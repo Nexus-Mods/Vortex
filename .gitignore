@@ -1,0 +1,6 @@
+node_modules
+typings
+dist
+out
+doc
+.vscode/.BROWSE.VC.DB*

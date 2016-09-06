@@ -1,0 +1,34 @@
+{
+  "globalDevDependencies": {
+    "babel-core": "registry:dt/babel-core#6.7.0+20160423062108",
+    "babel-template": "registry:dt/babel-template#6.7.0+20160423062108",
+    "babel-traverse": "registry:dt/babel-traverse#6.7.0+20160423062108",
+    "babel-types": "registry:dt/babel-types#6.7.0+20160423062108",
+    "babylon": "registry:dt/babylon#6.7.0+20160423062108",
+    "bluebird": "registry:dt/bluebird#3.0.0+20160811111256",
+    "electron-builder": "registry:dt/electron-builder#2.0.2+20160316155526",
+    "fs-extra-promise": "registry:dt/fs-extra-promise#0.0.0+20160811111312",
+    "jest": "registry:dt/jest#0.9.0+20160706021812",
+    "react-addons-test-utils": "registry:dt/react-addons-test-utils#0.14.0+20160427035638",
+    "react-addons-update": "registry:dt/react-addons-update#0.14.0+20160316155526",
+    "react-bootstrap": "registry:dt/react-bootstrap#0.0.0+20160806072414",
+    "react-fontawesome": "registry:dt/react-fontawesome#1.1.0+20160829152611",
+    "react-redux": "registry:dt/react-redux#4.4.0+20160724070751",
+    "redux": "registry:dt/redux#3.5.2+20160703092728",
+    "redux-devtools": "registry:dt/redux-devtools#3.0.0+20160703120921",
+    "redux-devtools-log-monitor": "registry:dt/redux-devtools-log-monitor#1.0.1+20151216103641",
+    "winston": "registry:dt/winston#0.0.0+20160417152829"
+  },
+  "globalDependencies": {
+    "node": "registry:dt/node#6.0.0+20160831021119",
+    "react": "registry:dt/react#0.14.0+20160829191040",
+    "react-bootstrap": "registry:dt/react-bootstrap#0.0.0+20160806072414",
+    "react-dom": "registry:dt/react-dom#0.14.0+20160412154040",
+    "redux": "registry:dt/redux#3.5.2+20160703092728",
+    "source-map-support": "registry:dt/source-map-support#0.2.10+20160316155526",
+    "typescript": "registry:dt/typescript#0.4.0+20160317120654"
+  },
+  "dependencies": {
+    "redux-persist": "registry:npm/redux-persist#3.2.2+20160817092816"
+  }
+}

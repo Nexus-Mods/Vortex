@@ -1,0 +1,7 @@
+*.js
+*.js.map
+node_modules
+actions
+reducers
+assets
+index.html

@@ -1,0 +1,95 @@
+{
+  "private": true,
+  "name": "nmm2_devel",
+  "version": "0.0.1",
+  "main": "out/main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nexus-Mods/NMM2"
+  },
+  "scripts": {
+    "_theme_out": "copyup -f node_modules/bootswatch/flatly/bootstrap.min.css out/assets/css",
+    "_theme_app": "copyup -f node_modules/bootswatch/flatly/bootstrap.min.css app/assets/css",
+    "_assets_out": "copyup src/index.html out && copyfiles assets/css/* out && copyfiles assets/fonts/* out && copyfiles assets/images/* out && copyfiles -f extensions/*/dist/*.js out/extensions",
+    "_assets_app": "copyup src/index.html app && copyfiles assets/css/* app && copyfiles assets/fonts/* app && copyfiles assets/images/* app && copyfiles -f extensions/*/dist/*.js app/extensions",
+    "_install_app": "cd app && npm install",
+    "prestart": "tsc -p . --outDir out && npm run _assets_out && npm run _theme_out",
+    "prepackage": "npm run _install_app && tsc -p . --outDir app && npm run _assets_app && npm run _theme_app",
+    "package": "build",
+    "postinstall": "typings install",
+    "start": "cross-env NODE_ENV=production electron .",
+    "test": "jest",
+    "doc": "typedoc --out doc src"
+  },
+  "engines": {
+    "electron": "1.3.5"
+  },
+  "jest": {
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.jsx?$"
+  },
+  "build": {
+    "asar": true,
+    "appId": "com.nexusmods.nmm2",
+    "win": {
+      "target": "squirrel",
+      "iconUrl": "https://staticdelivery.nexusmods.com/contents/Templates/110/favicon.ico"
+    }
+  },
+  "devDependencies": {
+    "babel-core": "^6.14.0",
+    "babel-jest": "^15.0.0",
+    "babel-polyfill": "^6.13.0",
+    "babel-preset-es2015": "6.13.2",
+    "babel-preset-react": "^6.11.1",
+    "babel-preset-react-optimize": "^1.0.1",
+    "babel-preset-stage-0": "^6.5.0",
+    "babel-register": "^6.11.6",
+    "babel-runtime": "^6.11.6",
+    "babel-types": "^6.15.0",
+    "babel-template": "^6.15.0",
+    "babel-traverse": "^6.15.0",
+    "babylon": "^6.9.1",
+    "bootswatch": "^3.3.7",
+    "bluebird": "^3.4.6",
+    "copyfiles": "^1.0.0",
+    "cross-env": "^2.0.0",
+    "devtron": "^1.3.0",
+    "electron": "1.3.5",
+    "electron-builder": "^5.26.0",
+    "electron-debug": "^1.0.1",
+    "electron-devtools-installer": "^2.0.1",
+    "electron-edge": "^5.9.2-p0",
+    "electron-squirrel-startup": "^1.0.0",
+    "fs-extra-promise": "^0.4.0",
+    "jest": "^15.1.1",
+    "typedoc": "^0.4.5",
+    "react-addons-update": "^15.3.0",
+    "react-addons-test-utils": "^15.3.1",
+    "react-bootstrap": "^0.30.2",
+    "react-fontawesome": "^1.1.0",
+    "react-layout-pane": "^0.1.16",
+    "react-redux": "^4.4.5",
+    "react-sidebar": "^2.2.1",
+    "redux": "^3.5.2",
+    "redux-act": "^0.5.0",
+    "redux-devtools": "^3.3.1",
+    "redux-devtools-log-monitor": "^1.0.11",
+    "redux-devtools-dispatch": "^2.2.0",
+    "redux-electron-store": "^0.3.13",
+    "redux-persist": "^3.5.0",
+    "redux-persist-node-storage": "^1.0.2",
+    "tslint": "^3.15.1",
+    "tslint-react": "^1.0.0",
+    "tslint-eslint-rules": "^1.5.0",
+    "typings": "^1.3.3",
+    "winston": "^2.2.0"
+  },
+  "dependencies": {
+    "font-awesome": "^4.6.3",
+    "react": "^15.3.0",
+    "react-bootstrap": "^0.30.2",
+    "react-dom": "^15.3.0",
+    "source-map-support": "^0.4.2",
+    "typescript": "^1.8.10"
+  }
+}
