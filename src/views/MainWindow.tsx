@@ -35,7 +35,7 @@ export class MainWindow extends React.Component<IMainWindowProps, IMainWindowSta
                         <Label>Content area placeholder</Label>
                     </Flex>
                     <Fixed>
-                        <Well bsStyle='slim'>Footer placeholder</Well>
+                        <Well bsStyle='slim'>Statusbar placeholder</Well>
                     </Fixed>
                 </Layout>
                 <Modal show={this.state.showLayer === 'settings'} onHide={() => { this.showLayer(''); }}>

@@ -14,6 +14,8 @@ import { Provider } from 'react-redux';
 import { Store, applyMiddleware, compose, createStore } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 
+import DevTools = require('./util/DevTools');
+
 log('info', 'renderer process started');
 
 // set up store. Through the electronEnhancer this is automatically
@@ -27,8 +29,6 @@ let middleware = [];
 let enhancer = null;
 
 if (process.env.NODE_ENV === 'development') {
-  // tslint:disable-next-line:no-var-requires
-  const DevTools = require('./util/DevTools');
   enhancer = compose(
     applyMiddleware(...middleware),
     electronEnhancer({ filter }),
