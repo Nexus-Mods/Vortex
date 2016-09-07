@@ -12,9 +12,11 @@
     "_theme_app": "copyup -f node_modules/bootswatch/flatly/bootstrap.min.css app/assets/css",
     "_assets_out": "copyup src/index.html out && copyfiles assets/css/* out && copyfiles assets/fonts/* out && copyfiles assets/images/* out && copyfiles -f extensions/*/dist/*.js out/extensions",
     "_assets_app": "copyup src/index.html app && copyfiles assets/css/* app && copyfiles assets/fonts/* app && copyfiles assets/images/* app && copyfiles -f extensions/*/dist/*.js app/extensions",
+    "_babel_out": "cross-env BABEL_ENV=development babel out -d out",
+    "_babel_app": "cross-env BABEL_ENV=development babel app -d app",
     "_install_app": "cd app && npm install",
-    "prestart": "tsc -p . --outDir out && npm run _assets_out && npm run _theme_out",
-    "prepackage": "npm run _install_app && tsc -p . --outDir app && npm run _assets_app && npm run _theme_app",
+    "prestart": "(tsc -p . --outDir out || (exit 0)) && npm run _assets_out && npm run _theme_out && npm run _babel_out",
+    "prepackage": "npm run _install_app && tsc -p . --outDir app && npm run _assets_app && npm run _theme_app && npm run _babel_app",
     "package": "build",
     "postinstall": "typings install",
     "start": "cross-env NODE_ENV=production electron .",
@@ -35,10 +37,18 @@
       "iconUrl": "https://staticdelivery.nexusmods.com/contents/Templates/110/favicon.ico"
     }
   },
+  "parserOptions": {
+    "ecmaFeatures": {
+        "jsx": true,
+        "modules": true
+    }
+  },
   "devDependencies": {
+    "babel-cli": "^6.14.0",
     "babel-core": "^6.14.0",
     "babel-jest": "^15.0.0",
     "babel-polyfill": "^6.13.0",
+    "babel-plugin-uglify": "^1.0.2",
     "babel-preset-es2015": "6.13.2",
     "babel-preset-react": "^6.11.1",
     "babel-preset-react-optimize": "^1.0.1",

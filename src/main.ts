@@ -2,6 +2,8 @@
  * entry point for the main process
  */
 
+import 'source-map-support/register';
+
 import { setMaximized, setWindowPosition, setWindowSize } from './actions/actions';
 import reducer from './reducers/index';
 import { IState, IWindow } from './types/IState';
@@ -16,7 +18,9 @@ import { autoRehydrate, persistStore } from 'redux-persist';
 import { AsyncNodeStorage } from 'redux-persist-node-storage';
 import * as winston from 'winston';
 
-if (require('electron-squirrel-startup')) {
+import doRestart = require('electron-squirrel-startup');
+
+if (doRestart) {
   app.quit();
 }
 
@@ -104,7 +108,6 @@ function setupAutoUpdate() {
     autoUpdater.quitAndInstall();
   });
 }
-
 
 // main window setup
 

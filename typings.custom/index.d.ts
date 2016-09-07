@@ -4,3 +4,4 @@
 /// <reference path="redux-act.d.ts" />
 /// <reference path="react-layout-pane.d.ts" />
 /// <reference path="various-ext.d.ts" />
+/// <reference path="electron-squirrel-startup.d.ts" />

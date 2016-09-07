@@ -20,7 +20,7 @@
     "winston": "registry:dt/winston#0.0.0+20160417152829"
   },
   "globalDependencies": {
-    "node": "registry:dt/node#6.0.0+20160831021119",
+    "node": "registry:dt/node#6.0.0+20160906151955",
     "react": "registry:dt/react#0.14.0+20160829191040",
     "react-bootstrap": "registry:dt/react-bootstrap#0.0.0+20160806072414",
     "react-dom": "registry:dt/react-dom#0.14.0+20160412154040",

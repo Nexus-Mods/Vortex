@@ -2,6 +2,8 @@
  * entry point for the renderer process(es)
  */
 
+import 'source-map-support/register';
+
 import reducer from './reducers/index';
 import { log } from './util/log';
 import { MainWindow } from './views/MainWindow';
@@ -25,6 +27,7 @@ let middleware = [];
 let enhancer = null;
 
 if (process.env.NODE_ENV === 'development') {
+  // tslint:disable-next-line:no-var-requires
   const DevTools = require('./util/DevTools');
   enhancer = compose(
     applyMiddleware(...middleware),
