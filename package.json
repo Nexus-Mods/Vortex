@@ -8,8 +8,8 @@
     "url": "https://github.com/Nexus-Mods/NMM2"
   },
   "scripts": {
-    "_theme_out": "copyup -f node_modules/bootswatch/flatly/bootstrap.min.css out/assets/css",
-    "_theme_app": "copyup -f node_modules/bootswatch/flatly/bootstrap.min.css app/assets/css",
+    "_theme_out": "copyup -f node_modules/bootswatch/flatly/bootstrap.min.css out/assets/css && copyup -f node_modules/font-awesome/css/font-awesome.min.css out/assets/css && copyup -f node_modules/font-awesome/fonts/fontawesome-webfont.woff2 out/assets/fonts",
+    "_theme_app": "copyup -f node_modules/bootswatch/flatly/bootstrap.min.css app/assets/css && copyup -f node_modules/font-awesome/css/font-awesome.min.css app/assets/css && copyup -f node_modules/font-awesome/fonts/fontawesome-webfont.woff2 app/assets/fonts",
     "_assets_out": "copyup src/index.html out && copyfiles assets/css/* out && copyfiles assets/fonts/* out && copyfiles assets/images/* out && copyfiles -f extensions/*/dist/*.js out/extensions",
     "_assets_app": "copyup src/index.html app && copyfiles assets/css/* app && copyfiles assets/fonts/* app && copyfiles assets/images/* app && copyfiles -f extensions/*/dist/*.js app/extensions",
     "_babel_out": "cross-env BABEL_ENV=development babel out -d out",
