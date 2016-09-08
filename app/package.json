@@ -29,6 +29,7 @@
     "redux-electron-store": "^0.3.13",
     "redux-persist": "^3.5.0",
     "redux-persist-node-storage": "^1.0.2",
+    "source-map-support": "^0.4.2",
     "winston": "^2.2.0"
   }
 }

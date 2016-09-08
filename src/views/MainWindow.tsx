@@ -38,7 +38,7 @@ export class MainWindow extends React.Component<IMainWindowProps, IMainWindowSta
                         <Well bsStyle='slim'>Statusbar placeholder</Well>
                     </Fixed>
                 </Layout>
-                <Modal show={this.state.showLayer === 'settings'} onHide={() => { this.showLayer(''); }}>
+                <Modal show={this.state.showLayer === 'settings'} onHide={ () => this.showLayer('') }>
                     <Modal.Header>
                         <Modal.Title>Settings</Modal.Title>
                     </Modal.Header>
@@ -46,7 +46,7 @@ export class MainWindow extends React.Component<IMainWindowProps, IMainWindowSta
                         <Label>Settings placeholder</Label>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button tooltip='Close' onClick={() => { this.showLayer(''); }}>Close</Button>
+                        <Button tooltip='Close' onClick={ () => this.showLayer('') }>Close</Button>
                     </Modal.Footer>
                 </Modal>
             </div>

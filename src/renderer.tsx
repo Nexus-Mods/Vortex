@@ -14,7 +14,6 @@ import { Provider } from 'react-redux';
 import { Store, applyMiddleware, compose, createStore } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 
-import DevTools = require('./util/DevTools');
 
 log('info', 'renderer process started');
 
@@ -29,6 +28,7 @@ let middleware = [];
 let enhancer = null;
 
 if (process.env.NODE_ENV === 'development') {
+  let DevTools = require('./util/DevTools');
   enhancer = compose(
     applyMiddleware(...middleware),
     electronEnhancer({ filter }),

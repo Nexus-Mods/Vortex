@@ -89,7 +89,7 @@ persistStore(store, {
 // auto updater
 
 function setupAutoUpdate() {
-  autoUpdater.setFeedURL(`http://updates.tannin.eu/${app.getVersion()}`);
+  autoUpdater.setFeedURL(`http://localhost/download/${app.getVersion()}`);
   try {
     autoUpdater.checkForUpdates();
   } catch (e) {
@@ -123,7 +123,8 @@ function createWindow() {
     y: windowMetrics.position.y,
     autoHideMenuBar: true,
     show: false,
-    title: 'NMM2' });
+    title: 'NMM2'
+  });
 
   if (windowMetrics.maximized) {
     mainWindow.maximize();
@@ -132,7 +133,7 @@ function createWindow() {
   mainWindow.loadURL(`file://${__dirname}/index.html`);
   // opening the devtools automatically can be very useful if the renderer has
   // trouble loading the page
-  // mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
 
   mainWindow.once('ready-to-show', () => {
     log('info', 'ready to show');

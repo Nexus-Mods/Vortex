@@ -20,12 +20,12 @@ export class IconBar extends React.Component<IIconBarProps, IIconBarState> {
     return (
       <div>
         <ButtonGroup>
-          <Button tooltip='Placeholder' id='placeholder' placement='right'>
+          <Button tooltip='Placeholder' id='placeholder' placement='bottom'>
             <Icon name='bank' />
           </Button>
         </ButtonGroup>
         <ButtonGroup className='pull-right'>
-          <Button tooltip='Settings' id='settings' placement='left' onClick={() => { onShowLayer('settings'); } }>
+          <Button tooltip='Settings' id='settings' placement='bottom' onClick={() => { onShowLayer('settings'); } }>
             <Icon name='gear' />
           </Button>
         </ButtonGroup>
