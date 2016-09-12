@@ -1,7 +1,9 @@
+import { II18NProps } from '../types/II18NProps';
 import { Button } from './TooltipControls';
 
 import * as React from 'react';
 import { ButtonGroup } from 'react-bootstrap';
+import { translate } from 'react-i18next';
 
 import Icon = require('react-fontawesome');
 
@@ -12,10 +14,10 @@ interface IIconBarProps {
 interface IIconBarState {
 }
 
-export class IconBar extends React.Component<IIconBarProps, IIconBarState> {
-  public render() {
+class IconBar extends React.Component<IIconBarProps & II18NProps, IIconBarState> {
+  public render(): JSX.Element {
 
-    let { onShowLayer } = this.props;
+    const { t, onShowLayer } = this.props;
 
     return (
       <div>
@@ -25,7 +27,7 @@ export class IconBar extends React.Component<IIconBarProps, IIconBarState> {
           </Button>
         </ButtonGroup>
         <ButtonGroup className='pull-right'>
-          <Button tooltip='Settings' id='settings' placement='bottom' onClick={() => { onShowLayer('settings'); } }>
+          <Button tooltip={t('Settings')} id='settings' placement='bottom' onClick={() => onShowLayer('settings') }>
             <Icon name='gear' />
           </Button>
         </ButtonGroup>
@@ -33,3 +35,5 @@ export class IconBar extends React.Component<IIconBarProps, IIconBarState> {
     );
   }
 }
+
+export default translate(['common'], { wait: true })(IconBar);

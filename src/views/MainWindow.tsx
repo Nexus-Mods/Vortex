@@ -1,9 +1,13 @@
-import { IconBar } from './IconBar';
+import { II18NProps } from '../types/II18NProps';
+import IconBar from './IconBar';
+import Settings from './Settings';
 import { Button } from './TooltipControls';
 
 import * as React from 'react';
 import { Label, Modal, Well } from 'react-bootstrap';
+import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
+
 import update = require('react-addons-update');
 
 interface IMainWindowProps {
@@ -15,7 +19,7 @@ interface IMainWindowState {
     currentTab: string;
 }
 
-export class MainWindow extends React.Component<IMainWindowProps, IMainWindowState> {
+class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWindowState> {
     constructor() {
         super();
         this.state = {
@@ -24,7 +28,8 @@ export class MainWindow extends React.Component<IMainWindowProps, IMainWindowSta
         };
     }
 
-    public render() {
+    public render(): JSX.Element {
+        const { t } = this.props;
         return (
             <div>
                 <Layout type='column'>
@@ -40,13 +45,15 @@ export class MainWindow extends React.Component<IMainWindowProps, IMainWindowSta
                 </Layout>
                 <Modal show={this.state.showLayer === 'settings'} onHide={ () => this.showLayer('') }>
                     <Modal.Header>
-                        <Modal.Title>Settings</Modal.Title>
+                        <Modal.Title>{t('Settings')}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Label>Settings placeholder</Label>
+                        <Settings />
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button tooltip='Close' onClick={ () => this.showLayer('') }>Close</Button>
+                        <Button tooltip={t('Close')} id='close' onClick={ () => this.showLayer('') }>
+                            {t('Close')}
+                        </Button>
                     </Modal.Footer>
                 </Modal>
             </div>
@@ -57,3 +64,5 @@ export class MainWindow extends React.Component<IMainWindowProps, IMainWindowSta
         this.setState(update(this.state, { showLayer: { $set: layer } }));
     }
 }
+
+export default translate(['common'], { wait: true })(MainWindow);

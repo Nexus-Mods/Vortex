@@ -12,36 +12,21 @@
             "preLaunchTask": "prestart",
             "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "runtimeArgs": [
-                "--nolazy",
                 "."
             ],
             "env": {
                 "NODE_ENV": "development"
             },
-            "externalConsole": false,
+            "console": "internalConsole",
             "sourceMaps": true,
             "outDir": null
         },
         {
-            "name": "Attach",
-            "type": "node",
+            "name": "Attach to renderer",
+            "type": "chrome",
             "request": "attach",
-            "port": 5858,
-            "address": "localhost",
-            "restart": false,
-            "sourceMaps": false,
-            "outDir": null,
-            "localRoot": "${workspaceRoot}",
-            "remoteRoot": null
-        },
-        {
-            "name": "Attach to Process",
-            "type": "node",
-            "request": "attach",
-            "processId": "${command.PickProcess}",
-            "port": 5858,
-            "sourceMaps": false,
-            "outDir": null
+            "port": 9222,
+            "sourceMaps": true
         }
     ]
 }
