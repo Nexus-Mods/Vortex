@@ -12,9 +12,6 @@ declare namespace NodeJS {
     interface Process {
         type: string
     }
-}
-
-declare namespace NodeJS {
     interface Global {
         logger: any
     }

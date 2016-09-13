@@ -1,18 +1,36 @@
 import { II18NProps } from '../../../types/II18NProps';
+import { setLanguage } from '../actions/actions';
 
+import { changeLanguage } from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import { translate } from 'react-i18next';
+import { connect } from 'react-redux';
 
 interface ILanguage {
   key: string;
   name: string;
 }
 
-class SettingsInterface extends React.Component<II18NProps, {}> {
+interface IConnectedProps {
+  currentLanguage: string;
+}
+
+interface IActionProps {
+  onSetLanguage: (language: string) => void;
+}
+
+class SettingsInterfaceBase extends React.Component<IActionProps & IConnectedProps & II18NProps, {}> {
+  private selectLanguage: (event) => void;
+
+  constructor(props) {
+    super(props);
+
+    this.selectLanguage = this.selectLanguageImpl.bind(this);
+  }
 
   public render(): JSX.Element {
-    const { t } = this.props;
+    const { t, currentLanguage } = this.props;
 
     const languages = [
       { key: 'en-GB', name: 'English' },
@@ -25,12 +43,17 @@ class SettingsInterface extends React.Component<II18NProps, {}> {
       <form>
         <FormGroup controlId='languageSelect'>
           <ControlLabel>{t('Language') }</ControlLabel>
-          <FormControl componentClass='select'>
+          <FormControl componentClass='select' onChange={this.selectLanguage} value={currentLanguage}>
             { languages.map((language) => { return this.renderLanguage(language); }) }
           </FormControl>
         </FormGroup>
       </form>
     );
+  }
+
+  private selectLanguageImpl(evt) {
+    let target: HTMLSelectElement = evt.target as HTMLSelectElement;
+    this.props.onSetLanguage(target.value);
   }
 
   private renderLanguage(language: ILanguage): JSX.Element {
@@ -41,5 +64,22 @@ class SettingsInterface extends React.Component<II18NProps, {}> {
     );
   }
 }
+
+function mapStateToProps(state: any): IConnectedProps {
+  return {
+    currentLanguage: state.settings.interface.language,
+  };
+}
+
+function mapDispatchToProps(dispatch: Function): IActionProps {
+  return {
+    onSetLanguage: (language: string) => {
+      changeLanguage(language);
+      return dispatch(setLanguage(language));
+    },
+  };
+}
+
+const SettingsInterface = connect(mapStateToProps, mapDispatchToProps)(SettingsInterfaceBase);
 
 export default translate(['common'], { wait: true })(SettingsInterface);

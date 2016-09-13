@@ -5,8 +5,9 @@
 import 'source-map-support/register';
 
 import reducer from './reducers/index';
+import { IExtensionInit } from './types/Extension';
 import loadExtensions from './util/ExtensionLoader';
-import { ExtensionProvider } from './util/ExtensionProvider';
+import { ExtensionProvider, getReducers } from './util/ExtensionProvider';
 import i18n from './util/i18n';
 import { log } from './util/log';
 import MainWindow from './views/MainWindow';
@@ -31,7 +32,8 @@ let middleware = [];
 let enhancer = null;
 
 if (process.env.NODE_ENV === 'development') {
-  let DevTools = require('./util/DevTools');
+  // tslint:disable-next-line:no-var-requires
+  const DevTools = require('./util/DevTools');
   enhancer = compose(
     applyMiddleware(...middleware),
     electronEnhancer({ filter }),
@@ -44,11 +46,13 @@ if (process.env.NODE_ENV === 'development') {
   );
 }
 
-const store: Store<any> = createStore(reducer, enhancer);
+const extensions: IExtensionInit[] = loadExtensions();
+
+let extReducers = getReducers(extensions);
+
+const store: Store<any> = createStore(reducer(extReducers), enhancer);
 
 log('info', 'renderer connected to store');
-
-let extensions = loadExtensions();
 
 // render the page content 
 

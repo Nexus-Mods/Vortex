@@ -18,6 +18,10 @@ import { autoRehydrate, persistStore } from 'redux-persist';
 import { AsyncNodeStorage } from 'redux-persist-node-storage';
 import * as winston from 'winston';
 
+import { IExtensionInit } from './types/Extension';
+import loadExtensions from './util/ExtensionLoader';
+import { getReducers } from './util/ExtensionProvider';
+
 import doRestart = require('electron-squirrel-startup');
 
 if (doRestart) {
@@ -78,10 +82,13 @@ const enhancer: Redux.StoreEnhancer<IState> = compose(
   electronEnhancer()
 ) as Redux.StoreEnhancer<IState>;
 
-let store: Redux.Store<IState> = createStore<IState>(reducer, enhancer);
+const extensions: IExtensionInit[] = loadExtensions();
+let extReducers = getReducers(extensions);
+
+let store: Redux.Store<IState> = createStore<IState>(reducer(extReducers), enhancer);
 persistStore(store, {
     storage: new AsyncNodeStorage(path.join(basePath, 'state')),
-    whitelist: ['window'],
+    whitelist: ['window', 'settings'],
   },
   () => { log('info', 'Application state loaded'); }
 );

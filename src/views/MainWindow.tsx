@@ -1,4 +1,5 @@
 import { II18NProps } from '../types/II18NProps';
+import { IIconDefinition } from '../types/IIconDefinition';
 import IconBar from './IconBar';
 import Settings from './Settings';
 import { Button } from './TooltipControls';
@@ -20,12 +21,30 @@ interface IMainWindowState {
 }
 
 class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWindowState> {
-    constructor() {
-        super();
+    private showLayer: (layer: string) => void;
+    private hideLayer: () => void;
+
+    private buttonsLeft: IIconDefinition[];
+    private buttonsRight: IIconDefinition[];
+
+    constructor(props) {
+        super(props);
         this.state = {
             showLayer: '',
             currentTab: 'mod',
         };
+        this.showLayer = this.showLayerImpl.bind(this);
+        this.hideLayer = this.showLayerImpl.bind(this, '');
+
+        const { t } = props;
+
+        this.buttonsLeft = [
+            { icon: 'bank', title: 'placeholder', action: () => undefined },
+        ];
+
+        this.buttonsRight = [
+            { icon: 'gear', title: t('Settings'), action: () => this.showLayer('settings') },
+        ];
     }
 
     public render(): JSX.Element {
@@ -34,7 +53,8 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
             <div>
                 <Layout type='column'>
                     <Fixed>
-                        <IconBar onShowLayer={ (name) => this.showLayer(name) } />
+                        <IconBar group='application-icons' staticElements={this.buttonsLeft} />
+                        <IconBar group='help-icons' className='pull-right' staticElements={this.buttonsRight} />
                     </Fixed>
                     <Flex>
                         <Label>Content area placeholder</Label>
@@ -43,16 +63,16 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
                         <Well bsStyle='slim'>Statusbar placeholder</Well>
                     </Fixed>
                 </Layout>
-                <Modal show={this.state.showLayer === 'settings'} onHide={ () => this.showLayer('') }>
+                <Modal show={this.state.showLayer === 'settings'} onHide={ this.hideLayer }>
                     <Modal.Header>
-                        <Modal.Title>{t('Settings')}</Modal.Title>
+                        <Modal.Title>{t('Settings') }</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <Settings />
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button tooltip={t('Close')} id='close' onClick={ () => this.showLayer('') }>
-                            {t('Close')}
+                        <Button tooltip={t('Close') } id='close' onClick={ this.hideLayer }>
+                            {t('Close') }
                         </Button>
                     </Modal.Footer>
                 </Modal>
@@ -60,7 +80,7 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
         );
     }
 
-    private showLayer(layer: string): void {
+    private showLayerImpl(layer: string): void {
         this.setState(update(this.state, { showLayer: { $set: layer } }));
     }
 }

@@ -1,39 +1,53 @@
-import { II18NProps } from '../types/II18NProps';
-import { Button } from './TooltipControls';
+import { IIconDefinition } from '../types/IIconDefinition';
+import { extension } from '../util/ExtensionProvider';
+import ToolbarIcon from './ToolbarIcon';
 
 import * as React from 'react';
 import { ButtonGroup } from 'react-bootstrap';
-import { translate } from 'react-i18next';
-
-import Icon = require('react-fontawesome');
 
 interface IIconBarProps {
-  onShowLayer: Function;
+  className?: string;
+  group: string;
+  objects: IIconDefinition[];
 }
 
-interface IIconBarState {
-}
+class IconBar extends React.Component<IIconBarProps, {}> {
 
-class IconBar extends React.Component<IIconBarProps & II18NProps, IIconBarState> {
   public render(): JSX.Element {
 
-    const { t, onShowLayer } = this.props;
+    const { objects, className } = this.props;
 
     return (
-      <div>
-        <ButtonGroup>
-          <Button tooltip='Placeholder' id='placeholder' placement='bottom'>
-            <Icon name='bank' />
-          </Button>
-        </ButtonGroup>
-        <ButtonGroup className='pull-right'>
-          <Button tooltip={t('Settings')} id='settings' placement='bottom' onClick={() => onShowLayer('settings') }>
-            <Icon name='gear' />
-          </Button>
-        </ButtonGroup>
-      </div>
+      <ButtonGroup className={className}>
+        { objects.map(this.renderIcon) }
+      </ButtonGroup>
     );
+  }
+
+  private renderIcon(icon: IIconDefinition) {
+    return <ToolbarIcon key={icon.title} id={icon.title} icon={icon.icon} tooltip={icon.title} onClick={icon.action} />;
   }
 }
 
-export default translate(['common'], { wait: true })(IconBar);
+/**
+ * called to register an extension icon. Please note that this function is called once for every
+ * icon bar in the ui for each icon. Only the bar with matching group name should accept the icon
+ * by returning a descriptor object.
+ * 
+ * @param {IconBar} instance the bar to test against. Please note that this is not actually an IconBar instance
+ *                           but the Wrapper, as the bar itself is not yet registered, but all props are there
+ * @param {string} group name of the icon group this icon wants to be registered with
+ * @param {string} icon name of the icon to use
+ * @param {string} title title of the icon
+ * @param {*} action the action to call on click
+ * @returns
+ */
+function registerIcon(instance: IconBar, group: string, icon: string, title: string, action: () => void) {
+  if (instance.props.group === group) {
+    return { icon, title, action };
+  } else {
+    return undefined;
+  }
+}
+
+export default extension(registerIcon)(IconBar);

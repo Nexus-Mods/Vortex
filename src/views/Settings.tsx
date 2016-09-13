@@ -1,4 +1,3 @@
-import { IExtensionContext, IExtensionProps } from '../types/Extension';
 import { II18NProps } from '../types/II18NProps';
 import { extension } from '../util/ExtensionProvider';
 
@@ -11,36 +10,27 @@ interface ISettingsPage {
     component: React.ComponentClass<any>;
 }
 
-class Settings extends React.Component<II18NProps & IExtensionProps, {}> {
+interface ISettingsProps {
+    objects: ISettingsPage[];
+}
 
-    private settingsPages: ISettingsPage[];
-
+class Settings extends React.Component<ISettingsProps & II18NProps, {}> {
     constructor(props) {
         super(props);
-        this.state = {
-        };
-
-        this.settingsPages = [];
-
-        let context: IExtensionContext = {
-            registerSettings: (title: string, component: React.ComponentClass<any>) => {
-                this.settingsPages.push({title, component});
-            },
-            registerReducer: () => true,
-        };
-
-        for (let ext of this.props.extensions) {
-            ext(context);
-        }
     }
 
     public render(): JSX.Element {
+        let { objects } = this.props;
         return (
             <Tabs id='settings-tab'>
-            {this.settingsPages.map((page) => <Tab key={page.title} title={page.title}><page.component /></Tab>)}
+            { objects.map((page) => <Tab key={page.title} title={page.title}><page.component /></Tab>) }
             </Tabs>
         );
     }
 }
 
-export default extension(translate(['common'], { wait: true })(Settings));
+function registerSettings(instance: Settings, title: string, component: React.ComponentClass<any>): ISettingsPage {
+    return { title, component };
+}
+
+export default translate(['common'], { wait: true })(extension(registerSettings)(Settings));

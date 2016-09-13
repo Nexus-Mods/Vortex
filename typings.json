@@ -33,7 +33,6 @@
     "typescript": "registry:dt/typescript#0.4.0+20160317120654"
   },
   "dependencies": {
-    "react-router": "registry:npm/react-router#2.4.0+20160811060709",
     "redux-persist": "registry:npm/redux-persist#3.2.2+20160817092816"
   }
 }

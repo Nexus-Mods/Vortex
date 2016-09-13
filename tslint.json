@@ -10,7 +10,8 @@
       "single",
       "avoid-escape"
     ],
-    "jsx-no-lambda": null
+    "jsx-no-lambda": true,
+    "jsx-alignment": true
   },
   "rulesDirectory": []
 }
