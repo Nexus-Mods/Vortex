@@ -1,6 +1,6 @@
 import { IExtensionContext } from '../../types/Extension';
 import settingsReducer from './reducers';
-import SettingsInterface from './views/SettingsInterface';
+import SettingsInterface from './SettingsInterface';
 
 function init(context: IExtensionContext): boolean {
   context.registerSettings('Interface', SettingsInterface);

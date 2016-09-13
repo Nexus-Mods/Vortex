@@ -11,7 +11,7 @@ export default function (language: string): I18next.I18n {
       ns: ['common'],
       defaultNS: 'common',
 
-      debug: true,
+      debug: false,
 
       saveMissing: false,
 

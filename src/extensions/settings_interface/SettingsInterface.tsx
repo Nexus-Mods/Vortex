@@ -1,9 +1,9 @@
-import { II18NProps } from '../../../types/II18NProps';
-import { nativeCountryName, nativeLanguageName } from '../../../util/languagemap';
-import { log } from '../../../util/log';
-import { setLanguage } from '../actions/actions';
+import { II18NProps } from '../../types/II18NProps';
+import { log } from '../../util/log';
+import { setLanguage } from './actions';
+import { nativeCountryName, nativeLanguageName } from './languagemap';
 
-import { changeLanguage, language } from 'i18next';
+import { changeLanguage } from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import { translate } from 'react-i18next';

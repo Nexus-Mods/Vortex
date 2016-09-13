@@ -13,6 +13,7 @@ declare namespace NodeJS {
         type: string
     }
     interface Global {
-        logger: any
+        logger: any;
+        extensions: Function[];
     }
 }

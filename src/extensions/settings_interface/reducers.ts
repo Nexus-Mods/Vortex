@@ -1,4 +1,4 @@
-import { setLanguage } from '../actions/actions';
+import { setLanguage } from './actions';
 import { createReducer } from 'redux-act';
 import update = require('react-addons-update');
 

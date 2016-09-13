@@ -1,5 +1,6 @@
 import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
+import Developer from './Developer';
 import IconBar from './IconBar';
 import Settings from './Settings';
 import { Button } from './TooltipControls';
@@ -32,8 +33,6 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
             currentTab: 'mod',
         };
 
-        const { t } = props;
-
         this.buttonsLeft = [
             { icon: 'bank', title: 'placeholder', action: () => undefined },
         ];
@@ -41,6 +40,12 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
         this.buttonsRight = [
             { icon: 'gear', title: 'Settings', action: () => this.showLayer('settings') },
         ];
+
+        if (process.env.NODE_ENV === 'development') {
+            this.buttonsRight.push(
+                { icon: 'wrench', title: 'Developer', action: () => this.showLayer('developer') }
+            );
+        }
     }
 
     public render(): JSX.Element {
@@ -71,6 +76,14 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
                             {t('Close') }
                         </Button>
                     </Modal.Footer>
+                </Modal>
+                <Modal show={this.state.showLayer === 'developer'} onHide={ this.hideLayer }>
+                    <Modal.Header>
+                        <Modal.Title>{t('Developer')}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Developer />
+                    </Modal.Body>
                 </Modal>
             </div>
         );

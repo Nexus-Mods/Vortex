@@ -8,9 +8,11 @@ let logger = null;
 // (which appears to be a singleton). In the renderer processes we connect
 // to the main-process logger through ipc
 if (process.type === 'renderer') {
+  // tslint:disable-next-line:no-var-requires
   const { remote } = require('electron');
   logger = remote.getGlobal('logger');
 } else {
+  // tslint:disable-next-line:no-var-requires
   logger = require('winston');
   global.logger = logger;
 }
