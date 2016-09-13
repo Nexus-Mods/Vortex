@@ -8,7 +8,7 @@ import reducer from './reducers/index';
 import { IExtensionInit } from './types/Extension';
 import loadExtensions from './util/ExtensionLoader';
 import { ExtensionProvider, getReducers } from './util/ExtensionProvider';
-import i18n from './util/i18n';
+import getI18n from './util/i18n';
 import { log } from './util/log';
 import MainWindow from './views/MainWindow';
 
@@ -53,6 +53,8 @@ let extReducers = getReducers(extensions);
 const store: Store<any> = createStore(reducer(extReducers), enhancer);
 
 log('info', 'renderer connected to store');
+
+const i18n = getI18n(store.getState().settings.interface.language);
 
 // render the page content 
 

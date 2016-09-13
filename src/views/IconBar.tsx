@@ -1,9 +1,11 @@
+import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
 import { extension } from '../util/ExtensionProvider';
 import ToolbarIcon from './ToolbarIcon';
 
 import * as React from 'react';
 import { ButtonGroup } from 'react-bootstrap';
+import { translate } from 'react-i18next';
 
 interface IIconBarProps {
   className?: string;
@@ -11,7 +13,7 @@ interface IIconBarProps {
   objects: IIconDefinition[];
 }
 
-class IconBar extends React.Component<IIconBarProps, {}> {
+class IconBar extends React.Component<IIconBarProps & II18NProps, {}> {
 
   public render(): JSX.Element {
 
@@ -24,8 +26,17 @@ class IconBar extends React.Component<IIconBarProps, {}> {
     );
   }
 
-  private renderIcon(icon: IIconDefinition) {
-    return <ToolbarIcon key={icon.title} id={icon.title} icon={icon.icon} tooltip={icon.title} onClick={icon.action} />;
+  private renderIcon = (icon: IIconDefinition) => this.renderIconImpl(icon);
+
+  private renderIconImpl(icon: IIconDefinition) {
+    const { t } = this.props;
+    return <ToolbarIcon
+      key={icon.title}
+      id={icon.title}
+      icon={icon.icon}
+      tooltip={t(icon.title)}
+      onClick={icon.action}
+    />;
   }
 }
 
@@ -50,4 +61,4 @@ function registerIcon(instance: IconBar, group: string, icon: string, title: str
   }
 }
 
-export default extension(registerIcon)(IconBar);
+export default translate(['common'], { wait: true })(extension(registerIcon)(IconBar));

@@ -10,8 +10,8 @@
   "scripts": {
     "_theme_out": "copyup -f node_modules/font-awesome/css/font-awesome.min.css out/assets/css && copyup -f node_modules/font-awesome/fonts/fontawesome-webfont.woff2 out/assets/fonts",
     "_theme_app": "copyup -f node_modules/font-awesome/css/font-awesome.min.css app/assets/css && copyup -f node_modules/font-awesome/fonts/fontawesome-webfont.woff2 app/assets/fonts",
-    "_assets_out": "copyup src/index.html out && copyfiles assets/fonts/* out && copyfiles assets/images/* out && copyfiles -f extensions/*/dist/*.js out/extensions",
-    "_assets_app": "copyup src/index.html app && copyfiles assets/fonts/* app && copyfiles assets/images/* app && copyfiles -f extensions/*/dist/*.js app/extensions",
+    "_assets_out": "copyup src/index.html out && copyfiles assets/fonts/* out && copyfiles locales/*/* out && copyfiles assets/images/* out && copyfiles -f extensions/*/dist/*.js out/extensions",
+    "_assets_app": "copyup src/index.html app && copyfiles assets/fonts/* app && copyfiles locales/*/* app && copyfiles assets/images/* app && copyfiles -f extensions/*/dist/*.js app/extensions",
     "_babel_out": "cross-env BABEL_ENV=development babel out -d out",
     "_babel_app": "cross-env BABEL_ENV=development babel app -d app --ignore node_modules",
     "_less_out": "lessc --clean-css --include-path=node_modules/bootswatch:node_modules/bootstrap-less src/less/index.less out/assets/css/theme.css",

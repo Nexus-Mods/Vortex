@@ -1,15 +1,22 @@
 import { II18NProps } from '../../../types/II18NProps';
+import { nativeCountryName, nativeLanguageName } from '../../../util/languagemap';
+import { log } from '../../../util/log';
 import { setLanguage } from '../actions/actions';
 
-import { changeLanguage } from 'i18next';
+import { changeLanguage, language } from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import update = require('react-addons-update');
+
+import { readdir } from 'fs';
+import * as path from 'path';
 
 interface ILanguage {
   key: string;
-  name: string;
+  language: string;
+  country?: string;
 }
 
 interface IConnectedProps {
@@ -20,36 +27,70 @@ interface IActionProps {
   onSetLanguage: (language: string) => void;
 }
 
-class SettingsInterfaceBase extends React.Component<IActionProps & IConnectedProps & II18NProps, {}> {
-  private selectLanguage: (event) => void;
+interface IState {
+  languages: ILanguage[];
+}
+
+class SettingsInterfaceBase extends React.Component<IActionProps & IConnectedProps & II18NProps, IState> {
 
   constructor(props) {
     super(props);
 
-    this.selectLanguage = this.selectLanguageImpl.bind(this);
+    this.state = {
+      languages: [],
+    };
+
+    const localesPath = path.normalize(path.join(__dirname, '..', '..', '..', 'locales'));
+
+    readdir(localesPath, (err, files) => {
+      if (err) {
+        log('warn', 'failed to read locales', err);
+        return;
+      }
+
+      if (!('en' in files)) {
+        files = files.concat(['en']);
+      }
+
+      log('info', 'files', files);
+
+      const locales = files.map((key) => {
+        let language = undefined;
+        let country = undefined;
+
+        if (key.includes('-')) {
+          let [languageKey, countryKey] = key.split('-');
+          language = nativeLanguageName(languageKey);
+          country = nativeCountryName(countryKey);
+        } else {
+          language = nativeLanguageName(key);
+        }
+        return { key, language, country }; });
+
+      log('info', 'locales', locales);
+
+      this.setState(update(this.state, {
+        languages: { $set: locales },
+      }));
+    });
   }
 
   public render(): JSX.Element {
     const { t, currentLanguage } = this.props;
-
-    const languages = [
-      { key: 'en-GB', name: 'English' },
-      { key: 'de', name: 'Deutsch' },
-      { key: 'it', name: 'italiano' },
-      { key: 'jp', name: '日本語' },
-    ];
 
     return (
       <form>
         <FormGroup controlId='languageSelect'>
           <ControlLabel>{t('Language') }</ControlLabel>
           <FormControl componentClass='select' onChange={this.selectLanguage} value={currentLanguage}>
-            { languages.map((language) => { return this.renderLanguage(language); }) }
+            { this.state.languages.map((language) => { return this.renderLanguage(language); }) }
           </FormControl>
         </FormGroup>
       </form>
     );
   }
+
+  private selectLanguage = (evt) => this.selectLanguageImpl(evt);
 
   private selectLanguageImpl(evt) {
     let target: HTMLSelectElement = evt.target as HTMLSelectElement;
@@ -59,7 +100,7 @@ class SettingsInterfaceBase extends React.Component<IActionProps & IConnectedPro
   private renderLanguage(language: ILanguage): JSX.Element {
     return (
       <option key={language.key} value={language.key}>
-        {language.name}
+      { language.country === undefined ? language.language : `${language.language} (${language.country})` }
       </option>
     );
   }
@@ -73,9 +114,14 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: Function): IActionProps {
   return {
-    onSetLanguage: (language: string) => {
-      changeLanguage(language);
-      return dispatch(setLanguage(language));
+    onSetLanguage: (newLanguage: string): void => {
+      changeLanguage(newLanguage, (err, t) => {
+        if (err === undefined) {
+          dispatch(setLanguage(newLanguage));
+        } else {
+          alert(err);
+        }
+      });
     },
   };
 }

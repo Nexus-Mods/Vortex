@@ -21,8 +21,6 @@ interface IMainWindowState {
 }
 
 class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWindowState> {
-    private showLayer: (layer: string) => void;
-    private hideLayer: () => void;
 
     private buttonsLeft: IIconDefinition[];
     private buttonsRight: IIconDefinition[];
@@ -33,8 +31,6 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
             showLayer: '',
             currentTab: 'mod',
         };
-        this.showLayer = this.showLayerImpl.bind(this);
-        this.hideLayer = this.showLayerImpl.bind(this, '');
 
         const { t } = props;
 
@@ -43,7 +39,7 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
         ];
 
         this.buttonsRight = [
-            { icon: 'gear', title: t('Settings'), action: () => this.showLayer('settings') },
+            { icon: 'gear', title: 'Settings', action: () => this.showLayer('settings') },
         ];
     }
 
@@ -79,6 +75,9 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
             </div>
         );
     }
+
+    private showLayer = (layer: string) => this.showLayerImpl(layer);
+    private hideLayer = () => this.showLayerImpl('');
 
     private showLayerImpl(layer: string): void {
         this.setState(update(this.state, { showLayer: { $set: layer } }));
