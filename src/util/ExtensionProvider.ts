@@ -31,6 +31,7 @@ function emptyExtensionContext(): IExtensionContext {
     registerSettings: (title: string, component: React.ComponentClass<any>) => undefined,
     registerIcon: (group: string, icon: string, title: string, action: any) => undefined,
     registerReducer: (path: string[], reducer: any) => undefined,
+    once: (): void => undefined,
   };
 }
 
@@ -39,6 +40,9 @@ interface IExtensibleProps {
   staticElements: any[];
 }
 
+/**
+ * retrieve list of all reducers registered by extensions
+ */
 export function getReducers(extensions: IExtensionInit[]) {
   let reducers = [];
 
@@ -51,6 +55,20 @@ export function getReducers(extensions: IExtensionInit[]) {
   extensions.forEach((ext) => ext(context));
 
   return reducers;
+}
+
+/**
+ * call the "once" function for all extensions. This should really only be called
+ * once.
+ */
+export function doOnce(extension: IExtensionInit[]) {
+  let context = emptyExtensionContext();
+
+  context.once = (callback: () => void) => {
+    callback();
+  };
+
+  extension.forEach((ext) => ext(context));
 }
 
 /**

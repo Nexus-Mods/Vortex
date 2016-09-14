@@ -52,8 +52,6 @@ class SettingsInterfaceBase extends React.Component<IActionProps & IConnectedPro
         files = files.concat(['en']);
       }
 
-      log('info', 'files', files);
-
       const locales = files.map((key) => {
         let language = undefined;
         let country = undefined;
@@ -66,8 +64,6 @@ class SettingsInterfaceBase extends React.Component<IActionProps & IConnectedPro
           language = nativeLanguageName(key);
         }
         return { key, language, country }; });
-
-      log('info', 'locales', locales);
 
       this.setState(update(this.state, {
         languages: { $set: locales },

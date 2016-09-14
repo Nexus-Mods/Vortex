@@ -14,6 +14,7 @@ export interface IExtensionContext {
   registerSettings: IRegisterSettings;
   registerIcon: IRegisterIcon;
   registerReducer: (path: string[], Function) => void;
+  once: (callback: () => void) => void;
 
 }
 

@@ -1,0 +1,7 @@
+{
+  "globalDevDependencies": {
+    "babel-core": "registry:dt/babel-core#6.7.0+20160423062108",
+    "express": "registry:dt/express#4.0.0+20160708185218",
+    "webpack": "registry:dt/webpack#1.12.9+20160724112410"
+  }
+}

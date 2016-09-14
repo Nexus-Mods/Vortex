@@ -9,7 +9,7 @@ import reducer from './reducers/index';
 import { IState, IWindow } from './types/IState';
 import { log } from  './util/log';
 import * as Promise from 'bluebird';
-import { BrowserWindow, app, autoUpdater } from 'electron';
+import { BrowserWindow, app, autoUpdater, dialog } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import { applyMiddleware, compose, createStore } from 'redux';
@@ -20,7 +20,7 @@ import * as winston from 'winston';
 
 import { IExtensionInit } from './types/Extension';
 import loadExtensions from './util/ExtensionLoader';
-import { getReducers } from './util/ExtensionProvider';
+import { doOnce, getReducers } from './util/ExtensionProvider';
 
 import doRestart = require('electron-squirrel-startup');
 
@@ -93,6 +93,8 @@ persistStore(store, {
   () => { log('info', 'Application state loaded'); }
 );
 
+doOnce(extensions);
+
 // auto updater
 
 function setupAutoUpdate() {
@@ -110,9 +112,12 @@ function setupAutoUpdate() {
   autoUpdater.on('update-not-available', () => {
     log('info', 'no update available');
   });
-  autoUpdater.on('update-download', () => {
-    alert('installing update now, cya');
-    autoUpdater.quitAndInstall();
+  autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) => {
+    dialog.showMessageBox(mainWindow, {
+        type: 'question', buttons: ['Later', 'Restart'],
+        title: 'Update available', message: 'NMM2 was updated. You can now restart to use the new version.'
+      },
+      (response) => { if (response === 1) { quitAndUpdate(); } });
   });
 }
 
@@ -140,7 +145,7 @@ function createWindow() {
   mainWindow.loadURL(`file://${__dirname}/index.html`);
   // opening the devtools automatically can be very useful if the renderer has
   // trouble loading the page
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   mainWindow.once('ready-to-show', () => {
     log('info', 'ready to show');

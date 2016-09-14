@@ -1,4 +1,5 @@
 import initAboutDialog from '../extensions/about_dialog/index';
+import initNutsLocal from '../extensions/nuts_local/index';
 import initSettingsInterface from '../extensions/settings_interface/index';
 import { IExtensionInit } from '../types/Extension';
 import { log } from '../util/log';
@@ -24,7 +25,8 @@ function loadDynamicExtension(extensionPath: string): IExtensionInit {
 
 function loadDynamicExtensions(extensionsPath: string): IExtensionInit[] {
   if (!fs.existsSync(extensionsPath)) {
-    log('warn', 'failed to load dynamic extensions, path doesn\'t exist', extensionsPath);
+    log('info', 'failed to load dynamic extensions, path doesn\'t exist', extensionsPath);
+    fs.mkdirSync(extensionsPath);
     return [];
   }
 
@@ -34,7 +36,7 @@ function loadDynamicExtensions(extensionsPath: string): IExtensionInit[] {
       try {
         return loadDynamicExtension(path.join(extensionsPath, name));
       } catch (err) {
-        log('warn', 'failed to load dynamic extension', err);
+        log('warn', 'failed to load dynamic extension', {error: err.message});
         return undefined;
       }
     });
@@ -46,6 +48,7 @@ function loadExtensions(): IExtensionInit[] {
   return [
     initSettingsInterface,
     initAboutDialog,
+    initNutsLocal,
   ].concat(loadDynamicExtensions(extensionsPath));
 }
 
