@@ -96,7 +96,7 @@ persistStore(store, {
 // auto updater
 
 function setupAutoUpdate() {
-  autoUpdater.setFeedURL(`http://localhost:6000/download/${app.getVersion()}`);
+  autoUpdater.setFeedURL(`http://localhost:6000/update/win32/${app.getVersion()}`);
   try {
     autoUpdater.checkForUpdates();
   } catch (e) {

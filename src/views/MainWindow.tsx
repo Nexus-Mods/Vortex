@@ -62,7 +62,7 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
                         <IconBar group='help-icons' className='pull-right' staticElements={this.buttonsRight} />
                     </Fixed>
                     <Flex>
-                        <Label>Content area placeholder</Label>
+                        <Label>Content area placeholder (version 2!)</Label>
                     </Flex>
                     <Fixed>
                         <Well bsStyle='slim'>Statusbar placeholder</Well>
