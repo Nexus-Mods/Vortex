@@ -52,7 +52,10 @@ let extReducers = getReducers(extensions);
 
 const store: Store<any> = createStore(reducer(extReducers), enhancer);
 
+const { remote } = require('electron');
 log('info', 'renderer connected to store');
+console.log(`using ${remote.app.getPath('userData')} as the storage directory`);
+console.log(`what about ${remote.app.getPath('appData')}`);
 
 const i18n = getI18n(store.getState().settings.interface.language);
 

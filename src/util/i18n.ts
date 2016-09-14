@@ -1,6 +1,16 @@
 import i18n = require('i18next');
 import FSBackend = require('i18next-node-fs-backend');
 
+import * as path from 'path';
+
+let dirName = path.dirname(__dirname);
+if (dirName.endsWith('.asar')) {
+  // locales are not packed so users can update/change them
+  dirName = path.dirname(dirName);
+}
+
+const basePath = path.normalize(path.join(dirName, 'locales'));
+
 export default function (language: string): I18next.I18n {
   return i18n
     .use(FSBackend)
@@ -20,8 +30,8 @@ export default function (language: string): I18next.I18n {
       },
 
       backend: {
-        loadPath: `${__dirname}/../locales/{{lng}}/{{ns}}.json`,
-        addPath: `${__dirname}/../locales/{{lng}}/{{ns}}.missing.json`,
+        loadPath: path.join(basePath, '{{lng}}', '{{ns}}.json'),
+        addPath: path.join(basePath, '{{lng}}', '{{ns}}.missing.json'),
       },
     });
 }

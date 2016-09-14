@@ -6,14 +6,14 @@ interface IRegisterSettings {
 }
 
 interface IRegisterIcon {
-  (group: string, icon: string, title: string, action: any): void;
+  (group: string, icon: string, title: string, action: () => void): void;
 }
 
 export interface IExtensionContext {
 
   registerSettings: IRegisterSettings;
   registerIcon: IRegisterIcon;
-  registerReducer: any;
+  registerReducer: (path: string[], Function) => void;
 
 }
 

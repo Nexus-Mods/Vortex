@@ -96,7 +96,7 @@ persistStore(store, {
 // auto updater
 
 function setupAutoUpdate() {
-  autoUpdater.setFeedURL(`http://localhost/download/${app.getVersion()}`);
+  autoUpdater.setFeedURL(`http://localhost:6000/download/${app.getVersion()}`);
   try {
     autoUpdater.checkForUpdates();
   } catch (e) {
@@ -140,7 +140,7 @@ function createWindow() {
   mainWindow.loadURL(`file://${__dirname}/index.html`);
   // opening the devtools automatically can be very useful if the renderer has
   // trouble loading the page
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   mainWindow.once('ready-to-show', () => {
     log('info', 'ready to show');

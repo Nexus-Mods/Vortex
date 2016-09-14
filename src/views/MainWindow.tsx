@@ -1,6 +1,5 @@
 import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
-import Developer from './Developer';
 import IconBar from './IconBar';
 import Settings from './Settings';
 import { Button } from './TooltipControls';
@@ -11,6 +10,11 @@ import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import update = require('react-addons-update');
+
+let Developer = undefined;
+if (process.env.NODE_ENV === 'development') {
+    Developer = require('./Developer').default;
+}
 
 interface IMainWindowProps {
     className: string;
@@ -41,7 +45,7 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
             { icon: 'gear', title: 'Settings', action: () => this.showLayer('settings') },
         ];
 
-        if (process.env.NODE_ENV === 'development') {
+        if (Developer !== undefined) {
             this.buttonsRight.push(
                 { icon: 'wrench', title: 'Developer', action: () => this.showLayer('developer') }
             );
@@ -66,27 +70,21 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
                 </Layout>
                 <Modal show={this.state.showLayer === 'settings'} onHide={ this.hideLayer }>
                     <Modal.Header>
-                        <Modal.Title>{t('Settings') }</Modal.Title>
+                        <Modal.Title>{ t('Settings') }</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <Settings />
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button tooltip={t('Close') } id='close' onClick={ this.hideLayer }>
+                        <Button tooltip={ t('Close') } id='close' onClick={ this.hideLayer }>
                             {t('Close') }
                         </Button>
                     </Modal.Footer>
                 </Modal>
-                <Modal show={this.state.showLayer === 'developer'} onHide={ this.hideLayer }>
-                    <Modal.Header>
-                        <Modal.Title>{t('Developer')}</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <Developer />
-                    </Modal.Body>
-                </Modal>
+                { this.renderDeveloperModal() }
             </div>
         );
+
     }
 
     private showLayer = (layer: string) => this.showLayerImpl(layer);
@@ -94,6 +92,19 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
 
     private showLayerImpl(layer: string): void {
         this.setState(update(this.state, { showLayer: { $set: layer } }));
+    }
+
+    private renderDeveloperModal() {
+        return Developer === undefined ? null : (
+            <Modal show={this.state.showLayer === 'developer'} onHide={ this.hideLayer }>
+                <Modal.Header>
+                    <Modal.Title>Developer</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Developer />
+                </Modal.Body>
+            </Modal>
+        );
     }
 }
 

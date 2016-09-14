@@ -26,7 +26,7 @@ export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
   }
 }
 
-function emptyContext(): IExtensionContext {
+function emptyExtensionContext(): IExtensionContext {
   return {
     registerSettings: (title: string, component: React.ComponentClass<any>) => undefined,
     registerIcon: (group: string, icon: string, title: string, action: any) => undefined,
@@ -42,7 +42,7 @@ interface IExtensibleProps {
 export function getReducers(extensions: IExtensionInit[]) {
   let reducers = [];
 
-  let context = emptyContext();
+  let context = emptyExtensionContext();
 
   context.registerReducer = (path: string[], reducer: any) => {
     reducers.push({ path, reducer });
@@ -76,7 +76,7 @@ export function extension(registerFunc: Function) {
       public componentWillMount(): void {
         this.mExtensions = this.props.staticElements || [];
 
-        let extContext = emptyContext();
+        let extContext = emptyExtensionContext();
         extContext[registerFunc.name] = (...args) => {
           const res = registerFunc(this, ...args);
           if (res !== undefined) {
