@@ -7,8 +7,8 @@
  */
 import { IExtensionReducer } from '../types/Extension';
 import { windowReducer } from './window';
+import { accountReducer } from './account';
 import { combineReducers } from 'redux';
-
 
 function reduceReducer(path, reducer, tree) {
   if (path.length === 1) {
@@ -42,9 +42,11 @@ function deriveReducer(ele) {
 
 export default function (extensionReducers: IExtensionReducer[]) {
   let tree = buildReducerTree(extensionReducers.concat([
-    { path: ['window'], reducer: windowReducer },
+      { path: ['window'], reducer: windowReducer },
+      { path: ['account'], reducer: accountReducer },
   ]));
 
   return deriveReducer(tree);
 
 }
+

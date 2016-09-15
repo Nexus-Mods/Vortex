@@ -88,7 +88,7 @@ let extReducers = getReducers(extensions);
 let store: Redux.Store<IState> = createStore<IState>(reducer(extReducers), enhancer);
 persistStore(store, {
     storage: new AsyncNodeStorage(path.join(basePath, 'state')),
-    whitelist: ['window', 'settings'],
+    whitelist: ['window', 'settings', 'account'],
   },
   () => { log('info', 'Application state loaded'); }
 );
@@ -145,7 +145,7 @@ function createWindow() {
   mainWindow.loadURL(`file://${__dirname}/index.html`);
   // opening the devtools automatically can be very useful if the renderer has
   // trouble loading the page
-  // mainWindow.webContents.openDevTools();
+   mainWindow.webContents.openDevTools();
 
   mainWindow.once('ready-to-show', () => {
     log('info', 'ready to show');

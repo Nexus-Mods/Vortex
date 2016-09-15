@@ -17,3 +17,9 @@ export const setWindowPosition = createAction('change window position');
  * fullscreen makes the window borderless + fill the screen
  */
 export const setMaximized = createAction('set window maximized');
+
+/*
+ * action to set the logged-in user. Takes two parameters of the form { login: text, password: password}
+ */
+export const setLoggedUser = createAction('set the logged-in user to these parameters', (username, cookie) => ({ username, cookie }));
+
