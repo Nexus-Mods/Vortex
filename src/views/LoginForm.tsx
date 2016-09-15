@@ -1,4 +1,4 @@
-import { setLoggedUser } from '../actions/actions';
+import { setLoggedInUser } from '../actions/actions';
 import { II18NProps } from '../types/II18NProps';
 import { log } from '../util/log';
 import { Button } from './TooltipControls';
@@ -118,7 +118,7 @@ function mapStateToProps(state: any): ILoginFormConnectedProps {
 
 function mapDispatchToProps(dispatch: Function): ILoginFormActionProps {
   return {
-    onSetAccount: (username: string, sid: string) => dispatch(setLoggedUser(username, sid)),
+    onSetAccount: (username: string, sid: string) => dispatch(setLoggedInUser(username, sid)),
   };
 }
 
