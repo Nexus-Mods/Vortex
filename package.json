@@ -82,6 +82,7 @@
     "jest": "^15.1.1",
     "less": "^2.7.1",
     "less-plugin-clean-css": "^1.5.1",
+    "node-rest-client": "^2.0.1",
     "react-addons-test-utils": "^15.3.1",
     "react-addons-update": "^15.3.0",
     "react-bootstrap": "^0.30.2",

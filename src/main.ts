@@ -62,7 +62,8 @@ log('info', `using ${basePath} as the storage directory`);
 
 winston.add(winston.transports.File, {
   filename: path.join(basePath, 'nmm2.log'),
-  level: 'info',
+  json: false,
+  level: 'debug',
   maxsize: 1024 * 1024,
   maxFiles: 5,
   tailable: true,
@@ -115,7 +116,7 @@ function setupAutoUpdate() {
   autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) => {
     dialog.showMessageBox(mainWindow, {
         type: 'question', buttons: ['Later', 'Restart'],
-        title: 'Update available', message: 'NMM2 was updated. You can now restart to use the new version.'
+        title: 'Update available', message: 'NMM2 was updated. You can now restart to use the new version.',
       },
       (response) => { if (response === 1) { quitAndUpdate(); } });
   });
@@ -145,7 +146,7 @@ function createWindow() {
   mainWindow.loadURL(`file://${__dirname}/index.html`);
   // opening the devtools automatically can be very useful if the renderer has
   // trouble loading the page
-   mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   mainWindow.once('ready-to-show', () => {
     log('info', 'ready to show');

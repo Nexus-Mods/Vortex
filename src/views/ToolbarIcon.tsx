@@ -14,9 +14,9 @@ class ToolbarIcon extends React.Component<IToolbarIconProps, {}> {
   public render(): JSX.Element {
     let { id, tooltip, icon, onClick } = this.props;
     return (
-          <Button tooltip={tooltip} id={id} placement='bottom' onClick={ onClick }>
-            <Icon name={icon} />
-          </Button>
+      <Button tooltip={tooltip} id={id} placement='bottom' onClick={ onClick }>
+        <Icon name={icon} />
+      </Button>
     );
   }
 }

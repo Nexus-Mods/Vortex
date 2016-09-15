@@ -1,4 +1,4 @@
-import { setLoggedUser } from '../actions/actions';
+import { setLoggedInUser } from '../actions/actions';
 import { createReducer } from 'redux-act';
 import update = require('react-addons-update');
 
@@ -7,8 +7,7 @@ import update = require('react-addons-update');
  */
  
 export const accountReducer = createReducer({
-    [setLoggedUser]: (state, payload) => update(state, { account: { $set: payload } }),
-},
-    {
-        account: { username: 'guest', cookie: '' },
- });
+  [setLoggedInUser]: (state, payload) => update(state, { account: { $set: payload } }),
+}, {
+  account: { username: 'guest', cookie: '' },
+});
