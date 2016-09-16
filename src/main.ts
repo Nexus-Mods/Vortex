@@ -18,9 +18,7 @@ import { autoRehydrate, persistStore } from 'redux-persist';
 import { AsyncNodeStorage } from 'redux-persist-node-storage';
 import * as winston from 'winston';
 
-import { IExtensionInit } from './types/Extension';
-import loadExtensions from './util/ExtensionLoader';
-import { doOnce, getReducers } from './util/ExtensionProvider';
+import ExtensionManager from './util/ExtensionLoader';
 
 import doRestart = require('electron-squirrel-startup');
 
@@ -67,6 +65,7 @@ winston.add(winston.transports.File, {
   maxsize: 1024 * 1024,
   maxFiles: 5,
   tailable: true,
+  timestamp: () => new Date().toUTCString(),
 });
 
 if (process.env.NODE_ENV !== 'development') {
@@ -83,8 +82,9 @@ const enhancer: Redux.StoreEnhancer<IState> = compose(
   electronEnhancer()
 ) as Redux.StoreEnhancer<IState>;
 
-const extensions: IExtensionInit[] = loadExtensions();
-let extReducers = getReducers(extensions);
+const extensions: ExtensionManager = new ExtensionManager();
+
+let extReducers = extensions.getReducers();
 
 let store: Redux.Store<IState> = createStore<IState>(reducer(extReducers), enhancer);
 persistStore(store, {
@@ -94,8 +94,7 @@ persistStore(store, {
   () => { log('info', 'Application state loaded'); }
 );
 
-doOnce(extensions);
-
+extensions.setStore(store);
 
 // main window setup
 

@@ -5,9 +5,25 @@ import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 
+import Icon = require('react-fontawesome');
+
 interface INotificationProps {
   params: INotification;
   onDismiss: (id: string) => void;
+}
+
+interface IActionProps {
+  t: (text: string) => string;
+  onDismiss: () => void;
+}
+
+class Action extends React.Component<IActionProps & INotificationAction, {}> {
+  public render(): JSX.Element {
+    const { t, title } = this.props;
+    return <Button onClick={this.action}>{t(title)}</Button>;
+  }
+
+  private action = () => this.props.action(this.props.onDismiss);
 }
 
 class Notification extends React.Component<INotificationProps & II18NProps, {}> {
@@ -25,18 +41,24 @@ class Notification extends React.Component<INotificationProps & II18NProps, {}> 
     return (
       <Alert bsStyle={this.styleName}>
         {message}
-        <div>{actions.map(this.renderAction)}</div>
+        <span className='pull-right'>
+          <Button className='btn-embed' onClick={this.dismiss}><Icon name='close'/></Button>
+        </span>
+        <div>
+          {actions.map(this.renderAction)}
+        </div>
       </Alert>
     );
   }
 
-  private renderAction = (action: INotificationAction) => this.renderActionImpl(action);
-
-  private renderActionImpl(action: INotificationAction) {
-    let { t, onDismiss } = this.props;
-    let { id } = this.props.params;
-    const dismissFunc = () => onDismiss(id);
-    return <Button onClick={() => action.action(dismissFunc)}>{t(action.title)}</Button>;
+  private renderAction = (action) => {
+    return <Action
+      key={action.title}
+      t={this.props.t}
+      title={action.title}
+      action={action.action}
+      onDismiss={this.dismiss}
+    />;
   }
 
   private typeToStyle(type: INotificationType) {
@@ -47,6 +69,8 @@ class Notification extends React.Component<INotificationProps & II18NProps, {}> 
       default: return 'warning';
     }
   }
+
+  private dismiss = () => this.props.onDismiss(this.props.params.id);
 }
 
 export default translate(['common'], { wait: true })(Notification);

@@ -1,3 +1,3 @@
 export interface II18NProps {
-    t?: Function;
+    t?: (input: string) => string;
 }

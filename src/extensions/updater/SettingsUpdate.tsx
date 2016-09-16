@@ -24,21 +24,19 @@ class SettingsUpdateBase extends React.Component<IActionProps & IConnectedProps 
         <FormGroup controlId='languageSelect'>
           <ControlLabel>{t('Update') }</ControlLabel>
           <FormControl componentClass='select' onChange={ this.selectChannel } value={updateChannel}>
-            <option key='stable'>{ t('Stable') }</option>
-            <option key='beta'>{ t('Beta') }</option>
+            <option value='stable'>{ t('Stable') }</option>
+            <option value='beta'>{ t('Beta') }</option>
           </FormControl>
         </FormGroup>
       </form>
     );
   }
 
-  private selectChannel = (evt) => this.selectChannelImpl(evt);
-
-  private selectChannelImpl(evt) {
+  private selectChannel = (evt) => {
     let target: HTMLSelectElement = evt.target as HTMLSelectElement;
     switch (target.value) {
-      case 'stable': this.props.onSetUpdateChannel('stable');
-      case 'beta': this.props.onSetUpdateChannel('beta');
+      case 'stable': this.props.onSetUpdateChannel('stable'); break;
+      case 'beta': this.props.onSetUpdateChannel('beta'); break;
       default: log('error', 'invalid channel', target.value);
     }
   }

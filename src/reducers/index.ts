@@ -15,7 +15,9 @@ function reduceReducer(path, reducer, tree) {
   if (path.length === 1) {
     tree[path[0]] = reducer;
   } else {
-    tree[path[0]] = {};
+    if (!(path[0] in tree)) {
+      tree[path[0]] = {};
+    }
     reduceReducer(path.slice(1), reducer, tree[path[0]]);
   }
 }
@@ -49,5 +51,4 @@ export default function (extensionReducers: IExtensionReducer[]) {
   ]));
 
   return deriveReducer(tree);
-
 }

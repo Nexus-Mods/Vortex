@@ -1,5 +1,6 @@
 import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
+import Dialog from './Dialog';
 import IconBar from './IconBar';
 import LoginForm from './LoginForm';
 import Notifications from './Notifications';
@@ -74,7 +75,7 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
           <Fixed>
             <Well bsStyle='slim'>
               <Button
-                bsSize='xsmall'
+                className='btn-embed'
                 id='login-btn'
                 tooltip={ t('Login') }
                 onClick={ this.showLoginLayer }
@@ -84,6 +85,7 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
             </Well>
           </Fixed>
         </Layout>
+        <Dialog />
         <Modal show={this.state.showLayer === 'settings'} onHide={ this.hideLayer }>
           <Modal.Header>
             <Modal.Title>{ t('Settings') }</Modal.Title>

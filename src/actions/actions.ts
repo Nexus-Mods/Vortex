@@ -24,7 +24,7 @@ export const setMaximized = createAction('set window maximized');
  * action to set the logged-in user. Takes two parameters of the form { login: text, password: password}
  */
 export const setLoggedInUser = createAction('set the logged-in user to these parameters',
-                                            (username, cookie) => ({ username, cookie }));
+                                            (username: string, cookie: string) => ({ username, cookie }));
 
 /**
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
@@ -36,3 +36,14 @@ export const addNotification = createAction('add a notification');
  * dismiss a notification. Takes the id of the notification
  */
 export const dismissNotification = createAction('dismiss notification');
+
+/**
+ * show a modal dialog to the user
+ */
+export const showDialog = createAction('show modal dialog to user',
+                                        (type: string, title: string, message: string) => ({ type, title, message }));
+
+/**
+ * dismiss the dialog being displayed
+ */
+export const dismissDialog = createAction('dismiss modal dialog');

@@ -1,3 +1,4 @@
+import { IDialog } from './IDialog';
 import { INotification } from './INotification';
 
 /**
@@ -34,8 +35,15 @@ export interface IWindow {
   size: IDimensions;
 }
 
+/**
+ * state regarding all manner of user interaction
+ * 
+ * @export
+ * @interface INotificationState
+ */
 export interface INotificationState {
   notifications: INotification[];
+  dialogs: IDialog[];
 }
 
 /**

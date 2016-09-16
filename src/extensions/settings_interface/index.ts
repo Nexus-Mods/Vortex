@@ -1,4 +1,4 @@
-import { IExtensionContext } from '../../types/Extension';
+import { IExtensionContext } from '../../types/IExtensionContext';
 import settingsReducer from './reducers';
 import SettingsInterface from './SettingsInterface';
 

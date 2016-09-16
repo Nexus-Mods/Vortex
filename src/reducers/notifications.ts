@@ -1,6 +1,10 @@
 import { addNotification, dismissNotification } from '../actions/actions';
+import { dismissDialog, showDialog } from '../actions/actions';
+
 import { createReducer } from 'redux-act';
 import update = require('react-addons-update');
+
+import { log } from '../util/log';
 
 let counter = 1;
 
@@ -12,15 +16,19 @@ export const notificationsReducer = createReducer({
     if (payload.id === undefined) {
       payload.id = `__auto_${counter++}`;
     }
-    update(state, { notifications: { [payload.id]: { $set: payload } } });
+    return update(state, { notifications: { $push: [ payload ] } });
   },
   [dismissNotification]: (state, payload) => {
     let idx = state.notifications.findIndex((ele) => ele.id === payload);
-    let newList = state.notifications.slice(idx, 1);
-    return update(state, { notifications: { $set : newList } });
-  }
+    return update(state, { notifications: { $splice : [[idx, 1]] } });
+  },
+  [showDialog]: (state, payload) => {
+    return update(state, { dialogs: { $push: [ payload ] } });
+  },
+  [dismissDialog]: (state, payload) => {
+    return update(state, { dialogs: { $splice: [[0, 1]] } });
+  },
 }, {
-  notifications: [
-    {id: '__init', type: 'info', actions: [], message: 'just a test'},
-  ],
+  notifications: [],
+  dialogs: [],
 });

@@ -1,6 +1,10 @@
-import { IExtensionContext, IExtensionInit, IExtensionProps } from '../types/Extension';
+import ExtensionManager from './ExtensionLoader';
 
 import * as React from 'react';
+
+interface IExtensionProps {
+  extensions: ExtensionManager;
+}
 
 /**
  * provider for ui extensions. This makes extensions available to
@@ -13,7 +17,7 @@ import * as React from 'react';
 export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
   // tslint:disable-next-line:no-unused-variable
   private static childContextTypes = {
-    extensions: React.PropTypes.array.isRequired,
+    extensions: React.PropTypes.object.isRequired,
   };
 
   public getChildContext(): Object {
@@ -26,49 +30,9 @@ export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
   }
 }
 
-function emptyExtensionContext(): IExtensionContext {
-  return {
-    registerSettings: (title: string, component: React.ComponentClass<any>) => undefined,
-    registerIcon: (group: string, icon: string, title: string, action: any) => undefined,
-    registerReducer: (path: string[], reducer: any) => undefined,
-    once: (): void => undefined,
-  };
-}
-
 interface IExtensibleProps {
   group?: string;
   staticElements: any[];
-}
-
-/**
- * retrieve list of all reducers registered by extensions
- */
-export function getReducers(extensions: IExtensionInit[]) {
-  let reducers = [];
-
-  let context = emptyExtensionContext();
-
-  context.registerReducer = (path: string[], reducer: any) => {
-    reducers.push({ path, reducer });
-  };
-
-  extensions.forEach((ext) => ext(context));
-
-  return reducers;
-}
-
-/**
- * call the "once" function for all extensions. This should really only be called
- * once.
- */
-export function doOnce(extension: IExtensionInit[]) {
-  let context = emptyExtensionContext();
-
-  context.once = (callback: () => void) => {
-    callback();
-  };
-
-  extension.forEach((ext) => ext(context));
 }
 
 /**
@@ -84,7 +48,7 @@ export function extension(registerFunc: Function) {
   return <P, S>(ComponentToWrap: React.ComponentClass<P>): any => {
     return class __ExtendedComponent extends React.Component<IExtensibleProps & P, S> {
       public static contextTypes: React.ValidationMap<any> = {
-        extensions: React.PropTypes.array.isRequired,
+        extensions: React.PropTypes.object.isRequired,
       };
 
       public context: IExtensionProps;
@@ -94,15 +58,12 @@ export function extension(registerFunc: Function) {
       public componentWillMount(): void {
         this.mExtensions = this.props.staticElements || [];
 
-        let extContext = emptyExtensionContext();
-        extContext[registerFunc.name] = (...args) => {
+        this.context.extensions.apply(registerFunc.name, (...args) => {
           const res = registerFunc(this, ...args);
           if (res !== undefined) {
             this.mExtensions.push(res);
           }
-        };
-
-        this.context.extensions.forEach((ext) => ext(extContext));
+        });
       }
 
       public render(): JSX.Element {

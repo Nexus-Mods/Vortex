@@ -1,15 +1,23 @@
-import { app, autoUpdater, dialog } from 'electron';
-
+import { IExtensionApi } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 
-// auto updater
+import { remote } from 'electron';
 
-function setupAutoUpdate(channel) {
+function setupAutoUpdate(api: IExtensionApi) {
+  if (remote === undefined) {
+    log('error', 'auto updater expected to be run in renderer thread');
+    return;
+  }
+
+  const app = remote.app;
+  const autoUpdater = remote.autoUpdater;
+
+  const channel: string = api.getState().settings.update.channel;
   autoUpdater.setFeedURL(`http://localhost:6000/update/channel/${channel}/win32/${app.getVersion()}`);
   try {
     autoUpdater.checkForUpdates();
   } catch (e) {
-    log('warn', 'checking for update failed', e);
+    api.showErrorNotification('checking for update failed', e.message);
     return;
   }
 
@@ -20,11 +28,16 @@ function setupAutoUpdate(channel) {
     log('info', 'no update available');
   });
   autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) => {
-    dialog.showMessageBox(mainWindow, {
-        type: 'question', buttons: ['Later', 'Restart'],
-        title: 'Update available', message: 'NMM2 was updated. You can now restart to use the new version.'
-      },
-      (response) => { if (response === 1) { quitAndUpdate(); } });
+    log('info', 'update installed');
+    api.sendNotification({
+      type: 'success',
+      message: 'Update available',
+      displayMS: 10000,
+      actions: [{
+        title: 'Restart & Install',
+        action: () => { quitAndUpdate(); },
+      }],
+    });
   });
 }
 

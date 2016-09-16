@@ -3,7 +3,6 @@ import { log } from '../../util/log';
 import { setLanguage } from './actions';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 
-import { changeLanguage } from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import { translate } from 'react-i18next';
@@ -111,13 +110,7 @@ function mapStateToProps(state: any): IConnectedProps {
 function mapDispatchToProps(dispatch: Function): IActionProps {
   return {
     onSetLanguage: (newLanguage: string): void => {
-      changeLanguage(newLanguage, (err, t) => {
-        if (err === undefined) {
-          dispatch(setLanguage(newLanguage));
-        } else {
-          alert(err);
-        }
-      });
+      dispatch(setLanguage(newLanguage));
     },
   };
 }

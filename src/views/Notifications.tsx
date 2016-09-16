@@ -1,8 +1,7 @@
+import { dismissNotification } from '../actions/actions';
 import { INotification } from '../types/INotification';
 import { IState } from '../types/IState';
 import Notification from './Notification';
-
-import { log } from '../util/log';
 
 import * as React from 'react';
 import { connect } from 'react-redux';
@@ -15,7 +14,12 @@ interface INotificationConnectedProps {
   notifications: INotification[];
 }
 
-class NotificationsBase extends React.Component<INotificationProps & INotificationConnectedProps, {}> {
+interface INotificationActionProps {
+  onDismiss: (id) => void;
+}
+
+class NotificationsBase extends React.Component
+    <INotificationProps & INotificationActionProps & INotificationConnectedProps, {}> {
   constructor(props) {
     super(props);
   }
@@ -29,8 +33,9 @@ class NotificationsBase extends React.Component<INotificationProps & INotificati
     );
   }
 
-  private renderNotification(notification: INotification) {
-    return (<Notification key={notification.message} params={notification} onDismiss={(id) => undefined} />);
+  private renderNotification = (notification: INotification) => {
+    const { onDismiss } = this.props;
+    return (<Notification key={notification.message} params={notification} onDismiss={onDismiss} />);
   }
 }
 
@@ -40,4 +45,11 @@ function mapStateToProps(state: IState): INotificationConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(NotificationsBase) as React.ComponentClass<INotificationProps>;
+function mapDispatchToProps(dispatch): INotificationActionProps {
+  return {
+    onDismiss: (id: string) => dispatch(dismissNotification(id)),
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(
+  NotificationsBase) as React.ComponentClass<INotificationProps>;
