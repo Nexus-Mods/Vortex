@@ -5,19 +5,21 @@ import { Button } from './TooltipControls';
 
 import { Client } from 'node-rest-client';
 import * as React from 'react';
-import { FormControl } from 'react-bootstrap';
+import { FormControl, FormGroup, ControlLabel } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
-
+import Icon = require('react-fontawesome');
+import FontAwesome = require('react-fontawesome');
 import update = require('react-addons-update');
 
 interface ILoginFormProps {
-  onClose: () => void;
+    onClose: () => void; 
 }
 
 interface ILoginFormState {
   username: string;
   password: string;
+  isSubmitted: boolean;
 }
 
 interface ILoginFormConnectedProps {
@@ -31,28 +33,33 @@ interface ILoginFormActionProps {
 class LoginFormBase extends React.Component<
   ILoginFormProps & ILoginFormConnectedProps & ILoginFormActionProps & II18NProps, ILoginFormState> {
   constructor(props) {
-    super(props);
-    this.state = { username: '', password: '' };
+      super(props);
+      this.state = { username: '', password: '', isSubmitted: false };
   }
 
   public render(): JSX.Element {
     let { t } = this.props;
     return (
-      <form onSubmit={ this.LoginAuthentication }>
-        <FormControl
-          type='text'
-          name='username'
-          value={ this.state.username }
-          placeholder={ t('Nexus Accountname') }
-          onChange={ this.handleChangeUsername }
-        />
-        <FormControl
+        <form onSubmit={ this.LoginAuthentication } >
+            <FormGroup controlId="formUsernameValidation" validationState={!this.state.isSubmitted ? "neutral" : this.state.username.length > 0 ? "success" : "warning"}>
+                <ControlLabel>{!this.state.isSubmitted ? "" : this.state.username.length > 0 ? "" : "Missing username"}</ControlLabel>
+            <FormControl
+            type='text'
+            name='username'
+            value={ this.state.username }
+            placeholder={ t('Nexus Accountname') }
+            onChange={ this.handleChangeUsername } />
+            <FormControl.Feedback />
+            </FormGroup>
+            <FormGroup controlId="formPasswordValidation" validationState={!this.state.isSubmitted ? "neutral" : this.state.password.length > 0 ? "success" : "warning"}>
+                <ControlLabel>{!this.state.isSubmitted ? "" : this.state.password.length > 0 ? "" : "Missing password"}</ControlLabel>
+         <FormControl
           type='password'
           name='password'
           value={this.state.password}
           placeholder={ t('Nexus Password') }
-          onChange={ this.handleChangePassword }
-        />
+          onChange={ this.handleChangePassword }/>
+        </FormGroup>
         <Button id='submit-login' type='submit' tooltip={t('Submit') }>
           { t('Submit') }
         </Button>
@@ -70,6 +77,8 @@ class LoginFormBase extends React.Component<
 
     let client = new Client();
 
+    this.setState(update(this.state, { isSubmitted: { $set: true } }))
+  
     let args = {
       path: { username, password },
       parameters: { Login: null, username, password },
