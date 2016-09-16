@@ -6,15 +6,16 @@
  * dummy comment
  */
 import { IExtensionReducer } from '../types/Extension';
-import { windowReducer } from './window';
 import { accountReducer } from './account';
+import { notificationsReducer } from './notifications';
+import { windowReducer } from './window';
 import { combineReducers } from 'redux';
 
 function reduceReducer(path, reducer, tree) {
   if (path.length === 1) {
     tree[path[0]] = reducer;
   } else {
-    tree[path[0]] = {}
+    tree[path[0]] = {};
     reduceReducer(path.slice(1), reducer, tree[path[0]]);
   }
 }
@@ -44,9 +45,9 @@ export default function (extensionReducers: IExtensionReducer[]) {
   let tree = buildReducerTree(extensionReducers.concat([
       { path: ['window'], reducer: windowReducer },
       { path: ['account'], reducer: accountReducer },
+      { path: ['notifications'], reducer: notificationsReducer },
   ]));
 
   return deriveReducer(tree);
 
 }
-

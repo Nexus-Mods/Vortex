@@ -1,3 +1,5 @@
+import { INotification } from './INotification';
+
 /**
  * interface to represent a position on the screen
  * 
@@ -32,6 +34,10 @@ export interface IWindow {
   size: IDimensions;
 }
 
+export interface INotificationState {
+  notifications: INotification[];
+}
+
 /**
  * interface for the top-level state object
  * this should precisely mirror the reducer structure
@@ -41,4 +47,5 @@ export interface IWindow {
  */
 export interface IState {
   window: IWindow;
+  notifications: INotificationState;
 }

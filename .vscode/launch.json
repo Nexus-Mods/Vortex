@@ -27,6 +27,19 @@
             "request": "attach",
             "port": 9222,
             "sourceMaps": true
+        },
+        {
+            "name": "Debug Unit Tests",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceRoot}/node_modules/jest-cli/bin/jest.js",
+            "args": ["--runInBand"],
+            "cwd": "${workspaceRoot}",
+            "preLaunchTask": null,
+            "runtimeExecutable": null,
+            "runtimeArgs": [
+                "--nolazy"
+            ]
         }
     ]
 }

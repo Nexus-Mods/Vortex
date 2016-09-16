@@ -9,7 +9,7 @@ import reducer from './reducers/index';
 import { IState, IWindow } from './types/IState';
 import { log } from  './util/log';
 import * as Promise from 'bluebird';
-import { BrowserWindow, app, autoUpdater, dialog } from 'electron';
+import { BrowserWindow, app } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import { applyMiddleware, compose, createStore } from 'redux';
@@ -38,11 +38,11 @@ const installExtensions: Function = () => {
 
       try {
         installExtension.default(REACT_DEVELOPER_TOOLS)
-          .then((name) => log('info', `Added Extension:  ${name}`))
+          .then((name) => log('info', 'Added Extension', name))
           .catch((err) => log('error', 'An error occurred: ', { error: err }));
 
         installExtension.default(REACT_PERF)
-          .then((name) => log('info', `Added Extension:  ${name}`))
+          .then((name) => log('info', 'Added Extension', name))
           .catch((err) => log('error', 'An error occurred: ', { error: err }));
       } catch (e) {
         console.error(e);
@@ -96,31 +96,6 @@ persistStore(store, {
 
 doOnce(extensions);
 
-// auto updater
-
-function setupAutoUpdate() {
-  autoUpdater.setFeedURL(`http://localhost:6000/update/win32/${app.getVersion()}`);
-  try {
-    autoUpdater.checkForUpdates();
-  } catch (e) {
-    log('warn', 'checking for update failed', e);
-    return;
-  }
-
-  autoUpdater.on('update-available', () => {
-    log('info', 'update available');
-  });
-  autoUpdater.on('update-not-available', () => {
-    log('info', 'no update available');
-  });
-  autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) => {
-    dialog.showMessageBox(mainWindow, {
-        type: 'question', buttons: ['Later', 'Restart'],
-        title: 'Update available', message: 'NMM2 was updated. You can now restart to use the new version.',
-      },
-      (response) => { if (response === 1) { quitAndUpdate(); } });
-  });
-}
 
 // main window setup
 
@@ -174,8 +149,6 @@ function createWindow() {
     let pos: number[] = mainWindow.getPosition();
     store.dispatch(setWindowPosition({ x: pos[0], y: pos[1] }));
   });
-
-  setupAutoUpdate();
 }
 
 const shouldQuit: boolean = app.makeSingleInstance((commandLine, workingDirectory): boolean => {

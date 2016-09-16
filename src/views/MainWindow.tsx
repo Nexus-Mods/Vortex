@@ -2,6 +2,7 @@ import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
 import IconBar from './IconBar';
 import LoginForm from './LoginForm';
+import Notifications from './Notifications';
 import Settings from './Settings';
 import { Button } from './TooltipControls';
 
@@ -9,14 +10,18 @@ import * as React from 'react';
 import { Label, Modal, Well } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
+
 import update = require('react-addons-update');
 import Icon = require('react-fontawesome');
 
+import Developer from './Developer';
+
+/*
 let Developer = undefined;
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
   Developer = require('./Developer').default;
-}
+}*/
 
 interface IMainWindowProps {
   className: string;
@@ -64,6 +69,7 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
           </Fixed>
           <Flex>
             <Label>Content area placeholder</Label>
+            <Notifications id='notifications' />
           </Flex>
           <Fixed>
             <Well bsStyle='slim'>

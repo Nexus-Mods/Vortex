@@ -9,8 +9,10 @@ import { createAction } from 'redux-act';
 
 /** action to set window size in the store. Takes one parameter of the form {width: number, height: number} */
 export const setWindowSize = createAction('change window size');
+
 /** action to set window position in the store. Takes one parameter of the form {x: number, y: number} */
 export const setWindowPosition = createAction('change window position');
+
 /**
  * action to set maximized in the store
  * to avoid confusion: maximize maintains window frame and fills one screen,
@@ -23,3 +25,14 @@ export const setMaximized = createAction('set window maximized');
  */
 export const setLoggedInUser = createAction('set the logged-in user to these parameters',
                                             (username, cookie) => ({ username, cookie }));
+
+/**
+ * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
+ * left unset, in that case one will be generated
+ */
+export const addNotification = createAction('add a notification');
+
+/**
+ * dismiss a notification. Takes the id of the notification
+ */
+export const dismissNotification = createAction('dismiss notification');

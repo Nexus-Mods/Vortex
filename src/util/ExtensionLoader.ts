@@ -1,6 +1,7 @@
 import initAboutDialog from '../extensions/about_dialog/index';
 import initNutsLocal from '../extensions/nuts_local/index';
 import initSettingsInterface from '../extensions/settings_interface/index';
+import initSettingsUpdate from '../extensions/updater/index';
 import { IExtensionInit } from '../types/Extension';
 import { log } from '../util/log';
 
@@ -47,6 +48,7 @@ function loadExtensions(): IExtensionInit[] {
   const extensionsPath = path.join(app.getPath('userData'), 'plugins');
   return [
     initSettingsInterface,
+    initSettingsUpdate,
     initAboutDialog,
     initNutsLocal,
   ].concat(loadDynamicExtensions(extensionsPath));

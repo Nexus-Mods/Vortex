@@ -16,7 +16,6 @@
     "react-addons-update": "registry:dt/react-addons-update#0.14.0+20160316155526",
     "react-bootstrap": "registry:dt/react-bootstrap#0.0.0+20160806072414",
     "react-fontawesome": "registry:dt/react-fontawesome#1.1.0+20160829152611",
-    "react-i18next": "registry:dt/react-i18next#1.7.0+20160810170216",
     "react-redux": "registry:dt/react-redux#4.4.0+20160724070751",
     "redux": "registry:dt/redux#3.5.2+20160703092728",
     "redux-devtools": "registry:dt/redux-devtools#3.0.0+20160703120921",

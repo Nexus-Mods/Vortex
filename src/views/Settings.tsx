@@ -20,12 +20,18 @@ class Settings extends React.Component<ISettingsProps & II18NProps, {}> {
     }
 
     public render(): JSX.Element {
-        let { t, objects } = this.props;
+        let { objects } = this.props;
         return (
             <Tabs id='settings-tab'>
-            { objects.map((page) => <Tab key={page.title} title={t(page.title)}><page.component /></Tab>) }
+            { objects.map(this.renderTab) }
             </Tabs>
         );
+    }
+
+    private renderTab = (page) => this.renderTabImpl(this.props.t, page);
+
+    private renderTabImpl(t, page): JSX.Element {
+        return <Tab key={page.title} eventKey={page.title} title={t(page.title)}><page.component /></Tab>;
     }
 }
 

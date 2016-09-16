@@ -1,11 +1,14 @@
+import * as CoreActions from '../actions/actions';
+import * as SettingsInterfaceActions from '../extensions/settings_interface/actions';
+
+import * as LogMonTool from '../util/DevTools';
+import { log } from '../util/log';
+
 import * as React from 'react';
 import { Component } from 'react';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 import { createDevTools } from 'redux-devtools';
 
-import * as SettingsInterfaceActions from '../extensions/settings_interface/actions';
-
-import * as LogMonTool from '../util/DevTools';
 import Dispatcher from 'redux-devtools-dispatch';
 
 const actionCreators = {};
@@ -46,12 +49,21 @@ function addCreators(mod: Object) {
   }
 }
 
-addCreators(SettingsInterfaceActions);
-
-let DispatcherTool = createDevTools(<Dispatcher actionCreators={actionCreators} />);
-
 class Developer extends Component<{}, {}> {
+
+  private DispatcherTool;
+
+  constructor() {
+    super();
+
+    addCreators(CoreActions);
+    addCreators(SettingsInterfaceActions);
+
+    this.DispatcherTool = createDevTools(<Dispatcher actionCreators={actionCreators} />);
+  }
+
   public render() {
+    let DispatcherTool = this.DispatcherTool;
     return (
       <Layout type='column' style={{ minHeight: '600px' }}>
         <Fixed>
