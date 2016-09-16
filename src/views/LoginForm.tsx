@@ -1,19 +1,19 @@
 import { setLoggedInUser } from '../actions/actions';
 import { II18NProps } from '../types/II18NProps';
 import { log } from '../util/log';
+import { showError } from '../util/message';
 import { Button } from './TooltipControls';
 
 import { Client } from 'node-rest-client';
 import * as React from 'react';
-import { FormControl, FormGroup, ControlLabel } from 'react-bootstrap';
+import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import Icon = require('react-fontawesome');
-import FontAwesome = require('react-fontawesome');
 import update = require('react-addons-update');
 
 interface ILoginFormProps {
-    onClose: () => void; 
+  onClose: () => void;
 }
 
 interface ILoginFormState {
@@ -28,39 +28,82 @@ interface ILoginFormConnectedProps {
 
 interface ILoginFormActionProps {
   onSetAccount: (username: string, sid: string) => void;
+  onShowError: (message: string, details: string) => void;
+}
+
+interface IFormGroupProps {
+  validationState?: "success" | "warning" | "error";
+}
+
+interface IFeedbackContext {
+  $bs_formGroup: IFormGroupProps;
+}
+
+class FormFeedbackAwesome extends FormControl.Feedback {
+  public context: IFeedbackContext;
+
+  public render(): JSX.Element {
+    let formGroup = this.context.$bs_formGroup;
+    const icon: string = this.iconName(formGroup.validationState);
+
+    if (icon === undefined) {
+      return null;
+    } else {
+      return <div className='form-control-feedback'><Icon name={icon} /></div>;
+    }
+  }
+
+  private iconName(state: string): string {
+    switch (state) {
+      case 'success': return 'check';
+      case 'warning': return 'warning';
+      case 'error': return 'remove';
+      default: return undefined;
+    }
+  }
 }
 
 class LoginFormBase extends React.Component<
   ILoginFormProps & ILoginFormConnectedProps & ILoginFormActionProps & II18NProps, ILoginFormState> {
   constructor(props) {
-      super(props);
-      this.state = { username: '', password: '', isSubmitted: false };
+    super(props);
+    this.state = { username: '', password: '', isSubmitted: false };
   }
 
   public render(): JSX.Element {
-    let { t } = this.props;
+    const { t } = this.props;
+    const { isSubmitted, username, password } = this.state;
+
+    const usernameState = !isSubmitted ? undefined : (username.length > 0) ? 'success' : 'warning';
+
     return (
-        <form onSubmit={ this.LoginAuthentication } >
-            <FormGroup controlId="formUsernameValidation" validationState={!this.state.isSubmitted ? "neutral" : this.state.username.length > 0 ? "success" : "warning"}>
-                <ControlLabel>{!this.state.isSubmitted ? "" : this.state.username.length > 0 ? "" : "Missing username"}</ControlLabel>
-            <FormControl
+      <form onSubmit={ this.LoginAuthentication } >
+        <FormGroup controlId='formUsernameValidation' validationState={usernameState} >
+          <ControlLabel>{usernameState === 'warning' ? 'Missing username' : ''}</ControlLabel>
+          <FormControl
             type='text'
             name='username'
-            value={ this.state.username }
+            value={ username }
             placeholder={ t('Nexus Accountname') }
-            onChange={ this.handleChangeUsername } />
-            <FormControl.Feedback />
-            </FormGroup>
-            <FormGroup controlId="formPasswordValidation" validationState={!this.state.isSubmitted ? "neutral" : this.state.password.length > 0 ? "success" : "warning"}>
-                <ControlLabel>{!this.state.isSubmitted ? "" : this.state.password.length > 0 ? "" : "Missing password"}</ControlLabel>
-         <FormControl
-          type='password'
-          name='password'
-          value={this.state.password}
-          placeholder={ t('Nexus Password') }
-          onChange={ this.handleChangePassword }/>
+            onChange={ this.handleChangeUsername }
+          />
+          <FormFeedbackAwesome />
         </FormGroup>
-        <Button id='submit-login' type='submit' tooltip={t('Submit') }>
+        <FormGroup
+          controlId='formPasswordValidation'
+          validationState={!isSubmitted ? undefined : (password.length > 0) ? 'success' : 'warning'}
+        >
+          <ControlLabel>{isSubmitted && (password.length === 0) ? 'Missing password' : ''}</ControlLabel>
+          <FormControl
+            type='password'
+            name='password'
+            value={password}
+            placeholder={ t('Nexus Password') }
+            onChange={ this.handleChangePassword }
+          />
+          <FormFeedbackAwesome />
+        </FormGroup>
+        <Button id='submit-login' type='submit' tooltip={ t('Submit') }>
           { t('Submit') }
         </Button>
       </form>
@@ -72,13 +115,13 @@ class LoginFormBase extends React.Component<
   }
 
   private LoginAuthenticationImpl() {
-    let { onClose, onSetAccount } = this.props;
+    let { onClose, onSetAccount, onShowError } = this.props;
     let { username, password } = this.state;
 
     let client = new Client();
 
-    this.setState(update(this.state, { isSubmitted: { $set: true } }))
-  
+    this.setState(update(this.state, { isSubmitted: { $set: true } }));
+
     let args = {
       path: { username, password },
       parameters: { Login: null, username, password },
@@ -108,6 +151,8 @@ class LoginFormBase extends React.Component<
           });
 
           onClose();
+        } else {
+          onShowError('Failed to log in', JSON.stringify(response.headers));
         }
       });
   }
@@ -125,9 +170,10 @@ function mapStateToProps(state: any): ILoginFormConnectedProps {
   return { account: state.account };
 }
 
-function mapDispatchToProps(dispatch: Function): ILoginFormActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): ILoginFormActionProps {
   return {
     onSetAccount: (username: string, sid: string) => dispatch(setLoggedInUser(username, sid)),
+    onShowError: (message: string, details: string) => showError(dispatch, message, details),
   };
 }
 

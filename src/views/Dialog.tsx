@@ -28,7 +28,7 @@ class Dialog extends React.Component<IDialogConnectedProps & IDialogActionProps 
           <Modal.Title>{ t(dialog.title) }</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          { t(dialog.message) }
+          { dialog.message }
         </Modal.Body>
         <Modal.Footer>
           <Button tooltip={ t('Confirm') } id='close' onClick={ this.dismiss }>

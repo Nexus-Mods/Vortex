@@ -1,7 +1,5 @@
 import { addNotification, showDialog } from '../actions/actions';
 
-import { log } from './log';
-
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));
 }
