@@ -9,6 +9,7 @@ import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import classNames = require('classnames');
 import Icon = require('react-fontawesome');
 import update = require('react-addons-update');
 
@@ -31,25 +32,13 @@ interface ILoginFormActionProps {
   onShowError: (message: string, details: string) => void;
 }
 
-interface IFormGroupProps {
-  validationState?: "success" | "warning" | "error";
-}
-
-interface IFeedbackContext {
-  $bs_formGroup: IFormGroupProps;
-}
-
 class FormFeedbackAwesome extends FormControl.Feedback {
-  public context: IFeedbackContext;
-
-  public render(): JSX.Element {
-    let formGroup = this.context.$bs_formGroup;
-    const icon: string = this.iconName(formGroup.validationState);
-
-    if (icon === undefined) {
+  protected renderDefaultFeedback(formGroup, className, classes, elementProps) {
+    let iconName = this.iconName(formGroup && formGroup.validationState);
+    if (iconName === undefined) {
       return null;
     } else {
-      return <div className='form-control-feedback'><Icon name={icon} /></div>;
+      return <div {...elementProps} className={classNames(className, classes)}><Icon name={iconName} /></div>;
     }
   }
 

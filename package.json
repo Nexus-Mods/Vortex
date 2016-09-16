@@ -67,6 +67,7 @@
     "bluebird": "^3.4.6",
     "bootstrap-less": "^3.3.8",
     "bootswatch": "^3.3.7",
+    "classnames": "^2.2.5",
     "copyfiles": "^1.0.0",
     "cross-env": "^2.0.0",
     "devtron": "^1.3.0",

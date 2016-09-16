@@ -6,6 +6,7 @@
     "babel-types": "registry:dt/babel-types#6.7.0+20160423062108",
     "babylon": "registry:dt/babylon#6.7.0+20160423062108",
     "bluebird": "registry:dt/bluebird#3.0.0+20160811111256",
+    "classnames": "registry:dt/classnames#0.0.0+20160316155526",
     "electron-builder": "registry:dt/electron-builder#2.0.2+20160316155526",
     "fs-extra-promise": "registry:dt/fs-extra-promise#0.0.0+20160811111312",
     "i18next": "registry:dt/i18next#2.3.4+20160803175212",
