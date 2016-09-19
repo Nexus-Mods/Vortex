@@ -16,6 +16,7 @@ import { applyMiddleware, compose, createStore } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 import { autoRehydrate, persistStore } from 'redux-persist';
 import { AsyncNodeStorage } from 'redux-persist-node-storage';
+import thunkMiddleware from 'redux-thunk';
 import * as winston from 'winston';
 
 import ExtensionManager from './util/ExtensionLoader';
@@ -74,7 +75,9 @@ if (process.env.NODE_ENV !== 'development') {
 
 // set up store and persisting
 
-const middleware = [];
+const middleware = [
+  thunkMiddleware,
+];
 
 const enhancer: Redux.StoreEnhancer<IState> = compose(
   applyMiddleware(...middleware),
@@ -120,7 +123,7 @@ function createWindow() {
   mainWindow.loadURL(`file://${__dirname}/index.html`);
   // opening the devtools automatically can be very useful if the renderer has
   // trouble loading the page
-  //mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   mainWindow.once('ready-to-show', () => {
     log('info', 'ready to show');

@@ -6,6 +6,8 @@ import Notification from './Notification';
 import * as React from 'react';
 import { connect } from 'react-redux';
 
+import CSSTransitionGroup = require('react-addons-css-transition-group');
+
 interface INotificationProps {
   id: string;
 }
@@ -19,23 +21,36 @@ interface INotificationActionProps {
 }
 
 class NotificationsBase extends React.Component
-    <INotificationProps & INotificationActionProps & INotificationConnectedProps, {}> {
+  <INotificationProps & INotificationActionProps & INotificationConnectedProps, {}> {
   constructor(props) {
     super(props);
   }
 
   public render(): JSX.Element {
     const { id, notifications } = this.props;
+
+    const items = notifications.sort(this.inverseSort).map(this.renderNotification);
+
     return (
       <div id={id}>
-      { notifications.map(this.renderNotification) }
+        <CSSTransitionGroup
+          transitionName='notification'
+          transitionEnterTimeout={500}
+          transitionLeaveTimeout={300}
+        >
+          { items }
+        </CSSTransitionGroup>
       </div>
     );
   }
 
+  private inverseSort(lhs: INotification, rhs: INotification) {
+    return lhs.id < rhs.id ? 1 : (lhs.id > rhs.id ? -1 : 0);
+  }
+
   private renderNotification = (notification: INotification) => {
     const { onDismiss } = this.props;
-    return (<Notification key={notification.message} params={notification} onDismiss={onDismiss} />);
+    return <Notification key={notification.id} params={notification} onDismiss={onDismiss} />;
   }
 }
 

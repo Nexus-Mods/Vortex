@@ -1,10 +1,8 @@
-import { addNotification, dismissNotification } from '../actions/actions';
+import { dismissNotification, startNotification } from '../actions/actions';
 import { dismissDialog, showDialog } from '../actions/actions';
 
 import { createReducer } from 'redux-act';
 import update = require('react-addons-update');
-
-import { log } from '../util/log';
 
 let counter = 1;
 
@@ -12,7 +10,7 @@ let counter = 1;
  * reducer for changes to notifications
  */
 export const notificationsReducer = createReducer({
-  [addNotification]: (state, payload) => {
+  [startNotification]: (state, payload) => {
     if (payload.id === undefined) {
       payload.id = `__auto_${counter++}`;
     }

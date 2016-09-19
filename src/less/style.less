@@ -1,8 +1,12 @@
+/**
+ * styles for custom controls
+ */
+
 #notifications {
   position: absolute;
   bottom: 5px;
   right: 5px;
-  width: 200px;
+  width: 250px;
 }
 
 .btn-embed {
@@ -10,4 +14,22 @@
   border: 0px;
   color: dimgray;
   background-color: transparent;
+}
+
+.notification-enter {
+  opacity: 0;
+}
+
+.notification-enter.notification-enter-active {
+    opacity: 1;
+    transition: opacity 500ms ease-in;
+}
+
+.notification-leave {
+  opacity: 1;
+}
+
+.notification-leave.notification-leave-active {
+    opacity: 0;
+    transition: opacity 300ms ease-in;
 }

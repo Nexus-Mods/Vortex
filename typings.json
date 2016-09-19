@@ -13,7 +13,9 @@
     "i18next-node-fs-backend": "registry:dt/i18next-node-fs-backend#0.0.0+20160319103745",
     "jest": "registry:dt/jest#0.9.0+20160706021812",
     "less": "registry:dt/less#0.0.0+20160608105036",
+    "react-addons-css-transition-group": "registry:dt/react-addons-css-transition-group#0.14.0+20160316155526",
     "react-addons-test-utils": "registry:dt/react-addons-test-utils#0.14.0+20160427035638",
+    "react-addons-transition-group": "registry:dt/react-addons-transition-group#0.14.0+20160701001352",
     "react-addons-update": "registry:dt/react-addons-update#0.14.0+20160316155526",
     "react-bootstrap": "registry:dt/react-bootstrap#0.0.0+20160806072414",
     "react-fontawesome": "registry:dt/react-fontawesome#1.1.0+20160829152611",
@@ -21,6 +23,7 @@
     "redux": "registry:dt/redux#3.5.2+20160703092728",
     "redux-devtools": "registry:dt/redux-devtools#3.0.0+20160703120921",
     "redux-devtools-log-monitor": "registry:dt/redux-devtools-log-monitor#1.0.1+20151216103641",
+    "redux-thunk": "registry:dt/redux-thunk#2.1.0+20160703120921",
     "winston": "registry:dt/winston#0.0.0+20160417152829"
   },
   "globalDependencies": {

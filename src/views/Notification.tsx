@@ -5,8 +5,6 @@ import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 
-import Icon = require('react-fontawesome');
-
 interface INotificationProps {
   params: INotification;
   onDismiss: (id: string) => void;
@@ -39,14 +37,11 @@ class Notification extends React.Component<INotificationProps & II18NProps, {}> 
   public render(): JSX.Element {
     let { actions, message } = this.props.params;
     return (
-      <Alert bsStyle={this.styleName}>
+      <Alert bsStyle={this.styleName} onDismiss={this.dismiss}>
         {message}
-        <span className='pull-right'>
-          <Button className='btn-embed' onClick={this.dismiss}><Icon name='close'/></Button>
-        </span>
-        <div>
-          {actions.map(this.renderAction)}
-        </div>
+        <p>
+          { actions !== undefined ? actions.map(this.renderAction) : null }
+        </p>
       </Alert>
     );
   }

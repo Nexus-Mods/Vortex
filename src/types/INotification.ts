@@ -15,5 +15,5 @@ export interface INotification {
   type: INotificationType;
   message: string;
   displayMS?: number;
-  actions: INotificationAction[];
+  actions?: INotificationAction[];
 }

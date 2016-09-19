@@ -1,10 +1,5 @@
-/**
- * define actions 
- */
-
-/**
- * dummy comment
- */
+import { INotification } from '../types/INotification';
+import * as Promise from 'bluebird';
 import { createAction } from 'redux-act';
 
 /** action to set window size in the store. Takes one parameter of the form {width: number, height: number} */
@@ -24,13 +19,13 @@ export const setMaximized = createAction('set window maximized');
  * action to set the logged-in user. Takes two parameters of the form { login: text, password: password}
  */
 export const setLoggedInUser = createAction('set the logged-in user to these parameters',
-                                            (username: string, cookie: string) => ({ username, cookie }));
+  (username: string, cookie: string) => ({ username, cookie }));
 
 /**
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
  * left unset, in that case one will be generated
  */
-export const addNotification = createAction('add a notification');
+export const startNotification = createAction('add a notification');
 
 /**
  * dismiss a notification. Takes the id of the notification
@@ -41,9 +36,24 @@ export const dismissNotification = createAction('dismiss notification');
  * show a modal dialog to the user
  */
 export const showDialog = createAction('show modal dialog to user',
-                                        (type: string, title: string, message: string) => ({ type, title, message }));
+  (type: string, title: string, message: string) => ({ type, title, message }));
 
 /**
  * dismiss the dialog being displayed
  */
 export const dismissDialog = createAction('dismiss modal dialog');
+
+export function addNotification(notification: INotification) {
+  return (dispatch) => {
+    dispatch(startNotification(notification));
+    if (notification.displayMS !== undefined) {
+      return new Promise((resolve) => {
+        setTimeout(() =>
+          resolve()
+          , notification.displayMS);
+      }).then(() =>
+        dispatch(dismissNotification(notification.id))
+        );
+    }
+  };
+}

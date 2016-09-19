@@ -19,6 +19,7 @@ import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { Store, applyMiddleware, compose, createStore } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
+import thunkMiddleware from 'redux-thunk';
 
 log('info', 'renderer process started');
 
@@ -28,7 +29,9 @@ log('info', 'renderer process started');
 let filter = {
 };
 
-let middleware = [];
+let middleware = [
+  thunkMiddleware,
+];
 
 let enhancer = null;
 
@@ -65,8 +68,6 @@ store.subscribe(() => {
     changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {
         showError(store.dispatch, 'failed to activate language', err);
-      } else {
-        showError(store.dispatch, 'everything worked fine', 'it\'s a trap!');
       }
     });
   }
