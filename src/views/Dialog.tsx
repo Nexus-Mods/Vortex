@@ -1,5 +1,5 @@
 import { dismissDialog } from '../actions/actions';
-import { IDialog } from '../types/IDialog';
+import { IDialog, IDialogType } from '../types/IDialog';
 import { II18NProps } from '../types/II18NProps';
 import { IState } from '../types/IState';
 
@@ -9,6 +9,8 @@ import * as React from 'react';
 import { Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+
+import Icon = require('react-fontawesome');
 
 interface IDialogConnectedProps {
   dialogs: IDialog[];
@@ -25,7 +27,7 @@ class Dialog extends React.Component<IDialogConnectedProps & IDialogActionProps 
     return dialog !== undefined ? (
       <Modal show={dialog !== undefined} onHide={ this.dismiss }>
         <Modal.Header>
-          <Modal.Title>{ t(dialog.title) }</Modal.Title>
+          <Modal.Title>{ this.iconForType(dialog.type) }{' '}{ t(dialog.title) }</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           { dialog.message }
@@ -37,6 +39,14 @@ class Dialog extends React.Component<IDialogConnectedProps & IDialogActionProps 
         </Modal.Footer>
       </Modal>
     ) : null;
+  }
+
+  private iconForType(type: IDialogType) {
+    switch (type) {
+      case 'info': return <Icon name='info-circle' size='2x' style={{ color: 'blue' }} />;
+      case 'error': return <Icon name='exclamation-circle' size='2x' style={{ color: 'red' }} />;
+      default: return null;
+    }
   }
 
   private dismiss = () => {

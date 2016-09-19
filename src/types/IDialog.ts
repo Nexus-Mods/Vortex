@@ -1,5 +1,8 @@
+export type IDialogType =
+  'success' | 'info' | 'error';
+
 export interface IDialog {
-  type: 'info' | 'error';
+  type: IDialogType;
   title: string;
   message: string;
 }
