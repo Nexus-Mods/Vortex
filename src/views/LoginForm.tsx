@@ -1,4 +1,4 @@
-import { setLoggedInUser } from '../actions/actions';
+import { setLoggedInUser, showDialog } from '../actions/actions';
 import { II18NProps } from '../types/II18NProps';
 import { log } from '../util/log';
 import { showError } from '../util/message';
@@ -24,12 +24,12 @@ interface ILoginFormState {
 }
 
 interface ILoginFormConnectedProps {
-  account: any;
+    account: any;
 }
 
 interface ILoginFormActionProps {
   onSetAccount: (username: string, sid: string) => void;
-  onShowError: (message: string, details: string) => void;
+  onShowLoginError: (message: string) => void;
 }
 
 class FormFeedbackAwesome extends FormControl.Feedback {
@@ -104,7 +104,7 @@ class LoginFormBase extends React.Component<
   }
 
   private LoginAuthenticationImpl() {
-    let { onClose, onSetAccount, onShowError } = this.props;
+    let { onClose, onSetAccount, onShowLoginError } = this.props;
     let { username, password } = this.state;
 
     let client = new Client();
@@ -117,33 +117,38 @@ class LoginFormBase extends React.Component<
       headers: { 'user-agent': 'Nexus Client v0.62.28' },
     };
 
-    client.get('http://nmm.nexusmods.com/Sessions/', args,
-      (data, response) => {
-        log('debug', 'STATUS', response.statusCode);
-        log('debug', 'HEADERS', JSON.stringify(response.headers));
+    if ((this.state.username != null && this.state.username != "") && (this.state.password != null && this.state.password != ""))
+    {
+        client.get('http://nmm.nexusmods.com/Sessions/', args,
+            (data, response) => {
+                log('debug', 'STATUS', response.statusCode);
+                log('debug', 'HEADERS', JSON.stringify(response.headers));
 
-        let cookies = response.headers['set-cookie'];
+                let cookies = response.headers['set-cookie'];
 
-        if (cookies !== undefined) {
-          let fields: string[] = cookies[0].split(';');
-          let sid = fields
-            .find((field) => field.startsWith('sid='))
-            .split('=')
-          [1];
-          log('debug', 'SID', sid);
+                if (cookies !== undefined) {
+                    let fields: string[] = cookies[0].split(';');
+                    let sid = fields
+                        .find((field) => field.startsWith('sid='))
+                        .split('=')
+                    [1];
+                    log('debug', 'SID', sid);
 
-          onSetAccount(username, sid);
+                    onSetAccount(username, sid);
 
-          response.setEncoding('utf8');
-          response.on('data', (chunk) => {
-            log('debug', 'BODY', chunk);
-          });
+                    response.setEncoding('utf8');
+                    response.on('data', (chunk) => {
+                        log('debug', 'BODY', chunk);
+                    });
 
-          onClose();
-        } else {
-          onShowError('Failed to log in', JSON.stringify(response.headers));
-        }
-      });
+                    onClose();
+                } else {
+                    let loginError = response.headers['nexusloginerrormessage'];
+                    console.log('debug', 'NEXUSLOGINERRORMESSAGE', loginError);
+                    onShowLoginError(loginError);
+                }
+            });
+    }
   }
 
   private LoginAuthentication = (event: Event) => {
@@ -161,8 +166,8 @@ function mapStateToProps(state: any): ILoginFormConnectedProps {
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): ILoginFormActionProps {
   return {
-    onSetAccount: (username: string, sid: string) => dispatch(setLoggedInUser(username, sid)),
-    onShowError: (message: string, details: string) => showError(dispatch, message, details),
+      onSetAccount: (username: string, sid: string) => dispatch(setLoggedInUser(username, sid)),
+      onShowLoginError: (message: string) => dispatch(showDialog('error', 'Error', message)), //showError(dispatch, message, details),
   };
 }
 

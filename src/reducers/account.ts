@@ -9,5 +9,5 @@ import update = require('react-addons-update');
 export const accountReducer = createReducer({
   [setLoggedInUser]: (state, payload) => update(state, { account: { $set: payload } }),
 }, {
-  account: { username: 'guest', cookie: '' },
+  account: { username: 'undefined', cookie: '' },
 });

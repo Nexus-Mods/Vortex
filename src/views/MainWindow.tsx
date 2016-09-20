@@ -6,12 +6,12 @@ import LoginForm from './LoginForm';
 import Notifications from './Notifications';
 import Settings from './Settings';
 import { Button } from './TooltipControls';
-
+import { connect } from 'react-redux';
 import * as React from 'react';
 import { Label, Modal, Well } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-
+import { setLoggedInUser } from '../actions/actions';
 import update = require('react-addons-update');
 import Icon = require('react-fontawesome');
 
@@ -25,23 +25,32 @@ if (process.env.NODE_ENV === 'development') {
 }*/
 
 interface IMainWindowProps {
-  className: string;
+    className: string;
 }
 
 interface IMainWindowState {
-  showLayer: string;
+    showLayer: string;
 }
 
-class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWindowState> {
+interface IMainWindowConnectedProps {
+    username: string;
+    sid: string;
+}
+
+interface IMainWindowActionProps {
+    onSetAccount: (username: string, sid: string) => void;
+}
+
+class MainWindowBase extends React.Component<IMainWindowProps & IMainWindowConnectedProps & IMainWindowActionProps & II18NProps, IMainWindowState> {
 
   private buttonsLeft: IIconDefinition[];
   private buttonsRight: IIconDefinition[];
-
+  
   constructor(props) {
     super(props);
 
     this.state = {
-      showLayer: '',
+        showLayer: ''
     };
 
     this.buttonsLeft = [
@@ -51,7 +60,7 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
     this.buttonsRight = [
       { icon: 'gear', title: 'Settings', action: () => this.showLayer('settings') },
     ];
-
+    
     if (Developer !== undefined) {
       this.buttonsRight.push(
         { icon: 'wrench', title: 'Developer', action: () => this.showLayer('developer') }
@@ -60,8 +69,8 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
   }
 
   public render(): JSX.Element {
-    const { t } = this.props;
-    return (
+      const { t } = this.props;
+      return (
       <div>
         <Layout type='column'>
           <Fixed>
@@ -74,14 +83,14 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
           </Flex>
           <Fixed>
             <Well bsStyle='slim'>
-              <Button
-                className='btn-embed'
-                id='login-btn'
-                tooltip={ t('Login') }
-                onClick={ this.showLoginLayer }
-              >
-                <Icon name='user'/>
+                          <Button
+                              className='btn-embed'
+                              id='login-btn'
+                              tooltip={ t('Login') }
+                              onClick={(this.props.sid == '' || this.props.sid == null) ? this.showLoginLayer : this.setAccount}>
+                              <Icon name='user' style={{ color: this.props.sid === "" ? 'red' : 'green' }} />
               </Button>
+              <span>{this.props.username === "undefined" ? ' guest' : ' ' + this.props.username}</span>
             </Well>
           </Fixed>
         </Layout>
@@ -112,13 +121,18 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
     );
   }
 
+  private setAccount = () => {
+      let { onSetAccount} = this.props;
+      onSetAccount('undefined', '');
+  }
+
   private showLayer = (layer: string) => this.showLayerImpl(layer);
   private hideLayer = () => this.showLayerImpl('');
 
   private showLoginLayer = () => this.showLayerImpl('login');
-
+  
   private showLayerImpl(layer: string): void {
-    this.setState(update(this.state, { showLayer: { $set: layer } }));
+      this.setState(update(this.state, { showLayer: { $set: layer } }));
   }
 
   private renderDeveloperModal() {
@@ -134,5 +148,17 @@ class MainWindow extends React.Component<IMainWindowProps & II18NProps, IMainWin
     );
   }
 }
+
+function mapStateToProps(state: any): IMainWindowConnectedProps {
+    return { username: state.account.account.username, sid: state.account.account.cookie};
+}
+
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IMainWindowActionProps {
+    return {
+        onSetAccount: (username: string, sid: string) => dispatch(setLoggedInUser(username, sid)),
+    };
+}
+
+const MainWindow = connect(mapStateToProps, mapDispatchToProps)(MainWindowBase) as React.ComponentClass<IMainWindowProps & IMainWindowConnectedProps>;
 
 export default translate(['common'], { wait: true })(MainWindow);
