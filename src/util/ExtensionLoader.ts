@@ -1,15 +1,18 @@
-import { addNotification } from '../actions/actions';
+import { addNotification, dismissNotification } from '../actions/notifications';
 
 import initAboutDialog from '../extensions/about_dialog/index';
+import initModManagement from '../extensions/mod_management/index';
 import initNutsLocal from '../extensions/nuts_local/index';
 import initSettingsInterface from '../extensions/settings_interface/index';
 import initSettingsUpdate from '../extensions/updater/index';
+import initWelcomeScreen from '../extensions/welcome_screen/index';
 import { IExtensionInit } from '../types/Extension';
-import { IExtensionApi, IExtensionContext } from '../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext, IOpenOptions } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
 import { log } from '../util/log';
 import { showError } from '../util/message';
 
+import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -31,8 +34,23 @@ class ExtensionManager {
     this.mExtensions = this.loadExtensions();
     this.mApi = {
       getState: () => { return {}; },
+      dispatch: undefined,
       showErrorNotification: (message: string, details: string) => {
         dialog.showErrorBox(message, details);
+      },
+      selectFile: (options: IOpenOptions) => {
+        return new Promise<string>((resolve, reject) => {
+          const fullOptions = Object.assign({}, options, {
+            properties: [ 'openFile' ],
+          });
+          dialog.showOpenDialog(null,  fullOptions, (fileNames: string[]) => {
+            if ((fileNames !== undefined) && (fileNames.length > 0)) {
+              resolve(fileNames[0]);
+            } else {
+              resolve(undefined);
+            }
+          });
+        });
       },
     };
   }
@@ -44,7 +62,11 @@ class ExtensionManager {
     this.mApi.showErrorNotification = (message: string, details: string) => {
       showError(store.dispatch, message, details);
     };
+    this.mApi.dismissNotification = (id: string) => {
+      store.dispatch(dismissNotification(id));
+    };
     this.mApi.getState = () => store.getState();
+    this.mApi.dispatch = store.dispatch;
   }
 
   /**
@@ -96,6 +118,7 @@ class ExtensionManager {
 
   private emptyExtensionContext(): IExtensionContext {
     return {
+      registerMainPage: (icon: string, title: string, component: React.ComponentClass<any>) => undefined,
       registerSettings: (title: string, component: React.ComponentClass<any>) => undefined,
       registerIcon: (group: string, icon: string, title: string, action: any) => undefined,
       registerReducer: (path: string[], reducer: any) => undefined,
@@ -146,6 +169,8 @@ class ExtensionManager {
       initSettingsInterface,
       initSettingsUpdate,
       initAboutDialog,
+      initWelcomeScreen,
+      initModManagement,
       initNutsLocal,
     ].concat(this.loadDynamicExtensions(extensionsPath));
   }

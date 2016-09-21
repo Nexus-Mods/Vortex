@@ -1,5 +1,7 @@
 import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
+import { IMainPage } from '../types/IMainPage';
+import { extension } from '../util/ExtensionProvider';
 import Dialog from './Dialog';
 import IconBar from './IconBar';
 import LoginForm from './LoginForm';
@@ -8,28 +10,23 @@ import Settings from './Settings';
 import { Button } from './TooltipControls';
 import { connect } from 'react-redux';
 import * as React from 'react';
-import { Label, Modal, Well } from 'react-bootstrap';
+import { Alert, Modal, Nav, NavItem, Well } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-import { setLoggedInUser } from '../actions/actions';
+import { setLoggedInUser } from '../actions/account';
 import update = require('react-addons-update');
 import Icon = require('react-fontawesome');
 
 import Developer from './Developer';
 
-/*
-let Developer = undefined;
-if (process.env.NODE_ENV === 'development') {
-  // tslint:disable-next-line:no-var-requires
-  Developer = require('./Developer').default;
-}*/
-
 interface IMainWindowProps {
-    className: string;
+  className: string;
+  objects: IMainPage[];
 }
 
 interface IMainWindowState {
-    showLayer: string;
+  showLayer: string;
+  showPage: string;
 }
 
 interface IMainWindowConnectedProps {
@@ -50,11 +47,11 @@ class MainWindowBase extends React.Component<IMainWindowProps & IMainWindowConne
     super(props);
 
     this.state = {
-        showLayer: ''
+      showLayer: '',
+      showPage: '',
     };
 
     this.buttonsLeft = [
-      { icon: 'bank', title: 'placeholder', action: () => undefined },
     ];
 
     this.buttonsRight = [
@@ -68,9 +65,14 @@ class MainWindowBase extends React.Component<IMainWindowProps & IMainWindowConne
     }
   }
 
+  public componentWillMount() {
+    this.setState(update(this.state, { showPage: { $set: this.props.objects[0].title } }));
+  }
+
   public render(): JSX.Element {
-      const { t } = this.props;
-      return (
+    const { t, objects } = this.props;
+    const { showPage } = this.state;
+    return (
       <div>
         <Layout type='column'>
           <Fixed>
@@ -78,7 +80,16 @@ class MainWindowBase extends React.Component<IMainWindowProps & IMainWindowConne
             <IconBar group='help-icons' className='pull-right' staticElements={this.buttonsRight} />
           </Fixed>
           <Flex>
-            <Label>Content area placeholder</Label>
+            <Layout type='row'>
+              <Fixed>
+                <Nav bsStyle='pills' stacked activeKey={showPage} onSelect={this.handleSetPage}>
+                  {objects.map(this.renderPageButton) }
+                </Nav>
+              </Fixed>
+              <Flex>
+                {this.renderCurrentPage()}
+              </Flex>
+            </Layout>
             <Notifications id='notifications' />
           </Flex>
           <Fixed>
@@ -126,6 +137,26 @@ class MainWindowBase extends React.Component<IMainWindowProps & IMainWindowConne
       onSetAccount('undefined', '');
   }
 
+  private renderPageButton = (page: IMainPage) => {
+    return <NavItem key={page.title} eventKey={page.title}><Icon name={page.icon} /></NavItem>;
+  }
+
+  private renderCurrentPage = () => {
+    const page: IMainPage = this.props.objects.find(
+      (ele) => ele.title === this.state.showPage);
+    if (page !== undefined) {
+      return <page.component />;
+    } else {
+      return <Alert>No content pages</Alert>;
+    }
+  };
+
+  private handleSetPage = (key) => {
+    this.setState(update(this.state, {
+      showPage: { $set: key },
+    }));
+  };
+
   private showLayer = (layer: string) => this.showLayerImpl(layer);
   private hideLayer = () => this.showLayerImpl('');
 
@@ -161,4 +192,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IMainWindowActionPro
 
 const MainWindow = connect(mapStateToProps, mapDispatchToProps)(MainWindowBase) as React.ComponentClass<IMainWindowProps & IMainWindowConnectedProps>;
 
-export default translate(['common'], { wait: true })(MainWindow);
+function registerMainPage(instance: MainWindowBase, icon: string, title: string, component: React.ComponentClass<any>) {
+  return { icon, title, component };
+}
+
+export default translate(['common'], { wait: true })(extension(registerMainPage)(MainWindow));

@@ -1,4 +1,5 @@
 import { INotification } from './INotification';
+import * as Promise from 'bluebird';
 import * as React from 'react';
 
 interface IRegisterSettings {
@@ -7,6 +8,21 @@ interface IRegisterSettings {
 
 interface IRegisterIcon {
   (group: string, icon: string, title: string, action: () => void): void;
+}
+
+interface IRegisterMainPage {
+  (icon: string, title: string, element: React.ComponentClass<any>): void;
+}
+
+export interface IFileFilter {
+  name: string;
+  extensions: string[];
+}
+
+export interface IOpenOptions {
+  title?: string;
+  defaultPath?: string;
+  filters?: IFileFilter[];
 }
 
 /**
@@ -35,12 +51,34 @@ export interface IExtensionApi {
   showErrorNotification?: (message: string, detail: string) => void;
 
   /**
+   * hides a notification by its id
+   * 
+   * @memberOf IExtensionApi
+   */
+  dismissNotification?: (id: string) => void;
+
+  /**
+   * show a system dialog to open a single file
+   * 
+   * @memberOf IExtensionApi
+   */
+  selectFile: (options: IOpenOptions) => Promise<string>;
+
+  /**
    * returns the whole application-state object.
    * This object is empty at the time registerReducer is called
    * 
    * @memberOf IExtensionApi
    */
   getState: () => any;
+
+  /**
+   * store dispatch function
+   * 
+   * @type {Redux.Dispatch<any>}
+   * @memberOf IExtensionApi
+   */
+  dispatch: Redux.Dispatch<any>;
 }
 
 export interface IExtensionContext {
@@ -61,6 +99,14 @@ export interface IExtensionContext {
   registerIcon: IRegisterIcon;
 
   /**
+   * registers a page for the main content area
+   * 
+   * @type {IRegisterMainPage}
+   * @memberOf IExtensionContext
+   */
+  registerMainPage: IRegisterMainPage;
+
+  /**
    * register a reducer to introduce new set-operations on the application
    * state.
    * Note: For obvious reasons this is called before the store is set up so
@@ -75,7 +121,7 @@ export interface IExtensionContext {
    * 
    * @memberOf IExtensionContext
    */
-  once: (callback: (state: any) => void) => void;
+  once: (callback: () => void) => void;
 
   /**
    * contains various utility functions. It's valid to store this object inside
