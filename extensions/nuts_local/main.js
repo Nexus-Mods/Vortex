@@ -13,7 +13,7 @@ function init(context) {
 
         app.use('/', nuts.router);
 
-        app.listen(6000).on('error', (err) => { });
+        app.listen(56000).on('error', (err) => { });
     });
 }
 

@@ -1,4 +1,4 @@
-import { dismissNotification } from '../actions/actions';
+import { dismissNotification } from '../actions/notifications';
 import { INotification } from '../types/INotification';
 import { IState } from '../types/IState';
 import Notification from './Notification';

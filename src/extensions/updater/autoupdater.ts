@@ -9,11 +9,13 @@ function setupAutoUpdate(api: IExtensionApi) {
     return;
   }
 
-  const app = remote.app;
   const autoUpdater = remote.autoUpdater;
 
   const channel: string = api.getState().settings.update.channel;
-  autoUpdater.setFeedURL(`http://localhost:6000/update/channel/${channel}/win32/${app.getVersion()}`);
+  const url = `http://localhost:56000/download/channel/${channel}/win`;
+
+  autoUpdater.setFeedURL(url);
+  log('info', 'feed url', url);
   try {
     autoUpdater.checkForUpdates();
   } catch (e) {

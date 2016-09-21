@@ -7,12 +7,12 @@ export interface INotificationAction {
   action: (dismiss: INotificationDismiss) => void;
 }
 
-export type INotificationType =
+export type NotificationType =
   'success' | 'info' | 'error';
 
 export interface INotification {
   id?: string;
-  type: INotificationType;
+  type: NotificationType;
   message: string;
   displayMS?: number;
   actions?: INotificationAction[];

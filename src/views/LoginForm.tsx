@@ -1,4 +1,5 @@
-import { setLoggedInUser, showDialog } from '../actions/actions';
+import { setLoggedInUser } from '../actions/account';
+import { showDialog } from '../actions/notifications'
 import { II18NProps } from '../types/II18NProps';
 import { log } from '../util/log';
 import { showError } from '../util/message';

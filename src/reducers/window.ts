@@ -1,4 +1,5 @@
-import { setMaximized, setWindowPosition, setWindowSize, setLoggedInUser } from '../actions/actions';
+import { setLoggedInUser } from '../actions/account';
+import { setMaximized, setWindowPosition, setWindowSize } from '../actions/window';
 import { createReducer } from 'redux-act';
 import update = require('react-addons-update');
 

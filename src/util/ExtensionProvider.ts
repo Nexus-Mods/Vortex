@@ -52,7 +52,6 @@ export function extension(registerFunc: Function) {
       };
 
       public context: IExtensionProps;
-
       private mExtensions: any[];
 
       public componentWillMount(): void {

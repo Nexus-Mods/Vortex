@@ -19,7 +19,9 @@
     "fs-extra-promise": "^0.4.0",
     "i18next": "^3.4.1",
     "i18next-node-fs-backend": "^0.1.2",
+    "node-rest-client": "^2.0.1",
     "react": "^15.3.0",
+    "react-addons-css-transition-group": "^15.3.1",
     "react-addons-update": "^15.3.1",
     "react-bootstrap": "^0.30.2",
     "react-dom": "^15.3.0",
@@ -29,9 +31,13 @@
     "react-redux": "^4.4.5",
     "redux": "^3.5.2",
     "redux-act": "^0.5.0",
+    "redux-devtools": "^3.3.1",
+    "redux-devtools-dispatch": "^2.2.0",
+    "redux-devtools-log-monitor": "^1.0.11",
     "redux-electron-store": "^0.3.13",
     "redux-persist": "^3.5.0",
     "redux-persist-node-storage": "^1.0.2",
+    "redux-thunk": "^2.1.0",
     "source-map-support": "^0.4.2",
     "winston": "^2.2.0"
   }

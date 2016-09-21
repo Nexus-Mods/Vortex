@@ -8,7 +8,9 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'update'], settingsReducer);
 
   context.once(() => {
-    setupAutoUpdate(context.api);
+    setTimeout(() => {
+      setupAutoUpdate(context.api);
+    }, 5000);
   });
 
   return true;

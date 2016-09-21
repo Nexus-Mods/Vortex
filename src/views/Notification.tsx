@@ -1,5 +1,5 @@
 import { II18NProps } from '../types/II18NProps';
-import { INotification, INotificationAction, INotificationType } from '../types/INotification';
+import { INotification, INotificationAction, NotificationType } from '../types/INotification';
 
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
@@ -56,7 +56,7 @@ class Notification extends React.Component<INotificationProps & II18NProps, {}> 
     />;
   }
 
-  private typeToStyle(type: INotificationType) {
+  private typeToStyle(type: NotificationType) {
     switch (type) {
       case 'success': return 'success';
       case 'info': return 'info';

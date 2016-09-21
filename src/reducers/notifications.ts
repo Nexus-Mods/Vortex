@@ -1,5 +1,5 @@
-import { dismissNotification, startNotification } from '../actions/actions';
-import { dismissDialog, showDialog } from '../actions/actions';
+import { dismissNotification, startNotification } from '../actions/notifications';
+import { dismissDialog, showDialog } from '../actions/notifications';
 
 import { createReducer } from 'redux-act';
 import update = require('react-addons-update');
@@ -17,7 +17,7 @@ export const notificationsReducer = createReducer({
     return update(state, { notifications: { $push: [ payload ] } });
   },
   [dismissNotification]: (state, payload) => {
-    let idx = state.notifications.findIndex((ele) => ele.id === payload);
+    const idx = state.notifications.findIndex((ele) => ele.id === payload);
     return update(state, { notifications: { $splice : [[idx, 1]] } });
   },
   [showDialog]: (state, payload) => {

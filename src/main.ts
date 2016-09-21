@@ -4,7 +4,7 @@
 
 import 'source-map-support/register';
 
-import { setMaximized, setWindowPosition, setWindowSize } from './actions/actions';
+import { setMaximized, setWindowPosition, setWindowSize } from './actions/window';
 import reducer from './reducers/index';
 import { IState, IWindow } from './types/IState';
 import { log } from  './util/log';
@@ -104,7 +104,6 @@ extensions.setStore(store);
 let mainWindow: Electron.BrowserWindow = null;
 
 function createWindow() {
-  log('info', 'state', store.getState());
   let windowMetrics: IWindow = store.getState().window;
   mainWindow = new BrowserWindow({
     height: windowMetrics.size.height,

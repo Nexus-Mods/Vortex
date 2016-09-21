@@ -1,4 +1,4 @@
-import { addNotification, showDialog } from '../actions/actions';
+import { addNotification, showDialog } from '../actions/notifications';
 
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));

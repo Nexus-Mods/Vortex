@@ -1,5 +1,5 @@
-import { dismissDialog } from '../actions/actions';
-import { IDialog, IDialogType } from '../types/IDialog';
+import { dismissDialog } from '../actions/notifications';
+import { DialogType, IDialog } from '../types/IDialog';
 import { II18NProps } from '../types/II18NProps';
 import { IState } from '../types/IState';
 
@@ -41,7 +41,7 @@ class Dialog extends React.Component<IDialogConnectedProps & IDialogActionProps 
     ) : null;
   }
 
-  private iconForType(type: IDialogType) {
+  private iconForType(type: DialogType) {
     switch (type) {
       case 'info': return <Icon name='info-circle' size='2x' style={{ color: 'blue' }} />;
       case 'error': return <Icon name='exclamation-circle' size='2x' style={{ color: 'red' }} />;
