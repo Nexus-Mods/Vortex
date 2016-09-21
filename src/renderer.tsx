@@ -12,6 +12,7 @@ import { log } from './util/log';
 import { showError } from './util/message';
 import MainWindow from './views/MainWindow';
 
+import { remote } from 'electron';
 import { changeLanguage } from 'i18next';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -76,6 +77,36 @@ store.subscribe(() => {
 log('info', 'renderer connected to store');
 
 const i18n = getI18n(store.getState().settings.interface.language);
+
+process.on('uncaughtException', (error) => {
+
+  let details = undefined;
+
+  switch (typeof error) {
+    case 'object': {
+      details = { code: error.code, message: error.message, stack: error.stack };
+    } break;
+    case 'string': {
+      details = { message: error, stack: undefined };
+    } break;
+    default: {
+      details = { message: error, stack: undefined };
+    } break;
+  }
+
+  log('error', 'uncaught exception', details);
+
+  remote.dialog.showMessageBox(null, {
+    type: 'error',
+    buttons: [ 'Quit' ],
+    title: 'An uncaught exception occured',
+    message: details.message,
+    detail: details.stack,
+    noLink: true,
+  });
+
+  remote.app.exit(1);
+});
 
 // render the page content 
 
