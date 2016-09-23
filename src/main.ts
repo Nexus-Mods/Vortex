@@ -7,7 +7,9 @@ import 'source-map-support/register';
 import { setMaximized, setWindowPosition, setWindowSize } from './actions/window';
 import reducer from './reducers/index';
 import { IState, IWindow } from './types/IState';
+import GameModeManager from './util/GameModeManager';
 import { log } from  './util/log';
+
 import * as Promise from 'bluebird';
 import { BrowserWindow, app } from 'electron';
 import * as fs from 'fs-extra-promise';
@@ -87,15 +89,19 @@ const enhancer: Redux.StoreEnhancer<IState> = compose(
 
 const extensions: ExtensionManager = new ExtensionManager();
 
-let extReducers = extensions.getReducers();
+const extReducers = extensions.getReducers();
 
-let store: Redux.Store<IState> = createStore<IState>(reducer(extReducers), enhancer);
+const store: Redux.Store<IState> = createStore<IState>(reducer(extReducers), enhancer);
 persistStore(store, {
     storage: new AsyncNodeStorage(path.join(basePath, 'state')),
     whitelist: ['window', 'settings', 'account'],
   },
   () => { log('info', 'Application state loaded'); }
 );
+
+const gameModeManager: GameModeManager = new GameModeManager(basePath);
+gameModeManager.attachToStore(store);
+gameModeManager.startQuickDiscovery();
 
 extensions.setStore(store);
 

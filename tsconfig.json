@@ -16,6 +16,7 @@
         "typings/index.d.ts",
         "typings.custom/index.d.ts",
         "src/main.ts",
-        "src/renderer.tsx"
+        "src/renderer.tsx",
+        "src/games/index.ts"
     ]
 }

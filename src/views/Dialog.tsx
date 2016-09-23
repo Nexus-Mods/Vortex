@@ -1,14 +1,12 @@
 import { dismissDialog } from '../actions/notifications';
 import { DialogType, IDialog } from '../types/IDialog';
-import { II18NProps } from '../types/II18NProps';
 import { IState } from '../types/IState';
+import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
 import { Button } from './TooltipControls';
 
 import * as React from 'react';
 import { Modal } from 'react-bootstrap';
-import { translate } from 'react-i18next';
-import { connect } from 'react-redux';
 
 import Icon = require('react-fontawesome');
 
@@ -20,7 +18,7 @@ interface IDialogActionProps {
   onDismiss: () => void;
 }
 
-class Dialog extends React.Component<IDialogConnectedProps & IDialogActionProps & II18NProps, {}> {
+class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}> {
   public render(): JSX.Element {
     const { t, dialogs } = this.props;
     const dialog = dialogs.length > 0 ? dialogs[0] : undefined;

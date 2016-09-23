@@ -30,21 +30,20 @@ export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
   }
 }
 
-interface IExtensibleProps {
+export interface IExtensibleProps {
   group?: string;
   staticElements: any[];
 }
 
 /**
- * extension function. This function creates a wrapper around a component that binds
- * the extensions of a component to its props
+ * extension function. This function creates a wrapper around a component that
+ * binds the extensions of a component to its props
  * 
  * @export
  * @param {(React.ComponentClass<P & IExtensionProps>)} ComponentToWrap the component to wrap
  * @returns {React.ComponentClass<P>} the wrapper component
  */
-export function extension(registerFunc: Function) {
-  // return <P, S>(ComponentToWrap: React.ComponentClass<P>): React.ComponentClass<IExtensibleProps & P> => {
+export function extend(registerFunc: Function) {
   return <P, S>(ComponentToWrap: React.ComponentClass<P>): any => {
     return class __ExtendedComponent extends React.Component<IExtensibleProps & P, S> {
       public static contextTypes: React.ValidationMap<any> = {

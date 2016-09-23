@@ -4,6 +4,10 @@
     "tslint-react"
   ],
   "rules": {
+    "max-line-length": [
+      true,
+      100
+    ],
     "object-literal-sort-keys": false,
     "quotemark": [
       true,

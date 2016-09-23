@@ -1,4 +1,5 @@
 import { IDialog } from './IDialog';
+import { IGame } from './IGame';
 import { INotification } from './INotification';
 
 /**
@@ -46,6 +47,32 @@ export interface INotificationState {
   dialogs: IDialog[];
 }
 
+export interface IDiscoveryResult {
+  path: string;
+}
+
+/**
+ * state regarding application settings
+ * 
+ * @export
+ * @interface ISettings
+ */
+export interface ISettings {
+  gameMode: string;
+  discoveredGames: { [id: string]: IDiscoveryResult };
+}
+
+/**
+ * "ephemeral" session state. 
+ * This state is generated at startup and forgotten at application exit
+ *
+ * @export
+ * @interface ISession
+ */
+export interface ISession {
+  knownGames: IGame[];
+}
+
 /**
  * interface for the top-level state object
  * this should precisely mirror the reducer structure
@@ -56,4 +83,6 @@ export interface INotificationState {
 export interface IState {
   window: IWindow;
   notifications: INotificationState;
+  session: ISession;
+  settings: ISettings;
 }
