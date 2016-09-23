@@ -11,7 +11,6 @@ import Settings from './views/Settings';
 
 import { INSTALL_TIME, MOD_NAME } from './modAttributes';
 import { startInstallFile } from './modInstall';
-import watchForMods from './modWatch';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -26,7 +25,7 @@ function init(context: IExtensionContextExt): boolean {
     () => startInstallFile(context.api));
   context.registerSettings('Mods', Settings);
   context.registerReducer(['mods'], modsReducer);
-  context.registerReducer(['game_settings', 'mods'], settingsReducer);
+  context.registerReducer(['gameSettings', 'mods'], settingsReducer);
 
   if (context.registerModAttribute !== undefined) {
     context.registerModAttribute(MOD_NAME);

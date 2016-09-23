@@ -1,8 +1,6 @@
 import { setLoggedInUser } from '../actions/account';
-import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
-import { extension } from '../util/ExtensionProvider';
 import Developer from './Developer';
 import Dialog from './Dialog';
 import IconBar from './IconBar';
@@ -13,13 +11,13 @@ import { Button } from './TooltipControls';
 
 import * as React from 'react';
 import { Alert, Modal, Nav, NavItem, Well } from 'react-bootstrap';
-import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-import { connect } from 'react-redux';
+import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
+
 import update = require('react-addons-update');
 import Icon = require('react-fontawesome');
 
-interface IProps {
+interface IBaseProps {
   className: string;
   objects: IMainPage[];
 }
@@ -37,7 +35,9 @@ interface IActionProps {
     onSetAPIKey: (APIKey: string) => void;
 }
 
-class MainWindowBase extends React.Component<IProps & IConnectedProps & IActionProps & II18NProps, IMainWindowState> {
+type IProps = IBaseProps & IConnectedProps & IActionProps;
+
+class MainWindow extends ComponentEx<IProps, IMainWindowState> {
 
   private buttonsLeft: IIconDefinition[];
   private buttonsRight: IIconDefinition[];
@@ -54,84 +54,153 @@ class MainWindowBase extends React.Component<IProps & IConnectedProps & IActionP
     ];
 
     this.buttonsRight = [
-      { icon: 'gear', title: 'Settings', action: () => this.showLayer('settings') },
+      {
+        icon: 'gear',
+        title: 'Settings',
+        action: () => this.showLayer('settings'),
+      },
     ];
 
     if (Developer !== undefined) {
       this.buttonsRight.push(
-        { icon: 'wrench', title: 'Developer', action: () => this.showLayer('developer') }
+        {
+          icon: 'wrench',
+          title: 'Developer',
+          action: () => this.showLayer('developer'),
+        }
       );
     }
   }
 
   public componentWillMount() {
-    this.setState(update(this.state, { showPage: { $set: this.props.objects[0].title } }));
+    this.setState(update(this.state, {
+      showPage: { $set: this.props.objects[0].title },
+    }));
   }
 
   public render(): JSX.Element {
-    const { t, objects } = this.props;
-    const { showPage } = this.state;
     return (
       <div>
         <Layout type='column'>
-          <Fixed>
-            <IconBar group='application-icons' staticElements={this.buttonsLeft} />
-            <IconBar group='help-icons' className='pull-right' staticElements={this.buttonsRight} />
-          </Fixed>
-          <Flex>
-            <Layout type='row'>
-              <Fixed>
-                <Nav bsStyle='pills' stacked activeKey={showPage} onSelect={this.handleSetPage}>
-                  {objects.map(this.renderPageButton) }
-                </Nav>
-              </Fixed>
-              <Flex>
-                {this.renderCurrentPage() }
-              </Flex>
-            </Layout>
-            <Notifications id='notifications' />
-          </Flex>
-          <Fixed>
-            <Well bsStyle='slim'>
-               <Button
-                 className='btn-embed'
-                 id='login-btn'
-                 tooltip={ t('Login') }
-                 onClick={ this.showLoginLayer }>
-                 <Icon name='user' style={{ color: this.props.APIKey === "" ? 'red' : 'green' }} />
-              </Button>
-            </Well>
-          </Fixed>
+        { this.renderToolbar() }
+        { this.renderBody() }
+        { this.renderFooter() }
         </Layout>
         <Dialog />
-        <Modal show={this.state.showLayer === 'settings'} onHide={ this.hideLayer }>
-          <Modal.Header>
-            <Modal.Title>{ t('Settings') }</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Settings />
-          </Modal.Body>
-          <Modal.Footer>
-            <Button tooltip={ t('Close') } id='close' onClick={ this.hideLayer }>
-              {t('Close') }
-            </Button>
-          </Modal.Footer>
-        </Modal>
-        <Modal show={this.state.showLayer === 'login'} onHide={ this.hideLayer }>
-          <Modal.Header>
-           <Modal.Title>{ t(this.props.APIKey === "" ? 'API Key Validation' : 'User Info') }</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <LoginForm onClose={ this.hideLayer } />
-          </Modal.Body>
-        </Modal>
+        { this.renderModalSettings() }
+        { this.renderModalLogin() }
         { this.renderDeveloperModal() }
       </div>
     );
   }
 
+  private renderToolbar() {
+    return (
+      <Fixed>
+        <IconBar
+          group='application-icons'
+          staticElements={this.buttonsLeft}
+        />
+        <IconBar
+          group='help-icons'
+          className='pull-right'
+          staticElements={this.buttonsRight}
+        />
+      </Fixed>
+    );
+  }
+
+  private renderBody() {
+    const { objects } = this.props;
+    const { showPage } = this.state;
+
+    return (
+      <Flex>
+        <Layout type='row'>
+          <Fixed>
+            <Nav
+              bsStyle='pills'
+              stacked
+              activeKey={showPage}
+              onSelect={this.handleSetPage}
+            >
+              {objects.map(this.renderPageButton) }
+            </Nav>
+          </Fixed>
+          <Flex>
+            {this.renderCurrentPage() }
+          </Flex>
+        </Layout>
+        <Notifications id='notifications' />
+      </Flex>
+    );
+  }
+
+  private renderFooter() {
+    const { t, APIKey } = this.props;
+    return (
+      <Fixed>
+        <Well bsStyle='slim'>
+          <Button
+            className='btn-embed'
+            id='login-btn'
+            tooltip={ t('Login') }
+            onClick={ this.showLoginLayer }
+          >
+            <Icon name='user' style={{ color: APIKey === '' ? 'red' : 'green' }} />
+          </Button>
+        </Well>
+      </Fixed>
+    );
+  }
+
+  private renderModalSettings() {
+    const { t } = this.props;
+    const { showLayer } = this.state;
+    return (
+      <Modal
+        show={ showLayer === 'settings' }
+        onHide={ this.hideLayer }
+      >
+        <Modal.Header>
+          <Modal.Title>{ t('Settings') }</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Settings />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            tooltip={ t('Close') }
+            id='close'
+            onClick={ this.hideLayer }
+          >
+          {t('Close') }
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    );
+  }
+
+  private renderModalLogin() {
+    const { t } = this.props;
+    return (
+      <Modal show={this.state.showLayer === 'login'} onHide={ this.hideLayer }>
+        <Modal.Header>
+          <Modal.Title>{ t(this.props.APIKey === "" ? 'API Key Validation' : 'User Info') }</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <LoginForm onClose={ this.hideLayer } />
+        </Modal.Body>
+      </Modal>
+    );
+  }
+
   private renderPageButton = (page: IMainPage) => {
-    return <NavItem key={page.title} eventKey={page.title}><Icon name={page.icon} /></NavItem>;
+    return (
+      <NavItem key={page.title} eventKey={page.title}>
+        <Icon name={page.icon} />
+      </NavItem>
+    );
   }
 
   private renderCurrentPage = () => {
@@ -161,7 +230,10 @@ class MainWindowBase extends React.Component<IProps & IConnectedProps & IActionP
 
   private renderDeveloperModal() {
     return Developer === undefined ? null : (
-      <Modal show={this.state.showLayer === 'developer'} onHide={ this.hideLayer }>
+      <Modal
+        show={this.state.showLayer === 'developer'}
+        onHide={ this.hideLayer }
+      >
         <Modal.Header>
           <Modal.Title>Developer</Modal.Title>
         </Modal.Header>
@@ -173,14 +245,20 @@ class MainWindowBase extends React.Component<IProps & IConnectedProps & IActionP
   }
 }
 
-function registerMainPage(instance: MainWindowBase, icon: string, title: string, component: React.ComponentClass<any>) {
-  return { icon, title, component };
-}
-
 function mapStateToProps(state: any): IConnectedProps {
     return { APIKey: state.account.account.APIKey};
 }
 
-const MainWindow = connect(mapStateToProps)(MainWindowBase) as React.ComponentClass<IProps & IConnectedProps>;
+function registerMainPage(instance: MainWindow,
+                          icon: string,
+                          title: string,
+                          component: React.ComponentClass<any>) {
+  return { icon, title, component };
+}
 
-export default translate(['common'], { wait: true })(extension(registerMainPage)(MainWindow));
+export default
+  translate(['common'], { wait: true })(
+    extend(registerMainPage)(
+      connect(mapStateToProps)(MainWindow)
+    )
+  );

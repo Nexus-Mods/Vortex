@@ -1,12 +1,10 @@
-import { II18NProps } from '../../../types/II18NProps';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { Button } from '../../../views/TooltipControls';
 import { setPath } from '../actions/settings';
 import resolvePath from '../util/resolvePath';
 
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, HelpBlock, InputGroup } from 'react-bootstrap';
-import { translate } from 'react-i18next';
-import { connect } from 'react-redux';
 
 import Icon = require('react-fontawesome');
 
@@ -25,7 +23,7 @@ interface IActionProps {
   onSetPath: (key: string, path: string) => void;
 }
 
-class Settings extends React.Component<IActionProps & IConnectedProps & II18NProps, {}> {
+class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
   public render(): JSX.Element {
     const { paths, t } = this.props;
 
@@ -70,7 +68,7 @@ class Settings extends React.Component<IActionProps & IConnectedProps & II18NPro
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    paths: state.game_settings.mods.paths,
+    paths: state.gameSettings.mods.paths,
     state,
   };
 }
@@ -83,6 +81,7 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
   };
 }
 
-const SettingsTemp = connect(mapStateToProps, mapDispatchToProps)(Settings);
-
-export default translate(['common'], { wait: true })(SettingsTemp);
+export default
+  translate(['common'], { wait: true })(
+    connect(mapStateToProps, mapDispatchToProps)(Settings)
+  ) as React.ComponentClass<{}>;

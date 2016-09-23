@@ -1,8 +1,7 @@
 import { setUserAPIKey, loadUserInfo } from '../actions/account';
-import { showDialog } from '../actions/notifications'
+import { showDialog } from '../actions/notifications';
 import { II18NProps } from '../types/II18NProps';
 import { log } from '../util/log';
-import { showError } from '../util/message';
 import { Button } from './TooltipControls';
 
 import { Client } from 'node-rest-client';

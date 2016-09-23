@@ -1,6 +1,7 @@
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import initAboutDialog from '../extensions/about_dialog/index';
+import initGamePicker from '../extensions/game_picker/index';
 import initModManagement from '../extensions/mod_management/index';
 import initNutsLocal from '../extensions/nuts_local/index';
 import initSettingsInterface from '../extensions/settings_interface/index';
@@ -38,20 +39,7 @@ class ExtensionManager {
       showErrorNotification: (message: string, details: string) => {
         dialog.showErrorBox(message, details);
       },
-      selectFile: (options: IOpenOptions) => {
-        return new Promise<string>((resolve, reject) => {
-          const fullOptions = Object.assign({}, options, {
-            properties: [ 'openFile' ],
-          });
-          dialog.showOpenDialog(null,  fullOptions, (fileNames: string[]) => {
-            if ((fileNames !== undefined) && (fileNames.length > 0)) {
-              resolve(fileNames[0]);
-            } else {
-              resolve(undefined);
-            }
-          });
-        });
-      },
+      selectFile: this.selectFile,
     };
   }
 
@@ -116,6 +104,21 @@ class ExtensionManager {
     this.mExtensions.forEach((ext) => ext(context));
   }
 
+  private selectFile(options: IOpenOptions) {
+    return new Promise<string>((resolve, reject) => {
+      const fullOptions = Object.assign({}, options, {
+        properties: ['openFile'],
+      });
+      dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
+        if ((fileNames !== undefined) && (fileNames.length > 0)) {
+          resolve(fileNames[0]);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
+  }
+
   private emptyExtensionContext(): IExtensionContext {
     return {
       registerMainPage: (icon: string, title: string, component: React.ComponentClass<any>) => undefined,
@@ -171,6 +174,7 @@ class ExtensionManager {
       initAboutDialog,
       initWelcomeScreen,
       initModManagement,
+      initGamePicker,
       initNutsLocal,
     ].concat(this.loadDynamicExtensions(extensionsPath));
   }

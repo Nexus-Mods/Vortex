@@ -8,20 +8,19 @@ import { connect } from 'react-redux';
 
 import CSSTransitionGroup = require('react-addons-css-transition-group');
 
-interface INotificationProps {
+interface IProps {
   id: string;
 }
 
-interface INotificationConnectedProps {
+interface IConnectedProps {
   notifications: INotification[];
 }
 
-interface INotificationActionProps {
+interface IActionProps {
   onDismiss: (id) => void;
 }
 
-class NotificationsBase extends React.Component
-  <INotificationProps & INotificationActionProps & INotificationConnectedProps, {}> {
+class Notifications extends React.Component<IProps & IActionProps & IConnectedProps, {}> {
   constructor(props) {
     super(props);
   }
@@ -54,17 +53,17 @@ class NotificationsBase extends React.Component
   }
 }
 
-function mapStateToProps(state: IState): INotificationConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     notifications: state.notifications.notifications,
   };
 }
 
-function mapDispatchToProps(dispatch): INotificationActionProps {
+function mapDispatchToProps(dispatch): IActionProps {
   return {
     onDismiss: (id: string) => dispatch(dismissNotification(id)),
   };
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(
-  NotificationsBase) as React.ComponentClass<INotificationProps>;
+  Notifications) as React.ComponentClass<IProps>;

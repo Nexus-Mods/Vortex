@@ -5,8 +5,9 @@ interface IButtonProps {
   tooltip: string | React.Component<any, any>;
 }
 
-export class Button extends React.Component<IButtonProps & ReactBootstrap.ButtonProps & ReactBootstrap.TooltipProps,
-  {}> {
+type IProps = IButtonProps & ReactBootstrap.ButtonProps & ReactBootstrap.TooltipProps;
+
+export class Button extends React.Component<IProps, {}> {
   public render() {
     let tooltip = <Tooltip id={this.props.id}>{this.props.tooltip}</Tooltip>;
     let relayProps = Object.assign({}, this.props);
@@ -14,7 +15,12 @@ export class Button extends React.Component<IButtonProps & ReactBootstrap.Button
     delete relayProps.placement;
 
     return (
-      <OverlayTrigger overlay={tooltip} placement={this.props.placement} delayShow={300} delayHide={150}>
+      <OverlayTrigger
+        overlay={tooltip}
+        placement={this.props.placement}
+        delayShow={300}
+        delayHide={150}
+      >
         <BootstrapButton {...relayProps}>{this.props.children}</BootstrapButton>
       </OverlayTrigger>
     );

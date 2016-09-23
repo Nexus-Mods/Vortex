@@ -1,4 +1,6 @@
-import { extension } from '../../../util/ExtensionProvider';
+import { ISettings } from '../../../types/IState';
+
+import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 
 import { IAttributeState } from '../types/IAttributeState';
 import { IMod } from '../types/IMod';
@@ -8,8 +10,7 @@ import { IStateMods } from '../types/IStateMods';
 import ModRow from './ModRow';
 
 import * as React from 'react';
-import { Table } from 'react-bootstrap';
-import { connect } from 'react-redux';
+import { Jumbotron, Table } from 'react-bootstrap';
 
 interface IProps {
   objects: IModAttribute[];
@@ -22,22 +23,25 @@ interface IAttributeStateMap {
 interface IConnectedProps {
   mods: IMod[];
   attributeState: IAttributeStateMap;
+  gameMode: string;
 }
 
 interface ILocalState {
 }
 
-class ModList extends React.Component<IProps & IConnectedProps, ILocalState> {
+class ModList extends ComponentEx<IProps & IConnectedProps, ILocalState> {
   constructor(props) {
     super(props);
   }
 
   public render(): JSX.Element {
-    const { objects, attributeState, mods } = this.props;
+    const { t, objects, attributeState, mods, gameMode } = this.props;
 
     const visibleAttributes: IModAttribute[] = this.visibleAttributes(objects, attributeState);
 
-    return (
+    return gameMode === undefined
+      ? <Jumbotron>{ t('Please select a game first') }</Jumbotron>
+      : (
       <Table bordered condensed hover>
       <thead>
       <tr>
@@ -45,10 +49,14 @@ class ModList extends React.Component<IProps & IConnectedProps, ILocalState> {
       </tr>
       </thead>
       <tbody>
-      { Object.keys(mods).map((id: string) => <ModRow key={ id } mod={ mods[id] } attributes={ visibleAttributes } />) }
+      { Object.keys(mods).map((id) => { return this.renderModRow(id, visibleAttributes); }) }
       </tbody>
       </Table>
     );
+  }
+
+  private renderModRow(id: string, visibleAttributes: IModAttribute[]): JSX.Element {
+    return <ModRow key={ id } mod={ this.props.mods[id] } attributes={ visibleAttributes } />;
   }
 
   private getOrDefault(obj: any, key: any, def: any): any {
@@ -59,7 +67,8 @@ class ModList extends React.Component<IProps & IConnectedProps, ILocalState> {
     }
   }
 
-  private visibleAttributes(attributes: IModAttribute[], attributeStates: IAttributeStateMap): IModAttribute[] {
+  private visibleAttributes(attributes: IModAttribute[],
+                            attributeStates: IAttributeStateMap): IModAttribute[] {
     return attributes.filter((attribute: IModAttribute) => {
       if (attribute.isDetail) {
         return false;
@@ -79,10 +88,16 @@ class ModList extends React.Component<IProps & IConnectedProps, ILocalState> {
   }
 }
 
-function mapStateToProps(state: { mods: IStateMods }): IConnectedProps {
+interface IState {
+ settings: ISettings;
+ mods: IStateMods;
+}
+
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     mods: state.mods.mods,
     attributeState: state.mods.attributeState,
+    gameMode: state.settings.gameMode,
   };
 }
 
@@ -90,4 +105,9 @@ function registerModAttribute(instance: ModList, attribute: IModAttribute) {
     return attribute;
 }
 
-export default connect(mapStateToProps)(extension(registerModAttribute)(ModList));
+export default
+  translate(['common'], { wait: true })(
+    connect(mapStateToProps)(
+      extend(registerModAttribute)(ModList)
+    )
+  ) as React.ComponentClass<{}>;
