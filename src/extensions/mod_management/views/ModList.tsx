@@ -89,7 +89,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps, ILocalState> {
 }
 
 interface IState {
- settings: ISettings;
+ settings: { base: ISettings },
  mods: IStateMods;
 }
 
@@ -97,7 +97,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   return {
     mods: state.mods.mods,
     attributeState: state.mods.attributeState,
-    gameMode: state.settings.gameMode,
+    gameMode: state.settings.base.gameMode,
   };
 }
 

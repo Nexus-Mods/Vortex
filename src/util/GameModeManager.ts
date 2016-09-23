@@ -98,7 +98,7 @@ class GameModeManager {
   }
 
   private testModeChange(lastMode: string, store: Redux.Store<IState>): string {
-      let currentMode = store.getState().settings.gameMode;
+      let currentMode = store.getState().settings.base.gameMode;
       if (currentMode !== lastMode) {
         if (this.mPersistor !== null) {
           // stop old persistor

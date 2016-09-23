@@ -1,8 +1,8 @@
-import { IExtensionContext } from './IExtensionContext';
+import { IExtensionContext, IReducerSpec } from './IExtensionContext';
 
 export interface IExtensionReducer {
   path: string[];
-  reducer: Function;
+  reducer: IReducerSpec;
 }
 
 export interface IExtensionInit {

@@ -81,6 +81,19 @@ export interface IExtensionApi {
   dispatch: Redux.Dispatch<any>;
 }
 
+/**
+ * specification a reducer registration has to follow.
+ * defaults must be an object with the same keys as
+ * reducers
+ * 
+ * @export
+ * @interface IReducerSpec
+ */
+export interface IReducerSpec {
+  reducers: { [key: string]: (state: any, payload: any) => any };
+  defaults: { [key: string]: any };
+}
+
 export interface IExtensionContext {
   /**
    * register a settings page
@@ -114,7 +127,7 @@ export interface IExtensionContext {
    * 
    * @memberOf IExtensionContext
    */
-  registerReducer: (path: string[], Function) => void;
+  registerReducer: (path: string[], IReducerSpec) => void;
 
   /**
    * called once after the store has been set up

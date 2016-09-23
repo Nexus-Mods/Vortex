@@ -3,7 +3,7 @@ import { IState } from '../../types/IState';
 
 import * as path from 'path';
 import * as React from 'react';
-import { Image, Jumbotron, Media } from 'react-bootstrap';
+import { Jumbotron, Media } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import Icon = require('react-fontawesome');
 
@@ -50,7 +50,7 @@ class WelcomeScreen extends React.Component<IConnectedProps, {}> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    gameMode: state.settings.gameMode,
+    gameMode: state.settings.base.gameMode,
     knownGames: state.session.knownGames,
   };
 }

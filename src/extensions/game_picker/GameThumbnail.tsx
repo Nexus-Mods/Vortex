@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Button, Image, Panel } from 'react-bootstrap';
+import { Button, Panel } from 'react-bootstrap';
 
 import { IGame } from '../../types/IGame';
 

@@ -56,8 +56,8 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    gameMode: state.settings.gameMode,
-    discoveredGames: state.settings.discoveredGames,
+    gameMode: state.settings.base.gameMode,
+    discoveredGames: state.settings.base.discoveredGames,
     knownGames: state.session.knownGames,
   };
 }

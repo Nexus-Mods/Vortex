@@ -84,5 +84,5 @@ export interface IState {
   window: IWindow;
   notifications: INotificationState;
   session: ISession;
-  settings: ISettings;
+  settings: { base: ISettings };
 }
