@@ -1,4 +1,4 @@
-import { setLoggedInUser } from '../actions/account';
+import { setUserAPIKey, loadUserInfo } from '../actions/account';
 import { showDialog } from '../actions/notifications'
 import { II18NProps } from '../types/II18NProps';
 import { log } from '../util/log';
@@ -7,7 +7,7 @@ import { Button } from './TooltipControls';
 
 import { Client } from 'node-rest-client';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
+import { ControlLabel, FormControl, FormGroup, Image } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import classNames = require('classnames');
@@ -19,9 +19,15 @@ interface ILoginFormProps {
 }
 
 interface ILoginFormState {
-  username: string;
-  password: string;
+  APIKey: string;
   isSubmitted: boolean;
+  user_id: string;
+  name: string;
+  isPremium: string;
+  email: string;
+  errorCode: string;
+  errorCodeMessage: string;
+  isSupporter: string;
 }
 
 interface ILoginFormConnectedProps {
@@ -29,8 +35,9 @@ interface ILoginFormConnectedProps {
 }
 
 interface ILoginFormActionProps {
-  onSetAccount: (username: string, sid: string) => void;
-  onShowLoginError: (message: string) => void;
+    onSetAPIKey: (APIKey: string) => void;
+    onShowLoginError: (message: string) => void;
+    onLoadUserInfo: (APIKey: string) => void;
 }
 
 class FormFeedbackAwesome extends FormControl.Feedback {
@@ -55,110 +62,157 @@ class FormFeedbackAwesome extends FormControl.Feedback {
 
 class LoginFormBase extends React.Component<
   ILoginFormProps & ILoginFormConnectedProps & ILoginFormActionProps & II18NProps, ILoginFormState> {
-  constructor(props) {
-    super(props);
-    this.state = { username: '', password: '', isSubmitted: false };
-  }
+     
+    constructor(props) {
+        super(props);
+        this.state = { APIKey: '', isSubmitted: false, user_id: '', name: '', isPremium: '', email: '', errorCode: '', errorCodeMessage: '', isSupporter: '' };
+    }
+    
+    componentWillMount() {
+        if (this.props.account.account.APIKey != '') {
+            this.LoadUserInfoImpl();
+        }
+    }
 
   public render(): JSX.Element {
-    const { t } = this.props;
-    const { isSubmitted, username, password } = this.state;
-
-    const usernameState = !isSubmitted ? undefined : (username.length > 0) ? 'success' : 'warning';
-
-    return (
-      <form onSubmit={ this.LoginAuthentication } >
-        <FormGroup controlId='formUsernameValidation' validationState={usernameState} >
-          <ControlLabel>{usernameState === 'warning' ? 'Missing username' : ''}</ControlLabel>
-          <FormControl
-            type='text'
-            name='username'
-            value={ username }
-            placeholder={ t('Nexus Accountname') }
-            onChange={ this.handleChangeUsername }
-          />
-          <FormFeedbackAwesome />
-        </FormGroup>
-        <FormGroup
-          controlId='formPasswordValidation'
-          validationState={!isSubmitted ? undefined : (password.length > 0) ? 'success' : 'warning'}
-        >
-          <ControlLabel>{isSubmitted && (password.length === 0) ? 'Missing password' : ''}</ControlLabel>
-          <FormControl
-            type='password'
-            name='password'
-            value={password}
-            placeholder={ t('Nexus Password') }
-            onChange={ this.handleChangePassword }
-          />
-          <FormFeedbackAwesome />
-        </FormGroup>
-        <Button id='submit-login' type='submit' tooltip={ t('Submit') }>
-          { t('Submit') }
-        </Button>
-      </form>
+      const { t } = this.props;
+      const { isSubmitted, APIKey, errorCode } = this.state;
+      const APIKeyState = !isSubmitted ? undefined : (APIKey.length > 0 && errorCode != '401') ? 'success' : 'warning';
+            
+      return (
+          <form onSubmit={ this.APIKeyAuthentication } >
+              <FormGroup controlId='formUserInfo' onc hidden= { (this.props.account.account.APIKey == '' || this.props.account.account.APIKey == null) ? true : false} onload={(this.props.account.account.APIKey != '' || this.props.account.account.APIKey != null) ? this.LoadUserInfo : null}>
+                  <div>
+                      <Image src='./images/avatar.png' width='90' height='90' rounded />
+                  </div>
+                  <div>
+                      <ControlLabel>{'User ID: ' + this.state.user_id}</ControlLabel>
+                  </div>
+                  <div>
+                      <ControlLabel>{'UserName: ' + this.state.name}</ControlLabel>
+                  </div>
+                  <div>
+                      <ControlLabel>{'Premium: ' + (this.state.isPremium != "false" ? 'YES' : 'NO') }</ControlLabel>
+                  </div>
+                  <div>
+                      <ControlLabel>{'Supporter: ' + (this.state.isSupporter != "false" ? 'YES' : 'NO') }</ControlLabel>
+                  </div>
+                  <div>
+                      <ControlLabel>{'Email: ' + this.state.email}</ControlLabel>
+                  </div>
+              </FormGroup>
+              <FormGroup controlId='formAPIKeyValidation' validationState={!isSubmitted ? undefined : (APIKey.length > 0 && errorCode != '401') ? 'success' : 'warning'} hidden= { (this.props.account.account.APIKey == '' || this.props.account.account.APIKey == null) ? false : true}>
+                  <ControlLabel>{isSubmitted && (APIKey.length === 0) ? 'Missing API Key' : this.state.errorCodeMessage}</ControlLabel>
+                  <FormControl
+                      type='text'
+                      name='APIKey'
+                      value={APIKey}
+                      placeholder={ t('User APIKey') }
+                      onChange={ this.handleChangeAPIKey }
+                      />
+                  <FormFeedbackAwesome />
+                </FormGroup>
+              <Button id={this.props.account.account.APIKey === '' ? 'submit-apikey' : 'remove-apikey'} type='submit' tooltip={ this.props.account.account.APIKey === '' ? t('Submit') : t('Remove API Key') }>
+                  { this.props.account.account.APIKey === '' ? t('Submit') : t('Remove API Key') }
+              </Button>
+          </form>
     );
   };
-
+  
   public handleChange(event, field) {
     this.setState(update(this.state, { [field]: { $set: event.target.value } }));
   }
 
-  private LoginAuthenticationImpl() {
-    let { onClose, onSetAccount, onShowLoginError } = this.props;
-    let { username, password } = this.state;
-
-    let client = new Client();
-
-    this.setState(update(this.state, { isSubmitted: { $set: true } }));
-
-    let args = {
-      path: { username, password },
-      parameters: { Login: null, username, password },
-      headers: { 'user-agent': 'Nexus Client v0.62.28' },
-    };
-
-    if ((this.state.username != null && this.state.username != "") && (this.state.password != null && this.state.password != ""))
-    {
-        client.get('http://nmm.nexusmods.com/Sessions/', args,
-            (data, response) => {
-                log('debug', 'STATUS', response.statusCode);
-                log('debug', 'HEADERS', JSON.stringify(response.headers));
-
-                let cookies = response.headers['set-cookie'];
-
-                if (cookies !== undefined) {
-                    let fields: string[] = cookies[0].split(';');
-                    let sid = fields
-                        .find((field) => field.startsWith('sid='))
-                        .split('=')
-                    [1];
-                    log('debug', 'SID', sid);
-
-                    onSetAccount(username, sid);
-
-                    response.setEncoding('utf8');
-                    response.on('data', (chunk) => {
-                        log('debug', 'BODY', chunk);
-                    });
-
-                    onClose();
-                } else {
-                    let loginError = response.headers['nexusloginerrormessage'];
-                    console.log('debug', 'NEXUSLOGINERRORMESSAGE', loginError);
-                    onShowLoginError(loginError);
-                }
-            });
-    }
+  private APIKeyAuthentication = (event: Event) => {
+      event.preventDefault();
+      this.APIKeyAuthenticationImpl();
   }
 
-  private LoginAuthentication = (event: Event) => {
-    event.preventDefault();
-    this.LoginAuthenticationImpl();
+  private APIKeyAuthenticationImpl() {
+
+      let { onClose, onSetAPIKey, onLoadUserInfo } = this.props;
+      let { APIKey, errorCode } = this.state;
+
+      if (this.props.account.account.APIKey != '') {
+          onSetAPIKey('');
+          this.setState(update(this.state, { isSubmitted: { $set: false } }));
+          onClose();
+      }
+      else
+      {
+          let client = new Client();
+
+          this.setState(update(this.state, { isSubmitted: { $set: true } }));
+
+          let args = {
+              headers: {
+                  "Content-Type": "application/json",
+                  "apikey": this.state.APIKey != '' ? this.state.APIKey : this.props.account.account.APIKey
+              }
+          };
+
+          if (this.state.APIKey != '') {
+              client.get('https://api.nexusmods.com/v1/users/validate.json', args,
+                  (data, response) => {
+
+                      if (response.statusCode == 200) {
+                          onSetAPIKey(this.state.APIKey);
+                          onClose();
+                      }
+
+                      if (response.statusCode == 401) {
+                          this.setState(update(this.state, { errorCodeMessage: { $set: data.message } }));
+                          this.setState(update(this.state, { errorCode: { $set: response.statusCode } }));
+                      }
+
+                  });
+          }
+      }
   }
 
-  private handleChangeUsername = (event) => this.handleChange(event, 'username');
-  private handleChangePassword = (event) => this.handleChange(event, 'password');
+  public LoadUserInfo = (event: Event) => {
+      event.preventDefault();
+      this.LoadUserInfoImpl();
+  }
+
+  public LoadUserInfoImpl() {
+  
+      let { onClose, onLoadUserInfo, onShowLoginError } = this.props;
+      let { APIKey } = this.state;
+
+      let client = new Client();
+
+      this.setState(update(this.state, { isSubmitted: { $set: true } }));
+
+      let args = {
+          headers: {
+              "Content-Type": "application/json",
+              "apikey": this.state.APIKey != '' ? this.state.APIKey : this.props.account.account.APIKey
+          }
+      };
+
+      client.get('https://api.nexusmods.com/v1/users/validate.json', args,  
+          (data, response) => {
+              console.log('debug', 'STATUS', response.statusCode);
+              console.log('debug', 'HEADERS', JSON.stringify(response.headers));
+              console.log('debug', 'BODY', JSON.stringify(data));
+              response.setEncoding('utf8')
+              response.on('data', console.log)
+
+              this.setState(update(this.state, { user_id: { $set: data.user_id } })); 
+              this.setState(update(this.state, { name: { $set: data.name } })); 
+              this.setState(update(this.state, { isPremium: { $set: data.is_premium } })); 
+              this.setState(update(this.state, { isSupporter: { $set: data.is_supporter } })); 
+              this.setState(update(this.state, { email: { $set: data.email } })); 
+          });
+  }
+     
+  private handleChangeAPIKey = (event) =>
+  {
+      this.setState(update(this.state, { errorCode: { $set: '' } }));
+      this.setState(update(this.state, { errorCodeMessage: { $set: '' } }));
+      this.handleChange(event, 'APIKey');
+  }
 }
 
 function mapStateToProps(state: any): ILoginFormConnectedProps {
@@ -166,9 +220,10 @@ function mapStateToProps(state: any): ILoginFormConnectedProps {
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): ILoginFormActionProps {
-  return {
-      onSetAccount: (username: string, sid: string) => dispatch(setLoggedInUser(username, sid)),
-      onShowLoginError: (message: string) => dispatch(showDialog('error', 'Error', message)), //showError(dispatch, message, details),
+    return {
+      onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
+      onShowLoginError: (message: string) => dispatch(showDialog('error', 'Error', message)), 
+      onLoadUserInfo: (APIKey: string) => dispatch(loadUserInfo(APIKey)),
   };
 }
 

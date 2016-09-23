@@ -36,19 +36,21 @@ function init(context: IExtensionContextExt): boolean {
   context.once(() => {
     const installDir = resolvePath('install', context.api.getState());
     fs.readdir(installDir, (err: NodeJS.ErrnoException, mods: string[]) => {
-      mods.forEach((modName: string) => {
-        const fullPath: string = path.join(installDir, modName);
-        const mod: IMod = {
-          id: modName,
-          installationPath: fullPath,
-          state: 'installed',
-          attributes: {
-            name: modName,
-            installTime: fs.statSync(fullPath).birthtime,
-          },
-        };
-        context.api.dispatch(addMod(mod));
-      });
+        if (mods !== undefined){
+            mods.forEach((modName: string) => {
+                const fullPath: string = path.join(installDir, modName);
+                const mod: IMod = {
+                    id: modName,
+                    installationPath: fullPath,
+                    state: 'installed',
+                    attributes: {
+                        name: modName,
+                        installTime: fs.statSync(fullPath).birthtime,
+                    },
+                };
+                context.api.dispatch(addMod(mod));
+            });
+    }
     });
   });
 

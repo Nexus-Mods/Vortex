@@ -16,7 +16,6 @@ import { Alert, Modal, Nav, NavItem, Well } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 import { connect } from 'react-redux';
-
 import update = require('react-addons-update');
 import Icon = require('react-fontawesome');
 
@@ -31,12 +30,11 @@ interface IMainWindowState {
 }
 
 interface IConnectedProps {
-  username: string;
-  sid: string;
+    APIKey: string;
 }
 
 interface IActionProps {
-  onSetAccount: (username: string, sid: string) => void;
+    onSetAPIKey: (APIKey: string) => void;
 }
 
 class MainWindowBase extends React.Component<IProps & IConnectedProps & IActionProps & II18NProps, IMainWindowState> {
@@ -95,15 +93,13 @@ class MainWindowBase extends React.Component<IProps & IConnectedProps & IActionP
           </Flex>
           <Fixed>
             <Well bsStyle='slim'>
-              <Button
-                className='btn-embed'
-                id='login-btn'
-                tooltip={ t('Login') }
-                onClick={(this.props.sid === '' || this.props.sid == null) ? this.showLoginLayer : this.setAccount}
-              >
-                <Icon name='user' style={{ color: this.props.sid === '' ? 'red' : 'green' }} />
+               <Button
+                 className='btn-embed'
+                 id='login-btn'
+                 tooltip={ t('Login') }
+                 onClick={ this.showLoginLayer }>
+                 <Icon name='user' style={{ color: this.props.APIKey === "" ? 'red' : 'green' }} />
               </Button>
-              <span>{this.props.username === 'undefined' ? ' guest' : ' ' + this.props.username}</span>
             </Well>
           </Fixed>
         </Layout>
@@ -123,7 +119,7 @@ class MainWindowBase extends React.Component<IProps & IConnectedProps & IActionP
         </Modal>
         <Modal show={this.state.showLayer === 'login'} onHide={ this.hideLayer }>
           <Modal.Header>
-            <Modal.Title>{ t('Login') }</Modal.Title>
+           <Modal.Title>{ t(this.props.APIKey === "" ? 'API Key Validation' : 'User Info') }</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <LoginForm onClose={ this.hideLayer } />
@@ -132,11 +128,6 @@ class MainWindowBase extends React.Component<IProps & IConnectedProps & IActionP
         { this.renderDeveloperModal() }
       </div>
     );
-  }
-
-  private setAccount = () => {
-    let { onSetAccount} = this.props;
-    onSetAccount('undefined', '');
   }
 
   private renderPageButton = (page: IMainPage) => {
@@ -182,21 +173,14 @@ class MainWindowBase extends React.Component<IProps & IConnectedProps & IActionP
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
-  return { username: state.account.account.username, sid: state.account.account.cookie };
-}
-
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
-  return {
-    onSetAccount: (username: string, sid: string) => dispatch(setLoggedInUser(username, sid)),
-  };
-}
-
-const MainWindow =
-  connect(mapStateToProps, mapDispatchToProps)(MainWindowBase) as React.ComponentClass<IProps & IConnectedProps>;
-
 function registerMainPage(instance: MainWindowBase, icon: string, title: string, component: React.ComponentClass<any>) {
   return { icon, title, component };
 }
+
+function mapStateToProps(state: any): IConnectedProps {
+    return { APIKey: state.account.account.APIKey};
+}
+
+const MainWindow = connect(mapStateToProps)(MainWindowBase) as React.ComponentClass<IProps & IConnectedProps>;
 
 export default translate(['common'], { wait: true })(extension(registerMainPage)(MainWindow));
