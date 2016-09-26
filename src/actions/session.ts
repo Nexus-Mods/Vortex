@@ -1,3 +1,6 @@
 import { createAction } from 'redux-act';
 
-export const setKnownGames = createAction('sets the list of known/supported games');
+/**
+ * sets the list of known/supported games
+ */
+export const setKnownGames = createAction('SET_KNOWN_GAMES');

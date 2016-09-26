@@ -3,6 +3,9 @@ import { createAction } from 'redux-act';
 /**
  * replace game settings. this happens when the game mode is changed
  */
-export const setGameSettings = createAction('completely replaces current game settings');
+export const setGameSettings = createAction('REPLACE_GAME_SETTINGS');
 
-export const setCurrentProfile = createAction('set the current profile');
+/**
+ * change current profile
+ */
+export const setCurrentProfile = createAction('SET_CURRENT_PROFILE');

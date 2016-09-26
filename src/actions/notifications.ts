@@ -6,23 +6,23 @@ import { createAction } from 'redux-act';
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
  * left unset, in that case one will be generated
  */
-export const startNotification = createAction('add a notification');
+export const startNotification = createAction('ADD_NOTIFICATION');
 
 /**
  * dismiss a notification. Takes the id of the notification
  */
-export const dismissNotification = createAction('dismiss notification');
+export const dismissNotification = createAction('DISMISS_NOTIFICATION');
 
 /**
  * show a modal dialog to the user
  */
-export const showDialog = createAction('show modal dialog to user',
+export const showDialog = createAction('SHOW_MODAL_DIALOG',
   (type: string, title: string, message: string) => ({ type, title, message }));
 
 /**
  * dismiss the dialog being displayed
  */
-export const dismissDialog = createAction('dismiss modal dialog');
+export const dismissDialog = createAction('DISMISS_MODAL_DIALOG');
 
 /**
  * 

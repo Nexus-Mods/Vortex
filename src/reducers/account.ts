@@ -1,4 +1,4 @@
-import { loadUserInfo, setUserAPIKey } from '../actions/account';
+import { setUserAPIKey } from '../actions/account';
 import { IReducerSpec } from '../types/IExtensionContext';
 
 import update = require('react-addons-update');
@@ -8,10 +8,9 @@ import update = require('react-addons-update');
  */
 export const accountReducer: IReducerSpec = {
   reducers: {
-    [setUserAPIKey]: (state, payload) => update(state, { account: { $set: payload } }),
-    [loadUserInfo]: (state, payload) => update(state, { account: { $set: payload } }),
+    [setUserAPIKey]: (state, payload) => update(state, { APIKey: { $set: payload } }),
   },
   defaults: {
-    account: { APIKey: '' },
+    APIKey: '',
   },
 };

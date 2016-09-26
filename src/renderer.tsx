@@ -27,8 +27,7 @@ log('info', 'renderer process started');
 // set up store. Through the electronEnhancer this is automatically
 // synchronized with the main process store
 
-let filter = {
-};
+let filter = true;
 
 let middleware = [
   thunkMiddleware,

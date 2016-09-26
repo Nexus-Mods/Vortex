@@ -7,7 +7,6 @@
  */
 import { IExtensionReducer } from '../types/Extension';
 import { IReducerSpec } from '../types/IExtensionContext';
-import { log } from '../util/log';
 
 import { accountReducer } from './account';
 import { gameSettingsReducer } from './gameSettings';
@@ -22,14 +21,11 @@ import { createReducer } from 'redux-act';
 function deriveReducer(path, ele): Redux.Reducer<any> {
   let attributes: string[] = Object.keys(ele);
 
-  log('info', 'ele', { ele, attributes });
-
   if ((attributes.indexOf('reducers') !== -1)
       && (attributes.indexOf('defaults') !== -1)) {
     if (attributes.length !== 2) {
       throw new Error(`invalid settings structure at ${path}`);
     }
-    log('info', 'leaf reducer', { red: ele.reducers, def:  ele.defaults });
     return createReducer(ele.reducers, ele.defaults);
   } else {
     const reducers: Redux.ReducersMapObject = {};
@@ -42,7 +38,6 @@ function deriveReducer(path, ele): Redux.Reducer<any> {
 }
 
 function addToTree(tree: any, path: string[], spec: IReducerSpec) {
-  log('info', 'path', { path });
   if (path.length === 0) {
     if (tree.reducers === undefined) {
       tree.reducers = {};
@@ -60,36 +55,41 @@ function addToTree(tree: any, path: string[], spec: IReducerSpec) {
   }
 }
 
+function recursiveObjectKeys(tree: Object, prefix: string = '') {
+  let result = [];
+  for (let key of Object.keys(tree)) {
+    const fullKey = prefix + '.' + key;
+    result.push(fullKey);
+    if ((typeof(tree[key]) === 'object') && (tree[key] !== null)) {
+      result = result.concat(recursiveObjectKeys(tree[key], fullKey));
+    }
+  }
+  return result;
+}
+
 export default function (extensionReducers: IExtensionReducer[]) {
   let tree = {
-    window: windowReducer,
-    account: accountReducer,
+    window: {
+      base: windowReducer,
+    },
+    account: {
+      base: accountReducer,
+    },
     gameSettings: {
       base: gameSettingsReducer,
     },
     notifications: notificationsReducer,
-    session: sessionReducer,
+    session: {
+      base: sessionReducer,
+    },
     settings: {
       base: settingsReducer,
-    }
+    },
   };
 
   extensionReducers.forEach((extensionReducer) => {
     addToTree(tree, extensionReducer.path, extensionReducer.reducer);
   });
-
-  /*
-  let tree = buildReducerTree(extensionReducers.concat([
-      { path: ['window'], reducer: windowReducer },
-      { path: ['account'], reducer: accountReducer },
-      { path: ['gameSettings'], reducer: gameSettingsReducer },
-      { path: ['notifications'], reducer: notificationsReducer },
-      { path: ['session'], reducer: sessionReducer },
-      { path: ['settings'], reducer: settingsReducer },
-  ]));
-  */
-
-  log('info', 'reducer tree', { tree: Object.keys(tree) });
 
   return deriveReducer('', tree);
 }

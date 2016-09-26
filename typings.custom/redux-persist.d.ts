@@ -467,6 +467,7 @@ interface PersistStoreConfig<S> {
    * Debounce interval applied to storage calls.
    */
   debounce?: number
+  keyPrefix?: string 
 }
 
 module ReduxPersist {
@@ -488,6 +489,7 @@ module ReduxPersist {
     purgeAll: () => void
     pause: () => void
     resume: () => void
+    stop: (cb?: () => void) => void
     /**
      * Rehydrate some state into the store
      * 

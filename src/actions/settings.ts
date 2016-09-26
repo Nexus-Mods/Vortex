@@ -2,8 +2,14 @@ import { IDiscoveryResult } from '../types/IState';
 
 import { createAction } from 'redux-act';
 
-export const setGameMode = createAction('change game being managed');
+/**
+ * change game being managed
+ */
+export const setGameMode = createAction('SET_GAME_MODE');
 
+/**
+ * add info about a discovered game
+ */
 export const addDiscoveredGame =
-  createAction('add info about a discovered game',
+  createAction('ADD_DISCOVERED_GAME',
     (id: string, result: IDiscoveryResult) => { return { id, result }; });

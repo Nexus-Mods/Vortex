@@ -5,23 +5,17 @@
 import 'source-map-support/register';
 
 import { setMaximized, setWindowPosition, setWindowSize } from './actions/window';
-import reducer from './reducers/index';
 import { IState, IWindow } from './types/IState';
+import ExtensionManager from './util/ExtensionLoader';
 import GameModeManager from './util/GameModeManager';
 import { log } from  './util/log';
+import { setupStore } from './util/store';
 
 import * as Promise from 'bluebird';
 import { BrowserWindow, app } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { applyMiddleware, compose, createStore } from 'redux';
-import { electronEnhancer } from 'redux-electron-store';
-import { autoRehydrate, persistStore } from 'redux-persist';
-import { AsyncNodeStorage } from 'redux-persist-node-storage';
-import thunkMiddleware from 'redux-thunk';
 import * as winston from 'winston';
-
-import ExtensionManager from './util/ExtensionLoader';
 
 import doRestart = require('electron-squirrel-startup');
 
@@ -75,29 +69,9 @@ if (process.env.NODE_ENV !== 'development') {
   winston.remove(winston.transports.Console);
 }
 
-// set up store and persisting
-
-const middleware = [
-  thunkMiddleware,
-];
-
-const enhancer: Redux.StoreEnhancer<IState> = compose(
-  applyMiddleware(...middleware),
-  autoRehydrate(),
-  electronEnhancer()
-) as Redux.StoreEnhancer<IState>;
-
+// set up some "global" components
 const extensions: ExtensionManager = new ExtensionManager();
-
-const extReducers = extensions.getReducers();
-
-const store: Redux.Store<IState> = createStore<IState>(reducer(extReducers), enhancer);
-persistStore(store, {
-    storage: new AsyncNodeStorage(path.join(basePath, 'state')),
-    whitelist: ['window', 'settings', 'account'],
-  },
-  () => { log('info', 'Application state loaded'); }
-);
+const store: Redux.Store<IState> = setupStore(basePath, extensions);
 
 const gameModeManager: GameModeManager = new GameModeManager(basePath);
 gameModeManager.attachToStore(store);
@@ -110,7 +84,7 @@ extensions.setStore(store);
 let mainWindow: Electron.BrowserWindow = null;
 
 function createWindow() {
-  let windowMetrics: IWindow = store.getState().window;
+  let windowMetrics: IWindow = store.getState().window.base;
   mainWindow = new BrowserWindow({
     height: windowMetrics.size.height,
     width: windowMetrics.size.width,
