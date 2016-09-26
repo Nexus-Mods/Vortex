@@ -5,6 +5,8 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 
 import GameThumbnail from './GameThumbnail';
 
+import { log } from '../../util/log';
+
 import * as React from 'react';
 
 interface IConnectedProps {
@@ -46,7 +48,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
         <GameThumbnail
           key={game.id}
           game={game}
-          onManage={onManage}
+          onManage={discovered ? onManage : undefined}
           active={game.id === gameMode}
         />
       );
@@ -58,7 +60,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   return {
     gameMode: state.settings.base.gameMode,
     discoveredGames: state.settings.base.discoveredGames,
-    knownGames: state.session.knownGames,
+    knownGames: state.session.base.knownGames,
   };
 }
 

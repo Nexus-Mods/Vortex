@@ -1,6 +1,8 @@
-import { setLoggedInUser } from '../actions/account';
 import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
+import { IState } from '../types/IState';
+import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
+import { log } from '../util/log';
 import Developer from './Developer';
 import Dialog from './Dialog';
 import IconBar from './IconBar';
@@ -12,7 +14,6 @@ import { Button } from './TooltipControls';
 import * as React from 'react';
 import { Alert, Modal, Nav, NavItem, Well } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
 
 import update = require('react-addons-update');
 import Icon = require('react-fontawesome');
@@ -186,7 +187,9 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
     return (
       <Modal show={this.state.showLayer === 'login'} onHide={ this.hideLayer }>
         <Modal.Header>
-          <Modal.Title>{ t(this.props.APIKey === "" ? 'API Key Validation' : 'User Info') }</Modal.Title>
+          <Modal.Title>
+          { t(this.props.APIKey === '' ? 'API Key Validation' : 'User Info') }
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <LoginForm onClose={ this.hideLayer } />
@@ -245,8 +248,8 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
-    return { APIKey: state.account.account.APIKey};
+function mapStateToProps(state: IState): IConnectedProps {
+    return { APIKey: state.account.base.APIKey};
 }
 
 function registerMainPage(instance: MainWindow,

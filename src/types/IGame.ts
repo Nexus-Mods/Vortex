@@ -39,6 +39,8 @@ export interface IGame {
    * other games of the same series.
    * Preferably the logo should *not* contain the game name because NMM will display
    * the name as text near the logo. This way the name can be localised.
+   * Background should be transparent. The logo will be resized preserving aspect
+   * ratio, the canvas has a 3:4 (portrait) ratio.
    * 
    * @type {string}
    * @memberOf IGame

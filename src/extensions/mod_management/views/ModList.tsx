@@ -89,7 +89,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps, ILocalState> {
 }
 
 interface IState {
- settings: { base: ISettings },
+ settings: { base: ISettings };
  mods: IStateMods;
 }
 

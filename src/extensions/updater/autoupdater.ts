@@ -1,5 +1,6 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
+import i18next = require('i18next');
 
 import { remote } from 'electron';
 
@@ -19,7 +20,7 @@ function setupAutoUpdate(api: IExtensionApi) {
   try {
     autoUpdater.checkForUpdates();
   } catch (e) {
-    api.showErrorNotification('checking for update failed', e.message);
+    api.showErrorNotification(i18next.t('checking for update failed'), e.message);
     return;
   }
 
@@ -29,7 +30,8 @@ function setupAutoUpdate(api: IExtensionApi) {
   autoUpdater.on('update-not-available', () => {
     log('info', 'no update available');
   });
-  autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) => {
+  autoUpdater.on('update-downloaded',
+                 (event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) => {
     log('info', 'update installed');
     api.sendNotification({
       type: 'success',

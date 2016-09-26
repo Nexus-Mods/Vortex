@@ -30,32 +30,32 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
     return (
       <form>
         <FormGroup>
-          <ControlLabel>Base Path</ControlLabel>
+          <ControlLabel>{ t('Base Path') }</ControlLabel>
           <InputGroup>
             <FormControl value={paths.base} placeholder={ t('Base Path') } readOnly />
             <InputGroup.Button>
-              <Button id='move-base-path' tooltip='Move'><Icon name='exchange' /></Button>
+              <Button id='move-base-path' tooltip={ t('Move') }><Icon name='exchange' /></Button>
             </InputGroup.Button>
           </InputGroup>
-          <HelpBlock>{this.resolveBase() }</HelpBlock>
+          <HelpBlock>{ this.resolveBase() }</HelpBlock>
 
-          <ControlLabel>Download Path</ControlLabel>
+          <ControlLabel>{ t('Download Path') }</ControlLabel>
           <InputGroup>
           <FormControl value={paths.download} placeholder={ t('Download Path') } readOnly />
           <InputGroup.Button>
-            <Button id='move-download-path' tooltip='Move'><Icon name='exchange' /></Button>
+            <Button id='move-download-path' tooltip={ t('Move') }><Icon name='exchange' /></Button>
           </InputGroup.Button>
           </InputGroup>
-          <HelpBlock>{this.resolveDownload() }</HelpBlock>
+          <HelpBlock>{ this.resolveDownload() }</HelpBlock>
 
-          <ControlLabel>Install Path</ControlLabel>
+          <ControlLabel>{ t('Install Path') }</ControlLabel>
           <InputGroup>
           <FormControl value={paths.install} placeholder={ t('Install Path') } readOnly />
           <InputGroup.Button>
-            <Button id='move-install-path' tooltip='Move'><Icon name='exchange' /></Button>
+            <Button id='move-install-path' tooltip={ t('Move') }><Icon name='exchange' /></Button>
           </InputGroup.Button>
           </InputGroup>
-          <HelpBlock>{this.resolveInstall() }</HelpBlock>
+          <HelpBlock>{ this.resolveInstall() }</HelpBlock>
         </FormGroup>
       </form>
     );

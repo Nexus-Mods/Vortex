@@ -51,7 +51,7 @@ class WelcomeScreen extends React.Component<IConnectedProps, {}> {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     gameMode: state.settings.base.gameMode,
-    knownGames: state.session.knownGames,
+    knownGames: state.session.base.knownGames,
   };
 }
 

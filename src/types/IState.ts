@@ -24,6 +24,10 @@ export interface IDimensions {
   width: number;
 }
 
+export interface IAccount {
+  APIKey: string;
+}
+
 /**
  * interface for window state
  * 
@@ -81,8 +85,9 @@ export interface ISession {
  * @interface IState
  */
 export interface IState {
-  window: IWindow;
+  account: { base: IAccount };
+  window: { base: IWindow };
   notifications: INotificationState;
-  session: ISession;
+  session: { base: ISession };
   settings: { base: ISettings };
 }

@@ -17,7 +17,7 @@ if (process.type === 'renderer') {
   global.logger = logger;
 }
 
-type Level = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
  * log a message
@@ -27,7 +27,7 @@ type Level = 'debug' | 'info' | 'warn' | 'error';
  * @param {string} message The text message. Should contain no variable data
  * @param {Object} [metadata] Additional information about the error instance
  */
-export function log(level: Level, message: string, metadata?: Object) {
+export function log(level: LogLevel, message: string, metadata?: Object) {
   if (metadata === undefined) {
     logger.log(level, message);
   } else {

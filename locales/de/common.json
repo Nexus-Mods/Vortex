@@ -1,5 +1,20 @@
 {
 	"Settings": "Einstellungen",
 	"Close": "Schließen",
-	"Interface": "Oberfläche"
+	"Interface": "Oberfläche",
+	"Language": "Sprache",
+	"Base Path": "Basis Verzeichnis",
+	"Download Path": "Download Verzeichnis",
+	"Install Path": "Installationsverzeichnis",
+	"Install from file": "Datei installieren",
+	"Mod Name": "Modname",
+	"Installation Time": "Installationszeitpunkt",
+	"Discovered": "Gefunden",
+	"Not discovered": "Nicht gefunden",
+	"Manage": "Verwalten",
+	"About": "Über",
+	"More": "Mehr",
+	"checking for update failed": "prüfen auf updates fehlgeschlagen",
+	"Error": "Fehler",
+	"Move": "Verschieben"
 }

@@ -6,9 +6,10 @@ export type PathKey =
 
 function resolvePath(key: PathKey, state: any) {
   const { paths } = state.gameSettings.mods;
+  const { gameMode } = state.settings.base;
   let formatKeys = {
     USERDATA: remote.app.getPath('userData'),
-    GAME: 'none',
+    GAME: gameMode,
     base: undefined,
   };
   if (key !== 'base') {

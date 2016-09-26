@@ -24,12 +24,12 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    let { t, game } = this.props;
+    let { t, game, active } = this.props;
 
     const logoPath: string = path.join(game.pluginPath, game.logo);
 
     return (
-      <Panel bsClass='game-thumbnail'>
+      <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
         <div style={{ position: 'relative', top: '0px' }}>
         <img className='game-thumbnail-img' src={ logoPath } />
         </div>
@@ -43,7 +43,7 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
 
   private renderManageButton = () => {
     const { t, active } = this.props;
-    return this.clickHandler !== undefined && !active
+    return (this.clickHandler !== undefined && !active)
       ? <Button onClick={ this.clickHandler }>{ t('Manage') }</Button>
       : null;
   }
