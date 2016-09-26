@@ -2,7 +2,7 @@ import { setGameSettings } from '../actions/gameSettings';
 import { setKnownGames } from '../actions/session';
 import { addDiscoveredGame, setGameMode } from '../actions/settings';
 import { IGame } from '../types/IGame';
-import { IDiscoveryResult, IState } from '../types/IState';
+import { IState } from '../types/IState';
 import { log } from '../util/log';
 import { showError } from '../util/message';
 
@@ -10,7 +10,7 @@ import { terminate } from './errorHandling';
 
 import * as Promise from 'bluebird';
 import { app } from 'electron';
-import * as fs from 'fs';
+import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import { Persistor, createPersistor, getStoredState } from 'redux-persist';
 import { AsyncNodeStorage } from 'redux-persist-node-storage';
@@ -24,6 +24,7 @@ class GameModeManager {
   private mPersistor: Persistor;
   private mError: boolean;
   private mStore: Redux.Store<IState>;
+  private mKnownGames: IGame[];
 
   constructor(basePath: string) {
     this.mSubscription = null;
@@ -31,6 +32,7 @@ class GameModeManager {
     this.mPersistor = null;
     this.mError = false;
     this.mStore = null;
+    this.mKnownGames = [];
   }
 
   /**
@@ -52,7 +54,7 @@ class GameModeManager {
     let gamesPath: string = path.join(appBasePath, 'games');
     let games: IGame[] = this.loadDynamicGames(gamesPath);
     gamesPath = path.join(app.getPath('userData'), 'games');
-    games = games.concat(this.loadDynamicGames(gamesPath));
+    this.mKnownGames = games.concat(this.loadDynamicGames(gamesPath));
 
     this.mStore = store;
 
@@ -60,7 +62,15 @@ class GameModeManager {
     //      are now no longer known
     // TODO verify that previously discovered games are still available in
     //      their existing location
-    store.dispatch(setKnownGames(games));
+    let gamesStored: any[] = this.mKnownGames.map((game: IGame) => {
+      return {
+        name: game.name,
+        id: game.id,
+        logo: game.logo,
+        pluginPath: game.pluginPath,
+      };
+    } );
+    store.dispatch(setKnownGames(gamesStored));
 
     this.mSubscription = store.subscribe(() => {
       lastMode = this.testModeChange(lastMode, store);
@@ -73,7 +83,7 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public startQuickDiscovery() {
-    for (let game of this.mStore.getState().session.knownGames) {
+    for (let game of this.mKnownGames) {
       try {
         let gamePath = game.queryGamePath();
         if (typeof (gamePath) === 'string') {
@@ -99,10 +109,11 @@ class GameModeManager {
 
   private testModeChange(lastMode: string, store: Redux.Store<IState>): string {
       let currentMode = store.getState().settings.base.gameMode;
+
       if (currentMode !== lastMode) {
         if (this.mPersistor !== null) {
           // stop old persistor
-          this.mPersistor.pause();
+          this.mPersistor.stop();
         }
         this.activateGameMode(currentMode, store)
         .then((persistor) => {
@@ -123,14 +134,23 @@ class GameModeManager {
   }
 
   private activateGameMode(mode: string, store: Redux.Store<IState>): Promise<Persistor> {
-    let settings = {
-      storage: new AsyncNodeStorage(path.join(this.mBasePath, mode, 'state')),
-      whitelist: ['gameSettings'],
-    };
+    const statePath: string = path.join(this.mBasePath, mode, 'state');
+
+    let settings = undefined;
 
     return new Promise<Persistor>((resolve, reject) => {
-      getStoredStateP(settings)
-      .then((state) => {
+      // step 1: ensure the state dir for this game exists
+      fs.ensureDirAsync(statePath)
+      .then(() => {
+        // step 2: retrieve stored state
+        settings = {
+          storage: new AsyncNodeStorage(statePath),
+          whitelist: ['gameSettings'],
+          keyPrefix: '',
+        };
+        return getStoredStateP(settings);
+      }).then((state) => {
+        // step 3: update game-specific settings, then return the persistor
         store.dispatch(setGameSettings(state));
         resolve(createPersistor(store, settings));
       }).catch((err) => {
@@ -145,7 +165,6 @@ class GameModeManager {
     if (fs.existsSync(indexPath)) {
       let res: IGame = require(indexPath).default;
       res.pluginPath = extensionPath;
-      log('info', 'pluginpath a', res.pluginPath);
       return res;
     } else {
       return undefined;
