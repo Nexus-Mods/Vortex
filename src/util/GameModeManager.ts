@@ -45,13 +45,7 @@ class GameModeManager {
   public attachToStore(store: Redux.Store<IState>) {
     let lastMode: string = undefined;
 
-    let appBasePath = app.getAppPath();
-
-    if (process.env.NODE_ENV === 'development') {
-      appBasePath = path.join(appBasePath, 'out');
-    }
-
-    let gamesPath: string = path.join(appBasePath, 'games');
+    let gamesPath: string = path.resolve(__dirname, '..', 'games');
     let games: IGame[] = this.loadDynamicGames(gamesPath);
     gamesPath = path.join(app.getPath('userData'), 'games');
     this.mKnownGames = games.concat(this.loadDynamicGames(gamesPath));

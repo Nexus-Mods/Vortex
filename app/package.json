@@ -19,6 +19,7 @@
     "fs-extra-promise": "^0.4.0",
     "i18next": "^3.4.1",
     "i18next-node-fs-backend": "^0.1.2",
+    "node-7z": "^0.4.0",
     "node-rest-client": "^2.0.1",
     "react": "^15.3.0",
     "react-addons-css-transition-group": "^15.3.1",
@@ -39,6 +40,8 @@
     "redux-persist-node-storage": "^1.0.2",
     "redux-thunk": "^2.1.0",
     "source-map-support": "^0.4.2",
+    "string-template": "^1.0.0",
+    "winreg": "^1.2.2",
     "winston": "^2.2.0"
   }
 }

@@ -5,16 +5,15 @@ import { findWithType, findWithClass } from 'react-shallow-testutils';
 
 import { Label, Modal } from 'react-bootstrap';
 
-jest.mock("../out/util/ExtensionProvider");
+jest.mock('../out/util/ExtensionProvider');
 
 function renderMainWindow() {
   let renderer = TestUtils.createRenderer();
 
-  renderer.render(<MainWindow />);
+  renderer.render(React.createElement('MainWindow'));
 
   return renderer.getRenderOutput();
 }
-
 
 it('returns a div', () => {
   let win = renderMainWindow();
@@ -28,12 +27,6 @@ it('has one modal', () => {
 
   expect(modals.length).toBe(1);
 });
-
-/*
-it('says hello world', () => {
-  expect(renderMainWindow().props.children).toBe('Hello World');
-});
-*/
 
 it('opens settings on click on icon', () => {
   let win = renderMainWindow();

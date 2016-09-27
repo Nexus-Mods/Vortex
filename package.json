@@ -10,7 +10,7 @@
   "scripts": {
     "_babel_out": "cross-env BABEL_ENV=development babel out -d out --ignore extensions",
     "_babel_app": "cross-env BABEL_ENV=production babel app -d app --ignore node_modules",
-    "_assets_out": "node InstallAssets.js out && npm run _babel_out",
+    "_assets_out": "node InstallAssets.js out",
     "_assets_app": "node InstallAssets.js app && npm run _babel_app",
     "_install_app": "cd app && npm install",
     "prestart": "npm run _assets_out",
