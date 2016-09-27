@@ -162,7 +162,7 @@
     "new-parens": 2,
     "newline-after-var": 0,
     "no-array-constructor": 2,
-    "no-continue": 2,
+    "no-continue": 0,
     "no-lonely-if": 1,
     "no-mixed-spaces-and-tabs": [
       1,

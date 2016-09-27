@@ -2,6 +2,7 @@
 *.js.map
 node_modules
 actions
-reducers
 assets
+games
+reducers
 index.html
