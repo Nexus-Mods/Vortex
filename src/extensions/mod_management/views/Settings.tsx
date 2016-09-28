@@ -16,7 +16,7 @@ interface IPaths {
 
 interface IConnectedProps {
   paths: IPaths;
-  state: any;
+  gameMode: string;
 }
 
 interface IActionProps {
@@ -61,15 +61,15 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
     );
   }
 
-  private resolveBase = () => resolvePath('base', this.props.state);
-  private resolveDownload = () => resolvePath('download', this.props.state);
-  private resolveInstall = () => resolvePath('install', this.props.state);
+  private resolveBase = () => resolvePath('base', this.props.paths, this.props.gameMode);
+  private resolveDownload = () => resolvePath('download', this.props.paths, this.props.gameMode);
+  private resolveInstall = () => resolvePath('install', this.props.paths, this.props.gameMode);
 }
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
     paths: state.gameSettings.mods.paths,
-    state,
+    gameMode: state.settings.base.gameMode,
   };
 }
 

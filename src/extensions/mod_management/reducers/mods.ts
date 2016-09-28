@@ -1,6 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 
-import { addMod, setAttributeEnabled, setModAttribute, setModState } from '../actions/mods';
+import { addMod, setModAttribute, setModState } from '../actions/mods';
 
 import update = require('react-addons-update');
 
@@ -18,12 +18,7 @@ export const modsReducer: IReducerSpec = {
       const { id, attribute, value } = payload;
       return update(state, { mods: { [id]: { attributes: { [attribute]: { $set: value } } } } });
     },
-    [setAttributeEnabled]: (state, payload) => {
-      const { id, enabled } = payload;
-      return update(state, { attributeState: { [id]: { enabled: { $set: enabled } } } });
-    },
   }, defaults: {
-    attributeState: {},
     mods: {},
   },
 };

@@ -121,7 +121,8 @@ class ExtensionManager {
 
   private emptyExtensionContext(): IExtensionContext {
     return {
-      registerMainPage: (icon: string, title: string, component: React.ComponentClass<any>) => undefined,
+      registerMainPage:
+        (icon: string, title: string, component: React.ComponentClass<any>) => undefined,
       registerSettings: (title: string, component: React.ComponentClass<any>) => undefined,
       registerIcon: (group: string, icon: string, title: string, action: any) => undefined,
       registerReducer: (path: string[], reducer: any) => undefined,

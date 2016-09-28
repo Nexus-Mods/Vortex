@@ -8,7 +8,7 @@ export interface INotificationAction {
 }
 
 export type NotificationType =
-  'success' | 'info' | 'error';
+  'activity' | 'success' | 'info' | 'error';
 
 export interface INotification {
   id?: string;

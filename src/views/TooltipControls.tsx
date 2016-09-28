@@ -17,7 +17,7 @@ export class Button extends React.Component<IProps, {}> {
     return (
       <OverlayTrigger
         overlay={tooltip}
-        placement={this.props.placement}
+        placement={this.props.placement || 'bottom'}
         delayShow={300}
         delayHide={150}
       >

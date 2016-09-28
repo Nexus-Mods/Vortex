@@ -1,3 +1,6 @@
 import { createAction } from 'redux-act';
 
-export const setLanguage = createAction('change user language');
+/**
+ * change the user interface language
+ */
+export const setLanguage = createAction('SET_USER_LANGUAGE');

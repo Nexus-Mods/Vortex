@@ -4,6 +4,8 @@ import { ComponentEx, translate } from '../util/ComponentEx';
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
 
+import Icon = require('react-fontawesome');
+
 interface IActionProps {
   t: (text: string) => string;
   onDismiss: () => void;
@@ -34,9 +36,10 @@ class Notification extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    let { actions, message } = this.props.params;
+    let { actions, message, type } = this.props.params;
     return (
       <Alert bsStyle={this.styleName} onDismiss={this.dismiss}>
+        { this.typeToIcon(type) }{' '}
         {message}
         <p>
           { actions !== undefined ? actions.map(this.renderAction) : null }
@@ -58,9 +61,17 @@ class Notification extends ComponentEx<IProps, {}> {
   private typeToStyle(type: NotificationType) {
     switch (type) {
       case 'success': return 'success';
+      case 'activity': return 'info';
       case 'info': return 'info';
       case 'error': return 'danger';
       default: return 'warning';
+    }
+  }
+
+  private typeToIcon(type: NotificationType): JSX.Element {
+    switch (type) {
+      case 'activity': return <Icon name='spinner' spin />;
+      default: return null;
     }
   }
 

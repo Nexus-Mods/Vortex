@@ -1,3 +1,5 @@
+import { IMod } from './IMod';
+
 /**
  * declaration of an attribute of a mod
  * 
@@ -10,6 +12,6 @@ export interface IModAttribute {
   description?: string;
   icon: string;
   isDetail: boolean;
-  sortFunc?: (lhs: any, rhs: any) => number;
+  sortFunc?: (lhs: any, rhs: any, locale: string) => number;
   filterFunc?: (filter: string, value: any) => boolean;
 }

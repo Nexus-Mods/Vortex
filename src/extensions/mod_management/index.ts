@@ -10,7 +10,6 @@ import ModList from './views/ModList';
 import Settings from './views/Settings';
 
 import { INSTALL_TIME, MOD_NAME } from './modAttributes';
-import { startInstallFile } from './modInstall';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -21,8 +20,6 @@ interface IExtensionContextExt extends IExtensionContext {
 
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('cubes', 'Mods', ModList);
-  context.registerIcon('application-icons', 'archive', 'Install from file',
-    () => startInstallFile(context.api));
   context.registerSettings('Mods', Settings);
   context.registerReducer(['mods'], modsReducer);
   context.registerReducer(['gameSettings', 'mods'], settingsReducer);
@@ -33,7 +30,10 @@ function init(context: IExtensionContextExt): boolean {
   }
 
   context.once(() => {
-    const installDir = resolvePath('install', context.api.getState());
+    const state = context.api.getState();
+    const installDir = resolvePath('install',
+                                   state.gameSettings.mods.paths,
+                                   state.settings.base.gameMode);
     fs.readdir(installDir, (err: NodeJS.ErrnoException, mods: string[]) => {
       if (mods === undefined) {
         return;

@@ -6,6 +6,9 @@ export const MOD_NAME: IModAttribute = {
   description: 'Name of the mod',
   icon: 'quote-left',
   isDetail: false,
+  sortFunc: (lhs: string, rhs: string, locale: string): number => {
+    return lhs.localeCompare(rhs, locale, { sensitivity: 'case' });
+  } 
 };
 
 export const INSTALL_TIME: IModAttribute = {
