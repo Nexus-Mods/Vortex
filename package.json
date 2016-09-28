@@ -89,7 +89,7 @@
     "react-bootstrap": "^0.30.2",
     "react-fontawesome": "^1.1.0",
     "react-i18next": "^1.8.0",
-    "react-layout-pane": "^0.1.16",
+    "react-layout-pane": "TanninOne/react-layout-pane",
     "react-redux": "^4.4.5",
     "react-shallow-testutils": "^2.0.0",
     "react-sidebar": "^2.2.1",

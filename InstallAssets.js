@@ -14,6 +14,8 @@ const tgt = process.argv[2];
 
 let childProcesses = [];
 
+let status = 0;
+
 // run other, independend commands concurrently to speed things up.
 for (let spawn of data.spawn) {
   if (spawn.target.indexOf(tgt) === -1) {
@@ -33,6 +35,9 @@ for (let spawn of data.spawn) {
     console.log('Error:', spawn.executable, output);
   });
   child.on('close', (code) => {
+    if (code !== 0) {
+      status = 1;
+    }
     console.log('finished', spawn.executable, code);
   });
   childProcesses.push(spawn.executable);
@@ -70,6 +75,8 @@ for (let file of data.copy) {
 function waitForProcesses() {
   if (childProcesses.length > 0) {
     setTimeout(waitForProcesses, 100);
+  } else {
+    process.exit(status);
   }
 }
 

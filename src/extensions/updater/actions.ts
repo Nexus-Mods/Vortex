@@ -1,3 +1,7 @@
 import { createAction } from 'redux-act';
 
-export const setUpdateChannel = createAction('change update channel');
+/**
+ * changes the 'channel' from which to receive NMM2 updates
+ * currently either 'beta' or 'stable'
+ */
+export const setUpdateChannel = createAction('SET_UPDATE_CHANNEL');

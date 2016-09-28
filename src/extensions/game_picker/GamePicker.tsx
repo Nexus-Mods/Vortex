@@ -5,8 +5,6 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 
 import GameThumbnail from './GameThumbnail';
 
-import { log } from '../../util/log';
-
 import * as React from 'react';
 
 interface IConnectedProps {

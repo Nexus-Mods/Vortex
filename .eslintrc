@@ -239,6 +239,6 @@
     ],
     "prefer-const": 0,
     "prefer-spread": 1,
-    "require-yield": 1,
+    "require-yield": 1
   }
 }
