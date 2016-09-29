@@ -1,10 +1,11 @@
-import { setGameSettings } from '../actions/gameSettings';
+import { setCurrentProfile } from '../actions/profiles';
 import { setKnownGames } from '../actions/session';
 import { addDiscoveredGame, setGameMode } from '../actions/settings';
 import { IGame } from '../types/IGame';
 import { IState } from '../types/IState';
 import { log } from '../util/log';
 import { showError } from '../util/message';
+import StorageLogger from '../util/StorageLogger';
 
 import { terminate } from './errorHandling';
 
@@ -17,6 +18,11 @@ import { AsyncNodeStorage } from 'redux-persist-node-storage';
 
 const getStoredStateP = Promise.promisify(getStoredState);
 
+/**
+ * discovers game modes
+ * 
+ * @class GameModeManager
+ */
 class GameModeManager {
 
   private mSubscription: Redux.Unsubscribe;
@@ -68,11 +74,13 @@ class GameModeManager {
 
     this.mSubscription = store.subscribe(() => {
       lastMode = this.testModeChange(lastMode, store);
+      this.checkProfile(store);
     });
   }
 
   /**
-   * starts game discovery, only using the game
+   * starts game discovery, only using the search function from the game
+   * extension
    * 
    * @memberOf GameModeManager
    */
@@ -101,15 +109,29 @@ class GameModeManager {
     }
   }
 
-  private testModeChange(lastMode: string, store: Redux.Store<IState>): string {
-      let currentMode = store.getState().settings.base.gameMode;
-
-      if (currentMode !== lastMode) {
-        if (this.mPersistor !== null) {
-          // stop old persistor
-          this.mPersistor.stop();
+  private checkProfile(store: Redux.Store<IState>) {
+    if (store.getState().gameSettings.profiles.currentProfile === undefined) {
+      // no profile set, find a fallback if possible
+      if ('default' in store.getState().gameSettings.profiles) {
+        store.dispatch(setCurrentProfile('default'));
+      } else {
+        let profiles = Object.keys(store.getState().gameSettings.profiles);
+        if (profiles.length > 0) {
+          store.dispatch(setCurrentProfile(profiles[0]));
         }
-        this.activateGameMode(currentMode, store)
+      }
+    }
+  }
+
+  private testModeChange(lastMode: string, store: Redux.Store<IState>): string {
+    let currentMode: string = store.getState().settings.base.gameMode;
+
+    if (currentMode !== lastMode) {
+      if (this.mPersistor !== null) {
+        // stop old persistor
+        this.mPersistor.stop();
+      }
+      this.activateGameMode(currentMode, store)
         .then((persistor) => {
           this.mPersistor = persistor;
           this.mError = false;
@@ -123,11 +145,15 @@ class GameModeManager {
             terminate({ message: 'Failed to change game mode', details: err });
           }
         });
-      }
-      return currentMode;
+    }
+    return currentMode;
   }
 
   private activateGameMode(mode: string, store: Redux.Store<IState>): Promise<Persistor> {
+    if (mode === undefined) {
+      return;
+    }
+
     const statePath: string = path.join(this.mBasePath, mode, 'state');
 
     let settings = undefined;
@@ -138,14 +164,16 @@ class GameModeManager {
       .then(() => {
         // step 2: retrieve stored state
         settings = {
-          storage: new AsyncNodeStorage(statePath),
+          storage: new StorageLogger(new AsyncNodeStorage(statePath)),
           whitelist: ['gameSettings'],
           keyPrefix: '',
         };
         return getStoredStateP(settings);
       }).then((state) => {
         // step 3: update game-specific settings, then return the persistor
-        store.dispatch(setGameSettings(state));
+        store.dispatch({ type: 'REHYDRATE', payload: {
+          gameSettings: state,
+        } });
         resolve(createPersistor(store, settings));
       }).catch((err) => {
         reject(err);

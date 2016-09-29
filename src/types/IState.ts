@@ -1,6 +1,7 @@
 import { IDialog } from './IDialog';
 import { IGame } from './IGame';
 import { INotification } from './INotification';
+import { IProfile } from './IProfile';
 
 /**
  * interface to represent a position on the screen
@@ -78,6 +79,17 @@ export interface ISession {
 }
 
 /**
+ * game-specific game
+ * 
+ * @export
+ * @interface IGameSettings
+ */
+export interface IGameSettingsProfiles {
+  currentProfile: string;
+  profiles: { [id: string]: IProfile };
+}
+
+/**
  * interface for the top-level state object
  * this should precisely mirror the reducer structure
  * 
@@ -90,4 +102,7 @@ export interface IState {
   notifications: INotificationState;
   session: { base: ISession };
   settings: { base: ISettings };
+  gameSettings: {
+    profiles: IGameSettingsProfiles,
+  };
 }

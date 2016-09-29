@@ -30,7 +30,7 @@ function init(context: IExtensionContextExt): boolean {
   }
 
   context.once(() => {
-    const state = context.api.getState();
+    const state = context.api.store.getState();
     const installDir = resolvePath('install',
                                    state.gameSettings.mods.paths,
                                    state.settings.base.gameMode);
@@ -49,7 +49,7 @@ function init(context: IExtensionContextExt): boolean {
             installTime: fs.statSync(fullPath).birthtime,
           },
         };
-        context.api.dispatch(addMod(mod));
+        context.api.store.dispatch(addMod(mod));
       });
     });
   });

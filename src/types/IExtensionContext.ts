@@ -65,20 +65,12 @@ export interface IExtensionApi {
   selectFile: (options: IOpenOptions) => Promise<string>;
 
   /**
-   * returns the whole application-state object.
-   * This object is empty at the time registerReducer is called
+   * the redux store
    * 
+   * @type {Redux.Store<any>}
    * @memberOf IExtensionApi
    */
-  getState: () => any;
-
-  /**
-   * store dispatch function
-   * 
-   * @type {Redux.Dispatch<any>}
-   * @memberOf IExtensionApi
-   */
-  dispatch: Redux.Dispatch<any>;
+  store?: Redux.Store<any>;
 }
 
 /**
