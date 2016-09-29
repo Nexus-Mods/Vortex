@@ -1,4 +1,4 @@
-import ExtensionManager from './ExtensionLoader';
+import ExtensionManager from './ExtensionManager';
 
 import * as React from 'react';
 

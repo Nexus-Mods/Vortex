@@ -1,11 +1,9 @@
-import { II18NProps } from '../../types/II18NProps';
+import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { setUpdateChannel } from './actions';
 
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
-import { translate } from 'react-i18next';
-import { connect } from 'react-redux';
 
 interface IConnectedProps {
   updateChannel: 'stable' | 'beta';
@@ -15,7 +13,9 @@ interface IActionProps {
   onSetUpdateChannel: (channel: 'stable' | 'beta') => void;
 }
 
-class SettingsUpdateBase extends React.Component<IActionProps & IConnectedProps & II18NProps, {}> {
+type IProps = IActionProps & IConnectedProps;
+
+class SettingsUpdate extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, updateChannel } = this.props;
 
@@ -23,7 +23,11 @@ class SettingsUpdateBase extends React.Component<IActionProps & IConnectedProps 
       <form>
         <FormGroup controlId='languageSelect'>
           <ControlLabel>{t('Update') }</ControlLabel>
-          <FormControl componentClass='select' onChange={ this.selectChannel } value={updateChannel}>
+          <FormControl
+            componentClass='select'
+            onChange={ this.selectChannel }
+            value={updateChannel}
+          >
             <option value='stable'>{ t('Stable') }</option>
             <option value='beta'>{ t('Beta') }</option>
           </FormControl>
@@ -56,6 +60,9 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
   };
 }
 
-const SettingsUpdate = connect(mapStateToProps, mapDispatchToProps)(SettingsUpdateBase);
-
-export default translate(['common'], { wait: true })(SettingsUpdate);
+export default
+  translate(['common'], { wait: true })(
+    connect(mapStateToProps, mapDispatchToProps)(
+      SettingsUpdate
+    )
+  );

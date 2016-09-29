@@ -1,11 +1,10 @@
-import { INotification } from '../../../types/INotification';
 import { ISettings } from '../../../types/IState';
 import { SortDirection } from '../../../types/SortDirection';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 
 import { setModlistAttributeSort, setModlistAttributeVisible } from '../actions/settings';
 import { IAttributeState } from '../types/IAttributeState';
-import { IMod, ModState } from '../types/IMod';
+import { IMod } from '../types/IMod';
 import { IModAttribute } from '../types/IModAttribute';
 import { IStateMods } from '../types/IStateMods';
 import { IStateSettings } from '../types/IStateSettings';
@@ -78,6 +77,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
             <Table bordered condensed hover>
               <thead>
                 <tr>
+                  <th>Enabled</th>
                   { visibleAttributes.map(this.renderHeaderField) }
                 </tr>
               </thead>
@@ -208,7 +208,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     mods: state.mods.mods,
     modlistState: state.gameSettings.mods.modlistState,
     gameMode: state.settings.base.gameMode,
-    language: state.settings.interface.language
+    language: state.settings.interface.language,
   };
 }
 

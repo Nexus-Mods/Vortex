@@ -1,7 +1,7 @@
 import reducer from '../reducers/index';
 import { IState } from '../types/IState';
 
-import ExtensionManager from './ExtensionLoader';
+import ExtensionManager from './ExtensionManager';
 import { log } from './log';
 import StorageLogger from './StorageLogger';
 
@@ -13,8 +13,13 @@ import { AsyncNodeStorage } from 'redux-persist-node-storage';
 import thunkMiddleware from 'redux-thunk';
 
 const logMiddleware = store => next => action => {
-  log('debug', 'dispatch', { action });
-  return next(action);
+  log('debug', 'dispatch', { action, state: JSON.stringify(store.getState()) });
+
+  let res = next(action);
+
+  log('debug', 'after', { state: JSON.stringify(res) });
+
+  return res;
 };
 
 export function setupStore(basePath: string, extensions: ExtensionManager): Redux.Store<IState> {

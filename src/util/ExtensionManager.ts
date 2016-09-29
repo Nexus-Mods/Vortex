@@ -4,6 +4,7 @@ import initAboutDialog from '../extensions/about_dialog/index';
 import initGamePicker from '../extensions/game_picker/index';
 import initModManagement from '../extensions/mod_management/index';
 import initNutsLocal from '../extensions/nuts_local/index';
+import initProfileManagement from '../extensions/profile_management/index';
 import initSettingsInterface from '../extensions/settings_interface/index';
 import initSettingsUpdate from '../extensions/updater/index';
 import initWelcomeScreen from '../extensions/welcome_screen/index';
@@ -27,6 +28,12 @@ if (remote !== undefined) {
   dialog = remote.dialog;
 }
 
+/**
+ * interface to extensions. This loads extensions and provides the api extensions
+ * use
+ * 
+ * @class ExtensionManager
+ */
 class ExtensionManager {
   private mExtensions: IExtensionInit[];
   private mApi: IExtensionApi;
@@ -34,8 +41,6 @@ class ExtensionManager {
   constructor() {
     this.mExtensions = this.loadExtensions();
     this.mApi = {
-      getState: () => { return {}; },
-      dispatch: undefined,
       showErrorNotification: (message: string, details: string) => {
         dialog.showErrorBox(message, details);
       },
@@ -53,8 +58,7 @@ class ExtensionManager {
     this.mApi.dismissNotification = (id: string) => {
       store.dispatch(dismissNotification(id));
     };
-    this.mApi.getState = () => store.getState();
-    this.mApi.dispatch = store.dispatch;
+    this.mApi.store = store;
   }
 
   /**
@@ -175,6 +179,7 @@ class ExtensionManager {
       initAboutDialog,
       initWelcomeScreen,
       initModManagement,
+      initProfileManagement,
       initGamePicker,
       initNutsLocal,
     ].concat(this.loadDynamicExtensions(extensionsPath));

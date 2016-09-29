@@ -6,7 +6,7 @@ import 'source-map-support/register';
 
 import { setMaximized, setWindowPosition, setWindowSize } from './actions/window';
 import { IState, IWindow } from './types/IState';
-import ExtensionManager from './util/ExtensionLoader';
+import ExtensionManager from './util/ExtensionManager';
 import GameModeManager from './util/GameModeManager';
 import { log } from  './util/log';
 import { setupStore } from './util/store';

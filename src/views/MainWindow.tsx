@@ -146,6 +146,7 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
             className='btn-embed'
             id='login-btn'
             tooltip={ t('Login') }
+            placement='top'
             onClick={ this.showLoginLayer }
           >
             <Icon name='user' style={{ color: APIKey === '' ? 'red' : 'green' }} />

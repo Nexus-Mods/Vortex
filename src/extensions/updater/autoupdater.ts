@@ -4,6 +4,22 @@ import i18next = require('i18next');
 
 import { remote } from 'electron';
 
+function setChannel(channel: string,
+                    showErrorNotification: (message: string, detail: string) => void) {
+  const autoUpdater = remote.autoUpdater;
+
+  const url = `http://localhost:56000/download/channel/${channel}/win`;
+
+  autoUpdater.setFeedURL(url);
+  log('info', 'feed url', url);
+  try {
+    autoUpdater.checkForUpdates();
+  } catch (e) {
+    showErrorNotification(i18next.t('checking for update failed'), e.message);
+    return;
+  }
+}
+
 function setupAutoUpdate(api: IExtensionApi) {
   if (remote === undefined) {
     log('error', 'auto updater expected to be run in renderer thread');
@@ -12,17 +28,16 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   const autoUpdater = remote.autoUpdater;
 
-  const channel: string = api.getState().settings.update.channel;
-  const url = `http://localhost:56000/download/channel/${channel}/win`;
+  let channel: string = api.store.getState().settings.update.channel;
+  setChannel(channel, api.showErrorNotification);
 
-  autoUpdater.setFeedURL(url);
-  log('info', 'feed url', url);
-  try {
-    autoUpdater.checkForUpdates();
-  } catch (e) {
-    api.showErrorNotification(i18next.t('checking for update failed'), e.message);
-    return;
-  }
+  api.store.subscribe(() => {
+    const newChannel = api.store.getState().settings.update.channel;
+    if (channel !== newChannel) {
+      channel = newChannel;
+      setChannel(newChannel, api.showErrorNotification);
+    }
+  });
 
   autoUpdater.on('update-available', () => {
     log('info', 'update available');

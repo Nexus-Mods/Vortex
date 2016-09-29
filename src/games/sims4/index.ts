@@ -11,8 +11,6 @@ function findGame() {
     return null;
   }
 
-  log('info', 'find teh sims');
-
   const regKey = new Registry({
     hive: Registry.HKLM,
     key: '\\Software\\Maxis\\The Sims 4',

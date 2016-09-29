@@ -1,12 +1,11 @@
-import { II18NProps } from '../../types/II18NProps';
+import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { setLanguage } from './actions';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
-import { translate } from 'react-i18next';
-import { connect } from 'react-redux';
+
 import update = require('react-addons-update');
 
 import { readdir } from 'fs';
@@ -30,7 +29,9 @@ interface IState {
   languages: ILanguage[];
 }
 
-class SettingsInterfaceBase extends React.Component<IActionProps & IConnectedProps & II18NProps, IState> {
+type IProps = IActionProps & IConnectedProps;
+
+class SettingsInterface extends ComponentEx<IProps, IState> {
 
   constructor(props) {
     super(props);
@@ -77,7 +78,11 @@ class SettingsInterfaceBase extends React.Component<IActionProps & IConnectedPro
       <form>
         <FormGroup controlId='languageSelect'>
           <ControlLabel>{t('Language') }</ControlLabel>
-          <FormControl componentClass='select' onChange={this.selectLanguage} value={currentLanguage}>
+          <FormControl
+            componentClass='select'
+            onChange={this.selectLanguage}
+            value={currentLanguage}
+          >
             { this.state.languages.map((language) => { return this.renderLanguage(language); }) }
           </FormControl>
         </FormGroup>
@@ -85,17 +90,21 @@ class SettingsInterfaceBase extends React.Component<IActionProps & IConnectedPro
     );
   }
 
-  private selectLanguage = (evt) => this.selectLanguageImpl(evt);
-
-  private selectLanguageImpl(evt) {
+  private selectLanguage = (evt) => {
     let target: HTMLSelectElement = evt.target as HTMLSelectElement;
     this.props.onSetLanguage(target.value);
+  }
+
+  private languageName(language: ILanguage): string {
+    return language.country === undefined
+      ? language.language
+      : `${language.language} (${language.country})`;
   }
 
   private renderLanguage(language: ILanguage): JSX.Element {
     return (
       <option key={language.key} value={language.key}>
-      { language.country === undefined ? language.language : `${language.language} (${language.country})` }
+      { this.languageName(language) }
       </option>
     );
   }
@@ -115,6 +124,9 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
   };
 }
 
-const SettingsInterface = connect(mapStateToProps, mapDispatchToProps)(SettingsInterfaceBase);
-
-export default translate(['common'], { wait: true })(SettingsInterface);
+export default
+  translate(['common'], { wait: true })(
+    connect(mapStateToProps, mapDispatchToProps)(
+      SettingsInterface
+    )
+  );

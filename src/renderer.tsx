@@ -6,7 +6,7 @@ import 'source-map-support/register';
 
 import reducer from './reducers/index';
 import { ITermination, terminate } from './util/errorHandling';
-import ExtensionManager from './util/ExtensionLoader';
+import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import getI18n from './util/i18n';
 import { log } from './util/log';
