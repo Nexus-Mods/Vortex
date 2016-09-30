@@ -1,6 +1,6 @@
 import { setCurrentProfile, setProfile } from '../../../actions/profiles';
 import { IProfile } from '../../../types/IProfile';
-import { IState } from '../../../types/IState';
+import { ISettings, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { Button } from '../../../views/TooltipControls';
 
@@ -17,6 +17,7 @@ import Icon = require('react-fontawesome');
 interface IConnectedProps {
   currentProfile: string;
   profiles: { [id: string]: IProfile };
+  language: string;
 }
 
 interface IActionProps {
@@ -110,19 +111,34 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
   }
 
   public render(): JSX.Element {
-    const { profiles } = this.props;
+    const { language, profiles } = this.props;
     const { edit } = this.state;
+
+    const sortedProfiles: string[] = Object.keys(profiles).sort(
+      (lhs: string, rhs: string): number => {
+        return profiles[lhs].name.localeCompare(profiles[rhs].name, language,
+          { sensitivity: 'base' });
+    });
+
+    log('info', 'sorted by', { language, sortedProfiles });
 
     return (
       <ListGroup>
-      { Object.keys(profiles).map(this.renderProfile) }
-      { edit === null ? this.renderAddProfile() : this.renderEditProfile() }
+      { sortedProfiles.map(this.renderProfile) }
+      { edit === null ? this.renderAddProfile() : null }
+      { edit === '__new' ? this.renderEditProfile() : null }
       </ListGroup>
     );
   }
 
   private renderProfile = (profileId: string): JSX.Element => {
+    const { edit } = this.state;
+    if (profileId === edit) {
+      return this.renderEditProfile();
+    }
+
     const { currentProfile, onSetCurrentProfile, profiles } = this.props;
+
     log('info', 'render profile', { profileId, profile: profiles[profileId] });
     return (profileId === this.state.edit) ? null : (
       <ProfileItem
@@ -225,10 +241,15 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
+interface IStateEx extends IState {
+  settings: { base: ISettings, interface: { language: string } };
+}
+
+function mapStateToProps(state: IStateEx): IConnectedProps {
   return {
     currentProfile: state.gameSettings.profiles.currentProfile,
     profiles: state.gameSettings.profiles.profiles,
+    language: state.settings.interface.language
   };
 }
 

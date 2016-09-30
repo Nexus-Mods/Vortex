@@ -30,40 +30,48 @@ class ProfileItem extends ComponentEx<IProps, {}> {
         return profile.modState[key].enabled ? prev + 1 : prev;
     }, 0);
 
+    // TODO: not using ListGroupItem because it puts the content into
+    //       <p>-tags so it doesn't support 'complex' content
+
+    let className = active ? 'list-group-item active' : 'list-group-item';
+
     return (
-      <ListGroupItem key={profile.id} header={profile.name} active={active}>
-        <TooltipIcon
-          id={profile.id}
-          name='cubes'
-          tooltip={ t('Number of Mods enabled') }
-        />{ enabledMods }
-        <div className='pull-right'>
-          <Button
-            className='btn-embed'
-            id='__select'
-            disabled={ active }
-            tooltip={ t('Enable') }
-            onClick={ this.activate }
-          >
-            <Icon name='play' />
-          </Button>
-          <Button
-            className='btn-embed'
-            id='__edit'
-            tooltip={ t('Edit') }
-            onClick={ this.startEditing }
-          >
-            <Icon name='wrench' />
-          </Button>
-          <Button
-            className='btn-embed'
-            id='__remove'
-            tooltip={ t('Remove') }
-          >
-            <Icon name='remove' />
-          </Button>
+      <span className={className}>
+        <h4 className='list-group-item-heading'>{ profile.name }</h4>
+        <div className='list-group-item-text'>
+          <TooltipIcon
+            id={profile.id}
+            name='cubes'
+            tooltip={ t('Number of Mods enabled') }
+          />{ enabledMods }
+          <div className='pull-right'>
+            <Button
+              className='btn-embed'
+              id='__select'
+              disabled={ active }
+              tooltip={ t('Enable') }
+              onClick={ this.activate }
+            >
+              <Icon name='play' />
+            </Button>
+            <Button
+              className='btn-embed'
+              id='__edit'
+              tooltip={ t('Edit') }
+              onClick={ this.startEditing }
+            >
+              <Icon name='wrench' />
+            </Button>
+            <Button
+              className='btn-embed'
+              id='__remove'
+              tooltip={ t('Remove') }
+            >
+              <Icon name='remove' />
+            </Button>
+          </div>
         </div>
-      </ListGroupItem>
+      </span>
     );
   }
 

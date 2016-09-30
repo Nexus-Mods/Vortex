@@ -171,9 +171,7 @@ class GameModeManager {
         return getStoredStateP(settings);
       }).then((state) => {
         // step 3: update game-specific settings, then return the persistor
-        store.dispatch({ type: 'REHYDRATE', payload: {
-          gameSettings: state,
-        } });
+        store.dispatch({ type: 'persist/REHYDRATE', payload: state });
         resolve(createPersistor(store, settings));
       }).catch((err) => {
         reject(err);
