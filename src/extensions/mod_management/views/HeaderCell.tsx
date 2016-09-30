@@ -3,16 +3,9 @@ import SortIndicator from '../../../views/SortIndicator';
 
 import { IAttributeState } from '../types/IAttributeState';
 import { IModAttribute } from '../types/IModAttribute';
+import getAttr from '../util/getAttr';
 
 import * as React from 'react';
-
-function getAttr<T>(state: IAttributeState, key: string, def: T): T {
-  if (state === undefined) {
-    return def;
-  }
-
-  return state[key] !== undefined ? state[key] : def;
-}
 
 interface IHeaderProps {
   attribute: IModAttribute;

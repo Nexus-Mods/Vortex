@@ -12,6 +12,7 @@ export interface IModAttribute {
   description?: string;
   icon: string;
   isDetail: boolean;
+  isToggleable: boolean;
   sortFunc?: (lhs: any, rhs: any, locale: string) => number;
   filterFunc?: (filter: string, value: any) => boolean;
 }

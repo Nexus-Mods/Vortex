@@ -6,7 +6,7 @@ export interface IStatePaths {
   install: string;
 }
 
-export interface IStateSettings {
+export interface IStateModSettings {
   paths: IStatePaths;
   modlistState: { [id: string]: IAttributeState };
 }

@@ -1,18 +1,30 @@
-import * as React from 'react';
+import { IProfileMod } from '../../../types/IProfile';
 
 import { IMod } from '../types/IMod';
 import { IModAttribute } from '../types/IModAttribute';
+import getAttr from '../util/getAttr';
+
+import * as React from 'react';
+import { Checkbox } from 'react-bootstrap';
 
 interface IProps {
   mod: IMod;
+  modState: IProfileMod;
   attributes: IModAttribute[];
+  onSetModEnabled: (modId: string, enabled: boolean) => void;
 }
 
 class ModRow extends React.Component<IProps, {}> {
   public render(): JSX.Element {
-    const { attributes, mod } = this.props;
+    const { attributes, mod, modState } = this.props;
 
     return <tr key={mod.id} className={'mod-' + mod.state}>
+      <td>
+      <Checkbox
+        checked={ getAttr(modState, 'enabled', false) }
+        onChange={ this.setModEnabled }
+      />
+      </td>
       { attributes.map(this.renderAttribute) }
     </tr>;
   }
@@ -31,6 +43,11 @@ class ModRow extends React.Component<IProps, {}> {
     } else {
       return value.toString();
     }
+  }
+
+  private setModEnabled = (evt: React.MouseEvent) => {
+    const { mod, modState, onSetModEnabled } = this.props;
+    onSetModEnabled(mod.id, (evt.target as HTMLInputElement).checked);
   }
 }
 

@@ -1,8 +1,23 @@
-import { setCurrentProfile, setProfile } from '../actions/profiles';
+import { setCurrentProfile, setModEnabled, setProfile } from '../actions/profiles';
 import { IReducerSpec } from '../types/IExtensionContext';
+import { IGameSettingsProfiles } from '../types/IState';
 import update = require('react-addons-update');
 
-import { log } from '../util/log';
+function ensureMod(state: IGameSettingsProfiles, modId: string): IGameSettingsProfiles {
+  if (!(modId in state.profiles[state.currentProfile].modState)) {
+    return update(state, {
+      profiles: {
+        [state.currentProfile]: {
+          modState: {
+            [modId]: { $set: {} },
+          },
+        },
+      },
+    });
+  } else {
+    return state;
+  }
+}
 
 /**
  * reducer for changes to ephemeral session state
@@ -14,6 +29,20 @@ export const profilesReducer: IReducerSpec = {
     },
     [setCurrentProfile]: (state, payload) => {
       return update(state, { currentProfile: { $set: payload } });
+    },
+    [setModEnabled]: (state, payload) => {
+      const { modId, enable } = payload;
+      return update(ensureMod(state, modId), {
+        profiles: {
+          [state.currentProfile]: {
+            modState: {
+              [modId]: {
+                enabled: { $set: enable },
+              },
+            },
+          },
+        },
+      });
     },
   },
   defaults: {

@@ -1,4 +1,7 @@
-import { ISettings } from '../../../types/IState';
+import { setModEnabled } from '../../../actions/profiles';
+
+import { IProfileMod } from '../../../types/IProfile';
+import { IGameSettingsProfiles, ISettings } from '../../../types/IState';
 import { SortDirection } from '../../../types/SortDirection';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 
@@ -7,7 +10,8 @@ import { IAttributeState } from '../types/IAttributeState';
 import { IMod } from '../types/IMod';
 import { IModAttribute } from '../types/IModAttribute';
 import { IStateMods } from '../types/IStateMods';
-import { IStateSettings } from '../types/IStateSettings';
+import { IStateModSettings } from '../types/IStateSettings';
+import getAttr from '../util/getAttr';
 
 import AttributeToggle from './AttributeToggle';
 import HeaderCell from './HeaderCell';
@@ -18,32 +22,28 @@ import * as React from 'react';
 import { Jumbotron, Table } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
+import { log } from '../../../util/log';
+
 interface IProps {
   objects: IModAttribute[];
 }
 
 interface IAttributeStateMap {
-  [ id: string ]: IAttributeState;
+  [ attributeId: string ]: IAttributeState;
 }
 
 interface IConnectedProps {
-  mods: { [id: string]: IMod };
+  mods: { [modId: string]: IMod };
+  modState: { [modId: string]: IProfileMod };
   modlistState: IAttributeStateMap;
   gameMode: string;
   language: string;
 }
 
 interface IActionProps {
-  onSetAttributeVisible: (id: string, visible: boolean) => void;
-  onSetAttributeSort: (id: string, dir: SortDirection) => void;
-}
-
-function getAttr<T>(state: IAttributeState, key: string, def: T): T {
-  if (state === undefined) {
-    return def;
-  }
-
-  return state[key] !== undefined ? state[key] : def;
+  onSetAttributeVisible: (attributeId: string, visible: boolean) => void;
+  onSetAttributeSort: (attributeId: string, dir: SortDirection) => void;
+  onSetModEnabled: (modId: string, enabled: boolean) => void;
 }
 
 /**
@@ -127,9 +127,9 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
     });
   }
 
-  private renderAttributeToggle = (attr) => {
+  private renderAttributeToggle = (attr: IModAttribute) => {
     const { t, modlistState, onSetAttributeVisible } = this.props;
-    return (
+    return !attr.isToggleable ? null : (
       <AttributeToggle
         key={attr.id}
         attribute={attr}
@@ -141,11 +141,14 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
   };
 
   private renderModRow(mod: IMod, visibleAttributes: IModAttribute[]): JSX.Element {
+    let { modState, onSetModEnabled } = this.props;
     return (
       <ModRow
         key={ mod.id }
         mod={ mod }
+        modState={ modState[mod.id] }
         attributes={ visibleAttributes }
+        onSetModEnabled={ onSetModEnabled }
       />
     );
   }
@@ -155,6 +158,8 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
     return attributes.filter((attribute: IModAttribute) => {
       if (attribute.isDetail) {
         return false;
+      } else if (!attributeStates.hasOwnProperty(attribute.id)) {
+        return true;
       } else {
         return getAttr(attributeStates[attribute.id], 'enabled', true);
       }
@@ -194,18 +199,26 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
 }
 
 interface IState {
- settings: { base: ISettings,
-             interface: {
-               language: string
-             }
-           };
- gameSettings: { mods: IStateSettings };
- mods: IStateMods;
+  settings: {
+    base: ISettings,
+    interface: {
+      language: string
+    }
+  };
+  gameSettings: {
+    mods: IStateModSettings,
+    profiles: IGameSettingsProfiles,
+  };
+  mods: IStateMods;
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
+  const activeProfile =
+    state.gameSettings.profiles.profiles[state.gameSettings.profiles.currentProfile];
+
   return {
     mods: state.mods.mods,
+    modState: activeProfile.modState,
     modlistState: state.gameSettings.mods.modlistState,
     gameMode: state.settings.base.gameMode,
     language: state.settings.interface.language,
@@ -214,11 +227,14 @@ function mapStateToProps(state: IState): IConnectedProps {
 
 function mapDispatchToProps(dispatch): IActionProps {
   return {
-    onSetAttributeVisible: (id: string, visible: boolean) => {
-      dispatch(setModlistAttributeVisible(id, visible));
+    onSetAttributeVisible: (attributeId: string, visible: boolean) => {
+      dispatch(setModlistAttributeVisible(attributeId, visible));
     },
-    onSetAttributeSort: (id: string, dir: SortDirection) => {
-      dispatch(setModlistAttributeSort(id, dir));
+    onSetAttributeSort: (attributeId: string, dir: SortDirection) => {
+      dispatch(setModlistAttributeSort(attributeId, dir));
+    },
+    onSetModEnabled: (modId: string, enabled: boolean) => {
+      dispatch(setModEnabled(modId, enabled));
     },
   };
 }

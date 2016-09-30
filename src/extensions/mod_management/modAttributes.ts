@@ -6,8 +6,9 @@ export const MOD_NAME: IModAttribute = {
   description: 'Name of the mod',
   icon: 'quote-left',
   isDetail: false,
+  isToggleable: false,
   sortFunc: (lhs: string, rhs: string, locale: string): number => {
-    return lhs.localeCompare(rhs, locale, { sensitivity: 'case' });
+    return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
   } 
 };
 
@@ -17,4 +18,5 @@ export const INSTALL_TIME: IModAttribute = {
   description: 'Time when this mod was installed',
   icon: 'calendar-plus-o',
   isDetail: false,
+  isToggleable: true,
 };
