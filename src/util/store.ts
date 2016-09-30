@@ -17,8 +17,6 @@ const logMiddleware = store => next => action => {
 
   let res = next(action);
 
-  log('debug', 'after', { state: JSON.stringify(res) });
-
   return res;
 };
 

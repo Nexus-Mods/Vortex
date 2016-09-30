@@ -3,8 +3,6 @@ import { IGame } from '../../types/IGame';
 import * as Promise from 'bluebird';
 import Registry = require('winreg');
 
-import { log } from '../../util/log';
-
 function findGame() {
   if (Registry === undefined) {
     // linux ? macos ?
@@ -19,8 +17,7 @@ function findGame() {
   return new Promise<string>((resolve, reject) => {
     regKey.get('Install Dir', (err: Error, result: Registry.RegistryItem) => {
       if (err !== null) {
-        log('info', 'failed to find', err.message);
-        reject(err.message);
+        reject(new Error(err.message));
       } else {
         resolve(result.value);
       }

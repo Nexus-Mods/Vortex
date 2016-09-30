@@ -201,7 +201,13 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
 
   private renderPageButton = (page: IMainPage) => {
     return (
-      <NavItem id={page.title} key={page.title} eventKey={page.title} tooltip={page.title}>
+      <NavItem
+        id={page.title}
+        key={page.title}
+        eventKey={page.title}
+        tooltip={page.title}
+        placement='right'
+      >
         <Icon name={page.icon} />
       </NavItem>
     );
