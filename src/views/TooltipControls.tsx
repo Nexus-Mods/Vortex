@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Button as BootstrapButton, OverlayTrigger, Popover } from 'react-bootstrap';
+import { Button as BootstrapButton, NavItem as BootstrapNavItem,
+         OverlayTrigger, Popover } from 'react-bootstrap';
 import Fontawesome = require('react-fontawesome');
 
 interface ITooltipProps {
@@ -32,6 +33,28 @@ export class Button extends React.Component<IButtonProps, {}> {
         delayHide={150}
       >
         <BootstrapButton {...relayProps}>{this.props.children}</BootstrapButton>
+      </OverlayTrigger>
+    );
+  }
+}
+
+type INavItemProps = ITooltipProps & ReactBootstrap.NavItemProps;
+
+export class NavItem extends React.Component<INavItemProps, {}> {
+  public render(): JSX.Element {
+    let tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
+    let relayProps = Object.assign({}, this.props);
+    delete relayProps.tooltip;
+    delete relayProps.placement;
+
+    return (
+      <OverlayTrigger
+        overlay={tooltip}
+        placement={this.props.placement || 'bottom'}
+        delayShow={300}
+        delayHide={150}
+      >
+        <BootstrapNavItem {...relayProps}>{this.props.children}</BootstrapNavItem>
       </OverlayTrigger>
     );
   }

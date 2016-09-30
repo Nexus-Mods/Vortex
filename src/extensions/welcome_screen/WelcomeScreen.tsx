@@ -16,7 +16,7 @@ class WelcomeScreen extends React.Component<IConnectedProps, {}> {
   public render(): JSX.Element {
     let { gameMode } = this.props;
     return (
-      <Jumbotron className='full-height'>
+      <Jumbotron>
         Welcome to Nexus Mod Manager 2!
         { gameMode === undefined ? <div>No game selected</div> : this.renderGameMode() }
       </Jumbotron>

@@ -9,10 +9,10 @@ import IconBar from './IconBar';
 import LoginForm from './LoginForm';
 import Notifications from './Notifications';
 import Settings from './Settings';
-import { Button } from './TooltipControls';
+import { Button, NavItem } from './TooltipControls';
 
 import * as React from 'react';
-import { Alert, Modal, Nav, NavItem, Well } from 'react-bootstrap';
+import { Alert, Modal, Nav, Well } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import update = require('react-addons-update');
@@ -117,7 +117,7 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
 
     return (
       <Flex>
-        <Layout type='row'>
+        <Layout type='row' style={{ height: '100%', overflowY: 'auto' }}>
           <Fixed>
             <Nav
               bsStyle='pills'
@@ -201,7 +201,7 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
 
   private renderPageButton = (page: IMainPage) => {
     return (
-      <NavItem key={page.title} eventKey={page.title}>
+      <NavItem id={page.title} key={page.title} eventKey={page.title} tooltip={page.title}>
         <Icon name={page.icon} />
       </NavItem>
     );
