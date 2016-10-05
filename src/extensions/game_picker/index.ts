@@ -1,4 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+
 import GamePicker from './GamePicker';
 
 function init(context: IExtensionContext): boolean {

@@ -37,17 +37,28 @@ if (remote !== undefined) {
 class ExtensionManager {
   private mExtensions: IExtensionInit[];
   private mApi: IExtensionApi;
+  private mEventEmitter: NodeJS.EventEmitter;
 
-  constructor() {
+  constructor(eventEmitter?: NodeJS.EventEmitter) {
+    this.mEventEmitter = eventEmitter;
     this.mExtensions = this.loadExtensions();
     this.mApi = {
       showErrorNotification: (message: string, details: string) => {
         dialog.showErrorBox(message, details);
       },
       selectFile: this.selectFile,
+      events: this.mEventEmitter,
     };
   }
 
+  /**
+   * sets up the extension manager to work with the specified store
+   * 
+   * @template S State interface
+   * @param {Redux.Store<S>} store
+   * 
+   * @memberOf ExtensionManager
+   */
   public setStore<S>(store: Redux.Store<S>) {
     this.mApi.sendNotification = (notification: INotification) => {
       store.dispatch(addNotification(notification));
@@ -59,6 +70,10 @@ class ExtensionManager {
       store.dispatch(dismissNotification(id));
     };
     this.mApi.store = store;
+  }
+
+  public getApi() {
+    return this.mApi;
   }
 
   /**

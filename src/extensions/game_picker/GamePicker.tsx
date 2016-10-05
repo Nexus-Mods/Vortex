@@ -1,37 +1,102 @@
 import { setGameMode } from '../../actions/settings';
+import { IComponentContext } from '../../types/IComponentContext';
 import { IGame } from '../../types/IGame';
-import { IDiscoveryResult, IState } from '../../types/IState';
+import { IDiscoveryResult, IDiscoveryState, IState } from '../../types/IState';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 
 import GameThumbnail from './GameThumbnail';
 
 import * as React from 'react';
+import { Button, ProgressBar } from 'react-bootstrap';
+import { Fixed, Flex, Layout } from 'react-layout-pane';
+
+import { log } from '../../util/log';
+
+import Icon = require('react-fontawesome');
+import update = require('react-addons-update');
 
 interface IConnectedProps {
   discoveredGames: { [id: string]: IDiscoveryResult };
   knownGames: IGame[];
   gameMode: string;
+  discovery: IDiscoveryState;
 }
 
 interface IActionProps {
   onManage: (gameId: string) => void;
 }
 
+/**
+ * picker/configuration for game modes 
+ * 
+ * @class GamePicker
+ */
 class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
+
+  public static contextTypes: React.ValidationMap<any> = {
+    api: React.PropTypes.object.isRequired,
+  };
+
+  public context: IComponentContext;
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      discovery: {
+        percent: 0,
+        label: '',
+      },
+    };
+  }
+
   public render(): JSX.Element {
     let { t } = this.props;
+    const { discovery } = this.props;
     return (
-      <div>
-        <span style={{ display: 'table' }}>
-          <h3>{ t('Discovered') }</h3>
-          { this.renderGames(true) }
-        </span>
-        <span style={{ display: 'table' }}>
-          <h3>{ t('Not discovered') }</h3>
-          { this.renderGames(false) }
-        </span>
-      </div>
+      <Layout type='column'>
+        <Flex style={{ height: '100%', overflowY: 'auto' }}>
+          <span style={{ display: 'table' }}>
+            <h3>{ t('Discovered') }</h3>
+            { this.renderGames(true) }
+          </span>
+          <span style={{ display: 'table' }}>
+            <h3>{ t('Not discovered') }</h3>
+            { this.renderGames(false) }
+          </span>
+        </Flex>
+        <Fixed style={{ height: '40px' }} >
+          <Layout type='row'>
+            <Flex>
+              <ProgressBar
+                active
+                min={ 0 }
+                max={ 100 }
+                now={ discovery.progress }
+                label={ `${discovery.directory}` }
+              />
+            </Flex>
+            <Fixed>
+              <Button onClick={ this.startDiscovery } disabled={ discovery.running } >
+                <Icon name='search' />
+              </Button>
+            </Fixed>
+          </Layout>
+        </Fixed>
+      </Layout>
     );
+  }
+
+  private startDiscovery = () => {
+    this.context.api.events.emit('start-discovery', (percent: number, label: string) => {
+      log('info', 'progress', { percent, label });
+      this.setState(update(this.state, {
+        discovery: {
+          percent: { $set: percent },
+          label: { $set: label },
+        },
+      }));
+    });
   }
 
   private renderGames = (discovered: boolean) => {
@@ -59,6 +124,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode: state.settings.base.gameMode,
     discoveredGames: state.settings.base.discoveredGames,
     knownGames: state.session.base.knownGames,
+    discovery: state.session.discovery,
   };
 }
 

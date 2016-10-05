@@ -1,3 +1,4 @@
+import { discoveryFinished, discoveryProgress } from '../actions/discovery';
 import { setCurrentProfile } from '../actions/profiles';
 import { setKnownGames } from '../actions/session';
 import { addDiscoveredGame, setGameMode } from '../actions/settings';
@@ -10,13 +11,118 @@ import StorageLogger from '../util/StorageLogger';
 import { terminate } from './errorHandling';
 
 import * as Promise from 'bluebird';
-import { app } from 'electron';
+import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import { Persistor, createPersistor, getStoredState } from 'redux-persist';
 import { AsyncNodeStorage } from 'redux-persist-node-storage';
 
 const getStoredStateP = Promise.promisify(getStoredState);
+
+type EmptyCB = () => void;
+
+class Progress {
+
+  private mMagnitude: number;
+  private mStepCount: number;
+  private mStepsCompleted: number;
+  private mBaseValue: number;
+  private mCallback: (percent: number, label: string) => void;
+
+  constructor(baseValue: number, magnitude: number,
+              callback: (percent: number, label: string) => void) {
+    this.mMagnitude = magnitude;
+    this.mBaseValue = baseValue;
+    this.mCallback = callback;
+    this.mStepsCompleted = 0;
+  }
+
+  public setStepCount(count: number) {
+    this.mStepCount = count;
+  }
+
+  public completed(label: string) {
+    if (this.mMagnitude > 0.5) {
+      this.mStepsCompleted += 1;
+      this.mCallback(this.currentProgress(), label);
+    }
+  }
+
+  public derive() {
+    return this.mMagnitude > 0.5
+      ? new Progress(this.mBaseValue + this.currentProgress(),
+                     this.mMagnitude / this.mStepCount, this.mCallback)
+      : undefined;
+  }
+
+  private currentProgress() {
+    return this.mBaseValue + (this.mMagnitude * this.mStepsCompleted) / this.mStepCount;
+  }
+}
+
+function walk(searchPath: string,
+              matchList: Set<string>,
+              blackList: Set<string>,
+              resultCB: (path: string) => void,
+              progress: Progress) {
+  if (blackList.has(searchPath)) {
+    return null;
+  }
+
+  let statPaths: string[] = [];
+
+  return fs.readdirAsync(searchPath)
+    .then((fileNames: string[]) => {
+      for (let fileName of fileNames) {
+        const filePath = path.join(searchPath, fileName);
+        if (matchList.has(fileName)) {
+          // notify that a searched file was found. If the CB says so
+          // we stop looking at this directory
+          resultCB(filePath);
+        } else {
+          statPaths.push(filePath);
+        }
+      }
+
+      return Promise.mapSeries(statPaths, (statPath: string) => {
+        return fs.statAsync(statPath).reflect();
+      });
+    }).then((res: Promise.Inspection<fs.Stats>[]) => {
+      // use the stats results to generate a list of paths of the directories
+      // in the searched directory
+      let dirPaths: string[] = res.reduce(
+        (prev, cur: Promise.Inspection<fs.Stats>, idx: number) => {
+          if (cur.isFulfilled() && cur.value().isDirectory()) {
+            return prev.concat(idx);
+          } else if (!cur.isFulfilled()) {
+            if (cur.reason().code !== 'EPERM') {
+              log('warn', 'stat failed', { error: cur.reason() });
+            } else {
+              log('debug', 'failed to access', { error: cur.reason() });
+            }
+          }
+          return prev;
+        }, []);
+      if (progress !== undefined) {
+        // count number of directories to be used as the step counter in the progress bar
+        progress.setStepCount(dirPaths.length);
+      }
+      // allow the gc to drop the stats results
+      res = [];
+      if (dirPaths === undefined) {
+        return undefined;
+      }
+      return Promise.mapSeries(dirPaths, (idx) => {
+        let subProgess = progress !== undefined ? progress.derive() : undefined;
+        if (progress !== undefined) {
+          progress.completed(statPaths[idx]);
+        }
+        return walk(statPaths[idx], matchList, blackList, resultCB, subProgess);
+      });
+    }).catch((err) => {
+      log('warn', 'walk failed', { msg: err.message });
+    });
+}
 
 /**
  * discovers game modes
@@ -53,7 +159,7 @@ class GameModeManager {
 
     let gamesPath: string = path.resolve(__dirname, '..', 'games');
     let games: IGame[] = this.loadDynamicGames(gamesPath);
-    gamesPath = path.join(app.getPath('userData'), 'games');
+    gamesPath = path.join(remote.app.getPath('userData'), 'games');
     this.mKnownGames = games.concat(this.loadDynamicGames(gamesPath));
 
     this.mStore = store;
@@ -86,6 +192,9 @@ class GameModeManager {
    */
   public startQuickDiscovery() {
     for (let game of this.mKnownGames) {
+      if (game.queryGamePath === undefined) {
+        continue;
+      }
       try {
         let gamePath = game.queryGamePath();
         if (typeof (gamePath) === 'string') {
@@ -99,6 +208,7 @@ class GameModeManager {
           (gamePath as Promise<string>).then((resolvedPath) => {
             log('info', 'found game', { name: game.name, location: resolvedPath });
             this.mStore.dispatch(addDiscoveredGame(game.id, { path: resolvedPath }));
+            return null;
           }).catch((err) => {
             log('debug', 'game not found', { id: game.id, err });
           });
@@ -107,6 +217,64 @@ class GameModeManager {
         log('warn', 'failed to use game support plugin', { id: game.id, err: err.message });
       }
     }
+  }
+
+  /**
+   * start game discovery using known files
+   * 
+   * 
+   * @memberOf GameModeManager
+   */
+  public startSearchDiscovery(progress: (percent: number, label: string) => void): void {
+    type FileEntry = {fileName: string, game: IGame};
+
+    let files: FileEntry[] = [];
+    let games: { [gameId: string]: string[] } = {};
+
+    this.mKnownGames.forEach((value: IGame) => {
+      if (!(value.id in this.mStore.getState().settings.base.discoveredGames)) {
+        games[value.id] = value.requiredFiles;
+        for (let required of value.requiredFiles) {
+          files.push({ fileName: required, game: value });
+        }
+      }
+    }, []);
+
+    // retrieve only the basenames of required files because the walk only ever looks
+    // at the last path component of a file
+    const matchList: Set<string> = new Set(files.map((entry: FileEntry) => {
+      return path.basename(entry.fileName);
+    }));
+
+    let progressObj = new Progress(0, 100, (percent: number, label: string) => {
+      this.mStore.dispatch(discoveryProgress(percent, label));
+    });
+
+    walk('c:', matchList, new Set<string>(), (foundPath: string) => {
+      let matches: FileEntry[] = files.filter((entry: FileEntry) => {
+        return foundPath.endsWith(entry.fileName);
+      });
+
+      for (let match of matches) {
+        let testPath: string = foundPath.substring(0, foundPath.length - match.fileName.length);
+        let game: IGame = match.game;
+        this.testGameDirValid(game, testPath);
+      }
+      return false;
+    }, progressObj).then(() => {
+      this.mStore.dispatch(discoveryFinished());
+    });
+  }
+
+  private testGameDirValid(game: IGame, testPath: string): void {
+    Promise.map(game.requiredFiles, (fileName: string) => {
+      return fs.statAsync(path.join(testPath, fileName));
+    }).then(() => {
+      log('info', 'valid', { game: game.id, path: testPath });
+      this.mStore.dispatch(addDiscoveredGame(game.id, { path: testPath }));
+    }).catch(() => {
+      log('info', 'invalid', { game: game.id, path: testPath });
+    });
   }
 
   private checkProfile(store: Redux.Store<IState>) {
@@ -151,16 +319,14 @@ class GameModeManager {
 
   private activateGameMode(mode: string, store: Redux.Store<IState>): Promise<Persistor> {
     if (mode === undefined) {
-      return;
+      return null;
     }
 
     const statePath: string = path.join(this.mBasePath, mode, 'state');
 
     let settings = undefined;
 
-    return new Promise<Persistor>((resolve, reject) => {
-      // step 1: ensure the state dir for this game exists
-      fs.ensureDirAsync(statePath)
+    return fs.ensureDirAsync(statePath)
       .then(() => {
         // step 2: retrieve stored state
         settings = {
@@ -172,11 +338,8 @@ class GameModeManager {
       }).then((state) => {
         // step 3: update game-specific settings, then return the persistor
         store.dispatch({ type: 'persist/REHYDRATE', payload: state });
-        resolve(createPersistor(store, settings));
-      }).catch((err) => {
-        reject(err);
+        return createPersistor(store, settings);
       });
-    });
   }
 
   private loadDynamicGame(extensionPath: string): IGame {

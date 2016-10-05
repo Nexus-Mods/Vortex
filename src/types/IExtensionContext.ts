@@ -71,6 +71,13 @@ export interface IExtensionApi {
    * @memberOf IExtensionApi
    */
   store?: Redux.Store<any>;
+
+  /**
+   * event emitter
+   * 
+   * @memberOf IExtensionApi
+   */
+  events: NodeJS.EventEmitter;
 }
 
 /**

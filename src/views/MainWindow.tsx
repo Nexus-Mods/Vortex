@@ -1,3 +1,5 @@
+import { IComponentContext } from '../types/IComponentContext';
+import { IExtensionApi } from '../types/IExtensionContext';
 import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
 import { IState } from '../types/IState';
@@ -20,6 +22,10 @@ import Icon = require('react-fontawesome');
 
 interface IBaseProps {
   className: string;
+  api: IExtensionApi;
+}
+
+interface IExtendedProps {
   objects: IMainPage[];
 }
 
@@ -36,9 +42,13 @@ interface IActionProps {
     onSetAPIKey: (APIKey: string) => void;
 }
 
-type IProps = IBaseProps & IConnectedProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps;
 
 class MainWindow extends ComponentEx<IProps, IMainWindowState> {
+  // tslint:disable-next-line:no-unused-variable
+  public static childContextTypes: React.ValidationMap<any> = {
+    api: React.PropTypes.object.isRequired,
+  };
 
   private buttonsLeft: IIconDefinition[];
   private buttonsRight: IIconDefinition[];
@@ -71,6 +81,11 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
         }
       );
     }
+  }
+
+  public getChildContext(): IComponentContext {
+    const { api } = this.props;
+    return { api };
   }
 
   public componentWillMount() {
@@ -117,7 +132,7 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
 
     return (
       <Flex>
-        <Layout type='row' style={{ height: '100%', overflowY: 'auto' }}>
+        <Layout type='row'>
           <Fixed>
             <Nav
               bsStyle='pills'
@@ -271,4 +286,4 @@ export default
     extend(registerMainPage)(
       connect(mapStateToProps)(MainWindow)
     )
-  );
+  ) as React.ComponentClass<IBaseProps>;

@@ -8,11 +8,14 @@ import reducer from './reducers/index';
 import { ITermination, terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
+import GameModeManager from './util/GameModeManager';
 import getI18n from './util/i18n';
 import { log } from './util/log';
 import { showError } from './util/message';
 import MainWindow from './views/MainWindow';
 
+import { remote } from 'electron';
+import { EventEmitter } from 'events';
 import { changeLanguage } from 'i18next';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -50,15 +53,20 @@ if (process.env.NODE_ENV === 'development') {
   );
 }
 
-const extensions: ExtensionManager = new ExtensionManager();
+const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
+
+const extensions: ExtensionManager = new ExtensionManager(eventEmitter);
 
 let extReducers = extensions.getReducers();
 
 const store: Store<any> = createStore(reducer(extReducers), enhancer);
-
 extensions.setStore(store);
-
 extensions.doOnce();
+
+const gameModeManager: GameModeManager = new GameModeManager(remote.app.getPath('userData'));
+gameModeManager.attachToStore(store);
+gameModeManager.startQuickDiscovery();
+eventEmitter.on('start-discovery', (progress) => gameModeManager.startSearchDiscovery(progress));
 
 let currentLanguage: string = store.getState().settings.interface.language;
 store.subscribe(() => {
@@ -101,7 +109,7 @@ ReactDOM.render(
   <Provider store={store}>
     <I18nextProvider i18n={i18n}>
       <ExtensionProvider extensions={extensions}>
-        <MainWindow className='full-height'/>
+        <MainWindow className='full-height' api={extensions.getApi()} />
       </ExtensionProvider>
     </I18nextProvider>
   </Provider>,

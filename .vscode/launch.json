@@ -15,7 +15,8 @@
                 "."
             ],
             "env": {
-                "NODE_ENV": "development"
+                "NODE_ENV": "development",
+                "BLUEBIRD_DEBUG": "0"
             },
             "console": "internalConsole",
             "sourceMaps": true,

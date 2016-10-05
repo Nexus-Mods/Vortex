@@ -79,6 +79,18 @@ export interface ISession {
 }
 
 /**
+ * state of the (lengthy) gamemode discovery
+ * 
+ * @export
+ * @interface IDiscoveryState
+ */
+export interface IDiscoveryState {
+  running: boolean;
+  progress: number;
+  directory: string;
+}
+
+/**
  * game-specific game
  * 
  * @export
@@ -100,7 +112,10 @@ export interface IState {
   account: { base: IAccount };
   window: { base: IWindow };
   notifications: INotificationState;
-  session: { base: ISession };
+  session: {
+    base: ISession,
+    discovery: IDiscoveryState,
+  };
   settings: { base: ISettings };
   gameSettings: {
     profiles: IGameSettingsProfiles,

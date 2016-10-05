@@ -13,9 +13,12 @@ export interface IGame {
    * will query the path from the registry or from steam.
    * This function may return a promise and should if it's doing I/O
    * 
+   * This may be left undefined but then the game can only be discovered
+   * by searching for files.
+   * 
    * @memberOf IGame
    */
-  queryGamePath: () => string | Promise<string>;
+  queryGamePath?: () => string | Promise<string>;
 
   /**
    * internal name of the game
@@ -56,4 +59,25 @@ export interface IGame {
    */
   pluginPath?: string;
 
+  /**
+   * list of files that have to exist in the game directory of this game.
+   * This is used by the game discovery to identify the game. NMM will only accept
+   * a directory as the game directory if all these files exist.
+   * Please make sure the files listed here uniquely identify the game, something
+   * like 'rpg_rt.exe' would not suffice (rpg_rt.exe is the binary name of a game
+   * engine and appears in many games).
+   * 
+   * Please specify as few files as possible, the more files specified here the slower
+   * the discovery will be.
+   * 
+   * Each file can be specified as a relative path (i.e. binaries/UT3.exe), the path
+   * is then assumed to be relative to the base directory of the game. It's important
+   * this is the case so that NMM can correctly identify the base directory of a game.
+   * 
+   * You can actually use a directory name for this as well.
+   * 
+   * @type {string[]}
+   * @memberOf IGame
+   */
+  requiredFiles: string[];
 }
