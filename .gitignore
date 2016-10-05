@@ -4,3 +4,16 @@ dist
 out
 doc
 .vscode/.BROWSE.VC.DB*
+
+# User-specific files
+*.suo
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
