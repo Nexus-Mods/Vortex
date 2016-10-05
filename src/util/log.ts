@@ -2,6 +2,9 @@
  * wrapper for logging functionality
  */
 
+/** dummy */
+import * as path from 'path';
+
 let logger = null;
 
 // magic: when we're in the main process, this uses the logger from winston
@@ -18,6 +21,27 @@ if (process.type === 'renderer') {
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+/**
+ * application specific logging setup
+ * 
+ * @export
+ */
+export function setupLogging(basePath: string, useConsole: boolean): void {
+  logger.add(logger.transports.File, {
+    filename: path.join(basePath, 'nmm2.log'),
+    json: false,
+    level: 'debug',
+    maxsize: 1024 * 1024,
+    maxFiles: 5,
+    tailable: true,
+    timestamp: () => new Date().toUTCString(),
+  });
+
+  if (useConsole) {
+    logger.remove(logger.transports.Console);
+  }
+}
 
 /**
  * log a message

@@ -249,7 +249,7 @@ function mapStateToProps(state: IStateEx): IConnectedProps {
   return {
     currentProfile: state.gameSettings.profiles.currentProfile,
     profiles: state.gameSettings.profiles.profiles,
-    language: state.settings.interface.language
+    language: state.settings.interface.language,
   };
 }
 

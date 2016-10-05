@@ -6,16 +6,13 @@ import 'source-map-support/register';
 
 import { setMaximized, setWindowPosition, setWindowSize } from './actions/window';
 import { IState, IWindow } from './types/IState';
+import { installDevelExtensions } from './util/devel';
 import ExtensionManager from './util/ExtensionManager';
-import GameModeManager from './util/GameModeManager';
-import { log } from  './util/log';
+import { log, setupLogging } from  './util/log';
 import { setupStore } from './util/store';
 
-import * as Promise from 'bluebird';
 import { BrowserWindow, app } from 'electron';
 import * as fs from 'fs-extra-promise';
-import * as path from 'path';
-import * as winston from 'winston';
 
 import doRestart = require('electron-squirrel-startup');
 
@@ -23,61 +20,18 @@ if (doRestart) {
   app.quit();
 }
 
-// install developer tool extensions
+installDevelExtensions();
 
-const installExtensions: Function = () => {
-  return new Promise((resolved, reject) => {
-    if (process.env.NODE_ENV === 'development') {
-      const installExtension = require('electron-devtools-installer');
-      const { REACT_DEVELOPER_TOOLS, REACT_PERF } = require('electron-devtools-installer');
-
-      try {
-        installExtension.default(REACT_DEVELOPER_TOOLS)
-          .then((name) => log('info', 'Added Extension', name))
-          .catch((err) => log('error', 'An error occurred: ', { error: err }));
-
-        installExtension.default(REACT_PERF)
-          .then((name) => log('info', 'Added Extension', name))
-          .catch((err) => log('error', 'An error occurred: ', { error: err }));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    resolved();
-  });
-};
-
+// determine where to store settings
 let basePath: string = app.getPath('userData');
-
 fs.ensureDirSync(basePath);
-
 log('info', `using ${basePath} as the storage directory`);
 
-// set up logging
-
-winston.add(winston.transports.File, {
-  filename: path.join(basePath, 'nmm2.log'),
-  json: false,
-  level: 'debug',
-  maxsize: 1024 * 1024,
-  maxFiles: 5,
-  tailable: true,
-  timestamp: () => new Date().toUTCString(),
-});
-
-if (process.env.NODE_ENV !== 'development') {
-  winston.remove(winston.transports.Console);
-}
-
 // set up some "global" components
+setupLogging(basePath, process.env.NODE_ENV === 'development');
+
 const extensions: ExtensionManager = new ExtensionManager();
 const store: Redux.Store<IState> = setupStore(basePath, extensions);
-
-const gameModeManager: GameModeManager = new GameModeManager(basePath);
-gameModeManager.attachToStore(store);
-gameModeManager.startQuickDiscovery();
-
-extensions.setStore(store);
 
 // main window setup
 
@@ -148,7 +102,7 @@ if (shouldQuit) {
 }
 
 app.on('ready', () => {
-  installExtensions().then(createWindow);
+  installDevelExtensions().then(createWindow);
 });
 
 app.on('window-all-closed', () => {
