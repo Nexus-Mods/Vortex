@@ -30,6 +30,9 @@ const game: IGame = {
   name: 'Skyrim',
   queryGamePath: findGame,
   logo: 'logo.png',
+  requiredFiles: [
+    'TESV.exe',
+  ],
 };
 
 export default game;

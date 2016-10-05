@@ -30,6 +30,9 @@ const game: IGame = {
   name: 'The Sims 4',
   queryGamePath: findGame,
   logo: 'logo.png',
+  requiredFiles: [
+    'game/bin/TS4.exe',
+  ],
 };
 
 export default game;
