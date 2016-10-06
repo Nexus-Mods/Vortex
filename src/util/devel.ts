@@ -11,11 +11,11 @@ export function installDevelExtensions() {
       try {
         installExtension.default(REACT_DEVELOPER_TOOLS)
           .then((name) => log('info', 'Added Extension', name))
-          .catch((err) => log('error', 'An error occurred: ', { error: err }));
+          .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
 
         installExtension.default(REACT_PERF)
           .then((name) => log('info', 'Added Extension', name))
-          .catch((err) => log('error', 'An error occurred: ', { error: err }));
+          .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
       } catch (e) {
         console.error(e);
       }

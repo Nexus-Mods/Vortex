@@ -1,14 +1,13 @@
-import { discoveryFinished, discoveryProgress } from '../actions/discovery';
-import { setCurrentProfile } from '../actions/profiles';
-import { setKnownGames } from '../actions/session';
-import { addDiscoveredGame, setGameMode } from '../actions/settings';
-import { IGame } from '../types/IGame';
-import { IState } from '../types/IState';
-import { log } from '../util/log';
-import { showError } from '../util/message';
-import StorageLogger from '../util/StorageLogger';
+import { IGame } from '../../types/IGame';
+import { terminate } from '../../util/errorHandling';
+import { log } from '../../util/log';
+import { showError } from '../../util/message';
+import StorageLogger from '../../util/StorageLogger';
 
-import { terminate } from './errorHandling';
+import { discoveryFinished, discoveryProgress } from './actions/discovery';
+import { setKnownGames } from './actions/session';
+import { addDiscoveredGame, setGameMode } from './actions/settings';
+import { IGameStored, IStateEx } from './types/IStateEx';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
@@ -21,6 +20,11 @@ const getStoredStateP = Promise.promisify(getStoredState);
 
 type EmptyCB = () => void;
 
+/**
+ * tracks progress for directory iteration
+ * 
+ * @class Progress
+ */
 class Progress {
 
   private mMagnitude: number;
@@ -50,7 +54,7 @@ class Progress {
 
   public derive() {
     return this.mMagnitude > 0.5
-      ? new Progress(this.mBaseValue + this.currentProgress(),
+      ? new Progress(this.currentProgress(),
                      this.mMagnitude / this.mStepCount, this.mCallback)
       : undefined;
   }
@@ -76,6 +80,7 @@ function walk(searchPath: string,
       for (let fileName of fileNames) {
         const filePath = path.join(searchPath, fileName);
         if (matchList.has(fileName)) {
+          log('info', 'potential match', fileName);
           // notify that a searched file was found. If the CB says so
           // we stop looking at this directory
           resultCB(filePath);
@@ -135,7 +140,7 @@ class GameModeManager {
   private mBasePath: string;
   private mPersistor: Persistor;
   private mError: boolean;
-  private mStore: Redux.Store<IState>;
+  private mStore: Redux.Store<IStateEx>;
   private mKnownGames: IGame[];
 
   constructor(basePath: string) {
@@ -150,14 +155,12 @@ class GameModeManager {
   /**
    * attach this manager to the specified store
    * 
-   * @param {Redux.Store<IState>} store
+   * @param {Redux.Store<IStateEx>} store
    * 
    * @memberOf GameModeManager
    */
-  public attachToStore(store: Redux.Store<IState>) {
-    let lastMode: string = undefined;
-
-    let gamesPath: string = path.resolve(__dirname, '..', 'games');
+  public attachToStore(store: Redux.Store<IStateEx>) {
+    let gamesPath: string = path.resolve(__dirname, '..', '..', 'games');
     let games: IGame[] = this.loadDynamicGames(gamesPath);
     gamesPath = path.join(remote.app.getPath('userData'), 'games');
     this.mKnownGames = games.concat(this.loadDynamicGames(gamesPath));
@@ -168,20 +171,44 @@ class GameModeManager {
     //      are now no longer known
     // TODO verify that previously discovered games are still available in
     //      their existing location
-    let gamesStored: any[] = this.mKnownGames.map((game: IGame) => {
+    let gamesStored: IGameStored[] = this.mKnownGames.map((game: IGame) => {
       return {
         name: game.name,
         id: game.id,
         logo: game.logo,
         pluginPath: game.pluginPath,
+        requiredFiles: game.requiredFiles,
       };
     } );
     store.dispatch(setKnownGames(gamesStored));
+  }
 
-    this.mSubscription = store.subscribe(() => {
-      lastMode = this.testModeChange(lastMode, store);
-      this.checkProfile(store);
-    });
+  /**
+   * update the game mode being managed
+   * 
+   * @param {string} newMode
+   * 
+   * @memberOf GameModeManager
+   */
+  public setGameMode(oldMode: string, newMode: string) {
+    if (this.mPersistor !== null) {
+      // stop old persistor
+      this.mPersistor.stop();
+    }
+    this.activateGameMode(newMode, this.mStore)
+      .then((persistor) => {
+        this.mPersistor = persistor;
+        this.mError = false;
+      }).catch((err) => {
+        if (!this.mError) {
+          // first error, try reverting to the previous game mode
+          this.mError = true;
+          showError(this.mStore.dispatch, 'Failed to change game mode', err);
+          this.mStore.dispatch(setGameMode(oldMode));
+        } else {
+          terminate({ message: 'Failed to change game mode', details: err });
+        }
+      });
   }
 
   /**
@@ -222,7 +249,6 @@ class GameModeManager {
   /**
    * start game discovery using known files
    * 
-   * 
    * @memberOf GameModeManager
    */
   public startSearchDiscovery(progress: (percent: number, label: string) => void): void {
@@ -232,7 +258,7 @@ class GameModeManager {
     let games: { [gameId: string]: string[] } = {};
 
     this.mKnownGames.forEach((value: IGame) => {
-      if (!(value.id in this.mStore.getState().settings.base.discoveredGames)) {
+      if (!(value.id in this.mStore.getState().settings.gameMode.discovered)) {
         games[value.id] = value.requiredFiles;
         for (let required of value.requiredFiles) {
           files.push({ fileName: required, game: value });
@@ -246,24 +272,27 @@ class GameModeManager {
       return path.basename(entry.fileName);
     }));
 
-    let progressObj = new Progress(0, 100, (percent: number, label: string) => {
-      this.mStore.dispatch(discoveryProgress(percent, label));
-    });
+    Promise.each(this.mStore.getState().settings.gameMode.searchPaths,
+      (searchPath: string) => {
+        let progressObj: Progress = new Progress(0, 100, (percent: number, label: string) => {
+          this.mStore.dispatch(discoveryProgress(percent, label));
+        });
 
-    walk('c:', matchList, new Set<string>(), (foundPath: string) => {
-      let matches: FileEntry[] = files.filter((entry: FileEntry) => {
-        return foundPath.endsWith(entry.fileName);
+        return walk(searchPath, matchList, new Set<string>(), (foundPath: string) => {
+          let matches: FileEntry[] = files.filter((entry: FileEntry) => {
+            return foundPath.endsWith(entry.fileName);
+          });
+
+          for (let match of matches) {
+            let testPath: string = foundPath.substring(0, foundPath.length - match.fileName.length);
+            let game: IGame = match.game;
+            this.testGameDirValid(game, testPath);
+          }
+          return false;
+        }, progressObj).then(() => {
+          this.mStore.dispatch(discoveryFinished());
+        });
       });
-
-      for (let match of matches) {
-        let testPath: string = foundPath.substring(0, foundPath.length - match.fileName.length);
-        let game: IGame = match.game;
-        this.testGameDirValid(game, testPath);
-      }
-      return false;
-    }, progressObj).then(() => {
-      this.mStore.dispatch(discoveryFinished());
-    });
   }
 
   private testGameDirValid(game: IGame, testPath: string): void {
@@ -277,47 +306,7 @@ class GameModeManager {
     });
   }
 
-  private checkProfile(store: Redux.Store<IState>) {
-    if (store.getState().gameSettings.profiles.currentProfile === undefined) {
-      // no profile set, find a fallback if possible
-      if ('default' in store.getState().gameSettings.profiles) {
-        store.dispatch(setCurrentProfile('default'));
-      } else {
-        let profiles = Object.keys(store.getState().gameSettings.profiles);
-        if (profiles.length > 0) {
-          store.dispatch(setCurrentProfile(profiles[0]));
-        }
-      }
-    }
-  }
-
-  private testModeChange(lastMode: string, store: Redux.Store<IState>): string {
-    let currentMode: string = store.getState().settings.base.gameMode;
-
-    if (currentMode !== lastMode) {
-      if (this.mPersistor !== null) {
-        // stop old persistor
-        this.mPersistor.stop();
-      }
-      this.activateGameMode(currentMode, store)
-        .then((persistor) => {
-          this.mPersistor = persistor;
-          this.mError = false;
-        }).catch((err) => {
-          if (!this.mError) {
-            // first error, try reverting to the previous game mode
-            this.mError = true;
-            showError(store.dispatch, 'Failed to change game mode', err);
-            store.dispatch(setGameMode(lastMode));
-          } else {
-            terminate({ message: 'Failed to change game mode', details: err });
-          }
-        });
-    }
-    return currentMode;
-  }
-
-  private activateGameMode(mode: string, store: Redux.Store<IState>): Promise<Persistor> {
+  private activateGameMode(mode: string, store: Redux.Store<IStateEx>): Promise<Persistor> {
     if (mode === undefined) {
       return null;
     }

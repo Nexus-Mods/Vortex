@@ -1,8 +1,9 @@
-import { setGameMode } from '../../actions/settings';
-import { IComponentContext } from '../../types/IComponentContext';
-import { IGame } from '../../types/IGame';
-import { IDiscoveryResult, IDiscoveryState, IState } from '../../types/IState';
-import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { IComponentContext } from '../../../types/IComponentContext';
+import { IGame } from '../../../types/IGame';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+
+import { setGameMode } from '../actions/settings';
+import { IDiscoveryResult, IDiscoveryState, IGameStored, IStateEx } from '../types/IStateEx';
 
 import GameThumbnail from './GameThumbnail';
 
@@ -10,14 +11,14 @@ import * as React from 'react';
 import { Button, ProgressBar } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
-import { log } from '../../util/log';
+import { log } from '../../../util/log';
 
 import Icon = require('react-fontawesome');
 import update = require('react-addons-update');
 
 interface IConnectedProps {
   discoveredGames: { [id: string]: IDiscoveryResult };
-  knownGames: IGame[];
+  knownGames: IGameStored[];
   gameMode: string;
   discovery: IDiscoveryState;
 }
@@ -119,11 +120,11 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
+function mapStateToProps(state: IStateEx): IConnectedProps {
   return {
-    gameMode: state.settings.base.gameMode,
-    discoveredGames: state.settings.base.discoveredGames,
-    knownGames: state.session.base.knownGames,
+    gameMode: state.settings.gameMode.current,
+    discoveredGames: state.settings.gameMode.discovered,
+    knownGames: state.session.gameMode.known,
     discovery: state.session.discovery,
   };
 }

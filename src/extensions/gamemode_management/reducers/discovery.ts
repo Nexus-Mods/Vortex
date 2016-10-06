@@ -1,4 +1,4 @@
-import { IReducerSpec } from '../types/IExtensionContext';
+import { IReducerSpec } from '../../../types/IExtensionContext';
 
 import { discoveryFinished, discoveryProgress } from '../actions/discovery';
 

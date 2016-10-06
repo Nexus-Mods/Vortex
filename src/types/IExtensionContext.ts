@@ -25,6 +25,10 @@ export interface IOpenOptions {
   filters?: IFileFilter[];
 }
 
+export interface IStateChangeCallback {
+  (previous: any, current: any): void;
+}
+
 /**
  * interface for convenience functions made available to extensions 
  * 
@@ -65,6 +69,13 @@ export interface IExtensionApi {
   selectFile: (options: IOpenOptions) => Promise<string>;
 
   /**
+   * show a system dialog to open a single directory
+   * 
+   * @memberOf IExtensionApi
+   */
+  selectDir: (options: IOpenOptions) => Promise<string>;
+
+  /**
    * the redux store
    * 
    * @type {Redux.Store<any>}
@@ -75,9 +86,38 @@ export interface IExtensionApi {
   /**
    * event emitter
    * 
+   * @type {NodeJS.EventEmitter}
    * @memberOf IExtensionApi
    */
   events: NodeJS.EventEmitter;
+
+  /**
+   * retrieve path for a known directory location.
+   * 
+   * Note: This uses electrons ids for known folder locations.
+   * Please write your extensions to always use the appropriate
+   * folder location returned from this function, especially
+   * 'userData' should be used for all settings/state/temporary data
+   * if you don't want to/can't use the store.
+   * If NMM2 introduces a way for users to customise storage locations
+   * then getPath will return the customised path so you don't have to
+   * adjust your extension.
+   * 
+   * @type {Electron.AppPathName}
+   * @memberOf IExtensionApi
+   */
+  getPath: (name: Electron.AppPathName) => string;
+
+  /**
+   * register a callback for changes to the state
+   * 
+   * @param {string[]} path path in the state-tree to watch for changes,
+   *                   i.e. [ 'settings', 'interface', 'language' ] would call the callback
+   *                   for all changes to the interface language  
+   * 
+   * @memberOf IExtensionApi
+   */
+  onStateChange?: (path: string[], callback: IStateChangeCallback) => void;
 }
 
 /**

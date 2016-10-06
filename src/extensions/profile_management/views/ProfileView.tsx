@@ -1,15 +1,14 @@
-import { setCurrentProfile, setProfile } from '../../../actions/profiles';
-import { IProfile } from '../../../types/IProfile';
-import { ISettings, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { Button } from '../../../views/TooltipControls';
+
+import { setCurrentProfile, setProfile } from '../actions/profiles';
+import { IProfile } from '../types/IProfile';
+import { IStateEx } from '../types/IStateEx';
 
 import ProfileItem from './ProfileItem';
 
 import * as React from 'react';
 import { FormControl, ListGroup, ListGroupItem } from 'react-bootstrap';
-
-import { log } from '../../../util/log';
 
 import update = require('react-addons-update');
 import Icon = require('react-fontawesome');
@@ -48,7 +47,6 @@ interface IEditProps {
 class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
   constructor(props: IEditProps) {
     super(props);
-    log('info', 'edit profile', { profile: props.profile, key: props.profileId });
     this.state = props.profile !== undefined
       ? { edit: Object.assign({}, props.profile) }
       : { edit: {
@@ -56,7 +54,6 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           modState: {},
           name: '',
         } };
-    log('info', 'state', { state: this.state });
   }
 
   public render(): JSX.Element {
@@ -120,8 +117,6 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
           { sensitivity: 'base' });
     });
 
-    log('info', 'sorted by', { language, sortedProfiles });
-
     return (
       <ListGroup>
       { sortedProfiles.map(this.renderProfile) }
@@ -139,7 +134,6 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
 
     const { currentProfile, onSetCurrentProfile, profiles } = this.props;
 
-    log('info', 'render profile', { profileId, profile: profiles[profileId] });
     return (profileId === this.state.edit) ? null : (
       <ProfileItem
         key={ profileId }
@@ -158,7 +152,6 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
     if (edit !== '__new') {
       profile = profiles[edit];
     }
-    log('info', 'rep', edit);
     return (
       <ProfileEdit
         profileId ={ edit }
@@ -210,7 +203,6 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
 
   private saveEdit = (profile: IProfile) => {
     const { onAddProfile, profiles } = this.props;
-    log('info', 'save edit', { profile, key: this.state.edit });
     if (profile.id === '__new') {
       let newId: string = this.genProfileId(profile.name, profiles);
       let newProf: IProfile = update(profile, { id: { $set: newId } });
@@ -234,15 +226,10 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
   };
 
   private editExistingProfile = (profileId) => {
-    log('info', 'start edit', { profileId });
     this.setState(update(this.state, {
       edit: { $set: profileId },
     }));
   }
-}
-
-interface IStateEx extends IState {
-  settings: { base: ISettings, interface: { language: string } };
 }
 
 function mapStateToProps(state: IStateEx): IConnectedProps {

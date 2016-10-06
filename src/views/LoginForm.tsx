@@ -127,7 +127,7 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
         </FormGroup>
         <FormGroup
           controlId='formAPIKeyValidation'
-          validationState={validation.state}
+          validationState={validation.state as 'error' | 'success' | 'warning' }
           hidden={ propAPIKey !== '' }
         >
           <ControlLabel>{ validation.reason }</ControlLabel>
@@ -178,7 +178,7 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
     return { state: 'success' };
   }
 
-  private apiKeySubmit = (event: Event) => {
+  private apiKeySubmit = (event) => {
     event.preventDefault();
     this.authenticateAPIKey();
   }

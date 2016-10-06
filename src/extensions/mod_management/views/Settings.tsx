@@ -69,7 +69,7 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     paths: state.gameSettings.mods.paths,
-    gameMode: state.settings.base.gameMode,
+    gameMode: state.settings.gameMode.current,
   };
 }
 

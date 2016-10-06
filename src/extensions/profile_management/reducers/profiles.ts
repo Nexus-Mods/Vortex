@@ -1,9 +1,9 @@
+import { IReducerSpec } from '../../../types/IExtensionContext';
 import { setCurrentProfile, setModEnabled, setProfile } from '../actions/profiles';
-import { IReducerSpec } from '../types/IExtensionContext';
-import { IGameSettingsProfiles } from '../types/IState';
+import { IProfileSettings } from '../types/IStateEx';
 import update = require('react-addons-update');
 
-function ensureMod(state: IGameSettingsProfiles, modId: string): IGameSettingsProfiles {
+function ensureMod(state: IProfileSettings, modId: string): IProfileSettings {
   if (!(modId in state.profiles[state.currentProfile].modState)) {
     return update(state, {
       profiles: {

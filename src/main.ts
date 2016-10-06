@@ -20,8 +20,6 @@ if (doRestart) {
   app.quit();
 }
 
-installDevelExtensions();
-
 // determine where to store settings
 let basePath: string = app.getPath('userData');
 fs.ensureDirSync(basePath);

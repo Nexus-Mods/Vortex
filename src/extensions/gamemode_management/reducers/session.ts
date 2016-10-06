@@ -1,5 +1,5 @@
+import { IReducerSpec } from '../../../types/IExtensionContext';
 import { setKnownGames } from '../actions/session';
-import { IReducerSpec } from '../types/IExtensionContext';
 import update = require('react-addons-update');
 
 /**
@@ -7,9 +7,9 @@ import update = require('react-addons-update');
  */
 export const sessionReducer: IReducerSpec = {
   reducers: {
-    [setKnownGames]: (state, payload) => update(state, { knownGames: { $set: payload } }),
+    [setKnownGames]: (state, payload) => update(state, { known: { $set: payload } }),
   },
   defaults: {
-    knownGames: [],
+    known: [],
   },
 };

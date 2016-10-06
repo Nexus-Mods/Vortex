@@ -33,7 +33,7 @@ function init(context: IExtensionContextExt): boolean {
     const state = context.api.store.getState();
     const installDir = resolvePath('install',
                                    state.gameSettings.mods.paths,
-                                   state.settings.base.gameMode);
+                                   state.settings.gameMode.current);
     fs.readdir(installDir, (err: NodeJS.ErrnoException, mods: string[]) => {
       if (mods === undefined) {
         return;

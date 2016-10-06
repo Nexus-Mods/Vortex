@@ -98,10 +98,10 @@ class InstallButton extends ComponentEx<IConnectedProps & IActionProps, {}> {
   }
 }
 
-function mapStateToProps(state): IConnectedProps {
+function mapStateToProps(state: any): IConnectedProps {
   return {
     paths: state.gameSettings.mods.paths,
-    gameMode: state.settings.base.gameMode,
+    gameMode: state.settings.gameMode.current,
   }
 }
 

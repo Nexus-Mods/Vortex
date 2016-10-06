@@ -1,9 +1,11 @@
-import { setModEnabled } from '../../../actions/profiles';
-
-import { IProfileMod } from '../../../types/IProfile';
-import { IGameSettingsProfiles, ISettings } from '../../../types/IState';
 import { SortDirection } from '../../../types/SortDirection';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+
+import { IGameModeSettings } from '../../gamemode_management/types/IStateEx';
+
+import { setModEnabled } from '../../profile_management/actions/profiles';
+import { IProfileMod } from '../../profile_management/types/IProfile';
+import { IProfileSettings } from '../../profile_management/types/IStateEx';
 
 import { setModlistAttributeSort, setModlistAttributeVisible } from '../actions/settings';
 import { IAttributeState } from '../types/IAttributeState';
@@ -21,8 +23,6 @@ import ModRow from './ModRow';
 import * as React from 'react';
 import { Jumbotron, Table } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-
-import { log } from '../../../util/log';
 
 interface IProps {
   objects: IModAttribute[];
@@ -200,14 +200,14 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
 
 interface IState {
   settings: {
-    base: ISettings,
+    gameMode: IGameModeSettings
     interface: {
       language: string
     }
   };
   gameSettings: {
     mods: IStateModSettings,
-    profiles: IGameSettingsProfiles,
+    profiles: IProfileSettings,
   };
   mods: IStateMods;
 }
@@ -218,9 +218,9 @@ function mapStateToProps(state: IState): IConnectedProps {
 
   return {
     mods: state.mods.mods,
-    modState: activeProfile.modState,
+    modState: activeProfile !== undefined ? activeProfile.modState : {},
     modlistState: state.gameSettings.mods.modlistState,
-    gameMode: state.settings.base.gameMode,
+    gameMode: state.settings.gameMode.current,
     language: state.settings.interface.language,
   };
 }

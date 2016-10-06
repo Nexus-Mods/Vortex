@@ -1,4 +1,4 @@
-import { IProfileMod } from '../../../types/IProfile';
+import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { IMod } from '../types/IMod';
 import { IModAttribute } from '../types/IModAttribute';
@@ -46,7 +46,7 @@ class ModRow extends React.Component<IProps, {}> {
   }
 
   private setModEnabled = (evt: React.MouseEvent) => {
-    const { mod, modState, onSetModEnabled } = this.props;
+    const { mod, onSetModEnabled } = this.props;
     onSetModEnabled(mod.id, (evt.target as HTMLInputElement).checked);
   }
 }

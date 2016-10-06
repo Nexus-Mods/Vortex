@@ -1,7 +1,7 @@
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import initAboutDialog from '../extensions/about_dialog/index';
-import initGamePicker from '../extensions/game_picker/index';
+import initGamemodeManagement from '../extensions/gamemode_management/index';
 import initModManagement from '../extensions/mod_management/index';
 import initNutsLocal from '../extensions/nuts_local/index';
 import initProfileManagement from '../extensions/profile_management/index';
@@ -9,7 +9,8 @@ import initSettingsInterface from '../extensions/settings_interface/index';
 import initSettingsUpdate from '../extensions/updater/index';
 import initWelcomeScreen from '../extensions/welcome_screen/index';
 import { IExtensionInit } from '../types/Extension';
-import { IExtensionApi, IExtensionContext, IOpenOptions } from '../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext, IOpenOptions,
+         IStateChangeCallback } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
 import { log } from '../util/log';
 import { showError } from '../util/message';
@@ -19,6 +20,7 @@ import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as React from 'react';
+import ReduxWatcher = require('redux-watcher');
 
 let app = appIn;
 let dialog = dialogIn;
@@ -38,6 +40,7 @@ class ExtensionManager {
   private mExtensions: IExtensionInit[];
   private mApi: IExtensionApi;
   private mEventEmitter: NodeJS.EventEmitter;
+  private mReduxWatcher: any;
 
   constructor(eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter;
@@ -47,7 +50,10 @@ class ExtensionManager {
         dialog.showErrorBox(message, details);
       },
       selectFile: this.selectFile,
+      selectDir: this.selectDir,
       events: this.mEventEmitter,
+      getPath: this.getPath,
+      onStateChange: (path: string[], callback: IStateChangeCallback) => undefined,
     };
   }
 
@@ -60,6 +66,8 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public setStore<S>(store: Redux.Store<S>) {
+    this.mReduxWatcher = new ReduxWatcher(store);
+
     this.mApi.sendNotification = (notification: INotification) => {
       store.dispatch(addNotification(notification));
     };
@@ -70,6 +78,12 @@ class ExtensionManager {
       store.dispatch(dismissNotification(id));
     };
     this.mApi.store = store;
+    this.mApi.onStateChange = (path: string[], callback: IStateChangeCallback) => {
+      this.mReduxWatcher.watch(path,
+        ({ store, selector, prevState, currentState, prevValue, currentValue }) => {
+        callback(prevValue, currentValue);
+      });
+    };
   }
 
   public getApi() {
@@ -123,10 +137,29 @@ class ExtensionManager {
     this.mExtensions.forEach((ext) => ext(context));
   }
 
+  private getPath(name: Electron.AppPathName) {
+    return app.getPath(name);
+  }
+
   private selectFile(options: IOpenOptions) {
     return new Promise<string>((resolve, reject) => {
       const fullOptions = Object.assign({}, options, {
         properties: ['openFile'],
+      });
+      dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
+        if ((fileNames !== undefined) && (fileNames.length > 0)) {
+          resolve(fileNames[0]);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
+  }
+
+  private selectDir(options: IOpenOptions) {
+    return new Promise<string>((resolve, reject) => {
+      const fullOptions = Object.assign({}, options, {
+        properties: ['openDirectory'],
       });
       dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
@@ -195,7 +228,7 @@ class ExtensionManager {
       initWelcomeScreen,
       initModManagement,
       initProfileManagement,
-      initGamePicker,
+      initGamemodeManagement,
       initNutsLocal,
     ].concat(this.loadDynamicExtensions(extensionsPath));
   }

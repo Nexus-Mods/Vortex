@@ -1,14 +1,14 @@
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 
-import { IGame } from '../../types/IGame';
+import { IGameStored } from '../types/IStateEx';
 
-import { ComponentEx, translate } from '../../util/ComponentEx';
+import { ComponentEx, translate } from '../../../util/ComponentEx';
 
 import * as path from 'path';
 
 interface IProps {
-  game: IGame;
+  game: IGameStored;
   onManage?: (id: string) => void;
   active: boolean;
 }

@@ -1,9 +1,9 @@
-import { IProfile } from '../../../types/IProfile';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import { Button, Icon as TooltipIcon } from '../../../views/TooltipControls';
 
+import { IProfile } from '../types/IProfile';
+
 import * as React from 'react';
-import { ListGroupItem } from 'react-bootstrap';
 
 import Icon = require('react-fontawesome');
 
