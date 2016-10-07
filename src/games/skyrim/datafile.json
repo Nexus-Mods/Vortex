@@ -1,0 +1,120 @@
+{
+  "spawn": [
+    {
+      "executable": "lessc",
+      "arguments": [
+        "--clean-css",
+        "--include-path=node_modules/bootswatch:node_modules/bootstrap-less",
+        "src/stylesheets/index.less",
+        "out/assets/css/theme.css"
+      ],
+      "target": [
+        "out"
+      ]
+    },
+    {
+      "executable": "lessc",
+      "arguments": [
+        "--clean-css",
+        "--include-path=node_modules/bootswatch:node_modules/bootstrap-less",
+        "src/stylesheets/index.less",
+        "app/assets/css/theme.css"
+      ],
+      "target": [
+        "app"
+      ]
+    },
+    {
+      "executable": "tsc",
+      "arguments": [
+        "-p",
+        ".",
+        "--outDir", "out"
+      ],
+      "target": [
+        "out"
+      ]
+    },
+    {
+      "executable": "tsc",
+      "arguments": [
+        "-p",
+        ".",
+        "--outDir", "app"
+      ],
+      "target": [
+        "app"
+      ]
+    }
+  ],
+  "copy": [
+    {
+      "srcPath": "node_modules/font-awesome/css/font-awesome.min.css",
+      "outPath": "assets",
+      "skipPaths": 2,
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "node_modules/font-awesome/fonts/fontawesome-webfont.woff2",
+      "outPath": "assets",
+      "skipPaths": 2,
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "src/index.html",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ],
+      "skipPaths": 1
+    },
+    {
+      "srcPath": "assets/fonts/*",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "locales/*/*",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "assets/images/",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "extensions/*/index.js",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "src/games/*/*.png",
+      "outPath": "",
+      "skipPaths": 1,
+      "target": [
+        "out",
+        "app"
+      ]
+    }
+  ]
+}

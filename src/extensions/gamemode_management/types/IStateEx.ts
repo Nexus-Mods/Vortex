@@ -1,4 +1,5 @@
 import { IState } from '../../../types/IState';
+import { ISupportedTools } from '../../../types/ISupportedTools';
 
 export interface IDiscoveryResult {
   path: string;
@@ -22,6 +23,7 @@ export interface IGameStored {
   logo: string;
   pluginPath?: string;
   requiredFiles: string[];
+  supportedTools: () => ISupportedTools[];
 }
 
 /**
@@ -33,6 +35,7 @@ export interface IGameStored {
 export interface IGameModeSettings {
   current: string;
   discovered: { [id: string]: IDiscoveryResult };
+  discoveredTool: { [id: string]: IDiscoveryResult };
   searchPaths: string[];
 }
 
@@ -46,4 +49,5 @@ export interface IStateEx extends IState {
   settings: {
     gameMode: IGameModeSettings,
   };
+
 }

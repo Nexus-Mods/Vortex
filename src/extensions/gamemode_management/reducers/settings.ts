@@ -1,5 +1,5 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { addDiscoveredGame, setGameMode } from '../actions/settings';
+import { addDiscoveredGame, setGameMode, addDiscoveredTool } from '../actions/settings';
 import { addSearchPath, removeSearchPath } from '../actions/settings';
 import update = require('react-addons-update');
 
@@ -17,6 +17,13 @@ export const settingsReducer: IReducerSpec = {
           [payload.id]: { $set: payload.result },
         },
       });
+    },
+    [addDiscoveredTool]: (state, payload) => {
+        return update(state, {
+            discoveredTool: {
+                [payload.id]: { $set: payload.result },
+            },
+        });
     },
     [addSearchPath]: (state, payload) => {
       if (state.searchPaths === undefined) {
@@ -39,5 +46,6 @@ export const settingsReducer: IReducerSpec = {
     current: undefined,
     discovered: {},
     searchPaths: undefined,
+    discoveredTool: {},
   },
 };

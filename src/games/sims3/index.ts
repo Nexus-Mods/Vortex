@@ -3,6 +3,8 @@ import { IGame } from '../../types/IGame';
 import * as Promise from 'bluebird';
 import Registry = require('winreg');
 
+import { log } from '../../util/log';
+
 function findGame() {
   if (Registry === undefined) {
     // linux ? macos ?
@@ -25,6 +27,10 @@ function findGame() {
   });
 }
 
+function findTools() {
+    return null;
+}
+
 const game: IGame = {
   id: 'sims3',
   name: 'The Sims 3',
@@ -33,6 +39,8 @@ const game: IGame = {
   requiredFiles: [
     'game/bin/TS3.exe',
   ],
+  supportedTools: null,
+
 };
 
 export default game;

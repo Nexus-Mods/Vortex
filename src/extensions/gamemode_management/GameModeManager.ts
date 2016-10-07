@@ -4,9 +4,11 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import StorageLogger from '../../util/StorageLogger';
 
+import { ISupportedTools } from '../../types/ISupportedTools';
+
 import { discoveryFinished, discoveryProgress } from './actions/discovery';
 import { setKnownGames } from './actions/session';
-import { addDiscoveredGame, setGameMode } from './actions/settings';
+import { addDiscoveredGame, setGameMode, addDiscoveredTool } from './actions/settings';
 import { IGameStored, IStateEx } from './types/IStateEx';
 
 import * as Promise from 'bluebird';
@@ -142,6 +144,7 @@ class GameModeManager {
   private mError: boolean;
   private mStore: Redux.Store<IStateEx>;
   private mKnownGames: IGame[];
+  private mKnownTools: ISupportedTools[];
 
   constructor(basePath: string) {
     this.mSubscription = null;
@@ -150,6 +153,7 @@ class GameModeManager {
     this.mError = false;
     this.mStore = null;
     this.mKnownGames = [];
+    this.mKnownTools = [];
   }
 
   /**
@@ -178,6 +182,7 @@ class GameModeManager {
         logo: game.logo,
         pluginPath: game.pluginPath,
         requiredFiles: game.requiredFiles,
+        supportedTools: game.supportedTools,
       };
     } );
     store.dispatch(setKnownGames(gamesStored));
@@ -240,6 +245,27 @@ class GameModeManager {
             log('debug', 'game not found', { id: game.id, err });
           });
         }
+
+        let supportedTools = game.supportedTools();
+        supportedTools.map((supportedTool) => {
+            let location = supportedTool.location(supportedTool.executable);
+            if (typeof (location) === 'string') {
+                if (location !== '') {
+                    log('info', 'found tool', { name: game.name, toolName: supportedTool.name, location: location });
+                    this.mStore.dispatch(addDiscoveredTool(game.id, { toolName: supportedTool.name, path: location }));
+                } else {
+                    log('debug', 'tool not found', supportedTool.name);
+                }
+            } else {
+                (location as Promise<string>).then((resolvedPath) => {
+                    log('info', 'found tool', { name: game.name, toolName: supportedTool.name, location: resolvedPath });
+                    this.mStore.dispatch(addDiscoveredTool(game.id, { toolName: supportedTool.name, path: resolvedPath }));
+                    return null;
+                }).catch((err) => {
+                    log('debug', 'tool not found', { id: supportedTool.name, err });
+                });
+            }
+        });
       } catch (err) {
         log('warn', 'failed to use game support plugin', { id: game.id, err: err.message });
       }

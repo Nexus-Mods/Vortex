@@ -1,5 +1,6 @@
 import { IDialog } from './IDialog';
 import { INotification } from './INotification';
+import { IGame } from './IGame';
 
 /**
  * interface to represent a position on the screen
@@ -48,6 +49,32 @@ export interface IWindow {
 export interface INotificationState {
   notifications: INotification[];
   dialogs: IDialog[];
+}
+
+export interface IDiscoveryResult {
+  path: string;
+}
+
+/**
+ * state regarding application settings
+ * 
+ * @export
+ * @interface ISettings
+ */
+export interface ISettings {
+  gameMode: string;
+  discoveredGames: { [id: string]: IDiscoveryResult };
+}
+
+/**
+ * "ephemeral" session state. 
+ * This state is generated at startup and forgotten at application exit
+ *
+ * @export
+ * @interface ISession
+ */
+export interface ISession {
+  knownGames: IGame[];
 }
 
 /**

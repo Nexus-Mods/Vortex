@@ -12,7 +12,15 @@ export const setGameMode = createAction('SET_GAME_MODE');
  */
 export const addDiscoveredGame =
   createAction('ADD_DISCOVERED_GAME',
-    (id: string, result: IDiscoveryResult) => { return { id, result }; });
+        (id: string, result: IDiscoveryResult) => { return { id, result }; });
+
+/**
+* add info about a discovered tool
+*/
+export const addDiscoveredTool =
+    createAction('ADD_DISCOVERED_TOOL',
+        (id: string, result: IDiscoveryResult) => { return { id, result }; });
+
 
 /**
  * add a search path (path that is searched for game installations)
@@ -22,4 +30,5 @@ export const addSearchPath = createAction('ADD_SEARCH_PATH');
 /**
  * remove a search path
  */
-export const removeSearchPath = createAction('REMOVE_SEARCH_PATH');
+export const removeSearchPath = createAction('REMOVE_SEARCH_PATH',
+    (id: string, result: IDiscoveryResult) => { return { id, result }; });

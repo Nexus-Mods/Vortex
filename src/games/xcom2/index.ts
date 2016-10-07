@@ -8,6 +8,7 @@ const game: IGame = {
     'XComGame',
     'XComGame/CookedPCConsole/3DUIBP.upk',
   ],
+  supportedTools: null,
 };
 
 export default game;
