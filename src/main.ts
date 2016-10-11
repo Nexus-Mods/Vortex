@@ -54,7 +54,7 @@ function createWindow() {
   mainWindow.loadURL(`file://${__dirname}/index.html`);
   // opening the devtools automatically can be very useful if the renderer has
   // trouble loading the page
-   mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   mainWindow.once('ready-to-show', () => {
     log('info', 'ready to show');
