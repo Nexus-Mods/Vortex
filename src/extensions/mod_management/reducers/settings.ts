@@ -1,7 +1,8 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 
-import { setModlistAttributeSort, setModlistAttributeVisible, setPath } from '../actions/settings';
+import { setActivator, setModlistAttributeSort,
+         setModlistAttributeVisible, setPath } from '../actions/settings';
 import { IStateModSettings } from '../types/IStateSettings';
 
 import update = require('react-addons-update');
@@ -21,6 +22,14 @@ function ensureAttribute(state: IStateModSettings, attributeId: string): IStateM
  */
 export const settingsReducer: IReducerSpec = {
   reducers: {
+    ['persist/REHYDRATE']: (state, payload) => {
+      if (payload.hasOwnProperty('gameSettings') &&
+          payload.gameSettings.hasOwnProperty('mods')) {
+        return update(state, { $set: payload.gameSettings.mods });
+      } else {
+        return state;
+      }
+    },
     [setPath]: (state, payload) => {
       const { key, path } = payload;
       return update(state, { paths: { [key]: { $set: path } } });
@@ -34,14 +43,17 @@ export const settingsReducer: IReducerSpec = {
     [setModlistAttributeSort]: (state, payload) => {
       const { attributeId, direction } = payload;
 
-      log('info', 'reducer', { attributeId, direction });
-
       return update(ensureAttribute(state, attributeId), {
         modlistState: {
           [attributeId]: {
             sortDirection: { $set: direction },
           },
         },
+      });
+    },
+    [setActivator]: (state, payload) => {
+      return update(state, {
+        activator: { $set: payload },
       });
     },
   }, defaults: {
@@ -51,5 +63,6 @@ export const settingsReducer: IReducerSpec = {
       install: path.join('{base}', 'mods'),
     },
     modlistState: { },
+    activator: undefined,
   },
 };

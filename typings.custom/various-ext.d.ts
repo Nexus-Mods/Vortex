@@ -16,4 +16,9 @@ declare namespace NodeJS {
         logger: any;
         extensions: Function[];
     }
+
+}
+
+interface NodeModule {
+    paths: string[];
 }

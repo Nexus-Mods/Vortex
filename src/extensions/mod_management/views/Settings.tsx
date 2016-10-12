@@ -1,6 +1,7 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { Button } from '../../../views/TooltipControls';
-import { setPath } from '../actions/settings';
+import { setActivator, setPath } from '../actions/settings';
+import { IModActivator } from '../types/IModActivator';
 import resolvePath from '../util/resolvePath';
 
 import * as React from 'react';
@@ -8,24 +9,35 @@ import { ControlLabel, FormControl, FormGroup, HelpBlock, InputGroup } from 'rea
 
 import Icon = require('react-fontawesome');
 
+import { log } from '../../../util/log';
+
 interface IPaths {
   base: string;
   download: string;
   install: string;
 }
 
+interface IBaseProps {
+  activators: IModActivator[];
+}
+
 interface IConnectedProps {
   paths: IPaths;
   gameMode: string;
+
+  currentActivator: string;
 }
 
 interface IActionProps {
   onSetPath: (key: string, path: string) => void;
+  onSetActivator: (id: string) => void;
 }
 
-class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
+type IProps = IBaseProps & IActionProps & IConnectedProps;
+
+class Settings extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { paths, t } = this.props;
+    const { currentActivator, activators, paths, t } = this.props;
 
     return (
       <form>
@@ -55,10 +67,47 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
             <Button id='move-install-path' tooltip={ t('Move') }><Icon name='exchange' /></Button>
           </InputGroup.Button>
           </InputGroup>
-          <HelpBlock>{ this.resolveInstall() }</HelpBlock>
+          <HelpBlock>{this.resolveInstall()}</HelpBlock>
+        </FormGroup>
+        <ControlLabel>Activation Method</ControlLabel>
+        <FormGroup validationState={ activators !== undefined ? undefined : 'error' }>
+          { this.renderActivators(activators, currentActivator) }
         </FormGroup>
       </form>
     );
+  }
+
+  private renderActivators(activators: IModActivator[], currentActivator: string): JSX.Element {
+    const { t } = this.props;
+
+    if (activators !== undefined) {
+      let activatorIdx: number = 0;
+      if (currentActivator !== undefined) {
+        activatorIdx = activators.findIndex((activator) => activator.id === currentActivator);
+      }
+      return (
+        <div>
+        <FormControl
+          componentClass='select'
+          value={currentActivator}
+          onChange={this.selectActivator}
+        >
+          {activators.map((activator) => <option value={activator.id}>{activator.name}</option>)}
+        </FormControl>
+        <HelpBlock>
+          {activators[activatorIdx].description}
+        </HelpBlock>
+        </div>
+      );
+    } else {
+      return <ControlLabel>{ t('No mod activators installed') }</ControlLabel>;
+    }
+  }
+
+  private selectActivator = (evt) => {
+    let target: HTMLSelectElement = evt.target as HTMLSelectElement;
+    log('info', 'select activator', { id: target.value });
+    this.props.onSetActivator(target.value);
   }
 
   private resolveBase = () => resolvePath('base', this.props.paths, this.props.gameMode);
@@ -70,6 +119,7 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     paths: state.gameSettings.mods.paths,
     gameMode: state.settings.gameMode.current,
+    currentActivator: state.gameSettings.mods.activator,
   };
 }
 
@@ -78,6 +128,9 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
     onSetPath: (key: string, path: string): void => {
       dispatch(setPath(key, path));
     },
+    onSetActivator: (id: string): void => {
+      dispatch(setActivator(id));
+    }
   };
 }
 

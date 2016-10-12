@@ -18,3 +18,8 @@ export const setModlistAttributeVisible = createAction('SET_MODLIST_ATTRIBUTE_VI
  */
 export const setModlistAttributeSort = createAction('SET_MODLIST_ATTRIBUTE_SORT',
   (attributeId: string, direction: string) => { return { attributeId, direction }; } );
+
+/**
+ * sets the activator to use for this game
+ */
+export const setActivator = createAction('SET_ACTIVATOR');

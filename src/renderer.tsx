@@ -13,6 +13,7 @@ import { log } from './util/log';
 import { showError } from './util/message';
 import MainWindow from './views/MainWindow';
 
+import * as Promise from 'bluebird';
 import { EventEmitter } from 'events';
 import { changeLanguage } from 'i18next';
 import * as React from 'react';
@@ -24,6 +25,8 @@ import { electronEnhancer } from 'redux-electron-store';
 import thunkMiddleware from 'redux-thunk';
 
 log('info', 'renderer process started');
+
+Promise.config({ cancellation: true });
 
 // set up store. Through the electronEnhancer this is automatically
 // synchronized with the main process store
@@ -59,6 +62,7 @@ let extReducers = extensions.getReducers();
 
 const store: Store<any> = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
+extensions.applyExtensionsOfExtensions();
 extensions.doOnce();
 
 let currentLanguage: string = store.getState().settings.interface.language;

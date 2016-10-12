@@ -2,12 +2,17 @@ import { INotification } from './INotification';
 import * as Promise from 'bluebird';
 import * as React from 'react';
 
+export type PropsCallback = () => Object;
+
 interface IRegisterSettings {
-  (title: string, element: React.ComponentClass<any>): void;
+  (title: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
 }
 
 interface IRegisterIcon {
-  (group: string, icon: string, title: string, action: () => void): void;
+  (group: string,
+   icon: string | React.ComponentClass<any>,
+   title?: string | PropsCallback,
+   action?: () => void): void;
 }
 
 interface IRegisterMainPage {
@@ -166,7 +171,16 @@ export interface IExtensionContext {
    * 
    * @memberOf IExtensionContext
    */
-  registerReducer: (path: string[], IReducerSpec) => void;
+  registerReducer: (path: string[], spec: IReducerSpec) => void;
+
+  /**
+   * register an extension function which allows other extensions to extend this one.
+   * React components can also use the extend() function from ExtensionProvider for
+   * the same purpose
+   * 
+   * @memberOf IExtensionContext
+   */
+  registerExtensionFunction: (name: string, callback: Function) => void;
 
   /**
    * called once after the store has been set up

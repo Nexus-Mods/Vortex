@@ -6,6 +6,11 @@ export const addMod = createAction('ADD_MOD',
   (mod: IMod) => mod);
 
 /**
+ * clear the mod cache
+ */
+export const clearMods = createAction('CLEAR_MODS');
+
+/**
  * sets the state of a mod (whether it's downloaded, installed, ...)
  */
 export const setModState = createAction('SET_MOD_STATE',

@@ -31,11 +31,11 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     checkProfile(context.api.store,
                  context.api.store.getState().gameSettings.profiles.currentProfile);
-  });
 
-  context.api.onStateChange(['gameSettings', 'profiles', 'current'],
-    (prev: string, current: string) => {
-      checkProfile(context.api.store, current);
+    context.api.onStateChange(['gameSettings', 'profiles', 'current'],
+      (prev: string, current: string) => {
+        checkProfile(context.api.store, current);
+    });
   });
 
   return true;

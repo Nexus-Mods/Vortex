@@ -37,7 +37,7 @@ class InstallButton extends ComponentEx<IConnectedProps & IActionProps, {}> {
       icon='archive'
       tooltip={ t('Install from file') }
       onClick={ this.startInstallFile }
-    />
+    />;
   }
 
 

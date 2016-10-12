@@ -25,12 +25,12 @@
     "redux-devtools": "registry:dt/redux-devtools#3.0.0+20160703120921",
     "redux-devtools-log-monitor": "registry:dt/redux-devtools-log-monitor#1.0.11+20160902130643",
     "redux-thunk": "registry:dt/redux-thunk#2.1.0+20160703120921",
+    "tmp": "registry:dt/tmp#0.0.0+20160514170650",
     "winreg": "registry:dt/winreg#1.2.0+20160505170241",
     "winston": "registry:dt/winston#0.0.0+20160417152829"
   },
   "globalDependencies": {
     "base16": "registry:dt/base16#1.0.0+20160902130643",
-    "node": "registry:dt/node#6.0.0+20160921192128",
     "react": "registry:dt/react#0.14.0+20160920055104",
     "react-bootstrap": "registry:dt/react-bootstrap#0.0.0+20160806072414",
     "react-dom": "registry:dt/react-dom#0.14.0+20160412154040",

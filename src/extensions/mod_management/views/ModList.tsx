@@ -4,7 +4,7 @@ import { ComponentEx, connect, extend, translate } from '../../../util/Component
 import { IGameModeSettings } from '../../gamemode_management/types/IStateEx';
 
 import { setModEnabled } from '../../profile_management/actions/profiles';
-import { IProfileMod } from '../../profile_management/types/IProfile';
+import { IProfile, IProfileMod } from '../../profile_management/types/IProfile';
 import { IProfileSettings } from '../../profile_management/types/IStateEx';
 
 import { setModlistAttributeSort, setModlistAttributeVisible } from '../actions/settings';
@@ -213,7 +213,7 @@ interface IState {
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
-  const activeProfile =
+  const activeProfile: IProfile =
     state.gameSettings.profiles.profiles[state.gameSettings.profiles.currentProfile];
 
   return {
@@ -225,7 +225,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetAttributeVisible: (attributeId: string, visible: boolean) => {
       dispatch(setModlistAttributeVisible(attributeId, visible));

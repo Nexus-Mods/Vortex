@@ -99,7 +99,6 @@ class GameModeManager {
     }
     this.activateGameMode(newMode, this.mStore)
       .then((persistor) => {
-        log('debug', 'activated game mode', { newMode });
         this.mPersistor = persistor;
         this.mError = false;
       }).catch((err) => {

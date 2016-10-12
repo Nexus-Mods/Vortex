@@ -24,6 +24,14 @@ function ensureMod(state: IProfileSettings, modId: string): IProfileSettings {
  */
 export const profilesReducer: IReducerSpec = {
   reducers: {
+    ['persist/REHYDRATE']: (state, payload) => {
+      if (payload.hasOwnProperty('gameSettings') &&
+          payload.gameSettings.hasOwnProperty('profiles')) {
+        return update(state, { $set: payload.gameSettings.profiles });
+      } else {
+        return state;
+      }
+    },
     [setProfile]: (state, payload) => {
       return update(state, { profiles: { [payload.id]: { $set: payload } } });
     },

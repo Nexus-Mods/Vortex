@@ -6,6 +6,8 @@ import initModManagement from '../extensions/mod_management/index';
 import initNutsLocal from '../extensions/nuts_local/index';
 import initProfileManagement from '../extensions/profile_management/index';
 import initSettingsInterface from '../extensions/settings_interface/index';
+import initSymlinkActivator from '../extensions/symlink_activator/index';
+import initSymlinkActivatorElevate from '../extensions/symlink_activator_elevate/index';
 import initSettingsUpdate from '../extensions/updater/index';
 import initWelcomeScreen from '../extensions/welcome_screen/index';
 import { IExtensionInit } from '../types/Extension';
@@ -19,7 +21,6 @@ import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as React from 'react';
 import ReduxWatcher = require('redux-watcher');
 
 let app = appIn;
@@ -30,6 +31,11 @@ if (remote !== undefined) {
   dialog = remote.dialog;
 }
 
+interface IRegisteredExtension {
+  name: string;
+  initFunc: IExtensionInit;
+}
+
 /**
  * interface to extensions. This loads extensions and provides the api extensions
  * use
@@ -37,7 +43,7 @@ if (remote !== undefined) {
  * @class ExtensionManager
  */
 class ExtensionManager {
-  private mExtensions: IExtensionInit[];
+  private mExtensions: IRegisteredExtension[];
   private mApi: IExtensionApi;
   private mEventEmitter: NodeJS.EventEmitter;
   private mReduxWatcher: any;
@@ -79,7 +85,9 @@ class ExtensionManager {
     };
     this.mApi.store = store;
     this.mApi.onStateChange = (path: string[], callback: IStateChangeCallback) => {
+      log('debug', 'watching state changes', { path: path.join('.') });
       this.mReduxWatcher.watch(path,
+        // tslint:disable-next-line:no-unused-variable no-shadowed-variable
         ({ store, selector, prevState, currentState, prevValue, currentValue }) => {
         callback(prevValue, currentValue);
       });
@@ -102,9 +110,28 @@ class ExtensionManager {
       reducers.push({ path, reducer });
     };
 
-    this.mExtensions.forEach((ext) => ext(context));
+    this.mExtensions.forEach((ext) => ext.initFunc(context));
 
     return reducers;
+  }
+
+  public applyExtensionsOfExtensions() {
+    this.apply('registerExtensionFunction', (name: string, registerFunc: () => void) => {
+      let context = this.emptyExtensionContext();
+      context.registerExtensionFunction = () => Promise.resolve(undefined);
+      context[name] = registerFunc;
+
+      return Promise.all(Promise.map(this.mExtensions,
+      (ext) => {
+        return new Promise((resolve, reject) => {
+          if (ext.initFunc(context)) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        });
+      }));
+    });
   }
 
   /**
@@ -120,7 +147,7 @@ class ExtensionManager {
     let context = this.emptyExtensionContext();
 
     context[funcName] = func;
-    this.mExtensions.forEach((ext) => ext(context));
+    this.mExtensions.forEach((ext) => ext.initFunc(context));
   }
 
   /**
@@ -134,7 +161,7 @@ class ExtensionManager {
       callback();
     };
 
-    this.mExtensions.forEach((ext) => ext(context));
+    this.mExtensions.forEach((ext) => ext.initFunc(context));
   }
 
   private getPath(name: Electron.AppPathName) {
@@ -173,26 +200,26 @@ class ExtensionManager {
 
   private emptyExtensionContext(): IExtensionContext {
     return {
-      registerMainPage:
-        (icon: string, title: string, component: React.ComponentClass<any>) => undefined,
-      registerSettings: (title: string, component: React.ComponentClass<any>) => undefined,
-      registerIcon: (group: string, icon: string, title: string, action: any) => undefined,
-      registerReducer: (path: string[], reducer: any) => undefined,
-      once: (): void => undefined,
+      registerMainPage: () => undefined,
+      registerSettings: () => undefined,
+      registerIcon: () => undefined,
+      registerReducer: () => undefined,
+      registerExtensionFunction: () => undefined,
+      once: () => undefined,
       api: Object.assign({}, this.mApi),
     };
   }
 
-  private loadDynamicExtension(extensionPath: string): IExtensionInit {
+  private loadDynamicExtension(extensionPath: string): IRegisteredExtension {
     let indexPath = path.join(extensionPath, 'index.js');
     if (fs.existsSync(indexPath)) {
-      return require(indexPath).default;
+      return { name: path.basename(extensionPath), initFunc: require(indexPath).default };
     } else {
       return undefined;
     }
   }
 
-  private loadDynamicExtensions(extensionsPath: string): IExtensionInit[] {
+  private loadDynamicExtensions(extensionsPath: string): IRegisteredExtension[] {
     if (!fs.existsSync(extensionsPath)) {
       log('info', 'failed to load dynamic extensions, path doesn\'t exist', extensionsPath);
       fs.mkdirSync(extensionsPath);
@@ -209,7 +236,7 @@ class ExtensionManager {
           return undefined;
         }
       });
-    return res.filter((func: IExtensionInit) => func !== undefined);
+    return res.filter((reg: IRegisteredExtension) => reg !== undefined);
   }
 
   /**
@@ -219,17 +246,19 @@ class ExtensionManager {
    * 
    * @returns {IExtensionInit[]}
    */
-  private loadExtensions(): IExtensionInit[] {
+  private loadExtensions(): IRegisteredExtension[] {
     const extensionsPath = path.join(app.getPath('userData'), 'plugins');
     return [
-      initSettingsInterface,
-      initSettingsUpdate,
-      initAboutDialog,
-      initWelcomeScreen,
-      initModManagement,
-      initProfileManagement,
-      initGamemodeManagement,
-      initNutsLocal,
+      { name: 'settings_interface', initFunc: initSettingsInterface },
+      { name: 'settings_update', initFunc: initSettingsUpdate },
+      { name: 'about_dialog', initFunc: initAboutDialog },
+      { name: 'welcome_screen', initFunc: initWelcomeScreen },
+      { name: 'mod_management', initFunc: initModManagement },
+      { name: 'profile_management', initFunc: initProfileManagement },
+      { name: 'gamemode_management', initFunc: initGamemodeManagement },
+      { name: 'nuts_local', initFunc: initNutsLocal },
+      { name: 'symlink_activator', initFunc: initSymlinkActivator },
+      { name: 'symlink_activator_elevate', initFunc: initSymlinkActivatorElevate },
     ].concat(this.loadDynamicExtensions(extensionsPath));
   }
 

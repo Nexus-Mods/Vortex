@@ -32,13 +32,18 @@ class IconBar extends ComponentEx<IProps & IExtensionProps, {}> {
 
   private renderIconImpl(icon: IIconDefinition) {
     const { t } = this.props;
-    return <ToolbarIcon
-      key={icon.title}
-      id={icon.title}
-      icon={icon.icon}
-      tooltip={t(icon.title)}
-      onClick={icon.action}
-    />;
+    if (icon.icon !== undefined) {
+      return <ToolbarIcon
+        key={icon.title}
+        id={icon.title}
+        icon={icon.icon}
+        tooltip={t(icon.title)}
+        onClick={icon.action}
+      />;
+    } else {
+      const props = icon.props();
+      return <icon.component {...props} />;
+    }
   }
 }
 
@@ -58,11 +63,15 @@ class IconBar extends ComponentEx<IProps & IExtensionProps, {}> {
  */
 function registerIcon(instance: IconBar,
                       group: string,
-                      icon: string,
-                      title: string,
-                      action: () => void) {
+                      iconOrComponent: string | React.ComponentClass<any>,
+                      titleOrProps: string | Function,
+                      action: () => void): Object {
   if (instance.props.group === group) {
-    return { icon, title, action };
+    if (typeof(iconOrComponent) === 'string') {
+      return { type: 'simple', icon: iconOrComponent, title: titleOrProps, action };
+    } else {
+      return { type: 'ext', component: iconOrComponent, props: titleOrProps };
+    }
   } else {
     return undefined;
   }
