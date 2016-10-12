@@ -9,7 +9,9 @@ import { ISupportedTools } from '../../types/ISupportedTools';
 import { discoveryFinished, discoveryProgress } from './actions/discovery';
 import { setKnownGames } from './actions/session';
 import { addDiscoveredGame, setGameMode, addDiscoveredTool } from './actions/settings';
-import { IGameStored, IStateEx } from './types/IStateEx';
+import { IDiscoveryResult, IGameStored, IStateEx, IToolDiscoveryResult } from './types/IStateEx';
+import { discoverTools, quickDiscovery, searchDiscovery } from './util/discovery';
+import Progress from './util/Progress';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
@@ -21,115 +23,6 @@ import { AsyncNodeStorage } from 'redux-persist-node-storage';
 const getStoredStateP = Promise.promisify(getStoredState);
 
 type EmptyCB = () => void;
-
-/**
- * tracks progress for directory iteration
- * 
- * @class Progress
- */
-class Progress {
-
-  private mMagnitude: number;
-  private mStepCount: number;
-  private mStepsCompleted: number;
-  private mBaseValue: number;
-  private mCallback: (percent: number, label: string) => void;
-
-  constructor(baseValue: number, magnitude: number,
-              callback: (percent: number, label: string) => void) {
-    this.mMagnitude = magnitude;
-    this.mBaseValue = baseValue;
-    this.mCallback = callback;
-    this.mStepsCompleted = 0;
-  }
-
-  public setStepCount(count: number) {
-    this.mStepCount = count;
-  }
-
-  public completed(label: string) {
-    if (this.mMagnitude > 0.5) {
-      this.mStepsCompleted += 1;
-      this.mCallback(this.currentProgress(), label);
-    }
-  }
-
-  public derive() {
-    return this.mMagnitude > 0.5
-      ? new Progress(this.currentProgress(),
-                     this.mMagnitude / this.mStepCount, this.mCallback)
-      : undefined;
-  }
-
-  private currentProgress() {
-    return this.mBaseValue + (this.mMagnitude * this.mStepsCompleted) / this.mStepCount;
-  }
-}
-
-function walk(searchPath: string,
-              matchList: Set<string>,
-              blackList: Set<string>,
-              resultCB: (path: string) => void,
-              progress: Progress) {
-  if (blackList.has(searchPath)) {
-    return null;
-  }
-
-  let statPaths: string[] = [];
-
-  return fs.readdirAsync(searchPath)
-    .then((fileNames: string[]) => {
-      for (let fileName of fileNames) {
-        const filePath = path.join(searchPath, fileName);
-        if (matchList.has(fileName)) {
-          log('info', 'potential match', fileName);
-          // notify that a searched file was found. If the CB says so
-          // we stop looking at this directory
-          resultCB(filePath);
-        } else {
-          statPaths.push(filePath);
-        }
-      }
-
-      return Promise.mapSeries(statPaths, (statPath: string) => {
-        return fs.statAsync(statPath).reflect();
-      });
-    }).then((res: Promise.Inspection<fs.Stats>[]) => {
-      // use the stats results to generate a list of paths of the directories
-      // in the searched directory
-      let dirPaths: string[] = res.reduce(
-        (prev, cur: Promise.Inspection<fs.Stats>, idx: number) => {
-          if (cur.isFulfilled() && cur.value().isDirectory()) {
-            return prev.concat(idx);
-          } else if (!cur.isFulfilled()) {
-            if (cur.reason().code !== 'EPERM') {
-              log('warn', 'stat failed', { error: cur.reason() });
-            } else {
-              log('debug', 'failed to access', { error: cur.reason() });
-            }
-          }
-          return prev;
-        }, []);
-      if (progress !== undefined) {
-        // count number of directories to be used as the step counter in the progress bar
-        progress.setStepCount(dirPaths.length);
-      }
-      // allow the gc to drop the stats results
-      res = [];
-      if (dirPaths === undefined) {
-        return undefined;
-      }
-      return Promise.mapSeries(dirPaths, (idx) => {
-        let subProgess = progress !== undefined ? progress.derive() : undefined;
-        if (progress !== undefined) {
-          progress.completed(statPaths[idx]);
-        }
-        return walk(statPaths[idx], matchList, blackList, resultCB, subProgess);
-      });
-    }).catch((err) => {
-      log('warn', 'walk failed', { msg: err.message });
-    });
-}
 
 /**
  * discovers game modes
@@ -145,6 +38,7 @@ class GameModeManager {
   private mStore: Redux.Store<IStateEx>;
   private mKnownGames: IGame[];
   private mKnownTools: ISupportedTools[];
+  private mActiveSearch: Promise<any[]>;
 
   constructor(basePath: string) {
     this.mSubscription = null;
@@ -154,6 +48,7 @@ class GameModeManager {
     this.mStore = null;
     this.mKnownGames = [];
     this.mKnownTools = [];
+    this.mActiveSearch = null;
   }
 
   /**
@@ -180,6 +75,7 @@ class GameModeManager {
         name: game.name,
         id: game.id,
         logo: game.logo,
+        modPath: game.queryModPath(),
         pluginPath: game.pluginPath,
         requiredFiles: game.requiredFiles,
         supportedTools: game.supportedTools,
@@ -196,12 +92,14 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public setGameMode(oldMode: string, newMode: string) {
+    log('info', 'changed game mode', { oldMode, newMode });
     if (this.mPersistor !== null) {
       // stop old persistor
       this.mPersistor.stop();
     }
     this.activateGameMode(newMode, this.mStore)
       .then((persistor) => {
+        log('debug', 'activated game mode', { newMode });
         this.mPersistor = persistor;
         this.mError = false;
       }).catch((err) => {
@@ -223,53 +121,7 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public startQuickDiscovery() {
-    for (let game of this.mKnownGames) {
-      if (game.queryGamePath === undefined) {
-        continue;
-      }
-      try {
-        let gamePath = game.queryGamePath();
-        if (typeof (gamePath) === 'string') {
-          if (gamePath !== '') {
-            log('info', 'found game', { name: game.name, location: gamePath });
-            this.mStore.dispatch(addDiscoveredGame(game.id, { path: gamePath }));
-          } else {
-            log('debug', 'game not found', game.id);
-          }
-        } else {
-          (gamePath as Promise<string>).then((resolvedPath) => {
-            log('info', 'found game', { name: game.name, location: resolvedPath });
-            this.mStore.dispatch(addDiscoveredGame(game.id, { path: resolvedPath }));
-            return null;
-          }).catch((err) => {
-            log('debug', 'game not found', { id: game.id, err });
-          });
-        }
-
-        let supportedTools = game.supportedTools();
-        supportedTools.map((supportedTool) => {
-            let location = supportedTool.location(supportedTool.executable);
-            if (typeof (location) === 'string') {
-                if (location !== '') {
-                    log('info', 'found tool', { name: game.name, toolName: supportedTool.name, location: location });
-                    this.mStore.dispatch(addDiscoveredTool(game.id, { toolName: supportedTool.name, path: location }));
-                } else {
-                    log('debug', 'tool not found', supportedTool.name);
-                }
-            } else {
-                (location as Promise<string>).then((resolvedPath) => {
-                    log('info', 'found tool', { name: game.name, toolName: supportedTool.name, location: resolvedPath });
-                    this.mStore.dispatch(addDiscoveredTool(game.id, { toolName: supportedTool.name, path: resolvedPath }));
-                    return null;
-                }).catch((err) => {
-                    log('debug', 'tool not found', { id: supportedTool.name, err });
-                });
-            }
-        });
-      } catch (err) {
-        log('warn', 'failed to use game support plugin', { id: game.id, err: err.message });
-      }
-    }
+    quickDiscovery(this.mKnownGames, this.onDiscoveredGame);
   }
 
   /**
@@ -277,59 +129,38 @@ class GameModeManager {
    * 
    * @memberOf GameModeManager
    */
-  public startSearchDiscovery(progress: (percent: number, label: string) => void): void {
-    type FileEntry = {fileName: string, game: IGame};
+  public startSearchDiscovery(): void {
+    let progress: Progress = new Progress(0, 100, (percent: number, label: string) => {
+      this.mStore.dispatch(discoveryProgress(percent, label));
+    });
 
-    let files: FileEntry[] = [];
-    let games: { [gameId: string]: string[] } = {};
-
-    this.mKnownGames.forEach((value: IGame) => {
-      if (!(value.id in this.mStore.getState().settings.gameMode.discovered)) {
-        games[value.id] = value.requiredFiles;
-        for (let required of value.requiredFiles) {
-          files.push({ fileName: required, game: value });
-        }
-      }
-    }, []);
-
-    // retrieve only the basenames of required files because the walk only ever looks
-    // at the last path component of a file
-    const matchList: Set<string> = new Set(files.map((entry: FileEntry) => {
-      return path.basename(entry.fileName);
-    }));
-
-    Promise.each(this.mStore.getState().settings.gameMode.searchPaths,
-      (searchPath: string) => {
-        let progressObj: Progress = new Progress(0, 100, (percent: number, label: string) => {
-          this.mStore.dispatch(discoveryProgress(percent, label));
-        });
-
-        return walk(searchPath, matchList, new Set<string>(), (foundPath: string) => {
-          let matches: FileEntry[] = files.filter((entry: FileEntry) => {
-            return foundPath.endsWith(entry.fileName);
-          });
-
-          for (let match of matches) {
-            let testPath: string = foundPath.substring(0, foundPath.length - match.fileName.length);
-            let game: IGame = match.game;
-            this.testGameDirValid(game, testPath);
-          }
-          return false;
-        }, progressObj).then(() => {
-          this.mStore.dispatch(discoveryFinished());
-        });
-      });
+    this.mActiveSearch = searchDiscovery(
+      this.mKnownGames,
+      this.mStore.getState().settings.gameMode.discovered,
+      this.mStore.getState().settings.gameMode.searchPaths,
+      this.onDiscoveredGame, progress)
+    .finally(() => {
+      this.mStore.dispatch(discoveryFinished());
+    });
   }
 
-  private testGameDirValid(game: IGame, testPath: string): void {
-    Promise.map(game.requiredFiles, (fileName: string) => {
-      return fs.statAsync(path.join(testPath, fileName));
-    }).then(() => {
-      log('info', 'valid', { game: game.id, path: testPath });
-      this.mStore.dispatch(addDiscoveredGame(game.id, { path: testPath }));
-    }).catch(() => {
-      log('info', 'invalid', { game: game.id, path: testPath });
-    });
+  public stopSearchDiscovery(): void {
+    log('info', 'stop search', { prom: this.mActiveSearch });
+    this.mActiveSearch.cancel();
+  }
+
+  private onDiscoveredTool = (gameId: string, result: IToolDiscoveryResult) => {
+    log('info', 'found tool', { name: result.toolName, gameId, path: result.path });
+    this.mStore.dispatch(addDiscoveredTool(gameId));
+  }
+
+  private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
+    if (!path.isAbsolute(result.modPath)) {
+      result.modPath = path.resolve(result.path, result.modPath);
+    }
+    this.mStore.dispatch(addDiscoveredGame(gameId, result));
+    discoverTools(this.mKnownGames.find((game: IGame) => game.id === gameId),
+                  this.onDiscoveredTool);
   }
 
   private activateGameMode(mode: string, store: Redux.Store<IStateEx>): Promise<Persistor> {
@@ -351,6 +182,7 @@ class GameModeManager {
         };
         return getStoredStateP(settings);
       }).then((state) => {
+        log('info', 'activate game settings', JSON.stringify(state));
         // step 3: update game-specific settings, then return the persistor
         store.dispatch({ type: 'persist/REHYDRATE', payload: state });
         return createPersistor(store, settings);

@@ -17,6 +17,7 @@ export const discoveryReducer: IReducerSpec = {
     [discoveryFinished]: (state, payload) => update(state, {
       running: { $set: false },
       progress: { $set: -1 },
+      directory: { $set: '' },
     }),
   }, defaults: {
     running: false,

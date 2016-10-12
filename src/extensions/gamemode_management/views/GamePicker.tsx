@@ -70,7 +70,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
           <Layout type='row'>
             <Flex>
               <ProgressBar
-                active
+                active={ discovery.running }
                 min={ 0 }
                 max={ 100 }
                 now={ discovery.progress }
@@ -78,8 +78,10 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
               />
             </Flex>
             <Fixed>
-              <Button onClick={ this.startDiscovery } disabled={ discovery.running } >
-                <Icon name='search' />
+              <Button
+                onClick={ discovery.running ? this.stopDiscovery : this.startDiscovery }
+              >
+                <Icon name={ discovery.running ? 'stop' : 'search' } />
               </Button>
             </Fixed>
           </Layout>
@@ -98,6 +100,10 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
         },
       }));
     });
+  }
+
+  private stopDiscovery = () => {
+    this.context.api.events.emit('cancel-discovery');
   }
 
   private renderGames = (discovered: boolean) => {

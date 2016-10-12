@@ -5,7 +5,7 @@
 
 // tslint:disable:no-unused-variable
 
-import sims3 from './sims3/index.ts';
-import sims4 from './sims4/index.ts';
-import skyrim from './skyrim/index.ts';
-import xcom2 from './xcom2/index.ts';
+import sims3 from './sims3/index';
+import sims4 from './sims4/index';
+import skyrim from './skyrim/index';
+import xcom2 from './xcom2/index';

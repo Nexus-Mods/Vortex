@@ -1,18 +1,20 @@
 import { IGame } from '../../types/IGame';
-import { ISupportedTools } from '../../types/ISupportedTools';
 import { IState, IDiscoveryResult } from '../../types/IState';
+import { ISupportedTools } from '../../types/ISupportedTools';
+import { log } from '../../util/log';
 
 import { dialog as dialogIn, remote } from 'electron';
 
+import * as Promise from 'bluebird';
+import { execFile } from 'child_process';
 import * as path from 'path';
 import * as React from 'react';
-import * as Promise from 'bluebird';
-import { Jumbotron, Media, Modal } from 'react-bootstrap';
+import { Jumbotron, Media, Modal, Well } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import Icon = require('react-fontawesome');
 
 import { Button } from '../../views/TooltipControls';
-import { setExecutablePath } from '../../actions/gamesettings';
+import { setExecutablePath } from '../gamemode_management/actions/settings';
 import update = require('react-addons-update');
 
 import * as fs from 'fs-extra-promise';
@@ -20,14 +22,14 @@ import * as fs from 'fs-extra-promise';
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
 interface IWelcomeScreenState {
-    showLayer: string;
-    showPage: string;
-    ExecutablePath: string;
-    discoveredTool: { toolName: string, location: string };
+  showLayer: string;
+  showPage: string;
+  ExecutablePath: string;
+  discoveredTool: { toolName: string, location: string };
 }
 
 interface IActionProps {
-    onSetExecutablePath: (ExecutablePath: string) => void;
+  onSetExecutablePath: (ExecutablePath: string) => void;
 }
 
 interface IConnectedProps {
@@ -87,39 +89,35 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps,  IWelcomeScreen
 
 
   private renderGameMode = () => {
-
-      let { gameMode, knownGames } = this.props;
+    let { gameMode, knownGames } = this.props;
 
     let game: IGame = knownGames.find((ele) => ele.id === gameMode);
-    
     let logoPath: string;
-    
     let location: string;
-    
+
     if (game !== undefined) {
         logoPath = path.join(game.pluginPath, game.logo);
     }
-    
+
     return (
-      <Media>
-        <Media.Left>
-                { game === undefined ? <Icon name='spinner' spin /> : <img className='welcome-game-logo' src={logoPath} />}
+      <Well>
+        <Media>
+          <Media.Left>
+            {game === undefined ? <Icon name='spinner' spin /> : <img className='welcome-game-logo' src={logoPath} />}
+            <Media.Heading>
                 <Media.Heading>
-                    <Media.Heading>
-                        Supported Tools:
-                    </Media.Heading>
-                    {
-                        this.renderSupportedToolsIcons(game)                     
-                    }
+                    Supported Tools:
                 </Media.Heading>
-        </Media.Left>
-        <Media.Right>
-          <Media.Heading>
-                    { game === undefined ? gameMode : game.name }
-                   
-          </Media.Heading>
-        </Media.Right>
+                { this.renderSupportedToolsIcons(game) }
+            </Media.Heading>
+          </Media.Left>
+          <Media.Right>
+            <Media.Heading>
+              {game === undefined ? gameMode : game.name}
+            </Media.Heading>
+          </Media.Right>
         </Media>
+      </Well>
     );
   }
 
@@ -168,20 +166,14 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps,  IWelcomeScreen
 }
 
 function openTool(supportedTool: ISupportedTools) {
-    return function () {
-    
-    var child = require('child_process').execFile;
-    var executablePath = supportedTool.executable;
+  let executablePath = supportedTool.executable;
 
-    child(executablePath, function (err, data) {
-        if (err) {
-            console.log(err);
-            return;
-        }
-               
-    });
-
-  };
+  execFile(executablePath, (err, data) => {
+    if (err) {
+      log('info', 'error', { err });
+      return;
+    }
+  });
 }
 
 function mapStateToProps(state: any): IConnectedProps {
@@ -193,9 +185,9 @@ function mapStateToProps(state: any): IConnectedProps {
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
-    return {
-        onSetExecutablePath: (executablePath: string) => dispatch(setExecutablePath(executablePath)),
-    };
+  return {
+    onSetExecutablePath: (executablePath: string) => dispatch(setExecutablePath(executablePath)),
+  };
 }
 
-export default connect(mapStateToProps)(WelcomeScreen);
+export default connect(mapStateToProps, mapDispatchToProps)(WelcomeScreen);

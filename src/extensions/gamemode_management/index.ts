@@ -26,7 +26,13 @@ function init(context: IExtensionContext): boolean {
     gameModeManager.attachToStore(context.api.store);
     gameModeManager.startQuickDiscovery();
     context.api.events.on('start-discovery',
-      (progress) => gameModeManager.startSearchDiscovery(progress));
+      () => gameModeManager.startSearchDiscovery());
+
+    context.api.events.on('cancel-discovery',
+      () => {
+        log('info', 'received cancel discovery');
+        gameModeManager.stopSearchDiscovery();
+      });
 
     if (context.api.store.getState().settings.gameMode.searchPaths === undefined) {
       log('info', 'no search paths configured');
@@ -42,11 +48,12 @@ function init(context: IExtensionContext): boolean {
         }
       });
     }
-  });
 
-  context.api.onStateChange(['settings', 'gameMode', 'current'],
-    (prev: string, current: string) => {
-      gameModeManager.setGameMode(prev, current);
+    context.api.onStateChange(['settings', 'gameMode', 'current'],
+      (prev: string, current: string) => {
+        gameModeManager.setGameMode(prev, current);
+    });
+    gameModeManager.setGameMode(undefined, context.api.store.getState().settings.gameMode.current);
   });
 
   return true;

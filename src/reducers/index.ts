@@ -9,11 +9,7 @@ import { IExtensionReducer } from '../types/Extension';
 import { IReducerSpec } from '../types/IExtensionContext';
 
 import { accountReducer } from './account';
-import { discoveryReducer } from './discovery';
 import { notificationsReducer } from './notifications';
-import { profilesReducer } from './profiles';
-import { sessionReducer } from './session';
-import { settingsReducer } from './settings';
 import { windowReducer } from './window';
 
 import { combineReducers } from 'redux';
@@ -77,15 +73,11 @@ export default function (extensionReducers: IExtensionReducer[]) {
       base: accountReducer,
     },
     gameSettings: {
-      profiles: profilesReducer,
     },
     notifications: notificationsReducer,
     session: {
-      base: sessionReducer,
-      discovery: discoveryReducer,
     },
     settings: {
-      base: settingsReducer,
     },
   };
 

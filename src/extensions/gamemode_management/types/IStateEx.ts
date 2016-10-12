@@ -3,6 +3,12 @@ import { ISupportedTools } from '../../../types/ISupportedTools';
 
 export interface IDiscoveryResult {
   path: string;
+  modPath: string;
+}
+
+export interface IToolDiscoveryResult {
+  path: string;
+  toolName: string;
 }
 
 /**

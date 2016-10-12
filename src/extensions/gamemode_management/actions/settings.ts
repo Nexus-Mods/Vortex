@@ -1,4 +1,4 @@
-import { IDiscoveryResult } from '../types/IStateEx';
+import { IDiscoveryResult, IToolDiscoveryResult } from '../types/IStateEx';
 
 import { createAction } from 'redux-act';
 
@@ -15,11 +15,11 @@ export const addDiscoveredGame =
         (id: string, result: IDiscoveryResult) => { return { id, result }; });
 
 /**
-* add info about a discovered tool
-*/
+ * add info about a discovered tool
+ */
 export const addDiscoveredTool =
     createAction('ADD_DISCOVERED_TOOL',
-        (id: string, result: IDiscoveryResult) => { return { id, result }; });
+        (id: string, result: IToolDiscoveryResult) => { return { id, result }; });
 
 
 /**

@@ -3,9 +3,10 @@ import { IGame } from '../../types/IGame';
 import * as Promise from 'bluebird';
 import Registry = require('winreg');
 
-import { log } from '../../util/log';
+import { remote } from 'electron';
+import * as path from 'path';
 
-function findGame() {
+function findGame(): Promise<string> {
   if (Registry === undefined) {
     // linux ? macos ?
     return null;
@@ -27,15 +28,16 @@ function findGame() {
   });
 }
 
-function findTools() {
-
-    return null;
+function modPath(): string {
+  return path.join(remote.app.getPath('documents'), 'Electronic Arts', 'The Sims 4', 'Mods');
 }
 
 const game: IGame = {
   id: 'sims4',
   name: 'The Sims 4',
+  mergeMods: false,
   queryGamePath: findGame,
+  queryModPath: modPath,
   logo: 'logo.png',
   requiredFiles: [
     'game/bin/TS4.exe',
