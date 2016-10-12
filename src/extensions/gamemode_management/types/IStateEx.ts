@@ -1,5 +1,4 @@
 import { IState } from '../../../types/IState';
-import { ISupportedTools } from '../../../types/ISupportedTools';
 
 export interface IDiscoveryResult {
   path: string;
@@ -29,7 +28,6 @@ export interface IGameStored {
   logo: string;
   pluginPath?: string;
   requiredFiles: string[];
-  supportedTools: () => ISupportedTools[];
 }
 
 /**

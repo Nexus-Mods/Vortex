@@ -1,4 +1,5 @@
 import { IGame } from '../../../types/IGame';
+import { ISupportedTool } from '../../../types/ISupportedTool';
 import { log } from '../../../util/log';
 
 import { IDiscoveryResult, IToolDiscoveryResult } from '../types/IStateEx';
@@ -14,10 +15,20 @@ import * as path from 'path';
 type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
 type DiscoveredToolCB = (gameId: string, toolDetails: IToolDiscoveryResult) => void;
 
+/**
+ * run discovery for the specified game
+ * 
+ * @export
+ * @param {IGame} game
+ * @param {DiscoveredToolCB} onDiscoveredTool
+ */
 export function discoverTools(game: IGame, onDiscoveredTool: DiscoveredToolCB) {
-  let supportedTools = game.supportedTools();
-  supportedTools.map((supportedTool) => {
-    let location = supportedTool.location(supportedTool.executable);
+  let supportedTools: ISupportedTool[] = game.supportedTools;
+  if (supportedTools === null) {
+    return;
+  }
+  supportedTools.map((supportedTool: ISupportedTool) => {
+    let location: string | Promise<string> = supportedTool.location();
     if (typeof (location) === 'string') {
       if (location !== '') {
         onDiscoveredTool(game.id, { toolName: supportedTool.name, path: location });

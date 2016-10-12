@@ -1,5 +1,6 @@
+import { ISupportedTool } from './ISupportedTool';
+
 import * as Promise from 'bluebird';
-import { ISupportedTools } from './ISupportedTools';
 
 /**
  * interface for game extensions
@@ -68,7 +69,7 @@ export interface IGame {
    * 
    * @memberOf IGame
    */
-  supportedTools: () => ISupportedTools[];
+  supportedTools: ISupportedTool[];
 
   /**
    * path to the game extension and assets included with it. This is automatically

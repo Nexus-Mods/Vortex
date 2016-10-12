@@ -4,11 +4,9 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import StorageLogger from '../../util/StorageLogger';
 
-import { ISupportedTools } from '../../types/ISupportedTools';
-
 import { discoveryFinished, discoveryProgress } from './actions/discovery';
 import { setKnownGames } from './actions/session';
-import { addDiscoveredGame, setGameMode, addDiscoveredTool } from './actions/settings';
+import { addDiscoveredGame, addDiscoveredTool, setGameMode } from './actions/settings';
 import { IDiscoveryResult, IGameStored, IStateEx, IToolDiscoveryResult } from './types/IStateEx';
 import { discoverTools, quickDiscovery, searchDiscovery } from './util/discovery';
 import Progress from './util/Progress';
@@ -37,7 +35,6 @@ class GameModeManager {
   private mError: boolean;
   private mStore: Redux.Store<IStateEx>;
   private mKnownGames: IGame[];
-  private mKnownTools: ISupportedTools[];
   private mActiveSearch: Promise<any[]>;
 
   constructor(basePath: string) {
@@ -47,7 +44,6 @@ class GameModeManager {
     this.mError = false;
     this.mStore = null;
     this.mKnownGames = [];
-    this.mKnownTools = [];
     this.mActiveSearch = null;
   }
 

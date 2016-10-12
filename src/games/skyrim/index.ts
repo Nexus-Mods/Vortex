@@ -1,5 +1,5 @@
 import { IGame } from '../../types/IGame';
-import { ISupportedTools } from '../../types/ISupportedTools';
+import { ISupportedTool } from '../../types/ISupportedTool';
 
 import { log } from '../../util/log';
 
@@ -31,51 +31,48 @@ function findGame() {
   });
 }
 
-function findPath(toolExecutable: string) {
-  let directory = 'C:\\Program Files (x86)';
+function findInProgramFiles(executable: string) {
+  let base = 'C:\\Program Files (x86)';
 
   return new Promise<string>((resolve, reject) => {
-    walk(directory, (err, results) => {
+    walk(base, (err, results) => {
       if (err) {
-        console.log('ERROR ' + err);
+        log('error', 'failed to walk', { err: err.message });
         return reject(err.message);
-      }
-      else {
+      } else {
         if (results !== null) {
-          console.log('FIND ' + results);
+          log('debug', 'found', {  });
           return resolve(results.value);
         }
       }
     });
 
-    function walk(directory, done) {
-      fs.readdir(directory, function (err, list) {
-        if (err) {
-          console.log('ERR2 ' + err);
-          return done(err);
+    function walk(directory: string, done: (err, res) => void) {
+      fs.readdir(directory, (readErr, list) => {
+        if (readErr) {
+          log('error', 'failed to read directory', { directory, err: readErr.message });
+          return done(readErr, null);
         }
         let i = 0;
-        (function next() {
+        let next = () => {
           let file = list[i++];
           if (!file) {
             return done(null, null);
           }
           file = directory + '/' + file;
-          fs.stat(file, function (err, stat) {
+          fs.stat(file, (statErr, stat) => {
             if (stat && stat.isDirectory()) {
-              walk(file, function (err, res) {
-                if (err) {
-                  //return done(err);
-                }
-                else if (res !== '') {
-                  done(err, res);
+              walk(file, (walkErr, res) => {
+                if (walkErr) {
+                  log('error', 'failed to walk', { file, err: walkErr.message });
+                } else if (res !== '') {
+                  done(null, res);
                 }
                 next();
               });
             } else {
-
-              if (path.basename(file) === toolExecutable) {
-                console.log('TOOL ' + toolExecutable);
+              if (path.basename(file) === executable) {
+                log('info', 'found tool', { executable });
                 let splittedFile = file.split(path.basename(file));
                 let gamePath = splittedFile[0];
                 return done(null, gamePath);
@@ -84,66 +81,34 @@ function findPath(toolExecutable: string) {
               next();
             }
           });
-        })();
+        };
+        next();
       });
-    };
+    }
   });
 }
 
-function findRegEditPath(toolExecutable: string) {
-  
-    if (Registry === undefined) {
-      // linux ? macos ?
-      return null;
-    }
-    //"toolRegEditPath": "\\SOFTWARE\\WOW6432Node\\LOOT"
-    
-    let regKey = new Registry({
-      hive: Registry.HKLM,
-      key: '\\Software\\Wow6432Node\\Bethesda Softworks\\skyrim',
-    });
-
-    return new Promise<string>((resolve, reject) => {
-      regKey.get('Installed Path', (err: Error, result: Registry.RegistryItem) => {
-        if (err !== null) {
-          log('info', 'reg error', { err });
-          reject(err.message);
-        } else {
-          resolve(result.value);
-        }
-      });
-    });
-}
-
-function findTools(): ISupportedTools[] {
-  let supportedTools = [];
-
-  try {
-    let tools = require('supportedtools.json');
-
-    for (let spawn of tools.spawn) {
-      let tool: ISupportedTools = {
-        name: spawn.toolName,
-        executable: spawn.executable,
-        icon: spawn.toolIcon,
-        location: findPath,
-      };
-
-      supportedTools.push(tool);
-    }
-  } catch (err) {
-    log('error', 'failed to find tool', { err: err.message });
-  }
-
-  return supportedTools;
-}
+let tools: ISupportedTool[] = [
+  {
+    name: 'FO4Edit',
+    location: () => findInProgramFiles('FO4Edit.exe'),
+  },
+  {
+    name: 'LOOT',
+    location: () => findInProgramFiles('LOOT.exe'),
+  },
+  {
+    name: 'BodySlide',
+    location: () => findInProgramFiles('BodySlide.exe'),
+  },
+];
 
 const game: IGame = {
   id: 'skyrim',
   name: 'Skyrim',
   mergeMods: true,
   queryGamePath: findGame,
-  supportedTools: findTools,
+  supportedTools: tools,
   queryModPath: () => '.',
   logo: 'logo.png',
   requiredFiles: [
