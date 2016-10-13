@@ -34,7 +34,6 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     let { t } = this.props;
 
     return <ToolbarIcon
-      key='activate-mods'
       id='activate-mods'
       icon='chain-broken'
       tooltip={ t('Unlink Mods') }

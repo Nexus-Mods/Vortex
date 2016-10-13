@@ -13,7 +13,7 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
-type DiscoveredToolCB = (gameId: string, toolDetails: IToolDiscoveryResult) => void;
+type DiscoveredToolCB = (gameId: string, toolId: string, result: IToolDiscoveryResult) => void;
 
 /**
  * run discovery for the specified game
@@ -31,13 +31,13 @@ export function discoverTools(game: IGame, onDiscoveredTool: DiscoveredToolCB) {
     let location: string | Promise<string> = supportedTool.location();
     if (typeof (location) === 'string') {
       if (location !== '') {
-        onDiscoveredTool(game.id, { toolName: supportedTool.name, path: location });
+        onDiscoveredTool(game.id, supportedTool.id, { path: location });
       } else {
         log('debug', 'tool not found', supportedTool.name);
       }
     } else {
       (location as Promise<string>).then((resolvedPath) => {
-        onDiscoveredTool(game.id, { toolName: supportedTool.name, path: resolvedPath });
+        onDiscoveredTool(game.id, supportedTool.id, { path: resolvedPath });
         return null;
       }).catch((err) => {
         log('debug', 'tool not found', { id: supportedTool.name, err });
@@ -66,6 +66,7 @@ export function quickDiscovery(knownGames: IGame[], onDiscoveredGame: Discovered
           onDiscoveredGame(game.id, {
             path: gamePath,
             modPath: game.queryModPath(),
+            tools: {},
           });
         } else {
           log('debug', 'game not found', game.id);
@@ -76,6 +77,7 @@ export function quickDiscovery(knownGames: IGame[], onDiscoveredGame: Discovered
           onDiscoveredGame(game.id, {
             path: resolvedPath,
             modPath: game.queryModPath(),
+            tools: {},
           });
           return null;
         }).catch((err) => {
@@ -181,6 +183,7 @@ function testGameDirValid(game: IGame, testPath: string, onDiscoveredGame: Disco
     onDiscoveredGame(game.id, {
       path: testPath,
       modPath: game.queryModPath(),
+      tools: {},
     });
   }).catch(() => {
     log('info', 'invalid', { game: game.id, path: testPath });

@@ -12,6 +12,13 @@ export const settingsReducer: IReducerSpec = {
       return update(state, { current: { $set: payload } });
     },
     [addDiscoveredGame]: (state, payload) => {
+      // don't replace previously discovered tools as the settings
+      // there may also be user configuration
+      if (state.discovered[payload.id] !== undefined) {
+        payload.result.tools = Object.assign({},
+          payload.result.tools, state.discovered[payload.id].tools);
+      }
+
       return update(state, {
         discovered: {
           [payload.id]: { $set: payload.result },
@@ -20,8 +27,12 @@ export const settingsReducer: IReducerSpec = {
     },
     [addDiscoveredTool]: (state, payload) => {
       return update(state, {
-        discoveredTools: {
-          [payload.id]: { $set: payload.result },
+        discovered: {
+          [payload.gameId]: {
+            tools: {
+              [payload.toolId]: { $set: payload.result },
+            },
+          },
         },
       });
     },
@@ -46,6 +57,5 @@ export const settingsReducer: IReducerSpec = {
     current: undefined,
     searchPaths: undefined,
     discovered: {},
-    discoveredTools: {},
   },
 };

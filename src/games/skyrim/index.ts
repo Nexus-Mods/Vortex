@@ -90,15 +90,21 @@ function findInProgramFiles(executable: string) {
 
 let tools: ISupportedTool[] = [
   {
+    id: 'fo4edit',
     name: 'FO4Edit',
+    logo: 'tes5edit.png',
     location: () => findInProgramFiles('FO4Edit.exe'),
   },
   {
+    id: 'loot',
     name: 'LOOT',
+    logo: 'loot.png',
     location: () => findInProgramFiles('LOOT.exe'),
   },
   {
+    id: 'bodyslide',
     name: 'BodySlide',
+    logo: 'fnis.png',
     location: () => findInProgramFiles('BodySlide.exe'),
   },
 ];

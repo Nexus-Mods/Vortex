@@ -3,11 +3,15 @@ import { IState } from '../../../types/IState';
 export interface IDiscoveryResult {
   path: string;
   modPath: string;
+  tools?: {
+    [id: string]: IToolDiscoveryResult;
+  };
 }
 
 export interface IToolDiscoveryResult {
   path: string;
-  toolName: string;
+  parameters?: string;
+  logo?: string;
 }
 
 /**
@@ -39,7 +43,6 @@ export interface IGameStored {
 export interface IGameModeSettings {
   current: string;
   discovered: { [id: string]: IDiscoveryResult };
-  discoveredTool: { [id: string]: IDiscoveryResult };
   searchPaths: string[];
 }
 

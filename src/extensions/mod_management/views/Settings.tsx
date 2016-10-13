@@ -92,7 +92,7 @@ class Settings extends ComponentEx<IProps, {}> {
           value={currentActivator}
           onChange={this.selectActivator}
         >
-          {activators.map((activator) => <option value={activator.id}>{activator.name}</option>)}
+          {activators.map(this.renderActivatorOption)}
         </FormControl>
         <HelpBlock>
           {activators[activatorIdx].description}
@@ -102,6 +102,12 @@ class Settings extends ComponentEx<IProps, {}> {
     } else {
       return <ControlLabel>{ t('No mod activators installed') }</ControlLabel>;
     }
+  }
+
+  private renderActivatorOption(activator: IModActivator): JSX.Element {
+    return (
+      <option key={activator.id} value={activator.id}>{activator.name}</option>
+    );
   }
 
   private selectActivator = (evt) => {
@@ -130,7 +136,7 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
     },
     onSetActivator: (id: string): void => {
       dispatch(setActivator(id));
-    }
+    },
   };
 }
 

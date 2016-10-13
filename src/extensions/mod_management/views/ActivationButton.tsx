@@ -34,7 +34,6 @@ class ActivationButton extends ComponentEx<IProps, {}> {
     let { t } = this.props;
 
     return <ToolbarIcon
-      key='activate-mods'
       id='activate-mods'
       icon='chain'
       tooltip={ t('Link Mods') }

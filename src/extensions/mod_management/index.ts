@@ -18,7 +18,6 @@ import { INSTALL_TIME, MOD_NAME } from './modAttributes';
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as util from 'util';
 
 let activators: IModActivator[] = [];
 
@@ -71,10 +70,16 @@ function supportedActivators(state: any): IModActivator[] {
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('cubes', 'Mods', ModList);
   context.registerIcon('application-icons', ActivationButton, () => {
-    return { activators: supportedActivators(context.api.store.getState()) };
+    return {
+      key: 'activate-button',
+      activators: supportedActivators(context.api.store.getState()),
+    };
   });
   context.registerIcon('application-icons', DeactivationButton, () => {
-    return { activators: supportedActivators(context.api.store.getState()) };
+    return {
+      key: 'deactivate-button',
+      activators: supportedActivators(context.api.store.getState()),
+    };
   });
   context.registerSettings('Mods', Settings, () => {
     return { activators: supportedActivators(context.api.store.getState()) };

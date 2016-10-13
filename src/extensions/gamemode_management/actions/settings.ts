@@ -19,7 +19,8 @@ export const addDiscoveredGame =
  */
 export const addDiscoveredTool =
   createAction('ADD_DISCOVERED_TOOL',
-        (id: string, result: IToolDiscoveryResult) => { return { id, result }; });
+        (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
+          return { gameId, toolId, result }; });
 
 /**
  * add a search path (path that is searched for game installations)

@@ -144,8 +144,7 @@ class GameModeManager {
     this.mActiveSearch.cancel();
   }
 
-  private onDiscoveredTool = (gameId: string, result: IToolDiscoveryResult) => {
-    log('info', 'found tool', { name: result.toolName, gameId, path: result.path });
+  private onDiscoveredTool = (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
     this.mStore.dispatch(addDiscoveredTool(gameId));
   }
 
