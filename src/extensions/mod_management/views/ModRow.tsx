@@ -1,8 +1,9 @@
+import getAttr from '../../../util/getAttr';
+
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { IMod } from '../types/IMod';
 import { IModAttribute } from '../types/IModAttribute';
-import getAttr from '../util/getAttr';
 
 import * as React from 'react';
 import { Checkbox } from 'react-bootstrap';

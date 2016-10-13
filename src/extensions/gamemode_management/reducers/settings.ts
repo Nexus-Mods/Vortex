@@ -1,6 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import { addDiscoveredGame, addDiscoveredTool, setGameMode } from '../actions/settings';
-import { addSearchPath, removeSearchPath } from '../actions/settings';
+import { addSearchPath, removeSearchPath, setGameHidden } from '../actions/settings';
 import update = require('react-addons-update');
 
 /**
@@ -15,8 +15,7 @@ export const settingsReducer: IReducerSpec = {
       // don't replace previously discovered tools as the settings
       // there may also be user configuration
       if (state.discovered[payload.id] !== undefined) {
-        payload.result.tools = Object.assign({},
-          payload.result.tools, state.discovered[payload.id].tools);
+        payload.result = Object.assign({}, state.discovered[payload.id], payload.result);
       }
 
       return update(state, {
@@ -35,6 +34,25 @@ export const settingsReducer: IReducerSpec = {
           },
         },
       });
+    },
+    [setGameHidden]: (state, payload) => {
+      if (!(payload.gameId in state.discovered)) {
+        return update(state, {
+          discovered: {
+            [payload.gameId]: { $set: {
+              hidden: payload.hidden,
+            } },
+          },
+        });
+      } else {
+        return update(state, {
+          discovered: {
+            [payload.gameId]: {
+              hidden: { $set: payload.hidden },
+            },
+          },
+        });
+      }
     },
     [addSearchPath]: (state, payload) => {
       if (state.searchPaths === undefined) {

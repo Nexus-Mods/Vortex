@@ -115,6 +115,10 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenS
   private renderSupportedToolsIcons = (game: IGame): JSX.Element => {
     let knownTools: ISupportedTool[] = game.supportedTools;
 
+    if (knownTools === null) {
+      return null;
+    }
+
     return (
       <div>
         { knownTools.map((tool) => this.renderSupportedTool(game, tool)) }

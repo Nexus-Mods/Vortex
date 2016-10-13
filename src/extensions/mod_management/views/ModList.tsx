@@ -1,5 +1,6 @@
 import { SortDirection } from '../../../types/SortDirection';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+import getAttr from '../../../util/getAttr';
 
 import { IGameModeSettings } from '../../gamemode_management/types/IStateEx';
 
@@ -13,7 +14,6 @@ import { IMod } from '../types/IMod';
 import { IModAttribute } from '../types/IModAttribute';
 import { IStateMods } from '../types/IStateMods';
 import { IStateModSettings } from '../types/IStateSettings';
-import getAttr from '../util/getAttr';
 
 import AttributeToggle from './AttributeToggle';
 import HeaderCell from './HeaderCell';

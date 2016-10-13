@@ -1,14 +1,16 @@
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IGame } from '../../../types/IGame';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import getAttr from '../../../util/getAttr';
+import { Button } from '../../../views/TooltipControls';
 
-import { setGameMode } from '../actions/settings';
+import { setGameHidden, setGameMode } from '../actions/settings';
 import { IDiscoveryResult, IDiscoveryState, IGameStored, IStateEx } from '../types/IStateEx';
 
 import GameThumbnail from './GameThumbnail';
 
 import * as React from 'react';
-import { Button, ProgressBar } from 'react-bootstrap';
+import { ProgressBar } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import { log } from '../../../util/log';
@@ -25,6 +27,11 @@ interface IConnectedProps {
 
 interface IActionProps {
   onManage: (gameId: string) => void;
+  onHide: (gameId: string, hidden: boolean) => void;
+}
+
+interface IState {
+  showHidden: boolean;
 }
 
 /**
@@ -32,7 +39,7 @@ interface IActionProps {
  * 
  * @class GamePicker
  */
-class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
+class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IState> {
 
   public static contextTypes: React.ValidationMap<any> = {
     api: React.PropTypes.object.isRequired,
@@ -44,18 +51,26 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
     super(props);
 
     this.state = {
-      discovery: {
-        percent: 0,
-        label: '',
-      },
+      showHidden: false,
     };
   }
 
   public render(): JSX.Element {
-    let { t } = this.props;
-    const { discovery } = this.props;
+    const { t, discovery } = this.props;
+    const { showHidden } = this.state;
     return (
       <Layout type='column'>
+        <Fixed>
+          <div>
+          <Button
+            id='show-hidden-games'
+            tooltip={ t('Show / Hide Hidden games') }
+            onClick={ this.toggleHidden }
+          >
+            <Icon name={ showHidden ? 'eye-slash' : 'eye' }/>
+          </Button>
+          </div>
+        </Fixed>
         <Flex style={{ height: '100%', overflowY: 'auto' }}>
           <span style={{ display: 'table' }}>
             <h3>{ t('Discovered') }</h3>
@@ -74,11 +89,13 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
                 min={ 0 }
                 max={ 100 }
                 now={ discovery.progress }
-                label={ `${discovery.directory}` }
+                label={ discovery.directory }
               />
             </Flex>
             <Fixed>
               <Button
+                id='start-discovery'
+                tooltip={ discovery.running ? t('Stop search') : t('Search for games') }
                 onClick={ discovery.running ? this.stopDiscovery : this.startDiscovery }
               >
                 <Icon name={ discovery.running ? 'stop' : 'search' } />
@@ -88,6 +105,10 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
         </Fixed>
       </Layout>
     );
+  }
+
+  private toggleHidden = () => {
+    this.setState(update(this.state, { showHidden: { $set: !this.state.showHidden } }));
   }
 
   private startDiscovery = () => {
@@ -107,18 +128,22 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, {}> {
   }
 
   private renderGames = (discovered: boolean) => {
-    let { onManage, knownGames, discoveredGames, gameMode } = this.props;
+    const { onManage, onHide, knownGames, discoveredGames, gameMode } = this.props;
+    const { showHidden } = this.state;
 
-    const games = knownGames.filter((game: IGame) => {
-        return (game.id in discoveredGames) === discovered;
+    const games: IGameStored[] = knownGames.filter((game: IGame) => {
+        return (((getAttr(discoveredGames, game.id, { path: '' }).path !== '') === discovered)
+          && (showHidden || !getAttr(discoveredGames, game.id, { hidden: false }).hidden));
       });
 
-    return games.map((game) => {
+    return games.map((game: IGameStored) => {
       return (
         <GameThumbnail
           key={game.id}
           game={game}
           onManage={discovered ? onManage : undefined}
+          hidden={getAttr(discoveredGames, game.id, { hidden: false }).hidden}
+          onHide={onHide}
           active={game.id === gameMode}
         />
       );
@@ -138,6 +163,7 @@ function mapStateToProps(state: IStateEx): IConnectedProps {
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onManage: (gameId: string) => dispatch(setGameMode(gameId)),
+    onHide: (gameId: string, hidden: boolean) => dispatch(setGameHidden(gameId, hidden)),
   };
 }
 

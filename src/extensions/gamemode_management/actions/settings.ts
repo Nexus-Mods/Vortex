@@ -23,6 +23,12 @@ export const addDiscoveredTool =
           return { gameId, toolId, result }; });
 
 /**
+ * hide or unhide a game
+ */
+export const setGameHidden = createAction('SET_GAME_HIDDEN',
+  (gameId: string, hidden: boolean) => { return { gameId, hidden }; });
+
+/**
  * add a search path (path that is searched for game installations)
  */
 export const addSearchPath = createAction('ADD_SEARCH_PATH');

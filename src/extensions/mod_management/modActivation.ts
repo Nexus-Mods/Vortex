@@ -1,10 +1,10 @@
+import getAttr from '../../util/getAttr';
+import { log } from '../../util/log';
+
 import { IProfileMod } from '../profile_management/types/IProfile';
 
 import { IMod } from './types/IMod';
 import { IModActivator } from './types/IModActivator';
-import getAttr from './util/getAttr';
-
-import { log } from '../../util/log';
 
 import * as Promise from 'bluebird';
 

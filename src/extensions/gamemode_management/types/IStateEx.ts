@@ -1,8 +1,9 @@
 import { IState } from '../../../types/IState';
 
 export interface IDiscoveryResult {
-  path: string;
-  modPath: string;
+  path?: string;
+  modPath?: string;
+  hidden?: boolean;
   tools?: {
     [id: string]: IToolDiscoveryResult;
   };

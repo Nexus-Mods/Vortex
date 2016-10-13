@@ -67,6 +67,7 @@ export function quickDiscovery(knownGames: IGame[], onDiscoveredGame: Discovered
             path: gamePath,
             modPath: game.queryModPath(),
             tools: {},
+            hidden: false,
           });
         } else {
           log('debug', 'game not found', game.id);
@@ -77,7 +78,6 @@ export function quickDiscovery(knownGames: IGame[], onDiscoveredGame: Discovered
           onDiscoveredGame(game.id, {
             path: resolvedPath,
             modPath: game.queryModPath(),
-            tools: {},
           });
           return null;
         }).catch((err) => {
@@ -183,7 +183,6 @@ function testGameDirValid(game: IGame, testPath: string, onDiscoveredGame: Disco
     onDiscoveredGame(game.id, {
       path: testPath,
       modPath: game.queryModPath(),
-      tools: {},
     });
   }).catch(() => {
     log('info', 'invalid', { game: game.id, path: testPath });

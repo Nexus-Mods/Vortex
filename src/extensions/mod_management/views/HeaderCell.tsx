@@ -1,9 +1,9 @@
 import { SortDirection } from '../../../types/SortDirection';
+import getAttr from '../../../util/getAttr';
 import SortIndicator from '../../../views/SortIndicator';
 
 import { IAttributeState } from '../types/IAttributeState';
 import { IModAttribute } from '../types/IModAttribute';
-import getAttr from '../util/getAttr';
 
 import * as React from 'react';
 

@@ -1,15 +1,19 @@
-import * as React from 'react';
-import { Button, Panel } from 'react-bootstrap';
+import { ComponentEx, translate } from '../../../util/ComponentEx';
+import { Button } from '../../../views/TooltipControls';
 
 import { IGameStored } from '../types/IStateEx';
 
-import { ComponentEx, translate } from '../../../util/ComponentEx';
-
 import * as path from 'path';
+import * as React from 'react';
+import { Panel } from 'react-bootstrap';
+
+import Icon = require('react-fontawesome');
 
 interface IProps {
   game: IGameStored;
+  hidden: boolean;
   onManage?: (id: string) => void;
+  onHide: (id: string, hidden: boolean) => void;
   active: boolean;
 }
 
@@ -36,16 +40,47 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
         <div className='game-thumbnail-bottom'>
           <h3>{ t(game.name) }</h3>
           { this.renderManageButton() }
+          { this.renderHideButton() }
         </div>
       </Panel>
     );
   }
 
-  private renderManageButton = () => {
-    const { t, active } = this.props;
-    return (this.clickHandler !== undefined && !active)
-      ? <Button onClick={ this.clickHandler }>{ t('Manage') }</Button>
-      : null;
+  private renderManageButton() {
+    const { t, active, game } = this.props;
+    let buttonId = `manage-${game.id}`;
+
+    if (this.clickHandler === undefined || active) {
+      return null;
+    }
+
+    return (
+      <Button
+        id={buttonId}
+        tooltip={t('Manage')}
+        onClick={this.clickHandler}
+      >
+        <Icon name='asterisk' />
+      </Button>
+    );
+  }
+
+  private toggleHidden = () => {
+    const { game, hidden, onHide } = this.props;
+    onHide(game.id, !hidden);
+  }
+
+  private renderHideButton() {
+    const { t, hidden, game } = this.props;
+    return (
+      <Button
+        id={`showhide-${game.id}`}
+        tooltip={ hidden ? t('Show') : t('Hide') }
+        onClick={ this.toggleHidden }
+      >
+        { hidden ? <Icon name='eye' /> : <Icon name='eye-slash' /> }
+      </Button>
+    );
   }
 }
 
