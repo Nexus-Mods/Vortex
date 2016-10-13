@@ -11,8 +11,6 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import ipc = require('node-ipc');
 
-import * as util from 'util';
-
 class ModActivator implements IModActivator {
   public id: string;
   public name: string;

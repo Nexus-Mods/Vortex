@@ -1,6 +1,5 @@
 import { IGame } from '../../types/IGame';
 import { ISupportedTool } from '../../types/ISupportedTool';
-import { log } from '../../util/log';
 
 import { addDiscoveredTool } from '../gamemode_management/actions/settings';
 import { IToolDiscoveryResult } from '../gamemode_management/types/IStateEx';
@@ -82,17 +81,12 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenS
     let { gameMode, knownGames } = this.props;
 
     let game: IGame = knownGames.find((ele) => ele.id === gameMode);
-    let logoPath: string;
-
-    if (game !== undefined) {
-      logoPath = path.join(game.pluginPath, game.logo);
-    }
 
     return (
       <Well>
         <Media>
           <Media.Left>
-            {game === undefined ? <Icon name='spinner' spin /> : <img className='welcome-game-logo' src={logoPath} />}
+          { this.renderGameIcon(game) }
           </Media.Left>
           <Media.Right>
             <Media.Heading>
@@ -106,6 +100,16 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenS
         </Media>
       </Well>
     );
+  }
+
+  private renderGameIcon = (game: IGame): JSX.Element => {
+    if (game === undefined) {
+      // assumption is that this can only happen during startup
+      return <Icon name='spinner' spin />;
+    } else {
+      let logoPath = path.join(game.pluginPath, game.logo);
+      return <img className='welcome-game-logo' src={logoPath} />;
+    }
   }
 
   private renderSupportedToolsIcons = (game: IGame): JSX.Element => {

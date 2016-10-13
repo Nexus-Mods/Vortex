@@ -1,5 +1,3 @@
-import { IMod } from './IMod';
-
 /**
  * declaration of an attribute of a mod
  * 

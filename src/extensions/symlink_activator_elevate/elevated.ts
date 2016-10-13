@@ -37,7 +37,7 @@ const SHELLEXECUTEINFO = struct({
 
 const SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
 const shell32 = new ffi.Library('Shell32', {
-    ShellExecuteExA: ['bool',  [SHELLEXECUTEINFOPtr]]
+    ShellExecuteExA: ['bool',  [SHELLEXECUTEINFOPtr]],
 });
 
 function execInfo(scriptPath: string, parameters?: string[]) {
@@ -159,7 +159,7 @@ function runElevated(ipcPath: string, func: Function,
           // this is reached after the user confirmed the UAC dialog but before node
           // has read the script source so we have to give a little time for that to
           // happen before we can remove the tmp file
-          //setTimeout(cleanup, 1000);
+          // setTimeout(cleanup, 1000);
           if (execErr) {
             reject(execErr);
           } else {

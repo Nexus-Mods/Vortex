@@ -10,8 +10,7 @@ export interface ITermination {
   details?: string;
 }
 
-export function terminate(error: ITermination)
-{
+export function terminate(error: ITermination) {
   log('error', 'unrecoverable error', error);
 
   dialog.showMessageBox(null, {

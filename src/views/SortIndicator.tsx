@@ -1,7 +1,5 @@
 import { SortDirection } from '../types/SortDirection';
 
-import { log } from '../util/log';
-
 import * as React from 'react';
 import Icon = require('react-fontawesome');
 
@@ -33,7 +31,6 @@ class SortIndicator extends React.Component<IProps, {}> {
 
     onSetDirection(next(direction));
   }
-
 
   private icon(direction: SortDirection): string {
     switch (direction) {

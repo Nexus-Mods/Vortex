@@ -4,7 +4,6 @@ import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
-import { log } from '../util/log';
 import Developer from './Developer';
 import Dialog from './Dialog';
 import IconBar from './IconBar';

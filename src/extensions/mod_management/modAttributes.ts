@@ -9,7 +9,7 @@ export const MOD_NAME: IModAttribute = {
   isToggleable: false,
   sortFunc: (lhs: string, rhs: string, locale: string): number => {
     return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
-  } 
+  },
 };
 
 export const INSTALL_TIME: IModAttribute = {

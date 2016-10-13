@@ -42,7 +42,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
   }
 
   private activate = () => {
-    let { activators, currentActivator, gameDiscovery, mods, modState, onShowError } = this.props;
+    let { activators, currentActivator, gameDiscovery, onShowError } = this.props;
 
     let activator: IModActivator = currentActivator !== undefined
       ? activators.find((act: IModActivator) => act.id === currentActivator)

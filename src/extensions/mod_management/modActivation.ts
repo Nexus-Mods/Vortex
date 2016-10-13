@@ -8,8 +8,6 @@ import { log } from '../../util/log';
 
 import * as Promise from 'bluebird';
 
-import * as util from 'util';
-
 export function activateMods(destination: string,
                              mods: IMod[],
                              modState: { [id: string]: IProfileMod },

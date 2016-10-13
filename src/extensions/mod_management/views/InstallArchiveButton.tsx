@@ -40,7 +40,6 @@ class InstallButton extends ComponentEx<IConnectedProps & IActionProps, {}> {
     />;
   }
 
-
   private startInstallFile = () => {
     const context: IInstallContext = {
       startInstallCB: this.startInstallCB,
@@ -102,7 +101,7 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     paths: state.gameSettings.mods.paths,
     gameMode: state.settings.gameMode.current,
-  }
+  };
 }
 
 function mapDispatchToProps(dispatch): IActionProps {
@@ -124,7 +123,7 @@ function mapDispatchToProps(dispatch): IActionProps {
     },
     onSetModAttribute: (id: string, key: string, value: any) => {
       dispatch(setModAttribute(id, key, value));
-    }
+    },
   };
 }
 
@@ -132,4 +131,3 @@ export default
   translate(['common'], { wait: true })(
     connect(mapStateToProps, mapDispatchToProps)(InstallButton)
   );
-

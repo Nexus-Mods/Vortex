@@ -1,6 +1,6 @@
 import { IDialog } from './IDialog';
-import { INotification } from './INotification';
 import { IGame } from './IGame';
+import { INotification } from './INotification';
 
 /**
  * interface to represent a position on the screen

@@ -5,4 +5,3 @@ export interface IMainPage {
   title: string;
   component: React.ComponentClass<any>;
 }
-

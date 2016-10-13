@@ -1,5 +1,3 @@
-import { log } from '../../../util/log';
-
 /**
  * tracks progress. This has been designed to handle subtasks
  * 

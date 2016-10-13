@@ -1,5 +1,4 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { log } from '../../../util/log';
 
 import { setActivator, setModlistAttributeSort,
          setModlistAttributeVisible, setPath } from '../actions/settings';
