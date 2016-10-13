@@ -159,7 +159,7 @@ class GameModeManager {
 
   private activateGameMode(mode: string, store: Redux.Store<IStateEx>): Promise<Persistor> {
     if (mode === undefined) {
-      return null;
+      return Promise.resolve(null);
     }
 
     const statePath: string = path.join(this.mBasePath, mode, 'state');

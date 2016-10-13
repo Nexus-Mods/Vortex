@@ -134,6 +134,7 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenS
 
     return (
       <ToolButton
+        key={ game.id }
         game={ game }
         tool={ tool }
         discovery={ toolDiscovery }
@@ -145,10 +146,12 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenS
 
 function mapStateToProps(state: any): IConnectedProps {
   let gameMode: string = state.settings.gameMode.current;
+  let discovered = state.settings.gameMode.discovered[gameMode];
+
   return {
     gameMode,
     knownGames: state.session.gameMode.known,
-    discoveredTools: state.settings.gameMode.discovered[gameMode].tools,
+    discoveredTools: discovered !== undefined ? discovered.tools : undefined,
   };
 }
 

@@ -95,7 +95,6 @@
     "react-layout-pane": "TanninOne/react-layout-pane",
     "react-redux": "^4.4.5",
     "react-shallow-testutils": "^2.0.0",
-    "react-sidebar": "^2.2.1",
     "redux": "^3.5.2",
     "redux-act": "^0.5.0",
     "redux-devtools": "^3.3.1",
