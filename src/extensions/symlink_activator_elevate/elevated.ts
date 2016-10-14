@@ -36,9 +36,12 @@ const SHELLEXECUTEINFO = struct({
 });
 
 const SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
-const shell32 = new ffi.Library('Shell32', {
+let shell32;
+if (process.platform === 'win32') {
+  shell32 = new ffi.Library('Shell32', {
     ShellExecuteExA: ['bool',  [SHELLEXECUTEINFOPtr]],
-});
+  });
+}
 
 function execInfo(scriptPath: string, parameters?: string[]) {
   const instApp = ref.alloc(voidPtr);

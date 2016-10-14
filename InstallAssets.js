@@ -1,3 +1,5 @@
+'use strict'
+
 const fs = require('fs-extra-promise');
 const path = require('path');
 const glob = require('glob');
