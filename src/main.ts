@@ -20,6 +20,10 @@ if (doRestart) {
   app.quit();
 }
 
+if (process.env.NODE_ENV === 'development') {
+  app.commandLine.appendSwitch('remote-debugging-port', '9222');
+}
+
 // determine where to store settings
 let basePath: string = app.getPath('userData');
 fs.ensureDirSync(basePath);

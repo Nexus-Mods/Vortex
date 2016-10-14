@@ -14,6 +14,10 @@
             "args": ["run", "prestart"]
         },
         {
+            "taskName": "start",
+            "args": ["run", "start"]
+        },
+        {
             "taskName": "update",
             "args": ["update"]
         },

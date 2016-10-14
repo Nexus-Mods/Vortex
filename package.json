@@ -17,7 +17,7 @@
     "prepackage": "npm run _install_app && npm run _assets_app",
     "package": "build",
     "postinstall": "typings install",
-    "start": "cross-env NODE_ENV=production electron --enable-logging --remote-debugging-port=9222 .",
+    "start": "cross-env NODE_ENV=development electron .",
     "test": "jest",
     "doc": "typedoc --out doc src"
   },
