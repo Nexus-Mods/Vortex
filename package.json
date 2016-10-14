@@ -111,6 +111,7 @@
     "redux-persist-node-storage": "^1.0.2",
     "redux-thunk": "^2.1.0",
     "redux-watcher": "^0.1.2",
+    "ref-union": "^1.0.1",
     "string-templates": "^1.0.6",
     "tmp": "0.0.29",
     "tslint": "^3.15.1",

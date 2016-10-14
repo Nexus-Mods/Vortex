@@ -97,6 +97,9 @@ export interface IGame {
    * 
    * You can actually use a directory name for this as well.
    * 
+   * Prefer to NOT use game executables because those will differ between operating systems
+   * so if the game is multi-platform better use a data file
+   * 
    * @type {string[]}
    * @memberOf IGame
    */

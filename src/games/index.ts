@@ -5,6 +5,7 @@
 
 // tslint:disable:no-unused-variable
 
+import factorio from './factorio/index';
 import sims3 from './sims3/index';
 import sims4 from './sims4/index';
 import skyrim from './skyrim/index';

@@ -112,15 +112,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IState> {
   }
 
   private startDiscovery = () => {
-    this.context.api.events.emit('start-discovery', (percent: number, label: string) => {
-      log('info', 'progress', { percent, label });
-      this.setState(update(this.state, {
-        discovery: {
-          percent: { $set: percent },
-          label: { $set: label },
-        },
-      }));
-    });
+    this.context.api.events.emit('start-discovery');
   }
 
   private stopDiscovery = () => {

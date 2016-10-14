@@ -14,7 +14,8 @@ function setChannel(channel: string,
 
   autoUpdater.setFeedURL(url);
   autoUpdater.on('error', (err) => {
-    log('error', 'failed to check for updates', { err });
+    showErrorNotification(i18next.t('checking for update failed'), err.message);
+    // log('error', 'failed to check for updates', { err });
   });
   log('info', 'feed url', url);
   try {

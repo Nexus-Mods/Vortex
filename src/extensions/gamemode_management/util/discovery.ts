@@ -61,7 +61,7 @@ export function quickDiscovery(knownGames: IGame[], onDiscoveredGame: Discovered
     try {
       let gamePath = game.queryGamePath();
       if (typeof (gamePath) === 'string') {
-        if (gamePath !== '') {
+        if (gamePath) {
           log('info', 'found game', { name: game.name, location: gamePath });
           onDiscoveredGame(game.id, {
             path: gamePath,
@@ -74,11 +74,13 @@ export function quickDiscovery(knownGames: IGame[], onDiscoveredGame: Discovered
         }
       } else {
         (gamePath as Promise<string>).then((resolvedPath) => {
-          log('info', 'found game', { name: game.name, location: resolvedPath });
-          onDiscoveredGame(game.id, {
-            path: resolvedPath,
-            modPath: game.queryModPath(),
-          });
+          if (resolvedPath) {
+            log('info', 'found game', { name: game.name, location: resolvedPath });
+            onDiscoveredGame(game.id, {
+              path: resolvedPath,
+              modPath: game.queryModPath(),
+            });
+          }
           return null;
         }).catch((err) => {
           log('debug', 'game not found', { id: game.id, err: err.message });
