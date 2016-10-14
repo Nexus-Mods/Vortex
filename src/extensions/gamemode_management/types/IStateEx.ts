@@ -30,7 +30,7 @@ export interface IDiscoveryState {
 export interface IGameStored {
   id: string;
   name: string;
-  logo: string;
+  logo?: string;
   pluginPath?: string;
   requiredFiles: string[];
 }
