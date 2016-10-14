@@ -23,6 +23,27 @@
       "outDir": null
     },
     {
+      "name": "Launch Linux",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceRoot}/out/main.js",
+      "stopOnEntry": false,
+      "args": [],
+      "cwd": "${workspaceRoot}",
+      "preLaunchTask": "prestart",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "runtimeArgs": [
+        "."
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "BLUEBIRD_DEBUG": "0"
+      },
+      "console": "internalConsole",
+      "sourceMaps": true,
+      "outDir": null
+    },
+    {
       "name": "Attach to renderer",
       "type": "node2",
       "request": "attach",
