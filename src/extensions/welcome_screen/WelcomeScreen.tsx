@@ -134,7 +134,7 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenS
 
     return (
       <ToolButton
-        key={ game.id }
+        key={ tool.id }
         game={ game }
         tool={ tool }
         discovery={ toolDiscovery }

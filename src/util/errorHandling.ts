@@ -2,15 +2,15 @@ import { app as appIn, dialog as dialogIn, remote } from 'electron';
 
 import { log } from './log';
 
-let app = appIn || remote.app;
-let dialog = dialogIn || remote.dialog;
-
 export interface ITermination {
   message: string;
   details?: string;
 }
 
 export function terminate(error: ITermination) {
+  const app = appIn || remote.app;
+  const dialog = dialogIn || remote.dialog;
+
   log('error', 'unrecoverable error', error);
 
   dialog.showMessageBox(null, {
