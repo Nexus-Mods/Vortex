@@ -8,9 +8,14 @@ function setChannel(channel: string,
                     showErrorNotification: (message: string, detail: string) => void) {
   const autoUpdater = remote.autoUpdater;
 
-  const url = `http://localhost:56000/download/channel/${channel}/win`;
+  // const url = `http://localhost:56001/download/channel/${channel}/win`;
+  // TODO: This isn't actually using the channel :( nuts doesn't implement this yet
+  const url = `http://localhost:56000/update/win32/${remote.app.getVersion()}`;
 
   autoUpdater.setFeedURL(url);
+  autoUpdater.on('error', (err) => {
+    log('error', 'failed to check for updates', { err });
+  });
   log('info', 'feed url', url);
   try {
     autoUpdater.checkForUpdates();

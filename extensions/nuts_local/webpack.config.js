@@ -1,18 +1,17 @@
 var webpack = require('webpack')
 
-
 module.exports = {
-    entry: "./main.js",
-    target: "node",
+    entry: './main.js',
+    target: 'node',
     output: {
-        libraryTarget: "commonjs2",
-        library: "nuts-local",
-        filename: "index.js"
+        libraryTarget: 'commonjs2',
+        library: 'nuts-local',
+        filename: 'index.js'
     },
     module: {
         loaders: [
-            { test: /\.jsx?$/, loader: "babel-loader", exclude: /node_modules/ },
-            { test: /\.json?$/, loader: "json-loader" },
+            { test: /\.jsx?$/, loader: 'babel-loader', exclude: /node_modules/ },
+            { test: /\.json?$/, loader: 'json-loader' },
         ]
     },
     resolve: {
@@ -26,10 +25,10 @@ module.exports = {
         })
     ],
     externals: [
-        "fs",
-        "path",
-        "net",
-        "node",
+        'fs',
+        'path',
+        'net',
+        'node',
+        '../../util/log'
     ]
-
 };
