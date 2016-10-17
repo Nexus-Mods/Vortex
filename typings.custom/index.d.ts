@@ -11,3 +11,4 @@
 /// <reference path="react-layout-pane.d.ts" />
 /// <reference path="various-ext.d.ts" />
 /// <reference path="electron-squirrel-startup.d.ts" />
+/// <reference path="simple-vdf.d.ts" />

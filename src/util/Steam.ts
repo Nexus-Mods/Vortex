@@ -1,12 +1,15 @@
 import * as Promise from 'bluebird';
 import Registry = require('winreg');
 
+import { log } from './log';
+import { getSafe } from './storeHelper';
+
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 import { app as appIn, remote } from 'electron';
 
-import { log } from './log';
+import { parse } from 'simple-vdf';
 
 let app = appIn || remote.app;
 
@@ -47,12 +50,23 @@ class Steam {
   }
 
   public allGames(): Promise<ISteamEntry[]> {
+    let steamPaths: string[] = [];
     return this.mBaseFolder
     .then((basePath: string) => {
-      let steamPaths: string[] = [];
       steamPaths.push(basePath);
+      return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'));
+    })
+    .then((data: NodeBuffer) => {
+      let configObj: Object = parse(data.toString());
 
-      // TODO: parse config/config.vdf for further base folders
+      let counter = 1;
+      let steamObj: Object =
+        getSafe(configObj, ['InstallConfigStore', 'Software', 'Valve', 'Steam'], {});
+      while (steamObj.hasOwnProperty(`BaseInstallFolder_${counter}`)) {
+        steamPaths.push(steamObj[`BaseInstallFolder_${counter}`]);
+        ++counter;
+      }
+
       log('debug', 'steam base folders', { steamPaths });
 
       return Promise.all(Promise.map(steamPaths, (steamPath) => {
