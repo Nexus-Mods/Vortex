@@ -33,7 +33,6 @@
   "globalDependencies": {
     "base16": "registry:dt/base16#1.0.0+20160902130643",
     "react": "registry:dt/react#0.14.0+20160920055104",
-    "react-bootstrap": "registry:dt/react-bootstrap#0.0.0+20160806072414",
     "react-dom": "registry:dt/react-dom#0.14.0+20160412154040",
     "redux": "registry:dt/redux#3.5.2+20160703092728",
     "source-map-support": "registry:dt/source-map-support#0.2.10+20160316155526",
