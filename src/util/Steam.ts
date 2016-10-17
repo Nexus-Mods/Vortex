@@ -4,7 +4,11 @@ import Registry = require('winreg');
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
+import { app as appIn, remote } from 'electron';
+
 import { log } from './log';
+
+let app = appIn || remote.app;
 
 export interface ISteamEntry {
   name: string;
@@ -21,7 +25,7 @@ class Steam {
   private mBaseFolder: Promise<string>;
 
   constructor() {
-    if (Registry !== undefined) {
+    if (process.platform === 'win32') {
       // windows
       const regKey = new Registry({
         hive: Registry.HKCU,
@@ -37,6 +41,8 @@ class Steam {
           }
         });
       });
+    } else {
+      this.mBaseFolder = Promise.resolve(path.resolve(app.getPath('home'), '.steam', 'steam'));
     }
   }
 
@@ -50,7 +56,7 @@ class Steam {
       log('debug', 'steam base folders', { steamPaths });
 
       return Promise.all(Promise.map(steamPaths, (steamPath) => {
-        let appPath: string = path.join(steamPath, 'SteamApps', 'common');
+        let appPath: string = path.join(steamPath, 'steamapps', 'common');
         return fs.readdirAsync(appPath)
         .then((names: string[]) => {
           return names.map((name: string) => {
