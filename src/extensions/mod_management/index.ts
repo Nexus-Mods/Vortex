@@ -69,21 +69,25 @@ function supportedActivators(state: any): IModActivator[] {
 
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('cubes', 'Mods', ModList);
+
   context.registerIcon('application-icons', ActivationButton, () => {
     return {
       key: 'activate-button',
       activators: supportedActivators(context.api.store.getState()),
     };
   });
+
   context.registerIcon('application-icons', DeactivationButton, () => {
     return {
       key: 'deactivate-button',
       activators: supportedActivators(context.api.store.getState()),
     };
   });
+
   context.registerSettings('Mods', Settings, () => {
     return { activators: supportedActivators(context.api.store.getState()) };
   });
+
   context.registerReducer(['mods'], modsReducer);
   context.registerReducer(['gameSettings', 'mods'], settingsReducer);
 

@@ -19,6 +19,12 @@ interface IPathProps {
   onRemovePath: (path: string) => void;
 }
 
+/**
+ * entry of the game search path list
+ * 
+ * @class SearchPathEntry
+ * @extends {ComponentEx<IPathProps, {}>}
+ */
 class SearchPathEntry extends ComponentEx<IPathProps, {}> {
   public render() {
     let { searchPath, t } = this.props;
@@ -52,6 +58,13 @@ interface IActionProps {
   onRemovePath: (path: string) => void;
 }
 
+/**
+ * settings dialog for game modes
+ * Contains the list of paths to search when looking for installed games
+ * 
+ * @class Settings
+ * @extends {(ComponentEx<IActionProps & IConnectedProps, {}>)}
+ */
 class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
 
   public static contextTypes: React.ValidationMap<any> = {

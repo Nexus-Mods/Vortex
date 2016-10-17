@@ -7,6 +7,15 @@ export interface ITermination {
   details?: string;
 }
 
+/**
+ * display an error message and quit the application
+ * on confirmation.
+ * Use this whenever the application state is unknown and thus
+ * continuing could lead to data loss
+ * 
+ * @export
+ * @param {ITermination} error
+ */
 export function terminate(error: ITermination) {
   const app = appIn || remote.app;
   const dialog = dialogIn || remote.dialog;

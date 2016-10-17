@@ -20,6 +20,14 @@ const logMiddleware = store => next => action => {
   return res;
 };
 
+/**
+ * initialize redux store
+ * 
+ * @export
+ * @param {string} basePath
+ * @param {ExtensionManager} extensions
+ * @returns {Redux.Store<IState>}
+ */
 export function setupStore(basePath: string, extensions: ExtensionManager): Redux.Store<IState> {
   const middleware = [
     thunkMiddleware,

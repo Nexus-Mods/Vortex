@@ -1,7 +1,7 @@
 import * as CoreActions from '../actions/index';
 import * as SettingsInterfaceActions from '../extensions/settings_interface/actions';
 
-import * as LogMonTool from '../util/DevTools';
+import LogMonTool from '../util/DevTools';
 
 import * as React from 'react';
 import { Component } from 'react';

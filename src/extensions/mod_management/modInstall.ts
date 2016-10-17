@@ -16,9 +16,17 @@ export interface IInstallContext {
   reportError: (message: string, details?: string) => void;
 }
 
-export function extractArchive(archivePath: string,
-                               destinationPath: string,
-                               context: IInstallContext) {
+/**
+ * extract an archive
+ * 
+ * @export
+ * @param {string} archivePath path to the archive file
+ * @param {string} destinationPath path to install to
+ * @param {IInstallContext} context
+ */
+function extractArchive(archivePath: string,
+                        destinationPath: string,
+                        context: IInstallContext) {
   const baseName = path.basename(archivePath, path.extname(archivePath));
 
   let task = new Zip();
@@ -41,6 +49,13 @@ export function extractArchive(archivePath: string,
     });
 }
 
+/**
+ * start installing an archive from disk
+ * 
+ * @export
+ * @param {string} installPath
+ * @param {IInstallContext} context
+ */
 export function startInstallFile(installPath: string, context: IInstallContext) {
   let destination: string;
   let fileName: string;

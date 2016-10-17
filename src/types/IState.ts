@@ -24,6 +24,12 @@ export interface IDimensions {
   width: number;
 }
 
+/**
+ * Credentials used to log in a user
+ * 
+ * @export
+ * @interface IAccount
+ */
 export interface IAccount {
   APIKey: string;
 }
@@ -51,6 +57,12 @@ export interface INotificationState {
   dialogs: IDialog[];
 }
 
+/**
+ * the result of a game discovery.
+ * 
+ * @export
+ * @interface IDiscoveryResult
+ */
 export interface IDiscoveryResult {
   path: string;
 }

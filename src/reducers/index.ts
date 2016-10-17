@@ -64,6 +64,13 @@ function recursiveObjectKeys(tree: Object, prefix: string = '') {
   return result;
 }
 
+/**
+ * initialize reducer tree
+ * 
+ * @export
+ * @param {IExtensionReducer[]} extensionReducers
+ * @returns
+ */
 export default function (extensionReducers: IExtensionReducer[]) {
   let tree = {
     window: {

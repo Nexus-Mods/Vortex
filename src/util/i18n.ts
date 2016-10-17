@@ -11,6 +11,13 @@ if (dirName.endsWith('.asar')) {
 
 const basePath = path.normalize(path.join(dirName, 'locales'));
 
+/**
+ * initialize the internationalization library
+ * 
+ * @export
+ * @param {string} language
+ * @returns {I18next.I18n}
+ */
 export default function (language: string): I18next.I18n {
   return i18n
     .use(FSBackend)

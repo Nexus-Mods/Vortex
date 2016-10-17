@@ -166,8 +166,34 @@ export interface IExtensionContext {
   /**
    * register a reducer to introduce new set-operations on the application
    * state.
-   * Note: For obvious reasons this is called before the store is set up so
+   * Note: For obvious reasons this is executed before the store is set up so
    * many api operations are not possible during this call
+   * 
+   * The first part of the path decides how and if settings are persisted:
+   *   * window, settings, account are always persisted and automatically restored
+   *   * gameSettings are persisted on a per-game basis and will be restored when
+   *     the game mode changes
+   *   * session and all other will not be persisted at all. Although session is not
+   *     treated different than any other path, please use this path  for all
+   *     ephemeral state
+   *
+   * Another word on the path: You can introduce additional reducers for any "leaf" of
+   *   the settings tree and you can introduce new "subnodes" in the tree at any depth.
+   *   For technical reasons it is however not possible to introduce subnodes to a leaf
+   *   or vice-verso.
+   *   I.e. settings.interface contains all settings regarding the ui. Your extension
+   *   can register a reducer with path ['settings', 'interface'] and ['settings', 'whatever']
+   *   but NOT ['settings'] and NOT ['settings', 'interface', 'somethingelse']
+   *
+   * And one more thing about the spec: All things you store inside the store need to be
+   *   serializable. This means: strings, numbers, booleans, arrays, objects are fine but
+   *   functions are not. If you absolutely need to store a callback or something then create
+   *   a "registry" or factory and store just an id that allows you to retrieve or generate
+   *   the function on demand. 
+   * 
+   * @param path The path within the settings store
+   * @param spec a IReducerSpec object that contains reducer functions and defaults
+   *        for the newly introduced settings
    * 
    * @memberOf IExtensionContext
    */

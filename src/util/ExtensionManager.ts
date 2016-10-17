@@ -94,6 +94,13 @@ class ExtensionManager {
     };
   }
 
+  /**
+   * gain acces to the extension api
+   * 
+   * @returns
+   * 
+   * @memberOf ExtensionManager
+    */
   public getApi() {
     return this.mApi;
   }
@@ -115,6 +122,11 @@ class ExtensionManager {
     return reducers;
   }
 
+  /**
+   * apply all extensions that were registered by extensions
+   * 
+   * @memberOf ExtensionManager
+   */
   public applyExtensionsOfExtensions() {
     this.apply('registerExtensionFunction', (name: string, registerFunc: () => void) => {
       let context = this.emptyExtensionContext();

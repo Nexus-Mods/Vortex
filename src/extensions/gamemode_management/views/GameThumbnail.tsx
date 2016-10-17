@@ -17,6 +17,11 @@ interface IProps {
   active: boolean;
 }
 
+/**
+ * thumbnail + controls for a single game mode within the game picker
+ * 
+ * @class GameThumbnail
+ */
 class GameThumbnail extends ComponentEx<IProps, {}> {
   private clickHandler: () => void;
 

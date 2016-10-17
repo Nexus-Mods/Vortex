@@ -41,7 +41,7 @@ let enhancer = null;
 
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
-  const DevTools = require('./util/DevTools');
+  const DevTools = require('./util/DevTools').default;
   enhancer = compose(
     applyMiddleware(...middleware),
     electronEnhancer({ filter }),

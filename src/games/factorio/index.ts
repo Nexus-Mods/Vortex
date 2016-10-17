@@ -12,9 +12,7 @@ function findGame(): Promise<string> {
   let steam = new Steam();
   return steam.allGames()
   .then((games: ISteamEntry[]) => {
-    log('info', 'games', { games });
     let factorio = games.find((entry: ISteamEntry) => entry.name === 'Factorio');
-    log('info', 'factorio', { factorio });
     if (factorio !== undefined) {
       return factorio.gamePath;
     } else {
