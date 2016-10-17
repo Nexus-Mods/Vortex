@@ -26,7 +26,7 @@ export const settingsReducer: IReducerSpec = {
       return setSafe(state, ['discovered', payload.gameId, 'hidden'], payload.hidden);
     },
     [addSearchPath]: (state, payload) => {
-      return pushSafe(state, ['seachPaths'], payload);
+      return pushSafe(state, ['searchPaths'], payload);
     },
     [removeSearchPath]: (state, payload) => {
       return removeValue(state, ['searchPaths'], payload);

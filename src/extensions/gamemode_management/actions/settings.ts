@@ -36,5 +36,4 @@ export const addSearchPath = createAction('ADD_SEARCH_PATH');
 /**
  * remove a search path
  */
-export const removeSearchPath = createAction('REMOVE_SEARCH_PATH',
-    (id: string, result: IDiscoveryResult) => { return { id, result }; });
+export const removeSearchPath = createAction('REMOVE_SEARCH_PATH');

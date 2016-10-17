@@ -48,16 +48,20 @@ export function setSafe<T>(state: T, path: string[], value: any): T {
   return copy;
 }
 
-function setDefault<T>(state: T, path: string[], fallback: any): T {
+function setDefaultArray<T>(state: T, path: string[], fallback: any[]): T {
   let firstElement: string = path[0];
   let copy = Object.assign({}, state);
-  if ((path.length === 1) && (!copy.hasOwnProperty(firstElement))) {
-    copy[firstElement] = fallback;
+  if (path.length === 1) {
+    if (!copy.hasOwnProperty(firstElement)) {
+      copy[firstElement] = fallback;
+    } else {
+      copy[firstElement] = copy[firstElement].slice();
+    }
   } else {
     if (!copy.hasOwnProperty(firstElement)) {
       copy[firstElement] = {};
     }
-    setDefault(copy[firstElement], path.slice(1), fallback);
+    copy[firstElement] = setDefaultArray(copy[firstElement], path.slice(1), fallback);
   }
   return copy;
 }
@@ -74,7 +78,7 @@ function setDefault<T>(state: T, path: string[], fallback: any): T {
  * @returns {T}
  */
 export function pushSafe<T>(state: T, path: string[], value: any): T {
-  let copy = setDefault(state, path, []);
+  let copy = setDefaultArray(state, path, []);
   getSafe(copy, path, undefined).push(value);
   return copy;
 }
@@ -90,7 +94,7 @@ export function pushSafe<T>(state: T, path: string[], value: any): T {
  * @returns {T}
  */
 export function removeValue<T>(state: T, path: string[], value: any): T {
-  let copy = setDefault(state, path, []);
+  let copy = setDefaultArray(state, path, []);
   let list = getSafe(copy, path, undefined);
   const idx = list.indexOf(value);
   if (idx !== -1) {
