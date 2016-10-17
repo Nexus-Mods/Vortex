@@ -1,15 +1,15 @@
-Usage
+# Usage
 
 - Install node.js (version 6.x)
 - check out repository
 - run "npm install" to install all dependencies
 - (temporary) change directory to "node_modules/redux-persist" and run "npm run build". If you get an error "Error: spawn webpack ENOENT", ignore it. Then cd back
-- (temporary) ensure you have python 2.7 installed and running "python" on the shell defaults to python 2, not python 3
-- (temporary) run node_modules/.bin/electron-rebuid.cmd (or without .cmd on linux & mac os)
+- Ensure you have python 2.7 installed. If you also have python 3, run "npm config set python python2.7"
+- run "npm run native" to rebuild native dependencies on the current platform
 - run "npm run start" to build & run
 - run "npm run package" to create a distribution
 
-Further Information
+# Further Information
 
 - see structure.md for an overview of how the project is organized
 - see the wiki for a description of the extension api
