@@ -80,7 +80,7 @@ class Settings extends ComponentEx<IProps, {}> {
   private renderActivators(activators: IModActivator[], currentActivator: string): JSX.Element {
     const { t } = this.props;
 
-    if (activators !== undefined) {
+    if ((activators !== undefined) && (activators.length > 0)) {
       let activatorIdx: number = 0;
       if (currentActivator !== undefined) {
         activatorIdx = activators.findIndex((activator) => activator.id === currentActivator);
