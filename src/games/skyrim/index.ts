@@ -41,8 +41,8 @@ function findInProgramFiles(executable: string) {
         return reject(err.message);
       } else {
         if (results !== null) {
-          log('debug', 'found', {  });
-          return resolve(results.value);
+          console.log('debug', 'found', { results });
+          return resolve(results);
         }
       }
     });
@@ -90,10 +90,16 @@ function findInProgramFiles(executable: string) {
 
 let tools: ISupportedTool[] = [
   {
-    id: 'fo4edit',
-    name: 'FO4Edit',
+    id: 'TES5Edit',
+    name: 'TES5Edit',
     logo: 'tes5edit.png',
-    location: () => findInProgramFiles('FO4Edit.exe'),
+    location: () => findInProgramFiles('TES5Edit.exe'),
+  },
+   {
+    id: 'WryeBash',
+    name: 'WryeBash',
+    logo: 'wrye.png',
+    location: () => findInProgramFiles('Wrye Bash.exe'),
   },
   {
     id: 'loot',
@@ -102,10 +108,10 @@ let tools: ISupportedTool[] = [
     location: () => findInProgramFiles('LOOT.exe'),
   },
   {
-    id: 'bodyslide',
-    name: 'BodySlide',
+    id: 'FNIS',
+    name: 'FNIS',
     logo: 'fnis.png',
-    location: () => findInProgramFiles('BodySlide.exe'),
+    location: () => findInProgramFiles('GenerateFNISforUsers.exe'),
   },
 ];
 

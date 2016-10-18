@@ -23,6 +23,14 @@ export const addDiscoveredTool =
           return { gameId, toolId, result }; });
 
 /**
+ * remove info about a discovered tool
+ */
+export const removeDiscoveredTool =
+  createAction('REMOVE_DISCOVERED_TOOL',
+        (gameId: string, toolId: string) => {
+          return { gameId, toolId }; });
+
+/**
  * hide or unhide a game
  */
 export const setGameHidden = createAction('SET_GAME_HIDDEN',

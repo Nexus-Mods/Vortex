@@ -123,12 +123,14 @@
     "tslint-react": "^1.0.0",
     "typedoc": "^0.4.5",
     "typings": "^1.3.3",
+    "webpack": "^1.13.2",
     "winreg": "^1.2.2",
     "winston": "^2.2.0"
   },
   "dependencies": {
     "font-awesome": "^4.6.3",
     "react": "^15.3.0",
+    "react-contextmenu": "^1.6.3",
     "react-dom": "^15.3.0",
     "source-map-support": "^0.4.2",
     "typescript": "^2.0.3"

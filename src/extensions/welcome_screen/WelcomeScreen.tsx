@@ -1,7 +1,7 @@
 import { IGame } from '../../types/IGame';
 import { ISupportedTool } from '../../types/ISupportedTool';
 
-import { addDiscoveredTool } from '../gamemode_management/actions/settings';
+import { addDiscoveredTool, removeDiscoveredTool } from '../gamemode_management/actions/settings';
 import { IToolDiscoveryResult } from '../gamemode_management/types/IStateEx';
 
 import { ToolButton } from './ToolButton';
@@ -22,6 +22,7 @@ interface IWelcomeScreenState {
 
 interface IActionProps {
   onAddDiscoveredTool: (gameId: string, toolId: string, result: IToolDiscoveryResult) => void;
+  onRemoveDiscoveredTool: (gameId: string, toolId: string) => void;
 }
 
 interface IConnectedProps {
@@ -59,23 +60,6 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenS
       </Jumbotron>
     );
   }
-
-  // private SaveExecutablePath = (game: string, supportedTool: ISupportedTools) => {
-
-  //    let destination: string;
-  //    let fileName: string;
-
-  //    const options: Electron.OpenDialogOptions = {
-  //        properties: ['openFile'],
-  //    };
-
-  //    dialog.showOpenDialog(null, options, (fileNames: string[]) => {
-  //        if ((fileNames !== undefined) && (fileNames.length > 0)) {
-  //            fileName = fileNames[0];
-  //            this.setState(update(this.state, { [game]: { $set: supportedTool } }));
-  //        }
-  //    });
-  // }
 
   private renderGameMode = () => {
     let { gameMode, knownGames } = this.props;
@@ -139,6 +123,7 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenS
         tool={ tool }
         discovery={ toolDiscovery }
         onChangeToolLocation={ this.props.onAddDiscoveredTool }
+        onRemoveTool={this.props.onRemoveDiscoveredTool}
       />
     );
   }
@@ -158,7 +143,10 @@ function mapStateToProps(state: any): IConnectedProps {
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onAddDiscoveredTool: (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
-      dispatch(addDiscoveredTool(gameId, toolId, result));
+    dispatch(addDiscoveredTool(gameId, toolId, result));
+    },
+    onRemoveDiscoveredTool: (gameId: string, toolId: string) => {
+    dispatch(removeDiscoveredTool(gameId, toolId));
     },
   };
 }
