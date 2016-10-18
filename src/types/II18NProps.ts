@@ -1,3 +1,3 @@
 export interface II18NProps {
-    t?: (input: string) => string;
+    t?: (input: string, parameters?: Object) => string;
 }

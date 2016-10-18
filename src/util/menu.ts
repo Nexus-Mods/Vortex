@@ -44,7 +44,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     accelerator: 'CmdOrCtrl+Shift+S',
     click (item, focusedWindow) {
       extensions.getApi().events.emit('show-modal', 'settings');
-    }
+    },
   });
 
   // development stuff
@@ -67,7 +67,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         log('info', 'toogle', { recordTranslation, label: viewMenu[viewMenu.length - 1].label });
         let subMenu: Electron.Menu = menu.items[1].submenu as Electron.Menu;
         subMenu.items[viewMenu.length - 1].enabled = recordTranslation;
-      }
+      },
     });
     viewMenu.push({
       label: 'Copy missing translations to clipboard',

@@ -15,7 +15,7 @@ import { IProfile } from '../extensions/profile_management/types/IProfile';
 export function getSafe<T>(state: any, path: string[], fallback: T): T {
   let current = state;
   for (let segment of path) {
-    if (!current.hasOwnProperty(segment)) {
+    if ((current === undefined) || !current.hasOwnProperty(segment)) {
       return fallback;
     } else {
       current = current[segment];

@@ -13,6 +13,7 @@ export interface IToolDiscoveryResult {
   path: string;
   parameters?: string;
   logo?: string;
+  hidden?: boolean;
 }
 
 /**

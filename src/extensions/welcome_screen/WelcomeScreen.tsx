@@ -1,12 +1,13 @@
 import { IGame } from '../../types/IGame';
 import { ISupportedTool } from '../../types/ISupportedTool';
-
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { addDiscoveredTool, removeDiscoveredTool } from '../gamemode_management/actions/settings';
+import { getSafe } from '../../util/storeHelper';
+
+import { addDiscoveredTool, hideDiscoveredTool } from '../gamemode_management/actions/settings';
 
 import { IToolDiscoveryResult } from '../gamemode_management/types/IStateEx';
 
-import { ToolButton } from './ToolButton';
+import ToolButton from './ToolButton';
 
 import * as path from 'path';
 import * as React from 'react';
@@ -117,6 +118,10 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     let toolDiscovery: IToolDiscoveryResult =
       discoveredTools !== undefined ? discoveredTools[tool.id] : undefined;
 
+    if (getSafe(toolDiscovery, ['hidden'], false) === true) {
+      return null;
+    }
+
     return (
       <ToolButton
         key={ tool.id }
@@ -147,7 +152,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     dispatch(addDiscoveredTool(gameId, toolId, result));
     },
     onRemoveDiscoveredTool: (gameId: string, toolId: string) => {
-    dispatch(removeDiscoveredTool(gameId, toolId));
+    dispatch(hideDiscoveredTool(gameId, toolId));
     },
   };
 }
