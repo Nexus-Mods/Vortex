@@ -16,7 +16,10 @@
     "node": true
   },
   "globals": {
-    "$": true
+    "$": true,
+    "expect": false,
+    "describe": false,
+    "it": false
   },
   "rules": {
     "strict": 0,
@@ -159,7 +162,7 @@
       2,
       4
     ],
-    "new-cap": 2,
+    "new-cap": 0,
     "new-parens": 2,
     "newline-after-var": 0,
     "no-array-constructor": 2,
