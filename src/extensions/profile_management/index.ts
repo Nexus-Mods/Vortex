@@ -23,7 +23,9 @@ function checkProfile(store: Redux.Store<any>, currentProfile: string) {
 }
 
 function init(context: IExtensionContext): boolean {
-  context.registerMainPage('clone', 'Profiles', ProfileView);
+  context.registerMainPage('clone', 'Profiles', ProfileView, {
+    hotkey: 'P',
+  });
   context.registerReducer(['gameSettings', 'profiles'], profilesReducer);
 
   // ensure the current profile is always set to a valid value on startup and

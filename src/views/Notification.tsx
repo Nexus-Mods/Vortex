@@ -40,7 +40,7 @@ class Notification extends ComponentEx<IProps, {}> {
     return (
       <Alert bsStyle={this.styleName} onDismiss={this.dismiss}>
         { this.typeToIcon(type) }{' '}
-        {message}
+        { message }
         <p>
           { actions !== undefined ? actions.map(this.renderAction) : null }
         </p>

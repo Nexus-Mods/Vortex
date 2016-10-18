@@ -1,10 +1,11 @@
 import { dismissNotification } from '../actions/notifications';
 import { INotification } from '../types/INotification';
 import { IState } from '../types/IState';
+import { ComponentEx, connect, translate } from '../util/ComponentEx';
+
 import Notification from './Notification';
 
 import * as React from 'react';
-import { connect } from 'react-redux';
 
 import CSSTransitionGroup = require('react-addons-css-transition-group');
 
@@ -20,7 +21,7 @@ interface IActionProps {
   onDismiss: (id) => void;
 }
 
-class Notifications extends React.Component<IProps & IActionProps & IConnectedProps, {}> {
+class Notifications extends ComponentEx<IProps & IActionProps & IConnectedProps, {}> {
   constructor(props) {
     super(props);
   }
@@ -48,8 +49,11 @@ class Notifications extends React.Component<IProps & IActionProps & IConnectedPr
   }
 
   private renderNotification = (notification: INotification) => {
-    const { onDismiss } = this.props;
-    return <Notification key={notification.id} params={notification} onDismiss={onDismiss} />;
+    const { t, onDismiss } = this.props;
+
+    let translated: INotification = Object.assign({}, notification);
+    translated.message = t(translated.message);
+    return <Notification key={notification.id} params={translated} onDismiss={onDismiss} />;
   }
 }
 
@@ -65,5 +69,8 @@ function mapDispatchToProps(dispatch): IActionProps {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(
-  Notifications) as React.ComponentClass<IProps>;
+export default
+  translate(['common'], { wait: true })(
+    connect(mapStateToProps, mapDispatchToProps)(
+      Notifications)
+  ) as React.ComponentClass<IProps>;

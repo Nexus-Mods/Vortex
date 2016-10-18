@@ -14,14 +14,14 @@ function setChannel(channel: string,
 
   autoUpdater.setFeedURL(url);
   autoUpdater.on('error', (err) => {
-    showErrorNotification(i18next.t('checking for update failed'), err.message);
+    showErrorNotification('checking for update failed', err.message);
     // log('error', 'failed to check for updates', { err });
   });
   log('info', 'feed url', url);
   try {
     autoUpdater.checkForUpdates();
   } catch (e) {
-    showErrorNotification(i18next.t('checking for update failed'), e.message);
+    showErrorNotification('checking for update failed', e.message);
     return;
   }
 }

@@ -15,7 +15,9 @@ import { list } from 'drivelist';
 let gameModeManager: GameModeManager;
 
 function init(context: IExtensionContext): boolean {
-  context.registerMainPage('gamepad', 'Games', GamePicker);
+  context.registerMainPage('gamepad', 'Games', GamePicker, {
+    hotkey: 'G',
+  });
   context.registerSettings('Games', Settings);
   context.registerReducer(['session', 'discovery'], discoveryReducer);
   context.registerReducer(['session', 'gameMode'], sessionReducer);

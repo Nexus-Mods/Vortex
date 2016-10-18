@@ -27,6 +27,7 @@
     "redux-thunk": "registry:dt/redux-thunk#2.1.0+20160703120921",
     "ref-union": "registry:dt/ref-union#0.0.0+20160316155526",
     "tmp": "registry:dt/tmp#0.0.0+20160514170650",
+    "webpack": "registry:dt/webpack#1.12.9+20160927034556",
     "winreg": "registry:dt/winreg#1.2.0+20160505170241",
     "winston": "registry:dt/winston#0.0.0+20160417152829"
   },

@@ -3,6 +3,8 @@ import FSBackend = require('i18next-node-fs-backend');
 
 import * as path from 'path';
 
+import { log } from './log';
+
 let dirName = path.dirname(__dirname);
 if (dirName.endsWith('.asar')) {
   // locales are not packed so users can update/change them
@@ -11,6 +13,15 @@ if (dirName.endsWith('.asar')) {
 
 const basePath = path.normalize(path.join(dirName, 'locales'));
 
+let debugging = false;
+
+interface ITranslationEntry {
+  lng: string;
+  ns: string;
+  key: string;
+}
+let missingKeys = { common: {} };
+
 /**
  * initialize the internationalization library
  * 
@@ -18,19 +29,25 @@ const basePath = path.normalize(path.join(dirName, 'locales'));
  * @param {string} language
  * @returns {I18next.I18n}
  */
-export default function (language: string): I18next.I18n {
+function init(language: string): I18next.I18n {
   return i18n
     .use(FSBackend)
     .init({
       lng: language,
-      fallbackLng: 'en',
 
       ns: ['common'],
       defaultNS: 'common',
 
+      nsSeparator: ':::',
+      keySeparator: '::',
+
       debug: false,
 
-      saveMissing: false,
+      saveMissing: debugging,
+
+      missingKeyHandler: (lng, ns, key, fallbackValue) => {
+        missingKeys[ns][key] = key;
+      },
 
       interpolation: {
         escapeValue: false,
@@ -42,3 +59,19 @@ export default function (language: string): I18next.I18n {
       },
     });
 }
+
+export function debugTranslations(enable?: boolean) {
+  if (enable !== undefined) {
+    debugging = enable;
+  } else {
+    debugging = !debugging;
+  }
+  missingKeys = { common: {} };
+  init(i18n.language);
+}
+
+export function getMissingTranslations() {
+  return missingKeys;
+}
+
+export default init;

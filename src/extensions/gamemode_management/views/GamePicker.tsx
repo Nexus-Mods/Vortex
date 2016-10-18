@@ -64,7 +64,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IState> {
           <div>
           <Button
             id='show-hidden-games'
-            tooltip={ t('Show / Hide Hidden games') }
+            tooltip={ t('Show / Hide hidden games') }
             onClick={ this.toggleHidden }
           >
             <Icon name={ showHidden ? 'eye-slash' : 'eye' }/>
@@ -97,6 +97,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IState> {
                 id='start-discovery'
                 tooltip={ discovery.running ? t('Stop search') : t('Search for games') }
                 onClick={ discovery.running ? this.stopDiscovery : this.startDiscovery }
+                placement='top'
               >
                 <Icon name={ discovery.running ? 'stop' : 'search' } />
               </Button>

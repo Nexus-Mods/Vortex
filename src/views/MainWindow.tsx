@@ -93,6 +93,18 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
         showPage: { $set: this.props.objects[0].title },
       }));
     }
+
+    this.props.api.events.on('show-main-page', (title) => {
+      this.setState(update(this.state, {
+        showPage: { $set: title },
+      }));
+    });
+
+    this.props.api.events.on('show-modal', (id) => {
+      this.setState(update(this.state, {
+        showLayer: { $set: id },
+      }));
+    });
   }
 
   public render(): JSX.Element {
@@ -206,7 +218,7 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
       <Modal show={this.state.showLayer === 'login'} onHide={ this.hideLayer }>
         <Modal.Header>
           <Modal.Title>
-          { t(this.props.APIKey === '' ? 'API Key Validation' : 'User Info') }
+          { this.props.APIKey === '' ? t('API Key Validation') : t('User Info') }
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -217,12 +229,13 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   }
 
   private renderPageButton = (page: IMainPage) => {
+    const { t } = this.props;
     return (
       <NavItem
         id={page.title}
         key={page.title}
         eventKey={page.title}
-        tooltip={page.title}
+        tooltip={ t(page.title) }
         placement='right'
       >
         <Icon name={page.icon} />

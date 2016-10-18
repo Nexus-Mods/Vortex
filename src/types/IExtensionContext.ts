@@ -15,8 +15,13 @@ interface IRegisterIcon {
    action?: () => void): void;
 }
 
+export interface IMainPageOptions {
+  hotkey?: string;
+}
+
 interface IRegisterMainPage {
-  (icon: string, title: string, element: React.ComponentClass<any>): void;
+  (icon: string, title: string, element: React.ComponentClass<any>,
+   options: IMainPageOptions): void;
 }
 
 export interface IFileFilter {

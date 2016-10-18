@@ -69,7 +69,7 @@ class Settings extends ComponentEx<IProps, {}> {
           </InputGroup>
           <HelpBlock>{this.resolveInstall()}</HelpBlock>
         </FormGroup>
-        <ControlLabel>Activation Method</ControlLabel>
+        <ControlLabel>{ t('Activation Method') }</ControlLabel>
         <FormGroup validationState={ activators !== undefined ? undefined : 'error' }>
           { this.renderActivators(activators, currentActivator) }
         </FormGroup>

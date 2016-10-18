@@ -1,7 +1,9 @@
 import { IGame } from '../../types/IGame';
 import { ISupportedTool } from '../../types/ISupportedTool';
 
+import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { addDiscoveredTool, removeDiscoveredTool } from '../gamemode_management/actions/settings';
+
 import { IToolDiscoveryResult } from '../gamemode_management/types/IStateEx';
 
 import { ToolButton } from './ToolButton';
@@ -9,7 +11,6 @@ import { ToolButton } from './ToolButton';
 import * as path from 'path';
 import * as React from 'react';
 import { Jumbotron, Media, Well } from 'react-bootstrap';
-import { connect } from 'react-redux';
 import Icon = require('react-fontawesome');
 
 import update = require('react-addons-update');
@@ -33,7 +34,7 @@ interface IConnectedProps {
 
 type IWelcomeScreenProps = IConnectedProps & IActionProps;
 
-class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenState> {
+class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   constructor(props) {
     super(props);
 
@@ -51,18 +52,18 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenS
   }
 
   public render(): JSX.Element {
-    let { gameMode } = this.props;
+    let { t, gameMode } = this.props;
 
     return (
       <Jumbotron>
         Welcome to Nexus Mod Manager 2!
-            {gameMode === undefined ? <div>No game selected</div> : this.renderGameMode()}
+            {gameMode === undefined ? <div>{ t('No game selected') }</div> : this.renderGameMode()}
       </Jumbotron>
     );
   }
 
   private renderGameMode = () => {
-    let { gameMode, knownGames } = this.props;
+    let { t, gameMode, knownGames } = this.props;
 
     let game: IGame = knownGames.find((ele) => ele.id === gameMode);
 
@@ -77,7 +78,7 @@ class WelcomeScreen extends React.Component<IWelcomeScreenProps, IWelcomeScreenS
               {game === undefined ? gameMode : game.name}
             </Media.Heading>
             <h5>
-              Supported Tools:
+              { t('Supported Tools:') }
             </h5>
             {this.renderSupportedToolsIcons(game)}
           </Media.Right>
@@ -151,4 +152,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(WelcomeScreen);
+export default
+  translate(['common'], { wait: true })(
+    connect(mapStateToProps, mapDispatchToProps)(WelcomeScreen)
+  );

@@ -68,7 +68,9 @@ function supportedActivators(state: any): IModActivator[] {
 }
 
 function init(context: IExtensionContextExt): boolean {
-  context.registerMainPage('cubes', 'Mods', ModList);
+  context.registerMainPage('cubes', 'Mods', ModList, {
+    hotkey: 'M',
+  });
 
   context.registerIcon('application-icons', ActivationButton, () => {
     return {

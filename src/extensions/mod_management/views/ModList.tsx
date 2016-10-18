@@ -77,7 +77,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
             <Table bordered condensed hover>
               <thead>
                 <tr>
-                  <th>Enabled</th>
+                  <th>{ t('Enabled') }</th>
                   { visibleAttributes.map(this.renderHeaderField) }
                 </tr>
               </thead>

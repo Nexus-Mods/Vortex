@@ -10,6 +10,7 @@ import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import getI18n from './util/i18n';
 import { log } from './util/log';
+import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
 import MainWindow from './views/MainWindow';
 
@@ -64,6 +65,7 @@ const store: Store<any> = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
 extensions.doOnce();
+initApplicationMenu(extensions);
 
 let currentLanguage: string = store.getState().settings.interface.language;
 store.subscribe(() => {
