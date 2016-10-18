@@ -19,7 +19,11 @@ export const notificationsReducer: IReducerSpec = {
     },
     [dismissNotification]: (state, payload) => {
       const idx = state.notifications.findIndex((ele) => ele.id === payload);
-      return update(state, { notifications: { $splice: [[idx, 1]] } });
+      if (idx < 0) {
+        return state;
+      } else {
+        return update(state, { notifications: { $splice: [[idx, 1]] } });
+      }
     },
     [showDialog]: (state, payload) => {
       return update(state, { dialogs: { $push: [payload] } });

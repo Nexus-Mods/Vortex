@@ -3,7 +3,8 @@
     "sourceType": "module",
     "ecmaFeatures": {
       "modules": true,
-      "experimentalObjectRestSpread": true
+      "experimentalObjectRestSpread": true,
+      "jsx": true
     }
   },
   

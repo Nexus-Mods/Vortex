@@ -5,6 +5,7 @@ import { createAction } from 'redux-act';
 /**
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
  * left unset, in that case one will be generated
+ * TODO: this stores a function into the store which seems to work but isn't supported
  */
 export const startNotification = createAction('ADD_NOTIFICATION');
 

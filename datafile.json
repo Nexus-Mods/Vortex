@@ -115,6 +115,14 @@
         "out",
         "app"
       ]
+    },
+    {
+      "srcPath": "src/util/__mocks__/*.js",
+      "outPath": "",
+      "skipPaths": 1,
+      "target": [
+        "out"
+      ]
     }
   ]
 }

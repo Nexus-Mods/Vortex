@@ -43,7 +43,7 @@ interface IActionProps {
 
 type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps;
 
-class MainWindow extends ComponentEx<IProps, IMainWindowState> {
+export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   // tslint:disable-next-line:no-unused-variable
   public static childContextTypes: React.ValidationMap<any> = {
     api: React.PropTypes.object.isRequired,
@@ -88,9 +88,11 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   }
 
   public componentWillMount() {
-    this.setState(update(this.state, {
-      showPage: { $set: this.props.objects[0].title },
-    }));
+    if (this.props.objects.length > 0) {
+      this.setState(update(this.state, {
+        showPage: { $set: this.props.objects[0].title },
+      }));
+    }
   }
 
   public render(): JSX.Element {
@@ -139,11 +141,11 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
               activeKey={showPage}
               onSelect={this.handleSetPage}
             >
-              {objects.map(this.renderPageButton) }
+              { objects !== undefined ? objects.map(this.renderPageButton) : null }
             </Nav>
           </Fixed>
           <Flex>
-            {this.renderCurrentPage() }
+            { this.renderCurrentPage() }
           </Flex>
         </Layout>
         <Notifications id='notifications' />
@@ -175,6 +177,7 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
     const { showLayer } = this.state;
     return (
       <Modal
+        id='modal-settings'
         show={ showLayer === 'settings' }
         onHide={ this.hideLayer }
       >
@@ -228,8 +231,9 @@ class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   }
 
   private renderCurrentPage = () => {
-    const page: IMainPage = this.props.objects.find(
-      (ele) => ele.title === this.state.showPage);
+    let { objects } = this.props;
+
+    const page: IMainPage = objects.find((ele) => ele.title === this.state.showPage);
     if (page !== undefined) {
       return <page.component />;
     } else {

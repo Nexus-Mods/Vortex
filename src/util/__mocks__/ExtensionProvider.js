@@ -1,11 +1,18 @@
+import * as React from 'react';
+
 const ext = jest.genMockFromModule('../ExtensionProvider');
 
-function extension(registerFunc) {
-  return (module) => {
-    return module;
-  } 
+function extend(registerFunc) {
+  return (component) => {
+    return class __ExtendedComponent extends React.Component {
+      render() {
+        let wrapProps = Object.assign({}, this.props, { objects: [] });
+        return React.createElement(component, wrapProps, []);
+      }
+    }
+  };
 }
 
-ext.extension = extension;
+ext.extend = extend;
 
 module.exports = ext;

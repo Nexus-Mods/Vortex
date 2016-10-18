@@ -26,7 +26,8 @@
     "electron": "1.4.3"
   },
   "jest": {
-    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.jsx?$"
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx)$",
+    "moduleFileExtensions": ["js", "json", "jsx"]
   },
   "build": {
     "asar": true,
