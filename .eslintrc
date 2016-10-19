@@ -19,7 +19,8 @@
     "$": true,
     "expect": false,
     "describe": false,
-    "it": false
+    "it": false,
+    "jest": false
   },
   "rules": {
     "strict": 0,
