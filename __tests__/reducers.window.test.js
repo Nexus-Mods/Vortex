@@ -12,7 +12,6 @@ describe('setWindowPosition', () => {
   it('sets the window position', () => {
     let input = {};
     let result = windowReducer.reducers.STORE_WINDOW_POSITION(input, { x: 1, y: 2 });
-    console.log('result', result);
     expect(result.position).toEqual({ x: 1, y: 2 });
   });
 });
