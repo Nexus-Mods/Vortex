@@ -14,7 +14,9 @@ function renderMainWindow() {
     return input;
   }
 
-  renderer.render(<MainWindow objects={[]} t={ dummyT } />, { api: { bla: 'blubb' } });
+  const api = { events: { on: () => undefined } };
+
+  renderer.render(<MainWindow objects={[]} t={ dummyT } api={api}/>);
 
   return renderer.getRenderOutput();
 }

@@ -127,11 +127,11 @@ export function merge<T>(state: T, path: string[], value: Object): T {
  * @returns {IGameStored}
  */
 export function currentGame(state: any): IGameStored {
-  const gameMode = state.settings.gameMode.current;
-  if (gameMode === undefined) {
-      return { id: '__placeholder', name: '<No game>', requiredFiles: [] };
-  }
-  return state.session.gameMode.known.find((ele: IGameStored) => ele.id === gameMode);
+  const fallback = { id: '__placeholder', name: '<No game>', requiredFiles: [] };
+  const gameMode = getSafe(state, [ 'settings', 'gameMode', 'current' ], undefined);
+  let res = getSafe(state, ['session', 'gameMode', 'known'], []).find(
+    (ele: IGameStored) => ele.id === gameMode);
+  return res || fallback;
 }
 
 /**
@@ -142,11 +142,8 @@ export function currentGame(state: any): IGameStored {
  * @returns {IDiscoveryResult}
  */
 export function currentGameDiscovery(state: any): IDiscoveryResult {
-  const gameMode = state.settings.gameMode.current;
-  if (gameMode === undefined) {
-    return {};
-  }
-  return state.settings.gameMode.discovery[gameMode];
+  const gameMode = getSafe(state, [ 'settings', 'gameMode', 'current' ], undefined);
+  return getSafe(state, ['settings', 'gameMode', 'discovered', gameMode], undefined);
 }
 
 /**
@@ -157,6 +154,6 @@ export function currentGameDiscovery(state: any): IDiscoveryResult {
  * @returns {IProfile}
  */
 export function currentProfile(state: any): IProfile {
-  const profileId = state.gameSettings.profiles.currentProfile;
-  return state.gameSettings.profiles.profiles[profileId];
+  const profileId = getSafe(state, [ 'gameSettings', 'profiles', 'currentProfile' ], undefined);
+  return getSafe(state, [ 'gameSettings', 'profiles', 'profiles', profileId ], undefined);
 }
