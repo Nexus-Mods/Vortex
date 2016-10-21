@@ -1,6 +1,7 @@
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import initAboutDialog from '../extensions/about_dialog/index';
+import initDownloadManagement from '../extensions/download_management/index';
 import initGamemodeManagement from '../extensions/gamemode_management/index';
 import initModManagement from '../extensions/mod_management/index';
 import initNutsLocal from '../extensions/nuts_local/index';
@@ -100,7 +101,7 @@ class ExtensionManager {
    * @returns
    * 
    * @memberOf ExtensionManager
-    */
+   */
   public getApi() {
     return this.mApi;
   }
@@ -170,7 +171,11 @@ class ExtensionManager {
     let context = this.emptyExtensionContext();
 
     context.once = (callback: () => void) => {
-      callback();
+      try {
+        callback();
+      } catch (err) {
+        log('warn', 'failed to call once', { err });
+      }
     };
 
     this.mExtensions.forEach((ext) => ext.initFunc(context));
@@ -215,6 +220,7 @@ class ExtensionManager {
       registerMainPage: () => undefined,
       registerSettings: () => undefined,
       registerIcon: () => undefined,
+      registerFooter: () => undefined,
       registerReducer: () => undefined,
       registerExtensionFunction: () => undefined,
       once: () => undefined,
@@ -267,6 +273,7 @@ class ExtensionManager {
       { name: 'welcome_screen', initFunc: initWelcomeScreen },
       { name: 'mod_management', initFunc: initModManagement },
       { name: 'profile_management', initFunc: initProfileManagement },
+      { name: 'download_management', initFunc: initDownloadManagement },
       { name: 'gamemode_management', initFunc: initGamemodeManagement },
       { name: 'nuts_local', initFunc: initNutsLocal },
       { name: 'symlink_activator', initFunc: initSymlinkActivator },

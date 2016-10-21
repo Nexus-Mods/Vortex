@@ -48,6 +48,33 @@ export function setSafe<T>(state: T, path: string[], value: any): T {
   return copy;
 }
 
+export function setOrNop<T>(state: T, path: string[], value: any): T {
+  let firstElement: string = path[0];
+  let copy = Object.assign({}, state);
+  if (path.length === 1) {
+    copy[firstElement] = value;
+  } else {
+    if (copy.hasOwnProperty(firstElement)) {
+      copy[firstElement] = setOrNop(copy[firstElement], path.slice(1), value);
+    }
+  }
+  return copy;
+}
+
+export function deleteOrNop<T>(state: T, path: string[]): T {
+  let firstElement: string = path[0];
+  let copy = Object.assign({}, state);
+  if (path.length === 1) {
+    delete copy[firstElement];
+  } else {
+    if (copy.hasOwnProperty(firstElement)) {
+      copy[firstElement] = deleteOrNop(copy[firstElement], path.slice(1));
+    }
+  }
+
+  return copy;
+}
+
 function setDefaultArray<T>(state: T, path: string[], fallback: any[]): T {
   let firstElement: string = path[0];
   let copy = Object.assign({}, state);

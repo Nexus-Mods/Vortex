@@ -1,4 +1,5 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
+import { setSafe } from '../../../util/storeHelper';
 
 import { setActivator, setModlistAttributeSort,
          setModlistAttributeVisible, setPath } from '../actions/settings';
@@ -30,30 +31,17 @@ export const settingsReducer: IReducerSpec = {
       }
     },
     [setPath]: (state, payload) => {
-      const { key, path } = payload;
-      return update(state, { paths: { [key]: { $set: path } } });
+      return setSafe(state, [ 'paths', payload.key ], payload.path);
     },
     [setModlistAttributeVisible]: (state, payload) => {
-      const { attributeId, visible } = payload;
-
-      return update(ensureAttribute(state, attributeId),
-                    { modlistState: { [attributeId]: { enabled: { $set: visible } } } });
+      return setSafe(state, [ 'modlistState', payload.attributeId, 'enabled' ], payload.visible);
     },
     [setModlistAttributeSort]: (state, payload) => {
       const { attributeId, direction } = payload;
-
-      return update(ensureAttribute(state, attributeId), {
-        modlistState: {
-          [attributeId]: {
-            sortDirection: { $set: direction },
-          },
-        },
-      });
+      return setSafe(state, [ 'modlistState', attributeId, 'sortDirection' ], direction);
     },
     [setActivator]: (state, payload) => {
-      return update(state, {
-        activator: { $set: payload },
-      });
+      return setSafe(state, [ 'activator' ], payload);
     },
   }, defaults: {
     paths: {

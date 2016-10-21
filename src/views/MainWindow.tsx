@@ -2,18 +2,18 @@ import { IComponentContext } from '../types/IComponentContext';
 import { IExtensionApi } from '../types/IExtensionContext';
 import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
-import { IState } from '../types/IState';
-import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
+import { ComponentEx, extend, translate } from '../util/ComponentEx';
 import Developer from './Developer';
 import Dialog from './Dialog';
 import IconBar from './IconBar';
 import LoginForm from './LoginForm';
+import MainFooter from './MainFooter';
 import Notifications from './Notifications';
 import Settings from './Settings';
 import { Button, NavItem } from './TooltipControls';
 
 import * as React from 'react';
-import { Alert, Modal, Nav, Well } from 'react-bootstrap';
+import { Alert, Modal, Nav } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import update = require('react-addons-update');
@@ -166,20 +166,9 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   }
 
   private renderFooter() {
-    const { t, APIKey } = this.props;
     return (
       <Fixed>
-        <Well bsStyle='slim'>
-          <Button
-            className='btn-embed'
-            id='login-btn'
-            tooltip={ t('Login') }
-            placement='top'
-            onClick={ this.showLoginLayer }
-          >
-            <Icon name='user' style={{ color: APIKey === '' ? 'red' : 'green' }} />
-          </Button>
-        </Well>
+        <MainFooter onShowDialog={ this.showLayer } />
       </Fixed>
     );
   }
@@ -263,8 +252,6 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   private showLayer = (layer: string) => this.showLayerImpl(layer);
   private hideLayer = () => this.showLayerImpl('');
 
-  private showLoginLayer = () => this.showLayerImpl('login');
-
   private showLayerImpl(layer: string): void {
     this.setState(update(this.state, { showLayer: { $set: layer } }));
   }
@@ -286,10 +273,6 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
-    return { APIKey: state.account.base.APIKey};
-}
-
 function registerMainPage(instance: MainWindow,
                           icon: string,
                           title: string,
@@ -299,7 +282,5 @@ function registerMainPage(instance: MainWindow,
 
 export default
   translate(['common'], { wait: true })(
-    extend(registerMainPage)(
-      connect(mapStateToProps)(MainWindow)
-    )
+    extend(registerMainPage)(MainWindow)
   ) as React.ComponentClass<IBaseProps>;

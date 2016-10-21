@@ -45,7 +45,7 @@ export function setupStore(basePath: string, extensions: ExtensionManager): Redu
   let result = createStore<IState>(reducer(extReducers), enhancer);
   persistStore(result, {
     storage: new StorageLogger(new AsyncNodeStorage(path.join(basePath, 'state'))),
-    whitelist: ['window', 'settings', 'account'],
+    whitelist: ['window', 'settings', 'persistent', 'account'],
     debounce: 200,
     keyPrefix: 'global_',
   },

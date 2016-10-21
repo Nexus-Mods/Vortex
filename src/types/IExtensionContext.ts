@@ -15,6 +15,10 @@ interface IRegisterIcon {
    action?: () => void): void;
 }
 
+interface IRegisterFooter {
+  (id: string, element: React.ComponentClass<any>): void;
+}
+
 export interface IMainPageOptions {
   hotkey?: string;
 }
@@ -167,6 +171,14 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerMainPage: IRegisterMainPage;
+
+  /**
+   * registers a element to be displayed in the footer
+   * 
+   * @type {IRegisterFooter}
+   * @memberOf IExtensionContext
+   */
+  registerFooter: IRegisterFooter;
 
   /**
    * register a reducer to introduce new set-operations on the application

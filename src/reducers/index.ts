@@ -86,6 +86,8 @@ export default function (extensionReducers: IExtensionReducer[]) {
     },
     settings: {
     },
+    persistent: {
+    },
   };
 
   extensionReducers.forEach((extensionReducer) => {

@@ -27,7 +27,11 @@
   },
   "jest": {
     "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx)$",
-    "moduleFileExtensions": ["js", "json", "jsx"]
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "jsx"
+    ]
   },
   "build": {
     "asar": true,
@@ -48,7 +52,9 @@
   },
   "devDependencies": {
     "@types/ffi": "^0.0.18",
+    "@types/form-data": "^0.0.32",
     "@types/node": "^6.0.45",
+    "@types/node-uuid": "^0.0.28",
     "@types/ref": "^0.0.28",
     "@types/ref-struct": "^0.0.28",
     "@types/ref-union": "^0.0.28",
@@ -94,6 +100,7 @@
     "node-7z": "^0.4.0",
     "node-ipc": "^8.9.2",
     "node-rest-client": "^2.0.1",
+    "node-uuid": "^1.4.7",
     "react-addons-css-transition-group": "^15.3.1",
     "react-addons-test-utils": "^15.3.1",
     "react-addons-transition-group": "^15.3.1",
@@ -115,6 +122,8 @@
     "redux-thunk": "^2.1.0",
     "redux-watcher": "^0.1.2",
     "ref-union": "^1.0.1",
+    "request": "^2.75.0",
+    "reselect": "^2.5.4",
     "simple-vdf": "^1.1.0",
     "string-templates": "^1.0.6",
     "tmp": "0.0.29",
