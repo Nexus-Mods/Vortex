@@ -1,6 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import { merge, pushSafe, removeValue, setSafe } from '../../../util/storeHelper';
-import { addDiscoveredGame, addDiscoveredTool,
+import { addDiscoveredGame, addDiscoveredTool, addNewTool,
          hideDiscoveredTool, setGameMode } from '../actions/settings';
 import { addSearchPath, removeSearchPath, setGameHidden } from '../actions/settings';
 import update = require('react-addons-update');
@@ -19,6 +19,11 @@ export const settingsReducer: IReducerSpec = {
       return merge(state, ['discovered', payload.id], payload.result);
     },
     [addDiscoveredTool]: (state, payload) => {
+      return setSafe(state,
+                     ['discovered', payload.gameId, 'tools', payload.toolId],
+                     payload.result);
+    },
+     [addNewTool]: (state, payload) => {
       return setSafe(state,
                      ['discovered', payload.gameId, 'tools', payload.toolId],
                      payload.result);

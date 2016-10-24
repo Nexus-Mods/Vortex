@@ -1,5 +1,6 @@
 /// <reference path="drivelist.d.ts" />
 /// <reference path="electron.d.ts" />
+/// <reference path="icon-extractor.d.ts" />
 /// <reference path="node-ipc.d.ts" />
 /// <reference path="node-rest-client.d.ts" />
 /// <reference path="react-contextmenu.d.ts" />
