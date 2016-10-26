@@ -12,31 +12,43 @@ export const setGameMode = createAction('SET_GAME_MODE');
  */
 export const addDiscoveredGame =
   createAction('ADD_DISCOVERED_GAME',
-        (id: string, result: IDiscoveryResult) => { return { id, result }; });
+    (id: string, result: IDiscoveryResult) => { return { id, result }; });
 
 /**
  * add info about a discovered tool
  */
 export const addDiscoveredTool =
   createAction('ADD_DISCOVERED_TOOL',
-        (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
-          return { gameId, toolId, result }; });
+    (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
+      return { gameId, toolId, result };
+    });
 
 /**
  * add info about a new tool
  */
 export const addNewTool =
   createAction('ADD_NEW_TOOL',
-        (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
-          return { gameId, toolId, result  }; });
+    (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
+      return { gameId, toolId, result };
+    });
+
+/**
+ * change tool's info
+ */
+export const changeToolParams =
+  createAction('CHANGE_TOOL_PARAMS',
+    (toolId: string) => {
+      return { toolId };
+    });
 
 /**
  * remove info about a discovered tool
  */
 export const hideDiscoveredTool =
   createAction('REMOVE_DISCOVERED_TOOL',
-        (gameId: string, toolId: string) => {
-          return { gameId, toolId }; });
+    (gameId: string, toolId: string) => {
+      return { gameId, toolId };
+    });
 
 /**
  * hide or unhide a game

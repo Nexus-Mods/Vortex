@@ -26,27 +26,31 @@ interface IProps {
   onChangeToolLocation: (gameId: string, toolId: string, result: IToolDiscoveryResult) => void;
   onRemoveTool: IRemoveTool;
   onAddNewTool: (toolPath: string) => void;
+  onChangeToolParams: (toolId: string) => void;
 }
 
 interface IContextMenuProps {
   id: string;
   tool: ISupportedTool;
   gameId: string;
+  discovery: boolean;
   onRemoveTool: IRemoveTool;
   onAddNewTool: (toolPath: string) => void;
+  onChangeToolParams: (toolId: string) => void;
 }
 
 class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   private currentItem: any;
 
   public render(): JSX.Element {
-    let { t, id, tool } = this.props;
+    let { t, id, discovery, tool } = this.props;
+
     return (
       <ContextMenu identifier={id} currentItem={this.currentItem} >
         <MenuItem data={tool} onClick={this.handleRemoveClick}>
           {t('Remove {{name}}', { name: tool.name })}
         </MenuItem>
-        <MenuItem data={tool} onClick={this.handleChangeSettingsClick}>
+        <MenuItem data={tool} onClick={discovery ? this.handleChangeSettingsClick : null} style={discovery ? {} : { color: '#ff0000' }}>
           {t('Change {{name}} settings', { name: tool.name })}
         </MenuItem>
         <MenuItem divider onClick={this.nop} />
@@ -80,7 +84,9 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   }
 
   private handleChangeSettingsClick = (e, data) => {
+    let {onChangeToolParams } = this.props;
     log('info', 'change', {});
+    onChangeToolParams(data.id);
   }
 
   private handleAddClick = (e, data) => {
@@ -108,7 +114,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
 
 class ToolButton extends ComponentEx<IProps, {}> {
   public render() {
-    const { t, game, tool, discovery, onAddNewTool, onRemoveTool } = this.props;
+    const { t, game, tool, discovery, onAddNewTool, onChangeToolParams, onRemoveTool } = this.props;
     const valid = discovery !== undefined;
     let logoPath: string;
     let toolIconsPath: string = path.join(remote.app.getPath('userData'),
@@ -117,7 +123,12 @@ class ToolButton extends ComponentEx<IProps, {}> {
     if (fs.existsSync(toolIconsPath)) {
       logoPath = toolIconsPath;
     } else {
-      logoPath = path.join(game.pluginPath, tool.logo !== '' ? tool.logo : 'no-icon.png');
+      toolIconsPath = path.join(game.pluginPath, tool.logo);
+      if (fs.existsSync(toolIconsPath)) {
+        logoPath = path.join(game.pluginPath, tool.logo !== '' ? tool.logo : 'no-icon.png');
+      } else {
+        logoPath = path.join(game.pluginPath, 'no-icon.png');
+      }
     }
     return (
       <Button
@@ -140,8 +151,10 @@ class ToolButton extends ComponentEx<IProps, {}> {
           id={`tool-menu-${tool.id}`}
           tool={tool}
           gameId={game.id}
+          discovery={valid}
           onRemoveTool={onRemoveTool}
           onAddNewTool={onAddNewTool}
+          onChangeToolParams={onChangeToolParams}
           t={t}
           />
       </Button>
