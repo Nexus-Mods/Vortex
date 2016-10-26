@@ -1,10 +1,9 @@
 import { INotification, INotificationAction, NotificationType } from '../types/INotification';
 import { ComponentEx, translate } from '../util/ComponentEx';
+import Icon from '../views/Icon';
 
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
-
-import Icon = require('react-fontawesome');
 
 interface IActionProps {
   t: (text: string) => string;

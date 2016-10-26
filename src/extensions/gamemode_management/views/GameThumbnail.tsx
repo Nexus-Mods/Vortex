@@ -1,4 +1,5 @@
 import { ComponentEx, translate } from '../../../util/ComponentEx';
+import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
 import { IGameStored } from '../types/IStateEx';
@@ -6,8 +7,6 @@ import { IGameStored } from '../types/IStateEx';
 import * as path from 'path';
 import * as React from 'react';
 import { Panel } from 'react-bootstrap';
-
-import Icon = require('react-fontawesome');
 
 interface IProps {
   game: IGameStored;

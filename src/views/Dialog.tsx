@@ -2,13 +2,12 @@ import { dismissDialog } from '../actions/notifications';
 import { DialogType, IDialog } from '../types/IDialog';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
+import Icon from '../views/Icon';
 
 import { Button } from './TooltipControls';
 
 import * as React from 'react';
 import { Modal } from 'react-bootstrap';
-
-import Icon = require('react-fontawesome');
 
 interface IDialogConnectedProps {
   dialogs: IDialog[];
@@ -41,8 +40,12 @@ class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}>
 
   private iconForType(type: DialogType) {
     switch (type) {
-      case 'info': return <Icon name='info-circle' size='2x' style={{ color: 'blue' }} />;
-      case 'error': return <Icon name='exclamation-circle' size='2x' style={{ color: 'red' }} />;
+      case 'info': return (
+        <Icon name='info-circle' style={{ height: '32px', color: 'blue' }} />
+      );
+      case 'error': return (
+        <Icon name='exclamation-circle' style={{ height: '32px', color: 'red' }} />
+      );
       default: return null;
     }
   }

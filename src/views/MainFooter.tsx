@@ -1,79 +1,58 @@
-import { IState } from '../types/IState';
-import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
-
-import { Button } from './TooltipControls';
+import { PropsCallback } from '../types/IExtensionContext';
+import { ComponentEx, extend, translate } from '../util/ComponentEx';
 
 import * as React from 'react';
 import { Well } from 'react-bootstrap';
-import Icon = require('react-fontawesome');
 
 interface IBaseProps {
   onShowDialog: (name: string) => void;
 }
 
-interface IConnectedProps {
-  APIKey: string;
-}
-
-interface IComponentState {
-  showLayer: string;
-}
-
 interface IFooter {
   id: string;
   component: React.ComponentClass<any>;
+  props: () => PropsCallback;
 }
 
 interface IExtendedProps {
   objects: IFooter[];
 }
 
-type IProps = IBaseProps & IConnectedProps & IExtendedProps;
+type IProps = IBaseProps & IExtendedProps;
 
-class MainFooter extends ComponentEx<IProps, IComponentState> {
+/**
+ * Footer on the main window. Can be extended
+ * 
+ * @class MainFooter
+ */
+class MainFooter extends ComponentEx<IProps, {}> {
   constructor(props) {
     super(props);
-
-    this.state = {
-      showLayer: '',
-    };
   }
 
   public render(): JSX.Element {
-    const { t, APIKey, objects } = this.props;
+    const { objects } = this.props;
     return (
       <Well bsStyle='slim'>
-        <Button
-          className='btn-embed'
-          id='login-btn'
-          tooltip={t('Login')}
-          placement='top'
-          onClick={this.showLoginLayer}
-        >
-          <Icon name='user' style={{ color: APIKey === '' ? 'red' : 'green' }} />
-        </Button>
-
-        { objects.map((obj: IFooter) => <obj.component key={ obj.id } />) }
+        { objects.map(this.renderFooter) }
       </Well>
     );
   }
 
-  private showLoginLayer = () => {
-    this.props.onShowDialog('login');
+  private renderFooter(footer: IFooter): JSX.Element {
+    let props = footer.props !== undefined ? footer.props() : {};
+    return <footer.component key={ footer.id } {...props} />;
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
-    return { APIKey: state.account.base.APIKey};
-}
-
-function registerFooter(instance: MainFooter, id: string, component: React.ComponentClass<any>) {
-  return { id, component };
+function registerFooter(instance: MainFooter,
+                        id: string,
+                        component: React.ComponentClass<any>,
+                        props: () => PropsCallback) {
+  return { id, component, props };
 }
 
 export default
   translate(['common'], { wait: true })(
-    connect(mapStateToProps)(
-      extend(registerFooter)(MainFooter)
-    )
+    extend(registerFooter)(MainFooter)
   ) as React.ComponentClass<IBaseProps>;

@@ -1,7 +1,8 @@
+import SvgIcon from './Icon';
+
 import * as React from 'react';
 import { Button as BootstrapButton, NavItem as BootstrapNavItem,
          OverlayTrigger, Popover } from 'react-bootstrap';
-import Fontawesome = require('react-fontawesome');
 
 interface ITooltipProps {
   tooltip: string | React.Component<any, any>;
@@ -72,12 +73,11 @@ interface IFontAwesomeProps {
   border?: boolean;
   className?: string;
   fixedWidth?: boolean;
-  flip?: boolean;
+  flip?: 'horizontal' | 'vertical';
   inverse?: boolean;
   name: string;
   pulse?: boolean;
-  rotate?: number;
-  size?: FontAwesomeSize;
+  rotate?: '90' | '180' | '270';
   spin?: boolean;
   stack?: string;
   style?: React.CSSProperties;
@@ -104,7 +104,7 @@ export class Icon extends React.Component<IIconProps, {}> {
         delayShow={300}
         delayHide={150}
       >
-        <Fontawesome {...relayProps} />
+        <SvgIcon {...relayProps} />
       </OverlayTrigger>
     );
   }

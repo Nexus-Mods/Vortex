@@ -2,6 +2,7 @@ import { IGame } from '../../types/IGame';
 import { ISupportedTool } from '../../types/ISupportedTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
+import Icon from '../../views/Icon';
 
 import {
   addDiscoveredTool, addNewTool,
@@ -26,7 +27,6 @@ import {
   ControlLabel, FormControl, HelpBlock,
   Jumbotron, Media, Modal, Well
 } from 'react-bootstrap';
-import Icon = require('react-fontawesome');
 
 import { remote } from 'electron';
 
@@ -126,7 +126,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
   private renderGameIcon = (game: IGame): JSX.Element => {
     if (game === undefined) {
       // assumption is that this can only happen during startup
-      return <Icon name='spinner' spin />;
+      return <Icon name='spinner' pulse />;
     } else {
       let logoPath = path.join(game.pluginPath, game.logo);
       return <img className='welcome-game-logo' src={logoPath} />;
@@ -422,8 +422,8 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
         onRemoveTool={this.props.onRemoveDiscoveredTool}
         onAddNewTool={this.showNewToolLayer}
         onChangeToolParams={this.showChangeToolParamsLayer}
-        />
-    );
+      />
+    ;
   }
 };
 

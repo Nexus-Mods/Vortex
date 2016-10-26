@@ -1,4 +1,5 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
 import { setCurrentProfile, setProfile } from '../actions/profiles';
@@ -11,7 +12,6 @@ import * as React from 'react';
 import { FormControl, ListGroup, ListGroupItem } from 'react-bootstrap';
 
 import update = require('react-addons-update');
-import Icon = require('react-fontawesome');
 
 interface IConnectedProps {
   currentProfile: string;

@@ -8,6 +8,7 @@ import reducer from './reducers/index';
 import { ITermination, terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
+import GlobalNotifications from './util/GlobalNotifications';
 import getI18n from './util/i18n';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
@@ -15,6 +16,7 @@ import { showError } from './util/message';
 import MainWindow from './views/MainWindow';
 
 import * as Promise from 'bluebird';
+import { ipcRenderer } from 'electron';
 import { EventEmitter } from 'events';
 import { changeLanguage } from 'i18next';
 import * as React from 'react';
@@ -58,12 +60,28 @@ if (process.env.NODE_ENV === 'development') {
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 const extensions: ExtensionManager = new ExtensionManager(eventEmitter);
-
 let extReducers = extensions.getReducers();
+let protocolHandlers = {};
 
 const store: Store<any> = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
+
+extensions.apply('registerProtocol', (protocol: string, callback: (url: string) => void) => {
+  protocolHandlers[protocol] = callback;
+});
+
+// tslint:disable-next-line:no-unused-variable
+const globalNotifications = new GlobalNotifications(extensions.getApi());
+
+ipcRenderer.on('external-url', (event, protocol, url) => {
+  if (protocol in protocolHandlers) {
+    protocolHandlers[protocol](url);
+  } else {
+    log('warn', 'not handling url, unknown protocol', { url });
+  }
+});
+
 extensions.doOnce();
 initApplicationMenu(extensions);
 

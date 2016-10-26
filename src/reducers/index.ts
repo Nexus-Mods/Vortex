@@ -8,8 +8,8 @@
 import { IExtensionReducer } from '../types/Extension';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import { accountReducer } from './account';
 import { notificationsReducer } from './notifications';
+import { sessionReducer } from './session';
 import { windowReducer } from './window';
 
 import { combineReducers } from 'redux';
@@ -77,12 +77,12 @@ export default function (extensionReducers: IExtensionReducer[]) {
       base: windowReducer,
     },
     account: {
-      base: accountReducer,
     },
     gameSettings: {
     },
     notifications: notificationsReducer,
     session: {
+      base: sessionReducer,
     },
     settings: {
     },

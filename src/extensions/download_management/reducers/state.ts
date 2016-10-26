@@ -8,13 +8,12 @@ import * as action from '../actions/state';
 export const stateReducer: IReducerSpec = {
   reducers: {
     [action.initDownload]: (state, payload) => {
-      return setSafe(state, [ 'running', payload.id ], { $set: {
+      return setSafe(state, [ 'running', payload.id ], {
         state: 'init',
         urls: payload.urls,
-        localPath: payload.downloadPath,
         modInfo: payload.modInfo,
         chunks: [],
-      } });
+      });
     },
     [action.downloadProgress]: (state, payload) => {
       return merge(state, [ 'running', payload.id ], {

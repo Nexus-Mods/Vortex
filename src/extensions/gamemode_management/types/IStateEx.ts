@@ -1,4 +1,4 @@
-import { IState } from '../../../types/IState';
+import { ISession, IState } from '../../../types/IState';
 
 export interface IDiscoveryResult {
   path?: string;
@@ -53,7 +53,8 @@ export interface IStateEx extends IState {
     gameMode: {
       known: IGameStored[]
     },
-    discovery: IDiscoveryState
+    discovery: IDiscoveryState,
+    base: ISession
   };
   settings: {
     gameMode: IGameModeSettings,

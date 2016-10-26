@@ -8,7 +8,7 @@ export interface INotificationAction {
 }
 
 export type NotificationType =
-  'activity' | 'success' | 'info' | 'error';
+  'activity' | 'global' | 'success' | 'info' | 'error';
 
 /**
  * a notification message
@@ -29,12 +29,42 @@ export interface INotification {
   id?: string;
   /**
    * the kind of notification to display. This mostly determines
-   * its look
+   * its look but also features to a degree.
+   * Possible values:
+   *   - 'activity': a notification that represents an activity. will have a
+   *                 spinner icon. Otherwise it looks like an info notification
+   *   - 'global': This notification will always be visible, so if the window
+   *               doesn't have the focus, this will be displayed as a native
+   *               system notification. These notifications can not be
+   *               programatically dismissed and actions are not supported
+   *   - 'success': notification about a successful operation (ideally the
+   *                user should be aware of the operation)
+   *   - 'info': neutral information notification
+   *   - 'error': Error notification (something went wrong)
    * 
    * @type {NotificationType}
    * @memberOf INotification
    */
   type: NotificationType;
+
+  /**
+   * path to an icon/image to display in the notification.
+   * 'global' notifications displayed outside the window will always display an
+   * icon so the user can tell which application it is from.
+   * If no icon is specified this will fall back to the application icon.
+   * 
+   * @type {string}
+   * @memberOf INotification
+   */
+  icon?: string;
+
+  /**
+   * optional title. Should only be one or two words
+   * 
+   * @type {string}
+   * @memberOf INotification
+   */
+  title?: string;
   /**
    * the message to display. This shouldn't be long
    * 

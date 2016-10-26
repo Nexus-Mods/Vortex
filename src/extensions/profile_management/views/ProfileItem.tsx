@@ -1,11 +1,10 @@
 import { ComponentEx, translate } from '../../../util/ComponentEx';
+import Icon from '../../../views/Icon';
 import { Button, Icon as TooltipIcon } from '../../../views/TooltipControls';
 
 import { IProfile } from '../types/IProfile';
 
 import * as React from 'react';
-
-import Icon = require('react-fontawesome');
 
 interface IProps {
   active: boolean;

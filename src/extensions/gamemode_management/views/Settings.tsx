@@ -1,6 +1,7 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 
 import { IComponentContext } from '../../../types/IComponentContext';
+import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
 import { addSearchPath, removeSearchPath } from '../actions/settings';
@@ -8,8 +9,6 @@ import { IStateEx } from '../types/IStateEx';
 
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock, ListGroup, ListGroupItem } from 'react-bootstrap';
-
-import Icon = require('react-fontawesome');
 
 import { log } from '../../../util/log';
 

@@ -3,19 +3,10 @@ import { setSafe } from '../../../util/storeHelper';
 
 import { setActivator, setModlistAttributeSort,
          setModlistAttributeVisible, setPath } from '../actions/settings';
-import { IStateModSettings } from '../types/IStateSettings';
 
 import update = require('react-addons-update');
 
 import * as path from 'path';
-
-function ensureAttribute(state: IStateModSettings, attributeId: string): IStateModSettings {
-  if (!(attributeId in state.modlistState)) {
-    return update(state, { modlistState: { [ attributeId ]: { $set: {} } } });
-  } else {
-    return state;
-  }
-}
 
 /**
  * reducer for changes to settings regarding mods

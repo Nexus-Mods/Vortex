@@ -1,10 +1,10 @@
+import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
 import { IAttributeState } from '../types/IAttributeState';
 import { IModAttribute } from '../types/IModAttribute';
 
 import * as React from 'react';
-import Icon = require('react-fontawesome');
 
 function getAttr<T>(state: IAttributeState, key: string, def: T): T {
   if (state === undefined) {

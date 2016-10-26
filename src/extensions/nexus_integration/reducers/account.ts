@@ -1,5 +1,6 @@
+import { IReducerSpec } from '../../../types/IExtensionContext';
+
 import { setUserAPIKey } from '../actions/account';
-import { IReducerSpec } from '../types/IExtensionContext';
 
 import update = require('react-addons-update');
 

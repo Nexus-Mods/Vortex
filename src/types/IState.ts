@@ -25,16 +25,6 @@ export interface IDimensions {
 }
 
 /**
- * Credentials used to log in a user
- * 
- * @export
- * @interface IAccount
- */
-export interface IAccount {
-  APIKey: string;
-}
-
-/**
  * interface for window state
  * 
  * @export
@@ -86,7 +76,7 @@ export interface ISettings {
  * @interface ISession
  */
 export interface ISession {
-  knownGames: IGame[];
+  displayGroups: { [id: string]: string };
 }
 
 /**
@@ -97,10 +87,10 @@ export interface ISession {
  * @interface IState
  */
 export interface IState {
-  account: { base: IAccount };
+  account: { };
   window: { base: IWindow };
   notifications: INotificationState;
-  session: { };
+  session: { base: ISession };
   settings: { };
   gameSettings: { };
 }

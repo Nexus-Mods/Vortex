@@ -198,7 +198,7 @@ class DownloadManager {
    */
   public enqueue(id: string, urls: string[], progressCB: IProgressCallback,
                  destinationPath?: string): Promise<string> {
-    const nameTemplate: string = path.basename(url.parse(urls[0]).pathname);
+    const nameTemplate: string = decodeURI(path.basename(url.parse(urls[0]).pathname));
     return this.unusedName(destinationPath || this.mDownloadPath, nameTemplate)
     .then((filePath: string) => {
       return new Promise<string>((resolve, reject) => {
@@ -284,7 +284,6 @@ class DownloadManager {
 
   private startWorker(download: IDownload) {
     const workerId: number = this.mNextId++;
-    log('info', 'start worker', { workerId });
     this.mSpeedCalculator.initCounter(workerId);
     let job: IDownloadJob = download.chunks.find((ele) => ele.state === 'init');
     job.state = 'running';
@@ -308,7 +307,7 @@ class DownloadManager {
   }
 
   private updateDownload(download: IDownload, size: number, fileName: string) {
-    if (fileName !== download.origName) {
+    if ((fileName !== undefined) && (fileName !== download.origName)) {
       download.finalName = this.unusedName(path.dirname(download.tempName), fileName);
     }
 

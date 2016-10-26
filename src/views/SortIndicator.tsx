@@ -1,7 +1,7 @@
 import { SortDirection } from '../types/SortDirection';
+import Icon from '../views/Icon';
 
 import * as React from 'react';
-import Icon = require('react-fontawesome');
 
 interface IProps {
   direction: SortDirection;

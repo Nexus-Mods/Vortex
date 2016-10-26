@@ -6,7 +6,7 @@ import ToolbarIcon from './ToolbarIcon';
 import * as React from 'react';
 import { ButtonGroup } from 'react-bootstrap';
 
-interface IProps {
+interface IBaseProps {
   className?: string;
   group: string;
 }
@@ -15,14 +15,16 @@ interface IExtensionProps {
   objects: IIconDefinition[];
 }
 
-class IconBar extends ComponentEx<IProps & IExtensionProps, {}> {
+type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes;
+
+class IconBar extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
 
-    const { objects, className } = this.props;
+    const { objects, className, style } = this.props;
 
     return (
-      <ButtonGroup className={className}>
+      <ButtonGroup className={className} style={style} >
         { objects.map(this.renderIcon) }
       </ButtonGroup>
     );
@@ -80,4 +82,4 @@ function registerIcon(instance: IconBar,
 export default
   translate(['common'], { wait: true })(
     extend(registerIcon)(IconBar)
-  ) as React.ComponentClass<IProps & IExtensibleProps>;
+  ) as React.ComponentClass<IBaseProps & IExtensibleProps & React.HTMLAttributes>;

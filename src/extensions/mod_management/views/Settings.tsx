@@ -1,4 +1,5 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 import { setActivator, setPath } from '../actions/settings';
 import { IModActivator } from '../types/IModActivator';
@@ -6,8 +7,6 @@ import resolvePath from '../util/resolvePath';
 
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, HelpBlock, InputGroup } from 'react-bootstrap';
-
-import Icon = require('react-fontawesome');
 
 import { log } from '../../../util/log';
 

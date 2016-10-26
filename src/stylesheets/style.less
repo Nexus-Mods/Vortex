@@ -24,13 +24,18 @@
   background-color: transparent;
 }
 
+.inline-form {
+  display: flex;
+  flex-grow: 1;
+}
+
 .notification-enter {
   opacity: 0;
 }
 
 .notification-enter.notification-enter-active {
-    opacity: 1;
-    transition: opacity 500ms ease-in;
+  opacity: 1;
+  transition: opacity 500ms ease-in;
 }
 
 .notification-leave {
@@ -40,6 +45,22 @@
 .notification-leave.notification-leave-active {
     opacity: 0;
     transition: opacity 300ms ease-in;
+}
+
+.input-button-enter {
+  opacity: 0.1;
+}
+
+.input-button-enter.input-button-enter-active {
+  transition: opacity 500ms ease-in;
+}
+
+.notification-leave {
+  opacity: 1;
+}
+
+.input-button-leave.input-button-leave-active {
+  transition: opacity 500ms ease-out;
 }
 
 .mod-installing {
@@ -97,4 +118,15 @@
 
 .progress {
   height: 32px;
+}
+
+.media-heading {
+  font-family: BebasNeue;
+}
+
+.svg-icon {
+  fill: currentColor;
+  height: @font-size-base;
+  width: @font-size-base;
+  display: block;
 }

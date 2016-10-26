@@ -1,7 +1,7 @@
+import Icon from './Icon';
 import { Button } from './TooltipControls';
 
 import * as React from 'react';
-import Icon = require('react-fontawesome');
 
 interface IToolbarIconProps {
   id: string;

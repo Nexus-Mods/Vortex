@@ -12,13 +12,14 @@ import { autoRehydrate, persistStore } from 'redux-persist';
 import { AsyncNodeStorage } from 'redux-persist-node-storage';
 import thunkMiddleware from 'redux-thunk';
 
-const logMiddleware = store => next => action => {
-  log('debug', 'dispatch', { action, state: JSON.stringify(store.getState()) });
+/*
+const logMiddleware = (store) => (next) => (action) => {
+  log('debug', 'dispatch', { action });
 
   let res = next(action);
 
   return res;
-};
+};*/
 
 /**
  * initialize redux store
@@ -31,7 +32,6 @@ const logMiddleware = store => next => action => {
 export function setupStore(basePath: string, extensions: ExtensionManager): Redux.Store<IState> {
   const middleware = [
     thunkMiddleware,
-    logMiddleware,
   ];
 
   const enhancer: Redux.StoreEnhancer<IState> = compose(

@@ -48,6 +48,16 @@ export function setSafe<T>(state: T, path: string[], value: any): T {
   return copy;
 }
 
+/**
+ * sets a value or do nothing if the path doesn't exist
+ * 
+ * @export
+ * @template T
+ * @param {T} state
+ * @param {string[]} path
+ * @param {*} value
+ * @returns {T}
+ */
 export function setOrNop<T>(state: T, path: string[], value: any): T {
   let firstElement: string = path[0];
   let copy = Object.assign({}, state);
@@ -61,6 +71,15 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
   return copy;
 }
 
+/**
+ * delete a value or do nothing if the path doesn't exist
+ * 
+ * @export
+ * @template T
+ * @param {T} state
+ * @param {string[]} path
+ * @returns {T}
+ */
 export function deleteOrNop<T>(state: T, path: string[]): T {
   let firstElement: string = path[0];
   let copy = Object.assign({}, state);
@@ -128,6 +147,11 @@ export function removeValue<T>(state: T, path: string[], value: any): T {
     list.splice(idx, 1);
   }
   return copy;
+}
+
+export function removeValueIf<T>(state: T, path: string[],
+                                 predicate: (element: any) => boolean): T {
+  return setSafe(state, path, getSafe(state, path, []).filter((ele) => !predicate(ele)));
 }
 
 /**

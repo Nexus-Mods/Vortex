@@ -2,6 +2,7 @@ import { IComponentContext } from '../../../types/IComponentContext';
 import { IGame } from '../../../types/IGame';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
+import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
 import { setGameHidden, setGameMode } from '../actions/settings';
@@ -13,9 +14,6 @@ import * as React from 'react';
 import { ProgressBar } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
-import { log } from '../../../util/log';
-
-import Icon = require('react-fontawesome');
 import update = require('react-addons-update');
 
 interface IConnectedProps {

@@ -16,7 +16,7 @@ interface IRegisterIcon {
 }
 
 interface IRegisterFooter {
-  (id: string, element: React.ComponentClass<any>): void;
+  (id: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
 }
 
 export interface IMainPageOptions {
@@ -26,6 +26,10 @@ export interface IMainPageOptions {
 interface IRegisterMainPage {
   (icon: string, title: string, element: React.ComponentClass<any>,
    options: IMainPageOptions): void;
+}
+
+interface IRegisterProtocol {
+  (protocol: string, callback: (url: string) => void);
 }
 
 export interface IFileFilter {
@@ -179,6 +183,14 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerFooter: IRegisterFooter;
+
+  /**
+   * registers an uri protocol to be handled by this application
+   * 
+   * @type {IRegisterProtocol}
+   * @memberOf IExtensionContext
+   */
+  registerProtocol: IRegisterProtocol;
 
   /**
    * register a reducer to introduce new set-operations on the application

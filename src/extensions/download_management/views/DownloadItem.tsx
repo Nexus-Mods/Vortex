@@ -1,5 +1,6 @@
 import { IComponentContext } from '../../../types/IComponentContext';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
+import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
 import { DownloadState, IDownload } from '../types/IDownload';
@@ -7,7 +8,6 @@ import { DownloadState, IDownload } from '../types/IDownload';
 import * as path from 'path';
 import * as React from 'react';
 import { ProgressBar } from 'react-bootstrap';
-import Icon = require('react-fontawesome');
 
 interface IBaseProps {
   downloadId: string;
@@ -35,8 +35,12 @@ class DownloadItem extends ComponentEx<IProps, {}> {
     return (
       <tr>
         <td>{ this.renderFileName(download.localPath) }</td>
-        <td>{ this.renderProgress(download.state, download.received, download.size) }</td>
-        <td>{ this.renderActions(downloadId, download) }</td>
+        <td style={{ textAlign: 'center' }}>
+          { this.renderProgress(download.state, download.received, download.size) }
+        </td>
+        <td style={{ textAlign: 'center' }}>
+          { this.renderActions(downloadId, download) }
+        </td>
       </tr>
     );
   }
@@ -50,7 +54,7 @@ class DownloadItem extends ComponentEx<IProps, {}> {
       name = t('Pending');
     }
     return (
-      <p>{ name }</p>
+      <span>{ name }</span>
     );
   }
 

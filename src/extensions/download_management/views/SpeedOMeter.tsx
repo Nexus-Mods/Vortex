@@ -1,7 +1,7 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import * as React from 'react';
+import Icon from '../../../views/Icon';
 
-import Icon = require('react-fontawesome');
+import * as React from 'react';
 
 interface IConnectedProps {
   speed: number;

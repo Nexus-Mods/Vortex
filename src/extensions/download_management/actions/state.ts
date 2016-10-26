@@ -6,8 +6,8 @@ type IDictionary = { [key: string]: any };
  * initialize a download (it may not be started immediately)
  */
 export const initDownload = createAction('INIT_DOWNLOAD',
-  (id: string, urls: string[], downloadPath: string, modInfo: IDictionary) => {
-    return { id, urls, downloadPath, modInfo }; });
+  (id: string, urls: string[], modInfo: IDictionary) => {
+    return { id, urls, modInfo }; });
 
 /**
  * set download progress (in percent)

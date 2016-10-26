@@ -4,6 +4,8 @@ import { IReducerSpec } from '../types/IExtensionContext';
 
 import update = require('react-addons-update');
 
+import { removeValueIf } from '../util/storeHelper';
+
 let counter = 1;
 
 /**
@@ -12,18 +14,25 @@ let counter = 1;
 export const notificationsReducer: IReducerSpec = {
   reducers: {
     [startNotification]: (state, payload) => {
+      let temp = state;
       if (payload.id === undefined) {
         payload.id = `__auto_${counter++}`;
+      } else {
+        if (payload.type === 'global') {
+          temp = removeValueIf(state, ['global_notifications'], (noti) => noti.id === payload.id);
+        } else {
+          temp = removeValueIf(state, ['notifications'], (noti) => noti.id === payload.id);
+        }
       }
-      return update(state, { notifications: { $push: [payload] } });
+      if (payload.type === 'global') {
+        return update(temp, { global_notifications: { $push: [payload] } });
+      } else {
+        return update(temp, { notifications: { $push: [payload] } });
+      }
     },
     [dismissNotification]: (state, payload) => {
-      const idx = state.notifications.findIndex((ele) => ele.id === payload);
-      if (idx < 0) {
-        return state;
-      } else {
-        return update(state, { notifications: { $splice: [[idx, 1]] } });
-      }
+      return removeValueIf(removeValueIf(state, [ 'notifications' ], (noti) => noti.id === payload),
+                           [ 'global_notifications' ], (noti) => noti.id === payload);
     },
     [showDialog]: (state, payload) => {
       return update(state, { dialogs: { $push: [payload] } });
@@ -34,6 +43,7 @@ export const notificationsReducer: IReducerSpec = {
   },
   defaults: {
     notifications: [],
+    global_notifications: [],
     dialogs: [],
   },
 };

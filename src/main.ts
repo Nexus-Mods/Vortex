@@ -11,12 +11,52 @@ import ExtensionManager from './util/ExtensionManager';
 import { log, setupLogging } from  './util/log';
 import { setupStore } from './util/store';
 
-import { BrowserWindow, app } from 'electron';
+import { BrowserWindow, Menu, Tray, app } from 'electron';
 import * as fs from 'fs-extra-promise';
+import * as path from 'path';
 
 import doRestart = require('electron-squirrel-startup');
 
 if (doRestart) {
+  app.quit();
+}
+
+let mainWindow: Electron.BrowserWindow = null;
+let trayIcon: Electron.Tray = null;
+
+const urlExp = /([a-z\-]+):\/\/.*/i;
+
+function createTrayIcon() {
+  trayIcon = new Tray(path.resolve(__dirname, 'assets', 'images', 'nmm.ico'));
+
+  trayIcon.setContextMenu(Menu.buildFromTemplate([
+    { label: 'Quit', click: () => app.quit() },
+  ]));
+}
+
+const shouldQuit: boolean = app.makeSingleInstance((commandLine, workingDirectory): boolean => {
+  /*
+  // second instance created, instead of starting a new one, bring the existing one to front
+  if (mainWindow !== null) {
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.focus();
+  }
+  */
+  // send everything that looks like an url we handle to be opened
+  for (let arg of commandLine) {
+    let match = arg.match(urlExp);
+    if (match !== null) {
+      log('info', 'external url');
+      mainWindow.webContents.send('external-url', match[1], arg);
+    }
+  }
+
+  return true;
+});
+
+if (shouldQuit) {
   app.quit();
 }
 
@@ -35,9 +75,20 @@ setupLogging(basePath, process.env.NODE_ENV === 'development');
 const extensions: ExtensionManager = new ExtensionManager();
 const store: Redux.Store<IState> = setupStore(basePath, extensions);
 
-// main window setup
+let protocolHandlers = {};
 
-let mainWindow: Electron.BrowserWindow = null;
+extensions.apply('registerProtocol', (protocol: string, callback: (url: string) => void) => {
+  log('info', 'register protocol', { protocol });
+  if (process.execPath.endsWith('electron.exe')) {
+    // make it work when using the development version
+    app.setAsDefaultProtocolClient(protocol, process.execPath, [ path.resolve(__dirname, '..') ]);
+  } else {
+    app.setAsDefaultProtocolClient(protocol);
+  }
+  protocolHandlers[protocol] = callback;
+});
+
+// main window setup
 
 function createWindow() {
   let windowMetrics: IWindow = store.getState().window.base;
@@ -88,22 +139,8 @@ function createWindow() {
   });
 }
 
-const shouldQuit: boolean = app.makeSingleInstance((commandLine, workingDirectory): boolean => {
-  // This is a second instance, instead of starting a new one, bring the existing one to front
-  if (mainWindow !== null) {
-    if (mainWindow.isMinimized()) {
-      mainWindow.restore();
-    }
-    mainWindow.focus();
-  }
-  return true;
-});
-
-if (shouldQuit) {
-  app.quit();
-}
-
 app.on('ready', () => {
+  createTrayIcon();
   installDevelExtensions().then(createWindow);
 });
 

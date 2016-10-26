@@ -1,19 +1,22 @@
-import { setUserAPIKey } from '../actions/account';
-import { showDialog } from '../actions/notifications';
-import { IAccount, IState } from '../types/IState';
-import { ComponentEx, connect, translate } from '../util/ComponentEx';
-import { log } from '../util/log';
-import { Button } from './TooltipControls';
+import Nexus from '../../../../lib/js/nexus-api/lib/Nexus';
+import { IValidateKeyResponse } from '../../../../lib/js/nexus-api/lib/types';
 
-import { Client } from 'node-rest-client';
+import { showDialog } from '../../../actions/notifications';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import Icon from '../../../views/Icon';
+import { Button } from '../../../views/TooltipControls';
+
+import { setUserAPIKey } from '../actions/account';
+import { IAccount } from '../types/IAccount';
+
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, Image } from 'react-bootstrap';
 import classNames = require('classnames');
-import Icon = require('react-fontawesome');
 import update = require('react-addons-update');
 
 interface IProps {
   onClose: () => void;
+  nexus: Nexus;
 }
 
 interface ILoginFormState {
@@ -44,7 +47,7 @@ interface IValidationState {
 
 class FormFeedbackAwesome extends FormControl.Feedback {
   protected renderDefaultFeedback(formGroup, className, classes, elementProps) {
-    let icon: JSX.Element = this.iconName(formGroup && formGroup.validationState);
+    let icon: JSX.Element = this.icon(formGroup && formGroup.validationState);
     if (icon === undefined) {
       return null;
     } else {
@@ -56,12 +59,13 @@ class FormFeedbackAwesome extends FormControl.Feedback {
     }
   }
 
-  private iconName(state: string): JSX.Element {
+  private icon(state: string): JSX.Element {
+    const style = { width: 'initial', height: 'initial', margin: '5px' };
     switch (state) {
-      case 'success': return <Icon name='check' />;
-      case 'warning': return <Icon name='warning' />;
-      case 'error': return <Icon name='remove' />;
-      case 'pending': return <Icon name='spinner' spin />;
+      case 'success': return <Icon name='check' style={ style } />;
+      case 'warning': return <Icon name='warning' style={ style } />;
+      case 'error': return <Icon name='remove' style={ style } />;
+      case 'pending': return <Icon name='spinner' pulse style={ style } />;
       default: return undefined;
     }
   }
@@ -184,7 +188,7 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
   }
 
   private authenticateAPIKey() {
-    const { onClose, onSetAPIKey } = this.props;
+    const { nexus, onClose, onSetAPIKey } = this.props;
     const { APIKey } = this.state;
     const propAPIKey = this.props.account.APIKey;
 
@@ -193,70 +197,42 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
       this.setState(update(this.state, { isSubmitted: { $set: false } }));
       onClose();
     } else {
-      let client = new Client();
-
       this.setState(update(this.state, {
         isSubmitted: { $set: true },
         statusCode: { $set: null },
         statusCodeMessage: { $set: '' },
       }));
 
-      let args = {
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: this.state.APIKey !== '' ? this.state.APIKey : propAPIKey,
-        },
-      };
-
-      if (APIKey !== '') {
-        client.get('https://api.nexusmods.com/v1/users/validate.json', args,
-          (data, response) => {
-            if (response.statusCode === 200) {
-              onSetAPIKey(this.state.APIKey);
-              onClose();
-            } else {
-              this.setState(update(this.state, {
-                statusCode: { $set: response.statusCode },
-                statusCodeMessage: { $set: data.message },
-              }));
-            }
-          });
-      }
+      nexus.validateKey(this.state.APIKey !== '' ? APIKey : propAPIKey)
+      .then(() => {
+        onSetAPIKey(APIKey);
+        onClose();
+      })
+      .catch((err) => {
+        this.setState(update(this.state, {
+          statusCode: { $set: err.statusCode },
+          statusCodeMessage: { $set: err.message },
+        }));
+      });
     }
   }
 
   private loadUserInfo() {
+    const { nexus } = this.props;
     const { APIKey } = this.state;
     const propAPIKey = this.props.account.APIKey;
 
-    let client = new Client();
-
     this.setState(update(this.state, { isSubmitted: { $set: true } }));
 
-    let args = {
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: APIKey !== '' ? APIKey : propAPIKey,
-      },
-    };
-
-    client.get('https://api.nexusmods.com/v1/users/validate.json', args,
-      (data, response) => {
-        log('debug', 'STATUS', response.statusCode);
-        log('debug', 'HEADERS', JSON.stringify(response.headers));
-        log('debug', 'BODY', JSON.stringify(data));
-        response.setEncoding('utf8');
-        response.on('data', (responseData) => {
-          log('debug', 'response data', responseData);
-        });
-
+    nexus.validateKey(APIKey !== '' ? APIKey : propAPIKey)
+      .then((data: IValidateKeyResponse) => {
         this.setState(update(this.state, {
-            userId: { $set: data.user_id },
-            name: { $set: data.name },
-            isPremium: { $set: data.is_premium },
-            isSupporter: { $set: data.is_supporter },
-            email: { $set: data.email },
-         }));
+          userId: { $set: data.user_id },
+          name: { $set: data.name },
+          isPremium: { $set: data.is_premium },
+          isSupporter: { $set: data.is_supporter },
+          email: { $set: data.email },
+        }));
       });
   }
 
@@ -267,8 +243,8 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
-  return { account: state.account.base };
+function mapStateToProps(state: any): IConnectedProps {
+  return { account: state.account.nexus };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {

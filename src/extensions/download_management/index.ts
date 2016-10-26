@@ -33,7 +33,12 @@ function init(context: IExtensionContext): boolean {
       downloadPath(store.getState()),
       store.getState().settings.downloads.maxParallelDownloads,
       store.getState().settings.downloads.maxChunks,
-      (speed: number) => store.dispatch(setDownloadSpeed(speed)));
+      (speed: number) => {
+        if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
+          store.dispatch(setDownloadSpeed(speed));
+        }
+      }
+    );
 
     context.api.events.on('remove-download', (downloadId: string) => {
       const download = store.getState().persistent.downloads.running[downloadId];
@@ -58,9 +63,12 @@ function init(context: IExtensionContext): boolean {
 
     context.api.events.on('start-download', (urls: string[], modInfo: any) => {
       let id = v1();
-      store.dispatch(initDownload(id, urls, downloadPath, modInfo));
+      store.dispatch(initDownload(id, urls, modInfo));
+
       manager.enqueue(id, urls, (received: number, total: number, filePath?: string) => {
-        store.dispatch(downloadProgress(id, received, total));
+        if (total > 0) {
+          store.dispatch(downloadProgress(id, received, total));
+        }
         if ((filePath !== undefined) &&
             (filePath !== store.getState().persistent.downloads.running[id].localPath)) {
           store.dispatch(setDownloadFilePath(id, filePath));

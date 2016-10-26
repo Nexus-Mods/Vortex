@@ -6,7 +6,6 @@ import { ComponentEx, extend, translate } from '../util/ComponentEx';
 import Developer from './Developer';
 import Dialog from './Dialog';
 import IconBar from './IconBar';
-import LoginForm from './LoginForm';
 import MainFooter from './MainFooter';
 import Notifications from './Notifications';
 import Settings from './Settings';
@@ -17,7 +16,7 @@ import { Alert, Modal, Nav } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import update = require('react-addons-update');
-import Icon = require('react-fontawesome');
+import Icon from './Icon';
 
 interface IBaseProps {
   className: string;
@@ -117,7 +116,6 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
         </Layout>
         <Dialog />
         { this.renderModalSettings() }
-        { this.renderModalLogin() }
         { this.renderDeveloperModal() }
       </div>
     );
@@ -146,7 +144,7 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
     return (
       <Flex>
         <Layout type='row'>
-          <Fixed>
+          <Fixed style={{ width: 48 }}>
             <Nav
               bsStyle='pills'
               stacked
@@ -197,22 +195,6 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
           {t('Close') }
           </Button>
         </Modal.Footer>
-      </Modal>
-    );
-  }
-
-  private renderModalLogin() {
-    const { t } = this.props;
-    return (
-      <Modal show={this.state.showLayer === 'login'} onHide={ this.hideLayer }>
-        <Modal.Header>
-          <Modal.Title>
-          { this.props.APIKey === '' ? t('API Key Validation') : t('User Info') }
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <LoginForm onClose={ this.hideLayer } />
-        </Modal.Body>
       </Modal>
     );
   }

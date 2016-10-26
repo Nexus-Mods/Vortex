@@ -4,6 +4,7 @@ import initAboutDialog from '../extensions/about_dialog/index';
 import initDownloadManagement from '../extensions/download_management/index';
 import initGamemodeManagement from '../extensions/gamemode_management/index';
 import initModManagement from '../extensions/mod_management/index';
+import initNexusIntegration from '../extensions/nexus_integration/index';
 import initNutsLocal from '../extensions/nuts_local/index';
 import initProfileManagement from '../extensions/profile_management/index';
 import initSettingsInterface from '../extensions/settings_interface/index';
@@ -86,7 +87,6 @@ class ExtensionManager {
     };
     this.mApi.store = store;
     this.mApi.onStateChange = (path: string[], callback: IStateChangeCallback) => {
-      log('debug', 'watching state changes', { path: path.join('.') });
       this.mReduxWatcher.watch(path,
         // tslint:disable-next-line:no-unused-variable no-shadowed-variable
         ({ store, selector, prevState, currentState, prevValue, currentValue }) => {
@@ -221,6 +221,7 @@ class ExtensionManager {
       registerSettings: () => undefined,
       registerIcon: () => undefined,
       registerFooter: () => undefined,
+      registerProtocol: () => undefined,
       registerReducer: () => undefined,
       registerExtensionFunction: () => undefined,
       once: () => undefined,
@@ -273,6 +274,7 @@ class ExtensionManager {
       { name: 'welcome_screen', initFunc: initWelcomeScreen },
       { name: 'mod_management', initFunc: initModManagement },
       { name: 'profile_management', initFunc: initProfileManagement },
+      { name: 'nexus_integration', initFunc: initNexusIntegration },
       { name: 'download_management', initFunc: initDownloadManagement },
       { name: 'gamemode_management', initFunc: initGamemodeManagement },
       { name: 'nuts_local', initFunc: initNutsLocal },

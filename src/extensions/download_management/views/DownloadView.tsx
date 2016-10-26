@@ -1,17 +1,16 @@
 import { IComponentContext } from '../../../types/IComponentContext';
+import { IIconDefinition } from '../../../types/IIconDefinition';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { Button } from '../../../views/TooltipControls';
+import IconBar from '../../../views/IconBar';
+import InputButton from '../../../views/InputButton';
 
 import { IDownload } from '../types/IDownload';
 
 import DownloadItem from './DownloadItem';
 
 import * as React from 'react';
-import { FormControl, Table } from 'react-bootstrap';
+import { Table } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-import update = require('react-addons-update');
-
-import Icon = require('react-fontawesome');
 
 interface IConnectedProps {
   downloads: IDownload[];
@@ -29,12 +28,25 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   };
 
   public context: IComponentContext;
+  private staticButtons: IIconDefinition[];
 
   constructor(props) {
     super(props);
     this.state = {
       inputUrl: undefined,
     };
+
+    this.staticButtons = [{
+      component: InputButton,
+      props: () => ({
+        id: 'input-download-url',
+        groupId: 'download-buttons',
+        key: 'input-download-url',
+        icon: 'download',
+        tooltip: 'Download URL',
+        onConfirmed: this.startDownload,
+      }),
+    }];
   }
 
   public render(): JSX.Element {
@@ -42,17 +54,19 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     return (
       <Layout type='column'>
         <Fixed>
-          <div style={{ height: '32px' }}>
-            { this.renderInputUrl() }
-          </div>
+          <IconBar
+            group='download-icons'
+            staticElements={this.staticButtons}
+            style={{ width: '100%', display: 'flex' }}
+          />
         </Fixed>
         <Flex style={{ height: '100%', overflowY: 'auto' }}>
           <Table bordered condensed hover>
             <thead>
               <tr>
                 <th>{t('Filename')}</th>
-                <th>{t('Progress')}</th>
-                <th>{t('Actions')}</th>
+                <th style={{ textAlign: 'center' }}>{t('Progress')}</th>
+                <th style={{ textAlign: 'center' }}>{t('Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -64,74 +78,8 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderInputUrl() {
-    const { t } = this.props;
-    if (this.state.inputUrl === undefined) {
-      return (
-        <Button
-          id='input-url'
-          tooltip={ t('Download URL') }
-          onClick={ this.startInputUrl }
-        >
-          <Icon name='download' />
-        </Button>
-      );
-    } else {
-      const { inputUrl } = this.state;
-      return (
-        <Layout type='row'>
-          <Flex>
-            <form>
-              <FormControl
-                autoFocus
-                type='text'
-                value={inputUrl}
-                onChange={this.updateUrl}
-              />
-            </form>
-          </Flex>
-          <Fixed>
-            <Button
-              id='accept-url'
-              tooltip={t('Download')}
-              onClick={this.startDownload}
-            >
-              <Icon name='check' />
-            </Button>
-            <Button
-              id='cancel-url'
-              tooltip={t('Cancel')}
-              onClick={this.closeInputUrl}
-            >
-              <Icon name='remove' />
-            </Button>
-          </Fixed>
-        </Layout>
-      );
-    }
-  }
-
-  private updateUrl = (event) => {
-    this.setState(update(this.state, {
-      inputUrl: { $set: event.target.value },
-    }));
-  }
-
-  private startInputUrl = () => {
-    this.setState(update(this.state, {
-      inputUrl: { $set: '' },
-    }));
-  }
-
-  private closeInputUrl = () => {
-    this.setState(update(this.state, {
-      inputUrl: { $set: undefined },
-    }));
-  }
-
-  private startDownload = () => {
-    this.context.api.events.emit('start-download', [ this.state.inputUrl ], {});
-    this.closeInputUrl();
+  private startDownload = (url: string) => {
+    this.context.api.events.emit('start-download', [ url ], {});
   }
 
   private renderDownload = (key: string) => {

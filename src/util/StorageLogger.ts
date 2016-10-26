@@ -29,7 +29,11 @@ class StorageLogger implements IStorage {
   }
 
   public setItem (key: string, value: string | number, cb: (error: Error) => void) {
-    log(this.mLogLevel, 'set item', { key, value });
+    if (typeof(value) === 'string') {
+      log(this.mLogLevel, 'set item', { key, value: value.substring(0, 30) });
+    } else {
+      log(this.mLogLevel, 'set item', { key, value });
+    }
     this.mNested.setItem(key, value, cb);
   }
 

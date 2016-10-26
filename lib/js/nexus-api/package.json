@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "name": "nexus-api",
+  "version": "0.1.0",
+  "main": "./lib/index.js",
+  "typings": "lib/index",
+  "files": [
+    "lib/"
+  ],
+  "description": "API for the Nexus Mods page",
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "jest"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "LGPL-3.0",
+  "devDependencies": {
+    "bluebird": "^3.4.6",
+    "node-rest-client": "^2.0.1"
+  }
+}

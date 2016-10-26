@@ -275,7 +275,7 @@ declare namespace Electron {
 		 * Note: This is only implemented on OS X and Windows.
 		 *       On OS X, you can only register protocols that have been added to your app's info.plist.
 		 */
-		setAsDefaultProtocolClient(protocol: string): void;
+		setAsDefaultProtocolClient(protocol: string, path?: string, args?: string[]): void;
 		/**
 		 * Removes the current executable as the default handler for a protocol (aka URI scheme).
 		 *

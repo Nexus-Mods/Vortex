@@ -1,0 +1,20 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "noImplicitAny": false,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "rootDir": "./src",
+        "outDir": "./lib",
+        "sourceMap": true,
+        "declaration": true
+    },
+    "files": [
+        "src/Nexus.ts",
+        "typings/index.d.ts",
+        "typings.custom/node-rest-client.d.ts"
+    ]
+}

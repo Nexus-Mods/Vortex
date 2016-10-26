@@ -1,4 +1,4 @@
-import { setMaximized, setWindowPosition, setWindowSize } from '../actions/window';
+import * as actions from '../actions/window';
 import { IReducerSpec } from '../types/IExtensionContext';
 
 import update = require('react-addons-update');
@@ -8,9 +8,9 @@ import update = require('react-addons-update');
  */
 export const windowReducer: IReducerSpec = {
   reducers: {
-    [setWindowSize]: (state, payload) => update(state, { size: { $set: payload } }),
-    [setWindowPosition]: (state, payload) => update(state, { position: { $set: payload } }),
-    [setMaximized]: (state, payload) => update(state, { maximized: { $set: payload } }),
+    [actions.setWindowSize]: (state, payload) => update(state, { size: { $set: payload } }),
+    [actions.setWindowPosition]: (state, payload) => update(state, { position: { $set: payload } }),
+    [actions.setMaximized]: (state, payload) => update(state, { maximized: { $set: payload } }),
   },
   defaults: {
     maximized: false,
