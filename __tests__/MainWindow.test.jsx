@@ -26,12 +26,12 @@ it('returns a div', () => {
   expect(win.type).toBe('div');
 });
 
-it('has three modal', () => {
+it('has two modal', () => {
   let win = renderMainWindow();
 
   let modals = findAll(win, (ele) => ele.type === Modal);
 
-  expect(modals.length).toBe(3);
+  expect(modals.length).toBe(2);
 });
 
 it('opens settings on click on icon', () => {

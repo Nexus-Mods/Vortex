@@ -42,15 +42,6 @@ describe('dismissNotification', () => {
   });
 });
 
-describe('setUserAPIKey', () => {
-  it('creates the correct action', () => {
-    expect(actions.setUserAPIKey('apikey')).toEqual({
-      type: 'SET_USER_API_KEY',
-      payload: 'apikey'
-    });
-  });
-});
-
 describe('setWindowSize', () => {
   it('creates the correct action', () => {
     let size = { width: 42, height: 13 };
