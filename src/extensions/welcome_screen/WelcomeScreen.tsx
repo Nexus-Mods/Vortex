@@ -423,7 +423,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
         onAddNewTool={this.showNewToolLayer}
         onChangeToolParams={this.showChangeToolParamsLayer}
       />
-    ;
+    );
   }
 };
 
