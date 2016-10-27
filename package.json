@@ -38,6 +38,7 @@
     "appId": "com.nexusmods.nmm2",
     "win": {
       "target": "squirrel",
+      "icon": "assets/images/nmm.ico",
       "iconUrl": "https://staticdelivery.nexusmods.com/contents/Templates/110/favicon.ico"
     },
     "extraResources": [
@@ -98,6 +99,7 @@
     "jest-cli": "^15.1.1",
     "less": "^2.7.1",
     "less-plugin-clean-css": "^1.5.1",
+    "nexus-api": "file:./lib/js/nexus-api",
     "node-7z": "^0.4.0",
     "node-ipc": "^8.9.2",
     "node-rest-client": "^2.0.1",

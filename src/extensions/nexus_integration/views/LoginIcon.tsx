@@ -1,4 +1,4 @@
-import Nexus from '../../../../lib/js/nexus-api/lib/Nexus';
+import Nexus from 'nexus-api/lib/Nexus';
 
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';

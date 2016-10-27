@@ -7,7 +7,7 @@ import { settingsReducer } from './reducers/settings';
 import LoginIcon from './views/LoginIcon';
 import Settings from './views/Settings';
 
-import Nexus, { IDownloadURL, IGetModInfoResponse } from '../../../lib/js/nexus-api';
+import Nexus, { IDownloadURL, IGetModInfoResponse } from 'nexus-api';
 
 import NXMUrl from './NXMUrl';
 

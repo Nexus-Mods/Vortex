@@ -1,5 +1,5 @@
-import Nexus from '../../../../lib/js/nexus-api/lib/Nexus';
-import { IValidateKeyResponse } from '../../../../lib/js/nexus-api/lib/types';
+import Nexus from 'nexus-api/lib/Nexus';
+import { IValidateKeyResponse } from 'nexus-api/lib/types';
 
 import { showDialog } from '../../../actions/notifications';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
