@@ -166,7 +166,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
   private renderModalNewTool() {
     const { code64, commandLine, toolPath } = this.state;
 
-    if (toolPath !== '') {
+    if (toolPath !== undefined) {
       if (code64 === '') {
         iconExtractor.getIcon('Icon', toolPath);
       }
@@ -181,11 +181,11 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
         </Modal.Header>
         <Modal.Body>
           <ControlLabel>Tool Name</ControlLabel>
-          <HelpBlock>{path.basename(toolPath.substr(0, toolPath.lastIndexOf('.')))}</HelpBlock>
+          <HelpBlock>{toolPath !== undefined ? path.basename(toolPath.substr(0, toolPath.lastIndexOf('.'))) : null}</HelpBlock>
           <ControlLabel>Tool Path</ControlLabel>
           <HelpBlock>{toolPath}</HelpBlock>
           <ControlLabel>Tool Icon</ControlLabel>
-          <HelpBlock>{toolPath !== '' ? this.renderNewToolIcon(code64) : null}</HelpBlock>
+          <HelpBlock>{toolPath !== undefined ? this.renderNewToolIcon(code64) : null}</HelpBlock>
           <ControlLabel>Command Line parameters</ControlLabel>
           <FormControl
             type='text'
@@ -201,23 +201,26 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
   }
 
   private renderModalChangeToolParams() {
-    const { code64, toolId} = this.state;
+    const { code64, toolId, toolPath} = this.state;
     let { discoveredTools, t } = this.props;
 
     if (toolId !== '') {
       if (fs.existsSync(discoveredTools[toolId].logo)) {
-        iconExtractor.getIcon('Icon', discoveredTools[toolId].logo);
+        if (code64 === '') {
+          iconExtractor.getIcon('Icon', discoveredTools[toolId].logo);
+        }
       } else {
-        if (this.state.toolPath === '') {
-            this.state.toolPath = discoveredTools[toolId].path;
-            this.state.commandLine = discoveredTools[toolId].parameters;
-            iconExtractor.getIcon('Icon', this.state.toolPath);
-          }
+        if (toolPath === '') {
+          this.setState(update(this.state, { toolPath: { $set: discoveredTools[toolId].path } }));
+          this.setState(update(this.state,
+            { commandLine: { $set: discoveredTools[toolId].parameters } }));
+          iconExtractor.getIcon('Icon', this.state.toolPath);
+        }
       }
     }
 
     return (
-      <Modal show={this.state.showLayer === 'changeToolParams'} onHide={this.hideLayer} >
+      <Modal show={this.state.showLayer === 'changeToolParams'} onHide={this.hideLayer}>
         <Modal.Header>
           <Modal.Title>
             {t('Change {{name}} params', { name: toolId })}
@@ -294,7 +297,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
 
   private newToolSubmit = (event) => {
     let {gameMode, knownGames, onAddNewTool} = this.props;
-    const { code64, toolPath } = this.state;
+    const { code64, commandLine, toolPath } = this.state;
     let game: IGame = knownGames.find((ele) => ele.id === gameMode);
     event.preventDefault();
 
@@ -315,7 +318,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
 
     newToolSettings.hidden = false;
     newToolSettings.logo = path.join(toolIconsPath, toolId + '.png');
-    newToolSettings.parameters = this.state.commandLine;
+    newToolSettings.parameters = commandLine;
     newToolSettings.path = toolPath;
     onAddNewTool(game.id, toolId, newToolSettings);
     this.hideLayer();
@@ -323,13 +326,11 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
 
   private changeToolSubmit = (event) => {
     let {gameMode, knownGames, onAddNewTool} = this.props;
-    const { code64, toolPath } = this.state;
+    const { code64, commandLine, toolId, toolPath } = this.state;
     let game: IGame = knownGames.find((ele) => ele.id === gameMode);
     event.preventDefault();
 
     let changedToolSettings: IToolDiscoveryResult = { path: null };
-    let toolId: string;
-    toolId = this.state.toolId;
 
     let toolIconsPath: string = path.join(remote.app.getPath('userData'),
       'games', game.id);
@@ -344,7 +345,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
 
     changedToolSettings.hidden = false;
     changedToolSettings.logo = path.join(toolIconsPath, toolId + '.png');
-    changedToolSettings.parameters = this.state.commandLine;
+    changedToolSettings.parameters = commandLine;
     changedToolSettings.path = toolPath;
     onAddNewTool(game.id, toolId, changedToolSettings);
     this.hideLayer();
@@ -392,14 +393,18 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
 
   private showNewToolLayer = (toolPath: string) => this.showLayerImpl('newTool',
     toolPath, '', '');
-  private showChangeToolParamsLayer = (toolId: string) => this.showLayerImpl('changeToolParams',
-    '', toolId, '');
+  private showChangeToolParamsLayer = (toolId: string) => {
+    let { discoveredTools } = this.props;
+    this.showLayerImpl('changeToolParams', discoveredTools[toolId].path, toolId, '');
+  }
 
   private showLayerImpl(layer: string, toolPath: string, toolId: string, code64: string): void {
-    this.state.toolId = toolId;
-    this.state.code64 = code64;
-    this.state.toolPath = toolPath;
-    this.setState(update(this.state, { showLayer: { $set: layer } }));
+    this.setState(update(this.state, {
+      showLayer: { $set: layer },
+      toolPath: { $set: toolPath },
+      code64: { $set: code64 },
+      toolId: { $set: toolId },
+    }));
   }
 
   private renderSupportedTool = (game: IGame, tool: ISupportedTool): JSX.Element => {
