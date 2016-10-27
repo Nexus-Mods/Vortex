@@ -49,6 +49,7 @@ class ExtensionManager {
   private mApi: IExtensionApi;
   private mEventEmitter: NodeJS.EventEmitter;
   private mReduxWatcher: any;
+  private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
 
   constructor(eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter;
@@ -62,6 +63,8 @@ class ExtensionManager {
       events: this.mEventEmitter,
       getPath: this.getPath,
       onStateChange: (path: string[], callback: IStateChangeCallback) => undefined,
+      registerProtocol: this.registerProtocol,
+      deregisterProtocol: this.deregisterProtocol,
     };
   }
 
@@ -181,6 +184,10 @@ class ExtensionManager {
     this.mExtensions.forEach((ext) => ext.initFunc(context));
   }
 
+  public getProtocolHandler(protocol: string) {
+    return this.mProtocolHandlers[protocol] || null;
+  }
+
   private getPath(name: Electron.AppPathName) {
     return app.getPath(name);
   }
@@ -215,13 +222,35 @@ class ExtensionManager {
     });
   }
 
+  private registerProtocol = (protocol: string, callback: (url: string) => void) => {
+    log('info', 'register protocol', { protocol });
+    if (process.execPath.endsWith('electron.exe')) {
+      // make it work when using the development version
+      app.setAsDefaultProtocolClient(protocol, process.execPath,
+                                     [ path.resolve(__dirname, '..', '..') ]);
+    } else {
+      app.setAsDefaultProtocolClient(protocol);
+    }
+    this.mProtocolHandlers[protocol] = callback;
+  }
+
+  private deregisterProtocol(protocol: string) {
+    log('info', 'deregister protocol');
+    if (process.execPath.endsWith('electron.exe')) {
+      // make it work when using the development version
+      app.removeAsDefaultProtocolClient(protocol, process.execPath,
+                                        [ path.resolve(__dirname, '..', '..') ]);
+    } else {
+      app.removeAsDefaultProtocolClient(protocol);
+    }
+  }
+
   private emptyExtensionContext(): IExtensionContext {
     return {
       registerMainPage: () => undefined,
       registerSettings: () => undefined,
       registerIcon: () => undefined,
       registerFooter: () => undefined,
-      registerProtocol: () => undefined,
       registerReducer: () => undefined,
       registerExtensionFunction: () => undefined,
       once: () => undefined,

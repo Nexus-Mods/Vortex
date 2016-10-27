@@ -3,7 +3,9 @@ import { log } from '../../util/log';
 import InputButton from '../../views/InputButton';
 
 import { accountReducer } from './reducers/account';
+import { settingsReducer } from './reducers/settings';
 import LoginIcon from './views/LoginIcon';
+import Settings from './views/Settings';
 
 import Nexus, { IDownloadURL, IGetModInfoResponse } from '../../../lib/js/nexus-api';
 
@@ -53,11 +55,9 @@ function startDownload(api: IExtensionApi, nxmurl: string) {
 
 function init(context: IExtensionContext): boolean {
   context.registerFooter('login', LoginIcon, () => ({ nexus }));
+  context.registerSettings('Nexus', Settings);
   context.registerReducer([ 'account', 'nexus' ], accountReducer);
-
-  context.registerProtocol('nxm', (url: string) => {
-    startDownload(context.api, url);
-  });
+  context.registerReducer([ 'settings', 'nexus' ], settingsReducer);
 
   let onStartDownload = (nxmurl: string) => {
     startDownload(context.api, nxmurl);
@@ -72,6 +72,28 @@ function init(context: IExtensionContext): boolean {
       tooltip: 'Download NXM URL',
       onConfirmed: onStartDownload,
     }));
+
+  context.once(() => {
+    let registerFunc = () => {
+      context.api.registerProtocol('nxm', (url: string) => {
+        startDownload(context.api, url);
+      });
+    };
+    if (context.api.store.getState().settings.nexus.associateNXM) {
+      registerFunc();
+    }
+
+    context.api.onStateChange([ 'settings', 'nexus', 'associateNXM' ],
+      (oldValue: boolean, newValue: boolean) => {
+        log('info', 'associate', { oldValue, newValue });
+        if (newValue === true) {
+          registerFunc();
+        } else {
+          context.api.deregisterProtocol('nxm');
+        }
+      }
+    );
+  });
 
   return true;
 }

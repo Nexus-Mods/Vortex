@@ -136,6 +136,21 @@ export interface IExtensionApi {
    * @memberOf IExtensionApi
    */
   onStateChange?: (path: string[], callback: IStateChangeCallback) => void;
+
+  /**
+   * registers an uri protocol to be handled by this application
+   * 
+   * @type {IRegisterProtocol}
+   * @memberOf IExtensionContext
+   */
+  registerProtocol: IRegisterProtocol;
+
+  /**
+   * deregister an uri protocol currently being handled by us
+   * 
+   * @memberOf IExtensionApi
+   */
+  deregisterProtocol: (protocol: string) => void;
 }
 
 /**
@@ -183,14 +198,6 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerFooter: IRegisterFooter;
-
-  /**
-   * registers an uri protocol to be handled by this application
-   * 
-   * @type {IRegisterProtocol}
-   * @memberOf IExtensionContext
-   */
-  registerProtocol: IRegisterProtocol;
 
   /**
    * register a reducer to introduce new set-operations on the application

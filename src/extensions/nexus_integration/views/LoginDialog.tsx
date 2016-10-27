@@ -5,7 +5,6 @@ import LoginForm from './LoginForm';
 import * as React from 'react';
 import { Modal } from 'react-bootstrap';
 
-import { log } from '../../../util/log';
 interface IBaseProps {
   shown: boolean;
   APIKey: string;
@@ -18,7 +17,6 @@ type IProps = IBaseProps;
 class LoginDialog extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, APIKey, nexus, shown, onHide } = this.props;
-    log('info', 'login dialog', { nexus });
     return (
       <Modal show={shown} onHide={ onHide }>
         <Modal.Header>

@@ -61,22 +61,18 @@ const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 const extensions: ExtensionManager = new ExtensionManager(eventEmitter);
 let extReducers = extensions.getReducers();
-let protocolHandlers = {};
 
 const store: Store<any> = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
 
-extensions.apply('registerProtocol', (protocol: string, callback: (url: string) => void) => {
-  protocolHandlers[protocol] = callback;
-});
-
 // tslint:disable-next-line:no-unused-variable
 const globalNotifications = new GlobalNotifications(extensions.getApi());
 
 ipcRenderer.on('external-url', (event, protocol, url) => {
-  if (protocol in protocolHandlers) {
-    protocolHandlers[protocol](url);
+  let handler = extensions.getProtocolHandler(protocol);
+  if (handler !== null) {
+    handler(url);
   } else {
     log('warn', 'not handling url, unknown protocol', { url });
   }

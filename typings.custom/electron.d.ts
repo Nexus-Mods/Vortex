@@ -282,7 +282,7 @@ declare namespace Electron {
 		 * Note: This API is only available on Windows.
 		 *       On OS X, removing the app will automatically remove the app as the default protocol handler.
 		 */
-		removeAsDefaultProtocolClient(protocol: string): void;
+		removeAsDefaultProtocolClient(protocol: string, path?: string, args?: string[]): void;
 		/**
 		 * Adds tasks to the Tasks category of JumpList on Windows.
 		 *

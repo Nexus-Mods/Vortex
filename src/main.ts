@@ -48,7 +48,6 @@ const shouldQuit: boolean = app.makeSingleInstance((commandLine, workingDirector
   for (let arg of commandLine) {
     let match = arg.match(urlExp);
     if (match !== null) {
-      log('info', 'external url');
       mainWindow.webContents.send('external-url', match[1], arg);
     }
   }
@@ -74,19 +73,6 @@ setupLogging(basePath, process.env.NODE_ENV === 'development');
 
 const extensions: ExtensionManager = new ExtensionManager();
 const store: Redux.Store<IState> = setupStore(basePath, extensions);
-
-let protocolHandlers = {};
-
-extensions.apply('registerProtocol', (protocol: string, callback: (url: string) => void) => {
-  log('info', 'register protocol', { protocol });
-  if (process.execPath.endsWith('electron.exe')) {
-    // make it work when using the development version
-    app.setAsDefaultProtocolClient(protocol, process.execPath, [ path.resolve(__dirname, '..') ]);
-  } else {
-    app.setAsDefaultProtocolClient(protocol);
-  }
-  protocolHandlers[protocol] = callback;
-});
 
 // main window setup
 
