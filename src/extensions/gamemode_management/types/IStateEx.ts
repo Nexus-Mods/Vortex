@@ -1,19 +1,13 @@
 import { ISession, IState } from '../../../types/IState';
+import { ISupportedTool } from '../../../types/ISupportedTool';
 
 export interface IDiscoveryResult {
   path?: string;
   modPath?: string;
   hidden?: boolean;
   tools?: {
-    [id: string]: IToolDiscoveryResult;
+    [id: string]: ISupportedTool;
   };
-}
-
-export interface IToolDiscoveryResult {
-  path: string;
-  parameters?: string;
-  logo?: string;
-  hidden?: boolean;
 }
 
 /**

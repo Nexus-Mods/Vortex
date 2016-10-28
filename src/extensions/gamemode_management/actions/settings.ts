@@ -1,4 +1,6 @@
-import { IDiscoveryResult, IToolDiscoveryResult } from '../types/IStateEx';
+import { ISupportedTool } from '../../../types/ISupportedTool';
+
+import { IDiscoveryResult } from '../types/IStateEx';
 
 import { createAction } from 'redux-act';
 
@@ -19,16 +21,7 @@ export const addDiscoveredGame =
  */
 export const addDiscoveredTool =
   createAction('ADD_DISCOVERED_TOOL',
-    (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
-      return { gameId, toolId, result };
-    });
-
-/**
- * add info about a new tool
- */
-export const addNewTool =
-  createAction('ADD_NEW_TOOL',
-    (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
+    (gameId: string, toolId: string, result: ISupportedTool) => {
       return { gameId, toolId, result };
     });
 

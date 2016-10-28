@@ -2,7 +2,7 @@ import { IGame } from '../../../types/IGame';
 import { ISupportedTool } from '../../../types/ISupportedTool';
 import { log } from '../../../util/log';
 
-import { IDiscoveryResult, IToolDiscoveryResult } from '../types/IStateEx';
+import { IDiscoveryResult } from '../types/IStateEx';
 
 import { Normalize, getNormalizeFunc } from './getNormalizeFunc';
 
@@ -13,7 +13,7 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
-type DiscoveredToolCB = (gameId: string, toolId: string, result: IToolDiscoveryResult) => void;
+type DiscoveredToolCB = (gameId: string, result: ISupportedTool) => void;
 
 /**
  * run discovery for the specified game
@@ -31,13 +31,19 @@ export function discoverTools(game: IGame, onDiscoveredTool: DiscoveredToolCB) {
     let location: string | Promise<string> = supportedTool.location();
     if (typeof (location) === 'string') {
       if (location !== '') {
-        onDiscoveredTool(game.id, supportedTool.id, { path: location });
+        onDiscoveredTool(game.id, {
+          id: supportedTool.id,
+          path: location,
+        });
       } else {
         log('debug', 'tool not found', supportedTool.name);
       }
     } else {
       (location as Promise<string>).then((resolvedPath) => {
-        onDiscoveredTool(game.id, supportedTool.id, { path: resolvedPath });
+        onDiscoveredTool(game.id, {
+          id: supportedTool.id,
+          path: resolvedPath,
+       });
         return null;
       }).catch((err) => {
         log('debug', 'tool not found', { id: supportedTool.name, err });

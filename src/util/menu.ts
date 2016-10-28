@@ -51,6 +51,15 @@ export function initApplicationMenu(extensions: ExtensionManager) {
   if (process.env.NODE_ENV === 'development') {
     viewMenu.push({ type: 'separator' });
     viewMenu.push({
+      label: 'Reload',
+      accelerator: 'F5',
+      click(item, focusedWindow) {
+        if (focusedWindow) {
+          focusedWindow.webContents.reload();
+        }
+      },
+    });
+    viewMenu.push({
       label: 'Toggle Developer Tools',
       accelerator: process.platform === 'darwin' ? 'Alt+Command+I' : 'Ctrl+Shift+I',
       click(item, focusedWindow) {

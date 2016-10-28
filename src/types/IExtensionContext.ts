@@ -87,6 +87,13 @@ export interface IExtensionApi {
   selectFile: (options: IOpenOptions) => Promise<string>;
 
   /**
+   * show a system dialog to select an executable file
+   * 
+   * @memberOf IExtensionApi
+   */
+  selectExecutable: (options: IOpenOptions) => Promise<string>;
+
+  /**
    * show a system dialog to open a single directory
    * 
    * @memberOf IExtensionApi

@@ -2,31 +2,20 @@ import { IGame } from '../../types/IGame';
 import { ISupportedTool } from '../../types/ISupportedTool';
 import { ComponentEx, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
+import Icon from '../../views/Icon';
 import { Button } from '../../views/TooltipControls';
-
-import { IToolDiscoveryResult } from '../gamemode_management/types/IStateEx';
-
-import { ContextMenu, ContextMenuLayer, MenuItem } from 'react-contextmenu';
-
-import * as fs from 'fs';
 
 import { execFile } from 'child_process';
 import { remote } from 'electron';
+import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
+import update = require('react-addons-update');
+import { Image } from 'react-bootstrap';
+import { ContextMenu, ContextMenuLayer, MenuItem } from 'react-contextmenu';
 
 interface IRemoveTool {
   (gameId: string, toolId: string): void;
-}
-
-interface IProps {
-  game: IGame;
-  tool: ISupportedTool;
-  discovery: IToolDiscoveryResult;
-  onChangeToolLocation: (gameId: string, toolId: string, result: IToolDiscoveryResult) => void;
-  onRemoveTool: IRemoveTool;
-  onAddNewTool: (toolPath: string) => void;
-  onChangeToolParams: (toolId: string) => void;
 }
 
 interface IContextMenuProps {
@@ -35,7 +24,7 @@ interface IContextMenuProps {
   gameId: string;
   discovery: boolean;
   onRemoveTool: IRemoveTool;
-  onAddNewTool: (toolPath: string) => void;
+  onAddNewTool: () => void;
   onChangeToolParams: (toolId: string) => void;
 }
 
@@ -50,7 +39,11 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
         <MenuItem data={tool} onClick={this.handleRemoveClick}>
           {t('Remove {{name}}', { name: tool.name })}
         </MenuItem>
-        <MenuItem data={tool} onClick={discovery ? this.handleChangeSettingsClick : null} style={discovery ? {} : { color: '#ff0000' }}>
+        <MenuItem
+          data={tool}
+          onClick={discovery ? this.handleChangeSettingsClick : null}
+          style={discovery ? {} : { color: '#ff0000' }}
+        >
           {t('Change {{name}} settings', { name: tool.name })}
         </MenuItem>
         <MenuItem divider onClick={this.nop} />
@@ -59,7 +52,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
         </MenuItem>
         <MenuItem divider onClick={this.nop} />
         <MenuItem data={tool} onClick={this.runCustomTool}>
-          {t('Lsunch custom {{name}} ')}
+          {t('Launch custom {{name}} ')}
         </MenuItem>
       </ContextMenu>
     );
@@ -68,8 +61,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   private nop = () => undefined;
 
   private runCustomTool = (e, data) => {
-    log('info', 'Launch custom tool', {});
-    execFile(data.path, (err, data) => {
+    execFile(data.path, (err, output) => {
       if (err) {
         log('info', 'error', { err });
         return;
@@ -79,121 +71,126 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
 
   private handleRemoveClick = (e, data) => {
     let { gameId, onRemoveTool } = this.props;
-    log('info', 'remove', {});
     onRemoveTool(gameId, data.id);
   }
 
   private handleChangeSettingsClick = (e, data) => {
     let {onChangeToolParams } = this.props;
-    log('info', 'change', {});
     onChangeToolParams(data.id);
   }
 
   private handleAddClick = (e, data) => {
-    let {onAddNewTool} = this.props;
-    log('info', 'add', {});
-
-    const options: Electron.OpenDialogOptions = {
-      title: 'Select tool binary',
-      properties: ['openFile'],
-      filters: [
-        { name: 'All Executables', extensions: ['exe', 'cmd', 'bat', 'jar', 'py'] },
-        { name: 'Native', extensions: ['exe', 'cmd', 'bat'] },
-        { name: 'Java', extensions: ['jar'] },
-        { name: 'Python', extensions: ['py'] },
-      ],
-    };
-
-    remote.dialog.showOpenDialog(null, options, (fileNames: string[]) => {
-      if ((fileNames !== undefined) && (fileNames.length > 0)) {
-        onAddNewTool(fileNames[0]);
-      }
-    });
+    this.props.onAddNewTool();
   }
 }
 
-class ToolButton extends ComponentEx<IProps, {}> {
-  public render() {
-    const { t, game, tool, discovery, onAddNewTool, onChangeToolParams, onRemoveTool } = this.props;
-    const valid = discovery !== undefined;
-    let logoPath: string;
-    let toolIconsPath: string = path.join(remote.app.getPath('userData'),
-      'games', game.id, tool.id + '.png');
+interface IProps {
+  game: IGame;
+  toolId: string;
+  tool: ISupportedTool;
+  onChangeToolLocation: (gameId: string, toolId: string, result: ISupportedTool) => void;
+  onRemoveTool: IRemoveTool;
+  onAddNewTool: () => void;
+  onChangeToolParams: (toolId: string) => void;
+}
 
-    if (fs.existsSync(toolIconsPath)) {
-      logoPath = toolIconsPath;
-    } else {
-      toolIconsPath = path.join(game.pluginPath, tool.logo);
-      if (fs.existsSync(toolIconsPath)) {
-        logoPath = path.join(game.pluginPath, tool.logo !== '' ? tool.logo : 'no-icon.png');
-      } else {
-        logoPath = path.join(game.pluginPath, 'no-icon.png');
-      }
-    }
+interface IToolButtonState {
+  imageUrl: string;
+}
+
+const ToolIcon = (props) => {
+  const validClass = props.valid ? 'valid' : 'invalid';
+  if (props.imageUrl !== undefined) {
+    return (
+      <Image
+        src={`${props.imageUrl}?${props.imageId}`}
+        className={'tool-icon ' + validClass}
+      />
+    );
+  } else {
+    return (
+      <Icon
+        name='question-circle'
+        className={'tool-icon ' + validClass}
+      />
+    );
+  }
+};
+
+class ToolButton extends ComponentEx<IProps, IToolButtonState> {
+  private mImageId: number;
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.state = {
+      imageUrl: undefined,
+    };
+  }
+
+  public componentDidMount() {
+    this.mImageId = new Date().getTime();
+    const customIconUrl = this.toolIconPath(this.props.tool.id);
+    fs.statAsync(customIconUrl)
+      .then((stat: fs.Stats) => {
+        this.setState(update(this.state, {
+          imageUrl: { $set: customIconUrl },
+        }));
+      })
+      .catch(() => {
+        const { game, tool } = this.props;
+        if ((tool !== undefined) && (tool.logo !== undefined)) {
+          const defaultPath = path.join(game.pluginPath, tool.logo);
+          this.setState(update(this.state, {
+            imageUrl: { $set: defaultPath }
+          }));
+        }
+      });
+  }
+
+  public render() {
+    const { t, game, toolId, tool, onAddNewTool, onRemoveTool } = this.props;
+    const valid = tool.path !== undefined;
+
     return (
       <Button
-        key={tool.id}
-        className={tool.name + '-logo'}
-        width='32'
+        key={toolId}
         id='tool-button'
         tooltip={tool.name}
-        height='32'
         title={tool.name}
-        onClick={valid ? this.runTool : this.handleChangeLocation}
-        >
-        <img
-          src={logoPath}
-          style={valid ? {} : { filter: 'grayscale(100%)' }}
-          height='32'
-          width='32'
-          />
+        onClick={valid ? this.runTool : this.handleEditTool}
+      >
+        <ToolIcon imageUrl={this.state.imageUrl} imageId={this.mImageId} valid={valid}/>
         <MyContextMenu
-          id={`tool-menu-${tool.id}`}
+          id={`tool-menu-${toolId}`}
           tool={tool}
           gameId={game.id}
           discovery={valid}
           onRemoveTool={onRemoveTool}
           onAddNewTool={onAddNewTool}
-          onChangeToolParams={onChangeToolParams}
+          onChangeToolParams={this.handleEditTool}
           t={t}
-          />
+        />
       </Button>
     );
   }
 
-  private handleChangeLocation = () => {
-    const { discovery, game, tool, onChangeToolLocation } = this.props;
+  private toolIconPath(toolName: string) {
+    let { game } = this.props;
+    return path.join(remote.app.getPath('userData'),
+                     game.id, 'icons', toolName + '.png');
+  }
 
-    const options: Electron.OpenDialogOptions = {
-      title: 'Select tool binary',
-      properties: ['openFile'],
-      filters: [
-        { name: 'All Executables', extensions: ['exe', 'cmd', 'bat', 'jar', 'py'] },
-        { name: 'Native', extensions: ['exe', 'cmd', 'bat'] },
-        { name: 'Java', extensions: ['jar'] },
-        { name: 'Python', extensions: ['py'] },
-      ],
-    };
-
-    remote.dialog.showOpenDialog(null, options, (fileNames: string[]) => {
-      if ((fileNames !== undefined) && (fileNames.length > 0)) {
-        let newToolSettings: IToolDiscoveryResult = { path: null };
-        if (discovery !== undefined) {
-          newToolSettings = Object.assign({}, discovery);
-        }
-        newToolSettings.path = fileNames[0];
-        onChangeToolLocation(game.id, tool.id, newToolSettings);
-      }
-    });
+  private handleEditTool = () => {
+    this.props.onChangeToolParams(this.props.tool.id);
   }
 
   private runTool = () => {
-    const { discovery } = this.props;
+    const { tool } = this.props;
 
-    execFile(discovery.path, (err, data) => {
+    execFile(tool.path, (err, data) => {
       if (err) {
-        log('info', 'error', { err });
-        return;
+        log('error', 'failed to spawn', { err, path: tool.path });
       }
     });
   };
@@ -206,4 +203,4 @@ class Wrapper extends React.Component<any, any> {
   }
 }
 
-export default translate(['common'], { wait: true })(Wrapper);
+export default translate(['common'], { wait: true })(Wrapper) as React.ComponentClass<IProps>;

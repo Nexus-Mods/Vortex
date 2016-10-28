@@ -37,8 +37,6 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
     const { t, APIKey, nexus } = this.props;
     const { dialogVisible } = this.state;
 
-    log('info', 'nexus', { nexus });
-
     return (
       <span>
         <Button

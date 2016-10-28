@@ -1,4 +1,5 @@
 import { IGame } from '../../types/IGame';
+import { ISupportedTool } from '../../types/ISupportedTool';
 import { terminate } from '../../util/errorHandling';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -7,7 +8,7 @@ import StorageLogger from '../../util/StorageLogger';
 import { discoveryFinished, discoveryProgress } from './actions/discovery';
 import { setKnownGames } from './actions/session';
 import { addDiscoveredGame, addDiscoveredTool, setGameMode } from './actions/settings';
-import { IDiscoveryResult, IGameStored, IStateEx, IToolDiscoveryResult } from './types/IStateEx';
+import { IDiscoveryResult, IGameStored, IStateEx } from './types/IStateEx';
 import { discoverTools, quickDiscovery, searchDiscovery } from './util/discovery';
 import Progress from './util/Progress';
 
@@ -144,7 +145,7 @@ class GameModeManager {
     this.mActiveSearch.cancel();
   }
 
-  private onDiscoveredTool = (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
+  private onDiscoveredTool = (gameId: string, result: ISupportedTool) => {
     this.mStore.dispatch(addDiscoveredTool(gameId));
   }
 

@@ -4,55 +4,33 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';
 
-import {
-  addDiscoveredTool, addNewTool,
-  changeToolParams, hideDiscoveredTool
-} from '../gamemode_management/actions/settings';
-
-import iconExtractor = require('icon-extractor');
-
-import { log } from '../../util/log';
-
-import { IToolDiscoveryResult } from '../gamemode_management/types/IStateEx';
-
-import { Button } from '../../views/TooltipControls';
-
-import * as fs from 'fs-extra-promise';
+import { addDiscoveredTool, changeToolParams,
+         hideDiscoveredTool } from '../gamemode_management/actions/settings';
 
 import ToolButton from './ToolButton';
+import ToolEditDialog from './ToolEditDialog';
 
+import { v1 } from 'node-uuid';
 import * as path from 'path';
 import * as React from 'react';
-import {
-  ControlLabel, FormControl, HelpBlock,
-  Jumbotron, Media, Modal, Well
-} from 'react-bootstrap';
-
-import { remote } from 'electron';
-
+import { Jumbotron, Media, Well } from 'react-bootstrap';
 import update = require('react-addons-update');
 
 interface IWelcomeScreenState {
-  showLayer: string;
-  showPage: string;
-  executablePath: string;
-  toolPath: string;
-  toolId: string;
-  commandLine: string;
-  code64: string;
+  editTool: string;
+  counter: number;
 }
 
 interface IActionProps {
-  onAddDiscoveredTool: (gameId: string, toolId: string, result: IToolDiscoveryResult) => void;
+  onAddDiscoveredTool: (gameId: string, toolId: string, result: ISupportedTool) => void;
   onRemoveDiscoveredTool: (gameId: string, toolId: string) => void;
-  onAddNewTool: (gameId: string, toolId: string, newToolSettings: IToolDiscoveryResult) => void;
   onChangeToolParams: (toolId: string) => void;
 }
 
 interface IConnectedProps {
   gameMode: string;
   knownGames: IGame[];
-  discoveredTools: { [id: string]: IToolDiscoveryResult };
+  discoveredTools: { [id: string]: ISupportedTool };
 }
 
 type IWelcomeScreenProps = IConnectedProps & IActionProps;
@@ -62,27 +40,9 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     super(props);
 
     this.state = {
-      showLayer: '',
-      showPage: '',
-      executablePath: '',
-      toolPath: '',
-      toolId: '',
-      commandLine: '',
-      code64: '',
+      editTool: undefined,
+      counter: 1,
     };
-  }
-
-  public componentWillMount() {
-
-    iconExtractor.emitter.on('icon', (data) => {
-      if (data !== undefined) {
-        this.setState(update(this.state, { code64: { $set: data.Base64ImageData } }));
-      }
-    });
-
-    this.setState(update(this.state, {
-      showPage: { $set: null },
-    }));
   }
 
   public render(): JSX.Element {
@@ -90,10 +50,9 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
 
     return (
       <Jumbotron>
-        {this.renderModalNewTool()}
-        {this.renderModalChangeToolParams()}
+        {this.renderEditToolDialog()}
         Welcome to Nexus Mod Manager 2!
-            {gameMode === undefined ? <div>{t('No game selected')}</div> : this.renderGameMode()}
+        {gameMode === undefined ? <div>{t('No game selected')}</div> : this.renderGameMode()}
       </Jumbotron>
     );
   }
@@ -141,318 +100,123 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
       return null;
     }
 
-    if (discoveredTools !== undefined) {
-      for (let key of Object.keys(discoveredTools)) {
-        if (key !== 'undefined') {
-          let knownTool: ISupportedTool = knownTools.find((ele) => ele.id === key);
-          if (knownTool === undefined) {
-            let newSupportedTool: ISupportedTool = {
-              logo: discoveredTools[key].logo !== undefined ? discoveredTools[key].logo : '',
-              name: key, id: key, location: () => discoveredTools[key].path,
-            };
-            knownTools.push(newSupportedTool);
-          }
-        }
-      }
-    }
+    let tools: ISupportedTool[] = this.mergeTools(knownTools, discoveredTools);
 
     return (
       <div>
-        {knownTools.map((tool) => this.renderSupportedTool(game, tool))}
+        {tools.map((tool) => this.renderSupportedTool(game, tool))}
       </div>
     );
   }
 
-  private renderModalNewTool() {
-    const { code64, commandLine, toolPath } = this.state;
+  private mergeTools(knownTools: ISupportedTool[],
+                     discoveredTools: { [id: string]: ISupportedTool }): ISupportedTool[] {
+    let result: ISupportedTool[] = knownTools.slice();
 
-    if (toolPath !== undefined) {
-      if (code64 === '') {
-        iconExtractor.getIcon('Icon', toolPath);
-      }
-    }
+    let lookup = result.reduce((prev: Object, current: ISupportedTool, idx: number) => {
+      prev[current.id] = idx;
+      return prev;
+    }, {});
 
-    return (
-      <Modal show={this.state.showLayer === 'newTool'} onHide={this.hideLayer}>
-        <Modal.Header>
-          <Modal.Title>
-            Adding New TOOL
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <ControlLabel>Tool Name</ControlLabel>
-          <HelpBlock>{toolPath !== undefined ? path.basename(toolPath.substr(0, toolPath.lastIndexOf('.'))) : null}</HelpBlock>
-          <ControlLabel>Tool Path</ControlLabel>
-          <HelpBlock>{toolPath}</HelpBlock>
-          <ControlLabel>Tool Icon</ControlLabel>
-          <HelpBlock>{toolPath !== undefined ? this.renderNewToolIcon(code64) : null}</HelpBlock>
-          <ControlLabel>Command Line parameters</ControlLabel>
-          <FormControl
-            type='text'
-            name='CommandLine'
-            value={commandLine}
-            placeholder='Command Line parameters'
-            onChange={this.handleChangeCommandLine}
-            />
-          {this.renderSubmitButton()}
-        </Modal.Body>
-      </Modal>
-    );
-  }
 
-  private renderModalChangeToolParams() {
-    const { code64, toolId, toolPath} = this.state;
-    let { discoveredTools, t } = this.props;
-
-    if (toolId !== '') {
-      if (fs.existsSync(discoveredTools[toolId].logo)) {
-        if (code64 === '') {
-          iconExtractor.getIcon('Icon', discoveredTools[toolId].logo);
-        }
+    Object.keys(discoveredTools).forEach((key: string) => {
+      if (!(key in lookup)) {
+        result.push(discoveredTools[key]);
       } else {
-        if (toolPath === '') {
-          this.setState(update(this.state, { toolPath: { $set: discoveredTools[toolId].path } }));
-          this.setState(update(this.state,
-            { commandLine: { $set: discoveredTools[toolId].parameters } }));
-          iconExtractor.getIcon('Icon', this.state.toolPath);
-        }
-      }
-    }
-
-    return (
-      <Modal show={this.state.showLayer === 'changeToolParams'} onHide={this.hideLayer}>
-        <Modal.Header>
-          <Modal.Title>
-            {t('Change {{name}} params', { name: toolId })}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <ControlLabel>Tool Name</ControlLabel>
-          <HelpBlock>{toolId}</HelpBlock>
-          <ControlLabel>Tool Path</ControlLabel>
-          <HelpBlock>{this.state.toolPath}</HelpBlock>
-          <ControlLabel>Tool Icon</ControlLabel>
-          <HelpBlock>{toolId !== '' ? this.renderNewToolIcon(code64) : null}</HelpBlock>
-          <ControlLabel>Command Line parameters</ControlLabel>
-          <FormControl
-            type='text'
-            name='CommandLine'
-            value={this.state.commandLine}
-            placeholder='Command Line parameters'
-            onChange={this.handleChangeCommandLine}
-            />
-          <span>{this.renderSubmitChangeButton()}  </span>
-          <span>{this.renderChangePathButton()}  </span>
-          <span>{this.renderChangeIconButton()}  </span>
-        </Modal.Body>
-      </Modal>
-    );
-  }
-
-  private handleChangeToolPath = (event) => {
-    const options: Electron.OpenDialogOptions = {
-      title: 'Select tool binary',
-      properties: ['openFile'],
-      filters: [
-        { name: 'All Executables', extensions: ['exe', 'cmd', 'bat', 'jar', 'py'] },
-        { name: 'Native', extensions: ['exe', 'cmd', 'bat'] },
-        { name: 'Java', extensions: ['jar'] },
-        { name: 'Python', extensions: ['py'] },
-      ],
-    };
-
-    remote.dialog.showOpenDialog(null, options, (fileNames: string[]) => {
-      if ((fileNames !== undefined) && (fileNames.length > 0)) {
-        this.setState(update(this.state, { toolPath: { $set: fileNames[0] } }));
-      }
-    });
-  }
-
-  private handleChangeToolIcon = (event) => {
-    const options: Electron.OpenDialogOptions = {
-      title: 'Select tool binary',
-      properties: ['openFile'],
-      filters: [
-        { name: 'All Executables', extensions: ['exe', 'cmd', 'bat', 'jar', 'py'] },
-        { name: 'Native', extensions: ['exe', 'cmd', 'bat'] },
-        { name: 'Java', extensions: ['jar'] },
-        { name: 'Python', extensions: ['py'] },
-      ],
-    };
-
-    remote.dialog.showOpenDialog(null, options, (fileNames: string[]) => {
-      if ((fileNames !== undefined) && (fileNames.length > 0)) {
-        iconExtractor.getIcon('Icon', fileNames[0]);
-      }
-    });
-  }
-
-  private handleChangeCommandLine = (event) => {
-    this.handleChange(event, 'commandLine');
-  }
-
-  private handleChange(event, field) {
-    this.setState(update(this.state, { [field]: { $set: event.target.value } }));
-  }
-
-  private newToolSubmit = (event) => {
-    let {gameMode, knownGames, onAddNewTool} = this.props;
-    const { code64, commandLine, toolPath } = this.state;
-    let game: IGame = knownGames.find((ele) => ele.id === gameMode);
-    event.preventDefault();
-
-    let newToolSettings: IToolDiscoveryResult = { path: null };
-    let toolId: string;
-    toolId = path.basename(toolPath.substr(0, toolPath.lastIndexOf('.')))
-
-    let toolIconsPath: string = path.join(remote.app.getPath('userData'),
-      'games', game.id);
-
-    fs.ensureDirSync(toolIconsPath);
-    fs.writeFile(path.join(toolIconsPath, toolId + '.png'), new Buffer(code64, 'base64'), (err) => {
-      if (err) {
-        log('info', 'error', { err });
-        return;
+        result[lookup[key]] = Object.assign({}, result[lookup[key]], discoveredTools[key]);
       }
     });
 
-    newToolSettings.hidden = false;
-    newToolSettings.logo = path.join(toolIconsPath, toolId + '.png');
-    newToolSettings.parameters = commandLine;
-    newToolSettings.path = toolPath;
-    onAddNewTool(game.id, toolId, newToolSettings);
-    this.hideLayer();
+    return result;
   }
 
-  private changeToolSubmit = (event) => {
-    let {gameMode, knownGames, onAddNewTool} = this.props;
-    const { code64, commandLine, toolId, toolPath } = this.state;
-    let game: IGame = knownGames.find((ele) => ele.id === gameMode);
-    event.preventDefault();
-
-    let changedToolSettings: IToolDiscoveryResult = { path: null };
-
-    let toolIconsPath: string = path.join(remote.app.getPath('userData'),
-      'games', game.id);
-
-    fs.ensureDirSync(toolIconsPath);
-    fs.writeFile(path.join(toolIconsPath, toolId + '.png'), new Buffer(code64, 'base64'), (err) => {
-      if (err) {
-        log('info', 'error', { err });
-        return;
-      }
-    });
-
-    changedToolSettings.hidden = false;
-    changedToolSettings.logo = path.join(toolIconsPath, toolId + '.png');
-    changedToolSettings.parameters = commandLine;
-    changedToolSettings.path = toolPath;
-    onAddNewTool(game.id, toolId, changedToolSettings);
-    this.hideLayer();
-  }
-
-  private renderSubmitButton(): JSX.Element {
-    return (
-      <Button id='submit-newTool' type='submit' tooltip={'Submit'} onClick={this.newToolSubmit}>
-        Submit
-        </Button>);
-  }
-
-  private renderSubmitChangeButton(): JSX.Element {
-    return (
-      <Button id='submit-chnage' type='submit' tooltip={'Submit'} onClick={this.changeToolSubmit}>
-        Submit
-        </Button>);
-  }
-
-  private renderChangePathButton(): JSX.Element {
-    return (
-      <Button id='changePath' type='submit' tooltip={'Submit'} onClick={this.handleChangeToolPath}>
-        Change Path
-      </Button>);
-  }
-
-  private renderChangeIconButton(): JSX.Element {
-    return (
-      <Button id='changeIcon' type='submit' tooltip={'Submit'} onClick={this.handleChangeToolIcon}>
-        Change Icon
-      </Button>);
-  }
-
-  private renderNewToolIcon(code64: string): JSX.Element {
-    return (code64 !== undefined)
-      ? <img
-        src={'data:image/png;base64,' + code64}
-        height='32'
-        width='32'
-        />
-      : null;
-  }
-
-  private hideLayer = () => this.showLayerImpl('', '', '', '');
-
-  private showNewToolLayer = (toolPath: string) => this.showLayerImpl('newTool',
-    toolPath, '', '');
-  private showChangeToolParamsLayer = (toolId: string) => {
-    let { discoveredTools } = this.props;
-    this.showLayerImpl('changeToolParams', discoveredTools[toolId].path, toolId, '');
-  }
-
-  private showLayerImpl(layer: string, toolPath: string, toolId: string, code64: string): void {
-    this.setState(update(this.state, {
-      showLayer: { $set: layer },
-      toolPath: { $set: toolPath },
-      code64: { $set: code64 },
-      toolId: { $set: toolId },
-    }));
-  }
-
-  private renderSupportedTool = (game: IGame, tool: ISupportedTool): JSX.Element => {
-    let { discoveredTools } = this.props;
-
-    let toolDiscovery: IToolDiscoveryResult =
-      discoveredTools !== undefined ? discoveredTools[tool.id] : undefined;
-
-    if (getSafe(toolDiscovery, ['hidden'], false) === true) {
+  private renderEditToolDialog() {
+    const toolId = this.state.editTool;
+    if (toolId === undefined) {
       return null;
     }
 
+    const { discoveredTools, gameMode, knownGames } = this.props;
+    const game = knownGames.find((ele) => ele.id === gameMode);
+    let tool: ISupportedTool = {
+      id: toolId,
+    };
+    let knownTool = game.supportedTools.find((ele) => ele.id === toolId);
+    if (knownTool !== undefined) {
+      tool = Object.assign({}, tool, knownTool);
+    }
+    if (toolId in discoveredTools) {
+      tool = Object.assign({}, tool, discoveredTools[toolId]);
+    }
+
     return (
-      <ToolButton
-        key={tool.id}
-        game={game}
-        tool={tool}
-        discovery={toolDiscovery}
-        onChangeToolLocation={this.props.onAddDiscoveredTool}
-        onRemoveTool={this.props.onRemoveDiscoveredTool}
-        onAddNewTool={this.showNewToolLayer}
-        onChangeToolParams={this.showChangeToolParamsLayer}
+      <ToolEditDialog
+        game={ game }
+        tool={ tool }
+        onClose={ this.closeEditDialog }
       />
     );
+  }
+
+  private closeEditDialog = () => {
+    // Through the counter, which is used in the key for the tool buttons
+    // this also forces all tool buttons to be re-mounted to ensure the icon is
+    // correctly updated
+    this.setState(update(this.state, {
+      editTool: { $set: undefined },
+      counter: { $set: this.state.counter + 1 },
+    }));
+  }
+
+  private renderSupportedTool =
+    (game: IGame, tool: ISupportedTool): JSX.Element => {
+    let { onAddDiscoveredTool, onRemoveDiscoveredTool } = this.props;
+
+    return (
+      <ToolButton
+        key={`${tool.id}_${this.state.counter}`}
+        game={game}
+        toolId={tool.id}
+        tool={tool}
+        onChangeToolLocation={onAddDiscoveredTool}
+        onRemoveTool={onRemoveDiscoveredTool}
+        onAddNewTool={this.addNewTool}
+        onChangeToolParams={this.editTool}
+      />
+    );
+  }
+
+  private addNewTool = () => {
+    this.setState(update(this.state, {
+      editTool: { $set: v1() },
+    }));
+  }
+
+  private editTool = (toolId: string) => {
+    this.setState(update(this.state, {
+      editTool: { $set: toolId },
+    }));
   }
 };
 
 function mapStateToProps(state: any): IConnectedProps {
   let gameMode: string = state.settings.gameMode.current;
-  let discovered = state.settings.gameMode.discovered[gameMode];
 
   return {
     gameMode,
     knownGames: state.session.gameMode.known,
-    discoveredTools: discovered !== undefined ? discovered.tools : undefined,
+    discoveredTools: getSafe(state, [ 'settings', 'gameMode',
+                                      'discovered', gameMode, 'tools' ], {}),
   };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
-    onAddDiscoveredTool: (gameId: string, toolId: string, result: IToolDiscoveryResult) => {
+    onAddDiscoveredTool: (gameId: string, toolId: string, result: ISupportedTool) => {
       dispatch(addDiscoveredTool(gameId, toolId, result));
     },
     onRemoveDiscoveredTool: (gameId: string, toolId: string) => {
       dispatch(hideDiscoveredTool(gameId, toolId));
-    },
-    onAddNewTool: (gameId: string, toolId: string, newToolSettings: IToolDiscoveryResult) => {
-      dispatch(addNewTool(gameId, toolId, newToolSettings));
     },
     onChangeToolParams: (toolId: string) => {
       dispatch(changeToolParams(toolId));

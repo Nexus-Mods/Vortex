@@ -92,7 +92,7 @@
     "electron-squirrel-startup": "^1.0.0",
     "ffi": "^2.1.0",
     "fs-extra-promise": "^0.4.0",
-    "icon-extractor": "^1.0.3",
+    "icon-extract": "file:./lib/cpp/icon-extract",
     "i18next": "^3.4.1",
     "i18next-node-fs-backend": "^0.1.2",
     "jest": "^15.1.1",

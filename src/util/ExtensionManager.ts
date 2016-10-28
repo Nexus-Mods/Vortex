@@ -59,6 +59,7 @@ class ExtensionManager {
         dialog.showErrorBox(message, details);
       },
       selectFile: this.selectFile,
+      selectExecutable: this.selectExecutable,
       selectDir: this.selectDir,
       events: this.mEventEmitter,
       getPath: this.getPath,
@@ -196,6 +197,27 @@ class ExtensionManager {
     return new Promise<string>((resolve, reject) => {
       const fullOptions = Object.assign({}, options, {
         properties: ['openFile'],
+      });
+      dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
+        if ((fileNames !== undefined) && (fileNames.length > 0)) {
+          resolve(fileNames[0]);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
+  }
+
+  private selectExecutable(options: IOpenOptions) {
+    return new Promise<string>((resolve, reject) => {
+      const fullOptions = Object.assign({}, options, {
+        properties: ['openFile'],
+        filters: [
+          { name: 'All Executables', extensions: ['exe', 'cmd', 'bat', 'jar', 'py'] },
+          { name: 'Native', extensions: ['exe', 'cmd', 'bat'] },
+          { name: 'Java', extensions: ['jar'] },
+          { name: 'Python', extensions: ['py'] },
+        ]
       });
       dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {

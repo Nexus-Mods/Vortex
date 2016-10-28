@@ -131,3 +131,17 @@
   display: inline-block;
   vertical-align: middle;
 }
+
+.tool-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.tool-icon.invalid {
+  filter: grayscale(100%);
+  color: @gray-darker;
+}
+
+.tool-icon.valid {
+  color: @brand-info;
+}
