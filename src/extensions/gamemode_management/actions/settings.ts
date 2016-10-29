@@ -37,8 +37,7 @@ export const changeToolParams =
 /**
  * remove info about a discovered tool
  */
-export const hideDiscoveredTool =
-  createAction('REMOVE_DISCOVERED_TOOL',
+export const removeDiscoveredTool = createAction('REMOVE_DISCOVERED_TOOL',
     (gameId: string, toolId: string) => {
       return { gameId, toolId };
     });

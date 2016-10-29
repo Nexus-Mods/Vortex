@@ -14,8 +14,9 @@ import * as fs from 'fs-extra-promise';
 import { extractIconToFile } from 'icon-extract';
 import * as path from 'path';
 import * as React from 'react';
-import { ControlLabel, FormControl, Image, InputGroup, Modal } from 'react-bootstrap';
 import update = require('react-addons-update');
+import { ControlLabel, FormControl, Image, InputGroup, Modal } from 'react-bootstrap';
+import * as ReactDOM from 'react-dom';
 
 interface IBaseProps {
   game: IGame;
@@ -41,12 +42,14 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
 
   public context: IComponentContext;
 
+  private mPathControl = null;
+
   constructor(props: IProps) {
     super(props);
     this.state = {
       tool: Object.assign({}, props.tool),
       imageId: new Date().getTime(),
-    }
+    };
   }
 
   public render(): JSX.Element {
@@ -73,6 +76,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
             value={ realName }
             placeholder={ t('Name') }
             onChange={ this.handleChangeName }
+            maxLength={50}
           />
 
           <ControlLabel>{ t('Path') }</ControlLabel>
@@ -80,6 +84,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
             <FormControl
               value={this.state.tool.path}
               placeholder={t('Tool Path')}
+              ref={this.setPathControl}
               readOnly
             />
             <InputGroup.Button>
@@ -132,16 +137,20 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     );
   }
 
+  private setPathControl = (ctrl) => {
+    this.mPathControl = ctrl;
+  }
+
   private clearCache() {
     this.setState(update(this.state, {
       imageId: { $set: new Date().getTime() },
     }));
   }
 
-  private handleChange(value: any, field: string): void {
+  private handleChange(value: any, field: string, callback?: () => void): void {
     this.setState(update(this.state, { tool:
-      { [field]: { $set: value } }
-    }));
+      { [field]: { $set: value } },
+    }), callback);
   }
 
   private handleChangeName = (event) => {
@@ -166,7 +175,13 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       if (filePath === undefined) {
         return Promise.reject(null);
       }
-      this.handleChange(filePath, 'path');
+      this.handleChange(filePath, 'path', () => {
+        let node: any = ReactDOM.findDOMNode(this.mPathControl);
+        node.scrollLeft = node.scrollWidth;
+      });
+      if (!this.state.tool.name) {
+        this.handleChange(path.basename(filePath, path.extname(filePath)), 'name');
+      }
       toolPath = filePath;
       return fs.statAsync(iconPath);
     })
@@ -247,7 +262,7 @@ function mapStateToProps(state): Object {
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onAddTool: (gameId, toolId, result) => dispatch(addDiscoveredTool(gameId, toolId, result)),
-  }
+  };
 }
 
 export default

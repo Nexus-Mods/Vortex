@@ -39,11 +39,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
         <MenuItem data={tool} onClick={this.handleRemoveClick}>
           {t('Remove {{name}}', { name: tool.name })}
         </MenuItem>
-        <MenuItem
-          data={tool}
-          onClick={discovery ? this.handleChangeSettingsClick : null}
-          style={discovery ? {} : { color: '#ff0000' }}
-        >
+        <MenuItem data={tool} onClick={this.handleChangeSettingsClick}>
           {t('Change {{name}} settings', { name: tool.name })}
         </MenuItem>
         <MenuItem divider onClick={this.nop} />
@@ -51,8 +47,12 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
           {t('Add new Tool')}
         </MenuItem>
         <MenuItem divider onClick={this.nop} />
-        <MenuItem data={tool} onClick={this.runCustomTool}>
-          {t('Launch custom {{name}} ')}
+        <MenuItem
+          data={tool}
+          disabled={!discovery}
+          onClick={this.runCustomTool}
+        >
+          {t('Launch {{name}}', { name: tool.name })}
         </MenuItem>
       </ContextMenu>
     );
@@ -69,7 +69,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
     });
   };
 
-  private handleRemoveClick = (e, data) => {
+  private handleRemoveClick = (e, data: ISupportedTool) => {
     let { gameId, onRemoveTool } = this.props;
     onRemoveTool(gameId, data.id);
   }
@@ -142,7 +142,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
         if ((tool !== undefined) && (tool.logo !== undefined)) {
           const defaultPath = path.join(game.pluginPath, tool.logo);
           this.setState(update(this.state, {
-            imageUrl: { $set: defaultPath }
+            imageUrl: { $set: defaultPath },
           }));
         }
       });

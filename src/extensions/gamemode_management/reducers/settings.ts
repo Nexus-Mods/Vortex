@@ -1,7 +1,7 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { merge, pushSafe, removeValue, setSafe } from '../../../util/storeHelper';
+import { deleteOrNop, getSafe, merge,
+         pushSafe, removeValue, setSafe } from '../../../util/storeHelper';
 import * as actions from '../actions/settings';
-import { addSearchPath, removeSearchPath, setGameHidden } from '../actions/settings';
 import update = require('react-addons-update');
 
 /**
@@ -22,10 +22,18 @@ export const settingsReducer: IReducerSpec = {
                      ['discovered', payload.gameId, 'tools', payload.toolId],
                      payload.result);
     },
-    [actions.hideDiscoveredTool]: (state, payload) => {
-      return setSafe(state,
-                     ['discovered', payload.gameId, 'tools', payload.toolId, 'hidden'],
-                     true);
+    [actions.removeDiscoveredTool]: (state, payload) => {
+      // custom added tools can be deleted. pre-configured ones have static discovery data
+      // in knownTools so they would always reappear. Therefore we just set them to hidden
+      if (getSafe(state,
+                  ['discovered', payload.gameId, 'tools', payload.toolId, 'custom'],
+                  false)) {
+        return deleteOrNop(state, ['discovered', payload.gameId, 'tools', payload.toolId]);
+      } else {
+        return setSafe(state,
+                       ['discovered', payload.gameId, 'tools', payload.toolId, 'hidden'],
+                       true);
+      }
     },
     [actions.setGameHidden]: (state, payload) => {
       return setSafe(state, ['discovered', payload.gameId, 'hidden'], payload.hidden);

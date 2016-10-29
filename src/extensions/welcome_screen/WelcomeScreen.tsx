@@ -5,7 +5,7 @@ import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';
 
 import { addDiscoveredTool, changeToolParams,
-         hideDiscoveredTool } from '../gamemode_management/actions/settings';
+         removeDiscoveredTool } from '../gamemode_management/actions/settings';
 
 import ToolButton from './ToolButton';
 import ToolEditDialog from './ToolEditDialog';
@@ -118,7 +118,6 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
       return prev;
     }, {});
 
-
     Object.keys(discoveredTools).forEach((key: string) => {
       if (!(key in lookup)) {
         result.push(discoveredTools[key]);
@@ -127,7 +126,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
       }
     });
 
-    return result;
+    return result.filter((tool: ISupportedTool) => !tool.hidden);
   }
 
   private renderEditToolDialog() {
@@ -140,10 +139,15 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     const game = knownGames.find((ele) => ele.id === gameMode);
     let tool: ISupportedTool = {
       id: toolId,
+      custom: false,
+      name: '',
+      path: '',
     };
     let knownTool = game.supportedTools.find((ele) => ele.id === toolId);
     if (knownTool !== undefined) {
       tool = Object.assign({}, tool, knownTool);
+    } else {
+      tool.custom = true;
     }
     if (toolId in discoveredTools) {
       tool = Object.assign({}, tool, discoveredTools[toolId]);
@@ -216,7 +220,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(addDiscoveredTool(gameId, toolId, result));
     },
     onRemoveDiscoveredTool: (gameId: string, toolId: string) => {
-      dispatch(hideDiscoveredTool(gameId, toolId));
+      dispatch(removeDiscoveredTool(gameId, toolId));
     },
     onChangeToolParams: (toolId: string) => {
       dispatch(changeToolParams(toolId));

@@ -16,4 +16,5 @@ export interface ISupportedTool {
   path?: string;
   hidden?: boolean;
   parameters?: string;
+  custom?: boolean;
 }
