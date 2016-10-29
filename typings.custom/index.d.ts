@@ -3,6 +3,7 @@
 /// <reference path="icon-extractor.d.ts" />
 /// <reference path="node-ipc.d.ts" />
 /// <reference path="node-rest-client.d.ts" />
+/// <reference path="rc-slider.d.ts" />
 /// <reference path="react-contextmenu.d.ts" />
 /// <reference path="react-i18next.d.ts" />
 /// <reference path="redux-electron-store.d.ts" />

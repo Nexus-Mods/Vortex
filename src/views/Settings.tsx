@@ -10,6 +10,11 @@ interface ISettingsPage {
   props: PropsCallback;
 }
 
+interface ICombinedSettingsPage {
+  title: string;
+  elements: ISettingsPage[];
+}
+
 interface ISettingsProps {
   objects: ISettingsPage[];
 }
@@ -26,23 +31,39 @@ class Settings extends ComponentEx<ISettingsProps, {}> {
   }
 
   public render(): JSX.Element {
-    let { objects } = this.props;
+    const { objects } = this.props;
+    let combined = objects.reduce((prev, current: ISettingsPage) => {
+      let result = prev.slice();
+      const page = prev.find((page: ISettingsPage) => page.title === current.title);
+      if (page === undefined) {
+        result.push({ title: current.title, elements: [ current ] });
+      } else {
+        page.elements.push(current);
+      }
+      return result;
+    }, []);
     return (
       <Tabs id='settings-tab'>
-        { objects.map(this.renderTab) }
+        { combined.map(this.renderTab) }
       </Tabs>
     );
   }
 
-  private renderTab = (page) => this.renderTabImpl(this.props.t, page);
+  private renderTab = (page: ICombinedSettingsPage): JSX.Element => {
+    const { t } = this.props;
 
-  private renderTabImpl(t, page: ISettingsPage): JSX.Element {
-    let props = page.props !== undefined ? page.props() : {};
     return (
       <Tab key={page.title} eventKey={page.title} title={t(page.title)}>
-        <page.component {...props} />
+      <div>
+      { page.elements.map(this.renderTabElement) }
+      </div>
       </Tab>
     );
+  }
+
+  private renderTabElement = (page: ISettingsPage, idx: number): JSX.Element => {
+    let props = page.props !== undefined ? page.props() : {};
+    return <page.component key={idx} {...props} />;
   }
 }
 

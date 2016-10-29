@@ -8,6 +8,7 @@ import { downloadProgress, finishDownload, initDownload, removeDownload,
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
 import DownloadView from './views/DownloadView';
+import Settings from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';
 
 import DownloadManager from './DownloadManager';
@@ -19,6 +20,8 @@ function init(context: IExtensionContext): boolean {
   context.registerMainPage('download', 'Download', DownloadView, {
     hotkey: 'D',
   });
+
+  context.registerSettings('Download', Settings);
 
   context.registerFooter('speed-o-meter', SpeedOMeter);
 

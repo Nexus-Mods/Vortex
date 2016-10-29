@@ -9,8 +9,6 @@ import LoginDialog from './LoginDialog';
 import * as React from 'react';
 import update = require('react-addons-update');
 
-import { log } from '../../../util/log';
-
 interface IBaseProps {
   nexus: Nexus;
 }

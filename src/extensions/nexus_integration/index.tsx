@@ -55,7 +55,7 @@ function startDownload(api: IExtensionApi, nxmurl: string) {
 
 function init(context: IExtensionContext): boolean {
   context.registerFooter('login', LoginIcon, () => ({ nexus }));
-  context.registerSettings('Nexus', Settings);
+  context.registerSettings('Download', Settings);
   context.registerReducer([ 'account', 'nexus' ], accountReducer);
   context.registerReducer([ 'settings', 'nexus' ], settingsReducer);
 

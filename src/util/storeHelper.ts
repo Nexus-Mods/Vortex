@@ -98,7 +98,7 @@ function setDefaultArray<T>(state: T, path: string[], fallback: any[]): T {
   let firstElement: string = path[0];
   let copy = Object.assign({}, state);
   if (path.length === 1) {
-    if (!copy.hasOwnProperty(firstElement)) {
+    if (!copy.hasOwnProperty(firstElement) || (copy[firstElement] === undefined)) {
       copy[firstElement] = fallback;
     } else {
       copy[firstElement] = copy[firstElement].slice();
