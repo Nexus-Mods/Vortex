@@ -61,12 +61,17 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   private nop = () => undefined;
 
   private runCustomTool = (e, data) => {
-    execFile(data.path, (err, output) => {
-      if (err) {
-        log('info', 'error', { err });
-        return;
-      }
-    });
+    try {
+      let params = data.parameters !== undefined ? '--' + data.parameters : null;
+      execFile(data.path, [params], (err, output) => {
+        if (err) {
+          log('info', 'error', { err });
+          return;
+        }
+      });
+    } catch (err) {
+      log('warn', 'Please run NMM2 in admin mode', { err: err.message });
+    };
   };
 
   private handleRemoveClick = (e, data: ISupportedTool) => {
@@ -159,8 +164,8 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
         tooltip={tool.name}
         title={tool.name}
         onClick={valid ? this.runTool : this.handleEditTool}
-      >
-        <ToolIcon imageUrl={this.state.imageUrl} imageId={this.mImageId} valid={valid}/>
+        >
+        <ToolIcon imageUrl={this.state.imageUrl} imageId={this.mImageId} valid={valid} />
         <MyContextMenu
           id={`tool-menu-${toolId}`}
           tool={tool}
@@ -178,7 +183,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   private toolIconPath(toolName: string) {
     let { game } = this.props;
     return path.join(remote.app.getPath('userData'),
-                     game.id, 'icons', toolName + '.png');
+      game.id, 'icons', toolName + '.png');
   }
 
   private handleEditTool = () => {
@@ -187,12 +192,16 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
 
   private runTool = () => {
     const { tool } = this.props;
-
-    execFile(tool.path, (err, data) => {
-      if (err) {
-        log('error', 'failed to spawn', { err, path: tool.path });
-      }
-    });
+    try {
+      let params = tool.parameters !== undefined ? '--' + tool.parameters : null;
+      execFile(tool.path, [params], (err, output) => {
+        if (err) {
+          log('error', 'failed to spawn', { err, path: tool.path });
+        }
+      });
+    } catch (err) {
+      log('warn', 'Please run NMM2 in admin mode', { err: err.message });
+    }
   };
 }
 

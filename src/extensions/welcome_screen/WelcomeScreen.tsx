@@ -126,7 +126,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
       }
     });
 
-    return result.filter((tool: ISupportedTool) => !tool.hidden);
+    return result.filter((tool: ISupportedTool) => tool !== undefined ? !tool.hidden : null);
   }
 
   private renderEditToolDialog() {
