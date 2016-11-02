@@ -76,7 +76,9 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
 
   private handleRemoveClick = (e, data: ISupportedTool) => {
     let { gameId, onRemoveTool } = this.props;
-    onRemoveTool(gameId, data.id);
+    if (data.id !== undefined) {
+      onRemoveTool(gameId, data.id);
+    }
   }
 
   private handleChangeSettingsClick = (e, data) => {

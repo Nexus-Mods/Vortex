@@ -98,6 +98,25 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
             </InputGroup.Button>
           </InputGroup>
 
+           <ControlLabel>{ t('Current Working Directory') }</ControlLabel>
+          <InputGroup>
+            <FormControl
+              value={this.state.tool.currentWorkingDirectory}
+              placeholder={t('Current Working Directory')}
+              ref={this.setPathControl}
+              readOnly
+            />
+            <InputGroup.Button>
+              <Button
+                id='change-CurrentWorkingDirectory-path'
+                tooltip={t('Change')}
+                onClick={this.addCurrentWorkingDirectoryPath}
+              >
+                <Icon name='folder-open' />
+              </Button>
+            </InputGroup.Button>
+          </InputGroup>
+
           <ControlLabel>{ t('Command Line') }</ControlLabel>
           <FormControl
             type='text'
@@ -159,6 +178,16 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
 
   private handleChangeParameters = (event) => {
     this.handleChange(event.target.value, 'parameters');
+  }
+
+  private addCurrentWorkingDirectoryPath = () => {
+    this.context.api.selectDir({})
+    .then((dirName: string) => {
+      this.handleChange(dirName, 'currentWorkingDirectory');
+    })
+    .catch((err) => {
+      console.log('info', 'search path selection cancelled', { err });
+    });
   }
 
   private handleChangePath = () => {
