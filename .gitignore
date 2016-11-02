@@ -8,6 +8,10 @@ doc
 # User-specific files
 *.suo
 
+# auto generated
+auto.gypi
+auto-top.gypi
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -17,3 +21,4 @@ build/
 bld/
 [Bb]in/
 [Oo]bj/
+lib/js/nexus-api/lib  

@@ -1,5 +1,6 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
+import { getSafe } from '../../util/storeHelper';
 import InputButton from '../../views/InputButton';
 
 import { accountReducer } from './reducers/account';
@@ -7,39 +8,40 @@ import { settingsReducer } from './reducers/settings';
 import LoginIcon from './views/LoginIcon';
 import Settings from './views/Settings';
 
-import Nexus, { IDownloadURL, IGetModInfoResponse } from 'nexus-api';
+import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
 
 import NXMUrl from './NXMUrl';
 
 import * as util from 'util';
 
-const nexus = new Nexus('nmm2');
+let nexus: Nexus;
 
 function startDownload(api: IExtensionApi, nxmurl: string) {
   const url: NXMUrl = new NXMUrl(nxmurl);
 
-  let nexusModInfo: IGetModInfoResponse;
+  let nexusFileInfo: IFileInfo;
 
-  nexus.getModInfo(url.modId)
-  .then((data: IGetModInfoResponse) => {
-    nexusModInfo = data;
-
+  nexus.getFileInfo(url.modId, url.fileId, url.gameId)
+  .then((fileInfo: IFileInfo) => {
+    nexusFileInfo = fileInfo;
     api.sendNotification({
-      type: 'global',
       id: url.fileId.toString(),
+      type: 'global',
       title: 'Downloading from Nexus',
-      message: nexusModInfo.name,
+      message: fileInfo.name,
       displayMS: 4000,
     });
-
-    return nexus.getDownloadURLs(url.fileId);
+    return nexus.getDownloadURLs(url.modId, url.fileId, url.gameId);
   })
   .then((urls: IDownloadURL[]) => {
     if (urls === null) {
       throw { message: 'No download locations (yet)' };
     }
     let uris: string[] = urls.map((item: IDownloadURL) => item.URI);
-    api.events.emit('start-download', uris, { nexus: nexusModInfo });
+    api.events.emit('start-download', uris, { nexus: {
+      ids: { gameId: url.gameId, modId: url.modId, fileId: url.fileId },
+      fileInfo: nexusFileInfo,
+    }});
   })
   .catch((err) => {
     api.sendNotification({
@@ -74,6 +76,11 @@ function init(context: IExtensionContext): boolean {
     }));
 
   context.once(() => {
+    let state = context.api.store.getState();
+    nexus = new Nexus(
+      getSafe(state, [ 'settings', 'gameMode', 'current' ], ''),
+      getSafe(state, [ 'account', 'nexus', 'APIKey' ], '')
+    );
     let registerFunc = () => {
       context.api.registerProtocol('nxm', (url: string) => {
         startDownload(context.api, url);
@@ -93,6 +100,16 @@ function init(context: IExtensionContext): boolean {
         }
       }
     );
+
+    context.api.onStateChange([ 'settings', 'gameMode', 'current' ],
+      (oldValue: string, newValue: string) => {
+        nexus.setGame(newValue);
+      });
+
+    context.api.onStateChange([ 'account', 'nexus', 'APIKey' ],
+      (oldValue: string, newValue: string) => {
+        nexus.setKey(newValue);
+      });
   });
 
   return true;

@@ -18,7 +18,7 @@
     "package": "build",
     "postinstall": "typings install",
     "start": "cross-env NODE_ENV=development electron .",
-    "native": "electron-rebuild",
+    "installex": "rm-local-modules && npm install && electron-rebuild -w icon-extract,ffi,node-7z,winreg && cd node_modules/redux-persist && npm run build:commonjs",
     "test": "jest",
     "doc": "typedoc --out doc src"
   },
@@ -128,6 +128,7 @@
     "ref-union": "^1.0.1",
     "request": "^2.75.0",
     "reselect": "^2.5.4",
+    "rm-local-modules": "^0.0.1",
     "simple-vdf": "^1.1.0",
     "string-templates": "^1.0.6",
     "tmp": "0.0.29",

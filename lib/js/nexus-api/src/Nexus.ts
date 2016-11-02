@@ -4,9 +4,9 @@ import * as Promise from 'bluebird';
 import { Client } from 'node-rest-client';
 
 interface IRequestArgs {
-  headers?: Object;
-  path?: Object;
-  data?: Object;
+  headers?: any;
+  path?: any;
+  data?: any;
   requestConfig?: {
     timeout: number,
     noDelay: boolean,
@@ -22,25 +22,20 @@ interface IRequestArgs {
  * @class Nexus
  */
 class Nexus {
-
-  private mApiKey: string;
-  private mAppId: string;
   private mRestClient: Client;
   private mBaseData: IRequestArgs;
 
   private mBaseURL = 'https://api.nexusmods.com/v1';
-  private mLegacyURL = 'http://nmm.nexusmods.com/games/';
 
-  constructor(appId: string) {
-    this.mAppId = appId;
+  constructor(game: string, apiKey: string) {
     this.mRestClient = new Client();
     this.mBaseData = {
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'Nexus Client v0.63.1',
+        APIKEY: apiKey,
       },
       path: {
-        gameId: 110,
+        gameId: game,
       },
       requestConfig: {
         timeout: 1000,
@@ -54,26 +49,81 @@ class Nexus {
     this.initMethods();
   }
 
-  public validateKey(apiKey: string): Promise<types.IValidateKeyResponse> {
-    this.mApiKey = apiKey;
+  public setGame(gameId: string): void {
+    this.mBaseData.path.gameId = gameId;
+  }
+
+  public setKey(apiKey: string): void {
+    this.mBaseData.headers.APIKEY = apiKey;
+  }
+
+  public validateKey(key?: string): Promise<types.IValidateKeyResponse> {
     return new Promise<types.IValidateKeyResponse>((resolve, reject) => {
-      this.mRestClient.methods.validateKey(this.args({ data: { apiKey } }),
+      this.mRestClient.methods.validateKey(
+        this.args({ headers: this.filter({ APIKEY: key }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
     });
   }
 
-  public getModInfo(modId: number): Promise<types.IGetModInfoResponse> {
-    return new Promise<types.IGetModInfoResponse>((resolve, reject) => {
-      this.mRestClient.methods.getModInfo(this.args({ path: { modId } }),
+  public getGames(): Promise<types.IGameListEntry[]> {
+    return new Promise<types.IGameListEntry[]>((resolve, reject) => {
+      this.mRestClient.methods.getGames(this.args({}),
         (data, response) => this.handleResult(data, response, resolve, reject));
     });
   }
 
-  public getDownloadURLs(fileId: number): Promise<types.IDownloadURL[]> {
+  public getGameInfo(gameId?: string): Promise<types.IGameInfo> {
+    return new Promise<types.IGameInfo>((resolve, reject) => {
+      this.mRestClient.methods.getGameInfo(
+        this.args({ path: this.filter({ gameId }) }),
+        (data, response) => this.handleResult(data, response, resolve, reject));
+    });
+  }
+
+  public getModInfo(modId: number, gameId?: string): Promise<types.IModInfo> {
+    return new Promise<types.IModInfo>((resolve, reject) => {
+      this.mRestClient.methods.getModInfo(
+        this.args({ path: this.filter({ modId, gameId }) }),
+        (data, response) => this.handleResult(data, response, resolve, reject));
+    });
+  }
+
+  public getModFiles(modId: number, gameId?: string): Promise<types.IFileInfo[]> {
+    return new Promise<any>((resolve, reject) => {
+      this.mRestClient.methods.getModFiles(
+        this.args({ path: this.filter({ modId, gameId }) }),
+        (data, response) => this.handleResult(data, response, resolve, reject));
+    });
+  }
+
+  public getFileInfo(modId: number,
+                     fileId: number,
+                     gameId?: string): Promise<types.IFileInfo> {
+    return new Promise<types.IFileInfo>((resolve, reject) => {
+      this.mRestClient.methods.getFileInfo(
+        this.args({ path: this.filter({ modId, fileId, gameId }) }),
+        (data, response) => this.handleResult(data, response, resolve, reject));
+    });
+  }
+
+  public getDownloadURLs(modId: number,
+                         fileId: number,
+                         gameId?: string): Promise<types.IDownloadURL[]> {
     return new Promise<types.IDownloadURL[]>((resolve, reject) => {
-      this.mRestClient.methods.getDownloadURLs(this.args({ path: { fileId } }),
+      this.mRestClient.methods.getDownloadURLs(
+        this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
     });
+  }
+
+  private filter(obj: Object): Object {
+    let result = {};
+    Object.keys(obj).forEach((key) => {
+      if (obj[key] !== undefined) {
+        result[key] = obj[key];
+      }
+    });
+    return result;
   }
 
   private handleResult(data, response, resolve, reject) {
@@ -89,7 +139,7 @@ class Nexus {
   }
 
   private args(customArgs: IRequestArgs) {
-    let result = Object.assign({}, this.mBaseData);
+    let result: IRequestArgs = Object.assign({}, this.mBaseData);
     for (let key of Object.keys(customArgs)) {
       result[key] = Object.assign({}, result[key], customArgs[key]);
     }
@@ -101,10 +151,23 @@ class Nexus {
       'validateKey', this.mBaseURL + '/users/validate.json', 'GET');
 
     this.mRestClient.registerMethod(
-      'getModInfo', this.mLegacyURL + 'Mods/${modId}&game_id=${gameId}', 'GET');
+      'getGames', this.mBaseURL + '/games', 'GET');
 
     this.mRestClient.registerMethod(
-      'getDownloadURLs', this.mLegacyURL + 'Files/download/${fileId}&game_id=${gameId}', 'GET');
+      'getGameInfo', this.mBaseURL + '/games/${gameId}', 'GET');
+
+    this.mRestClient.registerMethod(
+      'getModInfo', this.mBaseURL + '/games/${gameId}/mods/${modId}', 'GET');
+
+    this.mRestClient.registerMethod(
+      'getModFiles', this.mBaseURL + '/games/${gameId}/mods/${modId}/files', 'GET');
+
+    this.mRestClient.registerMethod(
+      'getFileInfo', this.mBaseURL + '/games/${gameId}/mods/${modId}/files/${fileId}', 'GET');
+
+    this.mRestClient.registerMethod(
+      'getDownloadURLs',
+      this.mBaseURL + '/games/${gameId}/mods/${modId}/files/${fileId}/download_link', 'GET');
   }
 }
 

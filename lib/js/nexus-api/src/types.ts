@@ -8,7 +8,7 @@ export interface IValidateKeyResponse {
   url: string;
 };
 
-export interface IGetModInfoResponse {
+export interface IModInfo {
   id: number;
   category_id: number;
   adult: number;
@@ -20,10 +20,41 @@ export interface IGetModInfoResponse {
   author: string;
 }
 
+export interface IFileInfo {
+  file_id: number;
+  name: string;
+  version: string;
+  size: number;
+  file_name: string;
+  uploaded_timestamp: number;
+  uploaded_time: string;
+  mod_version: string;
+  external_virus_scan_url: string;
+}
+
+export interface ICategory {
+  category_id: number;
+  name: string;
+  parent_category: number | false;
+}
+
+export interface IGameInfo extends IGameListEntry {
+  categories: ICategory[];
+}
+
+export interface IGameListEntry {
+  id: number;
+  name: string;
+  forum_url: string;
+  nexusmods_url: string;
+  genre: string;
+  mod_count: number;
+  file_count: number;
+  downloads: number;
+}
+
 export interface IDownloadURL {
   URI: string;
-  IsPremium: boolean;
-  Name: string;
-  Country: string;
-  ConnectedUsers: number;
+  name: string;
+  short_name: string;
 }

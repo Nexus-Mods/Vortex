@@ -2,7 +2,7 @@
 const sUrlExpression = /nxm:\/\/([a-z0-9]+)\/mods\/(\d+)\/files\/(\d+)/i;
 
 class NXMUrl {
-  private mGameName: string;
+  private mGameId: string;
   private mModId: number;
   private mFileId: number;
 
@@ -11,13 +11,13 @@ class NXMUrl {
     if ((matches === null) || (matches.length !== 4)) {
       throw Error('invalid nxm url "' + input + '"');
     }
-    this.mGameName = matches[1];
+    this.mGameId = matches[1];
     this.mModId = parseInt(matches[2], 10);
     this.mFileId = parseInt(matches[3], 10);
   }
 
-  public get gameName(): string {
-    return this.mGameName;
+  public get gameId(): string {
+    return this.mGameId;
   }
 
   public get modId(): number {

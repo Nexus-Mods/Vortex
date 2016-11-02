@@ -1,5 +1,4 @@
-import Nexus from 'nexus-api/lib/Nexus';
-import { IValidateKeyResponse } from 'nexus-api/lib/types';
+import Nexus, { IValidateKeyResponse } from 'nexus-api';
 
 import { showDialog } from '../../../actions/notifications';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -203,7 +202,7 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
         statusCodeMessage: { $set: '' },
       }));
 
-      nexus.validateKey(this.state.APIKey !== '' ? APIKey : propAPIKey)
+      nexus.validateKey(APIKey)
       .then(() => {
         onSetAPIKey(APIKey);
         onClose();
