@@ -1,0 +1,21 @@
+GET https://api.nexusmods.com/v1/games/skyrim/mods/3863/
+content-type: application/json
+APIKEY: {{$apikey}}
+
+# Expected:
+# {
+#   "name": "SkyUI",
+#   "summary": "..."
+#   "description": "...",
+#   "category_id": 42,
+#   "version": "5.1",
+#   "author": "SkyUI Team",
+#   "created_timestamp": 1324081488,
+#   "created_time": "2011-12-17T00:24:48.000+00:00",
+#   "updated_timestamp": 1440427123,
+#   "updated_time": "2015-08-24T15:38:43.000+01:00",
+#   "contains_adult_content?": false,
+#   "uploaded_by": "schlangster",
+#   "uploaded_users_profile_url": "http://www.nexusmods.com/games/users/28794",
+#   "picture_url": "https://staticdelivery.nexusmods.com/mods/110/images/3863-0-1436879491.png"
+# }

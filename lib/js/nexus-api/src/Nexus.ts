@@ -148,7 +148,7 @@ class Nexus {
 
   private initMethods() {
     this.mRestClient.registerMethod(
-      'validateKey', this.mBaseURL + '/users/validate.json', 'GET');
+      'validateKey', this.mBaseURL + '/users/validate', 'GET');
 
     this.mRestClient.registerMethod(
       'getGames', this.mBaseURL + '/games', 'GET');

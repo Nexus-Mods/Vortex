@@ -1,0 +1,29 @@
+GET https://api.nexusmods.com/v1/games/morrowind
+content-type: application/json
+APIKEY: {{$apikey}}
+
+# Expected:
+# {
+#   "id": 100,
+#   "name": "Morrowind",
+#   "forum_url": "https://forums.nexusmods.com/index.php?/forum/111-morrowind/",
+#   "nexusmods_url": "http://www.nexusmods.com/morrowind",
+#   "genre": "RPG",
+#   "mod_count": 1234,
+#   "file_count": 2345,
+#   "downloads": 34567,
+#   "categories": [
+#     {      
+#       "category_id": 1,
+#       "name": "Morrowind",
+#       "parent_category": false
+#     },
+#     {
+#       "category_id": 2,
+#       "name": "Buildings",
+#       "parent_category": 1
+#     },
+#     ...
+#   ]
+# }
+# 

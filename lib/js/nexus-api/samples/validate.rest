@@ -1,0 +1,14 @@
+GET https://api.nexusmods.com/v1/users/validate
+content-type: application/json
+APIKEY: {{$apikey}}
+
+# Expected:
+# {
+#   "user_id": 1234,
+#   "key": "yourkey",
+#   "name": "yourname",
+#   "is_premium?": true,
+#   "is_supporter?": true,
+#   "email": "user@host.com",
+#   "profile_url": "avatar url"
+# }

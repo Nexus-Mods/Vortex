@@ -1,0 +1,19 @@
+GET https://api.nexusmods.com/v1/games/skyrim/mods/3863/files
+content-type: application/json
+APIKEY: {{$apikey}}
+
+# Expected:
+# [
+#   {
+#     "file_id": 11209,
+#     "name": "SkyUI_1_0",
+#     "version": "1.0",
+#     "size": 1060,
+#     "file_name": "SkyUI_1_0-3863.7z",
+#     "uploaded_timestamp": 1324086840,
+#     "uploaded_time": "2011-12-17T01:54:00.000+00:00",
+#     "mod_version": "1.0",
+#     "external_virus_scan_url": "https://www.virustotal.com/file/c23f1bc97a38c5a2448b1df1ff1d209af7544c66e93e2057fe0a8e070ae4e164/analysis/1406527807/"
+#   },
+#   ...
+# ]

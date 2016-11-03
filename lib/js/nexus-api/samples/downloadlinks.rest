@@ -1,0 +1,12 @@
+GET https://api.nexusmods.com/v1/games/skyrim/mods/3863/files/11209/download_link
+content-type: application/json
+APIKEY: {{$apikey}}
+
+# Expected:
+# [
+#   {
+#     "name": "Nexus Global Content Delivery Network",
+#     "short_name": "Nexus CDN",
+#     "URI": "some url"
+#   }
+# ]
