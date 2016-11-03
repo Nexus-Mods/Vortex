@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "nexus-api",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "./lib/index.js",
   "typings": "lib/index",
   "files": [
