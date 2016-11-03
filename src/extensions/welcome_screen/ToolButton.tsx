@@ -5,6 +5,8 @@ import { log } from '../../util/log';
 import Icon from '../../views/Icon';
 import { Button } from '../../views/TooltipControls';
 
+import elevated from '../../util/elevated';
+
 import { execFile } from 'child_process';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
@@ -62,16 +64,26 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
 
   private runCustomTool = (e, data) => {
     try {
-      let params = data.parameters !== undefined ? '--' + data.parameters : null;
-      execFile(data.path, [params], (err, output) => {
+      let params: string[] = data.parameters.split(' ');
+      execFile(data.path, params, (err, output) => {
         if (err) {
           log('info', 'error', { err });
           return;
         }
       });
     } catch (err) {
-      log('warn', 'Please run NMM2 in admin mode', { err: err.message });
-    };
+      const {dialog} = require('electron').remote;
+      dialog.showMessageBox({
+        buttons: ['Ok', 'Cancel'],
+        title: 'Missing elevation',
+        message: data.id + ' cannot be started because it requires elevation. ' +
+        'Would you like to run the tool elevated?',
+      }, (buttonIndex) => {
+        if (buttonIndex === '0') {
+          elevated(data.path, this.runCustomTool, '', data.path);
+        }
+      });
+    }
   };
 
   private handleRemoveClick = (e, data: ISupportedTool) => {
@@ -166,7 +178,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
         tooltip={tool.name}
         title={tool.name}
         onClick={valid ? this.runTool : this.handleEditTool}
-        >
+      >
         <ToolIcon imageUrl={this.state.imageUrl} imageId={this.mImageId} valid={valid} />
         <MyContextMenu
           id={`tool-menu-${toolId}`}
@@ -195,14 +207,24 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   private runTool = () => {
     const { tool } = this.props;
     try {
-      let params = tool.parameters !== undefined ? '--' + tool.parameters : null;
-      execFile(tool.path, [params], (err, output) => {
+      let params: string[] = tool.parameters.split(' ');
+      execFile(tool.path, params, (err, output) => {
         if (err) {
           log('error', 'failed to spawn', { err, path: tool.path });
         }
       });
     } catch (err) {
-      log('warn', 'Please run NMM2 in admin mode', { err: err.message });
+      const {dialog} = require('electron').remote;
+      dialog.showMessageBox({
+        buttons: ['Ok', 'Cancel'],
+        title: 'Missing elevation',
+        message: tool.id + ' cannot be started because it requires elevation. ' +
+        'Would you like to run the tool elevated?',
+      }, (buttonIndex) => {
+        if (buttonIndex === '0') {
+          elevated(tool.path, this.runTool, '', tool.path);
+        }
+      });
     }
   };
 }

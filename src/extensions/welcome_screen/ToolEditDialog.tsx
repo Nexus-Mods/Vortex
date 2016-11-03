@@ -6,6 +6,8 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import Icon from '../../views/Icon';
 import { Button } from '../../views/TooltipControls';
 
+import { log } from '../../util/log';
+
 import { addDiscoveredTool } from '../gamemode_management/actions/settings';
 
 import * as Promise from 'bluebird';
@@ -103,14 +105,13 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
             <FormControl
               value={this.state.tool.currentWorkingDirectory}
               placeholder={t('Current Working Directory')}
-              ref={this.setPathControl}
               readOnly
             />
             <InputGroup.Button>
               <Button
-                id='change-CurrentWorkingDirectory-path'
+                id='change-current-working-directory-path'
                 tooltip={t('Change')}
-                onClick={this.addCurrentWorkingDirectoryPath}
+                onClick={this.setCurrentWorkingDirectoryPath}
               >
                 <Icon name='folder-open' />
               </Button>
@@ -180,13 +181,13 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     this.handleChange(event.target.value, 'parameters');
   }
 
-  private addCurrentWorkingDirectoryPath = () => {
+  private setCurrentWorkingDirectoryPath = () => {
     this.context.api.selectDir({})
     .then((dirName: string) => {
       this.handleChange(dirName, 'currentWorkingDirectory');
     })
     .catch((err) => {
-      console.log('info', 'search path selection cancelled', { err });
+      log('info', 'search path selection cancelled', { err });
     });
   }
 

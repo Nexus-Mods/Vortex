@@ -4,7 +4,7 @@ import { log } from '../../util/log';
 import { IMod } from '../mod_management/types/IMod';
 import { IModActivator } from '../mod_management/types/IModActivator';
 
-import elevated from './elevated';
+import elevated from  '../../util/elevated';
 import walk from './walk';
 
 import * as Promise from 'bluebird';

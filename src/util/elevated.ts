@@ -8,7 +8,7 @@ import * as uniontype from 'ref-union';
 
 import * as tmp from 'tmp';
 
-import { log } from '../../util/log';
+import { log } from './log';
 
 const DUMMYUNIONNAME = uniontype({
     hIcon: ref.refType(ref.types.void),
