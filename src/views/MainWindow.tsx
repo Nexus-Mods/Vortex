@@ -166,7 +166,7 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   private renderFooter() {
     return (
       <Fixed>
-        <MainFooter onShowDialog={ this.showLayer } />
+        <MainFooter />
       </Fixed>
     );
   }

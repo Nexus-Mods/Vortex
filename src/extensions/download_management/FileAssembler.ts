@@ -43,7 +43,11 @@ class FileAssembler {
   public close(): Promise<void> {
     return this.mWork
     .then(() => {
-      return fs.closeAsync(this.mFD);
+      if (this.mFD !== undefined) {
+        return fs.closeAsync(this.mFD);
+      } else {
+        return Promise.resolve();
+      }
     });
   }
 }

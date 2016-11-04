@@ -1,20 +1,44 @@
-import { dismissDialog } from '../actions/notifications';
-import { DialogType, IDialog } from '../types/IDialog';
+import { closeDialog } from '../actions/notifications';
+import { DialogType, IDialog, IDialogContent } from '../types/IDialog';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import Icon from '../views/Icon';
 
-import { Button } from './TooltipControls';
-
 import * as React from 'react';
-import { Modal } from 'react-bootstrap';
+import { Button, Modal } from 'react-bootstrap';
+
+import { log } from '../util/log';
+import * as util from 'util';
+
+interface IActionProps {
+  t: (input: string) => string;
+  onDismiss: (action: string) => void;
+  action: string;
+}
+
+class Action extends React.Component<IActionProps, {}> {
+  public render(): JSX.Element {
+    const { t, action } = this.props;
+    return (
+      <Button id='close' onClick={this.dismiss}>
+        {t(action)}
+      </Button>
+    )
+  }
+
+  private dismiss = () => {
+    const { onDismiss, action } = this.props;
+    onDismiss(action);
+  }
+}
+
 
 interface IDialogConnectedProps {
   dialogs: IDialog[];
 }
 
 interface IDialogActionProps {
-  onDismiss: () => void;
+  onDismiss: (id: string, action: string) => void;
 }
 
 class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}> {
@@ -27,31 +51,47 @@ class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}>
           <Modal.Title>{ this.iconForType(dialog.type) }{' '}{ t(dialog.title) }</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          { dialog.message }
+          { this.renderContent(dialog.content) }
         </Modal.Body>
         <Modal.Footer>
-          <Button tooltip={ t('Confirm') } id='close' onClick={ this.dismiss }>
-            {t('Ok') }
-          </Button>
+          { dialog.actions.map(this.renderAction) }
         </Modal.Footer>
       </Modal>
     ) : null;
   }
 
+  private renderContent(content: IDialogContent): JSX.Element {
+    if (content.message !== undefined) {
+      return <div>{ content.message }</div>;
+    } else if (content.htmlFile !== undefined) {
+      return <webview src={`file://${content.htmlFile}`} />;
+    } else {
+      return null;
+    }
+  }
+
+  private renderAction = (action: string): JSX.Element => {
+    const { t } = this.props;
+    return (
+      <Action t={t} action={action} onDismiss={this.dismiss} />
+    );
+  }
+
   private iconForType(type: DialogType) {
     switch (type) {
       case 'info': return (
-        <Icon name='info-circle' style={{ height: '32px', color: 'blue' }} />
+        <Icon name='info-circle' style={{ height: '32px', width: '32px', color: 'blue' }} />
       );
       case 'error': return (
-        <Icon name='exclamation-circle' style={{ height: '32px', color: 'red' }} />
+        <Icon name='exclamation-circle' style={{ height: '32px', width: '32px', color: 'red' }} />
       );
       default: return null;
     }
   }
 
-  private dismiss = () => {
-    this.props.onDismiss();
+  private dismiss = (action: string) => {
+    const { dialogs } = this.props;
+    this.props.onDismiss(dialogs[0].id, action);
   }
 }
 
@@ -63,7 +103,7 @@ function mapStateToProps(state: IState): IDialogConnectedProps {
 
 function mapDispatchToProps<S>(dispatch: Redux.Dispatch<S>): IDialogActionProps {
   return {
-    onDismiss: () => dispatch(dismissDialog()),
+    onDismiss: (id: string, action: string) => dispatch(closeDialog(id, action, null)),
   };
 }
 

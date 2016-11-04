@@ -149,3 +149,24 @@
 .react-context-menu-link.disabled {
   color: @gray-light;
 }
+
+.dropzone-url {
+  width: ~"calc(100% - 20px)";
+  height: 100px;
+  margin: 10px;
+  padding: 20px;
+  border-radius: 5px;
+  border-width: 2px;
+  border-style: dashed;
+  border-color: @gray;
+}
+
+.dropzone-url.hover-valid {
+  border-style: solid;
+  border-color: @brand-success;
+}
+
+.dropzone-url.hover-invalid {
+  border-style: solid;
+  border-color: @brand-warning;
+}

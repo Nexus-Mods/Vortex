@@ -14,7 +14,9 @@ import DeactivationButton from './views/DeactivationButton';
 import ModList from './views/ModList';
 import Settings from './views/Settings';
 
+import InstallContext from './InstallContext';
 import { INSTALL_TIME, MOD_NAME } from './modAttributes';
+import { installArchive } from './modInstall';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -128,6 +130,18 @@ function init(context: IExtensionContextExt): boolean {
           context.api.store.dispatch(addMod(mod));
         });
       });
+
+    let installContext = new InstallContext(context.api.store.dispatch);
+
+    context.api.events.on('start-install', (archivePath: string) => {
+      const installPath = resolvePath('install',
+                                      state.gameSettings.mods.paths,
+                                      state.settings.gameMode.current);
+      const baseName = path.basename(archivePath, path.extname(archivePath));
+      const destinationPath = path.join(installPath, baseName);
+
+      installArchive(archivePath, destinationPath, installContext);
+    });
   });
 
   return true;

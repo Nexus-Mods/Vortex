@@ -1,5 +1,6 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
+import { showError } from '../../util/message';
 
 import { downloadPath } from '../mod_management/selectors';
 
@@ -13,8 +14,11 @@ import SpeedOMeter from './views/SpeedOMeter';
 
 import DownloadManager from './DownloadManager';
 
+import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import { v1 } from 'node-uuid';
+
+const app = remote !== undefined ? remote.app : appIn;
 
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('download', 'Download', DownloadView, {
@@ -40,7 +44,8 @@ function init(context: IExtensionContext): boolean {
         if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
           store.dispatch(setDownloadSpeed(speed));
         }
-      }
+      },
+      `Nexus Client v2.${app.getVersion()}`
     );
 
     context.api.events.on('remove-download', (downloadId: string) => {
@@ -55,10 +60,8 @@ function init(context: IExtensionContext): boolean {
       }
       if (download.localPath !== undefined) {
         log('debug', 'will delete', { path: download.localPath });
-        fs.removeAsync(download.localPath)
-          .then(() => {
-            store.dispatch(removeDownload(downloadId));
-          });
+        store.dispatch(removeDownload(downloadId));
+        fs.removeAsync(download.localPath);
       } else {
         store.dispatch(removeDownload(downloadId));
       }
@@ -77,12 +80,27 @@ function init(context: IExtensionContext): boolean {
           store.dispatch(setDownloadFilePath(id, filePath));
         }
       })
-      .then((filePath: string) => {
-        store.dispatch(setDownloadFilePath(id, filePath));
-        store.dispatch(finishDownload(id, 'finished'));
+      .then((res: { filePath: string, headers: any }) => {
+        store.dispatch(setDownloadFilePath(id, res.filePath));
+        if (res.filePath.endsWith('.html')) {
+          store.dispatch(finishDownload(id, 'failed', { htmlFile: res.filePath }));
+        } else {
+          store.dispatch(finishDownload(id, 'finished'));
+        }
       })
       .catch((err) => {
-        store.dispatch(finishDownload(id, 'failed'));
+        let message;
+        if (err.http_headers !== undefined) {
+          if (err.http_headers.nexuserror !== undefined) {
+            message = err.http_headers.nexuserrorinfo;
+          } else {
+            message = err.http_headers.status;
+          }
+        } else {
+          message = err.message;
+        }
+        showError(store.dispatch, 'Download failed', message);
+        store.dispatch(finishDownload(id, 'failed', { message }));
       });
     });
   });

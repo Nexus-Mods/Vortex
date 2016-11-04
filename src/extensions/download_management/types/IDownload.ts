@@ -1,5 +1,10 @@
 export type DownloadState = 'init' | 'started' | 'paused' | 'finished' | 'failed';
 
+export interface IDownloadFailCause {
+  htmlFile?: string;
+  message?: string;
+}
+
 /**
  * download information
  * 
@@ -13,6 +18,16 @@ export interface IDownload {
    * @memberOf IDownload
    */
   state: DownloadState;
+
+  /**
+   * if the download failed, this will contain a more detailed description
+   * of the error
+   * 
+   * @type {IDownloadFailCause}
+   * @memberOf IDownload
+   */
+  failCause?: IDownloadFailCause;
+
   /**
    * list of urls we know serve this file. Should be sorted by preference.
    * If download from the first url isn't possible, the others may be used

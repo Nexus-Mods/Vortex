@@ -1,5 +1,7 @@
+import { DialogActions, DialogType, IDialogContent } from '../types/IDialog';
 import { INotification } from '../types/INotification';
 import * as Promise from 'bluebird';
+import { v1 } from 'node-uuid';
 import { createAction } from 'redux-act';
 
 /**
@@ -16,12 +18,20 @@ export const dismissNotification = createAction('DISMISS_NOTIFICATION');
 
 /**
  * show a modal dialog to the user
+ *
+ * don't call this directly, use showDialog
  */
-export const showDialog = createAction('SHOW_MODAL_DIALOG',
-  (type: string, title: string, message: string) => ({ type, title, message }));
+export const addDialog = createAction(
+    'SHOW_MODAL_DIALOG',
+    (id: string, type: string, title: string, content: IDialogContent, actions: string[]) =>
+        ({id, type, title, content, actions}));
 
 /**
  * dismiss the dialog being displayed
+ * 
+ * don't call this directly especially when you used "showDialog" to create the dialog or
+ * you leak (a tiny amount of) memory and the action callbacks aren't called.
+ * Use closeDialog instead
  */
 export const dismissDialog = createAction('DISMISS_MODAL_DIALOG');
 
@@ -42,7 +52,43 @@ export function addNotification(notification: INotification) {
           , notification.displayMS);
       }).then(() =>
         dispatch(dismissNotification(notification.id))
-        );
+      );
     }
+  };
+}
+
+let dialogCallbacks = {};
+
+/**
+ * show a dialog
+ * 
+ * @export
+ * @param {DialogType} type
+ * @param {string} title
+ * @param {IDialogContent} content
+ * @param {DialogActions} actions
+ * @returns
+ */
+export function showDialog(type: DialogType, title: string,
+                           content: IDialogContent, actions: DialogActions) {
+  return (dispatch) => {
+    return new Promise<{ action, input }>((resolve, reject) => {
+      const id = v1();
+      dispatch(addDialog(id, type, title, content, Object.keys(actions)));
+      dialogCallbacks[id] = (actionKey: string, input?: any) => {
+        if (actions[actionKey] !== null) {
+          actions[actionKey](input);
+        }
+        resolve({ action: actionKey, input });
+      };
+    });
+  };
+}
+
+export function closeDialog(id: string, actionKey: string, input: any) {
+  return (dispatch) => {
+    dispatch(dismissDialog(id));
+    dialogCallbacks[id](actionKey, input);
+    delete dialogCallbacks[id];
   };
 }

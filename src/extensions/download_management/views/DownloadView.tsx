@@ -6,6 +6,7 @@ import InputButton from '../../../views/InputButton';
 
 import { IDownload } from '../types/IDownload';
 
+import DownloadDropzone from './DownloadDropzone';
 import DownloadItem from './DownloadItem';
 
 import * as React from 'react';
@@ -16,13 +17,9 @@ interface IConnectedProps {
   downloads: IDownload[];
 }
 
-interface IComponentState {
-  inputUrl: string;
-}
-
 type IProps = IConnectedProps;
 
-class DownloadView extends ComponentEx<IProps, IComponentState> {
+class DownloadView extends ComponentEx<IProps, {}> {
   public static contextTypes: React.ValidationMap<any> = {
     api: React.PropTypes.object.isRequired,
   };
@@ -33,7 +30,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   constructor(props) {
     super(props);
     this.state = {
-      inputUrl: undefined,
+      dropActive: false,
     };
 
     this.staticButtons = [{
@@ -60,7 +57,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             style={{ width: '100%', display: 'flex' }}
           />
         </Fixed>
-        <Flex style={{ height: '100%', overflowY: 'auto' }}>
+        <Flex style={{ height: '100%', overflowY: 'auto' }} >
           <Table bordered condensed hover>
             <thead>
               <tr>
@@ -70,16 +67,17 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
               </tr>
             </thead>
             <tbody>
-              { Object.keys(downloads).map(this.renderDownload) }
+              {Object.keys(downloads).map(this.renderDownload)}
             </tbody>
           </Table>
+          <DownloadDropzone />
         </Flex>
       </Layout>
     );
   }
 
   private startDownload = (url: string) => {
-    this.context.api.events.emit('start-download', [ url ], {});
+    this.context.api.events.emit('start-download', [url], {});
   }
 
   private renderDownload = (key: string) => {
@@ -102,5 +100,5 @@ function mapStateToProps(state: any) {
 
 export default
   connect(mapStateToProps)(
-    translate([ 'common' ], { wait: true })(DownloadView)
+    translate(['common'], { wait: true })(DownloadView)
   );

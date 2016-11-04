@@ -29,7 +29,10 @@ export const stateReducer: IReducerSpec = {
       return setOrNop(state, [ 'running', payload.id, 'state' ], 'started');
     },
     [action.finishDownload]: (state, payload) => {
-      return setOrNop(state, [ 'running', payload.id, 'state'], payload.state);
+      return merge(state, [ 'running', payload.id ], {
+        state: payload.state,
+        failCause: payload.failCause,
+      });
     },
     [action.pauseDownload]: (state, payload) => {
       return setOrNop(state, [ 'running', payload.id, 'state' ],

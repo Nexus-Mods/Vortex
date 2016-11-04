@@ -33,7 +33,7 @@ export const startDownload = createAction('START_DOWNLOAD',
  * mark download as finished
  */
 export const finishDownload = createAction('FINISH_DOWNLOAD',
-  (id: string, state: 'finished' | 'failed') => { return { id, state }; });
+  (id: string, state: 'finished' | 'failed', failCause?: any) => ({ id, state, failCause }));
 
 /**
  * mark download paused
@@ -41,6 +41,9 @@ export const finishDownload = createAction('FINISH_DOWNLOAD',
 export const pauseDownload = createAction('PAUSE_DOWNLOAD',
   (id: string, paused: boolean) => { return { id, paused }; });
 
+/**
+ * remove a download (and associated file if any)
+ */
 export const removeDownload = createAction('REMOVE_DOWNLOAD',
   (id: string) => { return { id }; });
 

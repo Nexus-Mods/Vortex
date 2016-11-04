@@ -1,5 +1,4 @@
-import { dismissNotification, startNotification } from '../actions/notifications';
-import { dismissDialog, showDialog } from '../actions/notifications';
+import * as actions from '../actions/notifications';
 import { IReducerSpec } from '../types/IExtensionContext';
 
 import update = require('react-addons-update');
@@ -13,7 +12,7 @@ let counter = 1;
  */
 export const notificationsReducer: IReducerSpec = {
   reducers: {
-    [startNotification]: (state, payload) => {
+    [actions.startNotification]: (state, payload) => {
       let temp = state;
       if (payload.id === undefined) {
         payload.id = `__auto_${counter++}`;
@@ -30,15 +29,15 @@ export const notificationsReducer: IReducerSpec = {
         return update(temp, { notifications: { $push: [payload] } });
       }
     },
-    [dismissNotification]: (state, payload) => {
+    [actions.dismissNotification]: (state, payload) => {
       return removeValueIf(removeValueIf(state, [ 'notifications' ], (noti) => noti.id === payload),
                            [ 'global_notifications' ], (noti) => noti.id === payload);
     },
-    [showDialog]: (state, payload) => {
+    [actions.addDialog]: (state, payload) => {
       return update(state, { dialogs: { $push: [payload] } });
     },
-    [dismissDialog]: (state, payload) => {
-      return update(state, { dialogs: { $splice: [[0, 1]] } });
+    [actions.dismissDialog]: (state, payload) => {
+      return removeValueIf(state, [ 'dialogs' ], (dialog) => dialog.id === payload);
     },
   },
   defaults: {

@@ -1,10 +1,12 @@
+import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
-import { ComponentEx, translate } from '../../../util/ComponentEx';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
 import { DownloadState, IDownload } from '../types/IDownload';
 
+import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as React from 'react';
 import { ProgressBar } from 'react-bootstrap';
@@ -14,7 +16,11 @@ interface IBaseProps {
   download: IDownload;
 }
 
-type IProps = IBaseProps;
+interface IActionProps {
+  onShowDialog: (type, title, content, actions) => Promise<{ action, input }>;
+}
+
+type IProps = IBaseProps & IActionProps;
 
 /**
  * a single row in the download list
@@ -149,9 +155,66 @@ class DownloadItem extends ComponentEx<IProps, {}> {
     }
   }
 
+  private install = () => {
+    const { download } = this.props;
+    this.context.api.events.emit('start-install', download.localPath);
+  }
+
+  private renderInstallAction(key: string, download: IDownload) {
+    const { t } = this.props;
+
+    if (download.state === 'finished') {
+      return (
+        <Button
+          id={'install-btn-' + key}
+          className='btn-embed'
+          tooltip={t('Install')}
+          onClick={this.install}
+        >
+          <Icon name='archive' />
+        </Button>
+      );
+    } else {
+      return null;
+    }
+  }
+
+  private inspect = () => {
+    const { download, downloadId, onShowDialog } = this.props;
+    if (download.failCause.htmlFile !== undefined) {
+      onShowDialog('error', 'Download failed', {
+        htmlFile: download.failCause.htmlFile,
+      }, {
+        Delete: () => this.context.api.events.emit('remove-download', downloadId),
+        Close: null,
+      });
+    }
+  }
+
+  private renderInspectAction(key: string, download: IDownload) {
+    const { t } = this.props;
+
+    if (download.state === 'failed') {
+      return (
+        <Button
+          id={'inspect-btn-' + key}
+          className='btn-embed'
+          tooltip={t('Inspect')}
+          onClick={this.inspect}
+        >
+          <Icon name='eye' />
+        </Button>
+      );
+    } else {
+      return null;
+    }
+  }
+
   private renderActions(key: string, download: IDownload) {
     return (
         <div>
+        { this.renderInspectAction(key, download) }
+        { this.renderInstallAction(key, download) }
         { this.renderPauseAction(key, download) }
         { this.renderRemoveAction(key, download) }
         </div>
@@ -159,5 +222,18 @@ class DownloadItem extends ComponentEx<IProps, {}> {
   }
 }
 
+function mapStateToProps(state) {
+  return {};
+}
+
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+  return {
+    onShowDialog: (type, title, content, actions) =>
+      dispatch(showDialog(type, title, content, actions)),
+  };
+}
+
 export default
-  translate([ 'common' ], { wait: true })(DownloadItem);
+  translate([ 'common' ], { wait: true })(
+    connect(mapStateToProps, mapDispatchToProps)(DownloadItem)
+  ) as React.ComponentClass<IBaseProps>;

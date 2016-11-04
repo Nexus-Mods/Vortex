@@ -27,7 +27,7 @@ import { Store, applyMiddleware, compose, createStore } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 import thunkMiddleware from 'redux-thunk';
 
-log('info', 'renderer process started');
+log('debug', 'renderer process started');
 
 Promise.config({ cancellation: true });
 
@@ -94,7 +94,7 @@ store.subscribe(() => {
   }
 });
 
-log('info', 'renderer connected to store');
+log('debug', 'renderer connected to store');
 
 const i18n = getI18n(store.getState().settings.interface.language);
 
@@ -128,3 +128,8 @@ ReactDOM.render(
   </Provider>,
   document.getElementById('content')
 );
+
+// prevent the page from being changed through drag&drop
+document.ondragover = document.ondrop = (ev) => {
+  ev.preventDefault();
+}

@@ -8,6 +8,7 @@ import * as http from 'http';
 import * as path from 'path';
 import request = require('request');
 import * as url from 'url';
+import contentType = require('content-type');
 
 import { log } from '../../util/log';
 
@@ -27,6 +28,11 @@ interface IDownloadJob {
   responseCB?: (size: number, fileName: string) => void;
 }
 
+interface IDownloadResult {
+  filePath: string;
+  headers: any;
+}
+
 interface IDownload {
   id: string;
   fd?: number;
@@ -37,11 +43,12 @@ interface IDownload {
   lastProgressSent: number;
   received: number;
   size?: number;
+  headers?: any;
   assembler?: FileAssembler;
   chunks: IDownloadJob[];
   promises: Promise<any>[];
   progressCB?: IProgressCallback;
-  finishCB: (fileName: string) => void;
+  finishCB: (res: IDownloadResult) => void;
   failedCB: (err) => void;
 }
 
@@ -61,22 +68,29 @@ class DownloadWorker {
   private mRequest: request.Request;
   private mProgressCB: (bytes: number) => void;
   private mFinishCB: IFinishCallback;
+  private mHeadersCB: (headers: any) => void;
+  private mUserAgent: string;
 
-  constructor(job: IDownloadJob, progressCB: (bytes: number) => void, finishCB: IFinishCallback) {
+  constructor(job: IDownloadJob,
+              progressCB: (bytes: number) => void,
+              finishCB: IFinishCallback,
+              headersCB: (headers: any) => void,
+              userAgent: string) {
     this.mProgressCB = progressCB;
     this.mFinishCB = finishCB;
+    this.mHeadersCB = headersCB;
     this.mJob = job;
+    this.mUserAgent = userAgent;
     this.assignJob(job);
   }
 
   public assignJob(job: IDownloadJob) {
-    log('info', 'request at offset', { offset: job.offset, size: job.size,
-      end: job.offset + job.size });
     this.mRequest = request({
       method: 'GET',
       uri: job.url,
       headers: {
         Range: `bytes=${job.offset}-${job.offset + job.size}`,
+        'User-Agent': this.mUserAgent,
       },
     })
     .on('error', (err) => this.handleError(err))
@@ -107,6 +121,13 @@ class DownloadWorker {
   }
 
   private handleResponse(response: http.IncomingMessage) {
+    if (response.statusCode !== 200) {
+      this.handleError({ message: response.statusMessage, http_headers: response.headers });
+      return;
+    }
+
+    this.mHeadersCB(response.headers);
+
     if (this.mJob.responseCB !== undefined) {
       let size = response.headers['content-length'];
       if ('content-range' in response.headers) {
@@ -152,6 +173,7 @@ class DownloadManager {
   private mNextId: number = 0;
   private mSpeedCalculator: SpeedCalculator;
   private mCurrentTick: number;
+  private mUserAgent: string;
 
   /**
    * Creates an instance of DownloadManager.
@@ -165,12 +187,13 @@ class DownloadManager {
    * @memberOf DownloadManager
    */
   constructor(downloadPath: string, maxWorkers: number, maxChunks: number,
-              speedCB: (speed: number) => void) {
+              speedCB: (speed: number) => void, userAgent: string) {
     // TODO is it worth having this configurable?
     this.mMinChunkSize = 1024 * 1024;
     this.mDownloadPath = downloadPath;
     this.mMaxWorkers = maxWorkers;
     this.mMaxChunks = maxChunks;
+    this.mUserAgent = userAgent;
     this.mSpeedCalculator = new SpeedCalculator(5, speedCB);
 
     setInterval(() => {
@@ -197,11 +220,11 @@ class DownloadManager {
    * @memberOf DownloadManager
    */
   public enqueue(id: string, urls: string[], progressCB: IProgressCallback,
-                 destinationPath?: string): Promise<string> {
+                 destinationPath?: string): Promise<IDownloadResult> {
     const nameTemplate: string = decodeURI(path.basename(url.parse(urls[0]).pathname));
     return this.unusedName(destinationPath || this.mDownloadPath, nameTemplate)
     .then((filePath: string) => {
-      return new Promise<string>((resolve, reject) => {
+      return new Promise<IDownloadResult>((resolve, reject) => {
         let download: IDownload = {
           id,
           origName: nameTemplate,
@@ -212,7 +235,9 @@ class DownloadManager {
           chunks: [],
           progressCB,
           finishCB: resolve,
-          failedCB: reject,
+          failedCB: (err) => {
+            reject(err);
+          },
           promises: [],
         };
         download.chunks.push(this.initChunk(download));
@@ -303,10 +328,12 @@ class DownloadManager {
 
     this.mBusyWorkers[workerId] = new DownloadWorker(job,
       (bytes) => this.mSpeedCalculator.addMeasure(workerId, bytes),
-      () => this.finishChunk(download, job));
+      () => this.finishChunk(download, job),
+      (headers) => download.headers = headers,
+      this.mUserAgent);
   }
 
-  private updateDownload(download: IDownload, size: number, fileName: string) {
+  private updateDownload(download: IDownload, size: number, fileName?: string) {
     if ((fileName !== undefined) && (fileName !== download.origName)) {
       download.finalName = this.unusedName(path.dirname(download.tempName), fileName);
     }
@@ -331,7 +358,6 @@ class DownloadManager {
   }
 
   private finishChunk(download: IDownload, job: IDownloadJob) {
-    log('debug', 'finished chunk', { workerId: job.workerId });
     job.state = 'finished';
     this.stopWorker(job.workerId);
     let unfinished = download.chunks.find(
@@ -346,10 +372,14 @@ class DownloadManager {
               finalPath = resolvedPath;
               return fs.renameAsync(download.tempName, resolvedPath);
             });
+          } else if ((contentType.parse(download.headers['content-type']).type === 'text/html')
+                     && (!download.tempName.endsWith('.html'))) {
+            finalPath = download.tempName + '.html';
+            return fs.renameAsync(download.tempName, finalPath);
           }
         })
         .then(() => {
-          download.finishCB(finalPath);
+          download.finishCB({ filePath: finalPath, headers: download.headers });
         });
     }
     this.tickQueue();

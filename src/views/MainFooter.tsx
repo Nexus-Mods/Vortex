@@ -5,7 +5,6 @@ import * as React from 'react';
 import { Well } from 'react-bootstrap';
 
 interface IBaseProps {
-  onShowDialog: (name: string) => void;
 }
 
 interface IFooter {

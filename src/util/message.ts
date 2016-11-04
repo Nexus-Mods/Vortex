@@ -76,7 +76,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string, detai
     actions: details !== undefined ? [{
       title: 'More',
       action: (dismiss: Function) => {
-        dispatch(showDialog('error', 'Error', details));
+        dispatch(showDialog('error', 'Error', { message: details }, { Close: null }));
       },
     }] : [],
   }));
