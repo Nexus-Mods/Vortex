@@ -11,8 +11,8 @@ import * as tmp from 'tmp';
 import { log } from './log';
 
 const DUMMYUNIONNAME = uniontype({
-    hIcon: ref.refType(ref.types.void),
-    hMonitor: ref.refType(ref.types.void),
+  hIcon: ref.refType(ref.types.void),
+  hMonitor: ref.refType(ref.types.void),
 });
 
 const voidPtr = ref.refType(ref.types.void);
@@ -39,7 +39,7 @@ const SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
 let shell32;
 if (process.platform === 'win32') {
   shell32 = new ffi.Library('Shell32', {
-    ShellExecuteExA: ['bool',  [SHELLEXECUTEINFOPtr]],
+    ShellExecuteExA: ['bool', [SHELLEXECUTEINFOPtr]],
   });
 }
 
@@ -54,7 +54,7 @@ function execInfo(scriptPath: string, parameters?: string[]) {
     hwnd: null,
     lpVerb: 'runas',
     lpFile: process.execPath,
-//    lpFile: 'node.exe',
+    //    lpFile: 'node.exe',
     lpParameters: scriptPath + paramStr,
     lpDirectory: __dirname,
     nShow: 0x01,
@@ -138,7 +138,11 @@ function runElevated(ipcPath: string, func: Function,
       if (args !== undefined) {
         for (let argKey of Object.keys(args)) {
           if (args.hasOwnProperty(argKey)) {
-            prog += `let ${argKey} = ${args[argKey]};\n`;
+            if (typeof (args[argKey]) === 'string') {
+              prog += `let ${argKey} = '${args[argKey]}';\n`;
+            } else {
+              prog += `let ${argKey} = ${args[argKey]};\n`;
+            }
           }
         }
       }

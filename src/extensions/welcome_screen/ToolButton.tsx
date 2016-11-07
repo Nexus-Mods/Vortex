@@ -20,6 +20,12 @@ interface IRemoveTool {
   (gameId: string, toolId: string): void;
 }
 
+interface IElevatedSupportedTool {
+  id: string;
+  toolPath?: string;
+  parameters?: string;
+}
+
 interface IContextMenuProps {
   id: string;
   tool: ISupportedTool;
@@ -72,6 +78,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
         }
       });
     } catch (err) {
+      if (err.errno === 'UNKNOWN') {
       const {dialog} = require('electron').remote;
       dialog.showMessageBox({
         buttons: ['Ok', 'Cancel'],
@@ -79,10 +86,18 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
         message: data.id + ' cannot be started because it requires elevation. ' +
         'Would you like to run the tool elevated?',
       }, (buttonIndex) => {
-        if (buttonIndex === '0') {
-          elevated(data.path, this.runCustomTool, '', data.path);
+        if (buttonIndex === 0) {
+          let elevatedTool: IElevatedSupportedTool = {
+            id: data.id,
+            toolPath: data.path,
+            parameters: data.parameters,
+          };
+
+          elevated('tool_elevated_' + data.id, this.runCustomTool,
+           elevatedTool, undefined);
         }
       });
+      }
     }
   };
 
@@ -205,26 +220,33 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   }
 
   private runTool = () => {
-    const { tool } = this.props;
     try {
-      let params: string[] = tool.parameters.split(' ');
-      execFile(tool.path, params, (err, output) => {
+      let params: string[] = this.props.tool.parameters.split(' ');
+      execFile(this.props.tool.path, params, (err, output) => {
         if (err) {
-          log('error', 'failed to spawn', { err, path: tool.path });
+          log('error', 'failed to spawn', { err, path: this.props.tool.path });
         }
       });
     } catch (err) {
-      const {dialog} = require('electron').remote;
-      dialog.showMessageBox({
-        buttons: ['Ok', 'Cancel'],
-        title: 'Missing elevation',
-        message: tool.id + ' cannot be started because it requires elevation. ' +
-        'Would you like to run the tool elevated?',
-      }, (buttonIndex) => {
-        if (buttonIndex === '0') {
-          elevated(tool.path, this.runTool, '', tool.path);
-        }
-      });
+      if (err.errno === 'UNKNOWN') {
+        const {dialog} = require('electron').remote;
+        dialog.showMessageBox({
+          buttons: ['Ok', 'Cancel'],
+          title: 'Missing elevation',
+          message: this.props.tool.id + ' cannot be started because it requires elevation. ' +
+          'Would you like to run the tool elevated?',
+        }, (buttonIndex) => {
+          if (buttonIndex === 0) {
+            let elevatedTool: IElevatedSupportedTool = {
+              id: this.props.tool.id,
+              toolPath: this.props.tool.path,
+              parameters: this.props.tool.parameters,
+            };
+
+            elevated('tool_elevated_' + this.props.tool.id, this.runTool, elevatedTool, undefined);
+          }
+        });
+      }
     }
   };
 }
