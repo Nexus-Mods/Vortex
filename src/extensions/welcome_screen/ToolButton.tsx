@@ -1,11 +1,15 @@
 import { IGame } from '../../types/IGame';
 import { ISupportedTool } from '../../types/ISupportedTool';
-import { ComponentEx, translate } from '../../util/ComponentEx';
+import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import Icon from '../../views/Icon';
 import { Button } from '../../views/TooltipControls';
 
 import elevated from '../../util/elevated';
+
+import ipc = require('node-ipc');
+
+import runElevatedCustomTool from './runElevatedCustomTool';
 
 import { execFile } from 'child_process';
 import { remote } from 'electron';
@@ -34,10 +38,12 @@ interface IContextMenuProps {
   onRemoveTool: IRemoveTool;
   onAddNewTool: () => void;
   onChangeToolParams: (toolId: string) => void;
+  onShowError: (message: string, details?: string) => void;
 }
 
 class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   private currentItem: any;
+  private mElevatedClient: any = null;
 
   public render(): JSX.Element {
     let { t, id, discovery, tool } = this.props;
@@ -69,6 +75,8 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   private nop = () => undefined;
 
   private runCustomTool = (e, data) => {
+    let { onShowError } = this.props;
+
     try {
       let params: string[] = data.parameters.split(' ');
       execFile(data.path, params, (err, output) => {
@@ -79,24 +87,46 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
       });
     } catch (err) {
       if (err.errno === 'UNKNOWN') {
-      const {dialog} = require('electron').remote;
-      dialog.showMessageBox({
-        buttons: ['Ok', 'Cancel'],
-        title: 'Missing elevation',
-        message: data.id + ' cannot be started because it requires elevation. ' +
-        'Would you like to run the tool elevated?',
-      }, (buttonIndex) => {
-        if (buttonIndex === 0) {
-          let elevatedTool: IElevatedSupportedTool = {
-            id: data.id,
-            toolPath: data.path,
-            parameters: data.parameters,
-          };
+        const {dialog} = require('electron').remote;
+        dialog.showMessageBox({
+          buttons: ['Ok', 'Cancel'],
+          title: 'Missing elevation',
+          message: data.id + ' cannot be started because it requires elevation. ' +
+          'Would you like to run the tool elevated?',
+        }, (buttonIndex) => {
+          if (buttonIndex === 0) {
+            let elevatedTool: IElevatedSupportedTool = {
+              id: data.id,
+              toolPath: data.path.replace(/\\/g, '\\\\'),
+              parameters: data.parameters,
+            };
 
-          elevated('tool_elevated_' + data.id, this.runCustomTool,
-           elevatedTool, undefined);
-        }
-      });
+            const ipcPath: string = 'tool_elevated_' + data.id;
+            ipc.serve(ipcPath, () => {
+              ipc.server.on('initialised', (ipcData, socket) => {
+                this.mElevatedClient = socket;
+                ipc.server.emit(this.mElevatedClient, 'run-elevated-tool');
+              });
+              ipc.server.on('finished', (modPath: string) => {
+                ipc.server.emit(this.mElevatedClient, 'quit');
+                ipc.server.stop();
+              });
+              ipc.server.on('socket.disconnected', () => {
+                ipc.server.stop();
+                this.mElevatedClient = null;
+              });
+              ipc.server.on('log', (ipcData: any) => {
+                log(ipcData.level, ipcData.message, ipcData.meta);
+                onShowError(ipcData.message, ipcData.meta.err);
+              });
+              elevated('tool_elevated_' + data.id, runElevatedCustomTool,
+                elevatedTool, undefined);
+            });
+            ipc.server.start();
+          }
+        });
+      } else {
+        log('info', 'runCustomToolError', { err });
       }
     }
   };
@@ -126,6 +156,7 @@ interface IProps {
   onRemoveTool: IRemoveTool;
   onAddNewTool: () => void;
   onChangeToolParams: (toolId: string) => void;
+  onShowError: (message: string, details?: string) => void;
 }
 
 interface IToolButtonState {
@@ -153,6 +184,7 @@ const ToolIcon = (props) => {
 
 class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   private mImageId: number;
+  private mElevatedClient: any = null;
 
   constructor(props: IProps) {
     super(props);
@@ -183,7 +215,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   }
 
   public render() {
-    const { t, game, toolId, tool, onAddNewTool, onRemoveTool } = this.props;
+    const { t, game, toolId, tool, onAddNewTool, onRemoveTool, onShowError } = this.props;
     const valid = tool.path !== undefined;
 
     return (
@@ -204,6 +236,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
           onAddNewTool={onAddNewTool}
           onChangeToolParams={this.handleEditTool}
           t={t}
+          onShowError={onShowError}
         />
       </Button>
     );
@@ -220,6 +253,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   }
 
   private runTool = () => {
+    let { onShowError } = this.props;
     try {
       let params: string[] = this.props.tool.parameters.split(' ');
       execFile(this.props.tool.path, params, (err, output) => {
@@ -239,13 +273,32 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
           if (buttonIndex === 0) {
             let elevatedTool: IElevatedSupportedTool = {
               id: this.props.tool.id,
-              toolPath: this.props.tool.path,
+              toolPath: this.props.tool.path.replace(/\\/g, '\\\\'),
               parameters: this.props.tool.parameters,
             };
 
-            elevated('tool_elevated_' + this.props.tool.id, this.runTool, elevatedTool, undefined);
+            const ipcPath: string = 'tool_elevated_' + this.props.tool.id;
+            ipc.serve(ipcPath, () => {
+              ipc.server.on('initialised', (ipcData, socket) => {
+                this.mElevatedClient = socket;
+                ipc.server.emit(this.mElevatedClient, 'run-elevated-tool');
+              });
+              ipc.server.on('socket.disconnected', () => {
+                ipc.server.stop();
+                this.mElevatedClient = null;
+              });
+              ipc.server.on('log', (ipcData: any) => {
+                log(ipcData.level, ipcData.message, ipcData.meta);
+                onShowError(ipcData.message, ipcData.meta.err);
+              });
+              elevated('tool_elevated_' + this.props.tool.id, runElevatedCustomTool,
+                elevatedTool, undefined);
+            });
+            ipc.server.start();
           }
         });
+      } else {
+        log('info', 'runCustomToolError', { err });
       }
     }
   };

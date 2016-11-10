@@ -4,6 +4,8 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';
 
+import { showError } from '../../util/message';
+
 import { addDiscoveredTool, changeToolParams,
          removeDiscoveredTool } from '../gamemode_management/actions/settings';
 
@@ -25,6 +27,7 @@ interface IActionProps {
   onAddDiscoveredTool: (gameId: string, toolId: string, result: ISupportedTool) => void;
   onRemoveDiscoveredTool: (gameId: string, toolId: string) => void;
   onChangeToolParams: (toolId: string) => void;
+  onShowError: (message: string, details?: string) => void;
 }
 
 interface IConnectedProps {
@@ -174,7 +177,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
 
   private renderSupportedTool =
     (game: IGame, tool: ISupportedTool): JSX.Element => {
-    let { onAddDiscoveredTool, onRemoveDiscoveredTool } = this.props;
+    let { onAddDiscoveredTool, onRemoveDiscoveredTool, onShowError } = this.props;
 
     return (
       <ToolButton
@@ -186,6 +189,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
         onRemoveTool={onRemoveDiscoveredTool}
         onAddNewTool={this.addNewTool}
         onChangeToolParams={this.editTool}
+        onShowError={onShowError}
       />
     );
   }
@@ -225,6 +229,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onChangeToolParams: (toolId: string) => {
       dispatch(changeToolParams(toolId));
     },
+    onShowError: (message: string, details?: string) => showError(dispatch, message, details),
   };
 }
 
