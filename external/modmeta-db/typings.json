@@ -1,0 +1,12 @@
+{
+  "globalDependencies": {
+    "bluebird": "registry:dt/bluebird#3.0.0+20160928162057",
+    "body-parser": "registry:dt/body-parser#0.0.0+20160619023215",
+    "express": "registry:dt/express#4.0.0+20160708185218",
+    "fs-extra-promise": "registry:dt/fs-extra-promise#0.0.0+20160919071823",
+    "levelup": "registry:dt/levelup#0.0.0+20160316155526"
+  },
+  "globalDevDependencies": {
+    "fs-extra-promise": "registry:dt/fs-extra-promise#0.0.0+20160919071823"
+  }
+}

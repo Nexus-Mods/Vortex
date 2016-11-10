@@ -12,4 +12,5 @@ export interface IIconDefinition {
   action?: () => void;
   component?: React.ComponentClass<any>;
   props?: () => Object;
+  condition?: (instanceId: string) => boolean;
 }

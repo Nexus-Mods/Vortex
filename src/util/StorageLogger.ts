@@ -1,6 +1,6 @@
 import { LogLevel, log } from './log';
 
-interface IStorage {
+export interface IStorage {
   getItem: (key: string, cb: (error: Error, result?: string) => void) => any;
   setItem: (key: string, value: string | number, cb: (error: Error) => void) => void;
   removeItem: (key: string, cb: (error: Error) => void) => void;

@@ -6,17 +6,27 @@ import ToolbarIcon from './ToolbarIcon';
 import * as React from 'react';
 import { ButtonGroup } from 'react-bootstrap';
 
-interface IBaseProps {
+export interface IBaseProps {
   className?: string;
   group: string;
+  instanceId?: string;
 }
 
-interface IExtensionProps {
+export interface IExtensionProps {
   objects: IIconDefinition[];
 }
 
 type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes;
 
+/**
+ * represents an extensible row of icons/buttons
+ * In the simplest form this is simply a bunch of buttons that will run
+ * an action if clicked, but an icon can also be more dynamic (i.e. rendering
+ * dynamic content or having multiple states)
+ * 
+ * @class IconBar
+ * @extends {ComponentEx<IProps, {}>}
+ */
 class IconBar extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
@@ -33,17 +43,40 @@ class IconBar extends ComponentEx<IProps, {}> {
   private renderIcon = (icon: IIconDefinition) => this.renderIconImpl(icon);
 
   private renderIconImpl(icon: IIconDefinition) {
-    const { t } = this.props;
+    const { t, instanceId } = this.props;
+    // don't render anything if the condition doesn't match
+    if ((icon.condition !== undefined) && !icon.condition(instanceId)) {
+      return null;
+    }
+
     if (icon.icon !== undefined) {
+      let id = `${instanceId || '1'}_${icon.title}`;
+
+      // simple case
       return <ToolbarIcon
-        key={icon.title}
-        id={icon.title}
+        key={id}
+        id={id}
         icon={icon.icon}
         tooltip={t(icon.title)}
         onClick={icon.action}
       />;
     } else {
-      const props = icon.props();
+      // custom case. the caller can pass properties via the props() function and by
+      // passing the prop to the iconbar. the props on the iconbar that we don't handle are
+      // passed on
+      const knownProps = [ 'condition', 'className', 'group', 't', 'i18nLoadedAt',
+                           'instanceId', 'objects', 'children' ];
+      const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
+        if (knownProps.indexOf(current) === -1) {
+          return Object.assign({}, prev, { [current]: this.props[current] });
+        } else {
+          return prev;
+        }
+      }, {});
+      const props = Object.assign({},
+        unknownProps,
+        icon.props !== undefined ? icon.props() : {}
+      );
       return <icon.component {...props} />;
     }
   }
@@ -67,12 +100,15 @@ function registerIcon(instance: IconBar,
                       group: string,
                       iconOrComponent: string | React.ComponentClass<any>,
                       titleOrProps: string | Function,
-                      action: () => void): Object {
+                      actionOrCondition?: () => void | boolean,
+                      condition?: () => boolean): Object {
   if (instance.props.group === group) {
     if (typeof(iconOrComponent) === 'string') {
-      return { type: 'simple', icon: iconOrComponent, title: titleOrProps, action };
+      return { type: 'simple', icon: iconOrComponent, title: titleOrProps,
+               action: actionOrCondition, condition };
     } else {
-      return { type: 'ext', component: iconOrComponent, props: titleOrProps };
+      return { type: 'ext', component: iconOrComponent, props: titleOrProps,
+               condition: actionOrCondition };
     }
   } else {
     return undefined;

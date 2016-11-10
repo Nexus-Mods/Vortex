@@ -13,8 +13,8 @@ import initSymlinkActivatorElevate from '../extensions/symlink_activator_elevate
 import initSettingsUpdate from '../extensions/updater/index';
 import initWelcomeScreen from '../extensions/welcome_screen/index';
 import { IExtensionInit } from '../types/Extension';
-import { IExtensionApi, IExtensionContext, IOpenOptions,
-         IStateChangeCallback } from '../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext, ILookupDetails,
+         IOpenOptions, IStateChangeCallback } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
 import { log } from '../util/log';
 import { showError } from '../util/message';
@@ -22,8 +22,13 @@ import { showError } from '../util/message';
 import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs';
+import { ILookupResult, IModInfo, ModDB } from 'modmeta-db';
 import * as path from 'path';
 import ReduxWatcher = require('redux-watcher');
+
+import Module = require('module');
+
+import * as util from 'util';
 
 let app = appIn;
 let dialog = dialogIn;
@@ -32,6 +37,14 @@ if (remote !== undefined) {
   app = remote.app;
   dialog = remote.dialog;
 }
+
+// TODO: this inserts the nmm module-path globally so that dynamically loaded
+//   extensions can access them. It would be nicer if we could limit this to
+//   only the extensions and without using the internal function _initPaths
+//   but I didn't find out how (at least not without accessing even more
+//   internals)
+process.env.NODE_PATH = path.resolve(__dirname, '..', '..', 'node_modules');
+Module._initPaths();
 
 interface IRegisteredExtension {
   name: string;
@@ -50,8 +63,12 @@ class ExtensionManager {
   private mEventEmitter: NodeJS.EventEmitter;
   private mReduxWatcher: any;
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
+  private mModDB: ModDB;
+
+  private mPid: number;
 
   constructor(eventEmitter?: NodeJS.EventEmitter) {
+    this.mPid = process.pid;
     this.mEventEmitter = eventEmitter;
     this.mExtensions = this.loadExtensions();
     this.mApi = {
@@ -66,6 +83,8 @@ class ExtensionManager {
       onStateChange: (path: string[], callback: IStateChangeCallback) => undefined,
       registerProtocol: this.registerProtocol,
       deregisterProtocol: this.deregisterProtocol,
+      lookupModMeta: this.lookupModMeta,
+      saveModMeta: this.saveModMeta,
     };
   }
 
@@ -97,6 +116,10 @@ class ExtensionManager {
         callback(prevValue, currentValue);
       });
     };
+
+    // TODO the mod db doesn't depend on the store but it must only be instantiated
+    // in one process and this is a cheap way of achieving that
+    this.mModDB = new ModDB(app.getPath('userData'));
   }
 
   /**
@@ -217,7 +240,7 @@ class ExtensionManager {
           { name: 'Native', extensions: ['exe', 'cmd', 'bat'] },
           { name: 'Java', extensions: ['jar'] },
           { name: 'Python', extensions: ['py'] },
-        ]
+        ],
       });
       dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
@@ -265,6 +288,21 @@ class ExtensionManager {
     } else {
       app.removeAsDefaultProtocolClient(protocol);
     }
+  }
+
+  private lookupModMeta = (filePath: string, detail: ILookupDetails): Promise<ILookupResult[]> => {
+    if (this.mModDB !== undefined) {
+      return this.mModDB.lookup(filePath, detail.gameId, detail.modId);
+    } else {
+      return Promise.reject({ message: 'wrong process' });
+    }
+  }
+
+  private saveModMeta = (modInfo: IModInfo): Promise<void> => {
+    return new Promise<void>((resolve, reject) => {
+      this.mModDB.insert(modInfo);
+      resolve();
+    });
   }
 
   private emptyExtensionContext(): IExtensionContext {

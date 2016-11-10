@@ -7,7 +7,7 @@ import { IModAttribute } from '../types/IModAttribute';
 
 import * as React from 'react';
 
-interface IHeaderProps {
+export interface IHeaderProps {
   attribute: IModAttribute;
   state: IAttributeState;
   onSetSortDirection: (id: string, dir: SortDirection) => void;

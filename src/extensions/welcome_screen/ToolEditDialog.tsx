@@ -20,7 +20,7 @@ import update = require('react-addons-update');
 import { ControlLabel, FormControl, Image, InputGroup, Modal } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
-interface IBaseProps {
+export interface IBaseProps {
   game: IGame;
   tool: ISupportedTool;
   onClose: () => void;

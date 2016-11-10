@@ -1,8 +1,8 @@
 import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
+import { IIconDefinition } from '../../../types/IIconDefinition';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import Icon from '../../../views/Icon';
-import { Button } from '../../../views/TooltipControls';
+import IconBar from '../../../views/IconBar';
 
 import { DownloadState, IDownload } from '../types/IDownload';
 
@@ -11,7 +11,9 @@ import * as path from 'path';
 import * as React from 'react';
 import { ProgressBar } from 'react-bootstrap';
 
-interface IBaseProps {
+import { log } from '../../../util/log';
+
+export interface IBaseProps {
   downloadId: string;
   download: IDownload;
 }
@@ -36,6 +38,51 @@ class DownloadItem extends ComponentEx<IProps, {}> {
 
   public context: IComponentContext;
 
+  private downloadActions: IIconDefinition[];
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.downloadActions = [
+      {
+        icon: 'eye',
+        title: 'Inspect',
+        action: this.inspect,
+        condition: this.inspectable,
+      },
+      {
+        icon: 'archive',
+        title: 'Install',
+        action: this.install,
+        condition: this.installable,
+      },
+      {
+        icon: 'pause',
+        title: 'Pause',
+        action: this.pause,
+        condition: this.pausable,
+      },
+      {
+        icon: 'play',
+        title: 'Resume',
+        action: this.resume,
+        condition: this.resumable,
+      },
+      {
+        icon: 'remove',
+        title: 'Remove',
+        action: this.remove,
+        condition: this.removable,
+      },
+      {
+        icon: 'stop',
+        title: 'Cancel',
+        action: this.remove,
+        condition: this.cancelable,
+      },
+    ];
+  }
+
   public render(): JSX.Element {
     const { downloadId, download } = this.props;
     return (
@@ -45,7 +92,14 @@ class DownloadItem extends ComponentEx<IProps, {}> {
           { this.renderProgress(download.state, download.received, download.size) }
         </td>
         <td style={{ textAlign: 'center' }}>
-          { this.renderActions(downloadId, download) }
+          <IconBar
+            group='downloaditem-icons'
+            instanceId={ downloadId }
+            className='download-actions'
+            staticElements={ this.downloadActions }
+            downloadId={ downloadId }
+          />
+          { /* this.renderActions(downloadId, download) */ }
         </td>
       </tr>
     );
@@ -85,40 +139,19 @@ class DownloadItem extends ComponentEx<IProps, {}> {
     this.context.api.events.emit('pause-download', downloadId);
   }
 
+  private pausable = (instanceId: string) => {
+    const { download } = this.props;
+    return download.state === 'started';
+  }
+
   private resume = () => {
     const { downloadId } = this.props;
     this.context.api.events.emit('resume-download', downloadId);
   }
 
-  private renderPauseAction(key: string, download: IDownload) {
-    const { t } = this.props;
-
-    if (['init', 'started'].indexOf(download.state) >= 0) {
-      return (
-        <Button
-          id={'pause-btn-' + key}
-          className='btn-embed'
-          tooltip={t('Pause')}
-          onClick={this.pause}
-        >
-          <Icon name='pause' />
-        </Button>
-      );
-    } else if (download.state === 'paused') {
-      // offer resume instead. resume and pause are mutually exclusive
-      return (
-        <Button
-          id={'resume-btn-' + key}
-          className='btn-embed'
-          tooltip={t('Resume')}
-          onClick={this.resume}
-        >
-          <Icon name='play' />
-        </Button>
-      );
-    } else {
-      return null;
-    }
+  private resumable = () => {
+    const { download } = this.props;
+    return download.state === 'paused';
   }
 
   private remove = () => {
@@ -126,33 +159,14 @@ class DownloadItem extends ComponentEx<IProps, {}> {
     this.context.api.events.emit('remove-download', downloadId);
   }
 
-  private renderRemoveAction(key: string, download: IDownload) {
-    const { t } = this.props;
+  private removable = () => {
+    const { download } = this.props;
+    return ['finished', 'failed'].indexOf(download.state) >= 0;
+  }
 
-    if (['finished', 'failed'].indexOf(download.state) >= 0) {
-      // offer removal only for finished downloads. Offer cancel otherwise
-      return (
-        <Button
-          id={'remove-btn-' + key}
-          className='btn-embed'
-          tooltip={t('Remove')}
-          onClick={this.remove}
-        >
-          <Icon name='remove' />
-        </Button>
-      );
-    } else {
-      return (
-        <Button
-          id={'cancel-btn-' + key}
-          className='btn-embed'
-          tooltip={t('Cancel')}
-          onClick={this.remove}
-        >
-          <Icon name='stop' />
-        </Button>
-      );
-    }
+  private cancelable = () => {
+    const { download } = this.props;
+    return ['init', 'started', 'paused'].indexOf(download.state) >= 0;
   }
 
   private install = () => {
@@ -160,65 +174,33 @@ class DownloadItem extends ComponentEx<IProps, {}> {
     this.context.api.events.emit('start-install', download.localPath);
   }
 
-  private renderInstallAction(key: string, download: IDownload) {
-    const { t } = this.props;
-
-    if (download.state === 'finished') {
-      return (
-        <Button
-          id={'install-btn-' + key}
-          className='btn-embed'
-          tooltip={t('Install')}
-          onClick={this.install}
-        >
-          <Icon name='archive' />
-        </Button>
-      );
-    } else {
-      return null;
-    }
+  private installable = () => {
+    const { download } = this.props;
+    return download.state === 'finished';
   }
 
   private inspect = () => {
     const { download, downloadId, onShowDialog } = this.props;
-    if (download.failCause.htmlFile !== undefined) {
-      onShowDialog('error', 'Download failed', {
-        htmlFile: download.failCause.htmlFile,
-      }, {
-        Delete: () => this.context.api.events.emit('remove-download', downloadId),
-        Close: null,
-      });
-    }
-  }
-
-  private renderInspectAction(key: string, download: IDownload) {
-    const { t } = this.props;
-
     if (download.state === 'failed') {
-      return (
-        <Button
-          id={'inspect-btn-' + key}
-          className='btn-embed'
-          tooltip={t('Inspect')}
-          onClick={this.inspect}
-        >
-          <Icon name='eye' />
-        </Button>
-      );
+      if (download.failCause.htmlFile !== undefined) {
+        onShowDialog('error', 'Download failed', {
+          htmlFile: download.failCause.htmlFile,
+        }, {
+            Delete: () => this.context.api.events.emit('remove-download', downloadId),
+            Close: null,
+          });
+      }
     } else {
-      return null;
+      this.context.api.lookupModMeta(download.localPath, {})
+        .then((info) => {
+          log('info', 'meta', { info });
+        });
     }
   }
 
-  private renderActions(key: string, download: IDownload) {
-    return (
-        <div>
-        { this.renderInspectAction(key, download) }
-        { this.renderInstallAction(key, download) }
-        { this.renderPauseAction(key, download) }
-        { this.renderRemoveAction(key, download) }
-        </div>
-      );
+  private inspectable = () => {
+    const { download } = this.props;
+    return [ 'failed', 'finished' ].indexOf(download.state) >= 0;
   }
 }
 

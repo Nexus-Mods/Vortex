@@ -8,7 +8,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { Panel } from 'react-bootstrap';
 
-interface IProps {
+export interface IProps {
   game: IGameStored;
   hidden: boolean;
   onManage?: (id: string) => void;

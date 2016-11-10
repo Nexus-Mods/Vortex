@@ -4,7 +4,7 @@ import { ComponentEx, extend, translate } from '../util/ComponentEx';
 import * as React from 'react';
 import { Well } from 'react-bootstrap';
 
-interface IBaseProps {
+export interface IBaseProps {
 }
 
 interface IFooter {

@@ -1,0 +1,13 @@
+POST http://localhost:51666/api/describe HTTP/1.1
+Content-Type: application/json
+
+{
+  "modId": "1235",
+  "modName": "Silly Mod",
+  "gameId": "sse",
+  "fileName": "Silly Mod Some File",
+  "fileMD5": "2465",
+  "fileVersion": "1.0",
+  "fileSizeBytes": "1024",
+  "sourceURI": "nxm://skyrim/mods/1235/files/4567"
+}

@@ -10,10 +10,7 @@ import * as React from 'react';
 import update = require('react-addons-update');
 import { FormControl } from 'react-bootstrap';
 
-import { log } from '../util/log';
-import * as util from 'util';
-
-interface IBaseProps {
+export interface IBaseProps {
   id: string;
   iconGroup?: string;
   icon: string;

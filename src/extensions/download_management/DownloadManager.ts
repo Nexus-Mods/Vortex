@@ -1,5 +1,9 @@
 import { countIf } from '../../util/util';
 
+import { IDownloadJob } from './types/IDownloadJob';
+import { IDownloadResult } from './types/IDownloadResult';
+import { IProgressCallback } from './types/IProgressCallback';
+
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
@@ -11,27 +15,6 @@ import * as url from 'url';
 import contentType = require('content-type');
 
 import { log } from '../../util/log';
-
-interface IProgressCallback {
-  (received: number, total: number, filePath?: string): void;
-}
-
-interface IDownloadJob {
-  url: string;
-  offset: number;
-  state: 'init' | 'running' | 'finished';
-  workerId?: number;
-  size?: number;
-  dataCB?: (offset: number, data) => void;
-  completionCB?: () => void;
-  errorCB?: (err) => void;
-  responseCB?: (size: number, fileName: string) => void;
-}
-
-interface IDownloadResult {
-  filePath: string;
-  headers: any;
-}
 
 interface IDownload {
   id: string;
@@ -121,7 +104,8 @@ class DownloadWorker {
   }
 
   private handleResponse(response: http.IncomingMessage) {
-    if (response.statusCode !== 200) {
+    // TODO: should we handle redirections?
+    if (response.statusCode >= 300) {
       this.handleError({ message: response.statusMessage, http_headers: response.headers });
       return;
     }

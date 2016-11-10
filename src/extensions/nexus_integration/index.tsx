@@ -38,6 +38,7 @@ function startDownload(api: IExtensionApi, nxmurl: string) {
       throw { message: 'No download locations (yet)' };
     }
     let uris: string[] = urls.map((item: IDownloadURL) => item.URI);
+    log('debug', 'got download urls', { uris });
     api.events.emit('start-download', uris, { nexus: {
       ids: { gameId: url.gameId, modId: url.modId, fileId: url.fileId },
       fileInfo: nexusFileInfo,

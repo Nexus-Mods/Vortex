@@ -14,7 +14,7 @@ function getAttr<T>(state: IAttributeState, key: string, def: T): T {
   return state[key] !== undefined ? state[key] : def;
 }
 
-interface IAttributeProps {
+export interface IAttributeProps {
   attribute: IModAttribute;
   state: IAttributeState;
   onSetAttributeVisible: (id: string, visible: boolean) => void;

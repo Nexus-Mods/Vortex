@@ -2,7 +2,7 @@ import Nexus, { IValidateKeyResponse } from 'nexus-api';
 
 import { showDialog } from '../../../actions/notifications';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import Icon from '../../../views/Icon';
+import FormFeedbackAwesome from '../../../views/FormFeedbackAwesome';
 import { Button } from '../../../views/TooltipControls';
 
 import { setUserAPIKey } from '../actions/account';
@@ -10,10 +10,9 @@ import { IAccount } from '../types/IAccount';
 
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, Image } from 'react-bootstrap';
-import classNames = require('classnames');
 import update = require('react-addons-update');
 
-interface IProps {
+export interface IProps {
   onClose: () => void;
   nexus: Nexus;
 }
@@ -42,32 +41,6 @@ interface IActionProps {
 interface IValidationState {
   state?: 'success' | 'warning' | 'pending';
   reason?: string;
-}
-
-class FormFeedbackAwesome extends FormControl.Feedback {
-  protected renderDefaultFeedback(formGroup, className, classes, elementProps) {
-    let icon: JSX.Element = this.icon(formGroup && formGroup.validationState);
-    if (icon === undefined) {
-      return null;
-    } else {
-      return (
-        <div {...elementProps} className={classNames(className, classes) }>
-          { icon }
-        </div>
-      );
-    }
-  }
-
-  private icon(state: string): JSX.Element {
-    const style = { width: 'initial', height: 'initial', margin: '5px' };
-    switch (state) {
-      case 'success': return <Icon name='check' style={ style } />;
-      case 'warning': return <Icon name='warning' style={ style } />;
-      case 'error': return <Icon name='remove' style={ style } />;
-      case 'pending': return <Icon name='spinner' pulse style={ style } />;
-      default: return undefined;
-    }
-  }
 }
 
 type ILoginFormProps = IProps & IConnectedProps & IActionProps;

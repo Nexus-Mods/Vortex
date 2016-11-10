@@ -1,6 +1,8 @@
 import * as path from 'path';
 import * as React from 'react';
 
+import { remote } from 'electron';
+
 interface IIconDescription {
   icon: {
     paths: string[];
@@ -53,7 +55,7 @@ const fallback = {
 
 function getIcon(set: string, name: string): IRenderDescription {
   if (!(set in sets)) {
-    sets[set] = require(path.resolve(__dirname, '..', 'assets', 'fonts', set + '.json'));
+    sets[set] = require(path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.json'));
   }
 
   const icon = sets[set].icons.find((ele: IIconDescription) => ele.icon.tags.indexOf(name) !== -1);
@@ -73,7 +75,7 @@ function getIcon(set: string, name: string): IRenderDescription {
   }
 }
 
-interface IIconProps {
+export interface IIconProps {
   className?: string;
   style?: { [key: string]: string };
   size?: number;

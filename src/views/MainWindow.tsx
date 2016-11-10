@@ -18,29 +18,29 @@ import { Fixed, Flex, Layout } from 'react-layout-pane';
 import update = require('react-addons-update');
 import Icon from './Icon';
 
-interface IBaseProps {
+export interface IBaseProps {
   className: string;
   api: IExtensionApi;
 }
 
-interface IExtendedProps {
+export interface IExtendedProps {
   objects: IMainPage[];
 }
 
-interface IMainWindowState {
+export interface IMainWindowState {
   showLayer: string;
   showPage: string;
 }
 
-interface IConnectedProps {
+export interface IConnectedProps {
     APIKey: string;
 }
 
-interface IActionProps {
+export interface IActionProps {
     onSetAPIKey: (APIKey: string) => void;
 }
 
-type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps;
+export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps;
 
 export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   // tslint:disable-next-line:no-unused-variable

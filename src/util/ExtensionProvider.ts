@@ -2,7 +2,7 @@ import ExtensionManager from './ExtensionManager';
 
 import * as React from 'react';
 
-interface IExtensionProps {
+export interface IExtensionProps {
   extensions: ExtensionManager;
 }
 
@@ -55,7 +55,7 @@ export function extend(registerFunc: Function) {
 
       public componentWillMount(): void {
         this.mExtensions = this.props.staticElements || [];
-
+        // TODO: cache these results!
         this.context.extensions.apply(registerFunc.name, (...args) => {
           const res = registerFunc(this, ...args);
           if (res !== undefined) {

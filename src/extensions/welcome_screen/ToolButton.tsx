@@ -20,7 +20,7 @@ import update = require('react-addons-update');
 import { Image } from 'react-bootstrap';
 import { ContextMenu, ContextMenuLayer, MenuItem } from 'react-contextmenu';
 
-interface IRemoveTool {
+export interface IRemoveTool {
   (gameId: string, toolId: string): void;
 }
 
@@ -148,7 +148,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   }
 }
 
-interface IProps {
+export interface IProps {
   game: IGame;
   toolId: string;
   tool: ISupportedTool;

@@ -6,7 +6,7 @@ import { IProfile } from '../types/IProfile';
 
 import * as React from 'react';
 
-interface IProps {
+export interface IProps {
   active: boolean;
   profile: IProfile;
 

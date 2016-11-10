@@ -14,4 +14,4 @@ const DevTools = createDevTools(
   <LogMonitor />
 );
 
-export default DevTools;
+export default DevTools as any;

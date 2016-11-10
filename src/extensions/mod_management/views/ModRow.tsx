@@ -8,7 +8,7 @@ import { IModAttribute } from '../types/IModAttribute';
 import * as React from 'react';
 import { Checkbox } from 'react-bootstrap';
 
-interface IProps {
+export interface IProps {
   mod: IMod;
   modState: IProfileMod;
   attributes: IModAttribute[];

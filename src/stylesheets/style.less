@@ -20,8 +20,16 @@
 .btn-embed {
   padding: 1px 5px;
   border: 0px;
-  color: dimgray;
+  color: @gray-darker;
   background-color: transparent;
+}
+
+.download-actions>.btn {
+  .btn-embed;
+}
+
+.download-actions>.btn:hover {
+  background-color: @gray;
 }
 
 .inline-form {

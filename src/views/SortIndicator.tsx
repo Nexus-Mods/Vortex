@@ -3,7 +3,7 @@ import Icon from '../views/Icon';
 
 import * as React from 'react';
 
-interface IProps {
+export interface IProps {
   direction: SortDirection;
   onSetDirection: (direction: SortDirection) => void;
 }

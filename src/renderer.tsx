@@ -29,6 +29,7 @@ import thunkMiddleware from 'redux-thunk';
 
 log('debug', 'renderer process started');
 
+// allow promises to be cancelled.
 Promise.config({ cancellation: true });
 
 // set up store. Through the electronEnhancer this is automatically
@@ -65,6 +66,7 @@ let extReducers = extensions.getReducers();
 const store: Store<any> = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
+log('debug', 'renderer connected to store');
 
 // tslint:disable-next-line:no-unused-variable
 const globalNotifications = new GlobalNotifications(extensions.getApi());
@@ -93,8 +95,6 @@ store.subscribe(() => {
     });
   }
 });
-
-log('debug', 'renderer connected to store');
 
 const i18n = getI18n(store.getState().settings.interface.language);
 
@@ -132,4 +132,4 @@ ReactDOM.render(
 // prevent the page from being changed through drag&drop
 document.ondragover = document.ondrop = (ev) => {
   ev.preventDefault();
-}
+};

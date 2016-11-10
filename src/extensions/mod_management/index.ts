@@ -23,7 +23,7 @@ import * as path from 'path';
 
 let activators: IModActivator[] = [];
 
-interface IExtensionContextExt extends IExtensionContext {
+export interface IExtensionContextExt extends IExtensionContext {
   registerModAttribute: (attribute: IModAttribute) => void;
 }
 

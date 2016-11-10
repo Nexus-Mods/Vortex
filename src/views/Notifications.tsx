@@ -9,7 +9,7 @@ import * as React from 'react';
 
 import CSSTransitionGroup = require('react-addons-css-transition-group');
 
-interface IProps {
+export interface IProps {
   id: string;
 }
 

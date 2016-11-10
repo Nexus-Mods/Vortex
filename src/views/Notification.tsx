@@ -19,7 +19,7 @@ class Action extends React.Component<IActionProps & INotificationAction, {}> {
   private action = () => this.props.action(this.props.onDismiss);
 }
 
-interface IProps {
+export interface IProps {
   params: INotification;
   onDismiss: (id: string) => void;
 }

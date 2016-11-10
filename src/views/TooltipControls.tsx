@@ -4,13 +4,13 @@ import * as React from 'react';
 import { Button as BootstrapButton, NavItem as BootstrapNavItem,
          OverlayTrigger, Popover } from 'react-bootstrap';
 
-interface ITooltipProps {
+export interface ITooltipProps {
   tooltip: string | React.Component<any, any>;
   id: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
 }
 
-type IButtonProps = ITooltipProps & ReactBootstrap.ButtonProps;
+export type IButtonProps = ITooltipProps & ReactBootstrap.ButtonProps;
 
 /**
  * Button with a tooltip
@@ -39,7 +39,7 @@ export class Button extends React.Component<IButtonProps, {}> {
   }
 }
 
-type INavItemProps = ITooltipProps & ReactBootstrap.NavItemProps;
+export type INavItemProps = ITooltipProps & ReactBootstrap.NavItemProps;
 
 export class NavItem extends React.Component<INavItemProps, {}> {
   public render(): JSX.Element {
@@ -68,7 +68,7 @@ type FontAwesomeSize = 'lg' | '2x' | '3x' | '4x' | '5x';
  * 
  * @interface FontAwesomeProps
  */
-interface IFontAwesomeProps {
+export interface IFontAwesomeProps {
 
   border?: boolean;
   className?: string;
@@ -83,7 +83,7 @@ interface IFontAwesomeProps {
   style?: React.CSSProperties;
 }
 
-type IIconProps = ITooltipProps & IFontAwesomeProps;
+export type IIconProps = ITooltipProps & IFontAwesomeProps;
 /**
  * Icon with a tooltip
  * 

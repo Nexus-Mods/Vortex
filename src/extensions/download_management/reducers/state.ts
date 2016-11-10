@@ -8,7 +8,7 @@ import * as action from '../actions/state';
 export const stateReducer: IReducerSpec = {
   reducers: {
     [action.initDownload]: (state, payload) => {
-      return setSafe(state, [ 'running', payload.id ], {
+      return setSafe(state, [ 'files', payload.id ], {
         state: 'init',
         urls: payload.urls,
         modInfo: payload.modInfo,
@@ -16,26 +16,26 @@ export const stateReducer: IReducerSpec = {
       });
     },
     [action.downloadProgress]: (state, payload) => {
-      return merge(state, [ 'running', payload.id ], {
+      return merge(state, [ 'files', payload.id ], {
         state: 'started',
         received: payload.received,
         size: payload.total,
       });
     },
     [action.setDownloadFilePath]: (state, payload) => {
-      return setOrNop(state, [ 'running', payload.id, 'localPath' ], payload.filePath);
+      return setOrNop(state, [ 'files', payload.id, 'localPath' ], payload.filePath);
     },
     [action.startDownload]: (state, payload) => {
-      return setOrNop(state, [ 'running', payload.id, 'state' ], 'started');
+      return setOrNop(state, [ 'files', payload.id, 'state' ], 'started');
     },
     [action.finishDownload]: (state, payload) => {
-      return merge(state, [ 'running', payload.id ], {
+      return merge(state, [ 'files', payload.id ], {
         state: payload.state,
         failCause: payload.failCause,
       });
     },
     [action.pauseDownload]: (state, payload) => {
-      return setOrNop(state, [ 'running', payload.id, 'state' ],
+      return setOrNop(state, [ 'files', payload.id, 'state' ],
                       payload.paused ? 'paused' : 'started');
     },
     [action.setDownloadSpeed]: (state, payload) => {
@@ -46,11 +46,11 @@ export const stateReducer: IReducerSpec = {
       }
     },
     [action.removeDownload]: (state, payload) => {
-      return deleteOrNop(state, [ 'running', payload.id ]);
+      return deleteOrNop(state, [ 'files', payload.id ]);
     },
   },
   defaults: {
     speed: 0,
-    running: {},
+    files: {},
   },
 };

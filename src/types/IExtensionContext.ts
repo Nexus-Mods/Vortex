@@ -1,21 +1,22 @@
 import { INotification } from './INotification';
 import * as Promise from 'bluebird';
+import { IModInfo } from 'modmeta-db';
 import * as React from 'react';
 
 export type PropsCallback = () => Object;
 
-interface IRegisterSettings {
+export interface IRegisterSettings {
   (title: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
 }
 
-interface IRegisterIcon {
+export interface IRegisterIcon {
   (group: string,
    icon: string | React.ComponentClass<any>,
    title?: string | PropsCallback,
    action?: () => void): void;
 }
 
-interface IRegisterFooter {
+export interface IRegisterFooter {
   (id: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
 }
 
@@ -23,12 +24,12 @@ export interface IMainPageOptions {
   hotkey?: string;
 }
 
-interface IRegisterMainPage {
+export interface IRegisterMainPage {
   (icon: string, title: string, element: React.ComponentClass<any>,
    options: IMainPageOptions): void;
 }
 
-interface IRegisterProtocol {
+export interface IRegisterProtocol {
   (protocol: string, callback: (url: string) => void);
 }
 
@@ -45,6 +46,18 @@ export interface IOpenOptions {
 
 export interface IStateChangeCallback {
   (previous: any, current: any): void;
+}
+
+/**
+ * additional detail to further narrow down which file is meant
+ * in a lookup
+ * 
+ * @export
+ * @interface ILookupDetails
+  */
+export interface ILookupDetails {
+  gameId?: string;
+  modId?: string;
 }
 
 /**
@@ -158,6 +171,25 @@ export interface IExtensionApi {
    * @memberOf IExtensionApi
    */
   deregisterProtocol: (protocol: string) => void;
+
+  /**
+   * find meta information about a mod
+   * this will calculate a hash and the file size of the specified file
+   * for the lookup.
+   * Please note that it's still possible for the file to get multiple
+   * matches, i.e. if it has been re-uploaded, potentially for a different
+   * game.
+   * 
+   * @memberOf IExtensionApi
+   */
+  lookupModMeta: (filePath: string, details: ILookupDetails) => Promise<ILookupDetails[]>;
+
+  /**
+   * save meta information about a mod
+   * 
+   * @memberOf IExtensionApi
+   */
+  saveModMeta: (modInfo: IModInfo) => Promise<void>;
 }
 
 /**

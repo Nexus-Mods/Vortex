@@ -1,0 +1,20 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "noImplicitAny": false,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "rootDir": "./src",
+        "outDir": "./lib",
+        "sourceMap": false,
+        "declaration": true
+    },
+    "files": [
+        "src/index.ts",
+        "src/moddb.ts",
+        "typings/index.d.ts"
+    ]
+}

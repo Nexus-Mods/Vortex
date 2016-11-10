@@ -12,8 +12,8 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
-type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
-type DiscoveredToolCB = (gameId: string, result: ISupportedTool) => void;
+export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
+export type DiscoveredToolCB = (gameId: string, result: ISupportedTool) => void;
 
 /**
  * run discovery for the specified game

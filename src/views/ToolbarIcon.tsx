@@ -3,7 +3,7 @@ import { Button } from './TooltipControls';
 
 import * as React from 'react';
 
-interface IToolbarIconProps {
+export interface IToolbarIconProps {
   id: string;
   tooltip: string;
   icon: string;

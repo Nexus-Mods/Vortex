@@ -5,7 +5,7 @@ import LoginForm from './LoginForm';
 import * as React from 'react';
 import { Modal } from 'react-bootstrap';
 
-interface IBaseProps {
+export interface IBaseProps {
   shown: boolean;
   APIKey: string;
   nexus: any;
@@ -33,4 +33,4 @@ class LoginDialog extends ComponentEx<IProps, {}> {
 }
 
 export default
-  translate([ 'common' ], { wait: true })(LoginDialog);
+  translate([ 'common' ], { wait: true })(LoginDialog) as React.ComponentClass<IBaseProps>;

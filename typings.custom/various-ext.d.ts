@@ -45,3 +45,6 @@ declare module JSX {
   }
 }
 
+declare module 'module' {
+  export var _initPaths: () => void;
+}

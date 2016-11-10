@@ -94,7 +94,7 @@ class DownloadView extends ComponentEx<IProps, {}> {
 
 function mapStateToProps(state: any) {
   return {
-    downloads: state.persistent.downloads.running,
+    downloads: state.persistent.downloads.files,
   };
 }
 
