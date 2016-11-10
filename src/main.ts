@@ -35,15 +35,6 @@ function createTrayIcon() {
 }
 
 const shouldQuit: boolean = app.makeSingleInstance((commandLine, workingDirectory): boolean => {
-  /*
-  // second instance created, instead of starting a new one, bring the existing one to front
-  if (mainWindow !== null) {
-    if (mainWindow.isMinimized()) {
-      mainWindow.restore();
-    }
-    mainWindow.focus();
-  }
-  */
   // send everything that looks like an url we handle to be opened
   for (let arg of commandLine) {
     let match = arg.match(urlExp);
@@ -72,6 +63,10 @@ log('info', `using ${basePath} as the storage directory`);
 // set up some "global" components
 setupLogging(basePath, process.env.NODE_ENV === 'development');
 
+// TODO: we load all the extensions here including their dependencies
+//    like ui components despite the fact we only care about the reducers.
+//    If we could fix this that would probably reduce startup time by a
+//    second or more
 const extensions: ExtensionManager = new ExtensionManager();
 const store: Redux.Store<IState> = setupStore(basePath, extensions);
 

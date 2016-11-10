@@ -54,7 +54,7 @@ export interface IStateChangeCallback {
  * 
  * @export
  * @interface ILookupDetails
-  */
+ */
 export interface ILookupDetails {
   gameId?: string;
   modId?: string;

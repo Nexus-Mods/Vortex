@@ -2,7 +2,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { setMaxDownloads } from '../actions/settings';
 
 import * as React from 'react';
-import { Checkbox, ControlLabel, FormGroup } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from 'react-bootstrap';
 import ReactSlider = require('rc-slider');
 
 import { log } from '../../../util/log';
@@ -59,6 +59,6 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(Settings)
   ) as React.ComponentClass<{}>;

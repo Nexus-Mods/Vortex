@@ -34,7 +34,7 @@ class Settings extends ComponentEx<ISettingsProps, {}> {
     const { objects } = this.props;
     let combined = objects.reduce((prev, current: ISettingsPage) => {
       let result = prev.slice();
-      const page = prev.find((page: ISettingsPage) => page.title === current.title);
+      const page = prev.find((ele: ISettingsPage) => ele.title === current.title);
       if (page === undefined) {
         result.push({ title: current.title, elements: [ current ] });
       } else {
@@ -75,6 +75,6 @@ function registerSettings(instance: Settings,
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     extend(registerSettings)(Settings)
   ) as React.ComponentClass<{}>;

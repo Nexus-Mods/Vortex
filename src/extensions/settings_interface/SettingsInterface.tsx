@@ -125,7 +125,7 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
       SettingsInterface
     )

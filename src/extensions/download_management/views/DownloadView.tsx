@@ -100,5 +100,5 @@ function mapStateToProps(state: any) {
 
 export default
   connect(mapStateToProps)(
-    translate(['common'], { wait: true })(DownloadView)
+    translate(['common'], { wait: false })(DownloadView)
   );

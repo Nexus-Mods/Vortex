@@ -1,4 +1,4 @@
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { ComponentEx, connect } from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';
 
 import * as React from 'react';
@@ -31,6 +31,4 @@ function mapStateToProps(state: any): IConnectedProps {
 }
 
 export default
-  connect(mapStateToProps)(
-    translate(['common'], { wait: true })(SpeedOMeter)
-  );
+  connect(mapStateToProps)(SpeedOMeter) as React.ComponentClass<{}>;

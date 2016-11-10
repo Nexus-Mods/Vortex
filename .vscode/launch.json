@@ -9,7 +9,6 @@
       "stopOnEntry": false,
       "args": [],
       "cwd": "${workspaceRoot}",
-      "preLaunchTask": "prestart",
       "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
       "runtimeArgs": [
         "."

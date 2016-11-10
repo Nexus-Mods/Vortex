@@ -201,6 +201,6 @@ function mapStateToProps(state) {
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     connect(mapStateToProps)(MetaEditorIcon)
   );

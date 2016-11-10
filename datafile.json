@@ -6,33 +6,10 @@
         "--clean-css",
         "--include-path=node_modules/bootswatch:node_modules/bootstrap-less",
         "src/stylesheets/index.less",
-        "out/assets/css/theme.css"
-      ],
-      "target": [
-        "out"
-      ]
-    },
-    {
-      "executable": "lessc",
-      "arguments": [
-        "--clean-css",
-        "--include-path=node_modules/bootswatch:node_modules/bootstrap-less",
-        "src/stylesheets/index.less",
         "app/assets/css/theme.css"
       ],
       "target": [
         "app"
-      ]
-    },
-    {
-      "executable": "tsc",
-      "arguments": [
-        "-p",
-        ".",
-        "--outDir", "out"
-      ],
-      "target": [
-        "out"
       ]
     },
     {

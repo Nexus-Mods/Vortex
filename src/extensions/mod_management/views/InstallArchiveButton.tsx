@@ -54,6 +54,6 @@ function mapStateToProps(state: any): IConnectedProps {
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     connect(mapStateToProps)(InstallButton)
   );

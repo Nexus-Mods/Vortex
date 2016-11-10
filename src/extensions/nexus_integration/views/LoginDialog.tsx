@@ -33,4 +33,4 @@ class LoginDialog extends ComponentEx<IProps, {}> {
 }
 
 export default
-  translate([ 'common' ], { wait: true })(LoginDialog) as React.ComponentClass<IBaseProps>;
+  translate([ 'common' ], { wait: false })(LoginDialog) as React.ComponentClass<IBaseProps>;

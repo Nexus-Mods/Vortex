@@ -24,6 +24,11 @@
         {
             "taskName": "test",
             "args": ["run", "test"]
+        },
+        {
+          "taskName": "buildwatch",
+          "args": ["run", "buildwatch"],
+          "problemMatcher": "$tsc"
         }
     ]
 }

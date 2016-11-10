@@ -263,6 +263,6 @@ function registerMainPage(instance: MainWindow,
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     extend(registerMainPage)(MainWindow)
   ) as React.ComponentClass<IBaseProps>;

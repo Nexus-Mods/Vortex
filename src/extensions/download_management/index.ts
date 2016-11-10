@@ -31,8 +31,11 @@ function init(context: IExtensionContext): boolean {
   // ensure the current profile is always set to a valid value on startup and
   // when changing the game mode 
   context.once(() => {
+    const DownloadManagerImpl: typeof DownloadManager = require('./DownloadManager').default;
+    const observeImpl: typeof observe = require('./DownloadObserver').default;
+
     const store = context.api.store;
-    const manager = new DownloadManager(
+    const manager = new DownloadManagerImpl(
       downloadPath(store.getState()),
       store.getState().settings.downloads.maxParallelDownloads,
       store.getState().settings.downloads.maxChunks,
@@ -43,7 +46,7 @@ function init(context: IExtensionContext): boolean {
       },
       `Nexus Client v2.${app.getVersion()}`
     );
-    observe(context.api.events, store, manager);
+    observeImpl(context.api.events, store, manager);
   });
 
   return true;

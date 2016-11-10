@@ -3,8 +3,6 @@ import FSBackend = require('i18next-node-fs-backend');
 
 import * as path from 'path';
 
-import { log } from './log';
-
 let dirName = path.dirname(__dirname);
 if (dirName.endsWith('.asar')) {
   // locales are not packed so users can update/change them

@@ -86,6 +86,6 @@ class ProfileItem extends ComponentEx<IProps, {}> {
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     ProfileItem
   ) as React.ComponentClass<IProps>;

@@ -23,8 +23,19 @@
     "build_leveldown": "cd node_modules/leveldown && node-gyp rebuild --target=1.4.3 --arch=x64 --dist-url=https://atom.io/download/electron",
     "installex": "npm install && npm run build_leveldown && electron-rebuild -w icon-extract,ffi,node-7z,winreg,ref,leveldown && cd node_modules/redux-persist && npm run build:commonjs",
     "build_api": "tsc -p ./api",
+    "build_out": "tsc -p . && npm run lessc",
+    "buildwatch": "concurrently --kill-others \"tsc -p . -w\" npm-watch",
+    "lessc": "lessc --clean-css --include-path=node_modules/bootswatch:node_modules/bootstrap-less src/stylesheets/index.less out/assets/css/theme.css",
     "test": "jest",
     "doc": "typedoc --out doc src"
+  },
+  "watch": {
+    "lessc": {
+      "patterns": [ "src\\stylesheets" ],
+      "extensions": "less",
+      "ignore": "",
+      "quiet": false
+    }
   },
   "engines": {
     "electron": "1.4.3"
@@ -84,6 +95,7 @@
     "bootstrap-less": "^3.3.8",
     "bootswatch": "^3.3.7",
     "classnames": "^2.2.5",
+    "concurrently": "^3.1.0",
     "content-type": "^1.0.2",
     "copyfiles": "^1.0.0",
     "cross-env": "^2.0.0",
@@ -108,6 +120,7 @@
     "modmeta-db": "file:./external/modmeta-db",
     "nexus-api": "file:./lib/js/nexus-api",
     "nmm-api": "file:./api",
+    "npm-watch": "^0.1.6",
     "node-7z": "^0.4.0",
     "node-ipc": "^8.9.2",
     "node-rest-client": "^2.0.1",

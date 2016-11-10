@@ -12,6 +12,7 @@ import initSymlinkActivator from '../extensions/symlink_activator/index';
 import initSymlinkActivatorElevate from '../extensions/symlink_activator_elevate/index';
 import initSettingsUpdate from '../extensions/updater/index';
 import initWelcomeScreen from '../extensions/welcome_screen/index';
+
 import { IExtensionInit } from '../types/Extension';
 import { IExtensionApi, IExtensionContext, ILookupDetails,
          IOpenOptions, IStateChangeCallback } from '../types/IExtensionContext';
@@ -27,8 +28,6 @@ import * as path from 'path';
 import ReduxWatcher = require('redux-watcher');
 
 import Module = require('module');
-
-import * as util from 'util';
 
 let app = appIn;
 let dialog = dialogIn;
@@ -201,7 +200,7 @@ class ExtensionManager {
       try {
         callback();
       } catch (err) {
-        log('warn', 'failed to call once', { err });
+        log('warn', 'failed to call once', { err: err.message });
       }
     };
 

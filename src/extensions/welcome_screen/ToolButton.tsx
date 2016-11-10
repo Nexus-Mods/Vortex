@@ -16,7 +16,6 @@ import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
-import update = require('react-addons-update');
 import { Image } from 'react-bootstrap';
 import { ContextMenu, ContextMenuLayer, MenuItem } from 'react-contextmenu';
 
@@ -192,26 +191,24 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
     this.state = {
       imageUrl: undefined,
     };
+
+    // TODO the following really should be asynchronous but that would require
+    // a setstate and react doesn't seem to like any setState outside event
+    // handlers
+    try {
+      const customIconUrl = this.toolIconPath(this.props.tool.id);
+      fs.statSync(customIconUrl);
+      this.state.imageUrl = customIconUrl;
+    } catch (err) {
+      if ((props.tool !== undefined) && (props.tool.logo !== undefined)) {
+        const defaultPath = path.join(props.game.pluginPath, props.tool.logo);
+        this.state.imageUrl = defaultPath;
+      }
+    }
   }
 
   public componentDidMount() {
     this.mImageId = new Date().getTime();
-    const customIconUrl = this.toolIconPath(this.props.tool.id);
-    fs.statAsync(customIconUrl)
-      .then((stat: fs.Stats) => {
-        this.setState(update(this.state, {
-          imageUrl: { $set: customIconUrl },
-        }));
-      })
-      .catch(() => {
-        const { game, tool } = this.props;
-        if ((tool !== undefined) && (tool.logo !== undefined)) {
-          const defaultPath = path.join(game.pluginPath, tool.logo);
-          this.setState(update(this.state, {
-            imageUrl: { $set: defaultPath },
-          }));
-        }
-      });
   }
 
   public render() {
@@ -311,4 +308,4 @@ class Wrapper extends React.Component<any, any> {
   }
 }
 
-export default translate(['common'], { wait: true })(Wrapper) as React.ComponentClass<IProps>;
+export default translate(['common'], { wait: false })(Wrapper) as React.ComponentClass<IProps>;

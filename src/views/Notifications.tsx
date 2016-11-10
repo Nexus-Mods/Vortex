@@ -70,7 +70,7 @@ function mapDispatchToProps(dispatch): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
       Notifications)
   ) as React.ComponentClass<IProps>;

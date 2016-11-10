@@ -88,4 +88,5 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
   }
 }
 
-export default translate(['common'], { wait: true })(GameThumbnail) as React.ComponentClass<IProps>;
+export default
+  translate(['common'], { wait: false })(GameThumbnail) as React.ComponentClass<IProps>;

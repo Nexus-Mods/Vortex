@@ -78,7 +78,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
             <h5>
               {t('Supported Tools:')}
             </h5>
-            {this.renderSupportedToolsIcons(game)}
+            {game === undefined ? null : this.renderSupportedToolsIcons(game)}
           </Media.Right>
         </Media>
       </Well>
@@ -234,6 +234,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(WelcomeScreen)
   );

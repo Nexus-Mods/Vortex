@@ -1,5 +1,4 @@
 import { IDialog } from './IDialog';
-import { IGame } from './IGame';
 import { INotification } from './INotification';
 
 /**

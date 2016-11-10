@@ -116,6 +116,6 @@ function registerIcon(instance: IconBar,
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     extend(registerIcon)(IconBar)
   ) as React.ComponentClass<IBaseProps & IExtensibleProps & React.HTMLAttributes>;

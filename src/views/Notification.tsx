@@ -78,4 +78,4 @@ class Notification extends ComponentEx<IProps, {}> {
 }
 
 export default
-  translate(['common'], { wait: true })(Notification) as React.ComponentClass<IProps>;
+  translate(['common'], { wait: false })(Notification) as React.ComponentClass<IProps>;

@@ -244,7 +244,7 @@ function registerModAttribute(instance: ModList, attribute: IModAttribute) {
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
       extend(registerModAttribute)(ModList)
     )

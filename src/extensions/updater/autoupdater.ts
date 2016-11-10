@@ -1,6 +1,5 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
-import i18next = require('i18next');
 
 import { remote } from 'electron';
 
@@ -15,7 +14,6 @@ function setChannel(channel: string,
   autoUpdater.setFeedURL(url);
   autoUpdater.on('error', (err) => {
     showErrorNotification('checking for update failed', err.message);
-    // log('error', 'failed to check for updates', { err });
   });
   log('info', 'feed url', url);
   try {

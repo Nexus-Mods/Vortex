@@ -41,7 +41,6 @@ function findInProgramFiles(executable: string) {
         return reject(err.message);
       } else {
         if (results !== null) {
-          console.log('debug', 'found', { results });
           return resolve(results);
         }
       }

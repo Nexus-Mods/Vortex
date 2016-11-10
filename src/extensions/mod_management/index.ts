@@ -1,5 +1,4 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
-import { log } from '../../util/log';
 
 import { addMod, clearMods } from './actions/mods';
 import { modsReducer } from './reducers/mods';
@@ -8,15 +7,12 @@ import { IMod } from './types/IMod';
 import { IModActivator } from './types/IModActivator';
 import { IModAttribute } from './types/IModAttribute';
 import { IStatePaths } from './types/IStateSettings';
-import resolvePath from './util/resolvePath';
 import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
 import ModList from './views/ModList';
 import Settings from './views/Settings';
 
-import InstallContext from './InstallContext';
 import { INSTALL_TIME, MOD_NAME } from './modAttributes';
-import { installArchive } from './modInstall';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -31,9 +27,7 @@ function registerModActivator(activator: IModActivator) {
   activators.push(activator);
 }
 
-function refreshMods(paths: IStatePaths, gameMode: string, onAddMod: (mod: IMod) => void) {
-  const installDir = resolvePath('install', paths, gameMode);
-  log('info', 'reading mods', { paths, gameMode });
+function refreshMods(installDir: string, onAddMod: (mod: IMod) => void) {
   fs.readdir(installDir, (err: NodeJS.ErrnoException, mods: string[]) => {
     if (mods === undefined) {
       return;
@@ -103,10 +97,13 @@ function init(context: IExtensionContextExt): boolean {
   }
 
   context.once(() => {
+    const InstallContext = require('./InstallContext').default;
+    const { installArchive } = require('./modInstall');
+    const { installPath } = require('./selectors');
+
     const state = context.api.store.getState();
 
-    refreshMods(state.gameSettings.mods.paths,
-      state.settings.gameMode.current,
+    refreshMods(installPath(state),
       (mod: IMod): void => {
         context.api.store.dispatch(addMod(mod));
       });
@@ -117,7 +114,7 @@ function init(context: IExtensionContextExt): boolean {
         //   to read game-specific settings. This delay is not a proper solution
         setTimeout(() => {
           context.api.store.dispatch(clearMods());
-          refreshMods(state.gameSettings.mods.paths, current, (mod: IMod) => {
+          refreshMods(installPath(context.api.store.getState()), (mod: IMod) => {
             context.api.store.dispatch(addMod(mod));
           });
         }, 200);
@@ -126,7 +123,7 @@ function init(context: IExtensionContextExt): boolean {
     context.api.onStateChange(['gameSettings', 'mods', 'paths'],
       (previous: IStatePaths, current: IStatePaths) => {
         context.api.store.dispatch(clearMods());
-        refreshMods(current, state.settings.gameMode.current, (mod: IMod) => {
+        refreshMods(installPath(context.api.store.getState()), (mod: IMod) => {
           context.api.store.dispatch(addMod(mod));
         });
       });
@@ -134,11 +131,8 @@ function init(context: IExtensionContextExt): boolean {
     let installContext = new InstallContext(context.api.store.dispatch);
 
     context.api.events.on('start-install', (archivePath: string) => {
-      const installPath = resolvePath('install',
-                                      state.gameSettings.mods.paths,
-                                      state.settings.gameMode.current);
       const baseName = path.basename(archivePath, path.extname(archivePath));
-      const destinationPath = path.join(installPath, baseName);
+      const destinationPath = path.join(installPath(state), baseName);
 
       installArchive(archivePath, destinationPath, installContext);
     });

@@ -7,9 +7,6 @@ import Icon from '../views/Icon';
 import * as React from 'react';
 import { Button, Modal } from 'react-bootstrap';
 
-import { log } from '../util/log';
-import * as util from 'util';
-
 interface IActionProps {
   t: (input: string) => string;
   onDismiss: (action: string) => void;
@@ -23,7 +20,7 @@ class Action extends React.Component<IActionProps, {}> {
       <Button id='close' onClick={this.dismiss}>
         {t(action)}
       </Button>
-    )
+    );
   }
 
   private dismiss = () => {
@@ -31,7 +28,6 @@ class Action extends React.Component<IActionProps, {}> {
     onDismiss(action);
   }
 }
-
 
 interface IDialogConnectedProps {
   dialogs: IDialog[];
@@ -107,6 +103,6 @@ function mapDispatchToProps<S>(dispatch: Redux.Dispatch<S>): IDialogActionProps 
   };
 }
 
-export default translate(['common'], { wait: true })(
+export default translate(['common'], { wait: false })(
   connect(mapStateToProps, mapDispatchToProps)(Dialog)
 ) as React.ComponentClass<{}>;

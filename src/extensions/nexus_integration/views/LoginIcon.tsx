@@ -79,5 +79,5 @@ function mapStateToProps(state: any): IConnectedProps {
 
 export default
   connect(mapStateToProps)(
-    translate(['common'], { wait: true })(LoginIcon)
+    translate(['common'], { wait: false })(LoginIcon)
   );
