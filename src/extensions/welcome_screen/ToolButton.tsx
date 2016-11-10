@@ -1,6 +1,6 @@
 import { IGame } from '../../types/IGame';
 import { ISupportedTool } from '../../types/ISupportedTool';
-import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { ComponentEx, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import Icon from '../../views/Icon';
 import { Button } from '../../views/TooltipControls';
@@ -40,9 +40,38 @@ interface IContextMenuProps {
   onShowError: (message: string, details?: string) => void;
 }
 
+// run the specified tool in a separate process with elevated
+// permissions
+function runToolElevated(tool: ISupportedTool,
+                         onError: (message: string, details: string) => void) {
+  let elevatedTool: IElevatedSupportedTool = {
+    id: tool.id,
+    toolPath: tool.path.replace(/\\/g, '\\\\'),
+    parameters: tool.parameters,
+  };
+
+  const ipcPath: string = 'tool_elevated_' + tool.id;
+  // communicate with the elevated process via ipc
+  ipc.serve(ipcPath, () => {
+    ipc.server.on('finished', (modPath: string) => {
+      ipc.server.stop();
+    });
+    ipc.server.on('socket.disconnected', () => {
+      ipc.server.stop();
+    });
+    ipc.server.on('log', (ipcData: any) => {
+      log(ipcData.level, ipcData.message, ipcData.meta);
+      onError(ipcData.message, ipcData.meta.err);
+    });
+    // run it
+    elevated('tool_elevated_' + tool.id, runElevatedCustomTool,
+      elevatedTool);
+  });
+  ipc.server.start();
+}
+
 class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   private currentItem: any;
-  private mElevatedClient: any = null;
 
   public render(): JSX.Element {
     let { t, id, discovery, tool } = this.props;
@@ -74,8 +103,6 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   private nop = () => undefined;
 
   private runCustomTool = (e, data) => {
-    let { onShowError } = this.props;
-
     try {
       let params: string[] = data.parameters.split(' ');
       execFile(data.path, params, (err, output) => {
@@ -94,34 +121,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
           'Would you like to run the tool elevated?',
         }, (buttonIndex) => {
           if (buttonIndex === 0) {
-            let elevatedTool: IElevatedSupportedTool = {
-              id: data.id,
-              toolPath: data.path.replace(/\\/g, '\\\\'),
-              parameters: data.parameters,
-            };
-
-            const ipcPath: string = 'tool_elevated_' + data.id;
-            ipc.serve(ipcPath, () => {
-              ipc.server.on('initialised', (ipcData, socket) => {
-                this.mElevatedClient = socket;
-                ipc.server.emit(this.mElevatedClient, 'run-elevated-tool');
-              });
-              ipc.server.on('finished', (modPath: string) => {
-                ipc.server.emit(this.mElevatedClient, 'quit');
-                ipc.server.stop();
-              });
-              ipc.server.on('socket.disconnected', () => {
-                ipc.server.stop();
-                this.mElevatedClient = null;
-              });
-              ipc.server.on('log', (ipcData: any) => {
-                log(ipcData.level, ipcData.message, ipcData.meta);
-                onShowError(ipcData.message, ipcData.meta.err);
-              });
-              elevated('tool_elevated_' + data.id, runElevatedCustomTool,
-                elevatedTool, undefined);
-            });
-            ipc.server.start();
+            runToolElevated(data, this.props.onShowError);
           }
         });
       } else {
@@ -183,7 +183,6 @@ const ToolIcon = (props) => {
 
 class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   private mImageId: number;
-  private mElevatedClient: any = null;
 
   constructor(props: IProps) {
     super(props);
@@ -250,12 +249,15 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   }
 
   private runTool = () => {
-    let { onShowError } = this.props;
+    let { onShowError, tool } = this.props;
     try {
-      let params: string[] = this.props.tool.parameters.split(' ');
-      execFile(this.props.tool.path, params, (err, output) => {
+      let params: string[] = [];
+      if (tool.parameters) {
+        params = tool.parameters.split(' ');
+      }
+      execFile(tool.path, params, (err, output) => {
         if (err) {
-          log('error', 'failed to spawn', { err, path: this.props.tool.path });
+          log('error', 'failed to spawn', { err, path: tool.path });
         }
       });
     } catch (err) {
@@ -264,38 +266,15 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
         dialog.showMessageBox({
           buttons: ['Ok', 'Cancel'],
           title: 'Missing elevation',
-          message: this.props.tool.id + ' cannot be started because it requires elevation. ' +
+          message: tool.id + ' cannot be started because it requires elevation. ' +
           'Would you like to run the tool elevated?',
         }, (buttonIndex) => {
           if (buttonIndex === 0) {
-            let elevatedTool: IElevatedSupportedTool = {
-              id: this.props.tool.id,
-              toolPath: this.props.tool.path.replace(/\\/g, '\\\\'),
-              parameters: this.props.tool.parameters,
-            };
-
-            const ipcPath: string = 'tool_elevated_' + this.props.tool.id;
-            ipc.serve(ipcPath, () => {
-              ipc.server.on('initialised', (ipcData, socket) => {
-                this.mElevatedClient = socket;
-                ipc.server.emit(this.mElevatedClient, 'run-elevated-tool');
-              });
-              ipc.server.on('socket.disconnected', () => {
-                ipc.server.stop();
-                this.mElevatedClient = null;
-              });
-              ipc.server.on('log', (ipcData: any) => {
-                log(ipcData.level, ipcData.message, ipcData.meta);
-                onShowError(ipcData.message, ipcData.meta.err);
-              });
-              elevated('tool_elevated_' + this.props.tool.id, runElevatedCustomTool,
-                elevatedTool, undefined);
-            });
-            ipc.server.start();
+            runToolElevated(tool, onShowError);
           }
         });
       } else {
-        log('info', 'runCustomToolError', { err });
+        log('info', 'runCustomToolError', { err: err.message });
       }
     }
   };
