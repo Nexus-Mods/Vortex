@@ -11,6 +11,8 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import ipc = require('node-ipc');
 
+import { remoteCode } from './remoteCode';
+
 class ModActivator implements IModActivator {
   public id: string;
   public name: string;
@@ -57,7 +59,7 @@ class ModActivator implements IModActivator {
         ipc.server.on('log', (data: any) => {
           log(data.level, data.message, data.meta);
         });
-        return elevated(ipcPath, this.remoteCode);
+        return elevated(ipcPath, remoteCode, { gugu: 42 }, __dirname);
       });
       ipc.server.start();
     });
@@ -105,55 +107,9 @@ class ModActivator implements IModActivator {
     ipc.server.stop();
     this.mDone();
   }
-
-  private remoteCode = (ipcClient) => {
-    let walk = require('./walk').default;
-    let fs = require('fs-extra-promise');
-    let path = require('path');
-
-    ipcClient.on('create-link', (payload) => {
-      let { source, destination } = payload;
-      try {
-        walk(source, (iterPath: string, stat: fs.Stats) => {
-          let relPath: string = path.relative(source, iterPath);
-          let destFile: string = path.join(destination, relPath);
-          if (stat.isDirectory()) {
-            return fs.mkdirAsync(iterPath);
-          } else {
-            return fs.symlinkAsync(iterPath, destFile).then(() => {
-              ipcClient.emit('log', {
-                level: 'info',
-                message: 'installed',
-                meta: { source: iterPath, destination: destFile },
-              });
-            }).catch((err) => {
-              ipcClient.emit('log', {
-                level: 'error',
-                message: 'failed to install symlink',
-                meta: { err: err.message },
-              });
-            });
-          }
-        })
-        .finally(() => {
-          ipcClient.emit('finished', { source });
-        });
-      } catch (err) {
-        ipcClient.emit('log', {
-          level: 'info',
-          message: 'failed to create link',
-          meta: { err: err.message },
-        });
-      }
-    });
-    ipcClient.on('disconnect', () => {
-      process.exit(0);
-    });
-    ipcClient.emit('initialised');
-  }
 }
 
-interface IExtensionContextEx extends IExtensionContext {
+export interface IExtensionContextEx extends IExtensionContext {
   registerModActivator: (activator: IModActivator) => void;
 }
 

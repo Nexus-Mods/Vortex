@@ -87,7 +87,7 @@ class ModActivator implements IModActivator {
   }
 }
 
-interface IExtensionContextEx extends IExtensionContext {
+export interface IExtensionContextEx extends IExtensionContext {
   registerModActivator: (activator: IModActivator) => void;
 }
 

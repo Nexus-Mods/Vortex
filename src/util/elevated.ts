@@ -121,10 +121,11 @@ function runElevated(ipcPath: string, func: Function,
         return reject(err);
       }
 
-      let projectRoot = path.resolve(__dirname, '../../../node_modules').split('\\').join('/');
+      let projectRoot = path.resolve(__dirname, '../../node_modules').split('\\').join('/');
       if (moduleBase === undefined) {
-        moduleBase = __dirname.split('\\').join('/');
+        moduleBase = __dirname;
       }
+      moduleBase = moduleBase.split('\\').join('/');
 
       let mainBody = elevatedMain.toString();
       mainBody = mainBody.slice(mainBody.indexOf('{') + 1, mainBody.lastIndexOf('}'));
