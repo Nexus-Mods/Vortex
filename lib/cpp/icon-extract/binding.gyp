@@ -10,19 +10,44 @@
         "<!(node -e \"require('nan')\")"
       ],
       "sources": [
-        "src/IconExtractor.cpp",
-        "src/IconExtractorWindows.cpp"
-      ],
-      "libraries": [
-        "-lGdiplus"
+        "src/IconExtractor.cpp"
       ],
       "msvs_settings": {
         "VCCLCompilerTool": {
           "ExceptionHandling": 1
         }
       },
-      "cflags": [
-        "-EHsc"
+      "conditions": [
+        ['OS=="win"', {
+          'sources': [
+	    "src/IconExtractorWindows.cpp"
+          ],
+          "libraries": [
+            "-lGdiplus"
+          ],
+        }],
+        ['OS=="linux"', {
+          'sources': [
+	    "src/IconExtractorLinux.cpp"
+          ],
+          "cflags": [
+	    "-fexceptions"
+          ],
+          "cflags_cc": [
+            "-fexceptions"
+          ]
+        }],
+        ['OS=="mac"', {
+          'sources': [
+	    "src/IconExtractorMacOSX.cpp"
+          ],
+          "cflags": [
+	    "-fexceptions"
+          ],
+          "cflags_cc": [
+            "-fexceptions"
+          ]
+        }]
       ]
     }
   ]

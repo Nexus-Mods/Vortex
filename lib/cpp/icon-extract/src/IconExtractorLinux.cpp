@@ -1,4 +1,4 @@
-#include "IconExtractorMacOSX.h"
+#include "IconExtractorLinux.h"
 #include <fstream>
 
 const char s_Placeholder[] =

@@ -2,7 +2,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { setAssociatedWithNXMURLs } from '../actions/settings';
 
 import * as React from 'react';
-import { Checkbox, FormGroup } from 'react-bootstrap';
+import { Checkbox, FormGroup, HelpBlock } from 'react-bootstrap';
 
 interface IBaseProps {
 }
@@ -27,9 +27,11 @@ class Settings extends ComponentEx<IProps, {}> {
           <Checkbox
             checked={ associated }
             onChange={ this.associate }
+            disabled={ process.platform === 'linux' }
           >
             { t('Associate with NXM URLs') }
           </Checkbox>
+          { process.platform === 'linux' ? <HelpBlock>Not supported on Linux</HelpBlock> : null  }
         </FormGroup>
       </form>
     );

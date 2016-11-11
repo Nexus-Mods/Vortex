@@ -15,6 +15,7 @@ if (process.argv.length < 3) {
 const tgt = process.argv[2];
 
 let childProcesses = [];
+let copies = -1;
 
 let status = 0;
 
@@ -55,6 +56,7 @@ for (let file of data.copy) {
   }
 
   glob(file.srcPath, globOptions, (globErr, files) => {
+    copies = copies === -1 ? files.length : copies += files.length;
     if (globErr !== null) {
       console.err('glob failed', globErr);
     }
@@ -63,6 +65,7 @@ for (let file of data.copy) {
       const targetFile = path.join(tgt, file.outPath, globTarget);
 
       fs.copy(globResult, targetFile, (copyErr) => {
+        --copies;
         if (copyErr !== null) {
           console.log('failed to copy', globResult, targetFile, copyErr);
         }
@@ -75,7 +78,7 @@ for (let file of data.copy) {
 }
 
 function waitForProcesses() {
-  if (childProcesses.length > 0) {
+  if ((childProcesses.length > 0) || (copies != 0)) {
     setTimeout(waitForProcesses, 100);
   } else {
     process.exit(status);
@@ -83,3 +86,4 @@ function waitForProcesses() {
 }
 
 waitForProcesses();
+

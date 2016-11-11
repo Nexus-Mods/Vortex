@@ -27,7 +27,9 @@ let trayIcon: Electron.Tray = null;
 const urlExp = /([a-z\-]+):\/\/.*/i;
 
 function createTrayIcon() {
-  trayIcon = new Tray(path.resolve(__dirname, 'assets', 'images', 'nmm.ico'));
+  let imgPath = path.resolve(__dirname, 'assets', 'images',
+                      process.platform === 'win32' ? 'nmm.ico' : 'nmm.png');
+  trayIcon = new Tray(imgPath);
 
   trayIcon.setContextMenu(Menu.buildFromTemplate([
     { label: 'Quit', click: () => app.quit() },
