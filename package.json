@@ -12,7 +12,7 @@
     "_babel_app": "cross-env BABEL_ENV=production babel app -d app --ignore node_modules",
     "_assets_out": "node InstallAssets.js out",
     "_assets_app": "node InstallAssets.js app && npm run _babel_app",
-    "_install_app": "cd app && rm-local-modules && npm install && npm update",
+    "_install_app": "cd app && npm install rm-local-modules && rm-local-modules && npm install && npm update",
     "prestart": "npm run _assets_out",
     "prepackage": "npm run build_nexusapi && npm run _install_app && npm run _assets_app",
     "package": "build",
