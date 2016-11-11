@@ -1,4 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { log } from '../../util/log';
 
 import { addSearchPath } from './actions/settings';
 import { discoveryReducer } from './reducers/discovery';
@@ -8,7 +9,7 @@ import { settingsReducer } from './reducers/settings';
 import GamePicker from './views/GamePicker';
 import Settings from './views/Settings';
 
-import { log } from '../../util/log';
+import GameModeManager from './GameModeManager';
 
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('gamepad', 'Games', GamePicker, {
@@ -20,8 +21,8 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
 
   context.once(() => {
-    const GameModeManager = require('./GameModeManager').default;
-    let gameModeManager = new GameModeManager(context.api.getPath('userData'));
+    const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
+    let gameModeManager = new GameModeManagerImpl(context.api.getPath('userData'));
     gameModeManager.attachToStore(context.api.store);
     gameModeManager.startQuickDiscovery();
     context.api.events.on('start-discovery',
@@ -34,13 +35,12 @@ function init(context: IExtensionContext): boolean {
       });
 
     if (context.api.store.getState().settings.gameMode.searchPaths === undefined) {
-      log('info', 'no search paths configured');
-      const list = require('drivelist');
+      const { list } = require('drivelist');
       list((error, disks) => {
         if (error) {
           throw error;
         }
-        for (let disk of disks) {
+        for (let disk of disks.sort()) {
           // 'system' drives are the non-removable ones
           if (disk.system) {
             context.api.store.dispatch(addSearchPath(disk.mountpoint));

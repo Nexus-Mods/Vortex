@@ -1,4 +1,4 @@
-import { DialogActions, DialogType, IDialogContent } from '../types/IDialog';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { INotification } from '../types/INotification';
 import * as Promise from 'bluebird';
 import { v1 } from 'node-uuid';
@@ -72,7 +72,7 @@ let dialogCallbacks = {};
 export function showDialog(type: DialogType, title: string,
                            content: IDialogContent, actions: DialogActions) {
   return (dispatch) => {
-    return new Promise<{ action, input }>((resolve, reject) => {
+    return new Promise<IDialogResult>((resolve, reject) => {
       const id = v1();
       dispatch(addDialog(id, type, title, content, Object.keys(actions)));
       dialogCallbacks[id] = (actionKey: string, input?: any) => {

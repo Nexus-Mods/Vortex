@@ -15,3 +15,8 @@ export interface IDialogContent {
   htmlFile?: string;
   message?: string;
 }
+
+export interface IDialogResult {
+  action: string;
+  input: any;
+}

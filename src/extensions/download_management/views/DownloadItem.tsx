@@ -1,5 +1,6 @@
 import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
+import { IDialogResult } from '../../../types/IDialog';
 import { IIconDefinition } from '../../../types/IIconDefinition';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import IconBar from '../../../views/IconBar';
@@ -19,7 +20,7 @@ export interface IBaseProps {
 }
 
 interface IActionProps {
-  onShowDialog: (type, title, content, actions) => Promise<{ action, input }>;
+  onShowDialog: (type, title, content, actions) => Promise<IDialogResult>;
 }
 
 type IProps = IBaseProps & IActionProps;

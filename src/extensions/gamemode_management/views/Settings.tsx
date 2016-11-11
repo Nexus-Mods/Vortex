@@ -123,7 +123,8 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
 
 function mapStateToProps(state: IStateEx): IConnectedProps {
   return {
-    searchPaths: state.settings.gameMode.searchPaths,
+    // search paths should be initialized immediately on first start but this can't hurt
+    searchPaths: state.settings.gameMode.searchPaths || [],
   };
 }
 

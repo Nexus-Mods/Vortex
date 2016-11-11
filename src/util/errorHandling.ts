@@ -17,14 +17,14 @@ function createTitle(error: ITermination) {
   return `Crash: ${error.message}`;
 }
 
-function createReport(error: ITermination, config: any) {
+function createReport(error: ITermination, version: string) {
   return `### Application Crash
 #### System
 | | |
 |------------ | -------------|
 |Platform | ${process.platform}|
 |Architecture | ${process.arch}|
-|Application Version | ${config.version}|
+|Application Version | ${version}|
 #### Message
 ${error.message}
 #### Details
@@ -63,14 +63,13 @@ export function terminate(error: ITermination) {
   });
 
   if (action === 0) {
-    let config = require('../../package.json');
-    clipboard.writeText(createReport(error, config));
+    clipboard.writeText(createReport(error, app.getVersion()));
     const title = encodeURIComponent(createTitle(error));
     const body = 'Please paste the content of your clipboard here and describe what you did '
                + 'when the crash happened.';
-    let url = `${config.repository.url}/issues/new?title=${title}&labels[]=bug&body=${body}`;
-    log('info', 'create issue report', { url, len: body.length });
-    // this assumes it's a github url
+    // could be a bit more dynamic but how often is this going to change?
+    const repo = 'https://github.com/Nexus-Mods/NMM2';
+    let url = `${repo}/issues/new?title=${title}&labels[]=bug&body=${body}`;
     shell.openExternal(url);
   }
   app.exit(1);

@@ -22,7 +22,7 @@
     "preinstallex": "npm install rm-local-modules && rm-local-modules",
     "build_leveldown": "cd node_modules/leveldown && node-gyp rebuild --target=1.4.3 --arch=x64 --dist-url=https://atom.io/download/electron",
     "installex": "npm run build_api && npm install && npm run build_leveldown && electron-rebuild -w icon-extract,ffi,node-7z,winreg,ref,leveldown && cd node_modules/redux-persist && npm run build:commonjs",
-    "build_nexusapi": "cd lib/js/nexus-api && npm run build",
+    "build_nexusapi": "cd lib/js/nexus-api && typings install && npm run build",
     "build_api": "tsc -p ./api",
     "build_out": "tsc -p . && npm run lessc",
     "buildwatch": "concurrently --kill-others \"tsc -p . -w\" npm-watch",
@@ -50,7 +50,7 @@
     ]
   },
   "build": {
-    "asar": true,
+    "asar": false,
     "appId": "com.nexusmods.nmm2",
     "win": {
       "target": "squirrel",
