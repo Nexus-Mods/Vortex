@@ -1,6 +1,7 @@
 import * as Promise from 'bluebird';
-import * as path from 'path';
+import leveljs = require('level-js');
 import levelup = require('levelup');
+import * as path from 'path';
 
 import {IHashResult, ILookupResult, IModInfo} from './types';
 import { genHash } from './util';
@@ -16,7 +17,7 @@ class ModDB {
 
   constructor(location: string) {
     this.mDB =
-        levelup(path.join(location, 'mods.ldb'), {valueEncoding: 'json'});
+        levelup('mods', {valueEncoding: 'json', db: leveljs});
     this.mModKeys = [
       'modId',
       'modName',

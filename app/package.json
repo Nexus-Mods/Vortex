@@ -23,6 +23,7 @@
     "i18next": "^3.4.1",
     "i18next-node-fs-backend": "^0.1.2",
     "icon-extract": "file:../lib/cpp/icon-extract",
+    "level-js": "^2.2.4",
     "modmeta-db": "file:../external/modmeta-db",
     "nexus-api": "file:../lib/js/nexus-api",
     "node-7z": "^0.4.0",

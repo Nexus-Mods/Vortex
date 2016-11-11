@@ -1,12 +1,12 @@
 "use strict";
 const Promise = require('bluebird');
-const path = require('path');
+const leveljs = require('level-js');
 const levelup = require('levelup');
 const util_1 = require('./util');
 class ModDB {
     constructor(location) {
         this.mDB =
-            levelup(path.join(location, 'mods.ldb'), { valueEncoding: 'json' });
+            levelup('mods', { valueEncoding: 'json', db: leveljs });
         this.mModKeys = [
             'modId',
             'modName',
