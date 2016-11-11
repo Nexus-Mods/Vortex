@@ -41,12 +41,17 @@
           'sources': [
 	    "src/IconExtractorMacOSX.cpp"
           ],
+          "cflags!": [ "-fno-exceptions" ],
+          "cflags_cc!": [ "-fno-exceptions" ],
           "cflags": [
-	    "-fexceptions"
+            "-fexceptions"
           ],
           "cflags_cc": [
             "-fexceptions"
-          ]
+          ],
+          "xcode_settings": {
+            "GCC_ENABLE_CPP_EXCEPTIONS": "YES"
+          }
         }]
       ]
     }
