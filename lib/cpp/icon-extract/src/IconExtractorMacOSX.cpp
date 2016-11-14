@@ -40,7 +40,7 @@ bool IconExtractorMacOSX::extractIconToPngFile(const std::string &executable,
   //   As a convention it should have the same name as the bundle. It can be in
   //   any supported image format but preferrably in icns format which we need
   //   to handle (libicns)
-  std::ofstream file(output, std::fstream::out | std::fstream::binary);
+  std::ofstream file(output.c_str(), std::fstream::out | std::fstream::binary);
   file.write(s_Placeholder, sizeof(s_Placeholder));
   file.close();
   return true;

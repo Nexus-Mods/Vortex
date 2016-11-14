@@ -28,10 +28,12 @@
         }],
         ['OS=="linux"', {
           'sources': [
-	    "src/IconExtractorLinux.cpp"
+            "src/IconExtractorLinux.cpp"
           ],
+          "cflags!": [ "-fno-exceptions" ],
+          "cflags_cc!": [ "-fno-exceptions" ],
           "cflags": [
-	    "-fexceptions"
+            "-fexceptions"
           ],
           "cflags_cc": [
             "-fexceptions"
@@ -39,7 +41,7 @@
         }],
         ['OS=="mac"', {
           'sources': [
-	    "src/IconExtractorMacOSX.cpp"
+	          "src/IconExtractorMacOSX.cpp"
           ],
           "cflags!": [ "-fno-exceptions" ],
           "cflags_cc!": [ "-fno-exceptions" ],

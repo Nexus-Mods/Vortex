@@ -41,7 +41,7 @@ bool IconExtractorLinux::extractIconToPngFile(const std::string &executable,
   //   /usr/share/icons/[hi,lo]color/<widthxheight>/appname.png
   //   TBH this lookup would probably be easier to do in JS as linux doesn't use
   //   a custom icon format.
-  std::ofstream file(output, std::fstream::out | std::fstream::binary);
+  std::ofstream file(output.c_str(), std::fstream::out | std::fstream::binary);
   file.write(s_Placeholder, sizeof(s_Placeholder));
   file.close();
   return true;
