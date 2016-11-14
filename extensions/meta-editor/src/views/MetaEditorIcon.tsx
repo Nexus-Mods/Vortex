@@ -81,11 +81,19 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
                 value={info.modName}
                 onChange={this.changeModName}
               />
-              <ControlLabel>{t('File Version')}</ControlLabel>
+            </FormGroup>
+            <FormGroup>
+              <ControlLabel>{t('File Name')}</ControlLabel>
+              <FormControl
+                type='text'
+                value={info.logicalFileName}
+                onChange={this.changeLogicalFileName}
+              />
             </FormGroup>
             <FormGroup
               validationState={fvState as 'error' | 'success'}
             >
+              <ControlLabel>{t('File Version')}</ControlLabel>
               <FormControl
                 type='text'
                 value={info.fileVersion}
@@ -96,6 +104,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
             <FormGroup
               validationState={urlState as 'error' | 'success'}
             >
+              <ControlLabel>{t('Source URL')}</ControlLabel>
               <FormControl
                 type='text'
                 value={info.sourceURI}
@@ -142,6 +151,10 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
 
   private changeModName = (event) => {
     this.setField('modName', event.target.value);
+  }
+
+  private changeLogicalFileName = (event) => {
+    this.setField('logicalFileName', event.target.value);
   }
 
   private changeFileVersion = (event) => {

@@ -100,7 +100,6 @@ class DownloadItem extends ComponentEx<IProps, {}> {
             staticElements={ this.downloadActions }
             downloadId={ downloadId }
           />
-          { /* this.renderActions(downloadId, download) */ }
         </td>
       </tr>
     );
@@ -171,8 +170,8 @@ class DownloadItem extends ComponentEx<IProps, {}> {
   }
 
   private install = () => {
-    const { download } = this.props;
-    this.context.api.events.emit('start-install', download.localPath);
+    const { downloadId } = this.props;
+    this.context.api.events.emit('start-install-download', downloadId);
   }
 
   private installable = () => {

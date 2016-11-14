@@ -166,13 +166,12 @@ class GameModeManager {
     const statePath: string = path.join(this.mBasePath, mode, 'state');
 
     let settings = undefined;
-
     return fs.ensureDirAsync(statePath)
       .then(() => {
         // step 2: retrieve stored state
         settings = {
           storage: new StorageLogger(new AsyncNodeStorage(statePath)),
-          whitelist: ['gameSettings'],
+          whitelist: ['gameSettings', 'mods'],
           keyPrefix: '',
         };
         return getStoredStateP(settings);

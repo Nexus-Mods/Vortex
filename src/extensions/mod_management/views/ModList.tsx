@@ -21,8 +21,11 @@ import InstallArchiveButton from './InstallArchiveButton';
 import ModRow from './ModRow';
 
 import * as React from 'react';
-import { Jumbotron, Table } from 'react-bootstrap';
+import { ControlLabel, FormControl, FormGroup, Jumbotron, Table } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
+import update = require('react-addons-update');
+
+import { log } from '../../../util/log';
 
 interface IProps {
   objects: IModAttribute[];
@@ -46,13 +49,20 @@ interface IActionProps {
   onSetModEnabled: (modId: string, enabled: boolean) => void;
 }
 
+interface IComponentState {
+  selectedMod: string;
+}
+
 /**
  * displays the list of mods installed for the current game.
  * 
  */
-class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
+class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComponentState> {
   constructor(props) {
     super(props);
+    this.state = {
+      selectedMod: undefined,
+    }
   }
 
   public render(): JSX.Element {
@@ -61,9 +71,11 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
     const visibleAttributes: IModAttribute[] = this.visibleAttributes(objects, modlistState);
     let sorted: IMod[] = this.sortedMods(modlistState, visibleAttributes, mods, language);
 
-    return gameMode === undefined
-      ? <Jumbotron>{ t('Please select a game first') }</Jumbotron>
-      : (
+    if (gameMode === undefined) {
+      return <Jumbotron>{ t('Please select a game first') }</Jumbotron>;
+    }
+
+    return (
         <Layout type='column'>
           <Fixed>
             <div>
@@ -74,17 +86,25 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
             </div>
           </Fixed>
           <Flex>
-            <Table bordered condensed hover>
-              <thead>
-                <tr>
-                  <th>{ t('Enabled') }</th>
-                  { visibleAttributes.map(this.renderHeaderField) }
-                </tr>
-              </thead>
-              <tbody>
-                { sorted.map((mod) => this.renderModRow(mod, visibleAttributes)) }
-              </tbody>
-            </Table>
+          <Layout type='row'>
+            <Flex>
+              <Table bordered condensed hover>
+                <thead>
+                  <tr>
+                    <th>{t('Enabled')}</th>
+                    {visibleAttributes.map(this.renderHeaderField)}
+                    <th>{t('Actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((mod) => this.renderModRow(mod, visibleAttributes))}
+                </tbody>
+              </Table>
+              </Flex>
+                <Fixed>
+                  {this.renderModDetails(this.state.selectedMod)}
+                </Fixed>
+            </Layout>
           </Flex>
         </Layout>
       );
@@ -127,6 +147,59 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
     });
   }
 
+  private renderCell(value: any): string {
+    const { language } = this.props;
+
+    if (value instanceof Date) {
+      return value.toLocaleString(language);
+    } else if (typeof(value) === 'string') {
+      return value;
+    } else if (value === undefined) {
+      return '';
+    } else {
+      return value.toString();
+    }
+  }
+
+  private renderModDetail = (mod: IMod, attribute: IModAttribute) => {
+    const { t } = this.props;
+    return (
+      <FormGroup key={`${mod.id}-${attribute.id}`}>
+        <ControlLabel>{attribute.name}</ControlLabel>
+        <FormControl
+          id={attribute.id}
+          type='text'
+          label={t(attribute.name)}
+          readOnly={attribute.isReadOnly}
+          defaultValue={this.renderCell(attribute.calc(mod.attributes))}
+        />
+      </FormGroup>
+    );
+  }
+
+  private renderModDetails = (modId: string) => {
+    if (modId === undefined) {
+      return null;
+    }
+
+    const { mods, objects } = this.props;
+    const mod = mods[modId];
+
+    if (mod === undefined) {
+      log('warn', 'unknown mod id', modId);
+      this.setState(update(this.state, {
+        selectedMod: { $set: undefined },
+      }));
+      return null;
+    }
+
+    return (
+      <form>
+      {objects.map((obj) => this.renderModDetail(mod, obj))}
+      </form>
+    );
+  };
+
   private renderAttributeToggle = (attr: IModAttribute) => {
     const { t, modlistState, onSetAttributeVisible } = this.props;
     return !attr.isToggleable ? null : (
@@ -140,15 +213,26 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, {}> {
     );
   };
 
+  private selectMod = (evt: __React.MouseEvent) => {
+    const cell = (evt.target as HTMLTableCellElement);
+    const row = (cell.parentNode as HTMLTableRowElement);
+    this.setState(update(this.state, {
+      selectedMod: { $set: row.id },
+    }));
+  };
+
   private renderModRow(mod: IMod, visibleAttributes: IModAttribute[]): JSX.Element {
-    let { modState, onSetModEnabled } = this.props;
+    let { language, modState, onSetModEnabled } = this.props;
     return (
       <ModRow
-        key={ mod.id }
-        mod={ mod }
-        modState={ modState[mod.id] }
-        attributes={ visibleAttributes }
-        onSetModEnabled={ onSetModEnabled }
+        key={mod.id}
+        mod={mod}
+        modState={modState[mod.id]}
+        attributes={visibleAttributes}
+        language={language}
+        onSetModEnabled={onSetModEnabled}
+        onClick={this.selectMod}
+        selected={mod.id === this.state.selectedMod}
       />
     );
   }

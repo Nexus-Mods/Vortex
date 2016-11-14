@@ -1,46 +1,115 @@
+import { IIconDefinition } from '../../../types/IIconDefinition';
 import getAttr from '../../../util/getAttr';
+import IconBar from '../../../views/IconBar';
+
+import { connect } from '../../../util/ComponentEx';
 
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
+import { removeMod } from '../actions/mods';
 import { IMod } from '../types/IMod';
 import { IModAttribute } from '../types/IModAttribute';
 
+import * as fs from 'fs-extra-promise';
 import * as React from 'react';
 import { Checkbox } from 'react-bootstrap';
 
-export interface IProps {
+export interface IBaseProps {
   mod: IMod;
   modState: IProfileMod;
   attributes: IModAttribute[];
+  language: string;
   onSetModEnabled: (modId: string, enabled: boolean) => void;
+  onClick: __React.MouseEventHandler;
+  selected: boolean;
 }
 
-class ModRow extends React.Component<IProps, {}> {
-  public render(): JSX.Element {
-    const { attributes, mod, modState } = this.props;
+interface IActionProps {
+  onRemoveMod: (modId: string) => void;
+}
 
-    return <tr key={mod.id} className={'mod-' + mod.state}>
-      <td>
-      <Checkbox
-        checked={ getAttr(modState, 'enabled', false) }
-        onChange={ this.setModEnabled }
-      />
-      </td>
-      { attributes.map(this.renderAttribute) }
-    </tr>;
+type IProps = IBaseProps & IActionProps;
+
+class ModRow extends React.Component<IProps, {}> {
+
+  private modActions: IIconDefinition[];
+
+  constructor(props) {
+    super(props);
+
+    this.modActions = [
+      {
+        icon: 'remove',
+        title: 'Remove',
+        action: this.remove,
+      },
+    ]
+  }
+
+  public render(): JSX.Element {
+    const { attributes, mod, modState, onClick, selected } = this.props;
+
+    let classes = ['mod-' + mod.state];
+    if (selected) {
+      classes.push('modlist-selected');
+    }
+
+    return (
+      <tr
+        id={mod.id}
+        key={mod.id}
+        className={classes.join(' ')}
+        onClick={onClick}
+      >
+        <td>
+          <Checkbox
+            checked={getAttr(modState, 'enabled', false)}
+            onChange={this.setModEnabled}
+          />
+        </td>
+        {attributes.map(this.renderAttribute)}
+        <td style={{ textAlign: 'center' }}>
+          <IconBar
+            group='mod-action-icons'
+            instanceId={ mod.id }
+            className='mod-actions'
+            staticElements={ this.modActions }
+          />
+        </td>
+      </tr>
+    );
+  }
+
+  private remove = () => {
+    const { mod, onRemoveMod } = this.props;
+    if (mod.installationPath) {
+      fs.removeAsync(mod.installationPath)
+        .then(() => {
+          onRemoveMod(mod.id);
+        });
+    } else {
+      onRemoveMod(mod.id);
+    }
   }
 
   private renderAttribute = (attribute: IModAttribute): JSX.Element => {
     const { mod } = this.props;
-    return <td key={ attribute.id }>{this.renderCell(mod.attributes[attribute.id])}</td>;
+    return (
+      <td key={ attribute.id }>
+      {this.renderCell(attribute.calc(mod.attributes))}
+      </td>
+    );
   }
 
   private renderCell(value: any): string {
-    const valType = typeof(value);
-    if (valType === 'Date') {
-      return value.toLocaleString();
-    } else if (valType === 'string') {
+    const { language } = this.props;
+
+    if (value instanceof Date) {
+      return value.toLocaleString(language);
+    } else if (typeof(value) === 'string') {
       return value;
+    } else if (value === undefined) {
+      return '';
     } else {
       return value.toString();
     }
@@ -52,4 +121,16 @@ class ModRow extends React.Component<IProps, {}> {
   }
 }
 
-export default ModRow;
+function mapStateToProps(state) {
+  return {};
+}
+
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+  return {
+    onRemoveMod: (modId: string) =>
+      dispatch(removeMod(modId)),
+  };
+}
+
+export default
+  connect(mapStateToProps, mapDispatchToProps)(ModRow) as React.ComponentClass<IBaseProps>;

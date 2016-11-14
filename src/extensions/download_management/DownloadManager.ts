@@ -7,6 +7,7 @@ import { IProgressCallback } from './types/IProgressCallback';
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
+import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as http from 'http';
 import * as path from 'path';
@@ -206,7 +207,11 @@ class DownloadManager {
   public enqueue(id: string, urls: string[], progressCB: IProgressCallback,
                  destinationPath?: string): Promise<IDownloadResult> {
     const nameTemplate: string = decodeURI(path.basename(url.parse(urls[0]).pathname));
-    return this.unusedName(destinationPath || this.mDownloadPath, nameTemplate)
+    let destPath = destinationPath || this.mDownloadPath;
+    return fs.ensureDirAsync(destPath)
+    .then(() => {
+      return this.unusedName(destPath, nameTemplate);
+    })
     .then((filePath: string) => {
       return new Promise<IDownloadResult>((resolve, reject) => {
         let download: IDownload = {

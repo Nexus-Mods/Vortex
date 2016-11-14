@@ -3,7 +3,7 @@ import { INotification } from '../../types/INotification';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 
-import { addMod, setModAttribute, setModState } from './actions/mods';
+import { addMod, setModAttribute, setModInstallationPath, setModState } from './actions/mods';
 import { IMod, ModState } from './types/IMod';
 
 import { IInstallContext } from './modInstall';
@@ -24,6 +24,7 @@ class InstallContext implements IInstallContext {
   private mShowError: (message: string, details?: string) => void;
   private mSetModState: (id: string, state: ModState) => void;
   private mSetModAttribute: (id: string, key: string, value: any) => void;
+  private mSetModInstallationPath: (id: string, installPath: string) => void;
 
   constructor(dispatch: Redux.Dispatch<any>) {
     this.mAddMod = (mod) => dispatch(addMod(mod));
@@ -37,6 +38,8 @@ class InstallContext implements IInstallContext {
       dispatch(setModState(id, state));
     this.mSetModAttribute = (id, key, value) =>
       dispatch(setModAttribute(id, key, value));
+    this.mSetModInstallationPath = (id, installPath) =>
+      dispatch(setModInstallationPath(id, installPath));
   }
 
   public startInstallCB(id: string, archivePath: string, destinationPath: string): void {
@@ -60,7 +63,7 @@ class InstallContext implements IInstallContext {
     });
   }
 
-  public finishInstallCB(id: string, success: boolean): void {
+  public finishInstallCB(id: string, success: boolean, info?: any): void {
     this.mDismissNotification('install_' + id);
 
     if (success) {
@@ -71,7 +74,15 @@ class InstallContext implements IInstallContext {
       });
       this.mSetModState(id, 'installed');
       this.mSetModAttribute(id, 'installTime', new Date());
+      if (info !== undefined) {
+        Object.keys(info).forEach(
+            (key: string) => { this.mSetModAttribute(id, key, info[key]); });
+      }
     }
+  }
+
+  public setInstallPathCB(id: string, installPath: string) {
+    this.mSetModInstallationPath(id, installPath);
   }
 
   public reportError(message: string, details?: string): void {

@@ -3,5 +3,8 @@
     "editor.detectIndentation": false,
     "eslint.enable": true,
     "eslint.run": "onSave",
-    "typescript.tsdk": "./node_modules/typescript/lib"
+    "typescript.tsdk": "./node_modules/typescript/lib",
+    "TodoParser": {
+      "folderExclude": ["node_modules", ".vscode", "typings"]
+    }
   }

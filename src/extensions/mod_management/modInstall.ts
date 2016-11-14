@@ -1,8 +1,8 @@
 import {log} from '../../util/log';
 
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'fs-extra-promise';
 
+import * as Promise from 'bluebird';
 // import { ElementSpec, FileSpec, extract7z, list7z } from 'node-7z';
 import Zip = require('node-7z');
 
@@ -20,36 +20,19 @@ export interface IInstallContext {
  * @export
  * @param {string} archivePath path to the archive file
  * @param {string} destinationPath path to install to
- * @param {IInstallContext} context
  */
-function extractArchive(archivePath: string, destinationPath: string,
-                        context: IInstallContext) {
-  const baseName = path.basename(archivePath, path.extname(archivePath));
-
+function extractArchive(archivePath: string, destinationPath: string): Promise<void> {
   let task = new Zip();
   let extract7z = task.extractFull;
 
   log('info', 'installing archive', {archivePath, destinationPath});
 
-  context.startInstallCB(baseName, archivePath, destinationPath);
-
-  extract7z(archivePath, destinationPath + '.installing', {})
+  return Promise.resolve(extract7z(archivePath, destinationPath + '.installing', {})
       .then((args: string[]) => {
-        fs.rename(destinationPath + '.installing', destinationPath, (err) => {
-          if (err !== null) {
-            context.reportError(`failed to rename ${destinationPath}`,
-                                err.message);
-          }
-          context.finishInstallCB(baseName, err === null);
-        });
-      })
-      .catch((err) => {
-        context.reportError('failed to extract', err.message);
-        context.finishInstallCB(baseName, false);
-      });
+        return fs.renameAsync(destinationPath + '.installing', destinationPath);
+      }));
 }
 
-export function installArchive(archivePath: string, destinationPath: string,
-                               context: IInstallContext) {
-  extractArchive(archivePath, destinationPath, context);
+export function installArchive(archivePath: string, destinationPath: string): Promise<void> {
+  return extractArchive(archivePath, destinationPath);
 }
