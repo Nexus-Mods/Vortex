@@ -38,6 +38,7 @@ interface IContextMenuProps {
   onAddNewTool: () => void;
   onChangeToolParams: (toolId: string) => void;
   onShowError: (message: string, details?: string) => void;
+  onRescanTools: (gameId: string, toolId: string, result: ISupportedTool) => void;
 }
 
 // run the specified tool in a separate process with elevated
@@ -96,6 +97,10 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
         >
           {t('Launch {{name}}', { name: tool.name })}
         </MenuItem>
+        <MenuItem divider onClick={this.nop} />
+        <MenuItem onClick={this.rescanTools}>
+          {'Rescan Tools'}
+        </MenuItem>
       </ContextMenu>
     );
   }
@@ -145,6 +150,11 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   private handleAddClick = (e, data) => {
     this.props.onAddNewTool();
   }
+
+   private rescanTools = (e, data) => {
+     let { gameId, onRescanTools } = this.props;
+     onRescanTools(gameId, data.id, data);
+  }
 }
 
 export interface IProps {
@@ -156,6 +166,7 @@ export interface IProps {
   onAddNewTool: () => void;
   onChangeToolParams: (toolId: string) => void;
   onShowError: (message: string, details?: string) => void;
+  onRescanTools: (gameId: string, toolId: string, result: ISupportedTool) => void;
 }
 
 interface IToolButtonState {
@@ -211,7 +222,8 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   }
 
   public render() {
-    const { t, game, toolId, tool, onAddNewTool, onRemoveTool, onShowError } = this.props;
+    const { t, game, toolId, tool, onAddNewTool, onRemoveTool,
+       onRescanTools, onShowError } = this.props;
     const valid = tool.path !== undefined;
 
     return (
@@ -233,6 +245,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
           onChangeToolParams={this.handleEditTool}
           t={t}
           onShowError={onShowError}
+          onRescanTools={onRescanTools}
         />
       </Button>
     );

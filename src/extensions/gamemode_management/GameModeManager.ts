@@ -146,7 +146,7 @@ class GameModeManager {
   }
 
   private onDiscoveredTool = (gameId: string, result: ISupportedTool) => {
-    this.mStore.dispatch(addDiscoveredTool(gameId));
+    this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result));
   }
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
