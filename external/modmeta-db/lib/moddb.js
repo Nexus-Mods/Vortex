@@ -41,7 +41,6 @@ class ModDB {
                     lookupKey += ':' + modId;
                 }
             }
-            console.log('looking up mod', lookupKey);
             return this.getAllByKey(lookupKey);
         });
     }

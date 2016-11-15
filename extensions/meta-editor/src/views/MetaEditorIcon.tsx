@@ -1,10 +1,14 @@
+import RuleEditor from './RuleEditor';
+
 import { ComponentEx, FormFeedbackAwesome, Icon,
          connect, log, tooltip, translate, types } from 'nmm-api';
 
-import { IHashResult, ILookupResult, IModInfo, genHash } from 'modmeta-db';
+import { IHashResult, ILookupResult, IModInfo, IReference,
+         IRule, RuleType, genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup, Modal } from 'react-bootstrap';
+import { ControlLabel, FormControl, FormGroup, ListGroup,
+         ListGroupItem, Modal } from 'react-bootstrap';
 import update = require('react-addons-update');
 import semver = require('semver');
 import * as url from 'url';
@@ -20,6 +24,7 @@ interface IConnectedProps {
 interface IMetaEditorState {
   display: boolean;
   info?: IModInfo;
+  showRuleEditor: boolean;
 }
 
 type IProps = IBaseProps & IConnectedProps;
@@ -38,6 +43,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
     this.state = {
       display: false,
       info: undefined,
+      showRuleEditor: false,
     };
   }
 
@@ -49,7 +55,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
         key={downloadId}
         tooltip={t('View Meta Data')}
         onClick={this.open}
-        >
+      >
         <Icon name='edit' />
         {this.renderDialog()}
       </tooltip.Button>
@@ -58,7 +64,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
 
   private renderDialog(): JSX.Element {
     const { t } = this.props;
-    const { display, info } = this.state;
+    const { display, info, showRuleEditor } = this.state;
 
     if (!display) {
       return null;
@@ -69,7 +75,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
 
     return (
       <Modal show={true} onHide={this.close}>
-        <Modal.Header>Meta Data</Modal.Header>
+        <Modal.Header><h3>Meta Data</h3></Modal.Header>
         <Modal.Body>
           <form>
             <FormGroup
@@ -80,6 +86,14 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
                 type='text'
                 value={info.modName}
                 onChange={this.changeModName}
+              />
+            </FormGroup>
+            <FormGroup>
+              <ControlLabel>{t('Mod ID')}</ControlLabel>
+              <FormControl
+                type='text'
+                value={info.modId}
+                onChange={this.changeModId}
               />
             </FormGroup>
             <FormGroup>
@@ -112,7 +126,29 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
               />
               <FormFeedbackAwesome />
             </FormGroup>
+            <FormGroup>
+              <ControlLabel>
+                {t('Rules')}
+                {' '}
+                <tooltip.Button
+                  className='btn-embed'
+                  tooltip={t('Add')}
+                  id='add-rule'
+                  onClick={this.showRuleEditor}
+                >
+                  <Icon name='plus' />
+                </tooltip.Button>
+              </ControlLabel>
+              <ListGroup>
+                {info.rules.map(this.renderRule)}
+              </ListGroup>
+            </FormGroup>
           </form>
+          <RuleEditor
+            show={showRuleEditor}
+            onHide={this.hideRuleEditor}
+            onConfirm={this.addRule}
+          />
         </Modal.Body>
         <Modal.Footer>
           <tooltip.Button
@@ -134,6 +170,63 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
     );
   }
 
+  private renderRule = (rule: IRule, index: number) => {
+    let {t} = this.props;
+    return (
+      <ListGroupItem
+        key={`rule-${index}`}
+      >
+        {rule.type} - {this.renderReference(rule.reference)}
+        <div className='rule-actions pull-right'>
+          <tooltip.Button
+            id={`rule-${index}`}
+            tooltip={t('Remove')}
+            onClick={this.removeRule}
+          >
+            <Icon name='remove'/>
+          </tooltip.Button>
+        </div>
+      </ListGroupItem>
+    );
+  }
+
+  private renderReference = (reference: string | IReference) => {
+    if (typeof(reference) === 'string') {
+      return reference;
+    } else {
+      return `${reference.modId}:${reference.logicalFileName} - ${reference.versionMatch}`;
+    }
+  }
+
+  private removeRule = (evt) => {
+    const idSegmented = evt.currentTarget.id.split('-');
+    let idx = idSegmented[idSegmented.length - 1];
+    this.setState(update(this.state, { info: {
+      rules: { $splice: [[ idx, 1 ]] },
+    }}));
+  }
+
+  private showRuleEditor = () => {
+    this.setState(update(this.state, {
+      showRuleEditor: { $set: true },
+    }));
+  }
+
+  private hideRuleEditor = () => {
+    this.setState(update(this.state, {
+      showRuleEditor: { $set: false },
+    }));
+  }
+
+  private addRule = (type: RuleType, reference: string | IReference) => {
+    const rule = { type, reference };
+    this.setState(update(this.state, { info: {
+      rules: { $push: [ rule ] },
+    }}), () => {
+      this.hideRuleEditor();
+    });
+  }
+
   private save = () => {
     this.context.api.saveModMeta(this.state.info);
     this.close();
@@ -151,6 +244,10 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
 
   private changeModName = (event) => {
     this.setField('modName', event.target.value);
+  }
+
+  private changeModId = (event) => {
+    this.setField('modId', event.target.value);
   }
 
   private changeLogicalFileName = (event) => {
@@ -173,7 +270,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
   }
 
   private open = () => {
-    const { downloadId, downloads } = this.props;
+    const { t, downloadId, downloads } = this.props;
     let filePath = downloads[downloadId].localPath;
     this.context.api.lookupModMeta(filePath, {})
       .then((info: ILookupResult[]) => {
@@ -194,11 +291,16 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
                 rules: [],
                 details: {},
               });
+          })
+          .catch((err) => {
+            this.context.api.showErrorNotification(t('Failed to analyze file'), err.message);
           });
         }
       })
       .catch((err) => {
         log('error', 'Failed to look up mod meta information', { err: err.message });
+        this.context.api.showErrorNotification(t('Failed to look up meta information'),
+                                               err.message);
       });
   };
 
@@ -216,4 +318,4 @@ function mapStateToProps(state) {
 export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps)(MetaEditorIcon)
-  );
+  ) as React.ComponentClass<IBaseProps>;

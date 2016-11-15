@@ -12,7 +12,9 @@
   "author": "",
   "license": "GPL-3.0",
   "babel": {
-    "presets": ["es2015"]
+    "presets": [
+      "es2015"
+    ]
   },
   "devDependencies": {
     "babel-core": "^6.14.0",
@@ -21,7 +23,7 @@
     "bluebird": "^3.4.6",
     "i18next": "^3.5.1",
     "modmeta-db": "file:../../external/modmeta-db",
-    "nmm-api": "file:../../api",
+    "nmm-api": "file:///d:\\Work\\NMM2\\api",
     "react": "^15.3.2",
     "react-addons-update": "^15.3.2",
     "react-bootstrap": "^0.30.6",

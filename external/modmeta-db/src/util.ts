@@ -15,16 +15,23 @@ import * as fs from 'fs-extra-promise';
  */
 export function genHash(filePath: string): Promise<IHashResult> {
   return new Promise<IHashResult>((resolve, reject) => {
-    let hash = createHash('md5');
-    let size = 0;
-    let stream = fs.createReadStream(filePath);
-    stream.on('data', (data) => {
-      hash.update(data);
-      size += data.length;
-    });
-    stream.on('end', () => resolve({
-                       md5sum: hash.digest('hex'),
-                       numBytes: size,
-                     }));
+    try {
+      let hash = createHash('md5');
+      let size = 0;
+      let stream = fs.createReadStream(filePath);
+      stream.on('data', (data) => {
+        hash.update(data);
+        size += data.length;
+      });
+      stream.on('end', () => resolve({
+                         md5sum: hash.digest('hex'),
+                         numBytes: size,
+                       }));
+      stream.on('error', (err) => {
+        reject(err);
+      });
+    } catch (err) {
+      reject(err);
+    }
   });
 }
