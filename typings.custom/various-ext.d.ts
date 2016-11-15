@@ -48,3 +48,8 @@ declare module JSX {
 declare module 'module' {
   export var _initPaths: () => void;
 }
+
+declare module 'less-plugin-clean-css' {
+  let dummy: any;
+  export = dummy;
+}

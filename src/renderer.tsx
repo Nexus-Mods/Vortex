@@ -10,6 +10,7 @@ import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
 import getI18n from './util/i18n';
+import loadExtensionCSS from './util/loadExtensionCSS';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
@@ -82,6 +83,8 @@ ipcRenderer.on('external-url', (event, protocol, url) => {
 
 extensions.doOnce();
 initApplicationMenu(extensions);
+
+loadExtensionCSS(extensions);
 
 let currentLanguage: string = store.getState().settings.interface.language;
 store.subscribe(() => {

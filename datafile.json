@@ -6,7 +6,7 @@
         "--clean-css",
         "--include-path=node_modules/bootswatch:node_modules/bootstrap-less",
         "src/stylesheets/index.less",
-        "app/assets/css/theme.css"
+        "app/assets/css/base.css"
       ],
       "target": [
         "app"
@@ -25,6 +25,15 @@
     }
   ],
   "copy": [
+    {
+      "srcPath": "src/stylesheets",
+      "outPath": "assets/css",
+      "skipPaths": 2,
+      "target": [
+        "out",
+        "app"
+      ]
+    },
     {
       "srcPath": "node_modules/font-awesome/css/font-awesome.min.css",
       "outPath": "assets",

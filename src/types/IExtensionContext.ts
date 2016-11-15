@@ -284,6 +284,16 @@ export interface IExtensionContext {
   registerExtensionFunction: (name: string, callback: Function) => void;
 
   /**
+   * register a stylesheet file to be loaded in the page
+   * This is expected to be a less file and it will be compiled to css at startup
+   * time together will all other extensions and variables.less. This means you can
+   * access all the variables defined there.
+   * 
+   * @memberOf IExtensionContext
+   */
+  registerStyle: (filePath: string) => void;
+
+  /**
    * called once after the store has been set up
    * 
    * @memberOf IExtensionContext
