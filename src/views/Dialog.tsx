@@ -69,7 +69,7 @@ class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}>
   private renderAction = (action: string): JSX.Element => {
     const { t } = this.props;
     return (
-      <Action t={t} action={action} onDismiss={this.dismiss} />
+      <Action t={t} key={action} action={action} onDismiss={this.dismiss} />
     );
   }
 

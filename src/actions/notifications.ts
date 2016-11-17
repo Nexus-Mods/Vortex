@@ -76,7 +76,7 @@ export function showDialog(type: DialogType, title: string,
       const id = v1();
       dispatch(addDialog(id, type, title, content, Object.keys(actions)));
       dialogCallbacks[id] = (actionKey: string, input?: any) => {
-        if (actions[actionKey] !== null) {
+        if (actions[actionKey] != null) {
           actions[actionKey](input);
         }
         resolve({ action: actionKey, input });

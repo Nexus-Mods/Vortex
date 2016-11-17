@@ -19,6 +19,7 @@ import { IExtensionApi, IExtensionContext, ILookupDetails,
 import { INotification } from '../types/INotification';
 import { log } from '../util/log';
 import { showError } from '../util/message';
+import { getSafe } from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
@@ -118,7 +119,11 @@ class ExtensionManager {
 
     // TODO the mod db doesn't depend on the store but it must only be instantiated
     // in one process and this is a cheap way of achieving that
-    this.mModDB = new ModDB(app.getPath('userData'));
+    this.mModDB = new ModDB(
+        app.getPath('userData'),
+        getSafe(store.getState(), ['settings', 'gameMode', 'current'],
+                undefined),
+        getSafe(store.getState(), ['account', 'nexus', 'APIKey'], ''));
   }
 
   /**

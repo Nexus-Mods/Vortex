@@ -17,12 +17,10 @@ function genHash(filePath) {
                 numBytes: size,
             }));
             stream.on('error', (err) => {
-                console.log('error', err);
                 reject(err);
             });
         }
         catch (err) {
-            console.log('exception', err);
             reject(err);
         }
     });
