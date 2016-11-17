@@ -149,6 +149,16 @@ export function removeValue<T>(state: T, path: string[], value: any): T {
   return copy;
 }
 
+/**
+ * remove all vales for which the predicate applies
+ * 
+ * @export
+ * @template T
+ * @param {T} state
+ * @param {string[]} path
+ * @param {(element: any) => boolean} predicate
+ * @returns {T}
+ */
 export function removeValueIf<T>(state: T, path: string[],
                                  predicate: (element: any) => boolean): T {
   return setSafe(state, path, getSafe(state, path, []).filter((ele) => !predicate(ele)));

@@ -5,6 +5,7 @@ import { downloadPath } from '../mod_management/selectors';
 import { setDownloadSpeed} from './actions/state';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
+import { ProtocolHandlers } from './types/ProtocolHandlers';
 import DownloadView from './views/DownloadView';
 import Settings from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';
@@ -15,6 +16,9 @@ import observe from './DownloadObserver';
 import { app as appIn, remote } from 'electron';
 
 const app = remote !== undefined ? remote.app : appIn;
+
+let observer;
+let protocolHandlers: ProtocolHandlers = {};
 
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('download', 'Download', DownloadView, {
@@ -27,6 +31,11 @@ function init(context: IExtensionContext): boolean {
 
   context.registerReducer(['persistent', 'downloads'], stateReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
+
+  context.registerExtensionFunction('registerDownloadProtocol',
+    (schema: string, handler: (inputUrl: string) => Promise<string[]>) => {
+    protocolHandlers[schema] = handler;
+  });
 
   // ensure the current profile is always set to a valid value on startup and
   // when changing the game mode 
@@ -46,7 +55,7 @@ function init(context: IExtensionContext): boolean {
       },
       `Nexus Client v2.${app.getVersion()}`
     );
-    observeImpl(context.api.events, store, manager);
+    observer = observeImpl(context.api.events, store, manager, protocolHandlers);
   });
 
   return true;

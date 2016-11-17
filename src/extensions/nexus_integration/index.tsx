@@ -8,13 +8,18 @@ import { settingsReducer } from './reducers/settings';
 import LoginIcon from './views/LoginIcon';
 import Settings from './views/Settings';
 
-import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
-
 import NXMUrl from './NXMUrl';
 
+import * as Promise from 'bluebird';
+import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
 import * as util from 'util';
 
 let nexus: Nexus;
+
+export interface IExtensionContextExt extends IExtensionContext {
+  registerDownloadProtocol: (schema: string,
+    handler: (inputUrl: string) => Promise<string[]>) => void;
+}
 
 function startDownload(api: IExtensionApi, nxmurl: string) {
   const url: NXMUrl = new NXMUrl(nxmurl);
@@ -56,11 +61,21 @@ function startDownload(api: IExtensionApi, nxmurl: string) {
   });
 }
 
-function init(context: IExtensionContext): boolean {
+function init(context: IExtensionContextExt): boolean {
   context.registerFooter('login', LoginIcon, () => ({ nexus }));
   context.registerSettings('Download', Settings);
   context.registerReducer([ 'account', 'nexus' ], accountReducer);
   context.registerReducer([ 'settings', 'nexus' ], settingsReducer);
+
+  if (context.registerDownloadProtocol !== undefined) {
+    context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {
+      const nxm: NXMUrl = new NXMUrl(nxmurl);
+      return nexus.getDownloadURLs(nxm.modId, nxm.fileId, nxm.gameId)
+        .map((url: IDownloadURL): string => {
+          return url.URI;
+        });
+    });
+  }
 
   let onStartDownload = (nxmurl: string) => {
     startDownload(context.api, nxmurl);
