@@ -18,4 +18,5 @@ export interface ISupportedTool {
   parameters?: string;
   custom?: boolean;
   currentWorkingDirectory?: string;
+  missing?: boolean;
 }

@@ -93,24 +93,28 @@ let tools: ISupportedTool[] = [
     name: 'TES5Edit',
     logo: 'tes5edit.png',
     location: () => findInProgramFiles('TES5Edit.exe'),
+    missing: true,
   },
    {
     id: 'WryeBash',
     name: 'WryeBash',
     logo: 'wrye.png',
     location: () => findInProgramFiles('Wrye Bash.exe'),
+    missing: true,
   },
   {
     id: 'loot',
     name: 'LOOT',
     logo: 'loot.png',
     location: () => findInProgramFiles('LOOT.exe'),
+    missing: true,
   },
   {
     id: 'FNIS',
     name: 'FNIS',
     logo: 'fnis.png',
     location: () => findInProgramFiles('GenerateFNISforUsers.exe'),
+    missing: true,
   },
 ];
 

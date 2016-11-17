@@ -28,12 +28,15 @@ export function discoverTools(game: IGame, onDiscoveredTool: DiscoveredToolCB) {
     return;
   }
   supportedTools.map((supportedTool: ISupportedTool) => {
+    onDiscoveredTool(game.id, { id: supportedTool.id, missing: true });
+
     let location: string | Promise<string> = supportedTool.location();
     if (typeof (location) === 'string') {
       if (location !== '') {
         onDiscoveredTool(game.id, {
           id: supportedTool.id,
           path: location,
+          missing: false,
         });
       } else {
         log('debug', 'tool not found', supportedTool.name);
@@ -43,6 +46,7 @@ export function discoverTools(game: IGame, onDiscoveredTool: DiscoveredToolCB) {
         onDiscoveredTool(game.id, {
           id: supportedTool.id,
           path: resolvedPath,
+          missing: false,
        });
         return null;
       }).catch((err) => {
