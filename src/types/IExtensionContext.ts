@@ -1,6 +1,6 @@
 import { INotification } from './INotification';
 import * as Promise from 'bluebird';
-import { IModInfo } from 'modmeta-db';
+import { IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 
 export type PropsCallback = () => Object;
@@ -83,7 +83,7 @@ export interface IExtensionApi {
    * 
    * @memberOf IExtensionApi
    */
-  showErrorNotification?: (message: string, detail: string) => void;
+  showErrorNotification?: (message: string, detail: string | Error) => void;
 
   /**
    * hides a notification by its id
@@ -171,6 +171,13 @@ export interface IExtensionApi {
    * @memberOf IExtensionApi
    */
   deregisterProtocol: (protocol: string) => void;
+
+  /**
+   * find meta information about a mod
+   * 
+   * @memberOf IExtensionApi
+   */
+  lookupModReference: (ref: IReference) => Promise<ILookupDetails[]>;
 
   /**
    * find meta information about a mod
@@ -294,7 +301,9 @@ export interface IExtensionContext {
   registerStyle: (filePath: string) => void;
 
   /**
-   * called once after the store has been set up
+   * called once after the store has been set up and after all extensions have been initialized
+   * This means that if your extension registers its own extension function
+   * (@see registerExtensionFunction) then those registrations happen before once is called.
    * 
    * @memberOf IExtensionContext
    */

@@ -1,5 +1,7 @@
 import { addNotification, showDialog } from '../actions/notifications';
 
+import { createErrorReport } from './errorHandling';
+
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));
 }
@@ -69,15 +71,31 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
  * @param {string} message
  * @param {string} [details]
  */
-export function showError<S>(dispatch: Redux.Dispatch<S>, message: string, details?: string) {
+export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
+                             details?: string | Error) {
+  let finalDetails = details instanceof Error ? renderError(details) : details;
   dispatch(addNotification({
     type: 'error',
     message,
     actions: details !== undefined ? [{
       title: 'More',
       action: (dismiss: Function) => {
-        dispatch(showDialog('error', 'Error', { message: details }, { Close: null }));
+        dispatch(showDialog('error', 'Error', { message: finalDetails }, {
+          Report: () => createErrorReport('Error', {
+            message,
+            details: finalDetails,
+          }),
+          Close: null,
+        }));
       },
     }] : [],
   }));
+}
+
+function renderError(err: Error): string {
+  let res = err.message;
+  if (err.stack) {
+    res += '\n' + err.stack;
+  }
+  return res;
 }

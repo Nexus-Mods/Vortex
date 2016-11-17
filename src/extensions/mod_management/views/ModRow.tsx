@@ -43,7 +43,7 @@ class ModRow extends React.Component<IProps, {}> {
         title: 'Remove',
         action: this.remove,
       },
-    ]
+    ];
   }
 
   public render(): JSX.Element {
@@ -108,7 +108,7 @@ class ModRow extends React.Component<IProps, {}> {
       return value.toLocaleString(language);
     } else if (typeof(value) === 'string') {
       return value;
-    } else if (value === undefined) {
+    } else if ((value === undefined) || (value === null)) {
       return '';
     } else {
       return value.toString();

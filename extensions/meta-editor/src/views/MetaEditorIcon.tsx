@@ -1,7 +1,8 @@
 import RuleEditor from './RuleEditor';
 
 import { ComponentEx, FormFeedbackAwesome, Icon,
-         connect, log, tooltip, translate, types } from 'nmm-api';
+         connect, log, tooltip, translate, types,
+         util } from 'nmm-api';
 
 import { IHashResult, ILookupResult, IModInfo, IReference,
          IRule, RuleType, genHash } from 'modmeta-db';
@@ -12,6 +13,8 @@ import { ControlLabel, FormControl, FormGroup, ListGroup,
 import update = require('react-addons-update');
 import semver = require('semver');
 import * as url from 'url';
+
+import * as nodeUtil from 'util';
 
 export interface IBaseProps {
   downloadId: string;
@@ -75,7 +78,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
 
     return (
       <Modal show={true} onHide={this.close}>
-        <Modal.Header><h3>Meta Data</h3></Modal.Header>
+        <Modal.Header><h3>{info.logicalFileName}</h3></Modal.Header>
         <Modal.Body>
           <form>
             <FormGroup
@@ -140,11 +143,12 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
                 </tooltip.Button>
               </ControlLabel>
               <ListGroup>
-                {info.rules.map(this.renderRule)}
+                {info.rules !== undefined ? info.rules.map(this.renderRule) : null}
               </ListGroup>
             </FormGroup>
           </form>
           <RuleEditor
+            fileName={info.logicalFileName}
             show={showRuleEditor}
             onHide={this.hideRuleEditor}
             onConfirm={this.addRule}
@@ -190,9 +194,9 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
     );
   }
 
-  private renderReference = (reference: string | IReference) => {
-    if (typeof(reference) === 'string') {
-      return reference;
+  private renderReference = (reference: IReference) => {
+    if (reference.fileMD5 !== undefined) {
+      return reference.fileMD5;
     } else {
       return `${reference.modId}:${reference.logicalFileName} - ${reference.versionMatch}`;
     }
@@ -218,11 +222,9 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
     }));
   }
 
-  private addRule = (type: RuleType, reference: string | IReference) => {
+  private addRule = (type: RuleType, reference: IReference) => {
     const rule = { type, reference };
-    this.setState(update(this.state, { info: {
-      rules: { $push: [ rule ] },
-    }}), () => {
+    this.setState(util.pushSafe(this.state, [ 'info', 'rules' ], rule), () => {
       this.hideRuleEditor();
     });
   }
@@ -269,6 +271,28 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
     }));
   }
 
+  private initEmpty(filePath: string) {
+    const { t } = this.props;
+    genHash(filePath)
+      .then((hashResult: IHashResult) => {
+        this.setDialogVisible(true, {
+          modId: '',
+          modName: path.basename(filePath, path.extname(filePath)),
+          fileName: filePath,
+          fileSizeBytes: hashResult.numBytes,
+          gameId: '',
+          fileVersion: '',
+          fileMD5: hashResult.md5sum,
+          sourceURI: '',
+          rules: [],
+          details: {},
+        });
+      })
+      .catch((err) => {
+        this.context.api.showErrorNotification(t('Failed to analyze file'), err.message);
+      });
+  }
+
   private open = () => {
     const { t, downloadId, downloads } = this.props;
     let filePath = downloads[downloadId].localPath;
@@ -277,30 +301,12 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
         if (info.length > 0) {
           this.setDialogVisible(true, info[0].value);
         } else {
-          genHash(filePath)
-            .then((hashResult: IHashResult) => {
-              this.setDialogVisible(true, {
-                modId: '',
-                modName: path.basename(filePath, path.extname(filePath)),
-                fileName: filePath,
-                fileSizeBytes: hashResult.numBytes,
-                gameId: '',
-                fileVersion: '',
-                fileMD5: hashResult.md5sum,
-                sourceURI: '',
-                rules: [],
-                details: {},
-              });
-          })
-          .catch((err) => {
-            this.context.api.showErrorNotification(t('Failed to analyze file'), err.message);
-          });
+          this.initEmpty(filePath);
         }
       })
       .catch((err) => {
-        log('error', 'Failed to look up mod meta information', { err: err.message });
-        this.context.api.showErrorNotification(t('Failed to look up meta information'),
-                                               err.message);
+        log('info', 'Failed to look up mod meta information', { err: nodeUtil.inspect(err) });
+        this.initEmpty(filePath);
       });
   };
 

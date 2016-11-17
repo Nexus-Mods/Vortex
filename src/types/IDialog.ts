@@ -1,5 +1,5 @@
 export type DialogType =
-  'success' | 'info' | 'error';
+  'success' | 'info' | 'error' | 'question';
 
 export type DialogActions = { [label: string]: Function };
 

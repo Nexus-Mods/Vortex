@@ -21,7 +21,7 @@ class InstallContext implements IInstallContext {
   private mAddMod: (mod: IMod) => void;
   private mAddNotification: (notification: INotification) => void;
   private mDismissNotification: (id: string) => void;
-  private mShowError: (message: string, details?: string) => void;
+  private mShowError: (message: string, details?: string | Error) => void;
   private mSetModState: (id: string, state: ModState) => void;
   private mSetModAttribute: (id: string, key: string, value: any) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
@@ -85,7 +85,7 @@ class InstallContext implements IInstallContext {
     this.mSetModInstallationPath(id, installPath);
   }
 
-  public reportError(message: string, details?: string): void {
+  public reportError(message: string, details?: string | Error): void {
     log('error', 'install error', { message, details });
     this.mShowError(message, details);
   }

@@ -13,12 +13,12 @@ export interface ITermination {
   details?: string;
 }
 
-function createTitle(error: ITermination) {
-  return `Crash: ${error.message}`;
+function createTitle(type: string, error: ITermination) {
+  return `${type}: ${error.message}`;
 }
 
-function createReport(error: ITermination, version: string) {
-  return `### Application Crash
+function createReport(type: string, error: ITermination, version: string) {
+  return `### Application ${type}
 #### System
 | | |
 |------------ | -------------|
@@ -37,6 +37,23 @@ ${error.details}
 }
 
 declare var Notification: any;
+
+export function createErrorReport(type: string, error: ITermination, labels: string[] = []) {
+  const app = appIn || remote.app;
+
+  clipboard.writeText(createReport(type, error, app.getVersion()));
+  const title = encodeURIComponent(createTitle(type, error));
+  const body =
+      'Please paste the content of your clipboard here and describe what you did ' +
+      'when the error happened.';
+  // could be a bit more dynamic but how often is this going to change?
+  const repo = 'https://github.com/Nexus-Mods/NMM2';
+
+  let labelFragments = labels.concat(['bug']).map((str: string) => `labels[]=${str}`).join('&');
+
+  let url = `${repo}/issues/new?title=${title}&${labelFragments}&body=${body}`;
+  shell.openExternal(url);
+}
 
 /**
  * display an error message and quit the application
@@ -63,14 +80,7 @@ export function terminate(error: ITermination) {
   });
 
   if (action === 0) {
-    clipboard.writeText(createReport(error, app.getVersion()));
-    const title = encodeURIComponent(createTitle(error));
-    const body = 'Please paste the content of your clipboard here and describe what you did '
-               + 'when the crash happened.';
-    // could be a bit more dynamic but how often is this going to change?
-    const repo = 'https://github.com/Nexus-Mods/NMM2';
-    let url = `${repo}/issues/new?title=${title}&labels[]=bug&body=${body}`;
-    shell.openExternal(url);
+    createErrorReport('Crash', error, ['crash']);
   }
   app.exit(1);
 }

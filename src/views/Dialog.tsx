@@ -81,6 +81,9 @@ class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}>
       case 'error': return (
         <Icon name='exclamation-circle' style={{ height: '32px', width: '32px', color: 'red' }} />
       );
+      case 'question': return (
+        <Icon name='question-circle' style={{ height: '32px', width: '32px', color: 'blue' }} />
+      );
       default: return null;
     }
   }

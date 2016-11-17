@@ -24,7 +24,7 @@ import { getSafe } from '../util/storeHelper';
 import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs';
-import { ILookupResult, IModInfo, ModDB } from 'modmeta-db';
+import { ILookupResult, IModInfo, IReference, ModDB } from 'modmeta-db';
 import * as path from 'path';
 import ReduxWatcher = require('redux-watcher');
 
@@ -72,8 +72,12 @@ class ExtensionManager {
     this.mEventEmitter = eventEmitter;
     this.mExtensions = this.loadExtensions();
     this.mApi = {
-      showErrorNotification: (message: string, details: string) => {
-        dialog.showErrorBox(message, details);
+      showErrorNotification: (message: string, details: string | Error) => {
+        if (typeof(details) === 'string') {
+          dialog.showErrorBox(message, details);
+        } else {
+          dialog.showErrorBox(message, details.message);
+        }
       },
       selectFile: this.selectFile,
       selectExecutable: this.selectExecutable,
@@ -83,6 +87,7 @@ class ExtensionManager {
       onStateChange: (path: string[], callback: IStateChangeCallback) => undefined,
       registerProtocol: this.registerProtocol,
       deregisterProtocol: this.deregisterProtocol,
+      lookupModReference: this.lookupModReference,
       lookupModMeta: this.lookupModMeta,
       saveModMeta: this.saveModMeta,
     };
@@ -102,7 +107,7 @@ class ExtensionManager {
     this.mApi.sendNotification = (notification: INotification) => {
       store.dispatch(addNotification(notification));
     };
-    this.mApi.showErrorNotification = (message: string, details: string) => {
+    this.mApi.showErrorNotification = (message: string, details: string | Error) => {
       showError(store.dispatch, message, details);
     };
     this.mApi.dismissNotification = (id: string) => {
@@ -160,22 +165,18 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public applyExtensionsOfExtensions() {
+    let extFunctions: { name: string, registerFunc: Function }[] = [];
     this.apply('registerExtensionFunction', (name: string, registerFunc: () => void) => {
-      let context = this.emptyExtensionContext();
-      context.registerExtensionFunction = () => Promise.resolve(undefined);
-      context[name] = registerFunc;
-
-      return Promise.all(Promise.map(this.mExtensions,
-      (ext) => {
-        return new Promise((resolve, reject) => {
-          if (ext.initFunc(context)) {
-            resolve(true);
-          } else {
-            resolve(false);
-          }
-        });
-      }));
+      extFunctions.push({ name, registerFunc });
     });
+
+    if (extFunctions.length > 0) {
+      let context = this.emptyExtensionContext();
+      for (let func of extFunctions) {
+        context[func.name] = func.registerFunc;
+      }
+      this.mExtensions.forEach((ext) => ext.initFunc(context));
+    }
   }
 
   /**
@@ -291,6 +292,15 @@ class ExtensionManager {
                                         [ path.resolve(__dirname, '..', '..') ]);
     } else {
       app.removeAsDefaultProtocolClient(protocol);
+    }
+  }
+
+  private lookupModReference = (reference: IReference): Promise<ILookupResult[]> => {
+    if (this.mModDB !== undefined) {
+      // TODO support other reference type
+      return this.mModDB.getByKey(reference.fileMD5);
+    } else {
+      return Promise.reject({ message: 'wrong process' });
     }
   }
 

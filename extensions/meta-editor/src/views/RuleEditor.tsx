@@ -1,5 +1,5 @@
 import { IHashResult, ILookupResult, IReference, RuleType, genHash } from 'modmeta-db';
-import { ComponentEx, FormFeedbackAwesome, log, translate, types } from 'nmm-api';
+import { ComponentEx, FormFeedbackAwesome, translate, types } from 'nmm-api';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup,
          Modal, Nav, NavItem } from 'react-bootstrap';
@@ -7,9 +7,10 @@ import { Button, ControlLabel, FormControl, FormGroup,
 import update = require('react-addons-update');
 
 interface IBaseProps {
+  fileName: string;
   onHide: () => void;
   show: boolean;
-  onConfirm: (type: RuleType, reference: string | IReference) => void;
+  onConfirm: (type: RuleType, reference: IReference) => void;
 }
 
 interface IComponentState {
@@ -25,6 +26,12 @@ type IRule = IBaseProps;
 
 const MD5Expression = /[a-f0-9]{32}/;
 
+/**
+ * editor for dependency rules
+ * 
+ * @class RuleEditor
+ * @extends {ComponentEx<IRule, IComponentState>}
+ */
 class RuleEditor extends ComponentEx<IRule, IComponentState> {
   public static contextTypes: React.ValidationMap<any> = {
     api: React.PropTypes.object.isRequired,
@@ -45,12 +52,12 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const {t, show} = this.props;
+    const {t, fileName, show} = this.props;
     const {refType, ruleType} = this.state;
 
     return (
       <Modal show={show} onHide={this.nop}>
-        <Modal.Header><h3>{t('Edit Rules')}</h3></Modal.Header>
+        <Modal.Header><h3>{fileName}</h3></Modal.Header>
         <Modal.Body>
           <form>
             <FormGroup>
@@ -189,6 +196,10 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
         return this.context.api.lookupModMeta(filePath, {});
       })
       .then((result: ILookupResult[]) => {
+        // TODO always use hash because lookup by meta information is not currently
+        //   supported on the web side
+        return genHash(filePath);
+        /*
         if (result.length === 0) {
           return genHash(filePath);
         } else {
@@ -200,6 +211,7 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
             versionMatch: { $set: modInfo.fileVersion },
           }));
         }
+        */
       })
       .then((hash?: IHashResult) => {
         if (hash !== undefined) {
@@ -236,7 +248,9 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
         versionMatch: this.state.versionMatch,
       });
     } else {
-      onConfirm(ruleType, this.state.md5);
+      onConfirm(ruleType, {
+        fileMD5: this.state.md5,
+      });
     }
   }
 }

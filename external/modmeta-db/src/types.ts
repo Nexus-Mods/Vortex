@@ -52,8 +52,9 @@
  * @interface IReference
  */
 export interface IReference {
-  modId: string;
-  versionMatch: string;
+  fileMD5?: string;
+  modId?: string;
+  versionMatch?: string;
   logicalFileName?: string;
   fileExpression?: string;
 }
@@ -72,7 +73,7 @@ export type RuleType = 'before' | 'after' | 'requires' | 'conflics' | 'recommend
  */
 export interface IRule {
   type: RuleType;
-  reference: string | IReference;
+  reference: IReference;
 }
 
 /**

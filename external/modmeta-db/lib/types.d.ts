@@ -1,13 +1,14 @@
 export interface IReference {
-    modId: string;
-    versionMatch: string;
+    fileMD5?: string;
+    modId?: string;
+    versionMatch?: string;
     logicalFileName?: string;
     fileExpression?: string;
 }
 export declare type RuleType = 'before' | 'after' | 'requires' | 'conflics' | 'recommends' | 'provides';
 export interface IRule {
     type: RuleType;
-    reference: string | IReference;
+    reference: IReference;
 }
 export interface IModInfo {
     modId: string;

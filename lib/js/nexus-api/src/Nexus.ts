@@ -27,7 +27,7 @@ class Nexus {
 
   private mBaseURL = 'https://api.nexusmods.com/v1';
 
-  constructor(game: string, apiKey: string) {
+  constructor(game: string, apiKey: string, timeout?: number) {
     this.mRestClient = new Client();
     this.mBaseData = {
       headers: {
@@ -38,11 +38,11 @@ class Nexus {
         gameId: game,
       },
       requestConfig: {
-        timeout: 1000,
+        timeout: timeout || 5000,
         noDelay: true,
       },
       responseConfig: {
-        timeout: 1000,
+        timeout: timeout || 5000,
       },
     };
 
