@@ -58,7 +58,8 @@ class Progress {
     return this.mMagnitude > 0.9
       ? new Progress(this.currentProgress(),
                      this.mMagnitude / this.mStepCount, this.mCallback)
-      : undefined;
+      : new Progress(this.currentProgress(),
+                     0, this.mCallback);
   }
 
   private currentProgress() {

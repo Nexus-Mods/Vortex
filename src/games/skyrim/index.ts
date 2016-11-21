@@ -1,13 +1,8 @@
 import { IGame } from '../../types/IGame';
-import { ISupportedTool } from '../../types/ISupportedTool';
-
-import { log } from '../../util/log';
+import { ITool } from '../../types/ITool';
 
 import * as Promise from 'bluebird';
 import Registry = require('winreg');
-
-import * as fs from 'fs-extra-promise';
-import * as path from 'path';
 
 function findGame() {
   if (Registry === undefined) {
@@ -30,7 +25,7 @@ function findGame() {
     });
   });
 }
-
+/*
 function findInProgramFiles(executable: string) {
   let base = 'C:\\Program Files (x86)';
 
@@ -83,36 +78,44 @@ function findInProgramFiles(executable: string) {
       });
     }
   });
-}
+}*/
 
-let tools: ISupportedTool[] = [
+let tools: ITool[] = [
   {
     id: 'TES5Edit',
     name: 'TES5Edit',
     logo: 'tes5edit.png',
-    location: () => findInProgramFiles('TES5Edit.exe'),
-    missing: true,
+    executable: () => 'tes5edit.exe',
+    requiredFiles: [
+      'tes5edit.exe',
+    ],
   },
    {
     id: 'WryeBash',
     name: 'WryeBash',
     logo: 'wrye.png',
-    location: () => findInProgramFiles('Wrye Bash.exe'),
-    missing: true,
+    executable: () => 'wryebash.exe',
+    requiredFiles: [
+      'wryebash.exe',
+    ],
   },
   {
     id: 'loot',
     name: 'LOOT',
     logo: 'loot.png',
-    location: () => findInProgramFiles('LOOT.exe'),
-    missing: true,
+    executable: () => 'loot.exe',
+    requiredFiles: [
+      'loot.exe',
+    ],
   },
   {
     id: 'FNIS',
     name: 'FNIS',
     logo: 'fnis.png',
-    location: () => findInProgramFiles('GenerateFNISforUsers.exe'),
-    missing: true,
+    executable: () => 'GenerateFNISForUsers.exe',
+    requiredFiles: [
+      'GenerateFNISForUsers.exe',
+    ],
   },
 ];
 
@@ -120,10 +123,11 @@ const game: IGame = {
   id: 'skyrim',
   name: 'Skyrim',
   mergeMods: true,
-  queryGamePath: findGame,
+  queryPath: findGame,
   supportedTools: tools,
   queryModPath: () => '.',
   logo: 'logo.png',
+  executable: () => 'TESV.exe',
   requiredFiles: [
     'TESV.exe',
   ],

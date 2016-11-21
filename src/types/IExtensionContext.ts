@@ -197,6 +197,7 @@ export interface IExtensionApi {
    * @memberOf IExtensionApi
    */
   saveModMeta: (modInfo: IModInfo) => Promise<void>;
+
 }
 
 /**

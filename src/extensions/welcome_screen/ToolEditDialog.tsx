@@ -1,6 +1,6 @@
 import { IComponentContext } from '../../types/IComponentContext';
+import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
-import { ISupportedTool } from '../../types/ISupportedTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 
 import Icon from '../../views/Icon';
@@ -22,16 +22,16 @@ import * as ReactDOM from 'react-dom';
 
 export interface IBaseProps {
   game: IGame;
-  tool: ISupportedTool;
+  tool: IDiscoveredTool;
   onClose: () => void;
 }
 
 interface IActionProps {
-  onAddTool: (gameId: string, toolId: string, result: ISupportedTool) => void;
+  onAddTool: (gameId: string, toolId: string, result: IDiscoveredTool) => void;
 }
 
 interface IToolEditState {
-  tool: ISupportedTool;
+  tool: IDiscoveredTool;
   imageId: number;
 }
 
@@ -139,18 +139,18 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
         </Modal.Body>
         <Modal.Footer>
           <Button
-            id='apply-tool-btn'
-            tooltip={t('Apply')}
-            onClick={this.saveAndClose}
-          >
-            {t('Apply')}
-          </Button>
-          <Button
             id='cancel-tool-btn'
             tooltip={t('Cancel')}
             onClick={onClose}
           >
             {t('Cancel')}
+          </Button>
+          <Button
+            id='apply-tool-btn'
+            tooltip={t('Save')}
+            onClick={this.saveAndClose}
+          >
+            {t('Save')}
           </Button>
         </Modal.Footer>
       </Modal>

@@ -1,5 +1,5 @@
+import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
-import { ISupportedTool } from '../../types/ISupportedTool';
 import { terminate } from '../../util/errorHandling';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -9,7 +9,7 @@ import { discoveryFinished, discoveryProgress } from './actions/discovery';
 import { setKnownGames } from './actions/session';
 import { addDiscoveredGame, addDiscoveredTool, setGameMode } from './actions/settings';
 import { IDiscoveryResult, IGameStored, IStateEx } from './types/IStateEx';
-import { discoverTools, quickDiscovery, searchDiscovery } from './util/discovery';
+import { quickDiscovery, searchDiscovery } from './util/discovery';
 import Progress from './util/Progress';
 
 import * as Promise from 'bluebird';
@@ -117,7 +117,7 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public startQuickDiscovery() {
-    quickDiscovery(this.mKnownGames, this.onDiscoveredGame);
+    quickDiscovery(this.mKnownGames, this.onDiscoveredGame, this.onDiscoveredTool);
   }
 
   /**
@@ -134,7 +134,9 @@ class GameModeManager {
       this.mKnownGames,
       this.mStore.getState().settings.gameMode.discovered,
       this.mStore.getState().settings.gameMode.searchPaths,
-      this.onDiscoveredGame, progress)
+      this.onDiscoveredGame,
+      this.onDiscoveredTool,
+      progress)
     .finally(() => {
       this.mStore.dispatch(discoveryFinished());
     });
@@ -145,7 +147,7 @@ class GameModeManager {
     this.mActiveSearch.cancel();
   }
 
-  private onDiscoveredTool = (gameId: string, result: ISupportedTool) => {
+  private onDiscoveredTool = (gameId: string, result: IDiscoveredTool) => {
     this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result));
   }
 
@@ -154,8 +156,6 @@ class GameModeManager {
       result.modPath = path.resolve(result.path, result.modPath);
     }
     this.mStore.dispatch(addDiscoveredGame(gameId, result));
-    discoverTools(this.mKnownGames.find((game: IGame) => game.id === gameId),
-                  this.onDiscoveredTool);
   }
 
   private activateGameMode(mode: string, store: Redux.Store<IStateEx>): Promise<Persistor> {

@@ -1,6 +1,8 @@
+import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 import { IGame } from '../../../types/IGame';
-import { ISupportedTool } from '../../../types/ISupportedTool';
+import { ITool } from '../../../types/ITool';
 import { log } from '../../../util/log';
+import { getSafe } from '../../../util/storeHelper';
 
 import { IDiscoveryResult } from '../types/IStateEx';
 
@@ -12,64 +14,72 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
-export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
-export type DiscoveredToolCB = (gameId: string, result: ISupportedTool) => void;
+import * as util from 'util';
 
-/**
- * run discovery for the specified game
- * 
- * @export
- * @param {IGame} game
- * @param {DiscoveredToolCB} onDiscoveredTool
- */
-export function discoverTools(game: IGame, onDiscoveredTool: DiscoveredToolCB) {
-  let supportedTools: ISupportedTool[] = game.supportedTools;
-  if (supportedTools === null) {
+export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
+export type DiscoveredToolCB = (toolId: string, result: IDiscoveredTool) => void;
+
+function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB) {
+  if (tools === null) {
     return;
   }
-  supportedTools.map((supportedTool: ISupportedTool) => {
-    onDiscoveredTool(game.id, { id: supportedTool.id, missing: true });
 
-    let location: string | Promise<string> = supportedTool.location();
-    if (typeof (location) === 'string') {
-      if (location !== '') {
-        onDiscoveredTool(game.id, {
-          id: supportedTool.id,
-          path: location,
-          missing: false,
-        });
+  for (let tool of tools) {
+    if (tool.queryPath === undefined) {
+      continue;
+    }
+
+    let toolPath = tool.queryPath();
+    if (typeof(toolPath) === 'string') {
+      if (toolPath) {
+        onDiscoveredTool(tool.id, Object.assign({}, tool, {
+          path: toolPath,
+          hidden: false,
+          parameters: [],
+          custom: false,
+          currentWorkingDirectory: toolPath,
+        }));
       } else {
-        log('debug', 'tool not found', supportedTool.name);
+        log('debug', 'tool not found', tool.id);
       }
     } else {
-      (location as Promise<string>).then((resolvedPath) => {
-        onDiscoveredTool(game.id, {
-          id: supportedTool.id,
-          path: resolvedPath,
-          missing: false,
-       });
-        return null;
-      }).catch((err) => {
-        log('debug', 'tool not found', { id: supportedTool.name, err });
-      });
+      (toolPath as Promise<string>)
+          .then((resolvedPath) => {
+            if (resolvedPath) {
+              onDiscoveredTool(tool.id, Object.assign({}, tool, {
+                path: resolvedPath,
+                hidden: false,
+                parameters: [],
+                custom: false,
+                currentWorkingDirectory: resolvedPath,
+              }));
+            }
+            return null;
+          })
+          .catch((err) => {
+            log('debug', 'tool not found', {id: tool.id, err: err.message});
+          });
     }
-  });
+  }
 }
 
 /**
  * run the "quick" discovery using functions provided by the game extension
- * 
+ *
  * @export
  * @param {IGame[]} knownGames
  * @param {DiscoveredCB} onDiscoveredGame
  */
-export function quickDiscovery(knownGames: IGame[], onDiscoveredGame: DiscoveredCB) {
+export function quickDiscovery(knownGames: IGame[],
+                               onDiscoveredGame: DiscoveredCB,
+                               onDiscoveredTool: DiscoveredToolCB) {
   for (let game of knownGames) {
-    if (game.queryGamePath === undefined) {
+    quickDiscoveryTools(game.supportedTools, onDiscoveredTool);
+    if (game.queryPath === undefined) {
       continue;
     }
     try {
-      let gamePath = game.queryGamePath();
+      let gamePath = game.queryPath();
       if (typeof (gamePath) === 'string') {
         if (gamePath) {
           log('info', 'found game', { name: game.name, location: gamePath });
@@ -145,7 +155,7 @@ function walk(searchPath: string,
         }
       }
 
-      return Promise.mapSeries(statPaths, (statPath: string) => {
+      return Promise.map(statPaths, (statPath: string) => {
         return fs.statAsync(statPath).reflect();
       });
     }).then((res: Promise.Inspection<fs.Stats>[]) => {
@@ -156,9 +166,10 @@ function walk(searchPath: string,
           if (cur.isFulfilled() && cur.value().isDirectory()) {
             return prev.concat(idx);
           } else if (!cur.isFulfilled()) {
-            if (!(cur.reason().code in [ 'EPERM', 'ENOENT' ])) {
+            if ([ 'EPERM', 'ENOENT' ].indexOf(cur.reason().code) === -1) {
               log('warn', 'stat failed',
-                  { path: cur.reason().path, error: cur.reason().code });
+                  { path: cur.reason().path, error: cur.reason().code,
+                    type: typeof(cur.reason().code) });
             } else {
               log('debug', 'failed to access',
                   { path: cur.reason().path, error: cur.reason().code });
@@ -187,18 +198,33 @@ function walk(searchPath: string,
     });
 }
 
-function testGameDirValid(game: IGame, testPath: string, onDiscoveredGame: DiscoveredCB): void {
-  Promise.mapSeries(game.requiredFiles, (fileName: string) => {
-    return fs.statAsync(path.join(testPath, fileName));
-  }).then(() => {
-    log('info', 'valid', { game: game.id, path: testPath });
-    onDiscoveredGame(game.id, {
-      path: testPath,
-      modPath: game.queryModPath(),
-    });
-  }).catch(() => {
-    log('info', 'invalid', { game: game.id, path: testPath });
-  });
+function testApplicationDirValid(application: ITool, testPath: string, gameId: string,
+                                 onDiscoveredGame: DiscoveredCB,
+                                 onDiscoveredTool: DiscoveredToolCB): void {
+  Promise.mapSeries(application.requiredFiles,
+                    (fileName: string) => {
+                      return fs.statAsync(path.join(testPath, fileName));
+                    })
+      .then(() => {
+        let game = application as IGame;
+        if (game.queryModPath !== undefined) {
+          onDiscoveredGame(gameId, {
+            path: testPath,
+            modPath: game.queryModPath(),
+          });
+        } else {
+          onDiscoveredTool(gameId, Object.assign({}, application, {
+            path: path.join(testPath, application.executable()),
+            hidden: false,
+            parameters: [],
+            custom: false,
+            currentWorkingDirectory: testPath,
+          }));
+        }
+      })
+      .catch(() => {
+        log('info', 'invalid', {game: application.id, path: testPath});
+      });
 }
 
 /**
@@ -216,20 +242,35 @@ export function searchDiscovery(knownGames: IGame[],
                                 discoveredGames: { [id: string]: any },
                                 searchPaths: string[],
                                 onDiscoveredGame: DiscoveredCB,
+                                onDiscoveredTool: DiscoveredToolCB,
                                 progressObj: Progress): Promise<any[]> {
-  type FileEntry = { fileName: string, game: IGame };
+  type FileEntry = {
+    fileName: string,
+    gameId: string,
+    application: ITool
+  };
 
   let files: FileEntry[] = [];
-  let games: { [gameId: string]: string[] } = {};
 
-  knownGames.forEach((value: IGame) => {
-    if (!(value.id in discoveredGames)) {
-      games[value.id] = value.requiredFiles;
-      for (let required of value.requiredFiles) {
-        files.push({ fileName: required, game: value });
+  knownGames.forEach((knownGame: IGame) => {
+    if (!(knownGame.id in discoveredGames)) {
+      for (let required of knownGame.requiredFiles) {
+        files.push({ fileName: required, gameId: knownGame.id, application: knownGame });
       }
     }
+    if (knownGame.supportedTools !== null) {
+      knownGame.supportedTools.forEach((supportedTool: ITool) => {
+        if (getSafe(discoveredGames, [knownGame.id, 'tools', supportedTool.id, 'path'], undefined)
+            === undefined) {
+          for (let required of supportedTool.requiredFiles) {
+            files.push({fileName: required, gameId: knownGame.id, application: supportedTool});
+          }
+        }
+      });
+    }
   }, []);
+
+  log('info', 'searching for', util.inspect(files));
 
   // retrieve only the basenames of required files because the walk only ever looks
   // at the last path component of a file
@@ -239,27 +280,25 @@ export function searchDiscovery(knownGames: IGame[],
 
   progressObj.setStepCount(searchPaths.length);
 
-  return Promise.all(
-    Promise.map(searchPaths,
+  return Promise.mapSeries(searchPaths,
       (searchPath: string) => {
-        log('info', 'searching for games', { searchPaths });
+        log('info', 'searching for games & tools', { searchPaths });
         // recurse through the search path and look for known files. use the appropriate file name
         // normalization
         return getNormalizeFunc(searchPath)
           .then((normalize: Normalize) => {
             let matchListNorm = new Set(matchList.map(normalize));
-            log('info', 'matches', { matchList: matchListNorm.keys() });
             return walk(searchPath, matchListNorm, new Set<string>(), (foundPath: string) => {
-              log('debug', 'potential match', { foundPath });
               let matches: FileEntry[] = files.filter((entry: FileEntry) => {
-                return foundPath.endsWith(entry.fileName);
+                return normalize(foundPath).endsWith(normalize(entry.fileName));
               });
 
               for (let match of matches) {
                 let testPath: string =
                   foundPath.substring(0, foundPath.length - match.fileName.length);
-                let game: IGame = match.game;
-                testGameDirValid(game, testPath, onDiscoveredGame);
+                let application: ITool = match.application;
+                testApplicationDirValid(application, testPath, match.gameId,
+                                        onDiscoveredGame, onDiscoveredTool);
               }
               return false;
             }, progressObj, normalize);
@@ -268,7 +307,6 @@ export function searchDiscovery(knownGames: IGame[],
             progressObj.completed(searchPath);
             return null;
           });
-      })
+      }
     );
-
 }

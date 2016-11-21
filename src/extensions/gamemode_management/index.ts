@@ -7,6 +7,7 @@ import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 
 import GamePicker from './views/GamePicker';
+import ProgressFooter from './views/ProgressFooter';
 import Settings from './views/Settings';
 
 import GameModeManager from './GameModeManager';
@@ -19,6 +20,7 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['session', 'discovery'], discoveryReducer);
   context.registerReducer(['session', 'gameMode'], sessionReducer);
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
+  context.registerFooter('discovery-progress', ProgressFooter);
 
   context.once(() => {
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;

@@ -1,4 +1,5 @@
 import { IGame } from '../../types/IGame';
+import { ITool } from '../../types/ITool';
 
 import * as Promise from 'bluebird';
 import Registry = require('winreg');
@@ -33,17 +34,29 @@ function modPath(): string {
   return path.join(remote.app.getPath('documents'), 'Electronic Arts', 'The Sims 3', 'Mods');
 }
 
+let tools: ITool[] = [
+  {
+    id: 'sevenzip',
+    name: '7-Zip',
+    executable: () => '7zFM.exe',
+    requiredFiles: [
+      '7zFM.exe',
+    ],
+  },
+];
+
 const game: IGame = {
   id: 'sims3',
   name: 'The Sims 3',
   mergeMods: false,
-  queryGamePath: findGame,
+  queryPath: findGame,
   queryModPath: modPath,
   logo: 'logo.png',
+  executable: () => 'game/bin/TS3.exe',
   requiredFiles: [
     'game/bin/TS3.exe',
   ],
-  supportedTools: null,
+  supportedTools: tools,
 };
 
 export default game;

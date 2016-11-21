@@ -24,7 +24,7 @@
     "build_nexusapi": "cd lib/js/nexus-api && npm run build",
     "build_api": "tsc -p ./api && npm install ./api",
     "build_out": "tsc -p . && npm run lessc",
-    "buildwatch": "concurrently --kill-others \"tsc -p . -w\" npm-watch",
+    "buildwatch": "concurrently -p \"\" --kill-others \"tsc -p . -w\" npm-watch",
     "lessc": "lessc --clean-css --include-path=node_modules/bootswatch:node_modules/bootstrap-less src/stylesheets/index.less out/assets/css/base.css",
     "test": "jest",
     "doc": "typedoc --out doc src"

@@ -1,15 +1,11 @@
+import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
-import { ISupportedTool } from '../../types/ISupportedTool';
+import { ITool } from '../../types/ITool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';
 
-import { IDiscoveryResult, IDiscoveryState,
-   IGameStored, IStateEx } from '../gamemode_management/types/IStateEx';
-
 import { showError } from '../../util/message';
-
-import { discoverTools, DiscoveredToolCB } from '../gamemode_management/util/discovery';
 
 import { addDiscoveredTool, changeToolParams,
          removeDiscoveredTool } from '../gamemode_management/actions/settings';
@@ -29,17 +25,16 @@ interface IWelcomeScreenState {
 }
 
 interface IActionProps {
-  onAddDiscoveredTool: (gameId: string, toolId: string, result: ISupportedTool) => void;
+  onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => void;
   onRemoveDiscoveredTool: (gameId: string, toolId: string) => void;
   onChangeToolParams: (toolId: string) => void;
   onShowError: (message: string, details?: string) => void;
-  onRescanTools: (gameId: string, toolId: string, result: ISupportedTool) => void;
 }
 
 interface IConnectedProps {
   gameMode: string;
   knownGames: IGame[];
-  discoveredTools: { [id: string]: ISupportedTool };
+  discoveredTools: { [id: string]: IDiscoveredTool };
 }
 
 type IWelcomeScreenProps = IConnectedProps & IActionProps;
@@ -102,14 +97,14 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
   }
 
   private renderSupportedToolsIcons = (game: IGame): JSX.Element => {
-    let knownTools: ISupportedTool[] = game.supportedTools;
+    let knownTools: ITool[] = game.supportedTools;
     let { discoveredTools } = this.props;
 
     if (knownTools === null) {
       return null;
     }
 
-    let tools: ISupportedTool[] = this.mergeTools(knownTools, discoveredTools);
+    let tools: ITool[] = this.mergeTools(knownTools, discoveredTools);
 
     return (
       <div>
@@ -118,11 +113,19 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     );
   }
 
-  private mergeTools(knownTools: ISupportedTool[],
-                     discoveredTools: { [id: string]: ISupportedTool }): ISupportedTool[] {
-    let result: ISupportedTool[] = knownTools.slice();
+  private mergeTools(knownTools: ITool[],
+                     discoveredTools: { [id: string]: IDiscoveredTool }): IDiscoveredTool[] {
+    let result: IDiscoveredTool[] = knownTools.map((tool: ITool): IDiscoveredTool => {
+      return Object.assign({}, tool, {
+        path: '',
+        hidden: false,
+        parameters: [],
+        custom: false,
+        currentWorkingDirectory: '',
+      });
+    });
 
-    let lookup = result.reduce((prev: Object, current: ISupportedTool, idx: number) => {
+    let lookup = result.reduce((prev: Object, current: ITool, idx: number) => {
       prev[current.id] = idx;
       return prev;
     }, {});
@@ -135,7 +138,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
       }
     });
 
-    return result.filter((tool: ISupportedTool) => tool !== undefined ? !tool.hidden : null);
+    return result.filter((tool: IDiscoveredTool) => tool !== undefined ? !tool.hidden : null);
   }
 
   private renderEditToolDialog() {
@@ -146,11 +149,16 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
 
     const { discoveredTools, gameMode, knownGames } = this.props;
     const game = knownGames.find((ele) => ele.id === gameMode);
-    let tool: ISupportedTool = {
+    let tool: IDiscoveredTool = {
+      hidden: false,
       id: toolId,
       custom: false,
       name: '',
       path: '',
+      parameters: [],
+      currentWorkingDirectory: '',
+      requiredFiles: [],
+      executable: () => '',
     };
     let knownTool = game.supportedTools.find((ele) => ele.id === toolId);
     if (knownTool !== undefined) {
@@ -182,12 +190,14 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
   }
 
   private renderSupportedTool =
-    (game: IGame, tool: ISupportedTool): JSX.Element => {
-    let { onAddDiscoveredTool, onRemoveDiscoveredTool, onRescanTools, onShowError } = this.props;
+    (game: IGame, tool: ITool | IDiscoveredTool): JSX.Element => {
+    let { onAddDiscoveredTool, onRemoveDiscoveredTool, onShowError } = this.props;
+
+    let key = `${tool.id}_${this.state.counter}`;
 
     return (
       <ToolButton
-        key={`${tool.id}_${this.state.counter}`}
+        key={key}
         game={game}
         toolId={tool.id}
         tool={tool}
@@ -196,7 +206,6 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
         onAddNewTool={this.addNewTool}
         onChangeToolParams={this.editTool}
         onShowError={onShowError}
-        onRescanTools={this.rescanTools}
       />
     );
   }
@@ -205,16 +214,6 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     this.setState(update(this.state, {
       editTool: { $set: v1() },
     }));
-  }
-
-  private rescanTools = () => {
-    let { gameMode, knownGames } = this.props;
-    discoverTools(knownGames.find((game: IGame) => game.id === gameMode),
-                  this.onDiscoveredTool);
-  }
-
-  private onDiscoveredTool = (gameId: string, result: ISupportedTool) => {
-    addDiscoveredTool(gameId, result.id, result);
   }
 
   private editTool = (toolId: string) => {
@@ -237,7 +236,7 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
-    onAddDiscoveredTool: (gameId: string, toolId: string, result: ISupportedTool) => {
+    onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => {
       dispatch(addDiscoveredTool(gameId, toolId, result));
     },
     onRemoveDiscoveredTool: (gameId: string, toolId: string) => {
@@ -247,9 +246,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(changeToolParams(toolId));
     },
     onShowError: (message: string, details?: string) => showError(dispatch, message, details),
-    onRescanTools: (gameId: string, toolId: string, result: ISupportedTool) => {
-      dispatch(addDiscoveredTool(gameId, toolId, result));
-    },
   };
 }
 

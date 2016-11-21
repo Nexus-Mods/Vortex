@@ -1,4 +1,4 @@
-import { ISupportedTool } from '../../../types/ISupportedTool';
+import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 
 import { IDiscoveryResult } from '../types/IStateEx';
 
@@ -21,7 +21,7 @@ export const addDiscoveredGame =
  */
 export const addDiscoveredTool =
   createAction('ADD_DISCOVERED_TOOL',
-    (gameId: string, toolId: string, result: ISupportedTool) => {
+    (gameId: string, toolId: string, result: IDiscoveredTool) => {
       return { gameId, toolId, result };
     });
 

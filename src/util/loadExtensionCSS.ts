@@ -6,6 +6,11 @@ import * as path from 'path';
 
 let cleanCSSPlugin = new LessPluginCleanCSS({advanced: true});
 
+/**
+ * compile and add style sheets from extensions
+ * 
+ * @param {any} extensions
+ */
 function loadExtensionCSS(extensions) {
   let stylesheets = [
     'variables',

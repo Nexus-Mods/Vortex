@@ -28,7 +28,7 @@
   "Games": "Spiele",
   "Welcome": "Willkommen",
   "Search Paths": "Suchpfade",
-  "Directories to search when looking for games.": "Verzeichnisse in denen nach Spielen gesucht wird.",
+  "Directories to search when looking for games.": "Verzeichnisse in denen nach Spielen und Tools gesucht wird.",
   "Submit": "Absenden",
   "Hide": "Verstecken",
   "Show / Hide hidden games": "Versteckte Spiele ein- / ausblenden",
@@ -43,5 +43,5 @@
   "Beta": "Beta",
   "Add": "Hinzufügen",
   "Number of Mods enabled": "Anzahl aktiver mods",
-  "Search for games": "Nach spielen suchen"
+  "Search for games": "Nach Spielen suchen"
 }

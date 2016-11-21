@@ -33,13 +33,22 @@ function modPath(): string {
   }
 }
 
+function gameExecutable(): string {
+  if (process.platform === 'win32') {
+    return 'bin/x64/Factorio.exe';
+  } else {
+    return 'bin/x64/factorio';
+  }
+}
+
 const game: IGame = {
   id: 'factorio',
   name: 'Factorio',
   mergeMods: false,
-  queryGamePath: findGame,
+  queryPath: findGame,
   queryModPath: modPath,
   logo: 'logo.png',
+  executable: gameExecutable,
   requiredFiles: [
     'data/core/graphics/factorio.ico',
   ],

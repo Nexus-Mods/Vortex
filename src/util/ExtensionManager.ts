@@ -64,7 +64,6 @@ class ExtensionManager {
   private mReduxWatcher: any;
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
   private mModDB: ModDB;
-
   private mPid: number;
 
   constructor(eventEmitter?: NodeJS.EventEmitter) {
@@ -203,14 +202,17 @@ class ExtensionManager {
     let context = this.emptyExtensionContext();
 
     context.once = (callback: () => void) => {
-      try {
-        callback();
-      } catch (err) {
-        log('warn', 'failed to call once', { err: err.message });
-      }
+      callback();
     };
 
-    this.mExtensions.forEach((ext) => ext.initFunc(context));
+    this.mExtensions.forEach((ext: IRegisteredExtension) => {
+      try {
+        ext.initFunc(context);
+      } catch (err) {
+        log('warn', 'failed to call once',
+            { err: err.message, stack: err.stack, extension: ext.name });
+      }
+    });
   }
 
   public getProtocolHandler(protocol: string) {

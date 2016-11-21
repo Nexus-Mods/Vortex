@@ -36,9 +36,10 @@ const game: IGame = {
   id: 'sims4',
   name: 'The Sims 4',
   mergeMods: false,
-  queryGamePath: findGame,
+  queryPath: findGame,
   queryModPath: modPath,
   logo: 'logo.png',
+  executable: () => 'game/bin/TS4.exe',
   requiredFiles: [
     'game/bin/TS4.exe',
   ],

@@ -1,5 +1,6 @@
+import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
-import { ISupportedTool } from '../../types/ISupportedTool';
+import { ITool } from '../../types/ITool';
 import { ComponentEx, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import Icon from '../../views/Icon';
@@ -25,25 +26,24 @@ export interface IRemoveTool {
 
 interface IElevatedSupportedTool {
   id: string;
-  toolPath?: string;
-  parameters?: string;
+  toolPath: string;
+  parameters: string[];
 }
 
 interface IContextMenuProps {
   id: string;
-  tool: ISupportedTool;
+  tool: ITool | IDiscoveredTool;
   gameId: string;
   discovery: boolean;
   onRemoveTool: IRemoveTool;
   onAddNewTool: () => void;
   onChangeToolParams: (toolId: string) => void;
   onShowError: (message: string, details?: string) => void;
-  onRescanTools: (gameId: string, toolId: string, result: ISupportedTool) => void;
 }
 
 // run the specified tool in a separate process with elevated
 // permissions
-function runToolElevated(tool: ISupportedTool,
+function runToolElevated(tool: IDiscoveredTool,
                          onError: (message: string, details: string) => void) {
   let elevatedTool: IElevatedSupportedTool = {
     id: tool.id,
@@ -97,10 +97,6 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
         >
           {t('Launch {{name}}', { name: tool.name })}
         </MenuItem>
-        <MenuItem divider onClick={this.nop} />
-        <MenuItem onClick={this.rescanTools}>
-          {'Rescan Tools'}
-        </MenuItem>
       </ContextMenu>
     );
   }
@@ -135,7 +131,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
     }
   };
 
-  private handleRemoveClick = (e, data: ISupportedTool) => {
+  private handleRemoveClick = (e, data: IDiscoveredTool) => {
     let { gameId, onRemoveTool } = this.props;
     if (data.id !== undefined) {
       onRemoveTool(gameId, data.id);
@@ -150,23 +146,17 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   private handleAddClick = (e, data) => {
     this.props.onAddNewTool();
   }
-
-   private rescanTools = (e, data) => {
-     let { gameId, onRescanTools } = this.props;
-     onRescanTools(gameId, data.id, data);
-  }
 }
 
 export interface IProps {
   game: IGame;
   toolId: string;
-  tool: ISupportedTool;
-  onChangeToolLocation: (gameId: string, toolId: string, result: ISupportedTool) => void;
+  tool: ITool | IDiscoveredTool;
+  onChangeToolLocation: (gameId: string, toolId: string, result: IDiscoveredTool) => void;
   onRemoveTool: IRemoveTool;
   onAddNewTool: () => void;
   onChangeToolParams: (toolId: string) => void;
   onShowError: (message: string, details?: string) => void;
-  onRescanTools: (gameId: string, toolId: string, result: ISupportedTool) => void;
 }
 
 interface IToolButtonState {
@@ -222,9 +212,10 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   }
 
   public render() {
-    const { t, game, toolId, tool, onAddNewTool, onRemoveTool,
-       onRescanTools, onShowError } = this.props;
-    const valid = tool.path !== undefined;
+    const { t, game, toolId, tool, onAddNewTool, onRemoveTool, onShowError } = this.props;
+    let toolPath = (tool as IDiscoveredTool).path;
+    const valid = (toolPath !== undefined) && (toolPath !== '');
+    log('info', 'tool', { toolId, toolPath, valid });
 
     return (
       <Button
@@ -245,7 +236,6 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
           onChangeToolParams={this.handleEditTool}
           t={t}
           onShowError={onShowError}
-          onRescanTools={onRescanTools}
         />
       </Button>
     );
@@ -263,22 +253,24 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
 
   private runTool = () => {
     let { onShowError, tool } = this.props;
+    // we shouldn't get here if the tool is not discovered
+    let discoveredTool = tool as IDiscoveredTool;
     try {
       let params: string[] = [];
-      if (tool.parameters) {
-        params = tool.parameters.split(' ');
+      if (discoveredTool.parameters) {
+        params = discoveredTool.parameters.splice(0);
       }
 
-      if (tool.currentWorkingDirectory !== '') {
-          params.push(' -wo ' + tool.currentWorkingDirectory);
+      if (discoveredTool.currentWorkingDirectory !== '') {
+          params.push(' -wo ' + discoveredTool.currentWorkingDirectory);
         } else {
-          let splittedFile = tool.path.split(path.basename(tool.path));
+          let splittedFile = discoveredTool.path.split(path.basename(discoveredTool.path));
           params.push(' -wo ' + splittedFile[0]);
       }
 
-      execFile(tool.path, params, (err, output) => {
+      execFile(discoveredTool.path, params, (err, output) => {
         if (err) {
-          log('error', 'failed to spawn', { err, path: tool.path });
+          log('error', 'failed to spawn', { err, path: discoveredTool.path });
         }
       });
     } catch (err) {
@@ -291,7 +283,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
           'Would you like to run the tool elevated?',
         }, (buttonIndex) => {
           if (buttonIndex === 0) {
-            runToolElevated(tool, onShowError);
+            runToolElevated(discoveredTool, onShowError);
           }
         });
       } else {

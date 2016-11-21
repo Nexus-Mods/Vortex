@@ -6,6 +6,7 @@ const game: IGame = {
   logo: 'logo.png',
   mergeMods: false,
   queryModPath: () => 'ComGame/Mods',
+  executable: () => 'XCom2.exe',
   requiredFiles: [
     'XComGame',
     'XComGame/CookedPCConsole/3DUIBP.upk',

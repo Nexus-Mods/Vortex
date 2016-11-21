@@ -313,7 +313,7 @@ function installDependencies(rules: IRule[], installPath: string,
   .then((dependencies: IDependency[]) => {
     context.api.dismissNotification(notificationId);
     let requiredDownloads = dependencies.reduce((prev: number, current: IDependency) => {
-      return prev + (current.download ? 1 : 0);
+      return prev + (current.download ? 0 : 1);
     }, 0);
 
     return new Promise<void>((resolve, reject) => {
