@@ -15,6 +15,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { execFile } from 'child_process';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
+import { v1 } from 'node-uuid';
 import * as path from 'path';
 import * as React from 'react';
 import { Image } from 'react-bootstrap';
@@ -48,23 +49,26 @@ function runToolElevated(tool: IDiscoveredTool,
     toolCWD,
   };
 
-  const ipcPath: string = 'tool_elevated_' + tool.id;
+  // the ipc path has to be different every time so that
+  // the ipc lib doesn't report EADDRINUSE when the same tool
+  // is started multiple times.
+  // Also node-ipc has a bug and would crash the application
+  // if that were to happen
+  const ipcPath: string = 'tool_elevated_' + v1();
   // communicate with the elevated process via ipc
   ipc.serve(ipcPath, () => {
     ipc.server.on('finished', (modPath: string) => {
-      log('info', 'finished');
       ipc.server.stop();
     });
     ipc.server.on('socket.disconnected', () => {
       log('info', 'disconnected');
-      ipc.server.stop();
     });
     ipc.server.on('log', (ipcData: any) => {
       log(ipcData.level, ipcData.message, ipcData.meta);
       onError(ipcData.message, ipcData.meta.err);
     });
     // run it
-    elevated('tool_elevated_' + tool.id, runElevatedCustomTool,
+    elevated(ipcPath, runElevatedCustomTool,
       elevatedTool);
   });
   ipc.server.start();
@@ -275,7 +279,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
         dialog.showMessageBox({
           buttons: ['Ok', 'Cancel'],
           title: 'Missing elevation',
-          message: tool.id + ' cannot be started because it requires elevation. ' +
+          message: tool.name + ' cannot be started because it requires elevation. ' +
           'Would you like to run the tool elevated?',
         }, (buttonIndex) => {
           if (buttonIndex === 0) {

@@ -22,6 +22,7 @@ function runElevatedCustomTool(ipcClient) {
       // windows explorer or similar you don't get notified of status
       // code != 0 either so it shouldn't be a situation to worry about
       ipcClient.emit('finished', {});
+      process.exit(0);
     });
   } catch (err) {
     ipcClient.emit('log', {
