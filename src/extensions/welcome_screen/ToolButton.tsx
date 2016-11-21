@@ -24,12 +24,6 @@ export interface IRemoveTool {
   (gameId: string, toolId: string): void;
 }
 
-interface IElevatedSupportedTool {
-  id: string;
-  toolPath: string;
-  parameters: string[];
-}
-
 interface IContextMenuProps {
   id: string;
   tool: ITool | IDiscoveredTool;
@@ -45,19 +39,24 @@ interface IContextMenuProps {
 // permissions
 function runToolElevated(tool: IDiscoveredTool,
                          onError: (message: string, details: string) => void) {
-  let elevatedTool: IElevatedSupportedTool = {
+  let toolCWD = tool.currentWorkingDirectory !== undefined ?
+    tool.currentWorkingDirectory : path.dirname(tool.path);
+  let elevatedTool = {
     id: tool.id,
     toolPath: tool.path.replace(/\\/g, '\\\\'),
     parameters: tool.parameters,
+    toolCWD,
   };
 
   const ipcPath: string = 'tool_elevated_' + tool.id;
   // communicate with the elevated process via ipc
   ipc.serve(ipcPath, () => {
     ipc.server.on('finished', (modPath: string) => {
+      log('info', 'finished');
       ipc.server.stop();
     });
     ipc.server.on('socket.disconnected', () => {
+      log('info', 'disconnected');
       ipc.server.stop();
     });
     ipc.server.on('log', (ipcData: any) => {
@@ -215,7 +214,6 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
     const { t, game, toolId, tool, onAddNewTool, onRemoveTool, onShowError } = this.props;
     let toolPath = (tool as IDiscoveredTool).path;
     const valid = (toolPath !== undefined) && (toolPath !== '');
-    log('info', 'tool', { toolId, toolPath, valid });
 
     return (
       <Button
@@ -261,14 +259,12 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
         params = discoveredTool.parameters.splice(0);
       }
 
-      if (discoveredTool.currentWorkingDirectory !== '') {
-          params.push(' -wo ' + discoveredTool.currentWorkingDirectory);
-        } else {
-          let splittedFile = discoveredTool.path.split(path.basename(discoveredTool.path));
-          params.push(' -wo ' + splittedFile[0]);
-      }
+      let execOptions = {
+        cwd: discoveredTool.currentWorkingDirectory !== undefined ?
+        discoveredTool.currentWorkingDirectory : path.dirname(discoveredTool.path),
+      };
 
-      execFile(discoveredTool.path, params, (err, output) => {
+      execFile(discoveredTool.path, discoveredTool.parameters, execOptions, (err, output) => {
         if (err) {
           log('error', 'failed to spawn', { err, path: discoveredTool.path });
         }

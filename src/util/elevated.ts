@@ -139,11 +139,7 @@ function runElevated(ipcPath: string, func: Function,
       if (args !== undefined) {
         for (let argKey of Object.keys(args)) {
           if (args.hasOwnProperty(argKey)) {
-            if (typeof (args[argKey]) === 'string') {
-              prog += `let ${argKey} = '${args[argKey]}';\n`;
-            } else {
-              prog += `let ${argKey} = ${args[argKey]};\n`;
-            }
+            prog += `let ${argKey} = ${JSON.stringify(args[argKey])}\n`;
           }
         }
       }
