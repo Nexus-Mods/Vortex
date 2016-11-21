@@ -246,6 +246,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     const { tool } = this.props;
     const destPath = this.toolIconPath(tool.id);
 
+    fs.ensureDirAsync(path.dirname(destPath));
+
     let promise;
     if (path.extname(filePath) === '.exe') {
       promise = new Promise<boolean>((resolve, reject) => {

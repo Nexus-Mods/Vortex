@@ -72,9 +72,7 @@ function findInProgramFiles(executable: string) {
             } else {
               if (path.basename(file) === executable) {
                 log('info', 'found tool', { executable });
-                let splittedFile = file.split(path.basename(file));
-                let gamePath = splittedFile[0];
-                return done(null, gamePath);
+                return done(null, file);
               }
 
               next();

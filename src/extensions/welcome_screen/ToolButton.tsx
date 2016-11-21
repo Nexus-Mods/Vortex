@@ -268,6 +268,14 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
       if (tool.parameters) {
         params = tool.parameters.split(' ');
       }
+
+      if (tool.currentWorkingDirectory !== '') {
+          params.push(' -wo ' + tool.currentWorkingDirectory);
+        } else {
+          let splittedFile = tool.path.split(path.basename(tool.path));
+          params.push(' -wo ' + splittedFile[0]);
+      }
+
       execFile(tool.path, params, (err, output) => {
         if (err) {
           log('error', 'failed to spawn', { err, path: tool.path });
