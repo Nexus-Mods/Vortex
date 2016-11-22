@@ -1,5 +1,6 @@
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
+import { ITool } from '../../types/ITool';
 import { terminate } from '../../util/errorHandling';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -8,7 +9,7 @@ import StorageLogger from '../../util/StorageLogger';
 import { discoveryFinished, discoveryProgress } from './actions/discovery';
 import { setKnownGames } from './actions/session';
 import { addDiscoveredGame, addDiscoveredTool, setGameMode } from './actions/settings';
-import { IDiscoveryResult, IGameStored, IStateEx } from './types/IStateEx';
+import { IDiscoveryResult, IGameStored, IStateEx, IToolStored } from './types/IStateEx';
 import { quickDiscovery, searchDiscovery } from './util/discovery';
 import Progress from './util/Progress';
 
@@ -67,17 +68,7 @@ class GameModeManager {
     //      are now no longer known
     // TODO verify that previously discovered games are still available in
     //      their existing location
-    let gamesStored: IGameStored[] = this.mKnownGames.map((game: IGame) => {
-      return {
-        name: game.name,
-        id: game.id,
-        logo: game.logo,
-        modPath: game.queryModPath(),
-        pluginPath: game.pluginPath,
-        requiredFiles: game.requiredFiles,
-        supportedTools: game.supportedTools,
-      };
-    } );
+    let gamesStored: IGameStored[] = this.mKnownGames.map(this.storeGame);
     store.dispatch(setKnownGames(gamesStored));
   }
 
@@ -145,6 +136,31 @@ class GameModeManager {
   public stopSearchDiscovery(): void {
     log('info', 'stop search', { prom: this.mActiveSearch });
     this.mActiveSearch.cancel();
+  }
+
+  private storeGame = (game: IGame): IGameStored => {
+    return {
+      name: game.name,
+      id: game.id,
+      logo: game.logo,
+      modPath: game.queryModPath(),
+      pluginPath: game.pluginPath,
+      requiredFiles: game.requiredFiles,
+      supportedTools: game.supportedTools !== null
+        ? game.supportedTools.map(this.storeTool)
+        : [],
+      executable: game.executable(),
+    };
+  }
+
+  private storeTool(tool: ITool): IToolStored {
+    return {
+      id: tool.id,
+      name: tool.name,
+      logo: tool.logo,
+      executable: tool.executable(),
+      parameters: tool.parameters || [],
+    };
   }
 
   private onDiscoveredTool = (gameId: string, result: IDiscoveredTool) => {

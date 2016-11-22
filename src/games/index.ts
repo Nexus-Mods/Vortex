@@ -9,4 +9,5 @@ import factorio from './factorio/index';
 import sims3 from './sims3/index';
 import sims4 from './sims4/index';
 import skyrim from './skyrim/index';
+import skyrimse from './skyrimse/index';
 import xcom2 from './xcom2/index';

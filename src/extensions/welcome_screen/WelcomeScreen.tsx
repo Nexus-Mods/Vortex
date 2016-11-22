@@ -4,15 +4,19 @@ import { ITool } from '../../types/ITool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';
+import { Button } from '../../views/TooltipControls';
 
 import { showError } from '../../util/message';
 
 import { addDiscoveredTool, changeToolParams,
          removeDiscoveredTool } from '../gamemode_management/actions/settings';
 
+import { IDiscoveryResult } from '../gamemode_management/types/IStateEx';
+
 import ToolButton from './ToolButton';
 import ToolEditDialog from './ToolEditDialog';
 
+import { execFile } from 'child_process';
 import { v1 } from 'node-uuid';
 import * as path from 'path';
 import * as React from 'react';
@@ -34,6 +38,7 @@ interface IActionProps {
 interface IConnectedProps {
   gameMode: string;
   knownGames: IGame[];
+  discoveredGames: { [id: string]: IDiscoveryResult };
   discoveredTools: { [id: string]: IDiscoveredTool };
 }
 
@@ -76,14 +81,29 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
             <Media.Heading>
               {game === undefined ? gameMode : game.name}
             </Media.Heading>
+            <Button
+              id='start-game-btn'
+              tooltip={t('Start Game')}
+              onClick={this.startGame}
+            >
+              <Icon name='play' className='game-start-btn' />
+            </Button>
             <h5>
-              {t('Supported Tools:')}
+              {t('Tools:')}
             </h5>
             {game === undefined ? null : this.renderSupportedToolsIcons(game)}
           </Media.Right>
         </Media>
       </Well>
     );
+  }
+
+  private startGame = () => {
+    const { discoveredGames, gameMode } = this.props;
+    const game = this.currentGame();
+    const discovery = discoveredGames[gameMode];
+
+    execFile(path.join(discovery.path, game.executable));
   }
 
   private renderGameIcon = (game: IGame): JSX.Element => {
@@ -141,14 +161,19 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     return result.filter((tool: IDiscoveredTool) => tool !== undefined ? !tool.hidden : null);
   }
 
+  private currentGame(): IGame {
+    const { gameMode, knownGames } = this.props;
+    return knownGames.find((ele) => ele.id === gameMode);
+  }
+
   private renderEditToolDialog() {
     const toolId = this.state.editTool;
     if (toolId === undefined) {
       return null;
     }
 
-    const { discoveredTools, gameMode, knownGames } = this.props;
-    const game = knownGames.find((ele) => ele.id === gameMode);
+    const { discoveredTools } = this.props;
+    const game = this.currentGame();
     let tool: IDiscoveredTool = {
       hidden: false,
       id: toolId,
@@ -229,6 +254,7 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     gameMode,
     knownGames: state.session.gameMode.known,
+    discoveredGames: state.settings.gameMode.discovered,
     discoveredTools: getSafe(state, [ 'settings', 'gameMode',
                                       'discovered', gameMode, 'tools' ], {}),
   };

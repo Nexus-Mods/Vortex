@@ -58,8 +58,9 @@ export interface ITool {
    * return the path of the tool executable relative to the tool base path,
    * i.e. binaries/UT3.exe or TESV.exe
    * This is a function so that you can return different things based on
-   * the operating system but if at all possible this should return immediately without
-   * doing I/O.
+   * the operating system for example but be aware that it will be evaluated at
+   * application start and only once, so the return value can not depend on things
+   * that change at runtime.
    */
   executable: () => string;
 
@@ -86,4 +87,12 @@ export interface ITool {
    * @type {string[]}
    */
   requiredFiles: string[];
+
+  /**
+   * list of parameters to pass to the tool
+   * 
+   * @type {string[]}
+   * @memberOf ITool
+   */
+  parameters?: string[];
 }

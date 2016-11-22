@@ -121,7 +121,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
           <ControlLabel>{ t('Command Line') }</ControlLabel>
           <FormControl
             type='text'
-            value={ this.state.tool.parameters }
+            value={ this.state.tool.parameters.join(' ') }
             placeholder={ t('Command Line') }
             onChange={ this.handleChangeParameters }
           />
@@ -167,24 +167,24 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     }));
   }
 
-  private handleChange(value: any, field: string, callback?: () => void): void {
+  private handleChange(field: string, value: any, callback?: () => void): void {
     this.setState(update(this.state, { tool:
       { [field]: { $set: value } },
     }), callback);
   }
 
   private handleChangeName = (event) => {
-    this.handleChange(event.target.value, 'name');
+    this.handleChange('name', event.target.value);
   }
 
   private handleChangeParameters = (event) => {
-    this.handleChange(event.target.value, 'parameters');
+    this.handleChange('parameters', event.target.value.split(' '));
   }
 
   private setCurrentWorkingDirectoryPath = () => {
     this.context.api.selectDir({})
     .then((dirName: string) => {
-      this.handleChange(dirName, 'currentWorkingDirectory');
+      this.handleChange('currentWorkingDirectory', dirName);
     })
     .catch((err) => {
       log('info', 'search path selection cancelled', { err });
@@ -205,12 +205,15 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       if (filePath === undefined) {
         return Promise.reject(null);
       }
-      this.handleChange(filePath, 'path', () => {
+      this.handleChange('path', filePath, () => {
         let node: any = ReactDOM.findDOMNode(this.mPathControl);
         node.scrollLeft = node.scrollWidth;
       });
       if (!this.state.tool.name) {
-        this.handleChange(path.basename(filePath, path.extname(filePath)), 'name');
+        this.handleChange('name', path.basename(filePath, path.extname(filePath)));
+      }
+      if (!this.state.tool.currentWorkingDirectory) {
+        this.handleChange('currentWorkingDirectory', path.dirname(filePath));
       }
       toolPath = filePath;
       return fs.statAsync(iconPath);

@@ -129,7 +129,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
           }
         });
       } else {
-        log('info', 'runCustomToolError', { err });
+        log('info', 'failed to run custom tool', { err });
       }
     }
   };
@@ -258,11 +258,6 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
     // we shouldn't get here if the tool is not discovered
     let discoveredTool = tool as IDiscoveredTool;
     try {
-      let params: string[] = [];
-      if (discoveredTool.parameters) {
-        params = discoveredTool.parameters.splice(0);
-      }
-
       let execOptions = {
         cwd: discoveredTool.currentWorkingDirectory !== undefined ?
         discoveredTool.currentWorkingDirectory : path.dirname(discoveredTool.path),
@@ -287,7 +282,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
           }
         });
       } else {
-        log('info', 'runCustomToolError', { err: err.message });
+        log('info', 'failed to run custom tool', { err: err.message });
       }
     }
   };

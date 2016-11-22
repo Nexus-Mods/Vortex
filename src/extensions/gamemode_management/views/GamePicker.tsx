@@ -1,5 +1,4 @@
 import { IComponentContext } from '../../../types/IComponentContext';
-import { IGame } from '../../../types/IGame';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
 import Icon from '../../../views/Icon';
@@ -122,7 +121,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IState> {
     const { onManage, onHide, knownGames, discoveredGames, gameMode } = this.props;
     const { showHidden } = this.state;
 
-    const games: IGameStored[] = knownGames.filter((game: IGame) => {
+    const games: IGameStored[] = knownGames.filter((game: IGameStored) => {
         return (((getAttr(discoveredGames, game.id, { path: '' }).path !== '') === discovered)
           && (showHidden || !getAttr(discoveredGames, game.id, { hidden: false }).hidden));
       });

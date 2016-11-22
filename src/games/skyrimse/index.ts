@@ -12,7 +12,7 @@ function findGame() {
 
   let regKey = new Registry({
     hive: Registry.HKLM,
-    key: '\\Software\\Wow6432Node\\Bethesda Softworks\\skyrim',
+    key: '\\Software\\Wow6432Node\\Bethesda Softworks\\Skyrim Special Edition',
   });
 
   return new Promise<string>((resolve, reject) => {
@@ -28,15 +28,15 @@ function findGame() {
 
 let tools: ITool[] = [
   {
-    id: 'TES5Edit',
-    name: 'TES5Edit',
+    id: 'SSEEdit',
+    name: 'SSEEdit',
     logo: 'tes5edit.png',
-    executable: () => 'tes5edit.exe',
+    executable: () => 'sseedit.exe',
     requiredFiles: [
       'tes5edit.exe',
     ],
   },
-   {
+  {
     id: 'WryeBash',
     name: 'WryeBash',
     logo: 'wrye.png',
@@ -51,7 +51,7 @@ let tools: ITool[] = [
     logo: 'loot.png',
     executable: () => 'loot.exe',
     parameters: [
-      '--game=skyrim',
+      '--game=skyrimse',
     ],
     requiredFiles: [
       'loot.exe',
@@ -69,16 +69,16 @@ let tools: ITool[] = [
 ];
 
 const game: IGame = {
-  id: 'skyrim',
-  name: 'Skyrim',
+  id: 'skyrimse',
+  name: 'Skyrim Special Edition',
   mergeMods: true,
   queryPath: findGame,
   supportedTools: tools,
   queryModPath: () => '.',
   logo: 'logo.png',
-  executable: () => 'TESV.exe',
+  executable: () => 'SkyrimSE.exe',
   requiredFiles: [
-    'TESV.exe',
+    'SkyrimSE.exe',
   ],
 };
 
