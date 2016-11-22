@@ -1,4 +1,5 @@
 # User-specific files
+.suo
 *.suo
 
 # Build results
