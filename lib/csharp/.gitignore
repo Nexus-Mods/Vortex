@@ -1,5 +1,5 @@
 # User-specific files
-.suo
+.vs/
 *.suo
 
 # Build results
