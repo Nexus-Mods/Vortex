@@ -38,16 +38,15 @@ namespace Components.ModInstaller
 		/// <summary>
 		/// This will determine whether the program can handle the specific archive.
 		/// </summary>
-		/// <param name="ModArchiveFileList">The list of files inside the mod archive.</param>
-		/// <param name="RequiredFiles">List of files required by the mod.</param>
-		public async override Task<Dictionary<string, string>> testSupported(List<string> ModArchiveFileList)
+		/// <param name="modArchiveFileList">The list of files inside the mod archive.</param>
+		public async override Task<Dictionary<string, string>> TestSupported(List<string> modArchiveFileList)
 		{
 			Dictionary<string, string> Results = new Dictionary<string, string>();
 			bool test = true;
 			List<string> RequiredFiles = new List<string>();
 
-			if ((ModArchiveFileList != null) && (ModArchiveFileList.Count > 0))
-				FileList = ModArchiveFileList;
+			if ((modArchiveFileList != null) && (modArchiveFileList.Count > 0))
+				FileList = modArchiveFileList;
 			else
 			{
 				// ??? Do we want to handle empty lists? Or raise an error in case one is passed?
@@ -75,23 +74,22 @@ namespace Components.ModInstaller
 		/// <summary>
 		/// This will simulate the mod installation and decide installation choices and files final paths.
 		/// </summary>
-		/// <param name="ModArchiveFileList">The list of files inside the mod archive.</param>
-		/// <param name="DestFolder">The file install destination folder.</param>
-		/// <param name="ProgressDelegate">A delegate to provide progress feedback.</param>
-		/// <param name="Error_OverwritesDelegate">A delegate to present errors and file overwrite requests.</param>
-		/// <param name="UserInteractionDelegate">A delegate to present installation choices to the user.</param>
-		/// <param name="PluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
-		/// <param name="RequiredExtenderDelegate">A delegate to query what scripted extender version is installed.</param>
-		/// <param name="ResultMessage">An output message to present the function result.</param>
-		public async override Task<Dictionary<string, string>> Install(List<string> ModArchiveFileList, string DestFolder, string ProgressDelegate,
-			string Error_OverwritesDelegate, string UserInteractionDelegate, string PluginQueryDelegate, string RequiredExtenderDelegate)
+		/// <param name="modArchiveFileList">The list of files inside the mod archive.</param>
+		/// <param name="destinationPath">The file install destination folder.</param>
+		/// <param name="progressDelegate">A delegate to provide progress feedback.</param>
+		/// <param name="error_OverwritesDelegate">A delegate to present errors and file overwrite requests.</param>
+		/// <param name="userInteractionDelegate">A delegate to present installation choices to the user.</param>
+		/// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
+		/// <param name="requiredExtenderDelegate">A delegate to query what scripted extender version is installed.</param>
+		public async override Task<Dictionary<string, string>> Install(List<string> modArchiveFileList, string destinationPath, string progressDelegate,
+			string error_OverwritesDelegate, string userInteractionDelegate, string pluginQueryDelegate, string requiredExtenderDelegate)
 		{
-			List<string> IniEdits = new List<string>();
+			List<string> IniEditList = new List<string>();
 			List<KeyValuePair<string, string>> FilesToInstall = new List<KeyValuePair<string, string>>();
 			Dictionary<string, string> Instructions = new Dictionary<string, string>();
 
 
-			if (Directory.Exists(DestFolder))
+			if (Directory.Exists(destinationPath))
 			{
 				Instructions.Add("install", "false");
 				Instructions.Add("message", "The required folder already exists!");
@@ -99,7 +97,7 @@ namespace Components.ModInstaller
 			else
 			{
 				// temporary functionality assuming this is a simple install
-				FilesToInstall = await BasicModInstall(ModArchiveFileList, DestFolder, PluginQueryDelegate, ProgressDelegate, Error_OverwritesDelegate);
+				FilesToInstall = await BasicModInstall(modArchiveFileList, destinationPath, pluginQueryDelegate, progressDelegate, error_OverwritesDelegate);
 			}
 
 			if ((FilesToInstall != null) && (FilesToInstall.Count > 0))
@@ -109,17 +107,17 @@ namespace Components.ModInstaller
 
 				await Task.Run(() =>
 				{
-					foreach (KeyValuePair<string, string> kvp in FilesToInstall)
+					foreach (KeyValuePair<string, string> Kvp in FilesToInstall)
 					{
-						Instructions.Add(kvp.Key, kvp.Value);
+						Instructions.Add(Kvp.Key, Kvp.Value);
 					}
 				});
 			}
 
-			if ((IniEdits != null) && (IniEdits.Count > 0))
+			if ((IniEditList != null) && (IniEditList.Count > 0))
 			{
-				string edits = IniEdits.Concat('@');
-				Instructions.Add("iniEdit", edits);
+				string IniEdits = IniEditList.Concat('@');
+				Instructions.Add("iniEdit", IniEdits);
 			}
 
 			return Instructions;
@@ -134,7 +132,7 @@ namespace Components.ModInstaller
 		/// </summary>
 		protected async Task<List<string>> GetRequirements()
 		{
-			List<string> RequiredFiles = new List<string>();
+			List<string> RequiredFilesList = new List<string>();
 
 			//Dummy function
 			/*	foreach (ModFormat format in SupportedModFormats)
@@ -147,7 +145,7 @@ namespace Components.ModInstaller
 				}
 			*/
 
-			return RequiredFiles;
+			return RequiredFilesList;
 		}
 
 		#endregion
@@ -158,31 +156,31 @@ namespace Components.ModInstaller
 		/// This will assign all files to the proper destination.
 		/// </summary>
 		/// <param name="FileList">The list of files inside the mod archive.</param>
-		/// <param name="DestFolder">The file install destination folder.</param>
-		/// <param name="PluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
-		/// <param name="ProgressDelegate">A delegate to provide progress feedback.</param>
-		/// <param name="Error_OverwritesDelegate">A delegate to present errors and file overwrite requests.</param>
-		protected async Task<List<KeyValuePair<string, string>>> BasicModInstall(List<string> FileList, string DestFolder, string PluginQueryDelegate, string ProgressDelegate, string Error_OverwritesDelegate)
+		/// <param name="destinationPath">The file install destination folder.</param>
+		/// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
+		/// <param name="progressDelegate">A delegate to provide progress feedback.</param>
+		/// <param name="error_OverwritesDelegate">A delegate to present errors and file overwrite requests.</param>
+		protected async Task<List<KeyValuePair<string, string>>> BasicModInstall(List<string> fileList, string destinationPath, string pluginQueryDelegate, string progressDelegate, string error_OverwritesDelegate)
 		{
 			List<KeyValuePair<string, string>> FilesToInstall = new List<KeyValuePair<string, string>>();
 
 			await Task.Run(() =>
 			{
-				foreach (string file in FileList)
+				foreach (string ArchiveFile in fileList)
 				{
 					// the JS code is going to normalize the paths for us, so we don't need any additional checks.
-					string path = Path.Combine(DestFolder, file);
+					string FileDestinationPath = Path.Combine(destinationPath, ArchiveFile);
 
 					//Dummy code
 					/* if (PluginQueryDelegate.IsPlugin(file))
 						if (PluginQueryDelegate.ExsistsPlugin(path))
 							then do something about it
-					else */ if (File.Exists(path))
+					else */ if (File.Exists(FileDestinationPath))
 					{
 						// provide feedback to the user through the Error_OverwritesDelegate
 					}
 
-					FilesToInstall.Add(new KeyValuePair<string, string>("source: " + file, "destination:" + path));
+					FilesToInstall.Add(new KeyValuePair<string, string>("source: " + ArchiveFile, "destination:" + FileDestinationPath));
 					// Progress should increase.	
 				}
 			});

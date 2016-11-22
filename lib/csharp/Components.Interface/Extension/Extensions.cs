@@ -12,12 +12,12 @@ namespace Components.Extensions
 		/// <param name="separator">The separator char.</param>
 		public static string Concat(this IEnumerable<string> source, char separator)
 		{
-			StringBuilder sb = new StringBuilder();
-			foreach (string s in source)
+			StringBuilder Sb = new StringBuilder();
+			foreach (string S in source)
 			{
-				sb.Append(s + separator ?? "");
+				Sb.Append(S + separator ?? "");
 			}
-			return sb.ToString();
+			return Sb.ToString();
 		}
 	}
 
