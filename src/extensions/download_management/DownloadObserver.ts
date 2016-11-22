@@ -38,7 +38,7 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
  * 
  * @class DownloadObserver
  */
-class DownloadObserver {
+export class DownloadObserver {
   private mStore: Redux.Store<any>;
   private mManager: DownloadManager;
   private mProtocolHandlers: ProtocolHandlers;
