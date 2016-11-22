@@ -109,6 +109,15 @@
       "target": [
         "out"
       ]
+    },
+    {
+      "srcPath": "lib/csharp/ModInstaller/bin/Release/*",
+      "outPath": "lib/ModInstaller",
+      "skipPaths": 5,
+      "target": [
+        "out",
+        "app"
+      ]
     }
   ]
 }

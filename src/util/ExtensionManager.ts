@@ -3,6 +3,7 @@ import { addNotification, dismissNotification } from '../actions/notifications';
 import initAboutDialog from '../extensions/about_dialog/index';
 import initDownloadManagement from '../extensions/download_management/index';
 import initGamemodeManagement from '../extensions/gamemode_management/index';
+import initInstallerFomod from '../extensions/installer_fomod/index';
 import initModManagement from '../extensions/mod_management/index';
 import initNexusIntegration from '../extensions/nexus_integration/index';
 import initNutsLocal from '../extensions/nuts_local/index';
@@ -386,6 +387,7 @@ class ExtensionManager {
       { name: 'nuts_local', initFunc: initNutsLocal },
       { name: 'symlink_activator', initFunc: initSymlinkActivator },
       { name: 'symlink_activator_elevate', initFunc: initSymlinkActivatorElevate },
+      { name: 'installer_fomod', initFunc: initInstallerFomod },
     ].concat(this.loadDynamicExtensions(extensionsPath));
   }
 

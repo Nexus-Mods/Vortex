@@ -23,7 +23,7 @@ namespace Components.ModInstaller
 		/// <param name="userInteractionDelegate">A delegate to present installation choices to the user.</param>
 		/// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
 		/// <param name="requiredExtenderDelegate">A delegate to query what scripted extender version is installed.</param>
-		public abstract Task<Dictionary<string, string>> Install(List<string> modArchiveFileList, string destinationPath, string progressDelegate,
+		public abstract Task<Dictionary<string, string>> Install(List<string> modArchiveFileList, string destinationPath, ProgressDelegate progressDelegate,
 			string error_OverwritesDelegate, string userInteractionDelegate, string pluginQueryDelegate, string requiredExtenderDelegate);
 
 		#endregion

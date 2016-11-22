@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,12 +11,6 @@ namespace Components.ModInstaller
 	{
 		#region Properties
 
-		/// <summary>
-		/// Gets or sets the mod file list.
-		/// </summary>
-		/// <value>The mod file list.</value>
-		protected List<string> FileList;
-
 		#endregion
 
 		#region Constructors
@@ -23,12 +18,8 @@ namespace Components.ModInstaller
 		/// <summary>
 		/// A simple constructor that initializes the object with the given values.
 		/// </summary>
-		/// <param name="ModArchiveFileList">The list of files inside the mod archive.</param>
-		public Installer(List<string> ModArchiveFileList)
+		public Installer()
 		{
-			// ??? Do we want to use the Installer constructor to pass the list or pass the list directly to testSupported and Install?
-			if (ModArchiveFileList != null)
-				FileList = ModArchiveFileList;
 		}
 
 		#endregion
@@ -46,13 +37,6 @@ namespace Components.ModInstaller
 			List<string> RequiredFiles = new List<string>();
 
 			if ((modArchiveFileList != null) && (modArchiveFileList.Count > 0))
-				FileList = modArchiveFileList;
-			else
-			{
-				// ??? Do we want to handle empty lists? Or raise an error in case one is passed?
-			}
-
-			if ((FileList != null) && (FileList.Count > 0))
 				test = false;
 			else
 			{
@@ -81,7 +65,7 @@ namespace Components.ModInstaller
 		/// <param name="userInteractionDelegate">A delegate to present installation choices to the user.</param>
 		/// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
 		/// <param name="requiredExtenderDelegate">A delegate to query what scripted extender version is installed.</param>
-		public async override Task<Dictionary<string, string>> Install(List<string> modArchiveFileList, string destinationPath, string progressDelegate,
+		public async override Task<Dictionary<string, string>> Install(List<string> modArchiveFileList, string destinationPath, ProgressDelegate progressDelegate,
 			string error_OverwritesDelegate, string userInteractionDelegate, string pluginQueryDelegate, string requiredExtenderDelegate)
 		{
 			List<string> IniEditList = new List<string>();
@@ -119,6 +103,7 @@ namespace Components.ModInstaller
 				string IniEdits = IniEditList.Concat('@');
 				Instructions.Add("iniEdit", IniEdits);
 			}
+            progressDelegate(100);
 
 			return Instructions;
 		}
@@ -160,7 +145,7 @@ namespace Components.ModInstaller
 		/// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
 		/// <param name="progressDelegate">A delegate to provide progress feedback.</param>
 		/// <param name="error_OverwritesDelegate">A delegate to present errors and file overwrite requests.</param>
-		protected async Task<List<KeyValuePair<string, string>>> BasicModInstall(List<string> fileList, string destinationPath, string pluginQueryDelegate, string progressDelegate, string error_OverwritesDelegate)
+		protected async Task<List<KeyValuePair<string, string>>> BasicModInstall(List<string> fileList, string destinationPath, string pluginQueryDelegate, ProgressDelegate progressDelegate, string error_OverwritesDelegate)
 		{
 			List<KeyValuePair<string, string>> FilesToInstall = new List<KeyValuePair<string, string>>();
 
