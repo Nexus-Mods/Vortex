@@ -216,7 +216,6 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
           onDiscoveredTool(gameId, Object.assign({}, application, {
             path: path.join(testPath, application.executable()),
             hidden: false,
-            parameters: [],
             custom: false,
             currentWorkingDirectory: testPath,
           }));

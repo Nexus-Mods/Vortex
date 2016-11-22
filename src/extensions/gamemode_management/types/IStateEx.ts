@@ -22,12 +22,23 @@ export interface IDiscoveryState {
   directory: string;
 }
 
+export interface IToolStored {
+  id: string;
+  name: string;
+  logo: string;
+  executable: string;
+  parameters: string[];
+}
+
 export interface IGameStored {
   id: string;
   name: string;
   logo?: string;
+  modPath: string;
   pluginPath?: string;
   requiredFiles: string[];
+  executable: string;
+  supportedTools: IToolStored[];
 }
 
 /**

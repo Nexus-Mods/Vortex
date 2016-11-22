@@ -1,7 +1,5 @@
 import { ITool } from './ITool';
 
-import * as Promise from 'bluebird';
-
 /**
  * interface for game extensions
  * 
