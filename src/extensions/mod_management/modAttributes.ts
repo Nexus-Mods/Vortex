@@ -34,4 +34,4 @@ export const VERSION: IModAttribute = {
   isDetail: false,
   isToggleable: true,
   isReadOnly: false,
-}
+};

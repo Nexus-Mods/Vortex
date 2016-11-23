@@ -4,33 +4,65 @@ import * as path from 'path';
 
 import {log} from '../../util/log';
 
-const testSupported = edge.func({
-  assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller', 'ModInstaller.dll'),
+import * as util from 'util';
+
+const testSupportedLib = edge.func({
+  assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller',
+                             'ModInstaller.dll'),
   typeName: 'Components.ModInstaller.InstallerProxy',
   methodName: 'TestSupported',
 });
 
-const install = edge.func({
-  assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller', 'ModInstaller.dll'),
+const installLib = edge.func({
+  assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller',
+                             'ModInstaller.dll'),
   typeName: 'Components.ModInstaller.InstallerProxy',
   methodName: 'Install',
 });
 
-function init(context: IExtensionContext): boolean {
-  context.once(() => {
-    testSupported({ files: ['dummy.esp', 'textures/dummy.dds'] }, (err, result) => {
-      log('info', 'supported', { err, result });
+interface IProgressDelegate {
+  (perc: number): void;
+}
+
+function testSupported(files: string[]): Promise<boolean> {
+  log('info', 'testsupported called', util.inspect(files));
+  return new Promise((resolve, reject) => {
+    testSupportedLib({files}, (err: Error, result: boolean) => {
+      if ((err !== null) && (err !== undefined)) {
+        log('info', 'got err', util.inspect(err));
+        reject(err);
+      } else {
+        log('info', 'got result', util.inspect(result));
+        resolve(result);
+      }
     });
-    install(
-        {
-          files: ['dummy.esp', 'textures/dummy.dds'],
-          destinationPath: 'c:\\do\\we\\need\\this',
-          progressDelegate: (perc: number) => log('info', 'installer progress', perc),
-        },
-        (err, result) => {
-          log('info', 'install', {err, result});
-        });
   });
+}
+
+function install(files: string[], destinationPath: string,
+                 progressDelegate: IProgressDelegate): Promise<any> {
+  return new Promise((resolve, reject) => {
+    installLib({files, destinationPath, progressDelegate},
+               (err: Error, result: any) => {
+                 if ((err !== null) && (err !== undefined)) {
+                   log('info', 'got err', util.inspect(err));
+                   reject(err);
+                 } else {
+                   log('info', 'result', util.inspect(result));
+                   resolve(result);
+                 }
+               });
+  });
+}
+
+export interface IExtensionContextExt extends IExtensionContext {
+  registerInstaller: (priority, testSupported, install) => void;
+}
+
+function init(context: IExtensionContextExt): boolean {
+  if (context.registerInstaller) {
+    context.registerInstaller(100, testSupported, install);
+  }
 
   return true;
 }

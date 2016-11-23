@@ -6,7 +6,7 @@ import { showError } from '../../util/message';
 import { addMod, setModAttribute, setModInstallationPath, setModState } from './actions/mods';
 import { IMod, ModState } from './types/IMod';
 
-import { IInstallContext } from './modInstall';
+import { IInstallContext } from './types/IInstallContext';
 
 interface IOnAddMod {
   (mod: IMod): void;
