@@ -1,24 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Components.Extensions;
+using Utils;
 
 namespace Components.ModInstaller
 {
 	public class Installer : BaseInstaller
 	{
-		#region Properties
+        #region Fields
 
-		#endregion
+        protected static FileSystem FileSystem;
 
-		#region Constructors
+        #endregion
 
-		/// <summary>
-		/// A simple constructor that initializes the object with the given values.
-		/// </summary>
-		public Installer()
+        #region Properties
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// A simple constructor that initializes the object with the given values.
+        /// </summary>
+        public Installer()
 		{
 		}
 
@@ -73,7 +78,7 @@ namespace Components.ModInstaller
 			Dictionary<string, string> Instructions = new Dictionary<string, string>();
 
 
-			if (Directory.Exists(destinationPath))
+			if (FileSystem.DirectoryExists(destinationPath))
 			{
 				Instructions.Add("install", "false");
 				Instructions.Add("message", "The required folder already exists!");
@@ -160,7 +165,7 @@ namespace Components.ModInstaller
 					/* if (PluginQueryDelegate.IsPlugin(file))
 						if (PluginQueryDelegate.ExsistsPlugin(path))
 							then do something about it
-					else */ if (File.Exists(FileDestinationPath))
+					else */ if (FileSystem.FileExists(FileDestinationPath))
 					{
 						// provide feedback to the user through the Error_OverwritesDelegate
 					}

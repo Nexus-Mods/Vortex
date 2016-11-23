@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Util
+namespace Utils
 {
 	public interface IFileInfo
 	{

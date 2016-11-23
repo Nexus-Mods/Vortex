@@ -40,8 +40,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IFileInfo.cs" />
-    <Compile Include="IFileSystem.cs" />
+    <Compile Include="FileSystem.cs" />
+    <Compile Include="Interfaces\FileSystemBase.cs" />
+    <Compile Include="Interfaces\IFileInfo.cs" />
+    <Compile Include="Interfaces\IFileSystem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

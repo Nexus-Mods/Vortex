@@ -2,7 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Util
+namespace Utils
 {
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1049:TypesThatOwnNativeResourcesShouldBeDisposable")]
@@ -70,22 +70,22 @@ namespace Util
 		/// <param name="lpFileOp">Descriptor of the file operation to execute</param>
 		/// <returns>An error code. please note that this function has its own set of error codes documented
 		/// here: https://msdn.microsoft.com/en-us/library/windows/desktop/bb762164(v=vs.85).aspx </returns>
-		Int32 ShellFileOperation(ref SHFILEOPSTRUCT lpFileOp);
+		int ShellFileOperation(ref SHFILEOPSTRUCT lpFileOp);
 
 		/// <summary>
 		/// Creates a temporary directory rooted at the given path.
 		/// </summary>
-		/// <param name="strBasePath">The path under which to create the temporary directory.</param>
+		/// <param name="basePath">The path under which to create the temporary directory.</param>
 		/// <returns>The path to the newly created temporary directory.</returns>
-		string CreateTempDirectory();
+		string CreateTempDirectory(string basePath);
 
 		/// <summary>
-		/// rename a directory
+		/// Rename a directory
 		/// </summary>
-		/// <param name="strSource">old name</param>
-		/// <param name="strDest">new name</param>
+		/// <param name="nameOld">old name</param>
+		/// <param name="nameNew">new name</param>
 		/// <returns>true on success</returns>
-		bool RenameDirectory(string strSource, string strDest);
+		bool RenameDirectory(string nameOld, string nameNew);
 
 		/// <summary>
 		/// Copies the source to the destination.
@@ -93,44 +93,44 @@ namespace Util
 		/// <remarks>
 		/// If the source is a directory, it is copied recursively.
 		/// </remarks>
-		/// <param name="strSource">The path from which to copy.</param>
-		/// <param name="strDestination">The path to which to copy.</param>
+		/// <param name="sourcePath">The path from which to copy.</param>
+		/// <param name="destinationPath">The path to which to copy.</param>
 		/// <param name="fncCopyCallback">A callback method that notifies the caller when a file has been copied,
 		/// and provides the opportunity to cancel the copy operation.</param>
 		/// <returns><c>true</c> if the copy operation wasn't cancelled; <c>false</c> otherwise.</returns>
-		bool Copy(string strSource, string strDestination, Func<string, bool> fncCopyCallback);
+		bool Copy(string sourcePath, string destinationPath, Func<string, bool> fncCopyCallback);
 
 		/// <summary>
-		/// retrieves the list of files in the specified path that match a pattern
+		/// Retrieves the list of files in the specified path that match a pattern
 		/// </summary>
-		/// <param name="strPath">path to search in</param>
-		/// <param name="strPattern">the patterns have to match</param>
+		/// <param name="searchPath">path to search in</param>
+		/// <param name="pattern">the patterns have to match</param>
 		/// <param name="searchOption">options to control how the search works (i.e. recursive vs. only the specified dir)</param>
 		/// <returns></returns>
-		string[] GetFiles(string strPath, string strPattern, SearchOption searchOption);
+		string[] GetFiles(string searchPath, string pattern, SearchOption searchOption);
 
 		/// <summary>
-		/// 
+		/// Writes the text in the specified file.
 		/// </summary>
-		/// <param name="strPath"></param>
-		/// <param name="strText"></param>
-		void WriteAllLines(string strPath, string[] strText);
+		/// <param name="path"></param>
+		/// <param name="text"></param>
+		void WriteAllLines(string path, string[] text);
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="strPath"></param>
-		/// <param name="strText"></param>
-		void AppendAllText(string strPath, string strText);
+        /// <summary>
+        /// Appends the text to the specified file.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="text"></param>
+        void AppendAllText(string path, string text);
 
 		/// <summary>
 		/// Moves the specified file to the specified path, optionally overwritting
 		/// any existing file.
 		/// </summary>
-		/// <param name="strFrom">The path to the file to move.</param>
-		/// <param name="strTo">the path to which to move the file.</param>
-		/// <param name="booOverwrite">Whether to overwrite any file found at the destination.</param>
-		void Move(string strFrom, string strTo, bool booOverwrite = false);
+		/// <param name="pathFrom">The path to the file to move.</param>
+		/// <param name="pathTo">the path to which to move the file.</param>
+		/// <param name="overwrite">Whether to overwrite any file found at the destination.</param>
+		void Move(string pathFrom, string pathTo, bool overwrite = false);
 
 		/// <summary>
 		/// Creates a directory at the given path.
@@ -140,8 +140,8 @@ namespace Util
 		/// the directory is not necessarily ready for use immediately after creation. This
 		/// method waits until the cirectory is created and ready before returning.
 		/// </remarks>
-		/// <param name="strPath">The path of the directory to create.</param>
-		void CreateDirectory(string strPath);
+		/// <param name="path">The path of the directory to create.</param>
+		void CreateDirectory(string path);
 
 		/// <summary>
 		/// Forces deletion of the given path.
@@ -150,8 +150,8 @@ namespace Util
 		/// This method is recursive if the given path is a directory. This method will clear read only/system
 		/// attributes if required to delete the path.
 		/// </remarks>
-		/// <param name="strPath">The path to delete.</param>
-		void ForceDelete(string strPath);
+		/// <param name="path">The path to delete.</param>
+		void ForceDelete(string path);
 
 		/// <summary>
 		/// Clears the attributes of the given path.
@@ -160,9 +160,9 @@ namespace Util
 		/// This sets the path's attributes to <see cref="FileAttributes.Normal"/>. This operation is
 		/// optionally recursive.
 		/// </remarks>
-		/// <param name="strPath">The path whose attributes are to be cleared.</param>
-		/// <param name="booRecurse">Whether or not to clear the attributes on all children files and folers.</param>
-		void ClearAttributes(string strPath, bool booRecurse);
+		/// <param name="path">The path whose attributes are to be cleared.</param>
+		/// <param name="recurse">Whether or not to clear the attributes on all children files and folers.</param>
+		void ClearAttributes(string path, bool recurse);
 
 		/// <summary>
 		/// Clears the attributes of the given directory.
@@ -171,9 +171,9 @@ namespace Util
 		/// This sets the directory's attributes to <see cref="FileAttributes.Normal"/>. This operation is
 		/// optionally recursive.
 		/// </remarks>
-		/// <param name="difPath">The directory whose attributes are to be cleared.</param>
-		/// <param name="booRecurse">Whether or not to clear the attributes on all children files and folers.</param>
-		void ClearAttributes(DirectoryInfo difPath, bool booRecurse);
+		/// <param name="pathInfo">The directory whose attributes are to be cleared.</param>
+		/// <param name="recurse">Whether or not to clear the attributes on all children files and folers.</param>
+		void ClearAttributes(DirectoryInfo pathInfo, bool recurse);
 
 		/// <summary>
 		/// Writes the given data to the specified file.
@@ -183,9 +183,9 @@ namespace Util
 		/// does not exist, it is created. If the directory containing the specified file
 		/// does not exist, it is created.
 		/// </remarks>
-		/// <param name="strPath">The path to which to write the given data.</param>
-		/// <param name="bteData">The data to write to the file.</param>
-		void WriteAllBytes(string strPath, byte[] bteData);
+		/// <param name="path">The path to which to write the given data.</param>
+		/// <param name="dataBytes">The data to write to the file.</param>
+		void WriteAllBytes(string path, byte[] dataBytes);
 
 		/// <summary>
 		/// Writes the given data to the specified file.
@@ -195,56 +195,63 @@ namespace Util
 		/// does not exist, it is created. If the directory containing the specified file
 		/// does not exist, it is created.
 		/// </remarks>
-		/// <param name="strPath">The path to which to write the given text.</param>
-		/// <param name="strData">The text to write to the file.</param>
-		void WriteAllText(string strPath, string strData);
+		/// <param name="path">The path to which to write the given text.</param>
+		/// <param name="dataString">The text to write to the file.</param>
+		void WriteAllText(string path, string dataString);
 
 		/// <summary>
 		/// Test if a file exists
 		/// </summary>
-		/// <param name="strFilePath"></param>
+		/// <param name="filePath"></param>
 		/// <returns></returns>
-		bool Exists(string strFilePath);
+		bool FileExists(string filePath);
 
-		/// <summary>
-		/// Check if the file is in use.
-		/// </summary>
-		bool IsFileLocked(string filePath);	
+        /// <summary>
+        /// Test if a directory exists
+        /// </summary>
+        /// <param name="directoryPath"></param>
+        /// <returns></returns>
+        bool DirectoryExists(string directoryPath);
+
+        /// <summary>
+        /// Check if the file is in use.
+        /// </summary>
+        bool IsFileLocked(string filePath);
 
 		/// <summary>
 		/// Read whole content of a file into an array linewise
 		/// </summary>
-		/// <param name="strFilePath"></param>
+		/// <param name="filePath"></param>
 		/// <returns></returns>
-		string[] ReadAllLines(string strFilePath);
+		string[] ReadAllLines(string filePath);
 
 		/// <summary>
 		/// Read whole uninterpreted content of a file into a byte array
 		/// </summary>
-		/// <param name="strFilePath">path to the file to read</param>
+		/// <param name="filePath">path to the file to read</param>
 		/// <returns></returns>
-		byte[] ReadAllBytes(string strFilePath);
+		byte[] ReadAllBytes(string filePath);
 
 		/// <summary>
 		/// Delete a file
 		/// </summary>
-		/// <param name="strPath"></param>
-		void Delete(string strPath);
+		/// <param name="path"></param>
+		void Delete(string path);
 
 		/// <summary>
 		/// Opens a file stream
 		/// </summary>
 		/// <param name="filePath">path of the file to open</param>
-		/// <param name="fmMode">mode</param>
+		/// <param name="fileMode">mode</param>
 		/// <returns></returns>
-		Stream Open(string filePath, FileMode fmMode);
+		Stream Open(string filePath, FileMode fileMode);
 
 		/// <summary>
 		/// Change the file attributes on a file
 		/// </summary>
 		/// <param name="filePath">path of the file to change</param>
-		/// <param name="faAttributes">new attributes</param>
-		void SetAttributes(string filePath, FileAttributes faAttributes);
+		/// <param name="fileAttributes">new attributes</param>
+		void SetAttributes(string filePath, FileAttributes fileAttributes);
 
 		/// <summary>
 		/// Retrieve file attributes for a file
@@ -253,11 +260,11 @@ namespace Util
 		/// <returns>attributes or null if the file doesn't exist</returns>
 		FileAttributes GetAttributes(string filePath);
 
-		/// <summary>
-		/// Retrieve file info for a file
-		/// </summary>
-		/// <param name="strInstallFilePath">path of the file</param>
-		/// <returns>file info</returns>
-		IFileInfo GetFileInfo(string strInstallFilePath);
+        /// <summary>
+        /// Retrieve file info for a file
+        /// </summary>
+        /// <param name="filePath">path of the file</param>
+        /// <returns>file info</returns>
+        IFileInfo GetFileInfo(string filePath);
 	}
 }
