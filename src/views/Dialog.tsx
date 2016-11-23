@@ -57,8 +57,9 @@ class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}>
   }
 
   private renderContent(content: IDialogContent): JSX.Element {
+    const { t } = this.props;
     if (content.message !== undefined) {
-      return <div>{ content.message }</div>;
+      return <div>{ t(content.message) }</div>;
     } else if (content.htmlFile !== undefined) {
       return <webview src={`file://${content.htmlFile}`} />;
     } else {
