@@ -1,0 +1,21 @@
+{
+  "name": "gamebryo-savegame",
+  "version": "1.0.0",
+  "description": "Parses gamebryo savegames",
+  "main": "index.js",
+  "scripts": {
+    "autogypi": "autogypi",
+    "node-gyp": "node-gyp",
+    "emcc-path": "emcc-path",
+    "copyasm": "copyasm",
+    "install": "autogypi && node-gyp configure build"
+  },
+  "author": "",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "autogypi": "^0.2.2",
+    "nbind": "charto/nbind#master",
+    "node-gyp": "^3.4.0",
+    "segfault-handler": "^1.0.0"
+  }
+}

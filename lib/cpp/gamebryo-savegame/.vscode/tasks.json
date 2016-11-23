@@ -1,0 +1,7 @@
+{
+    "version": "0.1.0",
+    "command": "node-gyp",
+    "isShellCommand": true,
+    "args": ["rebuild", "--target=1.3.3", "--arch=x64", "--dist-url=https://atom.io/download/atom-shell"],
+    "showOutput": "always"
+}
