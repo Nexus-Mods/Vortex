@@ -43,6 +43,7 @@
     <Compile Include="Extension\Extensions.cs" />
     <Compile Include="ModInstaller\BaseInstaller.cs" />
     <Compile Include="ModInstaller\IInstaller.cs" />
+    <Compile Include="ModInstaller\Instruction.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

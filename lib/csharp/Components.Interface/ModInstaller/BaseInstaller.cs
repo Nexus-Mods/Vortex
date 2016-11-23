@@ -11,7 +11,7 @@ namespace Components.ModInstaller
 		/// This will determine whether the program can handle the specific archive.
 		/// </summary>
 		/// <param name="modArchiveFileList">The list of files inside the mod archive.</param>
-		public abstract Task<Dictionary<string, string>> TestSupported(List<string> modArchiveFileList);
+		public abstract Task<Dictionary<string, object>> TestSupported(List<string> modArchiveFileList);
 
 		/// <summary>
 		/// This will simulate the mod installation and decide installation choices and files final paths.
@@ -23,7 +23,7 @@ namespace Components.ModInstaller
 		/// <param name="userInteractionDelegate">A delegate to present installation choices to the user.</param>
 		/// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
 		/// <param name="requiredExtenderDelegate">A delegate to query what scripted extender version is installed.</param>
-		public abstract Task<Dictionary<string, string>> Install(List<string> modArchiveFileList, string destinationPath, ProgressDelegate progressDelegate,
+		public abstract Task<Dictionary<string, object>> Install(List<string> modArchiveFileList, string destinationPath, ProgressDelegate progressDelegate,
 			string error_OverwritesDelegate, string userInteractionDelegate, string pluginQueryDelegate, string requiredExtenderDelegate);
 
 		#endregion

@@ -31,10 +31,11 @@ namespace Components.ModInstaller
         public async Task<object> Install(dynamic input)
         {
             object[] files = (object[])input.files;
+            string destinationPath = (string)input.destinationPath;
             var progressCB = (Func<object, Task<object>>)input.progressDelegate;
             return await mInstaller.Install(
                 new List<string>(files.Cast<string>()),
-                (string)input.destinationPath,
+                destinationPath,
                 (int percent) => progressCB(percent),
                 "",
                 "",
