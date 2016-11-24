@@ -7,4 +7,4 @@ module.exports = {
   refType: (type) => type !== undefined ? type.toString() : '',
   coerceType: (type) => type,
   alloc: (type) => ({ size: 0 }),
-}
+};

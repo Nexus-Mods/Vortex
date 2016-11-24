@@ -7,12 +7,11 @@ let mockTmpFileReportError = undefined;
 jest.mock('tmp', () => ({
   file: (callback) => {
     if (mockTmpFileReportError) {
-      callback(mockTmpFileReportError);
-    } else {
-      mockTmpFileCalls += 1;
-      callback(null, '/tmp/xyz', 42, () => undefined);
+      return callback(mockTmpFileReportError);
     }
-  } 
+    mockTmpFileCalls += 1;
+    callback(null, '/tmp/xyz', 42, () => undefined);
+  },
 }));
 
 let mockWrites = [];

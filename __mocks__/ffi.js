@@ -12,10 +12,9 @@ module.exports = {
       result[keys[i]] = {
         async: (par, callback) => {
           if (error) {
-            callback(error);
-          } else {
-            callback(null, 0);
+            return callback(error);
           }
+          return callback(null, 0);
         }
       };
     }

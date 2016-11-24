@@ -1,9 +1,9 @@
 'use strict';
 
-function struct(desc) {
+function Struct(desc) {
   this.ref = () => undefined;
 }
 
-struct.size = 0;
+Struct.size = 0;
 
-module.exports = () => struct;
+module.exports = () => Struct;
