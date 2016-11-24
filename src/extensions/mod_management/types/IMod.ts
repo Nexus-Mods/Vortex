@@ -11,8 +11,8 @@ export interface IMod {
 
   state: ModState;
 
-  // path to the installation archive (relative to install dir)
-  archivePath?: string;
+  // id of the corresponding download
+  archiveId?: string;
   // path to the installed mod
   installationPath?: string;
   // dictionary of extended information fields

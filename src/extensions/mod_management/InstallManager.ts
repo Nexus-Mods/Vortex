@@ -26,6 +26,11 @@ interface IZipEntry {
   name: string;
 }
 
+/**
+ * central class for the installation process
+ * 
+ * @class InstallManager
+ */
 class InstallManager {
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: () => string;
@@ -33,6 +38,17 @@ class InstallManager {
 
   constructor(installPath: () => string) { this.mGetInstallPath = installPath; }
 
+  /**
+   * add an installer extension
+   * 
+   * @param {number} priority priority of the installer. the lower the number the higher
+   *                          the priority, so at priority 0 the extension would always be
+   *                          the first to be queried
+   * @param {ITestSupported} testSupported
+   * @param {IInstall} install
+   * 
+   * @memberOf InstallManager
+   */
   public addInstaller(priority: number, testSupported: ITestSupported,
                       install: IInstall) {
     this.mInstallers.push({priority, testSupported, install});
@@ -44,6 +60,8 @@ class InstallManager {
   /**
    * start installing a mod.
    *
+   * @param {string} archiveId id of the download. may be null if the download isn't
+   *                           in our download archive
    * @param {string} archivePath path to the archive file
    * @param {string} installPath path to install mods into (not including the
    * mod name)
@@ -51,8 +69,8 @@ class InstallManager {
    * @param {*} modInfo existing information about the mod (i.e. stuff retrieved
    * from nexus)
    */
-  public install(archivePath: string, context: IExtensionContext, info: any,
-                 processDependencies: boolean,
+  public install(archiveId: string, archivePath: string, context: IExtensionContext,
+                 info: any, processDependencies: boolean,
                  callback?: (error: Error, id: string) => void) {
     const installContext = new InstallContext(context.api.store.dispatch);
 
@@ -60,7 +78,7 @@ class InstallManager {
     let destinationPath: string;
     let fullInfo = Object.assign({}, info);
 
-    installContext.startInstallCB(baseName, archivePath, destinationPath);
+    installContext.startInstallCB(baseName, archiveId, destinationPath);
 
     let fileList: IZipEntry[] = [];
 
@@ -81,7 +99,6 @@ class InstallManager {
           });
         })
         .then(() => {
-          log('info', 'testing installers', this.mInstallers.length);
           return this.getInstaller(fileList.map((entry: IZipEntry) => entry.name));
         }).then((installer: IModInstaller) => {
           if (installer === undefined) {
@@ -119,11 +136,9 @@ class InstallManager {
     let offset = offsetIn || 0;
     return this.mInstallers[offset].testSupported(fileList).then(
         (testResult: ISupportedResult) => {
-          log('info', 'supported', { offset, supported: testResult.supported });
           if (testResult.supported === true) {
             return Promise.resolve(this.mInstallers[offset]);
           } else {
-            log('info', 'try again');
             return this.getInstaller(fileList, offset + 1);
           }
         });
@@ -233,7 +248,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
     return new Promise<string>((resolve, reject) => {
       const state = context.api.store.getState();
       let download: IDownload = state.persistent.downloads.files[downloadId];
-      this.install(download.localPath, context, download.modInfo, false,
+      this.install(downloadId, download.localPath, context, download.modInfo, false,
                    (error, id) => {
                      if (error === null) {
                        resolve(id);

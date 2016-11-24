@@ -42,10 +42,10 @@ class InstallContext implements IInstallContext {
       dispatch(setModInstallationPath(id, installPath));
   }
 
-  public startInstallCB(id: string, archivePath: string, destinationPath: string): void {
+  public startInstallCB(id: string, archiveId: string, destinationPath: string): void {
     const mod: IMod = {
       id,
-      archivePath,
+      archiveId,
       installationPath: destinationPath,
       state: 'installing',
       attributes: {

@@ -154,7 +154,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
       return value.toLocaleString(language);
     } else if (typeof(value) === 'string') {
       return value;
-    } else if (value === undefined) {
+    } else if ((value === undefined) || (value === null)) {
       return '';
     } else {
       return value.toString();

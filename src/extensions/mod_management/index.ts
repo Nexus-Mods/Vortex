@@ -136,7 +136,7 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on(
         'start-install',
         (archivePath: string, callback?: (error, id: string) => void) => {
-          installManager.install(archivePath, context, {}, true, callback);
+          installManager.install(null, archivePath, context, {}, true, callback);
         });
 
     context.api.events.on(
@@ -144,7 +144,8 @@ function init(context: IExtensionContextExt): boolean {
         (downloadId: string, callback?: (error, id: string) => void) => {
           let download: IDownload =
               store.getState().persistent.downloads.files[downloadId];
-          installManager.install(download.localPath, context, download.modInfo, true, callback);
+          installManager.install(downloadId, download.localPath, context,
+                                 download.modInfo, true, callback);
         });
     registerInstaller(1000, basicInstaller.testSupported, basicInstaller.install);
   });

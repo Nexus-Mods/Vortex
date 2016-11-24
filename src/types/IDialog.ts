@@ -11,9 +11,16 @@ export interface IDialog {
   actions: string[];
 }
 
+export interface ICheckbox {
+  id: string;
+  text: string;
+  value: boolean;
+}
+
 export interface IDialogContent {
   htmlFile?: string;
   message?: string;
+  checkboxes?: ICheckbox[];
 }
 
 export interface IDialogResult {

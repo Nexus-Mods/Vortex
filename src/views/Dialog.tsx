@@ -1,11 +1,12 @@
 import { closeDialog } from '../actions/notifications';
-import { DialogType, IDialog, IDialogContent } from '../types/IDialog';
+import { DialogType, ICheckbox, IDialog, IDialogContent } from '../types/IDialog';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import Icon from '../views/Icon';
 
 import * as React from 'react';
-import { Button, Modal } from 'react-bootstrap';
+import update = require('react-addons-update');
+import { Button, Checkbox, Modal } from 'react-bootstrap';
 
 interface IActionProps {
   t: (input: string) => string;
@@ -34,12 +35,39 @@ interface IDialogConnectedProps {
 }
 
 interface IDialogActionProps {
-  onDismiss: (id: string, action: string) => void;
+  onDismiss: (id: string, action: string, input: IDialogContent) => void;
 }
 
-class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}> {
+interface IComponentState {
+  currentDialogId: string;
+  dialogState: IDialogContent;
+}
+
+type IProps = IDialogConnectedProps & IDialogActionProps;
+
+class Dialog extends ComponentEx<IProps, IComponentState> {
+  constructor(props: IProps) {
+    super(props);
+
+    this.state = {
+      currentDialogId: undefined,
+      dialogState: undefined
+    };
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if ((newProps.dialogs.length > 0) &&
+      (newProps.dialogs[0].id !== this.state.currentDialogId)) {
+      this.setState(update(this.state, {
+        currentDialogId: { $set: newProps.dialogs[0].id },
+        dialogState: { $set: newProps.dialogs[0].content },
+      }));
+    }
+  }
+
   public render(): JSX.Element {
     const { t, dialogs } = this.props;
+    const { dialogState } = this.state;
     const dialog = dialogs.length > 0 ? dialogs[0] : undefined;
     return dialog !== undefined ? (
       <Modal show={dialog !== undefined} onHide={ this.dismiss }>
@@ -47,7 +75,7 @@ class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}>
           <Modal.Title>{ this.iconForType(dialog.type) }{' '}{ t(dialog.title) }</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          { this.renderContent(dialog.content) }
+          { this.renderContent(dialogState) }
         </Modal.Body>
         <Modal.Footer>
           { dialog.actions.map(this.renderAction) }
@@ -62,9 +90,38 @@ class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}>
       return <div>{ t(content.message) }</div>;
     } else if (content.htmlFile !== undefined) {
       return <webview src={`file://${content.htmlFile}`} />;
+    } else if (content.checkboxes !== undefined) {
+      return (
+        <div>
+          {content.checkboxes.map(this.renderCheckbox)}
+        </div>
+      );
     } else {
       return null;
     }
+  }
+
+  private renderCheckbox = (checkbox: ICheckbox) => {
+    const { t } = this.props;
+    return (
+      <Checkbox id={checkbox.id} checked={checkbox.value} onClick={this.toggleCheckbox}>
+        {t(checkbox.text)}
+      </Checkbox>
+    );
+  }
+
+  private toggleCheckbox = (evt) => {
+    let { dialogState } = this.state;
+    let idx = dialogState.checkboxes.findIndex((box: ICheckbox) => {
+      return box.id === evt.currentTarget.id;
+    });
+
+    let newCheckboxes = dialogState.checkboxes.slice(0);
+    newCheckboxes[idx].value = !newCheckboxes[idx].value;
+
+    this.setState(update(this.state, { dialogState: {
+      checkboxes: { $set: newCheckboxes },
+    } }));
   }
 
   private renderAction = (action: string): JSX.Element => {
@@ -90,8 +147,17 @@ class Dialog extends ComponentEx<IDialogConnectedProps & IDialogActionProps, {}>
   }
 
   private dismiss = (action: string) => {
-    const { dialogs } = this.props;
-    this.props.onDismiss(dialogs[0].id, action);
+    const { dialogs, onDismiss } = this.props;
+    const { dialogState } = this.state;
+
+    let data = null;
+    if (dialogState.checkboxes !== undefined) {
+      data = {};
+      dialogState.checkboxes.forEach((box: ICheckbox) => {
+        data[box.id] = box.value;
+      });
+    }
+    onDismiss(dialogs[0].id, action, data);
   }
 }
 
@@ -103,7 +169,8 @@ function mapStateToProps(state: IState): IDialogConnectedProps {
 
 function mapDispatchToProps<S>(dispatch: Redux.Dispatch<S>): IDialogActionProps {
   return {
-    onDismiss: (id: string, action: string) => dispatch(closeDialog(id, action, null)),
+    onDismiss: (id: string, action: string, input: any) =>
+      dispatch(closeDialog(id, action, input)),
   };
 }
 
