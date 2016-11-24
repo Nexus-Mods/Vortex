@@ -9,7 +9,7 @@ class NXMUrl {
   constructor(input: string) {
     let matches = input.match(sUrlExpression);
     if ((matches === null) || (matches.length !== 4)) {
-      throw Error('invalid nxm url "' + input + '"');
+      throw new Error('invalid nxm url "' + input + '"');
     }
     this.mGameId = matches[1];
     this.mModId = parseInt(matches[2], 10);

@@ -3,6 +3,7 @@ typings
 dist
 out
 doc
+coverage
 .vscode/.BROWSE.VC.DB*
 
 # User-specific files

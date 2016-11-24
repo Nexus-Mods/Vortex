@@ -19,6 +19,7 @@
     "$": true,
     "expect": false,
     "describe": false,
+    "fail": false,
     "it": false,
     "jest": false
   },

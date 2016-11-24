@@ -30,11 +30,11 @@ describe('dismissNotification', () => {
 });
 
 describe('dismissDialog', () => {
-  let dialogA = { type: 'info', title: 'title', message: 'message' };
-  let dialogB = { type: 'info', title: 'title2', message: 'message2' };
+  let dialogA = { id: 42, type: 'info', title: 'title', content: { message: 'message' }, actions: [] };
+  let dialogB = { id: 43, type: 'info', title: 'title2', content: { message: 'message2' }, actions: [] };
   let input = { dialogs: [ dialogA, dialogB ] };
-  it('dismisses the topmost dialog', () => {
-    let result = notificationsReducer.reducers.DISMISS_MODAL_DIALOG(input);
+  it('dismisses the specified dialog', () => {
+    let result = notificationsReducer.reducers.DISMISS_MODAL_DIALOG(input, 42);
     expect(result.dialogs.length).toBe(1);
     expect(result.dialogs[0]).toEqual(dialogB);
   });
@@ -44,8 +44,8 @@ describe('showDialog', () => {
   let input = { dialogs: [] };
   it('appends a dialog to be shown', () => {
     let result = notificationsReducer.reducers.SHOW_MODAL_DIALOG(input,
-      { type: 'info', title: 'title', message: 'message' });
+      { id: 42, type: 'info', title: 'title', content: { message: 'message' }, actions: [] });
     expect(result.dialogs.length).toBe(1);
-    expect(result.dialogs[0]).toEqual({ type: 'info', title: 'title', message: 'message' });
+    expect(result.dialogs[0]).toEqual({ id: 42, type: 'info', title: 'title', content: { message: 'message' }, actions: [] });
   });
 });

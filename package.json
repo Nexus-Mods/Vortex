@@ -48,7 +48,9 @@
       "js",
       "json",
       "jsx"
-    ]
+    ],
+    "collectCoverage": true,
+    "automock": false
   },
   "build": {
     "asar": false,
