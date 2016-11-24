@@ -7,7 +7,6 @@ import IconBar from '../../../views/IconBar';
 
 import { connect } from '../../../util/ComponentEx';
 
-import { removeDownload } from '../../download_management/actions/state';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { removeMod } from '../actions/mods';

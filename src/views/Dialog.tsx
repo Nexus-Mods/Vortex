@@ -51,7 +51,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     this.state = {
       currentDialogId: undefined,
-      dialogState: undefined
+      dialogState: undefined,
     };
   }
 
