@@ -94,6 +94,20 @@ describe('merge', () => {
   });
 });
 
+describe('deleteOrNop', () => {
+  it('leaves the original unomdified', () => {
+    let input = { a: 1, b: 2 };
+    let copy = Object.assign({}, input);
+    helper.deleteOrNop(input, ['a']);
+    expect(input).toEqual(copy);
+  });
+  it('removes the specified element', () => {
+    let input = { a: 1, b: 2 };
+    let result = helper.deleteOrNop(input, ['a']);
+    expect(result).toEqual({ b: 2 });
+  });
+});
+
 describe('currentGame', () => {
   it('returns the correct game', () => {
     let input = {

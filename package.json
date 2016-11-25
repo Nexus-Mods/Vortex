@@ -49,8 +49,7 @@
       "json",
       "jsx"
     ],
-    "collectCoverage": true,
-    "automock": false
+    "collectCoverage": true
   },
   "build": {
     "asar": false,
@@ -112,9 +111,10 @@
     "electron-edge": "^6.5.2",
     "electron-rebuild": "^1.2.1",
     "electron-squirrel-startup": "^1.0.0",
+    "enzyme": "^2.6.0",
     "ffi": "^2.1.0",
     "fs-extra-promise": "^0.4.0",
-    "gamebryo-savegame": "file:./lib/cpp/gamebryo-savegame",
+    "gamebryo-savegame": "file:lib\\cpp\\gamebryo-savegame",
     "i18next": "^3.4.1",
     "i18next-node-fs-backend": "^0.1.2",
     "icon-extract": "file:./lib/cpp/icon-extract",

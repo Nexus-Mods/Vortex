@@ -8,6 +8,7 @@
     "bluebird": "registry:dt/bluebird#3.0.0+20160928162057",
     "classnames": "registry:dt/classnames#0.0.0+20160316155526",
     "electron-builder": "registry:dt/electron-builder#2.0.2+20160316155526",
+    "enzyme": "registry:dt/enzyme#2.5.1+20161025153540",
     "fs-ext": "registry:dt/fs-ext#0.0.0+20160316155526",
     "fs-extra-promise": "registry:dt/fs-extra-promise#0.0.0+20160919071823",
     "i18next": "registry:dt/i18next#2.3.4+20160803175212",
