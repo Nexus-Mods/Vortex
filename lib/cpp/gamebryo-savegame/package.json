@@ -14,8 +14,11 @@
   "license": "GPL-3.0",
   "dependencies": {
     "autogypi": "^0.2.2",
-    "nbind": "charto/nbind#master",
+    "nbind": "^0.3.5",
     "node-gyp": "^3.4.0",
     "segfault-handler": "^1.0.0"
+  },
+  "devDependencies": {
+    "nbind": "^0.3.5"
   }
 }
