@@ -10,7 +10,7 @@ export function remoteCode(ipcClient) {
         let relPath: string = path.relative(source, iterPath);
         let destFile: string = path.join(destination, relPath);
         if (stat.isDirectory()) {
-          return fs.mkdirAsync(iterPath);
+          return fs.mkdirAsync(destFile);
         } else {
           return fs.symlinkAsync(iterPath, destFile)
               .then(() => {

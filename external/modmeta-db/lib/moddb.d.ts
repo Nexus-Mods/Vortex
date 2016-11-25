@@ -12,6 +12,7 @@ declare class ModDB {
     getByKey(key: string): Promise<ILookupResult[]>;
     insert(mod: IModInfo): Promise<void>;
     lookup(filePath: string, gameId?: string, modId?: string): Promise<ILookupResult[]>;
+    private translateNexusGameId(input);
     private translateFromNexus;
     private getAllByKey(key);
     private makeKey(mod);

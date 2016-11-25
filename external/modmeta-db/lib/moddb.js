@@ -5,6 +5,7 @@ const levelup = require('levelup');
 const node_rest_client_1 = require('node-rest-client');
 const semvish = require('semvish');
 const util_1 = require('./util');
+const util = require('util');
 class ModDB {
     constructor(location, gameId, apiKey, timeout) {
         this.mBaseURL = 'https://api.nexusmods.com/v1';
@@ -94,7 +95,7 @@ class ModDB {
             if (results.length > 0) {
                 return results;
             }
-            const realGameId = gameId || this.mGameId;
+            const realGameId = this.translateNexusGameId(gameId || this.mGameId);
             const url = `${this.mBaseURL}/games/${realGameId}/mods/md5_search/${hashResult}`;
             return new Promise((resolve, reject) => {
                 this.mRestClient.get(url, this.mBaseData, (data, response) => {
@@ -106,11 +107,19 @@ class ModDB {
                         resolve(altResults);
                     }
                     else {
-                        reject(new Error(data));
+                        reject(new Error(util.inspect(data)));
                     }
                 });
             });
         });
+    }
+    translateNexusGameId(input) {
+        if (input === 'skyrimse') {
+            return 'skyrimspecialedition';
+        }
+        else {
+            return input;
+        }
     }
     getAllByKey(key) {
         return new Promise((resolve, reject) => {

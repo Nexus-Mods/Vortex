@@ -2,11 +2,12 @@ import * as Promise from 'bluebird';
 import leveljs = require('level-js');
 import levelup = require('levelup');
 import { Client } from 'node-rest-client';
-import * as path from 'path';
 import * as semvish from 'semvish';
 
 import {IHashResult, ILookupResult, IModInfo} from './types';
 import { genHash } from './util';
+
+import * as util from 'util';
 
 interface IDatabase extends LevelUp {
   getAsync?: Function;
@@ -149,7 +150,7 @@ class ModDB {
           }
 
           // no result in our database, look at the backends
-          const realGameId = gameId || this.mGameId;
+          const realGameId = this.translateNexusGameId(gameId || this.mGameId);
           const url =
               `${this.mBaseURL}/games/${realGameId}/mods/md5_search/${hashResult}`;
           return new Promise<ILookupResult[]>((resolve, reject) => {
@@ -165,11 +166,19 @@ class ModDB {
                 // and return to caller
                 resolve(altResults);
               } else {
-                reject(new Error(data));
+                reject(new Error(util.inspect(data)));
               }
             });
           });
         });
+  }
+
+  private translateNexusGameId(input: string): string {
+    if (input === 'skyrimse') {
+      return 'skyrimspecialedition';
+    } else {
+      return input;
+    }
   }
 
   /**

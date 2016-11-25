@@ -311,7 +311,7 @@ class ExtensionManager {
     if (this.mModDB !== undefined) {
       return this.mModDB.lookup(filePath, detail.gameId, detail.modId);
     } else {
-      return Promise.reject({ message: 'wrong process' });
+      return Promise.reject(new Error('wrong process'));
     }
   }
 

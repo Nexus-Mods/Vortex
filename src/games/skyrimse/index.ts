@@ -74,7 +74,7 @@ const game: IGame = {
   mergeMods: true,
   queryPath: findGame,
   supportedTools: tools,
-  queryModPath: () => '.',
+  queryModPath: () => './data',
   logo: 'logo.png',
   executable: () => 'SkyrimSE.exe',
   requiredFiles: [
