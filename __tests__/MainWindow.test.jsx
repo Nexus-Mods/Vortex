@@ -1,4 +1,4 @@
-import { MainWindow } from '../out/views/MainWindow.js';
+import { MainWindow } from '../src/views/MainWindow';
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 import { findAll, findWithType, findWithClass } from 'react-shallow-testutils';

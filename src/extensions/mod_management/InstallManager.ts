@@ -276,7 +276,8 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
             .then((args: string[]) => {
               return fs.renameAsync(destinationPath + '.installing',
                                     destinationPath);
-            }));
+            }))
+            .then(() => undefined);
   }
 }
 

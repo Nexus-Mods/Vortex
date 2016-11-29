@@ -27,6 +27,7 @@ import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs';
 import { ILookupResult, IModInfo, IReference, ModDB } from 'modmeta-db';
 import * as path from 'path';
+import { types as ratypes } from 'redux-act';
 import ReduxWatcher = require('redux-watcher');
 
 import Module = require('module');
@@ -338,7 +339,13 @@ class ExtensionManager {
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {
     let indexPath = path.join(extensionPath, 'index.js');
+    log('info', 'load dynamic extension', indexPath);
     if (fs.existsSync(indexPath)) {
+      // TODO: workaround. redux-act stores a global set of action creator ids and throws if
+      //  there would be a duplicate. Since extensions might import actions we already have loaded
+      //  here, that mechanism would fail. 
+      ratypes.clear();
+
       return { name: path.basename(extensionPath), initFunc: require(indexPath).default };
     } else {
       return undefined;

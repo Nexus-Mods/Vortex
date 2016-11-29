@@ -1,4 +1,4 @@
-import getAttr from '../out/util/getAttr';
+import getAttr from '../src/util/getAttr';
 
 describe('getAttr', () => {
   it('returns default on undefined dict', () => {

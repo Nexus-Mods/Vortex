@@ -15,15 +15,15 @@ const { Menu, clipboard } = remote;
  * @param {ExtensionManager} extensions
  */
 export function initApplicationMenu(extensions: ExtensionManager) {
-  let fileMenu = [
+  let fileMenu: Electron.MenuItemOptions[] = [
     {
-      role: 'quit',
+      role: 'close',
     },
   ];
 
   let recordTranslation = false;
 
-  let viewMenu = [];
+  let viewMenu: Electron.MenuItemOptions[] = [];
 
   // main pages
   extensions.apply('registerMainPage',

@@ -1,6 +1,6 @@
-import { ExtensionProvider, extend } from '../out/util/ExtensionProvider';
-import * as React from 'react';
+import { ExtensionProvider, extend } from '../src/util/ExtensionProvider';
 import { mount, shallow } from 'enzyme';
+import * as React from 'react';
 
 function register(val) {
   return 42;

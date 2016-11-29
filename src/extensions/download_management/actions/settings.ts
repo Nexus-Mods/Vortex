@@ -1,3 +1,3 @@
 import { createAction } from 'redux-act';
 
-export const setMaxDownloads = createAction('SET_MAX_DOWNLOADS');
+export const setMaxDownloads: any = createAction('SET_MAX_DOWNLOADS');

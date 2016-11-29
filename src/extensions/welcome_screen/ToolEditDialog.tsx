@@ -251,7 +251,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
 
     fs.ensureDirAsync(path.dirname(destPath));
 
-    let promise;
+    let promise: Promise<any>;
     if (path.extname(filePath) === '.exe') {
       promise = new Promise<boolean>((resolve, reject) => {
         extractIconToFile(filePath, destPath, (err) => {

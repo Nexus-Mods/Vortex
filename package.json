@@ -43,11 +43,18 @@
     "electron": "1.4.3"
   },
   "jest": {
-    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx)$",
+
+    "transform": {
+      "^.+\\.(ts|tsx)$": "<rootDir>/node_modules/ts-jest/preprocessor.js",
+      "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest"
+    },
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx|ts|tsx)$",
     "moduleFileExtensions": [
       "js",
       "json",
-      "jsx"
+      "jsx",
+      "ts",
+      "tsx"
     ],
     "collectCoverage": true
   },
@@ -118,8 +125,8 @@
     "i18next": "^3.4.1",
     "i18next-node-fs-backend": "^0.1.2",
     "icon-extract": "file:./lib/cpp/icon-extract",
-    "jest": "^15.1.1",
-    "jest-cli": "^15.1.1",
+    "jest": "^17.0.3",
+    "jest-cli": "^17.0.3",
     "less": "^2.7.1",
     "less-plugin-clean-css": "^1.5.1",
     "level-js": "^2.2.4",
@@ -142,7 +149,7 @@
     "react-redux": "^4.4.5",
     "react-shallow-testutils": "^2.0.0",
     "redux": "^3.5.2",
-    "redux-act": "^0.5.0",
+    "redux-act": "^1.1.0",
     "redux-devtools": "^3.3.1",
     "redux-devtools-dispatch": "^2.2.0",
     "redux-devtools-log-monitor": "^1.0.11",
@@ -173,6 +180,6 @@
     "react-contextmenu": "^1.6.3",
     "react-dom": "^15.3.0",
     "source-map-support": "^0.4.2",
-    "typescript": "^2.0.3"
+    "typescript": "^2.0.10"
   }
 }

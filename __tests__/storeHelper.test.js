@@ -114,18 +114,28 @@ describe('currentGame', () => {
       settings: { gameMode: { current: 'testA' } },
       session: { gameMode: { known: [ { id: 'testA', name: '1' }, { id: 'testB', name: '2' } ] } }
     };
-    expect(helper.currentGame(input).name).toBe('1');
+
+    return helper.currentGame({ getState: () => input })
+    .then((game) => {
+      expect(game.name).toBe('1');
+    });
   });
   it('returns placeholder if unset', () => {
-    let input = {};
-    expect(helper.currentGame(input).id).toBe('__placeholder');
+    let input = { session: { gameMode: { known: [] } } };
+    return helper.currentGame({ getState: () => input })
+    .then((game) => {
+      expect(game.id).toBe('__placeholder');
+    });
   });
   it('returns placeholder if game not known', () => {
     let input = {
       settings: { gameMode: { current: 'testA' } },
       session: { gameMode: { known: [ { id: 'testB', name: '2' } ] } }
     };
-    expect(helper.currentGame(input).id).toBe('__placeholder');
+    return helper.currentGame({ getState: () => input })
+    .then((game) => {
+      expect(game.id).toBe('__placeholder');
+    });
   });
 });
 

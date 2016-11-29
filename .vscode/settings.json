@@ -3,6 +3,7 @@
     "editor.detectIndentation": false,
     "eslint.enable": true,
     "eslint.run": "onSave",
+    "jest.pathToJest": "node_modules\\.bin\\jest",
     "typescript.tsdk": "./node_modules/typescript/lib",
     "TodoParser": {
       "folderExclude": ["node_modules", ".vscode", "typings"]

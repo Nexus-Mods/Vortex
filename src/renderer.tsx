@@ -59,6 +59,24 @@ if (process.env.NODE_ENV === 'development') {
   );
 }
 
+process.on('uncaughtException', (error) => {
+  let details: ITermination = undefined;
+
+  switch (typeof error) {
+    case 'object': {
+      details = { message: error.message, details: error.stack };
+    } break;
+    case 'string': {
+      details = { message: error };
+    } break;
+    default: {
+      details = { message: error };
+    } break;
+  }
+
+  terminate(details);
+});
+
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 const extensions: ExtensionManager = new ExtensionManager(eventEmitter);
@@ -100,24 +118,6 @@ store.subscribe(() => {
 });
 
 const i18n = getI18n(store.getState().settings.interface.language);
-
-process.on('uncaughtException', (error) => {
-  let details: ITermination = undefined;
-
-  switch (typeof error) {
-    case 'object': {
-      details = { message: error.message, details: error.stack };
-    } break;
-    case 'string': {
-      details = { message: error };
-    } break;
-    default: {
-      details = { message: error };
-    } break;
-  }
-
-  terminate(details);
-});
 
 // render the page content 
 
