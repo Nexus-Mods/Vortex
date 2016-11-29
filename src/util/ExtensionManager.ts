@@ -8,6 +8,7 @@ import initModManagement from '../extensions/mod_management/index';
 import initNexusIntegration from '../extensions/nexus_integration/index';
 import initNutsLocal from '../extensions/nuts_local/index';
 import initProfileManagement from '../extensions/profile_management/index';
+import initSaveGameManagement from '../extensions/savegame_management/index';
 import initSettingsInterface from '../extensions/settings_interface/index';
 import initSymlinkActivator from '../extensions/symlink_activator/index';
 import initSymlinkActivatorElevate from '../extensions/symlink_activator_elevate/index';
@@ -395,6 +396,7 @@ class ExtensionManager {
       { name: 'symlink_activator', initFunc: initSymlinkActivator },
       { name: 'symlink_activator_elevate', initFunc: initSymlinkActivatorElevate },
       { name: 'installer_fomod', initFunc: initInstallerFomod },
+      { name: 'savegame_management', initFunc: initSaveGameManagement },
     ].concat(this.loadDynamicExtensions(extensionsPath));
   }
 

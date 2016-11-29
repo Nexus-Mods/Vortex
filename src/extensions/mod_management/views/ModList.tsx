@@ -62,7 +62,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
     super(props);
     this.state = {
       selectedMod: undefined,
-    }
+    };
   }
 
   public render(): JSX.Element {
