@@ -87,7 +87,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
           </Fixed>
           <Flex>
           <Layout type='row'>
-            <Flex>
+            <Flex style={{ height: '100%', overflowY: 'auto' }} >
               <Table bordered condensed hover>
                 <thead>
                   <tr>
@@ -194,7 +194,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
     }
 
     return (
-      <form>
+      <form style={{ minWidth: 300 }}>
       {objects.map((obj) => this.renderModDetail(mod, obj))}
       </form>
     );

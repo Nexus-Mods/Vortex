@@ -15,7 +15,7 @@ export function remoteCode(ipcClient) {
           return fs.symlinkAsync(iterPath, destFile)
               .then(() => {
                 ipcClient.emit('log', {
-                  level: 'info',
+                  level: 'debug',
                   message: 'installed',
                   meta: {source: iterPath, destination: destFile},
                 });

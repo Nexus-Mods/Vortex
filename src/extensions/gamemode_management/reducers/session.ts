@@ -10,6 +10,6 @@ export const sessionReducer: IReducerSpec = {
     [setKnownGames]: (state, payload) => update(state, { known: { $set: payload } }),
   },
   defaults: {
-    known: [],
+    known: null,
   },
 };

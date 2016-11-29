@@ -1,8 +1,9 @@
 import { IHashResult, ILookupResult, IReference, RuleType, genHash } from 'modmeta-db';
-import { ComponentEx, FormFeedbackAwesome, translate, types } from 'nmm-api';
+import { ComponentEx, FormFeedbackAwesome, types } from 'nmm-api';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup,
          Modal, Nav, NavItem } from 'react-bootstrap';
+import { translate } from 'react-i18next';
 
 import update = require('react-addons-update');
 

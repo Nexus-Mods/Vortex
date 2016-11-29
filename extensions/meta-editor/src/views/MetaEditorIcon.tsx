@@ -1,7 +1,7 @@
 import RuleEditor from './RuleEditor';
 
 import { ComponentEx, FormFeedbackAwesome, Icon,
-         connect, log, tooltip, translate, types,
+         log, tooltip, types,
          util } from 'nmm-api';
 
 import { IHashResult, ILookupResult, IModInfo, IReference,
@@ -11,6 +11,8 @@ import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
 import update = require('react-addons-update');
+import { translate } from 'react-i18next';
+import { connect } from 'react-redux';
 import semver = require('semver');
 import * as url from 'url';
 

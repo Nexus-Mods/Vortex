@@ -34,6 +34,36 @@ function deriveReducer(path, ele): Redux.Reducer<any> {
   }
 }
 
+/**
+ * very simplistic deep merge.
+ * 
+ * @param {*} lhs
+ * @param {*} rhs
+ * @returns {*}
+ */
+function deepMerge(lhs: any, rhs: any): any {
+  if ((lhs === undefined) || (rhs === undefined) ||
+      (lhs === null) || (rhs === null)) {
+    return lhs || rhs;
+  }
+
+  let result = {};
+  for (let key of Object.keys(lhs).concat(Object.keys(rhs))) {
+    if ((lhs[key] === undefined) || (rhs[key] === undefined)) {
+      result[key] = lhs[key] || rhs[key];
+    }
+
+    if ((typeof(lhs[key]) === 'object') && (typeof(lhs[key]) === 'object')) {
+      result[key] = deepMerge(lhs[key], rhs[key]);
+    } else if (Array.isArray(lhs[key]) && Array.isArray(rhs[key])) {
+      result[key] = lhs[key].concat(rhs[key]);
+    } else {
+      result[key] = rhs[key] || lhs[key];
+    }
+  }
+  return result;
+}
+
 function addToTree(tree: any, path: string[], spec: IReducerSpec) {
   if (path.length === 0) {
     if (tree.reducers === undefined) {
@@ -43,7 +73,7 @@ function addToTree(tree: any, path: string[], spec: IReducerSpec) {
       tree.defaults = {};
     }
     Object.assign(tree.reducers, spec.reducers);
-    Object.assign(tree.defaults, spec.defaults);
+    tree.defaults = deepMerge(tree.defaults, spec.defaults);
   } else {
     if (!(path[0] in tree)) {
       tree[path[0]] = {};

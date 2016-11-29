@@ -1,0 +1,33 @@
+{
+  "name": "sample-extension",
+  "version": "0.0.1",
+  "description": "Sample",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "tsc": "tsc -p .",
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
+    "build": "npm run tsc && npm run webpack"
+  },
+  "author": "",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "babel-core": "^6.14.0",
+    "babel-loader": "^6.2.5",
+    "babel-polyfill": "^6.13.0",
+    "bluebird": "^3.4.6",
+    "i18next": "^3.5.1",
+    "nmm-api": "file:../../api",
+    "react": "^15.3.2",
+    "react-addons-update": "^15.3.2",
+    "react-bootstrap": "^0.30.6",
+    "react-dom": "^15.3.2",
+    "react-i18next": "^1.10.1",
+    "webpack": "^1.13.2"
+  }
+}
