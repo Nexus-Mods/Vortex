@@ -3,4 +3,8 @@
 // (excluding log, which is exported separately to give
 //  it a more accessible name)
 
+export * from './message';
 export * from './storeHelper';
+
+import runElevated from './elevated';
+export { runElevated };

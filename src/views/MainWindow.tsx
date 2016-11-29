@@ -1,5 +1,5 @@
 import { IComponentContext } from '../types/IComponentContext';
-import { IExtensionApi } from '../types/IExtensionContext';
+import { IExtensionApi, IMainPageOptions } from '../types/IExtensionContext';
 import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
 import { ComponentEx, extend, translate } from '../util/ComponentEx';
@@ -219,7 +219,8 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
 
     const page: IMainPage = objects.find((ele) => ele.title === this.state.showPage);
     if (page !== undefined) {
-      return <page.component />;
+      let props = page.propsFunc !== undefined ? page.propsFunc() : {};
+      return <page.component {...props} />;
     } else {
       return <Alert>No content pages</Alert>;
     }
@@ -258,8 +259,9 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
 function registerMainPage(instance: MainWindow,
                           icon: string,
                           title: string,
-                          component: React.ComponentClass<any>) {
-  return { icon, title, component };
+                          component: React.ComponentClass<any>,
+                          options: IMainPageOptions) {
+  return { icon, title, component, propsFunc: options.props };
 }
 
 export default

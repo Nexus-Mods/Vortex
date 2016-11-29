@@ -1,6 +1,8 @@
 import { IDiscoveryResult, IGameStored } from '../extensions/gamemode_management/types/IStateEx';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
 
+import * as Promise from 'bluebird';
+
 /**
  * return an item from state or the fallback if the path doesn't lead
  * to an item.
@@ -179,20 +181,48 @@ export function merge<T>(state: T, path: string[], value: Object): T {
   return setSafe(state, path, newVal);
 }
 
+function waitUntil(predicate: () => boolean, interval: number = 100): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    setTimeout(() => {
+      if (predicate()) {
+        resolve();
+      } else {
+        return waitUntil(predicate, interval);
+      }
+    }, interval);
+  });
+}
+
 /**
  * return the stored static details about the currently selected game mode
  * or a fallback with the id '__placeholder'
+ * the return value is a promise because known games are loaded during extension
+ * initialization so there is quite a bit of code where we can't be sure
+ * if this is yet available
  * 
  * @export
  * @param {*} state
- * @returns {IGameStored}
+ * @returns {Promise<IGameStored>}
  */
-export function currentGame(state: any): IGameStored {
-  const fallback = { id: '__placeholder', name: '<No game>', requiredFiles: [] };
-  const gameMode = getSafe(state, [ 'settings', 'gameMode', 'current' ], undefined);
-  let res = getSafe(state, ['session', 'gameMode', 'known'], []).find(
-    (ele: IGameStored) => ele.id === gameMode);
-  return res || fallback;
+export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
+  const fallback = {id: '__placeholder', name: '<No game>', requiredFiles: []};
+  const gameMode =
+      getSafe(store.getState(), ['settings', 'gameMode', 'current'], undefined);
+  let knownGames = getSafe(store.getState(), ['session', 'gameMode', 'known'], null);
+  if ((knownGames !== null) && (knownGames !== undefined)) {
+    let res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
+    return Promise.resolve(res || fallback);
+  } else {
+    return waitUntil(() => {
+             knownGames =
+                 getSafe(store.getState(), ['session', 'gameMode', 'known'], null);
+             return (knownGames !== null) && (knownGames !== undefined);
+           })
+        .then(() => {
+          let res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
+          return Promise.resolve(res || fallback);
+        });
+  }
 }
 
 /**

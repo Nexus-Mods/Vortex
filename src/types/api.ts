@@ -3,5 +3,6 @@
 
 export * from './IComponentContext';
 export * from './IExtensionContext';
+export * from './IIconDefinition';
 export * from './INotification';
 export * from './IState';

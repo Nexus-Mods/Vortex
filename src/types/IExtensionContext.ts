@@ -22,6 +22,7 @@ export interface IRegisterFooter {
 
 export interface IMainPageOptions {
   hotkey?: string;
+  props?: () => any;
 }
 
 export interface IRegisterMainPage {
@@ -305,6 +306,12 @@ export interface IExtensionContext {
    * called once after the store has been set up and after all extensions have been initialized
    * This means that if your extension registers its own extension function
    * (@see registerExtensionFunction) then those registrations happen before once is called.
+   * 
+   * You shouldn't make assumptions on the order in which extensions are loaded and on them to be
+   * loaded synchronously, so if you have initialization code that requires another extension to
+   * be initialized first, you should check if that happened already in your "once" call and react
+   * to some sort of event that would indicate that other initialization to be finished (usually
+   * a state change)
    * 
    * @memberOf IExtensionContext
    */
