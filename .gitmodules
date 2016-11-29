@@ -1,0 +1,3 @@
+[submodule "lib/cpp/esptk/esptk"]
+	path = lib/cpp/esptk/esptk
+	url = https://github.com/TanninOne/modorganizer-esptk
