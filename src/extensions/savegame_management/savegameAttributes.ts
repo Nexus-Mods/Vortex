@@ -57,3 +57,14 @@ export const CREATION_TIME: ISavegameAttribute = {
   isToggleable: true,
   isReadOnly: true,
 };
+
+export const SCREENSHOT: ISavegameAttribute = {
+  id: 'screenshot',
+  name: 'Screenshot',
+  description: 'Savegame screenshot',
+  icon: ' file-picture-o',
+  calc: (attributes) => attributes.screenshot,
+  isDetail: true,
+  isToggleable: true,
+  isReadOnly: true,
+};

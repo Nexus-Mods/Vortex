@@ -11,6 +11,8 @@ export interface IBaseProps {
   save: ISavegame;
   attributes: ISavegameAttribute[];
   language: string;
+  onClick: __React.MouseEventHandler;
+  selected: boolean;
 }
 
 type IProps = IBaseProps;
@@ -27,12 +29,18 @@ class SavegameRow extends React.Component<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { attributes, save } = this.props;
+    const { attributes, onClick, save, selected } = this.props;
+
+    let classes = ['save-' + save.id];
+    if (selected) {
+      classes.push('savegamelist-selected');
+    }
 
     return (
       <tr
         id={save.id}
         key={save.id}
+        onClick={onClick}
       >
         {attributes.map(this.renderAttribute)}
       </tr>

@@ -1,10 +1,16 @@
 import { ISavegame } from '../types/ISavegame';
-
 import * as fs from 'fs-extra-promise';
-
 import { savegameBinding } from 'gamebryo-savegame';
-
 import * as path from 'path';
+
+class Dimensions {
+  public width: number;
+  public height: number;
+  constructor(width: number, height: number) {
+    this.width = width;
+    this.height = height;
+  }
+}
 
 /**
  * reads the savegame dir and adds savegames missing in our database
@@ -43,6 +49,7 @@ function loadSaveGame(file: string, onAddSavegame: Function) {
         name: sg.characterName,
         level: sg.characterLevel,
         location: sg.location,
+        screenshot: sg.screenshotSize,
         isToggleable: true,
         creationtime: timestampFormat(sg.creationTime),
       },

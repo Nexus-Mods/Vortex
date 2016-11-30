@@ -18,14 +18,22 @@ import { IGameModeSettings } from '../../gamemode_management/types/IStateEx';
 import { ISavegame } from '../types/ISavegame';
 import { ISavegameAttribute } from '../types/ISavegameAttribute';
 
-// import { setSavegamelistAttributeSort,
-  // setSavegamelistAttributeVisible } from '../actions/settings';
-
 import { SortDirection } from '../../../types/SortDirection';
 import { IAttributeState } from '../types/IAttributeState';
 
 import { log } from '../../../util/log';
 import SavegameRow from './SavegameRow';
+
+import update = require('react-addons-update');
+
+class Dimensions {
+  public width: number;
+  public height: number;
+  constructor(width: number, height: number) {
+    this.width = width;
+    this.height = height;
+  }
+}
 
 interface IProps {
   objects: ISavegameAttribute[];
@@ -56,6 +64,11 @@ interface IComponentState {
  * 
  */
 class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComponentState> {
+  public screenshotCanvas: HTMLCanvasElement;
+  private refHandlers = {
+        canvas: (ref) => this.screenshotCanvas = ref,
+    };
+
   constructor(props) {
     super(props);
     this.state = {
@@ -97,6 +110,7 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
               </Table>
             </Flex>
             <Fixed>
+            <canvas id='canvas' ref={this.refHandlers.canvas} width='0' height='0' />
               {this.renderSavegameDetails(this.state.selectedSavegame)}
             </Fixed>
           </Layout>
@@ -204,13 +218,11 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
       return null;
     }
 
-    const update = require('react-addons-update');
-
     const { saves, objects } = this.props;
     const save = saves[saveId];
 
     if (save === undefined) {
-      log('warn', 'unknown save id', saveId);
+      log('warn', 'unknown savegame id', saveId);
       this.setState(update(this.state, {
         selectedSavegame: { $set: undefined },
       }));
@@ -218,7 +230,7 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
     }
 
     return (
-      <form>
+      <form style={{ minWidth: 300 }}>
         {objects.map((obj) => this.renderSavegameDetail(save, obj))}
       </form>
     );
@@ -226,6 +238,7 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
 
   private renderSavegameDetail = (save: ISavegame, attribute: ISavegameAttribute) => {
     const { t } = this.props;
+    if (attribute.id !== 'screenshot') {
     return (
       <FormGroup key={`${save.id}-${attribute.id}`}>
         <ControlLabel>{attribute.name}</ControlLabel>
@@ -233,11 +246,32 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
           id={attribute.id}
           type='text'
           label={t(attribute.name)}
-          // readOnly={attribute.isReadOnly}
+          readOnly={attribute.isReadOnly}
           defaultValue={this.renderCell(attribute.calc(save.attributes))}
         />
       </FormGroup>
     );
+    } else {
+        let dim: Dimensions = attribute.calc(save.attributes);
+
+        this.screenshotCanvas.setAttribute('width', dim.width.toString());
+        this.screenshotCanvas.setAttribute('height', dim.height.toString());
+
+        if (dim.width.toString() !== this.screenshotCanvas.getAttribute('width')) {
+            this.screenshotCanvas.setAttribute('width', dim.width.toString());
+        }
+        if (dim.height.toString() !== this.screenshotCanvas.getAttribute('height')) {
+            this.screenshotCanvas.setAttribute('height', dim.height.toString());
+        }
+
+        let ctx: CanvasRenderingContext2D = this.screenshotCanvas.getContext('2d');
+        let imgData: ImageData = ctx.createImageData(dim.width, dim.height);
+        // row.screenshot(imgData.data);
+
+        ctx.putImageData(imgData, 0, 0);
+
+        return null;
+    }
   }
 
   private renderCell(value: any): string {
@@ -254,6 +288,14 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
     }
   }
 
+  private selectSavegame = (evt: __React.MouseEvent) => {
+    const cell = (evt.target as HTMLTableCellElement);
+    const row = (cell.parentNode as HTMLTableRowElement);
+    this.setState(update(this.state, {
+      selectedSavegame: { $set: row.id },
+    }));
+  };
+
   private renderSavegameRow(save: ISavegame, visibleAttributes: ISavegameAttribute[]): JSX.Element {
     let { language } = this.props;
     return (
@@ -262,6 +304,8 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
         save={save}
         attributes={visibleAttributes}
         language={language}
+        onClick={this.selectSavegame}
+        selected={save.id === this.state.selectedSavegame}
       />
     );
   }

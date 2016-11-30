@@ -22,11 +22,7 @@ export interface IAttributeProps {
 
 class AttributeToggle extends React.Component<IAttributeProps, {}> {
   public render(): JSX.Element {
-    const { attribute, state, t } = this.props;
-
-    const cssClass = getAttr(state, 'enabled', true)
-      ? 'attribute-icon-enabled'
-      : 'attribute-icon-disabled';
+    const { attribute, t } = this.props;
 
     return (
       <Button
