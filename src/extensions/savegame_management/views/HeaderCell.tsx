@@ -30,13 +30,11 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
   }
 
   private renderSortIndicator(direction: SortDirection, attributeId: string) {
-    if (attributeId === 'creationtime' || attributeId === 'name') {
+
       return (
         <SortIndicator direction={direction} onSetDirection={this.setDirection} />
       );
-    } else {
-      return null;
-    }
+
   }
 
   private setDirection = (dir: SortDirection) => {

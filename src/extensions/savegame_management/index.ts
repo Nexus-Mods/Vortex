@@ -25,7 +25,7 @@ export interface IExtensionContextExt extends IExtensionContext {
 
 function init(context: IExtensionContextExt): boolean {
 
-  context.registerMainPage('clone', 'Save Games', SavegameList, {
+  context.registerMainPage('hdd-o', 'Save Games', SavegameList, {
     hotkey: 'S',
   });
 

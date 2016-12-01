@@ -103,6 +103,7 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
                 <thead>
                   <tr>
                     {visibleAttributes.map(this.renderHeaderField)}
+                    <th>{t('Actions')}</th>
                   </tr>
                 </thead>
                 <tbody>

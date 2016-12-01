@@ -1,12 +1,12 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 
 import {
-  addSavegame, clearSavegames,
+  addSavegame, clearSavegames, removeSavegame,
   setSavegameAttribute,
   setSavegameState, setSavegamelistAttributeSort, setSavegamelistAttributeVisible,
 } from '../actions/session';
 
-import { setSafe } from '../../../util/storeHelper';
+import { deleteOrNop, setSafe } from '../../../util/storeHelper';
 
 import update = require('react-addons-update');
 
@@ -23,6 +23,7 @@ export const sessionReducer: IReducerSpec = {
       }
     },
     [addSavegame]: (state, payload) => setSafe(state, ['saves', payload.id], payload),
+    [removeSavegame]: (state, payload) => deleteOrNop(state, ['saves', payload]),
     [setSavegameState]: (state, payload) => {
       const { id, savegameState } = payload;
       return update(state, { saves: { [id]: { state: { $set: savegameState } } } });
