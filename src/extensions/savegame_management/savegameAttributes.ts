@@ -68,3 +68,14 @@ export const SCREENSHOT: ISavegameAttribute = {
   isToggleable: true,
   isReadOnly: true,
 };
+
+export const PLUGINS: ISavegameAttribute = {
+  id: 'plugins',
+  name: 'Plugins',
+  description: 'Savegame plugins',
+  icon: ' file-picture-o',
+  calc: (attributes) => attributes.plugins,
+  isDetail: true,
+  isToggleable: true,
+  isReadOnly: true,
+};

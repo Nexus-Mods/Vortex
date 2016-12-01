@@ -2,7 +2,8 @@ import { ComponentEx, connect, extend, translate } from '../../../util/Component
 
 import AttributeToggle from './AttributeToggle';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup, Jumbotron, Table } from 'react-bootstrap';
+import {
+  ControlLabel, FormControl, FormGroup, Jumbotron, Table } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import getAttr from '../../../util/getAttr';
@@ -66,8 +67,8 @@ interface IComponentState {
 class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComponentState> {
   public screenshotCanvas: HTMLCanvasElement;
   private refHandlers = {
-        canvas: (ref) => this.screenshotCanvas = ref,
-    };
+    canvas: (ref) => this.screenshotCanvas = ref,
+  };
 
   constructor(props) {
     super(props);
@@ -110,7 +111,7 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
               </Table>
             </Flex>
             <Fixed>
-            <canvas id='canvas' ref={this.refHandlers.canvas} width='0' height='0' />
+              <canvas id='canvas' ref={this.refHandlers.canvas} width='0' height='0' />
               {this.renderSavegameDetails(this.state.selectedSavegame)}
             </Fixed>
           </Layout>
@@ -238,40 +239,56 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
 
   private renderSavegameDetail = (save: ISavegame, attribute: ISavegameAttribute) => {
     const { t } = this.props;
-    if (attribute.id !== 'screenshot') {
-    return (
-      <FormGroup key={`${save.id}-${attribute.id}`}>
-        <ControlLabel>{attribute.name}</ControlLabel>
-        <FormControl
-          id={attribute.id}
-          type='text'
-          label={t(attribute.name)}
-          readOnly={attribute.isReadOnly}
-          defaultValue={this.renderCell(attribute.calc(save.attributes))}
-        />
-      </FormGroup>
-    );
-    } else {
-        let dim: Dimensions = attribute.calc(save.attributes);
+    if (attribute.id === 'screenshot') {
 
-        this.screenshotCanvas.setAttribute('width', dim.width.toString());
-        this.screenshotCanvas.setAttribute('height', dim.height.toString());
+      let dim: Dimensions = attribute.calc(save.attributes);
+      this.screenshotCanvas.setAttribute('width', dim.width.toString());
+      this.screenshotCanvas.setAttribute('height', dim.height.toString());
 
-        if (dim.width.toString() !== this.screenshotCanvas.getAttribute('width')) {
-            this.screenshotCanvas.setAttribute('width', dim.width.toString());
-        }
-        if (dim.height.toString() !== this.screenshotCanvas.getAttribute('height')) {
-            this.screenshotCanvas.setAttribute('height', dim.height.toString());
-        }
-
+      try {
         let ctx: CanvasRenderingContext2D = this.screenshotCanvas.getContext('2d');
-        let imgData: ImageData = ctx.createImageData(dim.width, dim.height);
-        // row.screenshot(imgData.data);
-
+        let imgData: ImageData = ctx.createImageData(this.screenshotCanvas.width,
+          this.screenshotCanvas.height);
+        save.savegameBind.screenshot(imgData.data);
         ctx.putImageData(imgData, 0, 0);
+      } catch (err) {
+        this.screenshotCanvas.setAttribute('width', '0');
+        this.screenshotCanvas.setAttribute('height', '0');
+        log('error', 'Error creating ImageData', err);
+      }
 
-        return null;
+    } else if (attribute.id === 'plugins') {
+      let plugins: string[] = attribute.calc(save.attributes);
+      return (
+        <FormGroup controlId='multiplePlugins'>
+          <ControlLabel>{ t('Plugins') }</ControlLabel>
+          <FormControl componentClass='select' multiple>
+            { plugins.map(this.renderPlugin) }
+          </FormControl>
+        </FormGroup>
+      );
+    } else {
+      if (attribute.isDetail === true) {
+        return (
+          <FormGroup key={`${save.id}-${attribute.id}`}>
+            <ControlLabel>{attribute.name}</ControlLabel>
+            <FormControl
+              id={attribute.id}
+              type='text'
+              label={t(attribute.name)}
+              readOnly={attribute.isReadOnly}
+              defaultValue={this.renderCell(attribute.calc(save.attributes))}
+            />
+          </FormGroup>
+        );
+      }
     }
+  }
+
+  private renderPlugin = (searchPlugin: string) => {
+    return (
+      <option value='select'>{searchPlugin}</option>
+    );
   }
 
   private renderCell(value: any): string {

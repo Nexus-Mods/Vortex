@@ -44,11 +44,13 @@ function loadSaveGame(file: string, onAddSavegame: Function) {
 
     const save: ISavegame = {
       id: file,
+      savegameBind: sg,
       attributes: {
         id: sg.saveNumber,
         name: sg.characterName,
         level: sg.characterLevel,
         location: sg.location,
+        plugins: sg.plugins,
         screenshot: sg.screenshotSize,
         isToggleable: true,
         creationtime: timestampFormat(sg.creationTime),

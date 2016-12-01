@@ -10,7 +10,7 @@ import { remote } from 'electron';
 
 import * as path from 'path';
 
-import {CREATION_TIME, LEVEL, LOCATION, SAVEGAME_ID,
+import {CREATION_TIME, LEVEL, LOCATION, PLUGINS, SAVEGAME_ID,
    SAVEGAME_NAME, SCREENSHOT} from './savegameAttributes';
 
 import { ISavegameAttribute } from './types/ISavegameAttribute';
@@ -39,6 +39,7 @@ function init(context: IExtensionContextExt): boolean {
     context.registerSavegameAttribute(LEVEL);
     context.registerSavegameAttribute(CREATION_TIME);
     context.registerSavegameAttribute(SCREENSHOT);
+    context.registerSavegameAttribute(PLUGINS);
   }
 
   context.once(() => {
