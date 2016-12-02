@@ -32,7 +32,9 @@ export const sessionReducer: IReducerSpec = {
       const { id, attribute, value } = payload;
       return update(state, { saves: { [id]: { attributes: { [attribute]: { $set: value } } } } });
     },
-    [clearSavegames]: (state, payload) => update(state, { saves: { $set: {} } }),
+    [clearSavegames]: (state, payload) => {
+      return update(state, { saves: { $set: {} } });
+    },
     [setSavegamelistAttributeVisible]: (state, payload) => {
       return setSafe(state, ['savegamelistlistState',
         payload.attributeId, 'enabled'], payload.visible);

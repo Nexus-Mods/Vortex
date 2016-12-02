@@ -10,8 +10,10 @@ import { remote } from 'electron';
 
 import * as path from 'path';
 
-import {CREATION_TIME, LEVEL, LOCATION, PLUGINS, SAVEGAME_ID,
-   SAVEGAME_NAME, SCREENSHOT} from './savegameAttributes';
+import {
+  CREATION_TIME, LEVEL, LOCATION, PLUGINS, SAVEGAME_ID,
+  SAVEGAME_NAME, SCREENSHOT,
+} from './savegameAttributes';
 
 import { ISavegameAttribute } from './types/ISavegameAttribute';
 
@@ -49,7 +51,7 @@ function init(context: IExtensionContextExt): boolean {
       'my games', store.getState().settings.gameMode.current, 'saves');
 
     refreshSavegames(installPath, (save: ISavegame): void => {
-        context.api.store.dispatch(addSavegame(save));
+      context.api.store.dispatch(addSavegame(save));
     });
 
     context.api.onStateChange(
@@ -60,8 +62,10 @@ function init(context: IExtensionContextExt): boolean {
         //   solution
         setTimeout(() => {
           context.api.store.dispatch(clearSavegames());
-          refreshSavegames(installPath, (save: ISavegame) => {
-            if (store.getState().saves[save.id] === undefined) {
+          let refreshPath = path.join(remote.app.getPath('documents'),
+            'my games', store.getState().settings.gameMode.current, 'saves');
+          refreshSavegames(refreshPath, (save: ISavegame): void => {
+            if (store.getState().session.saves[save.id] === undefined) {
               context.api.store.dispatch(addSavegame(save));
             }
           });
