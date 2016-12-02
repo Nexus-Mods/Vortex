@@ -37,6 +37,9 @@ export function getSafe<T>(state: any, path: string[], fallback: T): T {
  * @returns {T}
  */
 export function setSafe<T>(state: T, path: string[], value: any): T {
+  if (path.length === 0) {
+    return Object.assign({}, value);
+  }
   let firstElement: string = path[0];
   let copy = Object.assign({}, state);
   if (path.length === 1) {

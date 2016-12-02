@@ -38,7 +38,7 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
     timestamp: () => new Date().toUTCString(),
   });
 
-  if (useConsole) {
+  if (!useConsole) {
     logger.remove(logger.transports.Console);
   }
 }

@@ -70,17 +70,27 @@ export function terminate(error: ITermination) {
 
   log('error', 'unrecoverable error', error);
 
-  let action = dialog.showMessageBox(null, {
-    type: 'error',
-    buttons: ['Report', 'Quit'],
-    title: 'An unrecoverable error occured',
-    message: error.message,
-    detail: error.details,
-    noLink: true,
-  });
+  try {
+    let action = dialog.showMessageBox(null, {
+      type: 'error',
+      buttons: ['Report', 'Quit'],
+      title: 'An unrecoverable error occured',
+      message: error.message,
+      detail: error.details,
+      noLink: true,
+    });
 
-  if (action === 0) {
-    createErrorReport('Crash', error, ['crash']);
+    if (action === 0) {
+      createErrorReport('Crash', error, ['crash']);
+    }
+  } catch (err) {
+    // if the crash occurs before the application is ready, the dialog module can't be
+    // used (except for this function)
+    dialog.showErrorBox('An unrecoverable error occured',
+      error.message + '\n' + error.details +
+      '\nThis message was also written to the log file, please report it to the ' +
+      'issue tracker');
   }
+
   app.exit(1);
 }

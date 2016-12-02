@@ -1,5 +1,6 @@
 import * as React from 'react';
 
+import { IComponentContext } from '../types/IComponentContext';
 import { II18NProps } from '../types/II18NProps';
 
 export { translate } from 'react-i18next';
@@ -19,4 +20,10 @@ export { extend } from './ExtensionProvider';
  * @template P
  * @template S
  */
-export class ComponentEx<P, S> extends React.Component<P & II18NProps, S> {}
+export class ComponentEx<P, S> extends React.Component<P & II18NProps, S> {
+  public static contextTypes: React.ValidationMap<any> = {
+    api: React.PropTypes.object.isRequired,
+  };
+
+  public context: IComponentContext;
+}
