@@ -22,6 +22,7 @@ export interface IRegisterFooter {
 
 export interface IMainPageOptions {
   hotkey?: string;
+  visible?: () => boolean;
   props?: () => any;
 }
 
@@ -59,6 +60,31 @@ export interface IStateChangeCallback {
 export interface ILookupDetails {
   gameId?: string;
   modId?: string;
+}
+
+/**
+ * a persistor is used to hook a data file into the store.
+ * This way any data file can be made available through the store and
+ * updated through actions, as long as it can be represented in json
+ * 
+ * @export
+ * @interface IPersistor
+ */
+export interface IPersistor {
+  /**
+   * called once the persistor is hooked up and active. The persistor can call this
+   * if data has changed outside the application and the store will rehydrate with the
+   * new data
+   * 
+   * @param {() => void} cb
+   * 
+   * @memberOf IPersistor
+   */
+  setResetCallback(cb: () => void): void;
+  getItem(key: string, cb: (error: Error, result?: string) => void): void;
+  setItem(key: string, value: string | number, cb: (error: Error) => void): void;
+  removeItem(key: string, cb: (error: Error) => void): void;
+  getAllKeys(cb: (error: Error, keys?: string[]) => void): void;
 }
 
 /**
@@ -275,13 +301,29 @@ export interface IExtensionContext {
    *   a "registry" or factory and store just an id that allows you to retrieve or generate
    *   the function on demand. 
    * 
-   * @param path The path within the settings store
-   * @param spec a IReducerSpec object that contains reducer functions and defaults
+   * @param {string[]} path The path within the settings store
+   * @param {IReducerSpec} spec a IReducerSpec object that contains reducer functions and defaults
    *        for the newly introduced settings
    * 
    * @memberOf IExtensionContext
    */
   registerReducer: (path: string[], spec: IReducerSpec) => void;
+
+  /**
+   * register a new persistor that will hook a data file into the application store.
+   * @param {string} hive the top-level key inside the state that this persistor will add
+   *                      it's data to. We can't add persistors inside an existing node (
+   *                      technical reasons) but you can implement an aggregator-persistor
+   *                      that syncs sub-nodes with different files
+   * @param {IPersistor} persistor the persistor. Adhere to the interface and it should be fine
+   * @param {number} debounce this value (in milliseconds) determins how frequent the file will
+   *                          be updated on disk. Higher values reduce load and disk activity
+   *                          but more data could be lost in case of an application crash.
+   *                          Defaults to 200 ms
+   * 
+   * @memberOf IExtensionContext
+   */
+  registerPersistor: (hive: string, persistor: IPersistor, debounce?: number) => void;
 
   /**
    * register an extension function which allows other extensions to extend this one.

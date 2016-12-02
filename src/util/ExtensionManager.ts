@@ -333,6 +333,7 @@ class ExtensionManager {
       registerReducer: () => undefined,
       registerExtensionFunction: () => undefined,
       registerStyle: () => undefined,
+      registerPersistor: () => undefined,
       once: () => undefined,
       api: Object.assign({}, this.mApi),
     };

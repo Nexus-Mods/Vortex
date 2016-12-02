@@ -5,6 +5,7 @@
 import 'source-map-support/register';
 
 import reducer from './reducers/index';
+import { IPersistor } from './types/IExtensionContext';
 import { ITermination, terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
@@ -14,6 +15,7 @@ import loadExtensionCSS from './util/loadExtensionCSS';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
+import {extendStore} from './util/store';
 import MainWindow from './views/MainWindow';
 
 import * as Promise from 'bluebird';
@@ -99,11 +101,6 @@ ipcRenderer.on('external-url', (event, protocol, url) => {
   }
 });
 
-extensions.doOnce();
-initApplicationMenu(extensions);
-
-loadExtensionCSS(extensions);
-
 let currentLanguage: string = store.getState().settings.interface.language;
 store.subscribe(() => {
   let newLanguage: string = store.getState().settings.interface.language;
@@ -119,18 +116,23 @@ store.subscribe(() => {
 
 const i18n = getI18n(store.getState().settings.interface.language);
 
-// render the page content 
-
-ReactDOM.render(
-  <Provider store={store}>
-    <I18nextProvider i18n={i18n}>
-      <ExtensionProvider extensions={extensions}>
-        <MainWindow className='full-height' api={extensions.getApi()} />
-      </ExtensionProvider>
-    </I18nextProvider>
-  </Provider>,
-  document.getElementById('content')
-);
+extendStore(store, extensions)
+  .then(() => {
+    extensions.doOnce();
+    initApplicationMenu(extensions);
+    loadExtensionCSS(extensions);
+    // render the page content 
+    ReactDOM.render(
+      <Provider store={store}>
+        <I18nextProvider i18n={i18n}>
+          <ExtensionProvider extensions={extensions}>
+            <MainWindow className='full-height' api={extensions.getApi()} />
+          </ExtensionProvider>
+        </I18nextProvider>
+      </Provider>,
+      document.getElementById('content')
+    );
+  });
 
 // prevent the page from being changed through drag&drop
 document.ondragover = document.ondrop = (ev) => {

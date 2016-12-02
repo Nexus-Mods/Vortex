@@ -7,10 +7,12 @@ import 'source-map-support/register';
 import { setMaximized, setWindowPosition, setWindowSize } from './actions/window';
 import { IState, IWindow } from './types/IState';
 import { installDevelExtensions } from './util/devel';
+import { ITermination, terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { log, setupLogging } from  './util/log';
 import { setupStore } from './util/store';
 
+import * as Promise from 'bluebird';
 import { BrowserWindow, Menu, Tray, app } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
@@ -52,25 +54,52 @@ if (shouldQuit) {
   app.quit();
 }
 
+let basePath: string = app.getPath('userData');
+// set up some "global" components
+setupLogging(basePath, process.env.NODE_ENV === 'development');
+
+log('info', 'logging set up');
+
 if (process.env.NODE_ENV === 'development') {
   log('info', 'enabling debugging');
   app.commandLine.appendSwitch('remote-debugging-port', '9222');
 }
 
 // determine where to store settings
-let basePath: string = app.getPath('userData');
 fs.ensureDirSync(basePath);
 log('info', `using ${basePath} as the storage directory`);
 
-// set up some "global" components
-setupLogging(basePath, process.env.NODE_ENV === 'development');
+process.on('uncaughtException', (error) => {
+  let details: ITermination = undefined;
 
-// TODO: we load all the extensions here including their dependencies
-//    like ui components despite the fact we only care about the reducers.
-//    If we could fix this that would probably reduce startup time by a
-//    second or more
-const extensions: ExtensionManager = new ExtensionManager();
-const store: Redux.Store<IState> = setupStore(basePath, extensions);
+  switch (typeof error) {
+    case 'object': {
+      details = { message: error.message, details: error.stack };
+    } break;
+    case 'string': {
+      details = { message: error };
+    } break;
+    default: {
+      details = { message: error };
+    } break;
+  }
+
+  terminate(details);
+});
+
+let store: Redux.Store<IState>;
+
+function createStore(): Promise<void> {
+  // TODO: we load all the extensions here including their dependencies
+  //    like ui components despite the fact we only care about the reducers.
+  //    If we could fix this that would probably reduce startup time by a
+  //    second or more
+  const extensions: ExtensionManager = new ExtensionManager();
+  return setupStore(basePath, extensions).then((newStore) => {
+    store = newStore;
+    return Promise.resolve();
+  });
+}
 
 // main window setup
 
@@ -124,8 +153,12 @@ function createWindow() {
 }
 
 app.on('ready', () => {
-  createTrayIcon();
-  installDevelExtensions().then(createWindow);
+  createStore()
+  .then(() => {
+    createTrayIcon();
+    return installDevelExtensions();
+  })
+  .then(createWindow);
 });
 
 app.on('window-all-closed', () => {

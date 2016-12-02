@@ -1,8 +1,9 @@
 import { IComponentContext } from '../types/IComponentContext';
 import { IExtensionApi, IMainPageOptions } from '../types/IExtensionContext';
+import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
-import { ComponentEx, extend, translate } from '../util/ComponentEx';
+import { extend, translate } from '../util/ComponentEx';
 import Developer from './Developer';
 import Dialog from './Dialog';
 import IconBar from './IconBar';
@@ -40,9 +41,9 @@ export interface IActionProps {
     onSetAPIKey: (APIKey: string) => void;
 }
 
-export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps;
+export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps & II18NProps;
 
-export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
+export class MainWindow extends React.Component<IProps, IMainWindowState> {
   // tslint:disable-next-line:no-unused-variable
   public static childContextTypes: React.ValidationMap<any> = {
     api: React.PropTypes.object.isRequired,
@@ -201,17 +202,16 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
 
   private renderPageButton = (page: IMainPage) => {
     const { t } = this.props;
-    return (
+    return !page.visible() ? null :
       <NavItem
         id={page.title}
         key={page.title}
         eventKey={page.title}
-        tooltip={ t(page.title) }
+        tooltip={t(page.title)}
         placement='right'
       >
         <Icon name={page.icon} />
-      </NavItem>
-    );
+      </NavItem>;
   }
 
   private renderCurrentPage = () => {
@@ -219,7 +219,7 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
 
     const page: IMainPage = objects.find((ele) => ele.title === this.state.showPage);
     if (page !== undefined) {
-      let props = page.propsFunc !== undefined ? page.propsFunc() : {};
+      let props = page.propsFunc();
       return <page.component {...props} />;
     } else {
       return <Alert>No content pages</Alert>;
@@ -256,12 +256,24 @@ export class MainWindow extends ComponentEx<IProps, IMainWindowState> {
   }
 }
 
+function trueFunc() {
+  return true;
+}
+
+function emptyFunc() {
+  return {};
+}
+
 function registerMainPage(instance: MainWindow,
                           icon: string,
                           title: string,
                           component: React.ComponentClass<any>,
                           options: IMainPageOptions) {
-  return { icon, title, component, propsFunc: options.props };
+  return {
+    icon, title, component,
+    propsFunc: options.props || emptyFunc,
+    visible: options.visible || trueFunc,
+  };
 }
 
 export default
