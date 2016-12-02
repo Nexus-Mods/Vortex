@@ -30,9 +30,14 @@ describe('setSafe', () => {
     expect(res).toEqual({ a: { test: 42 } });
   });
   it('changes the value if node not missing', () => {
-    let input = { a: { test: 12 } };
-    let res = helper.setSafe({}, ['a', 'test'], 42);
-    expect(res).toEqual({ a: { test: 42 } });
+    let input = { a: { test: 12 }, b: 13 };
+    let res = helper.setSafe(input, ['a', 'test'], 42);
+    expect(res).toEqual({ a: { test: 42 }, b: 13 });
+  });
+  it('works with empty path', () => {
+    let input = { a: 42 };
+    let res = helper.setSafe(input, [], { b: 13 });
+    expect(res).toEqual({ b: 13 });
   });
 });
 
