@@ -1,8 +1,10 @@
-import {setPluginEnabled} from '../actions/plugins';
-import {IPluginStates} from '../types/IPluginState';
+import {setPluginEnabled} from '../actions/loadOrder';
+import {setPluginlistAttributeSort, setPluginlistAttributeVisible} from '../actions/settings';
+import {ILoadOrder} from '../types/ILoadOrder';
+import {IPlugin, IPlugins} from '../types/IPlugins';
 
 import ESPFile from 'esptk';
-import {ComponentEx, IconBar, log, types, util} from 'nmm-api';
+import {ComponentEx, HeaderCell, Icon, IconBar, types} from 'nmm-api';
 import * as React from 'react';
 import update = require('react-addons-update');
 import {Checkbox, ControlLabel, FormControl, FormGroup,
@@ -10,24 +12,106 @@ import {Checkbox, ControlLabel, FormControl, FormGroup,
 import {translate} from 'react-i18next';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 import {connect} from 'react-redux';
-import * as nodeUtil from 'util';
+
+interface IPluginParsed {
+  isMaster: boolean;
+}
 
 interface IBaseProps {
 }
 
 interface IConnectedProps {
-  plugins: IPluginStates;
+  plugins: IPlugins;
+  loadOrder: { [name: string]: ILoadOrder };
+  listState: { [attribute: string]: types.IAttributeState };
+  language: string;
 }
 
 interface IActionProps {
+  onSetAttributeVisible: (attributeId: string, visible: boolean) => void;
+  onSetAttributeSort: (attributeId: string, dir: types.SortDirection) => void;
   onSetPluginEnabled: (pluginName: string, enabled: boolean) => void;
 }
 
 interface IComponentState {
   selectedPlugin: string;
+  pluginsParsed: { [name: string]: IPluginParsed };
 }
 
+type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed & {
+  name: string,
+};
+
 type IProps = IBaseProps & IConnectedProps & IActionProps;
+
+const pluginAttributes: types.ITableAttribute[] = [
+  {
+    id: 'enabled',
+    name: 'Enabled',
+    isToggleable: false,
+    isReadOnly: false,
+    isSortable: false,
+    calc: (attributes: any) => attributes.enabled,
+  },
+  {
+    id: 'name',
+    name: 'Name',
+    isToggleable: false,
+    isReadOnly: true,
+    isSortable: true,
+    calc: (attributes: any) => attributes.name,
+  },
+  {
+    id: 'modName',
+    name: 'Mod',
+    icon: 'cubes',
+    isToggleable: true,
+    isReadOnly: true,
+    isSortable: true,
+    calc: (attributes: any) => attributes.mod,
+  },
+  {
+    id: 'flags',
+    name: 'Flags',
+    icon: 'flag',
+    isToggleable: true,
+    isReadOnly: true,
+    isSortable: false,
+    calc: (attributes: any) => attributes.isMaster ? <Icon name='globe'/> : null,
+  },
+  {
+    id: 'loadOrder',
+    name: 'Load Order',
+    icon: 'sort-numeric-asc',
+    isToggleable: true,
+    isReadOnly: true,
+    isSortable: true,
+    calc: (attributes: any) => attributes.loadOrder,
+  },
+  {
+    id: 'modIndex',
+    name: 'Mod Index',
+    icon: 'indent',
+    isToggleable: true,
+    isReadOnly: true,
+    isSortable: true,
+    calc: (attributes: any) => attributes.modIndex,
+  },
+];
+
+function toHex(num: number) {
+  let res = num.toString(16).toUpperCase();
+  if (res.length < 2) {
+    res = '0' + res;
+  }
+  return res;
+}
+
+function standardSort(lhs: any, rhs: any): number {
+    return lhs < rhs ? -1
+        : lhs === rhs ? 0
+            : 1;
+}
 
 class PluginList extends ComponentEx<IProps, IComponentState> {
   private staticButtons: types.IIconDefinition[];
@@ -35,12 +119,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     super(props);
     this.state = {
       selectedPlugin: undefined,
+      pluginsParsed: {},
     };
     this.staticButtons = [];
   }
 
   public render(): JSX.Element {
-    const { t, plugins } = this.props;
+    const { plugins } = this.props;
+
+    let sorted: string[] = this.sortedPlugins(Object.keys(plugins));
+
     return (
       <Layout type='column'>
         <Fixed>
@@ -52,16 +140,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         </Fixed>
         <Flex>
           <Layout type='row'>
-            <Flex>
+            <Flex style={{ height: '100%', overflowY: 'auto' }}>
               <Table bordered condensed hover>
                 <thead>
                   <tr>
-                    <th>{t('Enabled')}</th>
-                    <th>{t('Name')}</th>
+                    {pluginAttributes.map((attribute) => this.renderHeader(attribute))}
                   </tr>
                 </thead>
                 <tbody>
-                  {plugins !== undefined ? Object.keys(plugins).map(this.renderPlugin) : null}
+                  {sorted.map(this.renderPlugin)}
                 </tbody>
               </Table>
             </Flex>
@@ -74,8 +161,82 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderPlugin = (pluginName: string) => {
-    const { plugins } = this.props;
+  private renderHeader = (attribute: types.ITableAttribute) => {
+    const { t, listState } = this.props;
+    const defaultState: types.IAttributeState = {
+      enabled: true,
+      sortDirection: 'none',
+    };
+    return (
+      <HeaderCell
+        key={attribute.id}
+        attribute={attribute}
+        state={listState[attribute.id] || defaultState}
+        t={t}
+        onSetSortDirection={this.setSortDirection}
+      />
+    );
+  }
+
+  private setSortDirection = (id: string, direction: types.SortDirection) => {
+    const { listState, onSetAttributeSort } = this.props;
+
+    // reset all other columns because we can't really support multisort with this ui
+    for (let testId of Object.keys(listState)) {
+      if ((id !== testId) && (listState[testId].sortDirection !== 'none')) {
+        onSetAttributeSort(testId, 'none');
+      }
+    }
+
+    onSetAttributeSort(id, direction);
+  }
+
+  private sortedPlugins(pluginNames: string[]): string[] {
+    const { plugins, listState, loadOrder, language } = this.props;
+    let sortAttribute: types.ITableAttribute =
+        pluginAttributes.find((attribute: types.ITableAttribute) => {
+            return (listState[attribute.id] !== undefined)
+                && (listState[attribute.id].sortDirection !== 'none');
+    });
+
+    if (sortAttribute === undefined) {
+      return pluginNames;
+    }
+
+    let sortFunction = sortAttribute.sortFunc;
+    if (sortFunction === undefined) {
+      sortFunction = standardSort;
+    }
+
+    let pluginObjects: IPluginCombined[] = pluginNames.map((plugin: string) => {
+      return Object.assign({}, plugins[plugin], loadOrder[plugin], {
+        name: plugin,
+        isMaster: false,
+      });
+    });
+
+    return pluginObjects.sort((lhs: IPluginCombined, rhs: IPluginCombined): number => {
+      let res = sortFunction(lhs[sortAttribute.id], rhs[sortAttribute.id], language);
+
+      if (listState[sortAttribute.id].sortDirection === 'desc') {
+        res *= -1;
+      }
+      return res;
+    }).map((val: IPluginCombined) => val.name);
+  }
+
+  private renderPlugin = (pluginName: string): JSX.Element => {
+    const { loadOrder, plugins } = this.props;
+    const pluginOrder = loadOrder[pluginName] || {
+      enabled: false,
+      loadOrder: -1,
+      modIndex: -1,
+    };
+
+    if (plugins[pluginName] === undefined) {
+      return null;
+    }
+
     return (
       <tr
         key={pluginName}
@@ -85,12 +246,21 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         <td>
           <Checkbox
             id={`checkbox-${pluginName}`}
-            checked={plugins[pluginName].enabled}
+            checked={pluginOrder.enabled}
             onChange={this.togglePlugin}
           />
         </td>
         <td>
           {pluginName}
+        </td>
+        <td>
+          {plugins[pluginName].modName}
+        </td>
+        <td>
+          {pluginOrder.loadOrder}
+        </td>
+        <td>
+          {pluginOrder.modIndex >= 0 ? toHex(pluginOrder.modIndex) : null}
         </td>
       </tr>
     );
@@ -104,9 +274,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private togglePlugin = (evt: __React.MouseEvent) => {
-    let box = (evt.target as HTMLInputElement);
+    const { loadOrder } = this.props;
+    let box = (evt.currentTarget as HTMLInputElement);
     let pluginName = box.id.split('-').slice(1).join('-');
-    this.props.onSetPluginEnabled(pluginName, box.value === 'on');
+    let lo = loadOrder[pluginName];
+    this.props.onSetPluginEnabled(pluginName, (lo === undefined) || !lo.enabled);
   }
 
   private renderPluginDetails = (pluginName: string) => {
@@ -163,9 +335,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 }
 
 function mapStateToProps(state: any): IConnectedProps {
-  let profiles = state.gameSettings.profiles;
   return {
-    plugins: util.getSafe(profiles, ['profiles', profiles.currentProfile, 'pluginList'], {}),
+    plugins: state.session.plugins.pluginList,
+    loadOrder: state.loadOrder,
+    listState: state.settings.plugins.pluginlistState || {},
+    language: state.settings.interface.language,
   };
 }
 
@@ -173,6 +347,12 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetPluginEnabled: (pluginName: string, enabled: boolean) =>
       dispatch(setPluginEnabled(pluginName, enabled)),
+    onSetAttributeVisible: (attributeId: string, visible: boolean) => {
+      dispatch(setPluginlistAttributeVisible(attributeId, visible));
+    },
+    onSetAttributeSort: (attributeId: string, dir: types.SortDirection) => {
+      dispatch(setPluginlistAttributeSort(attributeId, dir));
+    },
   };
 }
 

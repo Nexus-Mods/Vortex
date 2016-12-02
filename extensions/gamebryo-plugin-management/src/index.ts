@@ -1,6 +1,8 @@
 import {setPluginList} from './actions/plugins';
+import {loadOrderReducer} from './reducers/loadOrder';
 import {pluginsReducer} from './reducers/plugins';
-import {IPluginStates} from './types/IPluginState';
+import {settingsReducer} from './reducers/settings';
+import {IPlugins} from './types/IPlugins';
 import PluginList from './views/PluginList';
 
 import * as Promise from 'bluebird';
@@ -10,13 +12,13 @@ import { log, types, util } from 'nmm-api';
 import * as path from 'path';
 import * as nodeUtil from 'util';
 
+import PluginPersistor, {PluginFormat} from './util/PluginPersistor';
+
 interface IModState {
   enabled: boolean;
 }
 
 type IModStates = { [modId: string]: IModState };
-
-let plugins: IPluginStates = {};
 
 function isPlugin(fileName: string): boolean {
   return ['.esp', '.esm'].indexOf(path.extname(fileName).toLowerCase()) !== -1;
@@ -24,19 +26,15 @@ function isPlugin(fileName: string): boolean {
 
 function updatePluginList(store: ReactRedux.Store<any>, oldModList: IModStates,
                           newModList: IModStates) {
-  console.log('upl');
   if (newModList === undefined) {
     return Promise.resolve({});
   }
 
   let state = store.getState();
 
-  let profile = state.gameSettings.profiles.currentProfile;
-
-  let addCount = 0;
   Promise.reduce(
              Object.keys(newModList),
-             (total: IPluginStates, modId: string) => {
+             (total: IPlugins, modId: string) => {
                if (!newModList[modId].enabled) {
                  return total;
                }
@@ -45,34 +43,21 @@ function updatePluginList(store: ReactRedux.Store<any>, oldModList: IModStates,
                  return total;
                }
                let modPath = mod.installationPath;
-               console.log('read', modPath);
                return fs.readdirAsync(modPath).then((fileNames: string[]) => {
                  let pluginNames: string[] = fileNames.filter(isPlugin);
-                 log('info', 'plugin names', pluginNames);
-                 let pluginStates: IPluginStates = {};
-                 let totalLength = Object.keys(total).length;
+                 let pluginStates: IPlugins = {};
                  pluginNames.forEach((fileName: string) => {
-                   let existing = util.getSafe(plugins, [fileName], undefined);
-                   log('info', 'existing', nodeUtil.inspect(existing));
-                   if (existing !== undefined) {
-                     pluginStates[fileName] = existing;
-                   } else {
-                     pluginStates[fileName] = {
-                       enabled: false,
-                       loadOrder: totalLength + addCount,
-                       mod: modId,
-                       filePath: path.join(modPath, fileName),
-                     };
-                     addCount += 1;
-                   }
+                   pluginStates[fileName] = {
+                     modName: modId,
+                     filePath: path.join(modPath, fileName),
+                   };
                  });
                  return Object.assign({}, total, pluginStates);
                });
              },
-             {} as IPluginStates)
-      .then((newPlugins: IPluginStates) => {
-        store.dispatch(setPluginList(profile, newPlugins));
-        console.log('/upl', newPlugins);
+             {} as IPlugins)
+      .then((newPlugins: IPlugins) => {
+        store.dispatch(setPluginList(newPlugins));
       });
 }
 
@@ -80,32 +65,85 @@ interface IExtensionContextExt extends types.IExtensionContext {
   registerProfileFile: (gameId: string, filePath: string) => void;
 }
 
-function main(context: IExtensionContextExt) {
+function pluginPath(state: any): string {
+  let gamePath = {
+    skyrim: 'skyrim',
+    skyrimse: 'Skyrim Special Edition',
+  }[state.settings.gameMode.current];
+
+  if (gamePath === undefined) {
+    return undefined;
+  }
+
+  const app = appIn || remote.app;
+  return path.resolve(app.getPath('appData'), '..', 'Local', gamePath);
+}
+
+function pluginFormat(state: any): PluginFormat {
+  return {
+    skyrim: 'original',
+    skyrimse: 'fallout4',
+  }[state.settings.gameMode.current];
+}
+
+function gameSupported(gameMode: string): boolean {
+  return ['skyrim', 'skyrimse'].indexOf(gameMode) !== -1;
+}
+
+let persistor: PluginPersistor;
+
+function init(context: IExtensionContextExt) {
+
   context.registerMainPage('puzzle-piece', 'Plugins', PluginList, {
     hotkey: 'E',
-    props: () => {
-      log('info', 'called props');
-      return { plugins };
-    },
+    visible: () => gameSupported(context.api.store.getState().settings.gameMode.current),
   });
 
   if (context.registerProfileFile) {
     const app = appIn || remote.app;
-    context.registerProfileFile(
-        'skyrimse', path.resolve(app.getPath('appData'), '..', 'Local',
-                                 'Skyrim Special Edition', 'plugins.txt'));
+    let localPath = path.resolve(app.getPath('appData'), '..', 'Local');
+    for (let game of [
+      { internal: 'skyrim', path: 'Skyrim' },
+      { internal: 'skyrimse', path: 'Skyrim Special Edition' },
+    ]) {
+      context.registerProfileFile(
+        game.internal, path.join(localPath, game.path, 'plugins.txt'));
+      context.registerProfileFile(
+        game.internal, path.join(localPath, game.path, 'loadorder.txt'));
+    }
   }
 
-  context.registerReducer(['gameSettings', 'profiles'], pluginsReducer);
+  context.registerReducer(['session', 'plugins'], pluginsReducer);
+  context.registerReducer(['loadOrder'], loadOrderReducer);
+  context.registerReducer(['settings', 'plugins'], settingsReducer);
+
+  if (persistor === undefined) {
+    persistor = new PluginPersistor();
+  }
+  context.registerPersistor('loadOrder', persistor);
 
   context.once(() => {
     const store = context.api.store;
+
     let currentProfile: string =
       util.getSafe(store.getState(), ['gameSettings', 'profiles', 'currentProfile'], undefined);
 
-    log('info', 'update plugin list', {currentProfile});
     updatePluginList(store, {}, util.getSafe(store.getState(),
       ['gameSettings', 'profiles', 'profiles', currentProfile], {} as any).modState);
+
+    context.api.events.on('gamemode-activated', (newGameMode: string) => {
+      let state = store.getState();
+      persistor.loadFiles(pluginPath(state), pluginFormat(state));
+    });
+
+    context.api.events.on('mods-refreshed', () => {
+      updatePluginList(
+          store, {},
+          util.getSafe(store.getState(),
+                       ['gameSettings', 'profiles', 'profiles', currentProfile],
+                       {} as any)
+              .modState);
+    });
 
     context.api.onStateChange(
         ['gameSettings', 'profiles', 'profiles', currentProfile],
@@ -135,4 +173,4 @@ function main(context: IExtensionContextExt) {
   return true;
 }
 
-export default main;
+export default init;

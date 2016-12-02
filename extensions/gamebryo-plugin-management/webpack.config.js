@@ -3,7 +3,7 @@ var webpack = require('webpack');
 module.exports = {
   entry: './out/index.js',
   target: 'electron-renderer',
-  node: {__filename: false, __dirname: false },
+  node: { __filename: false, __dirname: false },
   output: {
     libraryTarget: 'commonjs2',
     library: 'sample',
@@ -11,13 +11,13 @@ module.exports = {
   },
   module: {
     loaders: [
-      {test: /\.json?$/, loader: 'json-loader'},
+      { test: /\.json?$/, loader: 'json-loader' },
     ]
   },
-  resolve: {extensions: ['', '.js', '.jsx', '.json']},
+  resolve: { extensions: ['', '.js', '.jsx', '.json'] },
   _plugins: [
     new webpack.optimize.UglifyJsPlugin(
-        {compress: {warnings: false}, comments: false, sourceMap: false})
+        { compress: { warnings: false }, comments: false, sourceMap: false })
   ],
   externals: [
     'bluebird',
