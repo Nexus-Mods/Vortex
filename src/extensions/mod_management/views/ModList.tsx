@@ -1,6 +1,9 @@
+import { IAttributeState } from '../../../types/IAttributeState';
 import { SortDirection } from '../../../types/SortDirection';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
+import AttributeToggle from '../../../views/AttributeToggle';
+import HeaderCell from '../../../views/HeaderCell';
 
 import { IGameModeSettings } from '../../gamemode_management/types/IStateEx';
 
@@ -9,14 +12,11 @@ import { IProfile, IProfileMod } from '../../profile_management/types/IProfile';
 import { IProfileSettings } from '../../profile_management/types/IStateEx';
 
 import { setModlistAttributeSort, setModlistAttributeVisible } from '../actions/settings';
-import { IAttributeState } from '../types/IAttributeState';
 import { IMod } from '../types/IMod';
 import { IModAttribute } from '../types/IModAttribute';
 import { IStateMods } from '../types/IStateMods';
 import { IStateModSettings } from '../types/IStateSettings';
 
-import AttributeToggle from './AttributeToggle';
-import HeaderCell from './HeaderCell';
 import InstallArchiveButton from './InstallArchiveButton';
 import ModRow from './ModRow';
 

@@ -24,7 +24,10 @@ function init(context: IExtensionContext): boolean {
 
   context.once(() => {
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
-    let gameModeManager = new GameModeManagerImpl(context.api.getPath('userData'));
+    let gameModeManager = new GameModeManagerImpl(
+        context.api.getPath('userData'), (gameMode: string) => {
+          context.api.events.emit('gamemode-activated', gameMode);
+        });
     gameModeManager.attachToStore(context.api.store);
     gameModeManager.startQuickDiscovery();
     context.api.events.on('start-discovery',

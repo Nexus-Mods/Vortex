@@ -1,4 +1,5 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
+import {ITableAttribute} from '../../types/ITableAttribute';
 
 import {IDownload} from '../download_management/types/IDownload';
 
@@ -8,7 +9,6 @@ import {settingsReducer} from './reducers/settings';
 import {IInstall} from './types/IInstall';
 import {IMod} from './types/IMod';
 import {IModActivator} from './types/IModActivator';
-import {IModAttribute} from './types/IModAttribute';
 import {IStatePaths} from './types/IStateSettings';
 import {ITestSupported} from './types/ITestSupported';
 import * as basicInstaller from './util/basicInstaller';
@@ -23,12 +23,14 @@ import InstallManager from './InstallManager';
 import {INSTALL_TIME, MOD_NAME, VERSION} from './modAttributes';
 import {installPath} from './selectors';
 
+import {log} from '../../util/log';
+
 let activators: IModActivator[] = [];
 
 let installManager: InstallManager;
 
 export interface IExtensionContextExt extends IExtensionContext {
-  registerModAttribute: (attribute: IModAttribute) => void;
+  registerModAttribute: (attribute: ITableAttribute) => void;
 }
 
 function registerModActivator(activator: IModActivator) {
@@ -100,27 +102,18 @@ function init(context: IExtensionContextExt): boolean {
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
 
-    refreshMods(installPath(store.getState()), (mod: IMod): void => {
-      if (store.getState().mods[mod.id] === undefined) {
-        context.api.store.dispatch(addMod(mod));
-      }
+    context.api.events.on('gamemode-activated', (newGame: string) => {
+      context.api.store.dispatch(clearMods());
+      refreshMods(installPath(store.getState()), (mod: IMod) => {
+        if (store.getState().mods[mod.id] === undefined) {
+          context.api.store.dispatch(addMod(mod));
+        }
+      })
+      .then(() => {
+        context.api.events.emit('mods-refreshed');
+      })
+      ;
     });
-
-    context.api.onStateChange(
-        ['settings', 'gameMode', 'current'],
-        (previous: string, current: string) => {
-          // TODO after changing the game mode it may take a moment for the
-          //   system to read game-specific settings. This delay is not a proper
-          //   solution
-          setTimeout(() => {
-            context.api.store.dispatch(clearMods());
-            refreshMods(installPath(store.getState()), (mod: IMod) => {
-              if (store.getState().mods[mod.id] === undefined) {
-                context.api.store.dispatch(addMod(mod));
-              }
-            });
-          }, 200);
-        });
 
     context.api.onStateChange(
         ['gameSettings', 'mods', 'paths'],

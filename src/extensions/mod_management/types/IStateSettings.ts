@@ -1,4 +1,4 @@
-import { IAttributeState } from './IAttributeState';
+import { IAttributeState } from '../../../types/IAttributeState';
 
 export interface IStatePaths {
   base: string;

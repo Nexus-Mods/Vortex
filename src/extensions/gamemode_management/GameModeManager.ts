@@ -38,8 +38,9 @@ class GameModeManager {
   private mStore: Redux.Store<IStateEx>;
   private mKnownGames: IGame[];
   private mActiveSearch: Promise<any[]>;
+  private mOnGameModeActivated: (mode: string) => void;
 
-  constructor(basePath: string) {
+  constructor(basePath: string, onGameModeActivated: (mode: string) => void) {
     this.mSubscription = null;
     this.mBasePath = basePath;
     this.mPersistor = null;
@@ -47,6 +48,7 @@ class GameModeManager {
     this.mStore = null;
     this.mKnownGames = [];
     this.mActiveSearch = null;
+    this.mOnGameModeActivated = onGameModeActivated;
   }
 
   /**
@@ -80,7 +82,7 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public setGameMode(oldMode: string, newMode: string) {
-    log('info', 'changed game mode', { oldMode, newMode });
+    log('info', 'changed game mode', { oldMode, newMode, process: process.type });
     if (this.mPersistor !== null) {
       // stop old persistor
       this.mPersistor.stop();
@@ -89,6 +91,7 @@ class GameModeManager {
       .then((persistor) => {
         this.mPersistor = persistor;
         this.mError = false;
+        this.mOnGameModeActivated(newMode);
       }).catch((err) => {
         if (!this.mError) {
           // first error, try reverting to the previous game mode

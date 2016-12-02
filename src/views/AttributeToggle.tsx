@@ -1,8 +1,8 @@
-import Icon from '../../../views/Icon';
-import { Button } from '../../../views/TooltipControls';
+import Icon from './Icon';
+import { Button } from './TooltipControls';
 
 import { IAttributeState } from '../types/IAttributeState';
-import { IModAttribute } from '../types/IModAttribute';
+import { ITableAttribute } from '../types/ITableAttribute';
 
 import * as React from 'react';
 
@@ -15,7 +15,7 @@ function getAttr<T>(state: IAttributeState, key: string, def: T): T {
 }
 
 export interface IAttributeProps {
-  attribute: IModAttribute;
+  attribute: ITableAttribute;
   state: IAttributeState;
   onSetAttributeVisible: (id: string, visible: boolean) => void;
   t: Function;

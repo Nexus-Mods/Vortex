@@ -9,6 +9,7 @@ export const MOD_NAME: IModAttribute = {
   isDetail: false,
   isToggleable: false,
   isReadOnly: false,
+  isSortable: true,
   sortFunc: (lhs: string, rhs: string, locale: string): number => {
     return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
   },
@@ -23,6 +24,7 @@ export const INSTALL_TIME: IModAttribute = {
   isDetail: false,
   isToggleable: true,
   isReadOnly: true,
+  isSortable: true,
 };
 
 export const VERSION: IModAttribute = {
@@ -34,4 +36,5 @@ export const VERSION: IModAttribute = {
   isDetail: false,
   isToggleable: true,
   isReadOnly: false,
+  isSortable: true,
 };

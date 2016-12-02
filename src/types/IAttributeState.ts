@@ -1,4 +1,4 @@
-import { SortDirection } from '../../../types/SortDirection';
+import { SortDirection } from './SortDirection';
 
 /**
  * user-configuration for mod attributes
