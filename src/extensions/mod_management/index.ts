@@ -105,19 +105,6 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('gamemode-activated', (newGame: string) => {
       context.api.store.dispatch(clearMods());
-<<<<<<< 5548dfa3d44bf969e79a83fcfc1cbbd88da3c822
-      if (fs.existsSync(installPath(store.getState()))) {
-        refreshMods(installPath(store.getState()), (mod: IMod) => {
-          if (store.getState().mods[mod.id] === undefined) {
-            context.api.store.dispatch(addMod(mod));
-          }
-        })
-        .then(() => {
-          context.api.events.emit('mods-refreshed');
-        });
-      }
-=======
-
       let currentActivator = store.getState().gameSettings.mods.activator;
       let supported = supportedActivators(store.getState());
       if (supported.find((activator: IModActivator) =>
@@ -138,7 +125,6 @@ function init(context: IExtensionContextExt): boolean {
         context.api.events.emit('mods-refreshed');
       })
       ;
->>>>>>> [#135617019] added hard-link based mod activator
     });
 
     context.api.onStateChange(

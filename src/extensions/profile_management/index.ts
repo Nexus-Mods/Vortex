@@ -33,11 +33,14 @@ import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
+import {log} from '../../util/log';
+
 let profileFiles: { [gameId: string]: string[] } = {};
 
 function profilePath(store: Redux.Store<any>): Promise<string> {
   let app = appIn || remote.app;
-  return currentGame(store).then((game: IGameStored) => {
+  return currentGame(store)
+  .then((game: IGameStored) => {
     let profileName = currentProfile(store.getState()).id;
     return path.join(app.getPath('userData'), game.id, 'profiles', profileName);
   });
@@ -66,12 +69,11 @@ function currentGameId(state: any) {
   return getSafe(state, ['settings', 'gameMode', 'current'], undefined);
 }
 
-let firstLoad = true;
-
-function refreshProfile(store: Redux.Store<any>) {
+function refreshProfile(store: Redux.Store<any>, direction: 'import' | 'export') {
   checkProfile(store, currentProfile(store.getState()).id)
       .then(() => {
-        return profilePath(store); })
+        return profilePath(store);
+      })
       .then((currentProfilePath: string) => {
         // if this is the first sync, we assume the files on disk belong
         // to the profile that was last active in nmm2. This could only be
@@ -79,8 +81,7 @@ function refreshProfile(store: Redux.Store<any>) {
         // syncFromProfile happening. Of course if the profile was never
         // loaded then it has no copies of the files but that if fine.
         const gameId = currentGameId(store.getState());
-        if (firstLoad) {
-          firstLoad = false;
+        if (direction === 'import') {
           syncToProfile(currentProfilePath, profileFiles[gameId],
             (error, detail) => showError(store.dispatch, error, detail));
         } else {
@@ -116,16 +117,21 @@ function init(context: IExtensionContext): boolean {
 
     context.api.onStateChange(['settings', 'gameMode', 'current'],
       (prev: string, current: string) => {
-        refreshProfile(store);
+        // when the game changes it's assumed that the "global" files are associated
+        // with the active profile because you can't change the profile without
+        // activating the game first
+        refreshProfile(store, 'import');
       });
 
     context.api.onStateChange(['gameSettings', 'profiles', 'currentProfile'],
       (prev: string, current: string) => {
+        log('info', 'profile changed', {prev, current});
         let newGame = currentGameId(store.getState());
         // if the game mode has changed, don't trigger the profile refresh here
         // because that already happened in the previous state change handler
         if (lastGame === newGame) {
-          refreshProfile(store);
+          // changing the profile means 
+          refreshProfile(store, 'export');
         } else {
           lastGame = newGame;
         }
