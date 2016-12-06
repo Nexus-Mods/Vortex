@@ -18,7 +18,7 @@
 import { setCurrentProfile } from './actions/profiles';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
-import { log } from '../../util/log';
+import { showError } from '../../util/message';
 import { currentGame, currentProfile, getSafe } from '../../util/storeHelper';
 
 import { IGameStored } from '../gamemode_management/types/IStateEx';
@@ -39,14 +39,11 @@ function profilePath(store: Redux.Store<any>): Promise<string> {
   let app = appIn || remote.app;
   return currentGame(store).then((game: IGameStored) => {
     let profileName = currentProfile(store.getState()).id;
-    log('info', 'profile path',
-        {ud: app.getPath('userData'), gameId: game.id, profileName});
     return path.join(app.getPath('userData'), game.id, 'profiles', profileName);
   });
 }
 
 function checkProfile(store: Redux.Store<any>, currentProfile: string): Promise<void> {
-  log('info', 'checkProfile called', { currentProfile });
   if (currentProfile === undefined) {
     // no profile set, find a fallback if possible
     if ('default' in store.getState().gameSettings.profiles) {
@@ -73,7 +70,8 @@ let firstLoad = true;
 
 function refreshProfile(store: Redux.Store<any>) {
   checkProfile(store, currentProfile(store.getState()).id)
-      .then(() => { return profilePath(store); })
+      .then(() => {
+        return profilePath(store); })
       .then((currentProfilePath: string) => {
         // if this is the first sync, we assume the files on disk belong
         // to the profile that was last active in nmm2. This could only be
@@ -81,14 +79,19 @@ function refreshProfile(store: Redux.Store<any>) {
         // syncFromProfile happening. Of course if the profile was never
         // loaded then it has no copies of the files but that if fine.
         const gameId = currentGameId(store.getState());
-        log('info', 'sync to/from profile for game', gameId);
         if (firstLoad) {
           firstLoad = false;
-          syncToProfile(currentProfilePath, profileFiles[gameId]);
+          syncToProfile(currentProfilePath, profileFiles[gameId],
+            (error, detail) => showError(store.dispatch, error, detail));
         } else {
-          syncFromProfile(currentProfilePath, profileFiles[gameId]);
+          syncFromProfile(currentProfilePath, profileFiles[gameId],
+            (error, detail) => showError(store.dispatch, error, detail));
         }
-      });
+      })
+      .catch((err: Error) => {
+        showError(store.dispatch, 'Failed to set profile', err);
+      })
+      ;
 }
 
 function init(context: IExtensionContext): boolean {
@@ -111,19 +114,13 @@ function init(context: IExtensionContext): boolean {
     let store = context.api.store;
     let lastGame = currentGameId(store.getState());
 
-    if (lastGame !== '__placeholder') {
-      refreshProfile(store);
-    }
-
     context.api.onStateChange(['settings', 'gameMode', 'current'],
       (prev: string, current: string) => {
-        log('info', 'game changed');
         refreshProfile(store);
       });
 
     context.api.onStateChange(['gameSettings', 'profiles', 'currentProfile'],
       (prev: string, current: string) => {
-        log('info', 'profile changed');
         let newGame = currentGameId(store.getState());
         // if the game mode has changed, don't trigger the profile refresh here
         // because that already happened in the previous state change handler

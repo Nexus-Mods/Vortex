@@ -19,6 +19,7 @@ module.exports = {
     new webpack.optimize.UglifyJsPlugin(
         { compress: { warnings: false }, comments: false, sourceMap: false })
   ],
+  devtool: "source-map",
   externals: [
     'bluebird',
     'fs',

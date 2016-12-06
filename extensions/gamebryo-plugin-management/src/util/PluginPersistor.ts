@@ -1,4 +1,5 @@
 import {ILoadOrder} from '../types/ILoadOrder';
+import {nativePlugins, pluginFormat, pluginPath} from '../util/gameSupport';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -17,6 +18,7 @@ export type PluginFormat = 'original' | 'fallout4';
 class PluginPersistor implements types.IPersistor {
   private mPluginPath: string;
   private mPluginFormat: PluginFormat;
+  private mNativePlugins: Set<string>;
   private mResetCallback: () => void;
 
   private mWatch: fs.FSWatcher;
@@ -29,10 +31,10 @@ class PluginPersistor implements types.IPersistor {
     this.mPlugins = {};
   }
 
-  public loadFiles(pluginPath: string, format: PluginFormat) {
-    log('info', 'changed reference plugin file', pluginPath);
-    this.mPluginPath = pluginPath;
-    this.mPluginFormat = format;
+  public loadFiles(gameMode: string) {
+    this.mPluginPath = pluginPath(gameMode);
+    this.mPluginFormat = pluginFormat(gameMode);
+    this.mNativePlugins = new Set(nativePlugins(gameMode));
     // read the files now and update the store
     this.deserialize();
     // start watching for external changes
@@ -91,7 +93,11 @@ class PluginPersistor implements types.IPersistor {
 
     this.mSerializing = true;
 
-    let sorted: string[] = Object.keys(this.mPlugins).sort((lhs: string, rhs: string) => {
+    let sorted: string[] = Object.keys(this.mPlugins)
+    .filter((pluginName: string) => {
+      return !this.mNativePlugins.has(pluginName.toLowerCase());
+    })
+    .sort((lhs: string, rhs: string) => {
       return this.mPlugins[lhs].loadOrder - this.mPlugins[rhs].loadOrder;
     });
 
@@ -123,13 +129,16 @@ class PluginPersistor implements types.IPersistor {
       if ((this.mPluginFormat === 'fallout4') && (key[0] === '*')) {
         key = key.slice(1);
       }
+      // ignore "native" plugins
+      if (this.mNativePlugins.has(key.toLowerCase())) {
+        return;
+      }
       if (this.mPlugins[key] !== undefined) {
         this.mPlugins[key].enabled = keyEnabled;
       } else {
         this.mPlugins[key] = {
           enabled: keyEnabled,
           loadOrder: loadOrderPos++,
-          modIndex: -1,
         };
       }
     });
@@ -172,20 +181,19 @@ class PluginPersistor implements types.IPersistor {
     if (this.mWatch !== undefined) {
       this.mWatch.close();
     }
+
+    if (this.mPluginPath === undefined) {
+      return;
+    }
+
     this.mWatch = fs.watch(this.mPluginPath, {}, (evt, fileName: string) => {
       if (!this.mSerializing && ['loadorder.txt', 'plugins.txt'].indexOf(fileName) !== -1) {
-        log('info', 'change event', { evt, fileName });
         if (this.mRefreshTimer !== null) {
-          log('info', 'timer canceled');
           clearTimeout(this.mRefreshTimer);
         }
         this.mRefreshTimer = setTimeout(() => {
-          log('info', 'refresh timer');
           this.mRefreshTimer = null;
-          this.deserialize()
-          .then(() => {
-            log('info', '/refresh timer');
-          });
+          this.deserialize();
         }, 500);
       }
     });

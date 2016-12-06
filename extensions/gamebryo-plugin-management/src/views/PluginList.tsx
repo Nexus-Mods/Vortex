@@ -1,10 +1,13 @@
 import {setPluginEnabled} from '../actions/loadOrder';
 import {setPluginlistAttributeSort, setPluginlistAttributeVisible} from '../actions/settings';
 import {ILoadOrder} from '../types/ILoadOrder';
-import {IPlugin, IPlugins} from '../types/IPlugins';
+import {IPluginCombined, IPluginParsed, IPlugins} from '../types/IPlugins';
 
+import PluginFlags from './PluginFlags';
+
+import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
-import {ComponentEx, HeaderCell, Icon, IconBar, types} from 'nmm-api';
+import {ComponentEx, HeaderCell, IconBar, types, util} from 'nmm-api';
 import * as React from 'react';
 import update = require('react-addons-update');
 import {Checkbox, ControlLabel, FormControl, FormGroup,
@@ -13,11 +16,12 @@ import {translate} from 'react-i18next';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 import {connect} from 'react-redux';
 
-interface IPluginParsed {
-  isMaster: boolean;
+interface IAttributeStateMap {
+  [ attributeId: string ]: types.IAttributeState;
 }
 
 interface IBaseProps {
+  nativePlugins: string[];
 }
 
 interface IConnectedProps {
@@ -38,21 +42,9 @@ interface IComponentState {
   pluginsParsed: { [name: string]: IPluginParsed };
 }
 
-type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed & {
-  name: string,
-};
-
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 const pluginAttributes: types.ITableAttribute[] = [
-  {
-    id: 'enabled',
-    name: 'Enabled',
-    isToggleable: false,
-    isReadOnly: false,
-    isSortable: false,
-    calc: (attributes: any) => attributes.enabled,
-  },
   {
     id: 'name',
     name: 'Name',
@@ -62,22 +54,13 @@ const pluginAttributes: types.ITableAttribute[] = [
     calc: (attributes: any) => attributes.name,
   },
   {
-    id: 'modName',
-    name: 'Mod',
-    icon: 'cubes',
-    isToggleable: true,
-    isReadOnly: true,
-    isSortable: true,
-    calc: (attributes: any) => attributes.mod,
-  },
-  {
     id: 'flags',
     name: 'Flags',
     icon: 'flag',
     isToggleable: true,
     isReadOnly: true,
     isSortable: false,
-    calc: (attributes: any) => attributes.isMaster ? <Icon name='globe'/> : null,
+    calc: (attributes: any) => <PluginFlags plugin={attributes} />,
   },
   {
     id: 'loadOrder',
@@ -95,11 +78,14 @@ const pluginAttributes: types.ITableAttribute[] = [
     isToggleable: true,
     isReadOnly: true,
     isSortable: true,
-    calc: (attributes: any) => attributes.modIndex,
+    calc: (attributes: any) => toHex(attributes.modIndex),
   },
 ];
 
 function toHex(num: number) {
+  if (num === undefined) {
+    return 'FF';
+  }
   let res = num.toString(16).toUpperCase();
   if (res.length < 2) {
     res = '0' + res;
@@ -108,9 +94,14 @@ function toHex(num: number) {
 }
 
 function standardSort(lhs: any, rhs: any): number {
-    return lhs < rhs ? -1
-        : lhs === rhs ? 0
-            : 1;
+  if (lhs === undefined) {
+    return -1;
+  } else if (rhs === undefined) {
+    return 1;
+  }
+  return lhs < rhs ? -1
+      : lhs === rhs ? 0
+          : 1;
 }
 
 class PluginList extends ComponentEx<IProps, IComponentState> {
@@ -124,10 +115,31 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     this.staticButtons = [];
   }
 
-  public render(): JSX.Element {
+  public componentWillMount() {
     const { plugins } = this.props;
+    Promise.each(Object.keys(plugins), (pluginName: string) => {
+      let esp = new ESPFile(plugins[pluginName].filePath);
+      return new Promise((resolve, reject) => {
+        this.setState(util.setSafe(this.state, ['pluginsParsed', pluginName], {
+          isMaster: esp.isMaster,
+          description: esp.description,
+          author: esp.author,
+          masterList: esp.masterList,
+        }), () => resolve());
+      });
+    });
+  }
 
-    let sorted: string[] = this.sortedPlugins(Object.keys(plugins));
+  public render(): JSX.Element {
+    const { t, plugins, listState } = this.props;
+    const { selectedPlugin } = this.state;
+
+    const visibleAttributes: types.ITableAttribute[] =
+      this.visibleAttributes(pluginAttributes, listState);
+    let sorted: IPluginCombined[] = this.sortedPlugins(Object.keys(plugins));
+
+    let selected: IPluginCombined = selectedPlugin === undefined ? undefined :
+      sorted.find((plugin: IPluginCombined) => plugin.name === selectedPlugin);
 
     return (
       <Layout type='column'>
@@ -144,21 +156,33 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
               <Table bordered condensed hover>
                 <thead>
                   <tr>
-                    {pluginAttributes.map((attribute) => this.renderHeader(attribute))}
+                    <th>{t('Enabled')}</th>
+                    {visibleAttributes.map((attribute) => this.renderHeader(attribute))}
                   </tr>
                 </thead>
                 <tbody>
-                  {sorted.map(this.renderPlugin)}
+                  {sorted.map((plugin) => this.renderPlugin(plugin, visibleAttributes))}
                 </tbody>
               </Table>
             </Flex>
             <Fixed>
-              {this.renderPluginDetails(this.state.selectedPlugin)}
+              {this.renderPluginDetails(selected)}
             </Fixed>
           </Layout>
         </Flex>
       </Layout>
     );
+  }
+
+  private visibleAttributes(attributes: types.ITableAttribute[],
+                            attributeStates: IAttributeStateMap): types.ITableAttribute[] {
+    return attributes.filter((attribute: types.ITableAttribute) => {
+      if (!attributeStates.hasOwnProperty(attribute.id)) {
+        return true;
+      } else {
+        return util.getSafe(attributeStates, [attribute.id, 'enabled'], true);
+      }
+    });
   }
 
   private renderHeader = (attribute: types.ITableAttribute) => {
@@ -191,29 +215,66 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     onSetAttributeSort(id, direction);
   }
 
-  private sortedPlugins(pluginNames: string[]): string[] {
+  private updateModIndex(pluginObjects: IPluginCombined[]) {
+    // overly complicated?
+    // This sorts the whole plugin list by the load order, inserting the installed
+    // native plugins at the top in their hard-coded order. Then it assigns
+    // the ascending mod index to all enabled plugins.
+
+    let { nativePlugins } = this.props;
+    let installedNative = nativePlugins.filter((name: string) => {
+      return pluginObjects.find(
+        (plugin: IPluginCombined) => name === plugin.name.toLowerCase()) !== undefined;
+    });
+
+    function nativeIdx(name: string): number {
+      let idx = installedNative.indexOf(name.toLowerCase());
+      return idx !== -1 ? idx : undefined;
+    }
+
+    let byLO = pluginObjects.sort((lhs: IPluginCombined, rhs: IPluginCombined) => {
+      let lhsLO = lhs.isNative ? nativeIdx(lhs.name) : lhs.loadOrder + 1000;
+      let rhsLO = rhs.isNative ? nativeIdx(rhs.name) : rhs.loadOrder + 1000;
+      return lhsLO - rhsLO;
+    });
+
+    let modIndex = 0;
+    byLO.forEach((plugin: IPluginCombined) => {
+      if (plugin.enabled || plugin.isNative) {
+        plugin.modIndex = modIndex++;
+      }
+    });
+  }
+
+  private sortedPlugins(pluginNames: string[]): IPluginCombined[] {
     const { plugins, listState, loadOrder, language } = this.props;
+    const {pluginsParsed} = this.state;
     let sortAttribute: types.ITableAttribute =
         pluginAttributes.find((attribute: types.ITableAttribute) => {
             return (listState[attribute.id] !== undefined)
                 && (listState[attribute.id].sortDirection !== 'none');
     });
 
-    if (sortAttribute === undefined) {
-      return pluginNames;
-    }
-
-    let sortFunction = sortAttribute.sortFunc;
-    if (sortFunction === undefined) {
+    let sortFunction;
+    if ((sortAttribute === undefined) || (sortAttribute.sortFunc === undefined)) {
       sortFunction = standardSort;
+    } else {
+      sortFunction = sortAttribute.sortFunc;
     }
 
-    let pluginObjects: IPluginCombined[] = pluginNames.map((plugin: string) => {
-      return Object.assign({}, plugins[plugin], loadOrder[plugin], {
-        name: plugin,
-        isMaster: false,
+    let pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) => {
+      return Object.assign({}, plugins[pluginName], loadOrder[pluginName],
+        pluginsParsed[pluginName], {
+        name: pluginName,
+        modIndex: -1,
       });
     });
+
+    this.updateModIndex(pluginObjects);
+
+    if (sortAttribute === undefined) {
+      return pluginObjects;
+    }
 
     return pluginObjects.sort((lhs: IPluginCombined, rhs: IPluginCombined): number => {
       let res = sortFunction(lhs[sortAttribute.id], rhs[sortAttribute.id], language);
@@ -222,48 +283,33 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         res *= -1;
       }
       return res;
-    }).map((val: IPluginCombined) => val.name);
+    });
   }
 
-  private renderPlugin = (pluginName: string): JSX.Element => {
-    const { loadOrder, plugins } = this.props;
-    const pluginOrder = loadOrder[pluginName] || {
-      enabled: false,
-      loadOrder: -1,
-      modIndex: -1,
-    };
-
-    if (plugins[pluginName] === undefined) {
-      return null;
-    }
+  private renderPlugin = (plugin: IPluginCombined,
+                          visibleAttributes: types.ITableAttribute[]): JSX.Element => {
 
     return (
       <tr
-        key={pluginName}
-        id={`row-${pluginName}`}
+        key={plugin.name}
+        id={`row-${plugin.name}`}
         onClick={this.selectPlugin}
       >
         <td>
           <Checkbox
-            id={`checkbox-${pluginName}`}
-            checked={pluginOrder.enabled}
+            id={`checkbox-${plugin.name}`}
+            checked={plugin.enabled || plugin.isNative}
+            disabled={plugin.isNative}
             onChange={this.togglePlugin}
           />
         </td>
-        <td>
-          {pluginName}
-        </td>
-        <td>
-          {plugins[pluginName].modName}
-        </td>
-        <td>
-          {pluginOrder.loadOrder}
-        </td>
-        <td>
-          {pluginOrder.modIndex >= 0 ? toHex(pluginOrder.modIndex) : null}
-        </td>
+        {visibleAttributes.map((attribute) => this.renderAttribute(attribute, plugin))}
       </tr>
     );
+  }
+
+  private renderAttribute = (attribute: types.ITableAttribute, plugin: IPluginCombined) => {
+    return <td key={`td-${plugin.name}-${attribute.id}`}>{attribute.calc(plugin)}</td>;
   }
 
   private selectPlugin = (evt: __React.MouseEvent) => {
@@ -281,14 +327,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     this.props.onSetPluginEnabled(pluginName, (lo === undefined) || !lo.enabled);
   }
 
-  private renderPluginDetails = (pluginName: string) => {
-    if (pluginName === undefined) {
+  private renderPluginDetails = (plugin: IPluginCombined) => {
+    const { t } = this.props;
+
+    if (plugin === undefined) {
       return null;
     }
-
-    const { t, plugins } = this.props;
-
-    let esp = new ESPFile(plugins[pluginName].filePath);
 
     return (
       <form style={{ minWidth: 300 }}>
@@ -298,7 +342,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             id='ctrl-plugin-filename'
             type='text'
             readOnly={true}
-            value={pluginName}
+            value={plugin.name}
           />
         </FormGroup>
         <FormGroup>
@@ -307,10 +351,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             id='ctrl-plugin-description'
             componentClass='textarea'
             readOnly={true}
-            value={esp.description}
+            value={plugin.description}
             rows={6}
           />
-          <Checkbox checked={esp.isMaster}>
+          <Checkbox checked={plugin.isMaster} readOnly={true}>
             { t('Is a master') }
           </Checkbox>
         </FormGroup>
@@ -320,16 +364,26 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             id='ctrl-plugin-author'
             type='text'
             readOnly={true}
-            value={esp.author}
+            value={plugin.author}
           />
         </FormGroup>
         <FormGroup>
           <ControlLabel>{t('Required Masters')}</ControlLabel>
-          <ListGroup>
-            { esp.masterList.map((master) => <ListGroupItem key={master}>{master}</ListGroupItem>) }
-          </ListGroup>
+          { this.renderMasterList(plugin) }
         </FormGroup>
       </form>
+    );
+  }
+
+  private renderMasterList = (plugin: IPluginCombined) => {
+    if (plugin.masterList === undefined) {
+      return null;
+    }
+
+    return (
+      <ListGroup>
+        {plugin.masterList.map((m) => <ListGroupItem key={m}>{m}</ListGroupItem>)}
+      </ListGroup>
     );
   }
 }
