@@ -32,8 +32,9 @@ class ModActivator implements IModActivator {
     this.mElevatedClient = null;
   }
 
-  public isSupported(): boolean {
-    return process.platform === 'win32';
+  public isSupported(state: any): boolean {
+    const activeGameId = state.settings.gameMode.current;
+    return process.platform === 'win32' && !this.isGamebryoGame(activeGameId);
   }
 
   public prepare(modsPath: string): Promise<void> {
@@ -106,6 +107,10 @@ class ModActivator implements IModActivator {
     ipc.server.emit(this.mElevatedClient, 'quit');
     ipc.server.stop();
     this.mDone();
+  }
+
+  private isGamebryoGame(gameId: string): boolean {
+    return ['skyrim', 'skyrimse'].indexOf(gameId) !== -1;
   }
 }
 

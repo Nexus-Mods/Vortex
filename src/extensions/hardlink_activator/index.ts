@@ -1,15 +1,19 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
-import walk from '../../util/walk';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IStateEx';
+import {installPath} from '../mod_management/selectors';
 import { IMod } from '../mod_management/types/IMod';
 import { IModActivator } from '../mod_management/types/IModActivator';
+
+import walk from '../../util/walk';
 
 import * as Promise from 'bluebird';
 import * as fsOrig from 'fs';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+
+import * as util from 'util';
 
 class ModActivator implements IModActivator {
   public id: string;
@@ -18,31 +22,41 @@ class ModActivator implements IModActivator {
 
   constructor() {
     this.id = 'link_activator';
-    this.name = 'Symlink activator';
-    this.description = 'Installs the mods by setting symlinks in the destination directory. '
+    this.name = 'Hardlink activator';
+    this.description = 'Installs the mods by setting hard links in the destination directory. '
                      + 'This implementation requires the account running NMM2 to have write access '
-                     + 'to the mod directory. On Windows the account has to be an administrator.';
+                     + 'to the mod directory.';
   }
 
   public isSupported(state: any): boolean {
     const activeGameId = state.settings.gameMode.current;
-    if (this.isGamebryoGame(activeGameId)) {
-      // gamebryo engine seems to have some check on FindFirstFile/FindNextFile results that
-      // makes it ignore symbolic links
-      return false;
-    }
-
     const activeGameDiscovery: IDiscoveryResult =
       state.settings.gameMode.discovered[activeGameId];
 
     try {
       fsOrig.accessSync(activeGameDiscovery.modPath, fsOrig.constants.W_OK);
-      // TODO on windows, try to create a symlink to determine if
-      //   this is an administrator account
-      return true;
     } catch (err) {
+      log('info', 'hardlink activator not supported due to lack of write access',
+        { path: activeGameDiscovery.modPath, err: util.inspect(err) });
       return false;
     }
+
+    try {
+      if (fs.statSync(installPath(state)).dev !==
+          fs.statSync(activeGameDiscovery.modPath).dev) {
+        log('info', 'hardlink activator not supported because game is on different drive');
+        // hard links work only on the same drive
+        return false;
+      }
+    } catch (err) {
+      log('warn', 'failed to stat. directory missing?', {
+        dir1: installPath(state), dir2: activeGameDiscovery.modPath,
+        err: util.inspect(err),
+      });
+      return false;
+    }
+
+    return true;
   }
 
   public prepare(modsPath: string): Promise<void> {
@@ -59,9 +73,22 @@ class ModActivator implements IModActivator {
       let relPath: string = path.relative(sourceBase, iterPath);
       let dest: string = path.join(modsPath, relPath);
       if (stat.isDirectory()) {
-        return fs.mkdirAsync(dest);
+        return fs.mkdirAsync(dest).catch((err) => {
+          log('info', 'mkdir', util.inspect(err));
+          if (err.code !== 'EEXIST') {
+            throw err;
+          }
+        });
       } else {
-        return fs.symlinkAsync(iterPath, dest).then(() => {
+        return fs.unlinkAsync(dest)
+        .catch((err) => {
+          log('info', 'unlink failed', util.inspect(err));
+          if (err.code !== 'ENOENT') {
+            throw err;
+          }
+        }).then(() => {
+          return fs.linkAsync(iterPath, dest);
+        }).then(() => {
           log('info', 'installed', { iterPath, dest });
         }).catch((err) => {
           log('info', 'error', { err: err.message });
@@ -87,10 +114,6 @@ class ModActivator implements IModActivator {
 
   public isActive(): boolean {
     return false;
-  }
-
-  private isGamebryoGame(gameId: string): boolean {
-    return ['skyrim', 'skyrimse'].indexOf(gameId) !== -1;
   }
 }
 

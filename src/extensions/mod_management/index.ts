@@ -4,6 +4,7 @@ import {ITableAttribute} from '../../types/ITableAttribute';
 import {IDownload} from '../download_management/types/IDownload';
 
 import {addMod, clearMods} from './actions/mods';
+import {setActivator} from './actions/settings';
 import {modsReducer} from './reducers/mods';
 import {settingsReducer} from './reducers/settings';
 import {IInstall} from './types/IInstall';
@@ -104,6 +105,7 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('gamemode-activated', (newGame: string) => {
       context.api.store.dispatch(clearMods());
+<<<<<<< 5548dfa3d44bf969e79a83fcfc1cbbd88da3c822
       if (fs.existsSync(installPath(store.getState()))) {
         refreshMods(installPath(store.getState()), (mod: IMod) => {
           if (store.getState().mods[mod.id] === undefined) {
@@ -114,6 +116,29 @@ function init(context: IExtensionContextExt): boolean {
           context.api.events.emit('mods-refreshed');
         });
       }
+=======
+
+      let currentActivator = store.getState().gameSettings.mods.activator;
+      let supported = supportedActivators(store.getState());
+      if (supported.find((activator: IModActivator) =>
+        activator.id === currentActivator) === undefined) {
+          // current activator is not valid for this game. This should only occur
+          // if compatibility of the activator has changed
+          if (supported.length > 0) {
+            context.api.store.dispatch(setActivator(supported[0].id));
+          }
+        }
+
+      refreshMods(installPath(store.getState()), (mod: IMod) => {
+        if (store.getState().mods[mod.id] === undefined) {
+          context.api.store.dispatch(addMod(mod));
+        }
+      })
+      .then(() => {
+        context.api.events.emit('mods-refreshed');
+      })
+      ;
+>>>>>>> [#135617019] added hard-link based mod activator
     });
 
     context.api.onStateChange(

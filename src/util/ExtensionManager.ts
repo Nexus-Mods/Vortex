@@ -3,6 +3,7 @@ import { addNotification, dismissNotification } from '../actions/notifications';
 import initAboutDialog from '../extensions/about_dialog/index';
 import initDownloadManagement from '../extensions/download_management/index';
 import initGamemodeManagement from '../extensions/gamemode_management/index';
+import initHardlinkActivator from '../extensions/hardlink_activator/index';
 import initInstallerFomod from '../extensions/installer_fomod/index';
 import initModManagement from '../extensions/mod_management/index';
 import initNexusIntegration from '../extensions/nexus_integration/index';
@@ -54,6 +55,8 @@ interface IRegisteredExtension {
   initFunc: IExtensionInit;
 }
 
+type WatcherRegistry = { [watchPath: string]: IStateChangeCallback[] };
+
 /**
  * interface to extensions. This loads extensions and provides the api extensions
  * use
@@ -65,6 +68,7 @@ class ExtensionManager {
   private mApi: IExtensionApi;
   private mEventEmitter: NodeJS.EventEmitter;
   private mReduxWatcher: any;
+  private mWatches: WatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
   private mModDB: ModDB;
   private mPid: number;
@@ -116,12 +120,34 @@ class ExtensionManager {
       store.dispatch(dismissNotification(id));
     };
     this.mApi.store = store;
-    this.mApi.onStateChange = (path: string[], callback: IStateChangeCallback) => {
-      this.mReduxWatcher.watch(path,
-        // tslint:disable-next-line:no-unused-variable no-shadowed-variable
-        ({ store, selector, prevState, currentState, prevValue, currentValue }) => {
-        callback(prevValue, currentValue);
-      });
+    this.mApi.onStateChange = (watchPath: string[], callback: IStateChangeCallback) => {
+      let lastValue;
+      let key = watchPath.join('.');
+      if (this.mWatches[key] === undefined) {
+        this.mWatches[key] = [];
+        this.mReduxWatcher.watch(watchPath,
+          // tslint:disable-next-line: no-unused-variable
+          ({ cbStore, selector, prevState, currentState, prevValue, currentValue }) => {
+            // TODO redux-watch seems to trigger even if the value has not changed. This can
+            //   lead to an endless loop where a state change handler re-sets the same value
+            //   causing an infinite loop
+            if (currentValue === lastValue) {
+              return;
+            }
+            lastValue = currentValue;
+            for (let cb of this.mWatches[key]) {
+              try {
+                cb(prevValue, currentValue);
+              } catch (err) {
+                log('error', 'state change handler failed', {
+                  message: err.message,
+                  stack: err.stack,
+                });
+              }
+            }
+          });
+      }
+      this.mWatches[key].push(callback);
     };
 
     // TODO the mod db doesn't depend on the store but it must only be instantiated
@@ -382,6 +408,8 @@ class ExtensionManager {
    * @returns {IExtensionInit[]}
    */
   private loadExtensions(): IRegisteredExtension[] {
+    const bundledPath = path.resolve(__dirname, '..', 'bundledPlugins');
+    log('info', 'bundle at', bundledPath);
     const extensionsPath = path.join(app.getPath('userData'), 'plugins');
     return [
       { name: 'settings_interface', initFunc: initSettingsInterface },
@@ -396,9 +424,12 @@ class ExtensionManager {
       { name: 'nuts_local', initFunc: initNutsLocal },
       { name: 'symlink_activator', initFunc: initSymlinkActivator },
       { name: 'symlink_activator_elevate', initFunc: initSymlinkActivatorElevate },
+      { name: 'hardlink_activator', initFunc: initHardlinkActivator },
       { name: 'installer_fomod', initFunc: initInstallerFomod },
       { name: 'savegame_management', initFunc: initSaveGameManagement },
-    ].concat(this.loadDynamicExtensions(extensionsPath));
+    ]
+    .concat(this.loadDynamicExtensions(bundledPath))
+    .concat(this.loadDynamicExtensions(extensionsPath));
   }
 
 }
