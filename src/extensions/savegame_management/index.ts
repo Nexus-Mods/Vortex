@@ -11,7 +11,7 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 import {
-  CREATION_TIME, FILENAME, LOCATION, PLUGINS, SAVEGAME_ID,
+  CREATION_TIME, FILENAME, LEVEL, LOCATION, PLUGINS, SAVEGAME_ID,
   SAVEGAME_NAME, SCREENSHOT,
 } from './savegameAttributes';
 
@@ -37,6 +37,7 @@ function init(context: IExtensionContextExt): boolean {
   if (context.registerSavegameAttribute !== undefined) {
     context.registerSavegameAttribute(SAVEGAME_ID);
     context.registerSavegameAttribute(SAVEGAME_NAME);
+    context.registerSavegameAttribute(LEVEL);
     context.registerSavegameAttribute(LOCATION);
     context.registerSavegameAttribute(FILENAME);
     context.registerSavegameAttribute(CREATION_TIME);
@@ -56,6 +57,7 @@ function init(context: IExtensionContextExt): boolean {
       });
     }
 
+    context.api.store.dispatch(setSavegamelistAttributeVisible('id', false));
     context.api.store.dispatch(setSavegamelistAttributeVisible('filename', false));
 
     context.api.onStateChange(

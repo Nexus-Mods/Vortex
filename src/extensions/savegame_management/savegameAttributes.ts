@@ -4,10 +4,10 @@ export const SAVEGAME_ID: ISavegameAttribute = {
   id: 'id',
   name: 'Savegame id',
   description: 'Id of the savegame',
-  icon: 'quote-left',
+  icon: 'id-badge',
   calc: (attributes) => attributes.id,
   isDetail: false,
-  isToggleable: false,
+  isToggleable: true,
   isReadOnly: true,
 };
 
@@ -23,6 +23,17 @@ export const SAVEGAME_NAME: ISavegameAttribute = {
   sortFunc: (lhs: string, rhs: string, locale: string): number => {
     return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
   },
+};
+
+export const LEVEL: ISavegameAttribute = {
+  id: 'level',
+  name: 'Character level',
+  description: 'Level of the character',
+  icon: 'level-up',
+  calc: (attributes) => attributes.level,
+  isDetail: false,
+  isToggleable: true,
+  isReadOnly: true,
 };
 
 export const LOCATION: ISavegameAttribute = {
