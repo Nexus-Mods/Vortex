@@ -13,8 +13,8 @@ export const SAVEGAME_ID: ISavegameAttribute = {
 
 export const SAVEGAME_NAME: ISavegameAttribute = {
   id: 'name',
-  name: 'Savegame name',
-  description: 'Name of the savegame',
+  name: 'Character name',
+  description: 'Name of the character',
   icon: 'quote-left',
   calc: (attributes) => attributes.name,
   isDetail: false,
@@ -32,18 +32,7 @@ export const LOCATION: ISavegameAttribute = {
   icon: 'map-marker',
   calc: (attributes) => attributes.location,
   isDetail: false,
-  isToggleable: false,
-  isReadOnly: true,
-};
-
-export const LEVEL: ISavegameAttribute = {
-  id: 'level',
-  name: 'Character level',
-  description: 'Level of the character',
-  icon: 'fa.user-circle',
-  calc: (attributes) => attributes.level,
-  isDetail: false,
-  isToggleable: false,
+  isToggleable: true,
   isReadOnly: true,
 };
 
@@ -51,7 +40,7 @@ export const CREATION_TIME: ISavegameAttribute = {
   id: 'creationtime',
   name: 'Creation Time',
   description: 'File creation time',
-  icon: ' calendar-plus-o',
+  icon: 'calendar-plus-o',
   calc: (attributes) => new Date(attributes.creationtime),
   isDetail: false,
   isToggleable: true,
@@ -65,7 +54,7 @@ export const SCREENSHOT: ISavegameAttribute = {
   icon: ' file-picture-o',
   calc: (attributes) => attributes.screenshot,
   isDetail: true,
-  isToggleable: true,
+  isToggleable: false,
   isReadOnly: true,
 };
 
@@ -73,9 +62,20 @@ export const PLUGINS: ISavegameAttribute = {
   id: 'plugins',
   name: 'Plugins',
   description: 'Savegame plugins',
-  icon: ' file-picture-o',
+  icon: 'file-picture-o',
   calc: (attributes) => attributes.plugins,
   isDetail: true,
+  isToggleable: false,
+  isReadOnly: true,
+};
+
+export const FILENAME: ISavegameAttribute = {
+  id: 'filename',
+  name: 'Filename',
+  description: 'Name of the file',
+  icon: 'file-picture-o',
+  calc: (attributes) => attributes.filename,
+  isDetail: false,
   isToggleable: true,
   isReadOnly: true,
 };

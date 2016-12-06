@@ -1,3 +1,4 @@
+import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
 import { IAttributeState } from '../types/IAttributeState';
@@ -22,7 +23,11 @@ export interface IAttributeProps {
 
 class AttributeToggle extends React.Component<IAttributeProps, {}> {
   public render(): JSX.Element {
-    const { attribute, t } = this.props;
+    const { attribute, state, t } = this.props;
+
+    const cssClass = getAttr(state, 'enabled', true)
+      ? 'attribute-icon-enabled'
+      : 'attribute-icon-disabled';
 
     return (
       <Button
@@ -30,7 +35,9 @@ class AttributeToggle extends React.Component<IAttributeProps, {}> {
         className='btn-embed'
         tooltip={ t(attribute.name) }
         onClick={ this.toggleAttribute }
-      />
+      >
+      <Icon name={attribute.icon} className={ cssClass } />
+      </Button>
     );
   }
 

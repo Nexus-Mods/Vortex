@@ -86,7 +86,7 @@ class ModRow extends React.Component<IProps, {}> {
           <IconBar
             group='mod-action-icons'
             instanceId={ mod.id }
-            className='mod-actions'
+            className='table-actions'
             staticElements={ this.modActions }
           />
         </td>

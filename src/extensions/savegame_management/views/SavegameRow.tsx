@@ -80,7 +80,7 @@ class SavegameRow extends React.Component<IProps, {}> {
           <IconBar
             group='save-action-icons'
             instanceId={save.id}
-            className='mod-actions'
+            className='table-actions'
             staticElements={this.savegameActions}
           />
         </td>

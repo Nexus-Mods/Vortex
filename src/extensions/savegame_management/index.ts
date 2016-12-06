@@ -1,17 +1,17 @@
 import SavegameList from './views/SavegameList';
 
-import { addSavegame, clearSavegames } from './actions/session';
+import { addSavegame, clearSavegames, setSavegamelistAttributeVisible } from './actions/session';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
 
 import { ISavegame } from './types/ISavegame';
 
 import { remote } from 'electron';
-
+import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 import {
-  CREATION_TIME, LEVEL, LOCATION, PLUGINS, SAVEGAME_ID,
+  CREATION_TIME, FILENAME, LOCATION, PLUGINS, SAVEGAME_ID,
   SAVEGAME_NAME, SCREENSHOT,
 } from './savegameAttributes';
 
@@ -38,7 +38,7 @@ function init(context: IExtensionContextExt): boolean {
     context.registerSavegameAttribute(SAVEGAME_ID);
     context.registerSavegameAttribute(SAVEGAME_NAME);
     context.registerSavegameAttribute(LOCATION);
-    context.registerSavegameAttribute(LEVEL);
+    context.registerSavegameAttribute(FILENAME);
     context.registerSavegameAttribute(CREATION_TIME);
     context.registerSavegameAttribute(SCREENSHOT);
     context.registerSavegameAttribute(PLUGINS);
@@ -50,9 +50,13 @@ function init(context: IExtensionContextExt): boolean {
     let installPath = path.join(remote.app.getPath('documents'),
       'my games', store.getState().settings.gameMode.current, 'saves');
 
-    refreshSavegames(installPath, (save: ISavegame): void => {
-      context.api.store.dispatch(addSavegame(save));
-    });
+    if (fs.existsSync(installPath)) {
+      refreshSavegames(installPath, (save: ISavegame): void => {
+        context.api.store.dispatch(addSavegame(save));
+      });
+    }
+
+    context.api.store.dispatch(setSavegamelistAttributeVisible('filename', false));
 
     context.api.onStateChange(
       ['settings', 'gameMode', 'current'],
@@ -64,11 +68,14 @@ function init(context: IExtensionContextExt): boolean {
           context.api.store.dispatch(clearSavegames());
           let refreshPath = path.join(remote.app.getPath('documents'),
             'my games', store.getState().settings.gameMode.current, 'saves');
-          refreshSavegames(refreshPath, (save: ISavegame): void => {
-            if (store.getState().session.saves[save.id] === undefined) {
-              context.api.store.dispatch(addSavegame(save));
-            }
-          });
+
+          if (fs.existsSync(refreshPath)) {
+            refreshSavegames(refreshPath, (save: ISavegame): void => {
+              if (store.getState().session.saves[save.id] === undefined) {
+                context.api.store.dispatch(addSavegame(save));
+              }
+            });
+          }
         }, 200);
       });
   });

@@ -47,8 +47,8 @@ function loadSaveGame(file: string, onAddSavegame: Function) {
       savegameBind: sg,
       attributes: {
         id: sg.saveNumber,
-        name: sg.characterName,
-        level: sg.characterLevel,
+        name: sg.characterName + ' - LV ' + sg.characterLevel,
+        filename: path.basename(file),
         location: sg.location,
         plugins: sg.plugins,
         screenshot: sg.screenshotSize,

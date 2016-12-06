@@ -18,12 +18,12 @@ import DeactivationButton from './views/DeactivationButton';
 import ModList from './views/ModList';
 import Settings from './views/Settings';
 
+import * as fs from 'fs-extra-promise';
+
 import InstallManager from './InstallManager';
 
 import {INSTALL_TIME, MOD_NAME, VERSION} from './modAttributes';
 import {installPath} from './selectors';
-
-import {log} from '../../util/log';
 
 let activators: IModActivator[] = [];
 
@@ -104,26 +104,29 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('gamemode-activated', (newGame: string) => {
       context.api.store.dispatch(clearMods());
-      refreshMods(installPath(store.getState()), (mod: IMod) => {
-        if (store.getState().mods[mod.id] === undefined) {
-          context.api.store.dispatch(addMod(mod));
-        }
-      })
-      .then(() => {
-        context.api.events.emit('mods-refreshed');
-      })
-      ;
+      if (fs.existsSync(installPath(store.getState()))) {
+        refreshMods(installPath(store.getState()), (mod: IMod) => {
+          if (store.getState().mods[mod.id] === undefined) {
+            context.api.store.dispatch(addMod(mod));
+          }
+        })
+        .then(() => {
+          context.api.events.emit('mods-refreshed');
+        });
+      }
     });
 
     context.api.onStateChange(
         ['gameSettings', 'mods', 'paths'],
         (previous: IStatePaths, current: IStatePaths) => {
           store.dispatch(clearMods());
-          refreshMods(installPath(store.getState()), (mod: IMod) => {
-            if (store.getState().mods[mod.id] === undefined) {
-              context.api.store.dispatch(addMod(mod));
-            }
-          });
+          if (fs.existsSync(installPath(store.getState()))) {
+            refreshMods(installPath(store.getState()), (mod: IMod) => {
+              if (store.getState().mods[mod.id] === undefined) {
+                context.api.store.dispatch(addMod(mod));
+              }
+            });
+          }
         });
 
     context.api.events.on(

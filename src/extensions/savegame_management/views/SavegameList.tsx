@@ -2,12 +2,18 @@ import { ComponentEx, connect, extend, translate } from '../../../util/Component
 
 import AttributeToggle from './AttributeToggle';
 import * as React from 'react';
+
 import {
-  ControlLabel, FormControl, FormGroup, Jumbotron, Table } from 'react-bootstrap';
+  ControlLabel, FormControl, FormGroup, Jumbotron, Table,
+} from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
+
+import * as fs from 'fs-extra-promise';
 
 import getAttr from '../../../util/getAttr';
 import HeaderCell from './HeaderCell';
+
+import * as path from 'path';
 
 import { setSavegamelistAttributeSort, setSavegamelistAttributeVisible } from '../actions/session';
 
@@ -21,6 +27,8 @@ import { ISavegameAttribute } from '../types/ISavegameAttribute';
 
 import { SortDirection } from '../../../types/SortDirection';
 import { IAttributeState } from '../types/IAttributeState';
+
+import { IDiscoveryResult } from '../../gamemode_management/types/IStateEx';
 
 import { log } from '../../../util/log';
 import SavegameRow from './SavegameRow';
@@ -49,6 +57,7 @@ interface IConnectedProps {
   savegamelistState: IAttributeStateMap;
   gameMode: string;
   language: string;
+  discoveredGames: { [id: string]: IDiscoveryResult };
 }
 
 interface IActionProps {
@@ -98,7 +107,7 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
         </Fixed>
         <Flex>
           <Layout type='row'>
-            <Flex>
+            <Flex style={{ height: '100%', overflowY: 'auto' }}>
               <Table bordered condensed hover>
                 <thead>
                   <tr>
@@ -261,10 +270,10 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
     } else if (attribute.id === 'plugins') {
       let plugins: string[] = attribute.calc(save.attributes);
       return (
-        <FormGroup controlId='multiplePlugins'>
-          <ControlLabel>{ t('Plugins') }</ControlLabel>
-          <FormControl componentClass='select' multiple>
-            { plugins.map(this.renderPlugin) }
+        <FormGroup controlId='multiplePlugins' key={`${save.id}-${attribute.id}`}>
+          <ControlLabel>{t('Plugins')}</ControlLabel>
+          <FormControl componentClass='select' multiple size={20}>
+            {plugins.map(this.renderPlugin)}
           </FormControl>
         </FormGroup>
       );
@@ -286,10 +295,20 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
     }
   }
 
-  private renderPlugin = (searchPlugin: string) => {
-    return (
-      <option value='select'>{searchPlugin}</option>
-    );
+  private renderPlugin = (searchPlugin: string, index: number) => {
+    const { discoveredGames, gameMode } = this.props;
+    const discovery = discoveredGames[gameMode];
+    let pluginPath = path.join(discovery.modPath, searchPlugin);
+
+    if (fs.existsSync(pluginPath)) {
+      return (
+        <option value='select' style={{ color: 'black' }} key={index}>{searchPlugin}</option>
+      );
+    } else {
+      return (
+        <option value='select' style={{ color: 'red' }} key={index}>{searchPlugin}</option>
+      );
+    }
   }
 
   private renderCell(value: any): string {
@@ -348,6 +367,7 @@ function mapStateToProps(state: any): IConnectedProps {
     savegamelistState: state.session.saves.savegamelistState,
     gameMode: state.settings.gameMode.current,
     language: state.settings.interface.language,
+    discoveredGames: state.settings.gameMode.discovered,
   };
 }
 

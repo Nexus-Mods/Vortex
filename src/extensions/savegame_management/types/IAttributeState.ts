@@ -7,5 +7,6 @@ import { SortDirection } from '../../../types/SortDirection';
  * @interface IAttributeState
  */
 export interface IAttributeState {
+  enabled: boolean;
   sortDirection: SortDirection;
 }

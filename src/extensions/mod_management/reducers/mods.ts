@@ -17,8 +17,12 @@ export const modsReducer: IReducerSpec = {
         return state;
       }
     },
-    [actions.addMod]: (state, payload) => setSafe(state, ['mods', payload.id], payload),
-    [actions.removeMod]: (state, payload) => deleteOrNop(state, ['mods', payload]),
+    [actions.addMod]: (state, payload) => {
+      return setSafe(state, ['mods', payload.id], payload);
+    },
+    [actions.removeMod]: (state, payload) => {
+      return deleteOrNop(state, ['mods', payload]);
+    },
     [actions.clearMods]: (state, payload) => update(state, { mods: { $set: {} } } ),
     [actions.setModInstallationPath]: (state, payload) => {
       return setSafe(state, ['mods', payload.id, 'installationPath'], payload.installPath);

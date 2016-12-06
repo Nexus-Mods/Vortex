@@ -22,8 +22,12 @@ export const sessionReducer: IReducerSpec = {
         return state;
       }
     },
-    [addSavegame]: (state, payload) => setSafe(state, ['saves', payload.id], payload),
-    [removeSavegame]: (state, payload) => deleteOrNop(state, ['saves', payload]),
+    [addSavegame]: (state, payload) => {
+      return setSafe(state, ['saves', payload.id], payload);
+    },
+    [removeSavegame]: (state, payload) => {
+      return deleteOrNop(state, ['saves', payload]);
+    },
     [setSavegameState]: (state, payload) => {
       const { id, savegameState } = payload;
       return update(state, { saves: { [id]: { state: { $set: savegameState } } } });
@@ -36,7 +40,7 @@ export const sessionReducer: IReducerSpec = {
       return update(state, { saves: { $set: {} } });
     },
     [setSavegamelistAttributeVisible]: (state, payload) => {
-      return setSafe(state, ['savegamelistlistState',
+      return setSafe(state, ['savegamelistState',
         payload.attributeId, 'enabled'], payload.visible);
     },
     [setSavegamelistAttributeSort]: (state, payload) => {
