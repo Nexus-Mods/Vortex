@@ -22,4 +22,6 @@ export const setModlistAttributeSort: any = createAction('SET_MODLIST_ATTRIBUTE_
 /**
  * sets the activator to use for this game
  */
+// TODO we can't just change the activator, we first need to purge an activation made with the
+// previous one
 export const setActivator: any = createAction('SET_ACTIVATOR');

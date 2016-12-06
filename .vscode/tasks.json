@@ -29,7 +29,8 @@
         {
           "taskName": "buildwatch",
           "args": ["run", "buildwatch"],
-          "problemMatcher": "$tsc"
+          "problemMatcher": "$tsc",
+          "isBuildCommand": true
         }
     ]
 }

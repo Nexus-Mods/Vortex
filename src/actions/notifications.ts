@@ -1,5 +1,7 @@
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { INotification } from '../types/INotification';
+import {log} from '../util/log';
+
 import * as Promise from 'bluebird';
 import { v1 } from 'node-uuid';
 import { createAction } from 'redux-act';
@@ -88,7 +90,13 @@ export function showDialog(type: DialogType, title: string,
 export function closeDialog(id: string, actionKey: string, input: any) {
   return (dispatch) => {
     dispatch(dismissDialog(id));
-    dialogCallbacks[id](actionKey, input);
-    delete dialogCallbacks[id];
+    try {
+      if (dialogCallbacks[id] !== null) {
+        dialogCallbacks[id](actionKey, input);
+      }
+      delete dialogCallbacks[id];
+    } catch (err) {
+      log('error', 'failed to invoke dialog callback', { id, actionKey });
+    }
   };
 }

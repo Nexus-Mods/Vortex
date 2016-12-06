@@ -8,3 +8,9 @@ import { log } from './util/log';
 export * from './views/api';
 export { types, log, util }
 export { ComponentEx } from './util/ComponentEx';
+
+import * as mmselectors from './extensions/mod_management/selectors';
+
+let selectors = Object.assign({}, mmselectors);
+
+export { selectors };

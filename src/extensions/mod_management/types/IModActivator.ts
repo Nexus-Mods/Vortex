@@ -30,12 +30,14 @@ export interface IModActivator {
   /**
    * determine if this activator is supported in the current environment
    * 
+   * synchronous 'cause lazy.
+   * 
    * @memberOf IModActivator
    */
   isSupported: (state: any) => boolean;
 
   /**
-   * called before any  calls to activate, in case the
+   * called before any calls to activate, in case the
    * activator needs to do pre-processing
    * 
    * @memberOf IModActivator

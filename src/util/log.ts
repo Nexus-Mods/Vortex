@@ -41,6 +41,7 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
   if (!useConsole) {
     logger.remove(logger.transports.Console);
   }
+  logger.log('info', '--------------------------');
 }
 
 /**

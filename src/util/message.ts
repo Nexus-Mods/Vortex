@@ -69,11 +69,14 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
  * @template S
  * @param {Redux.Dispatch<S>} dispatch
  * @param {string} message
- * @param {string} [details]
+ * @param {any} [details] further details about the error (stack and such). The api says we only
+ *                        want string or Errors but since some node apis return non-Error objects
+ *                        where Errors are expected we have to be a bit more flexible here. 
  */
 export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
                              details?: string | Error) {
-  let finalDetails = details instanceof Error ? renderError(details) : details;
+  let finalDetails: string = typeof(details) !== 'string' ? renderError(details) : details;
+
   dispatch(addNotification({
     type: 'error',
     message,
@@ -92,10 +95,22 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
   }));
 }
 
-function renderError(err: Error): string {
-  let res = err.message;
-  if (err.stack) {
-    res += '\n' + err.stack;
+function renderError(err: any): string {
+  let res: string[] = [];
+
+  if (Array.isArray(err)) {
+    err = err[0];
   }
-  return res;
+
+  if (err.message) {
+    res.push(err.message);
+  } else if (err.Error) {
+    res.push(err.Error);
+  }
+
+  if (err.stack) {
+    res.push(err.stack);
+  }
+
+  return res.join('\n');
 }

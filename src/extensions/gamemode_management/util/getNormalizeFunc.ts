@@ -39,7 +39,6 @@ export function getNormalizeFunc(testPath: string): Promise<Normalize> {
         return null;
       }
 
-      log('debug', 'testing', { fileName });
       return Promise.all([fileName, fileName.toLowerCase(), fileName.toUpperCase()].map((file) => {
         return fs.statAsync(path.join(testPath, file));
       }));
