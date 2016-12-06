@@ -90,8 +90,8 @@ class GameModeManager {
     this.activateGameMode(newMode, this.mStore)
       .then((persistor) => {
         this.mPersistor = persistor;
-        this.mError = false;
         this.mOnGameModeActivated(newMode);
+        this.mError = false;
       }).catch((err) => {
         if (!this.mError) {
           // first error, try reverting to the previous game mode
@@ -102,6 +102,17 @@ class GameModeManager {
           terminate({ message: 'Failed to change game mode', details: err });
         }
       });
+  }
+
+  public setupGameMode(gameMode: string): Promise<void> {
+    let game: IGame = this.mKnownGames.find((ele: IGame) => ele.id === gameMode);
+    if (game === undefined) {
+      return Promise.reject(new Error('invalid game mode'));
+    } else if (game.setup === undefined) {
+      return Promise.resolve();
+    } else {
+      return game.setup();
+    }
   }
 
   /**

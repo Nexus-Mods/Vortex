@@ -1,7 +1,8 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
+import { showError } from '../../util/message';
 
-import { addSearchPath } from './actions/settings';
+import { addSearchPath, setCurrentGameMode } from './actions/settings';
 import { discoveryReducer } from './reducers/discovery';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
@@ -54,10 +55,23 @@ function init(context: IExtensionContext): boolean {
       });
     }
 
+    context.api.onStateChange(['settings', 'gameMode', 'next'],
+      (prev: string, current: string) => {
+        gameModeManager.setupGameMode(current)
+        .then(() => {
+          context.api.store.dispatch(setCurrentGameMode(current));
+        })
+        .catch((err) => {
+          showError(context.api.store.dispatch, 'Failed to set game mode', err);
+        })
+        ;
+      });
+
     context.api.onStateChange(['settings', 'gameMode', 'current'],
       (prev: string, current: string) => {
         gameModeManager.setGameMode(prev, current);
     });
+
     gameModeManager.setGameMode(undefined, context.api.store.getState().settings.gameMode.current);
   });
 

@@ -5,7 +5,7 @@ import Steam, { ISteamEntry } from '../../util/Steam';
 import * as Promise from 'bluebird';
 
 import { remote } from 'electron';
-
+import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 function findGame(): Promise<string> {
@@ -27,7 +27,7 @@ function findGame(): Promise<string> {
 
 function modPath(): string {
   if (process.platform === 'win32') {
-    return path.join(remote.app.getPath('appData'), 'Roaming', 'Factorio', 'mods');
+    return path.join(remote.app.getPath('appData'), 'Factorio', 'mods');
   } else {
     return path.join(remote.app.getPath('home'), '.factorio', 'mods');
   }
@@ -41,6 +41,10 @@ function gameExecutable(): string {
   }
 }
 
+function prepareForModding(): Promise<void> {
+  return fs.ensureDirAsync(modPath());
+}
+
 const game: IGame = {
   id: 'factorio',
   name: 'Factorio',
@@ -52,6 +56,7 @@ const game: IGame = {
   requiredFiles: [
     'data/core/graphics/factorio.ico',
   ],
+  setup: prepareForModding,
   supportedTools: null,
 };
 

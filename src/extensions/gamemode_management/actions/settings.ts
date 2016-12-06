@@ -10,6 +10,11 @@ import { createAction } from 'redux-act';
 export const setGameMode: any = createAction('SET_GAME_MODE');
 
 /**
+ * internal use only! Don't use outside gamemode_management
+ */
+export const setCurrentGameMode: any = createAction('SET_CURRENT_GAMEMODE');
+
+/**
  * add info about a discovered game
  */
 export const addDiscoveredGame: any =

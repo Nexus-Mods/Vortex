@@ -1,4 +1,5 @@
 import { ITool } from './ITool';
+import * as Promise from 'bluebird';
 
 /**
  * interface for game extensions
@@ -46,4 +47,11 @@ export interface IGame extends ITool {
    * @memberOf IGame
    */
   mergeMods: boolean;
+
+  /**
+   * Optional setup function. If this game requires some form of setup before it can be modded
+   * (like creating a directory, changing a registry key, ...) do it here. It will be called
+   * every time before the game mode is activated.
+   */
+  setup?: () => Promise<void>;
 }

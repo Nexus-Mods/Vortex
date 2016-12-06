@@ -11,7 +11,10 @@ import * as path from 'path';
  * @param {(mod: IMod) => void} onAddMod
  */
 function refreshMods(installPath: string, onAddMod: (mod: IMod) => void) {
-  return fs.readdirAsync(installPath)
+  return fs.ensureDirAsync(installPath)
+    .then(() => {
+      return fs.readdirAsync(installPath);
+    })
     .then((modNames: string[]) => {
       return Promise.map(modNames, (modName: string) => {
         const fullPath: string = path.join(installPath, modName);
