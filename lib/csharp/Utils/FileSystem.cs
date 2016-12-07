@@ -64,5 +64,29 @@ namespace Utils
 		{
 			return File.GetAttributes(filePath);
 		}
-	}
+
+        /// <summary>
+        /// Verifies if the given path is safe to be written to.
+        /// </summary>
+        /// <remarks>
+        /// A path is safe to be written to if it contains no charaters
+        /// disallowed by the operating system, and if is is in the Data
+        /// directory or one of its sub-directories.
+        /// </remarks>
+        /// <param name="p_strPath">The path whose safety is to be verified.</param>
+        /// <returns><c>true</c> if the given path is safe to write to;
+        /// <c>false</c> otherwise.</returns>
+        public override bool IsSafeFilePath(string p_strPath)
+        {
+            if (p_strPath.IndexOfAny(Path.GetInvalidPathChars()) != -1)
+                return false;
+            if (Path.IsPathRooted(p_strPath))
+                return false;
+            if (p_strPath.Contains(".." + Path.AltDirectorySeparatorChar))
+                return false;
+            if (p_strPath.Contains(".." + Path.DirectorySeparatorChar))
+                return false;
+            return true;
+        }
+    }
 }

@@ -280,5 +280,21 @@ namespace Utils
 		{
 			throw new NotImplementedException();
 		}
-	}
+
+        /// <summary>
+        /// Verifies if the given path is safe to be written to.
+        /// </summary>
+        /// <remarks>
+        /// A path is safe to be written to if it contains no charaters
+        /// disallowed by the operating system, and if is is in the Data
+        /// directory or one of its sub-directories.
+        /// </remarks>
+        /// <param name="p_strPath">The path whose safety is to be verified.</param>
+        /// <returns><c>true</c> if the given path is safe to write to;
+        /// <c>false</c> otherwise.</returns>
+        public virtual bool IsSafeFilePath(string p_strPath)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

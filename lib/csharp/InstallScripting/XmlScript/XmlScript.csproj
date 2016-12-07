@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{B0F526DB-967B-4A57-9EC9-2E4950E54F26}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Nexus.Client.ModManagement.Scripting.XmlScript</RootNamespace>
+    <AssemblyName>XmlScript</AssemblyName>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Antlr3.Runtime">
+      <HintPath>..\..\lib\Antlr\Antlr3.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="AntlrUtil">
+      <HintPath>..\..\lib\Antlr\AntlrUtil.dll</HintPath>
+    </Reference>
+    <Reference Include="ICSharpCode.TextEditor">
+      <HintPath>..\..\lib\ICSharpCode.TextEditor.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="WindowsBase">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CompositeCondition.cs" />
+    <Compile Include="ConditionallyInstalledFileSet.cs" />
+    <Compile Include="ConditionalFlag.cs" />
+    <Compile Include="ConditionalOptionTypeResolver.cs" />
+    <Compile Include="ConditionStateManager.cs" />
+    <Compile Include="CPL\BaseCplParserFactory.cs" />
+    <Compile Include="CPL\CPLConverter.cs" />
+    <Compile Include="CPL\ICplParserFactory.cs" />
+    <Compile Include="FlagCondition.cs" />
+    <Compile Include="GameVersionCondition.cs" />
+    <Compile Include="HeaderInfo.cs" />
+    <Compile Include="ICondition.cs" />
+    <Compile Include="InstallableFile.cs" />
+    <Compile Include="InstallStep.cs" />
+    <Compile Include="IOptionTypeResolver.cs" />
+    <Compile Include="ModManagerCondition.cs" />
+    <Compile Include="Option.cs" />
+    <Compile Include="OptionGroup.cs" />
+    <Compile Include="Parsers\IParser.cs" />
+    <Compile Include="Parsers\Parser.cs" />
+    <Compile Include="Parsers\Parser10.cs" />
+    <Compile Include="Parsers\Parser20.cs" />
+    <Compile Include="Parsers\Parser30.cs" />
+    <Compile Include="Parsers\Parser40.cs" />
+    <Compile Include="Parsers\Parser50.cs" />
+    <Compile Include="Parsers\ParserException.cs" />
+    <Compile Include="PluginCondition.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="XmlScriptExecutor.cs" />
+    <Compile Include="XmlScriptInstaller.cs" />
+    <Compile Include="XmlScriptType.cs" />
+    <Compile Include="Xml\XmlSchemaResourceResolver.cs" />
+    <Compile Include="SortOrder.cs" />
+    <Compile Include="StaticOptionTypeResolver.cs" />
+    <Compile Include="StringComparer.cs" />
+    <Compile Include="Unparsers\Unparser50.cs" />
+    <Compile Include="Unparsers\Unparser40.cs" />
+    <Compile Include="Unparsers\Unparser30.cs" />
+    <Compile Include="Unparsers\IUnparser.cs" />
+    <Compile Include="Unparsers\Unparser.cs" />
+    <Compile Include="Unparsers\Unparser10.cs" />
+    <Compile Include="Unparsers\Unparser20.cs" />
+    <Compile Include="Unparsers\UnsupportedScriptFeatureException.cs" />
+    <Compile Include="VersionCondition.cs" />
+    <Compile Include="XmlScript.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Components.Interface\Components.Interface.csproj">
+      <Project>{494c3e44-8a35-46ae-82e5-1c1a7221803b}</Project>
+      <Name>Components.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Utils\Utils.csproj">
+      <Project>{5b9ad297-9d49-4593-a795-bdbd309b3313}</Project>
+      <Name>Utils</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Scripting\Scripting.csproj">
+      <Project>{66dc8748-2dc2-4e6e-b645-080e0cfdc831}</Project>
+      <Name>Scripting</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\add.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\delete.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Antlr3 Include="CPL\CPLLexer.g">
+      <Generator>MSBuild:Compile</Generator>
+    </Antlr3>
+    <Antlr3 Include="CPL\CPLParser.g">
+      <Generator>MSBuild:Compile</Generator>
+    </Antlr3>
+    <None Include="Resources\edit.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\add-install-step.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\add-option-group.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\add-option.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="CPL\CPLImportParser.g">
+    </None>
+    <None Include="CPL\CPLImportLexer.g" />
+    <None Include="Resources\add-file-set.png" />
+    <EmbeddedResource Include="Schemas\XmlScript5.0.xsd" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\notFoundJPG.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <!-- Folder containing AntlrBuildTask.dll -->
+    <AntlrBuildTaskPath>$(SolutionDir)\lib\Antlr</AntlrBuildTaskPath>
+    <!-- Path to the ANTLR Tool itself. -->
+    <AntlrToolPath>$(SolutionDir)\lib\Antlr\Antlr3.exe</AntlrToolPath>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)\lib\Antlr\Antlr3.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  -->
+  <Target Name="AfterBuild">
+    <ItemGroup>
+      <FilesToCopy Include="$(TargetDir)$(TargetName)*.dll" />
+      <FilesToCopy Include="$(TargetDir)antlr*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(SolutionDir)$(OutDir)ScriptTypes\" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

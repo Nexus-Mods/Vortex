@@ -40,10 +40,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Collections\IListExtensions.cs" />
+    <Compile Include="Collections\SortedObservableCollection.cs" />
+    <Compile Include="Collections\ThreadSafeObservableList.cs" />
+    <Compile Include="EventArgs.cs" />
     <Compile Include="FileSystem.cs" />
     <Compile Include="Interfaces\FileSystemBase.cs" />
     <Compile Include="Interfaces\IFileInfo.cs" />
     <Compile Include="Interfaces\IFileSystem.cs" />
+    <Compile Include="ObjectHelper.cs" />
+    <Compile Include="ObservableObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
