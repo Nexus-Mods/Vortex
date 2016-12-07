@@ -107,12 +107,12 @@ private:
     void read(void *buff, std::size_t length);
 
     /* Reads RGB image from save
-     * Assumes picture dimentions come immediately before the save
+     * Assumes picture dimensions come immediately before the save
      */
-    void readImage(int scale = 0, bool alpha = false);
+    void readImage(bool alpha = false);
 
     /* Reads RGB image from save */
-    void readImage(unsigned long width, unsigned long height, int scale = 0, bool alpha = false);
+    void readImage(unsigned long width, unsigned long height, bool alpha = false);
 
     /* Read the plugin list */
     void readPlugins();

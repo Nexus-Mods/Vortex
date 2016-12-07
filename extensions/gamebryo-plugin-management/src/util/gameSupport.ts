@@ -3,6 +3,8 @@ import {PluginFormat} from '../util/PluginPersistor';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 
+const app = appIn || remote.app;
+
 const gameSupport = {
   skyrim: {
     appDataPath: 'skyrim',
@@ -27,7 +29,6 @@ const gameSupport = {
 
 export function pluginPath(gameMode: string): string {
   const gamePath = gameSupport[gameMode].appDataPath;
-  const app = appIn || remote.app;
   return path.resolve(app.getPath('appData'), '..', 'Local', gamePath);
 }
 

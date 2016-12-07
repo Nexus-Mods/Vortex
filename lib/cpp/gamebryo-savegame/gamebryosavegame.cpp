@@ -93,7 +93,8 @@ void GamebryoSaveGame::readOblivion(GamebryoSaveGame::FileWrapper &file)
 void GamebryoSaveGame::readSkyrim(GamebryoSaveGame::FileWrapper &file)
 {
   file.skip<unsigned long>(); // header size
-  file.skip<unsigned long>(); // header version
+  unsigned long version;
+  file.read(version); // header version
   file.read(m_SaveNumber);
 
   file.read(m_PCName);
@@ -117,12 +118,25 @@ void GamebryoSaveGame::readSkyrim(GamebryoSaveGame::FileWrapper &file)
   file.read(ftime);
   m_CreationTime = windowsTicksToEpoch(ftime);
 
-  file.readImage();
-
-  file.skip<unsigned char>(); // form version
-  file.skip<unsigned long>(); // plugin info size
-
-  file.readPlugins();
+  if (version < 0x0c) {
+    file.readImage();
+    file.skip<unsigned char>(); // form version
+    file.skip<unsigned long>(); // plugin info size
+    file.readPlugins();
+  } else {
+    // Skyrim SE - same header, different version ...
+    unsigned long width;
+    file.read(width);
+    unsigned long height;
+    file.read(height);
+    file.skip<unsigned char>(2);
+    file.readImage(width, height, true);
+    file.skip<unsigned char>(10); // not sure what this is
+    //file.skip<unsigned char>(); // form version
+    file.skip<unsigned char>(); // form version
+    file.skip<unsigned long>(); // plugin info size
+    // ... and broken plugin list. can't be parsed
+  }
 }
 
 void GamebryoSaveGame::readFO3(GamebryoSaveGame::FileWrapper &file)
@@ -171,7 +185,7 @@ void GamebryoSaveGame::readFO3(GamebryoSaveGame::FileWrapper &file)
   std::string playtime;
   file.read(playtime);
 
-  file.readImage(width, height, 256);
+  file.readImage(width, height);
 
   file.skip<char>(5); // unknown byte, size of plugin data
 
@@ -201,7 +215,7 @@ void GamebryoSaveGame::readFO4(GamebryoSaveGame::FileWrapper &file)
   uint64_t ftime;
   file.read(ftime);
   m_CreationTime = windowsTicksToEpoch(ftime);
-  file.readImage(384, true);
+  file.readImage(true);
 
   file.skip<uint8_t>(); // form version
   file.read(ignore);          // game version
@@ -274,16 +288,16 @@ void GamebryoSaveGame::FileWrapper::read(void *buff, std::size_t length)
   }
 }
 
-void GamebryoSaveGame::FileWrapper::readImage(int scale, bool alpha)
+void GamebryoSaveGame::FileWrapper::readImage(bool alpha)
 {
   unsigned long width;
   read(width);
   unsigned long height;
   read(height);
-  readImage(width, height, scale, alpha);
+  readImage(width, height, alpha);
 }
 
-void GamebryoSaveGame::FileWrapper::readImage(unsigned long width, unsigned long height, int scale, bool alpha)
+void GamebryoSaveGame::FileWrapper::readImage(unsigned long width, unsigned long height, bool alpha)
 {
   m_Game->m_ScreenshotDim = Dimensions(width, height);
 

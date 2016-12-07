@@ -1,4 +1,8 @@
 import { ISavegame } from '../types/ISavegame';
+
+import { log } from '../../../util/log';
+
+import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import { savegameBinding } from 'gamebryo-savegame';
 import * as path from 'path';
@@ -14,17 +18,26 @@ class Dimensions {
 
 /**
  * reads the savegame dir and adds savegames missing in our database
- * 
- * @param {string} installDir
+ *
+ * @param {string} savesPath
  * @param {(save: ISavegame) => void} onAddSavegame
  */
-function refreshSavegames(installDir: string, onAddSavegame: (save: ISavegame) => void) {
-  fs.readdirAsync(installDir)
+function refreshSavegames(savesPath: string,
+                          onAddSavegame: (save: ISavegame) => void): Promise<string[]> {
+  let failedReads: string[] = [];
+  return fs.readdirAsync(savesPath)
     .then((savegameNames: string[]) => {
-      savegameNames.forEach((savegameName: string) => {
-        savegameName = path.join(installDir, savegameName);
-        loadSaveGame(savegameName, onAddSavegame);
+      return Promise.each(savegameNames, (savegameName: string) => {
+        let savegamePath = path.join(savesPath, savegameName);
+        return loadSaveGame(savegamePath, onAddSavegame)
+        .catch((err: Error) => {
+          failedReads.push(savegameName);
+          log('warn', 'Failed to parse savegame', { savegamePath, error: err.message });
+        });
       });
+    })
+    .then(() => {
+      return Promise.resolve(failedReads);
     });
 }
 
@@ -33,8 +46,8 @@ function timestampFormat(timestamp: number) {
   return date;
 }
 
-function loadSaveGame(file: string, onAddSavegame: Function) {
-  fs.statAsync(file).then((stat: fs.Stats) => {
+function loadSaveGame(file: string, onAddSavegame: Function): Promise<void> {
+  return fs.statAsync(file).then((stat: fs.Stats) => {
     if (['.ess', '.fos'].indexOf(path.extname(file)) === -1) {
       return;
     }

@@ -35,6 +35,9 @@ import SavegameRow from './SavegameRow';
 
 import update = require('react-addons-update');
 
+// current typings know neither the function nor the return value
+declare var createImageBitmap: (imgData: ImageData) => Promise<any>;
+
 class Dimensions {
   public width: number;
   public height: number;
@@ -248,7 +251,8 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
   };
 
   private renderSavegameDetail = (save: ISavegame, attribute: ISavegameAttribute) => {
-    const { t } = this.props;
+    const { t, gameMode } = this.props;
+    // TODO: if-elseif-else cascade... This code could probably be nicer. somehow...
     if (attribute.id === 'screenshot') {
 
       let dim: Dimensions = attribute.calc(save.attributes);
@@ -260,23 +264,29 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
         let imgData: ImageData = ctx.createImageData(this.screenshotCanvas.width,
           this.screenshotCanvas.height);
         save.savegameBind.screenshot(imgData.data);
-        ctx.putImageData(imgData, 0, 0);
+        createImageBitmap(imgData)
+        .then((bitmap) => {
+          // technically we could apply filters here, resize the output and such
+          ctx.drawImage(bitmap, 0, 0);
+        });
       } catch (err) {
         this.screenshotCanvas.setAttribute('width', '0');
         this.screenshotCanvas.setAttribute('height', '0');
-        log('error', 'Error creating ImageData', err);
+        log('error', 'Error creating ImageData', err.message);
       }
 
     } else if (attribute.id === 'plugins') {
-      let plugins: string[] = attribute.calc(save.attributes);
-      return (
-        <FormGroup controlId='multiplePlugins' key={`${save.id}-${attribute.id}`}>
-          <ControlLabel>{t('Plugins')}</ControlLabel>
-          <FormControl componentClass='select' multiple size={20}>
-            {plugins.map(this.renderPlugin)}
-          </FormControl>
-        </FormGroup>
-      );
+      if (gameMode !== 'skyrimse') {
+        let plugins: string[] = attribute.calc(save.attributes);
+        return (
+          <FormGroup controlId='multiplePlugins' key={`${save.id}-${attribute.id}`}>
+            <ControlLabel>{t('Plugins')}</ControlLabel>
+            <FormControl componentClass='select' multiple size={20}>
+              {plugins.map(this.renderPlugin)}
+            </FormControl>
+          </FormGroup>
+        );
+      }
     } else {
       if (attribute.isDetail === true) {
         return (
