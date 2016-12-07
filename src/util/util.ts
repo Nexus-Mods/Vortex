@@ -14,6 +14,22 @@ export function sum(container: number[]): number {
   }, 0);
 }
 
+export function delayed(durationMS: number, value?: any) {
+  let timer: NodeJS.Timer;
+  let reject: (err: Error) => void;
+  let res = new Promise((resolve, rejectPar) => {
+    timer = setTimeout(() => {
+      resolve(value);
+    }, durationMS);
+    reject = rejectPar;
+  });
+  res.cancel = () => {
+    clearTimeout(timer);
+    reject(new Error('delayed operation canceled'));
+  };
+  return res;
+}
+
 /**
  * copy a file in such a way that it will not replace the target if the copy is
  * somehow interrupted. The file is first copied to a temporary file in the same

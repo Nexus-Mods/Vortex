@@ -5,7 +5,6 @@
 import 'source-map-support/register';
 
 import reducer from './reducers/index';
-import { IPersistor } from './types/IExtensionContext';
 import { ITermination, terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
@@ -39,7 +38,6 @@ Promise.config({ cancellation: true });
 // synchronized with the main process store
 
 let filter = true;
-
 let middleware = [
   thunkMiddleware,
 ];
