@@ -1,4 +1,4 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionContext, PersistingType } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 
@@ -13,6 +13,8 @@ import Settings from './views/Settings';
 
 import GameModeManager from './GameModeManager';
 
+let stateWhitelist = ['gameSettings'];
+
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('gamepad', 'Games', GamePicker, {
     hotkey: 'G',
@@ -23,12 +25,20 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
   context.registerFooter('discovery-progress', ProgressFooter);
 
+  context.registerExtensionFunction('registerSettingsHive',
+                                    (type: PersistingType, hive: string) => {
+                                      log('info', 'rsh', { hive, type, proc: process.type });
+                                      if (type === 'game') {
+                                        stateWhitelist.push(hive);
+                                      }
+                                    });
+
   context.once(() => {
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
     let gameModeManager = new GameModeManagerImpl(
         context.api.getPath('userData'), (gameMode: string) => {
           context.api.events.emit('gamemode-activated', gameMode);
-        });
+        }, stateWhitelist);
     gameModeManager.attachToStore(context.api.store);
     gameModeManager.startQuickDiscovery();
     context.api.events.on('start-discovery',

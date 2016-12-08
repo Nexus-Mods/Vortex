@@ -360,6 +360,7 @@ class ExtensionManager {
       registerExtensionFunction: () => undefined,
       registerStyle: () => undefined,
       registerPersistor: () => undefined,
+      registerSettingsHive: () => undefined,
       once: () => undefined,
       api: Object.assign({}, this.mApi),
     };

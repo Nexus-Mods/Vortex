@@ -26,7 +26,7 @@ class SpeedOMeter extends ComponentEx<IProps, {}> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    speed: state.persistent.downloads.speed,
+    speed: state.downloads.speed || 0,
   };
 }
 

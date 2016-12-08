@@ -28,7 +28,7 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
   }
   if ((filePath !== undefined) &&
       (filePath !==
-       store.getState().persistent.downloads.files[dlId].localPath)) {
+       store.getState().downloads.files[dlId].localPath)) {
     store.dispatch(setDownloadFilePath(dlId, filePath));
   }
 }
@@ -131,7 +131,7 @@ export class DownloadObserver {
 
   private handleRemoveDownload(downloadId: string) {
     const download =
-        this.mStore.getState().persistent.downloads.files[downloadId];
+        this.mStore.getState().downloads.files[downloadId];
     if (download === undefined) {
       log('warn', 'failed to remove download: unknown', {downloadId});
       return;

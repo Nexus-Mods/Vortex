@@ -247,7 +247,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
                           downloadId: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const state = context.api.store.getState();
-      let download: IDownload = state.persistent.downloads.files[downloadId];
+      let download: IDownload = state.downloads.files[downloadId];
       this.install(downloadId, download.localPath, context, download.modInfo, false,
                    (error, id) => {
                      if (error === null) {

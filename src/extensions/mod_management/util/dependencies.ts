@@ -18,7 +18,7 @@ function findModByRef(reference: IReference, state: any): string {
 
 function findDownloadByRef(reference: IReference, state: any): string {
   // TODO support non-hash references
-  const downloads = state.persistent.downloads.files;
+  const downloads = state.downloads.files;
   let existing: string = Object.keys(downloads).find((dlId: string): boolean => {
     return downloads[dlId].fileMD5 === reference.fileMD5;
   });

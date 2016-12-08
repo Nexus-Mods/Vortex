@@ -29,7 +29,8 @@ function init(context: IExtensionContext): boolean {
 
   context.registerFooter('speed-o-meter', SpeedOMeter);
 
-  context.registerReducer(['persistent', 'downloads'], stateReducer);
+  context.registerSettingsHive('game', 'downloads');
+  context.registerReducer(['downloads'], stateReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
   context.registerExtensionFunction('registerDownloadProtocol',
@@ -49,7 +50,7 @@ function init(context: IExtensionContext): boolean {
       store.getState().settings.downloads.maxParallelDownloads,
       store.getState().settings.downloads.maxChunks,
       (speed: number) => {
-        if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
+        if ((speed !== 0) || (store.getState().downloads.speed !== 0)) {
           store.dispatch(setDownloadSpeed(speed));
         }
       },

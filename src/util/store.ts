@@ -1,5 +1,5 @@
 import reducer from '../reducers/index';
-import { IPersistor } from '../types/IExtensionContext';
+import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 
 import {terminate} from './errorHandling';
@@ -46,12 +46,19 @@ export function setupStore(
 
     const extReducers = extensions.getReducers();
 
+    let whitelist = ['window', 'settings', 'persistent', 'account'];
+    extensions.apply('registerSettingsHive', (hive: string, type: PersistingType) => {
+      if (type === 'global') {
+        whitelist.push(hive);
+      }
+    });
+
     let result = createStore<IState>(reducer(extReducers), enhancer);
     persistStore(result,
                  {
                    storage: new StorageLogger(
                        new AsyncNodeStorage(path.join(basePath, 'state'))),
-                   whitelist: ['window', 'settings', 'persistent', 'account'],
+                   whitelist,
                    debounce: 200,
                    keyPrefix: 'global_',
                  },

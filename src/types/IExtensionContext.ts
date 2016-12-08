@@ -5,6 +5,14 @@ import * as React from 'react';
 
 export type PropsCallback = () => Object;
 
+/**
+ * determines where persisted state is stored and when it gets loaded.
+ * global: global NMM2 state, loaded on startup
+ * game: state regarding the managed game. Will be swapped out when the game mode changes
+ * profile: state regarding the managed profile. Will be swapped out when the profile changes
+ */
+export type PersistingType = 'global' | 'game' | 'profile';
+
 export interface IRegisterSettings {
   (title: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
 }
@@ -308,6 +316,21 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerReducer: (path: string[], spec: IReducerSpec) => void;
+
+  /**
+   * register a hive in the store to be persisted. A hive is a top-level branch in the state,
+   * like "settings", "state", ...
+   * You must not register a hive that is already being persisted or you get data inconsistency.
+   * Do not use this on a hive that is registered with "registerPersistor". With this function,
+   * NMM2 takes care of storing/restoring the data, with registerPersistor you can customize the
+   * file format.
+   * 
+   * @param {PersistingType} type controls where the state is stored and when it is loaded
+   * @param {string} hive the top-level key inside the state.
+   *
+   * @memberOf IExtensionContext
+   */
+  registerSettingsHive: (type: PersistingType, hive: string) => void;
 
   /**
    * register a new persistor that will hook a data file into the application store.

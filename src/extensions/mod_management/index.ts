@@ -86,6 +86,8 @@ function init(context: IExtensionContextExt): boolean {
     return {activators: supportedActivators(context.api.store.getState())};
   });
 
+  context.registerSettingsHive('game', 'mods');
+
   context.registerReducer(['mods'], modsReducer);
   context.registerReducer(['gameSettings', 'mods'], settingsReducer);
 
@@ -150,7 +152,7 @@ function init(context: IExtensionContextExt): boolean {
         'start-install-download',
         (downloadId: string, callback?: (error, id: string) => void) => {
           let download: IDownload =
-              store.getState().persistent.downloads.files[downloadId];
+              store.getState().downloads.files[downloadId];
           installManager.install(downloadId, download.localPath, context,
                                  download.modInfo, true, callback);
         });

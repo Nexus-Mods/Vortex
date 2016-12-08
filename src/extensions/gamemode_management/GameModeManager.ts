@@ -39,8 +39,9 @@ class GameModeManager {
   private mKnownGames: IGame[];
   private mActiveSearch: Promise<any[]>;
   private mOnGameModeActivated: (mode: string) => void;
+  private mStateWhitelist: string[];
 
-  constructor(basePath: string, onGameModeActivated: (mode: string) => void) {
+  constructor(basePath: string, onGameModeActivated: (mode: string) => void, whitelist: string[]) {
     this.mSubscription = null;
     this.mBasePath = basePath;
     this.mPersistor = null;
@@ -49,6 +50,7 @@ class GameModeManager {
     this.mKnownGames = [];
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
+    this.mStateWhitelist = whitelist;
   }
 
   /**
@@ -201,7 +203,7 @@ class GameModeManager {
         // step 2: retrieve stored state
         settings = {
           storage: new StorageLogger(new AsyncNodeStorage(statePath)),
-          whitelist: ['gameSettings', 'mods'],
+          whitelist: this.mStateWhitelist,
           keyPrefix: '',
         };
         return getStoredStateP(settings);
