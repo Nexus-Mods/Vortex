@@ -1,6 +1,7 @@
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import initAboutDialog from '../extensions/about_dialog/index';
+import initCategoryManagement from '../extensions/category_management/index';
 import initDownloadManagement from '../extensions/download_management/index';
 import initGamemodeManagement from '../extensions/gamemode_management/index';
 import initHardlinkActivator from '../extensions/hardlink_activator/index';
@@ -428,6 +429,7 @@ class ExtensionManager {
       { name: 'hardlink_activator', initFunc: initHardlinkActivator },
       { name: 'installer_fomod', initFunc: initInstallerFomod },
       { name: 'savegame_management', initFunc: initSaveGameManagement },
+      { name: 'category_management', initFunc: initCategoryManagement },
     ]
     .concat(this.loadDynamicExtensions(bundledPath))
     .concat(this.loadDynamicExtensions(extensionsPath));

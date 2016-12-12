@@ -7,6 +7,7 @@
 /// <reference path="rc-slider.d.ts" />
 /// <reference path="react-contextmenu.d.ts" />
 /// <reference path="react-i18next.d.ts" />
+/// <reference path="react-sortable-tree.d.ts" />
 /// <reference path="redux-electron-store.d.ts" />
 /// <reference path="redux-devtools-dispatch.d.ts" />
 /// <reference path="redux-act.d.ts" />
