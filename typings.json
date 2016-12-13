@@ -31,6 +31,7 @@
     "ref-union": "registry:dt/ref-union#0.0.0+20160316155526",
     "request": "registry:dt/request#0.0.0+20160726020908",
     "reselect": "registry:dt/reselect#2.0.2+20160319031821",
+    "shortid": "registry:dt/shortid#0.0.0+20160316155526",
     "tmp": "registry:dt/tmp#0.0.0+20160514170650",
     "winreg": "registry:dt/winreg#1.2.0+20160505170241",
     "winston": "registry:dt/winston#0.0.0+20160417152829"

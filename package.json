@@ -164,6 +164,7 @@
     "reselect": "^2.5.4",
     "rm-local-modules": "^0.0.1",
     "semvish": "^1.1.0",
+    "shortid": "^2.2.6",
     "simple-vdf": "^1.1.0",
     "string-templates": "^1.0.6",
     "tmp": "0.0.29",

@@ -21,12 +21,22 @@ export interface IExtensionContextExt extends IExtensionContext {
     handler: (inputUrl: string) => Promise<string[]>) => void;
 }
 
+function convertGameId(input: string): string {
+  if (input === 'SkyrimSE') {
+    return 'skyrimspecialedition';
+  } else {
+    return input;
+  }
+}
+
 function startDownload(api: IExtensionApi, nxmurl: string) {
   const url: NXMUrl = new NXMUrl(nxmurl);
 
   let nexusFileInfo: IFileInfo;
 
-  nexus.getFileInfo(url.modId, url.fileId, url.gameId)
+  let gameId = convertGameId(url.gameId);
+
+  nexus.getFileInfo(url.modId, url.fileId, gameId)
   .then((fileInfo: IFileInfo) => {
     nexusFileInfo = fileInfo;
     api.sendNotification({
@@ -36,7 +46,7 @@ function startDownload(api: IExtensionApi, nxmurl: string) {
       message: fileInfo.name,
       displayMS: 4000,
     });
-    return nexus.getDownloadURLs(url.modId, url.fileId, url.gameId);
+    return nexus.getDownloadURLs(url.modId, url.fileId, gameId);
   })
   .then((urls: IDownloadURL[]) => {
     if (urls === null) {
@@ -44,10 +54,12 @@ function startDownload(api: IExtensionApi, nxmurl: string) {
     }
     let uris: string[] = urls.map((item: IDownloadURL) => item.URI);
     log('debug', 'got download urls', { uris });
-    api.events.emit('start-download', uris, { nexus: {
-      ids: { gameId: url.gameId, modId: url.modId, fileId: url.fileId },
-      fileInfo: nexusFileInfo,
-    }});
+    api.events.emit('start-download', uris, {
+      game: url.gameId.toLowerCase(),
+      nexus: {
+        ids: { gameId, modId: url.modId, fileId: url.fileId },
+        fileInfo: nexusFileInfo,
+      }});
   })
   .catch((err) => {
     api.sendNotification({
@@ -70,7 +82,7 @@ function init(context: IExtensionContextExt): boolean {
   if (context.registerDownloadProtocol !== undefined) {
     context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {
       const nxm: NXMUrl = new NXMUrl(nxmurl);
-      return nexus.getDownloadURLs(nxm.modId, nxm.fileId, nxm.gameId)
+      return nexus.getDownloadURLs(nxm.modId, nxm.fileId, convertGameId(nxm.gameId))
         .map((url: IDownloadURL): string => {
           return url.URI;
         });

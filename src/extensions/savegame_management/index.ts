@@ -54,7 +54,12 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       store.dispatch(clearSavegames());
-      let readPath = savesPath(store.getState().settings.gameMode.current);
+
+      if (!gameSupported(gameMode)) {
+        return;
+      }
+
+      let readPath = savesPath(gameMode);
 
       refreshSavegames(readPath, (save: ISavegame): void => {
         if (store.getState().session.saves[save.id] === undefined) {

@@ -10,7 +10,7 @@ export interface ITooltipProps {
   placement?: 'top' | 'right' | 'bottom' | 'left';
 }
 
-export type IButtonProps = ITooltipProps & ReactBootstrap.ButtonProps;
+export type ButtonProps = ITooltipProps & ReactBootstrap.ButtonProps;
 
 /**
  * Button with a tooltip
@@ -19,7 +19,7 @@ export type IButtonProps = ITooltipProps & ReactBootstrap.ButtonProps;
  * @class Button
  * @extends {React.Component<IProps, {}>}
  */
-export class Button extends React.Component<IButtonProps, {}> {
+export class Button extends React.Component<ButtonProps, {}> {
   public render(): JSX.Element {
     let tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
     let relayProps = Object.assign({}, this.props);
@@ -34,6 +34,72 @@ export class Button extends React.Component<IButtonProps, {}> {
         delayHide={150}
       >
         <BootstrapButton {...relayProps}>{this.props.children}</BootstrapButton>
+      </OverlayTrigger>
+    );
+  }
+}
+
+export interface IIconButtonExtraProps {
+  icon: string;
+}
+
+export type IconButtonProps = ButtonProps & IIconButtonExtraProps;
+
+export class IconButton extends React.Component<IconButtonProps, {}> {
+  public render(): JSX.Element {
+    let tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
+    let relayProps = Object.assign({}, this.props);
+    delete relayProps.tooltip;
+    delete relayProps.placement;
+    delete relayProps.icon;
+
+    return (
+      <OverlayTrigger
+        overlay={tooltip}
+        placement={this.props.placement || 'bottom'}
+        delayShow={300}
+        delayHide={150}
+      >
+        <BootstrapButton {...relayProps}>
+          <SvgIcon name={this.props.icon}/>
+        </BootstrapButton>
+      </OverlayTrigger>
+    );
+  }
+}
+
+export interface IToggleButtonExtraProps {
+  onIcon: string;
+  offIcon: string;
+  offTooltip: string | React.Component<any, any>;
+  state: boolean;
+}
+
+export type ToggleButtonProps = ButtonProps & IToggleButtonExtraProps;
+
+export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
+  public render(): JSX.Element {
+    let tooltip = (
+      <Popover id={this.props.id}>
+        {this.props.state ? this.props.tooltip : this.props.offTooltip}
+      </Popover>
+    );
+    let relayProps = Object.assign({}, this.props);
+
+    ['tooltip', 'offTooltip', 'placement', 'onIcon', 'offIcon', 'state'].forEach((prop) => {
+      delete relayProps[prop];
+    });
+
+    return (
+      <OverlayTrigger
+        overlay={tooltip}
+        placement={this.props.placement || 'bottom'}
+        delayShow={300}
+        delayHide={150}
+      >
+        <BootstrapButton {...relayProps}>
+          <SvgIcon name={this.props.state ? this.props.onIcon : this.props.offIcon}/>
+        </BootstrapButton>
       </OverlayTrigger>
     );
   }
@@ -83,14 +149,14 @@ export interface IFontAwesomeProps {
   style?: React.CSSProperties;
 }
 
-export type IIconProps = ITooltipProps & IFontAwesomeProps;
+export type IconProps = ITooltipProps & IFontAwesomeProps;
 /**
  * Icon with a tooltip
  * 
  * @export
  * @class Icon
  */
-export class Icon extends React.Component<IIconProps, {}> {
+export class Icon extends React.Component<IconProps, {}> {
   public render(): JSX.Element {
     const tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
     let relayProps = Object.assign({}, this.props);
@@ -104,7 +170,7 @@ export class Icon extends React.Component<IIconProps, {}> {
         delayShow={300}
         delayHide={150}
       >
-        <SvgIcon {...relayProps} />
+        <a className='fake-link'><SvgIcon {...relayProps} /></a>
       </OverlayTrigger>
     );
   }

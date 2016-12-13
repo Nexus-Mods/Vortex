@@ -15,7 +15,8 @@
       "avoid-escape"
     ],
     "jsx-no-lambda": true,
-    "jsx-alignment": true
+    "jsx-alignment": true,
+    "jsx-no-multiline-js":  false
   },
   "rulesDirectory": []
 }

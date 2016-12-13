@@ -2,18 +2,42 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import {file} from 'tmp';
 
+/**
+ * count the elements in an array for which the predicate matches
+ * 
+ * @export
+ * @template T
+ * @param {T[]} container
+ * @param {(value: T) => boolean} predicate
+ * @returns {number}
+ */
 export function countIf<T>(container: T[], predicate: (value: T) => boolean): number {
   return container.reduce((count: number, value: T): number => {
     return count + (predicate(value) ? 1 : 0);
   }, 0);
 }
 
+/**
+ * calculate the sum of the elements of an array
+ * 
+ * @export
+ * @param {number[]} container
+ * @returns {number}
+ */
 export function sum(container: number[]): number {
   return container.reduce((total: number, value: number): number => {
     return total + value;
   }, 0);
 }
 
+/**
+ * promise-equivalent of setTimeout
+ * 
+ * @export
+ * @param {number} durationMS
+ * @param {*} [value]
+ * @returns
+ */
 export function delayed(durationMS: number, value?: any) {
   let timer: NodeJS.Timer;
   let reject: (err: Error) => void;

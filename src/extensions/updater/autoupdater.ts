@@ -35,12 +35,9 @@ function setupAutoUpdate(api: IExtensionApi) {
   let channel: string = api.store.getState().settings.update.channel;
   setChannel(channel, api.showErrorNotification);
 
-  api.store.subscribe(() => {
-    const newChannel = api.store.getState().settings.update.channel;
-    if (channel !== newChannel) {
-      channel = newChannel;
+  api.onStateChange(['settings', 'update', 'channel'],
+    (oldChannel: string, newChannel: string) => {
       setChannel(newChannel, api.showErrorNotification);
-    }
   });
 
   autoUpdater.on('update-available', () => {

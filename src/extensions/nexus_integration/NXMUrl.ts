@@ -11,7 +11,7 @@ class NXMUrl {
     if ((matches === null) || (matches.length !== 4)) {
       throw new Error('invalid nxm url "' + input + '"');
     }
-    this.mGameId = this.convertGameId(matches[1]);
+    this.mGameId = matches[1];
     this.mModId = parseInt(matches[2], 10);
     this.mFileId = parseInt(matches[3], 10);
   }
@@ -26,14 +26,6 @@ class NXMUrl {
 
   public get fileId(): number {
     return this.mFileId;
-  }
-
-  private convertGameId(input: string): string {
-    if (input === 'SkyrimSE') {
-      return 'skyrimspecialedition';
-    } else {
-      return input;
-    }
   }
 }
 
