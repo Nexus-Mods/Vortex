@@ -1,5 +1,7 @@
 import {ILoadOrder} from './ILoadOrder';
 
+import {Cleanliness, PluginTags, SimpleMessage} from 'loot';
+
 /**
  * generic information about a plugin
  * 
@@ -42,7 +44,13 @@ export interface IPluginParsed {
   description: string;
 }
 
-export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed & {
+export interface IPluginLoot {
+  messages: SimpleMessage[];
+  cleanliness: Cleanliness;
+  tags: PluginTags;
+}
+
+export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed & IPluginLoot & {
   /**
    * file name of the plugin
    * 

@@ -11,3 +11,8 @@ export const setPluginlistAttributeVisible: any = createAction('SET_PLUGINLIST_A
  */
 export const setPluginlistAttributeSort: any = createAction('SET_PLUGINLIST_ATTRIBUTE_SORT',
   (attributeId: string, direction: string) => { return { attributeId, direction }; } );
+
+/**
+ * enables or disables autosort
+ */
+export const setAutoSortEnabled: any = createAction('SET_AUTOSORT_ENABLED');

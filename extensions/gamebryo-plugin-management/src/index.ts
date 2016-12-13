@@ -6,12 +6,19 @@ import {IPlugins} from './types/IPlugins';
 import PluginList from './views/PluginList';
 
 import * as Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
+import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
+
 import { types, util } from 'nmm-api';
 import * as path from 'path';
 
-import {gameSupported, isNativePlugin, nativePlugins} from './util/gameSupport';
+import {
+  gameSupported,
+  isNativePlugin,
+  nativePlugins,
+  pluginPath,
+  supportedGames,
+} from './util/gameSupport';
 import PluginPersistor from './util/PluginPersistor';
 
 interface IModState {
@@ -86,16 +93,9 @@ function init(context: IExtensionContextExt) {
   });
 
   if (context.registerProfileFile) {
-    const app = appIn || remote.app;
-    let localPath = path.resolve(app.getPath('appData'), '..', 'Local');
-    for (let game of [
-      { internal: 'skyrim', path: 'Skyrim' },
-      { internal: 'skyrimse', path: 'Skyrim Special Edition' },
-    ]) {
-      context.registerProfileFile(
-        game.internal, path.join(localPath, game.path, 'plugins.txt'));
-      context.registerProfileFile(
-        game.internal, path.join(localPath, game.path, 'loadorder.txt'));
+    for (let game of supportedGames()) {
+      context.registerProfileFile(game, path.join(pluginPath(game), 'plugins.txt'));
+      context.registerProfileFile(game, path.join(pluginPath(game), 'loadorder.txt'));
     }
   }
 

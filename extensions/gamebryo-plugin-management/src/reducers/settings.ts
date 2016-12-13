@@ -1,7 +1,9 @@
 import { types, util } from 'nmm-api';
 
-import { setPluginlistAttributeSort,
-         setPluginlistAttributeVisible } from '../actions/settings';
+import {
+  setAutoSortEnabled,
+  setPluginlistAttributeSort,
+  setPluginlistAttributeVisible } from '../actions/settings';
 
 /**
  * reducer for changes to settings regarding mods
@@ -18,10 +20,14 @@ export const settingsReducer: types.IReducerSpec = {
       return util.setSafe(
           state, ['pluginlistState', attributeId, 'sortDirection'], direction);
     },
+    [setAutoSortEnabled]: (state, payload) => {
+      return util.setSafe(state, ['autoSort'], payload);
+    },
   },
   defaults: {
     pluginlistState: {
       loadOrder: { sortDirection: 'asc' },
     },
+    autoSort: true,
   },
 };

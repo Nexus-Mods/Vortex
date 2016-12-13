@@ -33,6 +33,7 @@
     "i18next": "^3.5.1",
     "iconv-lite": "^0.4.15",
     "json-loader": "^0.5.4",
+    "loot": "file:../../lib/cpp/loot",
     "nmm-api": "file:../../api",
     "react": "^15.3.2",
     "react-addons-update": "^15.3.2",

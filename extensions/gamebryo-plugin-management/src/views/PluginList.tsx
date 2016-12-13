@@ -1,20 +1,28 @@
 import {setPluginEnabled} from '../actions/loadOrder';
-import {setPluginlistAttributeSort, setPluginlistAttributeVisible} from '../actions/settings';
+import {
+  setAutoSortEnabled,
+  setPluginlistAttributeSort,
+  setPluginlistAttributeVisible} from '../actions/settings';
 import {ILoadOrder} from '../types/ILoadOrder';
 import {IPluginCombined, IPluginParsed, IPlugins} from '../types/IPlugins';
+import {lootAppPath, pluginPath} from '../util/gameSupport';
 
 import PluginFlags from './PluginFlags';
 
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
-import {ComponentEx, HeaderCell, IconBar, types, util} from 'nmm-api';
+import {LootDatabase, SimpleMessage} from 'loot';
+import {ComponentEx, HeaderCell, Icon, IconBar, log, tooltip, types, util} from 'nmm-api';
+import * as path from 'path';
 import * as React from 'react';
 import update = require('react-addons-update');
-import {Checkbox, ControlLabel, FormControl, FormGroup,
+import {Alert, Checkbox, ControlLabel, FormControl, FormGroup,
         ListGroup, ListGroupItem, Table} from 'react-bootstrap';
 import {translate} from 'react-i18next';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 import {connect} from 'react-redux';
+
+import * as nodeUtil from 'util';
 
 interface IAttributeStateMap {
   [ attributeId: string ]: types.IAttributeState;
@@ -25,9 +33,12 @@ interface IBaseProps {
 }
 
 interface IConnectedProps {
+  gameMode: string;
+  gamePath: string;
   plugins: IPlugins;
   loadOrder: { [name: string]: ILoadOrder };
   listState: { [attribute: string]: types.IAttributeState };
+  autoSort: boolean;
   language: string;
 }
 
@@ -35,11 +46,13 @@ interface IActionProps {
   onSetAttributeVisible: (attributeId: string, visible: boolean) => void;
   onSetAttributeSort: (attributeId: string, dir: types.SortDirection) => void;
   onSetPluginEnabled: (pluginName: string, enabled: boolean) => void;
+  onSetAutoSortEnabled: (enabled: boolean) => void;
 }
 
 interface IComponentState {
   selectedPlugin: string;
   pluginsParsed: { [name: string]: IPluginParsed };
+  lootActivity: string;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -106,33 +119,89 @@ function standardSort(lhs: any, rhs: any): number {
 
 class PluginList extends ComponentEx<IProps, IComponentState> {
   private staticButtons: types.IIconDefinition[];
+
+  private mLoot: LootDatabase;
+  private mLootQueue: Promise<void> = Promise.resolve();
+
   constructor(props) {
     super(props);
     this.state = {
       selectedPlugin: undefined,
       pluginsParsed: {},
+      lootActivity: undefined,
     };
-    this.staticButtons = [];
+    const {t, autoSort, listState, onSetAutoSortEnabled} = props;
+    this.staticButtons = [
+      {
+        component: tooltip.ToggleButton,
+        props: (): tooltip.ToggleButtonProps => ({
+          id: 'btn-sort-loot',
+          key: 'btn-sort-loot',
+          onIcon: 'random',
+          offIcon: 'sort-amount-asc',
+          tooltip: t('Disable Autosort (using LOOT)'),
+          offTooltip: t('Enable Autosort (using LOOT)'),
+          state: autoSort,
+          onClick: () => onSetAutoSortEnabled(!listState.autoSort),
+        }),
+      }
+    ];
+    let { gameMode, gamePath } = props;
+    this.mLoot = new LootDatabase(gameMode, gamePath, pluginPath(gameMode));
   }
 
   public componentWillMount() {
-    const { plugins } = this.props;
-    Promise.each(Object.keys(plugins), (pluginName: string) => {
-      let esp = new ESPFile(plugins[pluginName].filePath);
-      return new Promise((resolve, reject) => {
-        this.setState(util.setSafe(this.state, ['pluginsParsed', pluginName], {
-          isMaster: esp.isMaster,
-          description: esp.description,
-          author: esp.author,
-          masterList: esp.masterList,
-        }), () => resolve());
-      });
+    const { t, autoSort, gameMode, plugins } = this.props;
+
+    const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
+    this.enqueue(t('Update Masterlist'), () => {
+      const updateAsync = Promise.promisify(this.mLoot.updateMasterlist, { context: this.mLoot });
+      return updateAsync(masterlistPath,
+        `https://github.com/loot/${gameMode}.git`,
+        'v0.10')
+        .then(() => undefined);
     });
+    this.enqueue(t('Load Lists'), () => {
+      const loadListsAsync = Promise.promisify(this.mLoot.loadLists, { context: this.mLoot });
+      return loadListsAsync(masterlistPath, '');
+    });
+    this.enqueue(t('Eval Lists'), () => {
+      const evalListsAsync = Promise.promisify(this.mLoot.evalLists, { context: this.mLoot });
+      return evalListsAsync();
+    });
+    this.enqueue(t('Reading Plugin Details'), () => {
+      return Promise.each(Object.keys(plugins), (pluginName: string) => {
+        let esp = new ESPFile(plugins[pluginName].filePath);
+
+        let messages = this.mLoot.getPluginMessages(pluginName, 'en');
+        let tags = this.mLoot.getPluginTags(pluginName);
+        let cleanliness = this.mLoot.getPluginCleanliness(pluginName);
+
+        return new Promise((resolve, reject) => {
+          this.setState(util.setSafe(this.state, ['pluginsParsed', pluginName], {
+            isMaster: esp.isMaster,
+            description: esp.description,
+            author: esp.author,
+            masterList: esp.masterList,
+            messages,
+            tags,
+            cleanliness,
+          }), () => resolve());
+        });
+      }).then(() => Promise.resolve());
+    });
+    if (autoSort) {
+      this.enqueue(t('Sorting'), () => {
+        let sorted: string[] = this.mLoot.sortPlugins(Object.keys(plugins));
+        log('info', 'sorted plugins', nodeUtil.inspect(sorted));
+        return Promise.resolve();
+      });
+    }
   }
 
   public render(): JSX.Element {
     const { t, plugins, listState } = this.props;
-    const { selectedPlugin } = this.state;
+    const { lootActivity, selectedPlugin } = this.state;
 
     const visibleAttributes: types.ITableAttribute[] =
       this.visibleAttributes(pluginAttributes, listState);
@@ -143,12 +212,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Layout type='column'>
-        <Fixed>
-          <IconBar
-            group='gamebryo-plugin-icons'
-            staticElements={this.staticButtons}
-            style={{ width: '100%', display: 'flex' }}
-          />
+        <Fixed style={{minHeight: 32}}>
+          <Layout type='row'>
+            <Flex>
+              <IconBar
+                group='gamebryo-plugin-icons'
+                staticElements={this.staticButtons}
+              />
+            </Flex>
+            <Fixed>
+              <h4>{t(lootActivity)}</h4>
+            </Fixed>
+          </Layout>
         </Fixed>
         <Flex>
           <Layout type='row'>
@@ -172,6 +247,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         </Flex>
       </Layout>
     );
+  }
+
+  private enqueue(description: string, step: () => Promise<void>) {
+    this.mLootQueue = this.mLootQueue.then(() => {
+      this.setState(util.setSafe(this.state, ['lootActivity'], description));
+      return step()
+      .catch((err: Error) => {
+        this.context.api.showErrorNotification('LOOT operation failed', err);
+      })
+      .finally(() => {
+        this.setState(util.setSafe(this.state, ['lootActivity'], ''));
+      });
+    });
   }
 
   private visibleAttributes(attributes: types.ITableAttribute[],
@@ -371,6 +459,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           <ControlLabel>{t('Required Masters')}</ControlLabel>
           { this.renderMasterList(plugin) }
         </FormGroup>
+        <FormGroup>
+          <ControlLabel>{t('Messages (LOOT)')}</ControlLabel>
+          { this.renderLootMessages(plugin) }
+        </FormGroup>
       </form>
     );
   }
@@ -386,13 +478,43 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       </ListGroup>
     );
   }
+
+  private translateLootMessageType(input: string) {
+    return {
+      say: 'info',
+      warn: 'warning',
+      error: 'danger',
+      unknown: 'warning',
+    }[input];
+  }
+
+  private renderLootMessages = (plugin: IPluginCombined) => {
+    if (plugin.messages === undefined) {
+      return null;
+    }
+
+    return (
+      <ListGroup>
+        {
+          plugin.messages.map((msg: SimpleMessage, idx: number) => (
+            <ListGroupItem key={idx}>
+              <Alert bsStyle={this.translateLootMessageType(msg.type)}>{msg.text}</Alert>
+            </ListGroupItem>
+          ))
+        }
+      </ListGroup>
+    );
+  }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
+    gameMode: state.settings.gameMode.current,
+    gamePath: util.currentGameDiscovery(state).path,
     plugins: state.session.plugins.pluginList,
     loadOrder: state.loadOrder,
     listState: state.settings.plugins.pluginlistState || {},
+    autoSort: state.settings.plugins.autoSort,
     language: state.settings.interface.language,
   };
 }
@@ -407,6 +529,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetAttributeSort: (attributeId: string, dir: types.SortDirection) => {
       dispatch(setPluginlistAttributeSort(attributeId, dir));
     },
+    onSetAutoSortEnabled: (enabled: boolean) => {
+      dispatch(setAutoSortEnabled(enabled));
+    }
   };
 }
 

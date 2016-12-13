@@ -7,7 +7,7 @@ const app = appIn || remote.app;
 
 const gameSupport = {
   skyrim: {
-    appDataPath: 'skyrim',
+    appDataPath: 'Skyrim',
     pluginTXTFormat: 'original',
     nativePlugins: [
       'skyrim.esm',
@@ -32,8 +32,17 @@ export function pluginPath(gameMode: string): string {
   return path.resolve(app.getPath('appData'), '..', 'Local', gamePath);
 }
 
+export function lootAppPath(gameMode: string): string {
+  const gamePath = gameSupport[gameMode].appDataPath;
+  return path.resolve(app.getPath('appData'), '..', 'Local', 'LOOT', gamePath);
+}
+
 export function pluginFormat(gameMode: string): PluginFormat {
   return gameSupport[gameMode].pluginTXTFormat;
+}
+
+export function supportedGames(): string[] {
+  return Object.keys(gameSupport);
 }
 
 export function gameSupported(gameMode: string): boolean {

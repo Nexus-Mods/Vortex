@@ -38,6 +38,23 @@ const PluginFlags = (props: IProps): JSX.Element => {
     />);
   }
 
+  let cleanKey = `ico-clean-${plugin.name}`;
+  if (plugin.cleanliness === 'dirty') {
+    flags.push(<tooltip.Icon
+      id={cleanKey}
+      key={cleanKey}
+      name='bug'
+      tooltip={t('Requires cleaning (LOOT)')}
+    />);
+  } else if (plugin.cleanliness === 'do_not_clean') {
+    flags.push(<tooltip.Icon
+      id={cleanKey}
+      key={cleanKey}
+      name='shield'
+      tooltip={t('Must not be cleaned (LOOT)')}
+    />);
+  }
+
   return (
     <div>
     {flags}

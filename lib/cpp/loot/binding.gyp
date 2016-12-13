@@ -9,10 +9,10 @@
                 "src/lootwrapper.cpp"
             ],
             "include_dirs": [
-                "./loot/include"
+                "./loot_api/include"
             ],
             "libraries": [
-                "-l../loot/loot_api"
+                "-l../loot_api/loot_api"
             ]
         }
     ],
