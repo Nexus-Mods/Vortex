@@ -1,3 +1,4 @@
+import {updateLoadOrder} from './actions/loadOrder';
 import {setPluginList} from './actions/plugins';
 import {loadOrderReducer} from './reducers/loadOrder';
 import {pluginsReducer} from './reducers/plugins';
@@ -5,12 +6,7 @@ import {settingsReducer} from './reducers/settings';
 import {IPlugins} from './types/IPlugins';
 import PluginList from './views/PluginList';
 
-import * as Promise from 'bluebird';
-import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
-
-import { types, util } from 'nmm-api';
-import * as path from 'path';
+import LootInterface from './autosort';
 
 import {
   gameSupported,
@@ -20,6 +16,12 @@ import {
   supportedGames,
 } from './util/gameSupport';
 import PluginPersistor from './util/PluginPersistor';
+
+import * as Promise from 'bluebird';
+import { remote } from 'electron';
+import * as fs from 'fs-extra-promise';
+import { types, util } from 'nmm-api';
+import * as path from 'path';
 
 interface IModState {
   enabled: boolean;
@@ -32,7 +34,7 @@ function isPlugin(fileName: string): boolean {
 }
 
 function updatePluginList(store: ReactRedux.Store<any>, oldModList: IModStates,
-                          newModList: IModStates) {
+                          newModList: IModStates): Promise<void> {
   if (newModList === undefined) {
     return;
   }
@@ -43,7 +45,7 @@ function updatePluginList(store: ReactRedux.Store<any>, oldModList: IModStates,
   let pluginSources: { [pluginName: string]: string } = {};
   let modPath = util.currentGameDiscovery(state).modPath;
 
-  Promise.map(Object.keys(state.mods.mods), (modId: string) => {
+  return Promise.map(Object.keys(state.mods.mods), (modId: string) => {
     let mod = state.mods.mods[modId];
     return fs.readdirAsync(mod.installationPath)
     .then((fileNames: string[]) => {
@@ -69,6 +71,8 @@ function updatePluginList(store: ReactRedux.Store<any>, oldModList: IModStates,
       };
     });
     store.dispatch(setPluginList(pluginStates));
+    store.dispatch(updateLoadOrder(pluginNames));
+    return Promise.resolve();
   })
   .catch((err: Error) => {
     util.showError(store.dispatch, 'Failed to update plugin list', err);
@@ -81,6 +85,7 @@ interface IExtensionContextExt extends types.IExtensionContext {
 }
 
 let persistor: PluginPersistor;
+let loot: LootInterface;
 
 function init(context: IExtensionContextExt) {
 
@@ -115,6 +120,8 @@ function init(context: IExtensionContextExt) {
   context.once(() => {
     const store = context.api.store;
 
+    loot = new LootInterface(context);
+
     let currentProfile: string =
       util.getSafe(store.getState(), ['gameSettings', 'profiles', 'currentProfile'], undefined);
 
@@ -135,10 +142,15 @@ function init(context: IExtensionContextExt) {
         persistor.loadFiles(newGameMode);
         let modPath = util.currentGameDiscovery(store.getState()).modPath;
         watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
-          updatePluginList(store, {}, util.getSafe(store.getState(),
-            ['gameSettings', 'profiles', 'profiles', currentProfile],
-            {} as any)
-            .modState);
+          updatePluginList(
+              store, {},
+              util.getSafe(
+                      store.getState(),
+                      ['gameSettings', 'profiles', 'profiles', currentProfile],
+                      {} as any)
+                  .modState)
+              .then(() => {
+                context.api.events.emit('autosort-plugins'); });
         });
       }
     });
@@ -146,7 +158,10 @@ function init(context: IExtensionContextExt) {
     context.api.onStateChange(
         ['gameSettings', 'profiles', 'profiles', currentProfile],
         (oldModList, newModList) => {
-          updatePluginList(store, oldModList.modState, newModList.modState);
+          updatePluginList(store, oldModList.modState, newModList.modState)
+          .then(() => {
+            context.api.events.emit('autosort-plugins');
+          });
         });
 
     context.api.onStateChange(
@@ -158,7 +173,10 @@ function init(context: IExtensionContextExt) {
                            {} as any).modState,
               util.getSafe(store.getState(),
                            ['gameSettings', 'profiles', 'profiles', newProfile],
-                           {} as any).modState);
+                           {} as any).modState)
+          .then(() => {
+            context.api.events.emit('autosort-plugins');
+          });
           currentProfile = newProfile;
         });
   });

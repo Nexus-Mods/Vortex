@@ -1,7 +1,7 @@
-import {types, util} from 'nmm-api';
-
 import * as actions from '../actions/loadOrder';
 import {ILoadOrder} from '../types/ILoadOrder';
+
+import {types, util} from 'nmm-api';
 
 type LoadOrderMap = { [name: string]: ILoadOrder };
 
@@ -19,9 +19,35 @@ export const loadOrderReducer: types.IReducerSpec = {
           }
         },
     [actions.setPluginEnabled]:
-        (state, payload) => {
-          return util.setSafe(state, [payload.pluginName, 'enabled'], payload.enabled);
+        (state, payload) =>
+          util.setSafe(state, [payload.pluginName, 'enabled'], payload.enabled)
+        ,
+        [actions.updateLoadOrder]:
+        (state, payload: string[]) => {
+          let copy = Object.assign({}, state);
+          Object.keys(state).forEach((name: string) => {
+            if (payload.indexOf(name) === -1) {
+              delete copy[name];
+            }
+          });
+          let count = Object.keys(state).length;
+          payload.forEach((name: string) => {
+            if (copy[name] === undefined) {
+              copy[name] = {
+                enabled: false,
+                loadOrder: count++,
+              };
+            }
+          });
+          return copy;
         },
+    [actions.setPluginOrder]: (state, payload) => {
+      let copy = Object.assign({}, state);
+      Object.keys(copy).forEach((pluginName: string) => {
+        copy[pluginName].loadOrder = payload.indexOf(pluginName);
+      });
+      return copy;
+    },
   },
   defaults: {
   },

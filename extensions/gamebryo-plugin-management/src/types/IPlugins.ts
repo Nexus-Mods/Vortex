@@ -50,6 +50,8 @@ export interface IPluginLoot {
   tags: PluginTags;
 }
 
+export type IPluginsLoot = { [fileName: string]: IPluginLoot };
+
 export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed & IPluginLoot & {
   /**
    * file name of the plugin

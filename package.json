@@ -84,6 +84,7 @@
     "@types/ref": "^0.0.28",
     "@types/ref-struct": "^0.0.28",
     "@types/ref-union": "^0.0.28",
+    "@types/shortid": "^0.0.28",
     "@types/tmp": "^0.0.31",
     "babel-cli": "^6.14.0",
     "babel-core": "^6.14.0",

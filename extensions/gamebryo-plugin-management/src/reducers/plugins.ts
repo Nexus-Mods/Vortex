@@ -7,12 +7,15 @@ import * as actions from '../actions/plugins';
  */
 export const pluginsReducer: types.IReducerSpec = {
   reducers: {
-    [actions.setPluginList]:
-        (state, payload) => {
-          return util.setSafe(state, ['pluginList'], payload.plugins);
-        },
+    [actions.setPluginList]: (state, payload) =>
+      util.setSafe(state, ['pluginList'], payload.plugins)
+    ,
+    [actions.setLootActivity]: (state, payload) =>
+      util.setSafe(state, ['lootActivity'], payload)
+    ,
   },
   defaults: {
     pluginList: [],
+    lootActivity: undefined,
   },
 };

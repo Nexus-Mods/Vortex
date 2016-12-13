@@ -19,6 +19,7 @@
     "node-uuid": "registry:dt/node-uuid#0.0.0+20160316155526",
     "node-uuid/node-uuid-base": "registry:dt/node-uuid/node-uuid-base#0.0.0+20160316155526",
     "react-addons-css-transition-group": "registry:dt/react-addons-css-transition-group#0.14.0+20160316155526",
+    "react-addons-shallow-compare": "registry:dt/react-addons-shallow-compare#0.14.0+20160709044614",
     "react-addons-test-utils": "registry:dt/react-addons-test-utils#0.14.0+20160427035638",
     "react-addons-transition-group": "registry:dt/react-addons-transition-group#0.14.0+20160701001352",
     "react-addons-update": "registry:dt/react-addons-update#0.14.0+20160316155526",
@@ -31,7 +32,6 @@
     "ref-union": "registry:dt/ref-union#0.0.0+20160316155526",
     "request": "registry:dt/request#0.0.0+20160726020908",
     "reselect": "registry:dt/reselect#2.0.2+20160319031821",
-    "shortid": "registry:dt/shortid#0.0.0+20160316155526",
     "tmp": "registry:dt/tmp#0.0.0+20160514170650",
     "winreg": "registry:dt/winreg#1.2.0+20160505170241",
     "winston": "registry:dt/winston#0.0.0+20160417152829"
