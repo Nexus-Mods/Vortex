@@ -1,6 +1,6 @@
-import { IGameCategories } from './types/IGameCategories';
+import { IGameInfo } from './types/IGameInfo';
 
-export const CATEGORIES: IGameCategories = {
+export const CATEGORIES: IGameInfo = {
   id: 110,
   name: 'Skyrim',
   forum_url: 'https://forums.nexusmods.com/index.php?/forum/408-skyrim/',

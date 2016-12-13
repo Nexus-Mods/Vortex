@@ -1,53 +1,76 @@
 import CategoryList from './views/CategoryList';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
-import { setStateCategory } from './actions/session';
-
-import { CATEGORIES } from './categories_sample';
+import { loadCategories } from './actions/category';
 
 import { ICategory } from './types/ICategory';
+import { IGameListEntry } from './types/IGameListEntry';
 
-import { sessionReducer } from './reducers/session';
+import { categoryReducer } from './reducers/category';
 
-import { IStateCategory } from '../types/IStateCategory';
+import { ICategoryTree, IChildren } from './types/ICategoryTree';
 
-interface IChildren {
-  title: string;
-  expanded: boolean;
+import { getSafe } from '../../util/storeHelper';
+
+import Nexus from 'nexus-api';
+
+import {log} from '../../util/log';
+
+interface IGameInfo extends IGameListEntry {
+  categories: ICategory[];
 }
+
+let nexus: Nexus;
 
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('book', 'Categories', CategoryList, {
     hotkey: 'C',
   });
 
-  context.registerReducer(['session', 'categories'], sessionReducer);
+  context.registerReducer(['persistent'], categoryReducer);
 
   context.once(() => {
-    // const store: Redux.Store<any> = context.api.store;
+    const store: Redux.Store<any> = context.api.store;
 
-    let categories = [];
+    try {
+      let state = context.api.store.getState();
+      nexus = new Nexus(
+        getSafe(state, ['settings', 'gameMode', 'current'], ''),
+        getSafe(state, ['account', 'nexus', 'APIKey'], '')
+      );
 
-    let roots = CATEGORIES.categories.filter((value) => value.parent_category === false);
-    roots.forEach(rootElement => {
-      let children: ICategory[] = CATEGORIES.categories.filter((value) =>
-        value.parent_category === rootElement.category_id);
-      let childrenList = [];
+      const activeGameId = store.getState().settings.gameMode.current;
 
-      children.forEach(element => {
-        let child: IChildren = { title: element.name, expanded: false };
-        childrenList.push(child);
-      });
+      nexus.getGameInfo(activeGameId)
+        .then((gameInfo: IGameInfo) => {
+          let categories = [];
 
-      let root: IStateCategory = {
-        title: rootElement.name,
-        expanded: false,
-        children: childrenList,
-      };
-      categories.push(root);
-    });
+          let roots = gameInfo.categories.filter((value) => value.parent_category === false);
+          roots.forEach(rootElement => {
+            let children: ICategory[] = gameInfo.categories.filter((value) =>
+              value.parent_category === rootElement.category_id);
+            let childrenList = [];
 
-    context.api.store.dispatch(setStateCategory(categories));
+            children.forEach(element => {
+              let child: IChildren = { rootId: element.category_id,
+                 title: element.name, expanded: false  };
+              childrenList.push(child);
+            });
+
+            let root: ICategoryTree = {
+              rootId: rootElement.category_id,
+              title: rootElement.name,
+              expanded: false,
+              children: childrenList,
+            };
+            categories.push(root);
+          });
+
+          context.api.store.dispatch(loadCategories(activeGameId, categories));
+        });
+    } catch (err) {
+      log('error', 'Failed to load categories', err);
+    }
   });
 
   return true;
