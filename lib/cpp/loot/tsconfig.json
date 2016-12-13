@@ -1,0 +1,20 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "noImplicitAny": false,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "rootDir": "./src",
+        "outDir": "./out",
+        "sourceMap": true,
+        "jsx":"react"
+    },
+    "files": [
+        "typings/index.d.ts",
+        "typings.custom/index.d.ts",
+        "src/index.ts"
+    ]
+}
