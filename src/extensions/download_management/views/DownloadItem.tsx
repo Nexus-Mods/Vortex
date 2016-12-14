@@ -5,6 +5,8 @@ import { IIconDefinition } from '../../../types/IIconDefinition';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import IconBar from '../../../views/IconBar';
 
+import { IGameStored } from '../../gamemode_management/types/IStateEx';
+
 import { DownloadState, IDownload } from '../types/IDownload';
 
 import * as Promise from 'bluebird';
@@ -17,13 +19,18 @@ import { log } from '../../../util/log';
 export interface IBaseProps {
   downloadId: string;
   download: IDownload;
+  showGame: boolean;
+}
+
+export interface IConnectedProps {
+  knownGames: IGameStored[];
 }
 
 interface IActionProps {
   onShowDialog: (type, title, content, actions) => Promise<IDialogResult>;
 }
 
-type IProps = IBaseProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 /**
  * a single row in the download list
@@ -85,10 +92,11 @@ class DownloadItem extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { downloadId, download } = this.props;
+    const { downloadId, download, showGame } = this.props;
     return (
       <tr>
         <td>{ this.renderFileName(download.localPath) }</td>
+        { showGame ? <td>{ this.renderGame(download.game) }</td> : null }
         <td style={{ textAlign: 'center' }}>
           { this.renderProgress(download.state, download.received, download.size) }
         </td>
@@ -105,7 +113,7 @@ class DownloadItem extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderFileName(filePath: string) {
+  private renderFileName(filePath: string): JSX.Element {
     const { t } = this.props;
     let name;
     if (filePath !== undefined) {
@@ -116,6 +124,12 @@ class DownloadItem extends ComponentEx<IProps, {}> {
     return (
       <span>{ name }</span>
     );
+  }
+
+  private renderGame(gameId: string): JSX.Element {
+    const { t, knownGames } = this.props;
+    let game = knownGames.find((ele: IGameStored) => gameId === ele.id);
+    return <span>{ game ? t(game.name) : gameId }</span>;
   }
 
   private renderProgress(state: DownloadState, received: number, size: number): JSX.Element {
@@ -204,8 +218,10 @@ class DownloadItem extends ComponentEx<IProps, {}> {
   }
 }
 
-function mapStateToProps(state) {
-  return {};
+function mapStateToProps(state): IConnectedProps {
+  return {
+    knownGames: state.session.gameMode.known,
+  };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {

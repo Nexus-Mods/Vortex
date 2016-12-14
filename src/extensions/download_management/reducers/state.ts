@@ -7,16 +7,10 @@ import * as action from '../actions/state';
  */
 export const stateReducer: IReducerSpec = {
   reducers: {
-    ['persist/REHYDRATE']: (state, payload) => {
-      if (payload.downloads !== undefined) {
-        return setSafe(state, [], payload.downloads);
-      } else {
-        return state;
-      }
-    },
     [action.initDownload]: (state, payload) => {
       return setSafe(state, [ 'files', payload.id ], {
         state: 'init',
+        game: payload.game,
         urls: payload.urls,
         modInfo: payload.modInfo,
         chunks: [],

@@ -15,10 +15,11 @@ import update = require('react-addons-update');
 
 interface IConnectedProps {
   downloadPath: string;
+  gameMode: string;
 }
 
 interface IActionProps {
-  onStartMove: (id: string, filePath: string) => void;
+  onStartMove: (id: string, filePath: string, game: string) => void;
   onFinishMove: (id: string) => void;
   onMoveFailed: (id: string) => void;
 }
@@ -116,9 +117,9 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
   }
 
   private move(source: string, destination: string) {
-    const { onStartMove, onFinishMove, onMoveFailed } = this.props;
+    const { gameMode, onStartMove, onFinishMove, onMoveFailed } = this.props;
     const id = v1();
-    onStartMove(id, destination);
+    onStartMove(id, destination, gameMode);
     fs.renameAsync(source, destination)
       .catch((err) => {
         if (err.code === 'EXDEV') {
@@ -142,13 +143,14 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
 function mapStateToProps(state): IConnectedProps {
   return {
     downloadPath: downloadPath(state),
+    gameMode: state.settings.gameMode.current,
   };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
-    onStartMove: (id: string, filePath: string) => {
-      dispatch(initDownload(id, [], {}));
+    onStartMove: (id: string, filePath: string, game: string) => {
+      dispatch(initDownload(id, [], {}, game));
       dispatch(setDownloadFilePath(id, filePath));
     },
     onFinishMove: (id: string) => dispatch(finishDownload(id, 'finished')),

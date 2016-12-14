@@ -36,6 +36,7 @@ export interface IDownload {
    * @memberOf IDownload
    */
   urls: string[];
+
   /**
    * path of the file being downloaded to
    * 
@@ -43,6 +44,15 @@ export interface IDownload {
    * @memberOf IDownload
    */
   localPath: string;
+
+  /**
+   * id of the game to which this download applies.
+   * 
+   * @type {string}
+   * @memberOf IDownload
+   */
+  game: string;
+
   /**
    * info about the mod being downloaded. This will
    * be associated with the mod entry after its installation
@@ -51,6 +61,7 @@ export interface IDownload {
    * @memberOf IDownload
    */
   modInfo: { [key: string]: any };
+
   /**
    * size in bytes of this chunk
    * 
@@ -58,6 +69,7 @@ export interface IDownload {
    * @memberOf IDownloadChunk
    */
   size: number;
+
   /**
    * number of bytes received so far
    * 
