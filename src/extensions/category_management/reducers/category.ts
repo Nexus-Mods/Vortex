@@ -1,8 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 
-import { addCategory, loadCategories, removeCategory } from '../actions/category';
-
-import { deleteOrNop, pushSafe, removeValue } from '../../../util/storeHelper';
+import { loadCategories, updateCategories } from '../actions/category';
 
 import update = require('react-addons-update');
 
@@ -20,17 +18,13 @@ export const categoryReducer: IReducerSpec = {
     },
     [loadCategories]: (state, payload) => {
       if (state.categories.categories === undefined) {
-         return update(state, { categories: { $set: payload } });
+        return update(state, { categories: { $set: payload } });
       } else {
         return state;
       }
     },
-    [addCategory]: (state, payload) => {
-      return pushSafe(state, ['children'], payload);
-    },
-    [removeCategory]: (state, payload) => {
-      return deleteOrNop(state, ['categories', 'categories',
-       payload.rootId, 'children', payload]);
+    [updateCategories]: (state, payload) => {
+      return update(state, { categories: { $set: payload } });
     },
   }, defaults: {
     categories: {},

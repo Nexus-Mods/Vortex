@@ -17,10 +17,17 @@ export interface ICheckbox {
   value: boolean;
 }
 
+export interface IFormControl {
+  id: string;
+  type: string;
+  value: string;
+}
+
 export interface IDialogContent {
   htmlFile?: string;
   message?: string;
   checkboxes?: ICheckbox[];
+  formcontrol?: IFormControl;
 }
 
 export interface IDialogResult {

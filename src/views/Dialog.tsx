@@ -1,12 +1,12 @@
 import { closeDialog } from '../actions/notifications';
-import { DialogType, ICheckbox, IDialog, IDialogContent } from '../types/IDialog';
+import { DialogType, ICheckbox, IDialog, IDialogContent, IFormControl } from '../types/IDialog';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import Icon from '../views/Icon';
 
 import * as React from 'react';
 import update = require('react-addons-update');
-import { Button, Checkbox, Modal } from 'react-bootstrap';
+import { Button, Checkbox, FormControl, Modal } from 'react-bootstrap';
 
 interface IActionProps {
   t: (input: string) => string;
@@ -70,15 +70,15 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     const { dialogState } = this.state;
     const dialog = dialogs.length > 0 ? dialogs[0] : undefined;
     return dialog !== undefined ? (
-      <Modal show={dialog !== undefined} onHide={ this.dismiss }>
+      <Modal show={dialog !== undefined} onHide={this.dismiss}>
         <Modal.Header>
-          <Modal.Title>{ this.iconForType(dialog.type) }{' '}{ t(dialog.title) }</Modal.Title>
+          <Modal.Title>{this.iconForType(dialog.type)}{' '}{t(dialog.title)}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          { this.renderContent(dialogState) }
+          {this.renderContent(dialogState)}
         </Modal.Body>
         <Modal.Footer>
-          { dialog.actions.map(this.renderAction) }
+          {dialog.actions.map(this.renderAction)}
         </Modal.Footer>
       </Modal>
     ) : null;
@@ -87,13 +87,24 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   private renderContent(content: IDialogContent): JSX.Element {
     const { t } = this.props;
     if (content.message !== undefined) {
-      return <div>{ t(content.message) }</div>;
+      return <div>{t(content.message)}</div>;
     } else if (content.htmlFile !== undefined) {
       return <webview src={`file://${content.htmlFile}`} />;
     } else if (content.checkboxes !== undefined) {
       return (
         <div>
           {content.checkboxes.map(this.renderCheckbox)}
+        </div>
+      );
+    } else if (content.formcontrol !== undefined) {
+      return (
+        <div>
+          <FormControl
+            id={content.formcontrol.id}
+            type={content.formcontrol.type}
+            value={content.formcontrol.value}
+            onChange={this.toggleFormControl}
+          />
         </div>
       );
     } else {
@@ -110,6 +121,14 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private toggleFormControl = (evt) => {
+    this.setState(update(this.state, {
+      dialogState: {
+        formcontrol: { value: {$set: evt.currentTarget.value } },
+      },
+    }));
+  }
+
   private toggleCheckbox = (evt) => {
     let { dialogState } = this.state;
     let idx = dialogState.checkboxes.findIndex((box: ICheckbox) => {
@@ -119,9 +138,11 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     let newCheckboxes = dialogState.checkboxes.slice(0);
     newCheckboxes[idx].value = !newCheckboxes[idx].value;
 
-    this.setState(update(this.state, { dialogState: {
-      checkboxes: { $set: newCheckboxes },
-    } }));
+    this.setState(update(this.state, {
+      dialogState: {
+        checkboxes: { $set: newCheckboxes },
+      },
+    }));
   }
 
   private renderAction = (action: string): JSX.Element => {
@@ -156,6 +177,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       dialogState.checkboxes.forEach((box: ICheckbox) => {
         data[box.id] = box.value;
       });
+    } else if (dialogState.formcontrol !== undefined) {
+      data = dialogState.formcontrol;
     }
     onDismiss(dialogs[0].id, action, data);
   }
