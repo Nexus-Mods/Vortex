@@ -31,7 +31,6 @@ type EmptyCB = () => void;
  */
 class GameModeManager {
 
-  private mSubscription: Redux.Unsubscribe;
   private mBasePath: string;
   private mPersistor: Persistor;
   private mError: boolean;
@@ -42,7 +41,6 @@ class GameModeManager {
   private mStateWhitelist: string[];
 
   constructor(basePath: string, onGameModeActivated: (mode: string) => void, whitelist: string[]) {
-    this.mSubscription = null;
     this.mBasePath = basePath;
     this.mPersistor = null;
     this.mError = false;
@@ -84,28 +82,41 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public setGameMode(oldMode: string, newMode: string) {
-    log('info', 'changed game mode', { oldMode, newMode, process: process.type });
-    if (this.mPersistor !== null) {
-      // stop old persistor
-      this.mPersistor.stop();
-    }
-    this.activateGameMode(newMode, this.mStore)
-      .then((persistor) => {
-        this.mPersistor = persistor;
-        this.mOnGameModeActivated(newMode);
-        this.mError = false;
-      }).catch((err) => {
-        if (!this.mError) {
-          // first error, try reverting to the previous game mode
-          this.mError = true;
-          showError(this.mStore.dispatch, 'Failed to change game mode', err);
-          this.mStore.dispatch(setGameMode(oldMode));
-        } else {
-          terminate({ message: 'Failed to change game mode', details: err });
-        }
-      });
+    log('info', 'changed game mode', {oldMode, newMode, process: process.type});
+    // stop old persistor before proceeding
+    new Promise((resolve, reject) => {
+      if (this.mPersistor !== null) {
+        this.mPersistor.stop(resolve);
+      } else {
+        resolve();
+      }
+    })
+        .then(() => { return this.activateGameMode(newMode, this.mStore); })
+        .then((persistor) => {
+          this.mPersistor = persistor;
+          this.mOnGameModeActivated(newMode);
+          this.mError = false;
+        })
+        .catch((err) => {
+          if (!this.mError) {
+            // first error, try reverting to the previous game mode
+            this.mError = true;
+            showError(this.mStore.dispatch, 'Failed to change game mode', err);
+            this.mStore.dispatch(setGameMode(oldMode));
+          } else {
+            terminate({message: 'Failed to change game mode', details: err});
+          }
+        });
   }
 
+  /**
+   * prepare change to a different game mode
+   * 
+   * @param {string} gameMode
+   * @returns {Promise<void>}
+   * 
+   * @memberOf GameModeManager
+   */
   public setupGameMode(gameMode: string): Promise<void> {
     let game: IGame = this.mKnownGames.find((ele: IGame) => ele.id === gameMode);
     if (game === undefined) {
@@ -149,6 +160,11 @@ class GameModeManager {
     });
   }
 
+  /**
+   * stop search discovery
+   * 
+   * @memberOf GameModeManager
+   */
   public stopSearchDiscovery(): void {
     log('info', 'stop search', { prom: this.mActiveSearch });
     this.mActiveSearch.cancel();

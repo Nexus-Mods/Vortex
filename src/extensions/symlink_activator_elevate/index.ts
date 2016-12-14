@@ -23,7 +23,7 @@ class ModActivator implements IModActivator {
   private mDone: () => void;
 
   constructor() {
-    this.id = 'link_activator_elevated';
+    this.id = 'symlink_activator_elevated';
     this.name = 'Symlink activator (Elevated)';
     this.description = 'Installs the mods by setting symlinks in the destination directory. '
                      + 'This implementation will create the symlinks using a separate process '

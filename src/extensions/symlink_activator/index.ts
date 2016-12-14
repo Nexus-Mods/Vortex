@@ -17,7 +17,7 @@ class ModActivator implements IModActivator {
   public description: string;
 
   constructor() {
-    this.id = 'link_activator';
+    this.id = 'symlink_activator';
     this.name = 'Symlink activator';
     this.description = 'Installs the mods by setting symlinks in the destination directory. '
                      + 'This implementation requires the account running NMM2 to have write access '

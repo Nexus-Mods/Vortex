@@ -71,14 +71,14 @@ function init(context: IExtensionContextExt): boolean {
   context.registerIcon('application-icons', ActivationButton, () => {
     return {
       key: 'activate-button',
-      activators: supportedActivators(context.api.store.getState()),
+      activators,
     };
   });
 
   context.registerIcon('application-icons', DeactivationButton, () => {
     return {
       key: 'deactivate-button',
-      activators: supportedActivators(context.api.store.getState()),
+      activators,
     };
   });
 
@@ -152,7 +152,7 @@ function init(context: IExtensionContextExt): boolean {
         'start-install-download',
         (downloadId: string, callback?: (error, id: string) => void) => {
           let download: IDownload =
-              store.getState().downloads.files[downloadId];
+              store.getState().persistent.downloads.files[downloadId];
           installManager.install(downloadId, download.localPath, context,
                                  download.modInfo, true, callback);
         });

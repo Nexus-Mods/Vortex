@@ -1,4 +1,5 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import {log} from '../../../util/log';
 import { showError } from '../../../util/message';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
@@ -11,6 +12,7 @@ import { IModActivator } from '../types/IModActivator';
 import { activateMods } from '../modActivation';
 
 import * as React from 'react';
+import {generate as shortid} from 'shortid';
 
 interface IConnectedProps {
   gameDiscovery: IDiscoveryResult;
@@ -42,16 +44,32 @@ class ActivationButton extends ComponentEx<IProps, {}> {
   }
 
   private activate = () => {
-    let { activators, currentActivator, gameDiscovery, mods, modState, onShowError } = this.props;
+    let { t, activators, currentActivator, gameDiscovery,
+          mods, modState, onShowError } = this.props;
+
+    log('info', 'current activator', currentActivator);
 
     let activator: IModActivator = currentActivator !== undefined
       ? activators.find((act: IModActivator) => act.id === currentActivator)
       : activators[0];
 
+    log('info', 'used activator', activator.id);
+
     let modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
 
-    activateMods(gameDiscovery.modPath, modList, modState, activator).catch((err) => {
+    let notificationId = shortid();
+    this.context.api.sendNotification({
+      id: notificationId,
+      type: 'activity',
+      message: t('Activating mods'),
+      title: t('Activating'),
+    })
+    activateMods(gameDiscovery.modPath, modList, modState, activator)
+    .catch((err) => {
       onShowError('failed to activate mods', err.message);
+    })
+    .finally(() => {
+      this.context.api.dismissNotification(notificationId);
     });
   };
 }

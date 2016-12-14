@@ -27,7 +27,6 @@ function init(context: IExtensionContext): boolean {
 
   context.registerExtensionFunction('registerSettingsHive',
                                     (type: PersistingType, hive: string) => {
-                                      log('info', 'rsh', { hive, type, proc: process.type });
                                       if (type === 'game') {
                                         stateWhitelist.push(hive);
                                       }
