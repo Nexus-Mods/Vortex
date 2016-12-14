@@ -33,6 +33,13 @@ private:
   uint32_t m_Height;
 };
 
+class IDecoder {
+public:
+  virtual bool seek(size_t offset, std::ios_base::seekdir dir = std::ios::beg) = 0;
+  virtual size_t tell() = 0;
+  virtual bool read(char *buffer, size_t size) = 0;
+};
+
 class GamebryoSaveGame
 {
 public:
@@ -80,15 +87,15 @@ private:
 
     template <typename T> void skip(int count = 1)
     {
-      if (!m_File.seekg(count * sizeof(T), m_File.cur)) {
-        throw std::runtime_error(fmt::format("unexpected end of file at {} (skip of {} bytes)", m_File.tellg(), count * sizeof(T)).c_str());
+      if (!m_Decoder->seek(count * sizeof(T), std::ios::cur)) {
+        throw std::runtime_error(fmt::format("unexpected end of file at {} (skip of {} bytes)", m_Decoder->tell(), count * sizeof(T)).c_str());
       }
     }
 
     template <typename T> void read(T &value)
     {
-      if (!m_File.read(reinterpret_cast<char*>(&value), sizeof(T))) {
-        throw std::runtime_error(fmt::format("unexpected end of file at {} (read of {} bytes)", m_File.tellg(), sizeof(T)).c_str());
+      if (!m_Decoder->read(reinterpret_cast<char*>(&value), sizeof(T))) {
+        throw std::runtime_error(fmt::format("unexpected end of file at {} (read of {} bytes)", m_Decoder->tell(), sizeof(T)).c_str());
       }
       if (m_HasFieldMarkers) {
         skip<char>();
@@ -97,11 +104,11 @@ private:
 
     uint64_t tell()
     {
-      return m_File.tellg();
+      return m_Decoder->tell();
     }
 
     void seek(uint64_t pos) {
-      m_File.seekg(pos);
+      m_Decoder->seek(pos);
     }
 
     void read(void *buff, std::size_t length);
@@ -117,12 +124,12 @@ private:
     /* Read the plugin list */
     void readPlugins();
 
-    /* Set the creation time from a system date */
-    //void setCreationTime(::_SYSTEMTIME const &);
+    /* treat the following bytes as compressed */
+    void setCompression(unsigned short format, unsigned long compressedSize, unsigned long uncompressedSize);
 
   private:
     GamebryoSaveGame *m_Game;
-    std::ifstream m_File;
+    std::unique_ptr<IDecoder> m_Decoder;
     bool m_HasFieldMarkers;
     bool m_BZString;
   };
@@ -130,7 +137,6 @@ private:
   void readOblivion(FileWrapper &file);
   void readSkyrim(FileWrapper &file);
   void readFO3(FileWrapper &file);
-  void readFONV(FileWrapper &file);
   void readFO4(FileWrapper &file);
 
 private:

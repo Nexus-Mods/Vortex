@@ -1,11 +1,17 @@
 import { ISavegame } from '../types/ISavegame';
 
-import { log } from '../../../util/log';
+import { log } from 'nmm-api';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { savegameBinding } from 'gamebryo-savegame';
+import savegameLibInit, { GamebryoSaveGame } from 'gamebryo-savegame';
 import * as path from 'path';
+
+import * as nodeUtil from 'util';
+
+const savegameLib = savegameLibInit('savegameLib');
+
+log('info', 'sglib', nodeUtil.inspect(GamebryoSaveGame));
 
 class Dimensions {
   public width: number;
@@ -52,8 +58,8 @@ function loadSaveGame(file: string, onAddSavegame: Function): Promise<void> {
       return;
     }
 
-    let binding = savegameBinding();
-    let sg = new binding.GamebryoSaveGame(file);
+    let sg = new savegameLib.GamebryoSaveGame(file);
+    log('info', 'sg', {sg: nodeUtil.inspect(sg), type: typeof(sg) });
 
     const save: ISavegame = {
       id: file,

@@ -298,7 +298,7 @@ export interface IExtensionContext {
    * Another word on the path: You can introduce additional reducers for any "leaf" of
    *   the settings tree and you can introduce new "subnodes" in the tree at any depth.
    *   For technical reasons it is however not possible to introduce subnodes to a leaf
-   *   or vice-verso.
+   *   or vice-versa.
    *   I.e. settings.interface contains all settings regarding the ui. Your extension
    *   can register a reducer with path ['settings', 'interface'] and ['settings', 'whatever']
    *   but NOT ['settings'] and NOT ['settings', 'interface', 'somethingelse']

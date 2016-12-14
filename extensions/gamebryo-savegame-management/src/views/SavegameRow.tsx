@@ -1,27 +1,13 @@
-import { IComponentContext } from '../../../types/IComponentContext';
-
-import { connect } from '../../../util/ComponentEx';
-
+import { removeSavegame } from '../actions/session';
 import { ISavegame } from '../types/ISavegame';
 import { ISavegameAttribute } from '../types/ISavegameAttribute';
 
-import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
-
-import IconBar from '../../../views/IconBar';
-
-import { IIconDefinition } from '../../../types/IIconDefinition';
-
-import { showDialog } from '../../../actions/notifications';
-
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-
-import { removeSavegame } from '../actions/session';
-
-import { log } from '../../../util/log';
-import * as util from 'util';
-
+import {IconBar, actions, log, types} from 'nmm-api';
 import * as React from 'react';
+import { connect } from 'react-redux';
+import * as nodeUtil from 'util';
 
 export interface IBaseProps {
   save: ISavegame;
@@ -33,8 +19,8 @@ export interface IBaseProps {
 
 interface IActionProps {
   onRemoveSavegame: (savegameId: string) => void;
-  onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-    actions: DialogActions) => Promise<IDialogResult>;
+  onShowDialog: (type: types.DialogType, title: string, content: types.IDialogContent,
+    actions: types.DialogActions) => Promise<types.IDialogResult>;
 }
 
 type IProps = IBaseProps & IActionProps;
@@ -44,9 +30,9 @@ class SavegameRow extends React.Component<IProps, {}> {
     api: React.PropTypes.object.isRequired,
   };
 
-  public context: IComponentContext;
+  public context: types.IComponentContext;
 
-  private savegameActions: IIconDefinition[];
+  private savegameActions: types.IIconDefinition[];
 
   constructor(props) {
     super(props);
@@ -96,8 +82,8 @@ class SavegameRow extends React.Component<IProps, {}> {
     onShowDialog('question', 'Are you sure to remove this savegame?', {}, {
       Cancel: null,
       Continue: null,
-    }).then((result: IDialogResult) => {
-      log('info', 'res', util.inspect(result));
+    }).then((result: types.IDialogResult) => {
+      log('info', 'res', nodeUtil.inspect(result));
       removeSavegame = result.action === 'Continue';
       if (removeSavegame) {
         return fs.removeAsync(save.id);
@@ -144,8 +130,8 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onRemoveSavegame: (savegameId: string) => dispatch(removeSavegame(savegameId)),
-    onShowDialog:
-    (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
+    onShowDialog: (type, title, content, dialogActions) =>
+      dispatch(actions.showDialog(type, title, content, dialogActions)),
   };
 }
 

@@ -1,0 +1,45 @@
+{
+  "name": "gamebryo-savegame-management",
+  "version": "0.0.1",
+  "description": "Management for gamebryo savaegames",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "tsc": "tsc -p .",
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
+    "install": "electron-rebuild -w gamebryo-savegame",
+    "build": "npm run tsc && npm run webpack && copyfiles -f ./node_modules/gamebryo-savegame/dist/nbind.node ./dist/savegamelib && copyfiles -f ./node_modules/gamebryo-savegame/dist/liblz4.dll ./dist/savegamelib",
+    "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-savegame-management",
+    "buildDev": "npm run build && npm run installDev"
+  },
+  "author": "",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@types/iconv-lite": "^0.0.1",
+    "babel-core": "^6.14.0",
+    "babel-loader": "^6.2.5",
+    "babel-polyfill": "^6.13.0",
+    "bluebird": "^3.4.6",
+    "copyfiles": "^1.0.0",
+    "electron-rebuild": "^1.4.0",
+    "fs-extra-promise": "^0.4.1",
+    "gamebryo-savegame": "file:../../lib/cpp/gamebryo-savegame",
+    "i18next": "^3.5.1",
+    "iconv-lite": "^0.4.15",
+    "json-loader": "^0.5.4",
+    "nmm-api": "file:../../api",
+    "react": "^15.3.2",
+    "react-addons-update": "^15.3.2",
+    "react-bootstrap": "^0.30.6",
+    "react-dom": "^15.3.2",
+    "react-i18next": "^1.10.1",
+    "react-layout-pane": "TanninOne/react-layout-pane",
+    "redux-act": "^1.1.0",
+    "webpack": "^1.13.2"
+  }
+}

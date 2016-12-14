@@ -1,4 +1,4 @@
-import { SortDirection } from '../../../types/SortDirection';
+import { types } from 'nmm-api';
 
 /**
  * user-configuration for savegame attributes
@@ -8,5 +8,5 @@ import { SortDirection } from '../../../types/SortDirection';
  */
 export interface IAttributeState {
   enabled: boolean;
-  sortDirection: SortDirection;
+  sortDirection: types.SortDirection;
 }

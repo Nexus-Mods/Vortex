@@ -69,7 +69,7 @@ class Notification extends ComponentEx<IProps, {}> {
 
   private typeToIcon(type: NotificationType): JSX.Element {
     switch (type) {
-      case 'activity': return <Icon name='spinner' spin />;
+      case 'activity': return <Icon name='spinner' pulse />;
       default: return null;
     }
   }

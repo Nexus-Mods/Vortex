@@ -1,5 +1,4 @@
-import Icon from '../../../views/Icon';
-import { Button } from '../../../views/TooltipControls';
+import {Icon, tooltip} from 'nmm-api';
 
 import { IAttributeState } from '../types/IAttributeState';
 import { ISavegameAttribute } from '../types/ISavegameAttribute';
@@ -30,14 +29,14 @@ class AttributeToggle extends React.Component<IAttributeProps, {}> {
       : 'attribute-icon-disabled';
 
     return (
-      <Button
+      <tooltip.Button
         id={attribute.id}
         className='btn-embed'
         tooltip={ t(attribute.name) }
         onClick={ this.toggleAttribute }
       >
       <Icon name={attribute.icon} className={ cssClass } />
-      </Button>
+      </tooltip.Button>
     );
   }
 

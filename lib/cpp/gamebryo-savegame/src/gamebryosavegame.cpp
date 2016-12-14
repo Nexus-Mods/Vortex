@@ -2,7 +2,9 @@
 #include <stdexcept>
 #include <vector>
 #include <ctime>
+#include <sstream>
 #include <nbind/nbind.h>
+#include <lz4.h>
 
 uint32_t windowsTicksToEpoch(int64_t windowsTicks)
 {
@@ -14,6 +16,61 @@ uint32_t windowsTicksToEpoch(int64_t windowsTicks)
   return static_cast<uint32_t>(windowsTicks / WINDOWS_TICK - SEC_TO_UNIX_EPOCH);
 }
 
+class DirectDecoder : public IDecoder {
+public:
+  DirectDecoder(const std::string &fileName)
+    : m_File(fileName.c_str(), std::ios::in | std::ios::binary)
+  {
+    if (!m_File.is_open()) {
+      throw std::runtime_error(fmt::format("failed to open {}", fileName));
+    }
+  }
+
+  virtual size_t tell() {
+    return m_File.tellg();
+  }
+
+  virtual bool seek(size_t offset, std::ios_base::seekdir dir = std::ios::beg) {
+    return static_cast<bool>(m_File.seekg(offset, dir));
+  }
+
+  virtual bool read(char *buffer, size_t size) {
+    return static_cast<bool>(m_File.read(buffer, size));
+  }
+
+private:
+  std::ifstream m_File;
+};
+
+class LZ4Decoder : public IDecoder {
+public:
+  LZ4Decoder(std::unique_ptr<IDecoder> &wrapee, unsigned long compressedSize, unsigned long uncompressedSize)
+  {
+    std::string tempCompressed;
+    tempCompressed.resize(compressedSize);
+    std::string tempUncompressed;
+    tempUncompressed.resize(uncompressedSize);
+
+    wrapee->read(&tempCompressed[0], compressedSize);
+    LZ4_decompress_safe(&tempCompressed[0], &tempUncompressed[0], compressedSize, uncompressedSize);
+    m_Buffer = std::istringstream(tempUncompressed);
+  }
+
+  virtual size_t tell() {
+    return m_Buffer.tellg();
+  }
+
+  virtual bool seek(size_t offset, std::ios_base::seekdir dir = std::ios::beg) {
+    return static_cast<bool>(m_Buffer.seekg(offset, dir));
+  }
+
+  virtual bool read(char *buffer, size_t size) {
+    return static_cast<bool>(m_Buffer.read(buffer, size));
+  }
+
+private:
+  std::istringstream m_Buffer;
+};
 
 GamebryoSaveGame::GamebryoSaveGame(const std::string &fileName)
  : m_FileName(fileName)
@@ -119,24 +176,30 @@ void GamebryoSaveGame::readSkyrim(GamebryoSaveGame::FileWrapper &file)
   m_CreationTime = windowsTicksToEpoch(ftime);
 
   if (version < 0x0c) {
+    // original skyrim format
     file.readImage();
-    file.skip<unsigned char>(); // form version
-    file.skip<unsigned long>(); // plugin info size
-    file.readPlugins();
   } else {
-    // Skyrim SE - same header, different version ...
+    // Skyrim SE - same header, different version
     unsigned long width;
     file.read(width);
     unsigned long height;
     file.read(height);
-    file.skip<unsigned char>(2);
+    unsigned short compressionFormat;
+    file.read(compressionFormat);
+
     file.readImage(width, height, true);
-    file.skip<unsigned char>(10); // not sure what this is
-    //file.skip<unsigned char>(); // form version
-    file.skip<unsigned char>(); // form version
-    file.skip<unsigned long>(); // plugin info size
-    // ... and broken plugin list. can't be parsed
+
+    // the rest of the file is compressed in Skyrim SE
+    unsigned long compressed, uncompressed;
+    file.read(uncompressed);
+    file.read(compressed);
+
+    file.setCompression(compressionFormat, compressed, uncompressed);
   }
+
+  file.skip<unsigned char>(); // form version
+  file.skip<unsigned long>(); // plugin info size
+  file.readPlugins();
 }
 
 void GamebryoSaveGame::readFO3(GamebryoSaveGame::FileWrapper &file)
@@ -225,22 +288,19 @@ void GamebryoSaveGame::readFO4(GamebryoSaveGame::FileWrapper &file)
 }
 
 GamebryoSaveGame::FileWrapper::FileWrapper(GamebryoSaveGame *game)
- : m_Game(game),
-  m_File(game->m_FileName, std::ios::in | std::ios::binary),
-  m_HasFieldMarkers(false),
-  m_BZString(false)
+  : m_Game(game)
+  , m_Decoder(new DirectDecoder(game->m_FileName))
+  , m_HasFieldMarkers(false)
+  , m_BZString(false)
 {
-  if (!m_File.is_open()) {
-    throw std::runtime_error(fmt::format("failed to open {}", game->m_FileName));
-  }
 }
 
 bool GamebryoSaveGame::FileWrapper::header(const char *expected)
 {
   std::string foundId;
   foundId.resize(strlen(expected));
-  m_File.seekg(0);
-  m_File.read(&foundId[0], foundId.length());
+  m_Decoder->seek(0);
+  m_Decoder->read(&foundId[0], foundId.length());
 
   return foundId == expected;
 }
@@ -283,8 +343,8 @@ template <> void GamebryoSaveGame::FileWrapper::read(std::string &value)
 
 void GamebryoSaveGame::FileWrapper::read(void *buff, std::size_t length)
 {
-  if (!m_File.read(static_cast<char *>(buff), length)) {
-    throw std::runtime_error(fmt::format("unexpected end of file at {} (read of {} bytes)", m_File.tellg(), length).c_str());
+  if (!m_Decoder->read(static_cast<char *>(buff), length)) {
+    throw std::runtime_error(fmt::format("unexpected end of file at {} (read of {} bytes)", m_Decoder->tell(), length).c_str());
   }
 }
 
@@ -337,5 +397,13 @@ void GamebryoSaveGame::FileWrapper::readPlugins()
     std::string name;
     read(name);
     m_Game->m_Plugins.push_back(name);
+  }
+}
+
+void GamebryoSaveGame::FileWrapper::setCompression(unsigned short format, unsigned long compressedSize, unsigned long uncompressedSize)
+{
+  // not supporting any other format right now as all saves seem to use LZ4. format 1 is supposed to be zlib
+  if (format == 2) {
+    m_Decoder.reset(new LZ4Decoder(m_Decoder, compressedSize, uncompressedSize));
   }
 }

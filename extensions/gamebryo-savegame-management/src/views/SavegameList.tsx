@@ -1,39 +1,23 @@
-import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
-
-import AttributeToggle from './AttributeToggle';
-import * as React from 'react';
-
-import {
-  ControlLabel, FormControl, FormGroup, Jumbotron, Table,
-} from 'react-bootstrap';
-import { Fixed, Flex, Layout } from 'react-layout-pane';
-
-import * as fs from 'fs-extra-promise';
-
-import getAttr from '../../../util/getAttr';
-import HeaderCell from './HeaderCell';
-
-import * as path from 'path';
-
 import { setSavegamelistAttributeSort, setSavegamelistAttributeVisible } from '../actions/session';
-
-import { IStateSavegame } from '../types/IStateSavegame';
-import { IStateSavegameSettings } from '../types/IStateSettings';
-
-import { IGameModeSettings } from '../../gamemode_management/types/IStateEx';
-
+import { IAttributeState } from '../types/IAttributeState';
 import { ISavegame } from '../types/ISavegame';
 import { ISavegameAttribute } from '../types/ISavegameAttribute';
 
-import { SortDirection } from '../../../types/SortDirection';
-import { IAttributeState } from '../types/IAttributeState';
-
-import { IDiscoveryResult } from '../../gamemode_management/types/IStateEx';
-
-import { log } from '../../../util/log';
+import AttributeToggle from './AttributeToggle';
+import HeaderCell from './HeaderCell';
 import SavegameRow from './SavegameRow';
 
+import * as fs from 'fs-extra-promise';
+import { ComponentEx, log, types, util } from 'nmm-api';
+import * as path from 'path';
+import * as React from 'react';
 import update = require('react-addons-update');
+import {
+  ControlLabel, FormControl, FormGroup, Jumbotron, Table,
+} from 'react-bootstrap';
+import {translate} from 'react-i18next';
+import { Fixed, Flex, Layout } from 'react-layout-pane';
+import {connect} from 'react-redux';
 
 // current typings know neither the function nor the return value
 declare var createImageBitmap: (imgData: ImageData) => Promise<any>;
@@ -60,23 +44,25 @@ interface IConnectedProps {
   savegamelistState: IAttributeStateMap;
   gameMode: string;
   language: string;
-  discoveredGames: { [id: string]: IDiscoveryResult };
+  discoveredGames: { [id: string]: types.IDiscoveryResult };
 }
 
 interface IActionProps {
   onSetAttributeVisible: (attributeId: string, visible: boolean) => void;
-  onSetAttributeSort: (attributeId: string, dir: SortDirection) => void;
+  onSetAttributeSort: (attributeId: string, dir: types.SortDirection) => void;
 }
 
 interface IComponentState {
   selectedSavegame: string;
 }
 
+type Props = IProps & IConnectedProps & IActionProps;
+
 /**
  * displays the list of savegames installed for the current game.
  * 
  */
-class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComponentState> {
+class SavegameList extends ComponentEx<Props, IComponentState> {
   public screenshotCanvas: HTMLCanvasElement;
   private refHandlers = {
     canvas: (ref) => this.screenshotCanvas = ref,
@@ -178,7 +164,7 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
       } else if (!attributeStates.hasOwnProperty(attribute.id)) {
         return true;
       } else {
-        return getAttr(attributeStates[attribute.id], 'enabled', true);
+        return util.getSafe(attributeStates, [attribute.id, 'enabled'], true);
       }
     });
   }
@@ -199,7 +185,7 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
   private renderHeaderField = (attribute: ISavegameAttribute): JSX.Element => {
     let { t, savegamelistState } = this.props;
 
-    if (getAttr(savegamelistState[attribute.id], 'enabled', true)) {
+    if (util.getSafe(savegamelistState, [attribute.id, 'enabled'], true)) {
       return (
         <HeaderCell
           key={attribute.id}
@@ -214,7 +200,7 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
     }
   }
 
-  private setSortDirection = (id: string, direction: SortDirection) => {
+  private setSortDirection = (id: string, direction: types.SortDirection) => {
     const { savegamelistState, onSetAttributeSort } = this.props;
 
     // reset all other columns because we can't really support multisort with this ui
@@ -276,17 +262,15 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
       }
 
     } else if (attribute.id === 'plugins') {
-      if (gameMode !== 'skyrimse') {
-        let plugins: string[] = attribute.calc(save.attributes);
-        return (
-          <FormGroup controlId='multiplePlugins' key={`${save.id}-${attribute.id}`}>
-            <ControlLabel>{t('Plugins')}</ControlLabel>
-            <FormControl componentClass='select' multiple size={20}>
-              {plugins.map(this.renderPlugin)}
-            </FormControl>
-          </FormGroup>
-        );
-      }
+      let plugins: string[] = attribute.calc(save.attributes);
+      return (
+        <FormGroup controlId='multiplePlugins' key={`${save.id}-${attribute.id}`}>
+          <ControlLabel>{t('Plugins')}</ControlLabel>
+          <FormControl componentClass='select' multiple size={20}>
+            {plugins.map(this.renderPlugin)}
+          </FormControl>
+        </FormGroup>
+      );
     } else {
       if (attribute.isDetail === true) {
         return (
@@ -358,19 +342,6 @@ class SavegameList extends ComponentEx<IProps & IConnectedProps & IActionProps, 
   }
 }
 
-interface IState {
-  settings: {
-    gameMode: IGameModeSettings
-    interface: {
-      language: string
-    }
-  };
-  gameSettings: {
-    saves: IStateSavegameSettings,
-  };
-  saves: IStateSavegame;
-}
-
 function mapStateToProps(state: any): IConnectedProps {
   return {
     saves: state.session.saves.saves,
@@ -386,19 +357,13 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetAttributeVisible: (attributeId: string, visible: boolean) => {
       dispatch(setSavegamelistAttributeVisible(attributeId, visible));
     },
-    onSetAttributeSort: (attributeId: string, dir: SortDirection) => {
+    onSetAttributeSort: (attributeId: string, dir: types.SortDirection) => {
       dispatch(setSavegamelistAttributeSort(attributeId, dir));
     },
   };
 }
 
-function registerSavegameAttribute(instance: SavegameList, attribute: ISavegameAttribute) {
-  return attribute;
-}
-
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(
-      extend(registerSavegameAttribute)(SavegameList)
-    )
+    connect(mapStateToProps, mapDispatchToProps)(SavegameList)
   ) as React.ComponentClass<{}>;

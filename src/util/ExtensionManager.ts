@@ -1,7 +1,6 @@
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import initAboutDialog from '../extensions/about_dialog/index';
-import initCategoryManagement from '../extensions/category_management/index';
 import initDownloadManagement from '../extensions/download_management/index';
 import initGamemodeManagement from '../extensions/gamemode_management/index';
 import initHardlinkActivator from '../extensions/hardlink_activator/index';
@@ -10,7 +9,6 @@ import initModManagement from '../extensions/mod_management/index';
 import initNexusIntegration from '../extensions/nexus_integration/index';
 import initNutsLocal from '../extensions/nuts_local/index';
 import initProfileManagement from '../extensions/profile_management/index';
-import initSaveGameManagement from '../extensions/savegame_management/index';
 import initSettingsInterface from '../extensions/settings_interface/index';
 import initSymlinkActivator from '../extensions/symlink_activator/index';
 import initSymlinkActivatorElevate from '../extensions/symlink_activator_elevate/index';
@@ -428,8 +426,6 @@ class ExtensionManager {
       { name: 'symlink_activator_elevate', initFunc: initSymlinkActivatorElevate },
       { name: 'hardlink_activator', initFunc: initHardlinkActivator },
       { name: 'installer_fomod', initFunc: initInstallerFomod },
-      { name: 'savegame_management', initFunc: initSaveGameManagement },
-      { name: 'category_management', initFunc: initCategoryManagement },
     ]
     .concat(this.loadDynamicExtensions(bundledPath))
     .concat(this.loadDynamicExtensions(extensionsPath));

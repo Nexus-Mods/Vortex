@@ -47,16 +47,6 @@ export interface INotificationState {
 }
 
 /**
- * the result of a game discovery.
- * 
- * @export
- * @interface IDiscoveryResult
- */
-export interface IDiscoveryResult {
-  path: string;
-}
-
-/**
  * state regarding application settings
  * 
  * @export
@@ -64,7 +54,6 @@ export interface IDiscoveryResult {
  */
 export interface ISettings {
   gameMode: string;
-  discoveredGames: { [id: string]: IDiscoveryResult };
 }
 
 /**

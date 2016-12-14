@@ -7,4 +7,6 @@ export * from './message';
 export * from './storeHelper';
 
 import runElevated from './elevated';
-export { runElevated };
+import {extend} from './ExtensionProvider';
+
+export { extend, runElevated };

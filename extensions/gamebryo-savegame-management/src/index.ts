@@ -1,4 +1,4 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { types } from 'nmm-api';
 
 import { addSavegame, clearSavegames, setSavegamelistAttributeVisible } from './actions/session';
 import { sessionReducer } from './reducers/session';
@@ -13,7 +13,7 @@ import {
   SAVEGAME_NAME, SCREENSHOT,
 } from './savegameAttributes';
 
-export interface IExtensionContextExt extends IExtensionContext {
+export interface IExtensionContextExt extends types.IExtensionContext {
   registerSavegameAttribute: (attribute: ISavegameAttribute) => void;
 }
 
@@ -21,15 +21,20 @@ function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('hdd-o', 'Save Games', SavegameList, {
     hotkey: 'S',
     visible: () => gameSupported(context.api.store.getState().settings.gameMode.current),
+    props: () => ({
+      objects: [SAVEGAME_ID, SAVEGAME_NAME, LEVEL, LOCATION, FILENAME,
+                CREATION_TIME, SCREENSHOT, PLUGINS],
+    }),
   });
 
   context.registerReducer(['session', 'saves'], sessionReducer);
   context.registerReducer(['session', 'savegamelistState'], sessionReducer);
 
+  /*
   if (context.registerSavegameAttribute !== undefined) {
-    [SAVEGAME_ID, SAVEGAME_NAME, LEVEL, LOCATION, FILENAME, CREATION_TIME, SCREENSHOT, PLUGINS]
+    
       .forEach(context.registerSavegameAttribute);
-  }
+  }*/
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;

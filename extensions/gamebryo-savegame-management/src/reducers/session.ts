@@ -1,4 +1,4 @@
-import { IReducerSpec } from '../../../types/IExtensionContext';
+import { types, util } from 'nmm-api';
 
 import {
   addSavegame, clearSavegames, removeSavegame,
@@ -6,14 +6,12 @@ import {
   setSavegameState, setSavegamelistAttributeSort, setSavegamelistAttributeVisible,
 } from '../actions/session';
 
-import { deleteOrNop, setSafe } from '../../../util/storeHelper';
-
 import update = require('react-addons-update');
 
 /**
  * reducer for changes to ephemeral session state
  */
-export const sessionReducer: IReducerSpec = {
+export const sessionReducer: types.IReducerSpec = {
   reducers: {
     ['persist/REHYDRATE']: (state, payload) => {
       if (payload.saves !== undefined) {
@@ -23,10 +21,10 @@ export const sessionReducer: IReducerSpec = {
       }
     },
     [addSavegame]: (state, payload) => {
-      return setSafe(state, ['saves', payload.id], payload);
+      return util.setSafe(state, ['saves', payload.id], payload);
     },
     [removeSavegame]: (state, payload) => {
-      return deleteOrNop(state, ['saves', payload]);
+      return util.deleteOrNop(state, ['saves', payload]);
     },
     [setSavegameState]: (state, payload) => {
       const { id, savegameState } = payload;
@@ -40,12 +38,12 @@ export const sessionReducer: IReducerSpec = {
       return update(state, { saves: { $set: {} } });
     },
     [setSavegamelistAttributeVisible]: (state, payload) => {
-      return setSafe(state, ['savegamelistState',
+      return util.setSafe(state, ['savegamelistState',
         payload.attributeId, 'enabled'], payload.visible);
     },
     [setSavegamelistAttributeSort]: (state, payload) => {
       const { attributeId, direction } = payload;
-      return setSafe(state, ['savegamelistState', attributeId, 'sortDirection'], direction);
+      return util.setSafe(state, ['savegamelistState', attributeId, 'sortDirection'], direction);
     },
   }, defaults: {
     saves: {},

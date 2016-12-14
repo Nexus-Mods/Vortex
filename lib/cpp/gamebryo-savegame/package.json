@@ -2,23 +2,26 @@
   "name": "gamebryo-savegame",
   "version": "1.0.0",
   "description": "Parses gamebryo savegames",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "scripts": {
     "autogypi": "autogypi",
     "node-gyp": "node-gyp",
     "emcc-path": "emcc-path",
     "copyasm": "copyasm",
-    "install": "autogypi && node-gyp configure build"
+    "prebuild": "gulp download-lz4",
+    "install": "autogypi && node-gyp configure build && copyasm build dist"
   },
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
     "autogypi": "^0.2.2",
-    "nbind": "^0.3.5",
+    "copyfiles": "^1.0.0",
+    "nbind": "^0.3.6",
     "node-gyp": "^3.4.0",
-    "segfault-handler": "^1.0.0"
-  },
-  "devDependencies": {
-    "nbind": "^0.3.5"
+    "segfault-handler": "^1.0.0",
+    "gulp": "^3.9.1",
+    "gulp-downloader": "^1.0.4",
+    "gulp-unzip": "^0.2.0"
   }
 }
