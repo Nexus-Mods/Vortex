@@ -86,6 +86,7 @@ interface IExtensionContextExt extends types.IExtensionContext {
 
 let persistor: PluginPersistor;
 let loot: LootInterface;
+let refreshTimer: NodeJS.Timer;
 
 function init(context: IExtensionContextExt) {
 
@@ -142,15 +143,22 @@ function init(context: IExtensionContextExt) {
         persistor.loadFiles(newGameMode);
         let modPath = util.currentGameDiscovery(store.getState()).modPath;
         watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
-          updatePluginList(
-              store, {},
-              util.getSafe(
-                      store.getState(),
-                      ['gameSettings', 'profiles', 'profiles', currentProfile],
-                      {} as any)
-                  .modState)
-              .then(() => {
-                context.api.events.emit('autosort-plugins'); });
+          if (refreshTimer !== undefined) {
+            clearTimeout(refreshTimer);
+          }
+          refreshTimer = setTimeout(() => {
+            let profile = util.getSafe(store.getState(),
+                                       [
+                                         'gameSettings',
+                                         'profiles',
+                                         'profiles',
+                                         currentProfile,
+                                       ],
+                                       {} as any);
+            updatePluginList(store, {}, profile.modState)
+                .then(() => { context.api.events.emit('autosort-plugins'); });
+            refreshTimer = undefined;
+          }, 500);
         });
       }
     });
