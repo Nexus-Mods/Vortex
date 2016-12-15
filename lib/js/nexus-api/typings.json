@@ -1,0 +1,10 @@
+{
+  "globalDevDependencies": {
+    "bluebird": "registry:dt/bluebird#3.0.0+20160928162057"
+  },
+  "globalDependencies": {
+    "typescript": "registry:dt/typescript#0.4.0+20160317120654"
+  },
+  "dependencies": {
+  }
+}

@@ -9,11 +9,17 @@
   ],
   "description": "API for the Nexus Mods page",
   "scripts": {
+    "postinstall": "typings install",
     "build": "tsc -p ."
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "LGPL-3.0",
   "devDependencies": {
+    "@types/form-data": "^0.0.32",
+    "@types/node": "^6.0.45",
+    "@types/ref": "^0.0.28",
+    "@types/ref-struct": "^0.0.28",
+    "@types/ref-union": "^0.0.28",
     "bluebird": "^3.4.6",
     "node-rest-client": "^2.0.1",
     "typings": "^1.3.3"

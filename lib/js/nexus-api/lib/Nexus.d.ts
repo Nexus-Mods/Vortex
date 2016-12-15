@@ -4,7 +4,7 @@ declare class Nexus {
     private mRestClient;
     private mBaseData;
     private mBaseURL;
-    constructor(game: string, apiKey: string);
+    constructor(game: string, apiKey: string, timeout?: number);
     setGame(gameId: string): void;
     setKey(apiKey: string): void;
     validateKey(key?: string): Promise<types.IValidateKeyResponse>;
