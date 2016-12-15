@@ -99,17 +99,23 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     } else if (content.formcontrol !== undefined) {
       return (
         <div>
-          <FormControl
-            id={content.formcontrol.id}
-            type={content.formcontrol.type}
-            value={content.formcontrol.value}
-            onChange={this.toggleFormControl}
-          />
+          {this.renderFormControl(content.formcontrol)}
         </div>
       );
     } else {
       return null;
     }
+  }
+
+  private renderFormControl = (formcontrol: IFormControl) => {
+    return (
+      <FormControl
+        id={formcontrol.id}
+        type={formcontrol.type}
+        value={formcontrol.value}
+        onChange={this.toggleFormControl}
+      />
+    );
   }
 
   private renderCheckbox = (checkbox: ICheckbox) => {
@@ -122,9 +128,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private toggleFormControl = (evt) => {
+    let { dialogState } = this.state;
+    let newFormControl = dialogState.formcontrol;
+    newFormControl.value = evt.currentTarget.value;
+
     this.setState(update(this.state, {
       dialogState: {
-        formcontrol: { value: {$set: evt.currentTarget.value } },
+        formcontrol: {  $set: newFormControl },
       },
     }));
   }

@@ -1,6 +1,7 @@
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import initAboutDialog from '../extensions/about_dialog/index';
+import initCategoryManagement from '../extensions/category_management/index';
 import initDownloadManagement from '../extensions/download_management/index';
 import initGamemodeManagement from '../extensions/gamemode_management/index';
 import initHardlinkActivator from '../extensions/hardlink_activator/index';
@@ -424,6 +425,7 @@ class ExtensionManager {
       { name: 'about_dialog', initFunc: initAboutDialog },
       { name: 'welcome_screen', initFunc: initWelcomeScreen },
       { name: 'mod_management', initFunc: initModManagement },
+      { name: 'category_management', initFunc: initCategoryManagement },
       { name: 'profile_management', initFunc: initProfileManagement },
       { name: 'nexus_integration', initFunc: initNexusIntegration },
       { name: 'download_management', initFunc: initDownloadManagement },
