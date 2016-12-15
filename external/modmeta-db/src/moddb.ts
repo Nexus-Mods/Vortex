@@ -27,17 +27,38 @@ interface IRequestArgs {
   };
 }
 
+export interface IServer {
+  protocol: 'nexus' | 'metadb';
+  url: string;
+  apiKey?: string;
+  cacheDurationSec: number;
+}
+
+/**
+ * The primary database interface.
+ * This allows queries about meta information regarding a file and
+ * will relay them to a remote server if not found locally
+ */
 class ModDB {
   private mDB: IDatabase;
+  private mServers: IServer[];
   private mModKeys: string[];
   private mRestClient: Client;
-  private mBaseData: IRequestArgs;
+  private mTimeout: number;
   private mGameId: string;
-  private mBaseURL: string = 'https://api.nexusmods.com/v1';
 
-  constructor(location: string, gameId: string, apiKey: string, timeout?: number) {
+  /**
+   * constructor
+   * 
+   * @param {string} gameId default game id for lookups
+   * @param {string} servers list of servers we synchronize with
+   * @param {any} database the database backend to use. if not set, tries to use IndexedDB
+   * @param {number} timeoutMS timeout in milliseconds for outgoing network requests.
+   *                           defaults to 5 seconds
+   */
+  constructor(gameId: string, servers: IServer[], database?: any, timeoutMS?: number) {
     this.mDB =
-        levelup('mods', {valueEncoding: 'json', db: leveljs});
+        levelup('mods', {valueEncoding: 'json', db: database || leveljs});
     this.mModKeys = [
       'modId',
       'modName',
@@ -51,22 +72,8 @@ class ModDB {
 
     this.mGameId = gameId;
     this.mRestClient = new Client();
-
-    this.mBaseData = {
-      headers: {
-        'Content-Type': 'application/json',
-        APIKEY: apiKey,
-      },
-      path: {
-      },
-      requestConfig: {
-        timeout: timeout || 5000,
-        noDelay: true,
-      },
-      responseConfig: {
-        timeout: timeout || 5000,
-      },
-    };
+    this.mServers = servers;
+    this.mTimeout = timeoutMS;
 
     this.promisify();
   }
@@ -93,7 +100,7 @@ class ModDB {
    * @memberOf ModDB
    */
   public getByKey(key: string): Promise<ILookupResult[]> {
-    return this.getAllByKey(key);
+    return this.getAllByKey(key, this.mGameId);
   }
 
   /**
@@ -142,35 +149,78 @@ class ModDB {
               lookupKey += ':' + modId;
             }
           }
-          return this.getAllByKey(lookupKey);
-        })
-        .then((results: ILookupResult[]) => {
-          if (results.length > 0) {
-            return results;
-          }
+          return this.getAllByKey(lookupKey, gameId);
+        });
+  }
 
-          // no result in our database, look at the backends
-          const realGameId = this.translateNexusGameId(gameId || this.mGameId);
-          const url =
-              `${this.mBaseURL}/games/${realGameId}/mods/md5_search/${hashResult}`;
-          return new Promise<ILookupResult[]>((resolve, reject) => {
-            this.mRestClient.get(url, this.mBaseData, (data, response) => {
+  private restBaseData(server: IServer): IRequestArgs {
+    return {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      path: {
+      },
+      requestConfig: {
+        timeout: this.mTimeout || 5000,
+        noDelay: true,
+      },
+      responseConfig: {
+        timeout: this.mTimeout || 5000,
+      },
+    };
+  }
+
+  private nexusBaseData(server: IServer): IRequestArgs {
+    let res = this.restBaseData(server);
+    res.headers.APIKEY = server.apiKey;
+    return res;
+  }
+
+  private queryServer(server: IServer, gameId: string, hash: string): Promise<ILookupResult[]> {
+    if (server.protocol === 'nexus') {
+      return this.queryServerNexus(server, gameId, hash);
+    } else {
+      return this.queryServerMeta(server, gameId, hash);
+    }
+  }
+
+  private queryServerNexus(server: IServer, gameId: string,
+                           hash: string): Promise<ILookupResult[]> {
+    // no result in our database, look at the backends
+    const realGameId = this.translateNexusGameId(gameId || this.mGameId);
+
+    const url = `${server.url}/games/${realGameId}/mods/md5_search/${hash}`;
+    return new Promise<ILookupResult[]>((resolve, reject) => {
+      try {
+        this.mRestClient.get(
+            url, this.nexusBaseData(server), (data, response) => {
               if (response.statusCode === 200) {
-                let altResults: ILookupResult[] =
+                let result: ILookupResult[] =
                     data.map((nexusObj: any) =>
                                  this.translateFromNexus(nexusObj, gameId));
-                // cache all results in our database
-                for (let result of altResults) {
-                  this.insert(result.value);
-                }
                 // and return to caller
-                resolve(altResults);
+                resolve(result);
               } else {
                 reject(new Error(util.inspect(data)));
               }
             });
-          });
-        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  private queryServerMeta(server: IServer, gameId: string, hash: string): Promise<ILookupResult[]> {
+    const url = `${server.url}/by_hash/${hash}`;
+    return new Promise<ILookupResult[]>((resolve, reject) => {
+      this.mRestClient.get(url, this.restBaseData(server), (data, response) => {
+        if (response.statusCode === 200) {
+          resolve(data);
+        } else {
+          reject(new Error(util.inspect(data)));
+        }
+      });
+    });
   }
 
   private translateNexusGameId(input: string): string {
@@ -188,49 +238,72 @@ class ModDB {
    * 
    * @memberOf ModDB
    */
-  private translateFromNexus = (nexusObj: any, gameId: string): ILookupResult => {
-    let urlFragments = [
-      'nxm:/',
-      nexusObj.mod.game_domain,
-      'mods',
-      nexusObj.mod.mod_id,
-      'files',
-      nexusObj.file_details.file_id
-    ];
-    return {
-      key: `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
-      value: {
-        fileMD5: nexusObj.file_details.md5,
-        fileName: nexusObj.file_details.file_name,
-        fileSizeBytes: nexusObj.file_details.file_size,
-        logicalFileName: nexusObj.file_details.name,
-        fileVersion: semvish.clean(nexusObj.file_details.version),
-        gameId: nexusObj.mod.game_domain,
-        modName: nexusObj.mod.name,
-        modId: nexusObj.mod.mod_id,
-        sourceURI: urlFragments.join('/'),
-      },
-    };
-  }
+  private translateFromNexus = (nexusObj: any, gameId: string):
+      ILookupResult => {
+        let urlFragments = [
+          'nxm:/',
+          nexusObj.mod.game_domain,
+          'mods',
+          nexusObj.mod.mod_id,
+          'files',
+          nexusObj.file_details.file_id
+        ];
+        return {
+          key:
+              `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
+          value: {
+            fileMD5: nexusObj.file_details.md5,
+            fileName: nexusObj.file_details.file_name,
+            fileSizeBytes: nexusObj.file_details.file_size,
+            logicalFileName: nexusObj.file_details.name,
+            fileVersion: semvish.clean(nexusObj.file_details.version),
+            gameId: nexusObj.mod.game_domain,
+            modName: nexusObj.mod.name,
+            modId: nexusObj.mod.mod_id,
+            sourceURI: urlFragments.join('/'),
+          },
+        };
+      }
 
-  private getAllByKey(key: string): Promise<ILookupResult[]> {
+  private getAllByKey(key: string, gameId: string): Promise<ILookupResult[]> {
     return new Promise<ILookupResult[]>((resolve, reject) => {
-      let result: ILookupResult[] = [];
+             let result: ILookupResult[] = [];
 
-      let stream = this.mDB.createReadStream({
-        gte: key + ':',
-        lt: key + 'a:',
-      });
-      stream.on('data', (data: ILookupResult) => {
-        result.push(data);
-      });
-      stream.on('error', (err) => {
-        reject(err);
-      });
-      stream.on('end', () => {
-        resolve(result);
-      });
-    });
+             let stream = this.mDB.createReadStream({
+               gte: key + ':',
+               lt: key + 'a:',
+             });
+             stream.on('data', (data: ILookupResult) => { result.push(data); });
+             stream.on('error', (err) => { reject(err); });
+             stream.on('end', () => { resolve(result); });
+           })
+        .then((results: ILookupResult[]) => {
+          if (results.length > 0) {
+            return Promise.resolve(results);
+          }
+
+          let remoteResults: ILookupResult[];
+
+          return Promise
+              .mapSeries(this.mServers,
+                         (server: IServer) => {
+                           if (remoteResults) {
+                             return Promise.resolve();
+                           }
+                           return this.queryServer(server, gameId, key)
+                               .then((serverResults: ILookupResult[]) => {
+                                 remoteResults = serverResults;
+                                 // cache all results in our database
+                                 for (let result of remoteResults) {
+                                   let temp = Object.assign({}, result.value);
+                                   temp.expires = new Date().getTime() / 1000 +
+                                                  server.cacheDurationSec;
+                                   this.insert(result.value);
+                                 }
+                               });
+                         })
+              .then(() => { return Promise.resolve(remoteResults); });
+        });
   }
 
   private makeKey(mod: IModInfo) {

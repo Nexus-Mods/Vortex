@@ -27,6 +27,7 @@
   },
   "optionalDependencies": {
     "body-parser": "^1.15.2",
+    "commander": "^2.9.0",
     "express": "^4.14.0"
   }
 }

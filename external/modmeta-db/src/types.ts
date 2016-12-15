@@ -5,22 +5,21 @@
  * and which file to use.
  * 
  * Usually mods on file repositories like nexus have a name including the version
- * number so to match files with a dynamic
- * version number, you can use either a fileExpression, which is a regular
- * expression that should ideally match all versions of a file
+ * number. To match files with a dynamic version number, you can use either a
+ * fileExpression (which is a regex) that should ideally match all versions of a file
  * (i.e. SkyUI_\d+_\d+-3863-\d+-\d+.7z] to match all versions of SkyUI on nexus)
  * or through a "logical" file name, which could be something like
  * "Skimpy Leather Armor UNP" (to differentiate it from the CBBE version under
- * the same modId)
+ * the same modId).
  * logical file names need to be provided by the meta server so they may not
  * exist everywhere but they should be preferred over file expressions where
  * possible.
  * 
  * versionMatch specifies which version to use. It can be
- *  =[version number] for an exact version match.
- * This works independent of the versioning scheme
+ * a) =[version number] for an exact version match which works independent of the
+ * versioning scheme
  * 
- * Or a number of other comparison operators. These work correctly only
+ * b) a number of other comparison operators. These work correctly only
  * if the referenced mod uses semantic versioning!
  *  >=[version number] matches any version newer than or equal to the one
  *                     mentioned.
@@ -30,7 +29,8 @@
  * "1.2.1 - 1.3.6" would have the same effect.
  * 
  * Also you can use "1.x" to match the newest file with major version 1.
- * And "~1.2.1" which would be the same as ">=1.2.1 <1.3.0".
+ * Or "~1.2.1" which would be the same as ">=1.2.1 <1.3.0".
+ * Or "^1.2.1" which would be the same as ">=1.2.1 <2.0.0"
  * 
  * You can find all the available rules at: https://github.com/npm/node-semver
  * (this is the library we use for version matching)
@@ -40,14 +40,25 @@
  *   been verified to work. The problem is that different mods may have different
  *   compatibility ranges for the same dependency.
  *   Say you have two mods that both depend on SkyUI. One is compatible with
- *   version 3.3 - 5.0, some breakage made it incompatible with 5.1.
+ *   version 3.3 - 5.0, some breakage made it incompatible with the newest version 5.1.
  *   The other mod is compatible with all versions >= 4.6.
- *   If both mods specify ranges we can install 5.0 and everybody is happy.
- *   If the second mod specifies only 5.1 as compatible, we have a conflict and
- *   one of the two mods has to be disabled or the user has to find out which
- *   version to use, override and this rendering the complete dependency
- *   information useless.
+ *   If both mods specify ranges we can install 5.0 and all dependencies are fulfilled.
  * 
+ *   If the second mod specifies only the newest version (5.1) as compatible, we have a
+ *   conflict and one of the two mods has to be disabled. Or the user has to find out
+ *   which version to use, override and thus rendering the complete dependency
+ *   information useless.
+ *
+ * All this works best if mods adhere to the semantic versioning rules, which means:
+ * a) increment the major version whenever you break the "API". API meaning any
+ *    interface (variables, ids, functions, ...) that other mods may use to interact with
+ *    yours
+ * b) increment the minor version whenever you add features without breaking the api
+ * c) increment the patch level on bugfix-only releases
+ * This way dependending mods can specify the dependency with "^<tested version>" and
+ * be reasonably safe that every newer minor/patch-version should work as well because
+ * without an api change it can't break.
+ *
  * @export
  * @interface IReference
  */
@@ -93,6 +104,7 @@ export interface IModInfo {
   fileMD5: string;
   sourceURI: any;
   rules?: IRule[];
+  expires?: number;
   details?: {
     homepage?: string;
     category?: string;
