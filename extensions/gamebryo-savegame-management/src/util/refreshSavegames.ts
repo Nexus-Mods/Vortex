@@ -4,14 +4,10 @@ import { log } from 'nmm-api';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import savegameLibInit, { GamebryoSaveGame } from 'gamebryo-savegame';
+import savegameLibInit from 'gamebryo-savegame';
 import * as path from 'path';
 
-import * as nodeUtil from 'util';
-
 const savegameLib = savegameLibInit('savegameLib');
-
-log('info', 'sglib', nodeUtil.inspect(GamebryoSaveGame));
 
 class Dimensions {
   public width: number;
@@ -59,7 +55,6 @@ function loadSaveGame(file: string, onAddSavegame: Function): Promise<void> {
     }
 
     let sg = new savegameLib.GamebryoSaveGame(file);
-    log('info', 'sg', {sg: nodeUtil.inspect(sg), type: typeof(sg) });
 
     const save: ISavegame = {
       id: file,

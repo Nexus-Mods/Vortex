@@ -237,7 +237,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   };
 
   private renderSavegameDetail = (save: ISavegame, attribute: ISavegameAttribute) => {
-    const { t, gameMode } = this.props;
+    const { t } = this.props;
     // TODO: if-elseif-else cascade... This code could probably be nicer. somehow...
     if (attribute.id === 'screenshot') {
 
