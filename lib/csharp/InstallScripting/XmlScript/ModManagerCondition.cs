@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// A depcondition that requires a minimum version of the mod manager to be installed.

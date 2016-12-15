@@ -6,7 +6,7 @@ options {
 	superClass=AntlrLexerBase;
 }
 
-@namespace {Nexus.Client.ModManagement.Scripting.XmlScript.CPL}
+@namespace {Components.Scripting.XmlScript.CPL}
 
 @lexer::header {
 	//turn off warning about not needing CLSCompliant attribute

@@ -4,17 +4,18 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
 using Components.Scripting;
-using Nexus.Client.ModManagement.Scripting.XmlScript.CPL;
-using Nexus.Client.ModManagement.Scripting.XmlScript.Parsers;
-using Nexus.Client.ModManagement.Scripting.XmlScript.Unparsers;
-using Nexus.Client.ModManagement.Scripting.XmlScript.Xml;
-using System.Threading;
+using Components.Scripting.XmlScript.CPL;
+using Components.Scripting.XmlScript.Parsers;
+using Components.Scripting.XmlScript.Unparsers;
+using Components.Scripting.XmlScript.Xml;
+using Components.Interface;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// Describes the XML script type.
@@ -86,18 +87,16 @@ namespace Nexus.Client.ModManagement.Scripting.XmlScript
 			}
 		}
 
-		/// <summary>
-		/// Creates an executor that can run the script type.
-		/// </summary>
-		/// <param name="p_modMod">The mod being installed.</param>
-		/// <param name="p_gmdGameMode">The game mode currently bieng managed.</param>
-		/// <param name="p_eifEnvironmentInfo">The application's envrionment info.</param>
-		/// <param name="p_igpInstallers">The utility class to use to install the mod items.</param>
-		/// <param name="p_scxUIContext">The <see cref="SynchronizationContext"/> to use to marshall UI interactions to the UI thread.</param>
-		/// <returns>An executor that can run the script type.</returns>
-		public IScriptExecutor CreateExecutor(SynchronizationContext p_scxUIContext)
+        /// <summary>
+        /// Creates an executor that can run the script type.
+        /// </summary>
+        /// <param name="modArchive">The mod being installed.</param>
+        /// <param name="userInteractionDelegate">The application's envrionment info.</param>
+        /// <param name="scxUIContext">The <see cref="SynchronizationContext"/> to use to marshall UI interactions to the UI thread.</param>
+        /// <returns>An executor that can run the script type.</returns>
+        public IScriptExecutor CreateExecutor(Mod modArchive, string userInteractionDelegate, SynchronizationContext scxUIContext)
 		{
-			return new XmlScriptExecutor(p_scxUIContext);
+			return new XmlScriptExecutor(modArchive, userInteractionDelegate, scxUIContext);
 		}
 
 		/// <summary>

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// This class manages the state of the installation.

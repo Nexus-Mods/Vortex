@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// Describes the value to which to set a given flag.

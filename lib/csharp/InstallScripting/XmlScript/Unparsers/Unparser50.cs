@@ -1,6 +1,6 @@
 ﻿using System.Xml.Linq;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript.Unparsers
+namespace Components.Scripting.XmlScript.Unparsers
 {
 	/// <summary>
 	/// Unparses version 5.0 XML scripts.

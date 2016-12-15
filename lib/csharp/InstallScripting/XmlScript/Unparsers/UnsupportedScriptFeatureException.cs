@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript.Unparsers
+namespace Components.Scripting.XmlScript.Unparsers
 {
 	/// <summary>
 	/// The exception that is thrown if a feature of an XML Script cannot be unparsed to the

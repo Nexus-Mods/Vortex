@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript.Properties {
+namespace Components.Scripting.XmlScript.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Nexus.Client.ModManagement.Scripting.XmlScript.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Nexus.Client.ModManagement.Scripting.XmlScript.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Components.Scripting.XmlScript.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

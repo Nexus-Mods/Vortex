@@ -2,7 +2,7 @@
 using System.Drawing;
 using Utils;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// The posible positions of the title text.

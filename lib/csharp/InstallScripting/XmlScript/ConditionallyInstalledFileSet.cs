@@ -2,7 +2,7 @@
 using Utils;
 using Utils.Collections;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// A pattern that is matched against external conditions to determine whether

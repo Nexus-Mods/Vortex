@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Utils;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// Describes an option.

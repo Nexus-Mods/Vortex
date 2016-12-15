@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Xml.Linq;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript.Unparsers
+namespace Components.Scripting.XmlScript.Unparsers
 {
 	/// <summary>
 	/// Unparses version 1.0 XML scripts.

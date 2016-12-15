@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Xml.Linq;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript.Unparsers
+namespace Components.Scripting.XmlScript.Unparsers
 {
 	/// <summary>
 	/// The base class for unparsers that create an XML representation of an <see cref="XmlScript"/>.

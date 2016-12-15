@@ -5,7 +5,7 @@ using Components.Scripting;
 using Utils;
 using Utils.Collections;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// Represents an XML script.

@@ -5,7 +5,7 @@ using System.Xml.Linq;
 using System.Xml.Schema;
 using System.Xml.XPath;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript.Parsers
+namespace Components.Scripting.XmlScript.Parsers
 {
 	/// <summary>
 	/// Parses version 2.0 xml script files.

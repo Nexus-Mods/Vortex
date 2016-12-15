@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// Defines the interface for a condition.

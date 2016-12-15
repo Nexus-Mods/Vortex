@@ -1,5 +1,5 @@
 ﻿
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	public enum SortOrder
 	{

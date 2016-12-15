@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Xml.Linq;
 using System.Xml.Schema;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript.Parsers
+namespace Components.Scripting.XmlScript.Parsers
 {
 	/// <summary>
 	/// Provides a contract and base functionality for XML configuration file parsers.

@@ -2,7 +2,7 @@
 using Utils;
 using System.IO;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// The possible states of a plugin.

@@ -1,10 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Components.Interface.ModInstaller
 {
     public struct Instruction
     {
@@ -24,6 +17,23 @@ namespace Components.Interface.ModInstaller
             {
                 type = "iniedit",
                 source = edit,
+            };
+        }
+
+        public static Instruction EnablePlugin(string plugin)
+        {
+            return new Instruction()
+            {
+                type = "enableplugin",
+                source = plugin,
+            };
+        }
+
+        public static Instruction EnableAllPlugins()
+        {
+            return new Instruction()
+            {
+                type = "enableallplugins",
             };
         }
 

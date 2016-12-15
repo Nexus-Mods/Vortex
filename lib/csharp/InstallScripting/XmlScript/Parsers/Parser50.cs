@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Xml.Linq;
 using System.Xml.Schema;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript.Parsers
+namespace Components.Scripting.XmlScript.Parsers
 {
 	/// <summary>
 	/// Parses version 5.0 xml script files.

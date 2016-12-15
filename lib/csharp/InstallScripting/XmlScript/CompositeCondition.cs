@@ -5,7 +5,7 @@ using System.Text;
 using Utils;
 using Utils.Collections;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// The possible relations of conditions.

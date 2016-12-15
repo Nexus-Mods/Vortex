@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript.Parsers
+namespace Components.Scripting.XmlScript.Parsers
 {
 	/// <summary>
 	/// The exception that is thrown if there is a problem parsing a config file.

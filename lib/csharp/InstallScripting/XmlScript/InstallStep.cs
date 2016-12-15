@@ -3,7 +3,7 @@ using System.Collections.Specialized;
 using Utils;
 using Utils.Collections;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// A step in the XML Script install of a mod.

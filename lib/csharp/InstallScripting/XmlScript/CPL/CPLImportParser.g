@@ -35,7 +35,7 @@ options {
 	tokenVocab=CPLLexer;
 }
 
-@namespace {Nexus.Client.ModManagement.Scripting.XmlScript.CPL}
+@namespace {Components.Scripting.XmlScript.CPL}
 
 @members {
 	/// <summary>

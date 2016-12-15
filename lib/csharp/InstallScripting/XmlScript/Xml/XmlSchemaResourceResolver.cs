@@ -4,7 +4,7 @@ using System.Xml;
 using System.Reflection;
 using System.IO;
 
-namespace Nexus.Client.ModManagement.Scripting.XmlScript.Xml
+namespace Components.Scripting.XmlScript.Xml
 {
 	/// <summary>
 	/// This resolves references to external files from within schemas.
@@ -37,7 +37,7 @@ namespace Nexus.Client.ModManagement.Scripting.XmlScript.Xml
 				return asmResourceAssembly.GetManifestResourceStream(strPath);
 			string file = Path.GetFileName(absoluteUri.AbsolutePath);
 			asmResourceAssembly = Assembly.GetAssembly(typeof(XmlSchemaResourceResolver));
-			Stream stream = asmResourceAssembly.GetManifestResourceStream(String.Format("Nexus.Client.ModManagement.Scripting.XmlScript.Schemas.{0}", file));
+			Stream stream = asmResourceAssembly.GetManifestResourceStream(String.Format("Components.Scripting.XmlScript.Schemas.{0}", file));
 			return stream;
 		}
 	}

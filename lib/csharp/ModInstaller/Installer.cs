@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
-using Components.Extensions;
 using Utils;
-using Components.Interface.ModInstaller;
+using Components.Interface;
 
 namespace Components.ModInstaller
 {
