@@ -1,4 +1,4 @@
-import * as actions from '../out/actions/index';
+import * as actions from '../src/actions/index';
 
 describe('addNotification', () => {
   it('creates the correct action for minimal case', () => {

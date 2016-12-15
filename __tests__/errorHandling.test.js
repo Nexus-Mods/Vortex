@@ -1,4 +1,4 @@
-import { terminate } from '../out/util/errorHandling.js';
+import { terminate } from '../src/util/errorHandling';
 
 import { app, dialog } from 'electron';
 

@@ -1,4 +1,4 @@
-import { accountReducer } from '../out/reducers/account';
+import { accountReducer } from '../src/extensions/nexus_integration/reducers/account';
 
 describe('setUserAPIKey', () => {
   it('sets the key', () => {

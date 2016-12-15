@@ -1,4 +1,4 @@
-import * as helper from '../out/util/storeHelper';
+import * as helper from '../src/util/storeHelper';
 
 describe('getSafe', () => {
   it('returns the default if empty', () => {

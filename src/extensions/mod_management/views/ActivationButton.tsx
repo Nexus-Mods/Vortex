@@ -47,13 +47,9 @@ class ActivationButton extends ComponentEx<IProps, {}> {
     let { t, activators, currentActivator, gameDiscovery,
           mods, modState, onShowError } = this.props;
 
-    log('info', 'current activator', currentActivator);
-
     let activator: IModActivator = currentActivator !== undefined
       ? activators.find((act: IModActivator) => act.id === currentActivator)
       : activators[0];
-
-    log('info', 'used activator', activator.id);
 
     let modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
 

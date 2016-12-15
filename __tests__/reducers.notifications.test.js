@@ -1,4 +1,4 @@
-import { notificationsReducer } from '../out/reducers/notifications';
+import { notificationsReducer } from '../src/reducers/notifications';
 
 describe('startNotification', () => {
   let input = { notifications: [] };

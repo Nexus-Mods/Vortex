@@ -28,7 +28,7 @@ jest.mock('fs', () => ({
   }
 }));
 
-import runElevated from '../out/util/elevated';
+import runElevated from '../src/util/elevated';
 
 function dummy() {
   console.log('DUMMY FUNCTION');
