@@ -4,6 +4,7 @@ node_modules
 actions
 assets
 games
+lib
 locales
 reducers
 index.html

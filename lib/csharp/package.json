@@ -1,0 +1,15 @@
+{
+  "name": "modinstaller",
+  "version": "0.0.1",
+  "description": "Installer for xml and c# fomods",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {},
+  "dependencies": {
+    "msbuild": "^0.3.11"
+  }
+}

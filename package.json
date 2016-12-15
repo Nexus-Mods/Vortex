@@ -21,6 +21,7 @@
     "quickstart": "cross-env NODE_ENV=development electron .",
     "preinstallex": "npm install rm-local-modules && rm-local-modules",
     "installex": "npm install && npm run build_api && electron-rebuild -w icon-extract,gamebryo-savegame,ffi,node-7z,winreg,ref && cd node_modules/redux-persist && npm run build:commonjs",
+    "build_modinstaller": "cd lib/csharp && npm build",
     "build_nexusapi": "cd lib/js/nexus-api && npm install && npm run build",
     "build_api": "tsc -p ./api && npm install ./api",
     "build_out": "tsc -p . && npm run lessc",
