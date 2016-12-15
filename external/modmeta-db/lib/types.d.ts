@@ -21,6 +21,7 @@ export interface IModInfo {
     fileMD5: string;
     sourceURI: any;
     rules?: IRule[];
+    expires?: number;
     details?: {
         homepage?: string;
         category?: string;

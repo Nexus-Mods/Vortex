@@ -151,11 +151,18 @@ class ExtensionManager {
 
     // TODO the mod db doesn't depend on the store but it must only be instantiated
     // in one process and this is a cheap way of achieving that
-    this.mModDB = new ModDB(
-        app.getPath('userData'),
-        getSafe(store.getState(), ['settings', 'gameMode', 'current'],
-                undefined),
-        getSafe(store.getState(), ['account', 'nexus', 'APIKey'], ''));
+    this.mModDB =
+        new ModDB(getSafe(store.getState(), ['settings', 'gameMode', 'current'],
+                          undefined),
+                  [
+                    {
+                      protocol: 'nexus',
+                      url: 'https://api.nexusmods.com/v1',
+                      apiKey: getSafe(store.getState(),
+                                      ['account', 'nexus', 'APIKey'], ''),
+                      cacheDurationSec: 86400,
+                    },
+                  ]);
   }
 
   /**

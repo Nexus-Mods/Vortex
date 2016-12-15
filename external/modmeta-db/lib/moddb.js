@@ -7,8 +7,7 @@ const semvish = require('semvish');
 const util_1 = require('./util');
 const util = require('util');
 class ModDB {
-    constructor(location, gameId, apiKey, timeout) {
-        this.mBaseURL = 'https://api.nexusmods.com/v1';
+    constructor(gameId, servers, database, timeoutMS) {
         this.translateFromNexus = (nexusObj, gameId) => {
             let urlFragments = [
                 'nxm:/',
@@ -34,7 +33,7 @@ class ModDB {
             };
         };
         this.mDB =
-            levelup('mods', { valueEncoding: 'json', db: leveljs });
+            levelup('mods', { valueEncoding: 'json', db: database || leveljs });
         this.mModKeys = [
             'modId',
             'modName',
@@ -47,27 +46,15 @@ class ModDB {
         ];
         this.mGameId = gameId;
         this.mRestClient = new node_rest_client_1.Client();
-        this.mBaseData = {
-            headers: {
-                'Content-Type': 'application/json',
-                APIKEY: apiKey,
-            },
-            path: {},
-            requestConfig: {
-                timeout: timeout || 5000,
-                noDelay: true,
-            },
-            responseConfig: {
-                timeout: timeout || 5000,
-            },
-        };
+        this.mServers = servers;
+        this.mTimeout = timeoutMS;
         this.promisify();
     }
     setGameId(gameId) {
         this.mGameId = gameId;
     }
     getByKey(key) {
-        return this.getAllByKey(key);
+        return this.getAllByKey(key, this.mGameId);
     }
     insert(mod) {
         let missingKeys = this.missingKeys(mod);
@@ -89,27 +76,67 @@ class ModDB {
                     lookupKey += ':' + modId;
                 }
             }
-            return this.getAllByKey(lookupKey);
-        })
-            .then((results) => {
-            if (results.length > 0) {
-                return results;
-            }
-            const realGameId = this.translateNexusGameId(gameId || this.mGameId);
-            const url = `${this.mBaseURL}/games/${realGameId}/mods/md5_search/${hashResult}`;
-            return new Promise((resolve, reject) => {
-                this.mRestClient.get(url, this.mBaseData, (data, response) => {
+            return this.getAllByKey(lookupKey, gameId);
+        });
+    }
+    restBaseData(server) {
+        return {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            path: {},
+            requestConfig: {
+                timeout: this.mTimeout || 5000,
+                noDelay: true,
+            },
+            responseConfig: {
+                timeout: this.mTimeout || 5000,
+            },
+        };
+    }
+    nexusBaseData(server) {
+        let res = this.restBaseData(server);
+        res.headers.APIKEY = server.apiKey;
+        return res;
+    }
+    queryServer(server, gameId, hash) {
+        if (server.protocol === 'nexus') {
+            return this.queryServerNexus(server, gameId, hash);
+        }
+        else {
+            return this.queryServerMeta(server, gameId, hash);
+        }
+    }
+    queryServerNexus(server, gameId, hash) {
+        const realGameId = this.translateNexusGameId(gameId || this.mGameId);
+        const url = `${server.url}/games/${realGameId}/mods/md5_search/${hash}`;
+        return new Promise((resolve, reject) => {
+            try {
+                this.mRestClient.get(url, this.nexusBaseData(server), (data, response) => {
                     if (response.statusCode === 200) {
-                        let altResults = data.map((nexusObj) => this.translateFromNexus(nexusObj, gameId));
-                        for (let result of altResults) {
-                            this.insert(result.value);
-                        }
-                        resolve(altResults);
+                        let result = data.map((nexusObj) => this.translateFromNexus(nexusObj, gameId));
+                        resolve(result);
                     }
                     else {
                         reject(new Error(util.inspect(data)));
                     }
                 });
+            }
+            catch (err) {
+                reject(err);
+            }
+        });
+    }
+    queryServerMeta(server, gameId, hash) {
+        const url = `${server.url}/by_hash/${hash}`;
+        return new Promise((resolve, reject) => {
+            this.mRestClient.get(url, this.restBaseData(server), (data, response) => {
+                if (response.statusCode === 200) {
+                    resolve(data);
+                }
+                else {
+                    reject(new Error(util.inspect(data)));
+                }
             });
         });
     }
@@ -121,22 +148,39 @@ class ModDB {
             return input;
         }
     }
-    getAllByKey(key) {
+    getAllByKey(key, gameId) {
         return new Promise((resolve, reject) => {
             let result = [];
             let stream = this.mDB.createReadStream({
                 gte: key + ':',
                 lt: key + 'a:',
             });
-            stream.on('data', (data) => {
-                result.push(data);
-            });
-            stream.on('error', (err) => {
-                reject(err);
-            });
-            stream.on('end', () => {
-                resolve(result);
-            });
+            stream.on('data', (data) => { result.push(data); });
+            stream.on('error', (err) => { reject(err); });
+            stream.on('end', () => { resolve(result); });
+        })
+            .then((results) => {
+            if (results.length > 0) {
+                return Promise.resolve(results);
+            }
+            let remoteResults;
+            return Promise
+                .mapSeries(this.mServers, (server) => {
+                if (remoteResults) {
+                    return Promise.resolve();
+                }
+                return this.queryServer(server, gameId, key)
+                    .then((serverResults) => {
+                    remoteResults = serverResults;
+                    for (let result of remoteResults) {
+                        let temp = Object.assign({}, result.value);
+                        temp.expires = new Date().getTime() / 1000 +
+                            server.cacheDurationSec;
+                        this.insert(result.value);
+                    }
+                });
+            })
+                .then(() => { return Promise.resolve(remoteResults); });
         });
     }
     makeKey(mod) {

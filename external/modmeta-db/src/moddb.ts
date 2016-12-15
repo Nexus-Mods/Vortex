@@ -282,6 +282,7 @@ class ModDB {
             return Promise.resolve(results);
           }
 
+          let hash = key.split(':')[0];
           let remoteResults: ILookupResult[];
 
           return Promise
@@ -290,7 +291,7 @@ class ModDB {
                            if (remoteResults) {
                              return Promise.resolve();
                            }
-                           return this.queryServer(server, gameId, key)
+                           return this.queryServer(server, gameId, hash)
                                .then((serverResults: ILookupResult[]) => {
                                  remoteResults = serverResults;
                                  // cache all results in our database
