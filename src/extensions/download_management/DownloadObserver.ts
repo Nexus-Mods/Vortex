@@ -15,9 +15,8 @@ import DownloadManager from './DownloadManager';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import {t} from 'i18next';
 import {IHashResult, genHash} from 'modmeta-db';
-import {v1} from 'node-uuid';
+import {generate as shortid} from 'shortid';
 
 import * as nodeURL from 'url';
 import * as util from 'util';
@@ -74,7 +73,7 @@ export class DownloadObserver {
 
   private handleStartDownload(urls: string[], modInfo: any,
                               callback?: (error: Error, id: string) => void) {
-    let id = v1();
+    let id = shortid();
     let gameMode = modInfo.game || this.mStore.getState().settings.gameMode.current;
     this.mStore.dispatch(initDownload(id, urls, modInfo, gameMode));
 

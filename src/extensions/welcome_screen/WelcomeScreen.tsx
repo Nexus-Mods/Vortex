@@ -17,11 +17,11 @@ import ToolButton from './ToolButton';
 import ToolEditDialog from './ToolEditDialog';
 
 import { execFile } from 'child_process';
-import { v1 } from 'node-uuid';
 import * as path from 'path';
 import * as React from 'react';
 import { Jumbotron, Media, Well } from 'react-bootstrap';
 import update = require('react-addons-update');
+import { generate as shortid } from 'shortid';
 
 interface IWelcomeScreenState {
   editTool: string;
@@ -237,7 +237,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
 
   private addNewTool = () => {
     this.setState(update(this.state, {
-      editTool: { $set: v1() },
+      editTool: { $set: shortid() },
     }));
   }
 

@@ -15,11 +15,11 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { execFile } from 'child_process';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
-import { v1 } from 'node-uuid';
 import * as path from 'path';
 import * as React from 'react';
 import { Image } from 'react-bootstrap';
 import { ContextMenu, ContextMenuLayer, MenuItem } from 'react-contextmenu';
+import { generate as shortid } from 'shortid';
 
 export interface IRemoveTool {
   (gameId: string, toolId: string): void;
@@ -54,7 +54,7 @@ function runToolElevated(tool: IDiscoveredTool,
   // is started multiple times.
   // Also node-ipc has a bug and would crash the application
   // if that were to happen
-  const ipcPath: string = 'tool_elevated_' + v1();
+  const ipcPath: string = 'tool_elevated_' + shortid();
   // communicate with the elevated process via ipc
   ipc.serve(ipcPath, () => {
     ipc.server.on('finished', (modPath: string) => {

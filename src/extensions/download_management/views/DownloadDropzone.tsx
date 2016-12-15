@@ -8,10 +8,10 @@ import { finishDownload, initDownload,
 import { downloadPath } from '../../mod_management/selectors';
 
 import * as fs from 'fs-extra-promise';
-import { v1 } from 'node-uuid';
 import * as path from 'path';
 import * as React from 'react';
 import update = require('react-addons-update');
+import { generate as shortid } from 'shortid';
 
 interface IConnectedProps {
   downloadPath: string;
@@ -109,7 +109,6 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
       const item = evt.dataTransfer.files.item(0);
       const destination = path.join(downloadPath, item.name);
       this.move(item.path, destination);
-;
     }
     this.setState(update(this.state, {
       dropActive: { $set: 'no' },
@@ -118,7 +117,7 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
 
   private move(source: string, destination: string) {
     const { gameMode, onStartMove, onFinishMove, onMoveFailed } = this.props;
-    const id = v1();
+    const id = shortid();
     onStartMove(id, destination, gameMode);
     fs.renameAsync(source, destination)
       .catch((err) => {

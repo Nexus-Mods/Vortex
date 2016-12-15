@@ -3,8 +3,8 @@ import { INotification } from '../types/INotification';
 import {log} from '../util/log';
 
 import * as Promise from 'bluebird';
-import { v1 } from 'node-uuid';
 import { createAction } from 'redux-act';
+import { generate as shortid } from 'shortid';
 
 /**
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
@@ -75,7 +75,7 @@ export function showDialog(type: DialogType, title: string,
                            content: IDialogContent, actions: DialogActions) {
   return (dispatch) => {
     return new Promise<IDialogResult>((resolve, reject) => {
-      const id = v1();
+      const id = shortid();
       dispatch(addDialog(id, type, title, content, Object.keys(actions)));
       dialogCallbacks[id] = (actionKey: string, input?: any) => {
         if (actions[actionKey] != null) {
