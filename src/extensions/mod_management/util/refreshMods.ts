@@ -10,15 +10,20 @@ import * as path from 'path';
  * @param {string} installPath
  * @param {(mod: IMod) => void} onAddMod
  */
-function refreshMods(installPath: string, onAddMod: (mod: IMod) => void) {
+function refreshMods(installPath: string, knownMods: string[],
+                     onAddMod: (mod: IMod) => void, onRemoveMods: (names: string[]) => void) {
   return fs.ensureDirAsync(installPath)
     .then(() => {
       return fs.readdirAsync(installPath);
     })
     .then((modNames: string[]) => {
-      return Promise.map(modNames, (modName: string) => {
+      let addedMods = modNames.filter((name: string) => knownMods.indexOf(name) === -1);
+      let removedMods = knownMods.filter((name: string) => modNames.indexOf(name) === -1);
+
+      return Promise.map(addedMods, (modName: string) => {
         const fullPath: string = path.join(installPath, modName);
-        return fs.statAsync(fullPath).then((stat: fs.Stats) => {
+        return fs.statAsync(fullPath)
+        .then((stat: fs.Stats) => {
           const mod: IMod = {
             id: modName,
             installationPath: fullPath,
@@ -30,6 +35,9 @@ function refreshMods(installPath: string, onAddMod: (mod: IMod) => void) {
           };
           onAddMod(mod);
         });
+      })
+      .then(() => {
+        onRemoveMods(removedMods);
       });
     });
 }

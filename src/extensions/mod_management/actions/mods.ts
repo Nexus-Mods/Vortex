@@ -8,11 +8,6 @@ export const addMod: any = createAction('ADD_MOD',
 export const removeMod: any = createAction('REMOVE_MOD');
 
 /**
- * clear the mod cache
- */
-export const clearMods: any = createAction('CLEAR_MODS');
-
-/**
  * sets the state of a mod (whether it's downloaded, installed, ...)
  */
 export const setModState: any = createAction('SET_MOD_STATE',

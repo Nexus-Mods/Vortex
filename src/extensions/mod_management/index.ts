@@ -3,7 +3,7 @@ import {ITableAttribute} from '../../types/ITableAttribute';
 
 import {IDownload} from '../download_management/types/IDownload';
 
-import {addMod, clearMods} from './actions/mods';
+import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
 import {modsReducer} from './reducers/mods';
 import {settingsReducer} from './reducers/settings';
@@ -18,8 +18,6 @@ import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
 import ModList from './views/ModList';
 import Settings from './views/Settings';
-
-import * as fs from 'fs-extra-promise';
 
 import InstallManager from './InstallManager';
 
@@ -106,41 +104,39 @@ function init(context: IExtensionContextExt): boolean {
     const store: Redux.Store<any> = context.api.store;
 
     context.api.events.on('gamemode-activated', (newGame: string) => {
-      context.api.store.dispatch(clearMods());
       let currentActivator = store.getState().gameSettings.mods.activator;
       let supported = supportedActivators(store.getState());
       if (supported.find((activator: IModActivator) =>
         activator.id === currentActivator) === undefined) {
-          // current activator is not valid for this game. This should only occur
-          // if compatibility of the activator has changed
-          if (supported.length > 0) {
-            context.api.store.dispatch(setActivator(supported[0].id));
-          }
+        // current activator is not valid for this game. This should only occur
+        // if compatibility of the activator has changed
+        if (supported.length > 0) {
+          context.api.store.dispatch(setActivator(supported[0].id));
         }
+      }
 
-      refreshMods(installPath(store.getState()), (mod: IMod) => {
-        if (store.getState().mods[mod.id] === undefined) {
-          context.api.store.dispatch(addMod(mod));
-        }
+      let knownMods = Object.keys(store.getState().mods.mods);
+      refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
+        context.api.store.dispatch(addMod(mod));
+      }, (modNames: string[]) => {
+        modNames.forEach((name: string) => { context.api.store.dispatch(removeMod(name)); });
       })
-      .then(() => {
-        context.api.events.emit('mods-refreshed');
-      })
-      ;
+        .then(() => {
+          context.api.events.emit('mods-refreshed');
+        })
+        ;
     });
 
     context.api.onStateChange(
-        ['gameSettings', 'mods', 'paths'],
-        (previous: IStatePaths, current: IStatePaths) => {
-          store.dispatch(clearMods());
-          if (fs.existsSync(installPath(store.getState()))) {
-            refreshMods(installPath(store.getState()), (mod: IMod) => {
-              if (store.getState().mods[mod.id] === undefined) {
-                context.api.store.dispatch(addMod(mod));
-              }
-            });
-          }
+      ['gameSettings', 'mods', 'paths'],
+      (previous: IStatePaths, current: IStatePaths) => {
+        let knownMods = Object.keys(store.getState().mods.mods);
+        refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
+          context.api.store.dispatch(addMod(mod));
+        }, (modNames: string[]) => {
+          modNames.forEach((name: string) => { context.api.store.dispatch(removeMod(name)); });
         });
+      });
 
     context.api.events.on(
         'start-install',

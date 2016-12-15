@@ -23,7 +23,6 @@ export const modsReducer: IReducerSpec = {
     [actions.removeMod]: (state, payload) => {
       return deleteOrNop(state, ['mods', payload]);
     },
-    [actions.clearMods]: (state, payload) => update(state, { mods: { $set: {} } } ),
     [actions.setModInstallationPath]: (state, payload) => {
       return setSafe(state, ['mods', payload.id, 'installationPath'], payload.installPath);
     },
