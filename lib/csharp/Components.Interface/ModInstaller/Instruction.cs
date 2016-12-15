@@ -1,3 +1,4 @@
+﻿namespace Components.Interface
 {
     public struct Instruction
     {
