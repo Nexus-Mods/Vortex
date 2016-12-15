@@ -14,12 +14,3 @@ export const setSavegameAttribute: any = createAction('SET_SAVEGAME_ATTRIBUTE',
 export const clearSavegames: any = createAction('CLEAR_SAVEGAMES');
 
 export const removeSavegame: any = createAction('REMOVE_SAVEGAME');
-
-export const setSavegamelistAttributeVisible: any =
-    createAction('SET_SAVEGAMELIST_ATTRIBUTE_VISIBLE',
-                 (attributeId: string, visible: boolean) => {
-                   return {attributeId, visible};
-                 });
-
-export const setSavegamelistAttributeSort: any = createAction('SET_SAVEGAMELIST_ATTRIBUTE_SORT',
-  (attributeId: string, direction: string) => { return { attributeId, direction }; });

@@ -3,7 +3,7 @@ import { types, util } from 'nmm-api';
 import {
   addSavegame, clearSavegames, removeSavegame,
   setSavegameAttribute,
-  setSavegameState, setSavegamelistAttributeSort, setSavegamelistAttributeVisible,
+  setSavegameState,
 } from '../actions/session';
 
 import update = require('react-addons-update');
@@ -13,13 +13,6 @@ import update = require('react-addons-update');
  */
 export const sessionReducer: types.IReducerSpec = {
   reducers: {
-    ['persist/REHYDRATE']: (state, payload) => {
-      if (payload.saves !== undefined) {
-        return update(state, { saves: { $set: payload.saves || {} } });
-      } else {
-        return state;
-      }
-    },
     [addSavegame]: (state, payload) => {
       return util.setSafe(state, ['saves', payload.id], payload);
     },
@@ -37,16 +30,7 @@ export const sessionReducer: types.IReducerSpec = {
     [clearSavegames]: (state, payload) => {
       return update(state, { saves: { $set: {} } });
     },
-    [setSavegamelistAttributeVisible]: (state, payload) => {
-      return util.setSafe(state, ['savegamelistState',
-        payload.attributeId, 'enabled'], payload.visible);
-    },
-    [setSavegamelistAttributeSort]: (state, payload) => {
-      const { attributeId, direction } = payload;
-      return util.setSafe(state, ['savegamelistState', attributeId, 'sortDirection'], direction);
-    },
   }, defaults: {
     saves: {},
-    savegamelistState: {},
   },
 };

@@ -1,4 +1,4 @@
-import { setSavegamelistAttributeSort, setSavegamelistAttributeVisible } from '../actions/session';
+import { setSavegamelistAttributeSort, setSavegamelistAttributeVisible } from '../actions/settings';
 import { IAttributeState } from '../types/IAttributeState';
 import { ISavegame } from '../types/ISavegame';
 import { ISavegameAttribute } from '../types/ISavegameAttribute';
@@ -240,7 +240,6 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     const { t } = this.props;
     // TODO: if-elseif-else cascade... This code could probably be nicer. somehow...
     if (attribute.id === 'screenshot') {
-
       let dim: Dimensions = attribute.calc(save.attributes);
       this.screenshotCanvas.setAttribute('width', dim.width.toString());
       this.screenshotCanvas.setAttribute('height', dim.height.toString());
@@ -345,7 +344,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     saves: state.session.saves.saves,
-    savegamelistState: state.session.saves.savegamelistState,
+    savegamelistState: state.settings.savegamelistState,
     gameMode: state.settings.gameMode.current,
     language: state.settings.interface.language,
     discoveredGames: state.settings.gameMode.discovered,

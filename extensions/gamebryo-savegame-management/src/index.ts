@@ -1,7 +1,8 @@
 import { types } from 'nmm-api';
 
-import { addSavegame, clearSavegames, setSavegamelistAttributeVisible } from './actions/session';
+import { addSavegame, clearSavegames } from './actions/session';
 import { sessionReducer } from './reducers/session';
+import { settingsReducer } from './reducers/settings';
 import { ISavegame } from './types/ISavegame';
 import { ISavegameAttribute } from './types/ISavegameAttribute';
 import {gameSupported, savesPath} from './util/gameSupport';
@@ -28,13 +29,7 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerReducer(['session', 'saves'], sessionReducer);
-  context.registerReducer(['session', 'savegamelistState'], sessionReducer);
-
-  /*
-  if (context.registerSavegameAttribute !== undefined) {
-    
-      .forEach(context.registerSavegameAttribute);
-  }*/
+  context.registerReducer(['settings', 'savegamelistState'], settingsReducer);
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
@@ -53,9 +48,6 @@ function init(context: IExtensionContextExt): boolean {
         })
         ;
     }
-
-    store.dispatch(setSavegamelistAttributeVisible('id', false));
-    store.dispatch(setSavegamelistAttributeVisible('filename', false));
 
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       store.dispatch(clearSavegames());
