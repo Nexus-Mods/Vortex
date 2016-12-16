@@ -42,12 +42,17 @@
   <ItemGroup>
     <Compile Include="Installer.cs" />
     <Compile Include="InstallerProxy.cs" />
+    <Compile Include="ModFormatManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Components.Interface\Components.Interface.csproj">
       <Project>{494c3e44-8a35-46ae-82e5-1c1a7221803b}</Project>
       <Name>Components.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\InstallScripting\Scripting\Scripting.csproj">
+      <Project>{66dc8748-2dc2-4e6e-b645-080e0cfdc831}</Project>
+      <Name>Scripting</Name>
     </ProjectReference>
     <ProjectReference Include="..\Utils\Utils.csproj">
       <Project>{5b9ad297-9d49-4593-a795-bdbd309b3313}</Project>
