@@ -99,9 +99,9 @@
 		</xs:attribute>
 	</xs:complexType>
 
-	<xs:group name="dependencyTypesGroup">
+	<xs:complexType name="compositeDependency">
 		<xs:annotation>
-			<xs:documentation>The group of possible dependencies.</xs:documentation>
+			<xs:documentation>A dependency that is made up of one or more dependencies.</xs:documentation>
 		</xs:annotation>
 		<xs:sequence>
 			<xs:choice maxOccurs="unbounded">
@@ -115,9 +115,14 @@
 						<xs:documentation>Specifies that a condition flag must have a specific value.</xs:documentation>
 					</xs:annotation>
 				</xs:element>
-				<xs:element name="gameDependency" type="versionDependency" minOccurs="0" maxOccurs="1">
+				<xs:element name="foseDependency" type="versionDependency" minOccurs="0" maxOccurs="1">
 					<xs:annotation>
-						<xs:documentation>Specifies a minimum required version of the installed game.</xs:documentation>
+						<xs:documentation>Specifies a minimum required version of FOSE.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="falloutDependency" type="versionDependency" minOccurs="0" maxOccurs="1">
+					<xs:annotation>
+						<xs:documentation>Specifies a minimum required version of Fallout 3.</xs:documentation>
 					</xs:annotation>
 				</xs:element>
 				<xs:element name="fommDependency" type="versionDependency" minOccurs="0" maxOccurs="1">
@@ -130,35 +135,8 @@
 						<xs:documentation>A list of mods and their states against which to match the user's installation.</xs:documentation>
 					</xs:annotation>
 				</xs:element>
-				<xs:element name="foseDependency" type="versionDependency" minOccurs="0" maxOccurs="1">
-					<xs:annotation>
-						<xs:documentation>Specifies a minimum required version of FOSE.</xs:documentation>
-					</xs:annotation>
-				</xs:element>
-				<xs:element name="skseDependency" type="versionDependency" minOccurs="0" maxOccurs="1">
-					<xs:annotation>
-						<xs:documentation>Specifies a minimum required version of SKSE.</xs:documentation>
-					</xs:annotation>
-				</xs:element>
-				<xs:element name="nvseDependency" type="versionDependency" minOccurs="0" maxOccurs="1">
-					<xs:annotation>
-						<xs:documentation>Specifies a minimum required version of NVSE.</xs:documentation>
-					</xs:annotation>
-				</xs:element>
-				<xs:element name="f4seDependency" type="versionDependency" minOccurs="0" maxOccurs="1">
-					<xs:annotation>
-						<xs:documentation>Specifies a minimum required version of F4SE.</xs:documentation>
-					</xs:annotation>
-				</xs:element>
 			</xs:choice>
 		</xs:sequence>
-	</xs:group>
-	
-	<xs:complexType name="compositeDependency">
-		<xs:annotation>
-			<xs:documentation>A dependency that is made up of one or more dependencies.</xs:documentation>
-		</xs:annotation>
-		<xs:group ref="dependencyTypesGroup"/>
 		<xs:attribute name="operator" default="And">
 			<xs:annotation>
 				<xs:documentation>The relation of the contained dependencies.</xs:documentation>
@@ -299,7 +277,7 @@
 					<xs:documentation>The optional image associated with a plugin.</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:choice minOccurs="0">
+			<xs:choice>
 				<xs:sequence>
 					<xs:element name="files" type="fileList">
 						<xs:annotation>

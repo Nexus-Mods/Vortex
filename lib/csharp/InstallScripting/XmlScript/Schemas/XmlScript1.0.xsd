@@ -1,0 +1,444 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:complexType name="pluginType">
+		<xs:annotation>
+			<xs:documentation>The type of a given plugin.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="name" use="required">
+			<xs:annotation>
+				<xs:documentation>The name of the plugin type.</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="Required">
+						<xs:annotation>
+							<xs:documentation>Indicates the plugin must be installed.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="Optional">
+						<xs:annotation>
+							<xs:documentation>Indicates the plugin is optional.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="Recommended">
+						<xs:annotation>
+							<xs:documentation>Indicates the plugin is recommended for stability.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="NotUsable">
+						<xs:annotation>
+							<xs:documentation>Indicates that using the plugin could result in instability (i.e., a prerequisite plugin is missing).</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="CouldBeUsable">
+						<xs:annotation>
+							<xs:documentation>
+								Indicates that using the plugin could result in instability if loaded
+								with the currently active plugins (i.e., a prerequisite plugin is missing),
+								but that the prerequisite plugin is installed, just not activated.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="dependancy">
+		<xs:annotation>
+			<xs:documentation>A mod upon which the type of a plugin depends.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="file" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The file of the mod upon which a the plugin depends.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="state" use="required">
+			<xs:annotation>
+				<xs:documentation>The state of the mod file.</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="Missing">
+						<xs:annotation>
+							<xs:documentation>Indicates the mod file is not installed.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="Inactive">
+						<xs:annotation>
+							<xs:documentation>Indicates the mod file is installed, but not active.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="Active">
+						<xs:annotation>
+							<xs:documentation>Indicates the mod file is installed and active.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="compositeDependancy">
+		<xs:annotation>
+			<xs:documentation>A dependancy that is made up of one or more dependancies.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:choice maxOccurs="unbounded">
+				<xs:element name="dependancy" type="dependancy" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation>A mod upon which the type of a plugin depends.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="dependancies" type="compositeDependancy">
+					<xs:annotation>
+						<xs:documentation>A list of mods and their states against which to match the user's installation.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:choice>
+		</xs:sequence>
+		<xs:attribute name="operator" default="And">
+			<xs:annotation>
+				<xs:documentation>The relation of the contained dependancies.</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="And">
+						<xs:annotation>
+							<xs:documentation>Indicates all contained dependancies must be satisfied in order for this dependancy to be satisfied.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="Or">
+						<xs:annotation>
+							<xs:documentation>Indicates at least one listed dependancy must be satisfied in order for this dependancy to be satisfied.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="dependancyPattern">
+		<xs:annotation>
+			<xs:documentation>A pattern of mod files.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="dependancies" type="compositeDependancy">
+				<xs:annotation>
+					<xs:documentation>The list of mods and their states against which to match the user's installation.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="type" type="pluginType">
+				<xs:annotation>
+					<xs:documentation>The type of the plugin.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="dependancyPatternList">
+		<xs:annotation>
+			<xs:documentation>A list of dependancy patterns.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="pattern" type="dependancyPattern" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>A specific pattern of mod files against which to match the user's installation.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="dependancyPluginType">
+		<xs:annotation>
+			<xs:documentation>A plugin type that is dependant upon the state of other mods.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="defaultType" type="pluginType">
+				<xs:annotation>
+					<xs:documentation>The default type of the plugin used if none of the specified dependancy states are satisfied.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="patterns" type="dependancyPatternList">
+				<xs:annotation>
+					<xs:documentation>The list of dependancy patterns against which to match the user's installation. The first pattern that matches the user's installation determines the type of the plugin.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="pluginTypeDescriptor">
+		<xs:annotation>
+			<xs:documentation>Describes the type of a plugin.</xs:documentation>
+		</xs:annotation>
+		<xs:choice>
+			<xs:element name="dependancyType" type="dependancyPluginType">
+				<xs:annotation>
+					<xs:documentation>Used when the plugin type is dependant upon the state of other mods.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="type" type="pluginType">
+				<xs:annotation>
+					<xs:documentation>The type of the plugin.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:choice>
+	</xs:complexType>
+
+	<xs:complexType name="image">
+		<xs:annotation>
+			<xs:documentation>An image.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="path" use="required">
+			<xs:annotation>
+				<xs:documentation>The path to the image in the Mod.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="plugin">
+		<xs:annotation>
+			<xs:documentation>A plugin.</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="files" type="fileList">
+				<xs:annotation>
+					<xs:documentation>The list of files and folders that need to be installed for the plugin.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="description" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>A description of the plugin.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="image" type="image" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The optional image associated with a plugin.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="typeDescriptor" type="pluginTypeDescriptor">
+				<xs:annotation>
+					<xs:documentation>Describes the type of the plugin.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:all>
+		<xs:attribute name="name" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The name of the plugin.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="pluginList">
+		<xs:annotation>
+			<xs:documentation>A list of plugins.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="plugin" type="plugin" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>A mod plugin belonging to a group.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="group">
+		<xs:annotation>
+			<xs:documentation>A group of plugins.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="plugins" type="pluginList">
+				<xs:annotation>
+					<xs:documentation>The list of plugins in the group.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The name of the group.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="type" use="required">
+			<xs:annotation>
+				<xs:documentation>The type of the group.</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="SelectAtLeastOne">
+						<xs:annotation>
+							<xs:documentation>At least one plugin in the group must be selected.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="SelectAtMostOne">
+						<xs:annotation>
+							<xs:documentation>At most one plugin in the group must be selected.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="SelectExactlyOne">
+						<xs:annotation>
+							<xs:documentation>Exactly one plugin in the group must be selected.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="SelectAll">
+						<xs:annotation>
+							<xs:documentation>All plugins in the group must be selected.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="SelectAny">
+						<xs:annotation>
+							<xs:documentation>Any number of plugins in the group may be selected.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="groupList">
+		<xs:annotation>
+			<xs:documentation>A list of plugin groups.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="group" type="group" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>A group of plugins for the mod.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="fileSystemItem">
+		<xs:annotation>
+			<xs:documentation>A file or folder that may be installed as part of a module or plugin.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="source" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The path to the file or folder in the Mod.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="destination" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>The path to which the file or folder should be installed. If omitted, the destination is the same as the source.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="alwaysInstall" type="xs:boolean" default="false">
+			<xs:annotation>
+				<xs:documentation>Indicates that the file or folder should always be installed, regardless of whether or not the plugin has been selected.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="installIfUsable" type="xs:boolean" default="false">
+			<xs:annotation>
+				<xs:documentation>Indicates that the file or folder should always be installed if the plugin is not NotUsable, regardless of whether or not the plugin has been selected.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="priority" type="xs:integer" default="0">
+			<xs:annotation>
+				<xs:documentation>A number describing the relative priority of the file or folder. A higher number indicates the file or folder should be installed after the items with lower numbers. This value does not have to be unique.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="fileList">
+		<xs:annotation>
+			<xs:documentation>A list of files and folders.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:choice minOccurs="1" maxOccurs="unbounded">
+				<xs:element name="file" type="fileSystemItem" minOccurs="0" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation>A file belonging to the plugin or module.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="folder" type="fileSystemItem" minOccurs="0" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation>A folder belonging to the plugin or module.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="moduleFileDependancy">
+		<xs:annotation>
+			<xs:documentation>A file upon which the module depends.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="file" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The file upon which a the module depends.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="moduleVersionDependancy">
+		<xs:annotation>
+			<xs:documentation>A version of an item upon which the module depends.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="version" type=" xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The version of the item upon which the module depends.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="moduleDependancyList">
+		<xs:annotation>
+			<xs:documentation>A list of dependancies.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="foseDependancy" type="moduleVersionDependancy" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>The version of FOSE upon which the module depends.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="falloutDependancy" type="moduleVersionDependancy" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>The version of Fallout 3 upon which the module depends.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="fommDependancy" type="moduleVersionDependancy" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>The version of FOMM upon which the module depends.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="fileDependancy" type="moduleFileDependancy" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>A file upon which the module depends.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="moduleConfiguration">
+		<xs:annotation>
+			<xs:documentation>Describes the configuration of a module.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="moduleName" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>The name of the module.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="moduleDependancies" type="moduleDependancyList" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Items upon which the module depends.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="requiredInstallFiles" type="fileList" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The list of files and folders that must be installed for this module.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="optionalFileGroups" type="groupList" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The list of optional files (or plugins) that may optionally be installed for this module.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:element name="config" type="moduleConfiguration">
+		<xs:annotation>
+			<xs:documentation>The main element containing the module configuration info.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+</xs:schema>
