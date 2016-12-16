@@ -1,5 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 
+import { setSafe } from '../../../util/storeHelper';
 import { loadCategories, updateCategories } from '../actions/category';
 
 import update = require('react-addons-update');
@@ -11,20 +12,20 @@ export const categoryReducer: IReducerSpec = {
   reducers: {
     ['persist/REHYDRATE']: (state, payload) => {
       if (state.categories === undefined) {
-        return update(state, { categories: { $set: payload.categories || {} } });
+        return update(state, { categories: { $set: payload || {} } });
       } else {
         return state;
       }
     },
     [loadCategories]: (state, payload) => {
-      if (state.categories.categories === undefined) {
-        return update(state, { categories: { $set: payload } });
-      } else {
-        return state;
-      }
+        if (state.categories === undefined) {
+          return setSafe(state, [payload.gameId], payload);
+        } else {
+          return state;
+        }
     },
     [updateCategories]: (state, payload) => {
-      return update(state, { categories: { $set: payload } });
+        return setSafe(state, [payload.gameId], payload);
     },
   }, defaults: {
     categories: {},

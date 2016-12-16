@@ -3,10 +3,9 @@ import CategoryList from './views/CategoryList';
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { loadCategories, updateCategories } from './actions/category';
 
+import { categoryReducer } from './reducers/category';
 import { ICategory } from './types/ICategory';
 import { IGameListEntry } from './types/IGameListEntry';
-
-import { categoryReducer } from './reducers/category';
 
 import { ICategoryTree, IChildren } from './types/ICategoryTree';
 
@@ -47,6 +46,11 @@ function init(context: IExtensionContext): boolean {
         () => {
           retriveCategories(activeGameId, context, true);
         });
+
+      context.api.events.on('gamemode-activated', (gameMode: string) => {
+        retriveCategories(gameMode, context, false);
+      });
+
     } catch (err) {
       log('error', 'Failed to load categories', err);
     }
@@ -55,8 +59,11 @@ function init(context: IExtensionContext): boolean {
   return true;
 }
 
-function retriveCategories(activeGameId: string, context: IExtensionContext, isUpdate: boolean) {
-  let categories = [];
+function retriveCategories(
+  activeGameId: string,
+  context: IExtensionContext,
+  isUpdate: boolean): any {
+  let categoryList = [];
   nexus.getGameInfo(activeGameId)
     .then((gameInfo: IGameInfo) => {
 
@@ -80,13 +87,13 @@ function retriveCategories(activeGameId: string, context: IExtensionContext, isU
           expanded: false,
           children: childrenList,
         };
-        categories.push(root);
+        categoryList.push(root);
       });
 
       if (isUpdate) {
-        context.api.store.dispatch(updateCategories(activeGameId, categories));
+        context.api.store.dispatch(updateCategories(activeGameId, categoryList));
       } else {
-        context.api.store.dispatch(loadCategories(activeGameId, categories));
+        context.api.store.dispatch(loadCategories(activeGameId, categoryList));
       }
     });
 

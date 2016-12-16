@@ -97,7 +97,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
           <Button
             id='collapseAll'
             tooltip='Collapse All'
-            value='true'
+            value='false'
             onClick={this.toggleExpandedForAllJS}
           >
             <Icon name={'compress'} />
@@ -147,8 +147,8 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
             onChange={this.updateTreeData}
             searchQuery={searchString}
             searchFocusOffset={searchFocusIndex}
-            searchFinishCallback={this.searchFinishCallback}
-            generateNodeProps={this.generateNodeProps.bind(this)}
+            // searchFinishCallback={this.searchFinishCallback}
+            generateNodeProps={this.generateNodeProps}
           />
         </div>
       );
@@ -159,8 +159,16 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
     const {treeDataObject} = this.state;
     const {gameMode, onShowError, onUpdateCategories} = this.props;
     let treeFunctions = require('react-sortable-tree');
+    let expanded: boolean;
+
+    if (event.currentTarget === undefined) {
+      expanded = true;
+    } else {
+      expanded = event.currentTarget.value === 'true' ? true : false;
+    }
+
     try {
-      let isExpanded = event.currentTarget.value === 'true' ? true : false;
+      let isExpanded = expanded;
       let newTree: ({
         treeData: {},
         expanded: boolean,
@@ -312,9 +320,10 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private loadTree() {
-    const { categories } = this.props;
+    const { categories, gameMode } = this.props;
+    let gameCategories = categories[gameMode].gameCategories;
     this.setState(update(this.state, {
-      treeDataObject: { $set: categories },
+      treeDataObject: { $set: gameCategories },
     }));
   }
 
@@ -353,13 +362,14 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
 
   };
 
-  private generateNodeProps(rowInfo) {
+  private generateNodeProps = (rowInfo) => {
     rowInfo = {
       buttons: [
         <Button
           id='rename-category'
           className='btn-embed'
           tooltip='Rename Category'
+          value={rowInfo}
           onClick={this.renameJSCategory.bind(this, rowInfo)}
         >
           <Icon name={'pencil'} />
@@ -413,7 +423,7 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     gameMode: state.settings.gameMode.current,
     language: state.settings.interface.language,
-    categories: state.persistent.categories.categories.categories,
+    categories: state.persistent.categories,
   };
 }
 
