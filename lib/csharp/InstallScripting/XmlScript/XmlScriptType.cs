@@ -8,7 +8,6 @@ using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
-using Components.Scripting;
 using Components.Scripting.XmlScript.CPL;
 using Components.Scripting.XmlScript.Parsers;
 using Components.Scripting.XmlScript.Unparsers;
@@ -26,12 +25,12 @@ namespace Components.Scripting.XmlScript
 	/// </remarks>
 	public class XmlScriptType : IScriptType
 	{
-		private static Version[] m_verScriptVersions = { new Version(1, 0),
+		private static Version[] SupportedScriptVersions = { new Version(1, 0),
 														new Version(2, 0),
 														new Version(3, 0),
 														new Version(4, 0),
 														new Version(5, 0) };
-		private static List<string> m_lstFileNames = new List<string>() { "script.xml", "ModuleConfig.xml" };
+		private static List<string> ListFileNames = new List<string>() { "script.xml", "ModuleConfig.xml" };
 
 		/// <summary>
 		/// Gets the list of available script versions.
@@ -41,7 +40,7 @@ namespace Components.Scripting.XmlScript
 		{
 			get
 			{
-				return m_verScriptVersions;
+				return SupportedScriptVersions;
 			}
 		}
 
@@ -83,7 +82,7 @@ namespace Components.Scripting.XmlScript
 		{
 			get
 			{
-				return m_lstFileNames;
+				return ListFileNames;
 			}
 		}
 
@@ -104,11 +103,11 @@ namespace Components.Scripting.XmlScript
 		/// </summary>
 		/// <param name="p_strScriptData">The text to convert into a script.</param>
 		/// <returns>The <see cref="IScript"/> represented by the given data.</returns>
-		public IScript LoadScript(string p_strScriptData)
+		public IScript LoadScript(string scriptData)
 		{
-			XElement xelScript = XElement.Parse(p_strScriptData);
-			IParser prsParser = GetParser(xelScript);
-			return prsParser.Parse();
+			XElement XelScript = XElement.Parse(scriptData);
+			IParser Parser = GetParser(XelScript);
+			return Parser.Parse();
 		}
 
 		/// <summary>
@@ -116,11 +115,11 @@ namespace Components.Scripting.XmlScript
 		/// </summary>
 		/// <param name="p_scpScript">The <see cref="IScript"/> to save.</param>
 		/// <returns>The text represnetation of the given <see cref="IScript"/>.</returns>
-		public string SaveScript(IScript p_scpScript)
+		public string SaveScript(IScript script)
 		{
-			IUnparser upsUnparser = GetUnparser((XmlScript)p_scpScript);
-			XElement xelScript = upsUnparser.Unparse();
-			return xelScript.ToString();
+			IUnparser Unparser = GetUnparser((XmlScript)script);
+			XElement XelScript = Unparser.Unparse();
+			return XelScript.ToString();
 		}
 
 		/// <summary>
@@ -129,11 +128,11 @@ namespace Components.Scripting.XmlScript
 		/// <param name="p_scpScript">The script to validate.</param>
 		/// <returns><c>true</c> if the given script is valid;
 		/// <c>false</c> otherwise.</returns>
-		public bool ValidateScript(IScript p_scpScript)
+		public bool ValidateScript(IScript script)
 		{
-			IUnparser upsUnparser = GetUnparser((XmlScript)p_scpScript);
-			XElement xelScript = upsUnparser.Unparse();
-			return IsXmlScriptValid(xelScript);
+			IUnparser Unparser = GetUnparser((XmlScript)script);
+			XElement XelScript = Unparser.Unparse();
+			return IsXmlScriptValid(XelScript);
 		}
 
 		#endregion
@@ -148,7 +147,7 @@ namespace Components.Scripting.XmlScript
 		{
 			get
 			{
-				return "Nexus/Client/ModManagement/Scripting/XmlScript/Schemas";
+				return "Components/Scripting/XmlScript/Schemas";
 			}
 		}
 
@@ -157,31 +156,31 @@ namespace Components.Scripting.XmlScript
 		/// <summary>
 		/// Gets the path to the schema file for the specified xml script version.
 		/// </summary>
-		/// <param name="p_verXmlScriptVersion">The XML script file version for which to return a schema.</param>
+		/// <param name="XmlScriptVersion">The XML script file version for which to return a schema.</param>
 		/// <returns>The path to the schema file for the specified xml script version.</returns>
-		public XmlSchema GetXmlScriptSchema(Version p_verXmlScriptVersion)
+		public XmlSchema GetXmlScriptSchema(Version XmlScriptVersion)
 		{
-			Assembly asmAssembly = Assembly.GetAssembly(this.GetType());
-			XmlSchema xscSchema = null;
-			string strScriptVersion = String.Format("{0}.{1}", p_verXmlScriptVersion.Major, p_verXmlScriptVersion.Minor);
-			string strSourcePath = String.Format(Path.Combine(GameSpecificXMLScriptSchemaPath, "XmlScript{0}.xsd").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), strScriptVersion);
-			string strSourceQualifiedName = strSourcePath.Replace(Path.AltDirectorySeparatorChar, '.');
-			if (!Array.Exists(asmAssembly.GetManifestResourceNames(), (s) => { return strSourceQualifiedName.Equals(s, StringComparison.OrdinalIgnoreCase); }))
+			Assembly Assembly = Assembly.GetAssembly(this.GetType());
+			XmlSchema XMLSchema = null;
+			string ScriptVersion = string.Format("{0}.{1}", XmlScriptVersion.Major, XmlScriptVersion.Minor);
+			string SourcePath = string.Format(Path.Combine(GameSpecificXMLScriptSchemaPath, "XmlScript{0}.xsd").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), ScriptVersion);
+			string SourceQualifiedName = SourcePath.Replace(Path.AltDirectorySeparatorChar, '.');
+			if (!Array.Exists(Assembly.GetManifestResourceNames(), (s) => { return SourceQualifiedName.Equals(s, StringComparison.OrdinalIgnoreCase); }))
 			{
-				asmAssembly = Assembly.GetExecutingAssembly();
-				strSourcePath = String.Format("Nexus/Client/Games/data/XmlScript{0}.xsd", strScriptVersion);
-				strSourceQualifiedName = strSourcePath.Replace(Path.AltDirectorySeparatorChar, '.');
+				Assembly = Assembly.GetExecutingAssembly();
+				SourcePath = string.Format("Components/Scripting/Games/XmlScript{0}.xsd", ScriptVersion);
+				SourceQualifiedName = SourcePath.Replace(Path.AltDirectorySeparatorChar, '.');
 			}
-			using (Stream stmSchema = asmAssembly.GetManifestResourceStream(strSourceQualifiedName))
+			using (Stream schema = Assembly.GetManifestResourceStream(SourceQualifiedName))
 			{
-				string strSourceUri = String.Format("assembly://{0}/{1}", asmAssembly.GetName().Name, strSourcePath);
-				XmlReaderSettings xrsSettings = new XmlReaderSettings();
-				xrsSettings.IgnoreComments = true;
-				xrsSettings.IgnoreWhitespace = true;
-				using (XmlReader xrdSchemaReader = XmlReader.Create(stmSchema, xrsSettings, strSourceUri))
-					xscSchema = XmlSchema.Read(xrdSchemaReader, delegate(object sender, ValidationEventArgs e) { throw e.Exception; });
+				string SourceUri = string.Format("assembly://{0}/{1}", Assembly.GetName().Name, SourcePath);
+				XmlReaderSettings ReaderSettings = new XmlReaderSettings();
+				ReaderSettings.IgnoreComments = true;
+				ReaderSettings.IgnoreWhitespace = true;
+				using (XmlReader schemaReader = XmlReader.Create(schema, ReaderSettings, SourceUri))
+					XMLSchema = XmlSchema.Read(schemaReader, delegate(object sender, ValidationEventArgs e) { throw e.Exception; });
 			}
-			return xscSchema;
+			return XMLSchema;
 		}
 
 		#region Script Version Helpers
@@ -189,80 +188,80 @@ namespace Components.Scripting.XmlScript
 		/// <summary>
 		/// Extracts the config version from a XML configuration file.
 		/// </summary>
-		protected readonly static Regex m_rgxVersion = new Regex("xsi:noNamespaceSchemaLocation=\"[^\"]*((XmlScript)|(ModConfig))(.*?).xsd", RegexOptions.Singleline);
+		protected readonly static Regex RegexVersion = new Regex("xsi:noNamespaceSchemaLocation=\"[^\"]*((XmlScript)|(ModConfig))(.*?).xsd", RegexOptions.Singleline);
 
 		/// <summary>
 		/// Gets the config version used by the given XML configuration file.
 		/// </summary>
-		/// <param name="p_strXml">The XML file whose version is to be determined.</param>
+		/// <param name="xmlFile">The XML file whose version is to be determined.</param>
 		/// <returns>The config version used the given XML configuration file, or <c>null</c>
 		/// if the given file is not recognized as a configuration file.</returns>
-		public Version GetXmlScriptVersion(string p_strXml)
+		public Version GetXmlScriptVersion(string xmlFile)
 		{
-			string strScriptVersion = "1.0";
-			if (m_rgxVersion.IsMatch(p_strXml))
+			string ScriptVersion = "1.0";
+			if (RegexVersion.IsMatch(xmlFile))
 			{
-				strScriptVersion = m_rgxVersion.Match(p_strXml).Groups[4].Value;
-				if (String.IsNullOrEmpty(strScriptVersion))
-					strScriptVersion = "1.0";
+                ScriptVersion = RegexVersion.Match(xmlFile).Groups[4].Value;
+				if (string.IsNullOrEmpty(ScriptVersion))
+                    ScriptVersion = "1.0";
 			}
-			return new Version(strScriptVersion);
+			return new Version(ScriptVersion);
 		}
 
-		/// <summary>
-		/// Gets the config version used by the given XML configuration file.
-		/// </summary>
-		/// <param name="p_xelScript">The XML file whose version is to be determined.</param>
-		/// <returns>The config version used the given XML configuration file, or <c>null</c>
-		/// if the given file is not recognized as a configuration file.</returns>
-		public Version GetXmlScriptVersion(XElement p_xelScript)
+        /// <summary>
+        /// Gets the config version used by the given XML configuration file.
+        /// </summary>
+        /// <param name="xmlScript">The XML file whose version is to be determined.</param>
+        /// <returns>The config version used the given XML configuration file, or <c>null</c>
+        /// if the given file is not recognized as a configuration file.</returns>
+        public Version GetXmlScriptVersion(XElement xmlScript)
 		{
-			string strScriptVersion = "1.0";
-			XElement xelRoot = p_xelScript.DescendantsAndSelf("config").First();
-			string strSchemaName = xelRoot.Attribute(XName.Get("noNamespaceSchemaLocation", "http://www.w3.org/2001/XMLSchema-instance")).Value.ToLowerInvariant();
-			Int32 intStartPos = strSchemaName.LastIndexOf("xmlscript") + 9;
-			if (intStartPos < 9)
-				intStartPos = strSchemaName.LastIndexOf("modconfig") + 9;
-			if (intStartPos > 8)
+			string ScriptVersion = "1.0";
+			XElement XmlRoot = xmlScript.DescendantsAndSelf("config").First();
+			string SchemaName = XmlRoot.Attribute(XName.Get("noNamespaceSchemaLocation", "http://www.w3.org/2001/XMLSchema-instance")).Value.ToLowerInvariant();
+			int StartPos = SchemaName.LastIndexOf("xmlscript") + 9;
+			if (StartPos < 9)
+                StartPos = SchemaName.LastIndexOf("modconfig") + 9;
+			if (StartPos > 8)
 			{
-				Int32 intLength = strSchemaName.Length - intStartPos - 4;
+				int intLength = SchemaName.Length - StartPos - 4;
 				if (intLength > 0)
-					strScriptVersion = strSchemaName.Substring(intStartPos, intLength);
+                    ScriptVersion = SchemaName.Substring(StartPos, intLength);
 			}
-			return new Version(strScriptVersion);
+			return new Version(ScriptVersion);
 		}
 
-		#endregion
+        #endregion
 
-		#region Validation
+        #region Validation
 
-		/// <summary>
-		/// Validates the given Xml Script against the appropriate schema.
-		/// </summary>
-		/// <param name="p_xelScript">The script file.</param>
-		public void ValidateXmlScript(XElement p_xelScript)
+        /// <summary>
+        /// Validates the given Xml Script against the appropriate schema.
+        /// </summary>
+        /// <param name="xmlScript">The script file.</param>
+        public void ValidateXmlScript(XElement xmlScript)
 		{
-			XmlSchema xscSchema = GetXmlScriptSchema(GetXmlScriptVersion(p_xelScript));
-			XmlSchemaSet xssSchemas = new XmlSchemaSet();
-			xssSchemas.XmlResolver = new XmlSchemaResourceResolver();
-			xssSchemas.Add(xscSchema);
-			xssSchemas.Compile();
+			XmlSchema XMLSchema = GetXmlScriptSchema(GetXmlScriptVersion(xmlScript));
+			XmlSchemaSet SchemaSet = new XmlSchemaSet();
+            SchemaSet.XmlResolver = new XmlSchemaResourceResolver();
+            SchemaSet.Add(XMLSchema);
+            SchemaSet.Compile();
 
-			XDocument docScript = new XDocument(p_xelScript);
-			docScript.Validate(xssSchemas, null, true);
+			XDocument XDocScript = new XDocument(xmlScript);
+            XDocScript.Validate(SchemaSet, null, true);
 		}
 
-		/// <summary>
-		/// Validates the given Xml Script against the appropriate schema.
-		/// </summary>
-		/// <param name="p_xelScript">The script file.</param>
-		/// <returns><c>true</c> if the given script is valid;
-		/// <c>false</c> otherwise.</returns>
-		public bool IsXmlScriptValid(XElement p_xelScript)
+        /// <summary>
+        /// Validates the given Xml Script against the appropriate schema.
+        /// </summary>
+        /// <param name="xmlScript">The script file.</param>
+        /// <returns><c>true</c> if the given script is valid;
+        /// <c>false</c> otherwise.</returns>
+        public bool IsXmlScriptValid(XElement xmlScript)
 		{
 			try
 			{
-				ValidateXmlScript(p_xelScript);
+				ValidateXmlScript(xmlScript);
 			}
 			catch (Exception)
 			{

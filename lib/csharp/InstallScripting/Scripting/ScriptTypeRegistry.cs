@@ -14,6 +14,20 @@ namespace Components.Scripting
 	{
         #region Fields
 
+        private static List<string> SupportedScriptDLLs = new List<string>()
+        {
+            "XmlScript.dll",
+            "ModScript.dll",
+            "CSharpScript.dll"
+        };
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// The object used for filesystem interactions.
+        /// </summary>
         protected static FileSystem FileSystem;
 
         #endregion
@@ -26,83 +40,64 @@ namespace Components.Scripting
         /// A script type is loaded if the class implements <see cref="IScriptType"/> and is
         /// not abstract. Once loaded, the type is added to the registry.
         /// </remarks>
-        /// <param name="p_strSearchPath">The path in which to search for script type assemblies.</param>
-        /// <param name="p_gmdGameMode">The current game mode.</param>
+        /// <param name="searchPath">The path in which to search for script type assemblies.</param>
         /// <returns>A registry containing all of the discovered script types.</returns>
-        public static IScriptTypeRegistry DiscoverScriptTypes(string p_strSearchPath, List<string> p_lstDeletedDLL)
+        public static IScriptTypeRegistry DiscoverScriptTypes(string searchPath)
 		{
+            // ??? Do we still need to handle it this way?
 			Trace.TraceInformation("Discovering Script Types...");
 			Trace.Indent();
 
 			Trace.TraceInformation("Discovering Generic Script Types...");
 			Trace.Indent();
-			Trace.TraceInformation("Looking in: {0}", p_strSearchPath);
-			IScriptTypeRegistry stgRegistry = new ScriptTypeRegistry();
-			if (!FileSystem.DirectoryExists(p_strSearchPath))
+			Trace.TraceInformation("Looking in: {0}", searchPath);
+			IScriptTypeRegistry TypeRegistry = new ScriptTypeRegistry();
+			if (!FileSystem.DirectoryExists(searchPath))
 			{
 				Trace.TraceError("Script Type search path does not exist.");
 				Trace.Unindent();
 				Trace.Unindent();
-				return stgRegistry;
+				return TypeRegistry;
 			}
-			string[] strAssemblies = FileSystem.GetFiles(p_strSearchPath, "*.dll", System.IO.SearchOption.AllDirectories);
-			RegisterScriptTypes(stgRegistry, strAssemblies, p_lstDeletedDLL);
+			string[] Assemblies = FileSystem.GetFiles(searchPath, "*.dll", SearchOption.AllDirectories);
+			RegisterScriptTypes(TypeRegistry, Assemblies);
 			Trace.Unindent();
 
-			Trace.TraceInformation("Discovering Game Mode Specific Script Types...");
-			Trace.Indent();
-            /// Set path to the folder containing scripted installer dlls
-			string strGameModeSearchPath = Path.GetDirectoryName(p_strSearchPath);
-			Trace.TraceInformation("Looking in: {0}", strGameModeSearchPath);
-			if (!FileSystem.DirectoryExists(strGameModeSearchPath))
-			{
-				Trace.TraceError("Game Mode Specific Script Type search path does not exist.");
-				Trace.Unindent();
-				Trace.Unindent();
-				return stgRegistry;
-			}
-			List<string> lstAssemblies = new List<string>();
-			foreach (IScriptType stpType in stgRegistry.Types)
-				lstAssemblies.AddRange(FileSystem.GetFiles(strGameModeSearchPath, string.Format("{0}.dll", stpType.TypeId), System.IO.SearchOption.AllDirectories));
-			RegisterScriptTypes(stgRegistry, lstAssemblies, p_lstDeletedDLL);
-			Trace.Unindent();
-
-			Trace.Unindent();
-			return stgRegistry;
+			return TypeRegistry;
 		}
 
-		/// <summary>
-		/// Searches the given list of assemblies for script types, and registers any that are found.
-		/// </summary>
-		/// <param name="p_stgScriptTypeRegistry">The registry with which to register any found script types.</param>
-		/// <param name="p_enmAssemblies">The assemblies to search for script types.</param>
-		private static void RegisterScriptTypes(IScriptTypeRegistry p_stgScriptTypeRegistry, IEnumerable<string> p_enmAssemblies, List<string> p_lstRemovedDLL)
+        /// <summary>
+        /// Searches the given list of assemblies for script types, and registers any that are found.
+        /// </summary>
+        /// <param name="scriptTypeRegistry">The registry with which to register any found script types.</param>
+        /// <param name="scriptAssemblies">The assemblies to search for script types.</param>
+        private static void RegisterScriptTypes(IScriptTypeRegistry scriptTypeRegistry, IEnumerable<string> scriptAssemblies)
 		{
 			AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
 			try
 			{
-				foreach (string strAssembly in p_enmAssemblies)
+				foreach (string assembly in scriptAssemblies)
 				{
-					Trace.TraceInformation("Checking: {0}", Path.GetFileName(strAssembly));
+					Trace.TraceInformation("Checking: {0}", Path.GetFileName(assembly));
 					Trace.Indent();
 
-					if (!p_lstRemovedDLL.Contains(Path.GetFileName(strAssembly)))
+					if (SupportedScriptDLLs.Contains(Path.GetFileName(assembly)))
 					{
-						Assembly asmGameMode = Assembly.LoadFrom(strAssembly);
-						Type[] tpeTypes = asmGameMode.GetExportedTypes();
-						foreach (Type tpeType in tpeTypes)
+						Assembly CurrentAssembly = Assembly.LoadFrom(assembly);
+						Type[] Types = CurrentAssembly.GetExportedTypes();
+						foreach (Type type in Types)
 						{
-							if (typeof(IScriptType).IsAssignableFrom(tpeType) && !tpeType.IsAbstract)
+							if (typeof(IScriptType).IsAssignableFrom(type) && !type.IsAbstract)
 							{
-								Trace.TraceInformation("Initializing: {0}", tpeType.FullName);
+								Trace.TraceInformation("Initializing: {0}", type.FullName);
 								Trace.Indent();
 
-								IScriptType sctScriptType = null;
-								ConstructorInfo cifConstructor = tpeType.GetConstructor(new Type[] { });
-								if (cifConstructor != null)
-									sctScriptType = (IScriptType)cifConstructor.Invoke(null);
-								if (sctScriptType != null)
-									p_stgScriptTypeRegistry.RegisterType(sctScriptType);
+								IScriptType ScriptType = null;
+								ConstructorInfo Constructor = type.GetConstructor(new Type[] { });
+								if (Constructor != null)
+                                    ScriptType = (IScriptType)Constructor.Invoke(null);
+								if (ScriptType != null)
+                                    scriptTypeRegistry.RegisterType(ScriptType);
 
 								Trace.Unindent();
 							}
@@ -132,9 +127,9 @@ namespace Components.Scripting
 		/// be found.</returns>
 		private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
 		{
-			foreach (Assembly asmLoaded in AppDomain.CurrentDomain.GetAssemblies())
-				if (asmLoaded.FullName == args.Name)
-					return asmLoaded;
+			foreach (Assembly loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+				if (loadedAssembly.FullName == args.Name)
+					return loadedAssembly;
 			return null;
 		}
 
@@ -170,28 +165,28 @@ namespace Components.Scripting
 			ScriptTypes = new Dictionary<string, IScriptType>();
 		}
 
-		#endregion
+        #endregion
 
-		/// <summary>
-		/// Registers the given <see cref="IScriptType"/>.
-		/// </summary>
-		/// <param name="p_stpType">A <see cref="IScriptType"/> to register.</param>
-		public void RegisterType(IScriptType p_stpType)
+        /// <summary>
+        /// Registers the given <see cref="IScriptType"/>.
+        /// </summary>
+        /// <param name="scriptType">A <see cref="IScriptType"/> to register.</param>
+        public void RegisterType(IScriptType scriptType)
 		{
-			ScriptTypes[p_stpType.TypeId] = p_stpType;
+			ScriptTypes[scriptType.TypeId] = scriptType;
 		}
 
-		/// <summary>
-		/// Gets the specified <see cref="IScriptType"/>.
-		/// </summary>
-		/// <param name="p_strScriptTypeId">The id of the <see cref="IScriptType"/> to retrieve.</param>
-		/// <returns>The <see cref="IScriptType"/> whose id matches the given id. <c>null</c> is returned
-		/// if no <see cref="IScriptType"/> with the given id is in the registry.</returns>
-		public IScriptType GetType(string p_strScriptTypeId)
+        /// <summary>
+        /// Gets the specified <see cref="IScriptType"/>.
+        /// </summary>
+        /// <param name="scriptTypeId">The id of the <see cref="IScriptType"/> to retrieve.</param>
+        /// <returns>The <see cref="IScriptType"/> whose id matches the given id. <c>null</c> is returned
+        /// if no <see cref="IScriptType"/> with the given id is in the registry.</returns>
+        public IScriptType GetType(string scriptTypeId)
 		{
-			IScriptType stpType = null;
-			ScriptTypes.TryGetValue(p_strScriptTypeId, out stpType);
-			return stpType;
+			IScriptType Type = null;
+			ScriptTypes.TryGetValue(scriptTypeId, out Type);
+			return Type;
 		}
 	}
 }
