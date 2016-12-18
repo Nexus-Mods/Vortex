@@ -16,7 +16,7 @@ export interface IExtensionProps {
   objects: IIconDefinition[];
 }
 
-type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes;
+type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes<any>;
 
 /**
  * represents an extensible row of icons/buttons
@@ -118,4 +118,4 @@ function registerIcon(instance: IconBar,
 export default
   translate(['common'], { wait: false })(
     extend(registerIcon)(IconBar)
-  ) as React.ComponentClass<IBaseProps & IExtensibleProps & React.HTMLAttributes>;
+  ) as React.ComponentClass<IBaseProps & IExtensibleProps & React.HTMLAttributes<any>>;

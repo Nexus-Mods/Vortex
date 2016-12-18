@@ -213,7 +213,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
     );
   };
 
-  private selectMod = (evt: __React.MouseEvent) => {
+  private selectMod = (evt: React.MouseEvent<any>) => {
     const cell = (evt.target as HTMLTableCellElement);
     const row = (cell.parentNode as HTMLTableRowElement);
     this.setState(update(this.state, {

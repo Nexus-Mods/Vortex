@@ -27,7 +27,7 @@ export interface IBaseProps {
   attributes: IModAttribute[];
   language: string;
   onSetModEnabled: (modId: string, enabled: boolean) => void;
-  onClick: __React.MouseEventHandler;
+  onClick: React.MouseEventHandler<any>;
   selected: boolean;
 }
 
@@ -156,7 +156,7 @@ class ModRow extends React.Component<IProps, {}> {
     }
   }
 
-  private setModEnabled = (evt: React.MouseEvent) => {
+  private setModEnabled = (evt: React.MouseEvent<any>) => {
     const { mod, onSetModEnabled } = this.props;
     onSetModEnabled(mod.id, (evt.target as HTMLInputElement).checked);
   }

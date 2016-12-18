@@ -10,7 +10,7 @@ export interface ITooltipProps {
   placement?: 'top' | 'right' | 'bottom' | 'left';
 }
 
-export type ButtonProps = ITooltipProps & ReactBootstrap.ButtonProps;
+export type ButtonProps = ITooltipProps & typeof BootstrapButton.defaultProps;
 
 /**
  * Button with a tooltip
@@ -105,7 +105,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
   }
 }
 
-export type INavItemProps = ITooltipProps & ReactBootstrap.NavItemProps;
+export type INavItemProps = ITooltipProps & typeof BootstrapNavItem.defaultProps;
 
 export class NavItem extends React.Component<INavItemProps, {}> {
   public render(): JSX.Element {

@@ -86,7 +86,7 @@ class Settings extends ComponentEx<IProps, {}> {
     });
   }
 
-  private associate = (evt: React.MouseEvent) => {
+  private associate = (evt: React.MouseEvent<any>) => {
     const { onAssociate } = this.props;
     onAssociate((evt.target as HTMLInputElement).checked);
   }

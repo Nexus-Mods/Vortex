@@ -87,14 +87,20 @@ export function copyFileAtomic(srcPath: string, destPath: string): Promise<void>
     return fs.copyAsync(srcPath, tmpPath);
   })
   .then(() => {
-    return fs.unlinkAsync(destPath);
+    return fs.unlinkAsync(destPath).catch((err) => {
+      if (err.code === 'ENOENT') {
+        return Promise.resolve();
+      } else {
+        return Promise.reject(err);
+      }
+    });
   })
   .then(() => {
     return fs.renameAsync(tmpPath, destPath);
   })
   .catch((err) => {
     cleanup();
-    throw err;
+    return Promise.reject(err);
   })
   ;
 }

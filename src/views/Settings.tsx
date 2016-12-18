@@ -2,7 +2,7 @@ import { PropsCallback } from '../types/IExtensionContext';
 import { ComponentEx, extend, translate } from '../util/ComponentEx';
 
 import * as React from 'react';
-import { Tab, Tabs } from 'react-bootstrap';
+import { Panel, Tab, Tabs } from 'react-bootstrap';
 
 interface ISettingsPage {
   title: string;
@@ -63,7 +63,7 @@ class Settings extends ComponentEx<ISettingsProps, {}> {
 
   private renderTabElement = (page: ISettingsPage, idx: number): JSX.Element => {
     let props = page.props !== undefined ? page.props() : {};
-    return <page.component key={idx} {...props} />;
+    return <Panel key={idx}><page.component {...props} /></Panel>;
   }
 }
 

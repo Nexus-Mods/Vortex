@@ -68,7 +68,7 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private onDragEnter = (evt: React.DragEvent) => {
+  private onDragEnter = (evt: React.DragEvent<any>) => {
     evt.preventDefault();
     let type = 'invalid';
     if (evt.dataTransfer.getData('Url') !== '') {
@@ -81,7 +81,7 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
     }));
   };
 
-  private onDragOver = (evt: React.DragEvent) => {
+  private onDragOver = (evt: React.DragEvent<any>) => {
     evt.preventDefault();
     evt.stopPropagation();
     try {
@@ -92,14 +92,14 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
     return false;
   }
 
-  private onDragLeave = (evt: React.DragEvent) => {
+  private onDragLeave = (evt: React.DragEvent<any>) => {
     evt.preventDefault();
     this.setState(update(this.state, {
       dropActive: { $set: 'no' },
     }));
   }
 
-  private onDrop = (evt: React.DragEvent) => {
+  private onDrop = (evt: React.DragEvent<any>) => {
     let { downloadPath } = this.props;
     evt.preventDefault();
     let url = evt.dataTransfer.getData('Url');

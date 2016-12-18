@@ -5,8 +5,6 @@ import * as React from 'react';
 import { ControlLabel, FormGroup } from 'react-bootstrap';
 import ReactSlider = require('rc-slider');
 
-import { log } from '../../../util/log';
-
 interface IBaseProps {
 }
 

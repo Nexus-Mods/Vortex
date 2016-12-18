@@ -106,7 +106,6 @@ class DownloadItem extends ComponentEx<IProps, {}> {
             instanceId={ downloadId }
             className='download-actions'
             staticElements={ this.downloadActions }
-            downloadId={ downloadId }
           />
         </td>
       </tr>
