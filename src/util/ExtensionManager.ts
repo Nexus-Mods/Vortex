@@ -11,6 +11,7 @@ import initNexusIntegration from '../extensions/nexus_integration/index';
 import initNutsLocal from '../extensions/nuts_local/index';
 import initProfileManagement from '../extensions/profile_management/index';
 import initSettingsInterface from '../extensions/settings_interface/index';
+import initSettingsMetaserver from '../extensions/settings_metaserver/index';
 import initSymlinkActivator from '../extensions/symlink_activator/index';
 import initSymlinkActivatorElevate from '../extensions/symlink_activator_elevate/index';
 import initSettingsUpdate from '../extensions/updater/index';
@@ -435,6 +436,7 @@ class ExtensionManager {
       { name: 'symlink_activator_elevate', initFunc: initSymlinkActivatorElevate },
       { name: 'hardlink_activator', initFunc: initHardlinkActivator },
       { name: 'installer_fomod', initFunc: initInstallerFomod },
+      { name: 'settings_metaserver', initFunc: initSettingsMetaserver },
     ]
     .concat(this.loadDynamicExtensions(bundledPath))
     .concat(this.loadDynamicExtensions(extensionsPath));
