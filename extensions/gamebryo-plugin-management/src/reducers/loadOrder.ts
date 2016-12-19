@@ -10,37 +10,34 @@ type LoadOrderMap = { [name: string]: ILoadOrder };
  */
 export const loadOrderReducer: types.IReducerSpec = {
   reducers: {
-    ['persist/REHYDRATE']:
-        (state, payload) => {
-          if (payload.hasOwnProperty('loadOrder')) {
-            return util.setSafe(state, [], payload.loadOrder);
-          } else {
-            return state;
-          }
-        },
+    ['persist/REHYDRATE']: (state, payload) => {
+      if (payload.hasOwnProperty('loadOrder')) {
+        return util.setSafe(state, [], payload.loadOrder);
+      } else {
+        return state;
+      }
+    },
     [actions.setPluginEnabled]:
-        (state, payload) =>
-          util.setSafe(state, [payload.pluginName, 'enabled'], payload.enabled)
-        ,
-        [actions.updateLoadOrder]:
-        (state, payload: string[]) => {
-          let copy = Object.assign({}, state);
-          Object.keys(state).forEach((name: string) => {
-            if (payload.indexOf(name) === -1) {
-              delete copy[name];
-            }
-          });
-          let count = Object.keys(state).length;
-          payload.forEach((name: string) => {
-            if (copy[name] === undefined) {
-              copy[name] = {
-                enabled: false,
-                loadOrder: count++,
-              };
-            }
-          });
-          return copy;
-        },
+        (state, payload) => util.setSafe(state, [payload.pluginName, 'enabled'],
+                                         payload.enabled),
+    [actions.updateLoadOrder]: (state, payload: string[]) => {
+      let copy = Object.assign({}, state);
+      Object.keys(state).forEach((name: string) => {
+        if (payload.indexOf(name) === -1) {
+          delete copy[name];
+        }
+      });
+      let count = Object.keys(state).length;
+      payload.forEach((name: string) => {
+        if (copy[name] === undefined) {
+          copy[name] = {
+            enabled: false,
+            loadOrder: count++,
+          };
+        }
+      });
+      return copy;
+    },
     [actions.setPluginOrder]: (state, payload) => {
       let copy = Object.assign({}, state);
       Object.keys(copy).forEach((pluginName: string) => {
@@ -49,6 +46,5 @@ export const loadOrderReducer: types.IReducerSpec = {
       return copy;
     },
   },
-  defaults: {
-  },
+  defaults: {},
 };

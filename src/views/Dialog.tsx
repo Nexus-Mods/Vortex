@@ -85,7 +85,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderContent(content: IDialogContent): JSX.Element {
-    const { t } = this.props;
+    let { t } = this.props;
+    if (content.translated) {
+      t = (input: string) => input;
+    }
     if (content.message !== undefined) {
       return <div>{t(content.message)}</div>;
     } else if (content.htmlFile !== undefined) {

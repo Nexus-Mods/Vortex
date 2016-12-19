@@ -9,7 +9,7 @@
     "node-gyp": "node-gyp",
     "emcc-path": "emcc-path",
     "copyasm": "copyasm",
-    "prebuild": "gulp download-lz4",
+    "preinstall": "gulp download-lz4",
     "install": "autogypi && node-gyp configure build && copyasm build dist"
   },
   "author": "",

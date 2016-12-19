@@ -75,7 +75,7 @@ const pluginAttributes: types.ITableAttribute[] = [
     isToggleable: true,
     isReadOnly: true,
     isSortable: false,
-    calc: (attributes: any) => <PluginFlags plugin={attributes} />,
+    calc: (attributes: any, t) => <PluginFlags plugin={attributes} t={t} />,
   },
   {
     id: 'loadOrder',
@@ -166,22 +166,30 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { plugins } = this.props;
 
     let pluginNames: string[] = Object.keys(plugins);
-    this.context.api.events.emit('plugin-details',
-      pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
-        this.setState(util.setSafe(this.state, ['pluginsLoot'], resolved));
-    });
+
+    let stateUpdate = { pluginsParsed: {}, pluginsLoot: undefined };
 
     Promise.each(pluginNames, (pluginName: string) => {
-      let esp = new ESPFile(plugins[pluginName].filePath);
       return new Promise((resolve, reject) => {
-        this.setState(util.setSafe(this.state, ['pluginsParsed', pluginName], {
-          isMaster: esp.isMaster,
-          description: esp.description,
-          author: esp.author,
-          masterList: esp.masterList,
-        }), () => resolve());
+        let esp = new ESPFile(plugins[pluginName].filePath);
+        stateUpdate.pluginsParsed[pluginName] = {
+          $set: {
+            isMaster: esp.isMaster,
+            description: esp.description,
+            author: esp.author,
+            masterList: esp.masterList,
+          },
+        };
+        resolve();
       });
-    });
+    })
+      .then(() => {
+        this.context.api.events.emit('plugin-details',
+          pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
+            stateUpdate.pluginsLoot = { $set: resolved };
+            this.setState(update(this.state, stateUpdate));
+          });
+      });
   }
 
   public render(): JSX.Element {
@@ -368,7 +376,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderAttribute = (attribute: types.ITableAttribute, plugin: IPluginCombined) => {
-    return <td key={`td-${plugin.name}-${attribute.id}`}>{attribute.calc(plugin)}</td>;
+    let { t } = this.props;
+    return <td key={`td-${plugin.name}-${attribute.id}`}>{attribute.calc(plugin, t)}</td>;
   }
 
   private selectPlugin = (evt: React.MouseEvent<any>) => {

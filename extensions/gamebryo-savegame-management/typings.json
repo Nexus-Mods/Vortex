@@ -7,10 +7,6 @@
     "bluebird": "registry:dt/bluebird#3.0.0+20160928162057",
     "electron/github-electron": "registry:dt/electron/github-electron#1.4.4+20161022024109",
     "i18next": "registry:dt/i18next#2.3.4+20160803175212",
-    "react": "registry:dt/react#0.14.0+20161024223416",
-    "react-addons-update": "registry:dt/react-addons-update#0.14.0+20160316155526",
-    "react-router": "registry:dt/react-router#2.0.0+20161117134353",
-    "react-router/history": "registry:dt/react-router/history#2.0.0+20160830150755",
     "redux": "registry:dt/redux#3.5.2+20160703092728",
     "redux-thunk": "registry:dt/redux-thunk#2.1.0+20160703120921",
     "source-map": "registry:dt/source-map#0.0.0+20161003134342",
@@ -21,12 +17,6 @@
     "bluebird": "registry:dt/bluebird#3.0.0+20161007114152",
     "fs-extra-promise": "registry:dt/fs-extra-promise#0.0.0+20160919071823",
     "i18next": "registry:dt/i18next#2.3.4+20161107200623",
-    "react": "registry:dt/react#0.14.0+20161124131900",
-    "react-addons-update": "registry:dt/react-addons-update#0.14.0+20160316155526",
-    "react-bootstrap": "registry:dt/react-bootstrap#0.0.0+20161107151335",
-    "react-dom": "registry:dt/react-dom#0.14.0+20160412154040",
-    "react-i18next": "registry:dt/react-i18next#1.7.0+20160810170216",
-    "react-redux": "registry:dt/react-redux#4.4.0+20160908183346",
     "webpack": "registry:dt/webpack#1.12.9+20161025142220"
   },
   "dependencies": {

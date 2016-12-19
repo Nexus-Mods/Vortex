@@ -44,6 +44,9 @@ function init(language: string): I18next.I18n {
       saveMissing: debugging,
 
       missingKeyHandler: (lng, ns, key, fallbackValue) => {
+        if (missingKeys[ns] === undefined) {
+          missingKeys[ns] = {};
+        }
         missingKeys[ns][key] = key;
       },
 

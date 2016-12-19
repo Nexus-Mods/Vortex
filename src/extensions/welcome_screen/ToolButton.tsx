@@ -224,7 +224,6 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
         key={toolId}
         id='tool-button'
         tooltip={tool.name}
-        title={tool.name}
         onClick={valid ? this.runTool : this.handleEditTool}
       >
         <ToolIcon imageUrl={this.state.imageUrl} imageId={this.mImageId} valid={valid} />

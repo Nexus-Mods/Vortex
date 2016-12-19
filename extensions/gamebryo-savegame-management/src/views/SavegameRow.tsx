@@ -13,8 +13,9 @@ export interface IBaseProps {
   save: ISavegame;
   attributes: ISavegameAttribute[];
   language: string;
-  onClick: __React.MouseEventHandler;
+  onClick: React.MouseEventHandler<any>;
   selected: boolean;
+  t: I18next.TranslationFunction;
 }
 
 interface IActionProps {
@@ -40,7 +41,7 @@ class SavegameRow extends React.Component<IProps, {}> {
     this.savegameActions = [
       {
         icon: 'remove',
-        title: 'Delete',
+        title: props.t('Delete'),
         action: this.remove,
       },
     ];
@@ -75,22 +76,24 @@ class SavegameRow extends React.Component<IProps, {}> {
   }
 
   private remove = () => {
-    const { save, onRemoveSavegame, onShowDialog } = this.props;
+    const { t, save, onRemoveSavegame, onShowDialog } = this.props;
 
     let removeSavegame = true;
 
-    onShowDialog('question', 'Are you sure to remove this savegame?', {}, {
-      Cancel: null,
-      Continue: null,
-    }).then((result: types.IDialogResult) => {
-      log('info', 'res', nodeUtil.inspect(result));
-      removeSavegame = result.action === 'Continue';
-      if (removeSavegame) {
-        return fs.removeAsync(save.id);
-      } else {
-        return Promise.resolve();
-      }
-    })
+    onShowDialog('question', t('Confirm deletion'), {
+      message: t('Do you really want to remove {save.id}?'),
+      translated: true,
+    }, {
+        Cancel: null,
+        Delete: null,
+      }).then((result: types.IDialogResult) => {
+        removeSavegame = result.action === 'Delete';
+        if (removeSavegame) {
+          return fs.removeAsync(save.id);
+        } else {
+          return Promise.resolve();
+        }
+      })
       .then(() => {
         if (removeSavegame) {
           onRemoveSavegame(save.id);

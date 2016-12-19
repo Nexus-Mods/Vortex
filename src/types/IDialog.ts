@@ -28,6 +28,7 @@ export interface IDialogContent {
   message?: string;
   checkboxes?: ICheckbox[];
   formcontrol?: IFormControl;
+  translated?: boolean;
 }
 
 export interface IDialogResult {

@@ -27,7 +27,7 @@ type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes<any>;
  * @class IconBar
  * @extends {ComponentEx<IProps, {}>}
  */
-class IconBar extends ComponentEx<IProps, {}> {
+class IconBar extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
 
@@ -43,7 +43,7 @@ class IconBar extends ComponentEx<IProps, {}> {
   private renderIcon = (icon: IIconDefinition) => this.renderIconImpl(icon);
 
   private renderIconImpl(icon: IIconDefinition) {
-    const { t, instanceId } = this.props;
+    const { instanceId } = this.props;
     // don't render anything if the condition doesn't match
     if ((icon.condition !== undefined) && !icon.condition(instanceId)) {
       return null;
@@ -57,7 +57,7 @@ class IconBar extends ComponentEx<IProps, {}> {
         key={id}
         id={id}
         icon={icon.icon}
-        tooltip={t(icon.title)}
+        tooltip={icon.title}
         onClick={icon.action}
       />;
     } else {
@@ -116,6 +116,5 @@ function registerIcon(instance: IconBar,
 }
 
 export default
-  translate(['common'], { wait: false })(
-    extend(registerIcon)(IconBar)
+  extend(registerIcon)(IconBar
   ) as React.ComponentClass<IBaseProps & IExtensibleProps & React.HTMLAttributes<any>>;

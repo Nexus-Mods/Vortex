@@ -318,7 +318,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     }
   }
 
-  private selectSavegame = (evt: __React.MouseEvent) => {
+  private selectSavegame = (evt: React.MouseEvent<any>) => {
     const cell = (evt.target as HTMLTableCellElement);
     const row = (cell.parentNode as HTMLTableRowElement);
     this.setState(update(this.state, {
@@ -327,7 +327,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   };
 
   private renderSavegameRow(save: ISavegame, visibleAttributes: ISavegameAttribute[]): JSX.Element {
-    let { language } = this.props;
+    let { t, language } = this.props;
     return (
       <SavegameRow
         key={save.id}
@@ -336,6 +336,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         language={language}
         onClick={this.selectSavegame}
         selected={save.id === this.state.selectedSavegame}
+        t={t}
       />
     );
   }

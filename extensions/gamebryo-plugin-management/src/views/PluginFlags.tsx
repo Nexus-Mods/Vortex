@@ -1,7 +1,6 @@
 import {IPluginCombined} from '../types/IPlugins';
 
 import {tooltip} from 'nmm-api';
-import {translate} from 'react-i18next';
 
 import * as React from 'react';
 
@@ -62,6 +61,4 @@ const PluginFlags = (props: IProps): JSX.Element => {
   );
 };
 
-export default translate(['common', 'gamebryo-plugin'], { wait: false })(
-    PluginFlags as any
-    ) as React.ComponentClass<IBaseProps>;
+export default PluginFlags;
