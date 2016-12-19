@@ -7,9 +7,9 @@ import { categoryReducer } from './reducers/category';
 import { ICategory } from './types/ICategory';
 import { IGameListEntry } from './types/IGameListEntry';
 
-import { ICategoryTree, IChildren } from './types/ICategoryTree';
-
 import { getSafe } from '../../util/storeHelper';
+
+import { retriveCategoryList } from './util/retrieveCategories';
 
 import Nexus from 'nexus-api';
 
@@ -42,11 +42,6 @@ function init(context: IExtensionContext): boolean {
 
       retriveCategories(activeGameId, context, false);
 
-      context.api.events.on('retrieve-categories',
-        () => {
-          retriveCategories(activeGameId, context, true);
-        });
-
       context.api.events.on('gamemode-activated', (gameMode: string) => {
         retriveCategories(gameMode, context, false);
       });
@@ -63,40 +58,18 @@ function retriveCategories(
   activeGameId: string,
   context: IExtensionContext,
   isUpdate: boolean): any {
-  let categoryList = [];
-  nexus.getGameInfo(activeGameId)
-    .then((gameInfo: IGameInfo) => {
 
-      let roots = gameInfo.categories.filter((value) => value.parent_category === false);
-      roots.forEach(rootElement => {
-        let children: ICategory[] = gameInfo.categories.filter((value) =>
-          value.parent_category === rootElement.category_id);
-        let childrenList = [];
-
-        children.forEach(element => {
-          let child: IChildren = {
-            rootId: element.category_id,
-            title: element.name, expanded: false,
-          };
-          childrenList.push(child);
-        });
-
-        let root: ICategoryTree = {
-          rootId: rootElement.category_id,
-          title: rootElement.name,
-          expanded: false,
-          children: childrenList,
-        };
-        categoryList.push(root);
+  if (isUpdate) {
+    retriveCategoryList(activeGameId, nexus, isUpdate)
+      .then((result: any) => {
+        context.api.store.dispatch(updateCategories(activeGameId, result));
       });
-
-      if (isUpdate) {
-        context.api.store.dispatch(updateCategories(activeGameId, categoryList));
-      } else {
-        context.api.store.dispatch(loadCategories(activeGameId, categoryList));
-      }
-    });
-
+  } else {
+    retriveCategoryList(activeGameId, nexus, isUpdate)
+      .then((result: any) => {
+        context.api.store.dispatch(loadCategories(activeGameId, result));
+      });
+  }
 }
 
 export default init;

@@ -10,18 +10,35 @@ import { Jumbotron } from 'react-bootstrap';
 import { showDialog } from '../../../actions/notifications';
 import { showError } from '../../../util/message';
 
+import * as path from 'path';
 import * as React from 'react';
+
+import { getSafe } from '../../../util/storeHelper';
+
+import { retriveCategoryList } from '../util/retrieveCategories';
 
 import * as Promise from 'bluebird';
 
 import Tree from 'react-sortable-tree';
 
 import update = require('react-addons-update');
+import { app as appIn, dialog as dialogIn, remote } from 'electron';
 
 import { updateCategories } from '../actions/category';
 
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import Nexus from 'nexus-api';
+
+let app = appIn;
+let dialog = dialogIn;
+
+if (remote !== undefined) {
+  app = remote.app;
+  dialog = remote.dialog;
+}
+
+let nexus: Nexus;
 
 interface IGameInfo extends IGameListEntry {
   categories: ICategory[];
@@ -75,8 +92,8 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   public render(): JSX.Element {
-    const {  searchString, searchFocusIndex, searchFoundCount, treeDataObject } = this.state;
-    const { t, gameMode } = this.props;
+    const { searchString, searchFocusIndex, searchFoundCount, treeDataObject } = this.state;
+    const { t, gameMode, onShowError } = this.props;
     TreeImpl = require('react-sortable-tree').default;
 
     if (gameMode === undefined) {
@@ -150,6 +167,28 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
             // searchFinishCallback={this.searchFinishCallback}
             generateNodeProps={this.generateNodeProps}
           />
+        </div>
+      );
+    } else {
+      const categoriesPath = path.join(app.getPath('userData'), 'state', 'global_persistent');
+
+      onShowError('An error occurred loading the categories. ',
+       'Check inside this file:' + categoriesPath + ' if the structure is messed up.' +
+       'Structure example:' +
+       '"skyrim":{"gameId":"skyrim",' +
+       '"gameCategories":[{"rootId":20,"title":"Skyrim","expanded":true,"children":[{}]' +
+       ' If you have problems fixing the structure manually, you can click the retrive' +
+       ' categories button inside the page to restore a working tree.');
+
+      return (
+        <div style={{ height: 1000 }}>
+          <Button
+            id='retrieveCategories'
+            tooltip='Retrieve Categories from server'
+            onClick={this.retrieveCategories}
+          >
+            <Icon name={'download'} />
+          </Button>
         </div>
       );
     }
@@ -277,7 +316,20 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private retrieveCategories = () => {
-    this.context.api.events.emit('retrieve-categories');
+    const { gameMode } = this.props;
+    let state = this.context.api.store.getState();
+
+    nexus = new Nexus(
+        getSafe(state, ['settings', 'gameMode', 'current'], ''),
+        getSafe(state, ['account', 'nexus', 'APIKey'], '')
+      );
+
+    retriveCategoryList(gameMode, nexus, true)
+      .then((result: any) => {
+        this.setState(update(this.state, {
+        treeDataObject: { $set: result },
+      }));
+      });
   }
 
   private selectPrevMatch = () => {
@@ -321,10 +373,12 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
 
   private loadTree() {
     const { categories, gameMode } = this.props;
-    let gameCategories = categories[gameMode].gameCategories;
-    this.setState(update(this.state, {
-      treeDataObject: { $set: gameCategories },
-    }));
+    if (categories[gameMode].gameCategories !== undefined) {
+      let gameCategories = categories[gameMode].gameCategories;
+      this.setState(update(this.state, {
+        treeDataObject: { $set: gameCategories },
+      }));
+    }
   }
 
   private searchString = (event) => {
