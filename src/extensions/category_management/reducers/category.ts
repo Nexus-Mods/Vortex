@@ -18,7 +18,7 @@ export const categoryReducer: IReducerSpec = {
       }
     },
     [loadCategories]: (state, payload) => {
-        if (state.categories === undefined) {
+        if (state.categories[payload.gameId] === undefined) {
           return setSafe(state, [payload.gameId], payload);
         } else {
           return state;

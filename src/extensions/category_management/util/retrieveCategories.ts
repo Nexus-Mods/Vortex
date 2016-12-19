@@ -1,5 +1,6 @@
 import { IExtensionContext } from '../../../types/IExtensionContext';
 
+import { log } from '../../../util/log';
 import Nexus from 'nexus-api';
 
 import { ICategory } from '../types/ICategory';
@@ -16,7 +17,7 @@ export function retriveCategoryList(
   activeGameId: string,
   nexus: Nexus,
   isUpdate: boolean
-  ): any {
+): any {
   return new Promise<any>((resolve, reject) => {
     let categoryList = [];
     nexus.getGameInfo(activeGameId)
@@ -46,6 +47,11 @@ export function retriveCategoryList(
         });
 
         resolve(categoryList);
+      }
+      )
+      .catch((err) => {
+        log('error', 'An error occurred retrieving the Game Info', { err: err.message });
+        return null;
       });
   });
 }

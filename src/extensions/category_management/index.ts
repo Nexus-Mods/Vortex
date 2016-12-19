@@ -13,6 +13,8 @@ import { retriveCategoryList } from './util/retrieveCategories';
 
 import Nexus from 'nexus-api';
 
+import { convertGameId } from './util/convertGameId';
+
 import { log } from '../../util/log';
 
 interface IGameInfo extends IGameListEntry {
@@ -39,11 +41,13 @@ function init(context: IExtensionContext): boolean {
       );
 
       const activeGameId = store.getState().settings.gameMode.current;
+      let gameId = convertGameId(activeGameId);
 
-      retriveCategories(activeGameId, context, false);
+      retriveCategories(gameId, context, false);
 
       context.api.events.on('gamemode-activated', (gameMode: string) => {
-        retriveCategories(gameMode, context, false);
+        let gameId = convertGameId(gameMode);
+        retriveCategories(gameId, context, false);
       });
 
     } catch (err) {
