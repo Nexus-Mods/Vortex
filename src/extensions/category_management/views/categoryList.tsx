@@ -373,11 +373,14 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
 
   private loadTree() {
     const { categories, gameMode } = this.props;
-    if (categories[gameMode].gameCategories !== undefined) {
+    if (categories[gameMode] !== undefined) {
       let gameCategories = categories[gameMode].gameCategories;
-      this.setState(update(this.state, {
-        treeDataObject: { $set: gameCategories },
-      }));
+
+      if (gameCategories !== undefined) {
+        this.setState(update(this.state, {
+          treeDataObject: { $set: gameCategories },
+        }));
+      }
     }
   }
 
