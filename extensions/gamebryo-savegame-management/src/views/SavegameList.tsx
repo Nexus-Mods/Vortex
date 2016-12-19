@@ -65,7 +65,10 @@ type Props = IProps & IConnectedProps & IActionProps;
 class SavegameList extends ComponentEx<Props, IComponentState> {
   public screenshotCanvas: HTMLCanvasElement;
   private refHandlers = {
-    canvas: (ref) => this.screenshotCanvas = ref,
+    canvas: (ref) => {
+      this.screenshotCanvas = ref;
+      this.forceUpdate();
+    },
   };
 
   constructor(props) {
@@ -110,7 +113,6 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
               </Table>
             </Flex>
             <Fixed>
-              <canvas id='canvas' ref={this.refHandlers.canvas} width='0' height='0' />
               {this.renderSavegameDetails(this.state.selectedSavegame)}
             </Fixed>
           </Layout>
@@ -230,14 +232,22 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     }
 
     return (
-      <form style={{ minWidth: 300 }}>
-        {objects.map((obj) => this.renderSavegameDetail(save, obj))}
-      </form>
+      <div>
+        <canvas id='canvas' ref={this.refHandlers.canvas} width='0' height='0' />
+        <form style={{ minWidth: 300 }}>
+          {objects.map((obj) => this.renderSavegameDetail(save, obj))}
+        </form>
+      </div>
     );
   };
 
   private renderSavegameDetail = (save: ISavegame, attribute: ISavegameAttribute) => {
     const { t } = this.props;
+
+    if (this.screenshotCanvas === undefined) {
+      return null;
+    }
+
     // TODO: if-elseif-else cascade... This code could probably be nicer. somehow...
     if (attribute.id === 'screenshot') {
       let dim: Dimensions = attribute.calc(save.attributes);

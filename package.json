@@ -136,8 +136,8 @@
     "enzyme": "^2.6.0",
     "ffi": "^2.1.0",
     "fs-extra-promise": "^0.4.0",
-    "i18next": "^3.4.1",
-    "i18next-node-fs-backend": "^0.1.2",
+    "i18next": "^4.1.1",
+    "i18next-node-fs-backend": "^0.1.3",
     "icon-extract": "file:./lib/cpp/icon-extract",
     "jest": "^17.0.3",
     "jest-cli": "^17.0.3",
@@ -164,7 +164,7 @@
     "react-dnd": "^2.1.4",
     "react-dnd-html5-backend": "^2.1.2",
     "react-fontawesome": "^1.1.0",
-    "react-i18next": "^1.8.0",
+    "react-i18next": "^1.11.0",
     "react-layout-pane": "TanninOne/react-layout-pane",
     "react-redux": "^4.4.5",
     "react-shallow-testutils": "^2.0.0",
@@ -203,6 +203,6 @@
     "react-contextmenu": "^1.6.3",
     "react-dom": "^15.3.0",
     "source-map-support": "^0.4.2",
-    "typescript": "^2.0.10"
+    "typescript": "^2.1.4"
   }
 }

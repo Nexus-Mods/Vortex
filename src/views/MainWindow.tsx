@@ -6,6 +6,7 @@ import { IMainPage } from '../types/IMainPage';
 import { extend, translate } from '../util/ComponentEx';
 import Developer from './Developer';
 import Dialog from './Dialog';
+import Icon from './Icon';
 import IconBar from './IconBar';
 import MainFooter from './MainFooter';
 import Notifications from './Notifications';
@@ -15,9 +16,8 @@ import { Button, NavItem } from './TooltipControls';
 import * as React from 'react';
 import { Alert, Modal, Nav } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-
 import update = require('react-addons-update');
-import Icon from './Icon';
+import ReactCSSTransitionGroup = require('react-addons-css-transition-group');
 
 export interface IBaseProps {
   className: string;
@@ -156,7 +156,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             </Nav>
           </Fixed>
           <Flex>
+            <ReactCSSTransitionGroup
+              transitionName='mainpage'
+              transitionEnterTimeout={250}
+              transitionLeaveTimeout={250}
+            >
             { this.renderCurrentPage() }
+            </ReactCSSTransitionGroup>
           </Flex>
         </Layout>
         <Notifications id='notifications' />
@@ -220,7 +226,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const page: IMainPage = objects.find((ele) => ele.title === this.state.showPage);
     if (page !== undefined) {
       let props = page.propsFunc();
-      return <page.component {...props} />;
+      return <page.component id={page.title} key={page.title} {...props} />;
     } else {
       return <Alert>No content pages</Alert>;
     }

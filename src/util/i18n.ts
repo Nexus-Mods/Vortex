@@ -32,6 +32,8 @@ function init(language: string): I18next.I18n {
     .use(FSBackend)
     .init({
       lng: language,
+      fallbackLng: 'en',
+      fallbackNS: 'common',
 
       ns: ['common'],
       defaultNS: 'common',
