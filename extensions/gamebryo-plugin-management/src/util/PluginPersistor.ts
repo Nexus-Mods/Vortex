@@ -4,10 +4,12 @@ import {nativePlugins, pluginFormat, pluginPath} from '../util/gameSupport';
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import {decode, encode} from 'iconv-lite';
-import {log, types} from 'nmm-api';
+import {log, types, util} from 'nmm-api';
 import * as path from 'path';
 
 export type PluginFormat = 'original' | 'fallout4';
+
+type PluginMap = { [name: string]: ILoadOrder };
 
 /**
  * persistor syncing to and from the gamebryo plugins.txt and loadorder.txt
@@ -24,8 +26,9 @@ class PluginPersistor implements types.IPersistor {
   private mWatch: fs.FSWatcher;
   private mRefreshTimer: NodeJS.Timer;
   private mSerializing: boolean = false;
+  private mSerializeQueue: Promise<void> = Promise.resolve();
 
-  private mPlugins: { [name: string]: ILoadOrder };
+  private mPlugins: PluginMap;
 
   constructor() {
     this.mPlugins = {};
@@ -51,12 +54,12 @@ class PluginPersistor implements types.IPersistor {
 
   public setItem(key: string, value: string, cb: (error: Error) => void): void {
     this.mPlugins = JSON.parse(value);
-    this.serialize();
+    this.serialize().then(() => cb(null));
   }
 
   public removeItem(key: string, cb: (error: Error) => void): void {
     delete this.mPlugins[key];
-    this.serialize();
+    this.serialize().then(() => cb(null));
   }
 
   public getAllKeys(cb: (error: Error, keys?: string[]) => void): void {
@@ -78,7 +81,7 @@ class PluginPersistor implements types.IPersistor {
 
   private toPluginListFallout4(input: string[]) {
     return input.map((name: string) => {
-      if (this.mPlugins[name].enabled) {
+      if (util.getSafe(this.mPlugins, [name, 'enabled'], false)) {
         return '*' + name;
       } else {
         return name;
@@ -87,6 +90,14 @@ class PluginPersistor implements types.IPersistor {
   }
 
   private serialize(): Promise<void> {
+    // ensure we don't try to concurrently write the files
+    this.mSerializeQueue = this.mSerializeQueue.then(() => {
+      this.doSerialize();
+    });
+    return this.mSerializeQueue;
+  }
+
+  private doSerialize(): Promise<void> {
     if (this.mPluginPath === undefined) {
       return;
     }
@@ -122,8 +133,8 @@ class PluginPersistor implements types.IPersistor {
     return res;
   }
 
-  private initFromKeyList(keys: string[], enabled: boolean) {
-    let loadOrderPos = Object.keys(this.mPlugins).length;
+  private initFromKeyList(plugins: PluginMap, keys: string[], enabled: boolean) {
+    let loadOrderPos = Object.keys(plugins).length;
     keys.forEach((key: string) => {
       let keyEnabled = enabled && ((this.mPluginFormat === 'original') || (key[0] === '*'));
       if ((this.mPluginFormat === 'fallout4') && (key[0] === '*')) {
@@ -133,10 +144,10 @@ class PluginPersistor implements types.IPersistor {
       if (this.mNativePlugins.has(key.toLowerCase())) {
         return;
       }
-      if (this.mPlugins[key] !== undefined) {
-        this.mPlugins[key].enabled = keyEnabled;
+      if (plugins[key] !== undefined) {
+        plugins[key].enabled = keyEnabled;
       } else {
-        this.mPlugins[key] = {
+        plugins[key] = {
           enabled: keyEnabled,
           loadOrder: loadOrderPos++,
         };
@@ -145,11 +156,11 @@ class PluginPersistor implements types.IPersistor {
   }
 
   private deserialize(): Promise<void> {
-    this.mPlugins = {};
-
     if (this.mPluginPath === undefined) {
       return;
     }
+
+    let newPlugins: PluginMap = {};
 
     let phaseOne: Promise<NodeBuffer>;
     if (this.mPluginFormat === 'original') {
@@ -157,7 +168,7 @@ class PluginPersistor implements types.IPersistor {
                      .then((data: NodeBuffer) => {
                        let keys: string[] =
                            this.filterFileData(decode(data, 'utf-8'), false);
-                       this.initFromKeyList(keys, false);
+                       this.initFromKeyList(newPlugins, keys, false);
                        return fs.readFileAsync(
                            path.join(this.mPluginPath, 'plugins.txt'));
                      });
@@ -167,7 +178,8 @@ class PluginPersistor implements types.IPersistor {
     return phaseOne
     .then((data: NodeBuffer) => {
       let keys: string[] = this.filterFileData(decode(data, 'latin-1'), true);
-      this.initFromKeyList(keys, true);
+      this.initFromKeyList(newPlugins, keys, true);
+      this.mPlugins = newPlugins;
       if (this.mResetCallback) {
         this.mResetCallback();
       }
