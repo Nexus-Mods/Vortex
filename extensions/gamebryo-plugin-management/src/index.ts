@@ -33,7 +33,7 @@ function isPlugin(fileName: string): boolean {
   return ['.esp', '.esm'].indexOf(path.extname(fileName).toLowerCase()) !== -1;
 }
 
-function updatePluginList(store: ReactRedux.Store<any>, oldModList: IModStates,
+function updatePluginList(store: Redux.Store<any>, oldModList: IModStates,
                           newModList: IModStates): Promise<void> {
   if (newModList === undefined) {
     return;

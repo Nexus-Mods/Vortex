@@ -371,14 +371,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return <td key={`td-${plugin.name}-${attribute.id}`}>{attribute.calc(plugin)}</td>;
   }
 
-  private selectPlugin = (evt: __React.MouseEvent) => {
+  private selectPlugin = (evt: React.MouseEvent<any>) => {
     const row = (evt.currentTarget as HTMLTableRowElement);
     this.setState(update(this.state, {
       selectedPlugin: { $set: row.id.split('-').slice(1).join('-') },
     }));
   }
 
-  private togglePlugin = (evt: __React.MouseEvent) => {
+  private togglePlugin = (evt: React.MouseEvent<any>) => {
     const { loadOrder } = this.props;
     let box = (evt.currentTarget as HTMLInputElement);
     let pluginName = box.id.split('-').slice(1).join('-');
