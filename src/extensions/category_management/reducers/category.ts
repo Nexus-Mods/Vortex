@@ -10,6 +10,7 @@ import update = require('react-addons-update');
  */
 export const categoryReducer: IReducerSpec = {
   reducers: {
+    /*
     ['persist/REHYDRATE']: (state, payload) => {
       if (state.categories === undefined) {
         return update(state, { categories: { $set: payload || {} } });
@@ -17,17 +18,18 @@ export const categoryReducer: IReducerSpec = {
         return state;
       }
     },
+    */
     [loadCategories]: (state, payload) => {
-        if (state.categories[payload.gameId] === undefined) {
+         if (state.categories === undefined) {
           return setSafe(state, [payload.gameId], payload);
-        } else {
-          return state;
-        }
+         } else {
+           return state;
+         }
     },
     [updateCategories]: (state, payload) => {
         return setSafe(state, [payload.gameId], payload);
     },
   }, defaults: {
-    categories: {},
+
   },
 };

@@ -21,9 +21,11 @@ import * as Promise from 'bluebird';
 
 import Tree from 'react-sortable-tree';
 
-import update = require('react-addons-update');
+// import update = require('react-addons-update');
 
 import { updateCategories } from '../actions/category';
+import { setSearchFocusIndex, setSearchFoundCount,
+   setSearchString, setTreeDataObject } from '../actions/session';
 
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
@@ -40,19 +42,24 @@ interface IActionProps {
   onUpdateCategories: (activeGameId: string, categories: any[]) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
     actions: DialogActions) => Promise<IDialogResult>;
+  onSetSearchFocusIndex: (focusIndex: number) => void;
+  onSetSearchFoundCount: (foundCount: number) => void;
+  onSetSearchString: (text: string) => void;
+  onSetTreeDataObject: (tree: {}) => void;
 }
 
 interface IConnectedProps {
   gameMode: string;
   language: string;
   categories: [{ title: string, children: [{ title: string }] }];
-}
-
-interface IComponentState {
-  treeDataObject: {};
   searchString: string;
   searchFocusIndex: number;
   searchFoundCount: number;
+  treeDataObject: {};
+}
+
+interface IComponentState {
+  // treeDataObject: {};
 }
 
 let TreeImpl: typeof Tree;
@@ -69,22 +76,19 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
     super(props);
     this.state = {
       treeDataObject: undefined,
-      searchString: '',
-      searchFocusIndex: 0,
-      searchFoundCount: null,
     };
   }
 
   public componentWillMount() {
-    const { treeDataObject } = this.state;
+    const { treeDataObject } = this.props;
     if (treeDataObject === undefined) {
       this.loadTree();
     }
   }
 
   public render(): JSX.Element {
-    const { searchString, searchFocusIndex, searchFoundCount, treeDataObject } = this.state;
-    const { t, gameMode } = this.props;
+    const { t, gameMode, searchString, searchFocusIndex,
+       searchFoundCount, treeDataObject } = this.props;
     TreeImpl = require('react-sortable-tree').default;
 
     if (gameMode === undefined) {
@@ -190,8 +194,8 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private toggleExpandedForAllJS = (event) => {
-    const {treeDataObject} = this.state;
-    const {gameMode, onShowError, onUpdateCategories} = this.props;
+    const {gameMode, onShowError, onUpdateCategories,
+       onSetTreeDataObject, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     let expanded: boolean;
 
@@ -213,9 +217,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
 
       let updatedTree = treeFunctions.toggleExpandedForAll(newTree);
       onUpdateCategories(gameMode, updatedTree);
-      this.setState(update(this.state, {
-        treeDataObject: { $set: updatedTree },
-      }));
+      onSetTreeDataObject(updatedTree);
 
     } catch (err) {
       onShowError('An error occurred expanding/collapsing the categories tree', err);
@@ -223,8 +225,8 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private renameCategory = ({ node, path }) => {
-    const {treeDataObject} = this.state;
-    const {gameMode, onShowDialog, onShowError, onUpdateCategories} = this.props;
+    const {gameMode, onShowDialog, onShowError, onUpdateCategories,
+       onSetTreeDataObject, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     let renameCategory = true;
     onShowDialog('info', 'Rename Category', {
@@ -255,10 +257,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
             let updatedTree = treeFunctions.changeNodeAtPath(newTree);
 
             onUpdateCategories(gameMode, updatedTree);
-
-            this.setState(update(this.state, {
-              treeDataObject: { $set: updatedTree },
-            }));
+            onSetTreeDataObject(updatedTree);
 
           } catch (err) {
             onShowError('An error occurred renaming the category', err);
@@ -268,8 +267,8 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private addCategory = ({ path }) => {
-    const {treeDataObject} = this.state;
-    const {gameMode, onShowDialog, onShowError, onUpdateCategories} = this.props;
+    const {gameMode, onShowDialog, onShowError, onUpdateCategories,
+       onSetTreeDataObject, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     let addCategory = true;
 
@@ -300,10 +299,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
 
             let updatedTree = treeFunctions.addNodeUnderParent(newTree);
             onUpdateCategories(gameMode, updatedTree.treeData);
-
-            this.setState(update(this.state, {
-              treeDataObject: { $set: updatedTree.treeData },
-            }));
+            onSetTreeDataObject(updatedTree.treeData);
 
           } catch (err) {
             onShowError('An error occurred adding the new category', err);
@@ -313,8 +309,8 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private addRootCategory = () => {
-    const {treeDataObject} = this.state;
-    const {gameMode, onShowDialog, onShowError, onUpdateCategories} = this.props;
+    const {gameMode, onShowDialog, onShowError, onUpdateCategories,
+       onSetTreeDataObject, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     let addCategory = true;
 
@@ -345,10 +341,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
 
             let updatedTree = treeFunctions.addNodeUnderParent(newTree);
             onUpdateCategories(gameMode, updatedTree.treeData);
-
-            this.setState(update(this.state, {
-              treeDataObject: { $set: updatedTree.treeData },
-            }));
+            onSetTreeDataObject(updatedTree.treeData);
 
           } catch (err) {
             onShowError('An error occurred adding the new Root category', err);
@@ -358,7 +351,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private retrieveCategories = () => {
-    const { gameMode, onShowDialog } = this.props;
+    const { gameMode, onShowDialog, onSetTreeDataObject } = this.props;
     let state = this.context.api.store.getState();
     let retrieve = false;
 
@@ -378,9 +371,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
           let gameId = convertGameId(gameMode);
           retriveCategoryList(gameId, nexus, true)
             .then((result: any) => {
-              this.setState(update(this.state, {
-                treeDataObject: { $set: result },
-              }));
+              onSetTreeDataObject(result);
             });
         }
       }
@@ -388,53 +379,32 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private selectPrevMatch = () => {
-    const {  searchFocusIndex, searchFoundCount } = this.state;
+    const { onSetSearchFocusIndex, searchFocusIndex, searchFoundCount } = this.props;
 
     if (searchFocusIndex !== null) {
-      this.setState(update(this.state, {
-        searchFocusIndex: {
-          $set: ((searchFoundCount + searchFocusIndex - 1)
-            % searchFoundCount),
-        },
-      }));
+      onSetSearchFocusIndex((searchFoundCount + searchFocusIndex - 1) % searchFoundCount);
     } else {
-      this.setState(update(this.state, {
-        searchFocusIndex: { $set: searchFoundCount - 1 },
-      }));
+      onSetSearchFocusIndex(searchFoundCount - 1);
     }
   }
 
-  private searchFinishCallback = (event) => {
-    const { searchFocusIndex } = this.state;
-    this.setState(update(this.state, {
-      searchFoundCount: { $set: event.length },
-      searchFocusIndex: { $set: event.length > 0 ? searchFocusIndex % event.length : 0 },
-    }));
-  };
-
   private selectNextMatch = () => {
-    const {  searchFocusIndex, searchFoundCount } = this.state;
+    const { onSetSearchFocusIndex, searchFocusIndex, searchFoundCount } = this.props;
 
     if (searchFocusIndex !== null) {
-      this.setState(update(this.state, {
-        searchFocusIndex: { $set: ((searchFocusIndex + 1) % searchFoundCount) },
-      }));
+      onSetSearchFocusIndex((searchFocusIndex + 1) % searchFoundCount);
     } else {
-      this.setState(update(this.state, {
-        searchFocusIndex: { $set: 0 },
-      }));
+      onSetSearchFocusIndex(0);
     }
   }
 
   private loadTree() {
-    const { categories, gameMode, onShowError } = this.props;
+    const { categories, gameMode, onShowError, onSetTreeDataObject } = this.props;
     if (categories[gameMode] !== undefined) {
       let gameCategories = categories[gameMode].gameCategories;
 
       if (gameCategories !== undefined) {
-        this.setState(update(this.state, {
-          treeDataObject: { $set: gameCategories },
-        }));
+        onSetTreeDataObject(gameCategories);
       } else {
         onShowError('An error occurred loading the categories. ',
         'Cant read local categories. If you manually edited global_persistent you probably ' +
@@ -444,14 +414,19 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private searchString = (event) => {
-    this.setState(update(this.state, {
-      searchString: { $set: event.target.value },
-    }));
+    const { onSetSearchString} = this.props;
+    onSetSearchString(event.target.value);
   }
 
+  private searchFinishCallback = (event) => {
+    const {onSetSearchFocusIndex, onSetSearchFoundCount, searchFocusIndex} = this.props;
+    onSetSearchFoundCount(event.length);
+    onSetSearchFocusIndex(event.length > 0 ? searchFocusIndex % event.length : 0);
+  };
+
   private removeCategory = ({ path }) => {
-    const {treeDataObject} = this.state;
-    const {gameMode, onShowError, onUpdateCategories} = this.props;
+    const {gameMode, onShowError, onUpdateCategories,
+       onSetTreeDataObject, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     try {
       let nodePath = path;
@@ -466,9 +441,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
         };
 
       let updatedTree = treeFunctions.removeNodeAtPath(newTree);
-      this.setState(update(this.state, {
-        treeDataObject: { $set: updatedTree },
-      }));
+      onSetTreeDataObject(updatedTree);
 
       onUpdateCategories(gameMode, updatedTree);
 
@@ -512,13 +485,10 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private updateTreeData = (event) => {
-    const { gameMode, onUpdateCategories } = this.props;
+    const { gameMode, onUpdateCategories, onSetTreeDataObject } = this.props;
 
     onUpdateCategories(gameMode, event);
-
-    this.setState(update(this.state, {
-      treeDataObject: { $set: event },
-    }));
+    onSetTreeDataObject(event);
   }
 }
 
@@ -530,6 +500,18 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onUpdateCategories: (activeGameId: string, categories: any[]) => {
       dispatch(updateCategories(activeGameId, categories));
     },
+    onSetSearchString: (text: string) => {
+      dispatch(setSearchString(text));
+    },
+    onSetSearchFocusIndex: (focusIndex: number) => {
+      dispatch(setSearchFocusIndex(focusIndex));
+    },
+    onSetSearchFoundCount: (foundCount: number) => {
+      dispatch(setSearchFoundCount(foundCount));
+    },
+    onSetTreeDataObject: (tree: {}) => {
+      dispatch(setTreeDataObject(tree));
+    },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
   };
@@ -540,6 +522,10 @@ function mapStateToProps(state: any): IConnectedProps {
     gameMode: state.settings.gameMode.current,
     language: state.settings.interface.language,
     categories: state.persistent.categories,
+    searchString: state.session.categories.searchString,
+    searchFocusIndex: state.session.categories.searchFocusIndex,
+    searchFoundCount: state.session.categories.searchFoundCount,
+    treeDataObject: state.session.categories.treeDataObject,
   };
 }
 
