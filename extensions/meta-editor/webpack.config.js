@@ -2,7 +2,7 @@ var webpack = require('webpack');
 
 module.exports = {
     entry: './out/index.js',
-    target: 'node',
+    target: 'electron-renderer',
     output: {
         libraryTarget: 'commonjs2',
         library: 'meta_editor',
@@ -10,7 +10,6 @@ module.exports = {
     },
     module: {
         loaders: [
-            { test: /\.jsx?$/, loader: 'babel-loader', exclude: /node_modules/ },
             { test: /\.json?$/, loader: 'json-loader' },
         ]
     },
@@ -25,13 +24,18 @@ module.exports = {
         })
     ],
     externals: [
+        'bluebird',
         'fs',
-        'path',
+        'modmeta-db',
         'net',
         'nmm-api',
         'node',
+        'path',
         'react',
+        'react-addons-update',
         'react-bootstrap',
-        '../../util/log'
+        'react-i18next',
+        'react-redux',
+        'url'
     ]
 };
