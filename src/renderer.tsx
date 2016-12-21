@@ -114,6 +114,8 @@ store.subscribe(() => {
 
 const i18n = getI18n(store.getState().settings.interface.language);
 
+extensions.setTranslation(i18n);
+
 extendStore(store, extensions)
   .then(() => {
     extensions.doOnce();

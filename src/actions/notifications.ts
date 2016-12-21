@@ -59,7 +59,17 @@ export function addNotification(notification: INotification) {
   };
 }
 
-let dialogCallbacks = {};
+// TODO I don't like the use of a global, but I don't see how else we can ensure
+//  the same object is used between main application and extensions, without adding
+//  another parameter to functions
+class DialogCallbacks {
+  public static instance(): any {
+    if ((global as any).__dialogCallbacks === undefined) {
+      (global as any).__dialogCallbacks = {};
+    }
+    return (global as any).__dialogCallbacks;
+  }
+}
 
 /**
  * show a dialog
@@ -77,7 +87,7 @@ export function showDialog(type: DialogType, title: string,
     return new Promise<IDialogResult>((resolve, reject) => {
       const id = shortid();
       dispatch(addDialog(id, type, title, content, Object.keys(actions)));
-      dialogCallbacks[id] = (actionKey: string, input?: any) => {
+      DialogCallbacks.instance()[id] = (actionKey: string, input?: any) => {
         if (actions[actionKey] != null) {
           actions[actionKey](input);
         }
@@ -91,12 +101,13 @@ export function closeDialog(id: string, actionKey: string, input: any) {
   return (dispatch) => {
     dispatch(dismissDialog(id));
     try {
-      if (dialogCallbacks[id] !== null) {
-        dialogCallbacks[id](actionKey, input);
+      if (DialogCallbacks.instance()[id] !== null) {
+        DialogCallbacks.instance()[id](actionKey, input);
       }
-      delete dialogCallbacks[id];
     } catch (err) {
       log('error', 'failed to invoke dialog callback', { id, actionKey });
+    } finally {
+      delete DialogCallbacks.instance()[id];
     }
   };
 }

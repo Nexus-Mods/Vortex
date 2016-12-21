@@ -329,7 +329,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   }
 
   private selectSavegame = (evt: React.MouseEvent<any>) => {
-    const cell = (evt.target as HTMLTableCellElement);
+    const cell = (evt.currentTarget as HTMLTableCellElement);
     const row = (cell.parentNode as HTMLTableRowElement);
     this.setState(update(this.state, {
       selectedSavegame: { $set: row.id },

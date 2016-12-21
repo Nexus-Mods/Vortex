@@ -4,10 +4,10 @@ import { ISavegameAttribute } from '../types/ISavegameAttribute';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import {IconBar, actions, log, types} from 'nmm-api';
+import {IconBar, actions, selectors, types} from 'nmm-api';
+import * as path from 'path';
 import * as React from 'react';
 import { connect } from 'react-redux';
-import * as nodeUtil from 'util';
 
 export interface IBaseProps {
   save: ISavegame;
@@ -18,13 +18,17 @@ export interface IBaseProps {
   t: I18next.TranslationFunction;
 }
 
+interface IConnectedProps {
+  downloadPath: string;
+}
+
 interface IActionProps {
   onRemoveSavegame: (savegameId: string) => void;
   onShowDialog: (type: types.DialogType, title: string, content: types.IDialogContent,
     actions: types.DialogActions) => Promise<types.IDialogResult>;
 }
 
-type IProps = IBaseProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class SavegameRow extends React.Component<IProps, {}> {
   public static contextTypes: React.ValidationMap<any> = {
@@ -76,12 +80,12 @@ class SavegameRow extends React.Component<IProps, {}> {
   }
 
   private remove = () => {
-    const { t, save, onRemoveSavegame, onShowDialog } = this.props;
+    const { t, downloadPath, save, onRemoveSavegame, onShowDialog } = this.props;
 
     let removeSavegame = true;
 
     onShowDialog('question', t('Confirm deletion'), {
-      message: t('Do you really want to remove {save.id}?'),
+      message: t('Do you really want to remove {{saveId}}?', { replace: { saveId: save.id } }),
       translated: true,
     }, {
         Cancel: null,
@@ -89,7 +93,7 @@ class SavegameRow extends React.Component<IProps, {}> {
       }).then((result: types.IDialogResult) => {
         removeSavegame = result.action === 'Delete';
         if (removeSavegame) {
-          return fs.removeAsync(save.id);
+          return fs.removeAsync(path.join(downloadPath, save.id));
         } else {
           return Promise.resolve();
         }
@@ -126,8 +130,10 @@ class SavegameRow extends React.Component<IProps, {}> {
 
 }
 
-function mapStateToProps(state) {
-  return {};
+function mapStateToProps(state): IConnectedProps {
+  return {
+    downloadPath: selectors.downloadPath(state),
+  };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
