@@ -1,6 +1,8 @@
-import { IReducerSpec } from '../../../types/IExtensionContext';
 import { setSearchFocusIndex, setSearchFoundCount,
    setSearchString, setTreeDataObject } from '../actions/session';
+
+import { IReducerSpec } from '../../../types/IExtensionContext';
+
 import update = require('react-addons-update');
 
 /**
@@ -24,7 +26,7 @@ export const sessionReducer: IReducerSpec = {
   defaults: {
     searchFocusIndex: 0,
     searchFoundCount: 0,
-    searchString: undefined,
+    searchString: '',
     treeDataObject: undefined,
   },
 };

@@ -1,35 +1,27 @@
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-
-import Icon from '../../../views/Icon';
-import { Button } from '../../../views/TooltipControls';
-
-import { ICategory } from '../types/ICategory';
-import { IGameListEntry } from '../types/IGameListEntry';
-import { Jumbotron } from 'react-bootstrap';
-
-import { showDialog } from '../../../actions/notifications';
-import { showError } from '../../../util/message';
-
-import * as React from 'react';
-
-import { getSafe } from '../../../util/storeHelper';
-
-import { convertGameId } from '../util/convertGameId';
-import { retriveCategoryList } from '../util/retrieveCategories';
-
-import * as Promise from 'bluebird';
-
-import Tree from 'react-sortable-tree';
-
-// import update = require('react-addons-update');
 
 import { updateCategories } from '../actions/category';
 import { setSearchFocusIndex, setSearchFoundCount,
    setSearchString, setTreeDataObject } from '../actions/session';
+import { ICategory } from '../types/ICategory';
+import { IGameListEntry } from '../types/IGameListEntry';
+import { IAddedTree, IRemovedTree, IRenamedTree, IToggleExpandedTree } from '../types/ITrees';
+import { convertGameId } from '../util/convertGameId';
+import { retriveCategoryList } from '../util/retrieveCategories';
 
+import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { showError } from '../../../util/message';
+import { getSafe } from '../../../util/storeHelper';
+import Icon from '../../../views/Icon';
+import { Button } from '../../../views/TooltipControls';
+
+import * as Promise from 'bluebird';
 import Nexus from 'nexus-api';
+import * as React from 'react';
+import { Jumbotron } from 'react-bootstrap';
+import Tree from 'react-sortable-tree';
 
 let nexus: Nexus;
 
@@ -97,33 +89,33 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
 
     if (treeDataObject !== undefined) {
       return (
-        <div style={{ height: 1000 }}>
+        <div style={{ height: '90%' }}>
           <Button
             id='expandAll'
-            tooltip='Expand All'
+            tooltip={t('Expand All')}
             value='true'
-            onClick={this.toggleExpandedForAllJS}
+            onClick={this.toggleExpandedForAll}
           >
             <Icon name={'expand'} />
           </Button>
           <Button
             id='collapseAll'
-            tooltip='Collapse All'
+            tooltip={t('Collapse All')}
             value='false'
-            onClick={this.toggleExpandedForAllJS}
+            onClick={this.toggleExpandedForAll}
           >
             <Icon name={'compress'} />
           </Button>
           <Button
             id='retrieveCategories'
-            tooltip='Retrieve Categories from server'
+            tooltip={t('Retrieve Categories from server')}
             onClick={this.retrieveCategories}
           >
             <Icon name={'download'} />
           </Button>
           <Button
             id='add-root-category'
-            tooltip='Add Root Category'
+            tooltip={t('Add Root Category')}
             onClick={this.addRootCategory}
           >
           <Icon name={'indent'} />
@@ -133,13 +125,13 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
           <input
               id='find-box'
               type='text'
-              value={searchString}
+              value={searchString === undefined ? '' : searchString}
               onChange={this.searchString}
           />
           </label>
           <Button
             id='selectPrevMatch'
-            tooltip='Prev'
+            tooltip={t('Prev')}
             type='button'
             disabled={!searchFoundCount}
             onClick={this.selectPrevMatch}
@@ -148,7 +140,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
           </Button>
           <Button
             id='selectNextMatch'
-            tooltip='Next'
+            tooltip={t('Next')}
             type='submit'
             disabled={!searchFoundCount}
             onClick={this.selectNextMatch}
@@ -164,6 +156,8 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
           <TreeImpl
             treeData={treeDataObject}
             onChange={this.updateTreeData}
+            height={'100%'}
+            autoHeight={false}
             searchQuery={searchString}
             searchFocusOffset={searchFocusIndex}
             searchFinishCallback={this.searchFinishCallback}
@@ -173,17 +167,17 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       );
     } else {
       return (
-        <div style={{ height: 1000 }}>
+        <div style={{ height: '90%' }}>
           <Button
             id='retrieveCategories'
-            tooltip='Retrieve Categories from server'
+            tooltip={t('Retrieve Categories from server')}
             onClick={this.retrieveCategories}
           >
             <Icon name={'download'} />
           </Button>
           <Button
             id='add-category'
-            tooltip='Add Category'
+            tooltip={t('Add Category')}
             onClick={this.addRootCategory}
           >
           <Icon name={'indent'} />
@@ -193,7 +187,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
     }
   }
 
-  private toggleExpandedForAllJS = (event) => {
+  private toggleExpandedForAll = (event) => {
     const {gameMode, onShowError, onUpdateCategories,
        onSetTreeDataObject, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
@@ -207,10 +201,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
 
     try {
       let isExpanded = expanded;
-      let newTree: ({
-        treeData: {},
-        expanded: boolean,
-      }) = {
+      let newTree: IToggleExpandedTree = {
           treeData: treeDataObject,
           expanded: isExpanded,
         };
@@ -239,13 +230,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
         if (renameCategory) {
           try {
             let nodePath = path;
-            let newTree: ({
-              treeData: {},
-              path: string[],
-              newNode: {},
-              getNodeKey: Function,
-              ignoreCollapsed: boolean
-            }) = {
+            let newTree: IRenamedTree = {
                 treeData: treeDataObject,
                 path: nodePath,
                 newNode: { title: result.input.value, expanded: node.expanded,
@@ -281,14 +266,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
         addCategory = result.action === 'Add' && result.input.value !== undefined;
         if (addCategory) {
           try {
-            let newTree: ({
-              treeData: {},
-              newNode: {},
-              parentKey: number | string,
-              getNodeKey: Function,
-              ignoreCollapsed: boolean,
-              expandParent: boolean,
-            }) = {
+            let newTree: IAddedTree = {
                 treeData: treeDataObject,
                 newNode: { title: result.input.value, expanded: true },
                 parentKey: path[1] === undefined ? path[0] : path[1],
@@ -323,14 +301,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
         addCategory = result.action === 'Add' && result.input.value !== undefined;
         if (addCategory) {
           try {
-            let newTree: ({
-              treeData: {},
-              newNode: {},
-              parentKey: number | string,
-              getNodeKey: Function,
-              ignoreCollapsed: boolean,
-              expandParent: boolean,
-            }) = {
+            let newTree: IAddedTree = {
                 treeData: treeDataObject,
                 newNode: { title: result.input.value, expanded: true },
                 parentKey: undefined,
@@ -430,10 +401,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
     let treeFunctions = require('react-sortable-tree');
     try {
       let nodePath = path;
-      let newTree: ({
-        treeData: {}, path: any, getNodeKey: Function,
-        ignoreCollapsed: boolean
-      }) = {
+      let newTree: IRemovedTree = {
           treeData: treeDataObject,
           path: nodePath,
           getNodeKey: treeFunctions.defaultGetNodeKey,
@@ -452,12 +420,13 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   };
 
   private generateNodeProps = (rowInfo) => {
+    const {t} = this.props;
     rowInfo = {
       buttons: [
         <Button
           id='rename-category'
           className='btn-embed'
-          tooltip='Rename Category'
+          tooltip={t('Rename Category')}
           value={rowInfo}
           onClick={this.renameCategory.bind(this, rowInfo)}
         >
@@ -466,7 +435,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
         <Button
           id='add-category'
           className='btn-embed'
-          tooltip='Add Category'
+          tooltip={t('Add Category')}
           onClick={this.addCategory.bind(this, rowInfo)}
         >
           <Icon name={'indent'} />
@@ -474,7 +443,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
         <Button
           id='remove-category'
           className='btn-embed'
-          tooltip='Remove Category'
+          tooltip={t('Remove Category')}
           onClick={this.removeCategory.bind(this, rowInfo)}
         >
           <Icon name={'remove'} />

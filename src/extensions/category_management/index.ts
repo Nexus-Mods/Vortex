@@ -1,23 +1,20 @@
-import CategoryList from './views/CategoryList';
-
-import { IExtensionContext } from '../../types/IExtensionContext';
 import { loadCategories, updateCategories } from './actions/category';
 import { setTreeDataObject } from './actions/session';
-
 import { categoryReducer } from './reducers/category';
 import { sessionReducer } from './reducers/session';
 import { ICategory } from './types/ICategory';
 import { IGameListEntry } from './types/IGameListEntry';
+import { convertGameId } from './util/convertGameId';
+import { retriveCategoryList } from './util/retrieveCategories';
+import CategoryList from './views/CategoryList';
 
+import { IExtensionContext } from '../../types/IExtensionContext';
+import { log } from '../../util/log';
+import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 
-import { retriveCategoryList } from './util/retrieveCategories';
 
 import Nexus from 'nexus-api';
-
-import { convertGameId } from './util/convertGameId';
-
-import { log } from '../../util/log';
 
 interface IGameInfo extends IGameListEntry {
   categories: ICategory[];
@@ -37,7 +34,7 @@ function init(context: IExtensionContext): boolean {
     const store: Redux.Store<any> = context.api.store;
 
     try {
-      let state = context.api.store.getState();
+      let state = store.getState();
       nexus = new Nexus(
         getSafe(state, ['settings', 'gameMode', 'current'], ''),
         getSafe(state, ['account', 'nexus', 'APIKey'], '')
@@ -45,13 +42,14 @@ function init(context: IExtensionContext): boolean {
 
       context.api.events.on('gamemode-activated', (gameMode: string) => {
 
-        context.api.store.dispatch(setTreeDataObject(undefined));
+        store.dispatch(setTreeDataObject(undefined));
         let gameId = convertGameId(gameMode);
         retriveCategories(gameId, context, false);
       });
 
     } catch (err) {
       log('error', 'Failed to load categories', err);
+      showError(store.dispatch, 'Failed to load categories', err);
     }
   });
 
@@ -63,17 +61,18 @@ function retriveCategories(
   context: IExtensionContext,
   isUpdate: boolean): any {
 
-  if (isUpdate) {
-    retriveCategoryList(activeGameId, nexus, isUpdate)
-      .then((result: any) => {
+  retriveCategoryList(activeGameId, nexus, isUpdate)
+    .then((result: any) => {
+      if (isUpdate) {
         context.api.store.dispatch(updateCategories(activeGameId, result));
-      });
-  } else {
-    retriveCategoryList(activeGameId, nexus, isUpdate)
-      .then((result: any) => {
+      } else {
         context.api.store.dispatch(loadCategories(activeGameId, result));
-      });
-  }
+      }
+    })
+    .catch((err) => {
+      showError(context.api.store.dispatch,
+        'An error occurred retrieving the Game Info', err);
+    });
 }
 
 export default init;

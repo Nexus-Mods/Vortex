@@ -1,11 +1,12 @@
-import { IExtensionContext } from '../../../types/IExtensionContext';
-
-import { log } from '../../../util/log';
-import Nexus from 'nexus-api';
 
 import { ICategory } from '../types/ICategory';
 import { ICategoryTree, IChildren } from '../types/ICategoryTree';
 import { IGameListEntry } from '../types/IGameListEntry';
+
+import { IExtensionContext } from '../../../types/IExtensionContext';
+import { log } from '../../../util/log';
+
+import Nexus from 'nexus-api';
 
 interface IGameInfo extends IGameListEntry {
   categories: ICategory[];
@@ -51,7 +52,7 @@ export function retriveCategoryList(
       )
       .catch((err) => {
         log('error', 'An error occurred retrieving the Game Info', { err: err.message });
-        return null;
+        throw err;
       });
   });
 }
