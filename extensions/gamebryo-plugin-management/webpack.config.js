@@ -6,7 +6,7 @@ module.exports = {
   node: { __filename: false, __dirname: false },
   output: {
     libraryTarget: 'commonjs2',
-    library: 'sample',
+    library: 'gamebryo-plugin-management',
     filename: './dist/index.js'
   },
   module: {
@@ -19,7 +19,7 @@ module.exports = {
     new webpack.optimize.UglifyJsPlugin(
         { compress: { warnings: false }, comments: false, sourceMap: false })
   ],
-  devtool: "source-map",
+  devtool: 'source-map',
   externals: [
     'bluebird',
     'fs',

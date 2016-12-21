@@ -1,11 +1,11 @@
 import RuleEditor from './RuleEditor';
 
 import { ComponentEx, FormFeedbackAwesome, Icon,
-         log, tooltip, types,
+        log, selectors, tooltip, types,
          util } from 'nmm-api';
 
-import { IHashResult, ILookupResult, IModInfo, IReference,
-         IRule, RuleType, genHash } from 'modmeta-db';
+import { ILookupResult, IModInfo, IReference,
+         IRule, RuleType } from 'modmeta-db';
 import * as path from 'path';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, ListGroup,
@@ -24,6 +24,7 @@ export interface IBaseProps {
 
 interface IConnectedProps {
   downloads: { [id: string]: any };
+  downloadPath: string;
 }
 
 interface IMetaEditorState {
@@ -274,42 +275,51 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
   }
 
   private initEmpty(filePath: string) {
-    const { t } = this.props;
-    genHash(filePath)
-      .then((hashResult: IHashResult) => {
-        this.setDialogVisible(true, {
-          modId: '',
-          modName: path.basename(filePath, path.extname(filePath)),
-          fileName: filePath,
-          fileSizeBytes: hashResult.numBytes,
-          gameId: '',
-          fileVersion: '',
-          fileMD5: hashResult.md5sum,
-          sourceURI: '',
-          rules: [],
-          details: {},
-        });
-      })
-      .catch((err) => {
-        this.context.api.showErrorNotification(t('Failed to analyze file'), err.message);
-      });
+    const { downloadId, downloads } = this.props;
+    this.setDialogVisible(true, {
+      modId: '',
+      modName: path.basename(filePath, path.extname(filePath)),
+      fileName: filePath,
+      fileSizeBytes: downloads[downloadId].size,
+      gameId: '',
+      fileVersion: '',
+      fileMD5: downloads[downloadId].fileMD5,
+      sourceURI: '',
+      rules: [],
+      details: {},
+    });
   }
 
   private open = () => {
-    const { t, downloadId, downloads } = this.props;
-    let filePath = downloads[downloadId].localPath;
-    this.context.api.lookupModMeta(filePath, {})
+    const { downloadId, downloadPath, downloads } = this.props;
+    let filePath = path.join(downloadPath, downloads[downloadId].localPath);
+
+    this.context.api.sendNotification({
+      id: 'meta-lookup',
+      type: 'activity',
+      message: 'Mod lookup...',
+    });
+
+    this.context.api.lookupModMeta(filePath, {
+      fileMD5: downloads[downloadId].fileMD5,
+      fileSize: downloads[downloadId].size,
+     })
       .then((info: ILookupResult[]) => {
         if (info.length > 0) {
           this.setDialogVisible(true, info[0].value);
+          return Promise.resolve();
         } else {
-          this.initEmpty(filePath);
+          return this.initEmpty(filePath);
         }
       })
       .catch((err) => {
         log('info', 'Failed to look up mod meta information', { err: nodeUtil.inspect(err) });
         this.initEmpty(filePath);
-      });
+      })
+      .finally(() => {
+        this.context.api.dismissNotification('meta-lookup');
+      })
+      ;
   };
 
   private close = () => {
@@ -317,10 +327,11 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
   }
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state): IConnectedProps {
   return {
     downloads: state.persistent.downloads.files,
-  }
+    downloadPath: selectors.downloadPath(state),
+  };
 }
 
 export default

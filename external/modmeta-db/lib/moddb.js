@@ -64,12 +64,18 @@ class ModDB {
         }
         return this.mDB.putAsync(this.makeKey(mod), mod);
     }
-    lookup(filePath, gameId, modId) {
-        let hashResult;
-        return util_1.genHash(filePath)
-            .then((res) => {
-            hashResult = res.md5sum;
-            let lookupKey = `${res.md5sum}:${res.numBytes}`;
+    lookup(filePath, fileMD5, fileSize, gameId, modId) {
+        let hashResult = fileMD5;
+        let hashFileSize = fileSize;
+        let promise = fileMD5 !== undefined
+            ? Promise.resolve()
+            : util_1.genHash(filePath).then((res) => {
+                hashResult = res.md5sum;
+                hashFileSize = res.numBytes;
+                return Promise.resolve();
+            });
+        return promise.then(() => {
+            let lookupKey = `${hashResult}:${hashFileSize}`;
             if (gameId !== undefined) {
                 lookupKey += ':' + gameId;
                 if (modId !== undefined) {
@@ -163,13 +169,14 @@ class ModDB {
             if (results.length > 0) {
                 return Promise.resolve(results);
             }
+            let hash = key.split(':')[0];
             let remoteResults;
             return Promise
                 .mapSeries(this.mServers, (server) => {
                 if (remoteResults) {
                     return Promise.resolve();
                 }
-                return this.queryServer(server, gameId, key)
+                return this.queryServer(server, gameId, hash)
                     .then((serverResults) => {
                     remoteResults = serverResults;
                     for (let result of remoteResults) {

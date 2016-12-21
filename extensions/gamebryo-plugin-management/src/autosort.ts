@@ -4,7 +4,6 @@ import {IPluginLoot, IPluginsLoot} from './types/IPlugins';
 import {lootAppPath, pluginPath} from './util/gameSupport';
 
 import * as Promise from 'bluebird';
-import {t} from 'i18next';
 import {GameId, LootDatabase} from 'loot';
 import {types, util} from 'nmm-api';
 import * as path from 'path';
@@ -21,6 +20,8 @@ class LootInterface {
 
     this.mLootQueue = new Promise<void>((resolve, reject) => this.mOnFirstInit = resolve);
 
+    this.mExtensionApi = context.api;
+
     // when the game changes, we need to re-initialize loot for that game
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       let gamePath: string = util.currentGameDiscovery(store.getState()).path;
@@ -30,6 +31,7 @@ class LootInterface {
     // on demand, re-sort the plugin list
     context.api.events.on('autosort-plugins', () => {
       if (store.getState().settings.plugins.autoSort) {
+        const t = this.mExtensionApi.translate;
         this.enqueue(t('Sorting plugins'), () => {
           let pluginNames: string[] = Object.keys(store.getState().loadOrder);
           let sorted: string[] = this.mLoot.sortPlugins(pluginNames);
@@ -47,6 +49,7 @@ class LootInterface {
 
   private pluginDetails =
       (plugins: string[], callback: (result: IPluginsLoot) => void) => {
+        const t = this.mExtensionApi.translate;
         this.enqueue(t('Reading Plugin Details'), () => {
           let result: IPluginsLoot = {};
           plugins.forEach((pluginName: string) => {
@@ -62,6 +65,8 @@ class LootInterface {
       }
 
   private init(gameMode: GameId, gamePath: string) {
+    const t = this.mExtensionApi.translate;
+
     this.mLoot = new LootDatabase(gameMode, gamePath, pluginPath(gameMode));
 
     // little bit of hackery: If tasks are queued before the game mode is activated
@@ -95,7 +100,7 @@ class LootInterface {
     if (preInitQueue) {
       // there were tasks enqueued before the game mode was activated. Now we can run them.
       // enqueue a new promise that resolves once those pre-init tasks are done and unblock them.
-      this.enqueue('init queue', () => {
+      this.enqueue(t('Init Queue'), () => {
         this.mOnFirstInit();
         this.mOnFirstInit = null;
         return new Promise<void>((resolve, reject) => {

@@ -57,7 +57,7 @@ function loadSaveGame(file: string, onAddSavegame: Function): Promise<void> {
     let sg = new savegameLib.GamebryoSaveGame(file);
 
     const save: ISavegame = {
-      id: file,
+      id: path.basename(file),
       savegameBind: sg,
       attributes: {
         id: sg.saveNumber,

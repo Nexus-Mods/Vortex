@@ -117,4 +117,4 @@ function registerIcon(instance: IconBar,
 
 export default
   extend(registerIcon)(IconBar
-  ) as React.ComponentClass<IBaseProps & IExtensibleProps & React.HTMLAttributes<any>>;
+  ) as React.ComponentClass<IBaseProps & IExtensibleProps & React.HTMLAttributes<any> & any>;

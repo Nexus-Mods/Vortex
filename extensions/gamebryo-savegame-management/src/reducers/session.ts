@@ -1,7 +1,7 @@
 import { types, util } from 'nmm-api';
 
 import {
-  addSavegame, clearSavegames, removeSavegame,
+  setSavegames, clearSavegames, removeSavegame,
   setSavegameAttribute,
   setSavegameState,
 } from '../actions/session';
@@ -13,8 +13,8 @@ import update = require('react-addons-update');
  */
 export const sessionReducer: types.IReducerSpec = {
   reducers: {
-    [addSavegame]: (state, payload) => {
-      return util.setSafe(state, ['saves', payload.id], payload);
+    [setSavegames]: (state, payload) => {
+      return util.setSafe(state, ['saves'], payload);
     },
     [removeSavegame]: (state, payload) => {
       return util.deleteOrNop(state, ['saves', payload]);

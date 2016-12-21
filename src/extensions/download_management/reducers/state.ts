@@ -29,6 +29,14 @@ export const stateReducer: IReducerSpec = {
     [action.setDownloadHash]: (state, payload) => {
       return setOrNop(state, [ 'files', payload.id, 'fileMD5' ], payload.fileMD5);
     },
+    [action.setDownloadHashByFile]: (state, payload) => {
+      const downloadId = Object.keys(state.files).find(
+        (id: string) => state.files[id].localPath === payload.fileName);
+      return merge(state, ['files', downloadId], {
+        fileMD5: payload.fileMD5,
+        size: payload.fileSize,
+      });
+    },
     [action.startDownload]: (state, payload) => {
       return setOrNop(state, [ 'files', payload.id, 'state' ], 'started');
     },
@@ -51,6 +59,16 @@ export const stateReducer: IReducerSpec = {
     },
     [action.removeDownload]: (state, payload) => {
       return deleteOrNop(state, [ 'files', payload.id ]);
+    },
+    [action.addLocalDownload]: (state, payload) => {
+      return setSafe(state, [ 'files', payload.id ], {
+        state: 'finished',
+        game: payload.game,
+        localPath: payload.localPath,
+        urls: [],
+        modInfo: {},
+        chunks: [],
+      });
     },
   },
   defaults: {

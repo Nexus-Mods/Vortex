@@ -130,27 +130,37 @@ class ModDB {
    * is left undefined 
    * 
    * @param {string} filePath
+   * @param {string} fileMD5
+   * @param {number} fileSize
    * @param {string} [gameId]
    * @param {string} [modId]
    * @returns {Promise<ILookupResult[]>}
    * 
    * @memberOf ModDB
    */
-  public lookup(filePath: string, gameId?: string,
-                modId?: string): Promise<ILookupResult[]> {
-    let hashResult: string;
-    return genHash(filePath)
-        .then((res: IHashResult) => {
-          hashResult = res.md5sum;
-          let lookupKey = `${res.md5sum}:${res.numBytes}`;
-          if (gameId !== undefined) {
-            lookupKey += ':' + gameId;
-            if (modId !== undefined) {
-              lookupKey += ':' + modId;
-            }
-          }
-          return this.getAllByKey(lookupKey, gameId);
-        });
+  public lookup(filePath: string, fileMD5?: string, fileSize?: number,
+                gameId?: string, modId?: string): Promise<ILookupResult[]> {
+    let hashResult: string = fileMD5;
+    let hashFileSize: number = fileSize;
+
+    let promise = fileMD5 !== undefined
+      ? Promise.resolve()
+      : genHash(filePath).then((res: IHashResult) => {
+        hashResult = res.md5sum;
+        hashFileSize = res.numBytes;
+        return Promise.resolve();
+      });
+
+    return promise.then(() => {
+      let lookupKey = `${hashResult}:${hashFileSize}`;
+      if (gameId !== undefined) {
+        lookupKey += ':' + gameId;
+        if (modId !== undefined) {
+          lookupKey += ':' + modId;
+        }
+      }
+      return this.getAllByKey(lookupKey, gameId);
+    });
   }
 
   private restBaseData(server: IServer): IRequestArgs {
@@ -285,24 +295,26 @@ class ModDB {
           let hash = key.split(':')[0];
           let remoteResults: ILookupResult[];
 
-          return Promise
-              .mapSeries(this.mServers,
-                         (server: IServer) => {
-                           if (remoteResults) {
-                             return Promise.resolve();
-                           }
-                           return this.queryServer(server, gameId, hash)
-                               .then((serverResults: ILookupResult[]) => {
-                                 remoteResults = serverResults;
-                                 // cache all results in our database
-                                 for (let result of remoteResults) {
-                                   let temp = Object.assign({}, result.value);
-                                   temp.expires = new Date().getTime() / 1000 +
-                                                  server.cacheDurationSec;
-                                   this.insert(result.value);
-                                 }
-                               });
-                         })
+          return Promise.mapSeries(
+                            this.mServers,
+                            (server: IServer) => {
+                              if (remoteResults) {
+                                return Promise.resolve();
+                              }
+                              return this.queryServer(server, gameId, hash)
+                                  .then((serverResults: ILookupResult[]) => {
+                                    remoteResults = serverResults;
+                                    // cache all results in our database
+                                    for (let result of remoteResults) {
+                                      let temp =
+                                          Object.assign({}, result.value);
+                                      temp.expires =
+                                          new Date().getTime() / 1000 +
+                                          server.cacheDurationSec;
+                                      this.insert(result.value);
+                                    }
+                                  });
+                            })
               .then(() => { return Promise.resolve(remoteResults); });
         });
   }

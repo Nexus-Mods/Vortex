@@ -66,6 +66,8 @@ export interface IStateChangeCallback {
  * @interface ILookupDetails
  */
 export interface ILookupDetails {
+  fileMD5?: string;
+  fileSize?: number;
   gameId?: string;
   modId?: string;
 }
@@ -163,6 +165,11 @@ export interface IExtensionApi {
    * @memberOf IExtensionApi
    */
   events: NodeJS.EventEmitter;
+
+  /**
+   * translation function
+   */
+  translate: I18next.TranslationFunction;
 
   /**
    * retrieve path for a known directory location.

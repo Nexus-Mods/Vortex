@@ -63,10 +63,18 @@ export interface IDownload {
   modInfo: { [key: string]: any };
 
   /**
-   * size in bytes of this chunk
+   * hash of the file data
+   * 
+   * @type {string}
+   * @memberOf IDownload
+   */
+   fileMD5: string;
+
+  /**
+   * size in bytes
    * 
    * @type {number}
-   * @memberOf IDownloadChunk
+   * @memberOf IDownload
    */
   size: number;
 
@@ -74,7 +82,7 @@ export interface IDownload {
    * number of bytes received so far
    * 
    * @type {number}
-   * @memberOf IDownloadChunk
+   * @memberOf IDownload
    */
   received: number;
 }

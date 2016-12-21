@@ -22,6 +22,7 @@ import {log} from '../../../util/log';
 import * as util from 'util';
 
 export interface IBaseProps {
+  t: I18next.TranslationFunction;
   mod: IMod;
   modState: IProfileMod;
   attributes: IModAttribute[];
@@ -134,10 +135,10 @@ class ModRow extends React.Component<IProps, {}> {
   }
 
   private renderAttribute = (attribute: IModAttribute): JSX.Element => {
-    const { mod } = this.props;
+    const { t, mod } = this.props;
     return (
       <td key={ attribute.id }>
-      {this.renderCell(attribute.calc(mod.attributes))}
+      {this.renderCell(attribute.calc(mod.attributes, t))}
       </td>
     );
   }

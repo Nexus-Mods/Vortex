@@ -37,6 +37,9 @@ export const finishDownload: any = createAction('FINISH_DOWNLOAD',
 export const setDownloadHash: any = createAction('SET_DOWNLOAD_HASH',
   (id: string, fileMD5: string) => ({ id, fileMD5 }));
 
+export const setDownloadHashByFile: any = createAction('SET_DOWNLOAD_HASH_BY_FILE',
+  (fileName: string, fileMD5: string, fileSize: number) => ({ fileName, fileMD5, fileSize }));
+
 /**
  * mark download paused
  */
@@ -53,3 +56,11 @@ export const removeDownload: any = createAction('REMOVE_DOWNLOAD',
  * sets the current download speed in bytes/second
  */
 export const setDownloadSpeed: any = createAction('SET_DOWNLOAD_SPEED');
+
+/**
+ * add a file that has been found on disk but where we weren't involved
+ * in the download.
+ */
+export const addLocalDownload: any = createAction('ADD_LOCAL_DOWNLOAD',
+  (id: string, game: string, localPath: string, fileSize: number) =>
+    ({ id, game, localPath, fileSize }));

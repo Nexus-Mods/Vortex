@@ -1,6 +1,6 @@
 import { types } from 'nmm-api';
 
-import { addSavegame, clearSavegames } from './actions/session';
+import { setSavegames, clearSavegames } from './actions/session';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 import { ISavegame } from './types/ISavegame';
@@ -34,21 +34,6 @@ function init(context: IExtensionContextExt): boolean {
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
 
-    {
-      const readPath: string = savesPath(store.getState().settings.gameMode.current);
-
-      refreshSavegames(readPath, (save: ISavegame): void => {
-        store.dispatch(addSavegame(save));
-      })
-        .then((failedReads: string[]) => {
-          if (failedReads.length > 0) {
-            context.api.showErrorNotification('Some saves couldn\'t be read',
-                                              failedReads.join('\n'));
-          }
-        })
-        ;
-    }
-
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       store.dispatch(clearSavegames());
 
@@ -58,12 +43,19 @@ function init(context: IExtensionContextExt): boolean {
 
       let readPath = savesPath(gameMode);
 
+      let newSavegames: ISavegame[] = [];
       refreshSavegames(readPath, (save: ISavegame): void => {
         if (store.getState().session.saves[save.id] === undefined) {
-          store.dispatch(addSavegame(save));
+          newSavegames.push(save);
         }
       })
         .then((failedReads: string[]) => {
+          let savesDict: { [id: string]: ISavegame } = {};
+          newSavegames.forEach((save: ISavegame) => {
+            savesDict[save.id] = save;
+          });
+
+          store.dispatch(setSavegames(savesDict));
           if (failedReads.length > 0) {
             context.api.showErrorNotification(
               'Some saves couldn\'t be read',

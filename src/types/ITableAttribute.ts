@@ -12,7 +12,7 @@ export interface ITableAttribute {
   isToggleable: boolean;
   isReadOnly: boolean;
   isSortable: boolean;
-  calc: (attributes: any) => any;
+  calc: (attributes: any, t: I18next.TranslationFunction) => any;
   sortFunc?: (lhs: any, rhs: any, locale: string) => number;
   filterFunc?: (filter: string, value: any) => boolean;
 }

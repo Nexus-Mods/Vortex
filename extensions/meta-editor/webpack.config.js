@@ -3,6 +3,7 @@ var webpack = require('webpack');
 module.exports = {
     entry: './out/index.js',
     target: 'electron-renderer',
+    node: { __filename: false, __dirname: false },
     output: {
         libraryTarget: 'commonjs2',
         library: 'meta_editor',

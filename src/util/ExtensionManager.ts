@@ -28,12 +28,14 @@ import { getSafe } from '../util/storeHelper';
 import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs';
-import { ILookupResult, IModInfo, IReference, ModDB } from 'modmeta-db';
+import { IHashResult, ILookupResult, IModInfo, IReference, ModDB, genHash } from 'modmeta-db';
 import * as path from 'path';
 import { types as ratypes } from 'redux-act';
 import ReduxWatcher = require('redux-watcher');
 
 import Module = require('module');
+
+import * as util from 'util';
 
 let app = appIn;
 let dialog = dialogIn;
@@ -67,6 +69,7 @@ type WatcherRegistry = { [watchPath: string]: IStateChangeCallback[] };
 class ExtensionManager {
   private mExtensions: IRegisteredExtension[];
   private mApi: IExtensionApi;
+  private mTranslator: I18next.I18n;
   private mEventEmitter: NodeJS.EventEmitter;
   private mReduxWatcher: any;
   private mWatches: WatcherRegistry = {};
@@ -90,6 +93,9 @@ class ExtensionManager {
       selectExecutable: this.selectExecutable,
       selectDir: this.selectDir,
       events: this.mEventEmitter,
+      translate: (input: string, options?: I18next.TranslationOptions) => {
+        return this.mTranslator !== undefined ? this.mTranslator.t(input, options) : input;
+      },
       getPath: this.getPath,
       onStateChange: (path: string[], callback: IStateChangeCallback) => undefined,
       registerProtocol: this.registerProtocol,
@@ -98,6 +104,10 @@ class ExtensionManager {
       lookupModMeta: this.lookupModMeta,
       saveModMeta: this.saveModMeta,
     };
+  }
+
+  public setTranslation(translator: I18next.I18n) {
+    this.mTranslator = translator;
   }
 
   /**
@@ -345,7 +355,28 @@ class ExtensionManager {
 
   private lookupModMeta = (filePath: string, detail: ILookupDetails): Promise<ILookupResult[]> => {
     if (this.mModDB !== undefined) {
-      return this.mModDB.lookup(filePath, detail.gameId, detail.modId);
+      let fileMD5 = detail.fileMD5;
+      let fileSize = detail.fileSize;
+
+      let promise: Promise<void>;
+
+      if (fileMD5 === undefined) {
+        promise = genHash(filePath).then((res: IHashResult) => {
+          fileMD5 = res.md5sum;
+          fileSize = res.numBytes;
+          this.getApi().events.emit('filehash-calculated', filePath, fileMD5, fileSize);
+        });
+      } else {
+        promise = Promise.resolve();
+      }
+
+      return promise
+        .then(() => {
+          return this.mModDB.lookup(filePath, fileMD5, fileSize, detail.gameId, detail.modId);
+        })
+        .then((result: ILookupResult[]) => {
+          return Promise.resolve(result);
+        });
     } else {
       return Promise.reject(new Error('wrong process'));
     }
@@ -376,7 +407,6 @@ class ExtensionManager {
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {
     let indexPath = path.join(extensionPath, 'index.js');
-    log('info', 'load dynamic extension', indexPath);
     if (fs.existsSync(indexPath)) {
       // TODO: workaround. redux-act stores a global set of action creator ids and throws if
       //  there would be a duplicate. Since extensions might import actions we already have loaded

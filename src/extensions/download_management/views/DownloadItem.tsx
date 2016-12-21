@@ -6,6 +6,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import IconBar from '../../../views/IconBar';
 
 import { IGameStored } from '../../gamemode_management/types/IStateEx';
+import { downloadPath } from '../../mod_management/selectors';
 
 import { DownloadState, IDownload } from '../types/IDownload';
 
@@ -24,6 +25,7 @@ export interface IBaseProps {
 
 export interface IConnectedProps {
   knownGames: IGameStored[];
+  downloadPath: string;
 }
 
 interface IActionProps {
@@ -104,6 +106,7 @@ class DownloadItem extends ComponentEx<IProps, {}> {
           <IconBar
             group='downloaditem-icons'
             instanceId={ downloadId }
+            downloadId={ downloadId }
             className='download-actions'
             staticElements={ this.downloadActions }
           />
@@ -193,7 +196,7 @@ class DownloadItem extends ComponentEx<IProps, {}> {
   }
 
   private inspect = () => {
-    const { download, downloadId, onShowDialog } = this.props;
+    const { download, downloadPath, downloadId, onShowDialog } = this.props;
     if (download.state === 'failed') {
       if (download.failCause.htmlFile !== undefined) {
         onShowDialog('error', 'Download failed', {
@@ -204,7 +207,11 @@ class DownloadItem extends ComponentEx<IProps, {}> {
           });
       }
     } else {
-      this.context.api.lookupModMeta(download.localPath, {})
+      let fullPath = path.join(downloadPath, download.localPath);
+      this.context.api.lookupModMeta(fullPath, {
+        fileMD5: download.fileMD5,
+        fileSize: download.size,
+      })
         .then((info) => {
           log('info', 'meta', { info });
         });
@@ -220,6 +227,7 @@ class DownloadItem extends ComponentEx<IProps, {}> {
 function mapStateToProps(state): IConnectedProps {
   return {
     knownGames: state.session.gameMode.known,
+    downloadPath: downloadPath(state),
   };
 }
 
