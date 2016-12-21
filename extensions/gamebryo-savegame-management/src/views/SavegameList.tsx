@@ -225,9 +225,6 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
 
     if (save === undefined) {
       log('warn', 'unknown savegame id', saveId);
-      this.setState(update(this.state, {
-        selectedSavegame: { $set: undefined },
-      }));
       return null;
     }
 

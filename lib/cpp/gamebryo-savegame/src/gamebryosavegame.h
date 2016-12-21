@@ -35,6 +35,7 @@ private:
 
 class IDecoder {
 public:
+  virtual ~IDecoder() {};
   virtual bool seek(size_t offset, std::ios_base::seekdir dir = std::ios::beg) = 0;
   virtual size_t tell() = 0;
   virtual bool read(char *buffer, size_t size) = 0;
@@ -129,7 +130,7 @@ private:
 
   private:
     GamebryoSaveGame *m_Game;
-    std::unique_ptr<IDecoder> m_Decoder;
+    std::shared_ptr<IDecoder> m_Decoder;
     bool m_HasFieldMarkers;
     bool m_BZString;
   };

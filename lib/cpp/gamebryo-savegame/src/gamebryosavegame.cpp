@@ -44,7 +44,7 @@ private:
 
 class LZ4Decoder : public IDecoder {
 public:
-  LZ4Decoder(std::unique_ptr<IDecoder> &wrapee, unsigned long compressedSize, unsigned long uncompressedSize)
+  LZ4Decoder(std::shared_ptr<IDecoder> &wrapee, unsigned long compressedSize, unsigned long uncompressedSize)
   {
     std::string tempCompressed;
     tempCompressed.resize(compressedSize);

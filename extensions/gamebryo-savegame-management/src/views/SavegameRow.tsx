@@ -1,6 +1,7 @@
 import { removeSavegame } from '../actions/session';
 import { ISavegame } from '../types/ISavegame';
 import { ISavegameAttribute } from '../types/ISavegameAttribute';
+import { savesPath } from '../util/gameSupport';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -19,7 +20,7 @@ export interface IBaseProps {
 }
 
 interface IConnectedProps {
-  downloadPath: string;
+  savesPath: string;
 }
 
 interface IActionProps {
@@ -80,7 +81,7 @@ class SavegameRow extends React.Component<IProps, {}> {
   }
 
   private remove = () => {
-    const { t, downloadPath, save, onRemoveSavegame, onShowDialog } = this.props;
+    const { t, savesPath, save, onRemoveSavegame, onShowDialog } = this.props;
 
     let removeSavegame = true;
 
@@ -93,7 +94,7 @@ class SavegameRow extends React.Component<IProps, {}> {
       }).then((result: types.IDialogResult) => {
         removeSavegame = result.action === 'Delete';
         if (removeSavegame) {
-          return fs.removeAsync(path.join(downloadPath, save.id));
+          return fs.removeAsync(path.join(savesPath, save.id));
         } else {
           return Promise.resolve();
         }
@@ -132,7 +133,7 @@ class SavegameRow extends React.Component<IProps, {}> {
 
 function mapStateToProps(state): IConnectedProps {
   return {
-    downloadPath: selectors.downloadPath(state),
+    savesPath: savesPath(state.settings.gameMode.current),
   };
 }
 
