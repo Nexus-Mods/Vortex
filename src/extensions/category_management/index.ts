@@ -2,8 +2,10 @@ import CategoryList from './views/CategoryList';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { loadCategories, updateCategories } from './actions/category';
+import { setTreeDataObject } from './actions/session';
 
 import { categoryReducer } from './reducers/category';
+import { sessionReducer } from './reducers/session';
 import { ICategory } from './types/ICategory';
 import { IGameListEntry } from './types/IGameListEntry';
 
@@ -12,6 +14,8 @@ import { getSafe } from '../../util/storeHelper';
 import { retriveCategoryList } from './util/retrieveCategories';
 
 import Nexus from 'nexus-api';
+
+import { convertGameId } from './util/convertGameId';
 
 import { log } from '../../util/log';
 
@@ -27,6 +31,7 @@ function init(context: IExtensionContext): boolean {
   });
 
   context.registerReducer(['persistent', 'categories'], categoryReducer);
+  context.registerReducer(['session', 'categories'], sessionReducer);
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
@@ -38,12 +43,11 @@ function init(context: IExtensionContext): boolean {
         getSafe(state, ['account', 'nexus', 'APIKey'], '')
       );
 
-      const activeGameId = store.getState().settings.gameMode.current;
-
-      retriveCategories(activeGameId, context, false);
-
       context.api.events.on('gamemode-activated', (gameMode: string) => {
-        retriveCategories(gameMode, context, false);
+
+        context.api.store.dispatch(setTreeDataObject(undefined));
+        let gameId = convertGameId(gameMode);
+        retriveCategories(gameId, context, false);
       });
 
     } catch (err) {
