@@ -38,6 +38,8 @@ import update = require('react-addons-update');
 
 import { log } from '../../../util/log';
 
+import * as util from 'util';
+
 interface IProps {
   objects: IModAttribute[];
 }
@@ -363,17 +365,30 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
     const cell = (evt.target as HTMLTableCellElement);
     const row = (cell.parentNode as HTMLTableRowElement);
 
-    let stateUpdate: any = {
-      lastSelected: { $set: row.id },
-    };
+    let stateUpdate: any = { };
 
     if (evt.ctrlKey) {
-      if (this.state.tableState[row.id] === undefined) {
-        stateUpdate.tableState = { [row.id]: { $set: { selected: true } } };
-      } else {
-        stateUpdate.tableState = { [row.id]: { selected: { $set: true } } };
-      }
+      stateUpdate.tableState = { [row.id]: { $set: { selected: true } } };
+    } else if (evt.shiftKey) {
+      const { objects, modlistState, mods, language } = this.props;
+      const visibleAttributes: IModAttribute[] = this.visibleAttributes(objects, modlistState);
+      let sorted: IMod[] = this.sortedMods(modlistState, visibleAttributes, mods, language);
+      let selecting = false;
+      stateUpdate.tableState = {};
+      sorted.forEach((mod: IMod) => {
+        let isBracket = (mod.id === row.id) || (mod.id === this.state.lastSelected);
+        if (!selecting && isBracket) {
+          selecting = true;
+          isBracket = false;
+        }
+
+        stateUpdate.tableState[mod.id] = { $set: { selected: selecting } };
+        if (selecting && isBracket) {
+          selecting = false;
+        }
+      });
     } else {
+      stateUpdate.lastSelected = { $set: row.id };
       stateUpdate.tableState = { $set: { [row.id]: { selected: true } } };
     }
 
