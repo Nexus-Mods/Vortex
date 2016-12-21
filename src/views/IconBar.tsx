@@ -10,6 +10,7 @@ export interface IBaseProps {
   className?: string;
   group: string;
   instanceId?: string;
+  tooltipPlacement?: 'top' | 'right' | 'bottom' | 'left';
 }
 
 export interface IExtensionProps {
@@ -43,7 +44,7 @@ class IconBar extends React.Component<IProps, {}> {
   private renderIcon = (icon: IIconDefinition) => this.renderIconImpl(icon);
 
   private renderIconImpl(icon: IIconDefinition) {
-    const { instanceId } = this.props;
+    const { instanceId, tooltipPlacement } = this.props;
     // don't render anything if the condition doesn't match
     if ((icon.condition !== undefined) && !icon.condition(instanceId)) {
       return null;
@@ -59,6 +60,7 @@ class IconBar extends React.Component<IProps, {}> {
         icon={icon.icon}
         tooltip={icon.title}
         onClick={icon.action}
+        placement={tooltipPlacement}
       />;
     } else {
       // custom case. the caller can pass properties via the props() function and by

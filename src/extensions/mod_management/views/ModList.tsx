@@ -73,8 +73,6 @@ interface IComponentState {
   lastSelected: string;
 }
 
-
-
 /**
  * displays the list of mods installed for the current game.
  * 
@@ -90,6 +88,16 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
     };
 
     this.modActions = [
+      {
+        icon: 'check-square-o',
+        title: 'Enable selected',
+        action: this.enableSelected,
+      },
+      {
+        icon: 'square-o',
+        title: 'Disable selected',
+        action: this.disableSelected,
+      },
       {
         icon: 'remove',
         title: 'Remove',
@@ -237,7 +245,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
     );
   };
 
-  private renderModActions() {
+  private renderModActions(): JSX.Element {
     const { t } = this.props;
     let selectedCount = countIf(Object.keys(this.state.tableState),
       (val: string) => this.state.tableState[val].selected);
@@ -245,17 +253,48 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
     if (selectedCount === 0) {
       return null;
     }
-
+    // TODO the styling here is a bit of a hack
     return (
       <div>
-        <h4>{ t('{{count}} selected', { replace: { count: selectedCount } }) }</h4>
-          <IconBar
-            group='mod-multiaction-icons'
-            className='table-actions'
-            staticElements={ this.modActions }
-          />
+        <h4 style={{ display: 'inline-block' }}>
+          {t('{{count}} selected', { replace: { count: selectedCount } })}
+        </h4>
+        {' '}
+        <IconBar
+          group='mod-multiaction-icons'
+          className='table-actions'
+          staticElements={this.modActions}
+          style={{ marginBottom: 5 }}
+          tooltipPlacement='top'
+        />
       </div>
     );
+  }
+
+  private enableSelected = () => {
+    const { modState, onSetModEnabled } = this.props;
+    const { tableState } = this.state;
+
+    Object.keys(tableState).filter((key: string) => {
+      return tableState[key].selected;
+    }).forEach((key: string) => {
+      if (!modState[key].enabled) {
+        onSetModEnabled(key, true);
+      }
+    });
+  }
+
+  private disableSelected = () => {
+    const { modState, onSetModEnabled } = this.props;
+    const { tableState } = this.state;
+
+    Object.keys(tableState).filter((key: string) => {
+      return tableState[key].selected;
+    }).forEach((key: string) => {
+      if (modState[key].enabled) {
+        onSetModEnabled(key, false);
+      }
+    });
   }
 
   private removeSelected = () => {
