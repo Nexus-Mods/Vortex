@@ -1,9 +1,14 @@
+import { showDialog } from '../../../actions/notifications';
 import { IAttributeState } from '../../../types/IAttributeState';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IIconDefinition } from '../../../types/IIconDefinition';
 import { SortDirection } from '../../../types/SortDirection';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
-import getAttr from '../../../util/getAttr';
+import { getSafe } from '../../../util/storeHelper';
+import { countIf } from '../../../util/util';
 import AttributeToggle from '../../../views/AttributeToggle';
 import HeaderCell from '../../../views/HeaderCell';
+import IconBar from '../../../views/IconBar';
 
 import { IGameModeSettings } from '../../gamemode_management/types/IStateEx';
 
@@ -11,15 +16,21 @@ import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfile, IProfileMod } from '../../profile_management/types/IProfile';
 import { IProfileSettings } from '../../profile_management/types/IStateEx';
 
+import { removeMod } from '../actions/mods';
 import { setModlistAttributeSort, setModlistAttributeVisible } from '../actions/settings';
 import { IMod } from '../types/IMod';
 import { IModAttribute } from '../types/IModAttribute';
 import { IStateMods } from '../types/IStateMods';
 import { IStateModSettings } from '../types/IStateSettings';
 
+import { installPath } from '../selectors';
+
 import InstallArchiveButton from './InstallArchiveButton';
 import ModRow from './ModRow';
 
+import * as Promise from 'bluebird';
+import * as fs from 'fs-extra-promise';
+import * as path from 'path';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, Jumbotron, Table } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
@@ -41,32 +52,55 @@ interface IConnectedProps {
   modlistState: IAttributeStateMap;
   gameMode: string;
   language: string;
+  installPath: string;
 }
 
 interface IActionProps {
   onSetAttributeVisible: (attributeId: string, visible: boolean) => void;
   onSetAttributeSort: (attributeId: string, dir: SortDirection) => void;
   onSetModEnabled: (modId: string, enabled: boolean) => void;
+  onShowDialog: (type: DialogType, title: string, content: IDialogContent,
+                 actions: DialogActions) => Promise<IDialogResult>;
+  onRemoveMod: (modId: string) => void;
+}
+
+interface ITableState {
+  selected: boolean;
 }
 
 interface IComponentState {
-  selectedMod: string;
+  tableState: { [id: string]: ITableState };
+  lastSelected: string;
 }
+
+
 
 /**
  * displays the list of mods installed for the current game.
  * 
  */
 class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComponentState> {
+  private modActions: IIconDefinition[];
+
   constructor(props) {
     super(props);
     this.state = {
-      selectedMod: undefined,
+      tableState: {},
+      lastSelected: undefined,
     };
+
+    this.modActions = [
+      {
+        icon: 'remove',
+        title: 'Remove',
+        action: this.removeSelected,
+      },
+    ];
   }
 
   public render(): JSX.Element {
     const { t, objects, modlistState, mods, gameMode, language } = this.props;
+    const { lastSelected } = this.state;
 
     const visibleAttributes: IModAttribute[] = this.visibleAttributes(objects, modlistState);
     let sorted: IMod[] = this.sortedMods(modlistState, visibleAttributes, mods, language);
@@ -76,16 +110,16 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
     }
 
     return (
-        <Layout type='column'>
-          <Fixed>
-            <div>
-              <InstallArchiveButton />
-            </div>
-            <div className='pull-right'>
-              { objects.map( this.renderAttributeToggle ) }
-            </div>
-          </Fixed>
-          <Flex>
+      <Layout type='column'>
+        <Fixed>
+          <div>
+            <InstallArchiveButton />
+          </div>
+          <div className='pull-right'>
+            {objects.map(this.renderAttributeToggle)}
+          </div>
+        </Fixed>
+        <Flex>
           <Layout type='row'>
             <Flex style={{ height: '100%', overflowY: 'auto' }} >
               <Table bordered condensed hover>
@@ -100,13 +134,16 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
                   {sorted.map((mod) => this.renderModRow(mod, visibleAttributes))}
                 </tbody>
               </Table>
-              </Flex>
-                <Fixed>
-                  {this.renderModDetails(this.state.selectedMod)}
-                </Fixed>
-            </Layout>
-          </Flex>
-        </Layout>
+            </Flex>
+            <Fixed>
+              {this.renderModDetails(lastSelected)}
+            </Fixed>
+          </Layout>
+        </Flex>
+        <Fixed>
+          {this.renderModActions()}
+        </Fixed>
+      </Layout>
       );
   }
 
@@ -171,7 +208,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
           type='text'
           label={t(attribute.name)}
           readOnly={attribute.isReadOnly}
-          defaultValue={this.renderCell(attribute.calc(mod.attributes))}
+          defaultValue={this.renderCell(attribute.calc(mod.attributes, t))}
         />
       </FormGroup>
     );
@@ -200,6 +237,76 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
     );
   };
 
+  private renderModActions() {
+    const { t } = this.props;
+    let selectedCount = countIf(Object.keys(this.state.tableState),
+      (val: string) => this.state.tableState[val].selected);
+
+    if (selectedCount === 0) {
+      return null;
+    }
+
+    return (
+      <div>
+        <h4>{ t('{{count}} selected', { replace: { count: selectedCount } }) }</h4>
+          <IconBar
+            group='mod-multiaction-icons'
+            className='table-actions'
+            staticElements={ this.modActions }
+          />
+      </div>
+    );
+  }
+
+  private removeSelected = () => {
+    const { t, installPath, onRemoveMod, onShowDialog, mods } = this.props;
+    const { tableState } = this.state;
+
+    let keys = Object.keys(tableState).filter((key: string) => {
+      return tableState[key].selected;
+    });
+
+    let removeMods: boolean;
+    let removeArchive: boolean;
+    let disableDependent: boolean;
+
+    onShowDialog('question', 'Confirm Removal', {
+      message: t('Do you really want to delete {{count}} mods?',
+        { replace: { count: keys.length } }),
+      checkboxes: [
+        { id: 'mod', text: 'Remove Mod', value: true },
+        { id: 'archive', text: 'Remove Archive', value: false },
+        { id: 'dependents', text: 'Disable Dependent', value: false },
+      ],
+    }, {
+        Cancel: null,
+        Confirm: null,
+      }).then((result: IDialogResult) => {
+        removeMods = result.action === 'Remove' && result.input.mod;
+        removeArchive = result.action === 'Remove' && result.input.archive;
+        disableDependent = result.action === 'Remove' && result.input.dependents;
+
+        if (removeMods) {
+          return Promise.map(keys, (key: string) => {
+            let fullPath = path.join(installPath, mods[key].installationPath);
+            return fs.removeAsync(fullPath);
+          }).then(() => undefined);
+        } else {
+          return Promise.resolve();
+        }
+      })
+      .then(() => {
+        keys.forEach((key: string) => {
+          if (removeMods) {
+            onRemoveMod(key);
+          }
+          if (removeArchive) {
+            this.context.api.events.emit('remove-download', mods[key].archiveId);
+          }
+        });
+      });
+  }
+
   private renderAttributeToggle = (attr: IModAttribute) => {
     const { t, modlistState, onSetAttributeVisible } = this.props;
     return !attr.isToggleable ? null : (
@@ -216,15 +323,30 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
   private selectMod = (evt: React.MouseEvent<any>) => {
     const cell = (evt.target as HTMLTableCellElement);
     const row = (cell.parentNode as HTMLTableRowElement);
-    this.setState(update(this.state, {
-      selectedMod: { $set: row.id },
-    }));
+
+    let stateUpdate: any = {
+      lastSelected: { $set: row.id },
+    };
+
+    if (evt.ctrlKey) {
+      if (this.state.tableState[row.id] === undefined) {
+        stateUpdate.tableState = { [row.id]: { $set: { selected: true } } };
+      } else {
+        stateUpdate.tableState = { [row.id]: { selected: { $set: true } } };
+      }
+    } else {
+      stateUpdate.tableState = { $set: { [row.id]: { selected: true } } };
+    }
+
+    this.setState(update(this.state, stateUpdate));
   };
 
   private renderModRow(mod: IMod, visibleAttributes: IModAttribute[]): JSX.Element {
-    let { language, modState, onSetModEnabled } = this.props;
+    let { t, language, modState, onSetModEnabled } = this.props;
+    let { tableState } = this.state;
     return (
       <ModRow
+        t={t}
         key={mod.id}
         mod={mod}
         modState={modState[mod.id]}
@@ -232,7 +354,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
         language={language}
         onSetModEnabled={onSetModEnabled}
         onClick={this.selectMod}
-        selected={mod.id === this.state.selectedMod}
+        selected={getSafe(tableState, [mod.id, 'selected'], false)}
       />
     );
   }
@@ -245,7 +367,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
       } else if (!attributeStates.hasOwnProperty(attribute.id)) {
         return true;
       } else {
-        return getAttr(attributeStates[attribute.id], 'enabled', true);
+        return getSafe(attributeStates, [attribute.id, 'enabled'], true);
       }
     });
   }
@@ -253,7 +375,7 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
   private renderHeaderField = (attribute: IModAttribute): JSX.Element => {
     let { t, modlistState } = this.props;
 
-    if (getAttr(modlistState[attribute.id], 'enabled', true)) {
+    if (getSafe(modlistState, [attribute.id, 'enabled'], true)) {
       return (
         <HeaderCell
           key={attribute.id}
@@ -306,6 +428,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     modlistState: state.gameSettings.mods.modlistState,
     gameMode: state.settings.gameMode.current,
     language: state.settings.interface.language,
+    installPath: installPath(state),
   };
 }
 
@@ -320,6 +443,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetModEnabled: (modId: string, enabled: boolean) => {
       dispatch(setModEnabled(modId, enabled));
     },
+    onShowDialog:
+      (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
+    onRemoveMod: (modId: string) => dispatch(removeMod(modId)),
   };
 }
 

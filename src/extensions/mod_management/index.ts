@@ -22,7 +22,9 @@ import Settings from './views/Settings';
 import InstallManager from './InstallManager';
 
 import {INSTALL_TIME, MOD_NAME, VERSION} from './modAttributes';
-import {installPath} from './selectors';
+import {downloadPath, installPath} from './selectors';
+
+import * as path from 'path';
 
 let activators: IModActivator[] = [];
 
@@ -149,7 +151,8 @@ function init(context: IExtensionContextExt): boolean {
         (downloadId: string, callback?: (error, id: string) => void) => {
           let download: IDownload =
               store.getState().persistent.downloads.files[downloadId];
-          installManager.install(downloadId, download.localPath, context,
+          let fullPath: string = path.join(downloadPath(store.getState()), download.localPath);
+          installManager.install(downloadId, fullPath, context,
                                  download.modInfo, true, callback);
         });
     registerInstaller(1000, basicInstaller.testSupported, basicInstaller.install);

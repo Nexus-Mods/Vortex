@@ -12,6 +12,7 @@ import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 
 import InstallContext from './InstallContext';
+import {downloadPath} from './selectors';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -248,7 +249,8 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
     return new Promise<string>((resolve, reject) => {
       const state = context.api.store.getState();
       let download: IDownload = state.persistent.downloads.files[downloadId];
-      this.install(downloadId, download.localPath, context, download.modInfo, false,
+      let fullPath: string = path.join(downloadPath(state), download.localPath);
+      this.install(downloadId, fullPath, context, download.modInfo, false,
                    (error, id) => {
                      if (error === null) {
                        resolve(id);

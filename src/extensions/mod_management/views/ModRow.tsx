@@ -18,9 +18,6 @@ import * as fs from 'fs-extra-promise';
 import * as React from 'react';
 import { Checkbox } from 'react-bootstrap';
 
-import {log} from '../../../util/log';
-import * as util from 'util';
-
 export interface IBaseProps {
   t: I18next.TranslationFunction;
   mod: IMod;
@@ -109,12 +106,11 @@ class ModRow extends React.Component<IProps, {}> {
         ],
       }, {
           Cancel: null,
-          Continue: null,
+          Remove: null,
         }).then((result: IDialogResult) => {
-          log('info', 'res', util.inspect(result));
-          removeMod = result.action === 'Continue' && result.input.mod;
-          removeArchive = result.action === 'Continue' && result.input.archive;
-          disableDependent = result.action === 'Continue' && result.input.dependents;
+          removeMod = result.action === 'Remove' && result.input.mod;
+          removeArchive = result.action === 'Remove' && result.input.archive;
+          disableDependent = result.action === 'Remove' && result.input.dependents;
           if (removeMod) {
             return fs.removeAsync(mod.installationPath);
           } else {
