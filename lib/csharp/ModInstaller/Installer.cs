@@ -44,7 +44,7 @@ namespace Components.ModInstaller
                 test = false;
             else
             {
-                RequiredFiles = await GetRequirements();
+                RequiredFiles = new List<string>(await GetRequirements(modArchiveFileList));
             }
 
             return new Dictionary<string, object>
@@ -97,22 +97,11 @@ namespace Components.ModInstaller
         /// <summary>
         /// This function will return the list of files requirements to complete this mod's installation.
         /// </summary>
-        protected async Task<List<string>> GetRequirements()
+        protected async Task<IList<string>> GetRequirements(IList<string> modFiles)
         {
-            List<string> RequiredFilesList = new List<string>();
+            ModFormatManager FormatManager = new ModFormatManager();
 
-            //Dummy function
-            /*	foreach (ModFormat format in SupportedModFormats)
-                {
-                    if (format.CheckFileList(FileList))
-                    {
-                        RequiredFiles = format.GetRequiredFiles();
-                        break;
-                    }
-                }
-            */
-
-            return RequiredFilesList;
+            return await FormatManager.GetRequirements(modFiles);
         }
 
         #endregion
