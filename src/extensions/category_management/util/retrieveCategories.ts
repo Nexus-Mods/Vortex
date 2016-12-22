@@ -3,7 +3,6 @@ import { ICategory } from '../types/ICategory';
 import { ICategoryTree, IChildren } from '../types/ICategoryTree';
 import { IGameListEntry } from '../types/IGameListEntry';
 
-import { IExtensionContext } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 
 import Nexus from 'nexus-api';
@@ -12,12 +11,9 @@ interface IGameInfo extends IGameListEntry {
   categories: ICategory[];
 }
 
-let nexus: Nexus;
-
 export function retriveCategoryList(
   activeGameId: string,
-  nexus: Nexus,
-  isUpdate: boolean
+  nexus: Nexus
 ): any {
   return new Promise<any>((resolve, reject) => {
     let categoryList = [];

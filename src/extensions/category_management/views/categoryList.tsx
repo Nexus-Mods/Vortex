@@ -5,25 +5,20 @@ import { setSearchFocusIndex, setSearchFoundCount,
 import { ICategory } from '../types/ICategory';
 import { IGameListEntry } from '../types/IGameListEntry';
 import { IAddedTree, IRemovedTree, IRenamedTree, IToggleExpandedTree } from '../types/ITrees';
-import { convertGameId } from '../util/convertGameId';
-import { retriveCategoryList } from '../util/retrieveCategories';
 
 import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
-import { getSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
+import IconBar from '../../../views/IconBar';
 import { Button } from '../../../views/TooltipControls';
 
 import * as Promise from 'bluebird';
-import Nexus from 'nexus-api';
 import * as React from 'react';
 import { Jumbotron } from 'react-bootstrap';
 import Tree from 'react-sortable-tree';
-
-let nexus: Nexus;
 
 interface IGameInfo extends IGameListEntry {
   categories: ICategory[];
@@ -107,19 +102,16 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
             <Icon name={'compress'} />
           </Button>
           <Button
-            id='retrieveCategories'
-            tooltip={t('Retrieve Categories from server')}
-            onClick={this.retrieveCategories}
-          >
-            <Icon name={'download'} />
-          </Button>
-          <Button
             id='add-root-category'
             tooltip={t('Add Root Category')}
             onClick={this.addRootCategory}
           >
           <Icon name={'indent'} />
           </Button>
+          <IconBar
+            group='categories-icons'
+            staticElements={null}
+          />
           <label>
             Search:&nbsp;
           <input
@@ -169,19 +161,16 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       return (
         <div style={{ height: '90%' }}>
           <Button
-            id='retrieveCategories'
-            tooltip={t('Retrieve Categories from server')}
-            onClick={this.retrieveCategories}
-          >
-            <Icon name={'download'} />
-          </Button>
-          <Button
             id='add-category'
             tooltip={t('Add Category')}
             onClick={this.addRootCategory}
           >
           <Icon name={'indent'} />
           </Button>
+          <IconBar
+            group='categories-icons'
+            staticElements={null}
+          />
         </div>
       );
     }
@@ -321,34 +310,6 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       });
   }
 
-  private retrieveCategories = () => {
-    const { gameMode, onShowDialog, onSetTreeDataObject } = this.props;
-    let state = this.context.api.store.getState();
-    let retrieve = false;
-
-    onShowDialog('question', 'Retrieve Categories', {
-      message: 'Clicking RETRIEVE you will lose all your changes',
-    }, {
-        Cancel: null,
-        Retrieve: null,
-      }).then((dialogResult: IDialogResult) => {
-        retrieve = dialogResult.action === 'Retrieve';
-        if (retrieve) {
-          nexus = new Nexus(
-            getSafe(state, ['settings', 'gameMode', 'current'], ''),
-            getSafe(state, ['account', 'nexus', 'APIKey'], '')
-          );
-
-          let gameId = convertGameId(gameMode);
-          retriveCategoryList(gameId, nexus, true)
-            .then((result: any) => {
-              onSetTreeDataObject(result);
-            });
-        }
-      }
-      );
-  }
-
   private selectPrevMatch = () => {
     const { onSetSearchFocusIndex, searchFocusIndex, searchFoundCount } = this.props;
 
@@ -405,7 +366,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
           treeData: treeDataObject,
           path: nodePath,
           getNodeKey: treeFunctions.defaultGetNodeKey,
-          ignoreCollapsed: false,
+          ignoreCollapsed: true,
         };
 
       let updatedTree = treeFunctions.removeNodeAtPath(newTree);
