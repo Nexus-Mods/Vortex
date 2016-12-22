@@ -103,9 +103,9 @@
       ]
     },
         {
-      "srcPath": "lib/csharp/ModInstaller/bin/Release/*",
-      "outPath": "lib/ModInstaller",
-      "skipPaths": 5,
+      "srcPath": "node_modules/modinstaller/dist",
+      "outPath": "lib/modinstaller",
+      "skipPaths": 3,
       "target": [
         "out",
         "app"

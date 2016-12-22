@@ -2,14 +2,15 @@
   "name": "modinstaller",
   "version": "0.0.1",
   "description": "Installer for xml and c# fomods",
-  "main": "index.js",
+  "main": "dummy.js",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js && copyfiles -f ModInstaller/bin/Release/*.dll dist/"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {},
   "dependencies": {
+    "copyfiles": "^1.0.0",
     "msbuild": "^0.3.11"
   }
 }

@@ -21,7 +21,6 @@
     "quickstart": "cross-env NODE_ENV=development electron .",
     "preinstallex": "npm install rm-local-modules && rm-local-modules",
     "installex": "npm install && npm run build_api && electron-rebuild -w icon-extract,gamebryo-savegame,ffi,node-7z,winreg,ref && cd node_modules/redux-persist && npm run build:commonjs",
-    "build_modinstaller": "cd lib/csharp && npm build",
     "build_nexusapi": "cd lib/js/nexus-api && npm install && npm run build",
     "build_api": "tsc -p ./api && npm install ./api",
     "build_out": "tsc -p . && npm run lessc",
@@ -77,10 +76,12 @@
     }
   },
   "devDependencies": {
+    "@types/bluebird": "^3.0.36",
     "@types/content-type": "^1.0.33",
     "@types/enzyme": "^2.5.39",
     "@types/ffi": "^0.0.18",
     "@types/form-data": "^0.0.32",
+    "@types/lodash": "^4.14.44",
     "@types/node": "^6.0.45",
     "@types/node-uuid": "^0.0.28",
     "@types/react": "^0.14.55",
@@ -144,6 +145,7 @@
     "less": "^2.7.1",
     "less-plugin-clean-css": "^1.5.1",
     "level-js": "^2.2.4",
+    "modinstaller": "file:lib\\csharp",
     "modmeta-db": "file:external\\modmeta-db",
     "nbind": "^0.3.6",
     "nexus-api": "file:lib\\js\\nexus-api",

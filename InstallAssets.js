@@ -1,5 +1,6 @@
 'use strict'
 
+const Promise = require('bluebird');
 const fs = require('fs-extra-promise');
 const path = require('path');
 const glob = require('glob');
@@ -55,26 +56,32 @@ for (let file of data.copy) {
     continue;
   }
 
-  glob(file.srcPath, globOptions, (globErr, files) => {
-    copies = copies === -1 ? files.length : copies += files.length;
-    if (globErr !== null) {
-      console.err('glob failed', globErr);
-    }
-    for (let globResult of files) {
-      const globTarget = path.join(...globResult.split(/[\/\\]/).slice(file.skipPaths));
-      const targetFile = path.join(tgt, file.outPath, globTarget);
+  console.log('install to', file.outPath);
+  fs.ensureDirAsync(path.join(tgt, file.outPath))
+    .then(() => {
+      glob(file.srcPath, globOptions, (globErr, files) => {
+        copies = copies === -1 ? files.length : copies += files.length;
+        if (globErr !== null) {
+          console.err('glob failed', globErr);
+        }
+        return Promise.map(files, (globResult) => {
+          const globTarget = path.join(...globResult.split(/[\/\\]/).slice(file.skipPaths));
+          const targetFile = path.join(tgt, file.outPath, globTarget);
 
-      fs.copy(globResult, targetFile, (copyErr) => {
-        --copies;
-        if (copyErr !== null) {
-          console.log('failed to copy', globResult, targetFile, copyErr);
-        }
-        else {
-          console.log('copied', globResult, targetFile);
-        }
+          return fs.copyAsync(globResult, targetFile)
+            .then(() => {
+              console.log('copied', globResult, targetFile);
+            })
+            .catch((copyErr) => {
+              console.log('failed to copy', globResult, targetFile, copyErr);
+            })
+            .finally(() => {
+              --copies;
+            });
+          ;
+        });
       });
-    }
-  });
+    });
 }
 
 function waitForProcesses() {
