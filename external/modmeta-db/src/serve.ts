@@ -4,7 +4,7 @@ import ModDB from './moddb';
 import {ILookupResult} from './types';
 
 /**
- * serve the specified database through a rest
+ * serve the specified database through a rest rerquest
  *
  * @param {ModDB} db
  */

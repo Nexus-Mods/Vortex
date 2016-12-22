@@ -18,7 +18,6 @@
       "es2015"
     ]
   },
-
   "devDependencies": {
     "@types/react": "^0.14.55",
     "@types/react-addons-update": "^0.14.14",

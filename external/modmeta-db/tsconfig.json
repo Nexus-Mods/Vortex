@@ -15,7 +15,6 @@
     "files": [
         "src/index.ts",
         "src/moddb.ts",
-        "typings/index.d.ts",
         "typings.custom/index.d.ts"
     ]
 }

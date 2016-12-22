@@ -171,8 +171,7 @@ class ModDB {
             }
             let hash = key.split(':')[0];
             let remoteResults;
-            return Promise
-                .mapSeries(this.mServers, (server) => {
+            return Promise.mapSeries(this.mServers, (server) => {
                 if (remoteResults) {
                     return Promise.resolve();
                 }
@@ -181,8 +180,9 @@ class ModDB {
                     remoteResults = serverResults;
                     for (let result of remoteResults) {
                         let temp = Object.assign({}, result.value);
-                        temp.expires = new Date().getTime() / 1000 +
-                            server.cacheDurationSec;
+                        temp.expires =
+                            new Date().getTime() / 1000 +
+                                server.cacheDurationSec;
                         this.insert(result.value);
                     }
                 });

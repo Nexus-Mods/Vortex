@@ -1,3 +1,4 @@
+/// <reference types="bluebird" />
 import * as Promise from 'bluebird';
 import { ILookupResult, IModInfo } from './types';
 export interface IServer {
