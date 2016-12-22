@@ -1,3 +1,4 @@
+/// <reference types="bluebird" />
 import * as types from './types';
 import * as Promise from 'bluebird';
 declare class Nexus {

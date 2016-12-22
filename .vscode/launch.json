@@ -19,7 +19,7 @@
       },
       "console": "internalConsole",
       "sourceMaps": true,
-      "outDir": null
+      "outFiles": []
     },
     {
       "name": "Launch Linux",
@@ -40,7 +40,7 @@
       },
       "console": "internalConsole",
       "sourceMaps": true,
-      "outDir": null
+      "outFiles": []
     },
     {
       "name": "Attach to renderer",

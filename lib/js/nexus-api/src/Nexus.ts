@@ -16,6 +16,18 @@ interface IRequestArgs {
   };
 }
 
+class NexusError extends Error {
+  private mStatusCode: number;
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.mStatusCode = statusCode;
+  }
+
+  public get statusCode() {
+    return this.mStatusCode;
+  }
+}
+
 /**
  * implements the Nexus API
  * 
@@ -134,7 +146,7 @@ class Nexus {
         reject({ message: 'failed to parse server response: ' + err.message });
       }
     } else {
-      reject({ statusCode: response.statusCode, message: data.message });
+      reject(new NexusError(data.message, response.statusCode));
     }
   }
 

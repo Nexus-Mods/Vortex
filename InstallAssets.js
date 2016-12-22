@@ -56,7 +56,6 @@ for (let file of data.copy) {
     continue;
   }
 
-  console.log('install to', file.outPath);
   fs.ensureDirAsync(path.join(tgt, file.outPath))
     .then(() => {
       glob(file.srcPath, globOptions, (globErr, files) => {
