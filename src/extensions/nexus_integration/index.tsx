@@ -4,11 +4,13 @@ import { settingsReducer } from './reducers/settings';
 import LoginIcon from './views/LoginIcon';
 import Settings from './views/Settings';
 
-import { retriveCategoryList } from '../category_management/util/retrieveCategories';
+import { retriveCategoryList } from './util/retrieveCategories';
+
 
 import { showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
+import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 import InputButton from '../../views/InputButton';
 import { IconButton } from '../../views/TooltipControls';
@@ -90,8 +92,12 @@ function retrieveCategories(context: IExtensionContextExt, isUpdate: boolean) {
             let gameId: string = convertGameId(getSafe(context.api.store.getState(),
               ['settings', 'gameMode', 'current'], ''));
             retriveCategoryList(gameId, nexus)
-              .then((result: any) => {
+              .then((result: any, error: any) => {
                 context.api.events.emit('retrieve-categories', [gameId, result, isUpdate], {});
+              })
+              .catch((err) => {
+                showError(context.api.store.dispatch,
+                  'An error occurred retrieving the Game Info', err);
               });
           },
         }));
@@ -100,7 +106,6 @@ function retrieveCategories(context: IExtensionContextExt, isUpdate: boolean) {
       ['settings', 'gameMode', 'current'], ''));
     retriveCategoryList(gameId, nexus)
       .then((result: any) => {
-        // context.api.events.emit('retrieve-categories', [gameId, result, isUpdate], {});
         context.api.events.emit('retrieve-categories', [gameId, result, isUpdate], {});
       });
   }

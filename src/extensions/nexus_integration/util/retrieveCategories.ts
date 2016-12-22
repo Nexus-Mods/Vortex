@@ -1,14 +1,29 @@
 
-import { ICategory } from '../types/ICategory';
-import { ICategoryTree, IChildren } from '../types/ICategoryTree';
-import { IGameListEntry } from '../types/IGameListEntry';
-
 import { log } from '../../../util/log';
 
 import Nexus from 'nexus-api';
 
-interface IGameInfo extends IGameListEntry {
+interface IGameInfo {
   categories: ICategory[];
+}
+
+interface ICategory {
+    category_id: number;
+    name: string;
+    parent_category: number | false;
+}
+
+interface IChildren {
+  rootId: number;
+  title: string;
+  expanded: boolean;
+}
+
+interface ICategoryTree {
+  rootId: number;
+  title: string;
+  expanded: boolean;
+  children: IChildren[];
 }
 
 export function retriveCategoryList(
@@ -42,7 +57,6 @@ export function retriveCategoryList(
           };
           categoryList.push(root);
         });
-
         resolve(categoryList);
       }
       )

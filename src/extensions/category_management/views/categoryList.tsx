@@ -2,8 +2,6 @@
 import { updateCategories } from '../actions/category';
 import { setSearchFocusIndex, setSearchFoundCount,
    setSearchString, setTreeDataObject } from '../actions/session';
-import { ICategory } from '../types/ICategory';
-import { IGameListEntry } from '../types/IGameListEntry';
 import { IAddedTree, IRemovedTree, IRenamedTree, IToggleExpandedTree } from '../types/ITrees';
 
 import { showDialog } from '../../../actions/notifications';
@@ -19,10 +17,6 @@ import * as Promise from 'bluebird';
 import * as React from 'react';
 import { Jumbotron } from 'react-bootstrap';
 import Tree from 'react-sortable-tree';
-
-interface IGameInfo extends IGameListEntry {
-  categories: ICategory[];
-}
 
 interface IActionProps {
   onShowError: (message: string, details: string | Error) => void;

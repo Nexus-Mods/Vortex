@@ -2,17 +2,11 @@ import { loadCategories, updateCategories } from './actions/category';
 import { setTreeDataObject } from './actions/session';
 import { categoryReducer } from './reducers/category';
 import { sessionReducer } from './reducers/session';
-import { ICategory } from './types/ICategory';
-import { IGameListEntry } from './types/IGameListEntry';
 import CategoryList from './views/CategoryList';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
-
-interface IGameInfo extends IGameListEntry {
-  categories: ICategory[];
-}
 
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('book', 'Categories', CategoryList, {
