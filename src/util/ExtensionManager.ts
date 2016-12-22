@@ -60,6 +60,148 @@ interface IRegisteredExtension {
 
 type WatcherRegistry = { [watchPath: string]: IStateChangeCallback[] };
 
+interface IInitCall {
+  extension: string;
+  key: string;
+  arguments: any[];
+  optional: boolean;
+}
+
+interface IApiAddition {
+  key: string;
+  callback: Function;
+}
+
+class ContextProxyHandler implements ProxyHandler<any> {
+  private mContext: any;
+  private mInitCalls: IInitCall[];
+  private mApiAdditions: IApiAddition[];
+  private mCurrentExtension: string;
+  private mOptional: {};
+
+  constructor(context: any) {
+    this.mContext = context;
+    this.mInitCalls = [];
+    this.mApiAdditions = [];
+    let that = this;
+    this.mOptional = new Proxy({}, {
+      get(target, key: PropertyKey): any {
+        return (...args) => {
+          that.mInitCalls.push({
+            extension: this.mCurrentExtension,
+            key: key.toString(),
+            arguments: args,
+            optional: true,
+          });
+        }
+      }
+    });
+  }
+
+  /**
+   * returns the parameters of calls to the specified function
+   */
+  public getCalls(name: string): any[][] {
+    return this.mInitCalls.filter((call: IInitCall) =>
+      call.key === name
+    ).map((call: IInitCall) => call.arguments);
+  }
+
+  public invokeAdditions() {
+    this.mApiAdditions.forEach((addition: IApiAddition) => {
+      this.getCalls(addition.key).forEach((args: any[]) => {
+        addition.callback(...args);
+      });
+    });
+  }
+
+  /**
+   * remove all init calls from incompatible extesions
+   */
+  public unloadIncompatible(furtherAPIs: Set<string>) {
+    let addAPIs: string[] = this.mApiAdditions.map((addition: IApiAddition) => addition.key);
+    let fullAPI = new Set([...furtherAPIs, ...this.staticAPIs, ...addAPIs]);
+
+    let incompatibleExtensions = new Set<string>();
+    this.mInitCalls.forEach((call: IInitCall) => {
+    });
+
+    this.mInitCalls.filter((call: IInitCall) => !call.optional && !fullAPI.has(call.key)
+    ).forEach((call: IInitCall) => {
+      incompatibleExtensions.add(call.extension);
+    });
+    if (incompatibleExtensions.size > 0) {
+      log('info', 'extensions ignored for using unsupported api',
+          { extensions: Array.from(incompatibleExtensions).join(', ') });
+      this.mInitCalls = this.mInitCalls.filter((call: IInitCall) =>
+        !incompatibleExtensions.has(call.extension)
+      );
+    } else {
+      log('debug', 'all extensions compatible');
+    }
+  }
+
+  /**
+   * change the extension name currently being loaded
+   */
+  public setExtension(extension: string) {
+    this.mCurrentExtension = extension;
+  }
+
+  public has(target, key: PropertyKey): boolean {
+    return true;
+  }
+
+  public get(target, key: PropertyKey): any {
+    if (key in this.mContext) {
+      return this.mContext[key];
+    } else if (key === 'optional') {
+      return this.mOptional;
+    }
+
+    return (key in this.mContext)
+      ? this.mContext[key]
+      : (...args) => {
+        this.mInitCalls.push({
+          extension: this.mCurrentExtension,
+          key: key.toString(),
+          arguments: args,
+          optional: false,
+        });
+      };
+  }
+
+  public set(target, key: PropertyKey, value: any, receiver: any) {
+    this.mApiAdditions.push({
+      key: key.toString(),
+      callback: value,
+    });
+    return true;
+  }
+
+  private get staticAPIs() {
+    // trick so we get a compile time error from tsc if this object doesn't
+    // match the interface
+    let dummy: IExtensionContext = {
+      registerMainPage: undefined,
+      registerSettings: undefined,
+      registerIcon: undefined,
+      registerFooter: undefined,
+      registerReducer: undefined,
+      registerExtensionFunction: undefined,
+      registerStyle: undefined,
+      registerPersistor: undefined,
+      registerSettingsHive: undefined,
+      api: undefined,
+      once: undefined,
+      optional: undefined,
+    };
+
+    return Object.keys(dummy);
+  }
+
+}
+
 /**
  * interface to extensions. This loads extensions and provides the api extensions
  * use
@@ -67,6 +209,12 @@ type WatcherRegistry = { [watchPath: string]: IStateChangeCallback[] };
  * @class ExtensionManager
  */
 class ExtensionManager {
+  public static registerUIAPI(name: string) {
+    ExtensionManager.sUIAPIs.add(name);
+  }
+
+  private static sUIAPIs: Set<string> = new Set<string>();
+
   private mExtensions: IRegisteredExtension[];
   private mApi: IExtensionApi;
   private mTranslator: I18next.I18n;
@@ -76,11 +224,11 @@ class ExtensionManager {
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
   private mModDB: ModDB;
   private mPid: number;
+  private mContextProxyHandler: ContextProxyHandler;
 
   constructor(eventEmitter?: NodeJS.EventEmitter) {
     this.mPid = process.pid;
     this.mEventEmitter = eventEmitter;
-    this.mExtensions = this.loadExtensions();
     this.mApi = {
       showErrorNotification: (message: string, details: string | Error) => {
         if (typeof(details) === 'string') {
@@ -104,6 +252,8 @@ class ExtensionManager {
       lookupModMeta: this.lookupModMeta,
       saveModMeta: this.saveModMeta,
     };
+    this.mExtensions = this.loadExtensions();
+    this.initExtensions();
   }
 
   public setTranslation(translator: I18next.I18n) {
@@ -193,15 +343,9 @@ class ExtensionManager {
    */
   public getReducers() {
     let reducers = [];
-
-    let context = this.emptyExtensionContext();
-
-    context.registerReducer = (path: string[], reducer: any) => {
+    this.apply('registerReducer', (path: string[], reducer: any) => {
       reducers.push({ path, reducer });
-    };
-
-    this.mExtensions.forEach((ext) => ext.initFunc(context));
-
+    });
     return reducers;
   }
 
@@ -211,18 +355,7 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public applyExtensionsOfExtensions() {
-    let extFunctions: { name: string, registerFunc: Function }[] = [];
-    this.apply('registerExtensionFunction', (name: string, registerFunc: () => void) => {
-      extFunctions.push({ name, registerFunc });
-    });
-
-    if (extFunctions.length > 0) {
-      let context = this.emptyExtensionContext();
-      for (let func of extFunctions) {
-        context[func.name] = func.registerFunc;
-      }
-      this.mExtensions.forEach((ext) => ext.initFunc(context));
-    }
+    this.mContextProxyHandler.invokeAdditions();
   }
 
   /**
@@ -235,10 +368,9 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public apply(funcName: string, func: Function) {
-    let context = this.emptyExtensionContext();
-
-    context[funcName] = func;
-    this.mExtensions.forEach((ext) => ext.initFunc(context));
+    this.mContextProxyHandler.getCalls(funcName).forEach((args: any[]) => {
+      func(...args);
+    });
   }
 
   /**
@@ -246,24 +378,37 @@ class ExtensionManager {
    * once.
    */
   public doOnce() {
-    let context = this.emptyExtensionContext();
-
-    context.once = (callback: () => void) => {
-      callback();
-    };
-
-    this.mExtensions.forEach((ext: IRegisteredExtension) => {
+    this.mContextProxyHandler.getCalls('once').forEach((args: any[]) => {
       try {
-        ext.initFunc(context);
+        args[0]();
       } catch (err) {
         log('warn', 'failed to call once',
-            { err: err.message, stack: err.stack, extension: ext.name });
+            { err: err.message, stack: err.stack });
       }
     });
   }
 
   public getProtocolHandler(protocol: string) {
     return this.mProtocolHandlers[protocol] || null;
+  }
+
+  /**
+   * initialize all extensions
+   */
+  private initExtensions() {
+    let context = {
+      api: this.mApi,
+    };
+
+    this.mContextProxyHandler = new ContextProxyHandler(context);
+    let contextProxy = new Proxy(context, this.mContextProxyHandler);
+    this.mExtensions.forEach((ext) => {
+      log('info', 'init extension', {name: ext.name});
+      this.mContextProxyHandler.setExtension(ext.name);
+      ext.initFunc(contextProxy as IExtensionContext);
+    });
+    this.mContextProxyHandler.unloadIncompatible(ExtensionManager.sUIAPIs);
+    log('info', 'all extensions initialized');
   }
 
   private getPath(name: Electron.AppPathName) {
@@ -387,22 +532,6 @@ class ExtensionManager {
       this.mModDB.insert(modInfo);
       resolve();
     });
-  }
-
-  private emptyExtensionContext(): IExtensionContext {
-    return {
-      registerMainPage: () => undefined,
-      registerSettings: () => undefined,
-      registerIcon: () => undefined,
-      registerFooter: () => undefined,
-      registerReducer: () => undefined,
-      registerExtensionFunction: () => undefined,
-      registerStyle: () => undefined,
-      registerPersistor: () => undefined,
-      registerSettingsHive: () => undefined,
-      once: () => undefined,
-      api: Object.assign({}, this.mApi),
-    };
   }
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {

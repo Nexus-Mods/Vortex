@@ -25,12 +25,11 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
   context.registerFooter('discovery-progress', ProgressFooter);
 
-  context.registerExtensionFunction('registerSettingsHive',
-                                    (type: PersistingType, hive: string) => {
-                                      if (type === 'game') {
-                                        stateWhitelist.push(hive);
-                                      }
-                                    });
+  context.registerSettingsHive = (type: PersistingType, hive: string) => {
+    if (type === 'game') {
+      stateWhitelist.push(hive);
+    }
+  };
 
   context.once(() => {
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;

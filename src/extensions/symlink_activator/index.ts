@@ -99,9 +99,7 @@ export interface IExtensionContextEx extends IExtensionContext {
 }
 
 function init(context: IExtensionContextEx): boolean {
-  if (context.hasOwnProperty('registerModActivator')) {
-    context.registerModActivator(new ModActivator());
-  }
+  context.registerModActivator(new ModActivator());
 
   return true;
 }

@@ -9,15 +9,19 @@ import { setActivator, setPath } from '../actions/settings';
 import { IModActivator } from '../types/IModActivator';
 import { IStatePaths } from '../types/IStateSettings';
 import resolvePath, {PathKey} from '../util/resolvePath';
+import supportedActivators from '../util/supportedActivators';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
+import update = require('react-addons-update');
 import {Alert, ControlLabel, FormControl, FormGroup,
         HelpBlock, InputGroup, Jumbotron, Modal, Panel} from 'react-bootstrap';
 
 import { log } from '../../../util/log';
+
+import * as _ from 'lodash';
 
 interface IBaseProps {
   activators: IModActivator[];
@@ -26,8 +30,8 @@ interface IBaseProps {
 interface IConnectedProps {
   paths: IStatePaths;
   gameMode: string;
-
   currentActivator: string;
+  state: any;
 }
 
 interface IActionProps {
@@ -41,6 +45,7 @@ interface IActionProps {
 interface IComponentState {
   paths: IStatePaths;
   busy: string;
+  supportedActivators: IModActivator[];
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
@@ -56,7 +61,23 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     this.state = {
       paths: Object.assign(this.props.paths),
       busy: undefined,
+      supportedActivators: [],
     };
+  }
+
+  public componentWillMount() {
+    this.setState(update(this.state, {
+      supportedActivators: { $set: this.supportedActivators() }
+    }));
+  }
+
+  public componentDidUpdate(prevProps: IProps, prevState: IComponentState) {
+    if ((this.props.gameMode !== prevProps.gameMode)
+      || _.isEqual(this.props.paths, prevProps.paths)) {
+      this.setState(update(this.state, {
+        supportedActivators: { $set: this.supportedActivators() },
+      }));
+    }
   }
 
   public render(): JSX.Element {
@@ -83,6 +104,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </FormGroup>
       </form>
     );
+  }
+
+  /**
+   * return only those activators that are supported based on the current state
+   *
+   * @param {*} state
+   * @returns {IModActivator[]}
+   */
+  private supportedActivators(): IModActivator[] {
+    return supportedActivators(this.props.activators, this.props.state);
   }
 
   private pathsChanged() {
@@ -293,6 +324,7 @@ function mapStateToProps(state: any): IConnectedProps {
     paths: state.gameSettings.mods.paths,
     gameMode: state.settings.gameMode.current,
     currentActivator: state.gameSettings.mods.activator,
+    state: state,
   };
 }
 

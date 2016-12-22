@@ -95,19 +95,22 @@ function refreshProfile(store: Redux.Store<any>, direction: 'import' | 'export')
       ;
 }
 
-function init(context: IExtensionContext): boolean {
+interface IExtensionContextExt extends IExtensionContext {
+  registerProfileFile: (gameId: string, filePath: string) => void;
+}
+
+function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('clone', 'Profiles', ProfileView, {
     hotkey: 'P',
   });
   context.registerReducer(['gameSettings', 'profiles'], profilesReducer);
 
-  context.registerExtensionFunction('registerProfileFile',
-    (gameId: string, filePath: string) => {
+  context.registerProfileFile = (gameId: string, filePath: string) => {
       if (profileFiles[gameId] === undefined) {
         profileFiles[gameId] = [];
       }
       profileFiles[gameId].push(filePath);
-  });
+  };
 
   // ensure the current profile is always set to a valid value on startup and
   // when changing the game mode 

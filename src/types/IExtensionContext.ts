@@ -397,4 +397,10 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   api: IExtensionApi;
+
+  /**
+   * proxy to make optional register calls (if such calls are invalid in the api the extension
+   * will not be unloaded)
+   */
+  optional: any;
 }

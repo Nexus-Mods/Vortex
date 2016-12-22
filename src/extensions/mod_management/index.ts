@@ -14,6 +14,7 @@ import {IStatePaths} from './types/IStateSettings';
 import {ITestSupported} from './types/ITestSupported';
 import * as basicInstaller from './util/basicInstaller';
 import refreshMods from './util/refreshMods';
+import supportedActivators from './util/supportedActivators';
 import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
 import ModList from './views/ModList';
@@ -26,12 +27,24 @@ import {downloadPath, installPath} from './selectors';
 
 import * as path from 'path';
 
+import {log} from '../../util/log';
+
 let activators: IModActivator[] = [];
 
 let installManager: InstallManager;
 
+interface IInstaller {
+  priority: number;
+  testSupported: ITestSupported;
+  install: IInstall;
+}
+
+let installers: IInstaller[] = [];
+
 export interface IExtensionContextExt extends IExtensionContext {
   registerModAttribute: (attribute: ITableAttribute) => void;
+  registerModActivator: (activator: IModActivator) => void;
+  registerInstaller: (priority: number, testSupported: ITestSupported, install: IInstall) => void;
 }
 
 function registerModActivator(activator: IModActivator) {
@@ -39,31 +52,10 @@ function registerModActivator(activator: IModActivator) {
 }
 
 function registerInstaller(priority: number, testSupported: ITestSupported, install: IInstall) {
-  installManager.addInstaller(priority, testSupported, install);
-}
-
-/**
- * return only those activators that are supported based on the current state
- * TODO: this may be a costy operation if we do it ever time the list is
- * requested.
- *       we may want to limit what state activators may depend on and then only
- *       recalculate the list if that state changes
- *
- * @param {*} state
- * @returns {IModActivator[]}
- */
-function supportedActivators(state: any): IModActivator[] {
-  return activators.filter(
-      (activator: IModActivator) => { return activator.isSupported(state); });
+  installers.push({ priority, testSupported, install });
 }
 
 function init(context: IExtensionContextExt): boolean {
-  if ((installManager === undefined) && (context.api.store !== undefined)) {
-    const store = context.api.store;
-
-    installManager = new InstallManager(() => installPath(store.getState()) );
-  }
-
   context.registerMainPage('cubes', 'Mods', ModList, {
     hotkey: 'M',
   });
@@ -83,7 +75,7 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerSettings('Mods', Settings, () => {
-    return {activators: supportedActivators(context.api.store.getState())};
+    return {activators};
   });
 
   context.registerSettingsHive('game', 'mods');
@@ -91,23 +83,26 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['mods'], modsReducer);
   context.registerReducer(['gameSettings', 'mods'], settingsReducer);
 
-  context.registerExtensionFunction('registerModActivator',
-                                    registerModActivator);
+  context.registerModActivator = registerModActivator;
+  context.registerInstaller = registerInstaller;
 
-  context.registerExtensionFunction('registerInstaller', registerInstaller);
-
-  if (context.registerModAttribute !== undefined) {
-    context.registerModAttribute(MOD_NAME);
-    context.registerModAttribute(VERSION);
-    context.registerModAttribute(INSTALL_TIME);
-  }
+  context.optional.registerModAttribute(MOD_NAME);
+  context.optional.registerModAttribute(VERSION);
+  context.optional.registerModAttribute(INSTALL_TIME);
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
 
+    if (installManager === undefined) {
+      installManager = new InstallManager(() => installPath(store.getState()));
+      installers.forEach((installer: IInstaller) => {
+        installManager.addInstaller(installer.priority, installer.testSupported, installer.install);
+      });
+    }
+
     context.api.events.on('gamemode-activated', (newGame: string) => {
       let currentActivator = store.getState().gameSettings.mods.activator;
-      let supported = supportedActivators(store.getState());
+      let supported = supportedActivators(activators, store.getState());
       if (supported.find((activator: IModActivator) =>
         activator.id === currentActivator) === undefined) {
         // current activator is not valid for this game. This should only occur

@@ -46,7 +46,15 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
     });
 }
 
-function init(context: IExtensionContext): boolean {
+interface IProtocolHandler {
+  (inputUrl: string): Promise<string[]>;
+}
+
+interface IExtensionContextExt extends IExtensionContext {
+  registerDownloadProtocol: (schema: string, handler: IProtocolHandler) => void;
+}
+
+function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('download', 'Download', DownloadView, {
     hotkey: 'D',
   });
@@ -58,10 +66,9 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['persistent', 'downloads'], stateReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
-  context.registerExtensionFunction('registerDownloadProtocol',
-    (schema: string, handler: (inputUrl: string) => Promise<string[]>) => {
+  context.registerDownloadProtocol = (schema: string, handler: IProtocolHandler) => {
     protocolHandlers[schema] = handler;
-  });
+  };
 
   // ensure the current profile is always set to a valid value on startup and
   // when changing the game mode 
