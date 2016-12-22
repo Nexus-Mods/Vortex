@@ -65,7 +65,7 @@ function init(context: IExtensionContext): boolean {
 
     context.api.onStateChange(['settings', 'gameMode', 'next'],
       (prev: string, current: string) => {
-        gameModeManager.setupGameMode(current)
+        return gameModeManager.setupGameMode(current)
         .then(() => {
           context.api.store.dispatch(setCurrentGameMode(current));
         })

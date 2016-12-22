@@ -35,8 +35,6 @@ import ReduxWatcher = require('redux-watcher');
 
 import Module = require('module');
 
-import * as util from 'util';
-
 let app = appIn;
 let dialog = dialogIn;
 
@@ -93,8 +91,8 @@ class ContextProxyHandler implements ProxyHandler<any> {
             arguments: args,
             optional: true,
           });
-        }
-      }
+        };
+      },
     });
   }
 
@@ -123,8 +121,6 @@ class ContextProxyHandler implements ProxyHandler<any> {
     let fullAPI = new Set([...furtherAPIs, ...this.staticAPIs, ...addAPIs]);
 
     let incompatibleExtensions = new Set<string>();
-    this.mInitCalls.forEach((call: IInitCall) => {
-    });
 
     this.mInitCalls.filter((call: IInitCall) => !call.optional && !fullAPI.has(call.key)
     ).forEach((call: IInitCall) => {

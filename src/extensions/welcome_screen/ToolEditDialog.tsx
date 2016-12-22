@@ -249,32 +249,31 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     const { tool } = this.props;
     const destPath = this.toolIconPath(tool.id);
 
-    fs.ensureDirAsync(path.dirname(destPath));
-
-    let promise: Promise<any>;
-    if (path.extname(filePath) === '.exe') {
-      promise = new Promise<boolean>((resolve, reject) => {
-        extractIconToFile(filePath, destPath, (err) => {
-          if (err !== null) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        }, 32, 'png');
+    return fs.ensureDirAsync(path.dirname(destPath))
+      .then(() => {
+        if (path.extname(filePath) === '.exe') {
+          return new Promise<void>((resolve, reject) => {
+            extractIconToFile(filePath, destPath, (err) => {
+              if (err !== null) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            }, 32, 'png');
+          });
+        } else {
+          return fs.copyAsync(filePath, destPath);
+        }
+      })
+      .then(() => {
+        this.clearCache();
+        this.forceUpdate();
+      })
+      .catch((err) => {
+        if (err !== null) {
+          this.context.api.showErrorNotification('failed to change tool icon', err.message);
+        }
       });
-    } else {
-      promise = fs.copyAsync(filePath, destPath);
-    }
-
-    return promise.then(() => {
-      this.clearCache();
-      this.forceUpdate();
-    })
-    .catch((err) => {
-      if (err !== null) {
-        this.context.api.showErrorNotification('failed to change tool icon', err.message);
-      }
-    });
   }
 
   private toolIconPath(toolName: string) {

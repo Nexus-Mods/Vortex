@@ -70,7 +70,7 @@ function currentGameId(state: any) {
 }
 
 function refreshProfile(store: Redux.Store<any>, direction: 'import' | 'export') {
-  checkProfile(store, currentProfile(store.getState()).id)
+  return checkProfile(store, currentProfile(store.getState()).id)
       .then(() => {
         return profilePath(store);
       })
@@ -82,10 +82,10 @@ function refreshProfile(store: Redux.Store<any>, direction: 'import' | 'export')
         // loaded then it has no copies of the files but that if fine.
         const gameId = currentGameId(store.getState());
         if (direction === 'import') {
-          syncToProfile(currentProfilePath, profileFiles[gameId],
+          return syncToProfile(currentProfilePath, profileFiles[gameId],
             (error, detail) => showError(store.dispatch, error, detail));
         } else {
-          syncFromProfile(currentProfilePath, profileFiles[gameId],
+          return syncFromProfile(currentProfilePath, profileFiles[gameId],
             (error, detail) => showError(store.dispatch, error, detail));
         }
       })
@@ -123,7 +123,7 @@ function init(context: IExtensionContextExt): boolean {
         // when the game changes it's assumed that the "global" files are associated
         // with the active profile because you can't change the profile without
         // activating the game first
-        refreshProfile(store, 'import');
+        return refreshProfile(store, 'import');
       });
 
     context.api.onStateChange(['gameSettings', 'profiles', 'currentProfile'],
