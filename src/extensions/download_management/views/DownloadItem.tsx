@@ -53,44 +53,6 @@ class DownloadItem extends ComponentEx<IProps, {}> {
   constructor(props: IProps) {
     super(props);
 
-    this.downloadActions = [
-      {
-        icon: 'eye',
-        title: 'Inspect',
-        action: this.inspect,
-        condition: this.inspectable,
-      },
-      {
-        icon: 'archive',
-        title: 'Install',
-        action: this.install,
-        condition: this.installable,
-      },
-      {
-        icon: 'pause',
-        title: 'Pause',
-        action: this.pause,
-        condition: this.pausable,
-      },
-      {
-        icon: 'play',
-        title: 'Resume',
-        action: this.resume,
-        condition: this.resumable,
-      },
-      {
-        icon: 'remove',
-        title: 'Remove',
-        action: this.remove,
-        condition: this.removable,
-      },
-      {
-        icon: 'stop',
-        title: 'Cancel',
-        action: this.remove,
-        condition: this.cancelable,
-      },
-    ];
   }
 
   public render(): JSX.Element {
