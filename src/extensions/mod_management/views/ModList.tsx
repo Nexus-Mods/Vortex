@@ -362,13 +362,16 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
   };
 
   private selectMod = (evt: React.MouseEvent<any>) => {
-    const cell = (evt.target as HTMLTableCellElement);
-    const row = (cell.parentNode as HTMLTableRowElement);
+    const row = (evt.currentTarget as HTMLTableRowElement);
 
     let stateUpdate: any = { };
 
     if (evt.ctrlKey) {
-      stateUpdate.tableState = { [row.id]: { $set: { selected: true } } };
+      const wasSelected = getSafe(this.state, ['tableState', row.id, 'selected'], false);
+      if (!wasSelected) {
+        stateUpdate.lastSelected = { $set: row.id };
+      }
+      stateUpdate.tableState = { [row.id]: { $set: { selected: !wasSelected } } };
     } else if (evt.shiftKey) {
       const { objects, modlistState, mods, language } = this.props;
       const visibleAttributes: IModAttribute[] = this.visibleAttributes(objects, modlistState);

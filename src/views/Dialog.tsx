@@ -89,25 +89,25 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.translated) {
       t = (input: string) => input;
     }
+
+    let controls: JSX.Element[] = [];
+
     if (content.message !== undefined) {
-      return <div>{t(content.message)}</div>;
-    } else if (content.htmlFile !== undefined) {
-      return <webview src={`file://${content.htmlFile}`} />;
+      controls.push(<span>{t(content.message)}</span>);
+    }
+
+    if (content.htmlFile !== undefined) {
+      controls.push(<webview src={`file://${content.htmlFile}`} />);
     } else if (content.checkboxes !== undefined) {
-      return (
-        <div>
+      controls.push(<div>
           {content.checkboxes.map(this.renderCheckbox)}
         </div>
       );
     } else if (content.formcontrol !== undefined) {
-      return (
-        <div>
-          {this.renderFormControl(content.formcontrol)}
-        </div>
-      );
-    } else {
-      return null;
+      controls.push(this.renderFormControl(content.formcontrol));
     }
+
+    return <div>{controls}</div>;
   }
 
   private renderFormControl = (formcontrol: IFormControl) => {
