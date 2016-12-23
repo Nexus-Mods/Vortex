@@ -10,6 +10,7 @@ import { IReducerSpec } from '../types/IExtensionContext';
 
 import { notificationsReducer } from './notifications';
 import { sessionReducer } from './session';
+import { tableReducer } from './tables';
 import { windowReducer } from './window';
 
 import { combineReducers } from 'redux';
@@ -117,6 +118,7 @@ export default function (extensionReducers: IExtensionReducer[]) {
     settings: {
     },
     persistent: {
+      tables: tableReducer,
     },
   };
 

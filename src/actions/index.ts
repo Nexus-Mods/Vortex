@@ -1,5 +1,6 @@
 export * from './notifications';
 export * from './session';
+export * from './tables';
 export * from './window';
 
 export * from '../extensions/download_management/actions/settings';

@@ -1,3 +1,4 @@
+import { IAttributeState } from './IAttributeState';
 import { IDialog } from './IDialog';
 import { INotification } from './INotification';
 
@@ -67,6 +68,19 @@ export interface ISession {
   displayGroups: { [id: string]: string };
 }
 
+export interface IRowState {
+  selected: boolean;
+}
+
+export interface ITableState {
+  attributes: { [id: string]: IAttributeState };
+  rows: { [id: string]: IRowState };
+}
+
+export interface ITableStates {
+  [id: string]: ITableState;
+}
+
 /**
  * interface for the top-level state object
  * this should precisely mirror the reducer structure
@@ -80,5 +94,6 @@ export interface IState {
   notifications: INotificationState;
   session: { base: ISession };
   settings: { };
+  persistent: { tables: ITableStates };
   gameSettings: { };
 }

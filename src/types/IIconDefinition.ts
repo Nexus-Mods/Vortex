@@ -9,8 +9,8 @@ import * as React from 'react';
 export interface IIconDefinition {
   icon?: string;
   title?: string;
-  action?: () => void;
   component?: React.ComponentClass<any>;
   props?: () => Object;
+  action?: (instanceId: string) => void;
   condition?: (instanceId: string) => boolean;
 }

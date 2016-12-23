@@ -1,5 +1,5 @@
 import { IIconDefinition } from '../types/IIconDefinition';
-import { ComponentEx, extend, translate } from '../util/ComponentEx';
+import { extend } from '../util/ComponentEx';
 import { IExtensibleProps } from '../util/ExtensionProvider';
 import ToolbarIcon from './ToolbarIcon';
 
@@ -41,9 +41,7 @@ class IconBar extends React.Component<IProps, {}> {
     );
   }
 
-  private renderIcon = (icon: IIconDefinition) => this.renderIconImpl(icon);
-
-  private renderIconImpl(icon: IIconDefinition) {
+  private renderIcon = (icon: IIconDefinition) => {
     const { instanceId, tooltipPlacement } = this.props;
     // don't render anything if the condition doesn't match
     if ((icon.condition !== undefined) && !icon.condition(instanceId)) {
@@ -57,6 +55,7 @@ class IconBar extends React.Component<IProps, {}> {
       return <ToolbarIcon
         key={id}
         id={id}
+        instanceId={instanceId}
         icon={icon.icon}
         tooltip={icon.title}
         onClick={icon.action}

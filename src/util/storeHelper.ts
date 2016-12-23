@@ -26,6 +26,18 @@ export function getSafe<T>(state: any, path: string[], fallback: T): T {
   return current;
 }
 
+export function mutateSafe<T>(state: T, path: string[], value: any) {
+  let firstElement: string = path[0];
+  if (path.length === 1) {
+    state[firstElement] = value;
+  } else {
+    if (!state.hasOwnProperty(firstElement)) {
+      state[firstElement] = {};
+    }
+    mutateSafe(state[firstElement], path.slice(1), value);
+  }
+}
+
 /**
  * set an item in state, creating all intermediate nodes as necessary
  * 
