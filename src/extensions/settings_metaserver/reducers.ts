@@ -3,10 +3,7 @@ import {deleteOrNop, setSafe} from '../../util/storeHelper';
 
 import * as actions from './actions';
 
-import { generate as shortid } from 'shortid';
-
 import {log} from '../../util/log';
-import * as util from 'util';
 
 /**
  * reducer for changes to interface settings
@@ -14,11 +11,11 @@ import * as util from 'util';
 const settingsReducer: IReducerSpec = {
   reducers: {
     [actions.addMetaserver]:
-        (state, payload) => setSafe(state, ['servers', shortid()], {
-          url: payload.url,
-          cacheDurationSec: payload.cacheDurationSec || 86400,
-          priority: Object.keys(state.servers).length,
-        }),
+    (state, payload) => setSafe(state, ['servers', payload.id], {
+        url: payload.url,
+        cacheDurationSec: payload.cacheDurationSec || 86400,
+        priority: Object.keys(state.servers).length,
+      }),
     [actions.removeMetaserver]:
         (state, payload) => deleteOrNop(state, ['servers', payload.id]),
     [actions.setPriorities]:

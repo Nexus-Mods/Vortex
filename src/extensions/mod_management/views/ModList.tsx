@@ -38,8 +38,6 @@ import update = require('react-addons-update');
 
 import { log } from '../../../util/log';
 
-import * as util from 'util';
-
 interface IProps {
   objects: IModAttribute[];
 }

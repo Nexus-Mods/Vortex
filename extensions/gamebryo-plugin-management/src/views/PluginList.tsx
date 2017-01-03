@@ -16,7 +16,7 @@ import PluginFlags from './PluginFlags';
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import {SimpleMessage} from 'loot';
-import {ComponentEx, HeaderCell, IconBar, log, tooltip, types, util} from 'nmm-api';
+import {ComponentEx, HeaderCell, IconBar, tooltip, types, util} from 'nmm-api';
 import * as React from 'react';
 import update = require('react-addons-update');
 import {Alert, Checkbox, ControlLabel, FormControl, FormGroup,

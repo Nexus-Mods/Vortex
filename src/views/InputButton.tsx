@@ -62,14 +62,15 @@ class InputButton extends ComponentEx<IProps, IComponentState> {
       const { input } = this.state;
       return (
         <div className='inline-form'>
-          <form style={{ flexGrow: 1 }}>
+          <div style={{ flexGrow: 1 }}>
             <FormControl
               autoFocus
               type='text'
               value={input}
               onChange={this.updateInput}
+              onKeyPress={this.handleKeypress}
             />
-          </form>
+          </div>
           <Button
             id='accept-input'
             tooltip={t('Confirm')}
@@ -102,7 +103,17 @@ class InputButton extends ComponentEx<IProps, IComponentState> {
 
   private closeInput = () => {
     const { groupId, onSelectDisplayGroup } = this.props;
+    this.setState(update(this.state, {
+      input: { $set: '' },
+    }));
     onSelectDisplayGroup(groupId, undefined);
+  }
+
+  private handleKeypress = (evt: React.KeyboardEvent<any>) => {
+    if (evt.which === 13) {
+      evt.preventDefault();
+      this.confirmInput();
+    }
   }
 
   private confirmInput = () => {

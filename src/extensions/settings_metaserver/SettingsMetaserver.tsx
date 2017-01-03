@@ -6,15 +6,14 @@ import InputButton from '../../views/InputButton';
 import { Button } from '../../views/TooltipControls';
 import { addMetaserver, removeMetaserver, setPriorities } from './actions';
 
+import * as _ from 'lodash';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup, HelpBlock,
+import { ControlLabel, FormGroup, HelpBlock,
          ListGroup, ListGroupItem } from 'react-bootstrap';
 import {DragDropContext, DragSource, DropTarget} from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
-
-import * as util from 'util';
-
 import {findDOMNode} from 'react-dom';
+import { generate as shortid } from 'shortid';
 
 interface IServerEntry {
   url: string;
@@ -41,9 +40,11 @@ const serverSource: __ReactDnd.DragSourceSpec<any> = {
     return { id: props.serverId };
   },
   endDrag(props, monitor: __ReactDnd.DragSourceMonitor) {
+    if (monitor.getDropResult() === null) {
+      return;
+    }
     let source: string = (monitor.getItem() as { id: string }).id;
     let dest: string = (monitor.getDropResult() as { id: string }).id;
-    log('info', 'end drag', { source, dest });
     if (source !== dest) {
       props.onDrop();
     } else {
@@ -99,7 +100,12 @@ interface IDropProps {
   isOver: boolean;
 }
 
-class ServerRow extends React.Component<IRowProps & IDragProps & IDropProps, {}> {
+type RowProps = IRowProps & IDragProps & IDropProps;
+
+/**
+ * One row in the meta-server list
+ */
+class ServerRow extends React.Component<RowProps, {}> {
   public render(): JSX.Element {
     const {t, connectDragSource, connectDropTarget, isDragging, server} = this.props;
     return connectDropTarget(
@@ -148,6 +154,9 @@ interface IListState {
   orderedServers: { [id: string]: IServerEntry };
 }
 
+/**
+ * list of meta servers
+ */
 class ServerList extends React.Component<IListProps, IListState> {
   constructor(props) {
     super(props);
@@ -159,6 +168,12 @@ class ServerList extends React.Component<IListProps, IListState> {
 
   public componentWillMount() {
     this.pullServerState();
+  }
+
+  public componentDidUpdate(prevProps: IListProps, prevState: IListState) {
+    if (!_.isEqual(prevProps.metaservers, this.props.metaservers)) {
+      this.pullServerState();
+    }
   }
 
   public render(): JSX.Element {
@@ -190,11 +205,10 @@ class ServerList extends React.Component<IListProps, IListState> {
   private pullServerState() {
     const { metaservers } = this.props;
 
-    let copy = Object.assign({}, metaservers);
+    let copy = _.cloneDeep(metaservers);
     Object.keys(copy).forEach((key: string) => {
       copy[key].priority *= 2;
     });
-    log('info', 'copy', { copy: util.inspect(copy) });
     this.setState({
       orderedServers: copy,
     });
@@ -227,7 +241,6 @@ class ServerList extends React.Component<IListProps, IListState> {
   private handleDrop = () => {
     const {onSetMetaserverPriority} = this.props;
     const {orderedServers} = this.state;
-    log('info', 'drop');
     let sorted = Object.keys(orderedServers).sort((lhs: string, rhs: string) => {
       return orderedServers[lhs].priority - orderedServers[rhs].priority;
     });
@@ -236,7 +249,6 @@ class ServerList extends React.Component<IListProps, IListState> {
   }
 
   private handleCancel = () => {
-    log('info', 'cancel');
     this.pullServerState();
   }
 }
@@ -283,7 +295,7 @@ function mapStateToProps(state: any): IConnectedProps {
 function mapDispatchToProps(dispatch: Function): IActionProps {
   return {
     onAddMetaserver: (url: string): void => {
-      dispatch(addMetaserver(url));
+      dispatch(addMetaserver(shortid(), url));
     },
     onRemoveMetaserver: (id: string): void => {
       dispatch(removeMetaserver(id));

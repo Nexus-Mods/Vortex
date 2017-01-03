@@ -73,7 +73,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   public componentDidUpdate(prevProps: IProps, prevState: IComponentState) {
     if ((this.props.gameMode !== prevProps.gameMode)
-      || _.isEqual(this.props.paths, prevProps.paths)) {
+      || !_.isEqual(this.props.paths, prevProps.paths)) {
       this.setState(update(this.state, {
         supportedActivators: { $set: this.supportedActivators() },
       }));

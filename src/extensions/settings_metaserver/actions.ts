@@ -4,7 +4,7 @@ import { createAction } from 'redux-act';
  * add a metaserver
  */
 export const addMetaserver: any = createAction('ADD_METASERVER',
-  (url: string) => ({ url }));
+  (id: string, url: string) => ({ id, url }));
 
 /**
  * remove a metaserver
