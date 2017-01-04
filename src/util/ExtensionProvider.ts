@@ -44,9 +44,9 @@ export interface IExtensibleProps {
  * @returns {React.ComponentClass<P>} the wrapper component
  */
 export function extend(registerFunc: Function) {
-  // extension manager is undefined when this is called from the main process
-  if (ExtensionManager !== undefined) {
-    ExtensionManager.registerUIAPI(registerFunc.name);
+  if (process.type === 'renderer') {
+    let ExtensionManagerImpl: typeof ExtensionManager = require('./ExtensionManager');
+    ExtensionManagerImpl.registerUIAPI(registerFunc.name);
   }
   return <P, S>(ComponentToWrap: React.ComponentClass<P>): any => {
     return class __ExtendedComponent extends React.Component<IExtensibleProps & P, S> {

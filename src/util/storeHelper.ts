@@ -221,10 +221,10 @@ function waitUntil(predicate: () => boolean, interval: number = 100): Promise<vo
  */
 export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
   const fallback = {id: '__placeholder', name: '<No game>', requiredFiles: []};
-  const gameMode =
-      getSafe(store.getState(), ['settings', 'gameMode', 'current'], undefined);
   let knownGames = getSafe(store.getState(), ['session', 'gameMode', 'known'], null);
   if ((knownGames !== null) && (knownGames !== undefined)) {
+    const gameMode = getSafe(store.getState(),
+                             ['settings', 'gameMode', 'current'], undefined);
     let res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
     return Promise.resolve(res || fallback);
   } else {
@@ -234,7 +234,10 @@ export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
              return (knownGames !== null) && (knownGames !== undefined);
            })
         .then(() => {
-          let res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
+          const gameMode = getSafe(
+              store.getState(), ['settings', 'gameMode', 'current'], undefined);
+
+          const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
           return Promise.resolve(res || fallback);
         });
   }

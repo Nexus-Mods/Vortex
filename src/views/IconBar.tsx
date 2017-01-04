@@ -1,6 +1,5 @@
 import { IIconDefinition } from '../types/IIconDefinition';
-import { extend } from '../util/ComponentEx';
-import { IExtensibleProps } from '../util/ExtensionProvider';
+import { IExtensibleProps, extend } from '../util/ExtensionProvider';
 import ToolbarIcon from './ToolbarIcon';
 
 import * as React from 'react';

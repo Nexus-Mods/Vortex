@@ -22,8 +22,13 @@ describe('getSafe', () => {
 describe('setSafe', () => {
   it('leaves the original unmodified', () => {
     let input = {};
-    helper.getSafe(input, ['a', 'test'], 42);
+    helper.setSafe(input, ['a', 'test']);
     expect(input).toEqual({});
+  });
+  it('copies only the parts being modified', () => {
+    let input = { a: { a1: 42 }, b: { b1: 13 } };
+    let res = helper.setSafe(input, ['b', 'b1'], 12);
+    expect(res.a).toBe(input.a);
   });
   it('sets the value even if nodes missing', () => {
     let res = helper.setSafe({}, ['a', 'test'], 42);
@@ -140,6 +145,23 @@ describe('currentGame', () => {
     return helper.currentGame({ getState: () => input })
     .then((game) => {
       expect(game.id).toBe('__placeholder');
+    });
+  });
+  it('returns delayed', () => {
+    let state = {};
+
+    setTimeout(() => {
+      state = {
+        settings: { gameMode: { current: 'testA' } },
+        session: { gameMode: { known: [ { id: 'testA', name: 'testA' } ] } },
+      };
+    }, 100);
+
+    return helper.currentGame({ getState: () => {
+      return state;
+     } })
+    .then((game) => {
+      expect(game.name).toBe('testA');
     });
   });
 });

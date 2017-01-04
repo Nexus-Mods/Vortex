@@ -8,8 +8,6 @@ import * as uniontype from 'ref-union';
 
 import * as tmp from 'tmp';
 
-import { log } from './log';
-
 const DUMMYUNIONNAME = uniontype({
   hIcon: ref.refType(ref.types.void),
   hMonitor: ref.refType(ref.types.void),
@@ -151,7 +149,6 @@ function runElevated(ipcPath: string, func: Function,
 
       fs.write(fd, prog, (writeErr: any, written: number, str: string) => {
         if (writeErr) {
-          log('error', 'failed to write', { err: writeErr.message });
           cleanup();
           return reject(writeErr);
         }
@@ -159,7 +156,6 @@ function runElevated(ipcPath: string, func: Function,
         let runInfo = execInfo(tmpPath);
 
         shell32.ShellExecuteExA.async(runInfo.ref(), (execErr: any, res: any) => {
-          log('info', 'remote started', { execErr, res });
           // this is reached after the user confirmed the UAC dialog but before node
           // has read the script source so we have to give a little time for that to
           // happen before we can remove the tmp file

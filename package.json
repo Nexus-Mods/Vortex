@@ -48,6 +48,7 @@
       "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest"
     },
     "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx|ts|tsx)$",
+    "testResultsProcessor": "<rootDir>/node_modules/ts-jest/coverageprocessor.js",
     "moduleFileExtensions": [
       "js",
       "json",

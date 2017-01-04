@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 const ext = jest.genMockFromModule('../ExtensionProvider');
-
+console.log('inside mock');
 function extend(registerFunc) {
   return (component) => {
     return class __ExtendedComponent extends React.Component {
@@ -13,6 +13,6 @@ function extend(registerFunc) {
   };
 }
 
-ext.extend = extend;
-
-module.exports = ext;
+module.exports = {
+  extend
+};
