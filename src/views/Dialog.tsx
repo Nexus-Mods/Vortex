@@ -93,13 +93,20 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     let controls: JSX.Element[] = [];
 
     if (content.message !== undefined) {
-      controls.push(<span>{t(content.message)}</span>);
+      controls.push(<textarea
+        key='dialog-content-message'
+        wrap='off'
+        style={{ width: '100%', minHeight: 300, resize: 'none', border: 'none' }}
+        defaultValue={content.message}
+      />);
     }
 
     if (content.htmlFile !== undefined) {
-      controls.push(<webview src={`file://${content.htmlFile}`} />);
+      controls.push(<div key='dialog-content-html'>
+        <webview src={`file://${content.htmlFile}`} />
+      </div>);
     } else if (content.checkboxes !== undefined) {
-      controls.push(<div>
+      controls.push(<div key='dialog-content-choices'>
           {content.checkboxes.map(this.renderCheckbox)}
         </div>
       );
@@ -107,13 +114,14 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       controls.push(this.renderFormControl(content.formcontrol));
     }
 
-    return <div>{controls}</div>;
+    return <div style={{ width: '100%' }}>{controls}</div>;
   }
 
   private renderFormControl = (formcontrol: IFormControl) => {
     return (
       <FormControl
         id={formcontrol.id}
+        key={formcontrol.id}
         type={formcontrol.type}
         value={formcontrol.value}
         onChange={this.toggleFormControl}
@@ -124,7 +132,12 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   private renderCheckbox = (checkbox: ICheckbox) => {
     const { t } = this.props;
     return (
-      <Checkbox id={checkbox.id} checked={checkbox.value} onClick={this.toggleCheckbox}>
+      <Checkbox
+        id={checkbox.id}
+        key={checkbox.id}
+        checked={checkbox.value}
+        onChange={this.toggleCheckbox}
+      >
         {t(checkbox.text)}
       </Checkbox>
     );
@@ -142,7 +155,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }));
   }
 
-  private toggleCheckbox = (evt) => {
+  private toggleCheckbox = (evt: React.MouseEvent<any>) => {
     let { dialogState } = this.state;
     let idx = dialogState.checkboxes.findIndex((box: ICheckbox) => {
       return box.id === evt.currentTarget.id;

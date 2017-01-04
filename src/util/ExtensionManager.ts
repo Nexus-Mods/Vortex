@@ -18,6 +18,27 @@ import ReduxWatcher = require('redux-watcher');
 
 import Module = require('module');
 
+// these imports are only here so that tsc knows there is a dependency
+// on the extensions and re-compiles them properly. They are completely
+// removed during compilation
+import {} from '../extensions/about_dialog';
+import {} from '../extensions/category_management';
+import {} from '../extensions/download_management';
+import {} from '../extensions/gamemode_management';
+import {} from '../extensions/hardlink_activator';
+import {} from '../extensions/installer_fomod';
+import {} from '../extensions/mod_management';
+import {} from '../extensions/nexus_integration';
+import {} from '../extensions/nuts_local';
+import {} from '../extensions/profile_management';
+import {} from '../extensions/settings_interface';
+import {} from '../extensions/settings_metaserver';
+import {} from '../extensions/symlink_activator';
+import {} from '../extensions/symlink_activator_elevate';
+import {} from '../extensions/updater';
+import {} from '../extensions/welcome_screen';
+
+
 let app = appIn;
 let dialog = dialogIn;
 
@@ -557,7 +578,6 @@ class ExtensionManager {
   private loadExtensions(): IRegisteredExtension[] {
     let staticExtensions = [
       'settings_interface',
-      'settings_metaserver',
       'about_dialog',
       'welcome_screen',
       'mod_management',
@@ -572,6 +592,7 @@ class ExtensionManager {
       'hardlink_activator',
       'updater',
       'installer_fomod',
+      'settings_metaserver',
     ];
 
     const bundledPath = path.resolve(__dirname, '..', 'bundledPlugins');

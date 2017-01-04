@@ -30,7 +30,9 @@ function testSupported(files: string[]): Promise<boolean> {
     testSupportedLib({files}, (err: Error, result: boolean) => {
       if ((err !== null) && (err !== undefined)) {
         log('info', 'got err', util.inspect(err));
-        reject(err);
+        // TODO: hack while the c# installer doesn't work correctly
+        //reject(err);
+        resolve({ supported: true, requiredFiles: [] });
       } else {
         log('info', 'got result', util.inspect(result));
         resolve(result);

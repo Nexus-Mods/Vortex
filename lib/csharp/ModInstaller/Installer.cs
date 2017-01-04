@@ -40,7 +40,7 @@ namespace Components.ModInstaller
             bool test = true;
             List<string> RequiredFiles = new List<string>();
 
-            if ((modArchiveFileList != null) && (modArchiveFileList.Count > 0))
+            if ((modArchiveFileList == null) || (modArchiveFileList.Count == 0))
                 test = false;
             else
             {

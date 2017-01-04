@@ -1,3 +1,3 @@
 export interface II18NProps {
-    t?: (input: string, parameters?: Object) => string;
+    t?: I18next.TranslationFunction;
 }

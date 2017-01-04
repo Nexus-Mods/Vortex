@@ -16,6 +16,7 @@ import DownloadManager from './DownloadManager';
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import {IHashResult, genHash} from 'modmeta-db';
+import * as path from 'path';
 import {generate as shortid} from 'shortid';
 
 import * as nodeURL from 'url';
@@ -29,7 +30,7 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
   if ((filePath !== undefined) &&
       (filePath !==
        store.getState().persistent.downloads.files[dlId].localPath)) {
-    store.dispatch(setDownloadFilePath(dlId, filePath));
+    store.dispatch(setDownloadFilePath(dlId, path.basename(filePath)));
   }
 }
 
@@ -89,7 +90,7 @@ export class DownloadObserver {
         })
         .then((res: {filePath: string, headers: any}) => {
           filePath = res.filePath;
-          this.mStore.dispatch(setDownloadFilePath(id, res.filePath));
+          this.mStore.dispatch(setDownloadFilePath(id, path.basename(res.filePath)));
           if (res.filePath.endsWith('.html')) {
             this.mStore.dispatch(
                 finishDownload(id, 'failed', {htmlFile: res.filePath}));

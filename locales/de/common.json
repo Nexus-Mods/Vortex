@@ -94,5 +94,13 @@
   "Browse": "Suchen",
   "Meta server": "Metaserver",
   "Servers to query for meta data.": "Server auf denen nach Metadaten gesucht wird.",
-  "Add a metaserver": "Metaserver hinzufügen"
+  "Add a metaserver": "Metaserver hinzufügen",
+  "{{count}} selected": "{{count}} ausgewählt",
+  "Do you really want to delete this mod?": "Wollen Sie diese Mod löschen?",
+  "Do you really want to delete this mod?_plural": "Wollen Sie diese {{ count }} Mods löschen?",
+  "Remove Mod": "Mod löschen",
+  "Remove Archive": "Archiv löschen",
+  "Disable Dependent": "Abhängige Mods deaktivieren",
+  "Confirm Removal": "Löschung bestätigen",
+  "Confirm": "Fortfahren"
 }

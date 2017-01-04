@@ -48,10 +48,6 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
         return;
       }
 
-      if (!('en' in files)) {
-        files = files.concat(['en']);
-      }
-
       const locales = files.map((key) => {
         let language = undefined;
         let country = undefined;

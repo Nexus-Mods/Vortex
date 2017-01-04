@@ -150,7 +150,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onStartMove: (id: string, filePath: string, game: string) => {
       dispatch(initDownload(id, [], {}, game));
-      dispatch(setDownloadFilePath(id, filePath));
+      dispatch(setDownloadFilePath(id, path.basename(filePath)));
     },
     onFinishMove: (id: string) => dispatch(finishDownload(id, 'finished')),
     onMoveFailed: (id: string) => dispatch(removeDownload(id)),

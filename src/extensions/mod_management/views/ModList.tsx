@@ -38,7 +38,7 @@ import update = require('react-addons-update');
 
 import { log } from '../../../util/log';
 
-interface IProps {
+interface IBaseProps {
   objects: IModAttribute[];
 }
 
@@ -64,20 +64,22 @@ interface IActionProps {
   onRemoveMod: (modId: string) => void;
 }
 
-interface ITableState {
+interface IRowState {
   selected: boolean;
 }
 
 interface IComponentState {
-  tableState: { [id: string]: ITableState };
+  tableState: { [id: string]: IRowState };
   lastSelected: string;
 }
+
+type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 /**
  * displays the list of mods installed for the current game.
  * 
  */
-class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComponentState> {
+class ModList extends ComponentEx<IProps, IComponentState> {
   private modActions: IIconDefinition[];
 
   constructor(props) {
@@ -104,6 +106,21 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
         action: this.removeSelected,
       },
     ];
+  }
+
+  public componentDidUpdate(prevProps: IBaseProps, prevState: IComponentState) {
+    const { mods }  = this.props;
+    const { lastSelected } = this.state;
+
+    // after a removal the selected mod will no longer be here
+    if ((lastSelected !== undefined) && !(lastSelected in mods))  {
+      this.setState(update(this.state, {
+        lastSelected: { $set: undefined },
+        tableState: {
+          [lastSelected]: { selected: { $set: false } },
+        },
+      }));
+    }
   }
 
   public render(): JSX.Element {
@@ -232,9 +249,6 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
 
     if (mod === undefined) {
       log('warn', 'unknown mod id', modId);
-      this.setState(update(this.state, {
-        selectedMod: { $set: undefined },
-      }));
       return null;
     }
 
@@ -310,12 +324,12 @@ class ModList extends ComponentEx<IProps & IConnectedProps & IActionProps, IComp
     let disableDependent: boolean;
 
     onShowDialog('question', 'Confirm Removal', {
-      message: t('Do you really want to delete {{count}} mods?',
-        { replace: { count: keys.length } }),
+      message: t('Do you really want to delete this mod?',
+        { count: keys.length, replace: { count: keys.length } }) + '\n' + keys.join('\n'),
       checkboxes: [
-        { id: 'mod', text: 'Remove Mod', value: true },
-        { id: 'archive', text: 'Remove Archive', value: false },
-        { id: 'dependents', text: 'Disable Dependent', value: false },
+        { id: 'mod', text: t('Remove Mod'), value: true },
+        { id: 'archive', text: t('Remove Archive'), value: false },
+        { id: 'dependents', text: t('Disable Dependent'), value: false },
       ],
     }, {
         Cancel: null,

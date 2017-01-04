@@ -83,10 +83,10 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
     return (
       <ContextMenu identifier={id} currentItem={this.currentItem} >
         <MenuItem data={tool} onClick={this.handleRemoveClick}>
-          {t('Remove {{name}}', { name: tool.name })}
+          {t('Remove {{name}}', { replace: { name: tool.name } })}
         </MenuItem>
         <MenuItem data={tool} onClick={this.handleChangeSettingsClick}>
-          {t('Change {{name}} settings', { name: tool.name })}
+          {t('Change {{name}} settings', { replace: { name: tool.name } })}
         </MenuItem>
         <MenuItem divider onClick={this.nop} />
         <MenuItem data={tool} onClick={this.handleAddClick}>
@@ -98,7 +98,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
           disabled={!discovery}
           onClick={this.runCustomTool}
         >
-          {t('Launch {{name}}', { name: tool.name })}
+          {t('Launch {{name}}', { replace: { name: tool.name } })}
         </MenuItem>
       </ContextMenu>
     );
