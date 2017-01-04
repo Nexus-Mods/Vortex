@@ -38,3 +38,27 @@ export const VERSION: IModAttribute = {
   isReadOnly: false,
   isSortable: true,
 };
+
+export const CATEGORY: IModAttribute = {
+  id: 'category',
+  name: 'Category',
+  description: 'Category',
+  icon: 'book',
+  calc: (attributes) => attributes.category,
+  isDetail: false,
+  isToggleable: true,
+  isReadOnly: false,
+  isSortable: true,
+};
+
+export const CATEGORY_DETAIL: IModAttribute = {
+  id: 'category_detail',
+  name: 'Category Detail',
+  description: 'Category Detail',
+  icon: 'book',
+  calc: (attributes) => attributes.category_detail,
+  isDetail: true,
+  isToggleable: false,
+  isReadOnly: false,
+  isSortable: true,
+};

@@ -62,7 +62,7 @@ export function retriveCategoryList(
       )
       .catch((err) => {
         log('error', 'An error occurred retrieving the Game Info', { err: err.message });
-        throw err;
+        reject(err.message);
       });
   });
 }
