@@ -45,7 +45,7 @@ export interface IExtensibleProps {
  */
 export function extend(registerFunc: Function) {
   if (process.type === 'renderer') {
-    let ExtensionManagerImpl: typeof ExtensionManager = require('./ExtensionManager');
+    const ExtensionManagerImpl: typeof ExtensionManager = require('./ExtensionManager').default;
     ExtensionManagerImpl.registerUIAPI(registerFunc.name);
   }
   return <P, S>(ComponentToWrap: React.ComponentClass<P>): any => {

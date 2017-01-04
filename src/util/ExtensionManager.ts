@@ -1,22 +1,5 @@
 import { addNotification, dismissNotification } from '../actions/notifications';
 
-import initAboutDialog from '../extensions/about_dialog/index';
-import initCategoryManagement from '../extensions/category_management/index';
-import initDownloadManagement from '../extensions/download_management/index';
-import initGamemodeManagement from '../extensions/gamemode_management/index';
-import initHardlinkActivator from '../extensions/hardlink_activator/index';
-import initInstallerFomod from '../extensions/installer_fomod/index';
-import initModManagement from '../extensions/mod_management/index';
-import initNexusIntegration from '../extensions/nexus_integration/index';
-import initNutsLocal from '../extensions/nuts_local/index';
-import initProfileManagement from '../extensions/profile_management/index';
-import initSettingsInterface from '../extensions/settings_interface/index';
-import initSettingsMetaserver from '../extensions/settings_metaserver/index';
-import initSymlinkActivator from '../extensions/symlink_activator/index';
-import initSymlinkActivatorElevate from '../extensions/symlink_activator_elevate/index';
-import initSettingsUpdate from '../extensions/updater/index';
-import initWelcomeScreen from '../extensions/welcome_screen/index';
-
 import { IExtensionInit } from '../types/Extension';
 import { IExtensionApi, IExtensionContext, ILookupDetails,
          IOpenOptions, IStateChangeCallback } from '../types/IExtensionContext';
@@ -86,7 +69,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       get(target, key: PropertyKey): any {
         return (...args) => {
           that.mInitCalls.push({
-            extension: this.mCurrentExtension,
+            extension: that.mCurrentExtension,
             key: key.toString(),
             arguments: args,
             optional: true,
@@ -572,31 +555,33 @@ class ExtensionManager {
    * @returns {IExtensionInit[]}
    */
   private loadExtensions(): IRegisteredExtension[] {
+    let staticExtensions = [
+      'settings_interface',
+      'settings_metaserver',
+      'about_dialog',
+      'welcome_screen',
+      'mod_management',
+      'category_management',
+      'profile_management',
+      'nexus_integration',
+      'download_management',
+      'gamemode_management',
+      'nuts_local',
+      'symlink_activator',
+      'symlink_activator_elevate',
+      'hardlink_activator',
+      'updater',
+      'installer_fomod',
+    ];
+
     const bundledPath = path.resolve(__dirname, '..', 'bundledPlugins');
     log('info', 'bundle at', bundledPath);
     const extensionsPath = path.join(app.getPath('userData'), 'plugins');
-    return [
-      { name: 'settings_interface', initFunc: initSettingsInterface },
-      { name: 'settings_update', initFunc: initSettingsUpdate },
-      { name: 'about_dialog', initFunc: initAboutDialog },
-      { name: 'welcome_screen', initFunc: initWelcomeScreen },
-      { name: 'mod_management', initFunc: initModManagement },
-      { name: 'category_management', initFunc: initCategoryManagement },
-      { name: 'profile_management', initFunc: initProfileManagement },
-      { name: 'nexus_integration', initFunc: initNexusIntegration },
-      { name: 'download_management', initFunc: initDownloadManagement },
-      { name: 'gamemode_management', initFunc: initGamemodeManagement },
-      { name: 'nuts_local', initFunc: initNutsLocal },
-      { name: 'symlink_activator', initFunc: initSymlinkActivator },
-      { name: 'symlink_activator_elevate', initFunc: initSymlinkActivatorElevate },
-      { name: 'hardlink_activator', initFunc: initHardlinkActivator },
-      { name: 'installer_fomod', initFunc: initInstallerFomod },
-      { name: 'settings_metaserver', initFunc: initSettingsMetaserver },
-    ]
-    .concat(this.loadDynamicExtensions(bundledPath))
-    .concat(this.loadDynamicExtensions(extensionsPath));
+    return staticExtensions.map((name: string) => ({
+      name, initFunc: require(`../extensions/${name}/index`).default,
+    })).concat(this.loadDynamicExtensions(bundledPath))
+        .concat(this.loadDynamicExtensions(extensionsPath));
   }
-
 }
 
 export default ExtensionManager;
