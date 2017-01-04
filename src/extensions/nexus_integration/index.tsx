@@ -6,7 +6,6 @@ import Settings from './views/Settings';
 
 import { retriveCategoryList } from './util/retrieveCategories';
 
-
 import { showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
@@ -105,8 +104,12 @@ function retrieveCategories(context: IExtensionContextExt, isUpdate: boolean) {
     let gameId: string = convertGameId(getSafe(context.api.store.getState(),
       ['settings', 'gameMode', 'current'], ''));
     retriveCategoryList(gameId, nexus)
-      .then((result: any) => {
+      .then((result: any, err: any) => {
         context.api.events.emit('retrieve-categories', [gameId, result, isUpdate], {});
+      })
+      .catch((err) => {
+        showError(context.api.store.dispatch,
+          'An error occurred retrieving the Game Info', err);
       });
   }
 };
