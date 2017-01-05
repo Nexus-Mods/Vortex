@@ -21,6 +21,8 @@ import {Checkbox, ControlLabel, FormControl, FormGroup, Table} from 'react-boots
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 import { createSelector } from 'reselect';
 
+import * as util from 'util';
+
 export interface IChangeDataHandler {
   (rowId: string, attributeId: string, newValue: any): void;
 }

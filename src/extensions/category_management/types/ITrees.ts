@@ -26,3 +26,20 @@ export interface IRemovedTree {
   getNodeKey: Function;
   ignoreCollapsed: boolean;
 }
+
+export interface IFindTree {
+  getNodeKey: Function;
+  treeData: {};
+  searchQuery: string | number;
+  searchMethod: Function;
+  searchFocusOffset: number;
+  expandAllMatchPaths: boolean;
+  expandFocusMatchPaths: boolean;
+}
+
+export interface IGetNodeTree {
+  treeData: {};
+  path: number[]|string[];
+  getNodeKey: Function;
+  ignoreCollapsed: boolean;
+}

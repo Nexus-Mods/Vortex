@@ -7,6 +7,28 @@ import CategoryList from './views/CategoryList';
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import { getSafe } from '../../util/storeHelper';
+
+function convertGameId(input: string): string {
+  if (input === 'skyrimse') {
+    return 'skyrimspecialedition';
+  } else {
+    return input;
+  }
+}
+
+function retrieveCategoryPath(category: number, store: Redux.Store<any>, categoryPath: string) {
+
+  // TODO LUCO: searches for category 217 until we can retrieve the actual category
+  category = 217;
+
+  let gameId: string = convertGameId(getSafe(store.getState(),
+    ['settings', 'gameMode', 'current'], ''));
+
+  let categories: any = getSafe(store.getState(), ['persistent', 'categories', gameId], '');
+  // TODO LUCO: add the logic
+  return 'EMPTY PATH';
+}
 
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('book', 'Categories', CategoryList, {
@@ -15,6 +37,30 @@ function init(context: IExtensionContext): boolean {
 
   context.registerReducer(['persistent', 'categories'], categoryReducer);
   context.registerReducer(['session', 'categories'], sessionReducer);
+
+  context.optional.registerModAttribute({
+    id: 'category',
+    name: 'Category',
+    description: 'Category',
+    icon: 'book',
+    calc: (attributes) => attributes.category,
+    isDetail: false,
+    isToggleable: true,
+    isReadOnly: false,
+    isSortable: true,
+  });
+
+  context.optional.registerModAttribute({
+    id: 'category_detail',
+    name: 'Category Detail',
+    description: 'Category Detail',
+    icon: 'book',
+    calc: (attributes) => retrieveCategoryPath(attributes.category, context.api.store, null),
+    isDetail: true,
+    isToggleable: false,
+    isReadOnly: false,
+    isSortable: true,
+  });
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;

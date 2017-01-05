@@ -12,23 +12,6 @@ interface IOnAddMod {
   (mod: IMod): void;
 }
 
-interface IFindTree {
-  getNodeKey: Function;
-  treeData: {};
-  searchQuery: string | number;
-  searchMethod: Function;
-  searchFocusOffset: number;
-  expandAllMatchPaths: boolean;
-  expandFocusMatchPaths: boolean;
-}
-
-interface IGetNodeTree {
-  treeData: {};
-  path: number[]|string[];
-  getNodeKey: Function;
-  ignoreCollapsed: boolean;
-}
-
 interface IOnAddNotification {
   (notification: INotification): void;
 }
@@ -80,7 +63,7 @@ class InstallContext implements IInstallContext {
     });
   }
 
-  public finishInstallCB(id: string, success: boolean, treeDataObject?: any, info?: any): void {
+  public finishInstallCB(id: string, success: boolean, info?: any): void {
     this.mDismissNotification('install_' + id);
 
     if (success) {
@@ -91,43 +74,6 @@ class InstallContext implements IInstallContext {
       });
       this.mSetModState(id, 'installed');
       this.mSetModAttribute(id, 'installTime', new Date());
-
-      let treeFunctions = require('react-sortable-tree');
-      try {
-        let newTree: IFindTree = {
-          getNodeKey: treeFunctions.defaultGetNodeKey,
-          treeData: treeDataObject,
-          searchQuery: 30,
-          searchMethod: treeFunctions.defaultSearchMethod,
-          searchFocusOffset: 0,
-          expandAllMatchPaths: false,
-          expandFocusMatchPaths: true,
-        };
-
-        let result = treeFunctions.find(newTree);
-        let res: string = '';
-        let pathList: string[] = [];
-
-        result.matches[0].path.forEach(element => {
-          pathList.push(element);
-          let getNodeTree: IGetNodeTree = {
-            treeData: treeDataObject,
-            path: pathList,
-            getNodeKey: treeFunctions.defaultGetNodeKey,
-            ignoreCollapsed: true,
-          };
-          let tree = treeFunctions.getNodeAtPath(getNodeTree);
-          if (res === '') {
-            res = tree.node.title;
-          } else {
-            res = res + ' --> ' + tree.node.title;
-          }
-        });
-
-        this.mSetModAttribute(id, 'category_detail', res);
-      } catch (err) {
-        log('error', 'Error finding the category path', err);
-      }
 
       if (info !== undefined) {
         Object.keys(info).forEach(

@@ -17,6 +17,7 @@ interface IChildren {
   rootId: number;
   title: string;
   expanded: boolean;
+  parentId: number;
 }
 
 interface ICategoryTree {
@@ -24,6 +25,7 @@ interface ICategoryTree {
   title: string;
   expanded: boolean;
   children: IChildren[];
+  parentId: number;
 }
 
 export function retriveCategoryList(
@@ -34,7 +36,6 @@ export function retriveCategoryList(
     let categoryList = [];
     nexus.getGameInfo(activeGameId)
       .then((gameInfo: IGameInfo) => {
-
         let roots = gameInfo.categories.filter((value) => value.parent_category === false);
         roots.forEach(rootElement => {
           let children: ICategory[] = gameInfo.categories.filter((value) =>
@@ -44,7 +45,9 @@ export function retriveCategoryList(
           children.forEach(element => {
             let child: IChildren = {
               rootId: element.category_id,
-              title: element.name, expanded: false,
+              title: element.name,
+              expanded: false,
+              parentId: rootElement.category_id,
             };
             childrenList.push(child);
           });
@@ -53,6 +56,7 @@ export function retriveCategoryList(
             rootId: rootElement.category_id,
             title: rootElement.name,
             expanded: false,
+            parentId: 0,
             children: childrenList,
           };
           categoryList.push(root);
@@ -62,7 +66,7 @@ export function retriveCategoryList(
       )
       .catch((err) => {
         log('error', 'An error occurred retrieving the Game Info', { err: err.message });
-        reject(err.message);
+        reject(err);
       });
   });
 }
