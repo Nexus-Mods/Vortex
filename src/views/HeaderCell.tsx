@@ -8,8 +8,6 @@ import SortIndicator from './SortIndicator';
 
 import * as React from 'react';
 
-import {log} from '../util/log';
-
 export interface IHeaderProps {
   attribute: ITableAttribute;
   state: IAttributeState;

@@ -4,6 +4,22 @@
 
 import 'source-map-support/register';
 
+import * as ReactDOM from 'react-dom';
+
+if (process.env.NODE_ENV === 'production') {
+  // TODO the following hacks should, supposedly increase react
+  //  performance by avoiding unnecessary "if (process.env.NODE_ENV === )" 
+  //  calls and speeding up the rest by turning process.env into a static
+  //  object.
+  //  I have not yet made any benchmarks to verify that
+  // tslint:disable-next-line:no-var-requires
+  require('react/dist/react.min.js');
+  require.cache[require.resolve('react')] =
+    require.cache[require.resolve('react/dist/react.min.js')];
+
+  process.env = JSON.parse(JSON.stringify(process.env));
+}
+
 import reducer from './reducers/index';
 import { ITermination, terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
@@ -22,7 +38,6 @@ import { ipcRenderer } from 'electron';
 import { EventEmitter } from 'events';
 import { changeLanguage } from 'i18next';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { Store, applyMiddleware, compose, createStore } from 'redux';

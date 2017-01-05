@@ -1,7 +1,7 @@
-import { ComponentEx, connect } from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';
 import * as React from 'react';
 import { ProgressBar } from 'react-bootstrap';
+import { connect } from 'react-redux';
 
 interface IDiscoveryState {
   running: boolean;
@@ -15,26 +15,24 @@ interface IConnectedProps {
 
 type IProps = IConnectedProps;
 
-class ProgressFooter extends ComponentEx<IProps, {}> {
-  public render(): JSX.Element {
-    const { discovery } = this.props;
+const ProgressFooter = (props: IProps) => {
+  const { discovery } = this.props;
 
-    return discovery.running ? (
-      <div style={{ display: 'inline', marginLeft: 5, marginRight: 5 }}>
+  return discovery.running ? (
+    <div style={{ display: 'inline', marginLeft: 5, marginRight: 5 }}>
       <Icon name='search' />
       <div className='progress-container'>
-      <ProgressBar
-        active={true}
-        min={0}
-        max={100}
-        now={discovery.progress}
-        className='progress-embed'
-      />
+        <ProgressBar
+          active={true}
+          min={0}
+          max={100}
+          now={discovery.progress}
+          className='progress-embed'
+        />
       </div>
-      </div>
-    ) : null;
-  }
-}
+    </div>
+  ) : null;
+};
 
 function mapStateToProps(state: any): IConnectedProps {
   return {

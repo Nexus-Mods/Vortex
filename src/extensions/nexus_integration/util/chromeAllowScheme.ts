@@ -6,7 +6,6 @@ import * as path from 'path';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 
-
 const app = appIn || remote.app;
 
 /**

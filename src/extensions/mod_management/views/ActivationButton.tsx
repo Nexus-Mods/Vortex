@@ -1,5 +1,4 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import {log} from '../../../util/log';
 import { showError } from '../../../util/message';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
@@ -59,7 +58,7 @@ class ActivationButton extends ComponentEx<IProps, {}> {
       type: 'activity',
       message: t('Activating mods'),
       title: t('Activating'),
-    })
+    });
     activateMods(gameDiscovery.modPath, modList, modState, activator)
     .catch((err) => {
       onShowError('failed to activate mods', err.message);

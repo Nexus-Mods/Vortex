@@ -1,5 +1,4 @@
 import { showDialog } from '../../../actions/notifications';
-import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IIconDefinition } from '../../../types/IIconDefinition';
 import getAttr from '../../../util/getAttr';
@@ -38,12 +37,6 @@ interface IActionProps {
 type IProps = IBaseProps & IActionProps;
 
 class ModRow extends React.Component<IProps, {}> {
-  public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
-  };
-
-  public context: IComponentContext;
-
   private modActions: IIconDefinition[];
 
   constructor(props) {

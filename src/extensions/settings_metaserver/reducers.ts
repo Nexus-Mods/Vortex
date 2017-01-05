@@ -3,8 +3,6 @@ import {deleteOrNop, setSafe} from '../../util/storeHelper';
 
 import * as actions from './actions';
 
-import {log} from '../../util/log';
-
 /**
  * reducer for changes to interface settings
  */
@@ -33,4 +31,3 @@ const settingsReducer: IReducerSpec = {
 };
 
 export default settingsReducer;
-

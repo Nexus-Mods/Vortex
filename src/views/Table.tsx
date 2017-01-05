@@ -2,7 +2,7 @@ import {selectRows, setAttributeSort, setAttributeVisible} from '../actions/tabl
 
 import {IAttributeState} from '../types/IAttributeState';
 import {IIconDefinition} from '../types/IIconDefinition';
-import {IState, ITableState, ITableStates} from '../types/IState';
+import {IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
@@ -110,7 +110,7 @@ interface IBaseProps {
 }
 
 interface IConnectedProps {
-  tableStates: ITableStates;
+  tableState: ITableState;
   language: string;
 }
 
@@ -146,10 +146,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, objects, data, language } = this.props;
+    const { t, objects, data, language, tableState } = this.props;
     const { lastSelected } = this.state;
-
-    const tableState = this.tableState();
 
     const visibleAttributes: ITableAttribute[] =
       this.visibleAttributes(objects, tableState.attributes);
@@ -277,13 +275,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private tableState(): ITableState {
-    return getSafe(this.props.tableStates, [this.props.tableId], {
-      attributes: {},
-      rows: {},
-    });
-  }
-
   private renderDetails = (rowId: string) => {
     if (rowId === undefined) {
       return null;
@@ -307,8 +298,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   };
 
   private renderSelectionActions(): JSX.Element {
-    const {t} = this.props;
-    const tableState = this.tableState();
+    const {t, tableState} = this.props;
     let selectedCount = countIf(Object.keys(tableState),
       (val: string) => tableState[val].selected);
 
@@ -333,8 +323,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderAttributeToggle = (attr: ITableAttribute) => {
-    const { t } = this.props;
-    const tableState = this.tableState();
+    const { t, tableState } = this.props;
 
     let attributeState = getSafe<IAttributeState>(tableState, ['attributes', attr.id],
       { enabled: true, sortDirection: 'none' });
@@ -358,8 +347,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private selectRow = (evt: React.MouseEvent<any>) => {
     const row = (evt.currentTarget as HTMLTableRowElement);
 
-    const {onSelectRows, tableId} = this.props;
-    const tableState = this.tableState();
+    const {onSelectRows, tableId, tableState} = this.props;
 
     const rows = getSafe(tableState, ['rows'], {});
 
@@ -401,8 +389,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   };
 
   private renderRow(data: any, visibleAttributes: ITableAttribute[]): JSX.Element {
-    const { t, rowActions, language, onChangeData, tableId } = this.props;
-    const tableState = this.tableState();
+    const { t, rowActions, language, onChangeData, tableId, tableState } = this.props;
     return (
       <TableRow
         t={t}
@@ -433,8 +420,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderHeaderField = (attribute: ITableAttribute): JSX.Element => {
-    const { t } = this.props;
-    const tableState = this.tableState();
+    const { t, tableState } = this.props;
 
     if (getSafe(tableState, [attribute.id, 'enabled'], true)) {
       return (
@@ -452,8 +438,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private setSortDirection = (id: string, direction: SortDirection) => {
-    const { onSetAttributeSort, tableId } = this.props;
-    const tableState = this.tableState();
+    const { onSetAttributeSort, tableId, tableState } = this.props;
 
     // reset all other columns because we can't really support multisort with this ui
     for (let testId of Object.keys(tableState)) {
@@ -466,9 +451,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedProps {
   return {
-    tableStates: state.persistent.tables,
+    tableState: state.persistent.tables[ownProps.tableId],
     language: state.settings.interface.language,
   };
 }

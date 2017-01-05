@@ -1,6 +1,6 @@
 import { ITableAttribute } from '../../types/ITableAttribute';
 
-import { DownloadState, IDownload } from './types/IDownload';
+import { IDownload } from './types/IDownload';
 
 import * as React from 'react';
 import {ProgressBar} from 'react-bootstrap';
@@ -46,4 +46,4 @@ export const PROGRESS: ITableAttribute = {
   isToggleable: true,
   isReadOnly: true,
   isSortable: true,
-}
+};

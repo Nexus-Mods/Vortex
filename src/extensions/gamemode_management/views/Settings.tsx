@@ -65,11 +65,6 @@ interface IActionProps {
  * @extends {(ComponentEx<IActionProps & IConnectedProps, {}>)}
  */
 class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
-
-  public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
-  };
-
   public context: IComponentContext;
 
   public render(): JSX.Element {

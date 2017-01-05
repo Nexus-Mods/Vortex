@@ -29,11 +29,9 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
   }
 
   private renderSortIndicator(direction: types.SortDirection, attributeId: string) {
-
-      return (
-        <SortIndicator direction={direction} onSetDirection={this.setDirection} />
-      );
-
+    return (
+      <SortIndicator direction={direction} onSetDirection={this.setDirection} />
+    );
   }
 
   private setDirection = (dir: types.SortDirection) => {

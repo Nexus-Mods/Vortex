@@ -1,6 +1,4 @@
 import { IModActivator } from '../types/IModActivator';
-import { IStatePaths } from '../types/IStateSettings';
-import resolvePath from '../util/resolvePath';
 
 /**
  * return only those activators that are supported based on the current state

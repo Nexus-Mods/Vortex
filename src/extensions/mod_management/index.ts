@@ -27,8 +27,6 @@ import {downloadPath, installPath} from './selectors';
 
 import * as path from 'path';
 
-import {log} from '../../util/log';
-
 let activators: IModActivator[] = [];
 
 let installManager: InstallManager;

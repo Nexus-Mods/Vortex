@@ -19,7 +19,7 @@ export interface IRegisterSettings {
 
 export interface IRegisterIcon {
   (group: string,
-   icon: string | React.ComponentClass<any>,
+   icon: string | React.ComponentClass<any> | React.StatelessComponent<any>,
    title?: string | PropsCallback,
    action?: () => void): void;
 }

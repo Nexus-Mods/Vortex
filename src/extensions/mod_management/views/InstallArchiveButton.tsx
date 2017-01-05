@@ -1,4 +1,3 @@
-import { IComponentContext } from '../../../types/IComponentContext';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 
 import ToolbarIcon from '../../../views/ToolbarIcon';
@@ -16,12 +15,6 @@ interface IConnectedProps {
 }
 
 class InstallButton extends ComponentEx<IConnectedProps, {}> {
-  public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
-  };
-
-  public context: IComponentContext;
-
   public render(): JSX.Element {
     let { t } = this.props;
 
