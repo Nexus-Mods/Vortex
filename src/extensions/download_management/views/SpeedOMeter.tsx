@@ -12,7 +12,7 @@ type IProps = IConnectedProps;
 const labels = [ 'B', 'K', 'M', 'G', 'T' ];
 
 const SpeedOMeter = (props: IProps) => {
-  let { speed } = this.props;
+  let { speed } = props;
   let labelIdx = 0;
   while (speed > 1024) {
     ++labelIdx;

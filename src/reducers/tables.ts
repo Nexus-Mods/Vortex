@@ -1,10 +1,7 @@
 import * as actions from '../actions/tables';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import { mutateSafe, setSafe } from '../util/storeHelper';
-
-import {log} from '../util/log';
-import * as util from 'util';
+import { setSafe } from '../util/storeHelper';
 
 /**
  * reducer for changes to the window state
@@ -12,11 +9,10 @@ import * as util from 'util';
 export const tableReducer: IReducerSpec = {
   reducers: {
     [actions.selectRows]: (state, payload) => {
-      log('info', 'select rows', util.inspect(payload));
       const { tableId, rowIds, selected } = payload;
-      let copy = Object.assign({}, state);
+      let copy = state;
       rowIds.forEach((id: string) => {
-        mutateSafe(copy, [tableId, 'rows', id, 'selected'], selected);
+        copy = setSafe(copy, [tableId, 'rows', id, 'selected'], selected);
       });
 
       return copy;

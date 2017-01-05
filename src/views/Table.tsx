@@ -15,11 +15,12 @@ import AttributeToggle from './AttributeToggle';
 import HeaderCell from './HeaderCell';
 import IconBar from './IconBar';
 
+import * as _ from 'lodash';
 import * as React from 'react';
 import {Checkbox, ControlLabel, FormControl, FormGroup, Table} from 'react-bootstrap';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 
-interface IChangeDataHandler {
+export interface IChangeDataHandler {
   (rowId: string, attributeId: string, newValue: any): void;
 }
 
@@ -101,7 +102,7 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 }
 
-interface IBaseProps {
+export interface IBaseProps {
   tableId: string;
   data: { [rowId: string]: any };
   rowActions: IIconDefinition[];
@@ -299,8 +300,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private renderSelectionActions(): JSX.Element {
     const {t, tableState} = this.props;
-    let selectedCount = countIf(Object.keys(tableState),
-      (val: string) => tableState[val].selected);
+    let selectedCount = countIf(Object.keys(tableState.rows),
+      (val: string) => tableState.rows[val].selected);
 
     if (selectedCount === 0) {
       return null;
@@ -370,12 +371,17 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
       this.sortedRows(tableState, visibleAttributes, data, language)
       .forEach((iterRow: any) => {
-        if (selecting) {
-          selection.add(iterRow.__id);
+        let isBracket = (iterRow.__id === row.id) || (iterRow.__id === this.state.lastSelected);
+        if (!selecting && isBracket) {
+          selecting = true;
+          isBracket = false;
         }
 
-        if ((iterRow.__id === row.id) || (iterRow.__id === this.state.lastSelected)) {
-          selecting = !selecting;
+        if (selecting) {
+          selection.add(iterRow.__id);
+          if (isBracket) {
+            selecting = false;
+          }
         }
       });
       onSelectRows(tableId, Object.keys(rows), false);

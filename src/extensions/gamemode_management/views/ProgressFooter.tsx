@@ -16,7 +16,7 @@ interface IConnectedProps {
 type IProps = IConnectedProps;
 
 const ProgressFooter = (props: IProps) => {
-  const { discovery } = this.props;
+  const { discovery } = props;
 
   return discovery.running ? (
     <div style={{ display: 'inline', marginLeft: 5, marginRight: 5 }}>

@@ -1,16 +1,21 @@
 import resolvePath from './util/resolvePath';
 
-// import { remote } from 'electron';
-// import { createSelector } from 'reselect';
+import { createSelector } from 'reselect';
 
-export const basePath = (state) => {
-  return resolvePath('base', state.gameSettings.mods.paths, state.settings.gameMode.current);
-};
+const paths = (state) => state.gameSettings.mods.paths;
+const gameMode = (state) => state.settings.gameMode.current;
 
-export const downloadPath = (state) => {
-  return resolvePath('download', state.gameSettings.mods.paths, state.settings.gameMode.current);
-};
+export const basePath =
+  createSelector(paths, gameMode, (inPaths, inGameMode) => {
+    return resolvePath('base', inPaths, inGameMode);
+  });
 
-export const installPath = (state) => {
-  return resolvePath('install', state.gameSettings.mods.paths, state.settings.gameMode.current);
-};
+export const downloadPath =
+    createSelector(paths, gameMode, (inPaths, inGameMode) => {
+      return resolvePath('download', inPaths, inGameMode);
+    });
+
+export const installPath =
+    createSelector(paths, gameMode, (inPaths, inGameMode) => {
+      return resolvePath('install', inPaths, inGameMode);
+    });

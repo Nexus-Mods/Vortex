@@ -1,6 +1,6 @@
 /**
  * Manages profiles
- * 
+ *
  * New API:
  *  registerProfileFile(gameId: string, filePath: string) - registers a file to be
  *    included in the profile so it gets stored in the profile and switched when the
@@ -32,8 +32,6 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-
-import {log} from '../../util/log';
 
 let profileFiles: { [gameId: string]: string[] } = {};
 
@@ -95,7 +93,7 @@ function refreshProfile(store: Redux.Store<any>, direction: 'import' | 'export')
       ;
 }
 
-interface IExtensionContextExt extends IExtensionContext {
+export interface IExtensionContextExt extends IExtensionContext {
   registerProfileFile: (gameId: string, filePath: string) => void;
 }
 
@@ -106,34 +104,32 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['gameSettings', 'profiles'], profilesReducer);
 
   context.registerProfileFile = (gameId: string, filePath: string) => {
-      if (profileFiles[gameId] === undefined) {
-        profileFiles[gameId] = [];
-      }
-      profileFiles[gameId].push(filePath);
+    if (profileFiles[gameId] === undefined) {
+      profileFiles[gameId] = [];
+    }
+    profileFiles[gameId].push(filePath);
   };
 
   // ensure the current profile is always set to a valid value on startup and
   // when changing the game mode 
   context.once(() => {
     let store = context.api.store;
-    let lastGame = currentGameId(store.getState());
+    let lastGame = undefined;
 
-    context.api.onStateChange(['settings', 'gameMode', 'current'],
-      (prev: string, current: string) => {
-        // when the game changes it's assumed that the "global" files are associated
-        // with the active profile because you can't change the profile without
-        // activating the game first
-        return refreshProfile(store, 'import');
-      });
+    context.api.events.on('gamemode-activated', (gameMode: string) => {
+      // when the game changes it's assumed that the "global" files are
+      // associated with the active profile because you can't change the
+      // profile without activating the game first
+      return refreshProfile(store, 'import');
+    });
 
     context.api.onStateChange(['gameSettings', 'profiles', 'currentProfile'],
       (prev: string, current: string) => {
-        log('info', 'profile changed', {prev, current});
         let newGame = currentGameId(store.getState());
         // if the game mode has changed, don't trigger the profile refresh here
         // because that already happened in the previous state change handler
         if (lastGame === newGame) {
-          // changing the profile means 
+          // same game, different profile.
           refreshProfile(store, 'export');
         } else {
           lastGame = newGame;

@@ -46,11 +46,11 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
     });
 }
 
-interface IProtocolHandler {
+export interface IProtocolHandler {
   (inputUrl: string): Promise<string[]>;
 }
 
-interface IExtensionContextExt extends IExtensionContext {
+export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (schema: string, handler: IProtocolHandler) => void;
 }
 
