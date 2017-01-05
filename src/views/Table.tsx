@@ -20,6 +20,8 @@ import * as React from 'react';
 import {Checkbox, ControlLabel, FormControl, FormGroup, Table} from 'react-bootstrap';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 
+import * as util from 'util';
+
 export interface IChangeDataHandler {
   (rowId: string, attributeId: string, newValue: any): void;
 }

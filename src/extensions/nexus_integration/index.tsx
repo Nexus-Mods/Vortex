@@ -26,7 +26,7 @@ export interface IExtensionContextExt extends IExtensionContext {
 }
 
 function convertGameId(input: string): string {
-  if (input === 'SkyrimSE') {
+  if (input === 'skyrimse') {
     return 'skyrimspecialedition';
   } else {
     return input;
@@ -79,7 +79,6 @@ function startDownload(api: IExtensionApi, nxmurl: string) {
 }
 
 function retrieveCategories(context: IExtensionContextExt, isUpdate: boolean) {
-
   if (isUpdate !== false) {
     context.api.store.dispatch(
       showDialog('question', 'Retrieve Categories', {
@@ -95,8 +94,9 @@ function retrieveCategories(context: IExtensionContextExt, isUpdate: boolean) {
                 context.api.events.emit('retrieve-categories', [gameId, result, isUpdate], {});
               })
               .catch((err) => {
+                let message = processErrorMessage(err.statusCode, err.errorMessage, gameId);
                 showError(context.api.store.dispatch,
-                  'An error occurred retrieving the Game Info', err);
+                  'An error occurred retrieving the Game Info', message);
               });
           },
         }));
@@ -108,11 +108,23 @@ function retrieveCategories(context: IExtensionContextExt, isUpdate: boolean) {
         context.api.events.emit('retrieve-categories', [gameId, result, isUpdate], {});
       })
       .catch((err) => {
+        let message = processErrorMessage(err.statusCode, err.errorMessage, gameId);
         showError(context.api.store.dispatch,
-          'An error occurred retrieving the Game Info', err);
+          'An error occurred retrieving the Game Info', message);
       });
   }
 };
+
+function processErrorMessage(statusCode: number, errorMessage: string,  gameId: string) {
+  let message = '';
+  if (statusCode === 404) {
+    return message = 'Game not found: ' + gameId;
+  } else if (statusCode[0] === '5' ) {
+    return message = 'Internal server error';
+  } else {
+    return message = 'Unknown error, server reported ' + errorMessage;
+  }
+}
 
 function init(context: IExtensionContextExt): boolean {
   context.registerFooter('login', LoginIcon, () => ({ nexus }));

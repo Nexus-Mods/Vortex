@@ -114,11 +114,7 @@ class InstallManager {
         })
         .then(() => {
           const filteredInfo = filterModInfo(fullInfo);
-          const state = context.api.store.getState();
-          let gameMode = state.settings.gameMode.current;
-          let treeDataObject: any = state.persistent.categories[gameMode].gameCategories;
-
-          installContext.finishInstallCB(baseName, true, treeDataObject, filteredInfo);
+          installContext.finishInstallCB(baseName, true, filteredInfo);
           if (processDependencies) {
             this.installDependencies(filteredInfo.rules, this.mGetInstallPath(),
                                      installContext, context);

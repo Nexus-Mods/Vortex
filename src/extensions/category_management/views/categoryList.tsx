@@ -234,7 +234,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       });
   }
 
-  private addCategory = ({ path }) => {
+  private addCategory = ({ node, path }) => {
     const {gameMode, onShowDialog, onShowError, onUpdateCategories,
        onSetTreeDataObject, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
@@ -249,9 +249,12 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
         addCategory = result.action === 'Add' && result.input.value !== undefined;
         if (addCategory) {
           try {
+            let randomRootId = this.randomCategoryId(1, 999);
+
             let newTree: IAddedTree = {
                 treeData: treeDataObject,
-                newNode: { title: result.input.value, expanded: true },
+                newNode: { rootId: randomRootId, title: result.input.value,
+                   expanded: true, parentId: node.rootId },
                 parentKey: path[1] === undefined ? path[0] : path[1],
                 getNodeKey: treeFunctions.defaultGetNodeKey,
                 ignoreCollapsed: true,
@@ -269,6 +272,23 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       });
   }
 
+  private randomCategoryId (min, max) {
+    const { categories, gameMode } = this.props;
+    if (categories[gameMode] !== undefined) {
+      let rootId = Math.floor(Math.random() * (max - min + 1)) + min;
+      let checkRootId: string = undefined;
+      let gameCategories = categories[gameMode].gameCategories;
+
+      checkRootId = gameCategories.find((ele) => ele.rootId === rootId);
+
+      if (checkRootId !== undefined) {
+        this.randomCategoryId(min, max);
+      } else {
+        return rootId;
+      }
+    }
+  }
+
   private addRootCategory = () => {
     const {gameMode, onShowDialog, onShowError, onUpdateCategories,
        onSetTreeDataObject, treeDataObject} = this.props;
@@ -284,9 +304,12 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
         addCategory = result.action === 'Add' && result.input.value !== undefined;
         if (addCategory) {
           try {
+            let randomRootId = this.randomCategoryId(1, 999);
+
             let newTree: IAddedTree = {
                 treeData: treeDataObject,
-                newNode: { title: result.input.value, expanded: true },
+                newNode: { rootId: randomRootId, title: result.input.value,
+                   expanded: true, parentId: 0 },
                 parentKey: undefined,
                 getNodeKey: treeFunctions.defaultGetNodeKey,
                 ignoreCollapsed: false,
