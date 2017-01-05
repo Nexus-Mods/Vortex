@@ -1,6 +1,8 @@
 import {log} from '../../util/log';
 import {showError} from '../../util/message';
 
+import {downloadPath} from '../mod_management/selectors';
+
 import {
   downloadProgress,
   finishDownload,
@@ -145,7 +147,7 @@ export class DownloadObserver {
     if (download.localPath !== undefined) {
       log('debug', 'will delete', {path: download.localPath});
       this.mStore.dispatch(removeDownload(downloadId));
-      fs.removeAsync(download.localPath);
+      fs.removeAsync(path.join(downloadPath(this.mStore.getState()), download.localPath));
     } else {
       this.mStore.dispatch(removeDownload(downloadId));
     }

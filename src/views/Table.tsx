@@ -19,6 +19,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import {Checkbox, ControlLabel, FormControl, FormGroup, Table} from 'react-bootstrap';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
+import { createSelector } from 'reselect';
 
 export interface IChangeDataHandler {
   (rowId: string, attributeId: string, newValue: any): void;
@@ -106,6 +107,7 @@ export interface IBaseProps {
   tableId: string;
   data: { [rowId: string]: any };
   rowActions: IIconDefinition[];
+  multiActions?: IIconDefinition[];
 
   onChangeData: IChangeDataHandler;
 }
@@ -318,6 +320,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           className='table-actions'
           style={{ marginBottom: 5 }}
           tooltipPlacement='top'
+          staticElements={this.props.multiActions}
         />
       </div>
     );
@@ -481,6 +484,19 @@ function registerTableAttribute(instance: SuperTable, group: string, attribute: 
   } else {
     return undefined;
   }
+}
+
+function getTableState(state: IState, tableId: string) {
+  return state.persistent.tables[tableId];
+}
+
+export function makeGetSelection(tableId: string) {
+  const getTableStateInst = (state: any) => getTableState(state, tableId);
+  return createSelector(getTableStateInst, (tableState: ITableState) => {
+    return Object.keys(tableState.rows).filter((rowId: string) => (
+      tableState.rows[rowId].selected
+    ));
+  });
 }
 
 export default

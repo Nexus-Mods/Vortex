@@ -333,7 +333,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ],
     }, {
         Cancel: null,
-        Confirm: null,
+        Remove: null,
       }).then((result: IDialogResult) => {
         removeMods = result.action === 'Remove' && result.input.mod;
         removeArchive = result.action === 'Remove' && result.input.archive;

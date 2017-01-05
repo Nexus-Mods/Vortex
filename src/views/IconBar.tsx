@@ -42,7 +42,11 @@ class IconBar extends React.Component<IProps, {}> {
   private renderIcon = (icon: IIconDefinition, index: number) => {
     const { instanceId, tooltipPlacement } = this.props;
     // don't render anything if the condition doesn't match
-    if ((icon.condition !== undefined) && !icon.condition(instanceId)) {
+    try {
+      if ((icon.condition !== undefined) && !icon.condition(instanceId)) {
+        return null;
+      }
+    } catch (err) {
       return null;
     }
 
