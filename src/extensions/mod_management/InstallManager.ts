@@ -139,6 +139,9 @@ class InstallManager {
   private getInstaller(fileList: string[],
                        offsetIn?: number): Promise<IModInstaller> {
     let offset = offsetIn || 0;
+    if (offset >= this.mInstallers.length) {
+      return Promise.resolve(undefined);
+    }
     return this.mInstallers[offset].testSupported(fileList).then(
         (testResult: ISupportedResult) => {
           if (testResult.supported === true) {
@@ -146,6 +149,9 @@ class InstallManager {
           } else {
             return this.getInstaller(fileList, offset + 1);
           }
+        }).catch((err) => {
+          log('warn', 'failed to test installer support', err.message);
+          return this.getInstaller(fileList, offset + 1);
         });
   }
 
