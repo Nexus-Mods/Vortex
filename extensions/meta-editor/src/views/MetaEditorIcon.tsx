@@ -1,7 +1,7 @@
 import RuleEditor from './RuleEditor';
 
 import { ComponentEx, FormFeedbackAwesome, Icon,
-        log, selectors, tooltip, types,
+         log, selectors, tooltip, types,
          util } from 'nmm-api';
 
 import { ILookupResult, IModInfo, IReference,
@@ -19,7 +19,7 @@ import * as url from 'url';
 import * as nodeUtil from 'util';
 
 export interface IBaseProps {
-  downloadId: string;
+  instanceId: string;
 }
 
 interface IConnectedProps {
@@ -54,11 +54,11 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
   }
 
   public render(): JSX.Element {
-    const { t, downloadId } = this.props;
+    const { t, instanceId } = this.props;
     return (
       <tooltip.Button
         id='btn-meta-data'
-        key={downloadId}
+        key={instanceId}
         tooltip={t('View Meta Data')}
         onClick={this.open}
       >
@@ -275,15 +275,15 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
   }
 
   private initEmpty(filePath: string) {
-    const { downloadId, downloads } = this.props;
+    const { instanceId, downloads } = this.props;
     this.setDialogVisible(true, {
       modId: '',
       modName: path.basename(filePath, path.extname(filePath)),
       fileName: filePath,
-      fileSizeBytes: downloads[downloadId].size,
+      fileSizeBytes: downloads[instanceId].size,
       gameId: '',
       fileVersion: '',
-      fileMD5: downloads[downloadId].fileMD5,
+      fileMD5: downloads[instanceId].fileMD5,
       sourceURI: '',
       rules: [],
       details: {},
@@ -291,8 +291,8 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
   }
 
   private open = () => {
-    const { downloadId, downloadPath, downloads } = this.props;
-    let filePath = path.join(downloadPath, downloads[downloadId].localPath);
+    const { instanceId, downloadPath, downloads } = this.props;
+    let filePath = path.join(downloadPath, downloads[instanceId].localPath);
 
     this.context.api.sendNotification({
       id: 'meta-lookup',
@@ -301,8 +301,8 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
     });
 
     this.context.api.lookupModMeta(filePath, {
-      fileMD5: downloads[downloadId].fileMD5,
-      fileSize: downloads[downloadId].size,
+      fileMD5: downloads[instanceId].fileMD5,
+      fileSize: downloads[instanceId].size,
      })
       .then((info: ILookupResult[]) => {
         if (info.length > 0) {

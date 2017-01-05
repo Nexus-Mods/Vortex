@@ -1,5 +1,4 @@
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { log } from '../../util/log';
 import {setSafe} from '../../util/storeHelper';
 import Icon from '../../views/Icon';
 import InputButton from '../../views/InputButton';
@@ -312,4 +311,3 @@ export default
       SettingsMetaserver
     )
   );
-

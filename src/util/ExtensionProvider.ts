@@ -58,8 +58,9 @@ export function extend(registerFunc: Function) {
       private mExtensions: any[];
 
       public componentWillMount(): void {
-        this.mExtensions = this.props.staticElements || [];
-        // TODO: cache these results!
+        const { staticElements } = this.props;
+        this.mExtensions = staticElements ? staticElements.slice() : [];
+
         this.context.extensions.apply(registerFunc.name, (...args) => {
           const res = registerFunc(this, ...args);
           if (res !== undefined) {

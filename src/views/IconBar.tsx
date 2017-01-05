@@ -30,7 +30,6 @@ type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes<any>;
 class IconBar extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
-
     const { objects, className, style } = this.props;
 
     return (
@@ -40,16 +39,15 @@ class IconBar extends React.Component<IProps, {}> {
     );
   }
 
-  private renderIcon = (icon: IIconDefinition) => {
+  private renderIcon = (icon: IIconDefinition, index: number) => {
     const { instanceId, tooltipPlacement } = this.props;
     // don't render anything if the condition doesn't match
     if ((icon.condition !== undefined) && !icon.condition(instanceId)) {
       return null;
     }
 
+    let id = `${instanceId || '1'}_${index}`;
     if (icon.icon !== undefined) {
-      let id = `${instanceId || '1'}_${icon.title}`;
-
       // simple case
       return <ToolbarIcon
         key={id}
@@ -65,7 +63,7 @@ class IconBar extends React.Component<IProps, {}> {
       // passing the prop to the iconbar. the props on the iconbar that we don't handle are
       // passed on
       const knownProps = [ 'condition', 'className', 'group', 't', 'i18nLoadedAt',
-                           'instanceId', 'objects', 'children' ];
+                           'objects', 'children' ];
       const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
         if (knownProps.indexOf(current) === -1) {
           return Object.assign({}, prev, { [current]: this.props[current] });
@@ -75,7 +73,8 @@ class IconBar extends React.Component<IProps, {}> {
       }, {});
       const props = Object.assign({},
         unknownProps,
-        icon.props !== undefined ? icon.props() : {}
+        icon.props !== undefined ? icon.props() : {},
+        { key: id }
       );
       return <icon.component {...props} />;
     }

@@ -33,4 +33,3 @@ export const tableReducer: IReducerSpec = {
   defaults: {
   },
 };
-

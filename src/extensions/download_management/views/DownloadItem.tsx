@@ -1,5 +1,4 @@
 import { showDialog } from '../../../actions/notifications';
-import { IComponentContext } from '../../../types/IComponentContext';
 import { IDialogResult } from '../../../types/IDialog';
 import { IIconDefinition } from '../../../types/IIconDefinition';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -14,8 +13,6 @@ import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as React from 'react';
 import { ProgressBar } from 'react-bootstrap';
-
-import { log } from '../../../util/log';
 
 export interface IBaseProps {
   downloadId: string;
@@ -41,12 +38,6 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
  * @extends {ComponentEx<IProps, {}>}
  */
 class DownloadItem extends ComponentEx<IProps, {}> {
-
-  public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
-  };
-
-  public context: IComponentContext;
 
   private downloadActions: IIconDefinition[];
 
@@ -110,79 +101,6 @@ class DownloadItem extends ComponentEx<IProps, {}> {
         );
       }
     }
-  }
-
-  private pause = () => {
-    const { downloadId } = this.props;
-    this.context.api.events.emit('pause-download', downloadId);
-  }
-
-  private pausable = (instanceId: string) => {
-    const { download } = this.props;
-    return download.state === 'started';
-  }
-
-  private resume = () => {
-    const { downloadId } = this.props;
-    this.context.api.events.emit('resume-download', downloadId);
-  }
-
-  private resumable = () => {
-    const { download } = this.props;
-    return download.state === 'paused';
-  }
-
-  private remove = () => {
-    const { downloadId } = this.props;
-    this.context.api.events.emit('remove-download', downloadId);
-  }
-
-  private removable = () => {
-    const { download } = this.props;
-    return ['finished', 'failed'].indexOf(download.state) >= 0;
-  }
-
-  private cancelable = () => {
-    const { download } = this.props;
-    return ['init', 'started', 'paused'].indexOf(download.state) >= 0;
-  }
-
-  private install = () => {
-    const { downloadId } = this.props;
-    this.context.api.events.emit('start-install-download', downloadId);
-  }
-
-  private installable = () => {
-    const { download } = this.props;
-    return download.state === 'finished';
-  }
-
-  private inspect = () => {
-    const { download, downloadPath, downloadId, onShowDialog } = this.props;
-    if (download.state === 'failed') {
-      if (download.failCause.htmlFile !== undefined) {
-        onShowDialog('error', 'Download failed', {
-          htmlFile: download.failCause.htmlFile,
-        }, {
-            Delete: () => this.context.api.events.emit('remove-download', downloadId),
-            Close: null,
-          });
-      }
-    } else {
-      let fullPath = path.join(downloadPath, download.localPath);
-      this.context.api.lookupModMeta(fullPath, {
-        fileMD5: download.fileMD5,
-        fileSize: download.size,
-      })
-        .then((info) => {
-          log('info', 'meta', { info });
-        });
-    }
-  }
-
-  private inspectable = () => {
-    const { download } = this.props;
-    return [ 'failed', 'finished' ].indexOf(download.state) >= 0;
   }
 }
 

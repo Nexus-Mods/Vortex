@@ -67,7 +67,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   public componentWillMount() {
     this.setState(update(this.state, {
-      supportedActivators: { $set: this.supportedActivators() }
+      supportedActivators: { $set: this.supportedActivators() },
     }));
   }
 
@@ -324,7 +324,7 @@ function mapStateToProps(state: any): IConnectedProps {
     paths: state.gameSettings.mods.paths,
     gameMode: state.settings.gameMode.current,
     currentActivator: state.gameSettings.mods.activator,
-    state: state,
+    state,
   };
 }
 

@@ -19,8 +19,6 @@ import * as React from 'react';
 import {Checkbox, ControlLabel, FormControl, FormGroup, Table} from 'react-bootstrap';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 
-import * as util from 'util';
-
 interface IChangeDataHandler {
   (rowId: string, attributeId: string, newValue: any): void;
 }
@@ -40,7 +38,7 @@ interface IRowProps {
 
 class TableRow extends React.Component<IRowProps, {}> {
   public render(): JSX.Element {
-    const { attributes, data, onClick, selected, actions } = this.props;
+    const { attributes, data, onClick, selected, tableId, actions } = this.props;
 
     let classes = [];
     if (selected) {
@@ -57,7 +55,7 @@ class TableRow extends React.Component<IRowProps, {}> {
         {attributes.map(this.renderAttribute)}
         <td style={{ textAlign: 'center' }}>
           <IconBar
-            group='${tableId}-action-icons'
+            group={`${tableId}-action-icons`}
             instanceId={data.__id}
             className='table-actions'
             staticElements={actions}

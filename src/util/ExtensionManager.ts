@@ -38,7 +38,6 @@ import {} from '../extensions/symlink_activator_elevate';
 import {} from '../extensions/updater';
 import {} from '../extensions/welcome_screen';
 
-
 let app = appIn;
 let dialog = dialogIn;
 
@@ -601,7 +600,7 @@ class ExtensionManager {
     return staticExtensions.map((name: string) => ({
       name, initFunc: require(`../extensions/${name}/index`).default,
     })).concat(this.loadDynamicExtensions(bundledPath))
-        .concat(this.loadDynamicExtensions(extensionsPath));
+      .concat(this.loadDynamicExtensions(extensionsPath));
   }
 }
 
