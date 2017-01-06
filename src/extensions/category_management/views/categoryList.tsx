@@ -45,6 +45,14 @@ interface IComponentState {
 
 let TreeImpl: typeof Tree;
 
+function convertGameId(input: string): string {
+  if (input === 'skyrimse') {
+    return 'skyrimspecialedition';
+  } else {
+    return input;
+  }
+}
+
 /**
  * displays the list of savegames installed for the current game.
  * 
@@ -169,7 +177,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       );
     }
   }
-
+ 
   private toggleExpandedForAll = (event) => {
     const {gameMode, onShowError, onUpdateCategories,
        onSetTreeDataObject, treeDataObject} = this.props;
@@ -466,7 +474,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    gameMode: state.settings.gameMode.current,
+    gameMode: convertGameId(state.settings.gameMode.current),
     language: state.settings.interface.language,
     categories: state.persistent.categories,
     searchString: state.session.categories.searchString,

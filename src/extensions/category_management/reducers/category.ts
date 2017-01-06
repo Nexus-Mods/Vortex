@@ -1,7 +1,7 @@
 import { loadCategories, updateCategories } from '../actions/category';
 
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { setOrNop, setSafe } from '../../../util/storeHelper';
+import { setSafe } from '../../../util/storeHelper';
 
 /**
  * reducer for changes to ephemeral session state
@@ -9,7 +9,11 @@ import { setOrNop, setSafe } from '../../../util/storeHelper';
 export const categoryReducer: IReducerSpec = {
   reducers: {
     [loadCategories]: (state, payload) => {
-      return setOrNop(state, [payload.gameId], payload);
+      if (state[payload.gameId] === undefined) {
+        return setSafe(state, [payload.gameId], payload);
+      } else {
+        return state;
+      }
     },
     [updateCategories]: (state, payload) => {
       return setSafe(state, [payload.gameId], payload);

@@ -51,6 +51,8 @@ class InstallContext implements IInstallContext {
       attributes: {
         name: id,
         installTime: 'ongoing',
+        category: '',
+        categoryDetail: '',
       },
     };
 
@@ -74,6 +76,8 @@ class InstallContext implements IInstallContext {
       });
       this.mSetModState(id, 'installed');
       this.mSetModAttribute(id, 'installTime', new Date());
+      this.mSetModAttribute(id, 'category', info.category);
+      this.mSetModAttribute(id, 'version', info.version);
 
       if (info !== undefined) {
         Object.keys(info).forEach(

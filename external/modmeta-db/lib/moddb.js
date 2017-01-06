@@ -20,6 +20,7 @@ class ModDB {
             return {
                 key: `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
                 value: {
+                    category: nexusObj.mod.category_id,
                     fileMD5: nexusObj.file_details.md5,
                     fileName: nexusObj.file_details.file_name,
                     fileSizeBytes: nexusObj.file_details.file_size,
