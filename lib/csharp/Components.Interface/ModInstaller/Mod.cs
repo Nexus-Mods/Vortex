@@ -59,16 +59,49 @@ namespace Components.Interface
             }
         }
 
-        public List<string> GetFileList()
+        public List<string> GetFileList(string targetDirectory, bool isRecursive)
         {
             List<string> lstFiles = new List<string>();
+            IList<string> RequestedFiles;
 
-            foreach (string strFile in ModFiles)
+            if (!string.IsNullOrEmpty(targetDirectory))
+                RequestedFiles = GetFiles(targetDirectory, isRecursive);
+            else
+                RequestedFiles = ModFiles;
+
+            foreach (string strFile in RequestedFiles)
                 if (!strFile.StartsWith("fomod", StringComparison.OrdinalIgnoreCase))
                     lstFiles.Add(strFile);
 
             lstFiles.Sort(CompareOrderFoldersFirst);
             return lstFiles;
+        }
+
+        private List<string> GetFiles(string targetDirectory, bool isRecursive)
+        {
+            List<string> DirectoryFiles = new List<string>();
+
+            string PathPrefix = targetDirectory;
+            PathPrefix = PathPrefix.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            PathPrefix = PathPrefix.Trim(Path.DirectorySeparatorChar);
+            if (PathPrefix.Length > 0)
+                PathPrefix += Path.DirectorySeparatorChar;
+            int StopIndex = 0;
+            foreach (string file in ModFiles)
+            {
+                if (file.StartsWith(PathPrefix, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (!isRecursive)
+                    {
+                        StopIndex = file.IndexOf(Path.DirectorySeparatorChar, PathPrefix.Length);
+                        if (StopIndex > 0)
+                            continue;
+                    }
+                    DirectoryFiles.Add(file);
+                }
+            }
+
+            return DirectoryFiles;
         }
 
         public static int CompareOrderFoldersFirst(string x, string y)
