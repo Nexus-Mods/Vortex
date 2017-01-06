@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scripting", "InstallScripti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlScript", "InstallScripting\XmlScript\XmlScript.csproj", "{B0F526DB-967B-4A57-9EC9-2E4950E54F26}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpScript", "InstallScripting\CSharpScript\CSharpScript.csproj", "{6C3901C6-BFCA-47FC-929B-0CD030325FBD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +87,18 @@ Global
 		{B0F526DB-967B-4A57-9EC9-2E4950E54F26}.Release|x64.Build.0 = Release|Any CPU
 		{B0F526DB-967B-4A57-9EC9-2E4950E54F26}.Release|x86.ActiveCfg = Release|Any CPU
 		{B0F526DB-967B-4A57-9EC9-2E4950E54F26}.Release|x86.Build.0 = Release|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Debug|x64.Build.0 = Debug|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Debug|x86.Build.0 = Debug|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Release|x64.ActiveCfg = Release|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Release|x64.Build.0 = Release|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Release|x86.ActiveCfg = Release|Any CPU
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,5 +106,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{66DC8748-2DC2-4E6E-B645-080E0CFDC831} = {3453ABBE-7DA9-4946-ACC0-D55BD4BDB5D4}
 		{B0F526DB-967B-4A57-9EC9-2E4950E54F26} = {3453ABBE-7DA9-4946-ACC0-D55BD4BDB5D4}
+		{6C3901C6-BFCA-47FC-929B-0CD030325FBD} = {3453ABBE-7DA9-4946-ACC0-D55BD4BDB5D4}
 	EndGlobalSection
 EndGlobal

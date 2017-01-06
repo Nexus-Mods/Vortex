@@ -51,6 +51,13 @@
     <Compile Include="Scripting\IScriptType.cs" />
     <Compile Include="Scripting\IScriptTypeRegistry.cs" />
     <Compile Include="Scripting\ScriptExecutorBase.cs" />
+    <Compile Include="Scripting\ScriptFunctionProxy.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Utils\Utils.csproj">
+      <Project>{5b9ad297-9d49-4593-a795-bdbd309b3313}</Project>
+      <Name>Utils</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

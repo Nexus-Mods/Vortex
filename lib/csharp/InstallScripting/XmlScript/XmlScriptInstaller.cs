@@ -11,8 +11,6 @@ namespace Components.Scripting.XmlScript
 	/// </summary>
 	public class XmlScriptInstaller // ??? : BackgroundTask
 	{
-		private XDocument m_docLog = new XDocument();
-		private XElement m_xelRoot = null;
         private List<Instruction> modInstallInstructions = new List<Instruction>();
 
         #region Properties
@@ -134,7 +132,7 @@ namespace Components.Scripting.XmlScript
         /// <c>true</c> otherwise.</returns>
         protected bool InstallFolderFromMod(InstallableFile installableFile)
 		{
-            List<string> lstModFiles = ModArchive.GetFileList();
+            List<string> lstModFiles = ModArchive.GetFileList(null, true);
 
             string strFrom = installableFile.Source.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar).ToLowerInvariant();
 			if (!strFrom.EndsWith(Path.DirectorySeparatorChar.ToString()))
