@@ -38,6 +38,15 @@
             };
         }
 
+        public static Instruction UnsupportedFunctionalityWarning(string function)
+        {
+            return new Instruction()
+            {
+                type = "warning",
+                source = function,
+            };
+        }
+
         public string type;
         public string source;
         public string destination;
