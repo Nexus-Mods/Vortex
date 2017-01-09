@@ -324,6 +324,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const {data, objects} = this.props;
     let rowData = data[rowId];
 
+    const detailAttributes = objects.filter((attribute: ITableAttribute) =>
+      attribute.placement !== 'table'
+    );
+
     if (rowData === undefined) {
       log('warn', 'unknown row id', rowId);
       return null;
@@ -333,7 +337,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     return (
       <form style={{ minWidth: 300 }}>
-      {objects.map((obj) => this.renderDetail(rowData, obj))}
+      {detailAttributes.map((obj) => this.renderDetail(rowData, obj))}
       </form>
     );
   };
@@ -463,7 +467,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private visibleAttributes(attributes: ITableAttribute[],
                             attributeStates: { [id: string]: IAttributeState }): ITableAttribute[] {
     return attributes.filter((attribute: ITableAttribute) => {
-      if (attribute.isDetail) {
+      if (attribute.placement === 'detail') {
         return false;
       } else if (!attributeStates.hasOwnProperty(attribute.id)) {
         return true;

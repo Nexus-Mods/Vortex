@@ -11,7 +11,7 @@ export const FILE_NAME: ITableAttribute = {
   description: 'Name of the download',
   icon: '',
   calc: (attributes: IDownload) => attributes.localPath,
-  isDetail: false,
+  placement: 'both',
   isToggleable: false,
   isReadOnly: true,
   isSortable: true,
@@ -42,7 +42,7 @@ export const PROGRESS: ITableAttribute = {
   icon: 'clock-o',
   customRenderer: (download: IDownload, t: I18next.TranslationFunction) =>
     progress({ download, t }),
-  isDetail: false,
+  placement: 'table',
   isToggleable: true,
   isReadOnly: true,
   isSortable: true,

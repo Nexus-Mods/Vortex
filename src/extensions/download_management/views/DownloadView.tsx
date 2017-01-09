@@ -98,7 +98,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         let game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
         return game ? this.props.t(game.name) : attributes.game;
       },
-      isDetail: false,
+      placement: 'both',
       isToggleable: true,
       isReadOnly: true,
       isSortable: true,

@@ -1,5 +1,7 @@
 export type AttributeRenderer = 'progress';
 
+export type Placement = 'table' | 'detail' | 'both';
+
 /**
  * declaration of an attribute of a table
  * 
@@ -14,7 +16,7 @@ export interface ITableAttribute {
   isToggleable: boolean;
   isReadOnly: boolean;
   isSortable: boolean;
-  isDetail: boolean;
+  placement: Placement;
   customRenderer?: (attributes: any, t: I18next.TranslationFunction) => JSX.Element;
   calc?: (attributes: any, t: I18next.TranslationFunction) => any;
   sortFunc?: (lhs: any, rhs: any, locale: string) => number;

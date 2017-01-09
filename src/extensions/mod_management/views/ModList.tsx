@@ -1,6 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
 import { IAttributeState } from '../../../types/IAttributeState';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { ITableAttribute } from '../../../types/ITableAttribute';
 import { SortDirection } from '../../../types/SortDirection';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 import SuperTable, {ITableRowAction} from '../../../views/Table';
@@ -8,13 +9,12 @@ import SuperTable, {ITableRowAction} from '../../../views/Table';
 import { IGameModeSettings } from '../../gamemode_management/types/IStateEx';
 
 import { setModEnabled } from '../../profile_management/actions/profiles';
-import { IProfile, IProfileMod } from '../../profile_management/types/IProfile';
+import { IProfileMod } from '../../profile_management/types/IProfile';
 import { IProfileSettings } from '../../profile_management/types/IStateEx';
 
 import { removeMod } from '../actions/mods';
 import { setModlistAttributeSort, setModlistAttributeVisible } from '../actions/settings';
 import { IMod } from '../types/IMod';
-import { IModAttribute } from '../types/IModAttribute';
 import { IStateMods } from '../types/IStateMods';
 import { IStateModSettings } from '../types/IStateSettings';
 
@@ -37,7 +37,7 @@ import { log } from '../../../util/log';
 type IModWithState = IMod & IProfileMod;
 
 interface IBaseProps {
-  objects: IModAttribute[];
+  objects: ITableAttribute[];
 }
 
 interface IAttributeStateMap {
@@ -79,7 +79,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
  */
 class ModList extends ComponentEx<IProps, IComponentState> {
   private modActions: ITableRowAction[];
-  private modEnabledAttribute: IModAttribute;
+  private modEnabledAttribute: ITableAttribute;
 
   constructor(props: IProps) {
     super(props);
@@ -94,7 +94,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       description: 'Is mod enabled in current profile',
       icon: 'check-o',
       calc: (mod: IModWithState) => mod.enabled,
-      isDetail: false,
+      placement: 'table',
       isToggleable: false,
       isReadOnly: false,
       isSortable: false,
@@ -287,7 +287,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-function registerModAttribute(instance: ModList, attribute: IModAttribute) {
+function registerModAttribute(instance: ModList, attribute: ITableAttribute) {
   return attribute;
 }
 
