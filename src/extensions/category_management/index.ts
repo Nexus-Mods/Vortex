@@ -4,11 +4,13 @@ import { categoryReducer } from './reducers/category';
 import { sessionReducer } from './reducers/session';
 import CategoryList from './views/CategoryList';
 
+import { convertGameId } from './util/convertGameId';
 import { retrieveCategoryPath } from './util/retrieveCategoryPath';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import { getSafe } from '../../util/storeHelper';
 
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('book', 'Categories', CategoryList, {
@@ -61,8 +63,12 @@ function init(context: IExtensionContext): boolean {
       });
 
       context.api.events.on('gamemode-activated', (gameMode: string) => {
+        let categories: any = getSafe(store.getState(), ['persistent', 'categories',
+          convertGameId(gameMode)], '');
         store.dispatch(setTreeDataObject(undefined));
-        context.api.events.emit('retrieve-category-list', false, {});
+        if (categories === undefined) {
+          context.api.events.emit('retrieve-category-list', false, {});
+        }
       });
 
     } catch (err) {

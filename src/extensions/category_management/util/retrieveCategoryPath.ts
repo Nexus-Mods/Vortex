@@ -1,14 +1,8 @@
+import { convertGameId } from './convertGameId';
+
 import { IFindTree, IGetNodeTree } from '../types/ITrees';
 
 import { getSafe } from '../../../util/storeHelper';
-
-function convertGameId(input: string): string {
-  if (input === 'skyrimse') {
-    return 'skyrimspecialedition';
-  } else {
-    return input;
-  }
-}
 
 export function retrieveCategoryPath(
   category: number,

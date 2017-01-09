@@ -3,6 +3,7 @@ import { updateCategories } from '../actions/category';
 import { setSearchFocusIndex, setSearchFoundCount,
    setSearchString, setTreeDataObject } from '../actions/session';
 import { IAddedTree, IRemovedTree, IRenamedTree, IToggleExpandedTree } from '../types/ITrees';
+import { convertGameId } from '../util/convertGameId';
 
 import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
@@ -44,14 +45,6 @@ interface IComponentState {
 }
 
 let TreeImpl: typeof Tree;
-
-function convertGameId(input: string): string {
-  if (input === 'skyrimse') {
-    return 'skyrimspecialedition';
-  } else {
-    return input;
-  }
-}
 
 /**
  * displays the list of savegames installed for the current game.
