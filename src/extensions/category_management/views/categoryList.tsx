@@ -224,8 +224,8 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
             let newTree: IRenamedTree = {
                 treeData: treeDataObject,
                 path: nodePath,
-                newNode: { title: result.input.value, expanded: node.expanded,
-                   children: node.children },
+                newNode: { rootId: node.rootId, title: result.input.value,
+                  expanded: node.expanded, parentId: node.parentId, children: node.children },
                 getNodeKey: treeFunctions.defaultGetNodeKey,
                 ignoreCollapsed: true,
               };
