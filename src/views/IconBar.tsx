@@ -8,7 +8,7 @@ import { ButtonGroup } from 'react-bootstrap';
 export interface IBaseProps {
   className?: string;
   group: string;
-  instanceId?: string;
+  instanceId?: string | string[];
   tooltipPlacement?: 'top' | 'right' | 'bottom' | 'left';
 }
 
@@ -41,22 +41,25 @@ class IconBar extends React.Component<IProps, {}> {
 
   private renderIcon = (icon: IIconDefinition, index: number) => {
     const { instanceId, tooltipPlacement } = this.props;
+
+    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
     // don't render anything if the condition doesn't match
+
     try {
-      if ((icon.condition !== undefined) && !icon.condition(instanceId)) {
+      if ((icon.condition !== undefined) && !icon.condition(instanceIds)) {
         return null;
       }
     } catch (err) {
       return null;
     }
 
-    let id = `${instanceId || '1'}_${index}`;
+    const id = `${instanceId || '1'}_${index}`;
     if (icon.icon !== undefined) {
       // simple case
       return <ToolbarIcon
         key={id}
         id={id}
-        instanceId={instanceId}
+        instanceId={instanceIds}
         icon={icon.icon}
         tooltip={icon.title}
         onClick={icon.action}

@@ -2,29 +2,71 @@ import {selectRows, setAttributeSort, setAttributeVisible} from '../actions/tabl
 
 import {IAttributeState} from '../types/IAttributeState';
 import {IIconDefinition} from '../types/IIconDefinition';
-import {IState, ITableState} from '../types/IState';
+import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import {log} from '../util/log';
 import {getSafe, setSafe} from '../util/storeHelper';
-import {countIf} from '../util/util';
+import {IconButton} from '../views/TooltipControls';
 
 import AttributeToggle from './AttributeToggle';
 import HeaderCell from './HeaderCell';
 import IconBar from './IconBar';
 
-import * as _ from 'lodash';
 import * as React from 'react';
-import {Checkbox, ControlLabel, FormControl, FormGroup, Table} from 'react-bootstrap';
+import {ControlLabel, FormControl, FormGroup, Table} from 'react-bootstrap';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 import { createSelector } from 'reselect';
 
-import * as util from 'util';
-
 export interface IChangeDataHandler {
   (rowId: string, attributeId: string, newValue: any): void;
+}
+
+interface ICellProps {
+  language: string;
+  attribute: ITableAttribute;
+  rowId: string;
+  rowData: any;
+  t: I18next.TranslationFunction;
+  onChangeData: IChangeDataHandler;
+}
+
+class TableCell extends React.Component<ICellProps, {}> {
+  public render(): JSX.Element {
+    const { t, attribute, language, rowData, rowId } = this.props;
+
+    if (attribute.customRenderer !== undefined) {
+      return attribute.customRenderer(rowData, t);
+    }
+
+    const value = attribute.calc(rowData, t);
+
+    if (value instanceof Date) {
+      return <span>{value.toLocaleString(language)}</span>;
+    } else if (typeof (value) === 'string') {
+      return <span>{value}</span>;
+    } else if (typeof (value) === 'boolean') {
+      return <IconButton
+        className='btn-embed'
+        id={`toggle-${rowId}-${attribute.id}`}
+        tooltip={t('Toggle')}
+        icon={ value ? 'check-square-o' : 'square-o' }
+        onClick={this.toggle}
+      />;
+    } else if ((value === undefined) || (value === null)) {
+      return <span>{' '}</span>;
+    } else {
+      return <span>{value.toString()}</span>;
+    }
+  }
+
+  private toggle = () => {
+    const { t, attribute, rowData, rowId } = this.props;
+    const value = attribute.calc(rowData, t);
+    this.props.onChangeData(rowId, attribute.id, !value);
+  }
 }
 
 interface IRowProps {
@@ -83,39 +125,34 @@ class TableRow extends React.Component<IRowProps, {}> {
     rowData: any,
     t: I18next.TranslationFunction): JSX.Element {
 
-    const { language } = this.props;
+    const { data, language, onChangeData } = this.props;
 
-    if (attribute.customRenderer !== undefined) {
-      return attribute.customRenderer(rowData, t);
-    }
-
-    const value = attribute.calc(rowData, t);
-
-    if (value instanceof Date) {
-      return <span>{value.toLocaleString(language)}</span>;
-    } else if (typeof (value) === 'string') {
-      return <span>{value}</span>;
-    } else if (typeof (value) === 'boolean') {
-      return <Checkbox checked={value} />;
-    } else if ((value === undefined) || (value === null)) {
-      return <span>{' '}</span>;
-    } else {
-      return <span>{value.toString()}</span>;
-    }
+    return <TableCell
+      t={t}
+      attribute={attribute}
+      rowData={rowData}
+      rowId={data.__id}
+      language={language}
+      onChangeData={onChangeData}
+    />;
   }
+}
+
+export interface ITableRowAction extends IIconDefinition {
+  singleRowAction?: boolean;
+  multiRowAction?: boolean;
 }
 
 export interface IBaseProps {
   tableId: string;
   data: { [rowId: string]: any };
-  rowActions: IIconDefinition[];
-  multiActions?: IIconDefinition[];
-
-  onChangeData: IChangeDataHandler;
+  actions: ITableRowAction[];
+  onChangeData?: IChangeDataHandler;
 }
 
 interface IConnectedProps {
-  tableState: ITableState;
+  attributeState: { [id: string]: IAttributeState },
+  rowState: { [id: string]: IRowState },
   language: string;
 }
 
@@ -151,12 +188,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, objects, data, language, tableState } = this.props;
+    const { t, attributeState, objects, data, language } = this.props;
     const { lastSelected } = this.state;
 
-    const visibleAttributes: ITableAttribute[] =
-      this.visibleAttributes(objects, tableState.attributes);
-    let sorted: any[] = this.sortedRows(tableState, visibleAttributes, data, language);
+    const visibleAttributes = this.visibleAttributes(objects, attributeState);
+    let sorted: any[] = this.sortedRows(attributeState, visibleAttributes, data, language);
 
     return (
       <Layout type='column'>
@@ -198,13 +234,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       : 1;
   }
 
-  private sortedRows(tableState: ITableState,
+  private sortedRows(attributeState: { [id: string]: IAttributeState },
                      attributes: ITableAttribute[],
                      data: { [id: string]: any },
                      locale: string): any[] {
     let sortAttribute: ITableAttribute = attributes.find((attribute: ITableAttribute) => {
-      return (tableState.attributes[attribute.id] !== undefined)
-          && (tableState.attributes[attribute.id].sortDirection !== 'none');
+      return (attributeState[attribute.id] !== undefined)
+          && (attributeState[attribute.id].sortDirection !== 'none');
     });
 
     const rows: any[] = Object.keys(data).map((id: string) => {
@@ -226,7 +262,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       let res = sortFunction(lhs[sortAttribute.id],
                              rhs[sortAttribute.id],
                              locale);
-      if (tableState.attributes[sortAttribute.id].sortDirection === 'desc') {
+      if (attributeState[sortAttribute.id].sortDirection === 'desc') {
         res *= -1;
       }
       return res;
@@ -303,13 +339,18 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   };
 
   private renderSelectionActions(): JSX.Element {
-    const {t, tableState} = this.props;
-    let selectedCount = countIf(Object.keys(tableState.rows),
-      (val: string) => tableState.rows[val].selected);
+    const {t, actions, rowState} = this.props;
+
+    const selected = Object.keys(rowState).filter((key: string) => rowState[key].selected);
+    const selectedCount = selected.length;
 
     if (selectedCount === 0) {
       return null;
     }
+
+    const multiActions = actions.filter(
+      (action) => action.multiRowAction === undefined || action.multiRowAction);
+
     // TODO the styling here is a bit of a hack
     return (
       <div>
@@ -322,23 +363,23 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           className='table-actions'
           style={{ marginBottom: 5 }}
           tooltipPlacement='top'
-          staticElements={this.props.multiActions}
+          staticElements={multiActions}
+          instanceId={selected}
         />
       </div>
     );
   }
 
   private renderAttributeToggle = (attr: ITableAttribute) => {
-    const { t, tableState } = this.props;
+    const { t } = this.props;
 
-    let attributeState = getSafe<IAttributeState>(tableState, ['attributes', attr.id],
-      { enabled: true, sortDirection: 'none' });
+    let attribute = this.getAttributeState(attr.id);
 
     return !attr.isToggleable ? null : (
       <AttributeToggle
         key={attr.id}
         attribute={attr}
-        state={attributeState}
+        state={attribute}
         t={t}
         onSetAttributeVisible={this.setAttributeVisible}
       />
@@ -353,13 +394,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private selectRow = (evt: React.MouseEvent<any>) => {
     const row = (evt.currentTarget as HTMLTableRowElement);
 
-    const {onSelectRows, tableId, tableState} = this.props;
-
-    const rows = getSafe(tableState, ['rows'], {});
+    const {attributeState, onSelectRows, rowState, tableId} = this.props;
 
     if (evt.ctrlKey) {
       // ctrl-click -> toggle the selected row, leave remaining selection intact
-      const wasSelected = getSafe(rows, [row.id, 'selected'], false);
+      const wasSelected = getSafe(rowState, [row.id, 'selected'], false);
       if (!wasSelected) {
         this.setState(setSafe(this.state, ['lastSelected'], row.id));
       }
@@ -369,12 +408,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       //                deselect everything else
       const { objects, data, language } = this.props;
       const visibleAttributes: ITableAttribute[] =
-        this.visibleAttributes(objects, tableState.attributes);
+        this.visibleAttributes(objects, attributeState);
 
       let selection: Set<string> = new Set([row.id, this.state.lastSelected]);
       let selecting = false;
 
-      this.sortedRows(tableState, visibleAttributes, data, language)
+      this.sortedRows(attributeState, visibleAttributes, data, language)
       .forEach((iterRow: any) => {
         let isBracket = (iterRow.__id === row.id) || (iterRow.__id === this.state.lastSelected);
         if (!selecting && isBracket) {
@@ -389,18 +428,22 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           }
         }
       });
-      onSelectRows(tableId, Object.keys(rows), false);
+      onSelectRows(tableId, Object.keys(rowState), false);
       onSelectRows(tableId, Array.from(selection), true);
     } else {
       // regular click -> select only the clicked row, everything else get deselected
       this.setState(setSafe(this.state, ['lastSelected'], row.id));
-      onSelectRows(tableId, Object.keys(rows), false);
+      onSelectRows(tableId, Object.keys(rowState), false);
       onSelectRows(tableId, [row.id], true);
     }
   };
 
   private renderRow(data: any, visibleAttributes: ITableAttribute[]): JSX.Element {
-    const { t, rowActions, language, onChangeData, tableId, tableState } = this.props;
+    const { t, actions, language, onChangeData, rowState, tableId } = this.props;
+
+    const rowActions = actions.filter(
+      (action) => action.singleRowAction === undefined || action.singleRowAction);
+
     return (
       <TableRow
         t={t}
@@ -412,7 +455,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         language={language}
         onChangeData={onChangeData}
         onClick={this.selectRow}
-        selected={getSafe(tableState.rows, [data.__id, 'selected'], false)}
+        selected={getSafe(rowState, [data.__id, 'selected'], false)}
       />
     );
   }
@@ -431,14 +474,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderHeaderField = (attribute: ITableAttribute): JSX.Element => {
-    const { t, tableState } = this.props;
+    const { t } = this.props;
 
-    if (getSafe(tableState, [attribute.id, 'enabled'], true)) {
+    const attributeState = this.getAttributeState(attribute.id);
+
+    if (attributeState.enabled) {
       return (
         <HeaderCell
           key={attribute.id}
           attribute={attribute}
-          state={tableState.attributes[attribute.id]}
+          state={attributeState}
           onSetSortDirection={ this.setSortDirection }
           t={t}
         />
@@ -448,12 +493,22 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  private getAttributeState(attributeId: string) {
+    const { attributeState } = this.props;
+    return getSafe(attributeState, [attributeId], {
+      enabled: true,
+      sortDirection: 'none' as SortDirection,
+    });
+  }
+
   private setSortDirection = (id: string, direction: SortDirection) => {
-    const { onSetAttributeSort, tableId, tableState } = this.props;
+    const { attributeState, onSetAttributeSort, tableId } = this.props;
 
     // reset all other columns because we can't really support multisort with this ui
-    for (let testId of Object.keys(tableState)) {
-      if ((id !== testId) && (tableState[testId].sortDirection !== 'none')) {
+    for (let testId of Object.keys(attributeState)) {
+      const attrState = this.getAttributeState(testId);
+
+      if ((id !== testId) && (attrState.sortDirection !== 'none')) {
         onSetAttributeSort(tableId, testId, 'none');
       }
     }
@@ -464,7 +519,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedProps {
   return {
-    tableState: state.persistent.tables[ownProps.tableId],
+    attributeState: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'attributes'], {}),
+    rowState: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'rows'], {}),
     language: state.settings.interface.language,
   };
 }

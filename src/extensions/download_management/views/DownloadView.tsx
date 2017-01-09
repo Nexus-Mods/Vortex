@@ -9,7 +9,7 @@ import {setSafe} from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
 import InputButton from '../../../views/InputButton';
-import SuperTable, {makeGetSelection} from '../../../views/Table';
+import SuperTable, {ITableRowAction} from '../../../views/Table';
 import {Button} from '../../../views/TooltipControls';
 
 import { IGameStored } from '../../gamemode_management/types/IStateEx';
@@ -27,14 +27,12 @@ import * as React from 'react';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import {log} from '../../../util/log';
-import * as util from 'util';
 
 interface IConnectedProps {
   downloads: IDownload[];
   gameMode: string;
   knownGames: IGameStored[];
   downloadPath: string;
-  selection: string[];
 }
 
 interface IActionProps {
@@ -82,8 +80,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   private staticButtons: IIconDefinition[];
 
   private gameColumn: ITableAttribute;
-  private rowActions: IIconDefinition[];
-  private multiActions: IIconDefinition[];
+  private actions: ITableRowAction[];
 
   constructor(props) {
     super(props);
@@ -131,12 +128,13 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
-    this.rowActions = [
+    this.actions = [
       {
         icon: 'eye',
         title: 'Inspect',
         action: this.inspect,
         condition: this.inspectable,
+        multiRowAction: false,
       },
       {
         icon: 'archive',
@@ -169,39 +167,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         condition: this.cancelable,
       },
     ];
-
-    this.multiActions = [
-      {
-        icon: 'archive',
-        title: 'Install',
-        action: this.installMulti,
-        condition: this.installableMulti,
-      },
-      {
-        icon: 'pause',
-        title: 'Pause',
-        action: this.pauseMulti,
-        condition: this.pausableMulti,
-      },
-      {
-        icon: 'play',
-        title: 'Resume',
-        action: this.resumeMulti,
-        condition: this.resumableMulti,
-      },
-      {
-        icon: 'remove',
-        title: 'Remove',
-        action: this.removeMulti,
-        condition: this.removableMulti,
-      },
-      {
-        icon: 'stop',
-        title: 'Cancel',
-        action: this.removeMulti,
-        condition: this.cancelableMulti,
-      },
-    ];
   }
 
   public render(): JSX.Element {
@@ -221,9 +186,8 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             tableId='downloads'
             data={downloads}
             staticElements={[ FILE_NAME, this.gameColumn, PROGRESS ]}
-            rowActions={this.rowActions}
-            multiActions={this.multiActions}
-            onChangeData={() => undefined}
+            actions={this.actions}
+            onChangeData={this.onChangeData}
           />
         </Flex>
         <Fixed>
@@ -231,6 +195,10 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         </Fixed>
       </Layout>
     );
+  }
+
+  private onChangeData = (rowId: string, attributeId: string, value: any) => {
+    log('info', 'attempt to change', { rowId, attributeId, value });
   }
 
   private getDownload(downloadId: string): IDownload {
@@ -241,44 +209,80 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     this.context.api.events.emit('start-download', [url], {});
   }
 
-  private pause = (downloadId: string) => {
-    this.context.api.events.emit('pause-download', downloadId);
+  private pause = (downloadIds: string[]) => {
+    downloadIds.forEach((downloadId: string) => {
+      this.context.api.events.emit('pause-download', downloadId);
+    });
   }
 
-  private pausable = (downloadId: string) => {
-    return this.getDownload(downloadId).state === 'started';
+  private pausable = (downloadIds: string[]) => {
+    return downloadIds.find((downloadId: string) => (
+      this.getDownload(downloadId).state === 'started'
+    )) !== undefined;
   }
 
-  private resume = (downloadId: string) => {
-    this.context.api.events.emit('resume-download', downloadId);
+  private resume = (downloadIds: string[]) => {
+    downloadIds.forEach((downloadId: string) => {
+      this.context.api.events.emit('resume-download', downloadId);
+    });
   }
 
-  private resumable = (downloadId: string) => {
-    return this.getDownload(downloadId).state === 'paused';
+  private resumable = (downloadIds: string[]) => {
+    return downloadIds.find((downloadId: string) => (
+      this.getDownload(downloadId).state === 'paused'
+    )) !== undefined;
   }
 
-  private remove = (downloadId: string) => {
-    this.props.onDeselect(downloadId);
-    this.context.api.events.emit('remove-download', downloadId);
+  private remove = (downloadIds: string[]) => {
+    let removeId = (id: string) => {
+      this.props.onDeselect(id);
+      this.context.api.events.emit('remove-download', id);
+    };
+
+    if (downloadIds.length === 1) {
+      removeId(downloadIds[0]);
+    } else {
+      const { t, onShowDialog } = this.props;
+
+      let downloadNames = downloadIds.map((downloadId: string) => (
+        this.getDownload(downloadId).localPath
+      ));
+
+      onShowDialog('question', 'Confirm Removal', {
+        message: t('Do you really want to delete this archive?',
+          { count: downloadIds.length, replace: { count: downloadIds.length } })
+        + '\n' + downloadNames.join('\n'),
+      }, {
+          Cancel: null,
+          Remove: () => downloadIds.forEach(removeId),
+        });
+    }
   }
 
-  private removable = (downloadId: string) => {
-    const download = this.getDownload(downloadId);
-    return ['finished', 'failed'].indexOf(download.state) >= 0;
+  private removable = (downloadIds: string[]) => {
+    const match = ['finished', 'failed'];
+    return downloadIds.find((downloadId: string) => (
+      match.indexOf(this.getDownload(downloadId).state) >= 0
+    )) !== undefined;
   }
 
-  private cancelable = (downloadId: string) => {
-    const download = this.getDownload(downloadId);
-    return ['init', 'started', 'paused'].indexOf(download.state) >= 0;
+  private cancelable = (downloadIds: string[]) => {
+    const match = ['init', 'started', 'paused'];
+    return downloadIds.find((downloadId: string) => (
+      match.indexOf(this.getDownload(downloadId).state) >= 0
+    )) !== undefined;
   }
 
-  private install = (downloadId: string) => {
-    this.context.api.events.emit('start-install-download', downloadId);
+  private install = (downloadIds: string[]) => {
+    downloadIds.forEach((downloadId: string) => {
+      this.context.api.events.emit('start-install-download', downloadId);
+    });
   }
 
-  private installable = (downloadId: string) => {
-    const download = this.getDownload(downloadId);
-    return download.state === 'finished';
+  private installable = (downloadIds: string[]) => {
+    return downloadIds.find(
+      (id: string) => this.getDownload(id).state === 'finished'
+    ) !== undefined;
   }
 
   private inspect = (downloadId: string) => {
@@ -300,81 +304,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     const download = this.getDownload(downloadId);
     return [ 'failed' ].indexOf(download.state) >= 0;
   }
-
-  private pauseMulti = () => {
-    this.props.selection.forEach((downloadId: string) => {
-      this.context.api.events.emit('pause-download', downloadId);
-    });
-  }
-
-  private pausableMulti = () => {
-    return this.props.selection.find((downloadId: string) => (
-      this.getDownload(downloadId).state === 'started'
-    )) !== undefined;
-  }
-
-  private resumeMulti = () => {
-    this.props.selection.forEach((downloadId: string) => {
-      this.context.api.events.emit('resume-download', downloadId);
-    });
-  }
-
-  private resumableMulti = () => {
-    return this.props.selection.find((downloadId: string) => (
-      this.getDownload(downloadId).state === 'paused'
-    )) !== undefined;
-  }
-
-  private removeMulti = () => {
-    const { t, onShowDialog, selection } = this.props;
-
-    let downloadNames = selection.map((downloadId: string) => (
-      this.getDownload(downloadId).localPath
-        ));
-
-    onShowDialog('question', 'Confirm Removal', {
-      message: t('Do you really want to delete this archive?',
-        { count: selection.length, replace: { count: selection.length } })
-      + '\n' + downloadNames.join('\n'),
-    }, {
-        Cancel: null,
-        Remove: () => {
-          selection.forEach((downloadId: string) => {
-            this.remove(downloadId);
-          });
-        },
-      });
-  }
-
-  private removableMulti = () => {
-    const match = ['finished', 'failed'];
-    return this.props.selection.find((downloadId: string) => (
-      match.indexOf(this.getDownload(downloadId).state) >= 0
-    )) !== undefined;
-  }
-
-  private cancelableMulti = () => {
-    const match = ['init', 'started', 'paused'];
-    return this.props.selection.find((downloadId: string) => (
-      match.indexOf(this.getDownload(downloadId).state) >= 0
-    )) !== undefined;
-  }
-
-  private installMulti = () => {
-    this.props.selection.forEach((downloadId: string) => {
-      this.context.api.events.emit('start-install-download', downloadId);
-    });
-  }
-
-  private installableMulti = () => {
-    return this.props.selection.find(
-      (id: string) => this.getDownload(id).state === 'finished'
-    ) !== undefined;
-  }
 }
-
-// create a caching query function for the current table selection
-const getSelection = makeGetSelection('downloads');
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
@@ -382,7 +312,6 @@ function mapStateToProps(state: any): IConnectedProps {
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
     downloadPath: downloadPath(state),
-    selection: getSelection(state),
   };
 }
 

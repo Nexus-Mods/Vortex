@@ -22,7 +22,6 @@ import Settings from './views/Settings';
 
 import InstallManager from './InstallManager';
 
-import { INSTALL_TIME, MOD_NAME, VERSION} from './modAttributes';
 import {downloadPath, installPath} from './selectors';
 
 import * as path from 'path';
@@ -83,10 +82,6 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerModActivator = registerModActivator;
   context.registerInstaller = registerInstaller;
-
-  context.optional.registerModAttribute(MOD_NAME);
-  context.optional.registerModAttribute(VERSION);
-  context.optional.registerModAttribute(INSTALL_TIME);
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;

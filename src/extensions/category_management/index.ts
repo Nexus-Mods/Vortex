@@ -20,7 +20,7 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['persistent', 'categories'], categoryReducer);
   context.registerReducer(['session', 'categories'], sessionReducer);
 
-  context.optional.registerModAttribute({
+  context.registerTableAttribute('mods', {
     id: 'category',
     name: 'Category',
     description: 'Category',
@@ -32,7 +32,7 @@ function init(context: IExtensionContext): boolean {
     isSortable: true,
   });
 
-  context.optional.registerModAttribute({
+  context.registerTableAttribute('mods', {
     id: 'category_detail',
     name: 'Category Detail',
     description: 'Category Detail',

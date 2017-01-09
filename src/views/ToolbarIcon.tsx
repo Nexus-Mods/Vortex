@@ -5,11 +5,11 @@ import * as React from 'react';
 
 export interface IToolbarIconProps {
   id: string;
-  instanceId?: string;
+  instanceId?: string[];
   tooltip: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
   icon: string;
-  onClick: (id: string) => void;
+  onClick: (ids: string[]) => void;
 }
 
 class ToolbarIcon extends React.Component<IToolbarIconProps, {}> {

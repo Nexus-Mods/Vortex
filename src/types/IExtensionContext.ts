@@ -1,4 +1,5 @@
 import { INotification } from './INotification';
+import { ITableAttribute } from './ITableAttribute';
 import * as Promise from 'bluebird';
 import { IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
@@ -255,6 +256,40 @@ export interface IReducerSpec {
   defaults: { [key: string]: any };
 }
 
+/**
+ * The extension context is an object passed into all extensions during initialisation.
+ * 
+ * There are three main parts to this object:
+ * a) api. This is an object that contains various functions and objects to interact with the
+ *    main application. During runtime of the application (that is: after the startup phase)
+ *    this will be the only part of the context object you need.
+ *    Most importantly it gives you access to the application store (maintaining all state)
+ *    and a bunch of "stateful" convenience functions (stuff like displaying notifications/
+ *    dialogs in a way consistent with the remaining application).
+ * b) register functions. These must be called immediately inside the init function and they
+ *    "inject" your extension functionality into the main function. That is: you register ui
+ *    controls, callbacks, ... and the main function will then use that as necessary.
+ *    Please note that a call to a register function has no immediate effect, those calls are
+ *    stored and evaluated once all extensions have been initialised.
+ *    An extension can add new register functions by simply assigning to the context object.
+ *    These functions are then available to all other extensions, the order in which extensions
+ *    are loaded is irrelevant (and can't be controlled).
+ *    If an extension uses a register function from another extension it becomes implicitly
+ *    dependent on it. If the register function isn't available (because that other extension
+ *    isn't installed) the dependent extension isn't loaded either.
+ *    To avoid this, call context.optional.registerXYZ(). Such a call will be evaluated if possible
+ *    but won't cause an error if it isn't.
+ *    Please note that context is a "Proxy" object that will accept calls to any "registerXYZ"
+ *    function no matter if it's available or not. You can't "introspect" this object reliably,
+ *    it will not show the available register functions.
+ * c) once-callback. This is a callback that will be run after all extensions have been initialized
+ *    and all register functions have been evaluated. It will be called only once at application
+ *    startup whereas init is called once per process (that is: twice in total). It should be used
+ *    for all your extension setup except for the register calls (i.e. installing event handlers,
+ *    doing startup calculations). This is because at the time once is called, the context.api
+ *    object is fully initialised and once is only caused if your extension should really load
+ *    (as in: it's compatible with the current api).
+ */
 export interface IExtensionContext {
   /**
    * register a settings page
@@ -356,15 +391,6 @@ export interface IExtensionContext {
   registerPersistor: (hive: string, persistor: IPersistor, debounce?: number) => void;
 
   /**
-   * register an extension function which allows other extensions to extend this one.
-   * React components can also use the extend() function from ExtensionProvider for
-   * the same purpose
-   * 
-   * @memberOf IExtensionContext
-   */
-  registerExtensionFunction: (name: string, callback: Function) => void;
-
-  /**
    * register a stylesheet file to be loaded in the page
    * This is expected to be a less file and it will be compiled to css at startup
    * time together will all other extensions and variables.less. This means you can
@@ -373,6 +399,14 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerStyle: (filePath: string) => void;
+
+  /**
+   * add an attribute to a table. An attribute can appear as a column inside the table or as a
+   * detail field in the side panel.
+   * The tableId identifies, obviously, the table to which the attribute should be added. Please
+   * find the right id in the documentation of the corresponding extension
+   */
+  registerTableAttribute: (tableId: string, attribute: ITableAttribute) => void;
 
   /**
    * called once after the store has been set up and after all extensions have been initialized

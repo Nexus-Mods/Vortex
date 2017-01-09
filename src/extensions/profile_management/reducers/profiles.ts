@@ -1,23 +1,9 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { setCurrentProfile, setModEnabled, setProfile } from '../actions/profiles';
-import { IProfileSettings } from '../types/IStateEx';
-import update = require('react-addons-update');
+import { setSafe } from '../../../util/storeHelper';
 
-function ensureMod(state: IProfileSettings, modId: string): IProfileSettings {
-  if (!(modId in state.profiles[state.currentProfile].modState)) {
-    return update(state, {
-      profiles: {
-        [state.currentProfile]: {
-          modState: {
-            [modId]: { $set: {} },
-          },
-        },
-      },
-    });
-  } else {
-    return state;
-  }
-}
+import { setCurrentProfile, setModEnabled, setProfile } from '../actions/profiles';
+
+import update = require('react-addons-update');
 
 /**
  * reducer for changes to ephemeral session state
@@ -40,17 +26,11 @@ export const profilesReducer: IReducerSpec = {
     },
     [setModEnabled]: (state, payload) => {
       const { modId, enable } = payload;
-      return update(ensureMod(state, modId), {
-        profiles: {
-          [state.currentProfile]: {
-            modState: {
-              [modId]: {
-                enabled: { $set: enable },
-              },
-            },
-          },
-        },
-      });
+
+      return setSafe(
+        state,
+        ['profiles', state.currentProfile, 'modState', modId, 'enabled'],
+        enable);
     },
   },
   defaults: {
