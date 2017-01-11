@@ -18,7 +18,7 @@ declare class ModDB {
     setGameId(gameId: string): void;
     getByKey(key: string): Promise<ILookupResult[]>;
     insert(mod: IModInfo): Promise<void>;
-    lookup(filePath: string, fileMD5?: string, fileSize?: number, gameId?: string, modId?: string): Promise<ILookupResult[]>;
+    lookup(filePath?: string, fileMD5?: string, fileSize?: number, gameId?: string, modId?: string): Promise<ILookupResult[]>;
     private restBaseData(server);
     private nexusBaseData(server);
     private queryServer(server, gameId, hash);

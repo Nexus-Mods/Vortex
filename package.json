@@ -82,6 +82,7 @@
     "@types/enzyme": "^2.5.39",
     "@types/ffi": "^0.0.18",
     "@types/form-data": "^0.0.32",
+    "@types/graphlib": "^2.1.2",
     "@types/lodash": "^4.14.44",
     "@types/node": "^6.0.45",
     "@types/node-uuid": "^0.0.28",
@@ -202,6 +203,7 @@
   },
   "dependencies": {
     "font-awesome": "^4.6.3",
+    "graphlib": "^2.1.1",
     "react": "^15.3.0",
     "react-contextmenu": "^1.6.3",
     "react-dom": "^15.3.0",

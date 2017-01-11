@@ -138,10 +138,14 @@ class ModDB {
    * 
    * @memberOf ModDB
    */
-  public lookup(filePath: string, fileMD5?: string, fileSize?: number,
+  public lookup(filePath?: string, fileMD5?: string, fileSize?: number,
                 gameId?: string, modId?: string): Promise<ILookupResult[]> {
     let hashResult: string = fileMD5;
     let hashFileSize: number = fileSize;
+
+    if ((filePath === undefined) && (fileMD5 === undefined)) {
+      return Promise.resolve([]);
+    }
 
     let promise = fileMD5 !== undefined
       ? Promise.resolve()
@@ -248,32 +252,40 @@ class ModDB {
    * 
    * @memberOf ModDB
    */
-  private translateFromNexus = (nexusObj: any, gameId: string):
-      ILookupResult => {
-        let urlFragments = [
-          'nxm:/',
-          nexusObj.mod.game_domain,
-          'mods',
-          nexusObj.mod.mod_id,
-          'files',
-          nexusObj.file_details.file_id
-        ];
-        return {
-          key:
-              `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
-          value: {
-            fileMD5: nexusObj.file_details.md5,
-            fileName: nexusObj.file_details.file_name,
-            fileSizeBytes: nexusObj.file_details.file_size,
-            logicalFileName: nexusObj.file_details.name,
-            fileVersion: semvish.clean(nexusObj.file_details.version),
-            gameId: nexusObj.mod.game_domain,
-            modName: nexusObj.mod.name,
-            modId: nexusObj.mod.mod_id,
-            sourceURI: urlFragments.join('/'),
-          },
-        };
-      }
+  private translateFromNexus = (nexusObj: any, gameId: string): ILookupResult => {
+    let urlFragments = [
+      'nxm:/',
+      nexusObj.mod.game_domain,
+      'mods',
+      nexusObj.mod.mod_id,
+      'files',
+      nexusObj.file_details.file_id
+    ];
+
+    const page =
+      `http://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
+    return {
+      key:
+          `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
+      value: {
+        fileMD5: nexusObj.file_details.md5,
+        fileName: nexusObj.file_details.file_name,
+        fileSizeBytes: nexusObj.file_details.file_size,
+        logicalFileName: nexusObj.file_details.name,
+        fileVersion: semvish.clean(nexusObj.file_details.version),
+        gameId: nexusObj.mod.game_domain,
+        modName: nexusObj.mod.name,
+        modId: nexusObj.mod.mod_id,
+        sourceURI: urlFragments.join('/'),
+        details: {
+          category: nexusObj.mod.category,
+          description: nexusObj.mod.description,
+          author: nexusObj.mod.author,
+          homepage: page,
+        },
+      },
+    };
+  };
 
   private getAllByKey(key: string, gameId: string): Promise<ILookupResult[]> {
     return new Promise<ILookupResult[]>((resolve, reject) => {

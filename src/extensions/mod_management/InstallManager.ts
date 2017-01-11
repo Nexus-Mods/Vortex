@@ -83,7 +83,7 @@ class InstallManager {
 
     let fileList: IZipEntry[] = [];
 
-    context.api.lookupModMeta(archivePath, {})
+    context.api.lookupModMeta({ filePath: archivePath })
         .then((modInfo: ILookupResult[]) => {
           if (modInfo.length > 0) {
             fullInfo.meta = modInfo[0].value;

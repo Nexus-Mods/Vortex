@@ -134,7 +134,9 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
     const { t } = this.props;
     const { md5 } = this.state;
 
-    const md5state = md5 === '' ? undefined : md5.match(MD5Expression) ? 'success' : 'error';
+    const md5state = md5 === '' ? undefined
+      : md5 === '...' ? 'pending'
+        : md5.match(MD5Expression) ? 'success' : 'error';
 
     return (
       <form>
@@ -194,11 +196,12 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
     this.context.api.selectFile({})
       .then((selectedFile: string) => {
         filePath = selectedFile;
-        return this.context.api.lookupModMeta(filePath, {});
+        return this.context.api.lookupModMeta({filePath});
       })
       .then((result: ILookupResult[]) => {
         // TODO always use hash because lookup by meta information is not currently
         //   supported on the web side
+        this.setState(update(this.state, { md5: { $set: '...' } }));
         return genHash(filePath);
         /*
         if (result.length === 0) {
@@ -215,6 +218,7 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
         */
       })
       .then((hash?: IHashResult) => {
+        this.setState(update(this.state, { md5calc: { $set: false } }));
         if (hash !== undefined) {
           this.setState(update(this.state, {
             refType: { $set: 'md5' },

@@ -300,7 +300,8 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
       message: 'Mod lookup...',
     });
 
-    this.context.api.lookupModMeta(filePath, {
+    this.context.api.lookupModMeta({
+      filePath,
       fileMD5: downloads[instanceId].fileMD5,
       fileSize: downloads[instanceId].size,
      })

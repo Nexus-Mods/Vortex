@@ -67,6 +67,7 @@ export interface IStateChangeCallback {
  * @interface ILookupDetails
  */
 export interface ILookupDetails {
+  filePath?: string;
   fileMD5?: string;
   fileSize?: number;
   gameId?: string;
@@ -152,7 +153,14 @@ export interface IExtensionApi {
   selectDir: (options: IOpenOptions) => Promise<string>;
 
   /**
-   * the redux store
+   * the redux store containing all application state & data
+   *
+   * Please note: this store object will remain valid for the whole
+   *   application runtime so you can store it, bind it to functions
+   *   and so on. The state object (store.getState()) is immutable and
+   *   will be a different object whenever the state is changed.
+   *   Thus you should *not* store/bind the state directly unless you
+   *   actually want a "snapshot" of the state.
    * 
    * @type {Redux.Store<any>}
    * @memberOf IExtensionApi
@@ -225,14 +233,14 @@ export interface IExtensionApi {
   /**
    * find meta information about a mod
    * this will calculate a hash and the file size of the specified file
-   * for the lookup.
+   * for the lookup unless those details are already provided.
    * Please note that it's still possible for the file to get multiple
    * matches, i.e. if it has been re-uploaded, potentially for a different
    * game.
    * 
    * @memberOf IExtensionApi
    */
-  lookupModMeta: (filePath: string, details: ILookupDetails) => Promise<ILookupDetails[]>;
+  lookupModMeta: (details: ILookupDetails) => Promise<ILookupDetails[]>;
 
   /**
    * save meta information about a mod
@@ -283,10 +291,12 @@ export interface IReducerSpec {
  *    function no matter if it's available or not. You can't "introspect" this object reliably,
  *    it will not show the available register functions.
  * c) once-callback. This is a callback that will be run after all extensions have been initialized
- *    and all register functions have been evaluated. It will be called only once at application
- *    startup whereas init is called once per process (that is: twice in total). It should be used
- *    for all your extension setup except for the register calls (i.e. installing event handlers,
- *    doing startup calculations). This is because at the time once is called, the context.api
+ *    and all register functions have been evaluated. This is still *before* a gamemode has been
+ *    activated so you can't access game-specific data immediately inside once.
+ *    It will be called only once at application startup whereas init is called once per process
+ *    (that is: twice in total). It should be used for all your extension setup except for the
+ *    register calls (i.e. installing event handlers, doing startup calculations).
+ *    This is because at the time once is called, the context.api
  *    object is fully initialised and once is only caused if your extension should really load
  *    (as in: it's compatible with the current api).
  */

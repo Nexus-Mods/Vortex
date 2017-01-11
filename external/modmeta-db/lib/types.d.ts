@@ -9,6 +9,7 @@ export declare type RuleType = 'before' | 'after' | 'requires' | 'conflics' | 'r
 export interface IRule {
     type: RuleType;
     reference: IReference;
+    comment?: string;
 }
 export interface IModInfo {
     modId: string;

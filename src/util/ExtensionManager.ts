@@ -497,30 +497,31 @@ class ExtensionManager {
     }
   }
 
-  private lookupModMeta = (filePath: string, detail: ILookupDetails): Promise<ILookupResult[]> => {
+  private lookupModMeta = (detail: ILookupDetails): Promise<ILookupResult[]> => {
     if (this.mModDB !== undefined) {
       let fileMD5 = detail.fileMD5;
       let fileSize = detail.fileSize;
 
+      if ((fileMD5 === undefined) && (detail.filePath === undefined)) {
+        return Promise.resolve([]);
+      }
+
       let promise: Promise<void>;
 
       if (fileMD5 === undefined) {
-        promise = genHash(filePath).then((res: IHashResult) => {
+        promise = genHash(detail.filePath).then((res: IHashResult) => {
           fileMD5 = res.md5sum;
           fileSize = res.numBytes;
-          this.getApi().events.emit('filehash-calculated', filePath, fileMD5, fileSize);
+          this.getApi().events.emit('filehash-calculated', detail.filePath, fileMD5, fileSize);
         });
       } else {
         promise = Promise.resolve();
       }
 
-      return promise
-        .then(() => {
-          return this.mModDB.lookup(filePath, fileMD5, fileSize, detail.gameId, detail.modId);
-        })
-        .then((result: ILookupResult[]) => {
-          return Promise.resolve(result);
-        });
+      return promise.then(() => this.mModDB.lookup(detail.filePath, fileMD5,
+                                                   fileSize, detail.gameId,
+                                                   detail.modId))
+          .then((result: ILookupResult[]) => Promise.resolve(result));
     } else {
       return Promise.reject(new Error('wrong process'));
     }

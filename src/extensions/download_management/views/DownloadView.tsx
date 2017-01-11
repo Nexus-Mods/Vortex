@@ -29,8 +29,18 @@ import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import {log} from '../../../util/log';
 
+function objectFilter(obj: Object, filter: (key: string, value: any) => boolean) {
+  let result = {};
+  for (let key in obj) {
+    if (obj.hasOwnProperty(key) && filter(key, obj[key])) {
+      result[key] = obj[key];
+    }
+  }
+  return result;
+}
+
 interface IConnectedProps {
-  downloads: IDownload[];
+  downloads: { [downloadId: string]: IDownload };
   gameMode: string;
   knownGames: IGameStored[];
   downloadPath: string;
@@ -188,7 +198,13 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { downloads } = this.props;
+    let { downloads, gameMode } = this.props;
+    const { showAll } = this.state;
+
+    if (!showAll) {
+      downloads = objectFilter(downloads,
+        (id: string, download: IDownload) => download.game === gameMode);
+    }
 
     return (
       <Layout type='column'>

@@ -1,8 +1,11 @@
 /**
  * reference to a mod file.
+ * 
+ * This can be a reference to one exact file, using the md5 hash of that file or
+ * to different versions of the same file.
  *
- * You need to specify the modId, the version numbers to accept (see below)
- * and which file to use.
+ * When referencing multiple versions of a file you need to specify the modId, the
+ * version numbers to accept (see below) and which file to use.
  * 
  * Usually mods on file repositories like nexus have a name including the version
  * number. To match files with a dynamic version number, you can use either a
@@ -85,6 +88,7 @@ export type RuleType = 'before' | 'after' | 'requires' | 'conflics' | 'recommend
 export interface IRule {
   type: RuleType;
   reference: IReference;
+  comment?: string;
 }
 
 /**

@@ -8,6 +8,8 @@ import { IProfileMod } from '../../profile_management/types/IProfile';
 import { IMod } from '../types/IMod';
 import { IModActivator } from '../types/IModActivator';
 
+import sortMods from '../util/sort';
+
 import { activateMods } from '../modActivation';
 
 import * as React from 'react';
@@ -44,7 +46,7 @@ class ActivationButton extends ComponentEx<IProps, {}> {
 
   private activate = () => {
     let { t, activators, currentActivator, gameDiscovery,
-          mods, modState, onShowError } = this.props;
+      mods, modState, onShowError } = this.props;
 
     let activator: IModActivator = currentActivator !== undefined
       ? activators.find((act: IModActivator) => act.id === currentActivator)
@@ -59,13 +61,20 @@ class ActivationButton extends ComponentEx<IProps, {}> {
       message: t('Activating mods'),
       title: t('Activating'),
     });
-    activateMods(gameDiscovery.modPath, modList, modState, activator)
-    .catch((err) => {
-      onShowError('failed to activate mods', err.message);
-    })
-    .finally(() => {
-      this.context.api.dismissNotification(notificationId);
-    });
+
+    sortMods(modList, this.context.api)
+      .then((sortedMods: string[]) => {
+        let sortedModList = modList.sort((lhs: IMod, rhs: IMod) =>
+          sortedMods.indexOf(lhs.id) - sortedMods.indexOf(rhs.id));
+
+        return activateMods(gameDiscovery.modPath, sortedModList, modState, activator)
+      })
+      .catch((err) => {
+        onShowError('failed to activate mods', err.message);
+      })
+      .finally(() => {
+        this.context.api.dismissNotification(notificationId);
+      });
   };
 }
 

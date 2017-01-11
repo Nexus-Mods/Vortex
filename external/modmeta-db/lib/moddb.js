@@ -9,6 +9,7 @@ const util = require('util');
 class ModDB {
     constructor(gameId, servers, database, timeoutMS) {
         this.translateFromNexus = (nexusObj, gameId) => {
+            console.log('translateFromNexus', { nexusobj: util.inspect(nexusObj), gameId });
             let urlFragments = [
                 'nxm:/',
                 nexusObj.mod.game_domain,
@@ -17,10 +18,10 @@ class ModDB {
                 'files',
                 nexusObj.file_details.file_id
             ];
+            let page = `http://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
             return {
                 key: `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
                 value: {
-                    category: nexusObj.mod.category_id,
                     fileMD5: nexusObj.file_details.md5,
                     fileName: nexusObj.file_details.file_name,
                     fileSizeBytes: nexusObj.file_details.file_size,
@@ -30,6 +31,12 @@ class ModDB {
                     modName: nexusObj.mod.name,
                     modId: nexusObj.mod.mod_id,
                     sourceURI: urlFragments.join('/'),
+                    details: {
+                        category: nexusObj.mod.category_id,
+                        description: nexusObj.mod.description,
+                        author: nexusObj.mod.author,
+                        homepage: page,
+                    }
                 },
             };
         };
@@ -68,6 +75,9 @@ class ModDB {
     lookup(filePath, fileMD5, fileSize, gameId, modId) {
         let hashResult = fileMD5;
         let hashFileSize = fileSize;
+        if ((filePath === undefined) && (fileMD5 === undefined)) {
+            return Promise.resolve([]);
+        }
         let promise = fileMD5 !== undefined
             ? Promise.resolve()
             : util_1.genHash(filePath).then((res) => {
