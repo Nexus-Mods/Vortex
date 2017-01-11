@@ -9,16 +9,67 @@ export type Placement = 'table' | 'detail' | 'both';
  * @interface IModAttribute
  */
 export interface ITableAttribute {
+  /**
+   * internal id of the attribute
+   */
   id: string;
+  /**
+   * user readable name for the attribute (appears in the header and potentially in tooltips)
+   */
   name: string;
+  /**
+   * lengthier description of what the attribute represents
+   * (currently unused but please provide one anyway)
+   */
   description?: string;
+  /**
+   * icon for the attribute. This is currently only used for the toggle button if the column is
+   * toggleable
+   */
   icon?: string;
-  isToggleable: boolean;
+  /**
+   * if true the attribute can be disabled in the table
+   */
+  isToggleable?: boolean;
+  /**
+   * if true, the value of the attribute can not be changed through the table (it may still change
+   * programmatically of course)
+   */
   isReadOnly: boolean;
-  isSortable: boolean;
+  /**
+   * if true, the table can be sorted by this attribute
+   */
+  isSortable?: boolean;
+  /**
+   * specifies whether the attribute appears in the table, the details pane or both.
+   * \note that "isToggleable" and "isSortable" have no effect on attributes that don't appear
+   * in the table
+   */
   placement: Placement;
-  customRenderer?: (attributes: any, t: I18next.TranslationFunction) => JSX.Element;
-  calc?: (attributes: any, t: I18next.TranslationFunction) => any;
+  /**
+   * if specified this function is used to render the value in the table instead of the usual cell
+   * renderer. Please note that if you want caching or asynchronous calculation for this cell you'll
+   * have to implement it yourself.
+   */
+  customRenderer?: (object: any, t: I18next.TranslationFunction) => JSX.Element;
+  /**
+   * determine the display value for this attribute. This is used for display if customRenderer is
+   * not specified. It's also used for sorting the table so unless isSortable is false and a
+   * customRenderer is used you have to provide a calc function.
+   * Please return "appropriate" types, that is: standard types like string, boolean, number, Date
+   * and from those the one that most closely models what the data contains (i.e. if the attribute
+   * is a date return a Date object so that the Table can properly render and sort it according
+   * to the locale)
+   * \note: calc may return a Promise, the table will then update once the value is calculated
+   * \note: The table will only automatically refresh and call "calc" if one of its props changes.
+   *        This means that if you bind a variable to your calc function which is not part of
+   *        the Table props the Table may appear glitchy as it won't update as necessary.
+   */
+  calc?: (object: any, t: I18next.TranslationFunction) => any | Promise<any>;
+  /**
+   * custom function for sorting by this attribute. The parameters passed in (lhs and rhs) are
+   * by calc (cached). Return <0 if lhs is smaller than rhs, >0 if it's bigger and =0 if they are
+   * equal.
+   */
   sortFunc?: (lhs: any, rhs: any, locale: string) => number;
-  filterFunc?: (filter: string, value: any) => boolean;
 }

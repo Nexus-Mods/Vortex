@@ -8,5 +8,7 @@ export const selectRows: any = createAction('SELECT_ROWS',
 export const setAttributeVisible: any = createAction('SET_ATTRIBUTE_VISIBLE',
   (tableId: string, attributeId: string, visible: boolean) => ({ tableId, attributeId, visible }));
 
-export const setAttributeSort: any = createAction('SET_ATTRIBUTE_SORT',
-  (tableId: string, attributeId: string, dir: SortDirection) => ({ tableId, attributeId, dir }));
+export const setAttributeSort: any = createAction(
+    'SET_ATTRIBUTE_SORT',
+    (tableId: string, attributeId: string, direction: SortDirection) =>
+        ({tableId, attributeId, direction}));

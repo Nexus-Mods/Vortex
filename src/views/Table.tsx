@@ -15,7 +15,9 @@ import AttributeToggle from './AttributeToggle';
 import HeaderCell from './HeaderCell';
 import IconBar from './IconBar';
 
+import * as Promise from 'bluebird';
 import * as React from 'react';
+import update = require('react-addons-update');
 import {ControlLabel, FormControl, FormGroup, Table} from 'react-bootstrap';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 import { createSelector } from 'reselect';
@@ -37,35 +39,88 @@ class TableCell extends React.Component<ICellProps, {}> {
   public render(): JSX.Element {
     const { t, attribute, language, rowData, rowId } = this.props;
 
+    // if a custom renderer was set then rowData is the raw object
+    // passed to the table by the user.
+    // otherwise rowData is the calculated value of this cell
+
     if (attribute.customRenderer !== undefined) {
       return attribute.customRenderer(rowData, t);
     }
 
-    const value = attribute.calc(rowData, t);
-
-    if (value instanceof Date) {
-      return <span>{value.toLocaleString(language)}</span>;
-    } else if (typeof (value) === 'string') {
-      return <span>{value}</span>;
-    } else if (typeof (value) === 'boolean') {
+    if (rowData instanceof Date) {
+      return <span>{rowData.toLocaleString(language)}</span>;
+    } else if (typeof (rowData) === 'string') {
+      return <span>{rowData}</span>;
+    } else if (typeof (rowData) === 'boolean') {
       return <IconButton
         className='btn-embed'
         id={`toggle-${rowId}-${attribute.id}`}
-        tooltip={t('Toggle')}
-        icon={ value ? 'check-square-o' : 'square-o' }
+        tooltip={attribute.name}
+        icon={ rowData ? 'check-square-o' : 'square-o' }
         onClick={this.toggle}
       />;
-    } else if ((value === undefined) || (value === null)) {
+    } else if ((rowData === undefined) || (rowData === null)) {
       return <span>{' '}</span>;
     } else {
-      return <span>{value.toString()}</span>;
+      return <span>{rowData.toString()}</span>;
     }
   }
 
+
   private toggle = () => {
-    const { t, attribute, rowData, rowId } = this.props;
-    const value = attribute.calc(rowData, t);
+    const { attribute, rowData, rowId } = this.props;
+    const value = rowData;
     this.props.onChangeData(rowId, attribute.id, !value);
+  }
+}
+
+class DetailCell extends React.Component<ICellProps, {}> {
+  public render(): JSX.Element {
+    const { t, attribute, rowData, rowId } = this.props;
+    const value = rowData[attribute.id];
+
+    const key = `${rowId}-${attribute.id}`;
+
+    let content: JSX.Element = null;
+
+    if (attribute.customRenderer !== undefined) {
+      content = (
+        <FormControl.Static>
+          { attribute.customRenderer(rowData, t) }
+        </FormControl.Static>
+      );
+    } else {
+      content = (
+        <FormControl
+          id={attribute.id}
+          type='text'
+          label={t(attribute.name)}
+          readOnly={attribute.isReadOnly}
+          defaultValue={this.renderCell(value)}
+        />
+      );
+    }
+
+    return (
+      <FormGroup key={key}>
+        <ControlLabel>{attribute.name}</ControlLabel>
+        {content}
+      </FormGroup>
+    );
+  }
+
+  private renderCell(value: any): string {
+    const { language } = this.props;
+
+    if (value instanceof Date) {
+      return value.toLocaleString(language);
+    } else if (typeof(value) === 'string') {
+      return value;
+    } else if ((value === undefined) || (value === null)) {
+      return '';
+    } else {
+      return value.toString();
+    }
   }
 }
 
@@ -74,6 +129,7 @@ interface IRowProps {
   tableId: string;
   key: string;
   data: any;
+  rawData: any;
   attributes: ITableAttribute[];
   actions: IIconDefinition[];
   language: string;
@@ -112,10 +168,10 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   private renderAttribute = (attribute: ITableAttribute): JSX.Element => {
-    const { t, data } = this.props;
+    const { t, data, rawData } = this.props;
     return (
       <td key={attribute.id}>
-        {this.renderCell(attribute, data, t)}
+        {this.renderCell(attribute, attribute.customRenderer ? rawData : data[attribute.id], t)}
       </td>
     );
   }
@@ -151,8 +207,8 @@ export interface IBaseProps {
 }
 
 interface IConnectedProps {
-  attributeState: { [id: string]: IAttributeState },
-  rowState: { [id: string]: IRowState },
+  attributeState: { [id: string]: IAttributeState };
+  rowState: { [id: string]: IRowState };
   language: string;
 }
 
@@ -166,8 +222,11 @@ interface IExtensionProps {
   objects: ITableAttribute[];
 }
 
+type LookupCalculated = { [rowId: string]: { [attributeId: string]: any } };
+
 interface IComponentState {
   lastSelected?: string;
+  calculatedValues: LookupCalculated;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps;
@@ -184,7 +243,18 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     super(props);
     this.state = {
       lastSelected: undefined,
+      calculatedValues: {},
     };
+  }
+
+  public componentDidMount() {
+    this.updateCalculatedValues(this.props);
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if (newProps.data !== this.props.data) {
+      this.updateCalculatedValues(newProps);
+    }
   }
 
   public render(): JSX.Element {
@@ -228,6 +298,26 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       );
   }
 
+  private updateCalculatedValues(props) {
+    const { t, data, objects } = props;
+
+    let newValues: LookupCalculated = {};
+
+    // recalculate each attribute in each row
+    Promise.map(Object.keys(data), (rowId: string) => {
+      newValues[rowId] = { __id: rowId };
+      return Promise.map(objects, (attribute: ITableAttribute) =>
+        Promise.resolve(attribute.calc(data[rowId], t))
+          .then((newValue) => newValues[rowId][attribute.id] = newValue)
+      );
+    }).then(() => {
+      // once everything is recalculated, update the cache
+      this.setState(update(this.state, {
+        calculatedValues: { $set: newValues },
+      }));
+    });
+  }
+
   private standardSort(lhs: any, rhs: any): number {
     return lhs < rhs ? -1
       : lhs === rhs  ? 0
@@ -238,19 +328,20 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                      attributes: ITableAttribute[],
                      data: { [id: string]: any },
                      locale: string): any[] {
+    const { calculatedValues } = this.state;
+
     let sortAttribute: ITableAttribute = attributes.find((attribute: ITableAttribute) => {
       return (attributeState[attribute.id] !== undefined)
           && (attributeState[attribute.id].sortDirection !== 'none');
     });
 
-    const rows: any[] = Object.keys(data).map((id: string) => {
-      let res = data[id];
-      res.__id = id;
-      return res;
-    });
+    let idsToRows = (rowId: string) =>
+      Object.assign({}, data[rowId], {
+        __id: rowId,
+      });
 
     if (sortAttribute === undefined) {
-      return rows;
+      return Object.keys(data).map(idsToRows);
     }
 
     let sortFunction = sortAttribute.sortFunc;
@@ -258,62 +349,29 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       sortFunction = this.standardSort;
     }
 
-    return rows.sort((lhs: any, rhs: any): number => {
-      let res = sortFunction(lhs[sortAttribute.id],
-                             rhs[sortAttribute.id],
+    return Object.keys(data).sort((lhsId: string, rhsId: string): number => {
+      let res = sortFunction(calculatedValues[lhsId][sortAttribute.id],
+                             calculatedValues[rhsId][sortAttribute.id],
                              locale);
       if (attributeState[sortAttribute.id].sortDirection === 'desc') {
         res *= -1;
       }
       return res;
-    });
-  }
-
-  private renderCell(value: any): string {
-    const { language } = this.props;
-
-    if (value instanceof Date) {
-      return value.toLocaleString(language);
-    } else if (typeof(value) === 'string') {
-      return value;
-    } else if ((value === undefined) || (value === null)) {
-      return '';
-    } else {
-      return value.toString();
-    }
+    }).map(idsToRows);
   }
 
   private renderDetail = (rowData: any, attribute: ITableAttribute) => {
-    const { t } = this.props;
+    const { t, language, onChangeData } = this.props;
 
-    const key = `${rowData.__id}-${attribute.id}`;
-
-    let content: JSX.Element = null;
-
-    if (attribute.customRenderer !== undefined) {
-      content = (
-        <FormControl.Static>
-          { attribute.customRenderer(rowData, t) }
-        </FormControl.Static>
-      );
-    } else {
-      content = (
-        <FormControl
-          id={attribute.id}
-          type='text'
-          label={t(attribute.name)}
-          readOnly={attribute.isReadOnly}
-          defaultValue={this.renderCell(attribute.calc(rowData, t))}
-        />
-      );
-    }
-
-    return (
-      <FormGroup key={key}>
-        <ControlLabel>{attribute.name}</ControlLabel>
-        {content}
-      </FormGroup>
-    );
+    return <DetailCell
+      t={t}
+      key={`detail-${rowData.__id}-${attribute.id}`}
+      attribute={attribute}
+      language={language}
+      rowData={rowData}
+      rowId={rowData.__id}
+      onChangeData={onChangeData}
+    />;
   }
 
   private renderDetails = (rowId: string) => {
@@ -321,8 +379,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    const {data, objects} = this.props;
-    let rowData = data[rowId];
+    const {objects} = this.props;
+    const {calculatedValues} = this.state;
+
+    const rowData = calculatedValues[rowId];
 
     const detailAttributes = objects.filter((attribute: ITableAttribute) =>
       attribute.placement !== 'table'
@@ -332,8 +392,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       log('warn', 'unknown row id', rowId);
       return null;
     }
-
-    rowData.__id = rowId;
 
     return (
       <form style={{ minWidth: 300 }}>
@@ -444,6 +502,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private renderRow(data: any, visibleAttributes: ITableAttribute[]): JSX.Element {
     const { t, actions, language, onChangeData, rowState, tableId } = this.props;
+    const { calculatedValues } = this.state;
+
+    if (calculatedValues[data.__id] === undefined) {
+      return null;
+    }
 
     const rowActions = actions.filter(
       (action) => action.singleRowAction === undefined || action.singleRowAction);
@@ -453,7 +516,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         t={t}
         tableId={tableId}
         key={data.__id}
-        data={data}
+        data={calculatedValues[data.__id]}
+        rawData={data}
         attributes={visibleAttributes}
         actions={rowActions}
         language={language}
@@ -482,7 +546,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const attributeState = this.getAttributeState(attribute.id);
 
-    if (attributeState.enabled) {
+    if (attributeState.enabled === undefined || attributeState.enabled) {
       return (
         <HeaderCell
           key={attribute.id}
@@ -499,6 +563,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private getAttributeState(attributeId: string) {
     const { attributeState } = this.props;
+
     return getSafe(attributeState, [attributeId], {
       enabled: true,
       sortDirection: 'none' as SortDirection,

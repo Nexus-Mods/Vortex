@@ -22,6 +22,7 @@ import {FILE_NAME, PROGRESS} from '../downloadAttributes';
 import DownloadDropzone from './DownloadDropzone';
 
 import * as Promise from 'bluebird';
+import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
@@ -80,6 +81,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   private staticButtons: IIconDefinition[];
 
   private gameColumn: ITableAttribute;
+  private fileTimeColumn: ITableAttribute;
   private actions: ITableRowAction[];
 
   constructor(props) {
@@ -98,6 +100,22 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         let game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
         return game ? this.props.t(game.name) : attributes.game;
       },
+      placement: 'both',
+      isToggleable: true,
+      isReadOnly: true,
+      isSortable: true,
+    };
+
+    this.fileTimeColumn = {
+      id: 'filetime',
+      name: 'File Time',
+      description: 'Time the file was last modified',
+      icon: 'calendar-plus-o',
+      calc: (attributes: IDownload) =>
+        fs.statAsync(path.join(this.props.downloadPath, attributes.localPath))
+        .then((stat: fs.Stats) =>
+          Promise.resolve(stat.mtime)
+        ),
       placement: 'both',
       isToggleable: true,
       isReadOnly: true,
@@ -185,7 +203,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
           <SuperTable
             tableId='downloads'
             data={downloads}
-            staticElements={[ FILE_NAME, this.gameColumn, PROGRESS ]}
+            staticElements={[ FILE_NAME, this.fileTimeColumn, this.gameColumn, PROGRESS ]}
             actions={this.actions}
             onChangeData={this.onChangeData}
           />

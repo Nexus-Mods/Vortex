@@ -42,6 +42,7 @@ export const PROGRESS: ITableAttribute = {
   icon: 'clock-o',
   customRenderer: (download: IDownload, t: I18next.TranslationFunction) =>
     progress({ download, t }),
+  calc: (download: IDownload, t: I18next.TranslationFunction) => download.received / download.size,
   placement: 'table',
   isToggleable: true,
   isReadOnly: true,
