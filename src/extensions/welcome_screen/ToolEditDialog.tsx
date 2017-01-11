@@ -16,7 +16,6 @@ import * as fs from 'fs-extra-promise';
 import { extractIconToFile } from 'icon-extract';
 import * as path from 'path';
 import * as React from 'react';
-import update = require('react-addons-update');
 import { ControlLabel, FormControl, Image, InputGroup, Modal } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
@@ -48,10 +47,17 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
 
   constructor(props: IProps) {
     super(props);
-    this.state = {
+    this.initState({
       tool: Object.assign({}, props.tool),
       imageId: new Date().getTime(),
-    };
+    });
+  }
+
+  public componentDidUpdate(prevProps: IProps, prevState: IToolEditState) {
+    if (prevState.tool.path !== this.state.tool.path) {
+      let node: any = ReactDOM.findDOMNode(this.mPathControl);
+      node.scrollLeft = node.scrollWidth;
+    }
   }
 
   public render(): JSX.Element {
@@ -162,15 +168,11 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   }
 
   private clearCache() {
-    this.setState(update(this.state, {
-      imageId: { $set: new Date().getTime() },
-    }));
+    this.nextState.imageId = new Date().getTime();
   }
 
-  private handleChange(field: string, value: any, callback?: () => void): void {
-    this.setState(update(this.state, { tool:
-      { [field]: { $set: value } },
-    }), callback);
+  private handleChange(field: string, value: any): void {
+    this.nextState.tool[field] = value;
   }
 
   private handleChangeName = (event) => {
@@ -205,10 +207,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       if (filePath === undefined) {
         return Promise.reject(null);
       }
-      this.handleChange('path', filePath, () => {
-        let node: any = ReactDOM.findDOMNode(this.mPathControl);
-        node.scrollLeft = node.scrollWidth;
-      });
+      this.handleChange('path', filePath);
       if (!this.state.tool.name) {
         this.handleChange('name', path.basename(filePath, path.extname(filePath)));
       }
