@@ -43,3 +43,4 @@ export interface IGetNodeTree {
   getNodeKey: Function;
   ignoreCollapsed: boolean;
 }
+

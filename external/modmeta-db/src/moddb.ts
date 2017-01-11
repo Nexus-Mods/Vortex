@@ -252,6 +252,7 @@ class ModDB {
    * 
    * @memberOf ModDB
    */
+
   private translateFromNexus = (nexusObj: any, gameId: string): ILookupResult => {
     let urlFragments = [
       'nxm:/',
@@ -259,7 +260,7 @@ class ModDB {
       'mods',
       nexusObj.mod.mod_id,
       'files',
-      nexusObj.file_details.file_id
+      nexusObj.file_details.file_id,
     ];
 
     const page =

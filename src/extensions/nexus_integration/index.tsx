@@ -115,7 +115,7 @@ function retrieveCategories(context: IExtensionContextExt, isUpdate: boolean) {
   }
 };
 
-function processErrorMessage(statusCode: number, errorMessage: string,  gameId: string) {
+function processErrorMessage(statusCode: number, errorMessage: string, gameId: string) {
   let message = '';
   if (statusCode === 404) {
     return message = 'Game not found: ' + gameId;

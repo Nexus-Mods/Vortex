@@ -8,60 +8,45 @@ interface IGameInfo {
 }
 
 interface ICategory {
-    category_id: number;
-    name: string;
-    parent_category: number | false;
+  category_id: number;
+  name: string;
+  parent_category: number | false;
 }
 
-interface IChildren {
-  rootId: number;
-  title: string;
-  expanded: boolean;
-  parentId: number;
-}
-
-interface ICategoryTree {
-  rootId: number;
-  title: string;
-  expanded: boolean;
-  children: IChildren[];
-  parentId: number;
-}
+interface ICategoryDic {
+  [id: string]: { name: string, parentCategory: string };
+};
 
 export function retriveCategoryList(
   activeGameId: string,
   nexus: Nexus
 ): any {
   return new Promise<any>((resolve, reject) => {
-    let categoryList = [];
     nexus.getGameInfo(activeGameId)
       .then((gameInfo: IGameInfo) => {
-        let roots = gameInfo.categories.filter((value) => value.parent_category === false);
-        roots.forEach(rootElement => {
-          let children: ICategory[] = gameInfo.categories.filter((value) =>
-            value.parent_category === rootElement.category_id);
-          let childrenList = [];
+        if (gameInfo.categories !== undefined) {
+          let categoryList: any[] = [];
+          gameInfo.categories.forEach(category => {
 
-          children.forEach(element => {
-            let child: IChildren = {
-              rootId: element.category_id,
-              title: element.name,
-              expanded: false,
-              parentId: rootElement.category_id,
+            let categoryDict: ICategoryDic = {
+              [category.category_id]:
+              {
+                name: category.name, parentCategory: category.parent_category === false
+                  ? undefined : category.parent_category.toString(),
+              },
             };
-            childrenList.push(child);
+
+            categoryList.push(categoryDict);
           });
 
-          let root: ICategoryTree = {
-            rootId: rootElement.category_id,
-            title: rootElement.name,
-            expanded: false,
-            parentId: 0,
-            children: childrenList,
-          };
-          categoryList.push(root);
-        });
-        resolve(categoryList);
+          let categories = categoryList.reduce((result, item) => {
+            let key = Object.keys(item)[0];
+            result[key] = item[key];
+            return result;
+          }, {});
+
+          resolve(categories);
+        }
       }
       )
       .catch((err) => {

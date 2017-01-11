@@ -5,6 +5,7 @@ import { sessionReducer } from './reducers/session';
 import CategoryList from './views/CategoryList';
 
 import { convertGameId } from './util/convertGameId';
+import { createTreeDataObject } from './util/createTreeDataObject';
 import { retrieveCategoryPath } from './util/retrieveCategoryPath';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
@@ -56,7 +57,7 @@ function init(context: IExtensionContext): boolean {
 
         if (isUpdate) {
           context.api.store.dispatch(updateCategories(gameId, categories));
-          store.dispatch(setTreeDataObject(categories));
+          store.dispatch(setTreeDataObject(createTreeDataObject(categories)));
         } else {
           context.api.store.dispatch(loadCategories(gameId, categories));
         }
