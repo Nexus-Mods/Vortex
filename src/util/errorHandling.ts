@@ -11,6 +11,7 @@ import {log} from './log';
 export interface ITermination {
   message: string;
   details?: string;
+  stack?: string;
 }
 
 function createTitle(type: string, error: ITermination) {
@@ -88,7 +89,7 @@ export function terminate(error: ITermination) {
     // used (except for this function)
     dialog.showErrorBox('An unrecoverable error occured',
       error.message + '\n' + error.details +
-      '\nThis message was also written to the log file, please report it to the ' +
+      '\nIf you think this is a bug, please report it to the ' +
       'issue tracker');
   }
 

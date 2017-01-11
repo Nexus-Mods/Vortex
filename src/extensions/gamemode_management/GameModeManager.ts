@@ -98,13 +98,17 @@ class GameModeManager {
           this.mError = false;
         })
         .catch((err) => {
-          if (!this.mError) {
+          if (!this.mError && (oldMode !== undefined)) {
             // first error, try reverting to the previous game mode
             this.mError = true;
             showError(this.mStore.dispatch, 'Failed to change game mode', err);
             this.mStore.dispatch(setGameMode(oldMode));
           } else {
-            terminate({message: 'Failed to change game mode', details: err});
+            terminate({
+              message: 'Failed to change game mode',
+              details: err.message,
+              stack: err.stack,
+            });
           }
         });
   }
@@ -222,7 +226,13 @@ class GameModeManager {
           whitelist: this.mStateWhitelist,
           keyPrefix: '',
         };
-        return getStoredStateP(settings);
+        return getStoredStateP(settings)
+        .catch((err) => {
+          return Promise.reject(
+            new Error('Failed to load state. This almost certainly means you '
+                      + 'manually edited one of the state files. Fix the following syntax error '
+                      + 'and re-start NMM2: ' + err.message));
+        });
       }).then((state) => {
         log('info', 'activate game settings', JSON.stringify(state));
         // step 3: update game-specific settings, then return the persistor

@@ -32,8 +32,6 @@ import { Fixed, Flex, Layout } from 'react-layout-pane';
 import update = require('react-addons-update');
 import {createSelector} from 'reselect';
 
-import { log } from '../../../util/log';
-
 type IModWithState = IMod & IProfileMod;
 
 interface IBaseProps {
@@ -90,7 +88,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     this.modEnabledAttribute = {
       id: 'enabled',
-      name: 'Enabled',
+      name: 'Enable',
       description: 'Is mod enabled in current profile',
       icon: 'check-o',
       calc: (mod: IModWithState) => mod.enabled,

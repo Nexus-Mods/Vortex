@@ -107,25 +107,21 @@
 }
 
 .mainpage-enter {
-  transform: translateX(-50%);
   opacity: 0;
 }
 
 .mainpage-enter.mainpage-enter-active {
-  transform: translateX(0px);
   opacity: 1;
-  transition: transform 250ms ease-in, opacity 250ms ease-in;
+  transition: opacity 250ms ease-in;
 }
 
 .mainpage-leave {
-  transform: translateX(0px);
   opacity: 1;
 }
 
 .mainpage-leave.mainpage-leave-active {
   opacity: 0;
-  transform: translateX(50%);
-  transition: transform 250ms ease-out, opacity 150ms ease-out;
+  transition: opacity 150ms ease-out;
 }
 
 

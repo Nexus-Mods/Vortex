@@ -113,8 +113,7 @@ function init(context: IExtensionContextExt): boolean {
       })
         .then(() => {
           context.api.events.emit('mods-refreshed');
-        })
-        ;
+        });
     });
 
     context.api.onStateChange(

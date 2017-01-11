@@ -102,10 +102,10 @@
         "app"
       ]
     },
-        {
-      "srcPath": "node_modules/modinstaller/dist",
+    {
+      "srcPath": "node_modules/modinstaller/ModInstaller/bin/Release/*",
       "outPath": "lib/modinstaller",
-      "skipPaths": 3,
+      "skipPaths": 5,
       "target": [
         "out",
         "app"

@@ -102,7 +102,7 @@ export function extendStore(store: Redux.Store<IState>,
           } else {
             log('info', 'External state loaded',
                 {hive, state: JSON.stringify(state)});
-            // 
+
             persistor.setResetCallback(() => {
               // when the persistor resets we re-retrieve the stored state
               // and rehydrate with that.

@@ -101,6 +101,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('clone', 'Profiles', ProfileView, {
     hotkey: 'P',
   });
+
   context.registerReducer(['gameSettings', 'profiles'], profilesReducer);
 
   context.registerProfileFile = (gameId: string, filePath: string) => {
@@ -120,7 +121,11 @@ function init(context: IExtensionContextExt): boolean {
       // when the game changes it's assumed that the "global" files are
       // associated with the active profile because you can't change the
       // profile without activating the game first
-      return refreshProfile(store, 'import');
+      return refreshProfile(store, 'import')
+      .then(() => {
+        context.api.events.emit('profile-activated',
+          store.getState().gameSettings.profiles.currentProfile);
+      });
     });
 
     context.api.onStateChange(['gameSettings', 'profiles', 'currentProfile'],
@@ -130,7 +135,10 @@ function init(context: IExtensionContextExt): boolean {
         // because that already happened in the previous state change handler
         if (lastGame === newGame) {
           // same game, different profile.
-          refreshProfile(store, 'export');
+          refreshProfile(store, 'export')
+              .then(() => {
+                context.api.events.emit('profile-activated', current);
+              });
         } else {
           lastGame = newGame;
         }
