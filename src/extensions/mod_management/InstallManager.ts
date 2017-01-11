@@ -1,5 +1,6 @@
 import {showDialog} from '../../actions/notifications';
-import {IExtensionContext} from '../../types/IExtensionContext';
+import {IDialogResult} from '../../types/IDialog';
+import {IExtensionApi} from '../../types/IExtensionContext';
 import {log} from '../../util/log';
 
 import {IDownload} from '../download_management/types/IDownload';
@@ -25,6 +26,9 @@ interface IZipEntry {
   attr: string;
   size: number;
   name: string;
+}
+
+function UserCanceled() {
 }
 
 /**
@@ -67,29 +71,45 @@ class InstallManager {
    * @param {string} installPath path to install mods into (not including the
    * mod name)
    * @param {IExtensionContext} context extension context
-   * @param {*} modInfo existing information about the mod (i.e. stuff retrieved
-   * from nexus)
+   * @param {*} info existing information about the mod (i.e. stuff retrieved
+   *                 from the download page)
    */
-  public install(archiveId: string, archivePath: string, context: IExtensionContext,
+  public install(archiveId: string, archivePath: string, api: IExtensionApi,
                  info: any, processDependencies: boolean,
                  callback?: (error: Error, id: string) => void) {
-    const installContext = new InstallContext(context.api.store.dispatch);
+    const installContext = new InstallContext(api.store.dispatch);
 
     const baseName = path.basename(archivePath, path.extname(archivePath));
-    let destinationPath: string;
+    let installName = baseName;
     let fullInfo = Object.assign({}, info);
 
-    installContext.startInstallCB(baseName, archiveId, destinationPath);
+    installContext.startIndicator(baseName);
 
+    let destinationPath: string;
     let fileList: IZipEntry[] = [];
 
-    context.api.lookupModMeta({ filePath: archivePath })
+    api.lookupModMeta({filePath: archivePath})
         .then((modInfo: ILookupResult[]) => {
           if (modInfo.length > 0) {
             fullInfo.meta = modInfo[0].value;
           }
 
-          const installName = this.deriveInstallName(baseName, fullInfo);
+          installName = this.deriveInstallName(baseName, fullInfo);
+
+          const checkNameLoop = () => {
+            return this.checkModExists(installName, api)
+              ? this.queryUserReplace(installName, api).then((newName: string) => {
+                installName = newName;
+                return checkNameLoop();
+              })
+              : Promise.resolve(installName);
+          };
+
+          return checkNameLoop();
+        })
+        .then(() => {
+          installContext.startInstallCB(installName, archiveId);
+
           destinationPath = path.join(this.mGetInstallPath(), installName);
 
           // get list of files in the archive
@@ -101,35 +121,84 @@ class InstallManager {
         })
         .then(() => {
           return this.getInstaller(fileList.map((entry: IZipEntry) => entry.name));
-        }).then((installer: IModInstaller) => {
+        })
+        .then((installer: IModInstaller) => {
           if (installer === undefined) {
             throw new Error('no installer supporting this file');
           }
           return installer.install(fileList.map((entry: IZipEntry) => entry.name), destinationPath,
             (perc: number) => log('info', 'progress', perc));
-        }).then((result: any) => {
-          log('info', 'result', result);
-          installContext.setInstallPathCB(baseName, destinationPath);
+        })
+        .then((result: any) => {
+          installContext.setInstallPathCB(installName, destinationPath);
           return this.extractArchive(archivePath, destinationPath);
         })
         .then(() => {
           const filteredInfo = filterModInfo(fullInfo);
-          installContext.finishInstallCB(baseName, true, filteredInfo);
+          installContext.finishInstallCB(installName, true, filteredInfo);
           if (processDependencies) {
             this.installDependencies(filteredInfo.rules, this.mGetInstallPath(),
-                                     installContext, context);
+                                     installContext, api);
           }
           if (callback !== undefined) {
-            callback(null, baseName);
+            callback(null, installName);
           }
         })
         .catch((err) => {
-          installContext.reportError('failed to extract', err);
-          installContext.finishInstallCB(baseName, false);
-          if (callback !== undefined) {
-            callback(err, baseName);
+          installContext.finishInstallCB(installName, false);
+          if (!(err instanceof UserCanceled)) {
+            installContext.reportError('failed to extract', err);
+            if (callback !== undefined) {
+              callback(err, installName);
+            }
           }
-        });
+        })
+        .finally(() => {
+          installContext.stopIndicator(baseName);
+        })
+        ;
+  }
+
+  private checkModExists(installName: string, api: IExtensionApi): boolean {
+    return installName in api.store.getState().mods.mods;
+  }
+
+  private queryUserReplace(modId: string, api: IExtensionApi): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      api.store
+          .dispatch(showDialog(
+              'question', 'Mod exists',
+              {
+                message:
+                    'This mod seems to be installed already. You can replace the ' +
+                        'existing one or install the new one under a different name.',
+                formcontrol: {
+                  id: 'newName',
+                  type: 'input',
+                  value: modId,
+                },
+              },
+              {
+                Cancel: null,
+                Replace: null,
+                Rename: null,
+              }))
+          .then((result: IDialogResult) => {
+            if (result.action === 'Cancel') {
+              reject(new UserCanceled());
+            } else if (result.action === 'Rename') {
+              resolve(result.input.value);
+            } else if (result.action === 'Replace') {
+              api.events.emit('remove-mod', modId, (err) => {
+                if (err !== null) {
+                  reject(err);
+                } else {
+                  resolve(modId);
+                }
+              });
+            }
+          });
+    });
   }
 
   private getInstaller(fileList: string[],
@@ -155,9 +224,8 @@ class InstallManager {
    * determine the mod name (on disk) from the archive path
    * TODO: this currently simply uses the archive name which should be fine
    *   for downloads from nexus but in general we need the path to encode the
-   * mod,
-   *   the specific "component" and the version. And then we need to avoid
-   * collisions.
+   *   mod, the specific "component" and the version. And then we need to avoid
+   *   collisions.
    *   Finally, the way I know users they will want to customize this.
    *
    * @param {string} archiveName
@@ -169,9 +237,9 @@ class InstallManager {
   }
 
   private downloadModAsync(requirement: IReference, sourceURI: string,
-                           context: IExtensionContext): Promise<string> {
+                           api: IExtensionApi): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      if (!context.api.events.emit('start-download', [sourceURI], {},
+      if (!api.events.emit('start-download', [sourceURI], {},
                                    (error, id) => {
                                      if (error === null) {
                                        resolve(id);
@@ -185,24 +253,24 @@ class InstallManager {
   }
 
   private doInstallDependencies(dependencies: IDependency[],
-                                context: IExtensionContext): Promise<void> {
+                                api: IExtensionApi): Promise<void> {
     return Promise.all(dependencies.map((dep: IDependency) => {
                     if (dep.download === undefined) {
                       return this.downloadModAsync(
                                      dep.reference,
                                      dep.lookupResults[0].value.sourceURI,
-                                     context)
+                                     api)
                           .then((downloadId: string) => {
-                            return this.installModAsync(dep.reference, context,
+                            return this.installModAsync(dep.reference, api,
                                                         downloadId);
                           });
                     } else {
-                      return this.installModAsync(dep.reference, context,
+                      return this.installModAsync(dep.reference, api,
                                                   dep.download);
                     }
                   }))
         .catch((err) => {
-          context.api.showErrorNotification('Failed to install dependencies',
+          api.showErrorNotification('Failed to install dependencies',
                                             err.message);
         })
         .then(() => undefined);
@@ -210,16 +278,16 @@ class InstallManager {
 
   private installDependencies(rules: IRule[], installPath: string,
                               installContext: InstallContext,
-                              context: IExtensionContext): Promise<void> {
+                              api: IExtensionApi): Promise<void> {
     let notificationId = `${installPath}_activity`;
-    context.api.sendNotification({
+    api.sendNotification({
       id: notificationId,
       type: 'activity',
       message: 'Checking dependencies',
     });
-    return gatherDependencies(rules, context)
+    return gatherDependencies(rules, api)
         .then((dependencies: IDependency[]) => {
-          context.api.dismissNotification(notificationId);
+          api.dismissNotification(notificationId);
 
           if (dependencies.length === 0) {
             return Promise.resolve();
@@ -235,28 +303,27 @@ class InstallManager {
                 `This mod has unresolved dependencies. ${dependencies.length} mods have to be
 installed, ${requiredDownloads} of them have to be downloaded first.`;
 
-            context.api.store.dispatch(
+            api.store.dispatch(
                 showDialog('question', 'Install Dependencies', {message}, {
                   "Don't install": null,
                   Install:
-                      () => this.doInstallDependencies(dependencies, context),
+                      () => this.doInstallDependencies(dependencies, api),
                 }));
           });
         })
         .catch((err) => {
-          context.api.dismissNotification(notificationId);
-          context.api.showErrorNotification('Failed to check dependencies',
-                                            err);
+          api.dismissNotification(notificationId);
+          api.showErrorNotification('Failed to check dependencies', err);
         });
   }
 
-  private installModAsync(requirement: IReference, context: IExtensionContext,
+  private installModAsync(requirement: IReference, api: IExtensionApi,
                           downloadId: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      const state = context.api.store.getState();
+      const state = api.store.getState();
       let download: IDownload = state.persistent.downloads.files[downloadId];
       let fullPath: string = path.join(downloadPath(state), download.localPath);
-      this.install(downloadId, fullPath, context, download.modInfo, false,
+      this.install(downloadId, fullPath, api, download.modInfo, false,
                    (error, id) => {
                      if (error === null) {
                        resolve(id);

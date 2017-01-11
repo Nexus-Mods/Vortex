@@ -87,7 +87,9 @@ class SavegameRow extends React.Component<IProps, {}> {
 
     onShowDialog('question', t('Confirm deletion'), {
       message: t('Do you really want to remove {{saveId}}?', { replace: { saveId: save.id } }),
-      translated: true,
+      options: {
+        translated: true,
+      }
     }, {
         Cancel: null,
         Delete: null,

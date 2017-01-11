@@ -28,7 +28,10 @@ export interface IDialogContent {
   message?: string;
   checkboxes?: ICheckbox[];
   formcontrol?: IFormControl;
-  translated?: boolean;
+  options?: {
+    translated?: boolean;
+    wrap?: boolean;
+  }
 }
 
 export interface IDialogResult {

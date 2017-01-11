@@ -8,6 +8,8 @@ import { IMod, ModState } from './types/IMod';
 
 import { IInstallContext } from './types/IInstallContext';
 
+import * as path from 'path';
+
 interface IOnAddMod {
   (mod: IMod): void;
 }
@@ -42,20 +44,7 @@ class InstallContext implements IInstallContext {
       dispatch(setModInstallationPath(id, installPath));
   }
 
-  public startInstallCB(id: string, archiveId: string, destinationPath: string): void {
-    const mod: IMod = {
-      id,
-      archiveId,
-      installationPath: destinationPath,
-      state: 'installing',
-      attributes: {
-        name: id,
-        installTime: 'ongoing',
-      },
-    };
-
-    this.mAddMod(mod);
-
+  public startIndicator(id: string): void {
     this.mAddNotification({
       id: 'install_' + id,
       message: 'Installing ' + id,
@@ -63,15 +52,31 @@ class InstallContext implements IInstallContext {
     });
   }
 
-  public finishInstallCB(id: string, success: boolean, info?: any): void {
+  public stopIndicator(id: string): void {
     this.mDismissNotification('install_' + id);
 
+    this.mAddNotification({
+      type: 'success',
+      message: `${id} installed`,
+      displayMS: 4000,
+    });
+  }
+
+  public startInstallCB(id: string, archiveId: string): void {
+    this.mAddMod({
+      id,
+      archiveId,
+      installationPath: id,
+      state: 'installing',
+      attributes: {
+        name: id,
+        installTime: 'ongoing',
+      },
+    });
+  }
+
+  public finishInstallCB(id: string, success: boolean, info?: any): void {
     if (success) {
-      this.mAddNotification({
-        type: 'success',
-        message: `${id} installed`,
-        displayMS: 4000,
-      });
       this.mSetModState(id, 'installed');
       this.mSetModAttribute(id, 'installTime', new Date());
       this.mSetModAttribute(id, 'category', info.category);
@@ -85,7 +90,7 @@ class InstallContext implements IInstallContext {
   }
 
   public setInstallPathCB(id: string, installPath: string) {
-    this.mSetModInstallationPath(id, installPath);
+    this.mSetModInstallationPath(id, path.basename(installPath));
   }
 
   public reportError(message: string, details?: string | Error): void {

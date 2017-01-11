@@ -26,7 +26,7 @@ function refreshMods(installPath: string, knownMods: string[],
         .then((stat: fs.Stats) => {
           const mod: IMod = {
             id: modName,
-            installationPath: fullPath,
+            installationPath: modName,
             state: 'installed',
             attributes: {
               name: modName,

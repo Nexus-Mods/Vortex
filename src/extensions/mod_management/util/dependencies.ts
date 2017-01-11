@@ -1,4 +1,4 @@
-import {IExtensionContext} from '../../../types/IExtensionContext';
+import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
 import {getSafe} from '../../../util/storeHelper';
 
@@ -26,8 +26,8 @@ function findDownloadByRef(reference: IReference, state: any): string {
 }
 
 function gatherDependencies(
-    rules: IRule[], context: IExtensionContext): Promise<IDependency[]> {
-  const state = context.api.store.getState();
+    rules: IRule[], api: IExtensionApi): Promise<IDependency[]> {
+  const state = api.store.getState();
   let requirements: IRule[] =
       rules === undefined ?
           [] :
@@ -41,7 +41,7 @@ function gatherDependencies(
 
     let lookupDetails: ILookupResult[];
 
-    return context.api.lookupModReference(rule.reference)
+    return api.lookupModReference(rule.reference)
         .then((details: ILookupResult[]) => {
           lookupDetails = details;
 
@@ -49,7 +49,7 @@ function gatherDependencies(
             throw new Error('reference not found: ' + rule.reference);
           }
 
-          return gatherDependencies(details[0].value.rules, context);
+          return gatherDependencies(details[0].value.rules, api);
         })
         .then((dependencies: IDependency[]) => {
           return total.concat(dependencies)

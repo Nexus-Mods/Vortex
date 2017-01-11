@@ -86,16 +86,18 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   private renderContent(content: IDialogContent): JSX.Element {
     let { t } = this.props;
-    if (content.translated) {
+    if (content.options && content.options.translated) {
       t = (input: string) => input;
     }
 
     let controls: JSX.Element[] = [];
 
+    let wrap = (content.options && !content.options.wrap) ? 'off' : 'on';
+
     if (content.message !== undefined) {
       controls.push(<textarea
         key='dialog-content-message'
-        wrap='off'
+        wrap={ wrap }
         style={{ width: '100%', minHeight: 300, resize: 'none', border: 'none' }}
         defaultValue={content.message}
       />);

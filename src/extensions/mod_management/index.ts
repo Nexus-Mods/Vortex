@@ -24,6 +24,7 @@ import InstallManager from './InstallManager';
 
 import {downloadPath, installPath} from './selectors';
 
+import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 let activators: IModActivator[] = [];
@@ -130,7 +131,7 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on(
         'start-install',
         (archivePath: string, callback?: (error, id: string) => void) => {
-          installManager.install(null, archivePath, context, {}, true, callback);
+          installManager.install(null, archivePath, context.api, {}, true, callback);
         });
 
     context.api.events.on(
@@ -139,9 +140,29 @@ function init(context: IExtensionContextExt): boolean {
           let download: IDownload =
               store.getState().persistent.downloads.files[downloadId];
           let fullPath: string = path.join(downloadPath(store.getState()), download.localPath);
-          installManager.install(downloadId, fullPath, context,
+          installManager.install(downloadId, fullPath, context.api,
                                  download.modInfo, true, callback);
         });
+
+    context.api.events.on(
+        'remove-mod', (modId: string, callback?: (error: Error) => void) => {
+          let mods: {[id: string]: IMod};
+          let fullPath: string;
+          try {
+            mods = store.getState().mods.mods;
+            fullPath = path.join(installPath(store.getState()),
+                                 mods[modId].installationPath);
+          } catch (err) {
+            callback(err);
+          }
+          fs.removeAsync(fullPath)
+              .then(() => {
+                store.dispatch(removeMod(modId));
+                callback(null);
+              })
+              .catch((err) => { callback(err); });
+        });
+
     registerInstaller(1000, basicInstaller.testSupported, basicInstaller.install);
   });
 
