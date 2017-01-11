@@ -7,7 +7,6 @@ import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import {IExtensibleProps} from '../util/ExtensionProvider';
-import {log} from '../util/log';
 import {getSafe, setSafe} from '../util/storeHelper';
 import {IconButton} from '../views/TooltipControls';
 
@@ -65,7 +64,6 @@ class TableCell extends React.Component<ICellProps, {}> {
       return <span>{rowData.toString()}</span>;
     }
   }
-
 
   private toggle = () => {
     const { attribute, rowData, rowId } = this.props;
@@ -389,7 +387,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     );
 
     if (rowData === undefined) {
-      log('warn', 'unknown row id', rowId);
       return null;
     }
 

@@ -5,7 +5,7 @@ import { savesPath } from '../util/gameSupport';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import {IconBar, actions, selectors, types} from 'nmm-api';
+import {IconBar, actions, types} from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import { connect } from 'react-redux';

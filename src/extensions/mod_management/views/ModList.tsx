@@ -29,7 +29,6 @@ import * as path from 'path';
 import * as React from 'react';
 import { Jumbotron } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-import update = require('react-addons-update');
 import {createSelector} from 'reselect';
 
 type IModWithState = IMod & IProfileMod;
@@ -64,34 +63,25 @@ interface IRowState {
   selected: boolean;
 }
 
-interface IComponentState {
-  tableState: { [id: string]: IRowState };
-  lastSelected: string;
-}
-
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 /**
  * displays the list of mods installed for the current game.
  * 
  */
-class ModList extends ComponentEx<IProps, IComponentState> {
+class ModList extends ComponentEx<IProps, {}> {
   private modActions: ITableRowAction[];
   private modEnabledAttribute: ITableAttribute;
 
   constructor(props: IProps) {
     super(props);
-    this.state = {
-      tableState: {},
-      lastSelected: undefined,
-    };
 
     this.modEnabledAttribute = {
       id: 'enabled',
       name: 'Enable',
       description: 'Is mod enabled in current profile',
       icon: 'check-o',
-      calc: (mod: IModWithState) => mod.enabled,
+      calc: (mod: IModWithState) => mod.enabled || false,
       placement: 'table',
       isToggleable: false,
       isReadOnly: false,
@@ -117,21 +107,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         action: this.removeSelected,
       },
     ];
-  }
-
-  public componentDidUpdate(prevProps: IBaseProps, prevState: IComponentState) {
-    const { mods }  = this.props;
-    const { lastSelected } = this.state;
-
-    // after a removal the selected mod will no longer be here
-    if ((lastSelected !== undefined) && !(lastSelected in mods))  {
-      this.setState(update(this.state, {
-        lastSelected: { $set: undefined },
-        tableState: {
-          [lastSelected]: { selected: { $set: false } },
-        },
-      }));
-    }
   }
 
   public render(): JSX.Element {
@@ -199,7 +174,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     let removeArchive: boolean;
     let disableDependent: boolean;
 
-    onShowDialog('question', 'Confirm Removal', {
+    onShowDialog('question', 'Confirm deletion', {
       message: t('Do you really want to delete this mod?',
         { count: modIds.length, replace: { count: modIds.length } }) + '\n' + modIds.join('\n'),
       checkboxes: [

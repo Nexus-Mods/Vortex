@@ -20,7 +20,7 @@ import PluginPersistor from './util/PluginPersistor';
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
-import { types, util } from 'nmm-api';
+import { log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 
 interface IModState {
@@ -45,18 +45,33 @@ function updatePluginList(store: Redux.Store<any>, oldModList: IModStates,
   let pluginSources: { [pluginName: string]: string } = {};
   let modPath = util.currentGameDiscovery(state).modPath;
 
+  let readErrors = [];
+
   return Promise.map(Object.keys(state.mods.mods), (modId: string) => {
     let mod = state.mods.mods[modId];
-    return fs.readdirAsync(mod.installationPath)
+    return fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
     .then((fileNames: string[]) => {
       fileNames
       .filter((fileName: string) => ['.esp', '.esm'].indexOf(path.extname(fileName)) !== -1)
       .forEach((fileName: string) => {
         pluginSources[fileName] = mod.name || mod.id;
       });
+    })
+    .catch((err: Error) => {
+      readErrors.push(mod.id);
+      log('warn', 'failed to read mod directory',
+        { path: mod.installationPath, error: err.message });
     });
   })
   .then(() => {
+    if (readErrors.length > 0) {
+      util.showError(
+        store.dispatch,
+        'Failed to read some mods',
+        'The following mods could not be searched (see log for details):\n' +
+          readErrors.join('\n')
+        );
+    }
     return fs.readdirAsync(modPath);
   })
   .then((fileNames: string[]) => {
@@ -89,7 +104,6 @@ let loot: LootInterface;
 let refreshTimer: NodeJS.Timer;
 
 function init(context: IExtensionContextExt) {
-
   context.registerMainPage('puzzle-piece', 'Plugins', PluginList, {
     hotkey: 'E',
     visible: () => gameSupported(context.api.store.getState().settings.gameMode.current),
