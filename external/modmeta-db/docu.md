@@ -86,8 +86,10 @@ exclusively to identify the file.
 
 A compliant server should support one of the following protocols.
 It should document which protocol it uses and whether it syncs with other servers.
-If it does, you should also explain which servers those are, if it caches results from those servers
-and if it caches, how long it will hold cache results.
+If it does, you should also explain
+- which servers those are
+- whether it caches results from those servers
+- if it caches, how long it will hold cache results
 
 ## REST
 
@@ -105,11 +107,13 @@ optional fields, separated by colons:
 
 The optional fields have to be specified in sequence and can't be left out.
 This is necessary as otherwise efficient lookup wouldn't be possible.
-Example keys:
+Valid keys:
 - 58e6baf1108091ad59681c20c65dd6d:::
 - 58e6baf1108091ad59681c20c65dd6d:4711::
 - 58e6baf1108091ad59681c20c65dd6d:4711:skyrim:
 - 58e6baf1108091ad59681c20c65dd6d:4711:skyrim:12345
+Invalid keys (will simply not return a result):
+- 58e6baf1108091ad59681c20c65dd6d::skyrim:
 
 ### setting data
 
