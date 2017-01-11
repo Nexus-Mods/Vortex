@@ -23,7 +23,10 @@ function filterModInfo(input: any): any {
   transfer(result, 'version', input.meta, ['fileVersion']);
   transfer(result, 'logicalFileName', input.meta, ['logicalFileName']);
   transfer(result, 'rules', input.meta, ['rules']);
-  transfer(result, 'category', input.meta, ['category']);
+  transfer(result, 'category', input.meta, ['details', 'category']);
+  transfer(result, 'description', input.meta, ['details', 'description']);
+  transfer(result, 'author', input.meta, ['details', 'author']);
+  transfer(result, 'homepage', input.meta, ['details', 'homepage']);
 
   return result;
 }

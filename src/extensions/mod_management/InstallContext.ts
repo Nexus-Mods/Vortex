@@ -51,8 +51,6 @@ class InstallContext implements IInstallContext {
       attributes: {
         name: id,
         installTime: 'ongoing',
-        category: '',
-        categoryDetail: '',
       },
     };
 
