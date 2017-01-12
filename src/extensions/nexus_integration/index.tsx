@@ -105,7 +105,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
     let gameId;
     currentGame(api.store)
       .then((game: IGameStored) => {
-        gameId = game.id;
+        gameId = convertGameId(game.id);
         log('info', 'retrieve categories for game', gameId);
         return retrieveCategoryList(gameId, nexus);
       })
