@@ -1,7 +1,7 @@
 import {setPluginOrder} from './actions/loadOrder';
 import {setLootActivity} from './actions/plugins';
-import {IPluginLoot, IPluginsLoot} from './types/IPlugins';
-import {lootAppPath, pluginPath} from './util/gameSupport';
+import {IPluginsLoot} from './types/IPlugins';
+import {gameSupported, lootAppPath, pluginPath} from './util/gameSupport';
 
 import * as Promise from 'bluebird';
 import {GameId, LootDatabase} from 'loot';
@@ -25,7 +25,9 @@ class LootInterface {
     // when the game changes, we need to re-initialize loot for that game
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       let gamePath: string = util.currentGameDiscovery(store.getState()).path;
-      this.init(gameMode as GameId, gamePath);
+      if (gameSupported(gameMode)) {
+        this.init(gameMode as GameId, gamePath);
+      }
     });
 
     // on demand, re-sort the plugin list

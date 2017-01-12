@@ -33,7 +33,7 @@ function modPath(): string {
 }
 
 const game: IGame = {
-  id: 'sims4',
+  id: 'thesims4',
   name: 'The Sims 4',
   mergeMods: false,
   queryPath: findGame,

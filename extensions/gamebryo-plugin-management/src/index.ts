@@ -150,9 +150,11 @@ function init(context: IExtensionContextExt) {
         watcher.close();
         watcher = undefined;
       }
+
       if (!gameSupported(newGameMode)) {
         return;
       }
+
       if (persistor !== undefined) {
         persistor.loadFiles(newGameMode);
         let modPath = util.currentGameDiscovery(store.getState()).modPath;

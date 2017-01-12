@@ -46,7 +46,7 @@ let tools: ITool[] = [
 ];
 
 const game: IGame = {
-  id: 'sims3',
+  id: 'thesims3',
   name: 'The Sims 3',
   mergeMods: false,
   queryPath: findGame,

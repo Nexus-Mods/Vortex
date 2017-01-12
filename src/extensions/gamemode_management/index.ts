@@ -32,23 +32,26 @@ function init(context: IExtensionContext): boolean {
   };
 
   context.once(() => {
+    let store = context.api.store;
+    let events = context.api.events;
+
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
     let gameModeManager = new GameModeManagerImpl(
         context.api.getPath('userData'), (gameMode: string) => {
-          context.api.events.emit('gamemode-activated', gameMode);
+          events.emit('gamemode-activated', gameMode);
         }, stateWhitelist);
-    gameModeManager.attachToStore(context.api.store);
+    gameModeManager.attachToStore(store);
     gameModeManager.startQuickDiscovery();
-    context.api.events.on('start-discovery',
+    events.on('start-discovery',
       () => gameModeManager.startSearchDiscovery());
 
-    context.api.events.on('cancel-discovery',
+    events.on('cancel-discovery',
       () => {
         log('info', 'received cancel discovery');
         gameModeManager.stopSearchDiscovery();
       });
 
-    if (context.api.store.getState().settings.gameMode.searchPaths === undefined) {
+    if (store.getState().settings.gameMode.searchPaths === undefined) {
       const { list } = require('drivelist');
       list((error, disks) => {
         if (error) {
@@ -57,7 +60,7 @@ function init(context: IExtensionContext): boolean {
         for (let disk of disks.sort()) {
           // 'system' drives are the non-removable ones
           if (disk.system) {
-            context.api.store.dispatch(addSearchPath(disk.mountpoint));
+            store.dispatch(addSearchPath(disk.mountpoint));
           }
         }
       });
@@ -67,20 +70,25 @@ function init(context: IExtensionContext): boolean {
       (prev: string, current: string) => {
         return gameModeManager.setupGameMode(current)
         .then(() => {
-          context.api.store.dispatch(setCurrentGameMode(current));
+          store.dispatch(setCurrentGameMode(current));
         })
         .catch((err) => {
-          showError(context.api.store.dispatch, 'Failed to set game mode', err);
+          showError(store.dispatch, 'Failed to set game mode', err);
         })
         ;
       });
 
     context.api.onStateChange(['settings', 'gameMode', 'current'],
       (prev: string, current: string) => {
-        gameModeManager.setGameMode(prev, current);
+        gameModeManager.setGameMode(prev, current)
+        .catch(() => {
+            store.dispatch(setCurrentGameMode(prev));
+        });
     });
 
-    gameModeManager.setGameMode(undefined, context.api.store.getState().settings.gameMode.current);
+    gameModeManager.setGameMode(undefined,
+                                store.getState().settings.gameMode.current)
+        .catch(() => { store.dispatch(setCurrentGameMode(undefined)); });
   });
 
   return true;

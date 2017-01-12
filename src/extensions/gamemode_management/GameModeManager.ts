@@ -81,10 +81,17 @@ class GameModeManager {
    * 
    * @memberOf GameModeManager
    */
-  public setGameMode(oldMode: string, newMode: string) {
+  public setGameMode(oldMode: string, newMode: string): Promise<void> {
+    if (this.mStore.getState().session.gameMode.known.findIndex((knownGame: IGameStored) => {
+      return knownGame.id === newMode;
+    }) === -1) {
+      // new game mode is not valid
+      return Promise.reject(new Error('unknown game mode'));
+    }
+
     log('info', 'changed game mode', {oldMode, newMode, process: process.type});
     // stop old persistor before proceeding
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       if (this.mPersistor !== null) {
         this.mPersistor.stop(resolve);
       } else {
@@ -102,7 +109,7 @@ class GameModeManager {
             // first error, try reverting to the previous game mode
             this.mError = true;
             showError(this.mStore.dispatch, 'Failed to change game mode', err);
-            this.mStore.dispatch(setGameMode(oldMode));
+            throw err;
           } else {
             terminate({
               message: 'Failed to change game mode',

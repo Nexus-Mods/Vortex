@@ -79,6 +79,9 @@ function refreshProfile(store: Redux.Store<any>, direction: 'import' | 'export')
         // syncFromProfile happening. Of course if the profile was never
         // loaded then it has no copies of the files but that if fine.
         const gameId = currentGameId(store.getState());
+        if (profileFiles[gameId] === undefined) {
+          return Promise.resolve();
+        }
         if (direction === 'import') {
           return syncToProfile(currentProfilePath, profileFiles[gameId],
             (error, detail) => showError(store.dispatch, error, detail));
