@@ -1,18 +1,20 @@
-import NXMUrl from './NXMUrl';
-import { accountReducer } from './reducers/account';
-import { settingsReducer } from './reducers/settings';
-import LoginIcon from './views/LoginIcon';
-import Settings from './views/Settings';
-
-import { retriveCategoryList } from './util/retrieveCategories';
-
-import { showDialog } from '../../actions/notifications';
+import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
-import { getSafe } from '../../util/storeHelper';
+import { currentGame, getSafe } from '../../util/storeHelper';
 import InputButton from '../../views/InputButton';
 import { IconButton } from '../../views/TooltipControls';
+
+import {IGameStored} from '../gamemode_management/types/IStateEx';
+
+import { accountReducer } from './reducers/account';
+import { settingsReducer } from './reducers/settings';
+import retrieveCategoryList, {ICategoryDict} from './util/retrieveCategories';
+import LoginIcon from './views/LoginIcon';
+import Settings from './views/Settings';
+
+import NXMUrl from './NXMUrl';
 
 import * as Promise from 'bluebird';
 import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
@@ -78,51 +80,56 @@ function startDownload(api: IExtensionApi, nxmurl: string) {
     });
 }
 
-function retrieveCategories(context: IExtensionContextExt, isUpdate: boolean) {
-  if (isUpdate !== false) {
-    context.api.store.dispatch(
+function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
+  let askUser: Promise<boolean>;
+  if (isUpdate) {
+    askUser = api.store.dispatch(
       showDialog('question', 'Retrieve Categories', {
         message: 'Clicking RETRIEVE you will lose all your changes',
       }, {
           Cancel: null,
-          Retrieve:
-          () => {
-            let gameId: string = convertGameId(getSafe(context.api.store.getState(),
-              ['settings', 'gameMode', 'current'], ''));
-            retriveCategoryList(gameId, nexus)
-              .then((result: any, error: any) => {
-                context.api.events.emit('retrieve-categories', [gameId, result, isUpdate], {});
-              })
-              .catch((err) => {
-                let message = processErrorMessage(err.statusCode, err.errorMessage, gameId);
-                showError(context.api.store.dispatch,
-                  'An error occurred retrieving the Game Info', message);
-              });
-          },
-        }));
+          Retrieve: null,
+    }))
+      .then((result: IDialogResult) => {
+        return result.action === 'Retrieve';
+      });
   } else {
-    let gameId: string = convertGameId(getSafe(context.api.store.getState(),
-      ['settings', 'gameMode', 'current'], ''));
-    retriveCategoryList(gameId, nexus)
-      .then((result: any, err: any) => {
-        context.api.events.emit('retrieve-categories', [gameId, result, isUpdate], {});
+    askUser = Promise.resolve(true);
+  }
+
+  askUser.then((userContinue: boolean) => {
+    if (!userContinue) {
+      return;
+    }
+
+    let gameId;
+    currentGame(api.store)
+      .then((game: IGameStored) => {
+        gameId = game.id;
+        log('info', 'retrieve categories for game', gameId);
+        return retrieveCategoryList(gameId, nexus);
+      })
+      .then((categories: ICategoryDict) => {
+        api.events.emit('retrieve-categories', [gameId, categories, isUpdate], {});
       })
       .catch((err) => {
-        let message = processErrorMessage(err.statusCode, err.errorMessage, gameId);
-        showError(context.api.store.dispatch,
+        let message = processErrorMessage(err.statusCode, err.errorMessage, gameId, api.translate);
+        showError(api.store.dispatch,
           'An error occurred retrieving the Game Info', message);
       });
-  }
+  });
 };
 
-function processErrorMessage(statusCode: number, errorMessage: string, gameId: string) {
+function processErrorMessage(statusCode: number, errorMessage: string, gameId: string,
+                             t: I18next.TranslationFunction) {
   let message = '';
   if (statusCode === 404) {
-    return message = 'Game not found: ' + gameId;
-  } else if (statusCode[0] === '5' ) {
-    return message = 'Internal server error';
+    return message = t('Game not found: {{gameId}}', { replace: { gameId } });
+  } else if ((statusCode >= 500) && (statusCode < 600)) {
+    return message = t('Internal server error');
   } else {
-    return message = 'Unknown error, server reported ' + errorMessage;
+    return message = t('Unknown error, server reported {{errorMessage}}',
+      { replace: { errorMessage } });
   }
 }
 
@@ -142,14 +149,6 @@ function init(context: IExtensionContextExt): boolean {
     });
   }
 
-  let onStartDownload = (nxmurl: string) => {
-    startDownload(context.api, nxmurl);
-  };
-
-  let onRetrieveCategories = (isUpdate: boolean) => {
-    retrieveCategories(context, isUpdate);
-  };
-
   context.registerIcon('download-icons', InputButton,
     () => ({
       key: 'input-nxm-url',
@@ -157,7 +156,7 @@ function init(context: IExtensionContextExt): boolean {
       groupId: 'download-buttons',
       icon: 'nexus',
       tooltip: 'Download NXM URL',
-      onConfirmed: onStartDownload,
+      onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl),
     }));
 
   context.registerIcon('categories-icons', IconButton,
@@ -166,7 +165,7 @@ function init(context: IExtensionContextExt): boolean {
       id: 'retrieve-categories',
       icon: 'download',
       tooltip: 'Retrieve categories',
-      onClick: onRetrieveCategories,
+      onClick: () => retrieveCategories(context.api, true),
     }));
 
   context.once(() => {
@@ -185,7 +184,7 @@ function init(context: IExtensionContextExt): boolean {
     }
 
     context.api.events.on('retrieve-category-list', (isUpdate: boolean) => {
-      onRetrieveCategories(isUpdate);
+      retrieveCategories(context.api, isUpdate);
     });
 
     context.api.onStateChange(['settings', 'nexus', 'associateNXM'],

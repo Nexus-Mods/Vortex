@@ -6,6 +6,8 @@ import * as Promise from 'bluebird';
 import { createAction } from 'redux-act';
 import { generate as shortid } from 'shortid';
 
+export * from '../types/IDialog';
+
 /**
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
  * left unset, in that case one will be generated
