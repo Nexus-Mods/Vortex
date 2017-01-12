@@ -6,7 +6,7 @@ import Icon from '../views/Icon';
 
 import * as React from 'react';
 import update = require('react-addons-update');
-import { Button, Checkbox, FormControl, Modal } from 'react-bootstrap';
+import { Button, Checkbox, ControlLabel, FormControl, FormGroup, Modal } from 'react-bootstrap';
 
 interface IActionProps {
   t: (input: string) => string;
@@ -97,7 +97,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.message !== undefined) {
       controls.push(<textarea
         key='dialog-content-message'
-        wrap={ wrap }
+        wrap={wrap}
         style={{ width: '100%', minHeight: 300, resize: 'none', border: 'none' }}
         defaultValue={content.message}
       />);
@@ -109,25 +109,34 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       </div>);
     } else if (content.checkboxes !== undefined) {
       controls.push(<div key='dialog-content-choices'>
-          {content.checkboxes.map(this.renderCheckbox)}
-        </div>
+        {content.checkboxes.map(this.renderCheckbox)}
+      </div>
       );
     } else if (content.formcontrol !== undefined) {
-      controls.push(this.renderFormControl(content.formcontrol));
+      controls.push(<div key='dialog-form-content'>
+        {content.formcontrol.map(this.renderFormControl)}
+      </div>
+      );
     }
 
     return <div style={{ width: '100%' }}>{controls}</div>;
   }
 
   private renderFormControl = (formcontrol: IFormControl) => {
+    const { t } = this.props;
     return (
-      <FormControl
-        id={formcontrol.id}
-        key={formcontrol.id}
-        type={formcontrol.type}
-        value={formcontrol.value}
-        onChange={this.toggleFormControl}
-      />
+      <FormGroup key={formcontrol.id}>
+        <ControlLabel>{t(formcontrol.label)}
+          <FormControl
+            id={formcontrol.id}
+            key={formcontrol.id}
+            type={formcontrol.type}
+            value={formcontrol.value}
+            label={formcontrol.label}
+            onChange={this.toggleFormControl}
+          />
+        </ControlLabel>
+      </FormGroup>
     );
   }
 
@@ -147,12 +156,17 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   private toggleFormControl = (evt) => {
     let { dialogState } = this.state;
-    let newFormControl = dialogState.formcontrol;
-    newFormControl.value = evt.currentTarget.value;
+
+    let idx = dialogState.formcontrol.findIndex((form: IFormControl) => {
+      return form.id === evt.currentTarget.id;
+    });
+
+    let newFormControl = dialogState.formcontrol.slice(0);
+    newFormControl[idx].value = evt.currentTarget.value;
 
     this.setState(update(this.state, {
       dialogState: {
-        formcontrol: {  $set: newFormControl },
+        formcontrol: { $set: newFormControl },
       },
     }));
   }
@@ -206,7 +220,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         data[box.id] = box.value;
       });
     } else if (dialogState.formcontrol !== undefined) {
-      data = dialogState.formcontrol;
+      data = {};
+      dialogState.formcontrol.forEach((form: IFormControl) => {
+        data[form.id] = form.value;
+      });
     }
     onDismiss(dialogs[0].id, action, data);
   }

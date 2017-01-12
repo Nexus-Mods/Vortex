@@ -105,9 +105,9 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
     let gameId;
     currentGame(api.store)
       .then((game: IGameStored) => {
-        gameId = convertGameId(game.id);
+        gameId = game.id;
         log('info', 'retrieve categories for game', gameId);
-        return retrieveCategoryList(gameId, nexus);
+        return retrieveCategoryList(convertGameId(gameId), nexus);
       })
       .then((categories: ICategoryDict) => {
         api.events.emit('retrieve-categories', [gameId, categories, isUpdate], {});

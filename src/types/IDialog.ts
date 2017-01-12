@@ -21,17 +21,18 @@ export interface IFormControl {
   id: string;
   type: string;
   value: string;
+  label: string;
 }
 
 export interface IDialogContent {
   htmlFile?: string;
   message?: string;
   checkboxes?: ICheckbox[];
-  formcontrol?: IFormControl;
+  formcontrol?: IFormControl[];
   options?: {
     translated?: boolean;
     wrap?: boolean;
-  }
+  };
 }
 
 export interface IDialogResult {

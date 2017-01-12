@@ -172,11 +172,12 @@ class InstallManager {
                 message:
                     'This mod seems to be installed already. You can replace the ' +
                         'existing one or install the new one under a different name.',
-                formcontrol: {
+                formcontrol: [{
                   id: 'newName',
                   type: 'input',
                   value: modId,
-                },
+                  label: '',
+                }],
               },
               {
                 Cancel: null,
