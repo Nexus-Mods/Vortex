@@ -7,6 +7,7 @@ import {
 import { IAddedTree, IRemovedTree, IRenamedTree, IToggleExpandedTree } from '../types/ITrees';
 import { createTreeDataObject } from '../util/createTreeDataObject';
 import { createCategoryDict } from '../util/retrieveCategoryDictionary';
+import { retrieveSubtitle } from '../util/retrieveSubtitle';
 
 import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
@@ -44,6 +45,7 @@ interface IConnectedProps {
   searchFocusIndex: number;
   searchFoundCount: number;
   treeDataObject: {};
+  mods: any;
 }
 
 interface IComponentState {
@@ -78,10 +80,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   public componentWillMount() {
-    const { treeDataObject } = this.props;
-    if (treeDataObject === undefined || treeDataObject[0] === null) {
-      this.loadTree();
-    }
+    this.loadTree();
   }
 
   public render(): JSX.Element {
@@ -233,7 +232,8 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
               path: nodePath,
               newNode: {
                 rootId: node.rootId, title: result.input.newCategory,
-                expanded: node.expanded, parentId: node.parentId, children: node.children,
+                subtitle: node.subtitle, expanded: node.expanded,
+                parentId: node.parentId, children: node.children,
               },
               getNodeKey: treeFunctions.defaultGetNodeKey,
               ignoreCollapsed: true,
@@ -253,7 +253,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private addCategory = ({ node, path }) => {
-    const {categories, gameMode, onShowDialog, onShowError, onAddCategory,
+    const {categories, gameMode, mods, onShowDialog, onShowError, onAddCategory,
       onSetTreeDataObject, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     let addCategory = true;
@@ -285,7 +285,9 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
                 treeData: treeDataObject,
                 newNode: {
                   rootId: result.input.newCategoryId, title: result.input.newCategory,
-                  expanded: true, parentId: node.rootId,
+                  subtitle: mods !== undefined ?
+                  retrieveSubtitle(result.input.newCategoryId, mods) : '', expanded: true,
+                  parentId: node.rootId,
                 },
                 parentKey: path[1] === undefined ? path[0] : path[1],
                 getNodeKey: treeFunctions.defaultGetNodeKey,
@@ -312,7 +314,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private addRootCategory = () => {
-    const {categories, gameMode, onShowDialog, onShowError, onAddCategory,
+    const {categories, gameMode, mods, onShowDialog, onShowError, onAddCategory,
       onSetTreeDataObject, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     let addCategory = true;
@@ -344,7 +346,9 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
                 treeData: treeDataObject,
                 newNode: {
                   rootId: result.input.newCategoryId, title: result.input.newCategory,
-                  expanded: true, parentId: undefined,
+                  subtitle: mods !== undefined ?
+                  retrieveSubtitle(result.input.newCategoryId, mods) : '', expanded: true,
+                  parentId: undefined,
                 },
                 parentKey: undefined,
                 getNodeKey: treeFunctions.defaultGetNodeKey,
@@ -401,12 +405,12 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private loadTree() {
-    const { categories, gameMode, onShowError, onSetTreeDataObject } = this.props;
+    const { categories, gameMode, mods, onShowError, onSetTreeDataObject } = this.props;
     if (categories[gameMode] !== undefined) {
       let gameCategories = categories[gameMode].gameCategories;
 
       if (gameCategories !== undefined) {
-        let createdTree = createTreeDataObject(gameCategories);
+        let createdTree = createTreeDataObject(gameCategories, mods);
         onSetTreeDataObject(createdTree);
       } else {
         onShowError('An error occurred loading the categories. ',
@@ -540,7 +544,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    // gameMode: convertGameId(state.settings.gameMode.current),
     gameMode: state.settings.gameMode.current,
     language: state.settings.interface.language,
     categories: state.persistent.categories,
@@ -548,6 +551,7 @@ function mapStateToProps(state: any): IConnectedProps {
     searchFocusIndex: state.session.categories.searchFocusIndex,
     searchFoundCount: state.session.categories.searchFoundCount,
     treeDataObject: state.session.categories.treeDataObject,
+    mods: state.mods.mods,
   };
 }
 

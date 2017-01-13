@@ -1,3 +1,6 @@
+
+import { retrieveSubtitle } from './retrieveSubtitle';
+
 interface ICategory {
   categoryId: number;
   name: string;
@@ -7,6 +10,7 @@ interface ICategory {
 interface IChildren {
   rootId: string;
   title: string;
+  subtitle: string;
   expanded: boolean;
   parentId: string;
   children: IChildren[];
@@ -15,6 +19,7 @@ interface IChildren {
 interface ICategoryTree {
   rootId: string;
   title: string;
+  subtitle: string;
   expanded: boolean;
   children: IChildren[];
   parentId: string;
@@ -24,7 +29,7 @@ interface ICategoryDic {
   [id: string]: { name: string, parentCategory: number | false };
 };
 
-function searchChildren(categories: Object, rootId: string) {
+function searchChildren(categories: Object, rootId: string, mods: any) {
   let children: any[] = Object.keys(categories).filter((id: string) =>
     (rootId === categories[id].parentCategory));
 
@@ -34,9 +39,10 @@ function searchChildren(categories: Object, rootId: string) {
     let child: IChildren = {
       rootId: element,
       title: categories[element].name,
+      subtitle: mods !== undefined ? retrieveSubtitle(element, mods) : '',
       expanded: false,
       parentId: categories[element].parentCategory,
-      children: searchChildren(categories, element),
+      children: searchChildren(categories, element, mods),
     };
     childrenList.push(child);
   });
@@ -44,7 +50,7 @@ function searchChildren(categories: Object, rootId: string) {
   return childrenList;
 }
 
-export function createTreeDataObject(categories: Object) {
+export function createTreeDataObject(categories: Object, mods: any) {
   let categoryList = [];
 
   let roots: any[] = Object.keys(categories).filter((id: string) =>
@@ -60,9 +66,10 @@ export function createTreeDataObject(categories: Object) {
       let child: IChildren = {
         rootId: element,
         title: categories[element].name,
+        subtitle: mods !== undefined ? retrieveSubtitle(element, mods) : '',
         expanded: false,
         parentId: categories[element].parentCategory,
-        children: searchChildren(categories, element),
+        children: searchChildren(categories, element, mods),
       };
       childrenList.push(child);
     });
@@ -70,6 +77,7 @@ export function createTreeDataObject(categories: Object) {
     let root: ICategoryTree = {
       rootId: rootElement,
       title: categories[rootElement].name,
+      subtitle: mods !== undefined ? retrieveSubtitle(rootElement, mods) : '',
       expanded: false,
       parentId: undefined,
       children: childrenList,

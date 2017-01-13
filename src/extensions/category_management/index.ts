@@ -6,7 +6,7 @@ import CategoryList from './views/CategoryList';
 
 import { convertGameId } from './util/convertGameId';
 import { createTreeDataObject } from './util/createTreeDataObject';
-import { retrieveCategoryPath } from './util/retrieveCategoryPath';
+import { retrieveCategory, retrieveCategoryDetail } from './util/retrieveCategoryPath';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
@@ -27,7 +27,8 @@ function init(context: IExtensionContext): boolean {
     description: 'Category',
     icon: 'book',
     placement: 'table',
-    calc: (mod) => retrieveCategoryPath(mod.attributes.category, context.api.store, null, false),
+    calc: (mod) => mod.attributes.category !== undefined ?
+     retrieveCategory(mod.attributes.category, context.api.store) : null,
     isToggleable: true,
     isReadOnly: false,
     isSortable: true,
@@ -38,7 +39,8 @@ function init(context: IExtensionContext): boolean {
     name: 'Category Detail',
     description: 'Category Detail',
     icon: 'angle-double-right',
-    calc: (mod) => retrieveCategoryPath(mod.attributes.category, context.api.store, null, true),
+    calc: (mod) => mod.attributes.category !== undefined ?
+     retrieveCategoryDetail(mod.attributes.category, context.api.store) : null,
     placement: 'detail',
     isToggleable: false,
     isReadOnly: false,
@@ -57,7 +59,8 @@ function init(context: IExtensionContext): boolean {
 
         if (isUpdate) {
           context.api.store.dispatch(updateCategories(gameId, categories));
-          store.dispatch(setTreeDataObject(createTreeDataObject(categories)));
+          let mods: any = getSafe(store.getState(), ['mods'], '');
+          store.dispatch(setTreeDataObject(createTreeDataObject(categories, mods.mods)));
         } else {
           context.api.store.dispatch(loadCategories(gameId, categories));
         }

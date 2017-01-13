@@ -1,59 +1,47 @@
 import { convertGameId } from './convertGameId';
 
-import { IFindTree, IGetNodeTree } from '../types/ITrees';
-
 import { getSafe } from '../../../util/storeHelper';
 
-export function retrieveCategoryPath(
+function createCategoryDetailPath(categories: any, category: number, categoryPath: string) {
+  if (categoryPath === '') {
+    categoryPath = categories[category].name;
+  } else {
+    categoryPath = categories[category].name + ' --> ' + categoryPath;
+  }
+
+  if (categories[category].parentCategory !== undefined) {
+    return createCategoryDetailPath(categories,
+      categories[category].parentCategory, categoryPath);
+  } else {
+    return categoryPath;
+  }
+}
+
+export function retrieveCategoryDetail(
   category: number,
-  store: any,
-  categoryPath: string,
-  isDetail: boolean) {
+  store: any) {
+  let completePath: string = '';
+  let gameId: string = convertGameId(getSafe(store.getState(),
+    ['settings', 'gameMode', 'current'], ''));
+
+  let categories: any = getSafe(store.getState(), ['persistent', 'categories',
+    gameId, 'gameCategories'], '');
+  if (categories[category] !== undefined) {
+    completePath = createCategoryDetailPath(categories, category, '');
+  }
+  return completePath;
+
+}
+
+export function retrieveCategory(
+  category: number,
+  store: any) {
 
   let gameId: string = convertGameId(getSafe(store.getState(),
     ['settings', 'gameMode', 'current'], ''));
 
-  let categories: any = getSafe(store.getState(), ['persistent', 'categories', gameId], '');
+  let categories: any = getSafe(store.getState(), ['persistent', 'categories',
+    gameId, 'gameCategories'], '');
+  return categories[category] !== undefined ? categories[category].name : '';
 
-  let treeFunctions = require('react-sortable-tree');
-  let completePath: string = '';
-  try {
-    let newTree: IFindTree = {
-      getNodeKey: treeFunctions.defaultGetNodeKey,
-      treeData: categories.gameCategories,
-      searchQuery: category,
-      searchMethod: ({ node, searchQuery }) => (node.rootId === searchQuery),
-      searchFocusOffset: 0,
-      expandAllMatchPaths: false,
-      expandFocusMatchPaths: true,
-    };
-
-    let result = treeFunctions.find(newTree);
-    if (isDetail !== true) {
-      return result.matches[0].node.title;
-    }
-
-    let pathList: string[] = [];
-
-    result.matches[0].path.forEach(element => {
-      pathList.push(element);
-      let getNodeTree: IGetNodeTree = {
-        treeData: categories.gameCategories,
-        path: pathList,
-        getNodeKey: treeFunctions.defaultGetNodeKey,
-        ignoreCollapsed: true,
-      };
-      let tree = treeFunctions.getNodeAtPath(getNodeTree);
-      if (completePath === '') {
-        completePath = tree.node.title;
-      } else {
-        completePath = completePath + ' --> ' + tree.node.title;
-      }
-    });
-
-  } catch (err) {
-    return null;
-  }
-
-  return completePath;
 }
