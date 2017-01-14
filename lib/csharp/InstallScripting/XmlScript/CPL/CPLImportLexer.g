@@ -32,7 +32,7 @@ options {
 	superClass=AntlrLexerBase;
 }
 
-@namespace {Components.Scripting.XmlScript.CPL}
+@namespace {Components.Scripting.XmlScript}
 
 @lexer::members {
 	public const System.Int32 HIDDEN = TokenChannels.Hidden;

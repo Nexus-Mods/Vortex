@@ -9,7 +9,7 @@ options {
 	tokenVocab=CPLLexer;
 }
 
-@namespace {Components.Scripting.XmlScript.CPL}
+@namespace {Components.Scripting.XmlScript}
 
 @parser::header {
 	//turn off warning about not needing CLSCompliant attribute

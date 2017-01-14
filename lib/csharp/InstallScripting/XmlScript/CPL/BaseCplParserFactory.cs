@@ -1,7 +1,7 @@
 ﻿using Antlr.Runtime;
 using Nexus.Client.Util.Antlr;
 
-namespace Components.Scripting.XmlScript.CPL
+namespace Components.Scripting.XmlScript
 {
 	/// <summary>
 	/// Creates CPL parsers.

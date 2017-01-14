@@ -3,7 +3,7 @@ using System.Text;
 using Antlr.Runtime.Tree;
 using Nexus.Client.Util.Antlr;
 
-namespace Components.Scripting.XmlScript.CPL
+namespace Components.Scripting.XmlScript
 {
 	public class CPLConverter
 	{

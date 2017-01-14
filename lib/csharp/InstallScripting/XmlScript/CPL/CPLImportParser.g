@@ -35,7 +35,7 @@ options {
 	tokenVocab=CPLLexer;
 }
 
-@namespace {Components.Scripting.XmlScript.CPL}
+@namespace {Components.Scripting.XmlScript}
 
 @members {
 	/// <summary>

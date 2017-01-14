@@ -8,7 +8,6 @@ using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
-using Components.Scripting.XmlScript.CPL;
 using Components.Scripting.XmlScript.Parsers;
 using Components.Scripting.XmlScript.Unparsers;
 using Components.Scripting.XmlScript.Xml;
