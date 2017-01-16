@@ -44,6 +44,30 @@ describe('setSafe', () => {
     let res = helper.setSafe(input, [], { b: 13 });
     expect(res).toEqual({ b: 13 });
   });
+  it('works with arrays', () => {
+    let input = { arr: [ 41 ] };
+    let res = helper.setSafe(input, ['arr', 0], 42);
+    expect(res).toEqual({ arr: [42] });
+  });
+});
+
+describe('setOrNop', () => {
+  it('leaves the original unmodified', () => {
+    let input = {};
+    helper.setOrNop(input, ['a', 'test'], 42);
+    expect(input).toEqual({});
+  });
+  it('leaves unmodified if node missing', () => {
+    let input = {};
+    let res = helper.setOrNop(input, ['a', 'test'], 42);
+    expect(res).toEqual({});
+    expect(res).toBe(input);
+  });
+  it('changes the value if node not missing', () => {
+    let input = { a: { test: 12 } };
+    let res = helper.setOrNop(input, ['a', 'test'], 42);
+    expect(res).toEqual({ a: { test: 42 } });
+  });
 });
 
 describe('pushSafe', () => {

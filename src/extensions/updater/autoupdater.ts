@@ -4,7 +4,7 @@ import { log } from '../../util/log';
 import { remote } from 'electron';
 
 function setChannel(channel: string,
-                    showErrorNotification: (message: string, detail: string) => void) {
+                    showErrorNotification: (message: string, detail: string | Error) => void) {
   const autoUpdater = remote.autoUpdater;
 
   // const url = `http://localhost:56001/download/channel/${channel}/win`;
@@ -13,13 +13,13 @@ function setChannel(channel: string,
 
   autoUpdater.setFeedURL(url);
   autoUpdater.on('error', (err) => {
-    showErrorNotification('checking for update failed', err.message);
+    showErrorNotification('checking for update failed', err);
   });
   log('info', 'feed url', url);
   try {
     autoUpdater.checkForUpdates();
   } catch (e) {
-    showErrorNotification('checking for update failed', e.message);
+    showErrorNotification('checking for update failed', e);
     return;
   }
 }

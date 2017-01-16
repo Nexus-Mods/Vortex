@@ -144,7 +144,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     return (
       <Flex>
-        <Layout type='row' style={{ overflowX: 'hidden' }}>
+        <Layout type='row' style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
           <Fixed style={{ width: 48 }}>
             <Nav
               bsStyle='pills'

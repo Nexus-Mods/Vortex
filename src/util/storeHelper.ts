@@ -82,15 +82,20 @@ export function setSafe<T>(state: T, path: string[], value: any): T {
  */
 export function setOrNop<T>(state: T, path: string[], value: any): T {
   let firstElement: string = path[0];
-  let copy = Object.assign({}, state);
+  let result = state;
   if (path.length === 1) {
-    copy[firstElement] = value;
+    result = Object.assign({}, state);
+    result[firstElement] = value;
   } else {
-    if (copy.hasOwnProperty(firstElement)) {
-      copy[firstElement] = setOrNop(copy[firstElement], path.slice(1), value);
+    if (state.hasOwnProperty(firstElement)) {
+      let temp = setOrNop(result[firstElement], path.slice(1), value);
+      if (temp !== state[firstElement]) {
+        result = Object.assign({}, state);
+        result[firstElement] = temp;
+      }
     }
   }
-  return copy;
+  return result;
 }
 
 /**

@@ -51,7 +51,6 @@ function init(context: IExtensionContext): boolean {
     const store: Redux.Store<any> = context.api.store;
 
     try {
-
       context.api.events.on('retrieve-categories', (result) => {
         let isUpdate = result[2];
         let categories = result[1];
