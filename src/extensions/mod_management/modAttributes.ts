@@ -12,7 +12,7 @@ export const MOD_NAME: ITableAttribute = {
     getSafe(mod.attributes, ['logicalFileName'], getSafe(mod.attributes, ['name'], '')),
   placement: 'both',
   isToggleable: false,
-  isReadOnly: false,
+  edit: {},
   isSortable: true,
   sortFunc: (lhs: string, rhs: string, locale: string): number => {
     return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
@@ -27,7 +27,7 @@ export const INSTALL_TIME: ITableAttribute = {
   calc: (mod: IMod) => new Date(getSafe(mod.attributes, ['installTime'], '')),
   placement: 'both',
   isToggleable: true,
-  isReadOnly: true,
+  edit: {},
   isSortable: true,
 };
 
@@ -39,6 +39,6 @@ export const VERSION: ITableAttribute = {
   calc: (mod: IMod) => getSafe(mod.attributes, ['version'], ''),
   placement: 'both',
   isToggleable: true,
-  isReadOnly: false,
+  edit: {},
   isSortable: true,
 };

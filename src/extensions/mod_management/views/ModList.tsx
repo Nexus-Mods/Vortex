@@ -78,13 +78,15 @@ class ModList extends ComponentEx<IProps, {}> {
 
     this.modEnabledAttribute = {
       id: 'enabled',
-      name: 'Enable',
+      name: 'Enabled',
       description: 'Is mod enabled in current profile',
       icon: 'check-o',
       calc: (mod: IModWithState) => mod.enabled || false,
       placement: 'table',
       isToggleable: false,
-      isReadOnly: false,
+      edit: {
+        onChangeValue: (modId: string, value: any) => props.onSetModEnabled(modId, value),
+      },
       isSortable: false,
     };
 
@@ -134,17 +136,10 @@ class ModList extends ComponentEx<IProps, {}> {
             data={modsWithState}
             staticElements={[this.modEnabledAttribute, MOD_NAME, VERSION, INSTALL_TIME]}
             actions={this.modActions}
-            onChangeData={this.handleChangeData}
           />
         </Flex>
       </Layout>
       );
-  }
-
-  private handleChangeData = (modId: string, attributeId: string, value: any) => {
-    if (attributeId === this.modEnabledAttribute.id) {
-      this.props.onSetModEnabled(modId, value);
-    }
   }
 
   private enableSelected = (modIds: string[]) => {

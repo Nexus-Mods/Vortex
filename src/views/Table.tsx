@@ -3,7 +3,7 @@ import {selectRows, setAttributeSort, setAttributeVisible} from '../actions/tabl
 import {IAttributeState} from '../types/IAttributeState';
 import {IIconDefinition} from '../types/IIconDefinition';
 import {IRowState, IState, ITableState} from '../types/IState';
-import {ITableAttribute} from '../types/ITableAttribute';
+import {IEditChoice, ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import {IExtensibleProps} from '../util/ExtensionProvider';
@@ -31,7 +31,6 @@ interface ICellProps {
   rowId: string;
   rowData: any;
   t: I18next.TranslationFunction;
-  onChangeData: IChangeDataHandler;
 }
 
 class TableCell extends React.Component<ICellProps, {}> {
@@ -43,7 +42,7 @@ class TableCell extends React.Component<ICellProps, {}> {
     // otherwise rowData is the calculated value of this cell
 
     if (attribute.customRenderer !== undefined) {
-      return attribute.customRenderer(rowData, t);
+      return attribute.customRenderer(rowData, false, t);
     }
 
     if (rowData instanceof Date) {
@@ -68,7 +67,7 @@ class TableCell extends React.Component<ICellProps, {}> {
   private toggle = () => {
     const { attribute, rowData, rowId } = this.props;
     const value = rowData;
-    this.props.onChangeData(rowId, attribute.id, !value);
+    attribute.edit.onChangeValue(rowId, !value);
   }
 }
 
@@ -77,27 +76,57 @@ class DetailCell extends React.Component<ICellProps, {}> {
     const { t, attribute, rowData, rowId } = this.props;
     const value = rowData[attribute.id];
 
-    const key = `${rowId}-${attribute.id}`;
-
     let content: JSX.Element = null;
 
     if (attribute.customRenderer !== undefined) {
       content = (
         <FormControl.Static>
-          { attribute.customRenderer(rowData, t) }
+          { attribute.customRenderer(rowData, true, t) }
         </FormControl.Static>
       );
     } else {
-      content = (
-        <FormControl
-          id={attribute.id}
-          type='text'
-          label={t(attribute.name)}
-          readOnly={attribute.isReadOnly}
-          defaultValue={this.renderCell(value)}
-        />
-      );
+      if (attribute.edit.onChangeValue !== undefined) {
+        if (attribute.edit.choices !== undefined) {
+          const choices = attribute.edit.choices();
+          const currentChoice = choices.find((choice) => choice.text === value);
+          const key = currentChoice !== undefined ? currentChoice.key : undefined;
+          content = (
+            <FormControl
+              id={attribute.id}
+              componentClass='select'
+              placeholder={t('No category')}
+              value={key}
+              onChange={this.changeCell}
+            >
+              {choices.map(this.renderChoice)}
+            </FormControl>
+          );
+        } else {
+          content = (
+            <FormControl
+              id={attribute.id}
+              type='text'
+              label={t(attribute.name)}
+              readOnly={false}
+              value={this.renderCell(value)}
+              onChange={this.changeCell}
+            />
+          );
+        }
+      } else {
+        content = (
+          <FormControl
+            id={attribute.id}
+            type='text'
+            label={t(attribute.name)}
+            readOnly={true}
+            value={this.renderCell(value)}
+          />
+        );
+      }
     }
+
+    const key = `${rowId}-${attribute.id}`;
 
     return (
       <FormGroup key={key}>
@@ -105,6 +134,15 @@ class DetailCell extends React.Component<ICellProps, {}> {
         {content}
       </FormGroup>
     );
+  }
+
+  private changeCell = (evt: React.FormEvent<any>) => {
+    const { attribute, rowId } = this.props;
+    attribute.edit.onChangeValue(rowId, evt.currentTarget.value);
+  }
+
+  private renderChoice(choice: IEditChoice): JSX.Element {
+    return <option value={choice.key}>{choice.text}</option>;
   }
 
   private renderCell(value: any): string {
@@ -131,7 +169,6 @@ interface IRowProps {
   attributes: ITableAttribute[];
   actions: IIconDefinition[];
   language: string;
-  onChangeData: IChangeDataHandler;
   onClick: React.MouseEventHandler<any>;
   selected: boolean;
 }
@@ -179,7 +216,7 @@ class TableRow extends React.Component<IRowProps, {}> {
     rowData: any,
     t: I18next.TranslationFunction): JSX.Element {
 
-    const { data, language, onChangeData } = this.props;
+    const { data, language } = this.props;
 
     return <TableCell
       t={t}
@@ -187,7 +224,6 @@ class TableRow extends React.Component<IRowProps, {}> {
       rowData={rowData}
       rowId={data.__id}
       language={language}
-      onChangeData={onChangeData}
     />;
   }
 }
@@ -201,7 +237,6 @@ export interface IBaseProps {
   tableId: string;
   data: { [rowId: string]: any };
   actions: ITableRowAction[];
-  onChangeData?: IChangeDataHandler;
 }
 
 interface IConnectedProps {
@@ -376,7 +411,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderDetail = (rowData: any, attribute: ITableAttribute) => {
-    const { t, language, onChangeData } = this.props;
+    const { t, language } = this.props;
 
     return <DetailCell
       t={t}
@@ -385,7 +420,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       language={language}
       rowData={rowData}
       rowId={rowData.__id}
-      onChangeData={onChangeData}
     />;
   }
 
@@ -515,7 +549,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   };
 
   private renderRow(data: any, visibleAttributes: ITableAttribute[]): JSX.Element {
-    const { t, actions, language, onChangeData, rowState, tableId } = this.props;
+    const { t, actions, language, rowState, tableId } = this.props;
     const { calculatedValues } = this.state;
 
     if (calculatedValues[data.__id] === undefined) {
@@ -535,7 +569,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         attributes={visibleAttributes}
         actions={rowActions}
         language={language}
-        onChangeData={onChangeData}
         onClick={this.selectRow}
         selected={getSafe(rowState, [data.__id, 'selected'], false)}
       />

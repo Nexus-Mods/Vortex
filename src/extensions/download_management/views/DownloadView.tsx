@@ -112,7 +112,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       },
       placement: 'both',
       isToggleable: true,
-      isReadOnly: true,
+      edit: {},
       isSortable: true,
     };
 
@@ -128,7 +128,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         ),
       placement: 'both',
       isToggleable: true,
-      isReadOnly: true,
+      edit: {},
       isSortable: true,
     };
 
@@ -221,7 +221,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             data={downloads}
             staticElements={[ FILE_NAME, this.fileTimeColumn, this.gameColumn, PROGRESS ]}
             actions={this.actions}
-            onChangeData={this.onChangeData}
           />
         </Flex>
         <Fixed>
@@ -229,10 +228,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         </Fixed>
       </Layout>
     );
-  }
-
-  private onChangeData = (rowId: string, attributeId: string, value: any) => {
-    log('info', 'attempt to change', { rowId, attributeId, value });
   }
 
   private getDownload(downloadId: string): IDownload {

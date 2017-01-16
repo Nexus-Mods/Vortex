@@ -2,6 +2,11 @@ export type AttributeRenderer = 'progress';
 
 export type Placement = 'table' | 'detail' | 'both';
 
+export interface IEditChoice {
+  key: string;
+  text: string;
+}
+
 /**
  * declaration of an attribute of a table
  * 
@@ -32,11 +37,6 @@ export interface ITableAttribute {
    */
   isToggleable?: boolean;
   /**
-   * if true, the value of the attribute can not be changed through the table (it may still change
-   * programmatically of course)
-   */
-  isReadOnly: boolean;
-  /**
    * if true, the table can be sorted by this attribute
    */
   isSortable?: boolean;
@@ -51,7 +51,8 @@ export interface ITableAttribute {
    * renderer. Please note that if you want caching or asynchronous calculation for this cell you'll
    * have to implement it yourself.
    */
-  customRenderer?: (object: any, t: I18next.TranslationFunction) => JSX.Element;
+  customRenderer?: (object: any, detailCell: boolean,
+                    t: I18next.TranslationFunction) => JSX.Element;
   /**
    * determine the display value for this attribute. This is used for display if customRenderer is
    * not specified. It's also used for sorting the table so unless isSortable is false and a
@@ -72,4 +73,25 @@ export interface ITableAttribute {
    * equal.
    */
   sortFunc?: (lhs: any, rhs: any, locale: string) => number;
+  /**
+   * describes how editing for this field should work. No more than one of the optional parameters
+   * should be set.
+   * 
+   * Please note that this only works if no customRenderer is set. Otherwise that renderer
+   * will have to implement its own editing functionality
+   */
+  edit: {
+    /**
+     * if set, this field is a drop-down selection with the choices returned by this function.
+     * Please note: the value returned by calc has to appear in the text-field of one of these
+     *   choices
+     */
+    choices?: () => IEditChoice[],
+
+    /**
+     * called when this attribute was changed for an object.
+     * If this is undefined, the field is readonly
+     */
+    onChangeValue?: (rowId: string, newValue: any) => void;
+  },
 }

@@ -2,7 +2,7 @@ import { convertGameId } from './convertGameId';
 
 import { getSafe } from '../../../util/storeHelper';
 
-function createCategoryDetailPath(categories: any, category: number, categoryPath: string) {
+function createCategoryDetailPath(categories: any, category: string, categoryPath: string) {
   if (categoryPath === '') {
     categoryPath = categories[category].name;
   } else {
@@ -18,7 +18,7 @@ function createCategoryDetailPath(categories: any, category: number, categoryPat
 }
 
 export function retrieveCategoryDetail(
-  category: number,
+  category: string,
   store: any) {
   let completePath: string = '';
   let gameId: string = convertGameId(getSafe(store.getState(),

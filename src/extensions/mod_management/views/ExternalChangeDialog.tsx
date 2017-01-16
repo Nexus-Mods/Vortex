@@ -18,7 +18,7 @@ export interface IFileEntry {
   action: FileAction;
 }
 
-interface IBaseProps {
+export interface IBaseProps {
   actions: IFileEntry[];
   onChangeAction: (fileName: string, action: FileAction) => void;
   onClose: (cancel: boolean) => void;

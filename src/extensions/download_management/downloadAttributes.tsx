@@ -13,7 +13,7 @@ export const FILE_NAME: ITableAttribute = {
   calc: (attributes: IDownload) => attributes.localPath,
   placement: 'both',
   isToggleable: false,
-  isReadOnly: true,
+  edit: {},
   isSortable: true,
 };
 
@@ -40,11 +40,11 @@ export const PROGRESS: ITableAttribute = {
   name: 'Progress',
   description: 'Download progress',
   icon: 'clock-o',
-  customRenderer: (download: IDownload, t: I18next.TranslationFunction) =>
+  customRenderer: (download: IDownload, detailCell: boolean, t: I18next.TranslationFunction) =>
     progress({ download, t }),
   calc: (download: IDownload, t: I18next.TranslationFunction) => download.received / download.size,
   placement: 'table',
   isToggleable: true,
-  isReadOnly: true,
+  edit: {},
   isSortable: true,
 };
