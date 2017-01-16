@@ -10,6 +10,7 @@ import {IGameStored} from '../gamemode_management/types/IStateEx';
 
 import { accountReducer } from './reducers/account';
 import { settingsReducer } from './reducers/settings';
+import retrieveEndorsedMod from './util/endorseMod';
 import retrieveCategoryList, {ICategoryDict} from './util/retrieveCategories';
 import LoginIcon from './views/LoginIcon';
 import Settings from './views/Settings';
@@ -133,6 +134,24 @@ function processErrorMessage(statusCode: number, errorMessage: string, gameId: s
   }
 }
 
+function endorseMod(api: IExtensionApi, isEndorsed: boolean, modId: string) {
+  let gameId;
+  currentGame(api.store)
+    .then((game: IGameStored) => {
+      gameId = game.id;
+      log('info', 'endorse mod ', modId);
+      return retrieveEndorsedMod(gameId, nexus, isEndorsed, modId);
+    })
+    .then((result: boolean) => {
+      api.events.emit('endorse-mod-result', [modId, result], {});
+    })
+    .catch((err) => {
+      let message = processErrorMessage(err.statusCode, err.errorMessage, gameId, api.translate);
+      showError(api.store.dispatch,
+        'An error occurred endorsing a mod', message);
+    });
+};
+
 function init(context: IExtensionContextExt): boolean {
   context.registerFooter('login', LoginIcon, () => ({ nexus }));
   context.registerSettings('Download', Settings);
@@ -185,6 +204,12 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('retrieve-category-list', (isUpdate: boolean) => {
       retrieveCategories(context.api, isUpdate);
+    });
+
+    context.api.events.on('endorse-mod', (result: any) => {
+      let isEndorsed = result[0];
+      let modId = result[1];
+      endorseMod(context.api, isEndorsed, modId);
     });
 
     context.api.onStateChange(['settings', 'nexus', 'associateNXM'],

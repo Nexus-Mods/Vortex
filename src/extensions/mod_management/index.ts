@@ -4,7 +4,7 @@ import {currentGameMode} from '../../util/selectors';
 
 import {IDownload} from '../download_management/types/IDownload';
 
-import {addMod, removeMod} from './actions/mods';
+import {addMod, removeMod, setModAttribute} from './actions/mods';
 import {setActivator} from './actions/settings';
 import {activationReducer} from './reducers/activation';
 import {modsReducer} from './reducers/mods';
@@ -147,6 +147,12 @@ function init(context: IExtensionContextExt): boolean {
           installManager.install(downloadId, fullPath, context.api,
                                  download.modInfo, true, callback);
         });
+
+    context.api.events.on('endorse-mod-result', (result) => {
+        let modId = result[0];
+        let isEndorsed = result[1];
+        context.api.store.dispatch(setModAttribute(modId, 'endorsed', isEndorsed));
+      });
 
     context.api.events.on(
         'remove-mod', (modId: string, callback?: (error: Error) => void) => {
