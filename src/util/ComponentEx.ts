@@ -14,7 +14,7 @@ interface IProxyEntry<T> {
   path: string[];
 }
 
-class StateProxyHandler<T> implements ProxyHandler<T> {
+export class StateProxyHandler<T> implements ProxyHandler<T> {
   private mComponent: ComponentEx<any, T>;
   private mPath: string[];
   private mBaseObject: T;
@@ -36,7 +36,9 @@ class StateProxyHandler<T> implements ProxyHandler<T> {
   }
 
   public set(target: T, key: PropertyKey, value: any, receiver: any): boolean {
-    this.mBaseObject = setSafe(this.mBaseObject, [].concat(this.mPath, key), value);
+    target[key] = value;
+    const fullPath = [].concat(this.mPath, key);
+    this.mBaseObject = setSafe(this.mBaseObject, fullPath, value);
     this.mComponent.setState(this.mBaseObject);
     return true;
   }
