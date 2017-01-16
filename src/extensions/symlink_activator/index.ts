@@ -4,7 +4,7 @@ import walk from '../../util/walk';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IStateEx';
 import { IMod } from '../mod_management/types/IMod';
-import { IModActivator } from '../mod_management/types/IModActivator';
+import { IFileChange, IModActivator } from '../mod_management/types/IModActivator';
 
 import * as Promise from 'bluebird';
 import * as fsOrig from 'fs';
@@ -45,34 +45,37 @@ class ModActivator implements IModActivator {
     }
   }
 
-  public prepare(modsPath: string): Promise<void> {
+  public prepare(dataPath: string): Promise<void> {
     return Promise.resolve();
   }
 
-  public finalize(modsPath: string): Promise<void> {
+  public finalize(dataPath: string): Promise<void> {
     return Promise.resolve();
   }
 
-  public activate(modsPath: string, mod: IMod): Promise<void> {
+  public activate(installPath: string, dataPath: string, mod: IMod): Promise<void> {
     const sourceBase: string = mod.installationPath;
-    return walk(mod.installationPath, (iterPath: string, stat: fs.Stats) => {
-      let relPath: string = path.relative(sourceBase, iterPath);
-      let dest: string = path.join(modsPath, relPath);
-      if (stat.isDirectory()) {
-        return fs.mkdirAsync(dest);
-      } else {
-        return fs.symlinkAsync(iterPath, dest).then(() => {
-          log('info', 'installed', { iterPath, dest });
-        }).catch((err) => {
-          log('info', 'error', { err: err.message });
-          throw err;
-        });
-      }
-    });
+    return walk(path.join(installPath, mod.installationPath),
+                (iterPath: string, stat: fs.Stats) => {
+                  let relPath: string = path.relative(sourceBase, iterPath);
+                  let dest: string = path.join(dataPath, relPath);
+                  if (stat.isDirectory()) {
+                    return fs.mkdirAsync(dest);
+                  } else {
+                    return fs.symlinkAsync(iterPath, dest)
+                        .then(() => {
+                          log('info', 'installed', {iterPath, dest});
+                        })
+                        .catch((err) => {
+                          log('info', 'error', {err: err.message});
+                          throw err;
+                        });
+                  }
+                });
   }
 
-  public deactivate(modsPath: string): Promise<void> {
-    return walk(modsPath, (iterPath: string, stat: fs.Stats) => {
+  public purge(installPath: string, dataPath: string): Promise<void> {
+    return walk(dataPath, (iterPath: string, stat: fs.Stats) => {
       if (stat.isSymbolicLink()) {
         return fs.realpathAsync(iterPath)
           .then((realPath: string) => {
@@ -83,6 +86,10 @@ class ModActivator implements IModActivator {
           });
       }
     });
+  }
+
+  public externalChanges(installPath: string, dataPath: string): Promise<IFileChange[]> {
+    return Promise.resolve([]);
   }
 
   public isActive(): boolean {

@@ -6,7 +6,7 @@ import { getSafe } from '../../../util/storeHelper';
 
 import { IDiscoveryResult } from '../types/IStateEx';
 
-import { Normalize, getNormalizeFunc } from './getNormalizeFunc';
+import getNormalizeFunc, { Normalize } from '../../../util/getNormalizeFunc';
 
 import Progress from './Progress';
 

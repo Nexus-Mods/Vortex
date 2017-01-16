@@ -1,5 +1,6 @@
-import getAttr from '../../util/getAttr';
 import { log } from '../../util/log';
+import { getSafe } from '../../util/storeHelper';
+import walk from '../../util/walk';
 
 import { IProfileMod } from '../profile_management/types/IProfile';
 
@@ -18,16 +19,17 @@ import * as Promise from 'bluebird';
  * @param {IModActivator} activator the activator to use
  * @returns {Promise<void>}
  */
-export function activateMods(destination: string,
+export function activateMods(installPath: string,
+                             destination: string,
                              mods: IMod[],
                              modState: { [id: string]: IProfileMod },
                              activator: IModActivator): Promise<void> {
   return activator.prepare(destination)
     .then(() => {
       return Promise.each(mods, (mod: IMod) => {
-        if (getAttr(modState, mod.id, { enabled: false }).enabled) {
+        if (getSafe(modState, [mod.id, 'enabled'], false)) {
           try {
-            return activator.activate(destination, mod);
+            return activator.activate(installPath, destination, mod);
           } catch (err) {
             log('error', 'failed to activate mod', { err: err.message, id: mod.id });
           }
@@ -35,7 +37,7 @@ export function activateMods(destination: string,
       });
     })
     .then(() => {
-      activator.finalize(destination);
+      return activator.finalize(destination);
     });
 }
 
@@ -47,7 +49,8 @@ export function activateMods(destination: string,
  * @param {IModActivator} activator
  * @returns {Promise<void>}
  */
-export function deactivateMods(destination: string,
+export function deactivateMods(installPath: string,
+                               destination: string,
                                activator: IModActivator): Promise<void> {
-  return activator.deactivate(destination);
+  return activator.purge(installPath, destination);
 }

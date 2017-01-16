@@ -1,10 +1,12 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 import {ITableAttribute} from '../../types/ITableAttribute';
+import {currentGameMode} from '../../util/selectors';
 
 import {IDownload} from '../download_management/types/IDownload';
 
 import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
+import {activationReducer} from './reducers/activation';
 import {modsReducer} from './reducers/mods';
 import {settingsReducer} from './reducers/settings';
 import {IInstall} from './types/IInstall';
@@ -56,6 +58,7 @@ function registerInstaller(priority: number, testSupported: ITestSupported, inst
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('cubes', 'Mods', ModList, {
     hotkey: 'M',
+    visible: () => currentGameMode(context.api.store.getState()) !== undefined,
   });
 
   context.registerIcon('application-icons', ActivationButton, () => {
@@ -80,6 +83,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerReducer(['mods'], modsReducer);
   context.registerReducer(['gameSettings', 'mods'], settingsReducer);
+  context.registerReducer(['persistent', 'activation'], activationReducer);
 
   context.registerModActivator = registerModActivator;
   context.registerInstaller = registerInstaller;

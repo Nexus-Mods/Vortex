@@ -75,7 +75,7 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
  */
 export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
                              details?: string | Error) {
-  let finalDetails: string = typeof(details) !== 'string' ? renderError(details) : details;
+  const finalDetails: string = typeof(details) !== 'string' ? renderError(details) : details;
 
   dispatch(addNotification({
     type: 'error',

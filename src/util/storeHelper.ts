@@ -53,7 +53,12 @@ export function setSafe<T>(state: T, path: string[], value: any): T {
     return Object.assign({}, value);
   }
   let firstElement: string = path[0];
-  let copy = Object.assign({}, state);
+  let copy;
+  if (Array.isArray(state)) {
+    copy = state.slice();
+  } else {
+    copy = Object.assign({}, state);
+  }
   if (path.length === 1) {
     copy[firstElement] = value;
   } else {

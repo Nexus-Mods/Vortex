@@ -3,7 +3,8 @@ import { showError } from '../../../util/message';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { IDiscoveryResult } from '../../gamemode_management/types/IStateEx';
-import { IProfileMod } from '../../profile_management/types/IProfile';
+import {installPath} from '../../mod_management/selectors';
+import { IProfile, IProfileMod } from '../../profile_management/types/IProfile';
 
 import { IMod } from '../types/IMod';
 import { IModActivator } from '../types/IModActivator';
@@ -11,8 +12,10 @@ import { IModActivator } from '../types/IModActivator';
 import { deactivateMods } from '../modActivation';
 
 import * as React from 'react';
+import {generate as shortid} from 'shortid';
 
 interface IConnectedProps {
+  installPath: string;
   gameDiscovery: IDiscoveryResult;
   mods: { [id: string]: IMod };
   modState: { [id: string]: IProfileMod };
@@ -42,31 +45,44 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
   }
 
   private activate = () => {
-    let { activators, currentActivator, gameDiscovery, onShowError } = this.props;
+    let { t, activators, currentActivator, gameDiscovery, installPath, onShowError } = this.props;
 
     let activator: IModActivator = currentActivator !== undefined
       ? activators.find((act: IModActivator) => act.id === currentActivator)
       : activators[0];
 
-    deactivateMods(gameDiscovery.modPath, activator).catch((err) => {
-      onShowError('failed to activate mods', err.message);
+    let notificationId = shortid();
+    this.context.api.sendNotification({
+      id: notificationId,
+      type: 'activity',
+      message: t('Purging mods'),
+      title: t('Purging'),
     });
+
+    deactivateMods(installPath, gameDiscovery.modPath, activator).catch((err) => {
+      onShowError('failed to deactivate mods', err.message);
+    }).finally(() => {
+      this.context.api.dismissNotification(notificationId);
+    });
+;
   };
 }
 
-function mapStateToProps(state: any): IConnectedProps {
-  const activeProfile =
-    state.gameSettings.profiles.profiles[state.gameSettings.profiles.currentProfile];
+function activeProfile(state: any): IProfile {
+  return state.gameSettings.profiles.profiles[state.gameSettings.profiles.currentProfile];
+}
 
+function activeGameDiscovery(state: any)  {
   const activeGameId = state.settings.gameMode.current;
+  return state.settings.gameMode.discovered[activeGameId];
+}
 
-  const activeGameDiscovery: IDiscoveryResult =
-    state.settings.gameMode.discovered[activeGameId];
-
+function mapStateToProps(state: any): IConnectedProps {
   return {
-    gameDiscovery: activeGameDiscovery,
+    installPath: installPath(state),
+    gameDiscovery: activeGameDiscovery(state),
     mods: state.mods.mods,
-    modState: activeProfile.modState,
+    modState: activeProfile(state).modState,
     currentActivator: state.gameSettings.mods.activator,
   };
 }

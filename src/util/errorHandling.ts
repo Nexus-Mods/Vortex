@@ -77,7 +77,7 @@ export function terminate(error: ITermination) {
       buttons: ['Report', 'Quit'],
       title: 'An unrecoverable error occured',
       message: error.message,
-      detail: error.details,
+      detail: error.details + '\n' + error.stack,
       noLink: true,
     });
 

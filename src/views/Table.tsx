@@ -1,5 +1,5 @@
-import {selectRows, setAttributeSort, setAttributeVisible} from '../actions/tables';
 
+import {selectRows, setAttributeSort, setAttributeVisible} from '../actions/tables';
 import {IAttributeState} from '../types/IAttributeState';
 import {IIconDefinition} from '../types/IIconDefinition';
 import {IRowState, IState, ITableState} from '../types/IState';
@@ -224,7 +224,7 @@ type LookupCalculated = { [rowId: string]: { [attributeId: string]: any } };
 
 interface IComponentState {
   lastSelected?: string;
-  calculatedValues: LookupCalculated;
+  calculatedValues?: LookupCalculated;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps;
@@ -241,7 +241,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     super(props);
     this.state = {
       lastSelected: undefined,
-      calculatedValues: {},
+      calculatedValues: undefined,
     };
   }
 
@@ -256,11 +256,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, attributeState, objects, data, language } = this.props;
+    const { t, attributeState, objects } = this.props;
     const { lastSelected } = this.state;
 
     const visibleAttributes = this.visibleAttributes(objects, attributeState);
-    let sorted: any[] = this.sortedRows(attributeState, visibleAttributes, data, language);
 
     return (
       <Layout type='column'>
@@ -279,9 +278,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                     <th>{t('Actions')}</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {sorted.map((row) => this.renderRow(row, visibleAttributes))}
-                </tbody>
+                { this.renderBody(visibleAttributes) }
               </Table>
             </Flex>
             <Fixed>
@@ -294,6 +291,20 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         </Fixed>
       </Layout>
       );
+  }
+
+  private renderBody = (visibleAttributes: ITableAttribute[]) => {
+    const { attributeState, data, language } = this.props;
+    const { calculatedValues } = this.state;
+
+    if (calculatedValues === undefined) {
+      return null;
+    }
+
+    let sorted: any[] = this.sortedRows(attributeState, visibleAttributes, data, language);
+    return <tbody>
+      {sorted.map((row) => this.renderRow(row, visibleAttributes))}
+    </tbody>;
   }
 
   private updateCalculatedValues(props) {
@@ -338,8 +349,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         __id: rowId,
       });
 
-    if (sortAttribute === undefined) {
-      return Object.keys(data).map(idsToRows);
+    let dataIds = Object.keys(data);
+
+    // return unsorted if no sorting column was selected or if the values
+    // haven't been calculated yet
+    if ((sortAttribute === undefined) || (calculatedValues === undefined)) {
+      return dataIds.map(idsToRows);
     }
 
     let sortFunction = sortAttribute.sortFunc;
@@ -347,11 +362,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       sortFunction = this.standardSort;
     }
 
-    return Object.keys(data).sort((lhsId: string, rhsId: string): number => {
+    let descending = attributeState[sortAttribute.id].sortDirection === 'desc';
+
+    return dataIds.sort((lhsId: string, rhsId: string): number => {
       let res = sortFunction(calculatedValues[lhsId][sortAttribute.id],
                              calculatedValues[rhsId][sortAttribute.id],
                              locale);
-      if (attributeState[sortAttribute.id].sortDirection === 'desc') {
+      if (descending) {
         res *= -1;
       }
       return res;

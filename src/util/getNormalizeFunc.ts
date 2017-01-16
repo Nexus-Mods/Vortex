@@ -1,4 +1,4 @@
-import { log } from '../../../util/log';
+import { log } from '../util/log';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -25,7 +25,7 @@ function CaseInsensitiveNormalize(input: string) {
  * @param {string} path
  * @returns {Promise<Normalize>}
  */
-export function getNormalizeFunc(testPath: string): Promise<Normalize> {
+function getNormalizeFunc(testPath: string): Promise<Normalize> {
   return fs.readdirAsync(testPath)
     .then((files: string[]) => {
       // we need a filename that contains letters with case variants, otherwise we can't
@@ -50,7 +50,7 @@ export function getNormalizeFunc(testPath: string): Promise<Normalize> {
           ? CaseInsensitiveNormalize
           : CaseSensitiveNormalize;
       }
-      // we opened stated the original file name, the lower case variant and the upper case variant.
+      // we stated the original file name, the lower case variant and the upper case variant.
       // if they all returned the same file, this should be a case insensitive drive
       if ((stats[1] !== undefined) && (stats[2] !== undefined) &&
         (stats[0].ino === stats[1].ino) && (stats[0].ino === stats[2].ino)) {
@@ -62,3 +62,5 @@ export function getNormalizeFunc(testPath: string): Promise<Normalize> {
       }
     });
 }
+
+export default getNormalizeFunc;

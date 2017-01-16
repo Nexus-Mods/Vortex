@@ -1,9 +1,9 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IStateEx';
+import LinkingActivator from '../mod_management/LinkingActivator';
 import {installPath} from '../mod_management/selectors';
-import { IMod } from '../mod_management/types/IMod';
 import { IModActivator } from '../mod_management/types/IModActivator';
 
 import walk from '../../util/walk';
@@ -15,17 +15,14 @@ import * as path from 'path';
 
 import * as util from 'util';
 
-class ModActivator implements IModActivator {
-  public id: string;
-  public name: string;
-  public description: string;
-
-  constructor() {
-    this.id = 'hardlink_activator';
-    this.name = 'Hardlink activator';
-    this.description = 'Installs the mods by setting hard links in the destination directory. '
-                     + 'This implementation requires the account running NMM2 to have write access '
-                     + 'to the mod directory.';
+class ModActivator extends LinkingActivator {
+  constructor(api: IExtensionApi) {
+    super(
+        'hardlink_activator', 'Hardlink activator',
+        'Installs the mods by setting hard links in the destination directory. ' +
+            'This implementation requires the account running NMM2 to have write access ' +
+            'to the mod directory.',
+        api);
   }
 
   public isSupported(state: any): boolean {
@@ -59,58 +56,47 @@ class ModActivator implements IModActivator {
     return true;
   }
 
-  public prepare(modsPath: string): Promise<void> {
-    return Promise.resolve();
+  protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
+    let inos = new Set<number>();
+
+    return walk(installPath, (iterPath: string, stats: fs.Stats) => {
+      if (stats.nlink > 1) {
+        inos.add(stats.ino);
+      }
+      return Promise.resolve();
+    }).then(() => {
+      walk(dataPath, (iterPath: string, stats: fs.Stats) => {
+        if ((stats.nlink > 1) && (inos.has(stats.ino))) {
+          return fs.unlinkAsync(iterPath);
+        } else {
+          return Promise.resolve();
+        }
+      });
+    });
   }
 
-  public finalize(modsPath: string): Promise<void> {
-    return Promise.resolve();
+  protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
+    return fs.ensureDirAsync(path.dirname(linkPath))
+        .then(() => fs.linkAsync(sourcePath, linkPath)
+                        .catch((err) => {
+                          if (err.code !== 'EEXIST') { throw err; };
+                        }));
   }
 
-  public activate(modsPath: string, mod: IMod): Promise<void> {
-    const sourceBase: string = mod.installationPath;
-    return walk(mod.installationPath, (iterPath: string, stat: fs.Stats) => {
-      let relPath: string = path.relative(sourceBase, iterPath);
-      let dest: string = path.join(modsPath, relPath);
-      if (stat.isDirectory()) {
-        return fs.mkdirAsync(dest).catch((err) => {
-          if (err.code !== 'EEXIST') {
-            throw err;
-          }
-        });
+  protected unlinkFile(linkPath: string): Promise<void> {
+    return fs.unlinkAsync(linkPath);
+  }
+
+  protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
+    return fs.lstatAsync(linkPath).then((linkStats: fs.Stats) => {
+      if (linkStats.nlink === 1) {
+        return false;
       } else {
-        return fs.unlinkAsync(dest)
-        .catch((err) => {
-          log('info', 'unlink failed', util.inspect(err));
-          if (err.code !== 'ENOENT') {
-            throw err;
-          }
-        }).then(() => {
-          return fs.linkAsync(iterPath, dest);
-        }).catch((err) => {
-          log('info', 'error', { err: err.message });
-          throw err;
+        return fs.lstatAsync(sourcePath).then((sourceStats: fs.Stats) => {
+          return linkStats.ino === sourceStats.ino;
         });
       }
     });
-  }
-
-  public deactivate(modsPath: string): Promise<void> {
-    return walk(modsPath, (iterPath: string, stat: fs.Stats) => {
-      if (stat.isSymbolicLink()) {
-        return fs.realpathAsync(iterPath)
-          .then((realPath: string) => {
-            log('info', 'real path', realPath);
-            // TODO: we should check here if the link actually leads to the
-            //   our mods directory
-            return fs.unlinkAsync(iterPath);
-          });
-      }
-    });
-  }
-
-  public isActive(): boolean {
-    return false;
   }
 }
 
@@ -119,7 +105,7 @@ export interface IExtensionContextEx extends IExtensionContext {
 }
 
 function init(context: IExtensionContextEx): boolean {
-  context.registerModActivator(new ModActivator());
+  context.registerModActivator(new ModActivator(context.api));
 
   return true;
 }

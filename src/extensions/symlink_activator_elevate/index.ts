@@ -2,7 +2,7 @@ import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 
 import { IMod } from '../mod_management/types/IMod';
-import { IModActivator } from '../mod_management/types/IModActivator';
+import { IFileChange, IModActivator } from '../mod_management/types/IModActivator';
 
 import elevated from  '../../util/elevated';
 import walk from './walk';
@@ -10,6 +10,7 @@ import walk from './walk';
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import ipc = require('node-ipc');
+import * as path from 'path';
 
 import { remoteCode } from './remoteCode';
 
@@ -37,7 +38,7 @@ class ModActivator implements IModActivator {
     return process.platform === 'win32' && !this.isGamebryoGame(activeGameId);
   }
 
-  public prepare(modsPath: string): Promise<void> {
+  public prepare(dataPath: string): Promise<void> {
     this.mOutstanding = [];
     this.mDone = null;
     const ipcPath: string = 'nmm_elevate_symlink';
@@ -66,7 +67,7 @@ class ModActivator implements IModActivator {
     });
   }
 
-  public finalize(modsPath: string): Promise<void> {
+  public finalize(dataPath: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.mDone = resolve;
       if (this.mOutstanding.length === 0) {
@@ -75,19 +76,23 @@ class ModActivator implements IModActivator {
     });
   }
 
-  public activate(modsPath: string, mod: IMod): Promise<void> {
+  public activate(installPath: string, dataPath: string, mod: IMod): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.mOutstanding.push(mod.installationPath);
 
       ipc.server.emit(this.mElevatedClient, 'create-link',
-        { source: mod.installationPath, destination: modsPath });
+        { source: path.join(installPath, mod.installationPath), destination: dataPath });
       resolve();
     });
   }
 
-  public deactivate(modsPath: string): Promise<void> {
-    log('info', 'deactivate mods', { modsPath });
-    return walk(modsPath, (iterPath: string, stat: fs.Stats) => {
+  public deactivate(dataPath: string, mod: IMod): Promise<void> {
+    return Promise.reject(new Error('not implemented'));
+  }
+
+  public purge(installPath: string, dataPath: string): Promise<void> {
+    log('info', 'deactivate mods', { dataPath });
+    return walk(dataPath, (iterPath: string, stat: fs.Stats) => {
       if (stat.isSymbolicLink()) {
         return fs.realpathAsync(iterPath)
           .then((realPath: string) => {
@@ -97,6 +102,10 @@ class ModActivator implements IModActivator {
           });
       }
     });
+  }
+
+  public externalChanges(installPath: string, dataPath: string): Promise<IFileChange[]> {
+    return Promise.resolve([]);
   }
 
   public isActive(): boolean {
