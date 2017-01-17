@@ -14,7 +14,7 @@
     "_assets_app": "node InstallAssets.js app && npm run _babel_app",
     "_install_app": "cd app && npm install && npm update",
     "prestart": "npm run _assets_out",
-    "prepackage": "npm run installex && npm run build_nexusapi && npm run _install_app && npm run _assets_app",
+    "prepackage": "npm run build_nexusapi && npm run _install_app && npm run _assets_app",
     "package": "build",
     "postinstall": "typings install",
     "start": "cross-env NODE_ENV=development electron .",
