@@ -18,7 +18,10 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
   private mComponent: ComponentEx<any, T>;
   private mPath: string[];
   private mBaseObject: T;
-  private mSubProxies: { [key: string]: any };
+  private mSubProxies: { [key: string]: {
+    proxy: any,
+    obj: any,
+  } };
 
   constructor(component: ComponentEx<any, T>, baseObject: T, objPath: string[]) {
     this.mComponent = component;
@@ -48,11 +51,14 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
       return obj[key];
     }
 
-    if (!(key in this.mSubProxies)) {
-      this.mSubProxies[key] = new Proxy(obj[key],
-        new StateProxyHandler(this.mComponent, this.mBaseObject, [].concat(this.mPath, key)));
+    if (!(key in this.mSubProxies) || (obj[key] !== this.mSubProxies[key].obj)) {
+      this.mSubProxies[key] = {
+        proxy: new Proxy(obj[key],
+        new StateProxyHandler(this.mComponent, this.mBaseObject, [].concat(this.mPath, key))),
+        obj: obj[key],
+      };
     }
-    return this.mSubProxies[key];
+    return this.mSubProxies[key].proxy;
   }
 }
 
