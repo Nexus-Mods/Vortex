@@ -4,6 +4,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { SortDirection } from '../../../types/SortDirection';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+import { getSafe } from '../../../util/storeHelper';
 import SuperTable, {ITableRowAction} from '../../../views/Table';
 
 import { IGameModeSettings } from '../../gamemode_management/types/IStateEx';
@@ -12,13 +13,13 @@ import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 import { IProfileSettings } from '../../profile_management/types/IStateEx';
 
-import { removeMod } from '../actions/mods';
+import { removeMod, setModAttribute } from '../actions/mods';
 import { setModlistAttributeSort, setModlistAttributeVisible } from '../actions/settings';
 import { IMod } from '../types/IMod';
 import { IStateMods } from '../types/IStateMods';
 import { IStateModSettings } from '../types/IStateSettings';
 
-import { ENDORSED, INSTALL_TIME, MOD_NAME, VERSION } from '../modAttributes';
+import { ENDORSED, INSTALL_TIME } from '../modAttributes';
 import { installPath } from '../selectors';
 
 import InstallArchiveButton from './InstallArchiveButton';
@@ -30,6 +31,7 @@ import * as React from 'react';
 import { Jumbotron } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 import {createSelector} from 'reselect';
+import * as semver from 'semver';
 
 type IModWithState = IMod & IProfileMod;
 
@@ -53,6 +55,7 @@ interface IConnectedProps {
 interface IActionProps {
   onSetAttributeVisible: (attributeId: string, visible: boolean) => void;
   onSetAttributeSort: (attributeId: string, dir: SortDirection) => void;
+  onSetModAttribute: (modId: string, attributeId: string, value: any) => void;
   onSetModEnabled: (modId: string, enabled: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
@@ -72,9 +75,30 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 class ModList extends ComponentEx<IProps, {}> {
   private modActions: ITableRowAction[];
   private modEnabledAttribute: ITableAttribute;
+  private modNameAttribute: ITableAttribute;
+  private modVersionAttribute: ITableAttribute;
 
   constructor(props: IProps) {
     super(props);
+
+    this.modNameAttribute = {
+      id: 'name',
+      name: 'Mod Name',
+      description: 'Name of the mod',
+      icon: 'quote-left',
+      calc: (mod: IMod) =>
+        getSafe(mod.attributes, ['logicalFileName'], getSafe(mod.attributes, ['name'], '')),
+      placement: 'both',
+      isToggleable: false,
+      edit: {
+        onChangeValue: (modId: string, value: any) =>
+          props.onSetModAttribute(modId, 'logicalFileName', value),
+      },
+      isSortable: true,
+      sortFunc: (lhs: string, rhs: string, locale: string): number => {
+        return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
+      },
+    };
 
     this.modEnabledAttribute = {
       id: 'enabled',
@@ -88,6 +112,22 @@ class ModList extends ComponentEx<IProps, {}> {
         onChangeValue: (modId: string, value: any) => props.onSetModEnabled(modId, value),
       },
       isSortable: false,
+    };
+
+    this.modVersionAttribute = {
+      id: 'version',
+      name: 'Version',
+      description: 'File version (according to the author)',
+      icon: 'birthday-cake',
+      calc: (mod: IMod) => getSafe(mod.attributes, ['version'], ''),
+      placement: 'both',
+      isToggleable: true,
+      edit: {
+        validate: (input: string) => semver.valid(input) ? 'success' : 'error',
+        onChangeValue: (modId: string, value: any) =>
+          props.onSetModAttribute(modId, 'version', value),
+      },
+      isSortable: true,
     };
 
     this.modActions = [
@@ -140,7 +180,13 @@ class ModList extends ComponentEx<IProps, {}> {
           <SuperTable
             tableId='mods'
             data={modsWithState}
-            staticElements={[this.modEnabledAttribute, MOD_NAME, VERSION, INSTALL_TIME, ENDORSED]}
+            staticElements={[
+              this.modEnabledAttribute,
+              this.modNameAttribute,
+              this.modVersionAttribute,
+              INSTALL_TIME,
+              ENDORSED,
+            ]}
             actions={this.modActions}
           />
         </Flex>
@@ -257,6 +303,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     },
     onSetAttributeSort: (attributeId: string, dir: SortDirection) => {
       dispatch(setModlistAttributeSort(attributeId, dir));
+    },
+    onSetModAttribute: (modId: string, attributeId: string, value: any) => {
+      dispatch(setModAttribute(modId, attributeId, value));
     },
     onSetModEnabled: (modId: string, enabled: boolean) => {
       dispatch(setModEnabled(modId, enabled));

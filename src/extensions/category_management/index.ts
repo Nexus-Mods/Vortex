@@ -50,7 +50,7 @@ function init(context: IExtensionContext): boolean {
         const store = context.api.store;
         const categories: ICategoryDictionary = allCategories(store.getState());
         const language: string = store.getState().settings.interface.language;
-        return [{ key: undefined, text: '' }].concat(Object.keys(categories)
+        return [{ key: '', text: '' }].concat(Object.keys(categories)
           .map((id: string) => ({ key: id, text: retrieveCategoryDetail(id, context.api.store) }))
         .sort((lhs, rhs) => lhs.text.localeCompare(rhs.text, language)));
       },
