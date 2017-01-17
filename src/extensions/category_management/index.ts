@@ -1,25 +1,21 @@
-import {setModAttribute} from '../mod_management/actions/mods';
-
-import { loadCategories, updateCategories } from './actions/category';
-import { setTreeDataObject } from './actions/session';
-import { categoryReducer } from './reducers/category';
-import { sessionReducer } from './reducers/session';
-import CategoryList from './views/CategoryList';
-
-import { convertGameId } from './util/convertGameId';
-import { createTreeDataObject } from './util/createTreeDataObject';
-import { retrieveCategory, retrieveCategoryDetail } from './util/retrieveCategoryPath';
-
-import { allCategories } from './selectors';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 
-interface ICategoryDic {
-  [id: string]: { name: string, parentCategory: string };
-};
+import { setModAttribute } from '../mod_management/actions/mods';
+
+import { loadCategories, updateCategories } from './actions/category';
+import { setTreeDataObject } from './actions/session';
+import { categoryReducer } from './reducers/category';
+import { sessionReducer } from './reducers/session';
+import { allCategories } from './selectors';
+import { ICategoryDictionary } from './types/IcategoryDictionary';
+import convertGameId from './util/convertGameId';
+import createTreeDataObject from './util/createTreeDataObject';
+import { retrieveCategory, retrieveCategoryDetail } from './util/retrieveCategoryPath';
+import CategoryList from './views/CategoryList';
 
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('book', 'Categories', CategoryList, {
@@ -52,7 +48,7 @@ function init(context: IExtensionContext): boolean {
     edit: {
       choices: () => {
         const store = context.api.store;
-        const categories: ICategoryDic = allCategories(store.getState());
+        const categories: ICategoryDictionary = allCategories(store.getState());
         const language: string = store.getState().settings.interface.language;
         return [{ key: undefined, text: '' }].concat(Object.keys(categories)
           .map((id: string) => ({ key: id, text: retrieveCategoryDetail(id, context.api.store) }))
@@ -86,7 +82,7 @@ function init(context: IExtensionContext): boolean {
       });
 
       context.api.events.on('gamemode-activated', (gameMode: string) => {
-        let categories: any = getSafe(store.getState(), ['persistent', 'categories',
+        let categories = getSafe(store.getState(), ['persistent', 'categories',
           convertGameId(gameMode)], '');
         store.dispatch(setTreeDataObject(undefined));
         if (categories === undefined) {

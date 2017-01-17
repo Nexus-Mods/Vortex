@@ -1,6 +1,14 @@
 
-export function retrieveSubtitle(rootId: string, mods: any) {
-  let modsCount: any[] = Object.keys(mods).filter((id: string) => {
+/**
+ * generate the category's subtitle
+ * 
+ * @param {string} rootId
+ * @param {any} mods
+ * @return {string}
+ */
+
+function generateSubtitle(rootId: string, mods: any) {
+  let modsCount = Object.keys(mods).filter((id: string) => {
     if (mods[id].attributes.category !== undefined) {
       if (mods[id].attributes.category.toString() === rootId) {
         return id;
@@ -15,3 +23,5 @@ export function retrieveSubtitle(rootId: string, mods: any) {
       modsCount.length + ' mods installed';
   }
 }
+
+export default generateSubtitle;

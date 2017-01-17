@@ -10,20 +10,19 @@ import {  deleteOrNop, merge, setOrNop, setSafe } from '../../../util/storeHelpe
 export const categoryReducer: IReducerSpec = {
   reducers: {
     [loadCategories]: (state, payload) => {
-    return setOrNop(state, [payload.gameId], payload);
+    return setOrNop(state, [payload.gameId], payload.gameCategories);
     },
     [updateCategories]: (state, payload) => {
-    return setSafe(state, [payload.gameId], payload);
+    return setSafe(state, [payload.gameId], payload.gameCategories);
     },
     [addCategory]: (state, payload) => {
-    return merge(state, [payload.gameId, 'gameCategories'], payload.gameCategory);
+    return merge(state, [payload.gameId], payload.gameCategory);
     },
     [removeCategory]: (state, payload) => {
-    return deleteOrNop(state, [payload.gameId, 'gameCategories', payload.category] );
+    return deleteOrNop(state, [payload.gameId, payload.category] );
     },
     [renameCategory]: (state, payload) => {
-    return setSafe(state, [payload.gameId, 'gameCategories',
-     payload.oldCategory ], payload.newCategory);
+    return setSafe(state, [payload.gameId, payload.oldCategory ], payload.newCategory);
     },
   }, defaults: {
 

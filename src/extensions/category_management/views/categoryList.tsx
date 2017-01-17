@@ -1,14 +1,4 @@
 
-import { addCategory, removeCategory, renameCategory, updateCategories } from '../actions/category';
-import {
-  setSearchFocusIndex, setSearchFoundCount,
-  setSearchString, setTreeDataObject,
-} from '../actions/session';
-import { IAddedTree, IRemovedTree, IRenamedTree, IToggleExpandedTree } from '../types/ITrees';
-import { createTreeDataObject } from '../util/createTreeDataObject';
-import { createCategoryDict } from '../util/retrieveCategoryDictionary';
-import { retrieveSubtitle } from '../util/retrieveSubtitle';
-
 import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
@@ -18,6 +8,18 @@ import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
 import { Button } from '../../../views/TooltipControls';
 
+import { addCategory, removeCategory, renameCategory, updateCategories } from '../actions/category';
+import {
+  setSearchFocusIndex, setSearchFoundCount,
+  setSearchString, setTreeDataObject,
+} from '../actions/session';
+import { ICategoryDictionary } from '../types/IcategoryDictionary';
+import { IAddedTree, IRemovedTree, IRenamedTree,
+   IToggleExpandedTree, ITreeDataObject } from '../types/ITrees';
+import createCategoryDictionary from '../util/createCategoryDictionary';
+import createTreeDataObject from '../util/createTreeDataObject';
+import generateSubtitle from '../util/generateSubtitle';
+
 import * as Promise from 'bluebird';
 import * as React from 'react';
 import { Jumbotron } from 'react-bootstrap';
@@ -25,7 +27,7 @@ import Tree from 'react-sortable-tree';
 
 interface IActionProps {
   onShowError: (message: string, details: string | Error) => void;
-  onUpdateCategories: (activeGameId: string, categories: any[]) => void;
+  onUpdateCategories: (activeGameId: string, categories: ICategoryDictionary) => void;
   onAddCategory: (activeGameId: string, category: {}) => void;
   onRemoveCategory: (activeGameId: string, category: {}) => void;
   onRenameCategory: (activeGameId: string, categoryId: string, newCategory: {}) => void;
@@ -60,12 +62,8 @@ interface ICategory {
   parentCategory: number | false;
 }
 
-interface ICategoryDic {
-  [id: string]: { name: string, parentCategory: string };
-};
-
 /**
- * displays the list of savegames installed for the current game.
+ * displays the list of categories related for the current game.
  * 
  */
 class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponentState> {
@@ -254,17 +252,17 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
 
   private addCategory = ({ node, path }) => {
     const {categories, gameMode, mods, onShowDialog, onShowError, onAddCategory,
-      onSetTreeDataObject, treeDataObject} = this.props;
+      onSetTreeDataObject, t, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     let addCategory = true;
     let lastIndex = this.searchLastRootId(categories);
 
     onShowDialog('question', 'Add new Category', {
       formcontrol: [
-        { id: 'newCategory', type: 'text', value: '', label: 'New Category' },
+        { id: 'newCategory', type: 'text', value: '', label: 'Category Name' },
         {
           id: 'newCategoryId', type: 'text', value: lastIndex.toString(),
-          label: 'New Category ID',
+          label: 'Category ID',
         },
       ],
     }, {
@@ -273,7 +271,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       }).then((result: IDialogResult) => {
         addCategory = result.action === 'Add';
         if (addCategory) {
-          let checkId = Object.keys(categories[gameMode].gameCategories).filter((id: string) =>
+          let checkId = Object.keys(categories[gameMode]).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
             onShowError('An error occurred adding the new category', 'ID already used.');
@@ -284,9 +282,11 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
               let newTree: IAddedTree = {
                 treeData: treeDataObject,
                 newNode: {
-                  rootId: result.input.newCategoryId, title: result.input.newCategory,
+                  rootId: result.input.newCategoryId,
+                  title: result.input.newCategory,
                   subtitle: mods !== undefined ?
-                  retrieveSubtitle(result.input.newCategoryId, mods) : '', expanded: true,
+                  t(generateSubtitle(result.input.newCategoryId, mods)) : '',
+                  expanded: true,
                   parentId: node.rootId,
                 },
                 parentKey: path[1] === undefined ? path[0] : path[1],
@@ -296,7 +296,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
               };
 
               let updatedTree = treeFunctions.addNodeUnderParent(newTree);
-              let categoryDict: ICategoryDic = {
+              let categoryDict: ICategoryDictionary = {
                 [result.input.newCategoryId]:
                 {
                   name: result.input.newCategory, parentCategory: node.rootId,
@@ -315,17 +315,17 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
 
   private addRootCategory = () => {
     const {categories, gameMode, mods, onShowDialog, onShowError, onAddCategory,
-      onSetTreeDataObject, treeDataObject} = this.props;
+      onSetTreeDataObject, t, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     let addCategory = true;
     let lastIndex = this.searchLastRootId(categories);
 
     onShowDialog('question', 'Add new Root Category', {
       formcontrol: [
-        { id: 'newCategory', type: 'text', value: '', label: 'New Category' },
+        { id: 'newCategory', type: 'text', value: '', label: 'Category Name' },
         {
           id: 'newCategoryId', type: 'text', value: lastIndex.toString(),
-          label: 'New Category ID',
+          label: 'Category ID',
         },
       ],
     }, {
@@ -334,7 +334,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       }).then((result: IDialogResult) => {
         addCategory = result.action === 'Add';
         if (addCategory) {
-          let checkId = Object.keys(categories[gameMode].gameCategories).filter((id: string) =>
+          let checkId = Object.keys(categories[gameMode]).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
             onShowError('An error occurred adding the new category', 'ID already used.');
@@ -345,9 +345,11 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
               let newTree: IAddedTree = {
                 treeData: treeDataObject,
                 newNode: {
-                  rootId: result.input.newCategoryId, title: result.input.newCategory,
+                  rootId: result.input.newCategoryId,
+                  title: result.input.newCategory,
                   subtitle: mods !== undefined ?
-                  retrieveSubtitle(result.input.newCategoryId, mods) : '', expanded: true,
+                  t(generateSubtitle(result.input.newCategoryId, mods)) : '',
+                  expanded: true,
                   parentId: undefined,
                 },
                 parentKey: undefined,
@@ -357,7 +359,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
               };
 
               let updatedTree = treeFunctions.addNodeUnderParent(newTree);
-              let categoryDict: ICategoryDic = {
+              let categoryDict: ICategoryDictionary = {
                 [result.input.newCategoryId]:
                 {
                   name: result.input.newCategory, parentCategory: undefined,
@@ -373,10 +375,10 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       });
   }
 
-  private searchLastRootId(categories: any) {
+  private searchLastRootId(categories: Object) {
     const {gameMode} = this.props;
     let maxId = 0;
-    Object.keys(categories[gameMode].gameCategories).filter((id: string) => {
+    Object.keys(categories[gameMode]).filter((id: string) => {
       if (parseInt(id, 10) > maxId) {
         maxId = parseInt(id, 10);
       }
@@ -407,17 +409,13 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   private loadTree() {
     const { categories, gameMode, mods, onShowError, onSetTreeDataObject } = this.props;
     if (categories[gameMode] !== undefined) {
-      let gameCategories = categories[gameMode].gameCategories;
-
-      if (gameCategories !== undefined) {
-        let createdTree = createTreeDataObject(gameCategories, mods);
+        let createdTree = createTreeDataObject(categories[gameMode], mods);
         onSetTreeDataObject(createdTree);
-      } else {
+     } else {
         onShowError('An error occurred loading the categories. ',
           'Cant read local categories. If you manually edited global_persistent you probably ' +
           'damaged the file. If you didn t, please report a bug and include global_persistent.');
-      }
-    }
+     }
   }
 
   private searchString = (event) => {
@@ -448,14 +446,14 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       onSetTreeDataObject(updatedTree);
 
       let categoryList: any[] =
-        Object.keys(categories[gameMode].gameCategories).filter((id: string) => {
+        Object.keys(categories[gameMode]).filter((id: string) => {
           return (id === node.rootId ||
-            categories[gameMode].gameCategories[id].parentCategory === node.rootId);
+            categories[gameMode][id].parentCategory === node.rootId);
         }
         );
 
       if (categoryList !== undefined) {
-        categoryList.forEach(value => {
+        categoryList.forEach((value) => {
           onRemoveCategory(gameMode, value);
         });
       }
@@ -500,11 +498,11 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
     return rowInfo;
   }
 
-  private updateTreeData = (event) => {
+  private updateTreeData = (treeDataObject: ITreeDataObject[]) => {
     const { gameMode, onSetTreeDataObject, onUpdateCategories } = this.props;
-    let categories = createCategoryDict(event);
+    let categories = createCategoryDictionary(treeDataObject);
     onUpdateCategories(gameMode, categories);
-    onSetTreeDataObject(event);
+    onSetTreeDataObject(treeDataObject);
   }
 }
 
@@ -513,7 +511,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowError: (message: string, details: string | Error) => {
       showError(dispatch, message, details);
     },
-    onUpdateCategories: (activeGameId: string, categories: any[]) => {
+    onUpdateCategories: (activeGameId: string, categories: ICategoryDictionary) => {
       dispatch(updateCategories(activeGameId, categories));
     },
     onRemoveCategory: (activeGameId: string, category: {}) => {

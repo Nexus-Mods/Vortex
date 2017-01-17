@@ -1,4 +1,3 @@
-import { convertGameId } from './convertGameId';
 
 import { getSafe } from '../../../util/storeHelper';
 
@@ -17,15 +16,21 @@ function createCategoryDetailPath(categories: any, category: string, categoryPat
   }
 }
 
+/**
+ * retrieve the Category from the Store returning the full category path.
+ * 
+ * @param {number} category
+ * @param {Redux.Store<any>} store
+ */
+
 export function retrieveCategoryDetail(
   category: string,
   store: any) {
   let completePath: string = '';
-  let gameId: string = convertGameId(getSafe(store.getState(),
-    ['settings', 'gameMode', 'current'], ''));
+  let gameId: string = getSafe(store.getState(), ['settings', 'gameMode', 'current'], '');
 
   let categories: any = getSafe(store.getState(), ['persistent', 'categories',
-    gameId, 'gameCategories'], '');
+    gameId], '');
   if (categories[category] !== undefined) {
     completePath = createCategoryDetailPath(categories, category, '');
   }
@@ -33,15 +38,21 @@ export function retrieveCategoryDetail(
 
 }
 
+/**
+ * retrieve the Category from the Store
+ * 
+ * @param {number} category
+ * @param {Redux.Store<any>} store
+ */
+
 export function retrieveCategory(
   category: number,
   store: any) {
 
-  let gameId: string = convertGameId(getSafe(store.getState(),
-    ['settings', 'gameMode', 'current'], ''));
+  let gameId: string = getSafe(store.getState(), ['settings', 'gameMode', 'current'], '');
 
   let categories: any = getSafe(store.getState(), ['persistent', 'categories',
-    gameId, 'gameCategories'], '');
+    gameId], '');
   return categories[category] !== undefined ? categories[category].name : '';
 
 }

@@ -1,10 +1,9 @@
-interface ICategoryDic {
-  [id: string]: { name: string, parentCategory: string };
-};
+import { ICategoryDictionary } from '../types/IcategoryDictionary';
+import { ITreeDataObject } from '../types/ITrees';
 
-function searchChildren(children: any, categoryList: any[], rootId: string) {
-  let categoryDict: ICategoryDic;
-  children.forEach(child => {
+function searchChildren(children: any, categoryList: ICategoryDictionary[], rootId: string) {
+  let categoryDict: ICategoryDictionary;
+  children.forEach((child) => {
     categoryDict = {
       [child.rootId]:
       {
@@ -22,10 +21,18 @@ function searchChildren(children: any, categoryList: any[], rootId: string) {
   return categoryList;
 }
 
-export function createCategoryDict(event: any) {
-  let categoryList: any[] = [];
-  let categoryDict: ICategoryDic;
-  event.forEach(element => {
+/**
+ * create the categories Dictionary from the treeDataObject
+ * 
+ * @param {ITreeDataObject[]} treeDataObject
+ * @return {ICategoryDictionary} categories
+ * 
+ */
+
+function createCategoryDictionary(treeDataObject: ITreeDataObject[]) {
+  let categoryList: ICategoryDictionary[] = [];
+  let categoryDict: ICategoryDictionary;
+  treeDataObject.forEach((element) => {
     categoryDict = {
       [element.rootId]:
       {
@@ -41,7 +48,7 @@ export function createCategoryDict(event: any) {
     }
   });
 
-  let categories = categoryList.reduce((result, item) => {
+  let categories: ICategoryDictionary = categoryList.reduce((result, item) => {
     let key = Object.keys(item)[0];
     result[key] = item[key];
     return result;
@@ -49,3 +56,5 @@ export function createCategoryDict(event: any) {
 
   return categories;
 }
+
+export default createCategoryDictionary;

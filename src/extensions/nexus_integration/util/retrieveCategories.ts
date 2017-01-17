@@ -1,25 +1,32 @@
 
 import { log } from '../../../util/log';
 
+import { ICategoryDictionary } from '../../category_management/types/IcategoryDictionary';
+
 import Nexus, {ICategory} from 'nexus-api';
 
 interface IGameInfo {
   categories: ICategory[];
 }
 
-export interface ICategoryDict {
-  [id: string]: { name: string, parentCategory: string };
-};
+/**
+ * retrieve the categories by the server call
+ * 
+ * @param {string} activeGameId
+ * @param {Nexus} nexus
+ * @return {ICategoryDictionary} res 
+ * 
+ */
 
 function retrieveCategoryList(
   activeGameId: string,
   nexus: Nexus
-): Promise<ICategoryDict> {
-  return new Promise<ICategoryDict>((resolve, reject) => {
+): Promise<ICategoryDictionary> {
+  return new Promise<ICategoryDictionary>((resolve, reject) => {
     nexus.getGameInfo(activeGameId)
       .then((gameInfo: IGameInfo) => {
         if (gameInfo.categories !== undefined) {
-          let res: ICategoryDict = {};
+          let res: ICategoryDictionary = {};
 
           gameInfo.categories.forEach((category: ICategory) => {
             let parent = category.parent_category === false

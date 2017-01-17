@@ -1,3 +1,4 @@
+
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
@@ -6,16 +7,16 @@ import { currentGame, getSafe } from '../../util/storeHelper';
 import InputButton from '../../views/InputButton';
 import { IconButton } from '../../views/TooltipControls';
 
+import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import {IGameStored} from '../gamemode_management/types/IStateEx';
 
+import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
 import { settingsReducer } from './reducers/settings';
 import retrieveEndorsedMod from './util/endorseMod';
-import retrieveCategoryList, {ICategoryDict} from './util/retrieveCategories';
+import retrieveCategoryList from './util/retrieveCategories';
 import LoginIcon from './views/LoginIcon';
 import Settings from './views/Settings';
-
-import NXMUrl from './NXMUrl';
 
 import * as Promise from 'bluebird';
 import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
@@ -110,7 +111,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         log('info', 'retrieve categories for game', gameId);
         return retrieveCategoryList(convertGameId(gameId), nexus);
       })
-      .then((categories: ICategoryDict) => {
+      .then((categories: ICategoryDictionary) => {
         api.events.emit('retrieve-categories', [gameId, categories, isUpdate], {});
       })
       .catch((err) => {

@@ -44,3 +44,11 @@ export interface IGetNodeTree {
   ignoreCollapsed: boolean;
 }
 
+export interface ITreeDataObject {
+  children: ITreeDataObject[];
+  expanded: boolean;
+  parentId: string;
+  rootId: string;
+  subtitle: string;
+  title: string;
+}

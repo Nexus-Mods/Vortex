@@ -1,5 +1,5 @@
 
-import { retrieveSubtitle } from './retrieveSubtitle';
+import generateSubtitle from './generateSubtitle';
 
 interface ICategory {
   categoryId: number;
@@ -25,21 +25,17 @@ interface ICategoryTree {
   parentId: string;
 }
 
-interface ICategoryDic {
-  [id: string]: { name: string, parentCategory: number | false };
-};
-
 function searchChildren(categories: Object, rootId: string, mods: any) {
-  let children: any[] = Object.keys(categories).filter((id: string) =>
+  let children = Object.keys(categories).filter((id: string) =>
     (rootId === categories[id].parentCategory));
 
   let childrenList = [];
 
-  children.forEach(element => {
+  children.forEach((element) => {
     let child: IChildren = {
       rootId: element,
       title: categories[element].name,
-      subtitle: mods !== undefined ? retrieveSubtitle(element, mods) : '',
+      subtitle: mods !== undefined ? generateSubtitle(element, mods) : '',
       expanded: false,
       parentId: categories[element].parentCategory,
       children: searchChildren(categories, element, mods),
@@ -50,23 +46,32 @@ function searchChildren(categories: Object, rootId: string, mods: any) {
   return childrenList;
 }
 
-export function createTreeDataObject(categories: Object, mods: any) {
+/**
+ * create the treeDataObject from the categories inside the store
+ * 
+ * @param {Object} categories
+ * @param {any} mods
+ * @return {[]} categoryList
+ * 
+ */
+
+function createTreeDataObject(categories: Object, mods: any) {
   let categoryList = [];
 
-  let roots: any[] = Object.keys(categories).filter((id: string) =>
+  let roots = Object.keys(categories).filter((id: string) =>
     (categories[id].parentCategory === undefined));
 
-  roots.forEach(rootElement => {
-    let children: any[] = Object.keys(categories).filter((id: string) =>
+  roots.forEach((rootElement) => {
+    let children = Object.keys(categories).filter((id: string) =>
       (rootElement === categories[id].parentCategory));
 
     let childrenList = [];
 
-    children.forEach(element => {
+    children.forEach((element) => {
       let child: IChildren = {
         rootId: element,
         title: categories[element].name,
-        subtitle: mods !== undefined ? retrieveSubtitle(element, mods) : '',
+        subtitle: mods !== undefined ? generateSubtitle(element, mods) : '',
         expanded: false,
         parentId: categories[element].parentCategory,
         children: searchChildren(categories, element, mods),
@@ -77,7 +82,7 @@ export function createTreeDataObject(categories: Object, mods: any) {
     let root: ICategoryTree = {
       rootId: rootElement,
       title: categories[rootElement].name,
-      subtitle: mods !== undefined ? retrieveSubtitle(rootElement, mods) : '',
+      subtitle: mods !== undefined ? generateSubtitle(rootElement, mods) : '',
       expanded: false,
       parentId: undefined,
       children: childrenList,
@@ -87,3 +92,5 @@ export function createTreeDataObject(categories: Object, mods: any) {
 
   return categoryList;
 }
+
+export default createTreeDataObject;
