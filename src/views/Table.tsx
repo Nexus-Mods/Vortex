@@ -3,7 +3,7 @@ import {selectRows, setAttributeSort, setAttributeVisible} from '../actions/tabl
 import {IAttributeState} from '../types/IAttributeState';
 import {IIconDefinition} from '../types/IIconDefinition';
 import {IRowState, IState, ITableState} from '../types/IState';
-import {IEditChoice, ITableAttribute} from '../types/ITableAttribute';
+import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import {IExtensibleProps} from '../util/ExtensionProvider';
@@ -13,11 +13,12 @@ import {IconButton} from '../views/TooltipControls';
 import AttributeToggle from './AttributeToggle';
 import HeaderCell from './HeaderCell';
 import IconBar from './IconBar';
+import TableDetail from './table/TableDetail';
 
 import * as Promise from 'bluebird';
 import * as React from 'react';
 import update = require('react-addons-update');
-import {ControlLabel, FormControl, FormGroup, Table} from 'react-bootstrap';
+import {Table} from 'react-bootstrap';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 import { createSelector } from 'reselect';
 
@@ -68,95 +69,6 @@ class TableCell extends React.Component<ICellProps, {}> {
     const { attribute, rowData, rowId } = this.props;
     const value = rowData;
     attribute.edit.onChangeValue(rowId, !value);
-  }
-}
-
-class DetailCell extends React.Component<ICellProps, {}> {
-  public render(): JSX.Element {
-    const { t, attribute, rowData, rowId } = this.props;
-    const value = rowData[attribute.id];
-
-    let content: JSX.Element = null;
-
-    if (attribute.customRenderer !== undefined) {
-      content = (
-        <FormControl.Static>
-          { attribute.customRenderer(rowData, true, t) }
-        </FormControl.Static>
-      );
-    } else {
-      if (attribute.edit.onChangeValue !== undefined) {
-        if (attribute.edit.choices !== undefined) {
-          const choices = attribute.edit.choices();
-          const currentChoice = choices.find((choice) => choice.text === value);
-          const key = currentChoice !== undefined ? currentChoice.key : undefined;
-          content = (
-            <FormControl
-              id={attribute.id}
-              componentClass='select'
-              placeholder={t('No category')}
-              value={key}
-              onChange={this.changeCell}
-            >
-              {choices.map(this.renderChoice)}
-            </FormControl>
-          );
-        } else {
-          content = (
-            <FormControl
-              id={attribute.id}
-              type='text'
-              label={t(attribute.name)}
-              readOnly={false}
-              value={this.renderCell(value)}
-              onChange={this.changeCell}
-            />
-          );
-        }
-      } else {
-        content = (
-          <FormControl
-            id={attribute.id}
-            type='text'
-            label={t(attribute.name)}
-            readOnly={true}
-            value={this.renderCell(value)}
-          />
-        );
-      }
-    }
-
-    const key = `${rowId}-${attribute.id}`;
-
-    return (
-      <FormGroup key={key}>
-        <ControlLabel>{attribute.name}</ControlLabel>
-        {content}
-      </FormGroup>
-    );
-  }
-
-  private changeCell = (evt: React.FormEvent<any>) => {
-    const { attribute, rowId } = this.props;
-    attribute.edit.onChangeValue(rowId, evt.currentTarget.value);
-  }
-
-  private renderChoice(choice: IEditChoice): JSX.Element {
-    return <option value={choice.key}>{choice.text}</option>;
-  }
-
-  private renderCell(value: any): string {
-    const { language } = this.props;
-
-    if (value instanceof Date) {
-      return value.toLocaleString(language);
-    } else if (typeof(value) === 'string') {
-      return value;
-    } else if ((value === undefined) || (value === null)) {
-      return '';
-    } else {
-      return value.toString();
-    }
   }
 }
 
@@ -410,25 +322,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }).map(idsToRows);
   }
 
-  private renderDetail = (rowData: any, attribute: ITableAttribute) => {
-    const { t, language } = this.props;
-
-    return <DetailCell
-      t={t}
-      key={`detail-${rowData.__id}-${attribute.id}`}
-      attribute={attribute}
-      language={language}
-      rowData={rowData}
-      rowId={rowData.__id}
-    />;
-  }
-
   private renderDetails = (rowId: string) => {
     if (rowId === undefined) {
       return null;
     }
 
-    const {objects} = this.props;
+    const {t, language, objects} = this.props;
     const {calculatedValues} = this.state;
 
     const rowData = calculatedValues[rowId];
@@ -441,11 +340,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    return (
-      <form style={{ minWidth: 300 }}>
-      {detailAttributes.map((obj) => this.renderDetail(rowData, obj))}
-      </form>
-    );
+    return <TableDetail
+      t={t}
+      rowId={rowId}
+      rowData={rowData}
+      attributes={detailAttributes}
+      language={language}
+    />;
   };
 
   private renderSelectionActions(): JSX.Element {

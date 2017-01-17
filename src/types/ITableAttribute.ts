@@ -2,6 +2,8 @@ export type AttributeRenderer = 'progress';
 
 export type Placement = 'table' | 'detail' | 'both';
 
+export type ValidationState = 'success' | 'warning' | 'error';
+
 export interface IEditChoice {
   key: string;
   text: string;
@@ -74,8 +76,8 @@ export interface ITableAttribute {
    */
   sortFunc?: (lhs: any, rhs: any, locale: string) => number;
   /**
-   * describes how editing for this field should work. No more than one of the optional parameters
-   * should be set.
+   * describes how editing for this field should work. Only one out of "choices", "validate"
+   * should be used
    * 
    * Please note that this only works if no customRenderer is set. Otherwise that renderer
    * will have to implement its own editing functionality
@@ -89,9 +91,14 @@ export interface ITableAttribute {
     choices?: () => IEditChoice[],
 
     /**
+     * if set, this field is a text field that validates its input
+     */
+    validate?: (input: string) => ValidationState,
+
+    /**
      * called when this attribute was changed for an object.
      * If this is undefined, the field is readonly
      */
-    onChangeValue?: (rowId: string, newValue: any) => void;
+    onChangeValue?: (rowId: string, newValue: any) => void,
   },
 }

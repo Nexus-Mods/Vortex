@@ -1,6 +1,5 @@
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
-import walk from '../../util/walk';
 
 import { IProfileMod } from '../profile_management/types/IProfile';
 
