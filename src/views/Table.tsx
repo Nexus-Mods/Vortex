@@ -1,4 +1,3 @@
-
 import {selectRows, setAttributeSort, setAttributeVisible} from '../actions/tables';
 import {IAttributeState} from '../types/IAttributeState';
 import {IIconDefinition} from '../types/IIconDefinition';
@@ -8,14 +7,15 @@ import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import {getSafe, setSafe} from '../util/storeHelper';
-import {IconButton} from '../views/TooltipControls';
 
 import AttributeToggle from './AttributeToggle';
 import HeaderCell from './HeaderCell';
 import IconBar from './IconBar';
 import TableDetail from './table/TableDetail';
+import TableRow from './table/TableRow';
 
 import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 import * as React from 'react';
 import update = require('react-addons-update');
 import {Table} from 'react-bootstrap';
@@ -24,120 +24,6 @@ import { createSelector } from 'reselect';
 
 export interface IChangeDataHandler {
   (rowId: string, attributeId: string, newValue: any): void;
-}
-
-interface ICellProps {
-  language: string;
-  attribute: ITableAttribute;
-  rowId: string;
-  rowData: any;
-  t: I18next.TranslationFunction;
-}
-
-class TableCell extends React.Component<ICellProps, {}> {
-  public render(): JSX.Element {
-    const { t, attribute, language, rowData, rowId } = this.props;
-
-    // if a custom renderer was set then rowData is the raw object
-    // passed to the table by the user.
-    // otherwise rowData is the calculated value of this cell
-
-    if (attribute.customRenderer !== undefined) {
-      return attribute.customRenderer(rowData, false, t);
-    }
-
-    if (rowData instanceof Date) {
-      return <span>{rowData.toLocaleString(language)}</span>;
-    } else if (typeof (rowData) === 'string') {
-      return <span>{rowData}</span>;
-    } else if (typeof (rowData) === 'boolean') {
-      return <IconButton
-        className='btn-embed'
-        id={`toggle-${rowId}-${attribute.id}`}
-        tooltip={attribute.name}
-        icon={ rowData ? 'check-square-o' : 'square-o' }
-        onClick={this.toggle}
-      />;
-    } else if ((rowData === undefined) || (rowData === null)) {
-      return <span>{' '}</span>;
-    } else {
-      return <span>{rowData.toString()}</span>;
-    }
-  }
-
-  private toggle = () => {
-    const { attribute, rowData, rowId } = this.props;
-    const value = rowData;
-    attribute.edit.onChangeValue(rowId, !value);
-  }
-}
-
-interface IRowProps {
-  t: I18next.TranslationFunction;
-  tableId: string;
-  key: string;
-  data: any;
-  rawData: any;
-  attributes: ITableAttribute[];
-  actions: IIconDefinition[];
-  language: string;
-  onClick: React.MouseEventHandler<any>;
-  selected: boolean;
-}
-
-class TableRow extends React.Component<IRowProps, {}> {
-  public render(): JSX.Element {
-    const { attributes, data, onClick, selected, tableId, actions } = this.props;
-
-    let classes = [];
-    if (selected) {
-      classes.push('table-selected');
-    }
-
-    return (
-      <tr
-        id={data.__id}
-        key={data.__id}
-        className={classes.join(' ')}
-        onClick={onClick}
-      >
-        {attributes.map(this.renderAttribute)}
-        <td style={{ textAlign: 'center' }}>
-          <IconBar
-            group={`${tableId}-action-icons`}
-            instanceId={data.__id}
-            className='table-actions'
-            staticElements={actions}
-          />
-        </td>
-      </tr>
-    );
-  }
-
-  private renderAttribute = (attribute: ITableAttribute): JSX.Element => {
-    const { t, data, rawData } = this.props;
-    return (
-      <td key={attribute.id}>
-        {this.renderCell(attribute, attribute.customRenderer ? rawData : data[attribute.id], t)}
-      </td>
-    );
-  }
-
-  private renderCell(
-    attribute: ITableAttribute,
-    rowData: any,
-    t: I18next.TranslationFunction): JSX.Element {
-
-    const { data, language } = this.props;
-
-    return <TableCell
-      t={t}
-      attribute={attribute}
-      rowData={rowData}
-      rowId={data.__id}
-      language={language}
-    />;
-  }
 }
 
 export interface ITableRowAction extends IIconDefinition {
@@ -184,29 +70,32 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps;
  * - a detail-pane that gives additional detail on the (last) selected row
  */
 class SuperTable extends ComponentEx<IProps, IComponentState> {
+
+  private mVisibleAttributes: ITableAttribute[];
+
   constructor(props: IProps) {
     super(props);
     this.state = {
       lastSelected: undefined,
       calculatedValues: undefined,
     };
-  }
-
-  public componentDidMount() {
-    this.updateCalculatedValues(this.props);
+    this.mVisibleAttributes = this.visibleAttributes(props.objects, props.attributeState);
+    this.updateCalculatedValues(props);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
     if (newProps.data !== this.props.data) {
       this.updateCalculatedValues(newProps);
     }
+    if (newProps.attributeState !== this.props.attributeState) {
+      const { attributeState, objects } = newProps;
+      this.mVisibleAttributes = this.visibleAttributes(objects, attributeState);
+    }
   }
 
   public render(): JSX.Element {
-    const { t, attributeState, objects } = this.props;
+    const { t, objects } = this.props;
     const { lastSelected } = this.state;
-
-    const visibleAttributes = this.visibleAttributes(objects, attributeState);
 
     return (
       <Layout type='column'>
@@ -221,11 +110,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
               <Table bordered condensed hover>
                 <thead>
                   <tr>
-                    {visibleAttributes.map(this.renderHeaderField)}
+                    {this.mVisibleAttributes.map(this.renderHeaderField)}
                     <th>{t('Actions')}</th>
                   </tr>
                 </thead>
-                { this.renderBody(visibleAttributes) }
+                { this.renderBody(this.mVisibleAttributes) }
               </Table>
             </Flex>
             <Fixed>
@@ -257,14 +146,26 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private updateCalculatedValues(props) {
     const { t, data, objects } = props;
 
-    let newValues: LookupCalculated = {};
+    let newValues: LookupCalculated = this.state.calculatedValues || {};
 
     // recalculate each attribute in each row
     Promise.map(Object.keys(data), (rowId: string) => {
-      newValues[rowId] = { __id: rowId };
+      if (newValues[rowId] === undefined) {
+        newValues = update(newValues, {
+          [rowId]: { $set: { __id: rowId } },
+        });
+      }
       return Promise.map(objects, (attribute: ITableAttribute) =>
         Promise.resolve(attribute.calc(data[rowId], t))
-          .then((newValue) => newValues[rowId][attribute.id] = newValue)
+          .then((newValue) => {
+            if (!_.isEqual(newValue, newValues[rowId][attribute.id])) {
+              newValues = update(newValues, {
+                [rowId]: {
+                  [attribute.id]: { $set: newValue },
+                },
+              });
+            }
+          })
       );
     }).then(() => {
       // once everything is recalculated, update the cache
@@ -291,16 +192,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           && (attributeState[attribute.id].sortDirection !== 'none');
     });
 
-    let idsToRows = (rowId: string) =>
-      Object.assign({}, data[rowId], {
-        __id: rowId,
-      });
+    let idsToRows = (rowId: string) => ({
+      id: rowId,
+      data: data[rowId],
+    });
 
     let dataIds = Object.keys(data);
 
     // return unsorted if no sorting column was selected or if the values
     // haven't been calculated yet
-    if ((sortAttribute === undefined) || (calculatedValues === undefined)) {
+    if (sortAttribute === undefined) {
       return dataIds.map(idsToRows);
     }
 
@@ -328,13 +229,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     const {t, language, objects} = this.props;
-    const {calculatedValues} = this.state;
-
-    const rowData = calculatedValues[rowId];
 
     const detailAttributes = objects.filter((attribute: ITableAttribute) =>
       attribute.placement !== 'table'
     );
+
+    const rowData = this.state.calculatedValues[rowId];
 
     if (rowData === undefined) {
       return null;
@@ -426,14 +326,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
       this.sortedRows(attributeState, visibleAttributes, data, language)
       .forEach((iterRow: any) => {
-        let isBracket = (iterRow.__id === row.id) || (iterRow.__id === this.state.lastSelected);
+        let isBracket = (iterRow.id === row.id) || (iterRow.id === this.state.lastSelected);
         if (!selecting && isBracket) {
           selecting = true;
           isBracket = false;
         }
 
         if (selecting) {
-          selection.add(iterRow.__id);
+          selection.add(iterRow.id);
           if (isBracket) {
             selecting = false;
           }
@@ -453,7 +353,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const { t, actions, language, rowState, tableId } = this.props;
     const { calculatedValues } = this.state;
 
-    if (calculatedValues[data.__id] === undefined) {
+    if (calculatedValues[data.id] === undefined) {
       return null;
     }
 
@@ -464,9 +364,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       <TableRow
         t={t}
         tableId={tableId}
-        key={data.__id}
-        data={calculatedValues[data.__id]}
-        rawData={data}
+        key={data.id}
+        data={calculatedValues[data.id]}
+        rawData={data.data}
         attributes={visibleAttributes}
         actions={rowActions}
         language={language}

@@ -43,9 +43,12 @@ interface IAttributeStateMap {
   [ attributeId: string ]: IAttributeState;
 }
 
-interface IConnectedProps {
+interface IModProps {
   mods: { [modId: string]: IMod };
   modState: { [modId: string]: IProfileMod };
+}
+
+interface IConnectedProps extends IModProps {
   modlistState: IAttributeStateMap;
   gameMode: string;
   language: string;
@@ -77,6 +80,7 @@ class ModList extends ComponentEx<IProps, {}> {
   private modEnabledAttribute: ITableAttribute;
   private modNameAttribute: ITableAttribute;
   private modVersionAttribute: ITableAttribute;
+  private mModsWithState: { [id: string]: IModWithState };
 
   constructor(props: IProps) {
     super(props);
@@ -123,7 +127,7 @@ class ModList extends ComponentEx<IProps, {}> {
       placement: 'both',
       isToggleable: true,
       edit: {
-        validate: (input: string) => semver.valid(input) ? 'success' : 'error',
+        validate: (input: string) => semver.valid(input) ? 'success' : 'warning',
         onChangeValue: (modId: string, value: any) =>
           props.onSetModAttribute(modId, 'version', value),
       },
@@ -153,21 +157,39 @@ class ModList extends ComponentEx<IProps, {}> {
         title: 'Endorse',
         action: this.endorseSelected,
       },
-
     ];
   }
 
+  public componentWillMount() {
+    this.updateModsWithState({ mods: {}, modState: {} }, this.props);
+  }
+
+  public updateModsWithState(oldProps: IModProps, newProps: IModProps) {
+    let newModsWithState = {};
+    Object.keys(newProps.mods).forEach((modId: string) => {
+      if ((oldProps.mods[modId] !== newProps.mods[modId])
+        || (oldProps.modState[modId] !== newProps.modState[modId])) {
+        newModsWithState[modId] = Object.assign({}, newProps.mods[modId], newProps.modState[modId]);
+      } else {
+        newModsWithState[modId] = this.mModsWithState[modId];
+      }
+    });
+    this.mModsWithState = newModsWithState;
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if ((this.props.mods !== newProps.mods)
+        || (this.props.modState !== newProps.modState)) {
+      this.updateModsWithState(this.props, newProps);
+    }
+  }
+
   public render(): JSX.Element {
-    const { t, modState, mods, gameMode } = this.props;
+    const { t, gameMode } = this.props;
 
     if (gameMode === undefined) {
       return <Jumbotron>{ t('Please select a game first') }</Jumbotron>;
     }
-
-    let modsWithState: { [id: string]: IModWithState } = {};
-    Object.keys(mods).forEach((modId: string) => {
-      modsWithState[modId] = Object.assign({}, mods[modId], modState[modId]);
-    });
 
     return (
       <Layout type='column'>
@@ -179,7 +201,7 @@ class ModList extends ComponentEx<IProps, {}> {
         <Flex>
           <SuperTable
             tableId='mods'
-            data={modsWithState}
+            data={this.mModsWithState}
             staticElements={[
               this.modEnabledAttribute,
               this.modNameAttribute,

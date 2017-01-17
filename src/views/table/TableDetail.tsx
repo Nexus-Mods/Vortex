@@ -1,14 +1,11 @@
 import {IEditChoice, ITableAttribute} from '../../types/ITableAttribute';
+import {ComponentEx} from '../../util/ComponentEx';
 
 import FormFeedback from '../FormFeedbackAwesome';
+import FormInput from '../FormInput';
 
-import {ComponentEx} from '../../util/ComponentEx';
-import * as _ from 'lodash';
 import * as React from 'react';
-import update = require('react-addons-update');
-import {Button, ControlLabel, FormControl, FormGroup} from 'react-bootstrap';
-
-import {log} from '../../util/log';
+import {ControlLabel, FormControl, FormGroup} from 'react-bootstrap';
 
 interface ICellProps {
   language: string;
@@ -54,11 +51,10 @@ class DetailCell extends React.Component<ICellProps, {}> {
           <FormGroup
             validationState={attribute.edit.validate(value)}
           >
-            <FormControl
+            <FormInput
               id={attribute.id}
               type='text'
               label={t(attribute.name)}
-              readOnly={false}
               value={this.renderCell(value)}
               onChange={this.changeCell}
             />
@@ -124,7 +120,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
   }
 }
 
-interface IDetailProps {
+export interface IDetailProps {
   language: string;
   rowId: string;
   rowData: any;
@@ -132,36 +128,16 @@ interface IDetailProps {
   t: I18next.TranslationFunction;
 }
 
-interface IDetailState {
-  tempData: any;
-  modified: boolean;
-}
-
-class DetailBox extends ComponentEx<IDetailProps, IDetailState> {
+class DetailBox extends ComponentEx<IDetailProps, {}> {
   constructor(props: IDetailProps) {
     super(props);
-
-    this.initState({
-      tempData: Object.assign({}, props.rowData),
-      modified: false,
-    });
-  }
-
-  public componentWillReceiveProps(nextProps: IDetailProps) {
-    // TODO this looses all changes the user has made. Maybe give him a chance
-    //   to apply first?
-    this.nextState.tempData = Object.assign({}, nextProps.rowData);
-    this.nextState.modified = false;
   }
 
   public render(): JSX.Element {
-    const { t, attributes } = this.props;
-    const { modified, tempData } = this.state;
+    const { attributes, rowData } = this.props;
     return (
       <form style={{ minWidth: 300 }}>
-      {attributes.map((obj) => this.renderDetail(tempData, obj))}
-      <Button disabled={!modified} onClick={this.reset}>{t('Reset')}</Button>
-      <Button disabled={!modified} onClick={this.apply}>{t('Apply')}</Button>
+      {attributes.map((obj) => this.renderDetail(rowData, obj))}
       </form>
     );
   }
@@ -181,31 +157,9 @@ class DetailBox extends ComponentEx<IDetailProps, IDetailState> {
   }
 
   private onChangeData = (rowId: string, attributeId: string, value: any) => {
-    const oldData = this.props.rowData;
-    const newData = this.state.tempData;
-
-    this.nextState.tempData[attributeId] = value;
-    this.nextState.modified = Object.keys(newData).find(
-      (key: string) => oldData[key] !== newData[key]) !== undefined;
-  }
-
-  private reset = () => {
-    this.nextState.tempData = Object.assign({}, this.props.rowData);
-    this.nextState.modified = false;
-  }
-
-  private apply = () => {
-    const { attributes, rowId } = this.props;
-    const oldData = this.props.rowData;
-    const newData = this.state.tempData;
-
-    Object.keys(newData).forEach((key) => {
-      if (oldData[key] !== newData[key]) {
-        attributes
-          .find((attribute: ITableAttribute) => attribute.id === key)
-          .edit.onChangeValue(rowId, newData[key]);
-      }
-    });
+    this.props.attributes
+    .find((attr: ITableAttribute) => attr.id === attributeId)
+    .edit.onChangeValue(rowId, value);
   }
 }
 
