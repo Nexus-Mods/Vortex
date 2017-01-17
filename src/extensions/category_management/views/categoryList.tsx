@@ -21,6 +21,8 @@ import createTreeDataObject from '../util/createTreeDataObject';
 import generateSubtitle from '../util/generateSubtitle';
 
 import * as Promise from 'bluebird';
+import { remote } from 'electron';
+import * as path from 'path';
 import * as React from 'react';
 import { Jumbotron } from 'react-bootstrap';
 import Tree from 'react-sortable-tree';
@@ -409,13 +411,17 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   private loadTree() {
     const { categories, gameMode, mods, onShowError, onSetTreeDataObject } = this.props;
     if (categories[gameMode] !== undefined) {
+      if (categories[gameMode].length !== 0) {
         let createdTree = createTreeDataObject(categories[gameMode], mods);
         onSetTreeDataObject(createdTree);
-     } else {
-        onShowError('An error occurred loading the categories. ',
-          'Cant read local categories. If you manually edited global_persistent you probably ' +
-          'damaged the file. If you didn t, please report a bug and include global_persistent.');
-     }
+      } else {
+        const globalPersistentPath = path.join(remote.app.getPath('userData'), 'state');
+        onShowError('An error occurred loading the categories.',
+          'Can\'t read local categories. If you manually edited global_persistent you probably ' +
+          'damaged the file. If you did\'t, please report a bug and include the ' +
+          'global_persistent file. You can find it here:' + globalPersistentPath);
+      }
+    }
   }
 
   private searchString = (event) => {

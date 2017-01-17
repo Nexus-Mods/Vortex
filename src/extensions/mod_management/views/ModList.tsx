@@ -19,7 +19,7 @@ import { IMod } from '../types/IMod';
 import { IStateMods } from '../types/IStateMods';
 import { IStateModSettings } from '../types/IStateSettings';
 
-import { ENDORSED, INSTALL_TIME } from '../modAttributes';
+import { INSTALL_TIME } from '../modAttributes';
 import { installPath } from '../selectors';
 
 import InstallArchiveButton from './InstallArchiveButton';
@@ -152,11 +152,6 @@ class ModList extends ComponentEx<IProps, {}> {
         title: 'Remove',
         action: this.removeSelected,
       },
-      {
-        icon: 'star-half-o',
-        title: 'Endorse',
-        action: this.endorseSelected,
-      },
     ];
   }
 
@@ -201,13 +196,13 @@ class ModList extends ComponentEx<IProps, {}> {
         <Flex>
           <SuperTable
             tableId='mods'
+
             data={this.mModsWithState}
             staticElements={[
               this.modEnabledAttribute,
               this.modNameAttribute,
               this.modVersionAttribute,
               INSTALL_TIME,
-              ENDORSED,
             ]}
             actions={this.modActions}
           />
@@ -278,12 +273,6 @@ class ModList extends ComponentEx<IProps, {}> {
           }
         });
       });
-  }
-
-  private endorseSelected = (modIds: string[]) => {
-    const { mods } = this.props;
-    let attributes: any = mods[modIds[0]].attributes;
-    this.context.api.events.emit('endorse-mod', [attributes.endorsed, modIds[0]]);
   }
 }
 

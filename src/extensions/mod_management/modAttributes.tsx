@@ -1,11 +1,23 @@
 import {ITableAttribute} from '../../types/ITableAttribute';
 import {getSafe} from '../../util/storeHelper';
 
-import Icon from '../../views/Icon';
-
 import {IMod} from './types/IMod';
 
-import * as React from 'react';
+export const MOD_NAME: ITableAttribute = {
+  id: 'name',
+  name: 'Mod Name',
+  description: 'Name of the mod',
+  icon: 'quote-left',
+  calc: (mod: IMod) =>
+    getSafe(mod.attributes, ['logicalFileName'], getSafe(mod.attributes, ['name'], '')),
+  placement: 'both',
+  isToggleable: false,
+  edit: {},
+  isSortable: true,
+  sortFunc: (lhs: string, rhs: string, locale: string): number => {
+    return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
+  },
+};
 
 export const INSTALL_TIME: ITableAttribute = {
   id: 'installTime',
@@ -19,23 +31,14 @@ export const INSTALL_TIME: ITableAttribute = {
   isSortable: true,
 };
 
-export const ENDORSED: ITableAttribute = {
-  id: 'endorsed',
-  name: 'Endorsed',
-  description: 'Endorsed',
-  icon: 'star',
-  customRenderer: (mod: IMod) => getEndorsedIcon(mod),
-  calc: (mod: IMod) => getSafe(mod.attributes, ['endorsed'], ''),
-  placement: 'table',
+export const VERSION: ITableAttribute = {
+  id: 'version',
+  name: 'Version',
+  description: 'File version (according to the author)',
+  icon: 'birthday-cake',
+  calc: (mod: IMod) => getSafe(mod.attributes, ['version'], ''),
+  placement: 'both',
   isToggleable: true,
   edit: {},
   isSortable: true,
 };
-
-function getEndorsedIcon(mod: IMod) {
-  if (getSafe(mod.attributes, ['endorsed'], '')) {
-    return <div style={{ textAlign: 'center' }}><Icon name={'star'} /></div>;
-  } else {
-    return <div style={{ textAlign: 'center' }}><Icon name={'star-o'} /></div>;
-  }
-}

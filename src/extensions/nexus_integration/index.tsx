@@ -4,11 +4,13 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { currentGame, getSafe } from '../../util/storeHelper';
+import Icon from '../../views/Icon';
 import InputButton from '../../views/InputButton';
-import { IconButton } from '../../views/TooltipControls';
+import { Button, IconButton } from '../../views/TooltipControls';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
-import {IGameStored} from '../gamemode_management/types/IStateEx';
+import { IGameStored } from '../gamemode_management/types/IStateEx';
+import { IMod } from '../mod_management/types/IMod';
 
 import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
@@ -20,6 +22,7 @@ import Settings from './views/Settings';
 
 import * as Promise from 'bluebird';
 import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
+import * as React from 'react';
 import * as util from 'util';
 
 let nexus: Nexus;
@@ -91,7 +94,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
       }, {
           Cancel: null,
           Retrieve: null,
-    }))
+        }))
       .then((result: IDialogResult) => {
         return result.action === 'Retrieve';
       });
@@ -115,7 +118,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         api.events.emit('retrieve-categories', [gameId, categories, isUpdate], {});
       })
       .catch((err) => {
-        let message = processErrorMessage(err.statusCode, err.errorMessage, gameId, api.translate);
+        let message = processErrorMessage(err.statusCode, err, gameId, api.translate);
         showError(api.store.dispatch,
           'An error occurred retrieving the Game Info', message);
       });
@@ -135,7 +138,10 @@ function processErrorMessage(statusCode: number, errorMessage: string, gameId: s
   }
 }
 
-function endorseMod(api: IExtensionApi, isEndorsed: boolean, modId: string) {
+function endorseMod(result) {
+  let api = result[0];
+  let isEndorsed = result[1];
+  let modId = result[2];
   let gameId;
   currentGame(api.store)
     .then((game: IGameStored) => {
@@ -143,8 +149,8 @@ function endorseMod(api: IExtensionApi, isEndorsed: boolean, modId: string) {
       log('info', 'endorse mod ', modId);
       return retrieveEndorsedMod(gameId, nexus, isEndorsed, modId);
     })
-    .then((result: boolean) => {
-      api.events.emit('endorse-mod-result', [modId, result], {});
+    .then((endorsed: boolean) => {
+      api.events.emit('endorse-mod-result', [modId, endorsed], {});
     })
     .catch((err) => {
       let message = processErrorMessage(err.statusCode, err.errorMessage, gameId, api.translate);
@@ -152,6 +158,21 @@ function endorseMod(api: IExtensionApi, isEndorsed: boolean, modId: string) {
         'An error occurred endorsing a mod', message);
     });
 };
+
+function getEndorsedIcon(api: IExtensionApi, mod: IMod) {
+  let isEndorsed = getSafe(mod.attributes, ['endorsed'], '');
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <Button
+        id={mod.id}
+        tooltip='Endorse'
+        onClick={endorseMod.bind(this, [api, isEndorsed, mod.id])}
+      >
+        <Icon name={isEndorsed ? 'star' : 'star-o'} />
+      </Button>
+    </div>
+  );
+}
 
 function init(context: IExtensionContextExt): boolean {
   context.registerFooter('login', LoginIcon, () => ({ nexus }));
@@ -179,6 +200,19 @@ function init(context: IExtensionContextExt): boolean {
       onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl),
     }));
 
+  context.registerTableAttribute('mods', {
+    id: 'endorsed',
+    name: 'Endorsed',
+    description: 'Endorsed',
+    icon: 'star',
+    customRenderer: (mod: IMod) => getEndorsedIcon(context.api, mod),
+    calc: (mod: IMod) => getSafe(mod.attributes, ['endorsed'], ''),
+    placement: 'table',
+    isToggleable: true,
+    edit: {},
+    isSortable: true,
+  });
+
   context.registerIcon('categories-icons', IconButton,
     () => ({
       key: 'retrieve-categories',
@@ -205,12 +239,6 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('retrieve-category-list', (isUpdate: boolean) => {
       retrieveCategories(context.api, isUpdate);
-    });
-
-    context.api.events.on('endorse-mod', (result: any) => {
-      let isEndorsed = result[0];
-      let modId = result[1];
-      endorseMod(context.api, isEndorsed, modId);
     });
 
     context.api.onStateChange(['settings', 'nexus', 'associateNXM'],
