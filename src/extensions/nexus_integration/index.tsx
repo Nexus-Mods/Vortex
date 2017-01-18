@@ -4,13 +4,13 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { currentGame, getSafe } from '../../util/storeHelper';
-import Icon from '../../views/Icon';
 import InputButton from '../../views/InputButton';
-import { Button, IconButton } from '../../views/TooltipControls';
+import { IconButton } from '../../views/TooltipControls';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IStateEx';
 import { IMod } from '../mod_management/types/IMod';
+import EndorseModButton from '../mod_management/views/endorseModButton';
 
 import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
@@ -125,8 +125,9 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
   });
 };
 
-function processErrorMessage(statusCode: number, errorMessage: string, gameId: string,
-                             t: I18next.TranslationFunction) {
+function processErrorMessage(
+  statusCode: number, errorMessage: string, gameId: string,
+  t: I18next.TranslationFunction) {
   let message = '';
   if (statusCode === 404) {
     return message = t('Game not found: {{gameId}}', { replace: { gameId } });
@@ -138,10 +139,7 @@ function processErrorMessage(statusCode: number, errorMessage: string, gameId: s
   }
 }
 
-function endorseMod(result) {
-  let api = result[0];
-  let isEndorsed = result[1];
-  let modId = result[2];
+function endorseMod(api: IExtensionApi, isEndorsed: boolean, modId: string) {
   let gameId;
   currentGame(api.store)
     .then((game: IGameStored) => {
@@ -160,19 +158,21 @@ function endorseMod(result) {
 };
 
 function getEndorsedIcon(api: IExtensionApi, mod: IMod) {
-  let isEndorsed = getSafe(mod.attributes, ['endorsed'], '');
+  let endorsed: boolean = getSafe(mod.attributes, ['endorsed'], false);
+
   return (
-    <div style={{ textAlign: 'center' }}>
-      <Button
-        id={mod.id}
-        className='btn-embed'
-        tooltip='Endorse'
-        onClick={endorseMod.bind(this, [api, isEndorsed, mod.id])}
-      >
-        <Icon name={isEndorsed ? 'star' : 'star-o'} />
-      </Button>
-    </div>
+    <EndorseModButton
+      api={api}
+      isEndorsed={endorsed}
+      t={api.translate}
+      modId={mod.id}
+      onEndorseMod={endorseEmitter}
+    />
   );
+}
+
+function endorseEmitter(api: IExtensionApi, isEndorsed: boolean, modId: string) {
+  api.events.emit('endorse-mod', [isEndorsed, modId]);
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -240,6 +240,12 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('retrieve-category-list', (isUpdate: boolean) => {
       retrieveCategories(context.api, isUpdate);
+    });
+
+    context.api.events.on('endorse-mod', (result: any) => {
+      let isEndorsed = result[0];
+      let modId = result[1];
+      endorseMod(context.api, isEndorsed, modId);
     });
 
     context.api.onStateChange(['settings', 'nexus', 'associateNXM'],
