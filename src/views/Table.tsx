@@ -371,7 +371,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         actions={rowActions}
         language={language}
         onClick={this.selectRow}
-        selected={getSafe(rowState, [data.__id, 'selected'], false)}
+        selected={getSafe(rowState, [data.id, 'selected'], false)}
       />
     );
   }

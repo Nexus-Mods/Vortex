@@ -65,10 +65,6 @@ interface IActionProps {
   onRemoveMod: (modId: string) => void;
 }
 
-interface IRowState {
-  selected: boolean;
-}
-
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 /**
