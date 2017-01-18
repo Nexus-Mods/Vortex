@@ -33,7 +33,7 @@ export interface IExtensionContextExt extends IExtensionContext {
 }
 
 function convertGameId(input: string): string {
-  if (input === 'skyrimse') {
+  if (input.toLowerCase() === 'skyrimse') {
     return 'skyrimspecialedition';
   } else {
     return input;
@@ -165,6 +165,7 @@ function getEndorsedIcon(api: IExtensionApi, mod: IMod) {
     <div style={{ textAlign: 'center' }}>
       <Button
         id={mod.id}
+        className='btn-embed'
         tooltip='Endorse'
         onClick={endorseMod.bind(this, [api, isEndorsed, mod.id])}
       >

@@ -4,7 +4,6 @@ import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
 import { extend, translate } from '../util/ComponentEx';
-import Developer from './Developer';
 import Dialog from './Dialog';
 import Icon from './Icon';
 import IconBar from './IconBar';
@@ -71,7 +70,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       },
     ];
 
-    if (Developer !== undefined) {
+    if (process.env.NODE_ENV === 'development') {
       this.buttonsRight.push(
         {
           icon: 'wrench',
@@ -246,19 +245,24 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderDeveloperModal() {
-    return Developer === undefined ? null : (
-      <Modal
-        show={this.state.showLayer === 'developer'}
-        onHide={ this.hideLayer }
-      >
-        <Modal.Header>
-          <Modal.Title>Developer</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Developer />
-        </Modal.Body>
-      </Modal>
-    );
+    if (process.env.NODE_ENV !== 'development') {
+      return null;
+    } else {
+      const Developer = require('./Developer').default;
+      return Developer === undefined ? null : (
+        <Modal
+          show={this.state.showLayer === 'developer'}
+          onHide={this.hideLayer}
+        >
+          <Modal.Header>
+            <Modal.Title>Developer</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Developer />
+          </Modal.Body>
+        </Modal>
+      );
+    }
   }
 }
 
