@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Security;
 using System.Security.Permissions;
 using System.Threading.Tasks;
@@ -254,15 +255,12 @@ namespace Components.Interface
 		/// <param name="p_strPath">The path where the file is to be created.</param>
 		/// <param name="p_bteData">The data that is to make up the file.</param>
 		/// <returns><c>true</c> if the file was written; <c>false</c> otherwise.</returns>
-		public bool GenerateDataFile(string p_strPath, byte[] p_bteData)
+		public bool GenerateDataFile(string destinationPath, byte[] sourceData)
 		{
 			bool booSuccess = false;
-			string strPath = p_strPath.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-			string strFileType = Path.GetExtension(strPath);
+			string strPath = destinationPath.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
 
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("GenerateDataFile");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            modInstallInstructions.Add(Instruction.GenerateFile(Encoding.Default.GetString(sourceData), destinationPath));
 
             return booSuccess;
 		}

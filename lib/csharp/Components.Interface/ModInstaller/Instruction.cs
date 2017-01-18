@@ -12,6 +12,16 @@
             };
         }
 
+        public static Instruction GenerateFile(string byteSource, string destination)
+        {
+            return new Instruction()
+            {
+                type = "generatefile",
+                source = byteSource,
+                destination = destination,
+            };
+        }
+
         public static Instruction CreateIniEdit(string edit)
         {
             return new Instruction()
