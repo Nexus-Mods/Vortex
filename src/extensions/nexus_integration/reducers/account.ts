@@ -12,6 +12,6 @@ export const accountReducer: IReducerSpec = {
     [setUserAPIKey]: (state, payload) => update(state, { APIKey: { $set: payload } }),
   },
   defaults: {
-    APIKey: '',
+    APIKey: undefined,
   },
 };

@@ -46,7 +46,7 @@ export function setupStore(
 
     const extReducers = extensions.getReducers();
 
-    let whitelist = ['window', 'settings', 'persistent', 'account'];
+    const whitelist = ['window', 'settings', 'persistent', 'account'];
     extensions.apply('registerSettingsHive', (hive: string, type: PersistingType) => {
       if (type === 'global') {
         whitelist.push(hive);
@@ -66,8 +66,6 @@ export function setupStore(
                    if (err !== null) {
                      log('error', 'failed to load application state', {err});
                    }
-                   log('info', 'Application state loaded',
-                       {state: JSON.stringify(state)});
                    resolve(result);
                  });
   });

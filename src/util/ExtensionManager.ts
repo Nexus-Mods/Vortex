@@ -311,7 +311,8 @@ class ExtensionManager {
     };
 
     // TODO the mod db doesn't depend on the store but it must only be instantiated
-    // in one process and this is a cheap way of achieving that
+    //   in one process and this is a cheap way of achieving that
+    // TODO the fallback to nexus api should somehow be set up in nexus_integration, not here
     this.mModDB =
         new ModDB(getSafe(store.getState(), ['settings', 'gameMode', 'current'],
                           undefined),

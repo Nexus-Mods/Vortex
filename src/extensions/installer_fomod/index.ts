@@ -31,7 +31,7 @@ function testSupported(files: string[]): Promise<boolean> {
       if ((err !== null) && (err !== undefined)) {
         log('info', 'got err', util.inspect(err));
         // TODO: hack while the c# installer doesn't work correctly
-        //reject(err);
+        // reject(err);
         resolve({ supported: true, requiredFiles: [] });
       } else {
         log('info', 'got result', util.inspect(result));

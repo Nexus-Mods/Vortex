@@ -1,11 +1,11 @@
-import Nexus from 'nexus-api/lib/Nexus';
-
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { getSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
 import LoginDialog from './LoginDialog';
 
+import Nexus from 'nexus-api/lib/Nexus';
 import * as React from 'react';
 import update = require('react-addons-update');
 
@@ -44,7 +44,7 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
           placement='top'
           onClick={ this.showLoginLayer }
         >
-          <Icon name='user' style={{ color: APIKey === '' ? 'red' : 'green' }} />
+          <Icon name='user' style={{ color: APIKey === undefined ? 'red' : 'green' }} />
         </Button>
         <LoginDialog
           APIKey={ APIKey }
@@ -73,7 +73,7 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    APIKey: state.account.nexus.APIKey,
+    APIKey: getSafe(state, ['account', 'nexus', 'APIKey'], undefined),
   };
 }
 

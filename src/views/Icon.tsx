@@ -128,7 +128,7 @@ const Icon = (props: IIconProps) => {
 
   return (
     <svg
-      preserveAspectRatio='xMinYMin meet'
+      preserveAspectRatio='xMidYMid meet'
       className={ classes.join(' ') }
       viewBox={ `0 0 ${ icon.width } ${ icon.height }` }
       style={ props.style }

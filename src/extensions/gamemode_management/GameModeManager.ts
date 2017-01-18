@@ -8,7 +8,7 @@ import StorageLogger from '../../util/StorageLogger';
 
 import { discoveryFinished, discoveryProgress } from './actions/discovery';
 import { setKnownGames } from './actions/session';
-import { addDiscoveredGame, addDiscoveredTool, setGameMode } from './actions/settings';
+import { addDiscoveredGame, addDiscoveredTool } from './actions/settings';
 import { IDiscoveryResult, IGameStored, IStateEx, IToolStored } from './types/IStateEx';
 import { quickDiscovery, searchDiscovery } from './util/discovery';
 import Progress from './util/Progress';

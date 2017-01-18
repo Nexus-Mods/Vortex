@@ -197,9 +197,13 @@
 .svg-icon {
   fill: currentColor;
   height: @font-size-base;
-  width: @font-size-base;
   display: inline-block;
   vertical-align: middle;
+  margin: 1px;
+}
+
+.nav-pills>li>a>.svg-icon {
+  height: initial;
 }
 
 .tool-icon {
@@ -261,4 +265,8 @@
 
 .fake-link:hover {
   color: @text-color;
+}
+
+.feedback-awesome {
+  padding: 4px;
 }

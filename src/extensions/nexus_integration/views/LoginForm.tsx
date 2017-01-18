@@ -2,11 +2,11 @@ import Nexus, { IValidateKeyResponse } from 'nexus-api';
 
 import { showDialog } from '../../../actions/notifications';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { getSafe } from '../../../util/storeHelper';
 import FormFeedbackAwesome from '../../../views/FormFeedbackAwesome';
 import { Button } from '../../../views/TooltipControls';
 
 import { setUserAPIKey } from '../actions/account';
-import { IAccount } from '../types/IAccount';
 
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, Image } from 'react-bootstrap';
@@ -22,15 +22,15 @@ interface ILoginFormState {
   isSubmitted: boolean;
   userId: string;
   name: string;
-  isPremium: string;
   email: string;
   statusCode: string;
   statusCodeMessage: string;
-  isSupporter: string;
+  isPremium: boolean;
+  isSupporter: boolean;
 }
 
 interface IConnectedProps {
-  account: IAccount;
+  APIKey: string;
 }
 
 interface IActionProps {
@@ -39,8 +39,9 @@ interface IActionProps {
 }
 
 interface IValidationState {
-  state?: 'success' | 'warning' | 'pending';
+  state?: 'success' | 'warning' | 'error';
   reason?: string;
+  pending?: boolean;
 }
 
 type ILoginFormProps = IProps & IConnectedProps & IActionProps;
@@ -56,73 +57,91 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
       email: '',
       statusCode: null,
       statusCodeMessage: '',
-      isPremium: '',
-      isSupporter: '',
+      isPremium: false,
+      isSupporter: false,
     };
   }
 
   public componentWillMount() {
-    if (this.props.account.APIKey !== '') {
+    if (this.props.APIKey !== undefined) {
       this.loadUserInfo();
     }
   }
 
   public render(): JSX.Element {
-    const { t } = this.props;
-    const { APIKey, userId } = this.state;
-    const { name, email, isPremium, isSupporter } = this.state;
-
-    const propAPIKey = this.props.account.APIKey;
-
-    const validation: IValidationState = this.validationState();
+    const {APIKey} = this.props;
+    const propAPIKey = this.props.APIKey;
 
     return (
-      <form onSubmit={ this.apiKeySubmit } >
-        <FormGroup
-            controlId='formUserInfo'
-            hidden={ (propAPIKey === '') }
-        >
-          <div>
-            <Image src='./images/avatar.png' width='90' height='90' rounded />
-          </div>
-          <div>
-            <ControlLabel>{'User ID: ' + userId}</ControlLabel>
-          </div>
-          <div>
-            <ControlLabel>{'UserName: ' + name}</ControlLabel>
-          </div>
-          <div>
-            <ControlLabel>{'Premium: ' + (isPremium !== 'false' ? 'YES' : 'NO') }</ControlLabel>
-          </div>
-          <div>
-            <ControlLabel>{'Supporter: ' + (isSupporter !== 'false' ? 'YES' : 'NO') }</ControlLabel>
-          </div>
-          <div>
-            <ControlLabel>{'Email: ' + email}</ControlLabel>
-          </div>
-        </FormGroup>
-        <FormGroup
-          controlId='formAPIKeyValidation'
-          validationState={validation.state as 'error' | 'success' | 'warning' }
-          hidden={ propAPIKey !== '' }
-        >
-          <ControlLabel>{ validation.reason }</ControlLabel>
-          <FormControl
-            type='text'
-            name='APIKey'
-            value={APIKey}
-            placeholder={ t('User APIKey') }
-            onChange={ this.handleChangeAPIKey }
-          />
-          <FormFeedbackAwesome />
-        </FormGroup>
-        { this.renderSubmitButton(t, propAPIKey) }
+      <form onSubmit={this.apiKeySubmit} >
+      {APIKey === undefined ? this.renderKeyInput() : this.renderAccountInfo()}
+      { this.renderSubmitButton(propAPIKey) }
       </form>
     );
   };
 
-  private renderSubmitButton(t, propAPIKey: string): JSX.Element {
-    return (propAPIKey === '')
+  private renderKeyInput() {
+    const { t } = this.props;
+    const { APIKey } = this.state;
+
+    const validation: IValidationState = this.validationState();
+    return (
+      <FormGroup
+        controlId='formAPIKeyValidation'
+        validationState={validation.state}
+      >
+        <ControlLabel>{validation.reason}</ControlLabel>
+        <FormControl
+          type='text'
+          name='APIKey'
+          value={APIKey}
+          placeholder={t('User APIKey')}
+          onChange={this.handleChangeAPIKey}
+        />
+        <FormFeedbackAwesome pending={validation.pending}/>
+      </FormGroup>
+    );
+  }
+
+  private renderAccountInfo() {
+    const { t } = this.props;
+    const { name, email, isPremium, isSupporter, userId } = this.state;
+
+    return (
+      <FormGroup
+        controlId='formUserInfo'
+      >
+        <div>
+          <Image src='./images/avatar.png' width='90' height='90' rounded />
+        </div>
+        <div>
+          <ControlLabel>{t('User ID: {{userId}}', { replace: { userId } })}</ControlLabel>
+        </div>
+        <div>
+          <ControlLabel>{t('UserName: {{name}}', { replace: { name } })}</ControlLabel>
+        </div>
+        <div>
+          <ControlLabel>{
+            t('Premium: {{isPremium}}',
+              { replace: { isPremium: (isPremium ? t('YES') : t('NO')) } })
+          } </ControlLabel>
+        </div>
+        <div>
+          <ControlLabel>{
+            t('Supporter: {{isSupporter}}',
+              { replace: { isSupporter: (isSupporter ? t('YES') : t('NO')) } })
+          }</ControlLabel>
+        </div>
+        <div>
+          <ControlLabel>{t('Email: {{email}}', { replace: { email } })}</ControlLabel>
+        </div>
+      </FormGroup>
+    );
+  }
+
+  private renderSubmitButton(propAPIKey: string): JSX.Element {
+    const { t } = this.props;
+    return (propAPIKey === undefined)
       ? <Button id='submit-apikey' type='submit' tooltip={ t('Submit') }>
           { t('Submit') }
         </Button>
@@ -145,7 +164,7 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
       return { state: 'warning', reason: 'Missing API Key' };
     }
     if (statusCode === null) {
-      return { state: 'pending' };
+      return { pending: true, reason: 'Verifying...' };
     }
     if (statusCode !== '200') {
       return { state: 'warning', reason: statusCodeMessage };
@@ -160,14 +179,13 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
   }
 
   private authenticateAPIKey() {
-    const { nexus, onClose, onSetAPIKey } = this.props;
+    const { nexus, onSetAPIKey } = this.props;
     const { APIKey } = this.state;
-    const propAPIKey = this.props.account.APIKey;
+    const propAPIKey = this.props.APIKey;
 
-    if (propAPIKey !== '') {
-      onSetAPIKey('');
+    if (propAPIKey !== undefined) {
+      onSetAPIKey(undefined);
       this.setState(update(this.state, { isSubmitted: { $set: false } }));
-      onClose();
     } else {
       this.setState(update(this.state, {
         isSubmitted: { $set: true },
@@ -176,9 +194,15 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
       }));
 
       nexus.validateKey(APIKey)
-      .then(() => {
+      .then((data: IValidateKeyResponse) => {
         onSetAPIKey(APIKey);
-        onClose();
+        this.setState(update(this.state, {
+          userId: { $set: data.user_id },
+          name: { $set: data.name },
+          isPremium: { $set: data['is_premium?'] },
+          isSupporter: { $set: data['is_supporter?'] },
+          email: { $set: data.email },
+        }));
       })
       .catch((err) => {
         this.setState(update(this.state, {
@@ -192,7 +216,7 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
   private loadUserInfo() {
     const { nexus } = this.props;
     const { APIKey } = this.state;
-    const propAPIKey = this.props.account.APIKey;
+    const propAPIKey = this.props.APIKey;
 
     this.setState(update(this.state, { isSubmitted: { $set: true } }));
 
@@ -201,8 +225,8 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
         this.setState(update(this.state, {
           userId: { $set: data.user_id },
           name: { $set: data.name },
-          isPremium: { $set: data.is_premium },
-          isSupporter: { $set: data.is_supporter },
+          isPremium: { $set: data['is_premium?'] },
+          isSupporter: { $set: data['is_supporter?'] },
           email: { $set: data.email },
         }));
       });
@@ -216,7 +240,9 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
 }
 
 function mapStateToProps(state: any): IConnectedProps {
-  return { account: state.account.nexus };
+  return {
+     APIKey: getSafe(state, ['account', 'nexus', 'APIKey'], undefined),
+  };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
