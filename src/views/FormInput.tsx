@@ -1,11 +1,11 @@
 import * as React from 'react';
 import {FormControlProps} from 'react-bootstrap';
 
-interface IProps extends FormControlProps {
+export interface IProps extends FormControlProps {
   value: string;
 }
 
-interface IComponentState {
+export interface IComponentState {
   cursorPos: number;
 }
 

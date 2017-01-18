@@ -103,7 +103,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     const game = this.currentGame();
     const discovery = discoveredGames[gameMode];
 
-    execFile(path.join(discovery.path, game.executable));
+    execFile(path.join(discovery.path, game.executable()));
   }
 
   private renderGameIcon = (game: IGame): JSX.Element => {
