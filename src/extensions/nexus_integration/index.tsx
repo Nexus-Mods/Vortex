@@ -9,14 +9,15 @@ import { IconButton } from '../../views/TooltipControls';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IStateEx';
+import {setModAttribute} from '../mod_management/actions/mods';
 import { IMod } from '../mod_management/types/IMod';
-import EndorseModButton from '../mod_management/views/endorseModButton';
 
 import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
 import { settingsReducer } from './reducers/settings';
 import retrieveEndorsedMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
+import EndorseModButton from './views/EndorseModButton';
 import LoginIcon from './views/LoginIcon';
 import Settings from './views/Settings';
 
@@ -148,7 +149,7 @@ function endorseMod(api: IExtensionApi, isEndorsed: boolean, modId: string) {
       return retrieveEndorsedMod(gameId, nexus, isEndorsed, modId);
     })
     .then((endorsed: boolean) => {
-      api.events.emit('endorse-mod-result', [modId, endorsed], {});
+      api.store.dispatch(setModAttribute(modId, 'endorsed', endorsed));
     })
     .catch((err) => {
       let message = processErrorMessage(err.statusCode, err.errorMessage, gameId, api.translate);
