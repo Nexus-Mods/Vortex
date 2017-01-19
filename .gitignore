@@ -5,6 +5,7 @@ out
 doc
 coverage
 .vscode/.BROWSE.VC.DB*
+app/bundledPlugins
 
 # User-specific files
 *.suo
