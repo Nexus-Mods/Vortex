@@ -405,7 +405,11 @@ class ExtensionManager {
     this.mExtensions.forEach((ext) => {
       log('info', 'init extension', {name: ext.name});
       this.mContextProxyHandler.setExtension(ext.name);
-      ext.initFunc(contextProxy as IExtensionContext);
+      try {
+        ext.initFunc(contextProxy as IExtensionContext);
+      } catch (err) {
+        log('warn', 'couldn\'t initialize extension', {name: ext.name, err: err.message});
+      }
     });
     this.mContextProxyHandler.unloadIncompatible(ExtensionManager.sUIAPIs);
     log('info', 'all extensions initialized');
@@ -562,7 +566,7 @@ class ExtensionManager {
         try {
           return this.loadDynamicExtension(path.join(extensionsPath, name));
         } catch (err) {
-          log('warn', 'failed to load dynamic extension', { error: err.message });
+          log('warn', 'failed to load dynamic extension', { name, error: err.message });
           return undefined;
         }
       });

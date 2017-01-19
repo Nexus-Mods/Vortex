@@ -7,9 +7,11 @@
   "scripts": {
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
-    "postinstall": "electron-rebuild -w esptk",
-    "build": "npm run tsc && npm run webpack && copyfiles -f ./node_modules/esptk/build/Release/nbind.node ./dist",
-    "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/gamebryo-plugin-management && copyfiles -f ./node_modules/esptk/build/Release/nbind.node ../../out/bundledPlugins/gamebryo-plugin-management",
+    "postinstall": "electron-rebuild -w esptk,loot",
+    "copy_esptk": "copyfiles -f ./node_modules/esptk/build/Release/nbind.node ./dist/esptk",
+    "copy_loot": "copyfiles -f ./node_modules/loot/build/Release/nbind.node ./dist/loot && copyfiles -f ./node_modules/loot/build/Release/loot_api.dll ./dist/loot",
+    "build": "npm run tsc && npm run webpack && npm run copy_esptk && npm run copy_loot",
+    "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-plugin-management",
     "buildDev": "npm run build && npm run installDev"
   },
   "author": "",

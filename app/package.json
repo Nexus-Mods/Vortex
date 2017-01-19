@@ -7,7 +7,7 @@
   "license": "GPL-3.0",
   "main": "main.js",
   "engines": {
-    "electron": "1.4.3"
+    "electron": "1.4.14"
   },
   "repository": {
     "type": "git",
