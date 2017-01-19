@@ -23,9 +23,9 @@ function createReport(type: string, error: ITermination, version: string) {
 #### System
 | | |
 |------------ | -------------|
-|Platform | ${process.platform}|
-|Architecture | ${process.arch}|
-|Application Version | ${version}|
+|Platform | ${process.platform} |
+|Architecture | ${process.arch} |
+|Application Version | ${version} |
 #### Message
 ${error.message}
 #### Details

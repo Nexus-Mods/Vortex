@@ -83,7 +83,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
 
     const visibleAttributes: ISavegameAttribute[] =
       this.visibleAttributes(objects, savegamelistState);
-    let sorted: ISavegame[] =
+    const sorted: ISavegame[] =
       this.sortedSavegame(savegamelistState, visibleAttributes, saves, language);
 
     if (gameMode === undefined) {
