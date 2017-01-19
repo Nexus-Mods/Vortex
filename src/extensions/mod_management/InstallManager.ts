@@ -28,8 +28,8 @@ interface IZipEntry {
   name: string;
 }
 
-function UserCanceled() {
-}
+// tslint:disable:no-empty
+function UserCanceled() {}
 
 /**
  * central class for the installation process

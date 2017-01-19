@@ -9,7 +9,7 @@ import * as React from 'react';
 export interface IIconDefinition {
   icon?: string;
   title?: string;
-  component?: React.ComponentClass<any>;
+  component?: React.ComponentClass<any> | React.StatelessComponent<any>;
   props?: () => Object;
   action?: (instanceId: string | string[]) => void;
   condition?: (instanceId: string | string[]) => boolean;

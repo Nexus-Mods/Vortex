@@ -4,7 +4,7 @@ import classNames = require('classnames');
 import * as _ from 'lodash';
 import * as React from 'react';
 
-interface IFormFeedbackProps {
+export interface IFormFeedbackProps {
   pending?: boolean;
   className?: string;
 }

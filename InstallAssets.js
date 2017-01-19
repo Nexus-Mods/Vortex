@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 const Promise = require('bluebird');
 const fs = require('fs-extra-promise');
@@ -64,7 +64,10 @@ for (let file of data.copy) {
           console.err('glob failed', globErr);
         }
         return Promise.map(files, (globResult) => {
-          const globTarget = path.join(...globResult.split(/[\/\\]/).slice(file.skipPaths));
+          let globTarget = path.join(...globResult.split(/[\/\\]/).slice(file.skipPaths));
+          if (file.rename) {
+            globTarget = path.join(path.dirname(globTarget), file.rename);
+          }
           const targetFile = path.join(tgt, file.outPath, globTarget);
 
           return fs.copyAsync(globResult, targetFile)
@@ -77,16 +80,16 @@ for (let file of data.copy) {
             .finally(() => {
               --copies;
             });
-          ;
         });
       });
     });
 }
 
 function waitForProcesses() {
-  if ((childProcesses.length > 0) || (copies != 0)) {
+  if ((childProcesses.length > 0) || (copies !== 0)) {
     setTimeout(waitForProcesses, 100);
-  } else {
+  }
+  else {
     process.exit(status);
   }
 }

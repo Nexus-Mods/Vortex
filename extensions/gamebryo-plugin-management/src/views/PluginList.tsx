@@ -67,6 +67,7 @@ const pluginAttributes: types.ITableAttribute[] = [
     edit: {},
     isSortable: true,
     calc: (attributes: any) => attributes.name,
+    placement: 'both',
   },
   {
     id: 'flags',
@@ -76,6 +77,7 @@ const pluginAttributes: types.ITableAttribute[] = [
     edit: {},
     isSortable: false,
     calc: (attributes: any, t) => <PluginFlags plugin={attributes} t={t} />,
+    placement: 'both',
   },
   {
     id: 'loadOrder',
@@ -85,6 +87,7 @@ const pluginAttributes: types.ITableAttribute[] = [
     edit: {},
     isSortable: true,
     calc: (attributes: any) => attributes.loadOrder,
+    placement: 'both',
   },
   {
     id: 'modIndex',
@@ -94,6 +97,7 @@ const pluginAttributes: types.ITableAttribute[] = [
     edit: {},
     isSortable: true,
     calc: (attributes: any) => toHex(attributes.modIndex),
+    placement: 'both',
   },
 ];
 
@@ -158,7 +162,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             onClick: () => this.context.api.events.emit('autosort-plugins'),
           };
         },
-      }
+      },
     ];
   }
 
@@ -514,7 +518,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     },
     onSetPluginOrder: (newOrder: string[]) => {
       dispatch(setPluginOrder(newOrder));
-    }
+    },
   };
 }
 

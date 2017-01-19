@@ -10,7 +10,6 @@
     "postinstall": "electron-rebuild -w esptk",
     "build": "npm run tsc && npm run webpack && copyfiles -f ./node_modules/esptk/build/Release/nbind.node ./dist",
     "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/gamebryo-plugin-management && copyfiles -f ./node_modules/esptk/build/Release/nbind.node ../../out/bundledPlugins/gamebryo-plugin-management",
-    "_installDev": "copyfiles -f ./node_modules/esptk/build/Release/nbind.node ../../out/bundledPlugins/gamebryo-plugin-management",
     "buildDev": "npm run build && npm run installDev"
   },
   "author": "",
