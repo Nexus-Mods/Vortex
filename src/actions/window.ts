@@ -18,3 +18,5 @@ export const setWindowPosition: any = createAction('STORE_WINDOW_POSITION');
  * fullscreen makes the window borderless + fill the screen
  */
 export const setMaximized: any = createAction('SET_MAXIMIZED');
+
+export const setTabsMinimized: any = createAction('SET_TABS_MINIMIZED');

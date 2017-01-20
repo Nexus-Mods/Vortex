@@ -1,9 +1,12 @@
+import { setTabsMinimized } from '../actions/window';
+
 import { IComponentContext } from '../types/IComponentContext';
 import { IExtensionApi, IMainPageOptions } from '../types/IExtensionContext';
 import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
-import { extend, translate } from '../util/ComponentEx';
+import { IState } from '../types/IState';
+import { connect, extend, translate } from '../util/ComponentEx';
 import Dialog from './Dialog';
 import Icon from './Icon';
 import IconBar from './IconBar';
@@ -33,11 +36,11 @@ export interface IMainWindowState {
 }
 
 export interface IConnectedProps {
-    APIKey: string;
+  tabsMinimized: boolean;
 }
 
 export interface IActionProps {
-    onSetAPIKey: (APIKey: string) => void;
+  onSetTabsMinimized: (minimized: boolean) => void;
 }
 
 export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps & II18NProps;
@@ -138,21 +141,29 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderBody() {
-    const { objects } = this.props;
+    const { t, objects, tabsMinimized } = this.props;
     const { showPage } = this.state;
 
     return (
       <Flex>
         <Layout type='row' style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
-          <Fixed style={{ width: 48 }}>
-            <Nav
-              bsStyle='pills'
-              stacked
-              activeKey={showPage}
-              onSelect={this.handleSetPage}
+          <Fixed>
+              <Nav
+                bsStyle='pills'
+                stacked
+                activeKey={showPage}
+                onSelect={this.handleSetPage}
+              >
+                {objects !== undefined ? objects.map(this.renderPageButton) : null}
+              </Nav>
+            <Button
+              tooltip={ tabsMinimized ? t('Restore') : t('Minimize') }
+              id='btn-minimize-menu'
+              onClick={ this.toggleMenu }
+              className='btn-menu-minimize'
             >
-              { objects !== undefined ? objects.map(this.renderPageButton) : null }
-            </Nav>
+              <Icon name={ tabsMinimized ? 'angle-double-right' : 'angle-double-left' } />
+            </Button>
           </Fixed>
           <Flex>
             <ReactCSSTransitionGroup
@@ -206,7 +217,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderPageButton = (page: IMainPage) => {
-    const { t } = this.props;
+    const { t, tabsMinimized } = this.props;
     return !page.visible() ? null :
       <NavItem
         id={page.title}
@@ -216,6 +227,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         placement='right'
       >
         <Icon name={page.icon} />
+        {tabsMinimized ? null :
+          <span className='menu-label'>
+            {t(page.title)}
+          </span>
+        }
       </NavItem>;
   }
 
@@ -242,6 +258,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private showLayerImpl(layer: string): void {
     this.setState(update(this.state, { showLayer: { $set: layer } }));
+  }
+
+  private toggleMenu = () => {
+    this.props.onSetTabsMinimized(!this.props.tabsMinimized);
   }
 
   private renderDeveloperModal() {
@@ -274,6 +294,18 @@ function emptyFunc() {
   return {};
 }
 
+function mapStateToProps(state: IState): IConnectedProps {
+  return {
+    tabsMinimized: state.window.base.tabsMinimized,
+  };
+}
+
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+  return {
+    onSetTabsMinimized: (minimized: boolean) => dispatch(setTabsMinimized(minimized)),
+  };
+}
+
 function registerMainPage(instance: MainWindow,
                           icon: string,
                           title: string,
@@ -288,5 +320,7 @@ function registerMainPage(instance: MainWindow,
 
 export default
   translate(['common'], { wait: false })(
-    extend(registerMainPage)(MainWindow)
+    extend(registerMainPage)(
+      connect(mapStateToProps, mapDispatchToProps)(MainWindow)
+    )
   ) as React.ComponentClass<IBaseProps>;

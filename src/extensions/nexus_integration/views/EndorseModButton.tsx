@@ -4,7 +4,7 @@ import { IconButton } from '../../../views/TooltipControls';
 
 import * as React from 'react';
 
-interface IProps {
+export interface IProps {
   modId: string;
   isEndorsed: boolean;
   api: IExtensionApi;

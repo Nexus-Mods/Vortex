@@ -11,6 +11,8 @@ export const windowReducer: IReducerSpec = {
     [actions.setWindowSize]: (state, payload) => update(state, { size: { $set: payload } }),
     [actions.setWindowPosition]: (state, payload) => update(state, { position: { $set: payload } }),
     [actions.setMaximized]: (state, payload) => update(state, { maximized: { $set: payload } }),
+    [actions.setTabsMinimized]: (state, payload) =>
+      update(state, { tabsMinimized: { $set: payload } }),
   },
   defaults: {
     maximized: false,
@@ -19,5 +21,6 @@ export const windowReducer: IReducerSpec = {
       height: 768,
       width: 1024,
     },
+    tabsMinimized: false,
   },
 };

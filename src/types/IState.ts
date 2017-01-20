@@ -34,6 +34,7 @@ export interface IWindow {
   maximized: boolean;
   position?: IPosition;
   size: IDimensions;
+  tabsMinimized: boolean;
 }
 
 /**

@@ -97,7 +97,7 @@ const Icon = (props: IIconProps) => {
   let set = props.set || 'nmm';
   let icon = getIcon(set, props.name);
 
-  let classes = [ 'svg-icon' ];
+  let classes = [ 'icon', `icon-${props.name}` ];
   if (props.spin) {
     classes.push('fa-spin');
   }

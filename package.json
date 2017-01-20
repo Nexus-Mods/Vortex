@@ -30,15 +30,16 @@
     "build_out": "tsc -p . && npm run lessc",
     "buildwatch": "concurrently -p \"\" --kill-others \"tsc -p . -w\" npm-watch",
     "lessc": "lessc --clean-css --include-path=node_modules/bootswatch:node_modules/bootstrap-less src/stylesheets/index.less out/assets/css/base.css",
+    "sassc": "node-sass src/stylesheets/index.scss out/assets/css/base.css",
     "test": "jest",
     "doc": "typedoc --out doc src"
   },
   "watch": {
-    "lessc": {
+    "sassc": {
       "patterns": [
         "src\\stylesheets"
       ],
-      "extensions": "less",
+      "extensions": "scss",
       "ignore": "",
       "quiet": false
     }
@@ -125,6 +126,7 @@
     "babylon": "^6.9.1",
     "bluebird": "^3.4.6",
     "bootstrap-less": "^3.3.8",
+    "bootstrap-sass": "^3.3.7",
     "bootswatch": "^3.3.7",
     "classnames": "^2.2.5",
     "concurrently": "^3.1.0",
@@ -159,6 +161,7 @@
     "node-7z": "^0.4.0",
     "node-ipc": "^8.9.2",
     "node-rest-client": "^2.0.1",
+    "node-sass": "^4.3.0",
     "node-uuid": "^1.4.7",
     "npm-watch": "^0.1.6",
     "rc-slider": "^5.1.3",

@@ -1,0 +1,90 @@
+@import "nexus";
+
+// Bootstrap 4 to 3
+.panel { @extend .card !optional; }
+.panel-heading { @extend .card-header !optional; }
+.panel-title { @extend .card-title !optional; }
+.panel-body { @extend .card-block !optional; }
+.panel-footer { @extend .card-footer !optional; }
+.panel-primary { @extend .card-primary.card-inverse !optional; }
+.panel-success { @extend .card-success.card-inverse !optional; }
+.panel-info { @extend .card-info.card-inverse !optional; }
+.panel-warning { @extend .card-warning.card-inverse !optional; }
+.panel-danger { @extend .card-danger.card-inverse !optional; }
+.well { @extend .card.card-block !optional; }
+.thumbnail { @extend .card.card-block !optional; }
+.list-inline > li { @extend .list-inline-item !optional; }
+.dropdown-menu > li { @extend .dropdown-item !optional; }
+.nav navbar > li { @extend .nav-item !optional; }
+.nav navbar > li > a { @extend .nav-link !optional; }
+.navbar-right { @extend .ml-auto !optional; }
+.navbar-btn { @extend .nav-item !optional; }
+.navbar-fixed-top { @extend .fixed-top !optional; }
+.btn-default { @extend .btn-secondary !optional; }
+.img-responsive { @extend .img-fluid !optional; }
+.img-circle { @extend .rounded-circle !optional; }
+.img-rounded { @extend .rounded !optional; }
+.radio { @extend .form-check !optional; }
+.checkbox { @extend .form-check !optional; }
+.input-lg { @extend .form-control-lg !optional; }
+.input-sm { @extend .form-control-sm !optional; }
+.control-label { @extend .form-control-label !optional; }
+.table-condensed { @extend .table-sm !optional; }
+.pagination > li { @extend .page-item !optional; }
+.pagination > li > a { @extend .page-link !optional; }
+.item { @extend .carousel-item !optional; }
+.text-help { @extend .form-control-feedback !optional; }
+.pull-right { @extend .float-right !optional; }
+.pull-left { @extend .float-left !optional; }
+.center-block { @extend .mx-auto !optional; }
+.visible-xs { @extend .hidden-sm-up !optional; }
+.hidden-sm { @extend .hidden-md-down !optional; }
+.hidden-md { @extend .hidden-lg-down !optional; }
+.hidden-xs { @extend .hidden-xs-down !optional; }
+.label { @extend .tag !optional; }
+.badge { @extend .tag.tag-pill !optional; }
+
+.nav {
+  all: initial;
+}
+
+#menu > ul > li.active {
+  @extend .menu-selected;
+}
+
+// remove eventually
+.panel {
+  background-color: #606060;
+}
+
+.well {
+  background-color: $gray;
+}
+
+.popover {
+  background-color: $gray;
+}
+
+.form-control {
+  background-color: $gray;
+  color: white;
+}
+
+.help-block {
+  background-color: $gray-lighter;
+  color: white;
+}
+
+.list-group-item {
+  background-color: $gray;
+  color: white;
+}
+
+select.form-control:not([size]):not([multiple]) {
+  height: calc(2.75rem + 2px);
+}
+
+.rst__rowContents {
+  background-color: $gray;
+  color: white;
+}
