@@ -33,14 +33,12 @@ namespace Components.ModInstaller
             object[] files = (object[])input.files;
             string destinationPath = (string)input.destinationPath;
             var progressCB = (Func<object, Task<object>>)input.progressDelegate;
+            var coreDelegates = (Core)input.coreDelegates;
             return await mInstaller.Install(
                 new List<string>(files.Cast<string>()),
                 destinationPath,
                 (int percent) => progressCB(percent),
-                "",
-                "",
-                "",
-                ""
+                coreDelegates
             );
         }
     }
