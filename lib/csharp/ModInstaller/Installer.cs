@@ -60,17 +60,14 @@ namespace Components.ModInstaller
         /// <param name="modArchiveFileList">The list of files inside the mod archive.</param>
         /// <param name="destinationPath">The file install destination folder.</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
-        /// <param name="error_OverwritesDelegate">A delegate to present errors and file overwrite requests.</param>
-        /// <param name="userInteractionDelegate">A delegate to present installation choices to the user.</param>
-        /// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
-        /// <param name="requiredExtenderDelegate">A delegate to query what scripted extender version is installed.</param>
+        /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
         public async override Task<Dictionary<string, object>> Install(List<string> modArchiveFileList, string destinationPath, ProgressDelegate progressDelegate,
-            string error_OverwritesDelegate, string userInteractionDelegate, string pluginQueryDelegate, string requiredExtenderDelegate)
+            Core coreDelegate)
         {
             List<string> IniEditList = new List<string>();
 
             // temporary functionality assuming this is a simple install
-            List<Instruction> Instructions = await BasicModInstall(modArchiveFileList, pluginQueryDelegate, progressDelegate, error_OverwritesDelegate);
+            List<Instruction> Instructions = await BasicModInstall(modArchiveFileList, progressDelegate, coreDelegate);
             progressDelegate(50);
 
             if (IniEditList != null)
@@ -115,7 +112,7 @@ namespace Components.ModInstaller
         /// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
         /// <param name="error_OverwritesDelegate">A delegate to present errors and file overwrite requests.</param>
-        protected async Task<List<Instruction>> BasicModInstall(List<string> fileList, string pluginQueryDelegate, ProgressDelegate progressDelegate, string error_OverwritesDelegate)
+        protected async Task<List<Instruction>> BasicModInstall(List<string> fileList, ProgressDelegate progressDelegate, Core coreDelegate)
         {
             List<Instruction> FilesToInstall = new List<Instruction>();
 

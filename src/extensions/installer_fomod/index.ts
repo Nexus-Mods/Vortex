@@ -1,4 +1,5 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
+import Core from './delegates/core';
 import * as edge from 'electron-edge';
 import * as path from 'path';
 
@@ -24,6 +25,8 @@ interface IProgressDelegate {
   (perc: number): void;
 }
 
+let coreDelegates;
+
 function testSupported(files: string[]): Promise<boolean> {
   log('info', 'testsupported called', util.inspect(files));
   return new Promise((resolve, reject) => {
@@ -44,7 +47,7 @@ function testSupported(files: string[]): Promise<boolean> {
 function install(files: string[], destinationPath: string,
                  progressDelegate: IProgressDelegate): Promise<any> {
   return new Promise((resolve, reject) => {
-    installLib({files, destinationPath, progressDelegate},
+    installLib({files, destinationPath, progressDelegate, coreDelegates},
                (err: Error, result: any) => {
                  if ((err !== null) && (err !== undefined)) {
                    log('info', 'got err', util.inspect(err));
@@ -65,6 +68,8 @@ function init(context: IExtensionContextExt): boolean {
   if (context.registerInstaller) {
     context.registerInstaller(100, testSupported, install);
   }
+
+  this.coreDelegates = new Core(context);
 
   return true;
 }
