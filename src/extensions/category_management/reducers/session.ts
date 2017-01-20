@@ -1,4 +1,4 @@
-import { setSearchFocusIndex, setSearchFoundCount,
+import { setHidedCategories, setSearchFocusIndex, setSearchFoundCount,
    setSearchString, setTreeDataObject } from '../actions/session';
 
 import { IReducerSpec } from '../../../types/IExtensionContext';
@@ -19,6 +19,9 @@ export const sessionReducer: IReducerSpec = {
     [setSearchString]: (state, payload) => {
       return update(state, { searchString: { $set: payload } });
     },
+    [setHidedCategories]: (state, payload) => {
+      return update(state, { isHided: { $set: payload } });
+    },
     [setTreeDataObject]: (state, payload) => {
       return update(state, { treeDataObject: { $set: payload } });
     },
@@ -28,5 +31,6 @@ export const sessionReducer: IReducerSpec = {
     searchFoundCount: 0,
     searchString: '',
     treeDataObject: undefined,
+    isHided: false,
   },
 };

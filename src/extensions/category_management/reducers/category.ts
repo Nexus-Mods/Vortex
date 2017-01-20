@@ -1,8 +1,8 @@
-import { addCategory, loadCategories, removeCategory,
-   renameCategory, updateCategories } from '../actions/category';
-
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import {  deleteOrNop, merge, setOrNop, setSafe } from '../../../util/storeHelper';
+
+import { addCategory, loadCategories, removeCategory,
+   renameCategory, setTreeDataOrder, updateCategories } from '../actions/category';
 
 /**
  * reducer for changes to ephemeral session state
@@ -23,6 +23,10 @@ export const categoryReducer: IReducerSpec = {
     },
     [renameCategory]: (state, payload) => {
     return setSafe(state, [payload.gameId, payload.oldCategory ], payload.newCategory);
+    },
+    [setTreeDataOrder]: (state, payload) => {
+      const { gameId, treeDataOrder } = payload;
+      return setSafe(state, ['treeDataOrder', gameId], treeDataOrder);
     },
   }, defaults: {
 

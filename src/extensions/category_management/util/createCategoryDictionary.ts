@@ -48,13 +48,15 @@ function createCategoryDictionary(treeDataObject: ITreeDataObject[]) {
     }
   });
 
+  let treeDataOrder: string[] = [];
   let categories: ICategoryDictionary = categoryList.reduce((result, item) => {
     let key = Object.keys(item)[0];
     result[key] = item[key];
+    treeDataOrder.push(key);
     return result;
   }, {});
 
-  return categories;
+  return {categories, treeDataOrder};
 }
 
 export default createCategoryDictionary;

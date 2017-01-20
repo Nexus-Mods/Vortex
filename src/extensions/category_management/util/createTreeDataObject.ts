@@ -25,22 +25,27 @@ interface ICategoryTree {
   parentId: string;
 }
 
-function searchChildren(categories: Object, rootId: string, mods: any) {
+function searchChildren(categories: Object, rootId: string, mods: any, hided: boolean) {
   let children = Object.keys(categories).filter((id: string) =>
     (rootId === categories[id].parentCategory));
 
   let childrenList = [];
 
   children.forEach((element) => {
+    let subt: string = mods !== undefined ? generateSubtitle(element, mods) : '';
     let child: IChildren = {
       rootId: element,
       title: categories[element].name,
-      subtitle: mods !== undefined ? generateSubtitle(element, mods) : '',
+      subtitle: subt,
       expanded: false,
       parentId: categories[element].parentCategory,
-      children: searchChildren(categories, element, mods),
+      children: searchChildren(categories, element, mods, hided),
     };
-    childrenList.push(child);
+    if (!hided) {
+        childrenList.push(child);
+      } else if (subt !== '') {
+        childrenList.push(child);
+      }
   });
 
   return childrenList;
@@ -55,7 +60,7 @@ function searchChildren(categories: Object, rootId: string, mods: any) {
  * 
  */
 
-function createTreeDataObject(categories: Object, mods: any) {
+function createTreeDataObject(categories: Object, mods: any, hided: boolean) {
   let categoryList = [];
 
   let roots = Object.keys(categories).filter((id: string) =>
@@ -68,15 +73,20 @@ function createTreeDataObject(categories: Object, mods: any) {
     let childrenList = [];
 
     children.forEach((element) => {
+      let subt: string = mods !== undefined ? generateSubtitle(element, mods) : '';
       let child: IChildren = {
         rootId: element,
         title: categories[element].name,
-        subtitle: mods !== undefined ? generateSubtitle(element, mods) : '',
+        subtitle: subt,
         expanded: false,
         parentId: categories[element].parentCategory,
-        children: searchChildren(categories, element, mods),
+        children: searchChildren(categories, element, mods, hided),
       };
-      childrenList.push(child);
+      if (!hided) {
+        childrenList.push(child);
+      } else if (subt !== '') {
+        childrenList.push(child);
+      }
     });
 
     let root: ICategoryTree = {

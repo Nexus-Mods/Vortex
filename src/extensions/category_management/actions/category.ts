@@ -24,3 +24,8 @@ export const removeCategory: any = createAction('REMOVE_CATEGORY',
 (gameId: string, category: {}) => {
       return { gameId, category };
     });
+
+export const setTreeDataOrder: any = createAction('SET_TREE_DATA_ORDER',
+(gameId: string, treeDataOrder: string[]) => {
+      return { gameId, treeDataOrder };
+    });
