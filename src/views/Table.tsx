@@ -8,9 +8,9 @@ import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import {getSafe, setSafe} from '../util/storeHelper';
 
-import AttributeToggle from './AttributeToggle';
 import HeaderCell from './HeaderCell';
 import IconBar from './IconBar';
+import AttributeToggle from './table/AttributeToggle';
 import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
 
@@ -285,13 +285,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private renderAttributeToggle = (attr: ITableAttribute) => {
     const { t } = this.props;
 
-    let attribute = this.getAttributeState(attr.id);
+    let attributeState = this.getAttributeState(attr);
 
     return !attr.isToggleable ? null : (
       <AttributeToggle
         key={attr.id}
         attribute={attr}
-        state={attribute}
+        state={attributeState}
         t={t}
         onSetAttributeVisible={this.setAttributeVisible}
       />
@@ -380,12 +380,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private visibleAttributes(attributes: ITableAttribute[],
                             attributeStates: { [id: string]: IAttributeState }): ITableAttribute[] {
     return attributes.filter((attribute: ITableAttribute) => {
+      let state = this.getAttributeState(attribute, attributeStates);
       if (attribute.placement === 'detail') {
         return false;
-      } else if (!attributeStates.hasOwnProperty(attribute.id)) {
-        return true;
       } else {
-        return getSafe(attributeStates, [attribute.id, 'enabled'], true);
+        return state.enabled;
       }
     });
   }
@@ -393,9 +392,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private renderHeaderField = (attribute: ITableAttribute): JSX.Element => {
     const { t } = this.props;
 
-    const attributeState = this.getAttributeState(attribute.id);
+    const attributeState = this.getAttributeState(attribute);
 
-    if (attributeState.enabled === undefined || attributeState.enabled) {
+    if (attributeState.enabled) {
       return (
         <HeaderCell
           key={attribute.id}
@@ -410,21 +409,26 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private getAttributeState(attributeId: string) {
-    const { attributeState } = this.props;
+  private getAttributeState(attribute: ITableAttribute,
+                            attributeStatesIn?: { [id: string]: IAttributeState }) {
+    const attributeStates = attributeStatesIn || this.props.attributeState;
 
-    return getSafe(attributeState, [attributeId], {
-      enabled: true,
+    const defaultVisible =
+      attribute.isDefaultVisible !== undefined ? attribute.isDefaultVisible : true;
+
+    return Object.assign({
+      enabled: defaultVisible,
       sortDirection: 'none' as SortDirection,
-    });
+    }, attributeStates[attribute.id]);
   }
 
   private setSortDirection = (id: string, direction: SortDirection) => {
-    const { attributeState, onSetAttributeSort, tableId } = this.props;
+    const { attributeState, objects, onSetAttributeSort, tableId } = this.props;
 
     // reset all other columns because we can't really support multisort with this ui
     for (let testId of Object.keys(attributeState)) {
-      const attrState = this.getAttributeState(testId);
+      const attrState = this.getAttributeState(
+        objects.find((attribute: ITableAttribute) => attribute.id === testId));
 
       if ((id !== testId) && (attrState.sortDirection !== 'none')) {
         onSetAttributeSort(tableId, testId, 'none');

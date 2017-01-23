@@ -34,7 +34,7 @@ class ModActivator extends LinkingActivator {
       fsOrig.accessSync(activeGameDiscovery.modPath, fsOrig.constants.W_OK);
     } catch (err) {
       log('info', 'hardlink activator not supported due to lack of write access',
-        { path: activeGameDiscovery.modPath, err: util.inspect(err) });
+        { path: activeGameDiscovery.modPath });
       return false;
     }
 

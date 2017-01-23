@@ -21,6 +21,7 @@
     ]
   },
   "devDependencies": {
+    "@types/fs-extra-promise": "^0.0.31",
     "@types/iconv-lite": "^0.0.1",
     "@types/react": "^0.14.55",
     "@types/react-addons-update": "^0.14.14",

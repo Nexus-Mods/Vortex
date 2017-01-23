@@ -1,7 +1,7 @@
 import * as actions from '../actions/tables';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import { setSafe } from '../util/storeHelper';
+import { deleteOrNop, setSafe } from '../util/storeHelper';
 
 /**
  * reducer for changes to the window state
@@ -10,10 +10,18 @@ export const tableReducer: IReducerSpec = {
   reducers: {
     [actions.selectRows]: (state, payload) => {
       const { tableId, rowIds, selected } = payload;
+      // TODO: this is a bit wasteful, copying the state for each row being changed
       let copy = state;
-      rowIds.forEach((id: string) => {
-        copy = setSafe(copy, [tableId, 'rows', id, 'selected'], selected);
-      });
+      if (!selected) {
+        rowIds.forEach((id: string) => {
+          // TODO: this only works as long as selected is the only row-state we save
+          copy = deleteOrNop(copy, [tableId, 'rows', id]);
+        });
+      } else {
+        rowIds.forEach((id: string) => {
+          copy = setSafe(copy, [tableId, 'rows', id, 'selected'], selected);
+        });
+      }
 
       return copy;
     },

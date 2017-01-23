@@ -1,8 +1,8 @@
-import Icon from './Icon';
-import { Button } from './TooltipControls';
+import Icon from '../Icon';
+import { Button } from '../TooltipControls';
 
-import { IAttributeState } from '../types/IAttributeState';
-import { ITableAttribute } from '../types/ITableAttribute';
+import { IAttributeState } from '../../types/IAttributeState';
+import { ITableAttribute } from '../../types/ITableAttribute';
 
 import * as React from 'react';
 

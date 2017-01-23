@@ -43,6 +43,11 @@ export interface ITableAttribute {
    */
   isSortable?: boolean;
   /**
+   * if true (default), the column is visible by default otherwise the user has to activate it
+   * manually first
+   */
+  isDefaultVisible?: boolean;
+  /**
    * specifies whether the attribute appears in the table, the details pane or both.
    * \note that "isToggleable" and "isSortable" have no effect on attributes that don't appear
    * in the table

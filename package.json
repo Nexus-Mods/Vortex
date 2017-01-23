@@ -13,7 +13,7 @@
     "_assets_out": "node InstallAssets.js out",
     "_assets_app": "node InstallAssets.js app",
     "_install_app": "cd app && npm install && npm update",
-    "prestart": "npm run _assets_out",
+    "prestart": "npm run _assets_out && npm run build_out",
     "build_gamebryo_plugin": "cd extensions/gamebryo-plugin-management && npm install && npm run build && copyfiles -u 1 dist/**/* ../../app/bundledPlugins/gamebryo-plugin-management",
     "build_gamebryo_save": "cd extensions/gamebryo-savegame-management && npm install && npm run build && copyfiles -u 1 dist/**/* ../../app/bundledPlugins/gamebryo-savegame-management",
     "build_meta_editor": "cd extensions/meta-editor && npm install && npm run build && copyfiles -f dist/* ../../app/bundledPlugins/meta-editor",
