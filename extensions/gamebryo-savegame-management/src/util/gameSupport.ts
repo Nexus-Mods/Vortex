@@ -10,6 +10,9 @@ const gameSupport = {
   skyrimse: {
     savesPath: 'Skyrim Special Edition',
   },
+  fallout4: {
+    savesPath: 'Fallout4',
+  },
 };
 
 export function gameSupported(gameMode: string): boolean {

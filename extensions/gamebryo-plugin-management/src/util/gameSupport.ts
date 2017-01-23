@@ -25,6 +25,12 @@ const gameSupport = {
       'dragonborn.esm',
     ],
   },
+  fallout4: {
+    appDataPath: 'Fallout4',
+    pluginTXTFormat: 'fallout4',
+    nativePlugins: [
+    ],
+  },
 };
 
 export function pluginPath(gameMode: string): string {

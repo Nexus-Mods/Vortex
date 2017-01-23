@@ -119,7 +119,7 @@ class ModActivator implements IModActivator {
   }
 
   private isGamebryoGame(gameId: string): boolean {
-    return ['skyrim', 'skyrimse'].indexOf(gameId) !== -1;
+    return ['skyrim', 'skyrimse', 'fallout4'].indexOf(gameId) !== -1;
   }
 }
 
