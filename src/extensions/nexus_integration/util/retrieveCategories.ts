@@ -27,6 +27,7 @@ function retrieveCategoryList(
       .then((gameInfo: IGameInfo) => {
         if (gameInfo.categories !== undefined) {
           let res: ICategoryDictionary = {};
+          let counter: number = 1;
 
           gameInfo.categories.forEach((category: ICategory) => {
             let parent = category.parent_category === false
@@ -36,7 +37,9 @@ function retrieveCategoryList(
             res[category.category_id.toString()] = {
               name: category.name,
               parentCategory: parent,
+              order: counter,
             };
+            counter++;
           });
 
           resolve(res);

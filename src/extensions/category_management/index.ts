@@ -6,7 +6,7 @@ import { getSafe } from '../../util/storeHelper';
 
 import { setModAttribute } from '../mod_management/actions/mods';
 
-import { loadCategories, setTreeDataOrder, updateCategories } from './actions/category';
+import { loadCategories, updateCategories } from './actions/category';
 import { setTreeDataObject } from './actions/session';
 import { categoryReducer } from './reducers/category';
 import { sessionReducer } from './reducers/session';
@@ -49,19 +49,10 @@ function init(context: IExtensionContext): boolean {
       choices: () => {
         const store = context.api.store;
         const categories: ICategoryDictionary = allCategories(store.getState());
-        const treeDataOrder = getSafe(store.getState(),
-          ['persistent', 'categories', 'treeDataOrder'], []);
-        const gameMode = getSafe(store.getState(),
-          ['settings', 'gameMode', 'current'], []);
-
-        if (treeDataOrder === undefined) {
-          let dataOrder: string[] = [];
-          Object.keys(categories).forEach((key: string) => {
-            dataOrder.push(key);
+        const treeDataOrder: string[] = Object.keys(categories)
+          .map((id: string) => {
+            return categories[id].order.toString();
           });
-
-          store.dispatch(setTreeDataOrder(gameMode, dataOrder));
-        }
 
         const language: string = store.getState().settings.interface.language;
         if (treeDataOrder === undefined) {
@@ -71,9 +62,9 @@ function init(context: IExtensionContext): boolean {
               return lhs.text.localeCompare(rhs.text, language);
             }));
         } else {
-          return [{ key: '', text: '' }].concat(treeDataOrder
+          return [{ key: '', text: '' }].concat(Object.keys(categories)
             .map((id: string) => ({ key: id, text: retrieveCategoryDetail(id, context.api.store) }))
-          );
+            .sort((lhs, rhs) => (categories[lhs.key].order - categories[rhs.key].order )));
         }
       },
       onChangeValue: (rowId: string, newValue: any) => {
@@ -97,20 +88,10 @@ function init(context: IExtensionContext): boolean {
         if (isUpdate) {
           context.api.store.dispatch(updateCategories(gameId, categories));
 
-          const treeDataOrder = getSafe(store.getState(),
-            ['persistent', 'categories', gameId, 'treeDataOrder'], []);
-
           let mods: any = getSafe(store.getState(), ['mods'], '');
-          store.dispatch(setTreeDataObject(createTreeDataObject(categories, mods.mods, false)));
 
-          if (treeDataOrder[0] === undefined) {
-            let dataOrder: string[] = [];
-            Object.keys(categories).forEach((key: string) => {
-              dataOrder.push(key);
-            });
-
-            store.dispatch(setTreeDataOrder(gameId, dataOrder));
-          }
+          store.dispatch(setTreeDataObject(createTreeDataObject(categories,
+            mods.mods, false)));
 
         } else {
           context.api.store.dispatch(loadCategories(gameId, categories));
@@ -120,22 +101,11 @@ function init(context: IExtensionContext): boolean {
       context.api.events.on('gamemode-activated', (gameMode: string) => {
         let categories: ITreeDataObject[] = getSafe(store.getState(), ['persistent', 'categories',
           gameMode], []);
-
-        let treeDataOrder = getSafe(store.getState(), ['persistent', 'categories',
-          gameMode, 'treeDataOrder'], '');
-
-        if (treeDataOrder === undefined) {
-          let treeDataOrder: string[] = [];
-          Object.keys(categories).forEach((key: string) => {
-            treeDataOrder.push(key);
-          });
-
-          store.dispatch(setTreeDataOrder(gameMode, treeDataOrder));
-        }
-
         store.dispatch(setTreeDataObject(undefined));
         if (categories === undefined) {
           context.api.events.emit('retrieve-category-list', false, {});
+        } else if (categories.length === 0) {
+          context.api.store.dispatch(updateCategories(gameMode, {}));
         }
       });
 

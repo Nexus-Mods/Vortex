@@ -51,4 +51,5 @@ export interface ITreeDataObject {
   rootId: string;
   subtitle: string;
   title: string;
+  order: number;
 }

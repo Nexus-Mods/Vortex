@@ -1,10 +1,10 @@
-
 import generateSubtitle from './generateSubtitle';
 
 interface ICategory {
   categoryId: number;
   name: string;
   parentCategory: number | false;
+  order: number;
 }
 
 interface IChildren {
@@ -14,6 +14,7 @@ interface IChildren {
   expanded: boolean;
   parentId: string;
   children: IChildren[];
+  order: number;
 }
 
 interface ICategoryTree {
@@ -23,11 +24,13 @@ interface ICategoryTree {
   expanded: boolean;
   children: IChildren[];
   parentId: string;
+  order: number;
 }
 
 function searchChildren(categories: Object, rootId: string, mods: any, hided: boolean) {
-  let children = Object.keys(categories).filter((id: string) =>
-    (rootId === categories[id].parentCategory));
+  let children = Object.keys(categories)
+  .filter((id: string) => (rootId === categories[id].parentCategory))
+  .sort((lhs, rhs) => (categories[lhs].order - categories[rhs].order));
 
   let childrenList = [];
 
@@ -39,13 +42,14 @@ function searchChildren(categories: Object, rootId: string, mods: any, hided: bo
       subtitle: subt,
       expanded: false,
       parentId: categories[element].parentCategory,
+      order: categories[element].order,
       children: searchChildren(categories, element, mods, hided),
     };
     if (!hided) {
-        childrenList.push(child);
-      } else if (subt !== '') {
-        childrenList.push(child);
-      }
+      childrenList.push(child);
+    } else if (subt !== '') {
+      childrenList.push(child);
+    }
   });
 
   return childrenList;
@@ -60,15 +64,24 @@ function searchChildren(categories: Object, rootId: string, mods: any, hided: bo
  * 
  */
 
-function createTreeDataObject(categories: Object, mods: any, hided: boolean) {
+function createTreeDataObject(
+  categories: Object, mods: any,
+  hided: boolean) {
   let categoryList = [];
 
-  let roots = Object.keys(categories).filter((id: string) =>
-    (categories[id].parentCategory === undefined));
+  let test = Object.keys(categories)
+    .sort((lhs, rhs) => {
+      return (categories[lhs].order - categories[rhs].order);
+    });
+
+  let roots = Object.keys(categories)
+  .filter((id: string) => (categories[id].parentCategory === undefined))
+  .sort((lhs, rhs) => (categories[lhs].order - categories[rhs].order));
 
   roots.forEach((rootElement) => {
-    let children = Object.keys(categories).filter((id: string) =>
-      (rootElement === categories[id].parentCategory));
+    let children = Object.keys(categories)
+    .filter((id: string) => (rootElement === categories[id].parentCategory))
+    .sort((lhs, rhs) => (categories[lhs].order - categories[rhs].order));
 
     let childrenList = [];
 
@@ -80,6 +93,7 @@ function createTreeDataObject(categories: Object, mods: any, hided: boolean) {
         subtitle: subt,
         expanded: false,
         parentId: categories[element].parentCategory,
+        order: categories[element].order,
         children: searchChildren(categories, element, mods, hided),
       };
       if (!hided) {
@@ -96,6 +110,7 @@ function createTreeDataObject(categories: Object, mods: any, hided: boolean) {
       expanded: false,
       parentId: undefined,
       children: childrenList,
+      order: categories[rootElement].order,
     };
     categoryList.push(root);
   });
