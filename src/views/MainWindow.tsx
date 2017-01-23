@@ -7,6 +7,7 @@ import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
 import { IState } from '../types/IState';
 import { connect, extend, translate } from '../util/ComponentEx';
+import DeveloperType from './Developer';
 import Dialog from './Dialog';
 import Icon from './Icon';
 import IconBar from './IconBar';
@@ -268,7 +269,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     if (process.env.NODE_ENV !== 'development') {
       return null;
     } else {
-      const Developer = require('./Developer').default;
+      const Developer: typeof DeveloperType = require('./Developer').default;
       return Developer === undefined ? null : (
         <Modal
           show={this.state.showLayer === 'developer'}

@@ -21,6 +21,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 import reducer from './reducers/index';
+import DevToolsType from './util/DevTools';
 import { ITermination, terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
@@ -61,7 +62,7 @@ let enhancer = null;
 
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
-  const DevTools = require('./util/DevTools').default;
+  const DevTools: typeof DevToolsType = require('./util/DevTools').default;
   enhancer = compose(
     applyMiddleware(...middleware),
     electronEnhancer({ filter }),
