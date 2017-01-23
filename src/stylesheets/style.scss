@@ -283,3 +283,13 @@
 .menu-label {
   margin-left: 6px;
 }
+
+#table-main-pane {
+  height: 100%;
+  overflow-y: auto;
+}
+
+#table-details-pane {
+  height: 100%;
+  overflow-y: auto;
+}

@@ -106,7 +106,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         </Fixed>
         <Flex>
           <Layout type='row'>
-            <Flex style={{ height: '100%', overflowY: 'auto' }} >
+            <Flex id='table-main-pane'>
               <Table bordered condensed hover>
                 <thead>
                   <tr>
@@ -117,7 +117,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                 { this.renderBody(this.mVisibleAttributes) }
               </Table>
             </Flex>
-            <Fixed>
+            <Fixed id='table-details-pane'>
               {this.renderDetails(lastSelected)}
             </Fixed>
           </Layout>
@@ -228,7 +228,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    const {t, language, objects} = this.props;
+    const {t, data, language, objects} = this.props;
 
     const detailAttributes = objects.filter((attribute: ITableAttribute) =>
       attribute.placement !== 'table'
@@ -244,6 +244,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       t={t}
       rowId={rowId}
       rowData={rowData}
+      rawData={data[rowId]}
       attributes={detailAttributes}
       language={language}
     />;

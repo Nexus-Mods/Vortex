@@ -12,21 +12,22 @@ interface ICellProps {
   attribute: ITableAttribute;
   rowId: string;
   rowData: any;
+  rawData: any;
   t: I18next.TranslationFunction;
   onChangeData: (rowId: string, attributeId: string, value: any) => void;
 }
 
 class DetailCell extends React.Component<ICellProps, {}> {
   public render(): JSX.Element {
-    const { t, attribute, rowData, rowId } = this.props;
+    const { t, attribute, rawData, rowData, rowId } = this.props;
     const value = rowData[attribute.id];
 
     let content: JSX.Element = null;
 
     if (attribute.customRenderer !== undefined) {
       content = (
-        <FormControl.Static>
-          { attribute.customRenderer(rowData, true, t) }
+        <FormControl.Static componentClass='div'>
+          { attribute.customRenderer(rawData, true, t) }
         </FormControl.Static>
       );
     } else {
@@ -124,6 +125,7 @@ export interface IDetailProps {
   language: string;
   rowId: string;
   rowData: any;
+  rawData: any;
   attributes: ITableAttribute[];
   t: I18next.TranslationFunction;
 }
@@ -134,16 +136,16 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { attributes, rowData } = this.props;
+    const { attributes } = this.props;
     return (
       <form style={{ minWidth: 300 }}>
-      {attributes.map((obj) => this.renderDetail(rowData, obj))}
+      {attributes.map((obj) => this.renderDetail(obj))}
       </form>
     );
   }
 
-  private renderDetail = (rowData: any, attribute: ITableAttribute) => {
-    const { t, language } = this.props;
+  private renderDetail = (attribute: ITableAttribute) => {
+    const { t, language, rawData, rowData } = this.props;
 
     return <DetailCell
       t={t}
@@ -151,6 +153,7 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
       attribute={attribute}
       language={language}
       rowData={rowData}
+      rawData={rawData}
       rowId={rowData.__id}
       onChangeData={this.onChangeData}
     />;
