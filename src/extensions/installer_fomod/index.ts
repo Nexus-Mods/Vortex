@@ -69,7 +69,7 @@ function init(context: IExtensionContextExt): boolean {
     context.registerInstaller(100, testSupported, install);
   }
 
-  this.coreDelegates = new Core(context);
+  this.coreDelegates = new Core(context.api);
 
   return true;
 }

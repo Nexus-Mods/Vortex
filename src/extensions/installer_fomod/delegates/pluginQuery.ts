@@ -1,19 +1,20 @@
-import {IExtensionContext} from '../../../types/IExtensionContext';
+import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
 import * as util from 'util';
 
 export class Plugins {
-  private mCurrentContext: IExtensionContext;
+  private mExtensionApi: IExtensionApi;
 
-  constructor(context: IExtensionContext) {
-    this.mCurrentContext = context;
+  constructor(api: IExtensionApi) {
+    this.mExtensionApi = api;
   }
 
-  public isActive (pluginName: string): boolean {
-    log('info', 'isActive called', util.inspect(pluginName));
-    let state = this.mCurrentContext.api.store.getState();
+  public IsActive = (pluginName: string): boolean => {
+    log('info', 'IsActive called', util.inspect(pluginName));
+    let state = this.mExtensionApi.store.getState();
 
     if (state.loadOrder !== undefined) {
+      log('info', 'IsPresent debug state', util.inspect(pluginName));
       state.loadOrder.forEach((plugin) => {
       if ((plugin.key !== undefined) && (plugin.key.toLowerCase() === pluginName.toLowerCase())) {
           return plugin.enabled;
@@ -23,11 +24,12 @@ export class Plugins {
     return false;
   }
 
-  public isPresent (pluginName: string): boolean {
-    log('info', 'isPresent called', util.inspect(pluginName));
-    let state = this.mCurrentContext.api.store.getState();
+  public IsPresent = (pluginName: string): boolean => {
+    log('info', 'IsPresent called', util.inspect(pluginName));
+    let state = this.mExtensionApi.store.getState();
 
     if (state.loadOrder !== undefined) {
+      log('info', 'IsPresent debug state', util.inspect(pluginName));
       state.loadOrder.forEach((plugin) => {
       if ((plugin.key !== undefined) && (plugin.key.toLowerCase() === pluginName.toLowerCase())) {
           return true;
@@ -37,11 +39,12 @@ export class Plugins {
     return false;
   }
 
-  public GetAll (isActiveOnly: boolean): string[] {
+  public GetAll = (isActiveOnly: boolean): string[] => {
     log('info', 'GetAll called', util.inspect(isActiveOnly));
-    let state = this.mCurrentContext.api.store.getState();
+    let state = this.mExtensionApi.store.getState();
 
     if (state.loadOrder !== undefined) {
+      log('info', 'GetAll debug state', util.inspect(isActiveOnly));
       if (isActiveOnly === true) {
         return state.loadOrder.filter(plugin => plugin.enabled === true);
       } else {
