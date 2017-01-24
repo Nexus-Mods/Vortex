@@ -20,6 +20,7 @@ import CategoryList from './views/CategoryList';
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('book', 'Categories', CategoryList, {
     hotkey: 'C',
+    visible: () => context.api.store.getState().settings.gameMode.current,
   });
 
   context.registerReducer(['persistent', 'categories'], categoryReducer);

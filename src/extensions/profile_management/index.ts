@@ -103,6 +103,7 @@ export interface IExtensionContextExt extends IExtensionContext {
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('clone', 'Profiles', ProfileView, {
     hotkey: 'P',
+    visible: () => context.api.store.getState().settings.gameMode.current,
   });
 
   context.registerReducer(['gameSettings', 'profiles'], profilesReducer);

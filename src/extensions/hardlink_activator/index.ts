@@ -29,6 +29,9 @@ class ModActivator extends LinkingActivator {
     const activeGameId = state.settings.gameMode.current;
     const activeGameDiscovery: IDiscoveryResult =
       state.settings.gameMode.discovered[activeGameId];
+    if (activeGameDiscovery === undefined) {
+      return false;
+    }
 
     try {
       fsOrig.accessSync(activeGameDiscovery.modPath, fsOrig.constants.W_OK);
