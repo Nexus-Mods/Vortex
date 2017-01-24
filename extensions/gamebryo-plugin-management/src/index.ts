@@ -43,8 +43,8 @@ function updatePluginList(store: Redux.Store<any>, oldModList: IModStates,
 
   let gameName = state.settings.gameMode.current;
   let pluginSources: { [pluginName: string]: string } = {};
-  let modPath = util.currentGameDiscovery(state).modPath;
 
+  const currentDiscovery = util.currentGameDiscovery(state);
   let readErrors = [];
 
   return Promise.map(Object.keys(state.mods.mods), (modId: string) => {
@@ -72,6 +72,10 @@ function updatePluginList(store: Redux.Store<any>, oldModList: IModStates,
           readErrors.join('\n')
         );
     }
+    if (currentDiscovery === undefined) {
+      return Promise.resolve([]);
+    }
+    let modPath = currentDiscovery.modPath;
     return fs.readdirAsync(modPath);
   })
   .then((fileNames: string[]) => {
@@ -81,7 +85,7 @@ function updatePluginList(store: Redux.Store<any>, oldModList: IModStates,
       let modName = pluginSources[fileName];
       pluginStates[fileName] = {
         modName: modName || '',
-        filePath: path.join(modPath, fileName),
+        filePath: path.join(currentDiscovery.modPath, fileName),
         isNative: modName === undefined && isNativePlugin(gameName, fileName),
       };
     });

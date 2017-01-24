@@ -4,6 +4,7 @@ import {IPluginsLoot} from './types/IPlugins';
 import {gameSupported, lootAppPath, pluginPath} from './util/gameSupport';
 
 import * as Promise from 'bluebird';
+import * as fs from 'fs-extra-promise';
 import {GameId, LootDatabase} from 'loot';
 import {types, util} from 'nmm-api';
 import * as path from 'path';
@@ -26,13 +27,20 @@ class LootInterface {
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       let gamePath: string = util.currentGameDiscovery(store.getState()).path;
       if (gameSupported(gameMode)) {
-        this.init(gameMode as GameId, gamePath);
+        try {
+          this.init(gameMode as GameId, gamePath);
+        } catch (err) {
+          context.api.showErrorNotification('Failed to initialize LOOT', err);
+          this.mLoot = undefined;
+        }
+      } else {
+        this.mLoot = undefined;
       }
     });
 
     // on demand, re-sort the plugin list
     context.api.events.on('autosort-plugins', () => {
-      if (store.getState().settings.plugins.autoSort) {
+      if (store.getState().settings.plugins.autoSort && (this.mLoot !== undefined)) {
         const t = this.mExtensionApi.translate;
         this.enqueue(t('Sorting plugins'), () => {
           let pluginNames: string[] = Object.keys(store.getState().loadOrder);
@@ -51,6 +59,9 @@ class LootInterface {
 
   private pluginDetails =
       (plugins: string[], callback: (result: IPluginsLoot) => void) => {
+        if (this.mLoot === undefined) {
+          return;
+        }
         const t = this.mExtensionApi.translate;
         this.enqueue(t('Reading Plugin Details'), () => {
           let result: IPluginsLoot = {};
@@ -68,7 +79,6 @@ class LootInterface {
 
   private init(gameMode: GameId, gamePath: string) {
     const t = this.mExtensionApi.translate;
-
     this.mLoot = new LootDatabase(gameMode, gamePath, pluginPath(gameMode));
 
     // little bit of hackery: If tasks are queued before the game mode is activated
@@ -83,11 +93,15 @@ class LootInterface {
 
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
     this.enqueue(t('Update Masterlist'), () => {
-      const updateAsync =
-          Promise.promisify(this.mLoot.updateMasterlist, {context: this.mLoot});
-      return updateAsync(masterlistPath,
-                         `https://github.com/loot/${gameMode}.git`, 'v0.10')
-          .then(() => undefined);
+      return fs.ensureDirAsync(path.dirname(masterlistPath))
+          .then(() => {
+            const updateAsync = Promise.promisify(this.mLoot.updateMasterlist,
+                                                  {context: this.mLoot});
+            return updateAsync(masterlistPath,
+                               `https://github.com/loot/${gameMode}.git`,
+                               'v0.10')
+                .then(() => undefined);
+          });
     });
     this.enqueue(t('Load Lists'), () => {
       const loadListsAsync =

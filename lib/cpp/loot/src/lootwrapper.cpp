@@ -72,7 +72,12 @@ public:
   }
 
   void Execute() {
-    m_Result = m_Func();
+    try {
+      m_Result = m_Func();
+    }
+    catch (const std::exception &e) {
+      SetErrorMessage(e.what());
+    }
   }
 
   void HandleOKCallback() {
@@ -85,6 +90,11 @@ public:
 
     m_IntCallback();
     callback->Call(2, argv);
+  }
+
+  void HandleErrorCallback() {
+    m_IntCallback();
+    Nan::AsyncWorker::HandleErrorCallback();
   }
 
 private:
