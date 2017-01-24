@@ -69,11 +69,6 @@ function createTreeDataObject(
   hided: boolean) {
   let categoryList = [];
 
-  let test = Object.keys(categories)
-    .sort((lhs, rhs) => {
-      return (categories[lhs].order - categories[rhs].order);
-    });
-
   let roots = Object.keys(categories)
   .filter((id: string) => (categories[id].parentCategory === undefined))
   .sort((lhs, rhs) => (categories[lhs].order - categories[rhs].order));
