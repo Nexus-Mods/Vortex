@@ -191,7 +191,8 @@ function walk(searchPath: string,
         if (progress !== undefined) {
           progress.completed(statPaths[idx]);
         }
-        return walk(statPaths[idx], matchList, blackList, resultCB, subProgess, normalize);
+        return walk(statPaths[idx], matchList, blackList, resultCB,
+         subProgess !== null ? subProgess : progress, normalize);
       });
     }).catch((err) => {
       log('warn', 'walk failed', { msg: err.message });
