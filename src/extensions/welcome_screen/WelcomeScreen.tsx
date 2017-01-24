@@ -214,14 +214,14 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     }));
   }
 
-  private renderSupportedTool =
-    (game: IGame, tool: ITool | IDiscoveredTool): JSX.Element => {
-    let { onAddDiscoveredTool, onRemoveDiscoveredTool, onShowError } = this.props;
+  private renderSupportedTool = (game: IGame, tool: ITool | IDiscoveredTool): JSX.Element => {
+    let { t, onAddDiscoveredTool, onRemoveDiscoveredTool, onShowError } = this.props;
 
     let key = `${tool.id}_${this.state.counter}`;
 
     return (
       <ToolButton
+        t={t}
         key={key}
         game={game}
         toolId={tool.id}
@@ -276,6 +276,10 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'], {
+    wait: true,
+    bindI18n: 'languageChanged loaded',
+    bindStore: false,
+  } as any)(
     connect(mapStateToProps, mapDispatchToProps)(WelcomeScreen)
   );

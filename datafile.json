@@ -1,11 +1,9 @@
 {
   "spawn": [
     {
-      "executable": "lessc",
+      "executable": "node-sass",
       "arguments": [
-        "--clean-css",
-        "--include-path=node_modules/bootswatch:node_modules/bootstrap-less",
-        "src/stylesheets/index.less",
+        "src/stylesheets/index.scss",
         "app/assets/css/base.css"
       ],
       "target": [

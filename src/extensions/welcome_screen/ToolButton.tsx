@@ -152,6 +152,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
 }
 
 export interface IProps {
+  t: I18next.TranslationFunction;
   game: IGame;
   toolId: string;
   tool: ITool | IDiscoveredTool;
@@ -294,4 +295,4 @@ class Wrapper extends React.Component<any, any> {
   }
 }
 
-export default translate(['common'], { wait: false })(Wrapper) as React.ComponentClass<IProps>;
+export default Wrapper;
