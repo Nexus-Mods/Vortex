@@ -1,16 +1,16 @@
-import { createAction } from 'redux-act';
+import safeCreateAction from '../../../actions/safeCreateAction';
 
-export const loadCategories: any = createAction('LOAD_CATEGORIES',
+export const loadCategories: any = safeCreateAction('LOAD_CATEGORIES',
 (gameId: string, gameCategories) => {
       return { gameId, gameCategories };
     });
 
-export const updateCategories: any = createAction('UPDATE_CATEGORIES',
+export const updateCategories: any = safeCreateAction('UPDATE_CATEGORIES',
 (gameId: string, gameCategories) => {
       return { gameId, gameCategories };
     });
 
-export const renameCategory: any = createAction('RENAME_CATEGORY',
-(gameId: string, oldCategory: {}, newCategory: {}) => {
+export const renameCategory: any = safeCreateAction('RENAME_CATEGORY',
+(gameId: string, oldCategory, newCategory) => {
       return { gameId, oldCategory, newCategory };
     });

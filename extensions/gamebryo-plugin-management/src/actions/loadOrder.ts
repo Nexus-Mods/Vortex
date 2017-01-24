@@ -1,6 +1,6 @@
-import { createAction } from 'redux-act';
+import { safeCreateAction } from 'nmm-api';
 
-export const setPluginEnabled: any = createAction('SET_PLUGIN_ENABLED',
+export const setPluginEnabled: any = safeCreateAction('SET_PLUGIN_ENABLED',
     (pluginName: string, enabled: boolean) => ({ pluginName, enabled }));
 
 /**
@@ -8,9 +8,9 @@ export const setPluginEnabled: any = createAction('SET_PLUGIN_ENABLED',
  * are not in this list will be deleted, default entries are created for those
  * that are in the list but not stored
  */
-export const updateLoadOrder: any = createAction('UPDATE_LOAD_ORDER');
+export const updateLoadOrder: any = safeCreateAction('UPDATE_LOAD_ORDER');
 
 /**
  * completely replace the load order (not changing the enabled state of plugins)
  */
-export const setPluginOrder: any = createAction('SET_PLUGIN_ORDER');
+export const setPluginOrder: any = safeCreateAction('SET_PLUGIN_ORDER');

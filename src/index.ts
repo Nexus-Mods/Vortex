@@ -2,12 +2,13 @@
 // that should be available to extensions
 
 import * as actions from './actions/index';
+import safeCreateAction from './actions/safeCreateAction';
 import * as types from './types/api';
 import * as util from './util/api';
 import { log } from './util/log';
 
 export * from './views/api';
-export { actions, types, log, util }
+export { actions, types, log, util, safeCreateAction }
 export { ComponentEx } from './util/ComponentEx';
 
 import * as mmselectors from './extensions/mod_management/selectors';

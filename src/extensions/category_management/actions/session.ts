@@ -1,11 +1,11 @@
-import { createAction } from 'redux-act';
+import safeCreateAction from '../../../actions/safeCreateAction';
 
-export const setSearchString: any = createAction('SET_SEARCH_STRING');
+export const setSearchString: any = safeCreateAction('SET_SEARCH_STRING');
 
-export const setSearchFocusIndex: any = createAction('SET_SEARCH_FOCUS_INDEX');
+export const setSearchFocusIndex: any = safeCreateAction('SET_SEARCH_FOCUS_INDEX');
 
-export const setSearchFoundCount: any = createAction('SET_SEARCH_FOUND_COUNT');
+export const setSearchFoundCount: any = safeCreateAction('SET_SEARCH_FOUND_COUNT');
 
-export const setTreeDataObject: any = createAction('SET_TREE_DATA_OBJECT');
+export const setTreeDataObject: any = safeCreateAction('SET_TREE_DATA_OBJECT');
 
-export const setHidedCategories: any = createAction('SET_HIDED_CATEGORIES');
+export const setHidedCategories: any = safeCreateAction('SET_HIDED_CATEGORIES');

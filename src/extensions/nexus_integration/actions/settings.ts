@@ -1,6 +1,6 @@
-import { createAction } from 'redux-act';
+import safeCreateAction from '../../../actions/safeCreateAction';
 
 /*
  * associate with nxm urls
  */
-export const setAssociatedWithNXMURLs: any = createAction('SET_ASSOCIATED_WITH_NXM_URLS');
+export const setAssociatedWithNXMURLs: any = safeCreateAction('SET_ASSOCIATED_WITH_NXM_URLS');

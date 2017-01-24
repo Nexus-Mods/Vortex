@@ -1,6 +1,6 @@
-import { createAction } from 'redux-act';
+import safeCreateAction from '../../actions/safeCreateAction';
 
 /**
  * change the user interface language
  */
-export const setLanguage: any = createAction('SET_USER_LANGUAGE');
+export const setLanguage: any = safeCreateAction('SET_USER_LANGUAGE');

@@ -1,3 +1,3 @@
-import { createAction } from 'redux-act';
+import safeCreateAction from '../../../actions/safeCreateAction';
 
-export const setMaxDownloads: any = createAction('SET_MAX_DOWNLOADS');
+export const setMaxDownloads: any = safeCreateAction('SET_MAX_DOWNLOADS');

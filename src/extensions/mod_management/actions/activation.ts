@@ -1,6 +1,6 @@
-import { createAction } from 'redux-act';
+import safeCreateAction from '../../../actions/safeCreateAction';
 
 export const storeActivation: any =
-    createAction('STORE_ACTIVATION_SNAPSHOT',
+    safeCreateAction('STORE_ACTIVATION_SNAPSHOT',
                  (gameId: string, activationId: string, snapshot: any) =>
                      ({gameId, activationId, snapshot}));

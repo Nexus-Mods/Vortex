@@ -1,16 +1,16 @@
 import { IMod, ModState } from '../types/IMod';
 
-import { createAction } from 'redux-act';
+import safeCreateAction from '../../../actions/safeCreateAction';
 
-export const addMod: any = createAction('ADD_MOD',
+export const addMod: any = safeCreateAction('ADD_MOD',
   (mod: IMod) => mod);
 
-export const removeMod: any = createAction('REMOVE_MOD');
+export const removeMod: any = safeCreateAction('REMOVE_MOD');
 
 /**
  * sets the state of a mod (whether it's downloaded, installed, ...)
  */
-export const setModState: any = createAction('SET_MOD_STATE',
+export const setModState: any = safeCreateAction('SET_MOD_STATE',
   (id: string, modState: ModState) => ({ id, modState }));
 
 /**
@@ -18,11 +18,11 @@ export const setModState: any = createAction('SET_MOD_STATE',
  * any data is written to disk so that it can be cleaned/removed in case of an error.
  * The actual path on disk may be a variation of this path during installation.
  */
-export const setModInstallationPath: any = createAction('SET_MOD_INSTALLATION_PATH',
+export const setModInstallationPath: any = safeCreateAction('SET_MOD_INSTALLATION_PATH',
   (id: string, installPath: string) => ({ id, installPath }));
 
 /**
  * sets the value of an attribute on a mod
  */
-export const setModAttribute: any = createAction('SET_MOD_ATTRIBUTE',
+export const setModAttribute: any = safeCreateAction('SET_MOD_ATTRIBUTE',
   (id: string, attribute: string, value: any) => ({ id, attribute, value }));
