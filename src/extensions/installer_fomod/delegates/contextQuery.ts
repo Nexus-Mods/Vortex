@@ -1,8 +1,11 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
+import fs = require('fs-extra-promise');
+import path = require('path');
+import * as util from 'util';
 
 export class Context {
-  private mElectron = require('electron');
+  private electron = require('electron');
   private mExtensionApi: IExtensionApi;
 
   constructor(api: IExtensionApi) {
@@ -11,18 +14,34 @@ export class Context {
 
   public getAppVersion = (): string => {
     log('info', 'getAppVersion called', '');
-    let app = this.mElectron.app || this.mElectron.remote.app;
+    let app = this.electron.app || this.electron.remote.app;
     return app.getVersion();
   }
 
   public getCurrentGameVersion = (): string => {
     log('info', 'getCurrentGameVersion called', '');
-    return undefined;
+    let state = this.mExtensionApi.store.getState();
+    let currentGameInfo = currentGameDiscovery(state);
+    let currentGameRelativeExecutablePath =
+      state.settings.gameMode.known[state.settings.gameMode.current].executable();
+    let currentGameExecutablePath =
+      path.join(currentGameInfo.path, currentGameRelativeExecutablePath);
   }
 
-  public checkIfFileExists = (): boolean => {
-    log('info', 'checkIfFileExists called', '');
-    return false;
+  public checkIfFileExists = (fileName: string): boolean => {
+    log('info', 'checkIfFileExists called', util.inspect(fileName));
+    let state = this.mExtensionApi.store.getState();
+    let currentGameInfo = currentGameDiscovery(state);
+    let fullFilePath = path.join(currentGameInfo.modPath, fileName);
+    let isPresent = false;
+
+    fs.statAsync(fullFilePath).reflect()
+            .then((stat) => {
+            if (stat.isFulfilled()) {
+                isPresent = true;
+            }
+        });
+    return isPresent;
   }
 }
 
