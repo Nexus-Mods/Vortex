@@ -1,10 +1,7 @@
 import { log } from './log';
 
-import * as less from 'less';
-import LessPluginCleanCSS = require('less-plugin-clean-css');
+import * as sass from 'node-sass';
 import * as path from 'path';
-
-let cleanCSSPlugin = new LessPluginCleanCSS({advanced: true});
 
 /**
  * compile and add style sheets from extensions
@@ -19,22 +16,25 @@ function loadExtensionCSS(extensions) {
   extensions.apply('registerStyle',
                    (filePath: string) => { stylesheets.push(filePath); });
 
-  let lessIndex: string =
-      stylesheets.map((name: string) => `@import "${name}";\n`).join('\n');
+  const sassIndex: string =
+      stylesheets.map((name: string) => `@import "${name.replace(/\\/g, '\\\\')}";\n`).join('\n');
 
-  less.render(lessIndex,
-              {
-                filename: path.resolve(__dirname, '..', 'assets', 'css', 'theme.css'),
-                plugins: [cleanCSSPlugin],
+  const assetsPath = path.resolve(__dirname, '..', 'assets', 'css');
+
+  sass.render({
+                outFile: path.join(assetsPath, 'theme.css'),
+                includePaths: [ assetsPath ],
+                data: sassIndex,
               },
               (err, output) => {
                 if (err !== null) {
                   log('error', 'failed to render css', err.message);
+                } else {
+                  let style = document.createElement('style');
+                  style.type = 'text/css';
+                  style.innerHTML = output.css;
+                  document.getElementsByTagName('head')[0].appendChild(style);
                 }
-                let style = document.createElement('style');
-                style.type = 'text/css';
-                style.innerHTML = output.css;
-                document.getElementsByTagName('head')[0].appendChild(style);
               });
 }
 

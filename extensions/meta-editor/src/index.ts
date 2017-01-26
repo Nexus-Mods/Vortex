@@ -9,7 +9,7 @@ function main(context: types.IExtensionContext) {
     key: 'meta-editor-icon',
   }));
 
-  context.registerStyle(path.join(__dirname, 'metaeditor.less'));
+  context.registerStyle(path.join(__dirname, 'metaeditor.scss'));
 
   return true;
 }
