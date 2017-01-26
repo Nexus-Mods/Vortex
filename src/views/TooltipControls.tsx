@@ -5,7 +5,7 @@ import { Button as BootstrapButton, NavItem as BootstrapNavItem,
          OverlayTrigger, Popover } from 'react-bootstrap';
 
 export interface ITooltipProps {
-  tooltip: string | React.Component<any, any>;
+  tooltip: string | React.ReactElement<any>;
   id: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
 }

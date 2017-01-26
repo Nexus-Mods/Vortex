@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using Components.Interface;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Components.ModInstaller
 {
 	public delegate void ProgressDelegate(int percent);
-    public delegate void Core();
 
 	public interface IInstaller
 	{
@@ -24,7 +24,7 @@ namespace Components.ModInstaller
 		/// <param name="progressDelegate">A delegate to provide progress feedback.</param>
 		/// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
 		Task<Dictionary<string, object>> Install(List<string> modArchiveFileList, string destinationPath, ProgressDelegate progressDelegate,
-			Core coreDelegate);
+			CoreDelegates coreDelegate);
 
 		#endregion
 	}

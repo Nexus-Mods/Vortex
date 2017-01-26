@@ -63,10 +63,10 @@ namespace Components.Scripting.CSharpScript
         /// Creates an executor that can run the script type.
         /// </summary>
         /// <param name="modArchive">The mod being installed.</param>
-        /// <param name="userInteractionDelegate">The application's envrionment info.</param>
+        /// <param name="delegates">delegates for communicating with the application core.</param>
         /// <param name="scxUIContext">The <see cref="SynchronizationContext"/> to use to marshall UI interactions to the UI thread.</param>
         /// <returns>An executor that can run the script type.</returns>
-        public IScriptExecutor CreateExecutor(Mod modArchive, string userInteractionDelegate, SynchronizationContext scxUIContext)
+        public IScriptExecutor CreateExecutor(Mod modArchive, CoreDelegates delegates, SynchronizationContext scxUIContext)
 		{
 			CSharpScriptFunctionProxy csfFunctions = GetScriptFunctionProxy(modArchive);
 			return new CSharpScriptExecutor();

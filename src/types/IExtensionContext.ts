@@ -40,6 +40,10 @@ export interface IRegisterMainPage {
    options: IMainPageOptions): void;
 }
 
+export interface IRegisterDialog {
+  (id: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
+}
+
 export interface IRegisterProtocol {
   (protocol: string, callback: (url: string) => void);
 }
@@ -324,6 +328,13 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerMainPage: IRegisterMainPage;
+
+  /**
+   * register a dialog (or any control that is rendered independent of the main content area
+   * really)
+   * This dialog has to control its own visibility
+   */
+  registerDialog: IRegisterDialog;
 
   /**
    * registers a element to be displayed in the footer

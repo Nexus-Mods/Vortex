@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Components.Interface;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ namespace Components.ModInstaller
             object[] files = (object[])input.files;
             string destinationPath = (string)input.destinationPath;
             var progressCB = (Func<object, Task<object>>)input.progressDelegate;
-            var coreDelegates = (Core)input.coreDelegates;
+            CoreDelegates coreDelegates = new CoreDelegates(input.coreDelegates);
             return await mInstaller.Install(
                 new List<string>(files.Cast<string>()),
                 destinationPath,

@@ -23,15 +23,6 @@ namespace Components.Scripting
 
         #endregion
 
-        #region Properties
-
-        /// <summary>
-        /// The object used for filesystem interactions.
-        /// </summary>
-        protected static FileSystem FileSystem;
-
-        #endregion
-
         /// <summary>
         /// Searches for script type assemblies in the specified path, and loads
         /// any script types that are found into a registry.
@@ -42,7 +33,7 @@ namespace Components.Scripting
         /// </remarks>
         /// <param name="searchPath">The path in which to search for script type assemblies.</param>
         /// <returns>A registry containing all of the discovered script types.</returns>
-        public static IScriptTypeRegistry DiscoverScriptTypes(string searchPath)
+        public static IScriptTypeRegistry DiscoverScriptTypes(string searchPath, IFileSystem fileSystem)
 		{
             // ??? Do we still need to handle it this way?
 			Trace.TraceInformation("Discovering Script Types...");
@@ -52,14 +43,14 @@ namespace Components.Scripting
 			Trace.Indent();
 			Trace.TraceInformation("Looking in: {0}", searchPath);
 			IScriptTypeRegistry TypeRegistry = new ScriptTypeRegistry();
-			if (!FileSystem.DirectoryExists(searchPath))
+			if (!fileSystem.DirectoryExists(searchPath))
 			{
 				Trace.TraceError("Script Type search path does not exist.");
 				Trace.Unindent();
 				Trace.Unindent();
 				return TypeRegistry;
 			}
-			string[] Assemblies = FileSystem.GetFiles(searchPath, "*.dll", SearchOption.AllDirectories);
+			string[] Assemblies = fileSystem.GetFiles(searchPath, "*.dll", SearchOption.AllDirectories);
 			RegisterScriptTypes(TypeRegistry, Assemblies);
 			Trace.Unindent();
 

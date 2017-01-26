@@ -9,6 +9,7 @@ import { IState } from '../types/IState';
 import { connect, extend, translate } from '../util/ComponentEx';
 import DeveloperType from './Developer';
 import Dialog from './Dialog';
+import DialogContainer from './DialogContainer';
 import Icon from './Icon';
 import IconBar from './IconBar';
 import MainFooter from './MainFooter';
@@ -121,6 +122,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <Dialog />
         { this.renderModalSettings() }
         { this.renderDeveloperModal() }
+        <DialogContainer />
       </div>
     );
   }

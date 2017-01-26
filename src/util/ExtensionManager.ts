@@ -183,6 +183,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
     // match the interface
     let dummy: IExtensionContext = {
       registerMainPage: undefined,
+      registerDialog: undefined,
       registerSettings: undefined,
       registerIcon: undefined,
       registerFooter: undefined,

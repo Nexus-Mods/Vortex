@@ -83,7 +83,7 @@ namespace Components.Scripting.XmlScript
 		/// <summary>
 		/// Sets the value of a conditional flag.
 		/// </summary>
-		/// <param name="p_strFlagName">The name of the falg whose value is to be set.</param>
+		/// <param name="p_strFlagName">The name of the flag whose value is to be set.</param>
 		/// <param name="p_strValue">The value to which to set the flag.</param>
 		/// <param name="p_pifPlugin">The plugin that is responsible for setting the flag's value.</param>
 		public void SetFlagValue(string p_strFlagName, string p_strValue, Option p_pifPlugin)

@@ -55,6 +55,10 @@
       <Project>{66dc8748-2dc2-4e6e-b645-080e0cfdc831}</Project>
       <Name>Scripting</Name>
     </ProjectReference>
+    <ProjectReference Include="..\InstallScripting\XmlScript\XmlScript.csproj">
+      <Project>{B0F526DB-967B-4A57-9EC9-2E4950E54F26}</Project>
+      <Name>XmlScript</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Utils\Utils.csproj">
       <Project>{5b9ad297-9d49-4593-a795-bdbd309b3313}</Project>
       <Name>Utils</Name>

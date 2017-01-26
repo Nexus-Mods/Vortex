@@ -1,11 +1,15 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
+
 import Core from './delegates/core';
+import { installerUIReducer } from './reducers/installerUI';
+import InstallerDialog from './views/InstallerDialog';
+
 import * as edge from 'electron-edge';
 import * as path from 'path';
 
-import {log} from '../../util/log';
-
 import * as util from 'util';
+
+import {log} from '../../util/log';
 
 const testSupportedLib = edge.func({
   assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller',
@@ -25,10 +29,9 @@ interface IProgressDelegate {
   (perc: number): void;
 }
 
-let coreDelegates;
+let coreDelegates: Core;
 
 function testSupported(files: string[]): Promise<boolean> {
-  log('info', 'testsupported called', util.inspect(files));
   return new Promise((resolve, reject) => {
     testSupportedLib({files}, (err: Error, result: boolean) => {
       if ((err !== null) && (err !== undefined)) {
@@ -70,6 +73,13 @@ function init(context: IExtensionContextExt): boolean {
   }
 
   this.coreDelegates = new Core(context.api);
+  context.registerDialog('fomod-installer', InstallerDialog);
+
+  context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
+
+  context.once(() => {
+    coreDelegates = new Core(context.api);
+  });
 
   return true;
 }

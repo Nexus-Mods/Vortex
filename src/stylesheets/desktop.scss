@@ -34,7 +34,11 @@ html, body, #content {
 
 // in native ui's, the cursor doesn't change to a hand over buttons
 a, .btn {
-    cursor: default;
+  cursor: default;
+}
+
+.radio label, .checkbox label {
+  cursor: default;
 }
 
 // in native ui's, there is no text selection on 'label' elements,
