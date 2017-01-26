@@ -18,7 +18,7 @@ namespace Components.Interface
 
         public PluginDelegates(dynamic source)
         {
-            mGetAll = source.GetAll;
+            mGetAll = source.getAll;
             mIsActive = source.isActive;
             mIsPresent = source.isPresent;
         }
@@ -38,6 +38,38 @@ namespace Components.Interface
         public async Task<bool> IsPresent(string pluginName)
         {
             object res = await mIsPresent(pluginName);
+            return (bool)res;
+        }
+    }
+
+    public class ContextDelegates
+    {
+        private Func<Task<object>> mGetAppVersion;
+        private Func<Task<object>> mGetCurrentGameVersion;
+        private Func<object, Task<object>> mCheckIfFileExists;
+
+        public ContextDelegates(dynamic source)
+        {
+            mGetAppVersion = source.getAppVersion;
+            mGetCurrentGameVersion = source.getCurrentGameVersion;
+            mCheckIfFileExists = source.checkIfFileExists;
+        }
+
+        public async Task<string> GetAppVersion()
+        {
+            object res = await mGetAppVersion();
+            return (string)res;
+        }
+
+        public async Task<string> GetCurrentGameVersion()
+        {
+            object res = await mGetCurrentGameVersion();
+            return (string)res;
+        }
+
+        public async Task<bool> CheckIfFileExists(string fileName)
+        {
+            object res = await mCheckIfFileExists(fileName);
             return (bool)res;
         }
     }
@@ -160,11 +192,13 @@ namespace Components.Interface
     public class CoreDelegates
     {
         private PluginDelegates mPluginDelegates;
+        private ContextDelegates mContextDelegates;
         private ui.Delegates mUIDelegates;
 
         public CoreDelegates(dynamic source)
         {
             mPluginDelegates = new PluginDelegates(source.plugin);
+            mContextDelegates = new ContextDelegates(source.context);
             mUIDelegates = new ui.Delegates(source.ui);
         }
 
@@ -173,6 +207,14 @@ namespace Components.Interface
             get
             {
                 return mPluginDelegates;
+            }
+        }
+
+        public ContextDelegates context
+        {
+            get
+            {
+                return mContextDelegates;
             }
         }
 

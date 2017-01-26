@@ -9,6 +9,10 @@ export class Core {
     return this.plugin;
   }
 
+  get Context(): Context {
+    return this.context;
+  }
+
   public context: Context;
   public mExtensionApi: IExtensionApi;
   public ini: Ini;
