@@ -1,25 +1,27 @@
-import {IExtensionContext} from '../../../types/IExtensionContext';
+import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
 
 export class Context {
-  private mCurrentContext: IExtensionContext;
+  private mElectron = require('electron');
+  private mExtensionApi: IExtensionApi;
 
-  constructor(context: IExtensionContext) {
-    this.mCurrentContext = context;
+  constructor(api: IExtensionApi) {
+    this.mExtensionApi = api;
   }
 
-  public GetAppVersion (): string {
-    log('info', 'GetAppVersion called', '');
+  public getAppVersion = (): string => {
+    log('info', 'getAppVersion called', '');
+    let app = this.mElectron.app || this.mElectron.remote.app;
+    return app.getVersion();
+  }
+
+  public getCurrentGameVersion = (): string => {
+    log('info', 'getCurrentGameVersion called', '');
     return undefined;
   }
 
-  public GetCurrentGameVersion (): string {
-    log('info', 'GetCurrentGameVersion called', '');
-    return undefined;
-  }
-
-  public CheckIfFileExists (): boolean {
-    log('info', 'CheckIfFileExists called', '');
+  public checkIfFileExists = (): boolean => {
+    log('info', 'checkIfFileExists called', '');
     return false;
   }
 }

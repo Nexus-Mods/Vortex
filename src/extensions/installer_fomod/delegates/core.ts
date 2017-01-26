@@ -15,8 +15,8 @@ export class Core {
   public plugin: Plugins;
   public ui: UI;
 
-  constructor(context: IExtensionApi) {
-    this.mExtensionApi = context;
+  constructor(api: IExtensionApi) {
+    this.mExtensionApi = api;
     this.Initialize();
   }
 
@@ -24,6 +24,7 @@ export class Core {
     this.plugin = new Plugins(this.mExtensionApi);
     this.ini = new Ini(this.mExtensionApi);
     this.ui = new UI(this.mExtensionApi);
+    this.context = new Context(this.mExtensionApi);
   }
 }
 

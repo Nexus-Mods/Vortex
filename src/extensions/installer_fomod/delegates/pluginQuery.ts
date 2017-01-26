@@ -9,12 +9,12 @@ export class Plugins {
     this.mExtensionApi = api;
   }
 
-  public IsActive = (pluginName: string): boolean => {
-    log('info', 'IsActive called', util.inspect(pluginName));
+  public isActive = (pluginName: string): boolean => {
+    log('info', 'isActive called', util.inspect(pluginName));
     let state = this.mExtensionApi.store.getState();
 
     if (state.loadOrder !== undefined) {
-      log('info', 'IsPresent debug state', util.inspect(pluginName));
+      log('info', 'isPresent debug state', util.inspect(pluginName));
       state.loadOrder.forEach((plugin) => {
       if ((plugin.key !== undefined) && (plugin.key.toLowerCase() === pluginName.toLowerCase())) {
           return plugin.enabled;
@@ -24,12 +24,12 @@ export class Plugins {
     return false;
   }
 
-  public IsPresent = (pluginName: string): boolean => {
-    log('info', 'IsPresent called', util.inspect(pluginName));
+  public isPresent = (pluginName: string): boolean => {
+    log('info', 'isPresent called', util.inspect(pluginName));
     let state = this.mExtensionApi.store.getState();
 
     if (state.loadOrder !== undefined) {
-      log('info', 'IsPresent debug state', util.inspect(pluginName));
+      log('info', 'isPresent debug state', util.inspect(pluginName));
       state.loadOrder.forEach((plugin) => {
       if ((plugin.key !== undefined) && (plugin.key.toLowerCase() === pluginName.toLowerCase())) {
           return true;
@@ -39,12 +39,12 @@ export class Plugins {
     return false;
   }
 
-  public GetAll = (isActiveOnly: boolean): string[] => {
-    log('info', 'GetAll called', util.inspect(isActiveOnly));
+  public getAll = (isActiveOnly: boolean): string[] => {
+    log('info', 'getAll called', util.inspect(isActiveOnly));
     let state = this.mExtensionApi.store.getState();
 
     if (state.loadOrder !== undefined) {
-      log('info', 'GetAll debug state', util.inspect(isActiveOnly));
+      log('info', 'getAll debug state', util.inspect(isActiveOnly));
       if (isActiveOnly === true) {
         return state.loadOrder.filter(plugin => plugin.enabled === true);
       } else {
