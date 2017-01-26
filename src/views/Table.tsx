@@ -94,8 +94,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, objects } = this.props;
+    const { t, actions, objects, tableId } = this.props;
     const { lastSelected } = this.state;
+
+    const rowActions = actions.filter((action) => action.singleRowAction);
+    const hasActions = actions !== undefined && rowActions.length > 0;
 
     return (
       <Layout type='column'>
@@ -111,7 +114,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                 <thead>
                   <tr>
                     {this.mVisibleAttributes.map(this.renderHeaderField)}
-                    <th>{t('Actions')}</th>
+                    { hasActions
+                      ? <th className={`table-${tableId} header-action`}>{t('Actions')}</th>
+                      : null
+                    }
                   </tr>
                 </thead>
                 { this.renderBody(this.mVisibleAttributes) }
@@ -390,13 +396,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderHeaderField = (attribute: ITableAttribute): JSX.Element => {
-    const { t } = this.props;
+    const { t, tableId } = this.props;
 
     const attributeState = this.getAttributeState(attribute);
 
     if (attributeState.enabled) {
       return (
         <HeaderCell
+          className={`table-${tableId} header-${attribute.id}`}
           key={attribute.id}
           attribute={attribute}
           state={attributeState}

@@ -2,6 +2,7 @@ import {IIconDefinition} from '../../types/IIconDefinition';
 import {ITableAttribute} from '../../types/ITableAttribute';
 
 import IconBar from '../IconBar';
+import {ITableRowAction} from '../Table';
 import {IconButton} from '../TooltipControls';
 
 import * as React from 'react';
@@ -59,7 +60,7 @@ export interface IRowProps {
   data: any;
   rawData: any;
   attributes: ITableAttribute[];
-  actions: IIconDefinition[];
+  actions: ITableRowAction[];
   language: string;
   onClick: React.MouseEventHandler<any>;
   selected: boolean;
@@ -82,6 +83,9 @@ class TableRow extends React.Component<IRowProps, {}> {
       classes.push('table-selected');
     }
 
+    const rowActions = actions.filter((action) => action.singleRowAction);
+    const hasActions = actions !== undefined && rowActions.length > 0;
+
     return (
       <tr
         id={data.__id}
@@ -90,22 +94,28 @@ class TableRow extends React.Component<IRowProps, {}> {
         onClick={onClick}
       >
         {attributes.map(this.renderAttribute)}
-        <td style={{ textAlign: 'center' }}>
-          <IconBar
-            group={`${tableId}-action-icons`}
-            instanceId={data.__id}
-            className='table-actions'
-            staticElements={actions}
-          />
-        </td>
+        {
+          hasActions
+            ? <td style={{ textAlign: 'center' }}>
+              <IconBar
+                group={`${tableId}-action-icons`}
+                instanceId={data.__id}
+                className='table-actions'
+                staticElements={actions}
+              />
+            </td>
+            : null
+        }
       </tr>
     );
   }
 
   private renderAttribute = (attribute: ITableAttribute): JSX.Element => {
-    const { t, data, rawData } = this.props;
+    const { t, data, rawData, tableId } = this.props;
     return (
-      <td key={attribute.id}>
+      <td
+        className={`table-${tableId} cell-${attribute.id}`}
+        key={attribute.id}>
         {this.renderCell(attribute, attribute.customRenderer ? rawData : data[attribute.id], t)}
       </td>
     );

@@ -293,3 +293,23 @@
   height: 100%;
   overflow-y: auto;
 }
+
+.cell-enabled {
+  text-align: center;
+}
+
+.cell-version {
+  text-align: right;
+}
+
+.cell-installTime {
+  text-align: center;
+}
+
+.cell-filetime {
+  text-align: center;
+}
+
+.cell-progress {
+  text-align: center;
+}

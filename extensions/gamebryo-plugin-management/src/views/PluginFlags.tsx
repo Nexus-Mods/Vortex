@@ -12,6 +12,29 @@ type IProps = IBaseProps & {
   t: I18next.TranslationFunction;
 }
 
+export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFunction): string[] {
+  let result: string[] = [];
+
+  if (plugin.isMaster) {
+    result.push(t('Master'));
+  }
+
+  if (plugin.isNative) {
+    result.push(t('Native'));
+  }
+
+  switch (plugin.cleanliness) {
+    case 'dirty': {
+      result.push(t('Dirty'));
+    } break;
+    case 'do_not_clean': {
+      result.push(t('Don\'t clean'));
+    } break;
+    default: break;
+  }
+  return result;
+}
+
 const PluginFlags = (props: IProps): JSX.Element => {
   const {plugin, t} = props;
 

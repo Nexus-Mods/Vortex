@@ -1,8 +1,5 @@
 import {setPluginEnabled, setPluginOrder} from '../actions/loadOrder';
-import {
-  setAutoSortEnabled,
-  setPluginlistAttributeSort,
-  setPluginlistAttributeVisible} from '../actions/settings';
+import {setAutoSortEnabled} from '../actions/settings';
 import {ILoadOrder} from '../types/ILoadOrder';
 import {
   IPluginCombined,
@@ -11,16 +8,16 @@ import {
   IPlugins,
 } from '../types/IPlugins';
 
-import PluginFlags from './PluginFlags';
+import PluginFlags, {getPluginFlags} from './PluginFlags';
 
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import {SimpleMessage} from 'loot';
-import {ComponentEx, HeaderCell, IconBar, tooltip, types, util} from 'nmm-api';
+import {ComponentEx, ITableRowAction, IconBar,
+        Table, tooltip, types, util} from 'nmm-api';
 import * as React from 'react';
 import update = require('react-addons-update');
-import {Alert, Checkbox, ControlLabel, FormControl, FormGroup,
-        ListGroup, ListGroupItem, Table} from 'react-bootstrap';
+import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
 import {translate} from 'react-i18next';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 import {connect} from 'react-redux';
@@ -39,13 +36,10 @@ interface IConnectedProps {
   loadOrder: { [name: string]: ILoadOrder };
   listState: { [attribute: string]: types.IAttributeState };
   autoSort: boolean;
-  language: string;
   lootActivity: string;
 }
 
 interface IActionProps {
-  onSetAttributeVisible: (attributeId: string, visible: boolean) => void;
-  onSetAttributeSort: (attributeId: string, dir: types.SortDirection) => void;
   onSetPluginEnabled: (pluginName: string, enabled: boolean) => void;
   onSetAutoSortEnabled: (enabled: boolean) => void;
   onSetPluginOrder: (pluginOrder: string[]) => void;
@@ -66,7 +60,7 @@ const pluginAttributes: types.ITableAttribute[] = [
     isToggleable: false,
     edit: {},
     isSortable: true,
-    calc: (attributes: any) => attributes.name,
+    calc: (plugin: IPluginCombined) => plugin.name,
     placement: 'both',
   },
   {
@@ -76,8 +70,17 @@ const pluginAttributes: types.ITableAttribute[] = [
     isToggleable: true,
     edit: {},
     isSortable: false,
-    calc: (attributes: any, t) => <PluginFlags plugin={attributes} t={t} />,
-    placement: 'both',
+    customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
+      <PluginFlags plugin={plugin} t={t} />,
+    calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t).length,
+    placement: 'table',
+  },
+  {
+    id: 'flags-detail',
+    name: 'Flags',
+    edit: {},
+    calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),
+    placement: 'detail',
   },
   {
     id: 'loadOrder',
@@ -86,8 +89,8 @@ const pluginAttributes: types.ITableAttribute[] = [
     isToggleable: true,
     edit: {},
     isSortable: true,
-    calc: (attributes: any) => attributes.loadOrder,
-    placement: 'both',
+    calc: (plugin: IPluginCombined) => plugin.loadOrder,
+    placement: 'table',
   },
   {
     id: 'modIndex',
@@ -96,8 +99,23 @@ const pluginAttributes: types.ITableAttribute[] = [
     isToggleable: true,
     edit: {},
     isSortable: true,
-    calc: (attributes: any) => toHex(attributes.modIndex),
-    placement: 'both',
+    calc: (plugin: IPluginCombined) => toHex(plugin.modIndex),
+    placement: 'table',
+  },
+  {
+    id: 'masters',
+    name: 'Masters',
+    edit: {},
+    calc: (plugin: IPluginCombined) => plugin.masterList,
+    placement: 'detail',
+  },
+  {
+    id: 'loot_messages',
+    name: 'Loot Messages',
+    edit: {},
+    customRenderer: this.renderLootMessages,
+    calc: (plugin: IPluginCombined) => plugin.messages,
+    placement: 'detail',
   },
 ];
 
@@ -112,19 +130,10 @@ function toHex(num: number) {
   return res;
 }
 
-function standardSort(lhs: any, rhs: any): number {
-  if (lhs === undefined) {
-    return -1;
-  } else if (rhs === undefined) {
-    return 1;
-  }
-  return lhs < rhs ? -1
-      : lhs === rhs ? 0
-          : 1;
-}
-
 class PluginList extends ComponentEx<IProps, IComponentState> {
   private staticButtons: types.IIconDefinition[];
+  private pluginEnabledAttribute: types.ITableAttribute;
+  private actions: ITableRowAction[];
 
   constructor(props) {
     super(props);
@@ -134,6 +143,36 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       pluginsLoot: {},
     };
     const {t, onSetAutoSortEnabled} = props;
+
+    this.actions = [
+      {
+        icon: 'check-square-o',
+        title: 'Enable selected',
+        action: this.enableSelected,
+        singleRowAction: false,
+      },
+      {
+        icon: 'square-o',
+        title: 'Disable selected',
+        action: this.disableSelected,
+        singleRowAction: false,
+      },
+    ];
+
+    this.pluginEnabledAttribute = {
+      id: 'enabled',
+      name: 'Enabled',
+      description: 'Is plugin enabled in current profile',
+      icon: 'check-o',
+      calc: (plugin: IPluginCombined) => plugin.enabled,
+      placement: 'table',
+      isToggleable: false,
+      edit: {
+        onChangeValue: (pluginId: string, value: any) => props.onSetPluginEnabled(pluginId, value),
+      },
+      isSortable: false,
+    };
+
     this.staticButtons = [
       {
         component: tooltip.ToggleButton,
@@ -197,15 +236,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, plugins, listState, lootActivity } = this.props;
-    const { selectedPlugin } = this.state;
+    const { t, plugins, lootActivity } = this.props;
 
-    const visibleAttributes: types.ITableAttribute[] =
-      this.visibleAttributes(pluginAttributes, listState);
-    let sorted: IPluginCombined[] = this.sortedPlugins(Object.keys(plugins));
-
-    let selected: IPluginCombined = selectedPlugin === undefined ? undefined :
-      sorted.find((plugin: IPluginCombined) => plugin.name === selectedPlugin);
+    const detailed = this.detailedPlugins(Object.keys(plugins));
 
     return (
       <Layout type='column'>
@@ -223,68 +256,35 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           </Layout>
         </Fixed>
         <Flex>
-          <Layout type='row'>
-            <Flex style={{ height: '100%', overflowY: 'auto' }}>
-              <Table bordered condensed hover>
-                <thead>
-                  <tr>
-                    <th>{t('Enabled')}</th>
-                    {visibleAttributes.map((attribute) => this.renderHeader(attribute))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sorted.map((plugin) => this.renderPlugin(plugin, visibleAttributes))}
-                </tbody>
-              </Table>
-            </Flex>
-            <Fixed style={{ height: '100%', overflowY: 'auto' }}>
-              {this.renderPluginDetails(selected)}
-            </Fixed>
-          </Layout>
+          <Table
+            tableId='gamebryo-plugins'
+            actions={this.actions}
+            staticElements={[this.pluginEnabledAttribute, ...pluginAttributes]}
+            data={detailed}
+          />
         </Flex>
       </Layout>
     );
   }
 
-  private visibleAttributes(attributes: types.ITableAttribute[],
-                            attributeStates: IAttributeStateMap): types.ITableAttribute[] {
-    return attributes.filter((attribute: types.ITableAttribute) => {
-      if (!attributeStates.hasOwnProperty(attribute.id)) {
-        return true;
-      } else {
-        return util.getSafe(attributeStates, [attribute.id, 'enabled'], true);
+  private enableSelected = (pluginIds: string[]) => {
+    const { listState, onSetPluginEnabled } = this.props;
+
+    pluginIds.forEach((key: string) => {
+      if (!util.getSafe(listState, [key, 'enabled'], false)) {
+        onSetPluginEnabled(key, true);
       }
     });
   }
 
-  private renderHeader = (attribute: types.ITableAttribute) => {
-    const { t, listState } = this.props;
-    const defaultState: types.IAttributeState = {
-      enabled: true,
-      sortDirection: 'none',
-    };
-    return (
-      <HeaderCell
-        key={attribute.id}
-        attribute={attribute}
-        state={listState[attribute.id] || defaultState}
-        t={t}
-        onSetSortDirection={this.setSortDirection}
-      />
-    );
-  }
+  private disableSelected = (pluginIds: string[]) => {
+    const { listState, onSetPluginEnabled } = this.props;
 
-  private setSortDirection = (id: string, direction: types.SortDirection) => {
-    const { listState, onSetAttributeSort } = this.props;
-
-    // reset all other columns because we can't really support multisort with this ui
-    for (let testId of Object.keys(listState)) {
-      if ((id !== testId) && (listState[testId].sortDirection !== 'none')) {
-        onSetAttributeSort(testId, 'none');
+    pluginIds.forEach((key: string) => {
+      if (!listState[key].enabled) {
+        onSetPluginEnabled(key, false);
       }
-    }
-
-    onSetAttributeSort(id, direction);
+    });
   }
 
   private updateModIndex(pluginObjects: IPluginCombined[]) {
@@ -318,21 +318,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private sortedPlugins(pluginNames: string[]): IPluginCombined[] {
-    const { plugins, listState, loadOrder, language } = this.props;
+  private detailedPlugins(pluginNames: string[]): { [id: string]: IPluginCombined } {
+    const { plugins, loadOrder } = this.props;
     const {pluginsLoot, pluginsParsed} = this.state;
-    let sortAttribute: types.ITableAttribute =
-        pluginAttributes.find((attribute: types.ITableAttribute) => {
-            return (listState[attribute.id] !== undefined)
-                && (listState[attribute.id].sortDirection !== 'none');
-    });
-
-    let sortFunction;
-    if ((sortAttribute === undefined) || (sortAttribute.sortFunc === undefined)) {
-      sortFunction = standardSort;
-    } else {
-      sortFunction = sortAttribute.sortFunc;
-    }
 
     let pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) => {
       return Object.assign({}, plugins[pluginName], loadOrder[pluginName],
@@ -344,123 +332,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     this.updateModIndex(pluginObjects);
 
-    if (sortAttribute === undefined) {
-      return pluginObjects;
-    }
-
-    return pluginObjects.sort((lhs: IPluginCombined, rhs: IPluginCombined): number => {
-      let res = sortFunction(lhs[sortAttribute.id], rhs[sortAttribute.id], language);
-
-      if (listState[sortAttribute.id].sortDirection === 'desc') {
-        res *= -1;
-      }
-      return res;
+    let result: { [id: string]: IPluginCombined } = {};
+    pluginObjects.forEach((plugin: IPluginCombined) => {
+      result[plugin.name] = plugin;
     });
-  }
 
-  private renderPlugin = (plugin: IPluginCombined,
-                          visibleAttributes: types.ITableAttribute[]): JSX.Element => {
-    return (
-      <tr
-        key={plugin.name}
-        id={`row-${plugin.name}`}
-        onClick={this.selectPlugin}
-      >
-        <td>
-          <Checkbox
-            id={`checkbox-${plugin.name}`}
-            checked={plugin.enabled || plugin.isNative}
-            disabled={plugin.isNative}
-            onChange={this.togglePlugin}
-          />
-        </td>
-        {visibleAttributes.map((attribute) => this.renderAttribute(attribute, plugin))}
-      </tr>
-    );
-  }
-
-  private renderAttribute = (attribute: types.ITableAttribute, plugin: IPluginCombined) => {
-    let { t } = this.props;
-    return <td key={`td-${plugin.name}-${attribute.id}`}>{attribute.calc(plugin, t)}</td>;
-  }
-
-  private selectPlugin = (evt: React.MouseEvent<any>) => {
-    const row = (evt.currentTarget as HTMLTableRowElement);
-    this.setState(update(this.state, {
-      selectedPlugin: { $set: row.id.split('-').slice(1).join('-') },
-    }));
-  }
-
-  private togglePlugin = (evt: React.MouseEvent<any>) => {
-    const { loadOrder } = this.props;
-    let box = (evt.currentTarget as HTMLInputElement);
-    let pluginName = box.id.split('-').slice(1).join('-');
-    let lo = loadOrder[pluginName];
-    this.props.onSetPluginEnabled(pluginName, (lo === undefined) || !lo.enabled);
-  }
-
-  private renderPluginDetails = (plugin: IPluginCombined) => {
-    const { t } = this.props;
-
-    if (plugin === undefined) {
-      return null;
-    }
-
-    return (
-      <form style={{ minWidth: 300 }}>
-        <FormGroup>
-          <ControlLabel>{t('Filename')}</ControlLabel>
-          <FormControl
-            id='ctrl-plugin-filename'
-            type='text'
-            readOnly={true}
-            value={plugin.name}
-          />
-        </FormGroup>
-        <FormGroup>
-          <ControlLabel>{t('Description')}</ControlLabel>
-          <FormControl
-            id='ctrl-plugin-description'
-            componentClass='textarea'
-            readOnly={true}
-            value={plugin.description}
-            rows={6}
-          />
-          <Checkbox checked={plugin.isMaster} readOnly={true}>
-            { t('Is a master') }
-          </Checkbox>
-        </FormGroup>
-        <FormGroup>
-          <ControlLabel>{t('Author')}</ControlLabel>
-          <FormControl
-            id='ctrl-plugin-author'
-            type='text'
-            readOnly={true}
-            value={plugin.author}
-          />
-        </FormGroup>
-        <FormGroup>
-          <ControlLabel>{t('Required Masters')}</ControlLabel>
-          { this.renderMasterList(plugin) }
-        </FormGroup>
-        <FormGroup>
-          <ControlLabel>{t('Messages (LOOT)')}</ControlLabel>
-          { this.renderLootMessages(plugin) }
-        </FormGroup>
-      </form>
-    );
-  }
-
-  private renderMasterList = (plugin: IPluginCombined) => {
-    if (plugin.masterList === undefined) {
-      return null;
-    }
-
-    return (
-      <ListGroup>
-        {plugin.masterList.map((m) => <ListGroupItem key={m}>{m}</ListGroupItem>)}
-      </ListGroup>
-    );
+    return result;
   }
 
   private translateLootMessageType(input: string) {
@@ -499,7 +376,6 @@ function mapStateToProps(state: any): IConnectedProps {
     loadOrder: state.loadOrder,
     listState: state.settings.plugins.pluginlistState || {},
     autoSort: state.settings.plugins.autoSort,
-    language: state.settings.interface.language,
   };
 }
 
@@ -507,12 +383,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetPluginEnabled: (pluginName: string, enabled: boolean) =>
       dispatch(setPluginEnabled(pluginName, enabled)),
-    onSetAttributeVisible: (attributeId: string, visible: boolean) => {
-      dispatch(setPluginlistAttributeVisible(attributeId, visible));
-    },
-    onSetAttributeSort: (attributeId: string, dir: types.SortDirection) => {
-      dispatch(setPluginlistAttributeSort(attributeId, dir));
-    },
     onSetAutoSortEnabled: (enabled: boolean) => {
       dispatch(setAutoSortEnabled(enabled));
     },

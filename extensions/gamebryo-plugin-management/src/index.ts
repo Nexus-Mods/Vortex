@@ -123,6 +123,8 @@ function init(context: IExtensionContextExt) {
     }
   }
 
+  context.registerStyle(path.join(__dirname, 'plugin_management.scss'));
+
   context.registerReducer(['session', 'plugins'], pluginsReducer);
   context.registerReducer(['loadOrder'], loadOrderReducer);
   context.registerReducer(['settings', 'plugins'], settingsReducer);

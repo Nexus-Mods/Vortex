@@ -9,6 +9,7 @@ import SortIndicator from './SortIndicator';
 import * as React from 'react';
 
 export interface IHeaderProps {
+  className: string;
   attribute: ITableAttribute;
   state: IAttributeState;
   onSetSortDirection: (id: string, dir: SortDirection) => void;
@@ -17,9 +18,9 @@ export interface IHeaderProps {
 
 class HeaderCell extends React.Component<IHeaderProps, {}> {
   public render(): JSX.Element {
-    const { attribute, t } = this.props;
+    const { t, attribute, className } = this.props;
     return (
-      <th key={attribute.id}>
+      <th className={className} key={attribute.id}>
         <div>{ t(attribute.name) }
         { attribute.isSortable ? this.renderIndicator() : null }
         </div>

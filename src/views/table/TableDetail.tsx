@@ -5,7 +5,7 @@ import FormFeedback from '../FormFeedbackAwesome';
 import FormInput from '../FormInput';
 
 import * as React from 'react';
-import {ControlLabel, FormControl, FormGroup} from 'react-bootstrap';
+import {ControlLabel, FormControl, FormGroup, ListGroup, ListGroupItem} from 'react-bootstrap';
 
 interface ICellProps {
   language: string;
@@ -48,19 +48,19 @@ class DetailCell extends React.Component<ICellProps, {}> {
             </FormControl>
           );
         } else if (attribute.edit.validate !== undefined) {
-        content = (
-          <FormGroup
-            validationState={attribute.edit.validate(value)}
-          >
-            <FormInput
-              id={attribute.id}
-              type='text'
-              label={t(attribute.name)}
-              value={this.renderCell(value)}
-              onChange={this.changeCell}
-            />
-            <FormFeedback />
-          </FormGroup>
+          content = (
+            <FormGroup
+              validationState={attribute.edit.validate(value)}
+            >
+              <FormInput
+                id={attribute.id}
+                type='text'
+                label={t(attribute.name)}
+                value={this.renderCell(value)}
+                onChange={this.changeCell}
+              />
+              <FormFeedback />
+            </FormGroup>
           );
         } else {
           content = (
@@ -74,6 +74,14 @@ class DetailCell extends React.Component<ICellProps, {}> {
             />
           );
         }
+      } else if (Array.isArray(value)) {
+        let idx = 0;
+        content = (
+          <ListGroup>
+            {value.map((val: any) =>
+                <ListGroupItem key={`${attribute.id}-${idx++}`}>{val}</ListGroupItem>)}
+          </ListGroup>
+        );
       } else {
         content = (
           <FormControl

@@ -43,10 +43,16 @@ class LootInterface {
       if (store.getState().settings.plugins.autoSort && (this.mLoot !== undefined)) {
         const t = this.mExtensionApi.translate;
         this.enqueue(t('Sorting plugins'), () => {
-          let pluginNames: string[] = Object.keys(store.getState().loadOrder);
-          let sorted: string[] = this.mLoot.sortPlugins(pluginNames);
-          store.dispatch(setPluginOrder(sorted));
-          return Promise.resolve();
+          return new Promise<void>((resolve, reject) => {
+            const state = store.getState();
+            let pluginNames: string[] = Object.keys(state.loadOrder);
+            pluginNames = pluginNames.filter((name: string) =>
+              state.session.plugins.pluginList[name] !== undefined
+            );
+            let sorted: string[] = this.mLoot.sortPlugins(pluginNames);
+            store.dispatch(setPluginOrder(sorted));
+            resolve();
+          });
         });
       }
       return Promise.resolve();

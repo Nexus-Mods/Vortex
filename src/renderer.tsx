@@ -4,6 +4,7 @@
 
 import 'source-map-support/register';
 
+import * as path from 'path';
 import * as ReactDOM from 'react-dom';
 
 if (process.env.NODE_ENV === 'production') {
@@ -19,6 +20,10 @@ if (process.env.NODE_ENV === 'production') {
 
   process.env = JSON.parse(JSON.stringify(process.env));
 }
+
+process.env.SASS_BINARY_PATH = path.resolve(
+  path.dirname(path.dirname(require.resolve('node-sass'))), 'bin',
+  `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
 
 import reducer from './reducers/index';
 import DevToolsType from './util/DevTools';
