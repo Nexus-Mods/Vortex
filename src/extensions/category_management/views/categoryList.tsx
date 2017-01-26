@@ -10,7 +10,7 @@ import { Button } from '../../../views/TooltipControls';
 
 import { renameCategory, updateCategories } from '../actions/category';
 import {
-  setHidedCategories, setSearchFocusIndex, setSearchFoundCount,
+  setHiddenCategories, setSearchFocusIndex, setSearchFoundCount,
   setSearchString, setTreeDataObject,
 } from '../actions/session';
 import { ICategoryDictionary } from '../types/IcategoryDictionary';
@@ -35,7 +35,7 @@ interface IActionProps {
     actions: DialogActions) => Promise<IDialogResult>;
   onSetSearchFocusIndex: (focusIndex: number) => void;
   onSetSearchFoundCount: (foundCount: number) => void;
-  onSetHidedCategories: (isHidden: boolean) => void;
+  onSetHiddenCategories: (isHidden: boolean) => void;
   onSetSearchString: (text: string) => void;
   onSetTreeDataObject: (tree: {}) => void;
 }
@@ -49,7 +49,7 @@ interface IConnectedProps {
   searchFoundCount: number;
   treeDataObject: {};
   mods: any;
-  isHided: boolean;
+  isHidden: boolean;
 }
 
 interface IComponentState {
@@ -194,14 +194,14 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private hideShowCategories = () => {
-    const {categories, gameMode, isHided, mods,
-       onShowError, onSetHidedCategories, onSetTreeDataObject} = this.props;
+    const {categories, gameMode, isHidden, mods,
+       onShowError, onSetHiddenCategories, onSetTreeDataObject} = this.props;
 
     try {
       let createdTree = createTreeDataObject(categories[gameMode],
-       mods, isHided !== undefined ? !isHided : false);
+       mods, isHidden !== undefined ? !isHidden : false);
       onSetTreeDataObject(createdTree);
-      onSetHidedCategories(!isHided);
+      onSetHiddenCategories(!isHidden);
 
     } catch (err) {
       onShowError('An error occurred hiding/showing the empty categories', err);
@@ -275,7 +275,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private addCategory = ({ node, path }) => {
-    const {categories, gameMode, isHided, mods, onShowDialog, onShowError,
+    const {categories, gameMode, isHidden, mods, onShowDialog, onShowError,
       onSetTreeDataObject, onUpdateCategories, t, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     let addCategory = true;
@@ -322,11 +322,11 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
               let updatedTree = treeFunctions.addNodeUnderParent(newTree);
 
               onSetTreeDataObject(updatedTree.treeData);
-              if (isHided) {
+              if (isHidden) {
                 this.hideShowCategories();
               }
 
-              if (isHided !== undefined && !isHided) {
+              if (isHidden !== undefined && !isHidden) {
                 let categoryDictionary: ICategoryDictionary =
                  createCategoryDictionary(updatedTree.treeData);
                 onUpdateCategories(gameMode, categoryDictionary);
@@ -341,7 +341,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private addRootCategory = () => {
-    const {categories, gameMode, isHided, mods, onShowDialog, onShowError,
+    const {categories, gameMode, isHidden, mods, onShowDialog, onShowError,
       onSetTreeDataObject, onUpdateCategories, t, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     let addCategory = true;
@@ -388,11 +388,11 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
               let updatedTree = treeFunctions.addNodeUnderParent(newTree);
 
               onSetTreeDataObject(updatedTree.treeData);
-              if (isHided) {
+              if (isHidden) {
                 this.hideShowCategories();
               }
 
-              if (isHided !== undefined && !isHided) {
+              if (isHidden !== undefined && !isHidden) {
                 let categoryDictionary: ICategoryDictionary =
                  createCategoryDictionary(updatedTree.treeData);
                 onUpdateCategories(gameMode, categoryDictionary);
@@ -440,11 +440,11 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private loadTree() {
-    const { categories, gameMode, isHided,  mods, onShowError,
-       onSetHidedCategories, onSetTreeDataObject} = this.props;
+    const { categories, gameMode, isHidden,  mods, onShowError,
+       onSetHiddenCategories, onSetTreeDataObject} = this.props;
 
-    if (isHided === undefined) {
-      onSetHidedCategories(false);
+    if (isHidden === undefined) {
+      onSetHiddenCategories(false);
     }
 
     if (categories[gameMode] !== undefined) {
@@ -474,7 +474,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   };
 
   private removeCategory = ({ path }) => {
-    const {gameMode, isHided, onShowError,
+    const {gameMode, isHidden, onShowError,
       onSetTreeDataObject, onUpdateCategories, treeDataObject} = this.props;
     let treeFunctions = require('react-sortable-tree');
     try {
@@ -489,11 +489,11 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
       let updatedTree = treeFunctions.removeNodeAtPath(newTree);
       onSetTreeDataObject(updatedTree);
 
-      if (isHided) {
+      if (isHidden) {
         this.hideShowCategories();
       }
 
-      if (isHided !== undefined && !isHided) {
+      if (isHidden !== undefined && !isHidden) {
           let categoryDictionary: ICategoryDictionary =
           createCategoryDictionary(updatedTree);
           onUpdateCategories(gameMode, categoryDictionary);
@@ -540,10 +540,10 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   }
 
   private updateTreeData = (treeDataObject: ITreeDataObject[]) => {
-    const { gameMode, isHided, onSetTreeDataObject,
+    const { gameMode, isHidden, onSetTreeDataObject,
        onUpdateCategories } = this.props;
     let categories: ICategoryDictionary = createCategoryDictionary(treeDataObject);
-    if (isHided !== undefined && !isHided) {
+    if (isHidden !== undefined && !isHidden) {
       onUpdateCategories(gameMode, categories);
     }
     onSetTreeDataObject(treeDataObject);
@@ -570,8 +570,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetSearchFoundCount: (foundCount: number) => {
       dispatch(setSearchFoundCount(foundCount));
     },
-    onSetHidedCategories: (isHided: boolean) => {
-      dispatch(setHidedCategories(isHided));
+    onSetHiddenCategories: (isHidden: boolean) => {
+      dispatch(setHiddenCategories(isHidden));
     },
     onSetTreeDataObject: (tree: {}) => {
       dispatch(setTreeDataObject(tree));
@@ -591,7 +591,7 @@ function mapStateToProps(state: any): IConnectedProps {
     searchFoundCount: state.session.categories.searchFoundCount,
     treeDataObject: state.session.categories.treeDataObject,
     mods: state.mods.mods,
-    isHided: state.session.categories.isHided,
+    isHidden: state.session.categories.isHidden,
   };
 }
 

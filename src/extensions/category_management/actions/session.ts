@@ -8,4 +8,4 @@ export const setSearchFoundCount: any = safeCreateAction('SET_SEARCH_FOUND_COUNT
 
 export const setTreeDataObject: any = safeCreateAction('SET_TREE_DATA_OBJECT');
 
-export const setHidedCategories: any = safeCreateAction('SET_HIDED_CATEGORIES');
+export const setHiddenCategories: any = safeCreateAction('SET_HIDDEN_CATEGORIES');

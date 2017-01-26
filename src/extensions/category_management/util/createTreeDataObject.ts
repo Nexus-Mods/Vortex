@@ -27,7 +27,7 @@ interface ICategoryTree {
   order: number;
 }
 
-function searchChildren(categories: Object, rootId: string, mods: any, hided: boolean) {
+function searchChildren(categories: Object, rootId: string, mods: any, hidden: boolean) {
   let children = Object.keys(categories)
   .filter((id: string) => (rootId === categories[id].parentCategory))
   .sort((lhs, rhs) => (categories[lhs].order - categories[rhs].order));
@@ -43,9 +43,9 @@ function searchChildren(categories: Object, rootId: string, mods: any, hided: bo
       expanded: false,
       parentId: categories[element].parentCategory,
       order: categories[element].order,
-      children: searchChildren(categories, element, mods, hided),
+      children: searchChildren(categories, element, mods, hidden),
     };
-    if (!hided) {
+    if (!hidden) {
       childrenList.push(child);
     } else if (subt !== '') {
       childrenList.push(child);
@@ -66,7 +66,7 @@ function searchChildren(categories: Object, rootId: string, mods: any, hided: bo
 
 function createTreeDataObject(
   categories: Object, mods: any,
-  hided: boolean) {
+  hidden: boolean) {
   let categoryList = [];
 
   let roots = Object.keys(categories)
@@ -89,9 +89,9 @@ function createTreeDataObject(
         expanded: false,
         parentId: categories[element].parentCategory,
         order: categories[element].order,
-        children: searchChildren(categories, element, mods, hided),
+        children: searchChildren(categories, element, mods, hidden),
       };
-      if (!hided) {
+      if (!hidden) {
         childrenList.push(child);
       } else if (subt !== '') {
         childrenList.push(child);
