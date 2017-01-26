@@ -1,4 +1,6 @@
 ﻿using System;
+using Components.Interface;
+using System.Threading.Tasks;
 
 namespace Components.Scripting.XmlScript
 {
@@ -18,38 +20,61 @@ namespace Components.Scripting.XmlScript
 		{
 		}
 
-		#endregion
+        #endregion
 
-		/// <summary>
-		/// Gets whether or not the condition is fulfilled.
-		/// </summary>
-		/// <remarks>
-		/// The dependency is fulfilled if the specified minimum version of
-		/// the game is installed.
-		/// </remarks>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns><c>true</c> if the condition is fulfilled;
-		/// <c>false</c> otherwise.</returns>
-		/// <seealso cref="ICondition.GetIsFulfilled(ConditionStateManager)"/>
-		public override bool GetIsFulfilled(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets whether or not the condition is fulfilled.
+        /// </summary>
+        /// <remarks>
+        /// The condition is fulfilled if the specified <see cref="File"/> is in the
+        /// specified <see cref="State"/>.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns><c>true</c> if the condition is fulfilled;
+        /// <c>false</c> otherwise.</returns>
+        /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
+        public override bool GetIsFulfilled(CoreDelegates coreDelegates)
 		{
-			Version verInstalledVersion = p_csmStateManager.GameVersion;
-			return ((verInstalledVersion != null) && (verInstalledVersion >= MinimumVersion));
+            Version GameVersion = new Version("0.0.0.0");
+
+            Task.Run(async () => {
+                string VersionString = await coreDelegates.context.GetCurrentGameVersion();
+
+                if (!string.IsNullOrEmpty(VersionString))
+                    GameVersion = new Version(VersionString);
+                else
+                    GameVersion = new Version("0.0.0.0");
+            }).Wait();
+
+            return ((GameVersion != null) && (GameVersion >= MinimumVersion));
 		}
 
-		/// <summary>
-		/// Gets a message describing whether or not the condition is fulfilled.
-		/// </summary>
-		/// If the dependency is fulfilled the message is "Passed." If the dependency is not fulfilled the
-		/// message informs the user of the installed version.
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns>A message describing whether or not the condition is fulfilled.</returns>
-		/// <seealso cref="ICondition.GetMessage(ConditionStateManager)"/>
-		public override string GetMessage(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets a message describing whether or not the condition is fulfilled.
+        /// </summary>
+        /// <remarks>
+        /// If the condition is fulfilled the message is "Passed." If the condition is not fulfilled the
+        /// message uses the pattern:
+        ///		File '&lt;file>' is not &lt;state>.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns>A message describing whether or not the condition is fulfilled.</returns>
+        /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
+		public override string GetMessage(CoreDelegates coreDelegates)
 		{
-			Version verInstalledVersion = p_csmStateManager.GameVersion;
-			if (verInstalledVersion < MinimumVersion)
-				return String.Format("This mod requires v{0} or higher of the game. You have {1}. Please update your game.", MinimumVersion, verInstalledVersion);
+            Version GameVersion = new Version("0.0.0.0");
+
+            Task.Run(async () => {
+                string VersionString = await coreDelegates.context.GetCurrentGameVersion();
+
+                if (!string.IsNullOrEmpty(VersionString))
+                    GameVersion = new Version(VersionString);
+                else
+                    GameVersion = new Version("0.0.0.0");
+            }).Wait();
+
+            if (GameVersion < MinimumVersion)
+				return string.Format("This mod requires v{0} or higher of the game. You have {1}. Please update your game.", MinimumVersion, GameVersion);
 			return "Passed";
 		}
 	}

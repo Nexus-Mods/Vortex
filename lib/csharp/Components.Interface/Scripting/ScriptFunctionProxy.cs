@@ -30,6 +30,12 @@ namespace Components.Interface
         /// <value>The mod for which the script is running.</value>
         protected Mod Mod { get; private set; }
 
+        /// <summary>
+        /// Gets the Core delegates component.
+        /// </summary>
+        /// <value>The Core delegates component.</value>
+        protected CoreDelegates Core { get; private set; }
+
         #endregion
 
         #region Constructors
@@ -38,9 +44,11 @@ namespace Components.Interface
         /// A simple constructor that initializes the object with the given values.
         /// </summary>
         /// <param name="scriptedMod">The mod for which the script is running.</param>
-        public ScriptFunctionProxy(Mod scriptedMod)
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        public ScriptFunctionProxy(Mod scriptedMod, CoreDelegates coreDelegates)
 		{
 			Mod = scriptedMod;
+            Core = coreDelegates;
 		}
 
 		#endregion
@@ -359,8 +367,16 @@ namespace Components.Interface
         /// <returns>The version of the mod manager.</returns>
         public virtual Version GetModManagerVersion()
 		{
-            // ??? A delegate should provide this info
-			return new Version("1.0.0.0");
+            Version AppVersion = new Version("0.0.0.0");
+            Task.Run(async () => {
+                string VersionString = await Core.context.GetAppVersion();
+
+                if (!string.IsNullOrEmpty(VersionString))
+                    AppVersion = new Version(VersionString);
+                else
+                    AppVersion = new Version("0.0.0.0");
+            }).Wait();
+            return AppVersion;
 		}
 
 		/// <summary>
@@ -370,8 +386,16 @@ namespace Components.Interface
 		/// is not installed.</returns>
 		public Version GetGameVersion()
 		{
-            // ??? A delegate should provide this info
-            return new Version("1.0.0.0");
+            Version GameVersion = new Version("0.0.0.0");
+            Task.Run(async () => {
+                string VersionString = await Core.context.GetCurrentGameVersion();
+
+                if (!string.IsNullOrEmpty(VersionString))
+                    GameVersion = new Version(VersionString);
+                else
+                    GameVersion = new Version("0.0.0.0");
+            }).Wait();
+            return GameVersion;
         }
 
 		#endregion
@@ -384,8 +408,13 @@ namespace Components.Interface
 		/// <returns>A list of all installed plugins.</returns>
 		public string[] GetAllPlugins()
 		{
-            // ??? This value should be returned by the plugin delegate
-            return null;
+            string[] ManagedPlugins = null;
+
+            Task.Run(async () => {
+                ManagedPlugins = await Core.plugin.GetAll(false);
+            }).Wait();
+
+            return ManagedPlugins;
 		}
 
 		#region Plugin Activation Management
@@ -396,9 +425,14 @@ namespace Components.Interface
 		/// <returns>A list of currently active plugins.</returns>
 		public string[] GetActivePlugins()
 		{
-            // ??? This value should be returned by the plugin delegate
-            return null;
-		}
+            string[] ManagedPlugins = null;
+
+            Task.Run(async () => {
+                ManagedPlugins = await Core.plugin.GetAll(true);
+            }).Wait();
+
+            return ManagedPlugins;
+        }
 
 		/// <summary>
 		/// Sets the activated status of a plugin (i.e., and esp or esm file).

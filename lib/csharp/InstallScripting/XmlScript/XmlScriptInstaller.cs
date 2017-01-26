@@ -38,17 +38,17 @@ namespace Components.Scripting.XmlScript
         /// Performs the mod installation based on the XML script.
         /// </summary>
         /// <param name="xscScript">The script that is executing.</param>
-        /// <param name="stateManager">The state manager managing the install state.</param>
+        /// <param name="coreDelegates">The Core delegates component.</param>
         /// <param name="filesToInstall">The list of files to install.</param>
         /// <param name="pluginsToActivate">The list of plugins to activate.</param>
         /// <returns><c>true</c> if the installation succeeded;
         /// <c>false</c> otherwise.</returns>
-        public bool Install(XmlScript xscScript, ConditionStateManager stateManager, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
+        public bool Install(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
 		{
 			bool booSuccess = false;
 			try
 			{
-				booSuccess = InstallFiles(xscScript, stateManager, filesToInstall, pluginsToActivate);
+				booSuccess = InstallFiles(xscScript, coreDelegates, filesToInstall, pluginsToActivate);
 			}
 			catch (Exception ex)
 			{
@@ -62,10 +62,10 @@ namespace Components.Scripting.XmlScript
         /// Installs and activates files are required. This method is used by the background worker.
         /// </summary>
         /// <param name="xscScript">The script that is executing.</param>
-        /// <param name="stateManager">The state manager managing the install state.</param>
+        /// <param name="coreDelegates">The Core delegates component.</param>
         /// <param name="filesToInstall">The list of files to install.</param>
         /// <param name="pluginsToActivate">The list of plugins to activate.</param>
-        protected bool InstallFiles(XmlScript xscScript, ConditionStateManager stateManager, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
+        protected bool InstallFiles(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
 		{
 			IList<InstallableFile> lstRequiredFiles = xscScript.RequiredInstallFiles;
 			IList<ConditionallyInstalledFileSet> lstConditionallyInstalledFileSets = xscScript.ConditionallyInstalledFileSets;
@@ -84,7 +84,7 @@ namespace Components.Scripting.XmlScript
 
 			foreach (ConditionallyInstalledFileSet cisFileSet in lstConditionallyInstalledFileSets)
 			{
-				if (cisFileSet.Condition.GetIsFulfilled(stateManager))
+				if (cisFileSet.Condition.GetIsFulfilled(coreDelegates))
 					foreach (InstallableFile ilfFile in cisFileSet.Files)
 					{
 						if (!InstallFile(ilfFile))

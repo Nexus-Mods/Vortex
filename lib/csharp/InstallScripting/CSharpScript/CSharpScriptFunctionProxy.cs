@@ -8,14 +8,15 @@ namespace Components.Scripting.CSharpScript
 	/// </summary>
 	public class CSharpScriptFunctionProxy : ScriptFunctionProxy
 	{
-		#region Constructors
+        #region Constructors
 
-		/// <summary>
-		/// A simple constructor that initializes the object with the given values.
-		/// </summary>
-		/// <param name="p_modMod">The mod for which the script is running.</param>
-		public CSharpScriptFunctionProxy(Mod p_modMod)
-			: base(p_modMod)
+        /// <summary>
+        /// A simple constructor that initializes the object with the given values.
+        /// </summary>
+        /// <param name="scriptedMod">The mod for which the script is running.</param>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        public CSharpScriptFunctionProxy(Mod scriptedMod, CoreDelegates coreDelegates)
+			: base(scriptedMod, coreDelegates)
 		{
 		}
 

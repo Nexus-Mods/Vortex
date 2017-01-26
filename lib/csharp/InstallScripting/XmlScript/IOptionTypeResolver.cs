@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Components.Interface;
 
 namespace Components.Scripting.XmlScript
 {
@@ -40,11 +40,11 @@ namespace Components.Scripting.XmlScript
 	/// </summary>
 	public interface IOptionTypeResolver
 	{
-		/// <summary>
-		/// Determines the option type based on the given install state.
-		/// </summary>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns>The option type.</returns>
-		OptionType ResolveOptionType(ConditionStateManager p_csmStateManager);
+        /// <summary>
+        /// Determines the option type based on the given install state.
+        /// </summary>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns>The option type.</returns>
+        OptionType ResolveOptionType(CoreDelegates coreDelegates);
 	}
 }

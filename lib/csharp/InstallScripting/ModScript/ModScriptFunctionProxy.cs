@@ -29,14 +29,15 @@ namespace Components.Scripting.ModScript
 	{
 		private Dictionary<string, string> m_dicCopiedFileMappings = new Dictionary<string, string>();
 
-		#region Constructors
+        #region Constructors
 
-		/// <summary>
-		/// A simple constructor that initializes the object with the given values.
-		/// </summary>
-		/// <param name="p_modMod">The mod for which the script is running.</param>
-		public ModScriptFunctionProxy(Mod modArchive)
-			: base(modArchive)
+        /// <summary>
+        /// A simple constructor that initializes the object with the given values.
+        /// </summary>
+        /// <param name="modArchive">The mod for which the script is running.</param>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        public ModScriptFunctionProxy(Mod modArchive, CoreDelegates coreDelegates)
+			: base(modArchive, coreDelegates)
  		{
  		}
 

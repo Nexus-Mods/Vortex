@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Components.Interface;
 
 namespace Components.Scripting.XmlScript
 {
@@ -7,19 +7,30 @@ namespace Components.Scripting.XmlScript
 	/// </summary>
 	public interface ICondition
 	{
-		/// <summary>
-		/// Gets whether or not the condition is fulfilled.
-		/// </summary>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns><c>true</c> if the condition is fulfilled;
-		/// <c>false</c> otherwise.</returns>
-		bool GetIsFulfilled(ConditionStateManager p_csmStateManager);
+        /// <summary>
+        /// Gets whether or not the condition is fulfilled.
+        /// </summary>
+        /// <remarks>
+        /// The condition is fulfilled if the specified <see cref="File"/> is in the
+        /// specified <see cref="State"/>.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns><c>true</c> if the condition is fulfilled;
+        /// <c>false</c> otherwise.</returns>
+        /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
+		bool GetIsFulfilled(CoreDelegates coreDelegates);
 
-		/// <summary>
-		/// Gets a message describing whether or not the condition is fulfilled.
-		/// </summary>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns>A message describing whether or not the condition is fulfilled.</returns>
-		string GetMessage(ConditionStateManager p_csmStateManager);
+        /// <summary>
+        /// Gets a message describing whether or not the condition is fulfilled.
+        /// </summary>
+        /// <remarks>
+        /// If the condition is fulfilled the message is "Passed." If the condition is not fulfilled the
+        /// message uses the pattern:
+        ///		File '&lt;file>' is not &lt;state>.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns>A message describing whether or not the condition is fulfilled.</returns>
+        /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
+		string GetMessage(CoreDelegates coreDelegates);
 	}
 }

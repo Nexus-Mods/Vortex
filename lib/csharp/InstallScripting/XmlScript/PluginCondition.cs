@@ -1,6 +1,5 @@
-﻿using System;
-using Utils;
-using System.IO;
+﻿using System.Threading.Tasks;
+using Components.Interface;
 
 namespace Components.Scripting.XmlScript
 {
@@ -74,57 +73,71 @@ namespace Components.Scripting.XmlScript
 			m_strPluginPath = p_strPluginPath;
 		}
 
-		#endregion
+        #endregion
 
-		#region ICondition Members
+        #region ICondition Members
 
-		/// <summary>
-		/// Gets whether or not the condition is fulfilled.
-		/// </summary>
-		/// <remarks>
-		/// The condition is fulfilled if the specified <see cref="File"/> is in the
-		/// specified <see cref="State"/>.
-		/// </remarks>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns><c>true</c> if the condition is fulfilled;
-		/// <c>false</c> otherwise.</returns>
-		/// <seealso cref="ICondition.GetIsFulfilled(ConditionStateManager)"/>
-		public bool GetIsFulfilled(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets whether or not the condition is fulfilled.
+        /// </summary>
+        /// <remarks>
+        /// The condition is fulfilled if the specified <see cref="File"/> is in the
+        /// specified <see cref="State"/>.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns><c>true</c> if the condition is fulfilled;
+        /// <c>false</c> otherwise.</returns>
+        /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
+        public bool GetIsFulfilled(CoreDelegates coreDelegates)
 		{
-			string strPluginPath = m_strPluginPath;
+			string PluginPath = m_strPluginPath;
+            bool active = false;
+            bool present = false;
 
-            // ??? Plugin delegate
-			//if (p_csmStateManager != null)
-			//{
-			//	switch (m_pnsState)
-			//	{
-			//		case PluginState.Active:
-			//			return p_csmStateManager.PluginManager.IsPluginActive(strPluginPath);
-			//		case PluginState.Inactive:
-			//			return (p_csmStateManager.PluginManager.IsPluginRegistered(strPluginPath) && !p_csmStateManager.PluginManager.IsPluginActive(strPluginPath));
-			//		case PluginState.Missing:
-			//			return !p_csmStateManager.PluginManager.IsPluginRegistered(strPluginPath);
-			//	}
-			//}
-			return false;
+            if (coreDelegates != null)
+            {
+                switch (m_pnsState)
+                {
+                    case PluginState.Active:
+                        Task.Run(async () => {
+                            active = await coreDelegates.plugin.IsActive(PluginPath);
+                        }).Wait();
+
+                        return active;
+                    case PluginState.Inactive:
+                        Task.Run(async () => {
+                            active = await coreDelegates.plugin.IsActive(PluginPath);
+                            present = await coreDelegates.plugin.IsPresent(PluginPath);
+                        }).Wait();
+
+                        return (present && !active);
+                    case PluginState.Missing:
+                        Task.Run(async () => {
+                            present = await coreDelegates.plugin.IsPresent(PluginPath);
+                        }).Wait();
+
+                        return present;
+                }
+            }
+            return false;
 		}
 
-		/// <summary>
-		/// Gets a message describing whether or not the condition is fulfilled.
-		/// </summary>
-		/// <remarks>
-		/// If the condition is fulfilled the message is "Passed." If the condition is not fulfilled the
-		/// message uses the pattern:
-		///		File '&lt;file>' is not &lt;state>.
-		/// </remarks>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns>A message describing whether or not the condition is fulfilled.</returns>
-		/// <seealso cref="ICondition.GetMessage(ConditionStateManager)"/>
-		public string GetMessage(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets a message describing whether or not the condition is fulfilled.
+        /// </summary>
+        /// <remarks>
+        /// If the condition is fulfilled the message is "Passed." If the condition is not fulfilled the
+        /// message uses the pattern:
+        ///		File '&lt;file>' is not &lt;state>.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns>A message describing whether or not the condition is fulfilled.</returns>
+        /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
+        public string GetMessage(CoreDelegates coreDelegates)
 		{
-			if (GetIsFulfilled(p_csmStateManager))
+			if (GetIsFulfilled(coreDelegates))
 				return "Passed";
-			return String.Format("File '{0}' is not {1}.", PluginPath, State.ToString());
+			return string.Format("File '{0}' is not {1}.", PluginPath, State.ToString());
 		}
 
 		#endregion

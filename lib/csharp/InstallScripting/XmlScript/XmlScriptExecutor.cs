@@ -53,9 +53,8 @@ namespace Components.Scripting.XmlScript
 
             XmlScript xscScript = (XmlScript)scpScript;
 
-            ConditionStateManager csmStateManager = ((XmlScriptType)xscScript.Type).CreateConditionStateManager();
-            if ((xscScript.ModPrerequisites != null) && !xscScript.ModPrerequisites.GetIsFulfilled(csmStateManager))
-                throw new Exception(xscScript.ModPrerequisites.GetMessage(csmStateManager));
+            if ((xscScript.ModPrerequisites != null) && !xscScript.ModPrerequisites.GetIsFulfilled(m_Delegates))
+                throw new Exception(xscScript.ModPrerequisites.GetMessage(m_Delegates));
 
             IList<InstallStep> lstSteps = xscScript.InstallSteps;
             HeaderInfo hifHeaderInfo = xscScript.HeaderInfo;
@@ -74,11 +73,13 @@ namespace Components.Scripting.XmlScript
                     {
                         options[i].Flags.ForEach((ConditionalFlag flag) =>
                         {
-                            csmStateManager.SetFlagValue(flag.Name, flag.ConditionalValue, options[i]);
+                            // ??? Yet to be added
+                            //m_Delegates.SetFlagValue(flag.Name, flag.ConditionalValue, options[i]);
                         });
                     } else
                     {
-                        csmStateManager.RemoveFlags(options[i]);
+                        // ??? Yet to be added
+                        //m_Delegates.RemoveFlags(options[i]);
                     }
                 }
             };
@@ -88,10 +89,10 @@ namespace Components.Scripting.XmlScript
             Action<bool> cont = (bool forward) => {
                 if (forward)
                 {
-                    stepIdx = findNextIdx(lstSteps, csmStateManager, stepIdx);
+                    stepIdx = findNextIdx(lstSteps, stepIdx);
                 } else
                 {
-                    stepIdx = findPrevIdx(lstSteps, csmStateManager, stepIdx);
+                    stepIdx = findPrevIdx(lstSteps, stepIdx);
                 }
 
                 if (stepIdx == -1)
@@ -99,9 +100,9 @@ namespace Components.Scripting.XmlScript
                     m_Delegates.ui.EndDialog();
                     XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
                     // ??? OnTaskStarted(xsiInstaller);
-                    xsiInstaller.Install(xscScript, csmStateManager, FilesToInstall, PluginsToActivate);
+                    xsiInstaller.Install(xscScript, m_Delegates, FilesToInstall, PluginsToActivate);
                 }
-                sendState(lstSteps, csmStateManager, stepIdx);
+                sendState(lstSteps, stepIdx);
             };
             Action cancel = () => { };
 
@@ -109,17 +110,17 @@ namespace Components.Scripting.XmlScript
                 new HeaderImage(hifHeaderInfo.ImagePath, hifHeaderInfo.ShowFade, hifHeaderInfo.Height),
                 select, cont, cancel);
 
-            sendState(lstSteps, csmStateManager, stepIdx);
+            sendState(lstSteps, stepIdx);
 
             return false;
         }
  
-        private void sendState(IList<InstallStep> lstSteps, ConditionStateManager csmStateManager, int stepIdx)
+        private void sendState(IList<InstallStep> lstSteps, int stepIdx)
         {
             Func<IEnumerable<InstallStep>, IEnumerable<InstallerStep>> convertSteps = steps =>
             {
                 int idx = 0;
-                return steps.Select(step => new InstallerStep(idx++, step.Name, step.VisibilityCondition.GetIsFulfilled(csmStateManager)));
+                return steps.Select(step => new InstallerStep(idx++, step.Name, step.VisibilityCondition.GetIsFulfilled(m_Delegates)));
             };
 
             Func<IEnumerable<Option>, IEnumerable<Interface.ui.Option>> convertOptions = options =>
@@ -146,10 +147,10 @@ namespace Components.Scripting.XmlScript
             m_Delegates.ui.UpdateState(uiSteps, 0);
         }
 
-        private int findNextIdx(IList<InstallStep> lstSteps, ConditionStateManager csmStateManager, int currentIdx)
+        private int findNextIdx(IList<InstallStep> lstSteps, int currentIdx)
         {
             for (int i = currentIdx + 1; i < lstSteps.Count; ++i) {
-                if (lstSteps[i].VisibilityCondition.GetIsFulfilled(csmStateManager))
+                if (lstSteps[i].VisibilityCondition.GetIsFulfilled(m_Delegates))
                 {
                     return i;
                 }
@@ -157,18 +158,16 @@ namespace Components.Scripting.XmlScript
             return -1;
         }
 
-        private int findPrevIdx(IList<InstallStep> lstSteps, ConditionStateManager csmStateManager, int currentIdx)
+        private int findPrevIdx(IList<InstallStep> lstSteps, int currentIdx)
         {
             for (int i = currentIdx - 1; i >= 0; --i) {
-                if (lstSteps[i].VisibilityCondition.GetIsFulfilled(csmStateManager))
+                if (lstSteps[i].VisibilityCondition.GetIsFulfilled(m_Delegates))
                 {
                     return i;
                 }
             }
             return 0;
         }
-
-        
 
         #endregion
     }

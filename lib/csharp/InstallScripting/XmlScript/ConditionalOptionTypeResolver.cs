@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Components.Interface;
 
 namespace Components.Scripting.XmlScript
 {
@@ -137,25 +138,25 @@ namespace Components.Scripting.XmlScript
 			m_lstPatterns.Add(new ConditionalTypePattern(p_ptpType, p_cndCondition));
 		}
 
-		#region IOptionTypeResolver Members
+        #region IOptionTypeResolver Members
 
-		/// <summary>
-		/// Gets the plugin type.
-		/// </summary>
-		/// <remarks>
-		/// The returned type is dependent upon external state. A list of patterns are matched
-		/// against external state (e.g., installed files); the first pattern that is fulfilled
-		/// determines the returned type.
-		/// 
-		/// If no pattern is fulfilled, a default type if returned.
-		/// </remarks>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns>The option type.</returns>
-		/// <seealso cref="IOptionTypeResolver.ResolveOptionType(ConditionStateManager)"/>
-		public OptionType ResolveOptionType(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets the plugin type.
+        /// </summary>
+        /// <remarks>
+        /// The returned type is dependent upon external state. A list of patterns are matched
+        /// against external state (e.g., installed files); the first pattern that is fulfilled
+        /// determines the returned type.
+        /// 
+        /// If no pattern is fulfilled, a default type if returned.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns>The option type.</returns>
+        /// <seealso cref="IOptionTypeResolver.ResolveOptionType(CoreDelegates)"/>
+        public OptionType ResolveOptionType(CoreDelegates coreDelegates)
 		{
 			foreach (ConditionalTypePattern ctpPattern in m_lstPatterns)
-				if (ctpPattern.Condition.GetIsFulfilled(p_csmStateManager))
+				if (ctpPattern.Condition.GetIsFulfilled(coreDelegates))
 					return ctpPattern.Type;
 			return m_ptpDefaultType;
 		}

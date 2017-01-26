@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Components.Interface;
 
 namespace Components.Scripting.XmlScript
 {
@@ -60,45 +59,48 @@ namespace Components.Scripting.XmlScript
 			Value = p_strValue;
 		}
 
-		#endregion
+        #endregion
 
-		#region ICondition Members
+        #region ICondition Members
 
-		/// <summary>
-		/// Gets whether or not the condition is fulfilled.
-		/// </summary>
-		/// <remarks>
-		/// The condition is fulfilled if the specified flag has the specified value.
-		/// </remarks>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns><c>true</c> if the condition is fulfilled;
-		/// <c>false</c> otherwise.</returns>
-		/// <seealso cref="ICondition.GetIsFulfilled(ConditionStateManager)"/>
-		public bool GetIsFulfilled(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets whether or not the condition is fulfilled.
+        /// </summary>
+        /// <remarks>
+        /// The condition is fulfilled if the specified <see cref="File"/> is in the
+        /// specified <see cref="State"/>.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns><c>true</c> if the condition is fulfilled;
+        /// <c>false</c> otherwise.</returns>
+        /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
+        public bool GetIsFulfilled(CoreDelegates coreDelegates)
 		{
 			string strValue = null;
-			p_csmStateManager.FlagValues.TryGetValue(FlagName, out strValue);
-			if (String.IsNullOrEmpty(Value))
-				return String.IsNullOrEmpty(strValue);
+
+            // ??? Do we need to add this?
+            //coreDelegates.FlagValues.TryGetValue(FlagName, out strValue);
+			//if (string.IsNullOrEmpty(Value))
+			//	return string.IsNullOrEmpty(strValue);
 			return Value.Equals(strValue);
 		}
 
-		/// <summary>
-		/// Gets a message describing whether or not the condition is fulfilled.
-		/// </summary>
-		/// <remarks>
-		/// If the condition is fulfilled the message is "Passed." If the condition is not fulfilled the
-		/// message uses the pattern:
-		///		Flag '&lt;flag>' is not &lt;value>.
-		/// </remarks>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns>A message describing whether or not the condition is fulfilled.</returns>
-		/// <seealso cref="ICondition.GetMessage(ConditionStateManager)"/>
-		public string GetMessage(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets a message describing whether or not the condition is fulfilled.
+        /// </summary>
+        /// <remarks>
+        /// If the condition is fulfilled the message is "Passed." If the condition is not fulfilled the
+        /// message uses the pattern:
+        ///		File '&lt;file>' is not &lt;state>.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns>A message describing whether or not the condition is fulfilled.</returns>
+        /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
+		public string GetMessage(CoreDelegates coreDelegates)
 		{
-			if (GetIsFulfilled(p_csmStateManager))
+			if (GetIsFulfilled(coreDelegates))
 				return "Passed";
-			return String.Format("Flag '{0}' is not {1}.", FlagName, Value);
+			return string.Format("Flag '{0}' is not {1}.", FlagName, Value);
 		}
 
 		#endregion

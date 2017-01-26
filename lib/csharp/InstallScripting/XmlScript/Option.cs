@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Utils;
+using Components.Interface;
 
 namespace Components.Scripting.XmlScript
 {
@@ -125,16 +126,16 @@ namespace Components.Scripting.XmlScript
 			m_strImagePath = p_strImagePath;
 		}
 
-		#endregion
+        #endregion
 
-		/// <summary>
-		/// Gets the <see cref="OptionType"/> of the option.
-		/// </summary>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns>The <see cref="OptionType"/> of the option.</returns>
-		public OptionType GetOptionType(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets the <see cref="OptionType"/> of the option.
+        /// </summary>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns>The <see cref="OptionType"/> of the option.</returns>
+        public OptionType GetOptionType(CoreDelegates coreDelegates)
 		{
-			return m_otrTypeResolver.ResolveOptionType(p_csmStateManager);
+			return m_otrTypeResolver.ResolveOptionType(coreDelegates);
 		}
 	}
 }

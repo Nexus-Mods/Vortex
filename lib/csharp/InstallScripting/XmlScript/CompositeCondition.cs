@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Text;
 using Utils;
 using Utils.Collections;
+using Components.Interface;
 
 namespace Components.Scripting.XmlScript
 {
@@ -84,28 +85,28 @@ namespace Components.Scripting.XmlScript
 			OnPropertyChanged(() => Conditions);
 		}
 
-		#endregion
+        #endregion
 
-		#region ICondition Members
+        #region ICondition Members
 
-		/// <summary>
-		/// Determines if the given composite condition if fulfilled.
-		/// </summary>
-		/// <remarks>
-		/// A composite condition is fulfilled if and only if its contained conditions
-		/// are fulfilled in the combination specified by the <see cref="Operator"/>.
-		/// </remarks>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns><c>true</c> if the condition is fulfilled;
-		/// <c>false</c> otherwise.</returns>
-		/// <seealso cref="ICondition.GetIsFulfilled(ConditionStateManager)"/>
-		public bool GetIsFulfilled(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets whether or not the condition is fulfilled.
+        /// </summary>
+        /// <remarks>
+        /// The condition is fulfilled if the specified <see cref="File"/> is in the
+        /// specified <see cref="State"/>.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns><c>true</c> if the condition is fulfilled;
+        /// <c>false</c> otherwise.</returns>
+        /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
+        public bool GetIsFulfilled(CoreDelegates coreDelegates)
 		{
 			bool booAllFulfilled = (m_dopOperator == ConditionOperator.And) ? true : false;
 			bool booThisFulfilled = true;
 			foreach (ICondition conCondition in m_lstConditions)
 			{
-				booThisFulfilled = conCondition.GetIsFulfilled(p_csmStateManager);
+				booThisFulfilled = conCondition.GetIsFulfilled(coreDelegates);
 				switch (m_dopOperator)
 				{
 					case ConditionOperator.And:
@@ -119,17 +120,18 @@ namespace Components.Scripting.XmlScript
 			return booAllFulfilled;
 		}
 
-		/// <summary>
-		/// Gets a message describing whether or not the condition is fulfilled.
-		/// </summary>
-		/// <remarks>
-		/// If the condition is fulfilled the message is "Passed." If the condition is not fulfilled the
-		/// message is a list of the sub-dependecies' messages.
-		/// </remarks>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns>A message describing whether or not the condition is fulfilled.</returns>
-		/// <seealso cref="ICondition.GetMessage(ConditionStateManager)"/>
-		public string GetMessage(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets a message describing whether or not the condition is fulfilled.
+        /// </summary>
+        /// <remarks>
+        /// If the condition is fulfilled the message is "Passed." If the condition is not fulfilled the
+        /// message uses the pattern:
+        ///		File '&lt;file>' is not &lt;state>.
+        /// </remarks>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns>A message describing whether or not the condition is fulfilled.</returns>
+        /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
+		public string GetMessage(CoreDelegates coreDelegates)
 		{
 			StringBuilder stbMessage = new StringBuilder();
 			if (m_dopOperator == ConditionOperator.Or)
@@ -141,9 +143,9 @@ namespace Components.Scripting.XmlScript
 			for (Int32 i = 0; i < m_lstConditions.Count; i++)
 			{
 				conCondition = m_lstConditions[i];
-				booThisFulfilled = conCondition.GetIsFulfilled(p_csmStateManager);
+				booThisFulfilled = conCondition.GetIsFulfilled(coreDelegates);
 				if (!booThisFulfilled)
-					stbMessage.Append(conCondition.GetMessage(p_csmStateManager));
+					stbMessage.Append(conCondition.GetMessage(coreDelegates));
 				switch (m_dopOperator)
 				{
 					case ConditionOperator.And:

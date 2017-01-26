@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Components.Interface;
 
 namespace Components.Scripting.XmlScript
 {
@@ -40,16 +40,16 @@ namespace Components.Scripting.XmlScript
 			m_ptpType = p_ptpType;
 		}
 
-		#endregion
+        #endregion
 
-		#region IOptionType Members
+        #region IOptionType Members
 
-		/// <summary>
-		/// Gets the option type.
-		/// </summary>
-		/// <returns>The option type.</returns>
-		/// <seealso cref="IOptionType.GetOptionType(ConditionStateManager)"/>
-		public OptionType ResolveOptionType(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets the option type.
+        /// </summary>
+        /// <returns>The option type.</returns>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        public OptionType ResolveOptionType(CoreDelegates coreDelegates)
 		{
 			return m_ptpType;
 		}

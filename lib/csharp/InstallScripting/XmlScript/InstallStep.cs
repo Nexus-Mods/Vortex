@@ -2,6 +2,7 @@
 using System.Collections.Specialized;
 using Utils;
 using Utils.Collections;
+using Components.Interface;
 
 namespace Components.Scripting.XmlScript
 {
@@ -126,17 +127,17 @@ namespace Components.Scripting.XmlScript
 			OnPropertyChanged(() => OptionGroups);
 		}
 
-		/// <summary>
-		/// Gets whether this step is visible.
-		/// </summary>
-		/// <param name="p_csmStateManager">The manager that tracks the currect install state.</param>
-		/// <returns><c>true</c> if this step is visible, given the current state;
-		/// <c>false</c> otherwise.</returns>
-		public bool GetIsVisible(ConditionStateManager p_csmStateManager)
+        /// <summary>
+        /// Gets whether this step is visible.
+        /// </summary>
+        /// <param name="coreDelegates">The Core delegates component.</param>
+        /// <returns><c>true</c> if this step is visible, given the current state;
+        /// <c>false</c> otherwise.</returns>
+        public bool GetIsVisible(CoreDelegates coreDelegates)
 		{
 			if (VisibilityCondition == null)
 				return true;
-			return VisibilityCondition.GetIsFulfilled(p_csmStateManager);
+			return VisibilityCondition.GetIsFulfilled(coreDelegates);
 		}
 	}
 }

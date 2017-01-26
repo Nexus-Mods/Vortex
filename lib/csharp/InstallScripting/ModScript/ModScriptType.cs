@@ -65,7 +65,7 @@ namespace Components.Scripting.ModScript
         /// <returns>An executor that can run the script type.</returns>
         public IScriptExecutor CreateExecutor(Mod modArchive, CoreDelegates delegates, SynchronizationContext scxUIContext)
 		{
-			ModScriptFunctionProxy msfFunctions = GetScriptFunctionProxy(modArchive);
+			ModScriptFunctionProxy msfFunctions = GetScriptFunctionProxy(modArchive, delegates);
 			return new ModScriptExecutor(msfFunctions);
 		}
 
@@ -107,10 +107,11 @@ namespace Components.Scripting.ModScript
         /// Returns a proxy that implements the functions available to Mod Script scripts.
         /// </summary>
         /// <param name="modArchive">The mod being installed.</param>
+        /// <param name="coreDelegates">The Core delegates component.</param>
         /// <returns>A proxy that implements the functions available to Mod Script scripts.</returns>
-        protected virtual ModScriptFunctionProxy GetScriptFunctionProxy(Mod modArchive)
+        protected virtual ModScriptFunctionProxy GetScriptFunctionProxy(Mod modArchive, CoreDelegates coreDelegates)
 		{
-			return new ModScriptFunctionProxy(modArchive);
+			return new ModScriptFunctionProxy(modArchive, coreDelegates);
 		}
 	}
 }
