@@ -96,7 +96,7 @@ namespace Components.Scripting.XmlScript
 
                 if (stepIdx == -1)
                 {
-                    m_Delegates.ui.endDialog();
+                    m_Delegates.ui.EndDialog();
                     XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
                     // ??? OnTaskStarted(xsiInstaller);
                     xsiInstaller.Install(xscScript, csmStateManager, FilesToInstall, PluginsToActivate);
@@ -105,7 +105,7 @@ namespace Components.Scripting.XmlScript
             };
             Action cancel = () => { };
 
-            m_Delegates.ui.startDialog(hifHeaderInfo.Title,
+            m_Delegates.ui.StartDialog(hifHeaderInfo.Title,
                 new HeaderImage(hifHeaderInfo.ImagePath, hifHeaderInfo.ShowFade, hifHeaderInfo.Height),
                 select, cont, cancel);
 
@@ -143,7 +143,7 @@ namespace Components.Scripting.XmlScript
 
             InstallerStep[] uiSteps = convertSteps(lstSteps).ToArray();
             insertGroups(uiSteps, stepIdx);
-            m_Delegates.ui.updateState(uiSteps, 0);
+            m_Delegates.ui.UpdateState(uiSteps, 0);
         }
 
         private int findNextIdx(IList<InstallStep> lstSteps, ConditionStateManager csmStateManager, int currentIdx)

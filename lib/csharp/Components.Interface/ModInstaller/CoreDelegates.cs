@@ -23,19 +23,19 @@ namespace Components.Interface
             mIsPresent = source.isPresent;
         }
 
-        public async Task<string[]> getAll(bool activeOnly)
+        public async Task<string[]> GetAll(bool activeOnly)
         {
             object res = await mGetAll(activeOnly);
             return (string[])res;
         }
 
-        public async Task<bool> isActive(string pluginName)
+        public async Task<bool> IsActive(string pluginName)
         {
             object res = await mIsActive(pluginName);
             return (bool)res;
         }
 
-        public async Task<bool> isPresent(string pluginName)
+        public async Task<bool> IsPresent(string pluginName)
         {
             object res = await mIsPresent(pluginName);
             return (bool)res;
@@ -124,7 +124,7 @@ namespace Components.Interface
                 mUpdateState = source.updateState;
             }
 
-            public async void startDialog(string moduleName, HeaderImage image, SelectCB select, ContinueCB cont, CancelCB cancel)
+            public async void StartDialog(string moduleName, HeaderImage image, SelectCB select, ContinueCB cont, CancelCB cancel)
             {
                 Func<object, Task<object>> selectWrap = (dynamic selectPar) => select(selectPar.stepId, selectPar.groupId, selectPar.plugins);
                 Func<object, Task<object>> contWrap = (dynamic direction) =>
@@ -142,12 +142,12 @@ namespace Components.Interface
                 await mStartDialog(par);
             }
 
-            public async void endDialog()
+            public async void EndDialog()
             {
                 await mEndDialog(null);
             }
 
-            public async void updateState(InstallerStep[] installSteps, int currentStep)
+            public async void UpdateState(InstallerStep[] installSteps, int currentStep)
             {
                 dynamic par = new object();
                 par.installSteps = installSteps;
