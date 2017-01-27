@@ -1,12 +1,14 @@
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
 import { ITool } from '../../types/ITool';
-import { ComponentEx, translate } from '../../util/ComponentEx';
+import { ComponentEx } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import Icon from '../../views/Icon';
 import { Button } from '../../views/TooltipControls';
 
 import elevated from '../../util/elevated';
+
+import {IToolStored} from '../gamemode_management/types/IStateEx';
 
 import ipc = require('node-ipc');
 
@@ -27,7 +29,7 @@ export interface IRemoveTool {
 
 interface IContextMenuProps {
   id: string;
-  tool: ITool | IDiscoveredTool;
+  tool: IDiscoveredTool;
   gameId: string;
   discovery: boolean;
   onRemoveTool: IRemoveTool;
@@ -155,7 +157,7 @@ export interface IProps {
   t: I18next.TranslationFunction;
   game: IGame;
   toolId: string;
-  tool: ITool | IDiscoveredTool;
+  tool: IDiscoveredTool;
   onChangeToolLocation: (gameId: string, toolId: string, result: IDiscoveredTool) => void;
   onRemoveTool: IRemoveTool;
   onAddNewTool: () => void;
@@ -217,7 +219,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
 
   public render() {
     const { t, game, toolId, tool, onAddNewTool, onRemoveTool, onShowError } = this.props;
-    let toolPath = (tool as IDiscoveredTool).path;
+    let toolPath = tool.path;
     const valid = (toolPath !== undefined) && (toolPath !== '');
 
     return (

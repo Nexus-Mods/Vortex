@@ -11,7 +11,7 @@ import { showError } from '../../util/message';
 import { addDiscoveredTool, changeToolParams,
          removeDiscoveredTool } from '../gamemode_management/actions/settings';
 
-import { IDiscoveryResult } from '../gamemode_management/types/IStateEx';
+import { IDiscoveryResult, IGameStored, IToolStored } from '../gamemode_management/types/IStateEx';
 
 import ToolButton from './ToolButton';
 import ToolEditDialog from './ToolEditDialog';
@@ -37,7 +37,7 @@ interface IActionProps {
 
 interface IConnectedProps {
   gameMode: string;
-  knownGames: IGame[];
+  knownGames: IGameStored[];
   discoveredGames: { [id: string]: IDiscoveryResult };
   discoveredTools: { [id: string]: IDiscoveredTool };
 }
@@ -69,7 +69,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
   private renderGameMode = () => {
     let { t, gameMode, knownGames } = this.props;
 
-    let game: IGame = knownGames.find((ele) => ele.id === gameMode);
+    let game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
 
     return (
       <Well>
@@ -103,10 +103,10 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     const game = this.currentGame();
     const discovery = discoveredGames[gameMode];
 
-    execFile(path.join(discovery.path, game.executable()));
+    execFile(path.join(discovery.path, game.executable));
   }
 
-  private renderGameIcon = (game: IGame): JSX.Element => {
+  private renderGameIcon = (game: IGameStored): JSX.Element => {
     if (game === undefined) {
       // assumption is that this can only happen during startup
       return <Icon name='spinner' pulse />;
@@ -116,15 +116,15 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     }
   }
 
-  private renderSupportedToolsIcons = (game: IGame): JSX.Element => {
-    let knownTools: ITool[] = game.supportedTools;
+  private renderSupportedToolsIcons = (game: IGameStored): JSX.Element => {
+    let knownTools: IToolStored[] = game.supportedTools;
     let { discoveredTools } = this.props;
 
     if (knownTools === null) {
       return null;
     }
 
-    let tools: ITool[] = this.mergeTools(knownTools, discoveredTools);
+    let tools: IDiscoveredTool[] = this.mergeTools(knownTools, discoveredTools);
 
     return (
       <div>
@@ -133,19 +133,21 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     );
   }
 
-  private mergeTools(knownTools: ITool[],
+  private mergeTools(knownTools: IToolStored[],
                      discoveredTools: { [id: string]: IDiscoveredTool }): IDiscoveredTool[] {
-    let result: IDiscoveredTool[] = knownTools.map((tool: ITool): IDiscoveredTool => {
+    let result: IDiscoveredTool[] = knownTools.map((tool: IToolStored): IDiscoveredTool => {
       return Object.assign({}, tool, {
+        executable: () => tool.executable,
         path: '',
         hidden: false,
         parameters: [],
         custom: false,
         currentWorkingDirectory: '',
+        requiredFiles: [],
       });
     });
 
-    let lookup = result.reduce((prev: Object, current: ITool, idx: number) => {
+    let lookup = result.reduce((prev: Object, current: IDiscoveredTool, idx: number) => {
       prev[current.id] = idx;
       return prev;
     }, {});
@@ -161,7 +163,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     return result.filter((tool: IDiscoveredTool) => tool !== undefined ? !tool.hidden : null);
   }
 
-  private currentGame(): IGame {
+  private currentGame(): IGameStored {
     const { gameMode, knownGames } = this.props;
     return knownGames.find((ele) => ele.id === gameMode);
   }
@@ -214,7 +216,8 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
     }));
   }
 
-  private renderSupportedTool = (game: IGame, tool: ITool | IDiscoveredTool): JSX.Element => {
+  private renderSupportedTool = (game: IGameStored,
+                                 tool: IToolStored | IDiscoveredTool): JSX.Element => {
     let { t, onAddDiscoveredTool, onRemoveDiscoveredTool, onShowError } = this.props;
 
     let key = `${tool.id}_${this.state.counter}`;

@@ -1,6 +1,5 @@
 import { IComponentContext } from '../../types/IComponentContext';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import { IGame } from '../../types/IGame';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 
 import Icon from '../../views/Icon';
@@ -9,6 +8,7 @@ import { Button } from '../../views/TooltipControls';
 import { log } from '../../util/log';
 
 import { addDiscoveredTool } from '../gamemode_management/actions/settings';
+import { IGameStored } from '../gamemode_management/types/IStateEx';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
@@ -20,7 +20,7 @@ import { ControlLabel, FormControl, Image, InputGroup, Modal } from 'react-boots
 import * as ReactDOM from 'react-dom';
 
 export interface IBaseProps {
-  game: IGame;
+  game: IGameStored;
   tool: IDiscoveredTool;
   onClose: () => void;
 }

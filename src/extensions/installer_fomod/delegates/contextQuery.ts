@@ -1,6 +1,8 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
 import {currentGameDiscovery} from '../../../util/storeHelper';
+
+import getVersion from 'exe-version';
 import fs = require('fs-extra-promise');
 import path = require('path');
 import * as util from 'util';
@@ -24,11 +26,10 @@ export class Context {
     let state = this.mExtensionApi.store.getState();
     let currentGameInfo = currentGameDiscovery(state);
     let currentGameRelativeExecutablePath =
-      state.settings.gameMode.known[state.settings.gameMode.current].executable();
+      state.session.gameMode.known[state.settings.gameMode.current].executable;
     let currentGameExecutablePath =
       path.join(currentGameInfo.path, currentGameRelativeExecutablePath);
-    // hardcoded waiting for the C lib handling this
-    return '1.0.0.0';
+    return getVersion(currentGameExecutablePath);
   }
 
   public checkIfFileExists = (fileName: string): boolean => {
