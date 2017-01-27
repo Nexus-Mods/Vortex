@@ -14,8 +14,6 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
-import * as util from 'util';
-
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
 export type DiscoveredToolCB = (toolId: string, result: IDiscoveredTool) => void;
 
@@ -269,8 +267,6 @@ export function searchDiscovery(knownGames: IGame[],
       });
     }
   }, []);
-
-  log('info', 'searching for', util.inspect(files));
 
   // retrieve only the basenames of required files because the walk only ever looks
   // at the last path component of a file

@@ -81,8 +81,6 @@ bool IconExtractorWindows::saveBitmap(const std::string &output,
 
   Status res = image->Save(string_cast(output.c_str(), output.size()).c_str(), &iter->second, nullptr);
 
-  MessageBoxA(nullptr, std::to_string(res).c_str(), "res code", MB_OK);
-
   delete image;
   return true;
 }
