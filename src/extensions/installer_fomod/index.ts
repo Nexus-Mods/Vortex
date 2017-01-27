@@ -72,7 +72,6 @@ function init(context: IExtensionContextExt): boolean {
     context.registerInstaller(100, testSupported, install);
   }
 
-  this.coreDelegates = new Core(context.api);
   context.registerDialog('fomod-installer', InstallerDialog);
 
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);

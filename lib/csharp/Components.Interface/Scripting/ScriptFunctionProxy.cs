@@ -425,13 +425,13 @@ namespace Components.Interface
 		/// <returns>A list of currently active plugins.</returns>
 		public string[] GetActivePlugins()
 		{
-            string[] ManagedPlugins = null;
+            string[] ActivePlugins = null;
 
             Task.Run(async () => {
-                ManagedPlugins = await Core.plugin.GetAll(true);
+                ActivePlugins = await Core.plugin.GetAll(true);
             }).Wait();
 
-            return ManagedPlugins;
+            return ActivePlugins;
         }
 
 		/// <summary>
