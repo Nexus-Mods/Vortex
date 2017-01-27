@@ -1,14 +1,11 @@
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
-import { ITool } from '../../types/ITool';
 import { ComponentEx } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import Icon from '../../views/Icon';
 import { Button } from '../../views/TooltipControls';
 
 import elevated from '../../util/elevated';
-
-import {IToolStored} from '../gamemode_management/types/IStateEx';
 
 import ipc = require('node-ipc');
 

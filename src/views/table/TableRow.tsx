@@ -83,8 +83,12 @@ class TableRow extends React.Component<IRowProps, {}> {
       classes.push('table-selected');
     }
 
-    const rowActions = actions.filter((action) => action.singleRowAction);
-    const hasActions = actions !== undefined && rowActions.length > 0;
+    let hasActions = false;
+    if (actions !== undefined) {
+      const rowActions = actions.filter((action) =>
+        action.singleRowAction === undefined || action.singleRowAction);
+      hasActions = rowActions.length > 0;
+    }
 
     return (
       <tr
@@ -115,7 +119,8 @@ class TableRow extends React.Component<IRowProps, {}> {
     return (
       <td
         className={`table-${tableId} cell-${attribute.id}`}
-        key={attribute.id}>
+        key={attribute.id}
+      >
         {this.renderCell(attribute, attribute.customRenderer ? rawData : data[attribute.id], t)}
       </td>
     );
