@@ -1,11 +1,11 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
 
-export class Ini {
-  private mExtensionApi: IExtensionApi;
+import DelegateBase from './DelegateBase';
 
+class Ini extends DelegateBase {
   constructor(api: IExtensionApi) {
-    this.mExtensionApi = api;
+    super(api);
   }
 
   public GetIniString = (): string => {

@@ -98,7 +98,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       controls.push(<textarea
         key='dialog-content-message'
         wrap={wrap}
-        style={{ width: '100%', minHeight: 300, resize: 'none', border: 'none' }}
+        style={{ width: '100%', minHeight: 150, resize: 'none', border: 'none' }}
         defaultValue={content.message}
       />);
     }
@@ -127,15 +127,15 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     return (
       <FormGroup key={formcontrol.id}>
         <ControlLabel>{t(formcontrol.label)}
-          <FormControl
-            id={formcontrol.id}
-            key={formcontrol.id}
-            type={formcontrol.type}
-            value={formcontrol.value}
-            label={formcontrol.label}
-            onChange={this.toggleFormControl}
-          />
         </ControlLabel>
+        <FormControl
+          id={formcontrol.id}
+          key={formcontrol.id}
+          type={formcontrol.type}
+          value={formcontrol.value}
+          label={formcontrol.label}
+          onChange={this.toggleFormControl}
+        />
       </FormGroup>
     );
   }

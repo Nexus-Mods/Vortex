@@ -44,8 +44,8 @@ namespace Components.Interface
 
     public class ContextDelegates
     {
-        private Func<Task<object>> mGetAppVersion;
-        private Func<Task<object>> mGetCurrentGameVersion;
+        private Func<object, Task<object>> mGetAppVersion;
+        private Func<object, Task<object>> mGetCurrentGameVersion;
         private Func<object, Task<object>> mCheckIfFileExists;
 
         public ContextDelegates(dynamic source)
@@ -57,13 +57,13 @@ namespace Components.Interface
 
         public async Task<string> GetAppVersion()
         {
-            object res = await mGetAppVersion();
+            object res = await mGetAppVersion(null);
             return (string)res;
         }
 
         public async Task<string> GetCurrentGameVersion()
         {
-            object res = await mGetCurrentGameVersion();
+            object res = await mGetCurrentGameVersion(null);
             return (string)res;
         }
 

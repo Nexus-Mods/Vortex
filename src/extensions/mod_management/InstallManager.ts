@@ -28,7 +28,7 @@ interface IZipEntry {
   name: string;
 }
 
-// tslint:disable:no-empty
+// tslint:disable-next-line:no-empty
 function UserCanceled() {}
 
 /**
@@ -111,7 +111,6 @@ class InstallManager {
           installContext.startInstallCB(installName, archiveId);
 
           destinationPath = path.join(this.mGetInstallPath(), installName);
-
           // get list of files in the archive
           return new Promise((resolve, reject) => {
             this.mTask.list(archivePath, {})
@@ -171,12 +170,14 @@ class InstallManager {
               {
                 message:
                     'This mod seems to be installed already. You can replace the ' +
-                        'existing one or install the new one under a different name.',
+                    'existing one or install the new one under a different name ' +
+                    '(this name is used internally, you can still change the display name ' +
+                    'to anything you want).',
                 formcontrol: [{
                   id: 'newName',
                   type: 'input',
                   value: modId,
-                  label: '',
+                  label: 'Name',
                 }],
               },
               {

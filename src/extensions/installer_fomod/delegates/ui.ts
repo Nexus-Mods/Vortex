@@ -4,14 +4,16 @@ import {log} from '../../../util/log';
 import {endDialog, setDialogState, startDialog} from '../actions/installerUI';
 import {IInstallerInfo, IInstallerState, IStateCallback} from '../types/interface';
 
-export class UI {
-  private mAPI: IExtensionApi;
+import DelegateBase from './DelegateBase';
+
+class UI extends DelegateBase {
   private mStateCB: IStateCallback;
   private mContinueCB: (direction) => void;
   private mCancelCB: () => void;
 
   constructor(api: IExtensionApi) {
-    this.mAPI = api;
+    super(api);
+
     api.events.on('fomod-installer-select',
       (stepId: string, groupId: string, plugins: string[]) => {
         log('info', 'select', { stepId, groupId, plugins });
@@ -36,19 +38,19 @@ export class UI {
   public startDialog = (info: IInstallerInfo) => {
     this.mStateCB = info.continue;
     this.mCancelCB = info.cancel;
-    this.mAPI.store.dispatch(startDialog({
+    this.api.store.dispatch(startDialog({
       moduleName: info.moduleName,
       image: info.image,
     }));
   }
 
   public endDialog = () => {
-    this.mAPI.store.dispatch(endDialog());
+    this.api.store.dispatch(endDialog());
     this.mStateCB = this.mCancelCB = undefined;
   }
 
   public updateState = (state: IInstallerState) => {
-    this.mAPI.store.dispatch(setDialogState(state));
+    this.api.store.dispatch(setDialogState(state));
   }
 }
 

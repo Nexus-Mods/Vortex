@@ -1,17 +1,18 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
+
+import DelegateBase from './delegateBase';
+
 import * as util from 'util';
 
-export class Plugins {
-  private mExtensionApi: IExtensionApi;
-
+class Plugins extends DelegateBase {
   constructor(api: IExtensionApi) {
-    this.mExtensionApi = api;
+    super(api);
   }
 
   public isActive = (pluginName: string): boolean => {
     log('info', 'isActive called', util.inspect(pluginName));
-    let state = this.mExtensionApi.store.getState();
+    let state = this.api.store.getState();
 
     if (state.loadOrder !== undefined) {
       log('info', 'isPresent debug state', util.inspect(pluginName));
@@ -26,7 +27,7 @@ export class Plugins {
 
   public isPresent = (pluginName: string): boolean => {
     log('info', 'isPresent called', util.inspect(pluginName));
-    let state = this.mExtensionApi.store.getState();
+    let state = this.api.store.getState();
 
     if (state.loadOrder !== undefined) {
       log('info', 'isPresent debug state', util.inspect(pluginName));
@@ -41,7 +42,7 @@ export class Plugins {
 
   public getAll = (isActiveOnly: boolean): string[] => {
     log('info', 'getAll called', util.inspect(isActiveOnly));
-    let state = this.mExtensionApi.store.getState();
+    let state = this.api.store.getState();
 
     if (state.loadOrder !== undefined) {
       log('info', 'getAll debug state', util.inspect(isActiveOnly));
