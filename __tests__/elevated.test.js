@@ -18,15 +18,22 @@ let mockWrites = [];
 let mockWriteReportError = undefined;
 
 jest.mock('fs', () => ({
-  write: (fd, data, callback) => {
-    if (mockWriteReportError) {
-      callback(mockWriteReportError);
-      return;
+    write: (fd, data, callback) => {
+      if (mockWriteReportError) {
+        callback(mockWriteReportError);
+        return;
+      }
+      mockWrites.push(data);
+      callback(null, data.length, '');
+    },
+    existsSync: () => {
+      return true;
+    },
+    readFileSync: () => {
+      return '';
     }
-    mockWrites.push(data);
-    callback(null, data.length, '');
-  }
 }));
+
 
 import runElevated from '../src/util/elevated';
 
@@ -107,4 +114,3 @@ describe('runElevated', () => {
     });
   });
 });
-

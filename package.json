@@ -32,7 +32,7 @@
     "buildwatch": "concurrently -p \"\" --kill-others \"tsc -p . -w\" npm-watch",
     "lessc": "lessc --clean-css --include-path=node_modules/bootswatch:node_modules/bootstrap-less src/stylesheets/index.less out/assets/css/base.css",
     "sassc": "node-sass src/stylesheets/index.scss out/assets/css/base.css",
-    "test": "jest",
+    "test": "jest --no-cache",
     "doc": "typedoc --out doc src"
   },
   "watch": {
@@ -54,6 +54,7 @@
       "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest"
     },
     "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx|ts|tsx)$",
+    "testPathIgnorePatterns": ["/node_modules/", "/dist/", "/app/"],
     "testResultsProcessor": "<rootDir>/node_modules/ts-jest/coverageprocessor.js",
     "moduleFileExtensions": [
       "js",
@@ -216,7 +217,7 @@
     "react": "^15.3.0",
     "react-contextmenu": "^1.6.3",
     "react-dom": "^15.3.0",
-    "source-map-support": "^0.4.2",
+    "source-map-support": "^0.4.10",
     "typescript": "^2.1.4"
   }
 }

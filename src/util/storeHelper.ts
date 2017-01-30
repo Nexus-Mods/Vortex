@@ -71,7 +71,9 @@ export function setSafe<T>(state: T, path: string[], value: any): T {
 }
 
 /**
- * sets a value or do nothing if the path doesn't exist
+ * sets a value or do nothing if the path (except for the last element) doesn't exist.
+ * That is: setOrNop does not create the object hierarchy referenced in the path but
+ * it does add a new attribute to the object if necessary.
  * 
  * @export
  * @template T
@@ -99,6 +101,37 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
 }
 
 /**
+ * sets a value or do nothing if the path or the key (last element of the path) doesn't exist.
+ * This means changeOrNop only changes a pre-existing object attribute
+ * 
+ * @export
+ * @template T
+ * @param {T} state
+ * @param {string[]} path
+ * @param {*} value
+ * @returns {T}
+ */
+export function changeOrNop<T>(state: T, path: string[], value: any): T {
+  let firstElement: string = path[0];
+  let result = state;
+  if (path.length === 1) {
+    if (state.hasOwnProperty(firstElement)) {
+      result = Object.assign({}, state);
+      result[firstElement] = value;
+    }
+  } else {
+    if (state.hasOwnProperty(firstElement)) {
+      let temp = changeOrNop(result[firstElement], path.slice(1), value);
+      if (temp !== state[firstElement]) {
+        result = Object.assign({}, state);
+        result[firstElement] = temp;
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * delete a value or do nothing if the path doesn't exist
  * 
  * @export
@@ -109,16 +142,23 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
  */
 export function deleteOrNop<T>(state: T, path: string[]): T {
   let firstElement: string = path[0];
-  let copy = Object.assign({}, state);
+  let result = state;
   if (path.length === 1) {
-    delete copy[firstElement];
+    if (state.hasOwnProperty(firstElement)) {
+      result = Object.assign({}, state);
+      delete result[firstElement];
+    }
   } else {
-    if (copy.hasOwnProperty(firstElement)) {
-      copy[firstElement] = deleteOrNop(copy[firstElement], path.slice(1));
+    if (result.hasOwnProperty(firstElement)) {
+      let temp = deleteOrNop(result[firstElement], path.slice(1));
+      if (temp !== state[firstElement]) {
+        result = Object.assign({}, state);
+        result[firstElement] = temp;
+      }
     }
   }
 
-  return copy;
+  return result;
 }
 
 function setDefaultArray<T>(state: T, path: string[], fallback: any[]): T {

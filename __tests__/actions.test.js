@@ -3,12 +3,11 @@ import * as actions from '../src/actions/index';
 import safeCreateAction from '../src/actions/safeCreateAction';
 
 describe('safeCreateAction', () => {
-  it('creates the action', () => {
+  it('creates the action creator', () => {
     let creator = safeCreateAction('ACTION');
-    console.log('action', creator);
-    expect(creator).toBeDefined();
+    expect(typeof creator).toBe('function');
   });
-  it('replaces action', () => {
+  it('replaces action creator', () => {
     let c1 = safeCreateAction('ACTION', () => ({ key: 'old' }));
     expect(c1()).toEqual({ type: 'ACTION', payload: { key: 'old' } });
     let c2 = safeCreateAction('ACTION', () => ({ key: 'new' }));
@@ -82,6 +81,15 @@ describe('setMaximized', () => {
   it('creates the correct action', () => {
     expect(actions.setMaximized(true)).toEqual({
       type: 'SET_MAXIMIZED',
+      payload: true
+    });
+  });
+});
+
+describe('setTabsMinimized', () => {
+  it('creates the correct action', () => {
+    expect(actions.setTabsMinimized(true)).toEqual({
+      type: 'SET_TABS_MINIMIZED',
       payload: true
     });
   });

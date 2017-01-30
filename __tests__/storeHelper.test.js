@@ -60,12 +60,29 @@ describe('setOrNop', () => {
   it('leaves unmodified if node missing', () => {
     let input = {};
     let res = helper.setOrNop(input, ['a', 'test'], 42);
-    expect(res).toEqual({});
     expect(res).toBe(input);
   });
   it('changes the value if node not missing', () => {
     let input = { a: { test: 12 } };
     let res = helper.setOrNop(input, ['a', 'test'], 42);
+    expect(res).toEqual({ a: { test: 42 } });
+  });
+});
+
+describe('changeOrNop', () => {
+  it('leaves the original unmodified', () => {
+    let input = {};
+    helper.changeOrNop(input, ['a', 'test'], 42);
+    expect(input).toEqual({});
+  });
+  it('leaves unmodified if key missing', () => {
+    let input = { a: {} };
+    let res = helper.changeOrNop(input, ['a', 'test'], 42);
+    expect(res).toBe(input);
+  });
+  it('changes the value if node not missing', () => {
+    let input = { a: { test: 12 } };
+    let res = helper.changeOrNop(input, ['a', 'test'], 42);
     expect(res).toEqual({ a: { test: 42 } });
   });
 });
@@ -134,6 +151,16 @@ describe('deleteOrNop', () => {
     let copy = Object.assign({}, input);
     helper.deleteOrNop(input, ['a']);
     expect(input).toEqual(copy);
+  });
+  it('leaves unmodified if key missing', () => {
+    const input = { b: 2 };
+    let result = helper.deleteOrNop(input, ['a']);
+    expect(result).toBe(input);
+  });
+  it('leaves unmodified if node missing', () => {
+    const input = { b: { y: 2 } };
+    let result = helper.deleteOrNop(input, ['a', 'x']);
+    expect(result).toBe(input);
   });
   it('removes the specified element', () => {
     let input = { a: 1, b: 2 };

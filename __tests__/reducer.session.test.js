@@ -7,4 +7,3 @@ describe('displayGroup', () => {
     expect(result.displayGroups).toEqual({ someGroupId: 'someItemId' });
   });
 });
-

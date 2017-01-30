@@ -23,3 +23,11 @@ describe('setMaximized', () => {
     expect(result.maximized).toBe(true);
   });
 });
+
+describe('setTabsMinimized', () => {
+  it('makes tabs minimized', () => {
+    let input = {};
+    let result = windowReducer.reducers.SET_TABS_MINIMIZED(input, true);
+    expect(result.tabsMinimized).toBe(true);
+  });
+});

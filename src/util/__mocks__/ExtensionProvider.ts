@@ -1,7 +1,5 @@
 import * as React from 'react';
 
-import * as jest from 'jest';
-
 const ext = jest.genMockFromModule('../ExtensionProvider');
 
 function extend(registerFunc) {
