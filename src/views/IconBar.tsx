@@ -30,10 +30,10 @@ type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes<any>;
 class IconBar extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
-    const { objects, className, style } = this.props;
+    const { id, objects, className, style } = this.props;
 
     return (
-      <ButtonGroup className={className} style={style} >
+      <ButtonGroup id={id} className={className} style={style} >
         { objects.map(this.renderIcon) }
       </ButtonGroup>
     );

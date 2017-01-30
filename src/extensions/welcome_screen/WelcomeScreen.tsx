@@ -1,6 +1,4 @@
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import { IGame } from '../../types/IGame';
-import { ITool } from '../../types/ITool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';

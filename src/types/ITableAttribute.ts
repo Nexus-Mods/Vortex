@@ -105,5 +105,5 @@ export interface ITableAttribute {
      * If this is undefined, the field is readonly
      */
     onChangeValue?: (rowId: string, newValue: any) => void,
-  },
+  };
 }

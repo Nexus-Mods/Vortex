@@ -1,4 +1,3 @@
-import {IIconDefinition} from '../../types/IIconDefinition';
 import {ITableAttribute} from '../../types/ITableAttribute';
 
 import IconBar from '../IconBar';

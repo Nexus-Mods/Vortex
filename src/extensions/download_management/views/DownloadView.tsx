@@ -27,8 +27,6 @@ import * as path from 'path';
 import * as React from 'react';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
-import {log} from '../../../util/log';
-
 function objectFilter(obj: Object, filter: (key: string, value: any) => boolean) {
   let result = {};
   for (let key in obj) {

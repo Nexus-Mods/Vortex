@@ -23,7 +23,9 @@ import * as path from 'path';
 import * as React from 'react';
 import {generate as shortid} from 'shortid';
 
-function UserCanceled() {};
+function UserCanceled() {
+  /* nop */
+};
 
 interface IConnectedProps {
   installPath: string;
@@ -141,7 +143,7 @@ class ActivationButton extends ComponentEx<IProps, IComponentState> {
         let sortedModList = modList.sort((lhs: IMod, rhs: IMod) =>
           sortedMods.indexOf(lhs.id) - sortedMods.indexOf(rhs.id));
 
-        return activateMods(installPath, gameDiscovery.modPath, sortedModList, modState, activator)
+        return activateMods(installPath, gameDiscovery.modPath, sortedModList, modState, activator);
       })
       .catch(UserCanceled, () => undefined)
       .catch((err) => {

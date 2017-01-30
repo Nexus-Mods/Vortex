@@ -64,7 +64,6 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     }).finally(() => {
       this.context.api.dismissNotification(notificationId);
     });
-;
   };
 }
 

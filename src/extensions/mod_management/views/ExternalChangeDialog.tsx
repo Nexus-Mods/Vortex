@@ -4,8 +4,6 @@ import {Button} from '../../../views/TooltipControls';
 import * as React from 'react';
 import { Modal, Table } from 'react-bootstrap';
 
-import {log} from '../../../util/log';
-
 export type FileActionRef = 'import' | 'drop';
 export type FileActionVal = 'keey';
 

@@ -176,7 +176,7 @@ abstract class LinkingActivator implements IModActivator {
                      });
                      return Promise.resolve(undefined);
                    } else {
-                    return this.isLink(fileDataPath, fileModPath)
+                    return this.isLink(fileDataPath, fileModPath);
                    }
                  })
                      .then((isLink?: boolean) => {
