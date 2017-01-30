@@ -65,6 +65,7 @@ export const stateReducer: IReducerSpec = {
         state: 'finished',
         game: payload.game,
         localPath: payload.localPath,
+        size: payload.fileSize,
         urls: [],
         modInfo: {},
         chunks: [],

@@ -1,5 +1,21 @@
 import * as actions from '../src/actions/index';
 
+import safeCreateAction from '../src/actions/safeCreateAction';
+
+describe('safeCreateAction', () => {
+  it('creates the action', () => {
+    let creator = safeCreateAction('ACTION');
+    console.log('action', creator);
+    expect(creator).toBeDefined();
+  });
+  it('replaces action', () => {
+    let c1 = safeCreateAction('ACTION', () => ({ key: 'old' }));
+    expect(c1()).toEqual({ type: 'ACTION', payload: { key: 'old' } });
+    let c2 = safeCreateAction('ACTION', () => ({ key: 'new' }));
+    expect(c2()).toEqual({ type: 'ACTION', payload: { key: 'new' } });
+  });
+});
+
 describe('addNotification', () => {
   it('creates the correct action for minimal case', () => {
     let minimal = {
