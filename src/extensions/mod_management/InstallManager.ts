@@ -20,12 +20,18 @@ import * as fs from 'fs-extra-promise';
 import {ILookupResult, IReference, IRule} from 'modmeta-db';
 import Zip = require('node-7z');
 import * as path from 'path';
+import {dir as tmpDir, file as tmpFile} from 'tmp';
 
 interface IZipEntry {
   date: Date;
   attr: string;
   size: number;
   name: string;
+}
+
+interface ISupportedInstaller {
+  installer: IModInstaller;
+  requiredFiles: string[];
 }
 
 // tslint:disable-next-line:no-empty
@@ -121,16 +127,46 @@ class InstallManager {
         .then(() => {
           return this.getInstaller(fileList.map((entry: IZipEntry) => entry.name));
         })
-        .then((installer: IModInstaller) => {
-          if (installer === undefined) {
+        .then((supportedInstaller: ISupportedInstaller) => {
+          if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
           }
-          return installer.install(fileList.map((entry: IZipEntry) => entry.name), destinationPath,
-            (perc: number) => log('info', 'progress', perc));
+          const { installer, requiredFiles } = supportedInstaller;
+          let cleanup: () => void;
+          let reqFilesPath: string;
+          return new Promise<string>((resolve, reject) => {
+                   tmpDir((err: any, tmpPath: string,
+                           cleanupCallback: () => void) => {
+                     if (err !== null) {
+                       reject(err);
+                     }
+                     cleanup = cleanupCallback;
+                     resolve(tmpPath);
+                   });
+                 })
+              .then((tmpPath: string) => {
+                reqFilesPath = tmpPath;
+                if (requiredFiles.length > 0) {
+                  return this.mTask.extract(archivePath, tmpPath, {
+                    raw: requiredFiles,
+                  });
+                }
+              })
+              .then(() => {
+                return installer.install(
+                    fileList.map((entry: IZipEntry) => entry.name),
+                    reqFilesPath,
+                    (perc: number) => log('info', 'progress', perc));
+              })
+              .finally(() => {
+                if (cleanup !== undefined) {
+                  cleanup();
+                }
+              });
         })
         .then((result: any) => {
           installContext.setInstallPathCB(installName, destinationPath);
-          return this.extractArchive(archivePath, destinationPath);
+          return this.extractArchive(archivePath, destinationPath, result.instructions);
         })
         .then(() => {
           const filteredInfo = filterModInfo(fullInfo);
@@ -204,7 +240,7 @@ class InstallManager {
   }
 
   private getInstaller(fileList: string[],
-                       offsetIn?: number): Promise<IModInstaller> {
+                       offsetIn?: number): Promise<ISupportedInstaller> {
     let offset = offsetIn || 0;
     if (offset >= this.mInstallers.length) {
       return Promise.resolve(undefined);
@@ -212,7 +248,10 @@ class InstallManager {
     return this.mInstallers[offset].testSupported(fileList).then(
         (testResult: ISupportedResult) => {
           if (testResult.supported === true) {
-            return Promise.resolve(this.mInstallers[offset]);
+            return Promise.resolve({
+              installer: this.mInstallers[offset],
+              requiredFiles: testResult.requiredFiles,
+            });
           } else {
             return this.getInstaller(fileList, offset + 1);
           }
@@ -343,18 +382,64 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
    * @param {string} destinationPath path to install to
    */
   private extractArchive(archivePath: string,
-                         destinationPath: string): Promise<void> {
-    let extract7z = this.mTask.extractFull;
+                         destinationPath: string,
+                         instructions: any): Promise<void> {
+    const extract7z = this.mTask.extractFull;
 
-    log('info', 'installing archive', {archivePath, destinationPath});
+    const copies = instructions.filter((instruction) => instruction.type === 'copy');
 
-    return Promise.resolve(
-        extract7z(archivePath, destinationPath + '.installing', {})
-            .then((args: string[]) => {
-              return fs.renameAsync(destinationPath + '.installing',
-                                    destinationPath);
-            }))
-            .then(() => undefined);
+    let cleanup: () => void;
+    let extractFilePath: string;
+
+    return new Promise<string>((resolve, reject) => {
+             tmpFile((err: any, tmpPath: string, fd: number,
+                      cleanupCB: () => void) => {
+               if (err !== null) {
+                 reject(err);
+               } else {
+                 cleanup = cleanupCB;
+                 fs.close(fd, () => {
+                  resolve(tmpPath);
+                 });
+               }
+             });
+           })
+        .then((tmpPath: string) => {
+          extractFilePath = tmpPath;
+          const extractList: string[] = copies.map((instruction) => '"' + instruction.source + '"');
+          return fs.writeFileAsync(tmpPath, extractList.join('\n'));
+        })
+        .then(() => extract7z(archivePath, destinationPath + '.installing',
+                              {raw: [`-ir@${extractFilePath}`]})
+                        .then((args: string[]) => {
+                          return fs.renameAsync(destinationPath + '.installing',
+                                                destinationPath);
+                        }))
+        .then(() => {
+          // TODO hack: the 7z command line doesn't allow files to be renamed during installation so
+          //  we extract them all and then rename. This also tries to clean up dirs that are empty
+          //  afterwards but ideally we get a proper 7z lib...
+          let renames =
+              copies.filter((inst) => inst.source !== inst.destination);
+          let affectedDirs = new Set<string>();
+          return Promise.map(renames,
+                             (inst: any) => {
+                               const source = path.join(destinationPath, inst.source);
+                               const dest = path.join(destinationPath, inst.destination);
+                               affectedDirs.add(path.dirname(dest));
+                               return fs.ensureDirAsync(path.dirname(dest)).then(
+                                   () => fs.renameAsync(source, dest));
+                             })
+              .then(() => Promise.each(Array.from(affectedDirs),
+                                       (affectedPath: string) =>
+                                           fs.rmdirAsync(affectedPath).catch()))
+        })
+        .then(() => undefined)
+        .finally(() => {
+          if (cleanup !== undefined) {
+            cleanup();
+          }
+        });
   }
 }
 
