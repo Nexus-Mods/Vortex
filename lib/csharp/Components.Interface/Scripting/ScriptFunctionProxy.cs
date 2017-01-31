@@ -628,7 +628,7 @@ namespace Components.Interface
 		/// <returns>The specified value as an integer.</returns>
 		public int GetIniInt(string p_strSettingsFileName, string p_strSection, string p_strKey)
 		{
-            // ??? This value should be returned by the plugin delegate
+            // ??? This value should be returned by the ini delegate
             return 0;
         }
 

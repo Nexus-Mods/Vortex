@@ -26,7 +26,7 @@ namespace Components.ModInstaller
         public ModFormatManager()
         {
             // ??? Dummy path
-            CurrentScriptTypeRegistry = ScriptTypeRegistry.DiscoverScriptTypes("InstallScripts", new Utils.FileSystem());
+            CurrentScriptTypeRegistry = ScriptTypeRegistry.DiscoverScriptTypes(".", new Utils.FileSystem());
         }
 
         #endregion

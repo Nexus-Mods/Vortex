@@ -60,25 +60,21 @@ namespace Components.ModInstaller
         /// This will simulate the mod installation and decide installation choices and files final paths.
         /// </summary>
         /// <param name="modArchiveFileList">The list of files inside the mod archive.</param>
-        /// <param name="destinationPath">The file install destination folder.</param>
+        /// <param name="scriptPath">The path to the uncompressed install script file, if any.</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
         /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
         public async override Task<Dictionary<string, object>> Install(List<string> modArchiveFileList,
-            string destinationPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
+            string scriptPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
-            List<string> IniEditList = new List<string>();
+            List<Instruction> Instructions = new List<Instruction>();
+            Mod modToInstall = new Mod(modArchiveFileList, scriptPath);
 
-            // temporary functionality assuming this is a simple install
-            List<Instruction> Instructions = await BasicModInstall(modArchiveFileList, progressDelegate, coreDelegate);
             progressDelegate(50);
 
-            if (IniEditList != null)
-            {
-                foreach (string iniEdit in IniEditList)
-                {
-                    Instructions.Add(Instruction.CreateIniEdit(iniEdit));
-                }
-            }
+            if (modToInstall.HasInstallScript)
+                Instructions = await ScriptedModInstall(modToInstall, progressDelegate, coreDelegate);
+            else
+                Instructions = await BasicModInstall(modArchiveFileList, progressDelegate, coreDelegate);
 
             progressDelegate(100);
 
@@ -105,7 +101,7 @@ namespace Components.ModInstaller
 
         #endregion
 
-        #region File management
+        #region Install Management
 
         /// <summary>
         /// This will assign all files to the proper destination.
@@ -128,6 +124,20 @@ namespace Components.ModInstaller
             });
 
             return FilesToInstall;
+        }
+
+        /// <summary>
+        /// This will assign all files to the proper destination.
+        /// </summary>
+        /// <param name="FileList">The list of files inside the mod archive.</param>
+        /// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
+        /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
+        /// <param name="error_OverwritesDelegate">A delegate to present errors and file overwrite requests.</param>
+        protected async Task<List<Instruction>> ScriptedModInstall(Mod modArchive, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
+        {
+            List<Instruction> Instructions = new List<Instruction>();
+
+            return Instructions;
         }
 
         #endregion
