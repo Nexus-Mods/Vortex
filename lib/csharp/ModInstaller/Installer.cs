@@ -9,16 +9,6 @@ namespace Components.ModInstaller
 {
     public class Installer : BaseInstaller
     {
-        #region Fields
-
-        protected static FileSystem FileSystem;
-
-        #endregion
-
-        #region Properties
-
-        #endregion
-
         #region Constructors
 
         /// <summary>

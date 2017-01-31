@@ -11,16 +11,7 @@ namespace Components.Scripting
 	/// file system that are related to the game mode currently being managed.
 	/// </remarks>
 	public class DataFileUtil 
-	{
-        #region Fields
-
-        /// <summary>
-        /// The object used for filesystem interactions.
-        /// </summary>
-        protected static FileSystem FileSystem;
-
-        #endregion
-        
+	{        
         /// <summary>
         /// Gets or sets the path at which the current game is installed.
         /// </summary>

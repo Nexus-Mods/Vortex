@@ -21,11 +21,6 @@ namespace Components.Interface
 
         #region Properties
 
-        /// <summary>
-        /// The object used for filesystem interactions.
-        /// </summary>
-        protected static FileSystem FileSystem;
-
         public string ScreenshotPath
         {
             get
@@ -93,7 +88,6 @@ namespace Components.Interface
         #region Constructor
         public Mod(List<string> listModFiles, string installScriptPath)
         {
-            FileSystem = new FileSystem();
             ModFiles = listModFiles;
             GetScreenshotPath(listModFiles);
             InstallScriptPath = installScriptPath;
