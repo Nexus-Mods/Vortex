@@ -1,9 +1,11 @@
 import { ICategoryDictionary } from '../types/IcategoryDictionary';
 import { ITreeDataObject } from '../types/ITrees';
 
+let counter: number = 1;
+
 function searchChildren(
  children: any, categoryList: ICategoryDictionary[],
- rootId: string, counter: number) {
+ rootId: string) {
   let categoryDict: ICategoryDictionary;
   children.forEach((child) => {
     categoryDict = {
@@ -16,7 +18,7 @@ function searchChildren(
     counter++;
     if (child.children !== undefined) {
       if (child.children.length !== 0) {
-        searchChildren(child.children, categoryList, child.rootId, counter);
+        searchChildren(child.children, categoryList, child.rootId);
       }
     }
   });
@@ -35,7 +37,7 @@ function searchChildren(
 function createCategoryDictionary(treeDataObject: ITreeDataObject[]) {
   let categoryList: ICategoryDictionary[] = [];
   let categoryDict: ICategoryDictionary;
-  let counter: number = 1;
+  counter = 1;
   treeDataObject.forEach((element) => {
     categoryDict = {
       [element.rootId]:
@@ -48,7 +50,7 @@ function createCategoryDictionary(treeDataObject: ITreeDataObject[]) {
     counter++;
     if (element.children !== undefined) {
       if (element.children.length !== 0) {
-        categoryList = searchChildren(element.children, categoryList, element.rootId, counter);
+        categoryList = searchChildren(element.children, categoryList, element.rootId);
       }
     }
   });
