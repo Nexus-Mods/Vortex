@@ -93,6 +93,7 @@ namespace Components.Interface
         #region Constructor
         public Mod(List<string> listModFiles, string installScriptPath)
         {
+            FileSystem = new FileSystem();
             ModFiles = listModFiles;
             GetScreenshotPath(listModFiles);
             InstallScriptPath = installScriptPath;
