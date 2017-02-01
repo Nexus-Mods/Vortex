@@ -135,7 +135,7 @@ class InstallManager {
           let cleanup: () => void;
           let reqFilesPath: string;
           return new Promise<string>((resolve, reject) => {
-                   tmpDir((err: any, tmpPath: string,
+                   tmpDir({ unsafeCleanup: true }, (err: any, tmpPath: string,
                            cleanupCallback: () => void) => {
                      if (err !== null) {
                        reject(err);

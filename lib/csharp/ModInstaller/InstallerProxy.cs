@@ -32,7 +32,9 @@ namespace Components.ModInstaller
         public async Task<object> Install(dynamic input)
         {
             object[] files = (object[])input.files;
-            string destinationPath = (string)input.destinationPath;
+            // this is actually the temporary path where the files requested in TestSupported
+            // were put.
+            string destinationPath = (string)input.scriptPath;
             var progressCB = (Func<object, Task<object>>)input.progressDelegate;
             CoreDelegates coreDelegates = new CoreDelegates(input.coreDelegates);
             return await mInstaller.Install(
