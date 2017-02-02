@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Threading.Tasks;
 using Components.Interface;
 using Components.Scripting;
 using System.Linq;
@@ -13,7 +13,6 @@ namespace Components.Scripting.XmlScript
     /// </summary>
     public class XmlScriptExecutor : ScriptExecutorBase
     {
-        private SynchronizationContext m_scxSyncContext = null;
         private Mod ModArchive = null;
         private CoreDelegates m_Delegates;
         #region Constructors
@@ -24,10 +23,9 @@ namespace Components.Scripting.XmlScript
         /// <param name="modArchive">The mod object containing the file list in the mod archive.</param>
         /// <param name="UserInteractionDelegate">The utility class to use to install the mod items.</param>
         /// <param name="scxUIContext">The <see cref="SynchronizationContext"/> to use to marshall UI interactions to the UI thread.</param>		
-        public XmlScriptExecutor(Mod modArchive, CoreDelegates coreDelegates, SynchronizationContext scxUIContext)
+        public XmlScriptExecutor(Mod modArchive, CoreDelegates coreDelegates)
         {
             ModArchive = modArchive;
-            m_scxSyncContext = scxUIContext;
             m_Delegates = coreDelegates;
         }
 

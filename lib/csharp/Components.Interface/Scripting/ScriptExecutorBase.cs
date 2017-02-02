@@ -1,5 +1,7 @@
-﻿using System.Threading;
-
+﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Components.Interface;
 
 namespace Components.Scripting
 {
@@ -99,11 +101,12 @@ namespace Components.Scripting
 		/// </summary>
 		/// <returns><c>true</c> if the script completed
 		/// successfully; <c>false</c> otherwise.</returns>
-		public bool Execute(IScript p_scpScript)
+		public Task<IList<Instruction>> Execute(IScript p_scpScript)
 		{
-			bool booResult = DoExecute(p_scpScript);
-			// ??? OnTaskSetCompleted(booResult, "The script has finished executing.", p_scpScript);
-			return booResult;
+            DoExecute(p_scpScript);
+            // ??? OnTaskSetCompleted(booResult, "The script has finished executing.", p_scpScript);
+            //return booResult;
+            return null;
 		}
 
 		#endregion

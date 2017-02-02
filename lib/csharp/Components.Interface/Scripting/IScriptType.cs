@@ -40,9 +40,8 @@ namespace Components.Scripting
         /// </summary>
         /// <param name="modArchive">The mod being installed.</param>
         /// <param name="userInteractionDelegate">The application's envrionment info.</param>
-        /// <param name="scxUIContext">The <see cref="SynchronizationContext"/> to use to marshall UI interactions to the UI thread.</param>
         /// <returns>An executor that can run the script type.</returns>
-        IScriptExecutor CreateExecutor(Mod modArchive, CoreDelegates delegates, SynchronizationContext scxUIContext);
+        IScriptExecutor CreateExecutor(Mod modArchive, CoreDelegates delegates);
 
 		/// <summary>
 		/// Loads the script from the given text representation.

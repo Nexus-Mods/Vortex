@@ -66,7 +66,7 @@ namespace Components.Scripting.CSharpScript
         /// <param name="delegates">delegates for communicating with the application core.</param>
         /// <param name="scxUIContext">The <see cref="SynchronizationContext"/> to use to marshall UI interactions to the UI thread.</param>
         /// <returns>An executor that can run the script type.</returns>
-        public IScriptExecutor CreateExecutor(Mod modArchive, CoreDelegates delegates, SynchronizationContext scxUIContext)
+        public IScriptExecutor CreateExecutor(Mod modArchive, CoreDelegates delegates)
 		{
 			CSharpScriptFunctionProxy csfFunctions = GetScriptFunctionProxy(modArchive, delegates);
 			return new CSharpScriptExecutor();

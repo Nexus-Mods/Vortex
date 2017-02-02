@@ -57,6 +57,15 @@
             };
         }
 
+        public static Instruction InstallError(string message)
+        {
+            return new Instruction()
+            {
+                type = "error",
+                source = message,
+            };
+        }
+
         public string type;
         public string source;
         public string destination;

@@ -1,4 +1,8 @@
-﻿namespace Components.Scripting
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Components.Interface;
+
+namespace Components.Scripting
 {
 	/// <summary>
 	/// Describes the properties and methods of an object that executes
@@ -11,6 +15,6 @@
 		/// </summary>
 		/// <returns><c>true</c> if the script completed
 		/// successfully; <c>false</c> otherwise.</returns>
-		bool Execute(IScript p_scpScript);
+		Task<IList<Instruction>> Execute(IScript p_scpScript);
 	}
 }

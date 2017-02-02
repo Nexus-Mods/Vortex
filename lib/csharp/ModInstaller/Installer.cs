@@ -127,6 +127,8 @@ namespace Components.ModInstaller
         {
             List<Instruction> Instructions = new List<Instruction>();
 
+            IScriptExecutor sexScript = modArchive.InstallScript.Type.CreateExecutor(modArchive, coreDelegate);
+            sexScript.Execute(modArchive.InstallScript);
             return Instructions;
         }
 

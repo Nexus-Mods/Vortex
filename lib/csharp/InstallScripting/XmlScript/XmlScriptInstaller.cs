@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using Components.Interface;
 
@@ -25,8 +26,6 @@ namespace Components.Scripting.XmlScript
         /// A simple constructor that initializes the object with the required dependencies.
         /// </summary>
         /// <param name="modArchive">The mod for which the script is running.</param>
-        /// <param name="p_gmdGameMode">The game mode currently being managed.</param>
-        /// <param name="p_igpInstallers">The utility class to use to install the mod items.</param>
         public XmlScriptInstaller(Mod modArchive)
 		{
             ModArchive = modArchive;
@@ -43,19 +42,18 @@ namespace Components.Scripting.XmlScript
         /// <param name="pluginsToActivate">The list of plugins to activate.</param>
         /// <returns><c>true</c> if the installation succeeded;
         /// <c>false</c> otherwise.</returns>
-        public bool Install(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
+        public async Task<IList<Instruction>> Install(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
 		{
 			bool booSuccess = false;
 			try
 			{
-				booSuccess = InstallFiles(xscScript, coreDelegates, filesToInstall, pluginsToActivate);
+				await InstallFiles(xscScript, coreDelegates, filesToInstall, pluginsToActivate);
 			}
 			catch (Exception ex)
 			{
-				booSuccess = false;
-				throw new Exception(ex.Message);
-			}
-			return booSuccess;
+                modInstallInstructions.Add(Instruction.InstallError(ex.Message));
+            }
+			return modInstallInstructions;
 		}
 
         /// <summary>
@@ -65,35 +63,53 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <param name="filesToInstall">The list of files to install.</param>
         /// <param name="pluginsToActivate">The list of plugins to activate.</param>
-        protected bool InstallFiles(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
+        protected async Task<bool> InstallFiles(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
 		{
+            bool HadIssues = false;
 			IList<InstallableFile> lstRequiredFiles = xscScript.RequiredInstallFiles;
 			IList<ConditionallyInstalledFileSet> lstConditionallyInstalledFileSets = xscScript.ConditionallyInstalledFileSets;
 
-			foreach (InstallableFile iflRequiredFile in lstRequiredFiles)
-			{
-				if (!InstallFile(iflRequiredFile))
-					return false;
-			}
+            await Task.Run(() =>
+            {
+                foreach (InstallableFile iflRequiredFile in lstRequiredFiles)
+                {
+                    if (!InstallFile(iflRequiredFile))
+                        HadIssues = true;
+                }
+            });
 
-			foreach (InstallableFile ilfFile in filesToInstall)
-			{
-				if (!InstallFile(ilfFile)) // ??? , pluginsToActivate.Contains(ilfFile)))
-					return false;
-			}
+            if (!HadIssues)
+            {
+                await Task.Run(() =>
+                {
+                    foreach (InstallableFile ilfFile in filesToInstall)
+                    {
+                        if (!InstallFile(ilfFile)) // ??? , pluginsToActivate.Contains(ilfFile)))
+                            HadIssues = true;
+                    }
+                });
+            }
 
-			foreach (ConditionallyInstalledFileSet cisFileSet in lstConditionallyInstalledFileSets)
-			{
-				if (cisFileSet.Condition.GetIsFulfilled(coreDelegates))
-					foreach (InstallableFile ilfFile in cisFileSet.Files)
-					{
-						if (!InstallFile(ilfFile))
-							return false;
-					}
-			}
-            modInstallInstructions.Add(Instruction.EnableAllPlugins());
+            if (!HadIssues)
+            {
+                await Task.Run(() =>
+                {
+                    foreach (ConditionallyInstalledFileSet cisFileSet in lstConditionallyInstalledFileSets)
+                    {
+                        if (cisFileSet.Condition.GetIsFulfilled(coreDelegates))
+                            foreach (InstallableFile ilfFile in cisFileSet.Files)
+                            {
+                                if (!InstallFile(ilfFile))
+                                    HadIssues = true;
+                            }
+                    }
+                });
+            }
 
-            return true;
+            if (!HadIssues)
+                modInstallInstructions.Add(Instruction.EnableAllPlugins());
+
+            return (!HadIssues);
 		}
 
 		/// <summary>
