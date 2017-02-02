@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModInstaller", "ModInstaller\ModInstaller.csproj", "{B7659B4B-F4EF-468A-9D97-3FA2822243D8}"
 EndProject
@@ -18,6 +18,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpScript", "InstallScripting\CSharpScript\CSharpScript.csproj", "{6C3901C6-BFCA-47FC-929B-0CD030325FBD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModScript", "InstallScripting\ModScript\ModScript.csproj", "{474F11D4-9510-4C7D-AE19-C668FC0EC961}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModInstallerTests", "ModInstallerTests\ModInstallerTests.csproj", "{493549E4-5E9A-4F4B-8421-983DF255F02E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -113,6 +115,18 @@ Global
 		{474F11D4-9510-4C7D-AE19-C668FC0EC961}.Release|x64.Build.0 = Release|Any CPU
 		{474F11D4-9510-4C7D-AE19-C668FC0EC961}.Release|x86.ActiveCfg = Release|Any CPU
 		{474F11D4-9510-4C7D-AE19-C668FC0EC961}.Release|x86.Build.0 = Release|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Debug|x64.Build.0 = Debug|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Debug|x86.Build.0 = Debug|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Release|x64.ActiveCfg = Release|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Release|x64.Build.0 = Release|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Release|x86.ActiveCfg = Release|Any CPU
+		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
