@@ -1,6 +1,6 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
-import {currentGameDiscovery} from '../../../util/storeHelper';
+import {currentGameDiscovery} from '../../../util/selectors';
 
 import DelegateBase from './DelegateBase';
 

@@ -47,7 +47,6 @@ interface IFinishCallback {
  * @class DownloadWorker
  */
 class DownloadWorker {
-
   private mJob: IDownloadJob;
   private mRequest: request.Request;
   private mProgressCB: (bytes: number) => void;

@@ -1,5 +1,6 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
+import {activeGameId} from '../../../util/selectors';
 import {getSafe} from '../../../util/storeHelper';
 
 import {IDependency} from '../types/IDependency';
@@ -9,7 +10,8 @@ import {ILookupResult, IReference, IRule} from 'modmeta-db';
 
 function findModByRef(reference: IReference, state: any): string {
   // TODO support non-hash references
-  const mods = state.mods.mods;
+  const gameMode = activeGameId(state);
+  const mods = state.persistent.mods[gameMode];
   let existing: string = Object.keys(mods).find((modId: string): boolean => {
     return getSafe(mods[modId], ['attributes', 'fileMD5'], undefined) === reference.fileMD5;
   });

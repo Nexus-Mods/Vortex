@@ -4,7 +4,7 @@ import { ITool } from '../../../types/ITool';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 
-import { IDiscoveryResult } from '../types/IStateEx';
+import { IDiscoveryResult } from '../types/IDiscoveryResult';
 
 import getNormalizeFunc, { Normalize } from '../../../util/getNormalizeFunc';
 

@@ -6,14 +6,10 @@ import safeCreateAction from '../../../actions/safeCreateAction';
 export const setProfile: any = safeCreateAction('SET_PROFILE');
 
 /**
- * change current profile
- */
-export const setCurrentProfile: any = safeCreateAction('SET_CURRENT_PROFILE');
-
-/**
- * enable or disable a mod in the current profile
+ * enable or disable a mod in a profile
  */
 // TODO when we enable/disable a mod we need to also install/uninstall links created
 //   with this mod
-export const setModEnabled: any = safeCreateAction('SET_MOD_ENABLED',
-  (modId: string, enable: boolean) => { return { modId, enable }; });
+export const setModEnabled: any = safeCreateAction(
+  'SET_MOD_ENABLED',
+  (profileId: string, modId: string, enable: boolean) => ({profileId, modId, enable}));

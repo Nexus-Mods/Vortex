@@ -1,10 +1,11 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import elevated from  '../../util/elevated';
 import { log } from '../../util/log';
+import { activeGameId } from '../../util/selectors';
 
 import { IMod } from '../mod_management/types/IMod';
 import { IFileChange, IModActivator } from '../mod_management/types/IModActivator';
 
-import elevated from  '../../util/elevated';
 import walk from './walk';
 
 import * as Promise from 'bluebird';
@@ -34,8 +35,8 @@ class ModActivator implements IModActivator {
   }
 
   public isSupported(state: any): boolean {
-    const activeGameId = state.settings.gameMode.current;
-    return process.platform === 'win32' && !this.isGamebryoGame(activeGameId);
+    const gameId = activeGameId(state);
+    return process.platform === 'win32' && !this.isGamebryoGame(gameId);
   }
 
   public prepare(dataPath: string): Promise<void> {

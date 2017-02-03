@@ -3,38 +3,31 @@ import { deleteOrNop, setSafe } from '../../../util/storeHelper';
 
 import * as actions from '../actions/mods';
 
-import update = require('react-addons-update');
-
 /**
  * reducer for changes to the known mods
  */
 export const modsReducer: IReducerSpec = {
   reducers: {
-    ['persist/REHYDRATE']: (state, payload) => {
-      if (payload.mods !== undefined) {
-        return update(state, {mods: {$set: payload.mods.mods || {}}});
-      } else {
-        return state;
-      }
-    },
     [actions.addMod]: (state, payload) => {
-      return setSafe(state, ['mods', payload.id], payload);
+      const { gameId, mod } = payload;
+      return setSafe(state, [gameId, mod.id], mod);
     },
     [actions.removeMod]: (state, payload) => {
-      return deleteOrNop(state, ['mods', payload]);
+      const { gameId, modId } = payload;
+      return deleteOrNop(state, [gameId, modId]);
     },
     [actions.setModInstallationPath]: (state, payload) => {
-      return setSafe(state, ['mods', payload.id, 'installationPath'], payload.installPath);
+      const { gameId, modId, installPath } = payload;
+      return setSafe(state, [gameId, modId, 'installationPath'], installPath);
     },
     [actions.setModState]: (state, payload) => {
-      const { id, modState } = payload;
-      return update(state, { mods: { [id]: { state: { $set: modState } } } });
+      const { gameId, modId, modState } = payload;
+      return setSafe(state, [gameId, modId, 'state'], modState);
     },
     [actions.setModAttribute]: (state, payload) => {
-      const { id, attribute, value } = payload;
-      return update(state, { mods: { [id]: { attributes: { [attribute]: { $set: value } } } } });
+      const { gameId, modId, attribute, value } = payload;
+      return setSafe(state, [gameId, modId, 'attributes', attribute], value);
     },
   }, defaults: {
-    mods: {},
   },
 };

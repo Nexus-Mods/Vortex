@@ -7,6 +7,7 @@ import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
 import { IState } from '../types/IState';
 import { connect, extend, translate } from '../util/ComponentEx';
+import { getSafe } from '../util/storeHelper';
 import DeveloperType from './Developer';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
@@ -299,7 +300,7 @@ function emptyFunc() {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    tabsMinimized: state.window.base.tabsMinimized,
+    tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
   };
 }
 

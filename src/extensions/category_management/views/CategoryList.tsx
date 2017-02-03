@@ -4,6 +4,7 @@ import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
+import { activeGameId } from '../../../util/selectors';
 import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
 import { Button } from '../../../views/TooltipControls';
@@ -127,7 +128,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
           </Button>
           <IconBar
             group='categories-icons'
-            staticElements={null}
+            staticElements={[]}
           />
           <label>
             Search:&nbsp;
@@ -582,15 +583,16 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 }
 
 function mapStateToProps(state: any): IConnectedProps {
+  const gameMode = activeGameId(state);
   return {
-    gameMode: state.settings.gameMode.current,
+    gameMode,
     language: state.settings.interface.language,
     categories: state.persistent.categories,
     searchString: state.session.categories.searchString,
     searchFocusIndex: state.session.categories.searchFocusIndex,
     searchFoundCount: state.session.categories.searchFoundCount,
     treeDataObject: state.session.categories.treeDataObject,
-    mods: state.mods.mods,
+    mods: state.persistent.mods[gameMode],
     isHidden: state.session.categories.isHidden,
   };
 }

@@ -5,6 +5,7 @@ import { IDialogResult } from '../../../types/IDialog';
 import { IIconDefinition } from '../../../types/IIconDefinition';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { activeGameId } from '../../../util/selectors';
 import {setSafe} from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
@@ -12,7 +13,7 @@ import InputButton from '../../../views/InputButton';
 import SuperTable, {ITableRowAction} from '../../../views/Table';
 import {Button} from '../../../views/TooltipControls';
 
-import { IGameStored } from '../../gamemode_management/types/IStateEx';
+import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { downloadPath } from '../../mod_management/selectors';
 
 import { IDownload } from '../types/IDownload';
@@ -335,7 +336,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    gameMode: state.settings.gameMode.current,
+    gameMode: activeGameId(state),
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
     downloadPath: downloadPath(state),

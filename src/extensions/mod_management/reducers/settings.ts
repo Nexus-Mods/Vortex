@@ -1,46 +1,24 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import { setSafe } from '../../../util/storeHelper';
 
-import { setActivator, setModlistAttributeSort,
-         setModlistAttributeVisible, setPath } from '../actions/settings';
-
-import update = require('react-addons-update');
-
-import * as path from 'path';
+import { setActivator, setPath } from '../actions/settings';
 
 /**
  * reducer for changes to settings regarding mods
  */
 export const settingsReducer: IReducerSpec = {
   reducers: {
-    ['persist/REHYDRATE']: (state, payload) => {
-      if (payload.hasOwnProperty('gameSettings') &&
-          payload.gameSettings.hasOwnProperty('mods')) {
-        return update(state, { $set: payload.gameSettings.mods });
-      } else {
-        return state;
-      }
-    },
     [setPath]: (state, payload) => {
-      return setSafe(state, [ 'paths', payload.key ], payload.path);
-    },
-    [setModlistAttributeVisible]: (state, payload) => {
-      return setSafe(state, [ 'modlistState', payload.attributeId, 'enabled' ], payload.visible);
-    },
-    [setModlistAttributeSort]: (state, payload) => {
-      const { attributeId, direction } = payload;
-      return setSafe(state, [ 'modlistState', attributeId, 'sortDirection' ], direction);
+      const { gameId, key, path } = payload;
+      return setSafe(state, [ 'paths', gameId, key ], path);
     },
     [setActivator]: (state, payload) => {
-      return setSafe(state, [ 'activator' ], payload);
+      const { gameId, activatorId } = payload;
+      return setSafe(state, [ 'activator', gameId ], activatorId);
     },
   }, defaults: {
-    paths: {
-      base: path.join('{USERDATA}', '{GAME}'),
-      download: path.join('{base}', 'downloads'),
-      install: path.join('{base}', 'mods'),
-    },
+    paths: { },
     modlistState: { },
-    activator: undefined,
+    activator: { },
   },
 };

@@ -11,5 +11,6 @@ export * from './IState';
 export * from './ITableAttribute';
 export * from './SortDirection';
 
-export {IDiscoveryResult, IDiscoveryState, IGameStored,
-        IToolStored} from '../extensions/gamemode_management/types/IStateEx';
+export { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
+export { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
+export { IToolStored } from '../extensions/gamemode_management/types/IToolStored';

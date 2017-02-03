@@ -6,13 +6,8 @@ import safeCreateAction from './actions/safeCreateAction';
 import * as types from './types/api';
 import * as util from './util/api';
 import { log } from './util/log';
+import * as selectors from './util/selectors';
 
 export * from './views/api';
-export { actions, types, log, util, safeCreateAction }
+export { actions, types, log, selectors, safeCreateAction, util }
 export { ComponentEx } from './util/ComponentEx';
-
-import * as mmselectors from './extensions/mod_management/selectors';
-
-let selectors = Object.assign({}, mmselectors);
-
-export { selectors };

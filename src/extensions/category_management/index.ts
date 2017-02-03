@@ -2,6 +2,7 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import { setModAttribute } from '../mod_management/actions/mods';
@@ -20,7 +21,7 @@ import CategoryList from './views/CategoryList';
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('book', 'Categories', CategoryList, {
     hotkey: 'C',
-    visible: () => context.api.store.getState().settings.gameMode.current,
+    visible: () => activeProfile(context.api.store.getState()) !== undefined,
   });
 
   context.registerReducer(['persistent', 'categories'], categoryReducer);
@@ -33,7 +34,7 @@ function init(context: IExtensionContext): boolean {
     icon: 'book',
     placement: 'table',
     calc: (mod) => mod.attributes.category !== undefined ?
-      retrieveCategory(mod.attributes.category, context.api.store) : null,
+        retrieveCategory(mod.attributes.category, context.api.store) : null,
     isToggleable: true,
     edit: {},
     isSortable: true,
@@ -69,7 +70,8 @@ function init(context: IExtensionContext): boolean {
         }
       },
       onChangeValue: (rowId: string, newValue: any) => {
-        context.api.store.dispatch(setModAttribute(rowId, 'category', newValue));
+        const gameMode = activeGameId(context.api.store.getState());
+        context.api.store.dispatch(setModAttribute(gameMode, rowId, 'category', newValue));
       },
     },
     placement: 'detail',
@@ -89,10 +91,10 @@ function init(context: IExtensionContext): boolean {
         if (isUpdate) {
           context.api.store.dispatch(updateCategories(gameId, categories));
 
-          let mods: any = getSafe(store.getState(), ['mods'], '');
+          let mods: any = getSafe(store.getState(), ['mods', gameId], {});
 
           store.dispatch(setTreeDataObject(createTreeDataObject(categories,
-            mods.mods, false)));
+            mods, false)));
 
         } else {
           context.api.store.dispatch(loadCategories(gameId, categories));

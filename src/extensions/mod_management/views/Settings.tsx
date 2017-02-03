@@ -2,6 +2,7 @@ import {showDialog} from '../../../actions/notifications';
 import {DialogActions, DialogType, IDialogContent} from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
+import { activeGameId } from '../../../util/selectors';
 import { setSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
@@ -13,6 +14,7 @@ import supportedActivators from '../util/supportedActivators';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import update = require('react-addons-update');
@@ -21,14 +23,12 @@ import {Alert, ControlLabel, FormControl, FormGroup,
 
 import { log } from '../../../util/log';
 
-import * as _ from 'lodash';
-
 interface IBaseProps {
   activators: IModActivator[];
 }
 
 interface IConnectedProps {
-  paths: IStatePaths;
+  paths: { [gameId: string]: IStatePaths };
   gameMode: string;
   currentActivator: string;
   state: any;
@@ -43,7 +43,7 @@ interface IActionProps {
 }
 
 interface IComponentState {
-  paths: IStatePaths;
+  paths: { [gameId: string]: IStatePaths };
   busy: string;
   supportedActivators: IModActivator[];
 }
@@ -117,9 +117,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private pathsChanged() {
-    return (this.props.paths.base !== this.state.paths.base)
-        || (this.props.paths.download !== this.state.paths.download)
-        || (this.props.paths.install !== this.state.paths.install);
+    const { gameMode } = this.props;
+    return !_.isEqual(this.props.paths[gameMode], this.state.paths[gameMode]);
   }
 
   private pathsAbsolute() {
@@ -186,9 +185,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         return this.transferPath('install');
       })
       .then(() => {
-        onSetPath('base', this.state.paths.base);
-        onSetPath('download', this.state.paths.download);
-        onSetPath('install', this.state.paths.install);
+        onSetPath('base', this.state.paths[gameMode].base);
+        onSetPath('download', this.state.paths[gameMode].download);
+        onSetPath('install', this.state.paths[gameMode].install);
         this.setState(setSafe(this.state, ['busy'], undefined));
       })
       .catch((err) => {
@@ -242,7 +241,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <ControlLabel>{label}</ControlLabel>
       <InputGroup>
         <FormControl
-          value={paths[pathKey]}
+          value={paths[gameMode][pathKey]}
           placeholder={label}
           onChange={this.mPathChangeCBs[pathKey]}
         />
@@ -321,9 +320,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    paths: state.gameSettings.mods.paths,
-    gameMode: state.settings.gameMode.current,
-    currentActivator: state.gameSettings.mods.activator,
+    paths: state.settings.mods.paths,
+    gameMode: activeGameId(state),
+    currentActivator: state.settings.mods.activator,
     state,
   };
 }

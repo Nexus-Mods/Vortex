@@ -6,32 +6,40 @@
  *    included in the profile so it gets stored in the profile and switched when the
  *    profile gets changed
  * State:
- *   gameSettings.profiles.currentProfile: string - currently active profile id
- *   gameSettings.profiles.profiles: { [id: string]: IProfile } - dictionary of all profiles
+ *   settings.profiles.activeProfileId: string - currently active profile id
+ *   persistent.profiles: { [gameId: string]: { [profileId: string]: IProfile } } -
+ *      dictionary of all profiles
  * Actions:
- *   setProfile(profile: IProfile) - adds a new profile or changes an existing one
- *   setCurrentProfile(id: string) - activates a profile
- *   setModEnabled(modId: string, enabled: boolean) -
+ *   setProfile(gameId: string, profile: IProfile) - adds a new profile or changes an existing one
+ *   setCurrentProfile(gameId: string, profileId: string) - activates a profile
+ *   setModEnabled(gameId: string, profileId: string, modId: string, enabled: boolean) -
  *      enables or disables a mod in the current profile
  */
 
-import { setCurrentProfile } from './actions/profiles';
+import { IDialogResult, showDialog } from '../../actions/notifications';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { IState } from '../../types/IState';
 import { showError } from '../../util/message';
-import { currentGame, currentProfile, getSafe } from '../../util/storeHelper';
+import { currentGame, getSafe } from '../../util/storeHelper';
 
-import { IGameStored } from '../gamemode_management/types/IStateEx';
+import { IGameStored } from '../gamemode_management/types/IGameStored';
 
+import { setProfile } from './actions/profiles';
+import { setCurrentProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
+import { settingsReducer } from './reducers/settings';
+import { IProfile } from './types/IProfile';
 import ProfileView from './views/ProfileView';
 
+import { activeGameId, activeProfile, gameProfiles } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import { generate as shortid } from 'shortid';
 
 let profileFiles: { [gameId: string]: string[] } = {};
 
@@ -39,7 +47,7 @@ function profilePath(store: Redux.Store<any>): Promise<string> {
   let app = appIn || remote.app;
   return currentGame(store)
   .then((game: IGameStored) => {
-    let profileName = currentProfile(store.getState()).id;
+    let profileName = activeProfile(store.getState()).id;
     return path.join(app.getPath('userData'), game.id, 'profiles', profileName);
   });
 }
@@ -47,12 +55,13 @@ function profilePath(store: Redux.Store<any>): Promise<string> {
 function checkProfile(store: Redux.Store<any>, currentProfile: string): Promise<void> {
   if (currentProfile === undefined) {
     // no profile set, find a fallback if possible
-    if ('default' in store.getState().gameSettings.profiles) {
+    let profiles = gameProfiles(store.getState());
+    if (profiles['default'] !== undefined) {
       store.dispatch(setCurrentProfile('default'));
     } else {
-      let profiles = Object.keys(store.getState().gameSettings.profiles);
-      if (profiles.length > 0) {
-        store.dispatch(setCurrentProfile(profiles[0]));
+      let profileIds = Object.keys(profiles);
+      if (profileIds.length > 0) {
+        store.dispatch(setCurrentProfile(profileIds[0]));
       }
     }
   }
@@ -68,7 +77,7 @@ function currentGameId(state: any) {
 }
 
 function refreshProfile(store: Redux.Store<any>, direction: 'import' | 'export') {
-  return checkProfile(store, currentProfile(store.getState()).id)
+  return checkProfile(store, activeProfile(store.getState()).id)
       .then(() => {
         return profilePath(store);
       })
@@ -103,10 +112,53 @@ export interface IExtensionContextExt extends IExtensionContext {
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('clone', 'Profiles', ProfileView, {
     hotkey: 'P',
-    visible: () => context.api.store.getState().settings.gameMode.current,
+    visible: () => activeGameId(context.api.store.getState()) !== undefined,
   });
 
-  context.registerReducer(['gameSettings', 'profiles'], profilesReducer);
+  context.registerReducer(['persistent', 'profiles'], profilesReducer);
+  context.registerReducer(['settings', 'profiles'], settingsReducer);
+
+  context.registerIcon('game-discovered-buttons', 'asterisk', 'Manage', (instanceIds: string[]) => {
+    let profileId = shortid();
+    let gameId = instanceIds[0];
+    context.api.store.dispatch(setProfile({
+      id: profileId,
+      gameId,
+      name: 'Default',
+      modState: {},
+    }));
+    context.api.store.dispatch(setCurrentProfile(gameId, profileId));
+  });
+
+  context.registerIcon('game-managed-buttons', 'play', 'Activate', (instanceIds: string[]) => {
+    let store = context.api.store;
+    let state: IState = store.getState();
+    let gameId = instanceIds[0];
+    let profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId],
+                            undefined);
+    if (profileId === undefined) {
+      let profiles = getSafe(state, ['persistent', 'profiles'], []);
+      let gameProfiles: IProfile[] = Object.keys(profiles)
+        .filter((id: string) => profiles[id].gameId === gameId)
+        .map((id: string) => profiles[id]);
+      store.dispatch(showDialog('question', 'Choose profile', {
+        message: 'Please choose the profile to use with this game',
+        choices: gameProfiles.map((profile: IProfile, idx: number) =>
+          ({ id: profile.id, text: profile.name, value: idx === 0 })),
+      }, {
+        Activate: null,
+      }))
+      .then((dialogResult: IDialogResult) => {
+        if (dialogResult.action === 'Activate') {
+          let selectedId = Object.keys(dialogResult.input).find(
+            (id: string) => dialogResult.input[id]);
+          store.dispatch(setCurrentProfile(gameId, selectedId));
+        }
+      });
+    } else {
+      store.dispatch(setCurrentProfile(gameId, profileId));
+    }
+  });
 
   context.registerProfileFile = (gameId: string, filePath: string) => {
     if (profileFiles[gameId] === undefined) {
@@ -121,32 +173,28 @@ function init(context: IExtensionContextExt): boolean {
     let store = context.api.store;
     let lastGame = undefined;
 
-    context.api.events.on('gamemode-activated', (gameMode: string) => {
-      // when the game changes it's assumed that the "global" files are
-      // associated with the active profile because you can't change the
-      // profile without activating the game first
-      return refreshProfile(store, 'import')
-      .then(() => {
-        context.api.events.emit('profile-activated',
-          store.getState().gameSettings.profiles.currentProfile);
-      });
-    });
-
-    context.api.onStateChange(['gameSettings', 'profiles', 'currentProfile'],
-      (prev: string, current: string) => {
-        let newGame = currentGameId(store.getState());
-        // if the game mode has changed, don't trigger the profile refresh here
-        // because that already happened in the previous state change handler
-        if (lastGame === newGame) {
-          // same game, different profile.
-          refreshProfile(store, 'export')
-              .then(() => {
-                context.api.events.emit('profile-activated', current);
+    Object.keys(store.getState().settings.profiles)
+        .forEach((gameId: string) => {
+          // TODO instead of installing multiple state change observers it should be
+          //   be possible to set only one for the whole dict and then figure out what
+          //   changed from the prev and current parameters
+          context.api.onStateChange(
+              ['settings', 'profiles', 'activeProfileId'],
+              (prev: string, current: string) => {
+                let newGame = currentGameId(store.getState());
+                // if the game mode has changed, don't trigger the profile refresh here
+                // because that already happened in the previous state change handler
+                if (lastGame === newGame) {
+                  // same game, different profile.
+                  refreshProfile(store, 'export')
+                      .then(() => {
+                        context.api.events.emit('profile-activated', current);
+                      });
+                } else {
+                  lastGame = newGame;
+                }
               });
-        } else {
-          lastGame = newGame;
-        }
-    });
+        });
   });
 
   return true;

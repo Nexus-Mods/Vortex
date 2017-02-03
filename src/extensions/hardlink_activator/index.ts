@@ -1,7 +1,8 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
+import { activeGameId } from '../../util/selectors';
 
-import { IDiscoveryResult } from '../gamemode_management/types/IStateEx';
+import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingActivator from '../mod_management/LinkingActivator';
 import {installPath} from '../mod_management/selectors';
 import { IModActivator } from '../mod_management/types/IModActivator';
@@ -26,9 +27,9 @@ class ModActivator extends LinkingActivator {
   }
 
   public isSupported(state: any): boolean {
-    const activeGameId = state.settings.gameMode.current;
+    const gameId = activeGameId(state);
     const activeGameDiscovery: IDiscoveryResult =
-      state.settings.gameMode.discovered[activeGameId];
+      state.settings.gameMode.discovered[gameId];
     if (activeGameDiscovery === undefined) {
       return false;
     }

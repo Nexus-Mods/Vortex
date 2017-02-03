@@ -1,11 +1,11 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 
 import { IComponentContext } from '../../../types/IComponentContext';
+import { IState } from '../../../types/IState';
 import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
 import { addSearchPath, removeSearchPath } from '../actions/settings';
-import { IStateEx } from '../types/IStateEx';
 
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock, ListGroup, ListGroupItem } from 'react-bootstrap';
@@ -116,7 +116,7 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
   }
 }
 
-function mapStateToProps(state: IStateEx): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     // search paths should be initialized immediately on first start but this can't hurt
     searchPaths: state.settings.gameMode.searchPaths || [],

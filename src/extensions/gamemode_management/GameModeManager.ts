@@ -1,15 +1,15 @@
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
+import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
-import { terminate } from '../../util/errorHandling';
 import { log } from '../../util/log';
-import { showError } from '../../util/message';
-import StorageLogger from '../../util/StorageLogger';
 
 import { discoveryFinished, discoveryProgress } from './actions/discovery';
 import { setKnownGames } from './actions/session';
 import { addDiscoveredGame, addDiscoveredTool } from './actions/settings';
-import { IDiscoveryResult, IGameStored, IStateEx, IToolStored } from './types/IStateEx';
+import { IDiscoveryResult } from './types/IDiscoveryResult';
+import { IGameStored } from './types/IGameStored';
+import { IToolStored } from './types/IToolStored';
 import { quickDiscovery, searchDiscovery } from './util/discovery';
 import Progress from './util/Progress';
 
@@ -17,10 +17,6 @@ import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { Persistor, createPersistor, getStoredState } from 'redux-persist';
-import { AsyncNodeStorage } from 'redux-persist-node-storage';
-
-const getStoredStateP = Promise.promisify(getStoredState);
 
 type EmptyCB = () => void;
 
@@ -32,23 +28,19 @@ type EmptyCB = () => void;
 class GameModeManager {
 
   private mBasePath: string;
-  private mPersistor: Persistor;
   private mError: boolean;
-  private mStore: Redux.Store<IStateEx>;
+  private mStore: Redux.Store<IState>;
   private mKnownGames: IGame[];
   private mActiveSearch: Promise<any[]>;
   private mOnGameModeActivated: (mode: string) => void;
-  private mStateWhitelist: string[];
 
-  constructor(basePath: string, onGameModeActivated: (mode: string) => void, whitelist: string[]) {
+  constructor(basePath: string, onGameModeActivated: (mode: string) => void) {
     this.mBasePath = basePath;
-    this.mPersistor = null;
     this.mError = false;
     this.mStore = null;
     this.mKnownGames = [];
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
-    this.mStateWhitelist = whitelist;
   }
 
   /**
@@ -58,7 +50,7 @@ class GameModeManager {
    * 
    * @memberOf GameModeManager
    */
-  public attachToStore(store: Redux.Store<IStateEx>) {
+  public attachToStore(store: Redux.Store<IState>) {
     let gamesPath: string = path.resolve(__dirname, '..', '..', 'games');
     let games: IGame[] = this.loadDynamicGames(gamesPath);
     gamesPath = path.join(remote.app.getPath('userData'), 'games');
@@ -90,34 +82,7 @@ class GameModeManager {
     }
 
     log('info', 'changed game mode', {oldMode, newMode, process: process.type});
-    // stop old persistor before proceeding
-    return new Promise((resolve, reject) => {
-      if (this.mPersistor !== null) {
-        this.mPersistor.stop(resolve);
-      } else {
-        resolve();
-      }
-    })
-        .then(() => { return this.activateGameMode(newMode, this.mStore); })
-        .then((persistor) => {
-          this.mPersistor = persistor;
-          this.mOnGameModeActivated(newMode);
-          this.mError = false;
-        })
-        .catch((err) => {
-          if (!this.mError && (oldMode !== undefined)) {
-            // first error, try reverting to the previous game mode
-            this.mError = true;
-            showError(this.mStore.dispatch, 'Failed to change game mode', err);
-            throw err;
-          } else {
-            terminate({
-              message: 'Failed to change game mode',
-              details: err.message,
-              stack: err.stack,
-            });
-          }
-        });
+    this.mOnGameModeActivated(newMode);
   }
 
   /**
@@ -215,37 +180,6 @@ class GameModeManager {
       result.modPath = path.resolve(result.path, result.modPath);
     }
     this.mStore.dispatch(addDiscoveredGame(gameId, result));
-  }
-
-  private activateGameMode(mode: string, store: Redux.Store<IStateEx>): Promise<Persistor> {
-    if (mode === undefined) {
-      return Promise.resolve(null);
-    }
-
-    const statePath: string = path.join(this.mBasePath, mode, 'state');
-
-    let settings = undefined;
-    return fs.ensureDirAsync(statePath)
-      .then(() => {
-        // step 2: retrieve stored state
-        settings = {
-          storage: new StorageLogger(new AsyncNodeStorage(statePath)),
-          whitelist: this.mStateWhitelist,
-          keyPrefix: '',
-        };
-        return getStoredStateP(settings)
-        .catch((err) => {
-          return Promise.reject(
-            new Error('Failed to load state. This almost certainly means you '
-                      + 'manually edited one of the state files. Fix the following syntax error '
-                      + 'and re-start NMM2: ' + err.message));
-        });
-      }).then((state) => {
-        log('info', 'activate game settings', JSON.stringify(state));
-        // step 3: update game-specific settings, then return the persistor
-        store.dispatch({ type: 'persist/REHYDRATE', payload: state });
-        return createPersistor(store, settings);
-      });
   }
 
   private loadDynamicGame(extensionPath: string): IGame {

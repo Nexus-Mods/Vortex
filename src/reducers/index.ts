@@ -104,18 +104,16 @@ function recursiveObjectKeys(tree: Object, prefix: string = '') {
  */
 export default function (extensionReducers: IExtensionReducer[]) {
   let tree = {
-    window: {
-      base: windowReducer,
+    confidential: {
+      account: {
+      },
     },
-    account: {
-    },
-    gameSettings: {
-    },
-    notifications: notificationsReducer,
     session: {
       base: sessionReducer,
+      notifications: notificationsReducer,
     },
     settings: {
+      window: windowReducer,
     },
     persistent: {
       tables: tableReducer,

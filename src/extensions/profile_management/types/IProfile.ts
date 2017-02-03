@@ -5,6 +5,7 @@ export interface IProfileMod {
 
 export interface IProfile {
   id: string;
+  gameId: string;
   name: string;
   modState: { [id: string]: IProfileMod };
 }

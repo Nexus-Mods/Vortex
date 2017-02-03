@@ -39,16 +39,18 @@ function updatePluginList(store: Redux.Store<any>, oldModList: IModStates,
     return;
   }
 
-  let state = store.getState();
+  const state = store.getState();
 
-  let gameName = state.settings.gameMode.current;
+  const gameMode = selectors.activeGameId(state);
   let pluginSources: { [pluginName: string]: string } = {};
 
-  const currentDiscovery = util.currentGameDiscovery(state);
+  const currentDiscovery = selectors.currentGameDiscovery(state);
   let readErrors = [];
 
-  return Promise.map(Object.keys(state.mods.mods), (modId: string) => {
-    let mod = state.mods.mods[modId];
+  const gameMods = state.persistent.mods[gameMode];
+
+  return Promise.map(Object.keys(gameMods), (modId: string) => {
+    let mod = gameMods[modId];
     return fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
     .then((fileNames: string[]) => {
       fileNames
@@ -86,7 +88,7 @@ function updatePluginList(store: Redux.Store<any>, oldModList: IModStates,
       pluginStates[fileName] = {
         modName: modName || '',
         filePath: path.join(currentDiscovery.modPath, fileName),
-        isNative: modName === undefined && isNativePlugin(gameName, fileName),
+        isNative: modName === undefined && isNativePlugin(gameMode, fileName),
       };
     });
     store.dispatch(setPluginList(pluginStates));
@@ -107,12 +109,12 @@ let persistor: PluginPersistor;
 let loot: LootInterface;
 let refreshTimer: NodeJS.Timer;
 
-function init(context: IExtensionContextExt) {
+function register(context: IExtensionContextExt) {
   context.registerMainPage('puzzle-piece', 'Plugins', PluginList, {
     hotkey: 'E',
-    visible: () => gameSupported(context.api.store.getState().settings.gameMode.current),
+    visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
     props: () => ({
-      nativePlugins: nativePlugins(context.api.store.getState().settings.gameMode.current),
+      nativePlugins: nativePlugins(selectors.activeGameId(context.api.store.getState())),
     }),
   });
 
@@ -128,7 +130,9 @@ function init(context: IExtensionContextExt) {
   context.registerReducer(['session', 'plugins'], pluginsReducer);
   context.registerReducer(['loadOrder'], loadOrderReducer);
   context.registerReducer(['settings', 'plugins'], settingsReducer);
+}
 
+function initPersistor(context: IExtensionContextExt) {
   // TODO: Currently need to stop this from being called in the main process.
   //   This is mega-ugly and needs to go
   if ((persistor === undefined) && (remote !== undefined)) {
@@ -137,17 +141,33 @@ function init(context: IExtensionContextExt) {
   if (persistor !== undefined) {
     context.registerPersistor('loadOrder', persistor);
   }
+}
+
+function updateCurrentProfile(store: Redux.Store<any>, gameId: string): Promise<void> {
+  if (!gameSupported(gameId)) {
+    return;
+  }
+
+  return updatePluginList(store, {}, selectors.activeProfile(store.getState()).modState);
+}
+
+function init(context: IExtensionContextExt) {
+  register(context);
+  initPersistor(context);
 
   context.once(() => {
     const store = context.api.store;
 
     loot = new LootInterface(context);
 
-    let currentProfile: string =
-      util.getSafe(store.getState(), ['gameSettings', 'profiles', 'currentProfile'], undefined);
-
-    updatePluginList(store, {}, util.getSafe(store.getState(),
-      ['gameSettings', 'profiles', 'profiles', currentProfile], {} as any).modState);
+    const profiles = store.getState().persistent.profiles;
+    Promise.map(Object.keys(profiles), (profileId: string) => {
+      const gameMode = profiles[profileId].gameId;
+      return updateCurrentProfile(store, gameMode);
+    })
+    .then(() => {
+      log('info', 'active plugin lists refreshed');
+    });
 
     let watcher: fs.FSWatcher;
 
@@ -163,21 +183,13 @@ function init(context: IExtensionContextExt) {
 
       if (persistor !== undefined) {
         persistor.loadFiles(newGameMode);
-        let modPath = util.currentGameDiscovery(store.getState()).modPath;
+        let modPath = selectors.currentGameDiscovery(store.getState()).modPath;
         watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
           if (refreshTimer !== undefined) {
             clearTimeout(refreshTimer);
           }
           refreshTimer = setTimeout(() => {
-            let profile = util.getSafe(store.getState(),
-                                       [
-                                         'gameSettings',
-                                         'profiles',
-                                         'profiles',
-                                         currentProfile,
-                                       ],
-                                       {} as any);
-            updatePluginList(store, {}, profile.modState)
+            updateCurrentProfile(store, newGameMode)
                 .then(() => { context.api.events.emit('autosort-plugins'); });
             refreshTimer = undefined;
           }, 500);
@@ -185,29 +197,38 @@ function init(context: IExtensionContextExt) {
       }
     });
 
-    context.api.onStateChange(
-        ['gameSettings', 'profiles', 'profiles', currentProfile],
-        (oldModList, newModList) => {
-          updatePluginList(store, oldModList.modState, newModList.modState)
-          .then(() => {
-            context.api.events.emit('autosort-plugins');
-          });
-        });
+    Object.keys(store.getState().persistent.profiles)
+        .forEach((gameId: string) => {
+          context.api.onStateChange(
+              ['persistent', 'profiles', gameId], (oldProfiles, newProfiles) => {
+                const activeProfileId = selectors.activeProfile(store.getState).id;
+                const oldProfile = oldProfiles[activeProfileId];
+                const newProfile = newProfiles[activeProfileId];
 
-    context.api.onStateChange(
-        ['gameSettings', 'profiles', 'currentProfile'],
-        (oldProfile, newProfile) => {
-          updatePluginList(store,
-              util.getSafe(store.getState(),
-                           ['gameSettings', 'profiles', 'profiles', oldProfile],
-                           {} as any).modState,
-              util.getSafe(store.getState(),
-                           ['gameSettings', 'profiles', 'profiles', newProfile],
-                           {} as any).modState)
-          .then(() => {
-            context.api.events.emit('autosort-plugins');
-          });
-          currentProfile = newProfile;
+                if (oldProfile !== newProfile) {
+                  updatePluginList(store, oldProfile.modState,
+                                   newProfile.modState)
+                      .then(() => {
+                        context.api.events.emit('autosort-plugins');
+                      });
+                }
+              });
+          context.api.onStateChange(
+              ['settings', 'profiles', 'activeProfileId'],
+              (oldProfileId: string, newProfileId: string) => {
+                const oldProfile = util.getSafe(
+                    store.getState(),
+                    ['persistent', 'profiles', oldProfileId], {} as any);
+
+                const newProfile = util.getSafe(
+                    store.getState(),
+                    ['persistent', 'profiles', newProfileId], {} as any);
+
+                updatePluginList(store, oldProfile.modState,
+                                 newProfile.modState)
+                    .then(
+                        () => { context.api.events.emit('autosort-plugins'); });
+              });
         });
   });
 

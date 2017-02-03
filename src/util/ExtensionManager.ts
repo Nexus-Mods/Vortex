@@ -322,7 +322,7 @@ class ExtensionManager {
                       protocol: 'nexus',
                       url: 'https://api.nexusmods.com/v1',
                       apiKey: getSafe(store.getState(),
-                                      ['account', 'nexus', 'APIKey'], ''),
+                                      ['confidential', 'account', 'nexus', 'APIKey'], ''),
                       cacheDurationSec: 86400,
                     },
                   ]);

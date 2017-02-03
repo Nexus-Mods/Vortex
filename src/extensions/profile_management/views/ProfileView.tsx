@@ -1,10 +1,14 @@
+import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { activeGameId } from '../../../util/selectors';
 import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
-import { setCurrentProfile, setProfile } from '../actions/profiles';
+import { IGameStored } from '../../gamemode_management/types/IGameStored';
+
+import { setProfile } from '../actions/profiles';
+import { setCurrentProfile } from '../actions/settings';
 import { IProfile } from '../types/IProfile';
-import { IStateEx } from '../types/IStateEx';
 
 import ProfileItem from './ProfileItem';
 
@@ -14,14 +18,16 @@ import { FormControl, ListGroup, ListGroupItem } from 'react-bootstrap';
 import update = require('react-addons-update');
 
 interface IConnectedProps {
+  gameId: string;
   currentProfile: string;
   profiles: { [id: string]: IProfile };
   language: string;
+  games: IGameStored[];
 }
 
 interface IActionProps {
   onAddProfile: (profile: IProfile) => void;
-  onSetCurrentProfile: (profileId: string) => void;
+  onSetCurrentProfile: (gameId: string, profileId: string) => void;
 }
 
 interface IViewState {
@@ -34,6 +40,7 @@ interface IEditState {
 
 interface IEditProps {
   profileId: string;
+  gameId: string;
   profile?: IProfile;
   onSaveEdit: (profile: IProfile) => void;
   onCancelEdit: () => void;
@@ -51,6 +58,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
       ? { edit: Object.assign({}, props.profile) }
       : { edit: {
           id: props.profileId,
+          gameId: props.gameId,
           modState: {},
           name: '',
         } };
@@ -132,12 +140,15 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
       return this.renderEditProfile();
     }
 
-    const { currentProfile, onSetCurrentProfile, profiles } = this.props;
+    const { currentProfile, games, onSetCurrentProfile, profiles } = this.props;
+
+    let game = games.find((iter: IGameStored) => iter.id === profiles[profileId].gameId);
 
     return (profileId === this.state.edit) ? null : (
       <ProfileItem
         key={ profileId }
         profile={ profiles[profileId] }
+        gameName={ game.name }
         active={ currentProfile === profileId }
         onActivate={ onSetCurrentProfile }
         onStartEditing={ this.editExistingProfile }
@@ -146,7 +157,7 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
   }
 
   private renderEditProfile(): JSX.Element {
-    const { t, profiles } = this.props;
+    const { t, gameId, profiles } = this.props;
     const { edit } = this.state;
     let profile = undefined;
     if (edit !== '__new') {
@@ -154,7 +165,8 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
     }
     return (
       <ProfileEdit
-        profileId ={ edit }
+        profileId={ edit }
+        gameId={ gameId }
         t={ t }
         profile={ profile }
         onSaveEdit={ this.saveEdit }
@@ -232,18 +244,22 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
   }
 }
 
-function mapStateToProps(state: IStateEx): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
+  const gameId = activeGameId(state);
   return {
-    currentProfile: state.gameSettings.profiles.currentProfile,
-    profiles: state.gameSettings.profiles.profiles,
+    gameId,
+    currentProfile: state.settings.profiles.activeProfileId,
+    profiles: state.persistent.profiles,
     language: state.settings.interface.language,
+    games: state.session.gameMode.known,
   };
 }
 
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
-    onSetCurrentProfile: (profileId: string) => dispatch(setCurrentProfile(profileId)),
+    onSetCurrentProfile: (gameId: string, profileId: string) =>
+      dispatch(setCurrentProfile(gameId, profileId)),
   };
 }
 

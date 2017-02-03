@@ -14,7 +14,7 @@ import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import {SimpleMessage} from 'loot';
 import {ComponentEx, ITableRowAction, IconBar,
-        Table, tooltip, types, util} from 'nmm-api';
+        Table, selectors, tooltip, types, util} from 'nmm-api';
 import * as React from 'react';
 import update = require('react-addons-update');
 import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
@@ -370,7 +370,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    gameMode: state.settings.gameMode.current,
+    gameMode: selectors.activeProfile(state).gameId,
     plugins: state.session.plugins.pluginList,
     lootActivity: state.session.plugins.lootActivity,
     loadOrder: state.loadOrder,

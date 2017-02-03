@@ -1,15 +1,17 @@
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { showError } from '../../util/message';
+import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';
 import { Button } from '../../views/TooltipControls';
 
-import { showError } from '../../util/message';
-
 import { addDiscoveredTool, changeToolParams,
          removeDiscoveredTool } from '../gamemode_management/actions/settings';
 
-import { IDiscoveryResult, IGameStored, IToolStored } from '../gamemode_management/types/IStateEx';
+import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
+import { IGameStored } from '../gamemode_management/types/IGameStored';
+import { IToolStored } from '../gamemode_management/types/IToolStored';
 
 import ToolButton from './ToolButton';
 import ToolEditDialog from './ToolEditDialog';
@@ -250,7 +252,7 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
 };
 
 function mapStateToProps(state: any): IConnectedProps {
-  let gameMode: string = state.settings.gameMode.current;
+  let gameMode: string = activeGameId(state);
 
   return {
     gameMode,

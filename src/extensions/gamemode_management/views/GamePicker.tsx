@@ -1,11 +1,17 @@
 import { IComponentContext } from '../../../types/IComponentContext';
+import { IDiscoveryState, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
+import { activeGameId } from '../../../util/selectors';
+import { getSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
-import { setGameHidden, setGameMode } from '../actions/settings';
-import { IDiscoveryResult, IDiscoveryState, IGameStored, IStateEx } from '../types/IStateEx';
+import { IProfile } from '../../profile_management/types/IProfile';
+
+import { setGameHidden } from '../actions/settings';
+import { IDiscoveryResult } from '../types/IDiscoveryResult';
+import { IGameStored } from '../types/IGameStored';
 
 import GameThumbnail from './GameThumbnail';
 
@@ -16,18 +22,19 @@ import { Fixed, Flex, Layout } from 'react-layout-pane';
 import update = require('react-addons-update');
 
 interface IConnectedProps {
+  lastActiveProfile: { [gameId: string]: string };
   discoveredGames: { [id: string]: IDiscoveryResult };
+  profiles: { [profileId: string]: IProfile };
   knownGames: IGameStored[];
   gameMode: string;
   discovery: IDiscoveryState;
 }
 
 interface IActionProps {
-  onManage: (gameId: string) => void;
   onHide: (gameId: string, hidden: boolean) => void;
 }
 
-interface IState {
+interface IComponentState {
   showHidden: boolean;
 }
 
@@ -36,7 +43,7 @@ interface IState {
  * 
  * @class GamePicker
  */
-class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IState> {
+class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentState> {
 
   public static contextTypes: React.ValidationMap<any> = {
     api: React.PropTypes.object.isRequired,
@@ -53,8 +60,33 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IState> {
   }
 
   public render(): JSX.Element {
-    const { t, discovery } = this.props;
+    const { t, discoveredGames, discovery, knownGames, profiles } = this.props;
     const { showHidden } = this.state;
+
+    // TODO lots of computation and it doesn't actually change except through discovery
+    //   or when adding a profile
+    const displayedGames: IGameStored[] = showHidden ? knownGames : knownGames.filter(
+      (game: IGameStored) => !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
+
+    const profileGames = new Set<string>(
+      Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId));
+
+    let managedGameList: IGameStored[] = [];
+    let discoveredGameList: IGameStored[] = [];
+    let supportedGameList: IGameStored[] = [];
+
+    displayedGames.forEach((game: IGameStored) => {
+      if (getSafe(discoveredGames, [game.id, 'path'], undefined) !== undefined) {
+        if (profileGames.has(game.id)) {
+          managedGameList.push(game);
+        } else {
+          discoveredGameList.push(game);
+        }
+      } else {
+        supportedGameList.push(game);
+      }
+    });
+
     return (
       <Layout type='column'>
         <Fixed>
@@ -70,12 +102,16 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IState> {
         </Fixed>
         <Flex style={{ height: '100%', overflowY: 'auto' }}>
           <span style={{ display: 'table' }}>
-            <h3>{ t('Discovered') }</h3>
-            { this.renderGames(true) }
+            <h3>{ t('Managed') }</h3>
+            { this.renderGames(managedGameList, 'managed') }
           </span>
           <span style={{ display: 'table' }}>
-            <h3>{ t('Not discovered') }</h3>
-            { this.renderGames(false) }
+            <h3>{ t('Discovered') }</h3>
+            { this.renderGames(discoveredGameList, 'discovered') }
+          </span>
+          <span style={{ display: 'table' }}>
+            <h3>{ t('Supported') }</h3>
+            { this.renderGames(supportedGameList, 'undiscovered') }
           </span>
         </Flex>
         <Fixed style={{ height: '40px' }} >
@@ -117,23 +153,15 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IState> {
     this.context.api.events.emit('cancel-discovery');
   }
 
-  private renderGames = (discovered: boolean) => {
-    const { onManage, onHide, knownGames, discoveredGames, gameMode } = this.props;
-    const { showHidden } = this.state;
-
-    const games: IGameStored[] = knownGames.filter((game: IGameStored) => {
-        return (((getAttr(discoveredGames, game.id, { path: '' }).path !== '') === discovered)
-          && (showHidden || !getAttr(discoveredGames, game.id, { hidden: false }).hidden));
-      });
+  private renderGames = (games: IGameStored[], type: string) => {
+    const { gameMode } = this.props;
 
     return games.map((game: IGameStored) => {
       return (
         <GameThumbnail
           key={game.id}
           game={game}
-          onManage={discovered ? onManage : undefined}
-          hidden={getAttr(discoveredGames, game.id, { hidden: false }).hidden}
-          onHide={onHide}
+          type={type}
           active={game.id === gameMode}
         />
       );
@@ -141,10 +169,12 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IState> {
   }
 }
 
-function mapStateToProps(state: IStateEx): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
-    gameMode: state.settings.gameMode.current,
+    gameMode: activeGameId(state),
+    lastActiveProfile: state.settings.gameMode.lastActiveProfile,
     discoveredGames: state.settings.gameMode.discovered,
+    profiles: state.persistent.profiles,
     knownGames: state.session.gameMode.known,
     discovery: state.session.discovery,
   };
@@ -152,7 +182,6 @@ function mapStateToProps(state: IStateEx): IConnectedProps {
 
 function mapDispatchToProps(dispatch): IActionProps {
   return {
-    onManage: (gameId: string) => dispatch(setGameMode(gameId)),
     onHide: (gameId: string, hidden: boolean) => dispatch(setGameHidden(gameId, hidden)),
   };
 }

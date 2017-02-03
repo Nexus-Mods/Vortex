@@ -2,19 +2,12 @@ import { IReducerSpec } from '../../../types/IExtensionContext';
 import { deleteOrNop, getSafe, merge,
          pushSafe, removeValue, setSafe } from '../../../util/storeHelper';
 import * as actions from '../actions/settings';
-import update = require('react-addons-update');
 
 /**
  * reducer for changes to the window state
  */
 export const settingsReducer: IReducerSpec = {
   reducers: {
-    [actions.setGameMode]: (state, payload) => {
-      return update(state, { next: { $set: payload } });
-    },
-    [actions.setCurrentGameMode]: (state, payload) => {
-      return update(state, { current: { $set: payload } });
-    },
     [actions.addDiscoveredGame]: (state, payload) => {
       // don't replace previously discovered tools as the settings
       // there may also be user configuration
@@ -49,8 +42,6 @@ export const settingsReducer: IReducerSpec = {
     },
   },
   defaults: {
-    current: undefined,
-    next: undefined,
     searchPaths: undefined,
     discovered: {},
   },

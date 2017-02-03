@@ -13,7 +13,8 @@ class GlobalNotifications {
   private mKnownNotifications: INotification[];
 
   constructor(api: IExtensionApi) {
-    api.onStateChange([ 'notifications', 'global_notifications' ], (oldState, newState) => {
+    api.onStateChange([ 'session', 'notifications', 'global_notifications' ],
+      (oldState, newState) => {
       this.mKnownNotifications = newState;
 
       let currentNotification: INotification;

@@ -1,23 +1,18 @@
 import { showDialog } from '../../../actions/notifications';
 import { IAttributeState } from '../../../types/IAttributeState';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
-import { SortDirection } from '../../../types/SortDirection';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import SuperTable, {ITableRowAction} from '../../../views/Table';
 
-import { IGameModeSettings } from '../../gamemode_management/types/IStateEx';
-
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
-import { IProfileSettings } from '../../profile_management/types/IStateEx';
 
 import { removeMod, setModAttribute } from '../actions/mods';
-import { setModlistAttributeSort, setModlistAttributeVisible } from '../actions/settings';
 import { IMod } from '../types/IMod';
-import { IStateMods } from '../types/IStateMods';
-import { IStateModSettings } from '../types/IStateSettings';
 
 import { INSTALL_TIME } from '../modAttributes';
 import { installPath } from '../selectors';
@@ -30,7 +25,6 @@ import * as path from 'path';
 import * as React from 'react';
 import { Jumbotron } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-import {createSelector} from 'reselect';
 import * as semver from 'semver';
 
 type IModWithState = IMod & IProfileMod;
@@ -49,20 +43,18 @@ interface IModProps {
 }
 
 interface IConnectedProps extends IModProps {
-  modlistState: IAttributeStateMap;
   gameMode: string;
+  profileId: string;
   language: string;
   installPath: string;
 }
 
 interface IActionProps {
-  onSetAttributeVisible: (attributeId: string, visible: boolean) => void;
-  onSetAttributeSort: (attributeId: string, dir: SortDirection) => void;
-  onSetModAttribute: (modId: string, attributeId: string, value: any) => void;
-  onSetModEnabled: (modId: string, enabled: boolean) => void;
+  onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
+  onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
-  onRemoveMod: (modId: string) => void;
+  onRemoveMod: (gameMode: string, modId: string) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -92,7 +84,7 @@ class ModList extends ComponentEx<IProps, {}> {
       isToggleable: false,
       edit: {
         onChangeValue: (modId: string, value: any) =>
-          props.onSetModAttribute(modId, 'logicalFileName', value),
+          props.onSetModAttribute(props.gameMode, modId, 'logicalFileName', value),
       },
       isSortable: true,
       sortFunc: (lhs: string, rhs: string, locale: string): number => {
@@ -109,7 +101,8 @@ class ModList extends ComponentEx<IProps, {}> {
       placement: 'table',
       isToggleable: false,
       edit: {
-        onChangeValue: (modId: string, value: any) => props.onSetModEnabled(modId, value),
+        onChangeValue: (modId: string, value: any) =>
+          props.onSetModEnabled(props.profileId, modId, value),
       },
       isSortable: false,
     };
@@ -125,7 +118,7 @@ class ModList extends ComponentEx<IProps, {}> {
       edit: {
         validate: (input: string) => semver.valid(input) ? 'success' : 'warning',
         onChangeValue: (modId: string, value: any) =>
-          props.onSetModAttribute(modId, 'version', value),
+          props.onSetModAttribute(props.gameMode, modId, 'version', value),
       },
       isSortable: true,
     };
@@ -208,27 +201,27 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   private enableSelected = (modIds: string[]) => {
-    const { modState, onSetModEnabled } = this.props;
+    const { profileId, modState, onSetModEnabled } = this.props;
 
     modIds.forEach((key: string) => {
       if (!modState[key].enabled) {
-        onSetModEnabled(key, true);
+        onSetModEnabled(profileId, key, true);
       }
     });
   }
 
   private disableSelected = (modIds: string[]) => {
-    const { modState, onSetModEnabled } = this.props;
+    const { gameMode, modState, onSetModEnabled } = this.props;
 
     modIds.forEach((key: string) => {
       if (modState[key].enabled) {
-        onSetModEnabled(key, false);
+        onSetModEnabled(gameMode, key, false);
       }
     });
   }
 
   private removeSelected = (modIds: string[]) => {
-    const { t, installPath, onRemoveMod, onShowDialog, mods } = this.props;
+    const { t, gameMode, installPath, onRemoveMod, onShowDialog, mods } = this.props;
 
     let removeMods: boolean;
     let removeArchive: boolean;
@@ -262,7 +255,7 @@ class ModList extends ComponentEx<IProps, {}> {
       .then(() => {
         modIds.forEach((key: string) => {
           if (removeMods) {
-            onRemoveMod(key);
+            onRemoveMod(gameMode, key);
           }
           if (removeArchive) {
             this.context.api.events.emit('remove-download', mods[key].archiveId);
@@ -272,32 +265,15 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 }
 
-interface IState {
-  settings: {
-    gameMode: IGameModeSettings
-    interface: {
-      language: string
-    }
-  };
-  gameSettings: {
-    mods: IStateModSettings,
-    profiles: IProfileSettings,
-  };
-  mods: IStateMods;
-}
-
-const currentProfile = (state) =>
-  state.gameSettings.profiles.profiles[state.gameSettings.profiles.currentProfile];
-
-const modState = createSelector(currentProfile,
-  (profile) => profile !== undefined ? profile.modState : {});
-
 function mapStateToProps(state: IState): IConnectedProps {
+  const profile = activeProfile(state);
+  const gameMode = activeGameId(state);
+
   return {
-    mods: state.mods.mods,
-    modState: modState(state),
-    modlistState: state.gameSettings.mods.modlistState,
-    gameMode: state.settings.gameMode.current,
+    mods: state.persistent.mods[gameMode] || {},
+    modState: profile !== undefined ? profile.modState : {},
+    gameMode,
+    profileId: profile.id,
     language: state.settings.interface.language,
     installPath: installPath(state),
   };
@@ -305,21 +281,15 @@ function mapStateToProps(state: IState): IConnectedProps {
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
-    onSetAttributeVisible: (attributeId: string, visible: boolean) => {
-      dispatch(setModlistAttributeVisible(attributeId, visible));
+    onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
+      dispatch(setModAttribute(gameMode, modId, attributeId, value));
     },
-    onSetAttributeSort: (attributeId: string, dir: SortDirection) => {
-      dispatch(setModlistAttributeSort(attributeId, dir));
-    },
-    onSetModAttribute: (modId: string, attributeId: string, value: any) => {
-      dispatch(setModAttribute(modId, attributeId, value));
-    },
-    onSetModEnabled: (modId: string, enabled: boolean) => {
-      dispatch(setModEnabled(modId, enabled));
+    onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => {
+      dispatch(setModEnabled(profileId, modId, enabled));
     },
     onShowDialog:
       (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
-    onRemoveMod: (modId: string) => dispatch(removeMod(modId)),
+    onRemoveMod: (gameMode: string, modId: string) => dispatch(removeMod(gameMode, modId)),
   };
 }
 

@@ -28,6 +28,7 @@ export interface IDialogContent {
   htmlFile?: string;
   message?: string;
   checkboxes?: ICheckbox[];
+  choices?: ICheckbox[];
   formcontrol?: IFormControl[];
   options?: {
     translated?: boolean;

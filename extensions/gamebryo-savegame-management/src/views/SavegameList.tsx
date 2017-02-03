@@ -9,7 +9,7 @@ import {
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { ComponentEx, ITableRowAction, Table, actions, types } from 'nmm-api';
+import { ComponentEx, ITableRowAction, Table, actions, selectors, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import {translate} from 'react-i18next';
@@ -116,9 +116,10 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
 }
 
 function mapStateToProps(state: any): IConnectedProps {
+  const gameMode = selectors.activeGameId(state);
   return {
     saves: state.session.saves.saves,
-    savesPath: savesPath(state.settings.gameMode.current),
+    savesPath: savesPath(gameMode),
   };
 }
 

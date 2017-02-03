@@ -1,10 +1,11 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
+import { activeGameId, activeProfile, currentGameDiscovery } from '../../../util/selectors';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
-import { IDiscoveryResult } from '../../gamemode_management/types/IStateEx';
-import {installPath} from '../../mod_management/selectors';
-import { IProfile, IProfileMod } from '../../profile_management/types/IProfile';
+import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
+import { currentActivator, installPath } from '../../mod_management/selectors';
+import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { IMod } from '../types/IMod';
 import { IModActivator } from '../types/IModActivator';
@@ -67,22 +68,16 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
   };
 }
 
-function activeProfile(state: any): IProfile {
-  return state.gameSettings.profiles.profiles[state.gameSettings.profiles.currentProfile];
-}
-
-function activeGameDiscovery(state: any)  {
-  const activeGameId = state.settings.gameMode.current;
-  return state.settings.gameMode.discovered[activeGameId];
-}
-
 function mapStateToProps(state: any): IConnectedProps {
+  const profile = activeProfile(state);
+  const gameMode = activeGameId(state);
+
   return {
     installPath: installPath(state),
-    gameDiscovery: activeGameDiscovery(state),
-    mods: state.mods.mods,
-    modState: activeProfile(state).modState,
-    currentActivator: state.gameSettings.mods.activator,
+    gameDiscovery: currentGameDiscovery(state),
+    mods: state.persistent.mods[gameMode] || {},
+    modState: profile !== undefined ? profile.modState : {},
+    currentActivator: currentActivator(state),
   };
 }
 

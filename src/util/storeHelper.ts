@@ -1,5 +1,4 @@
-import { IDiscoveryResult, IGameStored } from '../extensions/gamemode_management/types/IStateEx';
-import { IProfile } from '../extensions/profile_management/types/IProfile';
+import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 
 import * as Promise from 'bluebird';
 
@@ -291,28 +290,4 @@ export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
           return Promise.resolve(res || fallback);
         });
   }
-}
-
-/**
- * return the discovery information about a game
- * 
- * @export
- * @param {*} state
- * @returns {IDiscoveryResult}
- */
-export function currentGameDiscovery(state: any): IDiscoveryResult {
-  const gameMode = getSafe(state, [ 'settings', 'gameMode', 'current' ], undefined);
-  return getSafe(state, ['settings', 'gameMode', 'discovered', gameMode], undefined);
-}
-
-/**
- * return the currently active profile
- * 
- * @export
- * @param {*} state
- * @returns {IProfile}
- */
-export function currentProfile(state: any): IProfile {
-  const profileId = getSafe(state, [ 'gameSettings', 'profiles', 'currentProfile' ], undefined);
-  return getSafe(state, [ 'gameSettings', 'profiles', 'profiles', profileId ], undefined);
 }

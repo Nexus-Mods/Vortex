@@ -5,10 +5,12 @@ import {gameSupported, savesPath} from './util/gameSupport';
 import refreshSavegames from './util/refreshSavegames';
 import SavegameList from './views/SavegameList';
 
+import { selectors } from 'nmm-api';
+
 function init(context): boolean {
   context.registerMainPage('hdd-o', 'Save Games', SavegameList, {
     hotkey: 'S',
-    visible: () => gameSupported(context.api.store.getState().settings.gameMode.current),
+    visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
   });
 
   context.registerReducer(['session', 'saves'], sessionReducer);

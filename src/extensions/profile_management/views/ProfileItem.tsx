@@ -9,8 +9,9 @@ import * as React from 'react';
 export interface IProps {
   active: boolean;
   profile: IProfile;
+  gameName: string;
 
-  onActivate: (id: string) => void;
+  onActivate: (gameId: string, profileId: string) => void;
   onStartEditing: (id: string) => void;
 }
 
@@ -22,7 +23,7 @@ export interface IProps {
  */
 class ProfileItem extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, active, profile } = this.props;
+    const { t, active, gameName, profile } = this.props;
 
     const enabledMods = Object.keys(profile.modState).reduce(
       (prev: number, key: string): number => {
@@ -36,7 +37,7 @@ class ProfileItem extends ComponentEx<IProps, {}> {
 
     return (
       <span className={className}>
-        <h4 className='list-group-item-heading'>{ profile.name }</h4>
+        <h4 className='list-group-item-heading'>{ `${gameName} - ${profile.name}` }</h4>
         <div className='list-group-item-text'>
           <TooltipIcon
             id={profile.id}
@@ -76,7 +77,7 @@ class ProfileItem extends ComponentEx<IProps, {}> {
 
   private activate = () => {
     const { onActivate, profile } = this.props;
-    onActivate(profile.id);
+    onActivate(profile.gameId, profile.id);
   }
 
   private startEditing = () => {

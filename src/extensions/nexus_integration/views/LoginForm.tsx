@@ -241,7 +241,7 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-     APIKey: getSafe(state, ['account', 'nexus', 'APIKey'], undefined),
+     APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
   };
 }
 

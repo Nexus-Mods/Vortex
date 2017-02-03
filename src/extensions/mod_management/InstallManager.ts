@@ -2,6 +2,7 @@ import {showDialog} from '../../actions/notifications';
 import {IDialogResult} from '../../types/IDialog';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {log} from '../../util/log';
+import {activeGameId, downloadPath} from '../../util/selectors';
 
 import {IDownload} from '../download_management/types/IDownload';
 
@@ -13,7 +14,6 @@ import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 
 import InstallContext from './InstallContext';
-import {downloadPath} from './selectors';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -83,7 +83,8 @@ class InstallManager {
   public install(archiveId: string, archivePath: string, api: IExtensionApi,
                  info: any, processDependencies: boolean,
                  callback?: (error: Error, id: string) => void) {
-    const installContext = new InstallContext(api.store.dispatch);
+    const installContext = new InstallContext(activeGameId(api.store.getState()),
+                                              api.store.dispatch);
 
     const baseName = path.basename(archivePath, path.extname(archivePath));
     let installName = baseName;
@@ -195,7 +196,8 @@ class InstallManager {
   }
 
   private checkModExists(installName: string, api: IExtensionApi): boolean {
-    return installName in api.store.getState().mods.mods;
+    const gameMode = activeGameId(api.store.getState());
+    return installName in api.store.getState().mods[gameMode];
   }
 
   private queryUserReplace(modId: string, api: IExtensionApi): Promise<string> {
@@ -432,7 +434,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
                              })
               .then(() => Promise.each(Array.from(affectedDirs),
                                        (affectedPath: string) =>
-                                           fs.rmdirAsync(affectedPath).catch()))
+                                           fs.rmdirAsync(affectedPath).catch()));
         })
         .then(() => undefined)
         .finally(() => {

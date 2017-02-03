@@ -8,6 +8,7 @@ import { log } from './log';
 import StorageLogger from './StorageLogger';
 
 import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
@@ -46,7 +47,7 @@ export function setupStore(
 
     const extReducers = extensions.getReducers();
 
-    const whitelist = ['window', 'settings', 'persistent', 'account'];
+    const whitelist = ['settings', 'persistent', 'confidential'];
     extensions.apply('registerSettingsHive', (hive: string, type: PersistingType) => {
       if (type === 'global') {
         whitelist.push(hive);
@@ -64,7 +65,15 @@ export function setupStore(
                  },
                  (err, state) => {
                    if (err !== null) {
-                     log('error', 'failed to load application state', {err});
+                     const app = appIn || remote.app;
+                     terminate({
+                       message: 'Failed to load application state.',
+                       details: 'One of the state files is corrupted. If you manually '
+                         + 'edited one, use the following error to repair it. Otherwise '
+                         + 'please report a bug and include the files at \''
+                         + app.getPath('userData') + '\'',
+                       stack: err.stack,
+                     });
                    }
                    resolve(result);
                  });

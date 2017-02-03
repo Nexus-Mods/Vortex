@@ -8,7 +8,7 @@ import { Button } from '../../views/TooltipControls';
 import { log } from '../../util/log';
 
 import { addDiscoveredTool } from '../gamemode_management/actions/settings';
-import { IGameStored } from '../gamemode_management/types/IStateEx';
+import { IGameStored } from '../gamemode_management/types/IGameStored';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';

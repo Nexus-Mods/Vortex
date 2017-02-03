@@ -1,4 +1,5 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { activeGameId } from '../../../util/selectors';
 
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
@@ -40,9 +41,10 @@ class InstallButton extends ComponentEx<IConnectedProps, {}> {
 }
 
 function mapStateToProps(state: any): IConnectedProps {
+  const gameMode = activeGameId(state);
   return {
-    paths: state.gameSettings.mods.paths,
-    gameMode: state.settings.gameMode.current,
+    paths: state.settings.mods.paths[gameMode],
+    gameMode,
   };
 }
 

@@ -59,7 +59,7 @@ class Notifications extends ComponentEx<IProps & IActionProps & IConnectedProps,
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    notifications: state.notifications.notifications,
+    notifications: state.session.notifications.notifications,
   };
 }
 

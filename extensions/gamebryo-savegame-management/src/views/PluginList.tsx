@@ -1,5 +1,5 @@
 import * as fs from 'fs-extra-promise';
-import { types } from 'nmm-api';
+import { selectors, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
@@ -71,7 +71,7 @@ class PluginList extends React.Component<IProps, IComponentState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    gameMode: state.settings.gameMode.current,
+    gameMode: selectors.activeGameId(state),
     discoveredGames: state.settings.gameMode.discovered,
   };
 }

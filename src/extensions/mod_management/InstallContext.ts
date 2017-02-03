@@ -28,8 +28,8 @@ class InstallContext implements IInstallContext {
   private mSetModAttribute: (id: string, key: string, value: any) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
 
-  constructor(dispatch: Redux.Dispatch<any>) {
-    this.mAddMod = (mod) => dispatch(addMod(mod));
+  constructor(gameMode: string, dispatch: Redux.Dispatch<any>) {
+    this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
     this.mAddNotification = (notification) =>
       dispatch(addNotification(notification));
     this.mDismissNotification = (id) =>
@@ -37,11 +37,11 @@ class InstallContext implements IInstallContext {
     this.mShowError = (message, details?) =>
       showError(dispatch, message, details);
     this.mSetModState = (id, state) =>
-      dispatch(setModState(id, state));
+      dispatch(setModState(gameMode, id, state));
     this.mSetModAttribute = (id, key, value) =>
-      dispatch(setModAttribute(id, key, value));
+      dispatch(setModAttribute(gameMode, id, key, value));
     this.mSetModInstallationPath = (id, installPath) =>
-      dispatch(setModInstallationPath(id, installPath));
+      dispatch(setModInstallationPath(gameMode, id, installPath));
   }
 
   public startIndicator(id: string): void {

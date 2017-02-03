@@ -1,6 +1,6 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 import {ITableAttribute} from '../../types/ITableAttribute';
-import {currentGameMode} from '../../util/selectors';
+import {activeGameId} from '../../util/selectors';
 
 import {IDownload} from '../download_management/types/IDownload';
 
@@ -24,7 +24,7 @@ import Settings from './views/Settings';
 
 import InstallManager from './InstallManager';
 
-import {downloadPath, installPath} from './selectors';
+import {currentActivator, downloadPath, installPath} from './selectors';
 
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
@@ -58,7 +58,7 @@ function registerInstaller(priority: number, testSupported: ITestSupported, inst
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('cubes', 'Mods', ModList, {
     hotkey: 'M',
-    visible: () => currentGameMode(context.api.store.getState()) !== undefined,
+    visible: () => activeGameId(context.api.store.getState()) !== undefined,
   });
 
   context.registerIcon('application-icons', ActivationButton, () => {
@@ -81,8 +81,8 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerSettingsHive('game', 'mods');
 
-  context.registerReducer(['mods'], modsReducer);
-  context.registerReducer(['gameSettings', 'mods'], settingsReducer);
+  context.registerReducer(['settings', 'mods'], settingsReducer);
+  context.registerReducer(['persistent', 'mods'], modsReducer);
   context.registerReducer(['persistent', 'activation'], activationReducer);
 
   context.registerModActivator = registerModActivator;
@@ -99,10 +99,10 @@ function init(context: IExtensionContextExt): boolean {
     }
 
     context.api.events.on('gamemode-activated', (newGame: string) => {
-      let currentActivator = store.getState().gameSettings.mods.activator;
+      let configuredActivator = currentActivator(store.getState());
       let supported = supportedActivators(activators, store.getState());
       if (supported.find((activator: IModActivator) =>
-        activator.id === currentActivator) === undefined) {
+        activator.id === configuredActivator) === undefined) {
         // current activator is not valid for this game. This should only occur
         // if compatibility of the activator has changed
         if (supported.length > 0) {
@@ -110,11 +110,13 @@ function init(context: IExtensionContextExt): boolean {
         }
       }
 
-      let knownMods = Object.keys(store.getState().mods.mods);
+      let knownMods = Object.keys(store.getState().persistent.mods[newGame]);
       refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
-        context.api.store.dispatch(addMod(mod));
+        context.api.store.dispatch(addMod(newGame, mod));
       }, (modNames: string[]) => {
-        modNames.forEach((name: string) => { context.api.store.dispatch(removeMod(name)); });
+        modNames.forEach((name: string) => {
+          context.api.store.dispatch(removeMod(newGame, name));
+        });
       })
         .then(() => {
           context.api.events.emit('mods-refreshed');
@@ -122,14 +124,18 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.onStateChange(
-      ['gameSettings', 'mods', 'paths'],
-      (previous: IStatePaths, current: IStatePaths) => {
-        let knownMods = Object.keys(store.getState().mods.mods);
-        refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
-          context.api.store.dispatch(addMod(mod));
-        }, (modNames: string[]) => {
-          modNames.forEach((name: string) => { context.api.store.dispatch(removeMod(name)); });
-        });
+      ['settings', 'mods', 'paths'],
+      (previous: { [gameId: string]: IStatePaths }, current: { [gameId: string]: IStatePaths }) => {
+        const gameMode = activeGameId(store.getState());
+        if (previous[gameMode] !== current[gameMode]) {
+          let knownMods = Object.keys(store.getState().mods[gameMode]);
+          refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
+            context.api.store.dispatch(addMod(gameMode, mod));
+          }, (modNames: string[]) => {
+            modNames.forEach((name: string) => {
+              context.api.store.dispatch(removeMod(gameMode, name)); });
+          });
+        }
       });
 
     context.api.events.on(
@@ -152,8 +158,9 @@ function init(context: IExtensionContextExt): boolean {
         'remove-mod', (modId: string, callback?: (error: Error) => void) => {
           let mods: {[id: string]: IMod};
           let fullPath: string;
+          const gameMode = activeGameId(store.getState());
           try {
-            mods = store.getState().mods.mods;
+            mods = store.getState().mods[gameMode];
             fullPath = path.join(installPath(store.getState()),
                                  mods[modId].installationPath);
           } catch (err) {
@@ -161,7 +168,7 @@ function init(context: IExtensionContextExt): boolean {
           }
           fs.removeAsync(fullPath)
               .then(() => {
-                store.dispatch(removeMod(modId));
+                store.dispatch(removeMod(gameMode, modId));
                 callback(null);
               })
               .catch((err) => { callback(err); });

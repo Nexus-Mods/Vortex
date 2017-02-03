@@ -22,7 +22,7 @@ export interface IRegisterIcon {
   (group: string,
    icon: string | React.ComponentClass<any> | React.StatelessComponent<any>,
    title?: string | PropsCallback,
-   action?: () => void): void;
+   action?: (instanceIds: string[]) => void): void;
 }
 
 export interface IRegisterFooter {
@@ -350,10 +350,8 @@ export interface IExtensionContext {
    * Note: For obvious reasons this is executed before the store is set up so
    * many api operations are not possible during this call
    * 
-   * The first part of the path decides how and if settings are persisted:
-   *   * window, settings, account are always persisted and automatically restored
-   *   * gameSettings are persisted on a per-game basis and will be restored when
-   *     the game mode changes
+   * The first part of the path decides how and if state persisted:
+   *   * window, settings, persistent are always persisted and automatically restored
    *   * session and all other will not be persisted at all. Although session is not
    *     treated different than any other path, please use this path  for all
    *     ephemeral state
@@ -364,7 +362,7 @@ export interface IExtensionContext {
    *   or vice-versa.
    *   I.e. settings.interface contains all settings regarding the ui. Your extension
    *   can register a reducer with path ['settings', 'interface'] and ['settings', 'whatever']
-   *   but NOT ['settings'] and NOT ['settings', 'interface', 'somethingelse']
+   *   but not ['settings'] and not ['settings', 'interface', 'somethingelse']
    *
    * And one more thing about the spec: All things you store inside the store need to be
    *   serializable. This means: strings, numbers, booleans, arrays, objects are fine but

@@ -8,7 +8,7 @@ import InputButton from '../../views/InputButton';
 import { IconButton } from '../../views/TooltipControls';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
-import { IGameStored } from '../gamemode_management/types/IStateEx';
+import { IGameStored } from '../gamemode_management/types/IGameStored';
 import {setModAttribute} from '../mod_management/actions/mods';
 import { IMod } from '../mod_management/types/IMod';
 
@@ -33,6 +33,13 @@ export interface IExtensionContextExt extends IExtensionContext {
     handler: (inputUrl: string) => Promise<string[]>) => void;
 }
 
+/**
+ * convert the game id from either our internal format or the format
+ * used in NXM links to the format used in the nexus api.
+ * TODO: This works only as one function because our internal id so
+ *   far coincides with the nxm link format except for upper/lower case.
+ *   This should be two functions!
+ */
 function convertGameId(input: string): string {
   if (input.toLowerCase() === 'skyrimse') {
     return 'skyrimspecialedition';
@@ -149,7 +156,7 @@ function endorseMod(api: IExtensionApi, isEndorsed: boolean, modId: string) {
       return retrieveEndorsedMod(gameId, nexus, isEndorsed, modId);
     })
     .then((endorsed: boolean) => {
-      api.store.dispatch(setModAttribute(modId, 'endorsed', endorsed));
+      api.store.dispatch(setModAttribute(gameId, modId, 'endorsed', endorsed));
     })
     .catch((err) => {
       let message = processErrorMessage(err.statusCode, err.errorMessage, gameId, api.translate);
@@ -179,7 +186,7 @@ function endorseEmitter(api: IExtensionApi, isEndorsed: boolean, modId: string) 
 function init(context: IExtensionContextExt): boolean {
   context.registerFooter('login', LoginIcon, () => ({ nexus }));
   context.registerSettings('Download', Settings);
-  context.registerReducer(['account', 'nexus'], accountReducer);
+  context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
 
   if (context.registerDownloadProtocol !== undefined) {
@@ -228,7 +235,7 @@ function init(context: IExtensionContextExt): boolean {
     let state = context.api.store.getState();
     nexus = new Nexus(
       getSafe(state, ['settings', 'gameMode', 'current'], ''),
-      getSafe(state, ['account', 'nexus', 'APIKey'], '')
+      getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '')
     );
     let registerFunc = () => {
       context.api.registerProtocol('nxm', (url: string) => {
@@ -265,7 +272,7 @@ function init(context: IExtensionContextExt): boolean {
         nexus.setGame(newValue);
       });
 
-    context.api.onStateChange(['account', 'nexus', 'APIKey'],
+    context.api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
       (oldValue: string, newValue: string) => {
         nexus.setKey(newValue);
       });

@@ -1,4 +1,4 @@
-
+import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
 function createCategoryDetailPath(categories: any, category: string, categoryPath: string) {
@@ -22,12 +22,11 @@ function createCategoryDetailPath(categories: any, category: string, categoryPat
  * @param {number} category
  * @param {Redux.Store<any>} store
  */
-
 export function retrieveCategoryDetail(
   category: string,
   store: any) {
   let completePath: string = '';
-  let gameId: string = getSafe(store.getState(), ['settings', 'gameMode', 'current'], '');
+  let gameId: string = activeGameId(store.getState());
 
   let categories: any = getSafe(store.getState(), ['persistent', 'categories',
     gameId], '');
@@ -49,7 +48,7 @@ export function retrieveCategory(
   category: number,
   store: any) {
 
-  let gameId: string = getSafe(store.getState(), ['settings', 'gameMode', 'current'], '');
+  let gameId: string = activeGameId(store.getState());
 
   let categories: any = getSafe(store.getState(), ['persistent', 'categories',
     gameId], '');

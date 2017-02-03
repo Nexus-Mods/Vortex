@@ -6,7 +6,8 @@ import Icon from '../views/Icon';
 
 import * as React from 'react';
 import update = require('react-addons-update');
-import { Button, Checkbox, ControlLabel, FormControl, FormGroup, Modal } from 'react-bootstrap';
+import { Button, Checkbox, ControlLabel, FormControl, FormGroup,
+         Modal, Radio } from 'react-bootstrap';
 
 interface IActionProps {
   t: (input: string) => string;
@@ -98,7 +99,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       controls.push(<textarea
         key='dialog-content-message'
         wrap={wrap}
-        style={{ width: '100%', minHeight: 150, resize: 'none', border: 'none' }}
+        style={{ width: '100%', minHeight: 300, resize: 'none', border: 'none' }}
         defaultValue={content.message}
       />);
     }
@@ -112,6 +113,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         {content.checkboxes.map(this.renderCheckbox)}
       </div>
       );
+    } else if (content.choices !== undefined) {
+      controls.push(<div key='dialog-content-choices'>
+        {content.choices.map(this.renderRadiobutton)}
+      </div>);
     } else if (content.formcontrol !== undefined) {
       controls.push(<div key='dialog-form-content'>
         {content.formcontrol.map(this.renderFormControl)}
@@ -154,6 +159,21 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private renderRadiobutton = (checkbox: ICheckbox) => {
+    const { t } = this.props;
+    return (
+      <Radio
+        id={checkbox.id}
+        key={checkbox.id}
+        name='dialog-radio'
+        checked={checkbox.value}
+        onChange={this.toggleRadio}
+      >
+        {t(checkbox.text)}
+      </Radio>
+    );
+  }
+
   private toggleFormControl = (evt) => {
     let { dialogState } = this.state;
 
@@ -172,8 +192,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private toggleCheckbox = (evt: React.MouseEvent<any>) => {
-    let { dialogState } = this.state;
-    let idx = dialogState.checkboxes.findIndex((box: ICheckbox) => {
+    const { dialogState } = this.state;
+    const idx = dialogState.checkboxes.findIndex((box: ICheckbox) => {
       return box.id === evt.currentTarget.id;
     });
 
@@ -183,6 +203,23 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     this.setState(update(this.state, {
       dialogState: {
         checkboxes: { $set: newCheckboxes },
+      },
+    }));
+  }
+
+  private toggleRadio = (evt: React.MouseEvent<any>) => {
+    const { dialogState } = this.state;
+    const idx = dialogState.choices.findIndex((box: ICheckbox) => {
+      return box.id === evt.currentTarget.id;
+    });
+
+    let newChoices = dialogState.choices.map((choice: ICheckbox) =>
+      ({ id: choice.id, text: choice.text, value: false }));
+    newChoices[idx].value = true;
+
+    this.setState(update(this.state, {
+      dialogState: {
+        choices: { $set: newChoices },
       },
     }));
   }
@@ -213,14 +250,20 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     const { dialogs, onDismiss } = this.props;
     const { dialogState } = this.state;
 
-    let data = null;
+    let data = {};
     if (dialogState.checkboxes !== undefined) {
-      data = {};
       dialogState.checkboxes.forEach((box: ICheckbox) => {
         data[box.id] = box.value;
       });
-    } else if (dialogState.formcontrol !== undefined) {
-      data = {};
+    }
+
+    if (dialogState.choices !== undefined) {
+      dialogState.choices.forEach((box: ICheckbox) => {
+        data[box.id] = box.value;
+      });
+    }
+
+    if (dialogState.formcontrol !== undefined) {
       dialogState.formcontrol.forEach((form: IFormControl) => {
         data[form.id] = form.value;
       });
@@ -231,7 +274,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IDialogConnectedProps {
   return {
-    dialogs: state.notifications.dialogs,
+    dialogs: state.session.notifications.dialogs,
   };
 }
 

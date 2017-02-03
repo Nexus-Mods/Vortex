@@ -2,7 +2,7 @@ import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
-import {currentGameMode, installPath} from '../../util/selectors';
+import {activeGameId, installPath} from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import walk from '../../util/walk';
 
@@ -59,7 +59,7 @@ abstract class LinkingActivator implements IModActivator {
 
   public finalize(dataPath: string): Promise<void> {
     const state = this.mApi.store.getState();
-    const gameId = currentGameMode(state);
+    const gameId = activeGameId(state);
 
     let currentActivation = Object.assign(
         getSafe(state, ['persistent', 'activation', gameId, ''], {}));
@@ -140,7 +140,7 @@ abstract class LinkingActivator implements IModActivator {
   public purge(installPath: string, dataPath: string): Promise<void> {
     return this.purgeLinks(installPath, dataPath).then(() => {
       const store = this.mApi.store;
-      const gameId = currentGameMode(store.getState());
+      const gameId = activeGameId(store.getState());
       store.dispatch(storeActivation(gameId, '', {}));
     });
   }
@@ -151,7 +151,7 @@ abstract class LinkingActivator implements IModActivator {
 
   public externalChanges(installPath: string, dataPath: string): Promise<IFileChange[]> {
     const state = this.mApi.store.getState();
-    const gameId = currentGameMode(state);
+    const gameId = activeGameId(state);
 
     let currentActivation = Object.assign(
         getSafe(state, ['persistent', 'activation', gameId, ''], {}));

@@ -2,7 +2,7 @@ import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import walk from '../../util/walk';
 
-import { IDiscoveryResult } from '../gamemode_management/types/IStateEx';
+import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { IMod } from '../mod_management/types/IMod';
 import { IFileChange, IModActivator } from '../mod_management/types/IModActivator';
 

@@ -2,6 +2,11 @@ import { IAttributeState } from './IAttributeState';
 import { IDialog } from './IDialog';
 import { INotification } from './INotification';
 
+import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
+import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
+import { IMod } from '../extensions/mod_management/types/IMod';
+import { IProfile } from '../extensions/profile_management/types/IProfile';
+
 /**
  * interface to represent a position on the screen
  * 
@@ -49,16 +54,6 @@ export interface INotificationState {
 }
 
 /**
- * state regarding application settings
- * 
- * @export
- * @interface ISettings
- */
-export interface ISettings {
-  gameMode: string;
-}
-
-/**
  * "ephemeral" session state. 
  * This state is generated at startup and forgotten at application exit
  *
@@ -82,6 +77,39 @@ export interface ITableStates {
   [id: string]: ITableState;
 }
 
+export interface ISettingsInterface {
+  language: string;
+}
+
+export interface ISettingsProfiles {
+  activeProfileId: string;
+}
+
+export interface IToolStored {
+  id: string;
+  name: string;
+  logo: string;
+  executable: string;
+  parameters: string[];
+}
+
+export interface ISettingsGameMode {
+  lastActiveProfile: { [gameId: string]: string };
+  discovered: { [id: string]: IDiscoveryResult };
+  searchPaths: string[];
+}
+
+export interface ISettings {
+  interface: ISettingsInterface;
+  gameMode: ISettingsGameMode;
+  profiles: ISettingsProfiles;
+  window: IWindow;
+}
+
+export interface ISessionGameMode {
+  known: IGameStored[];
+}
+
 /**
  * interface for the top-level state object
  * this should precisely mirror the reducer structure
@@ -90,11 +118,40 @@ export interface ITableStates {
  * @interface IState
  */
 export interface IState {
-  account: { };
-  window: { base: IWindow };
-  notifications: INotificationState;
-  session: { base: ISession };
-  settings: { };
-  persistent: { tables: ITableStates };
-  gameSettings: { };
+  confidential: {
+    account: { },
+  },
+  session: {
+    base: ISession,
+    gameMode: ISessionGameMode,
+    discovery: IDiscoveryState,
+    notifications: INotificationState;
+  };
+  settings: ISettings;
+  persistent: {
+    tables: ITableStates,
+    profiles: { [profileId: string]: IProfile },
+    mods: { [gameId: string]: { [modId: string]: IMod } },
+  };
+}
+
+/**
+ * state of the (lengthy) gamemode discovery
+ * 
+ * @export
+ * @interface IDiscoveryState
+ */
+export interface IDiscoveryState {
+  running: boolean;
+  progress: number;
+  directory: string;
+}
+
+/**
+ * gamemode-related application settings
+ * 
+ * @export
+ * @interface ISettings
+ */
+export interface IGameModeSettings {
 }

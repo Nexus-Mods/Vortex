@@ -6,7 +6,7 @@ import {gameSupported, lootAppPath, pluginPath} from './util/gameSupport';
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import {GameId, LootDatabase} from 'loot';
-import {types, util} from 'nmm-api';
+import {selectors, types} from 'nmm-api';
 import * as path from 'path';
 
 class LootInterface {
@@ -25,7 +25,7 @@ class LootInterface {
 
     // when the game changes, we need to re-initialize loot for that game
     context.api.events.on('gamemode-activated', (gameMode: string) => {
-      let gamePath: string = util.currentGameDiscovery(store.getState()).path;
+      let gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
       if (gameSupported(gameMode)) {
         try {
           this.init(gameMode as GameId, gamePath);

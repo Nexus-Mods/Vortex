@@ -11,6 +11,7 @@ import { ITermination, terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { log, setupLogging } from  './util/log';
 import { setupStore } from './util/store';
+import { getSafe } from './util/storeHelper';
 
 import * as Promise from 'bluebird';
 import { BrowserWindow, Menu, Tray, app } from 'electron';
@@ -104,18 +105,18 @@ function createStore(): Promise<void> {
 // main window setup
 
 function createWindow() {
-  let windowMetrics: IWindow = store.getState().window.base;
+  let windowMetrics: IWindow = store.getState().settings.window;
   mainWindow = new BrowserWindow({
-    height: windowMetrics.size.height,
-    width: windowMetrics.size.width,
-    x: windowMetrics.position.x,
-    y: windowMetrics.position.y,
+    height: getSafe(windowMetrics, ['size', 'height'], undefined),
+    width: getSafe(windowMetrics, ['size', 'width'], undefined),
+    x: getSafe(windowMetrics, ['position', 'x'], undefined),
+    y: getSafe(windowMetrics, ['position', 'y'], undefined),
     autoHideMenuBar: true,
     show: false,
     title: 'NMM2',
   });
 
-  if (windowMetrics.maximized) {
+  if (getSafe(windowMetrics, ['maximized'], false)) {
     mainWindow.maximize();
   }
 
@@ -158,7 +159,14 @@ app.on('ready', () => {
     createTrayIcon();
     return installDevelExtensions();
   })
-  .then(createWindow);
+  .then(createWindow)
+  .catch((err) => {
+    terminate({
+      message: 'Startup failed',
+      details: err.message,
+      stack: err.stack,
+    });
+  });
 });
 
 app.on('window-all-closed', () => {

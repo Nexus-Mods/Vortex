@@ -1,19 +1,22 @@
-import { IExtensionContext, PersistingType } from '../../types/IExtensionContext';
+import { IExtensionContext } from '../../types/IExtensionContext';
+import { IState } from '../../types/IState';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import { activeGameId } from '../../util/selectors';
 
-import { addSearchPath, setCurrentGameMode } from './actions/settings';
+import { setCurrentProfile } from '../profile_management/actions/settings';
+
+import { addSearchPath } from './actions/settings';
 import { discoveryReducer } from './reducers/discovery';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 
 import GamePicker from './views/GamePicker';
+import HideGameIcon from './views/HideGameIcon';
 import ProgressFooter from './views/ProgressFooter';
 import Settings from './views/Settings';
 
 import GameModeManager from './GameModeManager';
-
-let stateWhitelist = ['gameSettings'];
 
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('gamepad', 'Games', GamePicker, {
@@ -25,25 +28,21 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
   context.registerFooter('discovery-progress', ProgressFooter);
 
-  context.registerSettingsHive = (type: PersistingType, hive: string) => {
-    if (type === 'game') {
-      stateWhitelist.push(hive);
-    }
-  };
+  context.registerIcon('game-discovered-buttons', HideGameIcon);
+  context.registerIcon('game-undiscovered-buttons', HideGameIcon);
 
   context.once(() => {
-    let store = context.api.store;
+    let store: Redux.Store<IState> = context.api.store;
     let events = context.api.events;
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
     let gameModeManager = new GameModeManagerImpl(
         context.api.getPath('userData'), (gameMode: string) => {
           events.emit('gamemode-activated', gameMode);
-        }, stateWhitelist);
+        });
     gameModeManager.attachToStore(store);
     gameModeManager.startQuickDiscovery();
-    events.on('start-discovery',
-      () => gameModeManager.startSearchDiscovery());
+    events.on('start-discovery', () => gameModeManager.startSearchDiscovery());
 
     events.on('cancel-discovery',
       () => {
@@ -66,29 +65,28 @@ function init(context: IExtensionContext): boolean {
       });
     }
 
-    context.api.onStateChange(['settings', 'gameMode', 'next'],
-      (prev: string, current: string) => {
-        return gameModeManager.setupGameMode(current)
+    const changeGameMode = (oldGameId: string, newGameId: string, oldProfileId: string) => {
+      return gameModeManager.setupGameMode(newGameId)
         .then(() => {
-          store.dispatch(setCurrentGameMode(current));
-        })
-        .catch((err) => {
+          gameModeManager.setGameMode(oldGameId, newGameId);
+        }).catch((err) => {
           showError(store.dispatch, 'Failed to set game mode', err);
-        })
-        ;
+          // try to revert
+          store.dispatch(setCurrentProfile(oldGameId, oldProfileId));
+        });
+    };
+
+    context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
+      (prev: string, current: string) => {
+        const state = store.getState();
+        const oldGameId = state.persistent.profiles[prev].gameId;
+        const newGameId = state.persistent.profiles[current].gameId;
+        if (oldGameId !== newGameId) {
+          changeGameMode(oldGameId, newGameId, prev);
+        }
       });
 
-    context.api.onStateChange(['settings', 'gameMode', 'current'],
-      (prev: string, current: string) => {
-        gameModeManager.setGameMode(prev, current)
-        .catch(() => {
-            store.dispatch(setCurrentGameMode(prev));
-        });
-    });
-
-    gameModeManager.setGameMode(undefined,
-                                store.getState().settings.gameMode.current)
-        .catch(() => { store.dispatch(setCurrentGameMode(undefined)); });
+    changeGameMode(undefined, activeGameId(store.getState()), undefined);
   });
 
   return true;
