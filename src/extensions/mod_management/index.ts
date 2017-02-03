@@ -79,8 +79,6 @@ function init(context: IExtensionContextExt): boolean {
     return {activators};
   });
 
-  context.registerSettingsHive('game', 'mods');
-
   context.registerReducer(['settings', 'mods'], settingsReducer);
   context.registerReducer(['persistent', 'mods'], modsReducer);
   context.registerReducer(['persistent', 'activation'], activationReducer);
@@ -160,7 +158,7 @@ function init(context: IExtensionContextExt): boolean {
           let fullPath: string;
           const gameMode = activeGameId(store.getState());
           try {
-            mods = store.getState().mods[gameMode];
+            mods = store.getState().persistent.mods[gameMode];
             fullPath = path.join(installPath(store.getState()),
                                  mods[modId].installationPath);
           } catch (err) {

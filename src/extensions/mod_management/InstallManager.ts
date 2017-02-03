@@ -148,7 +148,7 @@ class InstallManager {
               .then((tmpPath: string) => {
                 reqFilesPath = tmpPath;
                 if (requiredFiles.length > 0) {
-                  return this.mTask.extract(archivePath, tmpPath, {
+                  return this.mTask.extractFull(archivePath, tmpPath, {
                     raw: requiredFiles,
                   });
                 }
@@ -197,7 +197,7 @@ class InstallManager {
 
   private checkModExists(installName: string, api: IExtensionApi): boolean {
     const gameMode = activeGameId(api.store.getState());
-    return installName in api.store.getState().mods[gameMode];
+    return installName in api.store.getState().persistent.mods[gameMode];
   }
 
   private queryUserReplace(modId: string, api: IExtensionApi): Promise<string> {
