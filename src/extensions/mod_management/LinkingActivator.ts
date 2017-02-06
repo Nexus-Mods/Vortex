@@ -3,10 +3,9 @@ import {IExtensionApi} from '../../types/IExtensionContext';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
 import {activeGameId, installPath} from '../../util/selectors';
-import {getSafe} from '../../util/storeHelper';
+import {loadData, saveData} from '../../util/storage';
 import walk from '../../util/walk';
 
-import {storeActivation} from './actions/activation';
 import {IMod} from './types/IMod';
 import {IFileChange, IModActivator} from './types/IModActivator';
 
@@ -61,26 +60,33 @@ abstract class LinkingActivator implements IModActivator {
     const state = this.mApi.store.getState();
     const gameId = activeGameId(state);
 
-    let currentActivation = Object.assign(
-        getSafe(state, ['persistent', 'activation', gameId, ''], {}));
+    let currentActivation: any;
+    let added: string[];
+    let removed: string[];
+    let sourceChanged: string[];
+    let contentChanged: string[];
 
-    const {added, removed, sourceChanged, contentChanged} =
-        this.diffActivation(currentActivation, this.mNewActivation);
     let errorCount: number = 0;
 
     const installPathStr = installPath(state);
 
     // unlink all files that were removed or changed
-    return Promise.map([].concat(removed, sourceChanged, contentChanged),
-                       (key: string) =>
-                           this.unlinkFile(
-                                   path.join(dataPath, currentActivation[key].relPath))
-                               .then(() => delete currentActivation[key])
-                               .catch((err) => {
-                                 log('warn', 'failed to unlink',
-                                     {path: currentActivation[key], error: err.message});
-                                 ++errorCount;
-                               }))
+    return loadData(gameId, 'activation', {})
+      .then((currentActivationIn: any) => {
+        currentActivation = currentActivationIn;
+        ({ added, removed, sourceChanged, contentChanged } =
+          this.diffActivation(currentActivation, this.mNewActivation));
+        return Promise.map([].concat(removed, sourceChanged, contentChanged),
+          (key: string) =>
+            this.unlinkFile(
+              path.join(dataPath, currentActivation[key].relPath))
+              .then(() => delete currentActivation[key])
+              .catch((err) => {
+                log('warn', 'failed to unlink',
+                  { path: currentActivation[key], error: err.message });
+                ++errorCount;
+              }));
+      })
         // then, (re-)link all files that were added or changed
       .then(() => Promise.map(
         [].concat(added, sourceChanged, contentChanged),
@@ -102,11 +108,8 @@ abstract class LinkingActivator implements IModActivator {
               ++errorCount;
             });
         }))
+        .then(() => saveData(gameId, 'activation', currentActivation))
         .then(() => {
-          // "previousActivation" was updated as we successfully applied changes so it
-          // should now represent the actual state on disk whereas this.mCurrentActivation
-          // represents the target
-          this.mApi.store.dispatch(storeActivation(gameId, '', currentActivation));
           if (errorCount > 0) {
             addNotification({
               type: 'error',
@@ -141,7 +144,7 @@ abstract class LinkingActivator implements IModActivator {
     return this.purgeLinks(installPath, dataPath).then(() => {
       const store = this.mApi.store;
       const gameId = activeGameId(store.getState());
-      store.dispatch(storeActivation(gameId, '', {}));
+      return saveData(gameId, 'activation', {});
     });
   }
 
@@ -153,43 +156,46 @@ abstract class LinkingActivator implements IModActivator {
     const state = this.mApi.store.getState();
     const gameId = activeGameId(state);
 
-    let currentActivation = Object.assign(
-        getSafe(state, ['persistent', 'activation', gameId, ''], {}));
+    let currentActivation: any;
 
     let nonLinks: IFileChange[] = [];
 
-    return Promise
-        .map(Object.keys(currentActivation),
-             (key: string) => {
-               const fileDataPath = path.join(dataPath, currentActivation[key].relPath);
-               const fileModPath =
-                   path.join(installPath, currentActivation[key].source,
-                             currentActivation[key].relPath);
+    return loadData(gameId, 'activation', {})
+      .then((activation: any) => {
+        currentActivation = activation;
+        return Promise
+          .map(Object.keys(currentActivation),
+          (key: string) => {
+            const fileDataPath = path.join(dataPath, currentActivation[key].relPath);
+            const fileModPath =
+              path.join(installPath, currentActivation[key].source,
+                currentActivation[key].relPath);
 
-               return fs.lstatAsync(fileModPath)
-                 .then((stat: fs.Stats): Promise<boolean> => {
-                   if (stat.mtime.getTime() !== currentActivation[key].time) {
-                     nonLinks.push({
-                       filePath: currentActivation[key].relPath,
-                       source: currentActivation[key].source,
-                       changeType: 'valchange',
-                     });
-                     return Promise.resolve(undefined);
-                   } else {
-                    return this.isLink(fileDataPath, fileModPath);
-                   }
-                 })
-                     .then((isLink?: boolean) => {
-                       if ((isLink !== undefined) && !isLink) {
-                         nonLinks.push({
-                           filePath: currentActivation[key].relPath,
-                           source: currentActivation[key].source,
-                           changeType: 'refchange',
-                         });
-                       }
-                     });
-                    })
-        .then(() => Promise.resolve(nonLinks));
+            return fs.lstatAsync(fileModPath)
+              .then((stat: fs.Stats): Promise<boolean> => {
+                if (stat.mtime.getTime() !== currentActivation[key].time) {
+                  nonLinks.push({
+                    filePath: currentActivation[key].relPath,
+                    source: currentActivation[key].source,
+                    changeType: 'valchange',
+                  });
+                  return Promise.resolve(undefined);
+                } else {
+                  return this.isLink(fileDataPath, fileModPath);
+                }
+              })
+              .then((isLink?: boolean) => {
+                if ((isLink !== undefined) && !isLink) {
+                  nonLinks.push({
+                    filePath: currentActivation[key].relPath,
+                    source: currentActivation[key].source,
+                    changeType: 'refchange',
+                  });
+                }
+              });
+          });
+      })
+      .then(() => Promise.resolve(nonLinks));
   }
 
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;

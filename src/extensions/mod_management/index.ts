@@ -6,7 +6,6 @@ import {IDownload} from '../download_management/types/IDownload';
 
 import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
-import {activationReducer} from './reducers/activation';
 import {modsReducer} from './reducers/mods';
 import {settingsReducer} from './reducers/settings';
 import {IInstall} from './types/IInstall';
@@ -81,7 +80,6 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerReducer(['settings', 'mods'], settingsReducer);
   context.registerReducer(['persistent', 'mods'], modsReducer);
-  context.registerReducer(['persistent', 'activation'], activationReducer);
 
   context.registerModActivator = registerModActivator;
   context.registerInstaller = registerInstaller;

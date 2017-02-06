@@ -9,7 +9,7 @@ import { Button } from '../../../views/TooltipControls';
 import { setActivator, setPath } from '../actions/settings';
 import { IModActivator } from '../types/IModActivator';
 import { IStatePaths } from '../types/IStateSettings';
-import resolvePath, {PathKey} from '../util/resolvePath';
+import resolvePath, {PathKey, pathDefaults} from '../util/resolvePath';
 import supportedActivators from '../util/supportedActivators';
 
 import * as Promise from 'bluebird';
@@ -36,7 +36,7 @@ interface IConnectedProps {
 
 interface IActionProps {
   onSetPath: (key: string, path: string) => void;
-  onSetActivator: (id: string) => void;
+  onSetActivator: (gameMode: string, id: string) => void;
   onShowDialog: (type: DialogType, title: string,
     content: IDialogContent, actions: DialogActions) => void;
   onShowError: (message: string, details: string | Error) => void;
@@ -81,14 +81,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { currentActivator, activators, t } = this.props;
+    const { t, activators, currentActivator, gameMode, paths } = this.props;
+
+    const gamePaths = paths[gameMode] || pathDefaults;
 
     return (
       <form>
         <Panel footer={this.renderFooter()}>
-        {this.renderPathCtrl(t('Base Path'), 'base')}
-        {this.renderPathCtrl(t('Download Path'), 'download')}
-        {this.renderPathCtrl(t('Install Path'), 'install')}
+        {this.renderPathCtrl(gamePaths, t('Base Path'), 'base')}
+        {this.renderPathCtrl(gamePaths, t('Download Path'), 'download')}
+        {this.renderPathCtrl(gamePaths, t('Install Path'), 'install')}
         <Modal show={this.state.busy !== undefined} onHide={nop}>
           <Modal.Body>
           <Jumbotron>
@@ -100,7 +102,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </Panel>
         <ControlLabel>{ t('Activation Method') }</ControlLabel>
         <FormGroup validationState={ activators !== undefined ? undefined : 'error' }>
-          { this.renderActivators(activators, currentActivator) }
+          { this.renderActivators(activators, currentActivator[gameMode]) }
         </FormGroup>
       </form>
     );
@@ -227,9 +229,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderPathCtrl(label: string, pathKey: PathKey): JSX.Element {
+  private renderPathCtrl(paths: any, label: string, pathKey: PathKey): JSX.Element {
     const { t, gameMode } = this.props;
-    let { paths } = this.state;
+
     if (this.mPathChangeCBs[pathKey] === undefined) {
       this.mPathChangeCBs[pathKey] = (evt) => this.changePathEvt(pathKey, evt);
     }
@@ -241,7 +243,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <ControlLabel>{label}</ControlLabel>
       <InputGroup>
         <FormControl
-          value={paths[gameMode][pathKey]}
+          value={paths[pathKey]}
           placeholder={label}
           onChange={this.mPathChangeCBs[pathKey]}
         />
@@ -312,16 +314,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectActivator = (evt) => {
+    const { gameMode } = this.props;
     let target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    log('info', 'select activator', { id: target.value });
-    this.props.onSetActivator(target.value);
+    this.props.onSetActivator(gameMode, target.value);
   }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
+  const gameMode = activeGameId(state);
   return {
     paths: state.settings.mods.paths,
-    gameMode: activeGameId(state),
+    gameMode,
     currentActivator: state.settings.mods.activator,
     state,
   };
@@ -332,8 +335,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetPath: (key: string, newPath: string): void => {
       dispatch(setPath(key, newPath));
     },
-    onSetActivator: (id: string): void => {
-      dispatch(setActivator(id));
+    onSetActivator: (gameMode: string, id: string): void => {
+      dispatch(setActivator(gameMode, id));
     },
     onShowDialog: (type, title, content, actions): void => {
       dispatch(showDialog(type, title, content, actions));

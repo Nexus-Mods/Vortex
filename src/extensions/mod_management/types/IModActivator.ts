@@ -96,8 +96,7 @@ export interface IModActivator {
    * NMM2 itself does not keep track which files were installed by the
    * activator so if the activator can not discover those automatically it
    * it has to do its own bookkeeping.
-   * The LinkingActivator base-class does implement such bookkeeping however and
-   * this extension does provide reducers to store an activation snapshot.
+   * The LinkingActivator base-class does implement such bookkeeping however.
    * 
    * @memberOf IModActivator
    */

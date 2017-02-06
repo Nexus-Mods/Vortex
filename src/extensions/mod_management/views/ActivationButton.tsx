@@ -157,8 +157,7 @@ class ActivationButton extends ComponentEx<IProps, IComponentState> {
 }
 
 function activeGameDiscovery(state: any)  {
-  const activeGameId = state.settings.gameMode.current;
-  return state.settings.gameMode.discovered[activeGameId];
+  return state.settings.gameMode.discovered[activeGameId(state)];
 }
 
 function mapStateToProps(state: any): IConnectedProps {

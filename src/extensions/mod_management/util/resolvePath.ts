@@ -7,7 +7,7 @@ import format = require('string-template');
 export type PathKey =
   'base' | 'download' | 'install';
 
-const defaults = {
+export const pathDefaults = {
     base: path.join('{USERDATA}', '{GAME}'),
     download: path.join('{base}', 'downloads'),
     install: path.join('{base}', 'mods'),
@@ -22,7 +22,7 @@ function resolvePath(key: PathKey, paths: { [gameId: string]: IStatePaths }, gam
   if (key !== 'base') {
     formatKeys.base = resolvePath('base', paths, gameMode);
   }
-  const gamePaths = paths[gameMode] || defaults;
+  const gamePaths = paths[gameMode] || pathDefaults;
   return format(gamePaths[key], formatKeys);
 }
 
