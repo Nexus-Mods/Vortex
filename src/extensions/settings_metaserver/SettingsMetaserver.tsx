@@ -1,5 +1,6 @@
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import {setSafe} from '../../util/storeHelper';
+import DNDContainer from '../../views/DNDContainer';
 import Icon from '../../views/Icon';
 import InputButton from '../../views/InputButton';
 import { Button } from '../../views/TooltipControls';
@@ -9,8 +10,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock,
          ListGroup, ListGroupItem } from 'react-bootstrap';
-import {DragDropContext, DragSource, DropTarget} from 'react-dnd';
-import HTML5Backend from 'react-dnd-html5-backend';
+import {DragSource, DropTarget} from 'react-dnd';
 import {findDOMNode} from 'react-dom';
 import { generate as shortid } from 'shortid';
 
@@ -252,9 +252,6 @@ class ServerList extends React.Component<IListProps, IListState> {
   }
 }
 
-const ServerListContext =
-  DragDropContext(HTML5Backend)(ServerList) as React.ComponentClass<IListProps>;
-
 class SettingsMetaserver extends ComponentEx<IProps, IState> {
   constructor(props) {
     super(props);
@@ -270,15 +267,17 @@ class SettingsMetaserver extends ComponentEx<IProps, IState> {
     return (
       <form>
         <FormGroup>
-          <ControlLabel>{ t('Meta server') }</ControlLabel>
-            <ServerListContext
+          <ControlLabel>{t('Meta server')}</ControlLabel>
+          <DNDContainer>
+            <ServerList
               t={t}
               metaservers={metaservers}
               onAddMetaserver={onAddMetaserver}
               onRemoveMetaserver={onRemoveMetaserver}
               onSetMetaserverPriority={onSetMetaserverPriority}
             />
-          <HelpBlock>{ t('Servers to query for meta data.') }</HelpBlock>
+          </DNDContainer>
+          <HelpBlock>{t('Servers to query for meta data.')}</HelpBlock>
         </FormGroup>
       </form>
     );

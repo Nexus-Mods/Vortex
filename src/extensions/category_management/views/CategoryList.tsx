@@ -1,10 +1,10 @@
-
 import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
+import DNDContainer from '../../../views/DNDContainer';
 import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
 import { Button } from '../../../views/TooltipControls';
@@ -26,7 +26,7 @@ import { remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
 import { Jumbotron } from 'react-bootstrap';
-import Tree from 'react-sortable-tree';
+import { SortableTreeWithoutDndContext as Tree } from 'react-sortable-tree';
 
 interface IActionProps {
   onShowError: (message: string, details: string | Error) => void;
@@ -87,7 +87,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
   public render(): JSX.Element {
     const { t, gameMode, searchString, searchFocusIndex,
       searchFoundCount, treeDataObject } = this.props;
-    TreeImpl = require('react-sortable-tree').default;
+    TreeImpl = require('react-sortable-tree').SortableTreeWithoutDndContext;
 
     if (gameMode === undefined) {
       return <Jumbotron>{t('Please select a game first')}</Jumbotron>;
@@ -163,16 +163,18 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
             &nbsp;/&nbsp;
           {searchFoundCount || 0}
           </span>
-          <TreeImpl
-            treeData={treeDataObject}
-            onChange={this.updateTreeData}
-            height={'100%'}
-            autoHeight={false}
-            searchQuery={searchString}
-            searchFocusOffset={searchFocusIndex}
-            searchFinishCallback={this.searchFinishCallback}
-            generateNodeProps={this.generateNodeProps}
-          />
+          <DNDContainer>
+            <TreeImpl
+              treeData={treeDataObject}
+              onChange={this.updateTreeData}
+              height={'100%'}
+              autoHeight={false}
+              searchQuery={searchString}
+              searchFocusOffset={searchFocusIndex}
+              searchFinishCallback={this.searchFinishCallback}
+              generateNodeProps={this.generateNodeProps}
+            />
+          </DNDContainer>
         </div>
       );
     } else {

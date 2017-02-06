@@ -21,8 +21,6 @@ import update = require('react-addons-update');
 import {Alert, ControlLabel, FormControl, FormGroup,
         HelpBlock, InputGroup, Jumbotron, Modal, Panel} from 'react-bootstrap';
 
-import { log } from '../../../util/log';
-
 interface IBaseProps {
   activators: IModActivator[];
 }
