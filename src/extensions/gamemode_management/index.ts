@@ -3,6 +3,7 @@ import { IState } from '../../types/IState';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
 
 import { setNextProfile } from '../profile_management/actions/settings';
 
@@ -82,8 +83,8 @@ function init(context: IExtensionContext): boolean {
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
       (prev: string, current: string) => {
         const state = store.getState();
-        const oldGameId = state.persistent.profiles[prev].gameId;
-        const newGameId = state.persistent.profiles[current].gameId;
+        const oldGameId = getSafe(state, ['persistent', 'profiles', prev, 'gameId'], undefined);
+        const newGameId = getSafe(state, ['persistent', 'profiles', current, 'gameId'], undefined);
         log('debug', 'active profile id changed', { prev, current, oldGameId, newGameId });
         if (oldGameId !== newGameId) {
           changeGameMode(oldGameId, newGameId, prev);
