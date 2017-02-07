@@ -3,6 +3,7 @@ using System.CodeDom.Compiler;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 
 namespace Components.Scripting.CSharpScript
@@ -49,7 +50,7 @@ namespace Components.Scripting.CSharpScript
 		/// <c>false</c> otherwise.</returns>
 		/// <exception cref="ArgumentException">Thrown if <paramref name="p_scpScript"/> is not a
 		/// <see cref="CSharpScript"/>.</exception>
-		public override bool DoExecute(IScript p_scpScript)
+		public override Task<bool> DoExecute(IScript p_scpScript)
 		{
 			if (!(p_scpScript is CSharpScript))
 				throw new ArgumentException("The given script must be of type CSharpScript.", "p_scpScript");
@@ -58,7 +59,7 @@ namespace Components.Scripting.CSharpScript
 
 			byte[] bteScript = Compile(cscScript.Code);
 			if (bteScript == null)
-				return false;
+				return null;
 
 			AppDomain admScript = CreateSandbox(p_scpScript);
 			try
@@ -74,7 +75,7 @@ namespace Components.Scripting.CSharpScript
 				{
 					AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomain_AssemblyResolve;
 				}
-				return srnRunner.Execute(bteScript);
+				return Task.Run(() => srnRunner.Execute(bteScript));
 			}
 			finally
 			{

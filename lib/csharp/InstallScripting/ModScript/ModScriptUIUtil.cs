@@ -17,8 +17,6 @@ namespace Components.Scripting.ModScript
 		/// <summary>
 		/// A simple constructor that initializes the object with the given values.
 		/// </summary>
-		/// <param name="p_gmdGameMode">The current game mode.</param>
-		/// <param name="p_eifEnvironmentInfo">The application's envrionment info.</param>
 		/// <param name="p_scxSyncContext">The synchronization context to use to marshall calls to the UI thread.</param>
 		public ModScriptUIUtil(SynchronizationContext p_scxSyncContext)
 		{

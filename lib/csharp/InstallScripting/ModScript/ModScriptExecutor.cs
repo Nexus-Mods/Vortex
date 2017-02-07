@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Security;
 using System.Security.Permissions;
 using System.Security.Policy;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Diagnostics;
 using Utils;
 
 namespace Components.Scripting.ModScript
@@ -41,7 +42,7 @@ namespace Components.Scripting.ModScript
 		/// <c>false</c> otherwise.</returns>
 		/// <exception cref="ArgumentException">Thrown if <paramref name="p_scpScript"/> is not a
 		/// <see cref="ModScript"/>.</exception>
-		public override bool DoExecute(IScript p_scpScript)
+		public override Task<bool> DoExecute(IScript p_scpScript)
 		{
 			if (!(p_scpScript is ModScript))
 				throw new ArgumentException("The given script must be of type ModScript.", "p_scpScript");
@@ -49,7 +50,7 @@ namespace Components.Scripting.ModScript
 			ModScript mscScript = (ModScript)p_scpScript;
 
 			if (string.IsNullOrEmpty(mscScript.Code))
-				return false;
+				return null;
 
 			AppDomain admScript = CreateSandbox(p_scpScript);
 			try
@@ -65,7 +66,7 @@ namespace Components.Scripting.ModScript
 				{
 					AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomain_AssemblyResolve;
 				}
-				return srnRunner.Execute(mscScript.Code);
+                return Task.Run(() => srnRunner.Execute(mscScript.Code));
 			}
 			finally
 			{

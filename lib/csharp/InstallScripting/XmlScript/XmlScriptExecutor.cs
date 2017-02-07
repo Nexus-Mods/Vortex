@@ -41,7 +41,7 @@ namespace Components.Scripting.XmlScript
         /// <c>false</c> otherwise.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="scpScript"/> is not an
         /// <see cref="XmlScript"/>.</exception>
-        public override bool DoExecute(IScript scpScript)
+        public override Task<bool> DoExecute(IScript scpScript)
         {
             List<InstallableFile> FilesToInstall = new List<InstallableFile>();
             List<InstallableFile> PluginsToActivate = new List<InstallableFile>();
@@ -110,7 +110,7 @@ namespace Components.Scripting.XmlScript
 
             sendState(lstSteps, stepIdx);
 
-            return false;
+            return null;
         }
  
         private void sendState(IList<InstallStep> lstSteps, int stepIdx)

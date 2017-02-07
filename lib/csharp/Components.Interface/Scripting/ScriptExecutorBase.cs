@@ -101,9 +101,9 @@ namespace Components.Scripting
 		/// </summary>
 		/// <returns><c>true</c> if the script completed
 		/// successfully; <c>false</c> otherwise.</returns>
-		public Task<IList<Instruction>> Execute(IScript p_scpScript)
+		public async Task<IList<Instruction>> Execute(IScript p_scpScript)
 		{
-            DoExecute(p_scpScript);
+            await DoExecute(p_scpScript);
             // ??? OnTaskSetCompleted(booResult, "The script has finished executing.", p_scpScript);
             //return booResult;
             return null;
@@ -120,7 +120,7 @@ namespace Components.Scripting
 		/// </remarks>
 		/// <returns><c>true</c> if the script completed
 		/// successfully; <c>false</c> otherwise.</returns>
-		public abstract bool DoExecute(IScript p_scpScript);
+		public abstract Task<bool> DoExecute(IScript p_scpScript);
 
 		/// <summary>
 		/// Blocks until the task set is completed.

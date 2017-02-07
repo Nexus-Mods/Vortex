@@ -62,6 +62,7 @@ namespace Components.Scripting.ModScript
         /// Creates an executor that can run the script type.
         /// </summary>
         /// <param name="modArchive">The mod being installed.</param>
+        /// <param name="delegates">A delegate for all the interactions with the js core.</param>
         /// <returns>An executor that can run the script type.</returns>
         public IScriptExecutor CreateExecutor(Mod modArchive, CoreDelegates delegates)
 		{

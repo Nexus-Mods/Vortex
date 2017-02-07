@@ -81,6 +81,7 @@ namespace Components.ModInstaller
 
         /// <summary>
         /// This function will return the list of files requirements to complete this mod's installation.
+        /// <param name="modFiles">The list of files inside the mod archive.</param>
         /// </summary>
         protected async Task<IList<string>> GetRequirements(IList<string> modFiles)
         {
@@ -96,10 +97,9 @@ namespace Components.ModInstaller
         /// <summary>
         /// This will assign all files to the proper destination.
         /// </summary>
-        /// <param name="FileList">The list of files inside the mod archive.</param>
-        /// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
+        /// <param name="fileList">The list of files inside the mod archive.</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
-        /// <param name="error_OverwritesDelegate">A delegate to present errors and file overwrite requests.</param>
+        /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
         protected async Task<List<Instruction>> BasicModInstall(List<string> fileList, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
             List<Instruction> FilesToInstall = new List<Instruction>();
@@ -119,10 +119,9 @@ namespace Components.ModInstaller
         /// <summary>
         /// This will assign all files to the proper destination.
         /// </summary>
-        /// <param name="FileList">The list of files inside the mod archive.</param>
-        /// <param name="pluginQueryDelegate">A delegate to query whether a plugin already exists.</param>
+        /// <param name="modArchive">The list of files inside the mod archive.</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
-        /// <param name="error_OverwritesDelegate">A delegate to present errors and file overwrite requests.</param>
+        /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
         protected async Task<List<Instruction>> ScriptedModInstall(Mod modArchive, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
             List<Instruction> Instructions = new List<Instruction>();
