@@ -63,6 +63,7 @@ namespace Components.ModInstaller
             string ScriptFilePath = new List<string>(await GetRequirements(FileSystem.GetFiles(scriptPath, "*", System.IO.SearchOption.AllDirectories))).FirstOrDefault();
 
             Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath);
+            await modToInstall.Initialize();
 
             progressDelegate(50);
 

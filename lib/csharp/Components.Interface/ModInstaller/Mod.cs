@@ -57,22 +57,6 @@ namespace Components.Interface
         {
             get
             {
-                try
-                {
-                    if ((ModInstallScript == null) && !string.IsNullOrEmpty(InstallScriptPath))
-                    {
-                        //byte[] scriptData = null;
-                        Task.Run(async () => {
-                            await GetScriptFile();
-                        }).Wait();
-                        //ModInstallScript = InstallScriptType.LoadScript(TextUtil.ByteToString(scriptData));
-                    }
-                }
-                catch
-                {
-                    throw new Exception(InstallScriptPath);
-                }
-
                 return ModInstallScript;
             }
             set
@@ -102,6 +86,12 @@ namespace Components.Interface
         }
 
         #endregion
+
+        public async Task Initialize()
+        {
+            await Task.Run(() => GetScreenshotPath(ModFiles));
+            await GetScriptFile();
+        }
 
         //public async Task<byte[]> GetScriptFile()
         //{
