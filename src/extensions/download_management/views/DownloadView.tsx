@@ -120,11 +120,15 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       name: 'File Time',
       description: 'Time the file was last modified',
       icon: 'calendar-plus-o',
-      calc: (attributes: IDownload) =>
-        fs.statAsync(path.join(this.props.downloadPath, attributes.localPath))
+      calc: (attributes: IDownload) => {
+        if (attributes.localPath === undefined) {
+          return undefined;
+        }
+        return fs.statAsync(path.join(this.props.downloadPath, attributes.localPath))
         .then((stat: fs.Stats) =>
           Promise.resolve(stat.mtime)
-        ),
+        );
+      },
       placement: 'both',
       isToggleable: true,
       edit: {},

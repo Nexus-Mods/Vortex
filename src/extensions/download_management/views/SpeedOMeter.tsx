@@ -1,6 +1,8 @@
 import { connect } from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';
 
+import bytesToString from '../util/bytesToString';
+
 import * as React from 'react';
 
 interface IConnectedProps {
@@ -9,17 +11,9 @@ interface IConnectedProps {
 
 type IProps = IConnectedProps;
 
-const labels = [ 'B', 'K', 'M', 'G', 'T' ];
-
 const SpeedOMeter = (props: IProps) => {
-  let { speed } = props;
-  let labelIdx = 0;
-  while (speed > 1024) {
-    ++labelIdx;
-    speed /= 1024;
-  }
   return (
-    <span><Icon name='tachometer' />{' '}{speed.toFixed(1)} {labels[labelIdx]}/s</span>
+    <span><Icon name='tachometer' />{' '}{bytesToString(props.speed)}/s</span>
   );
 };
 

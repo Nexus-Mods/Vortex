@@ -1,9 +1,10 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
-
-import Starter from './Starter';
+import Dashboard from './views/Dashboard';
 
 function init(context: IExtensionContext): boolean {
-  context.registerDashlet('Starter', 2, 0, Starter);
+  context.registerMainPage('th', 'Welcome', Dashboard, {
+    hotkey: '1',
+  });
 
   return true;
 }

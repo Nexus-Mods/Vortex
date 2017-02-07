@@ -8,6 +8,7 @@ import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
 import { IDownload } from './types/IDownload';
 import { ProtocolHandlers } from './types/ProtocolHandlers';
+import Dashlet from './views/Dashlet';
 import DownloadView from './views/DownloadView';
 import Settings from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';
@@ -66,12 +67,12 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['persistent', 'downloads'], stateReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
+  context.registerDashlet('downloads', 1, 10, Dashlet);
+
   context.registerDownloadProtocol = (schema: string, handler: IProtocolHandler) => {
     protocolHandlers[schema] = handler;
   };
 
-  // ensure the current profile is always set to a valid value on startup and
-  // when changing the game mode 
   context.once(() => {
     const DownloadManagerImpl: typeof DownloadManager = require('./DownloadManager').default;
     const observeImpl: typeof observe = require('./DownloadObserver').default;

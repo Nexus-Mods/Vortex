@@ -70,7 +70,7 @@ class Settings extends ComponentEx<ISettingsProps, {}> {
 function registerSettings(instance: Settings,
                           title: string,
                           component: React.ComponentClass<any>,
-                          props: () => PropsCallback): ISettingsPage {
+                          props: PropsCallback): ISettingsPage {
   return { title, component, props };
 }
 

@@ -4,6 +4,8 @@ import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from '../../../util/st
 
 import * as action from '../actions/state';
 
+export const speedDataPoints = 15;
+
 /**
  * reducer for changes to ephemeral session state
  */
@@ -84,11 +86,13 @@ export const stateReducer: IReducerSpec = {
                       payload.paused ? 'paused' : 'started');
     },
     [action.setDownloadSpeed]: (state, payload) => {
-      if (payload !== state.speed) {
-        return setSafe(state, [ 'speed' ], payload);
-      } else {
-        return state;
+      let temp = setSafe(state, ['speed'], payload);
+      let speeds = state.speedHistory !== undefined ? state.speedHistory.slice() : [];
+      speeds.push(payload);
+      if (speeds.length > speedDataPoints) {
+        speeds = speeds.slice(speeds.length - speedDataPoints);
       }
+      return setSafe(temp, ['speedHistory'], speeds);
     },
     [action.removeDownload]: (state, payload) => {
       return deleteOrNop(state, [ 'files', payload.id ]);
@@ -107,6 +111,7 @@ export const stateReducer: IReducerSpec = {
   },
   defaults: {
     speed: 0,
+    speedHistory: [],
     files: {},
   },
 };

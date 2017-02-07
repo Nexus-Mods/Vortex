@@ -183,6 +183,7 @@
     "react-redux": "^4.4.5",
     "react-shallow-testutils": "^2.0.0",
     "react-sortable-tree": "^0.1.8",
+    "recharts": "^0.20.5",
     "redux": "^3.5.2",
     "redux-act": "^1.1.0",
     "redux-devtools": "^3.3.1",

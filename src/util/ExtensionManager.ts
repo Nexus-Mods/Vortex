@@ -23,6 +23,7 @@ import Module = require('module');
 // removed during compilation
 import {} from '../extensions/about_dialog';
 import {} from '../extensions/category_management';
+import {} from '../extensions/dashboard';
 import {} from '../extensions/download_management';
 import {} from '../extensions/gamemode_management';
 import {} from '../extensions/hardlink_activator';
@@ -127,6 +128,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
 
     this.mInitCalls.filter((call: IInitCall) => !call.optional && !fullAPI.has(call.key)
     ).forEach((call: IInitCall) => {
+      log('debug', 'unsupported api call', { extension: call.extension, api: call.key });
       incompatibleExtensions.add(call.extension);
     });
     if (incompatibleExtensions.size > 0) {
@@ -183,6 +185,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
     // match the interface
     let dummy: IExtensionContext = {
       registerMainPage: undefined,
+      registerDashlet: undefined,
       registerDialog: undefined,
       registerSettings: undefined,
       registerIcon: undefined,
@@ -585,6 +588,7 @@ class ExtensionManager {
     let staticExtensions = [
       'settings_interface',
       'about_dialog',
+      'dashboard',
       'welcome_screen',
       'mod_management',
       'category_management',

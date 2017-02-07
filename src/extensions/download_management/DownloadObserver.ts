@@ -30,7 +30,7 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
     store.dispatch(downloadProgress(dlId, received, total));
   }
   if ((filePath !== undefined) &&
-      (filePath !==
+      (path.basename(filePath) !==
        store.getState().persistent.downloads.files[dlId].localPath)) {
     store.dispatch(setDownloadFilePath(dlId, path.basename(filePath)));
   }

@@ -10,7 +10,7 @@ export interface IBaseProps {
 interface IFooter {
   id: string;
   component: React.ComponentClass<any>;
-  props: () => PropsCallback;
+  props: PropsCallback;
 }
 
 interface IExtendedProps {

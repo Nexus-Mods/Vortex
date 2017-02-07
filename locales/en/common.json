@@ -1,4 +1,5 @@
 {
   "Do you really want to delete this mod?_plural": "Do you really want to delete these {{ count }} mods?",
-  "Do you really want to delete this archive?_plural": "Do you really want to delete these {{ count }} archives?"
+  "Do you really want to delete this archive?_plural": "Do you really want to delete these {{ count }} archives?",
+  "{{ count }} download_plural": "{{ count }} downloads"
 }

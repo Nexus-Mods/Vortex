@@ -19,7 +19,7 @@ import ToolEditDialog from './ToolEditDialog';
 import { execFile } from 'child_process';
 import * as path from 'path';
 import * as React from 'react';
-import { Jumbotron, Media, Well } from 'react-bootstrap';
+import { Media, Well } from 'react-bootstrap';
 import update = require('react-addons-update');
 import { generate as shortid } from 'shortid';
 
@@ -44,7 +44,7 @@ interface IConnectedProps {
 
 type IWelcomeScreenProps = IConnectedProps & IActionProps;
 
-class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
+class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   constructor(props) {
     super(props);
 
@@ -55,46 +55,37 @@ class WelcomeScreen extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState
   }
 
   public render(): JSX.Element {
-    let { t, gameMode } = this.props;
-
-    return (
-      <Jumbotron>
-        {this.renderEditToolDialog()}
-        Welcome to Nexus Mod Manager 2!
-        {gameMode === undefined ? <div>{t('No game selected')}</div> : this.renderGameMode()}
-      </Jumbotron>
-    );
-  }
-
-  private renderGameMode = () => {
     let { t, gameMode, knownGames } = this.props;
+
+    if (gameMode === undefined) {
+      return null;
+    }
 
     let game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
 
     return (
-      <Well>
-        <Media>
-          <Media.Left>
-            {this.renderGameIcon(game)}
-          </Media.Left>
-          <Media.Right>
-            <Media.Heading>
-              {game === undefined ? gameMode : game.name}
-            </Media.Heading>
-            <Button
-              id='start-game-btn'
-              tooltip={t('Start Game')}
-              onClick={this.startGame}
-            >
-              <Icon name='play' className='game-start-btn' />
-            </Button>
-            <h5>
-              {t('Tools:')}
-            </h5>
-            {game === undefined ? null : this.renderSupportedToolsIcons(game)}
-          </Media.Right>
-        </Media>
-      </Well>
+      <Media>
+        <Media.Left>
+          {this.renderGameIcon(game)}
+          {this.renderEditToolDialog()}
+        </Media.Left>
+        <Media.Right>
+          <Media.Heading>
+            {game === undefined ? gameMode : game.name}
+          </Media.Heading>
+          <Button
+            id='start-game-btn'
+            tooltip={t('Start Game')}
+            onClick={this.startGame}
+          >
+            <Icon name='play' className='game-start-btn' />
+          </Button>
+          <h5>
+            {t('Tools:')}
+          </h5>
+          {game === undefined ? null : this.renderSupportedToolsIcons(game)}
+        </Media.Right>
+      </Media>
     );
   }
 
@@ -284,5 +275,6 @@ export default
     bindI18n: 'languageChanged loaded',
     bindStore: false,
   } as any)(
-    connect(mapStateToProps, mapDispatchToProps)(WelcomeScreen)
+    connect(mapStateToProps, mapDispatchToProps)(Starter)
   );
+

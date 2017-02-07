@@ -40,6 +40,11 @@ export interface IRegisterMainPage {
    options: IMainPageOptions): void;
 }
 
+export interface IRegisterDashlet {
+  (title: string, width: 1 | 2 | 3, position: number,
+    component: React.ComponentClass<any>, props?: PropsCallback): void;
+}
+
 export interface IRegisterDialog {
   (id: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
 }
@@ -328,6 +333,11 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerMainPage: IRegisterMainPage;
+
+  /**
+   * register a dashlet to be displayed on the welcome screen
+   */
+  registerDashlet: IRegisterDashlet;
 
   /**
    * register a dialog (or any control that is rendered independent of the main content area
