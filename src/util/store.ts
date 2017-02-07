@@ -111,6 +111,7 @@ export function extendStore(store: Redux.Store<IState>,
                 {hive, state: JSON.stringify(state)});
 
             persistor.setResetCallback(() => {
+              log('debug', 'persistor reset', hive);
               // when the persistor resets we re-retrieve the stored state
               // and rehydrate with that.
               getStoredState(settings, (innerErr, innerState) => {
@@ -120,6 +121,8 @@ export function extendStore(store: Redux.Store<IState>,
                     details: innerErr.message,
                   });
                 } else {
+                  // TODO this seems to cause the state to be applied twice.
+                  //   not a big deal but curious
                   internalPersistor.rehydrate(innerState);
                 }
               });

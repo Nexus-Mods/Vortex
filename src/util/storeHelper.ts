@@ -1,5 +1,7 @@
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 
+import { activeGameId } from './selectors';
+
 import * as Promise from 'bluebird';
 
 /**
@@ -272,8 +274,7 @@ export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
   const fallback = {id: '__placeholder', name: '<No game>', requiredFiles: []};
   let knownGames = getSafe(store.getState(), ['session', 'gameMode', 'known'], null);
   if ((knownGames !== null) && (knownGames !== undefined)) {
-    const gameMode = getSafe(store.getState(),
-                             ['settings', 'gameMode', 'current'], undefined);
+    const gameMode = activeGameId(store.getState());
     let res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
     return Promise.resolve(res || fallback);
   } else {
@@ -283,8 +284,7 @@ export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
              return (knownGames !== null) && (knownGames !== undefined);
            })
         .then(() => {
-          const gameMode = getSafe(
-              store.getState(), ['settings', 'gameMode', 'current'], undefined);
+          const gameMode = activeGameId(store.getState());
 
           const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
           return Promise.resolve(res || fallback);

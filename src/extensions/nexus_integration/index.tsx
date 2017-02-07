@@ -189,15 +189,13 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
 
-  if (context.registerDownloadProtocol !== undefined) {
-    context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {
-      const nxm: NXMUrl = new NXMUrl(nxmurl);
-      return nexus.getDownloadURLs(nxm.modId, nxm.fileId, convertGameId(nxm.gameId))
-        .map((url: IDownloadURL): string => {
-          return url.URI;
-        });
-    });
-  }
+  context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {
+    const nxm: NXMUrl = new NXMUrl(nxmurl);
+    return nexus.getDownloadURLs(nxm.modId, nxm.fileId, convertGameId(nxm.gameId))
+      .map((url: IDownloadURL): string => {
+        return url.URI;
+      });
+  });
 
   context.registerIcon('download-icons', InputButton,
     () => ({
@@ -267,9 +265,8 @@ function init(context: IExtensionContextExt): boolean {
       }
     );
 
-    context.api.onStateChange(['settings', 'gameMode', 'current'],
-      (oldValue: string, newValue: string) => {
-        nexus.setGame(newValue);
+    context.api.events.on('gamemode-activated', (gameMode: string) => {
+        nexus.setGame(gameMode);
       });
 
     context.api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],

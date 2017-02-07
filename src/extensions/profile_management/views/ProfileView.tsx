@@ -7,7 +7,7 @@ import { Button } from '../../../views/TooltipControls';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 
 import { setProfile } from '../actions/profiles';
-import { setCurrentProfile } from '../actions/settings';
+import { setNextProfile } from '../actions/settings';
 import { IProfile } from '../types/IProfile';
 
 import ProfileItem from './ProfileItem';
@@ -27,7 +27,7 @@ interface IConnectedProps {
 
 interface IActionProps {
   onAddProfile: (profile: IProfile) => void;
-  onSetCurrentProfile: (gameId: string, profileId: string) => void;
+  onSetNextProfile: (profileId: string) => void;
 }
 
 interface IViewState {
@@ -140,7 +140,7 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
       return this.renderEditProfile();
     }
 
-    const { currentProfile, games, onSetCurrentProfile, profiles } = this.props;
+    const { currentProfile, games, onSetNextProfile, profiles } = this.props;
 
     let game = games.find((iter: IGameStored) => iter.id === profiles[profileId].gameId);
 
@@ -150,7 +150,7 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
         profile={ profiles[profileId] }
         gameName={ game.name }
         active={ currentProfile === profileId }
-        onActivate={ onSetCurrentProfile }
+        onActivate={ onSetNextProfile }
         onStartEditing={ this.editExistingProfile }
       />
     );
@@ -258,8 +258,8 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
-    onSetCurrentProfile: (gameId: string, profileId: string) =>
-      dispatch(setCurrentProfile(gameId, profileId)),
+    onSetNextProfile: (profileId: string) =>
+      dispatch(setNextProfile(profileId)),
   };
 }
 

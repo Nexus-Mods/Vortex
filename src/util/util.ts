@@ -2,6 +2,8 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import {file} from 'tmp';
 
+import {log} from './log';
+
 /**
  * count the elements in an array for which the predicate matches
  * 
@@ -80,25 +82,24 @@ export function copyFileAtomic(srcPath: string, destPath: string): Promise<void>
       resolve(fd);
     });
   })
-  .then((fd: number) => {
-    return fs.closeAsync(fd);
+  .then((fd: number) => fs.closeAsync(fd)
+  ).then(() => fs.copyAsync(srcPath, tmpPath)
+  ).then(() => fs.unlinkAsync(destPath).catch((err) => {
+    if (err.code === 'EPERM') {
+      // if the file is currently in use, try a second time
+      // 100ms later
+      log('debug', 'file locked, retrying delete', destPath);
+      return delayed(100).then(() => fs.unlinkAsync(destPath));
+    } else {
+      Promise.reject(err);
+    }
   })
-  .then(() => {
-    return fs.copyAsync(srcPath, tmpPath);
-  })
-  .then(() => {
-    return fs.unlinkAsync(destPath).catch((err) => {
-      if (err.code === 'ENOENT') {
-        return Promise.resolve();
-      } else {
-        return Promise.reject(err);
-      }
-    });
-  })
-  .then(() => {
-    return fs.renameAsync(tmpPath, destPath);
-  })
-  .catch((err) => {
+  ).catch((err) => {
+    return err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err);
+  }
+  ).then(() => fs.renameAsync(tmpPath, destPath)
+  ).catch((err) => {
+    log('info', 'failed to copy', {srcPath, destPath, err: err.stack});
     cleanup();
     return Promise.reject(err);
   })

@@ -2,6 +2,7 @@ import { IAttributeState } from './IAttributeState';
 import { IDialog } from './IDialog';
 import { INotification } from './INotification';
 
+import { IDownload } from '../extensions/download_management/types/IDownload';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IMod } from '../extensions/mod_management/types/IMod';
@@ -77,6 +78,12 @@ export interface ITableStates {
   [id: string]: ITableState;
 }
 
+export interface IStateDownloads {
+  speed: number;
+  speedHistory: number[];
+  files: { [id: string]: IDownload };
+}
+
 export interface ISettingsInterface {
   language: string;
 }
@@ -99,11 +106,18 @@ export interface ISettingsGameMode {
   searchPaths: string[];
 }
 
+export interface ISettingsDownloads {
+    minChunkSize: number;
+    maxChunks: number;
+    maxParallelDownloads: number;
+}
+
 export interface ISettings {
   interface: ISettingsInterface;
   gameMode: ISettingsGameMode;
   profiles: ISettingsProfiles;
   window: IWindow;
+  downloads: ISettingsDownloads;
 }
 
 export interface ISessionGameMode {
@@ -120,7 +134,7 @@ export interface ISessionGameMode {
 export interface IState {
   confidential: {
     account: { },
-  },
+  };
   session: {
     base: ISession,
     gameMode: ISessionGameMode,
@@ -132,6 +146,7 @@ export interface IState {
     tables: ITableStates,
     profiles: { [profileId: string]: IProfile },
     mods: { [gameId: string]: { [modId: string]: IMod } },
+    downloads: IStateDownloads,
   };
 }
 

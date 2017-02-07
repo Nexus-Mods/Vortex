@@ -1,10 +1,13 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import { setSafe } from '../../../util/storeHelper';
 
-import { setCurrentProfile } from '../actions/settings';
+import { setCurrentProfile, setNextProfile } from '../actions/settings';
 
 export const settingsReducer: IReducerSpec = {
   reducers: {
+    [setNextProfile]: (state, payload) => {
+      return setSafe(state, ['nextProfileId'], payload.profileId);
+    },
     [setCurrentProfile]: (state, payload) => {
       const { gameId, profileId } = payload;
       let res = setSafe(state, ['activeProfileId'], profileId);
@@ -13,6 +16,7 @@ export const settingsReducer: IReducerSpec = {
     },
   },
   defaults: {
+    nextProfileId: undefined,
     activeProfileId: undefined,
     lastActiveProfile: {},
   },

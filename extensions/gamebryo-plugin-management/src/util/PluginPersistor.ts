@@ -44,6 +44,22 @@ class PluginPersistor implements types.IPersistor {
     this.startWatch();
   }
 
+  /**
+   * immediately stops all syncing with the files on disc
+   * This should be used to prevent file corruption when switching
+   * game mode
+   */
+  public stopSync() {
+    this.mPluginPath = undefined;
+    this.mPluginFormat = undefined;
+    this.mNativePlugins = undefined;
+
+    if (this.mWatch !== undefined) {
+      this.mWatch.close();
+      this.mWatch = undefined;
+    }
+  }
+
   public setResetCallback(cb: () => void) {
     this.mResetCallback = cb;
   }

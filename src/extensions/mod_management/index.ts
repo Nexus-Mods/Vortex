@@ -1,6 +1,7 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 import {ITableAttribute} from '../../types/ITableAttribute';
-import {activeGameId} from '../../util/selectors';
+import {activeGameId, currentActivator, downloadPath, installPath} from '../../util/selectors';
+import {getSafe} from '../../util/storeHelper';
 
 import {IDownload} from '../download_management/types/IDownload';
 
@@ -22,8 +23,6 @@ import ModList from './views/ModList';
 import Settings from './views/Settings';
 
 import InstallManager from './InstallManager';
-
-import {currentActivator, downloadPath, installPath} from './selectors';
 
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
@@ -106,7 +105,7 @@ function init(context: IExtensionContextExt): boolean {
         }
       }
 
-      let knownMods = Object.keys(store.getState().persistent.mods[newGame]);
+      let knownMods = Object.keys(getSafe(store.getState(), ['persistent', 'mods', newGame], {}));
       refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
         context.api.store.dispatch(addMod(newGame, mod));
       }, (modNames: string[]) => {

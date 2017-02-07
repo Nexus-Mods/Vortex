@@ -33,8 +33,10 @@ function isPlugin(fileName: string): boolean {
   return ['.esp', '.esm'].indexOf(path.extname(fileName).toLowerCase()) !== -1;
 }
 
-function updatePluginList(store: Redux.Store<any>, oldModList: IModStates,
-                          newModList: IModStates): Promise<void> {
+/**
+ * updates the list of known plugins for the managed game
+ */
+function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Promise<void> {
   if (newModList === undefined) {
     return;
   }
@@ -132,6 +134,10 @@ function register(context: IExtensionContextExt) {
   context.registerReducer(['settings', 'plugins'], settingsReducer);
 }
 
+/**
+ * initialize persistor, exposing the content of plugins.txt / loadorder.txt to
+ * the store
+ */
 function initPersistor(context: IExtensionContextExt) {
   // TODO: Currently need to stop this from being called in the main process.
   //   This is mega-ugly and needs to go
@@ -143,12 +149,56 @@ function initPersistor(context: IExtensionContextExt) {
   }
 }
 
-function updateCurrentProfile(store: Redux.Store<any>, gameId: string): Promise<void> {
+/**
+ * update the plugin list for the currently active profile
+ */
+function updateCurrentProfile(store: Redux.Store<any>): Promise<void> {
+  const gameId = selectors.activeGameId(store.getState());
+
   if (!gameSupported(gameId)) {
     return;
   }
 
-  return updatePluginList(store, {}, selectors.activeProfile(store.getState()).modState);
+  const profile = selectors.activeProfile(store.getState());
+  if (profile === undefined) {
+    log('warn', 'no profile active');
+    return;
+  }
+
+  return updatePluginList(store, profile.modState);
+}
+
+let watcher: fs.FSWatcher;
+
+function stopSync() {
+  if (watcher !== undefined) {
+    watcher.close();
+    watcher = undefined;
+  }
+
+  persistor.stopSync();
+}
+
+function startSync(api: types.IExtensionApi) {
+  const store = api.store;
+
+  if (persistor !== undefined) {
+    persistor.loadFiles(selectors.activeGameId(persistor));
+  }
+
+  const modPath = selectors.currentGameDiscovery(store.getState()).modPath;
+  // watch the mod directory. if files change, that may mean our plugin list
+  // changed, so refresh
+  watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
+    if (refreshTimer !== undefined) {
+      clearTimeout(refreshTimer);
+    }
+    refreshTimer = setTimeout(() => {
+      updateCurrentProfile(store)
+          .then(() => { api.events.emit('autosort-plugins'); });
+      refreshTimer = undefined;
+    }, 500);
+  });
 }
 
 function init(context: IExtensionContextExt) {
@@ -160,43 +210,6 @@ function init(context: IExtensionContextExt) {
 
     loot = new LootInterface(context);
 
-    const profiles = store.getState().persistent.profiles;
-    Promise.map(Object.keys(profiles), (profileId: string) => {
-      const gameMode = profiles[profileId].gameId;
-      return updateCurrentProfile(store, gameMode);
-    })
-    .then(() => {
-      log('info', 'active plugin lists refreshed');
-    });
-
-    let watcher: fs.FSWatcher;
-
-    context.api.events.on('gamemode-activated', (newGameMode: string) => {
-      if (watcher !== undefined) {
-        watcher.close();
-        watcher = undefined;
-      }
-
-      if (!gameSupported(newGameMode)) {
-        return;
-      }
-
-      if (persistor !== undefined) {
-        persistor.loadFiles(newGameMode);
-        let modPath = selectors.currentGameDiscovery(store.getState()).modPath;
-        watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
-          if (refreshTimer !== undefined) {
-            clearTimeout(refreshTimer);
-          }
-          refreshTimer = setTimeout(() => {
-            updateCurrentProfile(store, newGameMode)
-                .then(() => { context.api.events.emit('autosort-plugins'); });
-            refreshTimer = undefined;
-          }, 500);
-        });
-      }
-    });
-
     Object.keys(store.getState().persistent.profiles)
         .forEach((gameId: string) => {
           context.api.onStateChange(
@@ -206,30 +219,41 @@ function init(context: IExtensionContextExt) {
                 const newProfile = newProfiles[activeProfileId];
 
                 if (oldProfile !== newProfile) {
-                  updatePluginList(store, oldProfile.modState,
-                                   newProfile.modState)
+                  updatePluginList(store, newProfile.modState)
                       .then(() => {
                         context.api.events.emit('autosort-plugins');
                       });
                 }
               });
-          context.api.onStateChange(
-              ['settings', 'profiles', 'activeProfileId'],
-              (oldProfileId: string, newProfileId: string) => {
-                const oldProfile = util.getSafe(
-                    store.getState(),
-                    ['persistent', 'profiles', oldProfileId], {} as any);
-
-                const newProfile = util.getSafe(
-                    store.getState(),
-                    ['persistent', 'profiles', newProfileId], {} as any);
-
-                updatePluginList(store, oldProfile.modState,
-                                 newProfile.modState)
-                    .then(
-                        () => { context.api.events.emit('autosort-plugins'); });
-              });
         });
+
+    context.api.onStateChange(['settings', 'profiles', 'nextProfileId'],
+      (oldProfileId: string, newProfileId: string) => {
+        stopSync();
+    });
+
+    context.api.events.on('profile-activated', (newProfileId: string) => {
+      const newProfile =
+          util.getSafe(store.getState(),
+                       ['persistent', 'profiles', newProfileId], {} as any);
+
+      if (!gameSupported(newProfile.gameId)) {
+        return;
+      }
+
+      updatePluginList(store, newProfile.modState)
+          .then(() => {
+            startSync(context.api);
+            context.api.events.emit('autosort-plugins');
+          });
+    });
+
+    const currentProfile = selectors.activeProfile(store.getState());
+    updatePluginList(store, currentProfile.modState)
+    .then(() => {
+      startSync(context.api);
+      context.api.events.emit('autosort-plugins');
+    });
   });
 
   return true;

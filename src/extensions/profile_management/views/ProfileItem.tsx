@@ -11,7 +11,7 @@ export interface IProps {
   profile: IProfile;
   gameName: string;
 
-  onActivate: (gameId: string, profileId: string) => void;
+  onActivate: (profileId: string) => void;
   onStartEditing: (id: string) => void;
 }
 
@@ -77,7 +77,7 @@ class ProfileItem extends ComponentEx<IProps, {}> {
 
   private activate = () => {
     const { onActivate, profile } = this.props;
-    onActivate(profile.gameId, profile.id);
+    onActivate(profile.id);
   }
 
   private startEditing = () => {

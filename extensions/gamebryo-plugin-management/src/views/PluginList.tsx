@@ -53,72 +53,6 @@ interface IComponentState {
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-const pluginAttributes: types.ITableAttribute[] = [
-  {
-    id: 'name',
-    name: 'Name',
-    isToggleable: false,
-    edit: {},
-    isSortable: true,
-    calc: (plugin: IPluginCombined) => plugin.name,
-    placement: 'both',
-  },
-  {
-    id: 'flags',
-    name: 'Flags',
-    icon: 'flag',
-    isToggleable: true,
-    edit: {},
-    isSortable: false,
-    customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
-      <PluginFlags plugin={plugin} t={t} />,
-    calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t).length,
-    placement: 'table',
-  },
-  {
-    id: 'flags-detail',
-    name: 'Flags',
-    edit: {},
-    calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),
-    placement: 'detail',
-  },
-  {
-    id: 'loadOrder',
-    name: 'Load Order',
-    icon: 'sort-numeric-asc',
-    isToggleable: true,
-    edit: {},
-    isSortable: true,
-    calc: (plugin: IPluginCombined) => plugin.loadOrder,
-    placement: 'table',
-  },
-  {
-    id: 'modIndex',
-    name: 'Mod Index',
-    icon: 'indent',
-    isToggleable: true,
-    edit: {},
-    isSortable: true,
-    calc: (plugin: IPluginCombined) => toHex(plugin.modIndex),
-    placement: 'table',
-  },
-  {
-    id: 'masters',
-    name: 'Masters',
-    edit: {},
-    calc: (plugin: IPluginCombined) => plugin.masterList,
-    placement: 'detail',
-  },
-  {
-    id: 'loot_messages',
-    name: 'Loot Messages',
-    edit: {},
-    customRenderer: this.renderLootMessages,
-    calc: (plugin: IPluginCombined) => plugin.messages,
-    placement: 'detail',
-  },
-];
-
 function toHex(num: number) {
   if (num === undefined) {
     return 'FF';
@@ -134,6 +68,72 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private staticButtons: types.IIconDefinition[];
   private pluginEnabledAttribute: types.ITableAttribute;
   private actions: ITableRowAction[];
+
+  private pluginAttributes: types.ITableAttribute[] = [
+    {
+      id: 'name',
+      name: 'Name',
+      isToggleable: false,
+      edit: {},
+      isSortable: true,
+      calc: (plugin: IPluginCombined) => plugin.name,
+      placement: 'both',
+    },
+    {
+      id: 'flags',
+      name: 'Flags',
+      icon: 'flag',
+      isToggleable: true,
+      edit: {},
+      isSortable: false,
+      customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
+        <PluginFlags plugin={plugin} t={t} />,
+      calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t).length,
+      placement: 'table',
+    },
+    {
+      id: 'flags-detail',
+      name: 'Flags',
+      edit: {},
+      calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),
+      placement: 'detail',
+    },
+    {
+      id: 'loadOrder',
+      name: 'Load Order',
+      icon: 'sort-numeric-asc',
+      isToggleable: true,
+      edit: {},
+      isSortable: true,
+      calc: (plugin: IPluginCombined) => plugin.loadOrder,
+      placement: 'table',
+    },
+    {
+      id: 'modIndex',
+      name: 'Mod Index',
+      icon: 'indent',
+      isToggleable: true,
+      edit: {},
+      isSortable: true,
+      calc: (plugin: IPluginCombined) => toHex(plugin.modIndex),
+      placement: 'table',
+    },
+    {
+      id: 'masters',
+      name: 'Masters',
+      edit: {},
+      calc: (plugin: IPluginCombined) => plugin.masterList,
+      placement: 'detail',
+    },
+    {
+      id: 'loot_messages',
+      name: 'Loot Messages',
+      edit: {},
+      customRenderer: this.renderLootMessages,
+      calc: (plugin: IPluginCombined) => plugin.messages,
+      placement: 'detail',
+    },
+  ];
 
   constructor(props) {
     super(props);
@@ -259,7 +259,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           <Table
             tableId='gamebryo-plugins'
             actions={this.actions}
-            staticElements={[this.pluginEnabledAttribute, ...pluginAttributes]}
+            staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
             data={detailed}
           />
         </Flex>
@@ -323,11 +323,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const {pluginsLoot, pluginsParsed} = this.state;
 
     let pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) => {
-      return Object.assign({}, plugins[pluginName], loadOrder[pluginName],
-        pluginsLoot[pluginName], pluginsParsed[pluginName], {
+      return Object.assign({}, {
         name: pluginName,
         modIndex: -1,
-      });
+        enabled: plugins[pluginName].isNative ? undefined : false,
+      }, plugins[pluginName], loadOrder[pluginName],
+        pluginsLoot[pluginName], pluginsParsed[pluginName]);
     });
 
     this.updateModIndex(pluginObjects);

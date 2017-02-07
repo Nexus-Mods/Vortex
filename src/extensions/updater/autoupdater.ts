@@ -17,7 +17,9 @@ function setChannel(channel: string,
   });
   log('info', 'feed url', url);
   try {
-    autoUpdater.checkForUpdates();
+    if (process.env.NODE_ENV === 'production') {
+      autoUpdater.checkForUpdates();
+    }
   } catch (e) {
     showErrorNotification('checking for update failed', e);
     return;

@@ -4,7 +4,7 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 
-import { setCurrentProfile } from '../profile_management/actions/settings';
+import { setNextProfile } from '../profile_management/actions/settings';
 
 import { addSearchPath } from './actions/settings';
 import { discoveryReducer } from './reducers/discovery';
@@ -72,7 +72,7 @@ function init(context: IExtensionContext): boolean {
         }).catch((err) => {
           showError(store.dispatch, 'Failed to set game mode', err);
           // try to revert
-          store.dispatch(setCurrentProfile(oldGameId, oldProfileId));
+          store.dispatch(setNextProfile(oldProfileId));
         });
     };
 
@@ -81,6 +81,7 @@ function init(context: IExtensionContext): boolean {
         const state = store.getState();
         const oldGameId = state.persistent.profiles[prev].gameId;
         const newGameId = state.persistent.profiles[current].gameId;
+        log('debug', 'active profile id changed', { prev, current, oldGameId, newGameId });
         if (oldGameId !== newGameId) {
           changeGameMode(oldGameId, newGameId, prev);
         }

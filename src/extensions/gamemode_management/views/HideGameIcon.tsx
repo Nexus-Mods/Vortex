@@ -8,7 +8,7 @@ import { setGameHidden } from '../actions/settings';
 
 import * as React from 'react';
 
-interface IBaseProps {
+export interface IBaseProps {
   instanceId: string;
 }
 
