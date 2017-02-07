@@ -57,14 +57,22 @@ namespace Components.Interface
         {
             get
             {
-                if ((ModInstallScript == null) && !string.IsNullOrEmpty(InstallScriptPath))
+                try
                 {
-                    byte[] scriptData = null;
-                    Task.Run(async () => {
-                        scriptData = await GetScriptFile();
-                    }).Wait();
-                    ModInstallScript = InstallScriptType.LoadScript(TextUtil.ByteToString(scriptData));
+                    if ((ModInstallScript == null) && !string.IsNullOrEmpty(InstallScriptPath))
+                    {
+                        //byte[] scriptData = null;
+                        Task.Run(async () => {
+                            await GetScriptFile();
+                        }).Wait();
+                        //ModInstallScript = InstallScriptType.LoadScript(TextUtil.ByteToString(scriptData));
+                    }
                 }
+                catch
+                {
+                    throw new Exception(InstallScriptPath);
+                }
+
                 return ModInstallScript;
             }
             set
@@ -95,7 +103,19 @@ namespace Components.Interface
 
         #endregion
 
-        public async Task<byte[]> GetScriptFile()
+        //public async Task<byte[]> GetScriptFile()
+        //{
+        //    byte[] scriptData = null;
+
+        //    await Task.Run(() =>
+        //    {
+        //        scriptData = FileSystem.ReadAllBytes(InstallScriptPath);
+        //    });
+
+        //    return scriptData;
+        //}
+
+        private async Task GetScriptFile()
         {
             byte[] scriptData = null;
 
@@ -104,7 +124,10 @@ namespace Components.Interface
                 scriptData = FileSystem.ReadAllBytes(InstallScriptPath);
             });
 
-            return scriptData;
+            await Task.Run(() =>
+            {
+                ModInstallScript = InstallScriptType.LoadScript(TextUtil.ByteToString(scriptData));
+            });
         }
 
         private void GetScreenshotPath(IList<string> listModFiles)
