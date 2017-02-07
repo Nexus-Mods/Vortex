@@ -41,8 +41,9 @@ namespace Components.Scripting.XmlScript
         /// <c>false</c> otherwise.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="scpScript"/> is not an
         /// <see cref="XmlScript"/>.</exception>
-        public override Task<bool> DoExecute(IScript scpScript)
+        public async override Task<IList<Instruction>> DoExecute(IScript scpScript)
         {
+            TaskCompletionSource<IList<Instruction>> Source = new TaskCompletionSource<IList<Instruction>>(); 
             List<InstallableFile> FilesToInstall = new List<InstallableFile>();
             List<InstallableFile> PluginsToActivate = new List<InstallableFile>();
             
@@ -97,8 +98,13 @@ namespace Components.Scripting.XmlScript
                 {
                     m_Delegates.ui.EndDialog();
                     XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
+                    IList<Instruction> test = null;
+                    Task.Run(async () =>
+                    {
+                        test = await xsiInstaller.Install(xscScript, m_Delegates, FilesToInstall, PluginsToActivate);
+                    }).Wait();
                     // ??? OnTaskStarted(xsiInstaller);
-                    xsiInstaller.Install(xscScript, m_Delegates, FilesToInstall, PluginsToActivate);
+                    Source.SetResult(test);
                 }
                 sendState(lstSteps, stepIdx);
             };
@@ -110,7 +116,7 @@ namespace Components.Scripting.XmlScript
 
             sendState(lstSteps, stepIdx);
 
-            return null;
+            return Source.Task.Result;
         }
  
         private void sendState(IList<InstallStep> lstSteps, int stepIdx)

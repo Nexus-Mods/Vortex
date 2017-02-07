@@ -56,7 +56,7 @@ namespace Components.ModInstaller
         public async override Task<Dictionary<string, object>> Install(List<string> modArchiveFileList,
             string scriptPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
-            List<Instruction> Instructions = new List<Instruction>();
+            IList<Instruction> Instructions = new List<Instruction>();
             Mod modToInstall = new Mod(modArchiveFileList, scriptPath);
 
             progressDelegate(50);
@@ -122,13 +122,12 @@ namespace Components.ModInstaller
         /// <param name="modArchive">The list of files inside the mod archive.</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
         /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
-        protected async Task<List<Instruction>> ScriptedModInstall(Mod modArchive, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
+        protected async Task<IList<Instruction>> ScriptedModInstall(Mod modArchive, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
-            List<Instruction> Instructions = new List<Instruction>();
+            IList<Instruction> Instructions = new List<Instruction>();
 
             IScriptExecutor sexScript = modArchive.InstallScript.Type.CreateExecutor(modArchive, coreDelegate);
-            sexScript.Execute(modArchive.InstallScript);
-            return Instructions;
+            return await sexScript.Execute(modArchive.InstallScript);
         }
 
         #endregion

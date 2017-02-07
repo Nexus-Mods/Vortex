@@ -103,10 +103,10 @@ namespace Components.Scripting
 		/// successfully; <c>false</c> otherwise.</returns>
 		public async Task<IList<Instruction>> Execute(IScript p_scpScript)
 		{
-            await DoExecute(p_scpScript);
+            
             // ??? OnTaskSetCompleted(booResult, "The script has finished executing.", p_scpScript);
             //return booResult;
-            return null;
+            return await DoExecute(p_scpScript);
 		}
 
 		#endregion
@@ -120,7 +120,7 @@ namespace Components.Scripting
 		/// </remarks>
 		/// <returns><c>true</c> if the script completed
 		/// successfully; <c>false</c> otherwise.</returns>
-		public abstract Task<bool> DoExecute(IScript p_scpScript);
+		public abstract Task<IList<Instruction>> DoExecute(IScript p_scpScript);
 
 		/// <summary>
 		/// Blocks until the task set is completed.
