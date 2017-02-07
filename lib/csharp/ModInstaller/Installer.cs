@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Utils;
 using Components.Interface;
@@ -57,7 +58,11 @@ namespace Components.ModInstaller
             string scriptPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
             IList<Instruction> Instructions = new List<Instruction>();
-            Mod modToInstall = new Mod(modArchiveFileList, scriptPath);
+
+            // There should only be one script file inside a mod archive
+            string ScriptFilePath = new List<string>(await GetRequirements(FileSystem.GetFiles(scriptPath, "*", System.IO.SearchOption.AllDirectories))).FirstOrDefault();
+
+            Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath);
 
             progressDelegate(50);
 
