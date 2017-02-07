@@ -66,6 +66,9 @@ function init(context: IExtensionContext): boolean {
     }
 
     const changeGameMode = (oldGameId: string, newGameId: string, oldProfileId: string) => {
+      if (newGameId === undefined) {
+        return;
+      }
       return gameModeManager.setupGameMode(newGameId)
         .then(() => {
           gameModeManager.setGameMode(oldGameId, newGameId);
