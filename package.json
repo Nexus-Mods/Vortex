@@ -166,7 +166,7 @@
     "nbind": "^0.3.6",
     "nexus-api": "file:lib\\js\\nexus-api",
     "nmm-api": "file:api",
-    "node-7z": "^0.4.0",
+    "node-7z": "quentinrossetti/node-7z",
     "node-ipc": "^8.9.2",
     "node-rest-client": "^2.0.1",
     "node-sass": "^4.3.0",
