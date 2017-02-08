@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Components.Extensions
@@ -19,7 +20,12 @@ namespace Components.Extensions
 			}
 			return Sb.ToString();
 		}
-	}
+
+        public static bool Contains(this string source, string toCheck, StringComparison comp)
+        {
+            return source != null && toCheck != null && source.IndexOf(toCheck, comp) >= 0;
+        }
+    }
 
 	#endregion
 }
