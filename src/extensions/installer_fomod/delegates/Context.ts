@@ -1,6 +1,6 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
-import {currentGameDiscovery} from '../../../util/selectors';
+import {activeGameId, currentGameDiscovery} from '../../../util/selectors';
 
 import DelegateBase from './DelegateBase';
 
@@ -27,7 +27,7 @@ export class Context extends DelegateBase {
     let state = this.api.store.getState();
     let currentGameInfo = currentGameDiscovery(state);
     let currentGameRelativeExecutablePath =
-      state.session.gameMode.known[state.settings.gameMode.current].executable;
+      state.session.gameMode.known[activeGameId(state)].executable;
     let currentGameExecutablePath =
       path.join(currentGameInfo.path, currentGameRelativeExecutablePath);
     return getVersion(currentGameExecutablePath);

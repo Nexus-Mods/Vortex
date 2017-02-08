@@ -1,10 +1,9 @@
-import { SortDirection } from '../types/SortDirection';
-import getAttr from '../util/getAttr';
+import { IAttributeState } from '../../types/IAttributeState';
+import { ITableAttribute } from '../../types/ITableAttribute';
+import { SortDirection } from '../../types/SortDirection';
+import getAttr from '../../util/getAttr';
 
-import { IAttributeState } from '../types/IAttributeState';
-import { ITableAttribute } from '../types/ITableAttribute';
-
-import SortIndicator from './SortIndicator';
+import SortIndicator from '../SortIndicator';
 
 import * as React from 'react';
 

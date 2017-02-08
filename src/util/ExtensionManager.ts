@@ -6,6 +6,7 @@ import { IExtensionApi, IExtensionContext, ILookupDetails,
 import { INotification } from '../types/INotification';
 import { log } from '../util/log';
 import { showError } from '../util/message';
+import { activeGameId } from '../util/selectors';
 import { getSafe } from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
@@ -30,7 +31,6 @@ import {} from '../extensions/hardlink_activator';
 import {} from '../extensions/installer_fomod';
 import {} from '../extensions/mod_management';
 import {} from '../extensions/nexus_integration';
-import {} from '../extensions/nuts_local';
 import {} from '../extensions/profile_management';
 import {} from '../extensions/settings_interface';
 import {} from '../extensions/settings_metaserver';
@@ -226,6 +226,8 @@ class ExtensionManager {
   private mWatches: WatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
   private mModDB: ModDB;
+  private mModDBGame: string;
+  private mModDBAPIKey: string;
   private mPid: number;
   private mContextProxyHandler: ContextProxyHandler;
 
@@ -313,22 +315,6 @@ class ExtensionManager {
       }
       this.mWatches[key].push(callback);
     };
-
-    // TODO the mod db doesn't depend on the store but it must only be instantiated
-    //   in one process and this is a cheap way of achieving that
-    // TODO the fallback to nexus api should somehow be set up in nexus_integration, not here
-    this.mModDB =
-        new ModDB(getSafe(store.getState(), ['settings', 'gameMode', 'current'],
-                          undefined),
-                  [
-                    {
-                      protocol: 'nexus',
-                      url: 'https://api.nexusmods.com/v1',
-                      apiKey: getSafe(store.getState(),
-                                      ['confidential', 'account', 'nexus', 'APIKey'], ''),
-                      cacheDurationSec: 86400,
-                    },
-                  ]);
   }
 
   /**
@@ -394,6 +380,30 @@ class ExtensionManager {
 
   public getProtocolHandler(protocol: string) {
     return this.mProtocolHandlers[protocol] || null;
+  }
+
+  get modDB() {
+    const currentGame = activeGameId(this.mApi.store.getState());
+    const currentKey =
+        getSafe(this.mApi.store.getState(),
+                ['confidential', 'account', 'nexus', 'APIKey'], '');
+    // TODO this is a hack!
+    if ((this.mModDB === undefined) || (currentGame !== this.mModDBGame) ||
+        (currentKey !== this.mModDBAPIKey)) {
+      log('info', 'init moddb connection');
+      this.mModDB = new ModDB(currentGame, [
+        {
+          protocol: 'nexus',
+          url: 'https://api.nexusmods.com/v1',
+          apiKey: currentKey,
+          cacheDurationSec: 86400,
+        },
+      ]);
+    }
+    // TODO the mod db doesn't depend on the store but it must only be instantiated
+    //   in one process and this is a cheap way of achieving that
+    // TODO the fallback to nexus api should somehow be set up in nexus_integration, not here
+    return this.mModDB;
   }
 
   /**
@@ -498,47 +508,38 @@ class ExtensionManager {
   }
 
   private lookupModReference = (reference: IReference): Promise<ILookupResult[]> => {
-    if (this.mModDB !== undefined) {
-      // TODO support other reference type
-      return this.mModDB.getByKey(reference.fileMD5);
-    } else {
-      return Promise.reject({ message: 'wrong process' });
-    }
+    return this.modDB.getByKey(reference.fileMD5);
   }
 
   private lookupModMeta = (detail: ILookupDetails): Promise<ILookupResult[]> => {
-    if (this.mModDB !== undefined) {
-      let fileMD5 = detail.fileMD5;
-      let fileSize = detail.fileSize;
+    let fileMD5 = detail.fileMD5;
+    let fileSize = detail.fileSize;
 
-      if ((fileMD5 === undefined) && (detail.filePath === undefined)) {
-        return Promise.resolve([]);
-      }
-
-      let promise: Promise<void>;
-
-      if (fileMD5 === undefined) {
-        promise = genHash(detail.filePath).then((res: IHashResult) => {
-          fileMD5 = res.md5sum;
-          fileSize = res.numBytes;
-          this.getApi().events.emit('filehash-calculated', detail.filePath, fileMD5, fileSize);
-        });
-      } else {
-        promise = Promise.resolve();
-      }
-
-      return promise.then(() => this.mModDB.lookup(detail.filePath, fileMD5,
-                                                   fileSize, detail.gameId,
-                                                   detail.modId))
-          .then((result: ILookupResult[]) => Promise.resolve(result));
-    } else {
-      return Promise.reject(new Error('wrong process'));
+    if ((fileMD5 === undefined) && (detail.filePath === undefined)) {
+      return Promise.resolve([]);
     }
+
+    let promise: Promise<void>;
+
+    if (fileMD5 === undefined) {
+      promise = genHash(detail.filePath).then((res: IHashResult) => {
+        fileMD5 = res.md5sum;
+        fileSize = res.numBytes;
+        this.getApi().events.emit('filehash-calculated', detail.filePath, fileMD5, fileSize);
+      });
+    } else {
+      promise = Promise.resolve();
+    }
+
+    return promise.then(() => this.modDB.lookup(detail.filePath, fileMD5,
+                                                  fileSize, detail.gameId,
+                                                  detail.modId))
+        .then((result: ILookupResult[]) => Promise.resolve(result));
   }
 
   private saveModMeta = (modInfo: IModInfo): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
-      this.mModDB.insert(modInfo);
+      this.modDB.insert(modInfo);
       resolve();
     });
   }
@@ -596,7 +597,6 @@ class ExtensionManager {
       'nexus_integration',
       'download_management',
       'gamemode_management',
-      'nuts_local',
       'symlink_activator',
       'symlink_activator_elevate',
       'hardlink_activator',

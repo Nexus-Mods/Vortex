@@ -8,9 +8,9 @@ import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import {getSafe, setSafe} from '../util/storeHelper';
 
-import HeaderCell from './HeaderCell';
 import IconBar from './IconBar';
 import AttributeToggle from './table/AttributeToggle';
+import HeaderCell from './table/HeaderCell';
 import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
 
@@ -434,10 +434,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private setSortDirection = (id: string, direction: SortDirection) => {
-    const { attributeState, objects, onSetAttributeSort, tableId } = this.props;
+    const { objects, onSetAttributeSort, tableId } = this.props;
 
     // reset all other columns because we can't really support multisort with this ui
-    for (let testId of Object.keys(attributeState)) {
+    for (let testId of objects.map((attribute) => attribute.id)) {
       const attrState = this.getAttributeState(
         objects.find((attribute: ITableAttribute) => attribute.id === testId));
 

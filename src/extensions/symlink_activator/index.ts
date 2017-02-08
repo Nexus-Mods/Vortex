@@ -1,5 +1,6 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
+import { activeGameId } from '../../util/selectors';
 import walk from '../../util/walk';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
@@ -25,15 +26,15 @@ class ModActivator implements IModActivator {
   }
 
   public isSupported(state: any): boolean {
-    const activeGameId = state.settings.gameMode.current;
-    if (this.isGamebryoGame(activeGameId)) {
+    const gameMode = activeGameId(state);
+    if (this.isGamebryoGame(gameMode)) {
       // gamebryo engine seems to have some check on FindFirstFile/FindNextFile results that
       // makes it ignore symbolic links
       return false;
     }
 
     const activeGameDiscovery: IDiscoveryResult =
-      state.settings.gameMode.discovered[activeGameId];
+      state.settings.gameMode.discovered[gameMode];
 
     try {
       fsOrig.accessSync(activeGameDiscovery.modPath, fsOrig.constants.W_OK);

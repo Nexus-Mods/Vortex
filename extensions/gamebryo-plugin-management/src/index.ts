@@ -183,7 +183,7 @@ function startSync(api: types.IExtensionApi) {
   const store = api.store;
 
   if (persistor !== undefined) {
-    persistor.loadFiles(selectors.activeGameId(persistor));
+    persistor.loadFiles(selectors.activeGameId(store.getState()));
   }
 
   const modPath = selectors.currentGameDiscovery(store.getState()).modPath;

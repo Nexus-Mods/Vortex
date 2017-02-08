@@ -1,6 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
-
-import { downloadPath } from '../mod_management/selectors';
+import { activeGameId, downloadPath } from '../../util/selectors';
 
 import { addLocalDownload, removeDownload, setDownloadHashByFile,
          setDownloadSpeed } from './actions/state';
@@ -83,8 +82,10 @@ function init(context: IExtensionContextExt): boolean {
       let currentDownloadPath = downloadPath(store.getState());
 
       let downloads: { [id: string]: IDownload } = store.getState().persistent.downloads.files;
-      let gameId: string = store.getState().settings.gameMode.current;
-      let knownDLs = Object.keys(downloads).map((dlId: string) => downloads[dlId].localPath);
+      let gameId: string = activeGameId(store.getState());
+      let knownDLs = Object.keys(downloads)
+        .filter((dlId: string) => downloads[dlId].game === gameId)
+        .map((dlId: string) => downloads[dlId].localPath);
       let nameIdMap = {};
       Object.keys(downloads).forEach((dlId: string) => nameIdMap[downloads[dlId].localPath] = dlId);
       refreshDownloads(currentDownloadPath, knownDLs, (downloadPath: string) => {
@@ -99,6 +100,7 @@ function init(context: IExtensionContextExt): boolean {
         });
       })
         .then(() => {
+          manager.setDownloadPath(currentDownloadPath);
           context.api.events.emit('downloads-refreshed');
         });
     });

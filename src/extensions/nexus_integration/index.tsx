@@ -3,6 +3,7 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import InputButton from '../../views/InputButton';
 import { IconButton } from '../../views/TooltipControls';
@@ -231,8 +232,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.once(() => {
     let state = context.api.store.getState();
-    nexus = new Nexus(
-      getSafe(state, ['settings', 'gameMode', 'current'], ''),
+    nexus = new Nexus(activeGameId(state),
       getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '')
     );
     let registerFunc = () => {

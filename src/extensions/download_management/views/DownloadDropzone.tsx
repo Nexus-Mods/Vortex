@@ -1,11 +1,10 @@
 import { IComponentContext } from '../../../types/IComponentContext';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { log } from '../../../util/log';
+import { activeGameId, downloadPath } from '../../../util/selectors';
 
 import { finishDownload, initDownload,
          removeDownload, setDownloadFilePath } from '../actions/state';
-
-import { downloadPath } from '../../mod_management/selectors';
 
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
@@ -142,7 +141,7 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
 function mapStateToProps(state): IConnectedProps {
   return {
     downloadPath: downloadPath(state),
-    gameMode: state.settings.gameMode.current,
+    gameMode: activeGameId(state),
   };
 }
 

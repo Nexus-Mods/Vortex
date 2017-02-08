@@ -1,7 +1,8 @@
 import {log} from '../../util/log';
 import {showError} from '../../util/message';
+import {activeGameId, downloadPath} from '../../util/selectors';
 
-import {downloadPath} from '../mod_management/selectors';
+import resolvePath from '../mod_management/util/resolvePath';
 
 import {
   downloadProgress,
@@ -77,8 +78,11 @@ export class DownloadObserver {
   private handleStartDownload(urls: string[], modInfo: any,
                               callback?: (error: Error, id: string) => void) {
     let id = shortid();
-    let gameMode = modInfo.game || this.mStore.getState().settings.gameMode.current;
+    let gameMode = modInfo.game || activeGameId(this.mStore.getState());
     this.mStore.dispatch(initDownload(id, urls, modInfo, gameMode));
+
+    const downloadPath = resolvePath('download',
+      this.mStore.getState().settings.mods.paths, gameMode);
 
     let filePath: string;
 
@@ -88,7 +92,8 @@ export class DownloadObserver {
               id, derivedUrls,
               (received: number, total: number, updatedFilePath?: string) =>
                   progressUpdate(this.mStore, id, received, total,
-                                 updatedFilePath));
+                                 updatedFilePath),
+              downloadPath);
         })
         .then((res: {filePath: string, headers: any}) => {
           filePath = res.filePath;

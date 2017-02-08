@@ -124,6 +124,9 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         if (attributes.localPath === undefined) {
           return undefined;
         }
+        if (attributes.game !== this.props.gameMode) {
+          return undefined;
+        }
         return fs.statAsync(path.join(this.props.downloadPath, attributes.localPath))
         .then((stat: fs.Stats) =>
           Promise.resolve(stat.mtime)
