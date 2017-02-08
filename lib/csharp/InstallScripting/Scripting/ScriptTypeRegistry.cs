@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
+using Components.Extensions;
 using Utils;
 
 namespace Components.Scripting
@@ -22,25 +24,25 @@ namespace Components.Scripting
         /// </remarks>
         /// <param name="searchPath">The path in which to search for script type assemblies.</param>
         /// <returns>A registry containing all of the discovered script types.</returns>
-        public static IScriptTypeRegistry DiscoverScriptTypes(string searchPath)
+        public async static Task<IScriptTypeRegistry> DiscoverScriptTypes(string searchPath)
 		{
             // ??? Do we still need to handle it this way?
-			Trace.TraceInformation("Discovering Script Types...");
-			Trace.Indent();
+            Trace.TraceInformation("Discovering Script Types...");
+            Trace.Indent();
 
-			Trace.TraceInformation("Discovering Generic Script Types...");
-			Trace.Indent();
-			Trace.TraceInformation("Looking in: {0}", searchPath);
-			IScriptTypeRegistry TypeRegistry = new ScriptTypeRegistry();
-			if (!FileSystem.DirectoryExists(searchPath))
-			{
-				Trace.TraceError("Script Type search path does not exist.");
-				Trace.Unindent();
-				Trace.Unindent();
-				return TypeRegistry;
+            Trace.TraceInformation("Discovering Generic Script Types...");
+            Trace.Indent();
+            Trace.TraceInformation("Looking in: {0}", searchPath);
+            IScriptTypeRegistry TypeRegistry = new ScriptTypeRegistry();
+            if (!FileSystem.DirectoryExists(searchPath))
+            {
+                Trace.TraceError("Script Type search path does not exist.");
+                Trace.Unindent();
+                Trace.Unindent();
+                return TypeRegistry;
 			}
-			string[] Assemblies = FileSystem.GetFiles(searchPath, "*.dll", SearchOption.AllDirectories);
-			RegisterScriptTypes(TypeRegistry, Assemblies);
+            List<string> Assemblies = new List<string>(FileSystem.GetFiles(searchPath, "*.dll", SearchOption.AllDirectories));
+			await RegisterScriptTypes(TypeRegistry, Assemblies);
 			Trace.Unindent();
 
 			return TypeRegistry;
@@ -51,7 +53,7 @@ namespace Components.Scripting
         /// </summary>
         /// <param name="scriptTypeRegistry">The registry with which to register any found script types.</param>
         /// <param name="scriptAssemblies">The assemblies to search for script types.</param>
-        private static void RegisterScriptTypes(IScriptTypeRegistry scriptTypeRegistry, IEnumerable<string> scriptAssemblies)
+        private async static Task RegisterScriptTypes(IScriptTypeRegistry scriptTypeRegistry, IList<string> scriptAssemblies)
 		{
             List<string> SupportedScriptDLLs = new List<string>()
             {
@@ -64,35 +66,37 @@ namespace Components.Scripting
 
 			try
 			{
-				foreach (string assembly in scriptAssemblies)
-				{
-					Trace.TraceInformation("Checking: {0}", Path.GetFileName(assembly));
-					Trace.Indent();
+                await Task.Run(() =>
+               {
+                   foreach (string assembly in scriptAssemblies)
+                   {
+                       foreach (string dll in SupportedScriptDLLs)
+                       {
+                           if (assembly.Contains(dll, StringComparison.OrdinalIgnoreCase))
+                           {
+                               Assembly CurrentAssembly = Assembly.LoadFrom(assembly);
+                               Type[] Types = CurrentAssembly.GetExportedTypes();
+                               foreach (Type type in Types)
+                               {
+                                   if (typeof(IScriptType).IsAssignableFrom(type) && !type.IsAbstract)
+                                   {
+                                       Trace.TraceInformation("Initializing: {0}", type.FullName);
+                                       Trace.Indent();
 
-					if (SupportedScriptDLLs.Contains(Path.GetFileName(assembly)))
-					{
-						Assembly CurrentAssembly = Assembly.LoadFrom(assembly);
-						Type[] Types = CurrentAssembly.GetExportedTypes();
-						foreach (Type type in Types)
-						{
-							if (typeof(IScriptType).IsAssignableFrom(type) && !type.IsAbstract)
-							{
-								Trace.TraceInformation("Initializing: {0}", type.FullName);
-								Trace.Indent();
+                                       IScriptType ScriptType = null;
+                                       ConstructorInfo Constructor = type.GetConstructor(new Type[] { });
+                                       if (Constructor != null)
+                                           ScriptType = (IScriptType)Constructor.Invoke(null);
+                                       if (ScriptType != null)
+                                           scriptTypeRegistry.RegisterType(ScriptType);
 
-								IScriptType ScriptType = null;
-								ConstructorInfo Constructor = type.GetConstructor(new Type[] { });
-								if (Constructor != null)
-                                    ScriptType = (IScriptType)Constructor.Invoke(null);
-								if (ScriptType != null)
-                                    scriptTypeRegistry.RegisterType(ScriptType);
-
-								Trace.Unindent();
-							}
-						}
-					}
-					Trace.Unindent();
-				}
+                                       Trace.Unindent();
+                                   }
+                               }
+                           }
+                       }
+                   }
+               });
 			}
 			finally
 			{

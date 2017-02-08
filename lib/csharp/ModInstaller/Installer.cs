@@ -61,8 +61,8 @@ namespace Components.ModInstaller
 
             // There should only be one script file inside a mod archive
             string ScriptFilePath = new List<string>(await GetRequirements(FileSystem.GetFiles(scriptPath, "*", System.IO.SearchOption.AllDirectories))).FirstOrDefault();
-
-            Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath, await GetScriptType(modArchiveFileList));
+            IScriptType ScriptType = await GetScriptType(modArchiveFileList);
+            Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath, ScriptType);
             await modToInstall.Initialize();
 
             progressDelegate(50);

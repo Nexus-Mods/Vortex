@@ -8,7 +8,7 @@
     <ProjectGuid>{B0F526DB-967B-4A57-9EC9-2E4950E54F26}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Nexus.Client.ModManagement.Scripting.XmlScript</RootNamespace>
+    <RootNamespace>Components.Scripting.XmlScript</RootNamespace>
     <AssemblyName>XmlScript</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

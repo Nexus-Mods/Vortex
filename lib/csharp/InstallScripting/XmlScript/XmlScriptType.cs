@@ -158,24 +158,24 @@ namespace Components.Scripting.XmlScript
 		/// <returns>The path to the schema file for the specified xml script version.</returns>
 		public XmlSchema GetXmlScriptSchema(Version XmlScriptVersion)
 		{
-			Assembly Assembly = Assembly.GetAssembly(this.GetType());
+			Assembly Assembly = Assembly.GetAssembly(GetType());
 			XmlSchema XMLSchema = null;
 			string ScriptVersion = string.Format("{0}.{1}", XmlScriptVersion.Major, XmlScriptVersion.Minor);
 			string SourcePath = string.Format(Path.Combine(GameSpecificXMLScriptSchemaPath, "XmlScript{0}.xsd").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), ScriptVersion);
 			string SourceQualifiedName = SourcePath.Replace(Path.AltDirectorySeparatorChar, '.');
 			if (!Array.Exists(Assembly.GetManifestResourceNames(), (s) => { return SourceQualifiedName.Equals(s, StringComparison.OrdinalIgnoreCase); }))
 			{
-				Assembly = Assembly.GetExecutingAssembly();
-				SourcePath = string.Format("Components/Scripting/Games/XmlScript{0}.xsd", ScriptVersion);
+                Assembly = Assembly.GetExecutingAssembly();
+				SourcePath = string.Format("Components/Scripting/XmlScript/Schemas/XmlScript{0}.xsd", ScriptVersion);
 				SourceQualifiedName = SourcePath.Replace(Path.AltDirectorySeparatorChar, '.');
 			}
 			using (Stream schema = Assembly.GetManifestResourceStream(SourceQualifiedName))
 			{
-				string SourceUri = string.Format("assembly://{0}/{1}", Assembly.GetName().Name, SourcePath);
-				XmlReaderSettings ReaderSettings = new XmlReaderSettings();
+                string SourceUri = string.Format("assembly://{0}", SourcePath);
+                XmlReaderSettings ReaderSettings = new XmlReaderSettings();
 				ReaderSettings.IgnoreComments = true;
 				ReaderSettings.IgnoreWhitespace = true;
-				using (XmlReader schemaReader = XmlReader.Create(schema, ReaderSettings, SourceUri))
+                using (XmlReader schemaReader = XmlReader.Create(schema, ReaderSettings, SourceUri))
 					XMLSchema = XmlSchema.Read(schemaReader, delegate(object sender, ValidationEventArgs e) { throw e.Exception; });
 			}
 			return XMLSchema;
@@ -203,6 +203,7 @@ namespace Components.Scripting.XmlScript
 				if (string.IsNullOrEmpty(ScriptVersion))
                     ScriptVersion = "1.0";
 			}
+
 			return new Version(ScriptVersion);
 		}
 
@@ -226,7 +227,7 @@ namespace Components.Scripting.XmlScript
 				if (intLength > 0)
                     ScriptVersion = SchemaName.Substring(StartPos, intLength);
 			}
-			return new Version(ScriptVersion);
+            return new Version(ScriptVersion);
 		}
 
         #endregion

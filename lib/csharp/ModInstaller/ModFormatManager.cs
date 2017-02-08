@@ -1,8 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
+using Components.Extensions;
 using Components.Scripting;
+using System.Text;
 
 namespace Components.ModInstaller
 {
@@ -26,13 +30,13 @@ namespace Components.ModInstaller
         public ModFormatManager()
         {
             // ??? Dummy path
-            CurrentScriptTypeRegistry = ScriptTypeRegistry.DiscoverScriptTypes(".");
         }
 
         #endregion
 
         public async Task<IList<string>> GetRequirements(IList<string> modFiles)
         {
+            CurrentScriptTypeRegistry = await ScriptTypeRegistry.DiscoverScriptTypes(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             IList<string> RequiredFiles = new List<string>();
 
             await Task.Run(() =>
@@ -46,7 +50,7 @@ namespace Components.ModInstaller
                         {
                             // ??? Need to check for Fomod/Omod/Whatever before this part
                             string FileToFind = Path.Combine(FomodRoot, scriptFile);
-                            string Match = modFiles.FirstOrDefault(x => x.Contains(FileToFind));
+                            string Match = modFiles.Where(x => Path.GetFileName(x).Contains(scriptFile, StringComparison.OrdinalIgnoreCase) && Path.GetFileName(Path.GetDirectoryName(x)).Contains(FomodRoot, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                             if (!string.IsNullOrEmpty(Match))
                             {
                                 HasFoundScriptType = true;
@@ -65,6 +69,7 @@ namespace Components.ModInstaller
 
         public async Task<IScriptType> GetScriptType(IList<string> modFiles)
         {
+            CurrentScriptTypeRegistry = await ScriptTypeRegistry.DiscoverScriptTypes(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             IScriptType FoundScriptType = null;
 
             await Task.Run(() =>
@@ -78,7 +83,7 @@ namespace Components.ModInstaller
                         {
                             // ??? Need to check for Fomod/Omod/Whatever before this part
                             string FileToFind = Path.Combine(FomodRoot, scriptFile);
-                            string Match = modFiles.FirstOrDefault(x => x.Contains(FileToFind));
+                            string Match = modFiles.Where(x => Path.GetFileName(x).Contains(scriptFile, StringComparison.OrdinalIgnoreCase) && Path.GetFileName(Path.GetDirectoryName(x)).Contains(FomodRoot, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                             if (!string.IsNullOrEmpty(Match))
                             {
                                 HasFoundScriptType = true;
