@@ -197,7 +197,7 @@ class InstallManager {
 
   private checkModExists(installName: string, api: IExtensionApi): boolean {
     const gameMode = activeGameId(api.store.getState());
-    return installName in api.store.getState().persistent.mods[gameMode];
+    return installName in (api.store.getState().persistent.mods[gameMode] || {});
   }
 
   private queryUserReplace(modId: string, api: IExtensionApi): Promise<string> {
