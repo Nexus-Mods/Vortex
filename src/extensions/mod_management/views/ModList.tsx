@@ -55,7 +55,7 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
-  onSetModRowColor: (modId: string, rowColor: string) => void;
+  onSetModRowColor: (gameMode: string, modId: string, rowColor: string) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -228,7 +228,7 @@ class ModList extends ComponentEx<IProps, {}> {
 
   private changeRowColorSelected = (modIds: string[]) => {
 
-    const { t, onSetModRowColor, onShowDialog } = this.props;
+    const { t, gameMode, onSetModRowColor, onShowDialog } = this.props;
 
     let changeColor: boolean;
     let removeCustomColor: boolean;
@@ -247,13 +247,13 @@ class ModList extends ComponentEx<IProps, {}> {
         if (changeColor) {
           hex = result.input.value;
           modIds.forEach((key: string) => {
-            onSetModRowColor(key, hex);
+            onSetModRowColor(gameMode, key, hex);
           });
         } else {
           removeCustomColor = result.action === 'Remove';
           if (removeCustomColor) {
             modIds.forEach((key: string) => {
-              onSetModRowColor(key, '#ffffff');
+              onSetModRowColor(gameMode, key, undefined);
             });
           }
         }
@@ -327,8 +327,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => {
       dispatch(setModEnabled(profileId, modId, enabled));
     },
-    onSetModRowColor: (modId: string, rowColor: string) => {
-      dispatch(setModRowColor(modId, rowColor));
+    onSetModRowColor: (gameMode: string, modId: string, rowColor: string) => {
+      dispatch(setModRowColor(gameMode, modId, rowColor));
     },
     onShowDialog:
       (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),

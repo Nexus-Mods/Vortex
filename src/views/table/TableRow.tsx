@@ -76,11 +76,15 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { attributes, data, onClick, rawData, tableId, actions } = this.props;
+    const { attributes, data, onClick, rawData, selected, tableId, actions } = this.props;
 
     let classes = [];
-    classes.push(rawData.rowColor !== '#ffffff' ?
-     'table-selected-' + rawData.rowColor.Replace('#', '') : 'table-selected');
+
+    if (selected) {
+      classes.push('table-selected');
+    } else if (rawData.rowColor !== undefined) {
+      classes.push('table-selected-' + rawData.rowColor.replace('#', ''));
+    }
 
     let hasActions = false;
     if (actions !== undefined) {

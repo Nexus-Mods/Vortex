@@ -18,7 +18,7 @@ export const setModState: any = safeCreateAction('SET_MOD_STATE',
  * sets the background color of the row
  */
 export const setModRowColor: any = safeCreateAction('SET_MOD_ROW_COLOR',
-  (id: string, rowColor: string) => ({ id, rowColor }));
+  (gameId: string, modId: string, rowColor: string) => ({ gameId, modId, rowColor }));
 
 /**
  * sets the (final) installation path of the mod. This should be set as soon as
