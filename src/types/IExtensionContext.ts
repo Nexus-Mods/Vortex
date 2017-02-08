@@ -42,7 +42,8 @@ export interface IRegisterMainPage {
 
 export interface IRegisterDashlet {
   (title: string, width: 1 | 2 | 3, position: number,
-    component: React.ComponentClass<any>, props?: PropsCallback): void;
+    component: React.ComponentClass<any>, isVisible?: (state) => boolean,
+    props?: PropsCallback): void;
 }
 
 export interface IRegisterDialog {

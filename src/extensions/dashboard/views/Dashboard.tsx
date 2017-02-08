@@ -10,6 +10,7 @@ interface IDashletProps {
   position: number;
   component: React.ComponentClass<any>;
   props?: PropsCallback;
+  isVisible?: (state: any) => boolean;
 }
 
 interface IExtensionProps {
@@ -33,13 +34,16 @@ class Dashboard extends ComponentEx<IProps, {}> {
     const sorted = objects.sort(
       (lhs: IDashletProps, rhs: IDashletProps) => lhs.position - rhs.position);
 
-    const rendered = sorted.map((dash: IDashletProps) => {
-      let compProps = dash.props !== undefined ? dash.props() : {};
+    const rendered = sorted
+    .filter((dash: IDashletProps) =>
+      dash.isVisible === undefined || dash.isVisible(this.context.api.store.getState()))
+    .map((dash: IDashletProps) => {
+      const compProps = dash.props !== undefined ? dash.props() : {};
       return {
         props: dash,
         comp: <dash.component t={t} {...compProps } />,
-    };
-  }).filter((ele) => ele.comp !== null);
+      };
+    });
 
     const grouped = this.rowGrouped(rendered);
 
@@ -86,8 +90,9 @@ function registerDashlet(instance: Dashboard,
                          width: 1 | 2 | 3,
                          position: number,
                          component: React.ComponentClass<any>,
+                         isVisible?: (state) => boolean,
                          props?: PropsCallback): IDashletProps {
-  return { title, position, width, component, props };
+  return { title, position, width, component, isVisible, props };
 }
 
 export default translate([ 'common' ], { wait: true })(

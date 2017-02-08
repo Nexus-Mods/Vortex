@@ -57,7 +57,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private buttonsLeft: IIconDefinition[];
   private buttonsRight: IIconDefinition[];
 
-  constructor(props) {
+  constructor(props: IProps) {
     super(props);
 
     this.state = {

@@ -32,9 +32,9 @@ class Settings extends ComponentEx<ISettingsProps, {}> {
 
   public render(): JSX.Element {
     const { objects } = this.props;
-    let combined = objects.reduce((prev, current: ISettingsPage) => {
+    let combined = objects.reduce((prev: ICombinedSettingsPage[], current: ISettingsPage) => {
       let result = prev.slice();
-      const page = prev.find((ele: ISettingsPage) => ele.title === current.title);
+      const page = prev.find((ele: ICombinedSettingsPage) => ele.title === current.title);
       if (page === undefined) {
         result.push({ title: current.title, elements: [ current ] });
       } else {

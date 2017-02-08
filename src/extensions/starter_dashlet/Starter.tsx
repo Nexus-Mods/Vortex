@@ -19,7 +19,7 @@ import ToolEditDialog from './ToolEditDialog';
 import { execFile } from 'child_process';
 import * as path from 'path';
 import * as React from 'react';
-import { Media, Well } from 'react-bootstrap';
+import { Media } from 'react-bootstrap';
 import update = require('react-addons-update');
 import { generate as shortid } from 'shortid';
 
@@ -277,4 +277,3 @@ export default
   } as any)(
     connect(mapStateToProps, mapDispatchToProps)(Starter)
   );
-

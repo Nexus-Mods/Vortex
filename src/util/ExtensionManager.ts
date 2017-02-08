@@ -26,6 +26,7 @@ import {} from '../extensions/about_dialog';
 import {} from '../extensions/category_management';
 import {} from '../extensions/dashboard';
 import {} from '../extensions/download_management';
+import {} from '../extensions/firststeps_dashlet';
 import {} from '../extensions/gamemode_management';
 import {} from '../extensions/hardlink_activator';
 import {} from '../extensions/installer_fomod';
@@ -34,10 +35,10 @@ import {} from '../extensions/nexus_integration';
 import {} from '../extensions/profile_management';
 import {} from '../extensions/settings_interface';
 import {} from '../extensions/settings_metaserver';
+import {} from '../extensions/starter_dashlet';
 import {} from '../extensions/symlink_activator';
 import {} from '../extensions/symlink_activator_elevate';
 import {} from '../extensions/updater';
-import {} from '../extensions/welcome_screen';
 
 let app = appIn;
 let dialog = dialogIn;
@@ -590,7 +591,8 @@ class ExtensionManager {
       'settings_interface',
       'about_dialog',
       'dashboard',
-      'welcome_screen',
+      'starter_dashlet',
+      'firststeps_dashlet',
       'mod_management',
       'category_management',
       'profile_management',
