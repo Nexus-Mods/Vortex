@@ -78,11 +78,12 @@ namespace Components.Interface
         #endregion
 
         #region Constructor
-        public Mod(List<string> listModFiles, string installScriptPath)
+        public Mod(List<string> listModFiles, string installScriptPath, IScriptType scriptType)
         {
             ModFiles = listModFiles;
             GetScreenshotPath(listModFiles);
             InstallScriptPath = installScriptPath;
+            InstallScriptType = scriptType;
         }
 
         #endregion
@@ -92,18 +93,6 @@ namespace Components.Interface
             await Task.Run(() => GetScreenshotPath(ModFiles));
             await GetScriptFile();
         }
-
-        //public async Task<byte[]> GetScriptFile()
-        //{
-        //    byte[] scriptData = null;
-
-        //    await Task.Run(() =>
-        //    {
-        //        scriptData = FileSystem.ReadAllBytes(InstallScriptPath);
-        //    });
-
-        //    return scriptData;
-        //}
 
         private async Task GetScriptFile()
         {

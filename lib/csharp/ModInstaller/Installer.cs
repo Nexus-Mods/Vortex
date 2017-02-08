@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Utils;
 using Components.Interface;
-using Components.Scripting.XmlScript;
 using Components.Scripting;
 
 namespace Components.ModInstaller
@@ -58,11 +57,12 @@ namespace Components.ModInstaller
             string scriptPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
             IList<Instruction> Instructions = new List<Instruction>();
+            ModFormatManager FormatManager = new ModFormatManager();
 
             // There should only be one script file inside a mod archive
             string ScriptFilePath = new List<string>(await GetRequirements(FileSystem.GetFiles(scriptPath, "*", System.IO.SearchOption.AllDirectories))).FirstOrDefault();
 
-            Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath);
+            Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath, await GetScriptType(modArchiveFileList));
             await modToInstall.Initialize();
 
             progressDelegate(50);
@@ -83,7 +83,7 @@ namespace Components.ModInstaller
 
         #endregion
 
-        #region Requirements
+        #region Mod Format Management
 
         /// <summary>
         /// This function will return the list of files requirements to complete this mod's installation.
@@ -94,6 +94,17 @@ namespace Components.ModInstaller
             ModFormatManager FormatManager = new ModFormatManager();
 
             return await FormatManager.GetRequirements(modFiles);
+        }
+
+        /// <summary>
+        /// This function will return the list of files requirements to complete this mod's installation.
+        /// <param name="modFiles">The list of files inside the mod archive.</param>
+        /// </summary>
+        protected async Task<IScriptType> GetScriptType(IList<string> modFiles)
+        {
+            ModFormatManager FormatManager = new ModFormatManager();
+
+            return await FormatManager.GetScriptType(modFiles);
         }
 
         #endregion

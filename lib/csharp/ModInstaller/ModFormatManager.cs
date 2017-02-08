@@ -17,7 +17,7 @@ namespace Components.ModInstaller
 
         #region Properties
 
-        protected IScriptTypeRegistry CurrentScriptTypeRegistry;
+        public IScriptTypeRegistry CurrentScriptTypeRegistry;
 
         #endregion
 
@@ -61,6 +61,38 @@ namespace Components.ModInstaller
             });
 
             return RequiredFiles;
+        }
+
+        public async Task<IScriptType> GetScriptType(IList<string> modFiles)
+        {
+            IScriptType FoundScriptType = null;
+
+            await Task.Run(() =>
+            {
+                foreach (IScriptType scriptType in CurrentScriptTypeRegistry.Types)
+                {
+                    bool HasFoundScriptType = false;
+                    if (scriptType.FileNames != null)
+                    {
+                        foreach (string scriptFile in scriptType.FileNames)
+                        {
+                            // ??? Need to check for Fomod/Omod/Whatever before this part
+                            string FileToFind = Path.Combine(FomodRoot, scriptFile);
+                            string Match = modFiles.FirstOrDefault(x => x.Contains(FileToFind));
+                            if (!string.IsNullOrEmpty(Match))
+                            {
+                                HasFoundScriptType = true;
+                                FoundScriptType = scriptType;
+                            }
+                        }
+                    }
+
+                    if (HasFoundScriptType)
+                        break;
+                }
+            });
+
+            return FoundScriptType;
         }
     }
 }

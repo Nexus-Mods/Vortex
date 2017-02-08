@@ -12,17 +12,6 @@ namespace Components.Scripting
 	/// </summary>
 	public class ScriptTypeRegistry : IScriptTypeRegistry
 	{
-        #region Fields
-
-        private static List<string> SupportedScriptDLLs = new List<string>()
-        {
-            "XmlScript.dll",
-            "ModScript.dll",
-            "CSharpScript.dll"
-        };
-
-        #endregion
-
         /// <summary>
         /// Searches for script type assemblies in the specified path, and loads
         /// any script types that are found into a registry.
@@ -64,7 +53,15 @@ namespace Components.Scripting
         /// <param name="scriptAssemblies">The assemblies to search for script types.</param>
         private static void RegisterScriptTypes(IScriptTypeRegistry scriptTypeRegistry, IEnumerable<string> scriptAssemblies)
 		{
-			AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+            List<string> SupportedScriptDLLs = new List<string>()
+            {
+                "XmlScript.dll",
+                "ModScript.dll",
+                "CSharpScript.dll"
+            };
+
+            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+
 			try
 			{
 				foreach (string assembly in scriptAssemblies)
