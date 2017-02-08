@@ -11,6 +11,11 @@ export interface IDialog {
   actions: string[];
 }
 
+export interface IColor {
+  id: string;
+  value: string;
+}
+
 export interface ICheckbox {
   id: string;
   text: string;
@@ -30,6 +35,7 @@ export interface IDialogContent {
   checkboxes?: ICheckbox[];
   choices?: ICheckbox[];
   formcontrol?: IFormControl[];
+  colors?: IColor;
   options?: {
     translated?: boolean;
     wrap?: boolean;

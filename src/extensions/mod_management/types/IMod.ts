@@ -15,6 +15,8 @@ export interface IMod {
   archiveId?: string;
   // path to the installed mod
   installationPath?: string;
+  // background color of the row
+  rowColor?: string;
   // dictionary of extended information fields
   attributes: { [id: string]: any };
 }

@@ -11,7 +11,7 @@ import SuperTable, {ITableRowAction} from '../../../views/Table';
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
-import { removeMod, setModAttribute } from '../actions/mods';
+import { removeMod, setModAttribute, setModRowColor } from '../actions/mods';
 import { IMod } from '../types/IMod';
 
 import { INSTALL_TIME } from '../modAttributes';
@@ -55,6 +55,7 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
+  onSetModRowColor: (modId: string, rowColor: string) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -141,6 +142,11 @@ class ModList extends ComponentEx<IProps, {}> {
         title: 'Remove',
         action: this.removeSelected,
       },
+      {
+        icon: 'paint-brush',
+        title: 'Change row color',
+        action: this.changeRowColorSelected,
+      },
     ];
   }
 
@@ -220,6 +226,40 @@ class ModList extends ComponentEx<IProps, {}> {
     });
   }
 
+  private changeRowColorSelected = (modIds: string[]) => {
+
+    const { t, onSetModRowColor, onShowDialog } = this.props;
+
+    let changeColor: boolean;
+    let removeCustomColor: boolean;
+    let hex: string;
+
+    onShowDialog('question', 'Select color', {
+      message:
+      t('Select the new row background color. Click Remove to return to the default value.'),
+      colors: { id: '', value: undefined },
+    }, {
+        Cancel: null,
+        Remove: null,
+        Select: null,
+      }).then((result: IDialogResult) => {
+        changeColor = result.action === 'Select';
+        if (changeColor) {
+          hex = result.input.value;
+          modIds.forEach((key: string) => {
+            onSetModRowColor(key, hex);
+          });
+        } else {
+          removeCustomColor = result.action === 'Remove';
+          if (removeCustomColor) {
+            modIds.forEach((key: string) => {
+              onSetModRowColor(key, '#ffffff');
+            });
+          }
+        }
+      });
+  }
+
   private removeSelected = (modIds: string[]) => {
     const { t, gameMode, installPath, onRemoveMod, onShowDialog, mods } = this.props;
 
@@ -286,6 +326,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     },
     onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => {
       dispatch(setModEnabled(profileId, modId, enabled));
+    },
+    onSetModRowColor: (modId: string, rowColor: string) => {
+      dispatch(setModRowColor(modId, rowColor));
     },
     onShowDialog:
       (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),

@@ -55,7 +55,11 @@
       "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest"
     },
     "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx|ts|tsx)$",
-    "testPathIgnorePatterns": ["/node_modules/", "/dist/", "/app/"],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/dist/",
+      "/app/"
+    ],
     "testResultsProcessor": "<rootDir>/node_modules/ts-jest/coverageprocessor.js",
     "moduleFileExtensions": [
       "js",
@@ -217,6 +221,7 @@
     "font-awesome": "^4.6.3",
     "graphlib": "^2.1.1",
     "react": "^15.3.0",
+    "react-color": "^2.11.1",
     "react-contextmenu": "^1.6.3",
     "react-dom": "^15.3.0",
     "source-map-support": "^0.4.10",

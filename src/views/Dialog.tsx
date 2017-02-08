@@ -8,12 +8,15 @@ import * as React from 'react';
 import update = require('react-addons-update');
 import { Button, Checkbox, ControlLabel, FormControl, FormGroup,
          Modal, Radio } from 'react-bootstrap';
+import { CirclePicker } from 'react-color';
 
 interface IActionProps {
   t: (input: string) => string;
   onDismiss: (action: string) => void;
   action: string;
 }
+
+let rowColors: string[] = ['#ff0000', '#03a9f4', '#4caf50', '#cddc39', '#ff9800'];
 
 class Action extends React.Component<IActionProps, {}> {
   public render(): JSX.Element {
@@ -122,6 +125,12 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         {content.formcontrol.map(this.renderFormControl)}
       </div>
       );
+    } else if (content.colors !== undefined) {
+      controls.push(
+      <div key='dialog-form-colors' style={{background: 'light-grey'}}>
+       <CirclePicker onChange={this.toggleColors} colors={rowColors} width='100%' />
+      </div>
+      );
     }
 
     return <div style={{ width: '100%' }}>{controls}</div>;
@@ -189,6 +198,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         formcontrol: { $set: newFormControl },
       },
     }));
+  }
+
+  private toggleColors = (evt) => {
+    let { dialogState } = this.state;
+
+    let newColors = dialogState.colors;
+    newColors.value = evt.hex;
   }
 
   private toggleCheckbox = (evt: React.MouseEvent<any>) => {
@@ -268,6 +284,12 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         data[form.id] = form.value;
       });
     }
+
+    if (dialogState.colors !== undefined) {
+      data = {};
+      data = dialogState.colors;
+    }
+
     onDismiss(dialogs[0].id, action, data);
   }
 }
