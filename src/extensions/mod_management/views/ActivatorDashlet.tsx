@@ -31,7 +31,7 @@ class ActivatorDashlet extends ComponentEx<IProps, {}> {
     return (<Alert bsStyle='danger'>
       {t('In the current constellation mods can\'t be activated.')}
       <ul>
-        {messages.map((msg) => <li>{msg}</li>)}
+        {messages.map((msg) => <li key={msg}>{msg}</li>)}
       </ul>
     </Alert>);
   }
