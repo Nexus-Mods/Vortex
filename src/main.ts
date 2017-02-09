@@ -102,6 +102,11 @@ function createStore(): Promise<void> {
   });
 }
 
+// timers used to prevent window resize/move from constantly causeing writes to the
+// store
+let resizeTimer: NodeJS.Timer;
+let moveTimer: NodeJS.Timer;
+
 // main window setup
 
 function createWindow() {
@@ -144,12 +149,24 @@ function createWindow() {
 
   mainWindow.on('resize', () => {
     let size: number[] = mainWindow.getSize();
-    store.dispatch(setWindowSize({ width: size[0], height: size[1] }));
+    if (resizeTimer !== undefined) {
+      clearTimeout(resizeTimer);
+    }
+    resizeTimer = setTimeout(() => {
+      store.dispatch(setWindowSize({ width: size[0], height: size[1] }));
+      resizeTimer = undefined;
+    }, 500);
   });
 
   mainWindow.on('move', (evt) => {
     let pos: number[] = mainWindow.getPosition();
-    store.dispatch(setWindowPosition({ x: pos[0], y: pos[1] }));
+    if (moveTimer !== undefined) {
+      clearTimeout(moveTimer);
+    }
+    moveTimer = setTimeout(() => {
+      store.dispatch(setWindowPosition({ x: pos[0], y: pos[1] }));
+      moveTimer = undefined;
+    }, 500);
   });
 }
 
