@@ -46,4 +46,3 @@ function mapStateToProps(state: IState): IConnectedProps {
 
 export default connect(mapStateToProps)(
   ActivatorDashlet) as React.ComponentClass<{}>;
-

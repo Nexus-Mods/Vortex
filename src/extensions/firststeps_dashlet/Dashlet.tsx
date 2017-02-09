@@ -1,6 +1,5 @@
 import { II18NProps } from '../../types/II18NProps';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { log } from '../../util/log';
 import { activeGameId, basePath } from '../../util/selectors';
 import Icon from '../../views/Icon';
 import { IconButton } from '../../views/TooltipControls';

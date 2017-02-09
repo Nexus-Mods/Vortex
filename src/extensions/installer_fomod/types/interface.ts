@@ -37,7 +37,7 @@ export interface IInstallStep {
 
 export type Direction = 'forward' | 'back';
 
-interface IStateParameters {
+export interface IStateParameters {
   stepId: number;
   groupId: number;
   plugins: number[];
