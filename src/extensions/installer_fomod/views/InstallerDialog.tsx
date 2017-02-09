@@ -25,11 +25,11 @@ function Plugin(props: { plugin: IPlugin }): JSX.Element {
 
 interface IGroupProps {
   group: IGroup;
-  onSelect: (groupId: string, plugins: string[], valid: boolean) => void;
+  onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
 };
 
 interface IGroupState {
-  selectedPlugins: string[];
+  selectedPlugins: number[];
 }
 
 class Group extends React.PureComponent<IGroupProps, IGroupState> {
@@ -57,15 +57,15 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       <ControlLabel>
         {group.name}
       </ControlLabel>
-      { group.plugins.map(this.renderPlugin)}
+      { group.options.map(this.renderPlugin)}
     </FormGroup>);
   }
 
   private validateFunc(type: GroupType) {
     switch (type) {
-      case 'SelectAtLeastOne': return (selected: string[]) => selected.length > 0;
-      case 'SelectAtMostOne': return (selected: string[]) => selected.length < 2;
-      case 'SelectExactlyOne': return (selected: string[]) => selected.length === 1;
+      case 'SelectAtLeastOne': return (selected: number[]) => selected.length > 0;
+      case 'SelectAtMostOne': return (selected: number[]) => selected.length < 2;
+      case 'SelectExactlyOne': return (selected: number[]) => selected.length === 1;
       default: return () => true;
     }
   }
@@ -80,17 +80,19 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     switch (group.type) {
       case 'SelectExactlyOne':
         return <Radio
-          id={plugin.id}
+          id={`radio-${group.id}-${plugin.id}`}
           key={plugin.id}
-          name={group.id}
+          value={plugin.id}
+          name={group.id.toString()}
           checked={isSelected}
           onChange={this.select}
         >{inner}
         </Radio>;
       case 'SelectAll': return inner;
       default: return <Checkbox
-        id={plugin.id}
+        id={`checkbox-${group.id}-${plugin.id}`}
         key={plugin.id}
+        value={plugin.id}
         checked={isSelected}
         onChange={this.select}
       >{inner}
@@ -100,7 +102,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
 
   private select = (evt: React.FormEvent<any>) => {
     const {group} = this.props;
-    const pluginId = evt.currentTarget.id;
+    const pluginId = parseInt(evt.currentTarget.value, 10);
 
     if (group.type === 'SelectExactlyOne') {
       this.setState({ selectedPlugins: [pluginId] });
@@ -122,11 +124,14 @@ function getGroupSortFunc(order: OrderType) {
 
 interface IStepProps {
   step: IInstallStep;
-  onSelect: (groupId: string, plugins: string[], valid: boolean) => void;
+  onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
 };
 
 function Step(props: IStepProps) {
   let groupsSorted: IGroup[];
+  if (props.step.optionalFileGroups.group === undefined) {
+    return null;
+  }
   if (props.step.optionalFileGroups.order === 'Explicit') {
     groupsSorted = props.step.optionalFileGroups.group;
   } else {
@@ -179,8 +184,13 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
     const idx = installerState.currentStep;
     const steps = installerState.installSteps;
 
-    const lastVisible = steps.find((step: IInstallStep, i: number) => i < idx && step.visible);
     const nextVisible = steps.find((step: IInstallStep, i: number) => i > idx && step.visible);
+    let lastVisible: IInstallStep;
+    steps.forEach((step: IInstallStep, i: number) => {
+      if ((i < idx) && step.visible) {
+        lastVisible = step;
+      }
+    });
 
     const nextDisabled = this.state.invalidGroups.length > 0;
 
@@ -190,7 +200,7 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
           <h3>{installerInfo.moduleName}</h3>
           <IconButton
             id='fomod-cancel'
-            className='pull-right'
+            className='close-button'
             tooltip={t('Cancel')}
             icon='remove'
             onClick={this.cancel}
@@ -222,7 +232,7 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
 
   private nop = () => undefined;
 
-  private select = (groupId: string, plugins: string[], valid: boolean) => {
+  private select = (groupId: number, plugins: number[], valid: boolean) => {
     const {events} = this.context.api;
     const {installerState} = this.props;
 

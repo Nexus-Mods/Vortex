@@ -10,17 +10,17 @@ export type GroupType =
   'SelectAtLeastOne' | 'SelectAtMostOne' | 'SelectExactlyOne' | 'SelectAll' | 'SelectAny';
 
 export interface IPlugin {
-  id: string;
+  id: number;
   name: string;
   description: string;
   image: string;
 }
 
 export interface IGroup {
-  id: string;
+  id: number;
   name: string;
   type: GroupType;
-  plugins: IPlugin[];
+  options: IPlugin[];
 }
 
 export interface IGroupList {
@@ -29,7 +29,7 @@ export interface IGroupList {
 }
 
 export interface IInstallStep {
-  id: string;
+  id: number;
   name: string;
   visible: boolean;
   optionalFileGroups?: IGroupList;
@@ -37,15 +37,21 @@ export interface IInstallStep {
 
 export type Direction = 'forward' | 'back';
 
+interface IStateParameters {
+  stepId: number;
+  groupId: number;
+  plugins: number[];
+}
+
 export interface IStateCallback {
-  (stepId: string, groupId: string, plugins: string[]): void;
+  (parameters: IStateParameters): void;
 }
 
 export interface IInstallerInfo {
   moduleName: string;
   image: IHeaderImage;
   select: IStateCallback;
-  continue: (direction: Direction) => void;
+  cont: (direction: Direction) => void;
   cancel: () => void;
 }
 

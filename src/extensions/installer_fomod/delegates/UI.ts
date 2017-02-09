@@ -15,20 +15,17 @@ class UI extends DelegateBase {
     super(api);
 
     api.events.on('fomod-installer-select',
-      (stepId: string, groupId: string, plugins: string[]) => {
-        log('info', 'select', { stepId, groupId, plugins });
+      (stepId: number, groupId: number, plugins: number[]) => {
         if (this.mStateCB !== undefined) {
-          this.mStateCB(stepId, groupId, plugins);
+          this.mStateCB({ stepId, groupId, plugins });
         }
       });
     api.events.on('fomod-installer-continue', (direction) => {
-      log('info', 'continue', direction);
       if (this.mContinueCB !== undefined) {
         this.mContinueCB(direction);
       }
     });
     api.events.on('fomod-installer-cancel', () => {
-      log('info', 'cancel');
       if (this.mCancelCB !== undefined) {
         this.mCancelCB();
       }
@@ -36,7 +33,8 @@ class UI extends DelegateBase {
   }
 
   public startDialog = (info: IInstallerInfo) => {
-    this.mStateCB = info.continue;
+    this.mContinueCB = info.cont;
+    this.mStateCB = info.select;
     this.mCancelCB = info.cancel;
     this.api.store.dispatch(startDialog({
       moduleName: info.moduleName,

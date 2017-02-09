@@ -42,12 +42,11 @@ namespace Components.Scripting.XmlScript
         /// <param name="pluginsToActivate">The list of plugins to activate.</param>
         /// <returns><c>true</c> if the installation succeeded;
         /// <c>false</c> otherwise.</returns>
-        public async Task<IList<Instruction>> Install(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
+        public IList<Instruction> Install(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
 		{
-			bool booSuccess = false;
 			try
 			{
-				await InstallFiles(xscScript, coreDelegates, filesToInstall, pluginsToActivate);
+				InstallFiles(xscScript, coreDelegates, filesToInstall, pluginsToActivate);
 			}
 			catch (Exception ex)
 			{
@@ -63,53 +62,44 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <param name="filesToInstall">The list of files to install.</param>
         /// <param name="pluginsToActivate">The list of plugins to activate.</param>
-        protected async Task<bool> InstallFiles(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
+        protected bool InstallFiles(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
 		{
             bool HadIssues = false;
 			IList<InstallableFile> lstRequiredFiles = xscScript.RequiredInstallFiles;
 			IList<ConditionallyInstalledFileSet> lstConditionallyInstalledFileSets = xscScript.ConditionallyInstalledFileSets;
 
-            await Task.Run(() =>
+            foreach (InstallableFile iflRequiredFile in lstRequiredFiles)
             {
-                foreach (InstallableFile iflRequiredFile in lstRequiredFiles)
-                {
-                    if (!InstallFile(iflRequiredFile))
-                        HadIssues = true;
-                }
-            });
-
-            if (!HadIssues)
-            {
-                await Task.Run(() =>
-                {
-                    foreach (InstallableFile ilfFile in filesToInstall)
-                    {
-                        if (!InstallFile(ilfFile)) // ??? , pluginsToActivate.Contains(ilfFile)))
-                            HadIssues = true;
-                    }
-                });
+                if (!InstallFile(iflRequiredFile))
+                    HadIssues = true;
             }
 
             if (!HadIssues)
             {
-                await Task.Run(() =>
+                foreach (InstallableFile ilfFile in filesToInstall)
                 {
-                    foreach (ConditionallyInstalledFileSet cisFileSet in lstConditionallyInstalledFileSets)
-                    {
-                        if (cisFileSet.Condition.GetIsFulfilled(coreDelegates))
-                            foreach (InstallableFile ilfFile in cisFileSet.Files)
-                            {
-                                if (!InstallFile(ilfFile))
-                                    HadIssues = true;
-                            }
-                    }
-                });
+                    if (!InstallFile(ilfFile)) // ??? , pluginsToActivate.Contains(ilfFile)))
+                        HadIssues = true;
+                }
+            }
+
+            if (!HadIssues)
+            {
+                foreach (ConditionallyInstalledFileSet cisFileSet in lstConditionallyInstalledFileSets)
+                {
+                    if (cisFileSet.Condition.GetIsFulfilled(coreDelegates))
+                        foreach (InstallableFile ilfFile in cisFileSet.Files)
+                        {
+                            if (!InstallFile(ilfFile))
+                                HadIssues = true;
+                        }
+                }
             }
 
             if (!HadIssues)
                 modInstallInstructions.Add(Instruction.EnableAllPlugins());
 
-            return (!HadIssues);
+            return !HadIssues;
 		}
 
 		/// <summary>

@@ -92,10 +92,10 @@ namespace Components.Interface
     {
         public struct Option
         {
-            int id;
-            string name;
-            string description;
-            string image;
+            public int id;
+            public string name;
+            public string description;
+            public string image;
 
             public Option(int id, string name, string description, string image) : this()
             {
@@ -143,6 +143,49 @@ namespace Components.Interface
             }
         }
 
+        struct StartParameters
+        {
+            public string moduleName;
+            public HeaderImage image;
+            public Func<object, Task<object>> select;
+            public Func<object, Task<object>> cont;
+            public Func<object, Task<object>> cancel;
+
+            public StartParameters(string moduleName, HeaderImage image, SelectCB select, ContinueCB cont, CancelCB cancel)
+            {
+                this.moduleName = moduleName;
+                this.image = image;
+                this.select = async (dynamic selectPar) =>
+                {
+                    select(selectPar.stepId, selectPar.groupId, selectPar.plugins);
+                    return await Task.FromResult<object>(null);
+                };
+
+                this.cont = async (dynamic direction) =>
+                {
+                    cont(((string)direction == "forward"));
+                    return await Task.FromResult<object>(null);
+                };
+                this.cancel = async (dynamic dummy) =>
+                {
+                    cancel();
+                    return await Task.FromResult<object>(null);
+                };
+            }
+        }
+
+        struct UpdateParameters
+        {
+            public InstallerStep[] installSteps;
+            public int currentStep;
+
+            public UpdateParameters(InstallerStep[] installSteps, int currentStep)
+            {
+                this.installSteps = installSteps;
+                this.currentStep = currentStep;
+            }
+        }
+
         public class Delegates
         {
             private Func<object, Task<object>> mStartDialog;
@@ -158,20 +201,7 @@ namespace Components.Interface
 
             public async void StartDialog(string moduleName, HeaderImage image, SelectCB select, ContinueCB cont, CancelCB cancel)
             {
-                Func<object, Task<object>> selectWrap = (dynamic selectPar) => select(selectPar.stepId, selectPar.groupId, selectPar.plugins);
-                Func<object, Task<object>> contWrap = (dynamic direction) =>
-                {
-                    cont(((string)direction == "forward"));
-                    return null;
-                };
-                Func<object, Task<object>> cancelWrap = (dynamic dummy) => { cancel(); return null; };
-                dynamic par = new object();
-                par.moduleName = moduleName;
-                par.image = image;
-                par.select = selectWrap;
-                par["continue"] = contWrap;
-                par.cancel = cancelWrap;
-                await mStartDialog(par);
+                await mStartDialog(new StartParameters(moduleName, image, select, cont, cancel));
             }
 
             public async void EndDialog()
@@ -181,10 +211,7 @@ namespace Components.Interface
 
             public async void UpdateState(InstallerStep[] installSteps, int currentStep)
             {
-                dynamic par = new object();
-                par.installSteps = installSteps;
-                par.currentStep = currentStep;
-                await mUpdateState(par);
+                await mUpdateState(new UpdateParameters(installSteps, currentStep));
             }
         }
     }

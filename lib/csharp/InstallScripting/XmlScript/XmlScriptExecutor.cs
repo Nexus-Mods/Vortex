@@ -98,13 +98,7 @@ namespace Components.Scripting.XmlScript
                 {
                     m_Delegates.ui.EndDialog();
                     XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
-                    IList<Instruction> test = null;
-                    Task.Run(async () =>
-                    {
-                        test = await xsiInstaller.Install(xscScript, m_Delegates, FilesToInstall, PluginsToActivate);
-                    }).Wait();
-                    // ??? OnTaskStarted(xsiInstaller);
-                    Source.SetResult(test);
+                    Source.SetResult(xsiInstaller.Install(xscScript, m_Delegates, FilesToInstall, PluginsToActivate));
                 }
                 sendState(lstSteps, stepIdx);
             };
@@ -116,7 +110,7 @@ namespace Components.Scripting.XmlScript
 
             sendState(lstSteps, stepIdx);
 
-            return Source.Task.Result;
+            return await Source.Task;
         }
  
         private void sendState(IList<InstallStep> lstSteps, int stepIdx)
@@ -124,7 +118,8 @@ namespace Components.Scripting.XmlScript
             Func<IEnumerable<InstallStep>, IEnumerable<InstallerStep>> convertSteps = steps =>
             {
                 int idx = 0;
-                return steps.Select(step => new InstallerStep(idx++, step.Name, step.VisibilityCondition.GetIsFulfilled(m_Delegates)));
+                return steps.Select(step => new InstallerStep(idx++, step.Name,
+                    step.VisibilityCondition == null || step.VisibilityCondition.GetIsFulfilled(m_Delegates)));
             };
 
             Func<IEnumerable<Option>, IEnumerable<Interface.ui.Option>> convertOptions = options =>
@@ -148,13 +143,14 @@ namespace Components.Scripting.XmlScript
 
             InstallerStep[] uiSteps = convertSteps(lstSteps).ToArray();
             insertGroups(uiSteps, stepIdx);
-            m_Delegates.ui.UpdateState(uiSteps, 0);
+            m_Delegates.ui.UpdateState(uiSteps, stepIdx);
         }
 
         private int findNextIdx(IList<InstallStep> lstSteps, int currentIdx)
         {
             for (int i = currentIdx + 1; i < lstSteps.Count; ++i) {
-                if (lstSteps[i].VisibilityCondition.GetIsFulfilled(m_Delegates))
+                if ((lstSteps[i].VisibilityCondition == null) ||
+                    lstSteps[i].VisibilityCondition.GetIsFulfilled(m_Delegates))
                 {
                     return i;
                 }
@@ -165,7 +161,8 @@ namespace Components.Scripting.XmlScript
         private int findPrevIdx(IList<InstallStep> lstSteps, int currentIdx)
         {
             for (int i = currentIdx - 1; i >= 0; --i) {
-                if (lstSteps[i].VisibilityCondition.GetIsFulfilled(m_Delegates))
+                if ((lstSteps[i].VisibilityCondition == null) ||
+                    lstSteps[i].VisibilityCondition.GetIsFulfilled(m_Delegates))
                 {
                     return i;
                 }
