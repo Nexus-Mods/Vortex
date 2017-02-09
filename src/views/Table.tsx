@@ -377,7 +377,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         tableId={tableId}
         key={data.id}
         data={calculatedValues[data.id]}
-        rowColor={data.data.rowColor}
         rawData={data.data}
         attributes={visibleAttributes}
         actions={rowActions}

@@ -24,10 +24,6 @@ export const modsReducer: IReducerSpec = {
       const { gameId, modId, modState } = payload;
       return setSafe(state, [gameId, modId, 'state'], modState);
     },
-    [actions.setModRowColor]: (state, payload) => {
-      const { gameId, modId, rowColor } = payload;
-      return setSafe(state, [gameId, modId, 'rowColor'], rowColor);
-    },
     [actions.setModAttribute]: (state, payload) => {
       const { gameId, modId, attribute, value } = payload;
       return setSafe(state, [gameId, modId, 'attributes', attribute], value);

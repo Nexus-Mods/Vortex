@@ -67,7 +67,6 @@ class InstallContext implements IInstallContext {
       id,
       archiveId,
       installationPath: id,
-      rowColor: '#ffffff',
       state: 'installing',
       attributes: {
         name: id,

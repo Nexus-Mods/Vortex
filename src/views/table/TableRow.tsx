@@ -57,7 +57,6 @@ export interface IRowProps {
   tableId: string;
   key: string;
   data: any;
-  rowColor: string;
   rawData: any;
   attributes: ITableAttribute[];
   actions: ITableRowAction[];
@@ -76,14 +75,12 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { attributes, data, onClick, rawData, selected, tableId, actions } = this.props;
+    const { attributes, data, onClick, selected, tableId, actions } = this.props;
 
     let classes = [];
 
     if (selected) {
       classes.push('table-selected');
-    } else if (rawData.rowColor !== undefined) {
-      classes.push('table-selected-' + rawData.rowColor.replace('#', ''));
     }
 
     let hasActions = false;

@@ -30,6 +30,7 @@ import {} from '../extensions/firststeps_dashlet';
 import {} from '../extensions/gamemode_management';
 import {} from '../extensions/hardlink_activator';
 import {} from '../extensions/installer_fomod';
+import {} from '../extensions/mod_highlight';
 import {} from '../extensions/mod_management';
 import {} from '../extensions/nexus_integration';
 import {} from '../extensions/profile_management';
@@ -597,6 +598,7 @@ class ExtensionManager {
       'category_management',
       'profile_management',
       'nexus_integration',
+      'mod_highlight',
       'download_management',
       'gamemode_management',
       'symlink_activator',

@@ -15,12 +15,6 @@ export const setModState: any = safeCreateAction('SET_MOD_STATE',
   (gameId: string, modId: string, modState: ModState) => ({ gameId, modId, modState }));
 
 /**
- * sets the background color of the row
- */
-export const setModRowColor: any = safeCreateAction('SET_MOD_ROW_COLOR',
-  (gameId: string, modId: string, rowColor: string) => ({ gameId, modId, rowColor }));
-
-/**
  * sets the (final) installation path of the mod. This should be set as soon as
  * any data is written to disk so that it can be cleaned/removed in case of an error.
  * The actual path on disk may be a variation of this path during installation.
