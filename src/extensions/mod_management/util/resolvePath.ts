@@ -1,5 +1,7 @@
 import { IStatePaths } from '../types/IStateSettings';
 
+import { getSafe } from '../../../util/storeHelper';
+
 import { remote } from 'electron';
 import * as path from 'path';
 import format = require('string-template');
@@ -22,8 +24,8 @@ function resolvePath(key: PathKey, paths: { [gameId: string]: IStatePaths }, gam
   if (key !== 'base') {
     formatKeys.base = resolvePath('base', paths, gameMode);
   }
-  const gamePaths = paths[gameMode] || pathDefaults;
-  return format(gamePaths[key], formatKeys);
+  const actualPath = getSafe(paths, [gameMode, key], pathDefaults[key]);
+  return format(actualPath, formatKeys);
 }
 
 export default resolvePath;

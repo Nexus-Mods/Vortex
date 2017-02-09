@@ -4,7 +4,7 @@ import { activeGameId } from '../../util/selectors';
 import Starter from './Starter';
 
 function init(context: IExtensionContext): boolean {
-  context.registerDashlet('Starter', 2, 0, Starter,
+  context.registerDashlet('Starter', 2, 100, Starter,
     (state: any) => activeGameId(state) !== undefined);
 
   return true;

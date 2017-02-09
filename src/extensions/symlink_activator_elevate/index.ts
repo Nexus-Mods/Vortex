@@ -34,9 +34,15 @@ class ModActivator implements IModActivator {
     this.mElevatedClient = null;
   }
 
-  public isSupported(state: any): boolean {
+  public isSupported(state: any): string {
+    if (process.platform !== 'win32') {
+      return 'Not required on non-windows systems';
+    }
     const gameId = activeGameId(state);
-    return process.platform === 'win32' && !this.isGamebryoGame(gameId);
+    if (this.isGamebryoGame(gameId)) {
+      return 'Not supported for gamebryo engine';
+    }
+    return undefined;
   }
 
   public prepare(dataPath: string): Promise<void> {

@@ -26,12 +26,12 @@ class ModActivator extends LinkingActivator {
         api);
   }
 
-  public isSupported(state: any): boolean {
+  public isSupported(state: any): string {
     const gameId = activeGameId(state);
     const activeGameDiscovery: IDiscoveryResult =
       state.settings.gameMode.discovered[gameId];
     if (activeGameDiscovery === undefined) {
-      return false;
+      return 'No game discovery';
     }
 
     try {
@@ -39,7 +39,7 @@ class ModActivator extends LinkingActivator {
     } catch (err) {
       log('info', 'hardlink activator not supported due to lack of write access',
         { path: activeGameDiscovery.modPath });
-      return false;
+      return 'Can\'t write to data path';
     }
 
     try {
@@ -47,17 +47,17 @@ class ModActivator extends LinkingActivator {
           fs.statSync(activeGameDiscovery.modPath).dev) {
         log('info', 'hardlink activator not supported because game is on different drive');
         // hard links work only on the same drive
-        return false;
+        return 'Works only if mods are installed on the same drive as the game.';
       }
     } catch (err) {
       log('warn', 'failed to stat. directory missing?', {
         dir1: installPath(state), dir2: activeGameDiscovery.modPath,
         err: util.inspect(err),
       });
-      return false;
+      return err.message;
     }
 
-    return true;
+    return undefined;
   }
 
   protected purgeLinks(installPath: string, dataPath: string): Promise<void> {

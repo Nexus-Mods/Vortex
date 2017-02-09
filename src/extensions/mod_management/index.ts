@@ -18,6 +18,7 @@ import * as basicInstaller from './util/basicInstaller';
 import refreshMods from './util/refreshMods';
 import supportedActivators from './util/supportedActivators';
 import ActivationButton from './views/ActivationButton';
+import ActivatorDashlet from './views/ActivatorDashlet';
 import DeactivationButton from './views/DeactivationButton';
 import ModList from './views/ModList';
 import Settings from './views/Settings';
@@ -73,9 +74,11 @@ function init(context: IExtensionContextExt): boolean {
     };
   });
 
-  context.registerSettings('Mods', Settings, () => {
-    return {activators};
-  });
+  context.registerDashlet('Activator', 3, 50, ActivatorDashlet,
+    (state: any) => supportedActivators(activators, state).length === 0,
+    () => ({ activators }));
+
+  context.registerSettings('Mods', Settings, () => ({activators}));
 
   context.registerReducer(['settings', 'mods'], settingsReducer);
   context.registerReducer(['persistent', 'mods'], modsReducer);

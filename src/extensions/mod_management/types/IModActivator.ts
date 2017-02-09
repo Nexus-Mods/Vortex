@@ -56,12 +56,14 @@ export interface IModActivator {
 
   /**
    * determine if this activator is supported in the current environment
+   * If the activator is supported, returns undefined. Otherwise a string
+   * that explains why the activator isn't available.
    * 
    * synchronous 'cause lazy.
    * 
    * @memberOf IModActivator
    */
-  isSupported: (state: any) => boolean;
+  isSupported: (state: any) => string;
 
   /**
    * called before any calls to activate, in case the

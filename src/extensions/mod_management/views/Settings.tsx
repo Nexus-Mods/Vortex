@@ -33,7 +33,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onSetPath: (key: string, path: string) => void;
+  onSetPath: (gameMode: string, key: string, path: string) => void;
   onSetActivator: (gameMode: string, id: string) => void;
   onShowDialog: (type: DialogType, title: string,
     content: IDialogContent, actions: DialogActions) => void;
@@ -79,16 +79,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, activators, currentActivator, gameMode, paths } = this.props;
-
-    const gamePaths = paths[gameMode] || pathDefaults;
+    const { t, activators, currentActivator, gameMode } = this.props;
+    const { paths, supportedActivators } = this.state;
 
     return (
       <form>
         <Panel footer={this.renderFooter()}>
-        {this.renderPathCtrl(gamePaths, t('Base Path'), 'base')}
-        {this.renderPathCtrl(gamePaths, t('Download Path'), 'download')}
-        {this.renderPathCtrl(gamePaths, t('Install Path'), 'install')}
+        {this.renderPathCtrl(paths, t('Base Path'), 'base')}
+        {this.renderPathCtrl(paths, t('Download Path'), 'download')}
+        {this.renderPathCtrl(paths, t('Install Path'), 'install')}
         <Modal show={this.state.busy !== undefined} onHide={nop}>
           <Modal.Body>
           <Jumbotron>
@@ -100,7 +99,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </Panel>
         <ControlLabel>{ t('Activation Method') }</ControlLabel>
         <FormGroup validationState={ activators !== undefined ? undefined : 'error' }>
-          { this.renderActivators(activators, currentActivator[gameMode]) }
+          { this.renderActivators(supportedActivators, currentActivator[gameMode]) }
         </FormGroup>
       </form>
     );
@@ -185,9 +184,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         return this.transferPath('install');
       })
       .then(() => {
-        onSetPath('base', this.state.paths[gameMode].base);
-        onSetPath('download', this.state.paths[gameMode].download);
-        onSetPath('install', this.state.paths[gameMode].install);
+        onSetPath(gameMode, 'base', this.state.paths[gameMode].base);
+        onSetPath(gameMode, 'download', this.state.paths[gameMode].download);
+        onSetPath(gameMode, 'install', this.state.paths[gameMode].install);
         this.setState(setSafe(this.state, ['busy'], undefined));
       })
       .catch((err) => {
@@ -236,12 +235,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (this.mBrowseCBs[pathKey] === undefined) {
       this.mBrowseCBs[pathKey] = () => this.browsePath(pathKey);
     }
+
+    const gamePaths = paths[gameMode] || pathDefaults;
+
     return (
       <FormGroup>
       <ControlLabel>{label}</ControlLabel>
       <InputGroup>
         <FormControl
-          value={paths[pathKey]}
+          value={gamePaths[pathKey]}
           placeholder={label}
           onChange={this.mPathChangeCBs[pathKey]}
         />
@@ -266,7 +268,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private changePath = (key: string, value: string) => {
-    this.setState(setSafe(this.state, ['paths', key], value));
+    const { gameMode } = this.props;
+    this.setState(setSafe(this.state, ['paths', gameMode, key], value));
   }
 
   private browsePath = (key: string) => {
@@ -330,8 +333,10 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
-    onSetPath: (key: string, newPath: string): void => {
-      dispatch(setPath(key, newPath));
+    onSetPath: (gameMode: string, key: string, newPath: string): void => {
+      if (newPath !== undefined) {
+        dispatch(setPath(gameMode, key, newPath));
+      }
     },
     onSetActivator: (gameMode: string, id: string): void => {
       dispatch(setActivator(gameMode, id));

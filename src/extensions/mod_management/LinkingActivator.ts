@@ -46,7 +46,7 @@ abstract class LinkingActivator implements IModActivator {
     this.mApi = api;
   }
 
-  public abstract isSupported(state: any): boolean;
+  public abstract isSupported(state: any): string;
 
   public prepare(dataPath: string): Promise<void> {
     this.mNewActivation = {};

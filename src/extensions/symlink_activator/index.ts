@@ -25,12 +25,12 @@ class ModActivator implements IModActivator {
                      + 'to the mod directory. On Windows the account has to be an administrator.';
   }
 
-  public isSupported(state: any): boolean {
+  public isSupported(state: any): string {
     const gameMode = activeGameId(state);
     if (this.isGamebryoGame(gameMode)) {
       // gamebryo engine seems to have some check on FindFirstFile/FindNextFile results that
       // makes it ignore symbolic links
-      return false;
+      return 'Doesn\'t work with the gamebryo engine.';
     }
 
     const activeGameDiscovery: IDiscoveryResult =
@@ -40,9 +40,9 @@ class ModActivator implements IModActivator {
       fsOrig.accessSync(activeGameDiscovery.modPath, fsOrig.constants.W_OK);
       // TODO on windows, try to create a symlink to determine if
       //   this is an administrator account
-      return true;
+      return undefined;
     } catch (err) {
-      return false;
+      return err.message;
     }
   }
 

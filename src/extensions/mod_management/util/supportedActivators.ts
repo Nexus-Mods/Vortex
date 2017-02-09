@@ -8,7 +8,7 @@ import { IModActivator } from '../types/IModActivator';
  */
 function supportedActivators(activators: IModActivator[], state: any): IModActivator[] {
   return activators.filter(
-    (activator: IModActivator) => { return activator.isSupported(state); });
+    (activator: IModActivator) => activator.isSupported(state) === undefined);
 }
 
 export default supportedActivators;

@@ -125,7 +125,6 @@ class Dashlet extends ComponentEx<IProps, {}> {
 
   private dismiss = (evt: React.MouseEvent<any>) => {
     let stepId = evt.currentTarget.value;
-    log('info', 'dismiss', stepId);
     this.props.onDismissStep(stepId);
   }
 }
