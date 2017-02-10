@@ -262,8 +262,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       return icon.id === evt.currentTarget.id;
     });
 
-    let newIcon = dialogState.icons[idx];
-    newIcon.selected = true;
+    let newIcon = dialogState.icons.slice(0);
+    newIcon[idx].selected = true;
 
     this.setState(update(this.state, {
       dialogState: {
@@ -362,7 +362,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (dialogState.icons !== undefined) {
       data = {};
-      data = dialogState.icons;
+      data = dialogState.icons.filter((icon: IIcon) => icon.selected);
     }
 
     onDismiss(dialogs[0].id, action, data);

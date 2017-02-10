@@ -160,7 +160,7 @@ class HighlightButtons extends ComponentEx<IProps, {}> {
           changeIcon = result.action === 'Select';
           if (changeIcon) {
 
-            icon = result.input.value;
+            icon = result.input[0].value;
             onSetModIcon(gameMode, modId, icon);
           } else {
             removeCustomIcon = result.action === 'Remove';
