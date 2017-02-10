@@ -42,11 +42,11 @@ namespace Components.Scripting.XmlScript
         /// <param name="pluginsToActivate">The list of plugins to activate.</param>
         /// <returns><c>true</c> if the installation succeeded;
         /// <c>false</c> otherwise.</returns>
-        public IList<Instruction> Install(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
+        public IList<Instruction> Install(XmlScript xscScript, ConditionStateManager csmState, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
 		{
 			try
 			{
-				InstallFiles(xscScript, coreDelegates, filesToInstall, pluginsToActivate);
+				InstallFiles(xscScript, csmState, coreDelegates, filesToInstall, pluginsToActivate);
 			}
 			catch (Exception ex)
 			{
@@ -62,7 +62,7 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <param name="filesToInstall">The list of files to install.</param>
         /// <param name="pluginsToActivate">The list of plugins to activate.</param>
-        protected bool InstallFiles(XmlScript xscScript, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
+        protected bool InstallFiles(XmlScript xscScript, ConditionStateManager csmState, CoreDelegates coreDelegates, ICollection<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
 		{
             bool HadIssues = false;
 			IList<InstallableFile> lstRequiredFiles = xscScript.RequiredInstallFiles;
@@ -87,7 +87,7 @@ namespace Components.Scripting.XmlScript
             {
                 foreach (ConditionallyInstalledFileSet cisFileSet in lstConditionallyInstalledFileSets)
                 {
-                    if (cisFileSet.Condition.GetIsFulfilled(coreDelegates))
+                    if (cisFileSet.Condition.GetIsFulfilled(csmState, coreDelegates))
                         foreach (InstallableFile ilfFile in cisFileSet.Files)
                         {
                             if (!InstallFile(ilfFile))
@@ -138,7 +138,7 @@ namespace Components.Scripting.XmlScript
         /// <c>true</c> otherwise.</returns>
         protected bool InstallFolderFromMod(InstallableFile installableFile)
 		{
-            List<string> lstModFiles = ModArchive.GetFileList(null, true);
+            List<string> lstModFiles = ModArchive.GetFileList(installableFile.Source, true);
 
             string strFrom = installableFile.Source.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar).ToLowerInvariant();
 			if (!strFrom.EndsWith(Path.DirectorySeparatorChar.ToString()))

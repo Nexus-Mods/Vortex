@@ -1,5 +1,6 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 
+import { setInstallerDataPath } from './actions/installerUI';
 import Core from './delegates/core';
 import { installerUIReducer } from './reducers/installerUI';
 import InstallerDialog from './views/InstallerDialog';
@@ -69,7 +70,11 @@ export interface IExtensionContextExt extends IExtensionContext {
 
 function init(context: IExtensionContextExt): boolean {
   if (context.registerInstaller) {
-    context.registerInstaller(100, testSupported, install);
+    context.registerInstaller(100, testSupported,
+    (files, scriptPath, progressDelegate) => {
+      context.api.store.dispatch(setInstallerDataPath(scriptPath));
+      return install(files, scriptPath, progressDelegate);
+    });
   }
 
   context.registerDialog('fomod-installer', InstallerDialog);

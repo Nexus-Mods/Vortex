@@ -18,7 +18,7 @@ namespace Components.Scripting.XmlScript
         /// <returns><c>true</c> if the condition is fulfilled;
         /// <c>false</c> otherwise.</returns>
         /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
-		bool GetIsFulfilled(CoreDelegates coreDelegates);
+		bool GetIsFulfilled(ConditionStateManager csmState, CoreDelegates coreDelegates);
 
         /// <summary>
         /// Gets a message describing whether or not the condition is fulfilled.
@@ -31,6 +31,6 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <returns>A message describing whether or not the condition is fulfilled.</returns>
         /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
-		string GetMessage(CoreDelegates coreDelegates);
+		string GetMessage(ConditionStateManager csmState, CoreDelegates coreDelegates);
 	}
 }

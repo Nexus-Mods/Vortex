@@ -157,7 +157,9 @@ namespace Components.Interface
                 this.image = image;
                 this.select = async (dynamic selectPar) =>
                 {
-                    select(selectPar.stepId, selectPar.groupId, selectPar.plugins);
+                    object[] pluginObjs = selectPar.plugins;
+                    IEnumerable<int> pluginIds = pluginObjs.Select(id => (int)id);
+                    select(selectPar.stepId, selectPar.groupId, pluginIds.ToArray());
                     return await Task.FromResult<object>(null);
                 };
 

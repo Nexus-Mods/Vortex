@@ -14,7 +14,11 @@ export const installerUIReducer: IReducerSpec = {
     [actions.setDialogState]: (state, payload) => {
       return setSafe(state, ['state'], payload);
     },
+    [actions.setInstallerDataPath]: (state, payload) => {
+      return setSafe(state, ['dataPath'], payload);
+    },
   }, defaults: {
+    dataPath: undefined,
     info: undefined,
     state: undefined,
   },

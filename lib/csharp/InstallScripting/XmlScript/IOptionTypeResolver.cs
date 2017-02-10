@@ -45,6 +45,6 @@ namespace Components.Scripting.XmlScript
         /// </summary>
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <returns>The option type.</returns>
-        OptionType ResolveOptionType(CoreDelegates coreDelegates);
+        OptionType ResolveOptionType(ConditionStateManager csmState, CoreDelegates coreDelegates);
 	}
 }

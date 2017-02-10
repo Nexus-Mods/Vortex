@@ -2,6 +2,8 @@ import { addNotification, showDialog } from '../actions/notifications';
 
 import { createErrorReport } from './errorHandling';
 
+import { log } from './log';
+
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));
 }
@@ -76,6 +78,8 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
 export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
                              details?: string | Error) {
   const finalDetails: string = typeof(details) !== 'string' ? renderError(details) : details;
+
+  log('error', message, details);
 
   dispatch(addNotification({
     type: 'error',

@@ -88,7 +88,7 @@ namespace Components.Scripting.XmlScript
         /// <returns><c>true</c> if the condition is fulfilled;
         /// <c>false</c> otherwise.</returns>
         /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
-        public bool GetIsFulfilled(CoreDelegates coreDelegates)
+        public bool GetIsFulfilled(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
 			string PluginPath = m_strPluginPath;
             bool active = false;
@@ -133,9 +133,9 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <returns>A message describing whether or not the condition is fulfilled.</returns>
         /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
-        public string GetMessage(CoreDelegates coreDelegates)
+        public string GetMessage(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
-			if (GetIsFulfilled(coreDelegates))
+			if (GetIsFulfilled(csmState, coreDelegates))
 				return "Passed";
 			return string.Format("File '{0}' is not {1}.", PluginPath, State.ToString());
 		}

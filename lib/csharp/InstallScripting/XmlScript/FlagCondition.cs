@@ -74,14 +74,13 @@ namespace Components.Scripting.XmlScript
         /// <returns><c>true</c> if the condition is fulfilled;
         /// <c>false</c> otherwise.</returns>
         /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
-        public bool GetIsFulfilled(CoreDelegates coreDelegates)
+        public bool GetIsFulfilled(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
 			string strValue = null;
 
-            // ??? Do we need to add this?
-            //coreDelegates.FlagValues.TryGetValue(FlagName, out strValue);
-			//if (string.IsNullOrEmpty(Value))
-			//	return string.IsNullOrEmpty(strValue);
+            csmState.FlagValues.TryGetValue(FlagName, out strValue);
+			if (string.IsNullOrEmpty(Value))
+				return string.IsNullOrEmpty(strValue);
 			return Value.Equals(strValue);
 		}
 
@@ -96,9 +95,9 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <returns>A message describing whether or not the condition is fulfilled.</returns>
         /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
-		public string GetMessage(CoreDelegates coreDelegates)
+		public string GetMessage(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
-			if (GetIsFulfilled(coreDelegates))
+			if (GetIsFulfilled(csmState, coreDelegates))
 				return "Passed";
 			return string.Format("Flag '{0}' is not {1}.", FlagName, Value);
 		}

@@ -100,13 +100,13 @@ namespace Components.Scripting.XmlScript
         /// <returns><c>true</c> if the condition is fulfilled;
         /// <c>false</c> otherwise.</returns>
         /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
-        public bool GetIsFulfilled(CoreDelegates coreDelegates)
+        public bool GetIsFulfilled(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
 			bool booAllFulfilled = (m_dopOperator == ConditionOperator.And) ? true : false;
 			bool booThisFulfilled = true;
 			foreach (ICondition conCondition in m_lstConditions)
 			{
-				booThisFulfilled = conCondition.GetIsFulfilled(coreDelegates);
+				booThisFulfilled = conCondition.GetIsFulfilled(csmState, coreDelegates);
 				switch (m_dopOperator)
 				{
 					case ConditionOperator.And:
@@ -131,7 +131,7 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <returns>A message describing whether or not the condition is fulfilled.</returns>
         /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
-		public string GetMessage(CoreDelegates coreDelegates)
+		public string GetMessage(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
 			StringBuilder stbMessage = new StringBuilder();
 			if (m_dopOperator == ConditionOperator.Or)
@@ -143,9 +143,9 @@ namespace Components.Scripting.XmlScript
 			for (Int32 i = 0; i < m_lstConditions.Count; i++)
 			{
 				conCondition = m_lstConditions[i];
-				booThisFulfilled = conCondition.GetIsFulfilled(coreDelegates);
+				booThisFulfilled = conCondition.GetIsFulfilled(csmState, coreDelegates);
 				if (!booThisFulfilled)
-					stbMessage.Append(conCondition.GetMessage(coreDelegates));
+					stbMessage.Append(conCondition.GetMessage(csmState, coreDelegates));
 				switch (m_dopOperator)
 				{
 					case ConditionOperator.And:

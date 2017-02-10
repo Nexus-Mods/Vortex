@@ -15,6 +15,7 @@ namespace Components.Scripting.XmlScript
     {
         private Mod ModArchive = null;
         private CoreDelegates m_Delegates;
+        private ConditionStateManager m_csmState;
         #region Constructors
 
         /// <summary>
@@ -46,14 +47,16 @@ namespace Components.Scripting.XmlScript
             TaskCompletionSource<IList<Instruction>> Source = new TaskCompletionSource<IList<Instruction>>(); 
             List<InstallableFile> FilesToInstall = new List<InstallableFile>();
             List<InstallableFile> PluginsToActivate = new List<InstallableFile>();
+
+            m_csmState = new ConditionStateManager();
             
             if (!(scpScript is XmlScript))
                 throw new ArgumentException("The given script must be of type XmlScript.", scpScript.Type.TypeName);
 
             XmlScript xscScript = (XmlScript)scpScript;
 
-            if ((xscScript.ModPrerequisites != null) && !xscScript.ModPrerequisites.GetIsFulfilled(m_Delegates))
-                throw new Exception(xscScript.ModPrerequisites.GetMessage(m_Delegates));
+            if ((xscScript.ModPrerequisites != null) && !xscScript.ModPrerequisites.GetIsFulfilled(m_csmState, m_Delegates))
+                throw new Exception(xscScript.ModPrerequisites.GetMessage(m_csmState, m_Delegates));
 
             IList<InstallStep> lstSteps = xscScript.InstallSteps;
             HeaderInfo hifHeaderInfo = xscScript.HeaderInfo;
@@ -61,6 +64,7 @@ namespace Components.Scripting.XmlScript
                 hifHeaderInfo.ImagePath = ModArchive.ScreenshotPath;
             if ((hifHeaderInfo.Height < 0) && hifHeaderInfo.ShowImage)
                 hifHeaderInfo.Height = 75;
+
 
             Action<int, int, int[]> select = (int stepId, int groupId, int[] optionIds) =>
             {
@@ -72,13 +76,11 @@ namespace Components.Scripting.XmlScript
                     {
                         options[i].Flags.ForEach((ConditionalFlag flag) =>
                         {
-                            // ??? Yet to be added
-                            //m_Delegates.SetFlagValue(flag.Name, flag.ConditionalValue, options[i]);
+                            m_csmState.SetFlagValue(flag.Name, flag.ConditionalValue, options[i]);
                         });
                     } else
                     {
-                        // ??? Yet to be added
-                        //m_Delegates.RemoveFlags(options[i]);
+                        m_csmState.RemoveFlags(options[i]);
                     }
                 }
             };
@@ -98,11 +100,16 @@ namespace Components.Scripting.XmlScript
                 {
                     m_Delegates.ui.EndDialog();
                     XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
-                    Source.SetResult(xsiInstaller.Install(xscScript, m_Delegates, FilesToInstall, PluginsToActivate));
+                    Source.SetResult(xsiInstaller.Install(xscScript, m_csmState, m_Delegates, FilesToInstall, PluginsToActivate));
                 }
-                sendState(lstSteps, stepIdx);
+                else
+                {
+                    sendState(lstSteps, stepIdx);
+                }
             };
-            Action cancel = () => { };
+            Action cancel = () => {
+                Source.SetCanceled();
+            };
 
             m_Delegates.ui.StartDialog(hifHeaderInfo.Title,
                 new HeaderImage(hifHeaderInfo.ImagePath, hifHeaderInfo.ShowFade, hifHeaderInfo.Height),
@@ -119,7 +126,7 @@ namespace Components.Scripting.XmlScript
             {
                 int idx = 0;
                 return steps.Select(step => new InstallerStep(idx++, step.Name,
-                    step.VisibilityCondition == null || step.VisibilityCondition.GetIsFulfilled(m_Delegates)));
+                    step.VisibilityCondition == null || step.VisibilityCondition.GetIsFulfilled(m_csmState, m_Delegates)));
             };
 
             Func<IEnumerable<Option>, IEnumerable<Interface.ui.Option>> convertOptions = options =>
@@ -150,7 +157,7 @@ namespace Components.Scripting.XmlScript
         {
             for (int i = currentIdx + 1; i < lstSteps.Count; ++i) {
                 if ((lstSteps[i].VisibilityCondition == null) ||
-                    lstSteps[i].VisibilityCondition.GetIsFulfilled(m_Delegates))
+                    lstSteps[i].VisibilityCondition.GetIsFulfilled(m_csmState, m_Delegates))
                 {
                     return i;
                 }
@@ -162,7 +169,7 @@ namespace Components.Scripting.XmlScript
         {
             for (int i = currentIdx - 1; i >= 0; --i) {
                 if ((lstSteps[i].VisibilityCondition == null) ||
-                    lstSteps[i].VisibilityCondition.GetIsFulfilled(m_Delegates))
+                    lstSteps[i].VisibilityCondition.GetIsFulfilled(m_csmState, m_Delegates))
                 {
                     return i;
                 }

@@ -33,7 +33,7 @@ namespace Components.Scripting.XmlScript
         /// <returns><c>true</c> if the condition is fulfilled;
         /// <c>false</c> otherwise.</returns>
         /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
-        public override bool GetIsFulfilled(CoreDelegates coreDelegates)
+        public override bool GetIsFulfilled(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
             Version GameVersion = new Version("0.0.0.0");
 
@@ -60,7 +60,7 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <returns>A message describing whether or not the condition is fulfilled.</returns>
         /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
-		public override string GetMessage(CoreDelegates coreDelegates)
+		public override string GetMessage(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
             Version GameVersion = new Version("0.0.0.0");
 

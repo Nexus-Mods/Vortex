@@ -133,9 +133,9 @@ namespace Components.Scripting.XmlScript
         /// </summary>
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <returns>The <see cref="OptionType"/> of the option.</returns>
-        public OptionType GetOptionType(CoreDelegates coreDelegates)
+        public OptionType GetOptionType(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
-			return m_otrTypeResolver.ResolveOptionType(coreDelegates);
+			return m_otrTypeResolver.ResolveOptionType(csmState, coreDelegates);
 		}
 	}
 }

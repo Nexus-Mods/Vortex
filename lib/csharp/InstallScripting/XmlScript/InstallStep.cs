@@ -133,11 +133,11 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <returns><c>true</c> if this step is visible, given the current state;
         /// <c>false</c> otherwise.</returns>
-        public bool GetIsVisible(CoreDelegates coreDelegates)
+        public bool GetIsVisible(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
 			if (VisibilityCondition == null)
 				return true;
-			return VisibilityCondition.GetIsFulfilled(coreDelegates);
+			return VisibilityCondition.GetIsFulfilled(csmState, coreDelegates);
 		}
 	}
 }

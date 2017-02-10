@@ -1,5 +1,5 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
-import {log} from '../../../util/log';
+import {showError} from '../../../util/message';
 
 import {endDialog, setDialogState, startDialog} from '../actions/installerUI';
 import {IInstallerInfo, IInstallerState, IStateCallback} from '../types/interface';
@@ -36,19 +36,31 @@ class UI extends DelegateBase {
     this.mContinueCB = info.cont;
     this.mStateCB = info.select;
     this.mCancelCB = info.cancel;
-    this.api.store.dispatch(startDialog({
-      moduleName: info.moduleName,
-      image: info.image,
-    }));
+    try {
+      this.api.store.dispatch(startDialog({
+        moduleName: info.moduleName,
+        image: info.image,
+      }));
+    } catch (err) {
+      showError(this.api.store.dispatch, 'start installer dialog failed', err);
+    }
   }
 
   public endDialog = () => {
-    this.api.store.dispatch(endDialog());
+    try {
+      this.api.store.dispatch(endDialog());
+    } catch (err) {
+      showError(this.api.store.dispatch, 'end installer dialog failed', err);
+    }
     this.mStateCB = this.mCancelCB = undefined;
   }
 
   public updateState = (state: IInstallerState) => {
-    this.api.store.dispatch(setDialogState(state));
+    try {
+      this.api.store.dispatch(setDialogState(state));
+    } catch (err) {
+      showError(this.api.store.dispatch, 'update installer dialog failed', err);
+    }
   }
 }
 

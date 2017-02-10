@@ -153,10 +153,10 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <returns>The option type.</returns>
         /// <seealso cref="IOptionTypeResolver.ResolveOptionType(CoreDelegates)"/>
-        public OptionType ResolveOptionType(CoreDelegates coreDelegates)
+        public OptionType ResolveOptionType(ConditionStateManager csmState, CoreDelegates coreDelegates)
 		{
 			foreach (ConditionalTypePattern ctpPattern in m_lstPatterns)
-				if (ctpPattern.Condition.GetIsFulfilled(coreDelegates))
+				if (ctpPattern.Condition.GetIsFulfilled(csmState, coreDelegates))
 					return ctpPattern.Type;
 			return m_ptpDefaultType;
 		}

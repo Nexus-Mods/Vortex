@@ -5,27 +5,45 @@ import {IconButton} from '../../../views/TooltipControls';
 import {GroupType, IGroup, IHeaderImage, IInstallStep, IInstallerState,
         IPlugin, OrderType} from '../types/interface';
 
+import * as path from 'path';
 import * as React from 'react';
-import { Checkbox, ControlLabel, Form, FormGroup, Modal, Pager,
+import update = require('react-addons-update');
+import { Checkbox, ControlLabel, Form, FormGroup, Image, Modal, Pager,
          ProgressBar, Radio } from 'react-bootstrap';
 
-function Plugin(props: { plugin: IPlugin }): JSX.Element {
-  const {plugin} = props;
-  const details = <div>{ plugin.description } {plugin.image}</div>;
-  return <div className='fomod-plugin-item'>
-    {plugin.name}
-    <IconButton
-      id={`btn-${ plugin.id }`}
-      className='pull-right btn-embed'
-      tooltip={details}
-      icon='image'
-    />
-  </div>;
+ import { Fixed, Flex, Layout } from 'react-layout-pane';
+
+interface IPluginProps {
+  plugin: IPlugin;
+  onShowDescription: (image: string, description: string) => void;
+}
+
+class Plugin extends React.PureComponent<IPluginProps, {}> {
+  public render(): JSX.Element {
+    const {plugin} = this.props;
+    const details = <div>{plugin.description} {plugin.image}</div>;
+    return (<div className='fomod-plugin-item'>
+      {plugin.name}
+      <IconButton
+        id={`btn-${plugin.id}`}
+        className='pull-right btn-embed'
+        tooltip={details}
+        icon='image'
+        onClick={this.showDescription}
+      />
+    </div>);
+  }
+
+  private showDescription = () => {
+    const {plugin, onShowDescription} = this.props;
+    onShowDescription(plugin.image, plugin.description);
+  }
 }
 
 interface IGroupProps {
   group: IGroup;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
+  onShowDescription: (image: string, description: string) => void;
 };
 
 interface IGroupState {
@@ -71,9 +89,9 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   private renderPlugin = (plugin: IPlugin): JSX.Element => {
-    const {group} = this.props;
+    const {group, onShowDescription} = this.props;
     const {selectedPlugins} = this.state;
-    const inner = <Plugin key={plugin.id} plugin={plugin} />;
+    const inner = <Plugin key={plugin.id} plugin={plugin} onShowDescription={onShowDescription}/>;
 
     const isSelected = selectedPlugins.indexOf(plugin.id) !== -1;
 
@@ -125,6 +143,7 @@ function getGroupSortFunc(order: OrderType) {
 interface IStepProps {
   step: IInstallStep;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
+  onShowDescription: (image: string, description: string) => void;
 };
 
 function Step(props: IStepProps) {
@@ -141,7 +160,12 @@ function Step(props: IStepProps) {
 
   return <Form id='fomod-installer-form'>
     {groupsSorted.map((group: IGroup) =>
-      <Group key={group.id} group={group} onSelect={props.onSelect} />)}
+      <Group
+        key={group.id}
+        group={group}
+        onSelect={props.onSelect}
+        onShowDescription={props.onShowDescription}
+      />)}
   </Form>;
 }
 
@@ -150,16 +174,22 @@ interface IInstallerInfo {
   image: IHeaderImage;
 }
 
+export interface IBaseProps {
+}
+
 interface IConnectedProps {
+  dataPath: string;
   installerInfo: IInstallerInfo;
   installerState: IInstallerState;
 }
 
 interface IDialogState {
   invalidGroups: string[];
+  currentImage: string;
+  currentDescription: string;
 }
 
-type IProps = IConnectedProps;
+type IProps = IBaseProps & IConnectedProps;
 
 class InstallerDialog extends ComponentEx<IProps, IDialogState> {
 
@@ -168,15 +198,18 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
 
     this.state = {
       invalidGroups: [],
+      currentImage: undefined,
+      currentDescription: undefined,
     };
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
-    this.setState({ invalidGroups: [] });
+    this.setState({ invalidGroups: [], currentImage: undefined, currentDescription: undefined });
   }
 
   public render(): JSX.Element {
-    const { t, installerInfo, installerState } = this.props;
+    const { t, dataPath, installerInfo, installerState } = this.props;
+    const { currentDescription, currentImage } = this.state;
     if ((installerInfo === undefined) || (installerState === undefined)) {
       return null;
     }
@@ -208,7 +241,21 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
           <ProgressBar now={idx} max={steps.length} />
         </Modal.Header>
         <Modal.Body>
-          <Step step={steps[idx]} onSelect={this.select} />
+          <Layout type='row' style={{ position: 'relative' }}>
+            <Fixed>
+              <Step
+                step={steps[idx]}
+                onSelect={this.select}
+                onShowDescription={this.showDescription}
+              />
+            </Fixed>
+            <Flex>
+              { currentImage !== undefined
+                ? <Image src={path.join(dataPath, currentImage)} />
+                : null }
+              <ControlLabel readOnly={true}>{currentDescription}</ControlLabel>
+            </Flex>
+          </Layout>
         </Modal.Body>
         <Modal.Footer>
           <Pager>
@@ -245,6 +292,13 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
     }
   };
 
+  private showDescription = (image: string, description: string) => {
+    this.setState(update(this.state, {
+      currentDescription: { $set: description },
+      currentImage: { $set: image },
+    }));
+  }
+
   private prev = () => this.context.api.events.emit('fomod-installer-continue', 'back');
 
   private next = () => this.context.api.events.emit('fomod-installer-continue', 'forward');
@@ -254,6 +308,7 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
+    dataPath: state.session.fomod.installer.dialog.dataPath,
     installerInfo: state.session.fomod.installer.dialog.info,
     installerState: state.session.fomod.installer.dialog.state,
   };
@@ -262,4 +317,4 @@ function mapStateToProps(state: any): IConnectedProps {
 export default translate(['common'], { wait: false })(connect(mapStateToProps)(
   InstallerDialog
   )
- ) as React.ComponentClass<{}>;
+ ) as React.ComponentClass<IBaseProps>;

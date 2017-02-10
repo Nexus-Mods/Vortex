@@ -30,13 +30,13 @@ namespace Components.ModInstaller
         {
             Dictionary<string, object> Results = new Dictionary<string, object>();
             bool test = true;
-            List<string> RequiredFiles = new List<string>();
+            IList<string> RequiredFiles = new List<string>();
 
             if ((modArchiveFileList == null) || (modArchiveFileList.Count == 0))
                 test = false;
             else
             {
-                RequiredFiles = new List<string>(await GetRequirements(modArchiveFileList));
+                RequiredFiles = await GetRequirements(modArchiveFileList);
             }
 
             return new Dictionary<string, object>
