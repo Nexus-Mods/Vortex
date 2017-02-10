@@ -6,6 +6,12 @@ export interface IProps {
   totalWidth: number;
 }
 
+/**
+ * wrapper for packery
+ * 
+ * @class Packery
+ * @extends {React.Component<IProps, {}>}
+ */
 class Packery extends React.Component<IProps, {}> {
   private mPackery: PackeryLib;
   private mRefreshTimer: NodeJS.Timer;
@@ -15,7 +21,9 @@ class Packery extends React.Component<IProps, {}> {
   }
 
   public componentDidUpdate() {
-    this.mPackery.layout();
+    if (this.mPackery !== undefined) {
+      this.mPackery.layout();
+    }
   }
 
   public componentWillReceiveProps() {
@@ -29,8 +37,15 @@ class Packery extends React.Component<IProps, {}> {
     }, 50);
   }
 
+  public componentDidMount() {
+    setTimeout(() => {
+      this.mPackery.layout();
+    });
+  }
+
   public componentWillUnmount() {
     clearTimeout(this.mRefreshTimer);
+    this.mPackery = undefined;
   }
 
   public render(): JSX.Element {
@@ -45,8 +60,12 @@ class Packery extends React.Component<IProps, {}> {
 
   private refContainer = (ele: Element) => {
     const options = {};
-    let PackeryLibImpl = require('packery');
-    this.mPackery = new PackeryLibImpl(ele, options);
+    if (ele !== null) {
+      let PackeryLibImpl = require('packery');
+      this.mPackery = new PackeryLibImpl(ele, options);
+    } else {
+      this.mPackery = undefined;
+    }
   }
 }
 
