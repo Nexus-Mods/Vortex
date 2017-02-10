@@ -17,21 +17,27 @@ export type ButtonProps = ITooltipProps & typeof BootstrapButton.defaultProps;
  * 
  */
 export const Button = (props: ButtonProps) => {
-  let tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
   let relayProps = Object.assign({}, props);
   delete relayProps.tooltip;
   delete relayProps.placement;
 
-  return (
-    <OverlayTrigger
-      overlay={tooltip}
-      placement={props.placement || 'bottom'}
-      delayShow={300}
-      delayHide={150}
-    >
-      <BootstrapButton {...relayProps}>{props.children}</BootstrapButton>
-    </OverlayTrigger>
-  );
+  if (typeof(props.tooltip) === 'string') {
+    return (<BootstrapButton {...relayProps} title={props.tooltip}>
+      {props.children}
+    </BootstrapButton>);
+  } else {
+    const tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
+    return (
+      <OverlayTrigger
+        overlay={tooltip}
+        placement={props.placement || 'bottom'}
+        delayShow={300}
+        delayHide={150}
+      >
+        <BootstrapButton {...relayProps}>{props.children}</BootstrapButton>
+      </OverlayTrigger>
+    );
+  }
 };
 
 export interface IIconButtonExtraProps {
@@ -41,24 +47,29 @@ export interface IIconButtonExtraProps {
 export type IconButtonProps = ButtonProps & IIconButtonExtraProps;
 
 export const IconButton = (props: IconButtonProps) => {
-  let tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
   let relayProps = Object.assign({}, props);
   delete relayProps.tooltip;
   delete relayProps.placement;
   delete relayProps.icon;
-
-  return (
-    <OverlayTrigger
-      overlay={tooltip}
-      placement={props.placement || 'bottom'}
-      delayShow={300}
-      delayHide={150}
-    >
-      <BootstrapButton {...relayProps}>
+  if (typeof(props.tooltip) === 'string') {
+  return (<BootstrapButton {...relayProps} title={props.tooltip}>
         <SvgIcon name={props.icon} />
-      </BootstrapButton>
-    </OverlayTrigger>
-  );
+      </BootstrapButton>);
+  } else {
+    const tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
+    return (
+      <OverlayTrigger
+        overlay={tooltip}
+        placement={props.placement || 'bottom'}
+        delayShow={300}
+        delayHide={150}
+      >
+        <BootstrapButton {...relayProps}>
+          <SvgIcon name={props.icon} />
+        </BootstrapButton>
+      </OverlayTrigger>
+    );
+  }
 };
 
 export interface IToggleButtonExtraProps {
@@ -71,49 +82,61 @@ export interface IToggleButtonExtraProps {
 export type ToggleButtonProps = ButtonProps & IToggleButtonExtraProps;
 
 export const ToggleButton = (props: ToggleButtonProps) => {
-  let tooltip = (
-    <Popover id={props.id}>
-      {props.state ? props.tooltip : props.offTooltip}
-    </Popover>
-  );
   let relayProps = Object.assign({}, props);
 
   ['tooltip', 'offTooltip', 'placement', 'onIcon', 'offIcon', 'state'].forEach((prop) => {
     delete relayProps[prop];
   });
 
-  return (
-    <OverlayTrigger
-      overlay={tooltip}
-      placement={props.placement || 'bottom'}
-      delayShow={300}
-      delayHide={150}
-    >
-      <BootstrapButton {...relayProps}>
-        <SvgIcon name={props.state ? props.onIcon : props.offIcon} />
-      </BootstrapButton>
-    </OverlayTrigger>
-  );
+  if (typeof(props.tooltip) === 'string') {
+    return (<BootstrapButton {...relayProps} title={props.tooltip}>
+      <SvgIcon name={props.state ? props.onIcon : props.offIcon} />
+    </BootstrapButton>);
+  } else {
+    const tooltip = (
+      <Popover id={props.id}>
+        {props.state ? props.tooltip : props.offTooltip}
+      </Popover>
+    );
+    return (
+      <OverlayTrigger
+        overlay={tooltip}
+        placement={props.placement || 'bottom'}
+        delayShow={300}
+        delayHide={150}
+      >
+        <BootstrapButton {...relayProps}>
+          <SvgIcon name={props.state ? props.onIcon : props.offIcon} />
+        </BootstrapButton>
+      </OverlayTrigger>
+    );
+  }
 };
 
 export type NavItemProps = ITooltipProps & typeof BootstrapNavItem.defaultProps;
 
 export const NavItem = (props: NavItemProps) => {
-  let tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
   let relayProps = Object.assign({}, props);
   delete relayProps.tooltip;
   delete relayProps.placement;
 
-  return (
-    <OverlayTrigger
-      overlay={tooltip}
-      placement={props.placement || 'bottom'}
-      delayShow={300}
-      delayHide={150}
-    >
-      <BootstrapNavItem {...relayProps}>{props.children}</BootstrapNavItem>
-    </OverlayTrigger>
-  );
+  if (typeof(props.tooltip) === 'string') {
+    return <BootstrapNavItem {...relayProps} title={props.tooltip}>
+      {props.children}
+    </BootstrapNavItem>;
+  } else {
+    let tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
+    return (
+      <OverlayTrigger
+        overlay={tooltip}
+        placement={props.placement || 'bottom'}
+        delayShow={300}
+        delayHide={150}
+      >
+        <BootstrapNavItem {...relayProps}>{props.children}</BootstrapNavItem>
+      </OverlayTrigger>
+    );
+  }
 };
 
 type FontAwesomeSize = 'lg' | '2x' | '3x' | '4x' | '5x';
@@ -146,19 +169,26 @@ export type IconProps = ITooltipProps & IFontAwesomeProps;
  * @class Icon
  */
 export const Icon = (props: IconProps) => {
-  const tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
   let relayProps = Object.assign({}, props);
   delete relayProps.tooltip;
   delete relayProps.placement;
 
-  return (
-    <OverlayTrigger
-      overlay={tooltip}
-      placement={props.placement || 'bottom'}
-      delayShow={300}
-      delayHide={150}
-    >
-      <a className='fake-link'><SvgIcon {...relayProps} /></a>
-    </OverlayTrigger>
-  );
+  if (typeof(props.tooltip) === 'string') {
+    return <a className='fake-link' title={props.tooltip}>
+      <SvgIcon {...relayProps} />
+    </a>;
+  } else {
+    const tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
+
+    return (
+      <OverlayTrigger
+        overlay={tooltip}
+        placement={props.placement || 'bottom'}
+        delayShow={300}
+        delayHide={150}
+      >
+        <a className='fake-link'><SvgIcon {...relayProps} /></a>
+      </OverlayTrigger>
+    );
+  }
 };
