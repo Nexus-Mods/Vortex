@@ -1,5 +1,9 @@
 $prefixClass: rc-slider;
 
+@function tint($color, $perc) {
+  @return mix(white, $color, $perc);
+}
+
 $disabledColor: #ccc;
 $border-radius-base: 6px;
 $primary-color: #2db7f5;
