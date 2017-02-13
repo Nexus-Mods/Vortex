@@ -25,6 +25,7 @@ import Module = require('module');
 import {} from '../extensions/about_dialog';
 import {} from '../extensions/category_management';
 import {} from '../extensions/dashboard';
+import {} from '../extensions/diagnostics_files';
 import {} from '../extensions/download_management';
 import {} from '../extensions/firststeps_dashlet';
 import {} from '../extensions/gamemode_management';
@@ -591,6 +592,7 @@ class ExtensionManager {
     let staticExtensions = [
       'settings_interface',
       'about_dialog',
+      'diagnostics_files',
       'dashboard',
       'starter_dashlet',
       'firststeps_dashlet',
