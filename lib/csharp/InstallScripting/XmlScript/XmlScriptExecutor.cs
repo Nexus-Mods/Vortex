@@ -5,6 +5,7 @@ using Components.Interface;
 using Components.Scripting;
 using System.Linq;
 using Components.Interface.ui;
+using System.IO;
 
 namespace Components.Scripting.XmlScript
 {
@@ -42,7 +43,7 @@ namespace Components.Scripting.XmlScript
         /// <c>false</c> otherwise.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="scpScript"/> is not an
         /// <see cref="XmlScript"/>.</exception>
-        public async override Task<IList<Instruction>> DoExecute(IScript scpScript)
+        public async override Task<IList<Instruction>> DoExecute(IScript scpScript, string strPrefixPath)
         {
             TaskCompletionSource<IList<Instruction>> Source = new TaskCompletionSource<IList<Instruction>>(); 
             List<InstallableFile> FilesToInstall = new List<InstallableFile>();
@@ -61,7 +62,7 @@ namespace Components.Scripting.XmlScript
             IList<InstallStep> lstSteps = xscScript.InstallSteps;
             HeaderInfo hifHeaderInfo = xscScript.HeaderInfo;
             if (string.IsNullOrEmpty(hifHeaderInfo.ImagePath))
-                hifHeaderInfo.ImagePath = ModArchive.ScreenshotPath;
+                hifHeaderInfo.ImagePath = Path.Combine(strPrefixPath, ModArchive.ScreenshotPath);
             if ((hifHeaderInfo.Height < 0) && hifHeaderInfo.ShowImage)
                 hifHeaderInfo.Height = 75;
 
@@ -100,11 +101,11 @@ namespace Components.Scripting.XmlScript
                 {
                     m_Delegates.ui.EndDialog();
                     XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
-                    Source.SetResult(xsiInstaller.Install(xscScript, m_csmState, m_Delegates, FilesToInstall, PluginsToActivate));
+                    Source.SetResult(xsiInstaller.Install(xscScript, m_csmState, m_Delegates, strPrefixPath, FilesToInstall, PluginsToActivate));
                 }
                 else
                 {
-                    sendState(lstSteps, stepIdx);
+                    sendState(lstSteps, strPrefixPath, stepIdx);
                 }
             };
             Action cancel = () => {
@@ -115,12 +116,12 @@ namespace Components.Scripting.XmlScript
                 new HeaderImage(hifHeaderInfo.ImagePath, hifHeaderInfo.ShowFade, hifHeaderInfo.Height),
                 select, cont, cancel);
 
-            sendState(lstSteps, stepIdx);
+            sendState(lstSteps, strPrefixPath, stepIdx);
 
             return await Source.Task;
         }
  
-        private void sendState(IList<InstallStep> lstSteps, int stepIdx)
+        private void sendState(IList<InstallStep> lstSteps, string strPrefixPath, int stepIdx)
         {
             Func<IEnumerable<InstallStep>, IEnumerable<InstallerStep>> convertSteps = steps =>
             {
@@ -132,7 +133,8 @@ namespace Components.Scripting.XmlScript
             Func<IEnumerable<Option>, IEnumerable<Interface.ui.Option>> convertOptions = options =>
             {
                 int idx = 0;
-                return options.Select(option => new Interface.ui.Option(idx++, option.Name, option.Description, option.ImagePath));
+                return options.Select(option => new Interface.ui.Option(idx++, option.Name, option.Description,
+                    string.IsNullOrEmpty(option.ImagePath) ? null : Path.Combine(strPrefixPath, option.ImagePath)));
             };
 
             Func<IEnumerable<OptionGroup>, IEnumerable<Group>> convertGroups = groups =>

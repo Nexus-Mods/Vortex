@@ -148,15 +148,12 @@ namespace Components.Interface
         {
             List<string> DirectoryFiles = new List<string>();
 
-            string PathPrefix = targetDirectory;
-            PathPrefix = PathPrefix.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-            PathPrefix = PathPrefix.Trim(Path.DirectorySeparatorChar);
-            if (PathPrefix.Length > 0)
-                PathPrefix += Path.DirectorySeparatorChar;
+            string PathPrefix = NormalizePath(targetDirectory, true);
+
             int StopIndex = 0;
             foreach (string file in ModFiles)
             {
-                if (file.StartsWith(PathPrefix, StringComparison.InvariantCultureIgnoreCase))
+                if (NormalizePath(file).StartsWith(PathPrefix))
                 {
                     if (!isRecursive)
                     {
@@ -169,6 +166,19 @@ namespace Components.Interface
             }
 
             return DirectoryFiles;
+        }
+
+        private string NormalizePath(string path, bool dirTerminate = false)
+        {
+            string temp = path
+                .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+                .Trim(Path.DirectorySeparatorChar)
+                .ToLowerInvariant();
+            if (dirTerminate && (temp.Length > 0))
+            {
+                temp += Path.DirectorySeparatorChar;
+            }
+            return temp;
         }
 
         public static int CompareOrderFoldersFirst(string x, string y)

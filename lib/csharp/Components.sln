@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModScript", "InstallScripti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModInstallerTests", "ModInstallerTests\ModInstallerTests.csproj", "{493549E4-5E9A-4F4B-8421-983DF255F02E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UtilsTests", "UtilsTests\UtilsTests.csproj", "{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +129,18 @@ Global
 		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Release|x64.Build.0 = Release|Any CPU
 		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Release|x86.ActiveCfg = Release|Any CPU
 		{493549E4-5E9A-4F4B-8421-983DF255F02E}.Release|x86.Build.0 = Release|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Debug|x64.Build.0 = Debug|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Debug|x86.Build.0 = Debug|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Release|x64.ActiveCfg = Release|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Release|x64.Build.0 = Release|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Release|x86.ActiveCfg = Release|Any CPU
+		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

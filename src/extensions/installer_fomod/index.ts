@@ -1,6 +1,6 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 
-import { setInstallerDataPath } from './actions/installerUI';
+import { endDialog, setInstallerDataPath } from './actions/installerUI';
 import Core from './delegates/core';
 import { installerUIReducer } from './reducers/installerUI';
 import InstallerDialog from './views/InstallerDialog';
@@ -73,7 +73,12 @@ function init(context: IExtensionContextExt): boolean {
     context.registerInstaller(100, testSupported,
     (files, scriptPath, progressDelegate) => {
       context.api.store.dispatch(setInstallerDataPath(scriptPath));
-      return install(files, scriptPath, progressDelegate);
+      return install(files, scriptPath, progressDelegate)
+      .catch((err) => {
+        context.api.store.dispatch(endDialog());
+        return Promise.reject(err);
+      })
+      ;
     });
   }
 

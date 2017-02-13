@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Utils;
 using Components.Interface;
 using Components.Scripting;
+using ModInstaller;
 
 namespace Components.ModInstaller
 {
@@ -60,7 +61,9 @@ namespace Components.ModInstaller
             ModFormatManager FormatManager = new ModFormatManager();
 
             // There should only be one script file inside a mod archive
-            string ScriptFilePath = new List<string>(await GetRequirements(FileSystem.GetFiles(scriptPath, "*", System.IO.SearchOption.AllDirectories))).FirstOrDefault();
+            // TODO But we don't extract just one file! That's why TestSupported returns "requiredFiles" as a list
+            //   and not "requiredFile" as a string
+            string ScriptFilePath = new List<string>(await GetRequirements(FileSystem.GetFiles(scriptPath, "ModuleConfig.xml", System.IO.SearchOption.AllDirectories))).FirstOrDefault();
             IScriptType ScriptType = await GetScriptType(modArchiveFileList);
             Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath, ScriptType);
             await modToInstall.Initialize();
@@ -68,9 +71,16 @@ namespace Components.ModInstaller
             progressDelegate(50);
 
             if (modToInstall.HasInstallScript)
-                Instructions = await ScriptedModInstall(modToInstall, progressDelegate, coreDelegate);
+            {
+                ArchiveStructure arch = new ArchiveStructure(modArchiveFileList);
+                string prefix = arch.FindPathPrefix(new string[] { "fomod" }, new string[] { @".*\.esp", @".*\.esm" });
+
+                Instructions = await ScriptedModInstall(modToInstall, prefix, progressDelegate, coreDelegate);
+            }
             else
+            {
                 Instructions = await BasicModInstall(modArchiveFileList, progressDelegate, coreDelegate);
+            }
 
             progressDelegate(100);
 
@@ -137,14 +147,15 @@ namespace Components.ModInstaller
         /// This will assign all files to the proper destination.
         /// </summary>
         /// <param name="modArchive">The list of files inside the mod archive.</param>
+        /// <param name="prefixPath">base path for all relative paths</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
         /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
-        protected async Task<IList<Instruction>> ScriptedModInstall(Mod modArchive, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
+        protected async Task<IList<Instruction>> ScriptedModInstall(Mod modArchive, string prefixPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
             IList<Instruction> Instructions = new List<Instruction>();
 
             IScriptExecutor sexScript = modArchive.InstallScript.Type.CreateExecutor(modArchive, coreDelegate);
-            return await sexScript.Execute(modArchive.InstallScript);
+            return await sexScript.Execute(modArchive.InstallScript, prefixPath);
         }
 
         #endregion

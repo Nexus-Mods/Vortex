@@ -43,7 +43,7 @@ namespace Components.Scripting.ModScript
 		/// <c>false</c> otherwise.</returns>
 		/// <exception cref="ArgumentException">Thrown if <paramref name="p_scpScript"/> is not a
 		/// <see cref="ModScript"/>.</exception>
-		public override Task<IList<Instruction>> DoExecute(IScript p_scpScript)
+		public override Task<IList<Instruction>> DoExecute(IScript p_scpScript, string p_strPrefixPath)
 		{
 			if (!(p_scpScript is ModScript))
 				throw new ArgumentException("The given script must be of type ModScript.", "p_scpScript");

@@ -45,6 +45,7 @@
     <Compile Include="Collections\ThreadSafeObservableList.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="FileSystem.cs" />
+    <Compile Include="FileTree.cs" />
     <Compile Include="Interfaces\FileSystemBase.cs" />
     <Compile Include="Interfaces\IFileInfo.cs" />
     <Compile Include="Interfaces\IFileSystem.cs" />

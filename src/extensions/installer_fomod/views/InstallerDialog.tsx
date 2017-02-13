@@ -8,10 +8,9 @@ import {GroupType, IGroup, IHeaderImage, IInstallStep, IInstallerState,
 import * as path from 'path';
 import * as React from 'react';
 import update = require('react-addons-update');
-import { Checkbox, ControlLabel, Form, FormGroup, Image, Modal, Pager,
+import { Checkbox, ControlLabel, Form, FormGroup, Modal, Pager,
          ProgressBar, Radio } from 'react-bootstrap';
-
- import { Fixed, Flex, Layout } from 'react-layout-pane';
+import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 interface IPluginProps {
   plugin: IPlugin;
@@ -21,22 +20,9 @@ interface IPluginProps {
 class Plugin extends React.PureComponent<IPluginProps, {}> {
   public render(): JSX.Element {
     const {plugin} = this.props;
-    const details = <div>{plugin.description} {plugin.image}</div>;
     return (<div className='fomod-plugin-item'>
       {plugin.name}
-      <IconButton
-        id={`btn-${plugin.id}`}
-        className='pull-right btn-embed'
-        tooltip={details}
-        icon='image'
-        onClick={this.showDescription}
-      />
     </div>);
-  }
-
-  private showDescription = () => {
-    const {plugin, onShowDescription} = this.props;
-    onShowDescription(plugin.image, plugin.description);
   }
 }
 
@@ -119,8 +105,11 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   private select = (evt: React.FormEvent<any>) => {
-    const {group} = this.props;
+    const {group, onShowDescription} = this.props;
     const pluginId = parseInt(evt.currentTarget.value, 10);
+
+    const {image, description} = group.options[pluginId];
+    onShowDescription(image, description);
 
     if (group.type === 'SelectExactlyOne') {
       this.setState({ selectedPlugins: [pluginId] });
@@ -183,6 +172,11 @@ interface IConnectedProps {
   installerState: IInstallerState;
 }
 
+interface ISize {
+  width: number;
+  height: number;
+}
+
 interface IDialogState {
   invalidGroups: string[];
   currentImage: string;
@@ -204,12 +198,16 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
-    this.setState({ invalidGroups: [], currentImage: undefined, currentDescription: undefined });
+    this.setState({
+      invalidGroups: [],
+      currentImage: undefined,
+      currentDescription: undefined,
+    });
   }
 
   public render(): JSX.Element {
-    const { t, dataPath, installerInfo, installerState } = this.props;
-    const { currentDescription, currentImage } = this.state;
+    const { t, installerInfo, installerState } = this.props;
+    const { currentDescription } = this.state;
     if ((installerInfo === undefined) || (installerState === undefined)) {
       return null;
     }
@@ -228,7 +226,11 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
     const nextDisabled = this.state.invalidGroups.length > 0;
 
     return (
-      <Modal show={true} onHide={this.nop} >
+      <Modal
+        id='fomod-installer-dialog'
+        show={true}
+        onHide={this.nop}
+      >
         <Modal.Header>
           <h3>{installerInfo.moduleName}</h3>
           <IconButton
@@ -242,19 +244,17 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
         </Modal.Header>
         <Modal.Body>
           <Layout type='row' style={{ position: 'relative' }}>
-            <Fixed>
+            <Flex>
               <Step
                 step={steps[idx]}
                 onSelect={this.select}
                 onShowDescription={this.showDescription}
               />
-            </Fixed>
-            <Flex>
-              { currentImage !== undefined
-                ? <Image src={path.join(dataPath, currentImage)} />
-                : null }
-              <ControlLabel readOnly={true}>{currentDescription}</ControlLabel>
             </Flex>
+            <Fixed style={{ maxWidth: '60%' }}>
+              { this.renderImage() }
+              <ControlLabel readOnly={true}>{currentDescription}</ControlLabel>
+            </Fixed>
           </Layout>
         </Modal.Body>
         <Modal.Footer>
@@ -291,6 +291,20 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
       this.setState(pushSafe(this.state, ['invalidGroups'], groupId));
     }
   };
+
+  private renderImage = () => {
+    const { dataPath } = this.props;
+    const { currentImage } = this.state;
+
+    if ((currentImage === undefined) || (currentImage === null)) {
+      return null;
+    }
+
+    return (<img
+        src={path.join(dataPath, currentImage)}
+        style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }}
+    />);
+  }
 
   private showDescription = (image: string, description: string) => {
     this.setState(update(this.state, {
