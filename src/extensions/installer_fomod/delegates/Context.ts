@@ -33,6 +33,14 @@ export class Context extends DelegateBase {
     return getVersion(currentGameExecutablePath);
   }
 
+  public getExtenderVersion = (extender: string): string => {
+    return null;
+  }
+
+  public isExtenderPresent = (): boolean => {
+    return false;
+  }
+
   public checkIfFileExists = (fileName: string): boolean => {
     log('info', 'checkIfFileExists called', util.inspect(fileName));
     let state = this.api.store.getState();

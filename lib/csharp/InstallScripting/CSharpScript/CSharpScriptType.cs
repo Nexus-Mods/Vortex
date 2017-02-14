@@ -68,7 +68,7 @@ namespace Components.Scripting.CSharpScript
         public IScriptExecutor CreateExecutor(Mod modArchive, CoreDelegates delegates)
 		{
 			CSharpScriptFunctionProxy csfFunctions = GetScriptFunctionProxy(modArchive, delegates);
-			return new CSharpScriptExecutor();
+			return new CSharpScriptExecutor(csfFunctions, BaseScriptType);
 		}
 
 		/// <summary>

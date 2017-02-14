@@ -46,6 +46,8 @@ namespace Components.Interface
     {
         private Func<object, Task<object>> mGetAppVersion;
         private Func<object, Task<object>> mGetCurrentGameVersion;
+        private Func<object, Task<object>> mGetExtenderVersion;
+        private Func<object, Task<object>> mIsExtenderPresent;
         private Func<object, Task<object>> mCheckIfFileExists;
 
         public ContextDelegates(dynamic source)
@@ -65,6 +67,18 @@ namespace Components.Interface
         {
             object res = await mGetCurrentGameVersion(null);
             return (string)res;
+        }
+
+        public async Task<string> GetExtenderVersion(string extender)
+        {
+            object res = await mGetExtenderVersion(extender);
+            return (string)res;
+        }
+
+        public async Task<bool> IsExtenderPresent()
+        {
+            object res = await mIsExtenderPresent(null);
+            return (bool)res;
         }
 
         public async Task<bool> CheckIfFileExists(string fileName)

@@ -5,6 +5,7 @@ using Utils;
 using Components.Interface;
 using Components.Scripting;
 using ModInstaller;
+using System.IO;
 
 namespace Components.ModInstaller
 {
@@ -37,7 +38,14 @@ namespace Components.ModInstaller
                 test = false;
             else
             {
-                RequiredFiles = await GetRequirements(modArchiveFileList);
+                try
+                {
+                    RequiredFiles = await GetRequirements(modArchiveFileList, true);
+                } catch (UnsupportedException)
+                {
+                    test = false;
+                }
+
             }
 
             return new Dictionary<string, object>
@@ -60,10 +68,8 @@ namespace Components.ModInstaller
             IList<Instruction> Instructions = new List<Instruction>();
             ModFormatManager FormatManager = new ModFormatManager();
 
-            // There should only be one script file inside a mod archive
-            // TODO But we don't extract just one file! That's why TestSupported returns "requiredFiles" as a list
-            //   and not "requiredFile" as a string
-            string ScriptFilePath = new List<string>(await GetRequirements(FileSystem.GetFiles(scriptPath, "ModuleConfig.xml", System.IO.SearchOption.AllDirectories))).FirstOrDefault();
+            string ScriptFilePath = new List<string>(await GetRequirements(modArchiveFileList, false)).FirstOrDefault();
+            ScriptFilePath = Path.Combine(scriptPath, ScriptFilePath);
             IScriptType ScriptType = await GetScriptType(modArchiveFileList);
             Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath, ScriptType);
             await modToInstall.Initialize();
@@ -98,12 +104,15 @@ namespace Components.ModInstaller
         /// <summary>
         /// This function will return the list of files requirements to complete this mod's installation.
         /// <param name="modFiles">The list of files inside the mod archive.</param>
+        /// <param name="includeAssets">If true, the result will also include all assets required by the
+        ///   installer (i.e. screenshots). Otherwise the result should only be one file which is the
+        ///   installer script</param>
         /// </summary>
-        protected async Task<IList<string>> GetRequirements(IList<string> modFiles)
+        protected async Task<IList<string>> GetRequirements(IList<string> modFiles, bool includeAssets)
         {
             ModFormatManager FormatManager = new ModFormatManager();
 
-            return await FormatManager.GetRequirements(modFiles);
+            return await FormatManager.GetRequirements(modFiles, includeAssets);
         }
 
         /// <summary>

@@ -10,6 +10,13 @@ using System.Text;
 
 namespace Components.ModInstaller
 {
+    [Serializable]
+    public class UnsupportedException : Exception
+    {
+        public UnsupportedException()
+        { }
+    }
+
     public class ModFormatManager
     {
 
@@ -35,18 +42,20 @@ namespace Components.ModInstaller
 
         #endregion
 
-        public async Task<IList<string>> GetRequirements(IList<string> modFiles)
+        public async Task<IList<string>> GetRequirements(IList<string> modFiles, bool includeAssets)
         {
             CurrentScriptTypeRegistry = await ScriptTypeRegistry.DiscoverScriptTypes(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             // TODO: I don't think there is a good way to determine which image files are referenced by the installer script without
             //   unpacking it first, right?
-            IList<string> RequiredFiles = modFiles.Where(path => ScreenshotExtensions.Contains(Path.GetExtension(path))).ToList();
+            IList<string> RequiredFiles = includeAssets
+                ? modFiles.Where(path => ScreenshotExtensions.Contains(Path.GetExtension(path))).ToList()
+                : new List<string>();
 
-            await Task.Run(() =>
+            return await Task.Run(() =>
             {
+                bool HasFoundScriptType = false;
                 foreach (IScriptType scriptType in CurrentScriptTypeRegistry.Types)
                 {
-                    bool HasFoundScriptType = false;
                     if (scriptType.FileNames != null)
                     {
                         foreach (string scriptFile in scriptType.FileNames)
@@ -65,9 +74,14 @@ namespace Components.ModInstaller
                     if (HasFoundScriptType)
                         break;
                 }
-            });
 
-            return RequiredFiles;
+                if (!HasFoundScriptType)
+                {
+                    throw new UnsupportedException();
+                }
+
+                return RequiredFiles;
+            });
         }
 
         public async Task<IScriptType> GetScriptType(IList<string> modFiles)
