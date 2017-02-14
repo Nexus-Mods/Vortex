@@ -95,7 +95,7 @@
     "@types/ffi": "^0.0.18",
     "@types/form-data": "^0.0.32",
     "@types/graphlib": "^2.1.2",
-    "@types/lodash": "^4.14.44",
+    "@types/lodash": "^4.14.52",
     "@types/node": "^6.0.45",
     "@types/node-uuid": "^0.0.28",
     "@types/packery": "^1.4.29",
@@ -116,7 +116,7 @@
     "@types/ref-struct": "^0.0.28",
     "@types/ref-union": "^0.0.28",
     "@types/shortid": "^0.0.28",
-    "@types/tmp": "^0.0.31",
+    "@types/tmp": "^0.0.32",
     "babel-cli": "^6.14.0",
     "babel-core": "^6.14.0",
     "babel-jest": "^15.0.0",
@@ -162,12 +162,13 @@
     "less": "^2.7.1",
     "less-plugin-clean-css": "^1.5.1",
     "level-js": "^2.2.4",
+    "lodash": "^4.17.4",
     "modinstaller": "file:lib\\csharp",
     "modmeta-db": "file:external\\modmeta-db",
     "nbind": "^0.3.6",
     "nexus-api": "file:lib\\js\\nexus-api",
     "nmm-api": "file:api",
-    "node-7z": "quentinrossetti/node-7z#ab0ea6ed31cba4af2eb65bb0cffd75c7b9655573",
+    "node-7z": "TanninOne/node-7z",
     "node-ipc": "^8.9.2",
     "node-rest-client": "^2.0.1",
     "node-sass": "^4.3.0",
@@ -227,6 +228,6 @@
     "react-contextmenu": "^1.6.3",
     "react-dom": "^15.3.0",
     "source-map-support": "^0.4.10",
-    "typescript": "^2.1.4"
+    "typescript": "2.1.6"
   }
 }

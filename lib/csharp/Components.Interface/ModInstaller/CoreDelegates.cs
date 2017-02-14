@@ -93,16 +93,18 @@ namespace Components.Interface
         public struct Option
         {
             public int id;
+            public bool selected;
             public string name;
             public string description;
             public string image;
 
-            public Option(int id, string name, string description, string image) : this()
+            public Option(int id, string name, string description, string image, bool selected) : this()
             {
                 this.id = id;
                 this.name = name;
                 this.description = description;
                 this.image = image;
+                this.selected = selected;
             }
         }
 

@@ -46,7 +46,6 @@ namespace Components.Scripting.XmlScript
         public async override Task<IList<Instruction>> DoExecute(IScript scpScript, string strPrefixPath)
         {
             TaskCompletionSource<IList<Instruction>> Source = new TaskCompletionSource<IList<Instruction>>(); 
-            List<InstallableFile> FilesToInstall = new List<InstallableFile>();
             List<InstallableFile> PluginsToActivate = new List<InstallableFile>();
 
             m_csmState = new ConditionStateManager();
@@ -62,10 +61,11 @@ namespace Components.Scripting.XmlScript
             IList<InstallStep> lstSteps = xscScript.InstallSteps;
             HeaderInfo hifHeaderInfo = xscScript.HeaderInfo;
             if (string.IsNullOrEmpty(hifHeaderInfo.ImagePath))
-                hifHeaderInfo.ImagePath = Path.Combine(strPrefixPath, ModArchive.ScreenshotPath);
+                hifHeaderInfo.ImagePath = string.IsNullOrEmpty(ModArchive.ScreenshotPath) ? null : Path.Combine(strPrefixPath, ModArchive.ScreenshotPath);
             if ((hifHeaderInfo.Height < 0) && hifHeaderInfo.ShowImage)
                 hifHeaderInfo.Height = 75;
 
+            ISet<Option> selectedOptions = new HashSet<Option>();
 
             Action<int, int, int[]> select = (int stepId, int groupId, int[] optionIds) =>
             {
@@ -75,12 +75,14 @@ namespace Components.Scripting.XmlScript
                 {
                     if (selectedIds.Contains(i))
                     {
+                        selectedOptions.Add(options[i]);
                         options[i].Flags.ForEach((ConditionalFlag flag) =>
                         {
                             m_csmState.SetFlagValue(flag.Name, flag.ConditionalValue, options[i]);
                         });
                     } else
                     {
+                        selectedOptions.Remove(options[i]);
                         m_csmState.RemoveFlags(options[i]);
                     }
                 }
@@ -101,11 +103,16 @@ namespace Components.Scripting.XmlScript
                 {
                     m_Delegates.ui.EndDialog();
                     XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
+                    IEnumerable<InstallableFile> FilesToInstall = new List<InstallableFile>();
+                    foreach (IEnumerable<InstallableFile> files in selectedOptions.Select(option => option.Files))
+                    {
+                        FilesToInstall = FilesToInstall.Union(files);
+                    }
                     Source.SetResult(xsiInstaller.Install(xscScript, m_csmState, m_Delegates, strPrefixPath, FilesToInstall, PluginsToActivate));
                 }
                 else
                 {
-                    sendState(lstSteps, strPrefixPath, stepIdx);
+                    sendState(lstSteps, strPrefixPath, selectedOptions, stepIdx);
                 }
             };
             Action cancel = () => {
@@ -116,12 +123,12 @@ namespace Components.Scripting.XmlScript
                 new HeaderImage(hifHeaderInfo.ImagePath, hifHeaderInfo.ShowFade, hifHeaderInfo.Height),
                 select, cont, cancel);
 
-            sendState(lstSteps, strPrefixPath, stepIdx);
+            sendState(lstSteps, strPrefixPath, selectedOptions, stepIdx);
 
             return await Source.Task;
         }
  
-        private void sendState(IList<InstallStep> lstSteps, string strPrefixPath, int stepIdx)
+        private void sendState(IList<InstallStep> lstSteps, string strPrefixPath, ISet<Option> selected, int stepIdx)
         {
             Func<IEnumerable<InstallStep>, IEnumerable<InstallerStep>> convertSteps = steps =>
             {
@@ -134,7 +141,9 @@ namespace Components.Scripting.XmlScript
             {
                 int idx = 0;
                 return options.Select(option => new Interface.ui.Option(idx++, option.Name, option.Description,
-                    string.IsNullOrEmpty(option.ImagePath) ? null : Path.Combine(strPrefixPath, option.ImagePath)));
+                    string.IsNullOrEmpty(option.ImagePath) ? null : Path.Combine(strPrefixPath, option.ImagePath),
+                    selected.Contains(option)
+                    ));
             };
 
             Func<IEnumerable<OptionGroup>, IEnumerable<Group>> convertGroups = groups =>

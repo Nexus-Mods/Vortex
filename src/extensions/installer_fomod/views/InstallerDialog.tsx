@@ -5,6 +5,7 @@ import {IconButton} from '../../../views/TooltipControls';
 import {GroupType, IGroup, IHeaderImage, IInstallStep, IInstallerState,
         IPlugin, OrderType} from '../types/interface';
 
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import update = require('react-addons-update');
@@ -12,21 +13,8 @@ import { Checkbox, ControlLabel, Form, FormGroup, Modal, Pager,
          ProgressBar, Radio } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
-interface IPluginProps {
-  plugin: IPlugin;
-  onShowDescription: (image: string, description: string) => void;
-}
-
-class Plugin extends React.PureComponent<IPluginProps, {}> {
-  public render(): JSX.Element {
-    const {plugin} = this.props;
-    return (<div className='fomod-plugin-item'>
-      {plugin.name}
-    </div>);
-  }
-}
-
 interface IGroupProps {
+  stepId: number;
   group: IGroup;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
   onShowDescription: (image: string, description: string) => void;
@@ -40,7 +28,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   constructor(props: IGroupProps) {
     super(props);
     this.state = {
-      selectedPlugins: [],
+      selectedPlugins: this.getSelectedPlugins(props),
     };
   }
 
@@ -49,6 +37,12 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     const {selectedPlugins} = this.state;
     const valid = this.validateFunc(group.type)(selectedPlugins);
     onSelect(group.id, this.state.selectedPlugins, valid);
+  }
+
+  public componentWillReceiveProps(newProps: IGroupProps) {
+    if (!_.isEqual(this.props.group, newProps.group)) {
+      this.setState({ selectedPlugins: this.getSelectedPlugins(newProps) });
+    }
   }
 
   public render(): JSX.Element {
@@ -65,6 +59,12 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     </FormGroup>);
   }
 
+  private getSelectedPlugins(props: IGroupProps) {
+    return props.group.options
+      .filter((plugin) => plugin.selected)
+      .map((plugin) => plugin.id);
+  }
+
   private validateFunc(type: GroupType) {
     switch (type) {
       case 'SelectAtLeastOne': return (selected: number[]) => selected.length > 0;
@@ -75,31 +75,30 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   private renderPlugin = (plugin: IPlugin): JSX.Element => {
-    const {group, onShowDescription} = this.props;
+    const {group, stepId} = this.props;
     const {selectedPlugins} = this.state;
-    const inner = <Plugin key={plugin.id} plugin={plugin} onShowDescription={onShowDescription}/>;
 
     const isSelected = selectedPlugins.indexOf(plugin.id) !== -1;
 
     switch (group.type) {
       case 'SelectExactlyOne':
         return <Radio
-          id={`radio-${group.id}-${plugin.id}`}
+          id={`radio-${stepId}-${group.id}-${plugin.id}`}
           key={plugin.id}
           value={plugin.id}
           name={group.id.toString()}
           checked={isSelected}
           onChange={this.select}
-        >{inner}
+        >{plugin.name}
         </Radio>;
-      case 'SelectAll': return inner;
+      case 'SelectAll': return <div>{plugin.name}</div>;
       default: return <Checkbox
-        id={`checkbox-${group.id}-${plugin.id}`}
+        id={`checkbox-${stepId}-${group.id}-${plugin.id}`}
         key={plugin.id}
         value={plugin.id}
         checked={isSelected}
         onChange={this.select}
-      >{inner}
+      >{plugin.name}
       </Checkbox>;
     }
   }
@@ -150,7 +149,8 @@ function Step(props: IStepProps) {
   return <Form id='fomod-installer-form'>
     {groupsSorted.map((group: IGroup) =>
       <Group
-        key={group.id}
+        key={`${props.step.id}-${group.id}`}
+        stepId={props.step.id}
         group={group}
         onSelect={props.onSelect}
         onShowDescription={props.onShowDescription}

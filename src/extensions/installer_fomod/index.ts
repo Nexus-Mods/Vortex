@@ -51,16 +51,16 @@ function testSupported(files: string[]): Promise<boolean> {
 function install(files: string[], scriptPath: string,
                  progressDelegate: IProgressDelegate): Promise<any> {
   return new Promise((resolve, reject) => {
-    installLib({files, scriptPath, progressDelegate, coreDelegates},
-               (err: Error, result: any) => {
-                 if ((err !== null) && (err !== undefined)) {
-                   log('info', 'got err', util.inspect(err));
-                   reject(err);
-                 } else {
-                   log('info', 'result', util.inspect(result));
-                   resolve(result);
-                 }
-               });
+    installLib({ files, scriptPath, progressDelegate, coreDelegates },
+      (err: Error, result: any) => {
+        if ((err !== null) && (err !== undefined)) {
+          log('info', 'got err', util.inspect(err));
+          reject(err);
+        } else {
+          log('info', 'result', util.inspect(result));
+          resolve(result);
+        }
+      });
   });
 }
 

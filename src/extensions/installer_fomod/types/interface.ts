@@ -11,6 +11,7 @@ export type GroupType =
 
 export interface IPlugin {
   id: number;
+  selected: boolean;
   name: string;
   description: string;
   image: string;

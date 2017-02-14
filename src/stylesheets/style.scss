@@ -319,6 +319,19 @@
   right: 5px;
 }
 
-#fomod-installer-dialog > .modal-dialog {
+#fomod-installer-dialog .modal-dialog {
   width: 80%;
+  height: 80%;
+}
+
+#fomod-installer-dialog .modal-content {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#fomod-installer-dialog .modal-body {
+  flex: 1 0%;
+  overflow-y: auto;
 }
