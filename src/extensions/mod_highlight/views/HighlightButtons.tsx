@@ -6,17 +6,21 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
+import { getSafe } from '../../../util/storeHelper';
+import Icon from '../../../views/Icon';
 import { IconButton } from '../../../views/TooltipControls';
 
+import { setModAttribute } from '../../mod_management/actions/mods';
 import { IMod } from '../../mod_management/types/IMod';
-
-import { setModColor, setModIcon, setModNotes } from '../actions/mods';
 
 import * as Promise from 'bluebird';
 import * as React from 'react';
+import update = require('react-addons-update');
+import { Button, ControlLabel, FormGroup, Modal } from 'react-bootstrap';
+import { CirclePicker } from 'react-color';
 
 export interface IBaseProps {
-  modId: string;
+  mod: IMod;
   gameMode: string;
   t: I18next.TranslationFunction;
   api: IExtensionApi;
@@ -26,9 +30,12 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string,
     content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
   onShowError: (message: string, details?: string) => void;
-  onSetModColor: (gameMode: string, modId: string, modColor: string) => void;
-  onSetModIcon: (gameMode: string, modId: string, icon: string) => void;
-  onSetModNotes: (gameMode: string, modId: string, notes: string) => void;
+  onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
+}
+
+export interface IMainWindowState {
+  showLayer: string;
+  showPage: string;
 }
 
 interface IConnectedProps {
@@ -41,137 +48,136 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
  * 
  * @class HighlightButtons
  */
-class HighlightButtons extends ComponentEx<IProps, {}> {
+class HighlightButtons extends ComponentEx<IProps, IMainWindowState> {
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.state = {
+      showLayer: '',
+      showPage: '',
+    };
+  }
 
   public render(): JSX.Element {
-    let {modId, t } = this.props;
+    let {mod, t } = this.props;
+    let color = getSafe(mod.attributes, ['color'], '');
+    let icon = getSafe(mod.attributes, ['icon'], '');
 
     return (
-      <div style={{ textAlign: 'center' }}>
+      <div style={{ textAlign: 'center', background: { color } }}>
         <IconButton
           className='btn-embed'
-          id={modId}
-          value='Color'
-          tooltip={t('Change Color')}
-          icon={'paint-brush'}
-          onClick={this.changeHighlight}
-        />
-        <IconButton
-          className='btn-embed'
-          id={modId}
-          value='Icon'
+          style={{ background: color, color: 'black' }}
+          icon={icon !== '' ? icon : 'exclamation-circle'}
+          id={mod.id}
           tooltip={t('Change Icon')}
-          icon={'eye'}
           onClick={this.changeHighlight}
         />
-        <IconButton
-          className='btn-embed'
-          id={modId}
-          value='Notes'
-          tooltip={t('Change Notes')}
-          icon={'sticky-note'}
-          onClick={this.changeHighlight}
-        />
+        {this.renderModalSettings()}
       </div>
     );
   }
 
+  private renderModalSettings() {
+    const { mod, t } = this.props;
+    const { showLayer } = this.state;
+    let modColors: string[] = ['#ff0000', '#03a9f4', '#4caf50', '#cddc39', '#ff9800'];
+    let modIcon: string[] = ['bomb', 'map', 'shield', 'flask', 'hotel', 'bolt', 'home'];
+    let color = getSafe(mod.attributes, ['color'], '');
+    let icon = getSafe(mod.attributes, ['icon'], '');
+
+    return (
+      <Modal
+        id='modal-settings'
+        show={showLayer === 'settings'}
+        onHide={this.hideLayer}
+      >
+        <Modal.Header>
+          <Modal.Title>{t('Highlight Settings')}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <FormGroup key={mod.id}>
+          <ControlLabel>{t('Select mod color')}
+          </ControlLabel>
+          <div key='dialog-form-colors' style={{ background: 'light-grey' }}>
+            <CirclePicker
+              onChange={this.toggleColors}
+              colors={modColors}
+              width='100%'
+            />
+          </div>
+          <ControlLabel>{t('Select mod icon')}
+          </ControlLabel>
+          <div>
+            {modIcon.map(this.renderIcons)}
+          </div>
+          <ControlLabel>{t('Preview')}
+          </ControlLabel>
+          <div>
+            <Icon name={icon !== '' ? icon : 'exclamation-circle'} style={{ background: color }} />
+          </div>
+          </FormGroup>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            id='remove'
+            onClick={this.removeHighlights}
+          >
+            {t('Remove Highlights')}
+          </Button>
+          <Button
+            id='close'
+            onClick={this.hideLayer}
+          >
+            {t('Close')}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    );
+  }
+
+  private renderIcons = (icon: string) => {
+    return (
+      <Button
+        type='button'
+        key={icon}
+        className='btn-embed'
+        id={icon}
+        value={icon}
+        onClick={this.toggleIcon}
+      >
+        <Icon name={icon} />
+      </Button>
+    );
+  }
+
+   private removeHighlights = (evt) => {
+    let { gameMode, mod, onSetModAttribute} = this.props;
+    onSetModAttribute(gameMode, mod.id, 'icon', '');
+    onSetModAttribute(gameMode, mod.id, 'color', '');
+  }
+
+  private toggleIcon = (evt) => {
+    let { gameMode, mod, onSetModAttribute} = this.props;
+    onSetModAttribute(gameMode, mod.id, 'icon', evt.currentTarget.id);
+  }
+
+  private toggleColors = (color) => {
+    let { gameMode, mod, onSetModAttribute} = this.props;
+    onSetModAttribute(gameMode, mod.id, 'color', color.hex);
+  }
+
   private changeHighlight = (evt) => {
-    let { api, gameMode, modId, onShowDialog, onSetModColor,
-      onSetModIcon, onSetModNotes, t } = this.props;
+    this.showLayer('settings');
+  }
 
-    if (evt.currentTarget.value === 'Color') {
-      let changeColor: boolean;
-      let removeCustomColor: boolean;
-      let hex: string;
+  private showLayer = (layer: string) => this.showLayerImpl(layer);
+  private hideLayer = () => this.showLayerImpl('');
 
-      onShowDialog('question', 'Select color', {
-        message:
-        t('Select the new row background color. Click Remove to return to the default value.'),
-        colors: { id: '', value: undefined },
-      }, {
-          Cancel: null,
-          Remove: null,
-          Select: null,
-        }).then((result: IDialogResult) => {
-          changeColor = result.action === 'Select';
-          if (changeColor) {
-            hex = result.input.value;
-            onSetModColor(gameMode, modId, hex);
-          } else {
-            removeCustomColor = result.action === 'Remove';
-            if (removeCustomColor) {
-              onSetModColor(gameMode, modId, undefined);
-            }
-          }
-        });
-    } else if (evt.currentTarget.value === 'Notes') {
-      let changeNotes: boolean;
-      let removeNotes: boolean;
-      let notes: string;
-
-      let mods: IMod = api.store.getState().persistent.mods[gameMode];
-
-      onShowDialog('question', 'Add Notes', {
-        message:
-        t('Add the new Mod Notes.'),
-        textArea: {id: modId, value: mods[modId].modNotes},
-      }, {
-          Cancel: null,
-          Remove: null,
-          Add: null,
-        }).then((result: IDialogResult) => {
-          changeNotes = result.action === 'Add';
-          if (changeNotes) {
-
-            notes = result.input.value;
-            onSetModNotes(gameMode, modId, notes);
-          } else {
-            removeNotes = result.action === 'Remove';
-            if (removeNotes) {
-              onSetModIcon(gameMode, modId, undefined);
-            }
-          }
-        });
-
-    } else if (evt.currentTarget.value === 'Icon') {
-      let changeIcon: boolean;
-      let removeCustomIcon: boolean;
-      let icon: string;
-
-      onShowDialog('question', 'Select icon', {
-        message:
-        t('Select the new icon. Click Remove to return to the default value (no icon).'),
-        icons: [
-          { id: 'map', value: 'map', selected: false },
-          { id: 'flask', value: 'flask', selected: false },
-          { id: 'snowflake-o', value: 'snowflake-o', selected: false },
-          { id: 'shield', value: 'shield', selected: false },
-          { id: 'hotel', value: 'hotel', selected: false },
-          { id: 'heart', value: 'heart', selected: false },
-          { id: 'bolt', value: 'bolt', selected: false },
-          { id: 'bomb', value: 'bomb', selected: false },
-          { id: 'home', value: 'home', selected: false }],
-      }, {
-          Cancel: null,
-          Remove: null,
-          Select: null,
-        }).then((result: IDialogResult) => {
-          changeIcon = result.action === 'Select';
-          if (changeIcon) {
-
-            icon = result.input[0].value;
-            onSetModIcon(gameMode, modId, icon);
-          } else {
-            removeCustomIcon = result.action === 'Remove';
-            if (removeCustomIcon) {
-              onSetModIcon(gameMode, modId, undefined);
-            }
-          }
-        });
-    }
-
-  };
+  private showLayerImpl(layer: string): void {
+    this.setState(update(this.state, { showLayer: { $set: layer } }));
+  }
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -183,14 +189,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
     onShowError: (message: string, details?: string) => showError(dispatch, message, details),
-    onSetModColor: (gameMode: string, modId: string, modColor: string) => {
-      dispatch(setModColor(gameMode, modId, modColor));
-    },
-    onSetModIcon: (gameMode: string, modId: string, icon: string) => {
-      dispatch(setModIcon(gameMode, modId, icon));
-    },
-    onSetModNotes: (gameMode: string, modId: string, notes: string) => {
-      dispatch(setModNotes(gameMode, modId, notes));
+    onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
+      dispatch(setModAttribute(gameMode, modId, attributeId, value));
     },
   };
 }

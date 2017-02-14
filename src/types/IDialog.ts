@@ -11,22 +11,6 @@ export interface IDialog {
   actions: string[];
 }
 
-export interface IColor {
-  id: string;
-  value: string;
-}
-
-export interface ITextArea {
-  id: string;
-  value: string;
-}
-
-export interface IIcon {
-  id: string;
-  value: string;
-  selected: boolean;
-}
-
 export interface ICheckbox {
   id: string;
   text: string;
@@ -46,9 +30,6 @@ export interface IDialogContent {
   checkboxes?: ICheckbox[];
   choices?: ICheckbox[];
   formcontrol?: IFormControl[];
-  colors?: IColor;
-  textArea?: ITextArea;
-  icons?: IIcon[];
   options?: {
     translated?: boolean;
     wrap?: boolean;

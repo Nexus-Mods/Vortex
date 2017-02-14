@@ -1,7 +1,7 @@
 import { closeDialog } from '../actions/notifications';
 import {
   DialogType, ICheckbox, IDialog,
-  IDialogContent, IFormControl, IIcon,
+  IDialogContent, IFormControl,
 } from '../types/IDialog';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
@@ -13,15 +13,12 @@ import {
   Button, Checkbox, ControlLabel, FormControl, FormGroup,
   Modal, Radio,
 } from 'react-bootstrap';
-import { CirclePicker } from 'react-color';
 
 interface IActionProps {
   t: (input: string) => string;
   onDismiss: (action: string) => void;
   action: string;
 }
-
-let modColors: string[] = ['#ff0000', '#03a9f4', '#4caf50', '#cddc39', '#ff9800'];
 
 class Action extends React.Component<IActionProps, {}> {
   public render(): JSX.Element {
@@ -130,27 +127,6 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         {content.formcontrol.map(this.renderFormControl)}
       </div>
       );
-    } else if (content.colors !== undefined) {
-      controls.push(
-        <div key='dialog-form-colors' style={{ background: 'light-grey' }}>
-          <CirclePicker onChange={this.toggleColors} colors={modColors} width='100%' />
-        </div>
-      );
-    } else if (content.icons !== undefined) {
-      controls.push(<div key='dialog-form-icons'>
-        {content.icons.map(this.renderIcons)}
-      </div>
-      );
-    } else if (content.textArea !== undefined) {
-      controls.push(
-        <div key='dialog-form-textarea' >
-          <textarea
-            onChange={this.toggleTextArea}
-            value={content.textArea.value}
-            style={{ width: '100%', minHeight: 300, resize: 'none' }}
-          />
-        </div>
-      );
     }
 
     return <div style={{ width: '100%' }}>{controls}</div>;
@@ -171,21 +147,6 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           onChange={this.toggleFormControl}
         />
       </FormGroup>
-    );
-  }
-
-  private renderIcons = (icons: IIcon) => {
-    return (
-      <Button
-        type='button'
-        key={icons.id}
-        className='btn-embed'
-        id={icons.id}
-        value={icons.value}
-        onClick={this.toggleIcon}
-      >
-        <Icon name={icons.value} />
-      </Button>
     );
   }
 
@@ -231,43 +192,6 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     this.setState(update(this.state, {
       dialogState: {
         formcontrol: { $set: newFormControl },
-      },
-    }));
-  }
-
-  private toggleColors = (evt) => {
-    let { dialogState } = this.state;
-
-    let newColors = dialogState.colors;
-    newColors.value = evt.hex;
-  }
-
-  private toggleTextArea = (evt) => {
-    let { dialogState } = this.state;
-
-    let newTextArea = dialogState.textArea;
-    newTextArea.value = evt.currentTarget.value;
-
-    this.setState(update(this.state, {
-      dialogState: {
-        textarea: { $set: newTextArea },
-      },
-    }));
-  }
-
-  private toggleIcon = (evt) => {
-    let { dialogState } = this.state;
-
-    let idx = dialogState.icons.findIndex((icon: IIcon) => {
-      return icon.id === evt.currentTarget.id;
-    });
-
-    let newIcon = dialogState.icons.slice(0);
-    newIcon[idx].selected = true;
-
-    this.setState(update(this.state, {
-      dialogState: {
-        icons: { $set: newIcon },
       },
     }));
   }
@@ -348,21 +272,6 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       dialogState.formcontrol.forEach((form: IFormControl) => {
         data[form.id] = form.value;
       });
-    }
-
-    if (dialogState.colors !== undefined) {
-      data = {};
-      data = dialogState.colors;
-    }
-
-    if (dialogState.textArea !== undefined) {
-      data = {};
-      data = dialogState.textArea;
-    }
-
-    if (dialogState.icons !== undefined) {
-      data = {};
-      data = dialogState.icons.filter((icon: IIcon) => icon.selected);
     }
 
     onDismiss(dialogs[0].id, action, data);
