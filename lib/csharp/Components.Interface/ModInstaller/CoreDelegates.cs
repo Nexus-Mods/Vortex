@@ -55,6 +55,8 @@ namespace Components.Interface
             mGetAppVersion = source.getAppVersion;
             mGetCurrentGameVersion = source.getCurrentGameVersion;
             mCheckIfFileExists = source.checkIfFileExists;
+            mGetExtenderVersion = source.getExtenderVersion;
+            mIsExtenderPresent = source.isExtenderPresent;
         }
 
         public async Task<string> GetAppVersion()

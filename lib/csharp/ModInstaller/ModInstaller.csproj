@@ -52,6 +52,10 @@
       <Project>{494c3e44-8a35-46ae-82e5-1c1a7221803b}</Project>
       <Name>Components.Interface</Name>
     </ProjectReference>
+    <ProjectReference Include="..\InstallScripting\CSharpScript\CSharpScript.csproj">
+      <Project>{6c3901c6-bfca-47fc-929b-0cd030325fbd}</Project>
+      <Name>CSharpScript</Name>
+    </ProjectReference>
     <ProjectReference Include="..\InstallScripting\Scripting\Scripting.csproj">
       <Project>{66dc8748-2dc2-4e6e-b645-080e0cfdc831}</Project>
       <Name>Scripting</Name>

@@ -17,45 +17,46 @@ export class Context extends DelegateBase {
     super(api);
   }
 
-  public getAppVersion = (): string => {
-    log('info', 'getAppVersion called', '');
-    return app.getVersion();
-  }
+  public getAppVersion =
+      (dummy: any, callback: (err, res: string) => void) => {
+        log('info', 'getAppVersion called', '');
+        return callback(null, app.getVersion());
+      }
 
-  public getCurrentGameVersion = (): string => {
-    log('info', 'getCurrentGameVersion called', '');
-    let state = this.api.store.getState();
-    let currentGameInfo = currentGameDiscovery(state);
-    let currentGameRelativeExecutablePath =
-      state.session.gameMode.known[activeGameId(state)].executable;
-    let currentGameExecutablePath =
-      path.join(currentGameInfo.path, currentGameRelativeExecutablePath);
-    return getVersion(currentGameExecutablePath);
-  }
+  public getCurrentGameVersion =
+      (dummy: any, callback: (err, res: string) => void) => {
+        log('info', 'getCurrentGameVersion called', '');
+        let state = this.api.store.getState();
+        let currentGameInfo = currentGameDiscovery(state);
+        let currentGameRelativeExecutablePath =
+            state.session.gameMode.known[activeGameId(state)].executable;
+        let currentGameExecutablePath =
+            path.join(currentGameInfo.path, currentGameRelativeExecutablePath);
+        return callback(null, getVersion(currentGameExecutablePath));
+      }
 
-  public getExtenderVersion = (extender: string): string => {
-    return null;
-  }
+  public getExtenderVersion =
+      (extender: string, callback: (err, res: string) => void) => {
+        return callback(null, null);
+      }
 
-  public isExtenderPresent = (): boolean => {
-    return false;
-  }
+  public isExtenderPresent =
+      (par: any, callback: (err, res: boolean) => void) => {
+        log('info', 'isExtenderPresent called');
+        return callback(null, false);
+      }
 
-  public checkIfFileExists = (fileName: string): boolean => {
-    log('info', 'checkIfFileExists called', util.inspect(fileName));
-    let state = this.api.store.getState();
-    let currentGameInfo = currentGameDiscovery(state);
-    let fullFilePath = path.join(currentGameInfo.modPath, fileName);
-    let isPresent = false;
+  public checkIfFileExists =
+      (fileName: string, callback: (err, res: boolean) => void) => {
+        log('info', 'checkIfFileExists called', util.inspect(fileName));
+        let state = this.api.store.getState();
+        let currentGameInfo = currentGameDiscovery(state);
+        let fullFilePath = path.join(currentGameInfo.modPath, fileName);
 
-    fs.statAsync(fullFilePath).reflect()
-            .then((stat) => {
-            if (stat.isFulfilled()) {
-                isPresent = true;
-            }
-        });
-    return isPresent;
-  }
+        fs.statAsync(fullFilePath)
+            .reflect()
+            .then((stat) => callback(null, stat.isFulfilled()));
+      }
 }
 
 export default Context;

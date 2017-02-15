@@ -20,7 +20,7 @@ namespace Components.Interface
     /// </remarks>
     public class ScriptFunctionProxy : MarshalByRefObject
     {
-        private List<Instruction> modInstallInstructions = new List<Instruction>();
+        private ICollection<Instruction> modInstallInstructions;
 
         #region Properties
 
@@ -49,6 +49,20 @@ namespace Components.Interface
         {
             Mod = scriptedMod;
             Core = coreDelegates;
+        }
+
+        #endregion
+
+        #region Management
+
+        /// <summary>
+        /// sets the container where the function proxy should store generated instructions
+        /// This has to be set before the proxy is actually used
+        /// </summary>
+        /// <param name="instructions"></param>
+        public void SetInstructionContainer(ICollection<Instruction> instructions)
+        {
+            modInstallInstructions = instructions;
         }
 
         #endregion

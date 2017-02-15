@@ -6,7 +6,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Components.Interface;
-
+using System.Diagnostics;
+using System.Security;
+using System.Security.Permissions;
+using System.Security.Policy;
+using System.IO;
 
 namespace Components.Scripting.CSharpScript
 {
@@ -65,26 +69,42 @@ namespace Components.Scripting.CSharpScript
             if (bteScript == null)
                 return null;
 
+            IList<Instruction> instructions = new List<Instruction>();
+            m_csfFunctions.SetInstructionContainer(instructions);
+
             AppDomain admScript = CreateSandbox(p_scpScript);
+            object[] args = { m_csfFunctions };
+            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+            ScriptRunner srnRunner = null;
             try
             {
-                object[] args = { m_csfFunctions };
-                AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
-                ScriptRunner srnRunner = null;
-                try
-                {
-                    srnRunner = (ScriptRunner)admScript.CreateInstanceFromAndUnwrap(typeof(ScriptRunner).Assembly.ManifestModule.FullyQualifiedName, typeof(ScriptRunner).FullName, false, BindingFlags.Default, null, args, null, null);
-                }
-                finally
-                {
-                    AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomain_AssemblyResolve;
-                }
-                return null; // ??? This requires tweaking: Task.Run(() => srnRunner.Execute(bteScript));
+                srnRunner = (ScriptRunner)admScript.CreateInstanceFromAndUnwrap(typeof(ScriptRunner).Assembly.ManifestModule.FullyQualifiedName, typeof(ScriptRunner).FullName, false, BindingFlags.Default, null, args, null, null);
+            }
+            catch (Exception e)
+            {
+                // TODO rethrow because the transition layer to js seems to have trouble serializing the original exception
+                //   of course we want to maintain more of the error message and this shouldn't be here but closer to the
+                //   "edge".
+                throw new Exception("failed to create runner: " + e.GetType().ToString() + "\n" + e.Message + "\n" + e.StackTrace + "\n" + e.Data.ToString());
             }
             finally
             {
-                AppDomain.Unload(admScript);
+                //AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomain_AssemblyResolve;
             }
+            return Task.Run(() =>
+            {
+                bool res = srnRunner.Execute(bteScript);
+                AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomain_AssemblyResolve;
+                AppDomain.Unload(admScript);
+                if (!res)
+                {
+                    return null;
+                }
+                else
+                {
+                    return instructions;
+                }
+            });
         }
 
         #endregion
@@ -172,11 +192,57 @@ namespace Components.Scripting.CSharpScript
         /// <returns>A sandboxed domain.</returns>
         protected AppDomain CreateSandbox(IScript p_scpScript)
         {
-            // ??? Pretty sure we no longer need this stuff here, since we're just creating instructions
-            //Trace.TraceInformation("Creating C# Script Sandbox...");
-            //Trace.Indent();
+            Trace.TraceInformation("Creating C# Script Sandbox...");
+            Trace.Indent();
 
-            return null;
+            Evidence eviSecurityInfo = null;
+            AppDomainSetup adsInfo = new AppDomainSetup();
+            //should this be different from the current ApplicationBase?
+            adsInfo.ApplicationBase = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            ISet<string> setPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            Type tpeBaseScript = BaseScriptType;
+            while ((tpeBaseScript != null) && (tpeBaseScript != typeof(object)))
+            {
+                setPaths.Add(Path.GetDirectoryName(Assembly.GetAssembly(tpeBaseScript).Location));
+                tpeBaseScript = tpeBaseScript.BaseType;
+            }
+            Type tpeScript = p_scpScript.Type.GetType();
+            while ((tpeScript != null) && (tpeScript != typeof(object)))
+            {
+                setPaths.Add(Path.GetDirectoryName(Assembly.GetAssembly(tpeScript).Location));
+                tpeScript = tpeScript.BaseType;
+            }
+            adsInfo.PrivateBinPath = string.Join(";", setPaths.GetEnumerator());
+
+            Trace.TraceInformation("ApplicationBase: {0}", adsInfo.ApplicationBase);
+            Trace.TraceInformation("PrivateBinPath: {0}", adsInfo.PrivateBinPath);
+
+            adsInfo.ApplicationName = "ScriptRunner";
+            adsInfo.DisallowBindingRedirects = true;
+            adsInfo.DisallowCodeDownload = true;
+            adsInfo.DisallowPublisherPolicy = true;
+            PermissionSet pstGrantSet = new PermissionSet(PermissionState.None);
+            pstGrantSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
+            pstGrantSet.AddPermission(new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess));
+
+            //need access to path with modinstaller binaries so the script can load the script assembly
+            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.PathDiscovery, adsInfo.ApplicationBase));
+            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, adsInfo.ApplicationBase));
+
+            //It's not clear to me if these permissions are dangerous
+            pstGrantSet.AddPermission(new UIPermission(UIPermissionClipboard.NoClipboard));
+            pstGrantSet.AddPermission(new UIPermission(UIPermissionWindow.AllWindows));
+            pstGrantSet.AddPermission(new MediaPermission(MediaPermissionImage.SafeImage));
+
+            //add the specific permissions the script will need
+            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Write, Path.GetTempPath()));
+            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, Path.GetTempPath()));
+            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Append, Path.GetTempPath()));
+            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.PathDiscovery, Path.GetTempPath()));
+
+            Trace.Unindent();
+
+            return AppDomain.CreateDomain("ScriptRunnerDomain", eviSecurityInfo, adsInfo, pstGrantSet);
         }
     }
 }

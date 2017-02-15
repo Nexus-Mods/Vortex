@@ -140,7 +140,6 @@ namespace Components.Interface
                 if (!strFile.StartsWith(FomodRoot, StringComparison.OrdinalIgnoreCase))
                     lstFiles.Add(strFile);
 
-            lstFiles.Sort(CompareOrderFoldersFirst);
             return lstFiles;
         }
 

@@ -8,14 +8,14 @@ class Ini extends DelegateBase {
     super(api);
   }
 
-  public GetIniString = (): string => {
+  public GetIniString = (dummy: any, callback: (err, res: string) => void) => {
     log('info', 'GetIniString called', '');
-    return undefined;
+    callback(null, '');
   }
 
-  public GetIniInt = (): number => {
+  public GetIniInt = (dummy: any, callback: (err, res: number) => void) => {
     log('info', 'GetIniString called', '');
-    return 0;
+    callback(null, 0);
   }
 }
 

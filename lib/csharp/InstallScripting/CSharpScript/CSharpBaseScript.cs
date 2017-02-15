@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
-using System.Windows.Forms;
 using System.Security;
+using System.Windows.Forms;
 
 namespace Components.Scripting.CSharpScript
 {
@@ -364,7 +364,14 @@ namespace Components.Scripting.CSharpScript
         /// <returns>A form that can be used in custom mod scripts.</returns>
         public static Form CreateCustomForm()
         {
-            return ExecuteMethod(() => new Form());
+            return ExecuteMethod(() => {
+                Form res = new Form();
+                res.Shown += (Object sender, EventArgs e) =>
+                {
+                    res.TopMost = true;
+                };
+                return res;
+                });
         }
 
         #endregion
