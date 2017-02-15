@@ -30,8 +30,6 @@ interface IProgressDelegate {
   (perc: number): void;
 }
 
-let coreDelegates: Core;
-
 function testSupported(files: string[]): Promise<boolean> {
   return new Promise((resolve, reject) => {
     testSupportedLib({files}, (err: Error, result: boolean) => {
@@ -49,7 +47,8 @@ function testSupported(files: string[]): Promise<boolean> {
 }
 
 function install(files: string[], scriptPath: string,
-                 progressDelegate: IProgressDelegate): Promise<any> {
+                 progressDelegate: IProgressDelegate,
+                 coreDelegates: Core): Promise<any> {
   return new Promise((resolve, reject) => {
     installLib({ files, scriptPath, progressDelegate, coreDelegates },
       (err: Error, result: any) => {
@@ -71,9 +70,10 @@ export interface IExtensionContextExt extends IExtensionContext {
 function init(context: IExtensionContextExt): boolean {
   if (context.registerInstaller) {
     context.registerInstaller(100, testSupported,
-    (files, scriptPath, progressDelegate) => {
+    (files, scriptPath, gameId, progressDelegate) => {
       context.api.store.dispatch(setInstallerDataPath(scriptPath));
-      return install(files, scriptPath, progressDelegate)
+      let coreDelegates = new Core(context.api, gameId);
+      return install(files, scriptPath, progressDelegate, coreDelegates)
       .catch((err) => {
         context.api.store.dispatch(endDialog());
         return Promise.reject(err);
@@ -85,10 +85,6 @@ function init(context: IExtensionContextExt): boolean {
   context.registerDialog('fomod-installer', InstallerDialog);
 
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
-
-  context.once(() => {
-    coreDelegates = new Core(context.api);
-  });
 
   return true;
 }

@@ -80,11 +80,13 @@ class InstallManager {
    * @param {*} info existing information about the mod (i.e. stuff retrieved
    *                 from the download page)
    */
-  public install(archiveId: string, archivePath: string, api: IExtensionApi,
+  public install(archiveId: string,
+                 archivePath: string,
+                 gameId: string,
+                 api: IExtensionApi,
                  info: any, processDependencies: boolean,
                  callback?: (error: Error, id: string) => void) {
-    const installContext = new InstallContext(activeGameId(api.store.getState()),
-      api.store.dispatch);
+    const installContext = new InstallContext(gameId, api.store.dispatch);
 
     const baseName = path.basename(archivePath, path.extname(archivePath));
     let installName = baseName;
@@ -104,7 +106,7 @@ class InstallManager {
         installName = this.deriveInstallName(baseName, fullInfo);
 
         const checkNameLoop = () => {
-          return this.checkModExists(installName, api)
+          return this.checkModExists(installName, api, gameId)
             ? this.queryUserReplace(installName, api).then((newName: string) => {
               installName = newName;
               return checkNameLoop();
@@ -161,6 +163,7 @@ class InstallManager {
             return installer.install(
               fileList.map((entry: IZipEntry) => entry.name),
               reqFilesPath,
+              gameId,
               (perc: number) => log('info', 'progress', perc));
           })
           .finally(() => {
@@ -199,8 +202,7 @@ class InstallManager {
       ;
   }
 
-  private checkModExists(installName: string, api: IExtensionApi): boolean {
-    const gameMode = activeGameId(api.store.getState());
+  private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {
     return installName in (api.store.getState().persistent.mods[gameMode] || {});
   }
 
@@ -370,8 +372,8 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
       const state = api.store.getState();
       let download: IDownload = state.persistent.downloads.files[downloadId];
       let fullPath: string = path.join(downloadPath(state), download.localPath);
-      this.install(downloadId, fullPath, api, download.modInfo, false,
-                   (error, id) => {
+      this.install(downloadId, fullPath, download.game || activeGameId(state),
+                   api, download.modInfo, false, (error, id) => {
                      if (error === null) {
                        resolve(id);
                      } else {

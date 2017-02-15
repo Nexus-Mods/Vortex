@@ -1,6 +1,10 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
-import {activeGameId, currentGameDiscovery} from '../../../util/selectors';
+import {currentGameDiscovery} from '../../../util/selectors';
+import {getSafe} from '../../../util/storeHelper';
+
+import {IDiscoveryResult} from '../../gamemode_management/types/IDiscoveryResult';
+import {IGameStored} from '../../gamemode_management/types/IGameStored';
 
 import DelegateBase from './DelegateBase';
 
@@ -12,9 +16,33 @@ import * as util from 'util';
 
 let app = appIn || remote.app;
 
+function extenderForGame(gameId: string) {
+  return {
+    oblivion: 'obse',
+    skyrim: 'skse',
+    skyrimse: 'skse64',
+    fallout3: 'fose',
+    falloutnv: 'nvse',
+    fallout4: 'f4se',
+  }[gameId];
+}
+
 export class Context extends DelegateBase {
-  constructor(api: IExtensionApi) {
+  private gameId: string;
+  private gameDiscovery: IDiscoveryResult;
+  private gameInfo: IGameStored;
+  constructor(api: IExtensionApi, gameId: string) {
     super(api);
+    this.gameId = gameId;
+    this.gameDiscovery =
+        getSafe(api.store.getState(),
+                ['settings', 'gameMode', 'discovered', gameId], undefined);
+    this.gameInfo =
+        getSafe(api.store.getState(), ['session', 'gameMode', 'known'], [])
+            .find((game) => game.id === gameId);
+    if ((this.gameDiscovery === undefined) || (this.gameInfo === undefined)) {
+      throw new Error('game not installed');
+    }
   }
 
   public getAppVersion =
@@ -26,24 +54,28 @@ export class Context extends DelegateBase {
   public getCurrentGameVersion =
       (dummy: any, callback: (err, res: string) => void) => {
         log('info', 'getCurrentGameVersion called', '');
-        let state = this.api.store.getState();
-        let currentGameInfo = currentGameDiscovery(state);
-        let currentGameRelativeExecutablePath =
-            state.session.gameMode.known[activeGameId(state)].executable;
-        let currentGameExecutablePath =
-            path.join(currentGameInfo.path, currentGameRelativeExecutablePath);
-        return callback(null, getVersion(currentGameExecutablePath));
+        const gameExePath =
+            path.join(this.gameDiscovery.path, this.gameInfo.executable);
+        return callback(null, getVersion(gameExePath));
       }
 
   public getExtenderVersion =
       (extender: string, callback: (err, res: string) => void) => {
-        return callback(null, null);
+        const sePath = path.join(this.gameDiscovery.path, `${extender}_loader.exe`);
+        return callback(null, getVersion(sePath));
       }
 
   public isExtenderPresent =
       (par: any, callback: (err, res: boolean) => void) => {
-        log('info', 'isExtenderPresent called');
-        return callback(null, false);
+        const extender = extenderForGame(this.gameId);
+        if (extender === undefined) {
+          return callback(null, false);
+        }
+
+        const sePath = path.join(this.gameDiscovery.path, `${extender}_loader.exe`);
+        fs.statAsync(sePath)
+        .then(() => callback(null, true))
+        .catch(() => callback(null, false));
       }
 
   public checkIfFileExists =

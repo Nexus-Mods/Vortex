@@ -5,6 +5,6 @@ export interface IProgressDelegate {
 }
 
 export interface IInstall {
-  (files: string[], destinationPath: string,
+  (files: string[], destinationPath: string, gameId: string,
    progressDelegate: IProgressDelegate): Promise<any>;
 }

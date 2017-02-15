@@ -43,16 +43,15 @@ function init(context: IExtensionContext): boolean {
         });
     gameModeManager.attachToStore(store);
     gameModeManager.startQuickDiscovery();
-    events.on('start-discovery', () => gameModeManager.startSearchDiscovery());
 
-    events.on('cancel-discovery',
-      () => {
-        log('info', 'received cancel discovery');
-        gameModeManager.stopSearchDiscovery();
-      });
+    events.on('start-discovery', () => gameModeManager.startSearchDiscovery());
+    events.on('cancel-discovery', () => {
+      log('info', 'received cancel discovery');
+      gameModeManager.stopSearchDiscovery();
+    });
 
     if (store.getState().settings.gameMode.searchPaths === undefined) {
-      const { list } = require('drivelist');
+      const {list} = require('drivelist');
       list((error, disks) => {
         if (error) {
           throw error;

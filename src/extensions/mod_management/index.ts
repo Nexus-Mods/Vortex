@@ -139,7 +139,9 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on(
         'start-install',
         (archivePath: string, callback?: (error, id: string) => void) => {
-          installManager.install(null, archivePath, context.api, {}, true, callback);
+          installManager.install(null, archivePath,
+                                 activeGameId(store.getState()), context.api,
+                                 {}, true, callback);
         });
 
     context.api.events.on(
@@ -148,7 +150,7 @@ function init(context: IExtensionContextExt): boolean {
           let download: IDownload =
               store.getState().persistent.downloads.files[downloadId];
           let fullPath: string = path.join(downloadPath(store.getState()), download.localPath);
-          installManager.install(downloadId, fullPath, context.api,
+          installManager.install(downloadId, fullPath, download.game, context.api,
                                  download.modInfo, true, callback);
         });
 

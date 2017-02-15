@@ -40,18 +40,21 @@ NAN_METHOD(getVersion) {
   DWORD handle;
   DWORD info_len = ::GetFileVersionInfoSizeW(string_cast(*executablePath).c_str(), &handle);
   if (info_len == 0) {
-    throw std::runtime_error("failed to get version info size");
+    info.GetReturnValue().SetUndefined();
+    return;
   }
 
   std::vector<char> buff(info_len);
   if (!::GetFileVersionInfoW(string_cast(*executablePath).c_str(), handle, info_len, buff.data())) {
-    throw std::runtime_error("failed to get version info");
+    info.GetReturnValue().SetUndefined();
+    return;
   }
 
   VS_FIXEDFILEINFO *pFileInfo;
   UINT buf_len;
   if (!::VerQueryValueW(buff.data(), L"\\", reinterpret_cast<LPVOID *>(&pFileInfo), &buf_len)) {
-    throw std::runtime_error("failed to parse version info");
+    info.GetReturnValue().SetUndefined();
+    return;
   }
 
   std::ostringstream result;

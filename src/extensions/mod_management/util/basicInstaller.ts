@@ -9,7 +9,7 @@ export function testSupported(files: string[]): Promise<ISupportedResult> {
 }
 
 export function install(files: string[], destinationPath: string,
-                        progress: IProgressDelegate): Promise<any> {
+                        gameId: string, progress: IProgressDelegate): Promise<any> {
   return Promise.resolve({
     message: 'Success',
     files: files.map((name: string) => ({ source: name, destination: name })),

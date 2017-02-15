@@ -10,11 +10,11 @@ export class Core {
   public plugin: Plugins;
   public ui: UI;
 
-  constructor(api: IExtensionApi) {
+  constructor(api: IExtensionApi, gameId: string) {
     this.plugin = new Plugins(api);
     this.ini = new Ini(api);
     this.ui = new UI(api);
-    this.context = new Context(api);
+    this.context = new Context(api, gameId);
   }
 }
 
