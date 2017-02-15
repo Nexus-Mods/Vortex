@@ -2,10 +2,10 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
-import { setModAttribute } from '../mod_management/actions/mods';
-import {modsReducer} from '../mod_management/reducers/mods';
+import { modsReducer } from '../mod_management/reducers/mods';
 
-import HighlightButtons from './views/HighlightButtons';
+import HighlightButton from './views/HighlightButton';
+import TextareaNotes from './views/TextareaNotes';
 
 import * as React from 'react';
 
@@ -19,14 +19,10 @@ function init(context: IExtensionContext): boolean {
     description: 'Mod Notes',
     icon: 'sticky-note',
     placement: 'detail',
+    customRenderer: (mod) => getTextArea(context.api, mod),
     calc: (mod) => getSafe(mod.attributes, ['notes'], ''),
     isToggleable: false,
-    edit: {
-      onChangeValue: (modId: string, newValue: any) => {
-        const gameMode = activeGameId(context.api.store.getState());
-        context.api.store.dispatch(setModAttribute(gameMode, modId, 'notes', newValue));
-      },
-    },
+    edit: {},
     isSortable: false,
   });
 
@@ -46,14 +42,23 @@ function init(context: IExtensionContext): boolean {
   return true;
 }
 
+function getTextArea(api: IExtensionApi, mod) {
+    const gameMode = activeGameId(api.store.getState());
+    return (
+      <TextareaNotes
+        gameMode={gameMode}
+        mod={mod}
+      />
+    );
+  }
+
 function getHighlightIcon(api: IExtensionApi, mod) {
   const gameMode = activeGameId(api.store.getState());
   return (
-    <HighlightButtons
+    <HighlightButton
       gameMode={gameMode}
       t={api.translate}
       mod={mod}
-      api={api}
     />
   );
 }
