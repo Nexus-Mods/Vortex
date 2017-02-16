@@ -8,6 +8,7 @@
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/meta-editor",
+    "prebuild": "typings install",
     "build": "npm run tsc && npm run webpack && copyfiles -f src/stylesheets/metaeditor.scss dist",
     "buildDev": "npm run build && npm run installDev"
   },

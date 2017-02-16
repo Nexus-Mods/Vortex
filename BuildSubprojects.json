@@ -1,0 +1,48 @@
+[
+  [
+    {
+      "name": "nexus-api",
+      "path": "lib/js/nexus-api",
+      "sources": ["src/*.ts"],
+      "module": "nexus-api"
+    },
+    {
+      "name": "modinstaller",
+      "path": "lib/csharp",
+      "sources": ["**/*.cs", "**/*.csproj", "src/Component.sln"],
+      "copyTo": "{BUILD_DIR}/lib/modinstaller"
+    },
+    {
+      "name": "exe-version",
+      "path": "lib/cpp/exe-version",
+      "sources": ["src/*", "binding.gyp", "*.json", "index.*"],
+      "module": "exe-version",
+      "rebuild": true
+    },
+    {
+      "name": "icon-extract",
+      "path": "lib/cpp/icon-extract",
+      "sources": ["src/*", "binding.gyp", "*.json", "index.*"],
+      "module": "icon-extract",
+      "rebuild": true
+    },
+    {
+      "name": "gamebryo-plugin-management",
+      "path": "extensions/gamebryo-plugin-management",
+      "sources": ["src/**/*.ts", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-plugin-management"
+    },
+    {
+      "name": "gamebryo-savegame-management",
+      "path": "extensions/gamebryo-savegame-management",
+      "sources": ["src/**/*.ts", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-savegame-management"
+    },
+    {
+      "name": "meta-editor",
+      "path": "extensions/meta-editor",
+      "sources": ["src/**/*.ts", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/meta-editor"
+    }
+  ]
+]

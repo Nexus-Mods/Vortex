@@ -9,6 +9,7 @@
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "clear": "rm-local-modules",
     "postinstall": "electron-rebuild -w gamebryo-savegame",
+    "prebuild": "typings install",
     "build": "npm run tsc && npm run webpack && copyfiles -f ./node_modules/gamebryo-savegame/dist/nbind.node ./dist/savegamelib && copyfiles -f ./node_modules/gamebryo-savegame/dist/liblz4.dll ./dist/savegamelib",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-savegame-management",
     "buildDev": "npm run build && npm run installDev"

@@ -6,7 +6,7 @@ const path = require('path');
 const glob = require('glob');
 const exec = require('child_process').exec;
 
-const data = require('./datafile.json');
+const data = require('./InstallAssets.json');
 
 const globOptions = { matchBase: true, globstar: true };
 
@@ -88,11 +88,9 @@ for (let file of data.copy) {
 function waitForProcesses() {
   if ((childProcesses.length > 0) || (copies !== 0)) {
     setTimeout(waitForProcesses, 100);
-  }
-  else {
+  } else {
     process.exit(status);
   }
 }
 
 waitForProcesses();
-

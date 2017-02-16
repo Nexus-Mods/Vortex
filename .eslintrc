@@ -135,7 +135,7 @@
     // Stylistic Issues
     "brace-style": [
       1,
-      "stroustrup",
+      "1tbs",
       {
         "allowSingleLine": true
       }

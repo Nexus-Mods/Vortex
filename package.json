@@ -8,33 +8,38 @@
     "url": "https://github.com/Nexus-Mods/NMM2"
   },
   "scripts": {
-    "_babel_out": "cross-env BABEL_ENV=development babel out -d out --ignore extensions",
-    "_babel_app": "cross-env BABEL_ENV=production babel app -d app --ignore node_modules",
     "_assets_out": "node InstallAssets.js out",
     "_assets_app": "node InstallAssets.js app",
-    "_install_app": "cd app && npm install && npm update",
-    "prestart": "npm run _assets_out && npm run build_out",
-    "build_gamebryo_plugin": "cd extensions/gamebryo-plugin-management && npm install && npm run build && copyfiles -u 1 dist/**/* ../../app/bundledPlugins/gamebryo-plugin-management",
-    "build_gamebryo_save": "cd extensions/gamebryo-savegame-management && npm install && npm run build && copyfiles -u 1 dist/**/* ../../app/bundledPlugins/gamebryo-savegame-management",
-    "build_meta_editor": "cd extensions/meta-editor && npm install && npm run build && copyfiles -f dist/* ../../app/bundledPlugins/meta-editor",
-    "build_extensions_app": "npm run build_gamebryo_plugin && npm run build_gamebryo_save && npm run build_meta_editor",
-    "prepackage": "npm run build_nexusapi && npm run _install_app && npm run _assets_app && npm install 7zip-bin",
-    "package": "build && npm run build_extensions_app",
-    "postinstall": "typings install",
-    "start": "cross-env NODE_ENV=development electron .",
-    "build_modinstaller": "rimraf node_modules/modinstaller && npm install modinstaller",
-    "quickstart": "cross-env NODE_ENV=development electron .",
-    "preinstallex": "npm install rm-local-modules && rm-local-modules",
-    "electron-rebuild": "electron-rebuild -w icon-extract,gamebryo-savegame,ffi,node-7z,winreg,ref,exe-version,node-sass",
-    "installex": "npm install && npm run build_out && npm run build_api && npm run electron-rebuild && npm run _assets_out && cd node_modules/redux-persist && npm run build:commonjs",
-    "build_nexusapi": "cd lib/js/nexus-api && npm install && npm run build",
+
+    "_build_subprojects_out": "node BuildSubprojects.js out",
+    "_build_subprojects_app": "node BuildSubprojects.js app",
+
     "build_api": "tsc -p ./api && npm install ./api",
-    "build_out": "tsc -p . && npm run sassc",
-    "buildwatch": "concurrently -p \"\" --kill-others \"tsc -p . -w\" npm-watch",
+
+    "build_rest": "npm run _assets_out && npm run _build_subprojects_out && npm run build_api",
+
+    "prepackage": "npm run build_api && npm run _build_subprojects_app && npm run _install_app && npm run _assets_app && npm install 7zip-bin",
+    "package": "build",
+
+    "prestart": "npm run build",
+    "start": "cross-env NODE_ENV=development electron .",
+
+    "_install_app": "cd app && npm install && npm update",
+
+    "preinstallex": "npm install rm-local-modules && rm-local-modules",
+    "installex": "npm install && npm run build && npm run electron-rebuild",
+
+    "electron-rebuild": "electron-rebuild -w ffi,node-7z,winreg,ref,node-sass",
+
+    "postinstall": "typings install",
+
     "lessc": "lessc --clean-css --include-path=node_modules/bootswatch:node_modules/bootstrap-less src/stylesheets/index.less out/assets/css/base.css",
     "sassc": "node-sass src/stylesheets/index.scss out/assets/css/base.css",
     "test": "jest --no-cache",
-    "doc": "typedoc --out doc src"
+    "doc": "typedoc --out doc src",
+
+    "build": "tsc -p . && npm run sassc && npm run build_rest",
+    "buildwatch": "npm run build_rest && concurrently -p \"\" --kill-others \"tsc -p . -w\" npm-watch"
   },
   "watch": {
     "sassc": {
@@ -163,6 +168,7 @@
     "less-plugin-clean-css": "^1.5.1",
     "level-js": "^2.2.4",
     "lodash": "^4.17.4",
+    "minimist": "^1.2.0",
     "modinstaller": "file:lib\\csharp",
     "modmeta-db": "file:external\\modmeta-db",
     "nbind": "^0.3.6",
