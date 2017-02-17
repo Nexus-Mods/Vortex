@@ -133,15 +133,8 @@ function processModule(project, buildType, feedback) {
     modulePath = path.join('node_modules', project.module);
   }
 
-  let res =
-      rimrafAsync(modulePath)
+  return rimrafAsync(modulePath)
           .then(() => npm(['install', project.module], options, feedback));
-
-  if (project.rebuild === true) {
-    res = res.then(
-        () => spawnAsync(rebuild, ['-w', project.module], options, feedback));
-  }
-  return res;
 }
 
 function processCustom(project, buildType, feedback) {
@@ -157,11 +150,21 @@ function processCustom(project, buildType, feedback) {
   return res;
 }
 
+function processRebuild(project, buildType, feedback) {
+  const moduleDir = buildType === 'out'
+    ? __dirname
+    : path.join(__dirname, buildType);
+
+  return spawnAsync(rebuild, ['-w', project.module, '-m', moduleDir], {}, feedback);
+}
+
 function processProject(project, buildType, feedback) {
-  if (project.module !== undefined) {
+  if (project.type === 'install-module') {
     return processModule(project, buildType, feedback);
-  } else if (project.path !== undefined) {
+  } else if (project.type === 'build-copy') {
     return processCustom(project, buildType, feedback);
+  } else if (project.type === 'electron-rebuild') {
+    return processRebuild(project, buildType, feedback);
   }
   return Promise.reject(new Error('invalid project descriptor ' + project.toString()));
 }
