@@ -18,7 +18,7 @@
 
     "build_rest": "npm run _assets_out && npm run _build_subprojects_out && npm run build_api",
 
-    "prepackage": "npm run build_api && npm run _build_subprojects_app && npm run _install_app && npm run _assets_app && npm install 7zip-bin",
+    "prepackage": "npm run build_api && npm run _install_app && npm run _build_subprojects_app && npm run _assets_app && npm install 7zip-bin",
     "package": "build",
 
     "prestart": "npm run build",
@@ -227,6 +227,7 @@
     "react-contextmenu": "^1.6.3",
     "react-dom": "^15.3.0",
     "react-layout-pane": "TanninOne/react-layout-pane",
+    "recharts": "^0.20.8",
     "redux-persist": "TanninOne/redux-persist",
     "redux-persist-node-storage": "^1.0.2",
     "source-map-support": "^0.4.10",
