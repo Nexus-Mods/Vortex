@@ -177,12 +177,31 @@ namespace Components.Scripting.CSharpScript
         }
 
         /// <summary>
+        /// Installs the speified file from the mod to the file system.
+        /// </summary>
+        /// <param name="p_strFile">The path of the file to install.</param>
+        /// <returns><c>true</c> if the file was written; <c>false</c> otherwise.</returns>
+        public static bool InstallFileFromFomod(string p_strFile)
+        {
+            return InstallFileFromMod(p_strFile, p_strFile);
+        }
+
+        /// <summary>
         /// Retrieves the list of files in the mod.
         /// </summary>
         /// <returns>The list of files in the mod.</returns>
         public static string[] GetModFileList()
         {
             return ExecuteMethod(() => Functions.GetModFileList());
+        }
+
+        /// <summary>
+        /// Retrieves the list of files in the mod.
+        /// </summary>
+        /// <returns>The list of files in the mod.</returns>
+        public static string[] GetFomodFileList()
+        {
+            return GetModFileList();
         }
 
         /// <summary>
@@ -193,6 +212,16 @@ namespace Components.Scripting.CSharpScript
         public static byte[] GetFileFromMod(string p_strFile)
         {
             return ExecuteMethod(() => Functions.GetFileFromMod(p_strFile));
+        }
+
+        /// <summary>
+        /// Retrieves the specified file from the mod.
+        /// </summary>
+        /// <param name="p_strFile">The file to retrieve.</param>
+        /// <returns>The requested file data.</returns>
+        public static byte[] GetFileFromFomod(string p_strFile)
+        {
+            return GetFileFromMod(p_strFile);
         }
 
         /// <summary>

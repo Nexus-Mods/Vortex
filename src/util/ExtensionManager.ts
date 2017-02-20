@@ -31,6 +31,7 @@ import {} from '../extensions/firststeps_dashlet';
 import {} from '../extensions/gamemode_management';
 import {} from '../extensions/hardlink_activator';
 import {} from '../extensions/installer_fomod';
+import {} from '../extensions/installer_nested_fomod';
 import {} from '../extensions/mod_highlight';
 import {} from '../extensions/mod_management';
 import {} from '../extensions/nexus_integration';
@@ -608,6 +609,7 @@ class ExtensionManager {
       'hardlink_activator',
       'updater',
       'installer_fomod',
+      'installer_nested_fomod',
       'settings_metaserver',
     ];
 

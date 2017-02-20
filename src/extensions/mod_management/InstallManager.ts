@@ -34,6 +34,14 @@ interface ISupportedInstaller {
   requiredFiles: string[];
 }
 
+interface IInstruction {
+  type: 'copy' | 'submodule';
+
+  path: string;
+  source: string;
+  destination: string;
+}
+
 // tslint:disable-next-line:no-empty
 function UserCanceled() {}
 
@@ -95,111 +103,135 @@ class InstallManager {
     installContext.startIndicator(baseName);
 
     let destinationPath: string;
-    let fileList: IZipEntry[] = [];
 
-    api.lookupModMeta({ filePath: archivePath })
-      .then((modInfo: ILookupResult[]) => {
-        if (modInfo.length > 0) {
-          fullInfo.meta = modInfo[0].value;
-        }
-
-        installName = this.deriveInstallName(baseName, fullInfo);
-
-        const checkNameLoop = () => {
-          return this.checkModExists(installName, api, gameId)
-            ? this.queryUserReplace(installName, api).then((newName: string) => {
-              installName = newName;
-              return checkNameLoop();
-            })
-            : Promise.resolve(installName);
-        };
-
-        return checkNameLoop();
-      })
-      .then(() => {
-        installContext.startInstallCB(installName, archiveId);
-
-        destinationPath = path.join(this.mGetInstallPath(), installName);
-        // get list of files in the archive
-        return new Promise((resolve, reject) => {
-          this.mTask.list(archivePath, {})
-            .progress((files: any[]) => {
-              fileList.push(...files.filter((spec) => spec.attr[0] !== 'D'));
-            })
-            .then(() => {
-              resolve();
-            });
-        });
-      })
-      .then(() => {
-        return this.getInstaller(fileList.map((entry: IZipEntry) => entry.name));
-      })
-      .then((supportedInstaller: ISupportedInstaller) => {
-        if (supportedInstaller === undefined) {
-          throw new Error('no installer supporting this file');
-        }
-        const { installer, requiredFiles } = supportedInstaller;
-        let cleanup: () => void;
-        let reqFilesPath: string;
-        return new Promise<string>((resolve, reject) => {
-          tmpDir({ unsafeCleanup: true },
-            (err: any, tmpPath: string, cleanupCallback: () => void) => {
-              if (err !== null) {
-                reject(err);
-              }
-              cleanup = cleanupCallback;
-              resolve(tmpPath);
-            });
-        })
-          .then((tmpPath: string) => {
-            reqFilesPath = tmpPath;
-            if (requiredFiles.length > 0) {
-              return this.mTask.extractFull(archivePath, tmpPath, {
-                raw: requiredFiles,
-              });
-            }
-          })
-          .then(() => {
-            return installer.install(
-              fileList.map((entry: IZipEntry) => entry.name),
-              reqFilesPath,
-              gameId,
-              (perc: number) => log('info', 'progress', perc));
-          })
-          .finally(() => {
-            if (cleanup !== undefined) {
-              cleanup();
-            }
-          });
-      })
-      .then((result: any) => {
-        installContext.setInstallPathCB(installName, destinationPath);
-        return this.extractArchive(archivePath, destinationPath, result.instructions);
-      })
-      .then(() => {
-        const filteredInfo = filterModInfo(fullInfo);
-        installContext.finishInstallCB(installName, true, filteredInfo);
-        if (processDependencies) {
-          this.installDependencies(filteredInfo.rules, this.mGetInstallPath(),
-            installContext, api);
-        }
-        if (callback !== undefined) {
-          callback(null, installName);
-        }
-      })
-      .catch((err) => {
-        installContext.finishInstallCB(installName, false);
-        if (!(err instanceof UserCanceled)) {
-          installContext.reportError('Installation failed', err);
-          if (callback !== undefined) {
-            callback(err, installName);
+    api.lookupModMeta({filePath: archivePath})
+        .then((modInfo: ILookupResult[]) => {
+          if (modInfo.length > 0) {
+            fullInfo.meta = modInfo[0].value;
           }
-        }
-      })
-      .finally(() => {
-        installContext.stopIndicator(baseName);
-      })
-      ;
+
+          installName = this.deriveInstallName(baseName, fullInfo);
+
+          const checkNameLoop = () => {
+            return this.checkModExists(installName, api, gameId) ?
+                       this.queryUserReplace(installName, api)
+                           .then((newName: string) => {
+                             installName = newName;
+                             return checkNameLoop();
+                           }) :
+                       Promise.resolve(installName);
+          };
+
+          return checkNameLoop();
+        })
+        .then(() => {
+          installContext.startInstallCB(installName, archiveId);
+
+          destinationPath = path.join(this.mGetInstallPath(), installName);
+          return this.installInner(archivePath, gameId);
+        })
+        .then((result) => {
+          installContext.setInstallPathCB(installName, destinationPath);
+          return this.processInstructions(archivePath, destinationPath, gameId, result);
+        })
+        .then(() => {
+          const filteredInfo = filterModInfo(fullInfo);
+          installContext.finishInstallCB(installName, true, filteredInfo);
+          if (processDependencies) {
+            this.installDependencies(filteredInfo.rules, this.mGetInstallPath(),
+                                     installContext, api);
+          }
+          if (callback !== undefined) {
+            callback(null, installName);
+          }
+        })
+        .catch((err) => {
+          installContext.finishInstallCB(installName, false);
+          if (!(err instanceof UserCanceled)) {
+            installContext.reportError('Installation failed', err);
+            if (callback !== undefined) {
+              callback(err, installName);
+            }
+          }
+        })
+        .finally(() => { installContext.stopIndicator(baseName); });
+  }
+
+  /**
+   * find the right installer for the specified archive, then install
+   */
+  private installInner(archivePath: string, gameId: string) {
+    let fileList: IZipEntry[] = [];
+    // get list of files in the archive
+    return new Promise((resolve, reject) => {
+             this.mTask.list(archivePath, {})
+                 .progress((files: any[]) => {
+                   fileList.push(
+                       ...files.filter((spec) => spec.attr[0] !== 'D'));
+                 })
+                 .then(() => { resolve(); });
+           })
+        .then(() => this.getInstaller(
+                  fileList.map((entry: IZipEntry) => entry.name)))
+        .then((supportedInstaller: ISupportedInstaller) => {
+          if (supportedInstaller === undefined) {
+            throw new Error('no installer supporting this file');
+          }
+          const {installer, requiredFiles} = supportedInstaller;
+          let cleanup: () => void;
+          let reqFilesPath: string;
+          // extract the requested files, then initiate the actual install
+          return new Promise<string>((resolve, reject) => {
+                   tmpDir({unsafeCleanup: true},
+                          (err: any, tmpPath: string,
+                           cleanupCallback: () => void) => {
+                            if (err !== null) {
+                              reject(err);
+                            }
+                            cleanup = cleanupCallback;
+                            resolve(tmpPath);
+                          });
+                 })
+              .then((tmpPath: string) => {
+                reqFilesPath = tmpPath;
+                if (requiredFiles.length > 0) {
+                  return this.mTask.extractFull(archivePath, tmpPath, {
+                    raw: requiredFiles,
+                  });
+                }
+              })
+              .then(() => installer.install(
+                        fileList.map((entry: IZipEntry) => entry.name),
+                        reqFilesPath, gameId,
+                        (perc: number) => log('info', 'progress', perc)))
+              .finally(() => {
+                if (cleanup !== undefined) {
+                  // cleanup();
+                }
+              });
+        });
+  }
+
+  private processInstructions(archivePath: string, destinationPath: string,
+                              gameId: string,
+                              result: {instructions: IInstruction[]}) {
+    if ((result.instructions === null) || (result.instructions === undefined) ||
+        (result.instructions.length === 0)) {
+      return Promise.reject('installer returned no instructions');
+    }
+    const copies = result.instructions.filter((instruction) =>
+                                                  instruction.type === 'copy');
+
+    const subModule = result.instructions.filter(
+        (instruction) => instruction.type === 'submodule');
+
+    return this.extractArchive(archivePath, destinationPath, copies)
+        .then(() => Promise.each(
+                  subModule,
+                  (mod) => this.installInner(mod.path, gameId)
+                               .then((resultInner) => this.processInstructions(
+                                         archivePath, destinationPath, gameId,
+                                         resultInner))));
   }
 
   private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {
@@ -391,10 +423,11 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
    */
   private extractArchive(archivePath: string,
                          destinationPath: string,
-                         instructions: any): Promise<void> {
+                         copies: IInstruction[]): Promise<void> {
+    if (copies.length === 0) {
+      return Promise.resolve();
+    }
     const extract7z = this.mTask.extractFull;
-
-    const copies = instructions.filter((instruction) => instruction.type === 'copy');
 
     let extractFilePath: string;
 

@@ -52,7 +52,7 @@
         {
             return new Instruction()
             {
-                type = "warning",
+                type = "unsupported",
                 source = function,
             };
         }

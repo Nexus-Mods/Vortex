@@ -47,7 +47,7 @@ namespace Components.Scripting.CSharpScript
 			//s = new Script();
 			if (s == null)
 			{
-				// ??? m_csfFunctions.MessageBox("C# Script did not contain a 'Script' class in the root namespace.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                m_csfFunctions.ExtendedMessageBox("C# Script did not contain a 'Script' class in the root namespace.", "Error", null);
 				return false;
 			}
 
@@ -68,7 +68,7 @@ namespace Components.Scripting.CSharpScript
 					stbException.AppendLine().AppendLine().Append(ex.ToString());
 				}
 				string strMessage = "An exception occured in the script.";
-				// ??? m_csfFunctions.ExtendedMessageBox(strMessage, "Error", stbException.ToString(), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                m_csfFunctions.ExtendedMessageBox(strMessage, "Error", stbException.ToString());
 				return false;
 			}
 		}

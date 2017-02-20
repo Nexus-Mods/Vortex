@@ -171,8 +171,6 @@ namespace Components.ModInstaller
         /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
         protected async Task<IList<Instruction>> ScriptedModInstall(Mod modArchive, string prefixPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
-            IList<Instruction> Instructions = new List<Instruction>();
-
             IScriptExecutor sexScript = modArchive.InstallScript.Type.CreateExecutor(modArchive, coreDelegate);
             return await sexScript.Execute(modArchive.InstallScript, prefixPath);
         }
