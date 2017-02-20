@@ -6,6 +6,7 @@ using Components.Interface;
 using Components.Scripting;
 using ModInstaller;
 using System.IO;
+using System.Diagnostics;
 
 namespace Components.ModInstaller
 {
@@ -34,6 +35,9 @@ namespace Components.ModInstaller
             bool test = true;
             IList<string> RequiredFiles = new List<string>();
 
+            Debugger.Launch();
+            Debugger.Break();
+
             if ((modArchiveFileList == null) || (modArchiveFileList.Count == 0))
                 test = false;
             else
@@ -43,7 +47,7 @@ namespace Components.ModInstaller
                     RequiredFiles = await GetRequirements(modArchiveFileList, true);
                 } catch (UnsupportedException)
                 {
-                    test = false;
+                    RequiredFiles = new List<string>();
                 }
 
             }
@@ -67,9 +71,20 @@ namespace Components.ModInstaller
         {
             IList<Instruction> Instructions = new List<Instruction>();
             ModFormatManager FormatManager = new ModFormatManager();
+            string ScriptFilePath = null;
 
-            string ScriptFilePath = new List<string>(await GetRequirements(modArchiveFileList, false)).FirstOrDefault();
-            ScriptFilePath = Path.Combine(scriptPath, ScriptFilePath);
+            //Debugger.Launch();
+            //Debugger.Break();
+            try
+            {
+                ScriptFilePath = new List<string>(await GetRequirements(modArchiveFileList, false)).FirstOrDefault();
+            }
+            catch (UnsupportedException)
+            {
+                // Currently this does nothing.
+            }
+            if (!string.IsNullOrEmpty(scriptPath) && !string.IsNullOrEmpty(ScriptFilePath))
+                ScriptFilePath = Path.Combine(scriptPath, ScriptFilePath);
             IScriptType ScriptType = await GetScriptType(modArchiveFileList);
             Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath, ScriptType);
             await modToInstall.Initialize();

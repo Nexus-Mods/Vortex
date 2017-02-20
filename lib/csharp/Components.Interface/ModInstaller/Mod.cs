@@ -98,15 +98,18 @@ namespace Components.Interface
         {
             byte[] scriptData = null;
 
-            await Task.Run(() =>
+            if (!string.IsNullOrEmpty(InstallScriptPath))
             {
-                scriptData = FileSystem.ReadAllBytes(InstallScriptPath);
-            });
+                await Task.Run(() =>
+                {
+                    scriptData = FileSystem.ReadAllBytes(InstallScriptPath);
+                });
 
-            await Task.Run(() =>
-            {
-                ModInstallScript = InstallScriptType.LoadScript(TextUtil.ByteToString(scriptData));
-            });
+                await Task.Run(() =>
+                {
+                    ModInstallScript = InstallScriptType.LoadScript(TextUtil.ByteToString(scriptData));
+                });
+            }
         }
 
         private void GetScreenshotPath(IList<string> listModFiles)
