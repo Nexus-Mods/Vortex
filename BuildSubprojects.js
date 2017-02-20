@@ -133,8 +133,13 @@ function processModule(project, buildType, feedback) {
     modulePath = path.join('node_modules', project.module);
   }
 
-  return rimrafAsync(modulePath)
-          .then(() => npm(['install', project.module], options, feedback));
+  let build = project.build === true
+    ? npm(['run', 'build'], { cwd: project.path }, feedback)
+    : Promise.resolve();
+
+  return build
+    .then(() => rimrafAsync(modulePath))
+    .then(() => npm(['install', project.module], options, feedback));
 }
 
 function processCustom(project, buildType, feedback) {

@@ -2,6 +2,16 @@
   [
     {
       "type": "install-module",
+      "name": "modmeta-db",
+      "path": "external/modmeta-db",
+      "source": ["src/*.ts"],
+      "build": true,
+      "module": "modmeta-db"
+    }
+  ],
+  [
+    {
+      "type": "install-module",
       "name": "nexus-api",
       "path": "lib/js/nexus-api",
       "sources": ["src/*.ts"],
