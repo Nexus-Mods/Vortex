@@ -134,7 +134,8 @@ function processModule(project, buildType, feedback) {
   }
 
   let build = project.build === true
-    ? npm(['run', 'build'], { cwd: project.path }, feedback)
+    ? npm(['install'], { cwd: project.path }, feedback)
+      .then(() => npm(['run', 'build'], { cwd: project.path }, feedback))
     : Promise.resolve();
 
   return build
