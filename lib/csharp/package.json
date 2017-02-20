@@ -4,6 +4,7 @@
   "description": "Installer for xml and c# fomods",
   "main": "dummy.js",
   "scripts": {
+    "buildDev": "node build.js Debug && copyfiles -f ModInstaller/bin/Debug/*.dll dist/ && copyfiles -f ModInstaller/bin/Debug/*.pdb dist/",
     "build": "node build.js && copyfiles -f ModInstaller/bin/Release/*.dll dist/"
   },
   "author": "Black Tree Gaming Ltd.",

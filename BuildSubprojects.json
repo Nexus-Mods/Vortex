@@ -20,9 +20,20 @@
     },
     {
       "type": "build-copy",
-      "name": "modinstaller",
+      "condition": "buildType === 'out'",
+      "name": "modinstaller (for development)",
       "path": "lib/csharp",
       "sources": ["**/*.cs", "**/*.csproj", "src/Component.sln"],
+      "build": "buildDev",
+      "copyTo": "{BUILD_DIR}/lib/modinstaller"
+    },
+    {
+      "type": "build-copy",
+      "condition": "buildType !== 'out'",
+      "name": "modinstaller (for distribution)",
+      "path": "lib/csharp",
+      "sources": ["**/*.cs", "**/*.csproj", "src/Component.sln"],
+      "build": "build",
       "copyTo": "{BUILD_DIR}/lib/modinstaller"
     },
     {

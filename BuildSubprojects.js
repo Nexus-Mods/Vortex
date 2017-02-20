@@ -6,6 +6,7 @@ const glob = require('glob');
 const minimist = require('minimist');
 const path = require('path');
 const rimraf = require('rimraf');
+const vm = require('vm');
 
 const projectGroups = fs.readJSONSync('./BuildSubprojects.json');
 let buildState;
@@ -29,6 +30,11 @@ class Unchanged extends Error {
   }
 }
 
+class ConditionNotMet extends Error {
+  constructor() {
+    super('Condition not met');
+  }
+}
 class ProcessFeedback {
   constructor(id) {
     this.id = id;
@@ -133,9 +139,9 @@ function processModule(project, buildType, feedback) {
     modulePath = path.join('node_modules', project.module);
   }
 
-  let build = project.build === true
+  let build = project.build !== undefined && project.build !== false
     ? npm(['install'], { cwd: project.path }, feedback)
-      .then(() => npm(['run', 'build'], { cwd: project.path }, feedback))
+      .then(() => npm(['run', typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback))
     : Promise.resolve();
 
   return build
@@ -145,7 +151,7 @@ function processModule(project, buildType, feedback) {
 
 function processCustom(project, buildType, feedback) {
   let res = npm(['install'], { cwd: project.path }, feedback)
-      .then(() => npm(['run', 'build'], { cwd: project.path }, feedback));
+      .then(() => npm(['run', typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback));
   if (project.copyTo !== undefined) {
     const output = format(project.copyTo, { BUILD_DIR: buildType });
     feedback.log('copying files to ' + output);
@@ -164,7 +170,18 @@ function processRebuild(project, buildType, feedback) {
   return spawnAsync(rebuild, ['-w', project.module, '-m', moduleDir], {}, feedback);
 }
 
+function evalCondition(condition, context) {
+  if (condition === undefined) {
+    return true;
+  }
+  const script = new vm.Script(condition);
+  return script.runInNewContext(context);
+}
+
 function processProject(project, buildType, feedback) {
+  if (!evalCondition(project.condition, { buildType })) {
+    return Promise.reject(new ConditionNotMet());
+  }
   if (project.type === 'install-module') {
     return processModule(project, buildType, feedback);
   } else if (project.type === 'build-copy') {
@@ -203,6 +220,8 @@ function main(args) {
         .catch((err) => {
           if (err instanceof Unchanged) {
             console.log('nothing to do', project.name);
+          } else if (err instanceof ConditionNotMet) {
+            console.log('condition wasn\'t met', project.name);
           } else {
             console.error('failed ', project.name, err);
           }
