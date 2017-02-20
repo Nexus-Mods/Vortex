@@ -71,40 +71,55 @@ class Nexus {
 
   public validateKey(key?: string): Promise<types.IValidateKeyResponse> {
     return new Promise<types.IValidateKeyResponse>((resolve, reject) => {
-      this.mRestClient.methods.validateKey(
+      let req = this.mRestClient.methods.validateKey(
         this.args({ headers: this.filter({ APIKEY: key }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
+      req.on('requestTimeout', () => reject('validate key timeout'));
+      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('error', (err) => reject(err));
     });
   }
 
   public getGames(): Promise<types.IGameListEntry[]> {
     return new Promise<types.IGameListEntry[]>((resolve, reject) => {
-      this.mRestClient.methods.getGames(this.args({}),
+      let req = this.mRestClient.methods.getGames(this.args({}),
         (data, response) => this.handleResult(data, response, resolve, reject));
+      req.on('requestTimeout', () => reject('validate key timeout'));
+      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('error', (err) => reject(err));
     });
   }
 
   public getGameInfo(gameId?: string): Promise<types.IGameInfo> {
     return new Promise<types.IGameInfo>((resolve, reject) => {
-      this.mRestClient.methods.getGameInfo(
+      let req = this.mRestClient.methods.getGameInfo(
         this.args({ path: this.filter({ gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
+      req.on('requestTimeout', () => reject('validate key timeout'));
+      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('error', (err) => reject(err));
     });
   }
 
   public getModInfo(modId: number, gameId?: string): Promise<types.IModInfo> {
     return new Promise<types.IModInfo>((resolve, reject) => {
-      this.mRestClient.methods.getModInfo(
+      let req = this.mRestClient.methods.getModInfo(
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
+      req.on('requestTimeout', () => reject('validate key timeout'));
+      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('error', (err) => reject(err));
     });
   }
 
   public getModFiles(modId: number, gameId?: string): Promise<types.IFileInfo[]> {
     return new Promise<any>((resolve, reject) => {
-      this.mRestClient.methods.getModFiles(
+      let req = this.mRestClient.methods.getModFiles(
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
+      req.on('requestTimeout', () => reject('validate key timeout'));
+      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('error', (err) => reject(err));
     });
   }
 
@@ -112,9 +127,12 @@ class Nexus {
                      fileId: number,
                      gameId?: string): Promise<types.IFileInfo> {
     return new Promise<types.IFileInfo>((resolve, reject) => {
-      this.mRestClient.methods.getFileInfo(
+      let req = this.mRestClient.methods.getFileInfo(
         this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
+      req.on('requestTimeout', () => reject('validate key timeout'));
+      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('error', (err) => reject(err));
     });
   }
 
@@ -122,9 +140,12 @@ class Nexus {
                          fileId: number,
                          gameId?: string): Promise<types.IDownloadURL[]> {
     return new Promise<types.IDownloadURL[]>((resolve, reject) => {
-      this.mRestClient.methods.getDownloadURLs(
+      let req = this.mRestClient.methods.getDownloadURLs(
         this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
+      req.on('requestTimeout', () => reject('validate key timeout'));
+      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('error', (err) => reject(err));
     });
   }
 

@@ -40,7 +40,7 @@ class ModActivator implements IModActivator {
     }
     const gameId = activeGameId(state);
     if (this.isGamebryoGame(gameId)) {
-      return 'Not supported for gamebryo engine';
+      return 'Doesn\'t work wtih the gamebryo engine.';
     }
     return undefined;
   }
