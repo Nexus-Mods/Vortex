@@ -49,7 +49,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
   const currentDiscovery = selectors.currentGameDiscovery(state);
   let readErrors = [];
 
-  const gameMods = state.persistent.mods[gameMode];
+  const gameMods = state.persistent.mods[gameMode] || {};
 
   return Promise.map(Object.keys(gameMods), (modId: string) => {
     let mod = gameMods[modId];
