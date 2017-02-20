@@ -349,6 +349,7 @@ namespace Components.Interface
         /// <param name="p_mdiIcon">The icon to display in the message box.</param>
         public void ExtendedMessageBox(string p_strMessage, string p_strTitle, string p_strDetails)
         {
+            Core.ui.ReportError(p_strTitle, p_strMessage, p_strDetails);
             // ??? This stuff should be handled by the user interaction delegate
         }
 

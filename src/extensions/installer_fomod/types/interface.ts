@@ -60,3 +60,9 @@ export interface IInstallerState {
   installSteps: IInstallStep[];
   currentStep: number;
 }
+
+export interface IReportError {
+  title: string;
+  message: string;
+  details: string;
+}

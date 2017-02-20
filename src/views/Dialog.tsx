@@ -113,6 +113,11 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       controls.push(<div key='dialog-content-html'>
         <webview src={`file://${content.htmlFile}`} />
       </div>);
+    } else if (content.htmlText !== undefined) {
+      controls.push(<div
+        key='dialog-content-html'
+        dangerouslySetInnerHTML={{ __html: content.htmlText }}
+      />);
     } else if (content.checkboxes !== undefined) {
       controls.push(<div key='dialog-content-choices'>
         {content.checkboxes.map(this.renderCheckbox)}

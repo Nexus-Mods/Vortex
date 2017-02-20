@@ -88,7 +88,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
       title: 'More',
       action: (dismiss: Function) => {
         dispatch(showDialog('error', 'Error', {
-          message: finalDetails,
+          htmlText: finalDetails,
           options: {
             wrap: false,
           },

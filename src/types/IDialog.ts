@@ -26,6 +26,16 @@ export interface IFormControl {
 
 export interface IDialogContent {
   htmlFile?: string;
+  /**
+   * displays a message as html.
+   * NOTE: this will be inserted directy
+   * into the dom so it must never be html from
+   * an external source!
+   * 
+   * @type {string}
+   * @memberOf IDialogContent
+   */
+  htmlText?: string;
   message?: string;
   checkboxes?: ICheckbox[];
   choices?: ICheckbox[];

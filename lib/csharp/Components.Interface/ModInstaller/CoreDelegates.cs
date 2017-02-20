@@ -211,12 +211,14 @@ namespace Components.Interface
             private Func<object, Task<object>> mStartDialog;
             private Func<object, Task<object>> mEndDialog;
             private Func<object, Task<object>> mUpdateState;
+            private Func<object, Task<object>> mReportError;
 
             public Delegates(dynamic source)
             {
                 mStartDialog = source.startDialog;
                 mEndDialog = source.endDialog;
                 mUpdateState = source.updateState;
+                mReportError = source.reportError;
             }
 
             public async void StartDialog(string moduleName, HeaderImage image, SelectCB select, ContinueCB cont, CancelCB cancel)
@@ -232,6 +234,16 @@ namespace Components.Interface
             public async void UpdateState(InstallerStep[] installSteps, int currentStep)
             {
                 await mUpdateState(new UpdateParameters(installSteps, currentStep));
+            }
+
+            public async void ReportError(string title, string message, string details)
+            {
+                await mReportError(new Dictionary<string, dynamic>
+                {
+                    { "title", title },
+                    { "message", message },
+                    { "details", details }
+                });
             }
         }
     }
