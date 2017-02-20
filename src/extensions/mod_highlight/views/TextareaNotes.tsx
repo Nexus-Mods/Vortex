@@ -44,7 +44,7 @@ class TextareaNotes extends ComponentEx<IProps, IMainWindowState> {
 
   public render(): JSX.Element {
     let {mod } = this.props;
-    let notes = getSafe(mod.attributes, ['notes'], '');
+    let notes: string =  mod !== undefined ? getSafe(mod.attributes, ['notes'], '') : '';
 
     return (
       <textarea
