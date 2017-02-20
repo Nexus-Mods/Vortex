@@ -181,7 +181,7 @@ function main(args) {
   // each group is processed in parallel
   Promise.each(projectGroups, (projects) => Promise.map(projects, (project) => {
     let feedback = new ProcessFeedback(project.name);
-    return changes(project.path, project.sources, args.f || (buildState[project.name] === undefined))
+    return changes(project.path || '.', project.sources, args.f || (buildState[project.name] === undefined))
         .then((lastChange) => {
           if ((lastChange !== undefined) && (lastChange < buildState[project.name])) {
             return Promise.reject(new Unchanged());
