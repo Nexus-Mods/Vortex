@@ -326,9 +326,15 @@ class ModDB {
                                           server.cacheDurationSec;
                                       this.insert(result.value);
                                     }
+                                  })
+                                  .catch((err) => {
+                                    // TODO need a way to log without rejecting
+                                    console.log('failed to query server', err);
                                   });
                             })
-              .then(() => { return Promise.resolve(remoteResults); });
+              .then(() =>
+                Promise.resolve(remoteResults || [])
+              );
         });
   }
 

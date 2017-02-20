@@ -1,5 +1,5 @@
 "use strict";
-const bodyParser = require('body-parser');
+const bodyParser = require("body-parser");
 function serveREST(db, portIn) {
     const express = require('express');
     let app = express();

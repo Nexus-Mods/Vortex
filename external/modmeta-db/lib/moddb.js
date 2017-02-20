@@ -1,24 +1,23 @@
 "use strict";
-const Promise = require('bluebird');
-const leveljs = require('level-js');
-const levelup = require('levelup');
-const node_rest_client_1 = require('node-rest-client');
-const semvish = require('semvish');
-const util_1 = require('./util');
-const util = require('util');
+const Promise = require("bluebird");
+const leveljs = require("level-js");
+const levelup = require("levelup");
+const node_rest_client_1 = require("node-rest-client");
+const semvish = require("semvish");
+const util_1 = require("./util");
+const util = require("util");
 class ModDB {
     constructor(gameId, servers, database, timeoutMS) {
         this.translateFromNexus = (nexusObj, gameId) => {
-            console.log('translateFromNexus', { nexusobj: util.inspect(nexusObj), gameId });
             let urlFragments = [
                 'nxm:/',
                 nexusObj.mod.game_domain,
                 'mods',
                 nexusObj.mod.mod_id,
                 'files',
-                nexusObj.file_details.file_id
+                nexusObj.file_details.file_id,
             ];
-            let page = `http://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
+            const page = `http://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
             return {
                 key: `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
                 value: {
@@ -32,11 +31,11 @@ class ModDB {
                     modId: nexusObj.mod.mod_id,
                     sourceURI: urlFragments.join('/'),
                     details: {
-                        category: nexusObj.mod.category_id,
+                        category: nexusObj.mod.category,
                         description: nexusObj.mod.description,
                         author: nexusObj.mod.author,
                         homepage: page,
-                    }
+                    },
                 },
             };
         };
@@ -196,9 +195,12 @@ class ModDB {
                                 server.cacheDurationSec;
                         this.insert(result.value);
                     }
+                })
+                    .catch((err) => {
+                    console.log('failed to query server', err);
                 });
             })
-                .then(() => { return Promise.resolve(remoteResults); });
+                .then(() => Promise.resolve(remoteResults || []));
         });
     }
     makeKey(mod) {
