@@ -12,6 +12,6 @@ export function install(files: string[], destinationPath: string,
                         gameId: string, progress: IProgressDelegate): Promise<any> {
   return Promise.resolve({
     message: 'Success',
-    files: files.map((name: string) => ({ source: name, destination: name })),
+    instructions: files.map((name: string) => ({ type: 'copy', source: name, destination: name })),
   });
 }

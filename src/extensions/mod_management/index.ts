@@ -86,6 +86,8 @@ function init(context: IExtensionContextExt): boolean {
   context.registerModActivator = registerModActivator;
   context.registerInstaller = registerInstaller;
 
+  registerInstaller(1000, basicInstaller.testSupported, basicInstaller.install);
+
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
 
@@ -173,8 +175,6 @@ function init(context: IExtensionContextExt): boolean {
               })
               .catch((err) => { callback(err); });
         });
-
-    registerInstaller(1000, basicInstaller.testSupported, basicInstaller.install);
   });
 
   return true;
