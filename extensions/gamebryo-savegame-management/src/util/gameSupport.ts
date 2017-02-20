@@ -13,6 +13,9 @@ const gameSupport = {
   fallout4: {
     savesPath: 'Fallout4',
   },
+  falloutnv: {
+    savesPath: 'FalloutNV',
+  },
 };
 
 export function gameSupported(gameMode: string): boolean {
