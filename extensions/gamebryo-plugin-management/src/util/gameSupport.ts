@@ -32,6 +32,7 @@ const gameSupport = {
     ],
   },
   falloutnv: {
+    appDataPath: 'falloutnv',
     pluginTXTFormat: 'original',
     nativePlugins: [
       'falloutnv.esm',
