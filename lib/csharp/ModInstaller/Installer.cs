@@ -35,9 +35,6 @@ namespace Components.ModInstaller
             bool test = true;
             IList<string> RequiredFiles = new List<string>();
 
-            Debugger.Launch();
-            Debugger.Break();
-
             if ((modArchiveFileList == null) || (modArchiveFileList.Count == 0))
                 test = false;
             else
@@ -73,8 +70,6 @@ namespace Components.ModInstaller
             ModFormatManager FormatManager = new ModFormatManager();
             string ScriptFilePath = null;
 
-            //Debugger.Launch();
-            //Debugger.Break();
             try
             {
                 ScriptFilePath = new List<string>(await GetRequirements(modArchiveFileList, false)).FirstOrDefault();
