@@ -5,7 +5,7 @@ import Nexus from 'nexus-api';
  * 
  * @param {string} activeGameId
  * @param {Nexus} nexus
- * @param {boolean} isEndorsed
+ * @param {string} endorseStatus
  * @param {string} modId,
  * @return {boolean} isEndorsed
  * 
@@ -14,12 +14,25 @@ import Nexus from 'nexus-api';
 function retrieveEndorsedMod(
   activeGameId: string,
   nexus: Nexus,
-  isEndorsed: boolean,
+  endorseStatus: string,
   modId: string,
-): Promise<boolean> {
-  return new Promise<boolean>((resolve, reject) => {
-    // TODO LUCO Tom's call
-    resolve(!isEndorsed);
+  version: string,
+): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+
+    if (endorseStatus === 'Undecided' || endorseStatus === 'Abstained') {
+      endorseStatus = 'endorse';
+    } else  if (endorseStatus === 'Endorsed') {
+      endorseStatus = 'abstain';
+    }
+
+    nexus.endorseMod(version, parseInt(modId, 10), endorseStatus, activeGameId)
+      .then((result: any) => {
+        resolve(endorseStatus);
+      })
+      .catch((err) => {
+        reject(err);
+      });
   });
 }
 

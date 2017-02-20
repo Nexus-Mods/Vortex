@@ -10,7 +10,7 @@ import { IconButton } from '../../views/TooltipControls';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
-import {setModAttribute} from '../mod_management/actions/mods';
+import { setModAttribute } from '../mod_management/actions/mods';
 import { IMod } from '../mod_management/types/IMod';
 
 import NXMUrl from './NXMUrl';
@@ -148,15 +148,16 @@ function processErrorMessage(
   }
 }
 
-function endorseMod(api: IExtensionApi, isEndorsed: boolean, modId: string) {
+function endorseMod(api: IExtensionApi, endorsedStatus: string,
+                    modId: string, id: string, version: string) {
   let gameId;
   currentGame(api.store)
     .then((game: IGameStored) => {
       gameId = game.id;
       log('info', 'endorse mod ', modId);
-      return retrieveEndorsedMod(gameId, nexus, isEndorsed, modId);
+      return retrieveEndorsedMod(gameId, nexus, endorsedStatus, modId, version);
     })
-    .then((endorsed: boolean) => {
+    .then((endorsed: string) => {
       api.store.dispatch(setModAttribute(gameId, modId, 'endorsed', endorsed));
     })
     .catch((err) => {
@@ -167,21 +168,46 @@ function endorseMod(api: IExtensionApi, isEndorsed: boolean, modId: string) {
 };
 
 function getEndorsedIcon(api: IExtensionApi, mod: IMod) {
-  let endorsed: boolean = getSafe(mod.attributes, ['endorsed'], false);
+  let endorsed: string = getSafe(mod.attributes, ['endorsed'], '');
+  let modId: string = getSafe(mod.attributes, ['modId'], '');
+  let version: string = getSafe(mod.attributes, ['version'], '');
+
+  if (endorsed === '') {
+    const gameMode = activeGameId(api.store.getState());
+    if (modId !== '') {
+      nexus.getModInfo(parseInt(modId, null), gameMode)
+        .then((modInfo: any) => {
+          api.store.dispatch(setModAttribute(gameMode, mod.id,
+            'endorsed', modInfo.endorsement.endorse_status));
+          if (version === '') {
+            version = modInfo.version;
+            api.store.dispatch(setModAttribute(gameMode, mod.id,
+            'version', modInfo.version));
+          }
+        })
+        .catch((err) => {
+          showError(api.store.dispatch, 'An error occurred endorsing the mod', err);
+        });
+    }
+  }
 
   return (
     <EndorseModButton
       api={api}
-      isEndorsed={endorsed}
+      endorsedStatus={endorsed}
       t={api.translate}
-      modId={mod.id}
+      id={mod.id}
+      modId={modId}
+      version={version}
       onEndorseMod={endorseEmitter}
     />
   );
+
 }
 
-function endorseEmitter(api: IExtensionApi, isEndorsed: boolean, modId: string) {
-  api.events.emit('endorse-mod', [isEndorsed, modId]);
+function endorseEmitter(api: IExtensionApi, endorsedStatus: string,
+                        modId: string, id: string, version: string) {
+  api.events.emit('endorse-mod', [endorsedStatus, modId, id, version]);
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -249,9 +275,11 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('endorse-mod', (result: any) => {
-      let isEndorsed = result[0];
+      let endorsedStatus = result[0];
       let modId = result[1];
-      endorseMod(context.api, isEndorsed, modId);
+      let id = result[2];
+      let version = result[3];
+      endorseMod(context.api, endorsedStatus, modId, id, version);
     });
 
     context.api.onStateChange(['settings', 'nexus', 'associateNXM'],
@@ -266,8 +294,8 @@ function init(context: IExtensionContextExt): boolean {
     );
 
     context.api.events.on('gamemode-activated', (gameMode: string) => {
-        nexus.setGame(gameMode);
-      });
+      nexus.setGame(gameMode);
+    });
 
     context.api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
       (oldValue: string, newValue: string) => {

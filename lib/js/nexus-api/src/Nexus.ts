@@ -80,6 +80,16 @@ class Nexus {
     });
   }
 
+  public endorseMod(version: string, modId: number,
+                    endorseStatus: string, gameId?: string): Promise<any> {
+    return new Promise<any>((resolve, reject) => {
+      this.mRestClient.methods.endorseMod(
+        this.args({ path: this.filter({ modId, gameId, endorseStatus }),
+         data: this.filter({ Version: version }) }),
+        (data, response) => this.handleResult(data, response, resolve, reject));
+    });
+  }
+
   public getGames(): Promise<types.IGameListEntry[]> {
     return new Promise<types.IGameListEntry[]>((resolve, reject) => {
       let req = this.mRestClient.methods.getGames(this.args({}),
@@ -197,6 +207,9 @@ class Nexus {
 
     this.mRestClient.registerMethod(
       'getFileInfo', this.mBaseURL + '/games/${gameId}/mods/${modId}/files/${fileId}', 'GET');
+
+    this.mRestClient.registerMethod(
+      'endorseMod', this.mBaseURL + '/games/${gameId}/mods/${modId}/${endorseStatus}', 'POST');
 
     this.mRestClient.registerMethod(
       'getDownloadURLs',
