@@ -172,9 +172,9 @@ function getEndorsedIcon(api: IExtensionApi, mod: IMod) {
   let modId: string = getSafe(mod.attributes, ['modId'], '');
   let version: string = getSafe(mod.attributes, ['version'], '');
 
-  if (endorsed === '') {
+  if (endorsed === undefined) {
     const gameMode = activeGameId(api.store.getState());
-    if (modId !== '') {
+    if (modId !== undefined) {
       nexus.getModInfo(parseInt(modId, null), gameMode)
         .then((modInfo: any) => {
           api.store.dispatch(setModAttribute(gameMode, mod.id,

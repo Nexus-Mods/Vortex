@@ -49,7 +49,7 @@ class TextareaNotes extends ComponentEx<IProps, IMainWindowState> {
     return (
       <textarea
           value={notes}
-          id={mod.id}
+          id={mod !== undefined ? mod.id : ''}
           style={{ width: '100%', minHeight: 200, resize: 'none' }}
           onChange={this.handleChange}
       />

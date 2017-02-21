@@ -20,7 +20,7 @@ function retrieveEndorsedMod(
 ): Promise<string> {
   return new Promise<string>((resolve, reject) => {
 
-    if (endorseStatus === 'Undecided' || endorseStatus === 'Abstained') {
+    if (endorseStatus === 'Undecided' || endorseStatus === 'Abstained' || endorseStatus === '') {
       endorseStatus = 'endorse';
     } else  if (endorseStatus === 'Endorsed') {
       endorseStatus = 'abstain';
