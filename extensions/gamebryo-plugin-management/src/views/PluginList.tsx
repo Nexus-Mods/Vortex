@@ -8,6 +8,7 @@ import {
   IPlugins,
 } from '../types/IPlugins';
 
+import MasterList from './MasterList';
 import PluginFlags, {getPluginFlags} from './PluginFlags';
 
 import * as Promise from 'bluebird';
@@ -122,6 +123,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       id: 'masters',
       name: 'Masters',
       edit: {},
+      customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
+        <MasterList masters={plugin.masterList} />,
       calc: (plugin: IPluginCombined) => plugin.masterList,
       placement: 'detail',
     },
