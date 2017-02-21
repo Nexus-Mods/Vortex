@@ -158,7 +158,7 @@ function endorseMod(api: IExtensionApi, endorsedStatus: string,
       return retrieveEndorsedMod(gameId, nexus, endorsedStatus, modId, version);
     })
     .then((endorsed: string) => {
-      api.store.dispatch(setModAttribute(gameId, modId, 'endorsed', endorsed));
+      api.store.dispatch(setModAttribute(gameId, id, 'endorsed', endorsed));
     })
     .catch((err) => {
       let message = processErrorMessage(err.statusCode, err.errorMessage, gameId, api.translate);
