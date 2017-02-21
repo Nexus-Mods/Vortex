@@ -207,12 +207,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       data: data[rowId],
     });
 
-    let dataIds = Object.keys(data);
-
     // return unsorted if no sorting column was selected or if the values
     // haven't been calculated yet
     if (sortAttribute === undefined) {
-      return dataIds.map(idsToRows);
+      return Object.keys(data).map(idsToRows);
     }
 
     let sortFunction = sortAttribute.sortFunc;
@@ -221,6 +219,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     let descending = attributeState[sortAttribute.id].sortDirection === 'desc';
+
+    let dataIds = Object.keys(data).filter((key) => calculatedValues[key] !== undefined);
 
     return dataIds.sort((lhsId: string, rhsId: string): number => {
       let res = sortFunction(calculatedValues[lhsId][sortAttribute.id],

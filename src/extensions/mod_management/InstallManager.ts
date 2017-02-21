@@ -1,6 +1,7 @@
 import {showDialog} from '../../actions/notifications';
 import {IDialogResult} from '../../types/IDialog';
 import {IExtensionApi} from '../../types/IExtensionContext';
+import {createErrorReport} from '../../util/errorHandling';
 import {log} from '../../util/log';
 import {activeGameId, downloadPath} from '../../util/selectors';
 
@@ -17,10 +18,21 @@ import InstallContext from './InstallContext';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import {ILookupResult, IReference, IRule} from 'modmeta-db';
+import {IHashResult, ILookupResult, IReference, IRule, genHash} from 'modmeta-db';
 import Zip = require('node-7z');
 import * as path from 'path';
+import * as rimraf from 'rimraf';
 import {dir as tmpDir, file as tmpFile} from 'tmp';
+
+// TODO the type declaration for rimraf is actually wrong atm (v0.0.28)
+interface IRimrafOptions {
+  glob?: { nosort: boolean, silent: boolean } | false;
+  disableGlob?: boolean;
+  emfileWait?: number;
+  maxBusyTries?: number;
+}
+type rimrafType = (path: string, options: IRimrafOptions, callback: (err?) => void) => void;
+const rimrafAsync = Promise.promisify(rimraf as rimrafType);
 
 interface IZipEntry {
   date: Date;
@@ -34,16 +46,31 @@ interface ISupportedInstaller {
   requiredFiles: string[];
 }
 
+type InstructionType = 'copy' | 'submodule' | 'unsupported';
+
 interface IInstruction {
-  type: 'copy' | 'submodule';
+  type: InstructionType;
 
   path: string;
   source: string;
   destination: string;
 }
 
+interface IInstructionGroups {
+  copies?: IInstruction[];
+  submodule?: IInstruction[];
+  unsupported?: IInstruction[];
+}
+
 // tslint:disable-next-line:no-empty
 function UserCanceled() {}
+
+function setDefault<T>(obj: Object, key: PropertyKey, def: T): T {
+  if (!obj.hasOwnProperty(key)) {
+    obj[key] = def;
+  }
+  return obj[key];
+}
 
 /**
  * central class for the installation process
@@ -132,7 +159,7 @@ class InstallManager {
         })
         .then((result) => {
           installContext.setInstallPathCB(installName, destinationPath);
-          return this.processInstructions(archivePath, destinationPath, gameId, result);
+          return this.processInstructions(api, archivePath, destinationPath, gameId, result);
         })
         .then(() => {
           const filteredInfo = filterModInfo(fullInfo);
@@ -146,12 +173,29 @@ class InstallManager {
           }
         })
         .catch((err) => {
-          installContext.finishInstallCB(installName, false);
-          if (!(err instanceof UserCanceled)) {
-            installContext.reportError('Installation failed', err);
-            if (callback !== undefined) {
-              callback(err, installName);
-            }
+          let prom = destinationPath !== undefined
+            ? rimrafAsync(destinationPath, { glob: false }).then(() => undefined)
+            : Promise.resolve();
+          prom.then(() => installContext.finishInstallCB(installName, false));
+
+          if (err === undefined) {
+            return undefined;
+          } else if (err instanceof UserCanceled) {
+            return undefined;
+          } else {
+            let errMessage = typeof err === 'string' ? err : err.message;
+
+            return genHash(archivePath)
+                .then((hashResult: IHashResult) => {
+                  let id =
+                      `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
+                  installContext.reportError(
+                      'Installation failed',
+                      `The installer ${id} failed: ${errMessage}`);
+                  if (callback !== undefined) {
+                    callback(err, installName);
+                  }
+                });
           }
         })
         .finally(() => { installContext.stopIndicator(baseName); });
@@ -212,25 +256,72 @@ class InstallManager {
         });
   }
 
-  private processInstructions(archivePath: string, destinationPath: string,
+  private processInstructions(api: IExtensionApi, archivePath: string, destinationPath: string,
                               gameId: string,
                               result: {instructions: IInstruction[]}) {
-    if ((result.instructions === null) || (result.instructions === undefined) ||
+    if (result.instructions === null) {
+      // this is the signal that the installer has already reported what went wrong
+      return Promise.reject(null);
+    }
+    if ((result.instructions === undefined) ||
         (result.instructions.length === 0)) {
       return Promise.reject('installer returned no instructions');
     }
+
+    let instructionGroups: IInstructionGroups = {};
+
+    result.instructions.forEach((instruction) => {
+      setDefault(instructionGroups, instruction.type, []).push(instruction);
+    });
+
     const copies = result.instructions.filter((instruction) =>
                                                   instruction.type === 'copy');
 
     const subModule = result.instructions.filter(
         (instruction) => instruction.type === 'submodule');
 
+    if (instructionGroups.unsupported !== undefined) {
+      let missing = instructionGroups.unsupported.map((instruction) => instruction.source);
+      const makeReport = () =>
+          genHash(archivePath)
+              .then(
+                  (hashResult: IHashResult) => createErrorReport(
+                      'Installer failed',
+                      {
+                        message: 'The installer uses unimplemented functions',
+                        details:
+                            `Missing instructions: ${missing.join(', ')}\n` +
+                                `Installer name: ${path.basename(archivePath)}\n` +
+                                `MD5 checksum: ${hashResult.md5sum}\n`,
+                      },
+                      ['installer']));
+      const showUnsupportedDialog = () => api.store.dispatch(showDialog(
+          'info', 'Installer unsupported',
+          {
+            message:
+                'This installer is (partially) unsupported as it\'s ' +
+                'using functionality that hasn\'t been implemented yet. ' +
+                'Please help us fix this by submitting an error report with a link to this mod.',
+          },
+          {
+            Report: makeReport,
+          }));
+
+      api.sendNotification({
+        type: 'info',
+        message: 'Installer unsupported',
+        actions: [{title: 'More', action: showUnsupportedDialog}],
+      });
+    }
+
+    // process 'copy' instructions during extraction
     return this.extractArchive(archivePath, destinationPath, copies)
+        // process 'submodule' instructions
         .then(() => Promise.each(
                   subModule,
                   (mod) => this.installInner(mod.path, gameId)
                                .then((resultInner) => this.processInstructions(
-                                         archivePath, destinationPath, gameId,
+                                         api, archivePath, destinationPath, gameId,
                                          resultInner))));
   }
 

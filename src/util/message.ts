@@ -96,7 +96,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
           Report: () => createErrorReport('Error', {
             message,
             details: finalDetails,
-          }),
+          }, ['bug']),
           Close: null,
         }));
       },

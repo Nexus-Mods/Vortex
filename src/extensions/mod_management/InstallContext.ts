@@ -3,7 +3,8 @@ import { INotification } from '../../types/INotification';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 
-import { addMod, setModAttribute, setModInstallationPath, setModState } from './actions/mods';
+import { addMod, removeMod, setModAttribute,
+         setModInstallationPath, setModState } from './actions/mods';
 import { IMod, ModState } from './types/IMod';
 
 import { IInstallContext } from './types/IInstallContext';
@@ -21,6 +22,7 @@ interface IOnAddNotification {
 class InstallContext implements IInstallContext {
 
   private mAddMod: (mod: IMod) => void;
+  private mRemoveMod: (modId: string) => void;
   private mAddNotification: (notification: INotification) => void;
   private mDismissNotification: (id: string) => void;
   private mShowError: (message: string, details?: string | Error) => void;
@@ -30,6 +32,7 @@ class InstallContext implements IInstallContext {
 
   constructor(gameMode: string, dispatch: Redux.Dispatch<any>) {
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
+    this.mRemoveMod = (modId) => dispatch(removeMod(gameMode, modId));
     this.mAddNotification = (notification) =>
       dispatch(addNotification(notification));
     this.mDismissNotification = (id) =>
@@ -87,6 +90,8 @@ class InstallContext implements IInstallContext {
         Object.keys(info).forEach(
           (key: string) => { this.mSetModAttribute(id, key, info[key]); });
       }
+    } else {
+      this.mRemoveMod(id);
     }
   }
 

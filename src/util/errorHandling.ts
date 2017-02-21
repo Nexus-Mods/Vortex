@@ -14,6 +14,9 @@ export interface ITermination {
   stack?: string;
 }
 
+// could be a bit more dynamic but how often is this going to change?
+const repo = 'https://github.com/Nexus-Mods/NMM2';
+
 function createTitle(type: string, error: ITermination) {
   return `${type}: ${error.message}`;
 }
@@ -32,7 +35,7 @@ ${error.message}
 \`\`\`
 ${error.details}
 \`\`\`
-#### Description
+#### Steps to reproduce
 <Please describe what you were doing when the crash happened>
 `;
 }
@@ -47,10 +50,8 @@ export function createErrorReport(type: string, error: ITermination, labels: str
   const body =
       'Please paste the content of your clipboard here and describe what you did ' +
       'when the error happened.';
-  // could be a bit more dynamic but how often is this going to change?
-  const repo = 'https://github.com/Nexus-Mods/NMM2';
 
-  let labelFragments = labels.concat(['bug']).map((str: string) => `labels[]=${str}`).join('&');
+  let labelFragments = labels.map((str: string) => `labels[]=${str}`).join('&');
 
   let url = `${repo}/issues/new?title=${title}&${labelFragments}&body=${body}`;
   shell.openExternal(url);
@@ -82,7 +83,7 @@ export function terminate(error: ITermination) {
     });
 
     if (action === 0) {
-      createErrorReport('Crash', error, ['crash']);
+      createErrorReport('Crash', error, ['bug', 'crash']);
     }
   } catch (err) {
     // if the crash occurs before the application is ready, the dialog module can't be

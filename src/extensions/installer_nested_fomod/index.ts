@@ -13,8 +13,9 @@ import * as path from 'path';
 
 function testSupported(files: string[]): Promise<boolean> {
   return new Promise((resolve, reject) => {
-    if ((files.length === 1) && (path.extname(files[0]) === '.fomod')) {
-      resolve({ supported: true, requiredFiles: files });
+    const fomod = files.find((file) => path.extname(file) === '.fomod');
+    if (fomod !== undefined) {
+      resolve({ supported: true, requiredFiles: [ fomod ] });
     } else {
       resolve({ supported: false, requiredFiles: [] });
     }
@@ -25,7 +26,8 @@ function install(files: string[], destinationPath: string,
                  gameId: string, progress: IProgressDelegate,
                  api: IExtensionApi): Promise<any> {
   return new Promise((resolve, reject) => {
-    const filePath = path.join(destinationPath, files[0]);
+    const fomod = files.find((file) => path.extname(file) === '.fomod');
+    const filePath = path.join(destinationPath, fomod);
     log('debug', 'install nested', filePath);
     resolve({ instructions: [ { type: 'submodule', path: filePath } ] });
   });

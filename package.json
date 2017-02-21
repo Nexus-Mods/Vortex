@@ -118,6 +118,7 @@
     "@types/ref": "^0.0.28",
     "@types/ref-struct": "^0.0.28",
     "@types/ref-union": "^0.0.28",
+    "@types/rimraf": "^0.0.28",
     "@types/shortid": "^0.0.28",
     "@types/tmp": "^0.0.32",
     "babel-cli": "^6.14.0",
@@ -230,6 +231,7 @@
     "recharts": "^0.20.8",
     "redux-persist": "TanninOne/redux-persist",
     "redux-persist-node-storage": "^1.0.2",
+    "rimraf": "^2.6.0",
     "source-map-support": "^0.4.10",
     "typescript": "2.1.6"
   }
