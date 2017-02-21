@@ -6,7 +6,6 @@ using Components.Interface;
 using Components.Scripting;
 using ModInstaller;
 using System.IO;
-using System.Diagnostics;
 
 namespace Components.ModInstaller
 {
@@ -81,7 +80,7 @@ namespace Components.ModInstaller
             if (!string.IsNullOrEmpty(scriptPath) && !string.IsNullOrEmpty(ScriptFilePath))
                 ScriptFilePath = Path.Combine(scriptPath, ScriptFilePath);
             IScriptType ScriptType = await GetScriptType(modArchiveFileList);
-            Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath, ScriptType);
+            Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath, scriptPath, ScriptType);
             await modToInstall.Initialize();
 
             progressDelegate(50);

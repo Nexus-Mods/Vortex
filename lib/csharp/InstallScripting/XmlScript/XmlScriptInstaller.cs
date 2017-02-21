@@ -140,7 +140,7 @@ namespace Components.Scripting.XmlScript
         {
             List<string> lstModFiles = ModArchive.GetFileList(Path.Combine(strPrefixPath, installableFile.Source), true);
 
-            string strFrom = Path.Combine(strPrefixPath, installableFile.Source).Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar).ToLowerInvariant();
+            string strFrom = Path.Combine(strPrefixPath, installableFile.Source).Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             if (!strFrom.EndsWith(Path.DirectorySeparatorChar.ToString()))
                 strFrom += Path.DirectorySeparatorChar;
             string strTo = installableFile.Destination.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);

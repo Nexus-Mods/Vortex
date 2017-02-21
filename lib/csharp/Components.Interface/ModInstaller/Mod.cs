@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Components.Scripting;
 using Utils;
@@ -15,6 +17,7 @@ namespace Components.Interface
         private IList<string> ModFiles;
         private string ScreenshotFilesPath = string.Empty;
         private string InstallScriptPath = null;
+        private string TempPath = null;
         private IScriptType InstallScriptType = null;
         private IScript ModInstallScript = null;
         #endregion
@@ -78,11 +81,12 @@ namespace Components.Interface
         #endregion
 
         #region Constructor
-        public Mod(List<string> listModFiles, string installScriptPath, IScriptType scriptType)
+        public Mod(List<string> listModFiles, string installScriptPath, string tempFolderPath, IScriptType scriptType)
         {
             ModFiles = listModFiles;
             GetScreenshotPath(listModFiles);
             InstallScriptPath = installScriptPath;
+            TempPath = tempFolderPath;
             InstallScriptType = scriptType;
         }
 
@@ -127,6 +131,21 @@ namespace Components.Interface
                     }
                 }
             }
+        }
+
+        public byte[] GetFile(string file)
+        {
+            if (!ModFiles.Contains(file, StringComparer.InvariantCultureIgnoreCase))
+            {
+                if (Path.GetFileNameWithoutExtension(file).Equals("screenshot", StringComparison.InvariantCultureIgnoreCase))
+                    return (byte[])(new ImageConverter().ConvertTo(new Bitmap(1, 1), typeof(byte[])));
+                else
+                    throw new FileNotFoundException("File doesn't exist in FOMod", file);
+            }
+
+            string filePath = Path.Combine(TempPath, file);
+
+            return FileSystem.ReadAllBytes(filePath);
         }
 
         public List<string> GetFileList(string targetDirectory, bool isRecursive)

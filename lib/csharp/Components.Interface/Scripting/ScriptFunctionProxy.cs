@@ -5,9 +5,6 @@ using System.Text;
 using System.Security;
 using System.Security.Permissions;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using Utils;
-using Utils.Collections;
 
 namespace Components.Interface
 {
@@ -117,7 +114,7 @@ namespace Components.Interface
         /// <returns><c>true</c> if the file was written; <c>false</c> otherwise.</returns>
         public bool InstallFolderFromMod(string p_strFrom, bool p_booRecurse)
         {
-            string strFrom = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar).ToLowerInvariant();
+            string strFrom = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             return InstallFolderFromMod(strFrom, strFrom, p_booRecurse);
         }
 
@@ -130,7 +127,7 @@ namespace Components.Interface
         /// <returns><c>true</c> if the file was written; <c>false</c> otherwise.</returns>
         public bool InstallFolderFromMod(string p_strFrom, string p_strTo, bool p_booRecurse)
         {
-            string strFrom = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar).ToLowerInvariant();
+            string strFrom = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             if (!strFrom.EndsWith(Path.DirectorySeparatorChar.ToString()))
                 strFrom += Path.DirectorySeparatorChar;
             string strTo = p_strTo.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
@@ -154,7 +151,7 @@ namespace Components.Interface
         public virtual bool InstallFileFromMod(string p_strFrom, string p_strTo)
         {
             bool booSuccess = false;
-            string strFrom = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar).ToLowerInvariant();
+            string strFrom = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             string strTo = p_strTo.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
 
             modInstallInstructions.Add(Instruction.CreateCopy(strFrom, strTo));
@@ -209,15 +206,21 @@ namespace Components.Interface
         /// <summary>
         /// Retrieves the specified file from the mod.
         /// </summary>
-        /// <param name="p_strFile">The file to retrieve.</param>
+        /// <param name="file">The file to retrieve.</param>
         /// <returns>The requested file data.</returns>
-        public byte[] GetFileFromMod(string p_strFile)
+        public byte[] GetFileFromMod(string file)
         {
             byte[] bteFile = null;
 
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("GetFileFromMod");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            try
+            {
+                new SecurityPermission(SecurityPermissionFlag.UnmanagedCode).Assert();
+                bteFile = Mod.GetFile(file);
+            }
+            finally
+            {
+                PermissionSet.RevertAssert();
+            }
 
             return bteFile;
         }
