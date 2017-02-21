@@ -160,6 +160,9 @@ class ModDB {
         if (input === 'skyrimse') {
             return 'skyrimspecialedition';
         }
+        else if (input === 'falloutnv') {
+            return 'newvegas';
+        }
         else {
             return input;
         }
