@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Components.Interface
@@ -26,7 +26,14 @@ namespace Components.Interface
         public async Task<string[]> GetAll(bool activeOnly)
         {
             object res = await mGetAll(activeOnly);
-            return (string[])res;
+            if (res != null)
+            {
+                return ((IEnumerable)res).Cast<object>()
+                                                    .Select(x => x.ToString())
+                                                    .ToArray();
+            }
+            else
+                return new string[0];
         }
 
         public async Task<bool> IsActive(string pluginName)

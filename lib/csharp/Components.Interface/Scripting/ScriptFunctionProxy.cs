@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Security;
 using System.Security.Permissions;
@@ -244,10 +246,10 @@ namespace Components.Interface
         /// <summary>
         /// Determines if the specified file exists in the user's Data directory.
         /// </summary>
-        /// <param name="p_strPath">The path of the file whose existence is to be verified.</param>
+        /// <param name="file">The path of the file whose existence is to be verified.</param>
         /// <returns><c>true</c> if the specified file exists; <c>false</c>
         /// otherwise.</returns>
-        public bool DataFileExists(string p_strPath)
+        public bool DataFileExists(string file)
         {
             Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("DataFileExists");
             if (!modInstallInstructions.Contains(UnsupportedFunction))
@@ -458,7 +460,7 @@ namespace Components.Interface
         /// <returns>A list of currently active plugins.</returns>
         public string[] GetActivePlugins()
         {
-            string[] ActivePlugins = null;
+            string[] ActivePlugins = new string[0];
 
             Task.Run(async () => {
                 ActivePlugins = await Core.plugin.GetAll(true);

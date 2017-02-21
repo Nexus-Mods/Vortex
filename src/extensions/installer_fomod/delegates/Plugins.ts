@@ -48,12 +48,15 @@ class Plugins extends DelegateBase {
     log('info', 'getAll called', util.inspect(isActiveOnly));
     let state = this.api.store.getState();
 
-    if (state.loadOrder !== undefined) {
+    if (state.loadOrder !== undefined && Object.keys(state.loadOrder).length > 0) {
       log('info', 'getAll debug state', util.inspect(isActiveOnly));
       if (isActiveOnly === true) {
-        return callback(null, state.loadOrder.filter((plugin) => plugin.enabled));
+        let plugins = Object.keys(state.session.plugins.pluginList);
+        return callback(null, plugins.filter((plugin) =>
+          (state.loadOrder[plugin] !== undefined && state.loadOrder[plugin].enabled)));
       } else {
-        return callback(null, state.loadOrder);
+        let plugins = Object.keys(state.session.plugins.pluginList);
+        return callback(null, plugins);
       }
     }
 

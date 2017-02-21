@@ -135,7 +135,8 @@ namespace Components.Interface
 
         public byte[] GetFile(string file)
         {
-            if (!ModFiles.Contains(file, StringComparer.InvariantCultureIgnoreCase))
+            IList<string> NormalizedModFile = NormalizePathList(ModFiles);
+            if (!NormalizedModFile.Contains(file, StringComparer.InvariantCultureIgnoreCase))
             {
                 if (Path.GetFileNameWithoutExtension(file).Equals("screenshot", StringComparison.InvariantCultureIgnoreCase))
                     return (byte[])(new ImageConverter().ConvertTo(new Bitmap(1, 1), typeof(byte[])));
@@ -145,7 +146,10 @@ namespace Components.Interface
 
             string filePath = Path.Combine(TempPath, file);
 
-            return FileSystem.ReadAllBytes(filePath);
+            if (FileSystem.FileExists(filePath))
+                return FileSystem.ReadAllBytes(filePath);
+            else
+                return null;
         }
 
         public List<string> GetFileList(string targetDirectory, bool isRecursive)
@@ -189,15 +193,37 @@ namespace Components.Interface
             return DirectoryFiles;
         }
 
-        private string NormalizePath(string path, bool dirTerminate = false)
+        private IList<string> NormalizePathList(IList<string> paths)
         {
-            string temp = path
-                .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
-                .Trim(Path.DirectorySeparatorChar)
-                .ToLowerInvariant();
+            List<string> NormalizedPaths = new List<string>();
+
+            foreach (string path in paths)
+                NormalizedPaths.Add(NormalizePath(path, false, true));
+
+            return NormalizedPaths;
+        }
+
+        private string NormalizePath(string path, bool dirTerminate = false, bool alternateSeparators = false)
+        {
+            string temp = string.Empty;
+
+            if (alternateSeparators)
+            {
+                temp = path
+                    .Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    .Trim(Path.AltDirectorySeparatorChar)
+                    .ToLowerInvariant();
+            }
+            else
+            {
+                temp = path
+                    .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+                    .Trim(Path.DirectorySeparatorChar)
+                    .ToLowerInvariant();
+            }
             if (dirTerminate && (temp.Length > 0))
             {
-                temp += Path.DirectorySeparatorChar;
+                temp += (alternateSeparators ? Path.AltDirectorySeparatorChar : Path.DirectorySeparatorChar);
             }
             return temp;
         }
