@@ -28,8 +28,7 @@ function retrieveEndorsedMod(
 
     nexus.endorseMod(version, parseInt(modId, 10), endorseStatus, activeGameId)
       .then((result: any) => {
-        // resolve(result.status); waiting TOM
-        resolve(endorseStatus);
+        resolve(result.status);
       })
       .catch((err) => {
         reject(err);

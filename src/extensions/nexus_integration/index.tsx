@@ -143,7 +143,7 @@ function processErrorMessage(
   } else if ((statusCode >= 500) && (statusCode < 600)) {
     return message = t('Internal server error');
   } else {
-    return message = t('Unknown error, server reported {{errorMessage}}',
+    return message = t('Unknown error, server reported: {{errorMessage}}',
       { replace: { errorMessage } });
   }
 }
@@ -161,7 +161,7 @@ function endorseMod(api: IExtensionApi, endorsedStatus: string,
       api.store.dispatch(setModAttribute(gameId, id, 'endorsed', endorsed));
     })
     .catch((err) => {
-      let message = processErrorMessage(err.statusCode, err.errorMessage, gameId, api.translate);
+      let message = processErrorMessage(err.statusCode, err.message, gameId, api.translate);
       showError(api.store.dispatch,
         'An error occurred endorsing a mod', message);
     });
@@ -186,7 +186,7 @@ function getEndorsedIcon(api: IExtensionApi, mod: IMod) {
           }
         })
         .catch((err) => {
-          showError(api.store.dispatch, 'An error occurred endorsing the mod', err);
+          showError(api.store.dispatch, 'An error occurred endorsing the mod', err.message);
         });
     }
   }
