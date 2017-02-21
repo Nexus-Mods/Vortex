@@ -113,7 +113,7 @@ class PluginPersistor implements types.IPersistor {
     if (!this.mLoaded) {
       // this happens during initialization, when the persistor is initially created, with default
       // values.
-      return;
+      return Promise.resolve();
     }
     // ensure we don't try to concurrently write the files
     this.mSerializeQueue = this.mSerializeQueue.then(() => {

@@ -321,7 +321,7 @@ class InstallManager {
                   subModule,
                   (mod) => this.installInner(mod.path, gameId)
                                .then((resultInner) => this.processInstructions(
-                                         api, archivePath, destinationPath, gameId,
+                                         api, mod.path, destinationPath, gameId,
                                          resultInner))));
   }
 
@@ -566,7 +566,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
           })
           .then(() => Promise.each(Array.from(affectedDirs).sort(
             (lhs: string, rhs: string) => rhs.length - lhs.length), (affectedPath: string) => {
-            return fs.rmdirAsync(affectedPath).catch();
+            return fs.rmdirAsync(affectedPath).catch(() => undefined);
           }));
       })
       .then(() => undefined)
