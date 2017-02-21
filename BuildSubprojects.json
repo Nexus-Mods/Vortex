@@ -54,14 +54,14 @@
       "type": "build-copy",
       "name": "gamebryo-plugin-management",
       "path": "extensions/gamebryo-plugin-management",
-      "sources": ["src/**/*.ts", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-plugin-management"
     },
     {
       "type": "build-copy",
       "name": "gamebryo-savegame-management",
       "path": "extensions/gamebryo-savegame-management",
-      "sources": ["src/**/*.ts", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-savegame-management"
     },
     {
