@@ -305,6 +305,7 @@ class InstallManager {
           },
           {
             Report: makeReport,
+            Close: null,
           }));
 
       api.sendNotification({
@@ -549,25 +550,41 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
         // TODO hack: the 7z command line doesn't allow files to be renamed during installation so
         //  we extract them all and then rename. This also tries to clean up dirs that are empty
         //  afterwards but ideally we get a proper 7z lib...
-        let renames =
-          copies.filter((inst) => inst.source !== inst.destination);
+        let renames = copies
+          .filter((inst) => inst.source !== inst.destination)
+          .reduce((groups, inst) => {
+            setDefault(groups, inst.source, []).push(inst.destination);
+            return groups;
+          }, {});
         let affectedDirs = new Set<string>();
-        return Promise.map(renames,
-          (inst: any) => {
-            const source = path.join(destinationPath, inst.source);
-            const dest = path.join(destinationPath, inst.destination);
-            let affDir = path.dirname(source);
-            while (affDir.length > destinationPath.length) {
-              affectedDirs.add(affDir);
-              affDir = path.dirname(affDir);
-            }
-            return fs.ensureDirAsync(path.dirname(dest))
-              .then(() => fs.renameAsync(source, dest));
-          })
-          .then(() => Promise.each(Array.from(affectedDirs).sort(
-            (lhs: string, rhs: string) => rhs.length - lhs.length), (affectedPath: string) => {
-            return fs.rmdirAsync(affectedPath).catch(() => undefined);
-          }));
+        return Promise
+            .map(Object.keys(renames),
+                 (source: string) => {
+                   return Promise.each(renames[source], (destination: string, index: number,
+                                                         len: number) => {
+                     const fullSource = path.join(destinationPath, source);
+                     const dest = path.join(destinationPath, destination);
+                     let affDir = path.dirname(fullSource);
+                     while (affDir.length > destinationPath.length) {
+                       affectedDirs.add(affDir);
+                       affDir = path.dirname(affDir);
+                     }
+                     // if this is the last or only destination for the source file, use a rename
+                     // because it's quicker. otherwise copy so that further destinations can be
+                     // processed
+                     return fs.ensureDirAsync(path.dirname(dest))
+                         .then(() => (index !== len - 1)
+                                         ? fs.copyAsync(fullSource, dest)
+                                         : fs.renameAsync(fullSource, dest));
+                   });
+                 })
+            .then(() => Promise.each(Array.from(affectedDirs)
+                                         .sort((lhs: string, rhs: string) =>
+                                                   rhs.length - lhs.length),
+                                     (affectedPath: string) => {
+                                       return fs.rmdirAsync(affectedPath)
+                                           .catch(() => undefined);
+                                     }));
       })
       .then(() => undefined)
       .finally(() => {

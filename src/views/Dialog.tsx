@@ -110,7 +110,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
 
     if (content.htmlFile !== undefined) {
-      controls.push(<div key='dialog-content-html'>
+      controls.push(<div key='dialog-content-html' style={{ overflowY: 'auto' }}>
         <webview src={`file://${content.htmlFile}`} />
       </div>);
     } else if (content.htmlText !== undefined) {
