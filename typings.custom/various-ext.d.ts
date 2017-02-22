@@ -1,21 +1,22 @@
 interface NodeModule {
   hot: any
 }
-
+/*
 declare namespace Electron {
   interface Session {
     protocol: any
   }
-}
+}*/
 
 declare namespace NodeJS {
-  interface Process {
-    type: string
-  }
   interface Global {
     logger: any;
   }
+}
 
+// the electron-builder-http typings use the wrong type name...
+declare namespace debug {
+  type Debugger = any;
 }
 
 interface NodeModule {
@@ -47,9 +48,4 @@ declare module JSX {
 
 declare module 'module' {
   export var _initPaths: () => void;
-}
-
-declare module 'less-plugin-clean-css' {
-  let dummy: any;
-  export = dummy;
 }

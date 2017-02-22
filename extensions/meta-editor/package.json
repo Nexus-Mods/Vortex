@@ -20,6 +20,7 @@
     ]
   },
   "devDependencies": {
+    "@types/electron": "^1.4.32",
     "@types/react": "^0.14.55",
     "@types/react-addons-update": "^0.14.14",
     "@types/react-bootstrap": "^0.0.37",
