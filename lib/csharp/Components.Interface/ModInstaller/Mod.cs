@@ -135,6 +135,7 @@ namespace Components.Interface
 
         public byte[] GetFile(string file)
         {
+            file = TextUtil.NormalizePath(file, false, true);
             IList<string> NormalizedModFile = NormalizePathList(ModFiles);
             if (!NormalizedModFile.Contains(file, StringComparer.InvariantCultureIgnoreCase))
             {
@@ -173,12 +174,12 @@ namespace Components.Interface
         {
             List<string> DirectoryFiles = new List<string>();
 
-            string PathPrefix = NormalizePath(targetDirectory, true);
+            string PathPrefix = TextUtil.NormalizePath(targetDirectory, true);
 
             int StopIndex = 0;
             foreach (string file in ModFiles)
             {
-                if (NormalizePath(file).StartsWith(PathPrefix))
+                if (TextUtil.NormalizePath(file).StartsWith(PathPrefix))
                 {
                     if (!isRecursive)
                     {
@@ -198,34 +199,9 @@ namespace Components.Interface
             List<string> NormalizedPaths = new List<string>();
 
             foreach (string path in paths)
-                NormalizedPaths.Add(NormalizePath(path, false, true));
+                NormalizedPaths.Add(TextUtil.NormalizePath(path, false, true));
 
             return NormalizedPaths;
-        }
-
-        private string NormalizePath(string path, bool dirTerminate = false, bool alternateSeparators = false)
-        {
-            string temp = string.Empty;
-
-            if (alternateSeparators)
-            {
-                temp = path
-                    .Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                    .Trim(Path.AltDirectorySeparatorChar)
-                    .ToLowerInvariant();
-            }
-            else
-            {
-                temp = path
-                    .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
-                    .Trim(Path.DirectorySeparatorChar)
-                    .ToLowerInvariant();
-            }
-            if (dirTerminate && (temp.Length > 0))
-            {
-                temp += (alternateSeparators ? Path.AltDirectorySeparatorChar : Path.DirectorySeparatorChar);
-            }
-            return temp;
         }
 
         public static int CompareOrderFoldersFirst(string x, string y)

@@ -303,9 +303,9 @@ namespace Components.Scripting.CSharpScript
         /// <param name="p_strMessage">The message to display in the message box.</param>
         /// <param name="p_strTitle">The message box's title, display in the title bar.</param>
         /// <param name="p_mbbButtons">The buttons to show in the message box.</param>
-        public static void MessageBox(string p_strMessage, string p_strTitle, MessageBoxButtons p_mbbButtons)
+        public static DialogResult MessageBox(string p_strMessage, string p_strTitle, MessageBoxButtons p_mbbButtons)
         {
-            ExecuteMethod(() => Functions.MessageBox(p_strMessage, p_strTitle));
+            return (DialogResult)ExecuteMethod(() => Functions.MessageBox(p_strMessage, p_strTitle));
         }
 
         #endregion
@@ -453,6 +453,29 @@ namespace Components.Scripting.CSharpScript
             return ExecuteMethod(() => Functions.GetNvseVersion());
         }
 
+        #region Version Checking
+
+        /// <summary>
+        /// Gets the version of the mod manager.
+        /// </summary>
+        /// <returns>The version of the mod manager.</returns>
+        public static Version GetFommVersion()
+        {
+            return ExecuteMethod(() => Functions.GetModManagerVersion());
+        }
+
+        /// <summary>
+        /// Gets the version of the game that is installed.
+        /// </summary>
+        /// <returns>The version of the game, or <c>null</c> if Fallout
+        /// is not installed.</returns>
+        public static Version GetFalloutVersion()
+        {
+            return ExecuteMethod(() => Functions.GetGameVersion());
+        }
+
+        #endregion
+
         /// <summary>
         /// Determins if the script extender for the game is installed
         /// (this checks for the script extender of the game for which the
@@ -571,9 +594,32 @@ namespace Components.Scripting.CSharpScript
         /// <param name="p_strSection">The section containing the value to retrieve.</param>
         /// <param name="p_strKey">The key of the value to retrieve.</param>
         /// <returns>The specified value as an integer.</returns>
-        public static Int32 GetIniInt(string p_strSettingsFileName, string p_strSection, string p_strKey)
+        public static int GetIniInt(string p_strSettingsFileName, string p_strSection, string p_strKey)
         {
             return ExecuteMethod(() => Functions.GetIniInt(p_strSettingsFileName, p_strSection, p_strKey));
+        }
+
+        /// <summary>
+        /// Retrieves the specified Fallout.ini value as a string.
+        /// </summary>
+        /// <param name="p_strSection">The section containing the value to retrieve.</param>
+        /// <param name="p_strKey">The key of the value to retrieve.</param>
+        /// <returns>The specified value as a string.</returns>
+        /// <seealso cref="GetFalloutIniInt(string, string)"/>
+        public static string GetFalloutIniString(string p_strSection, string p_strKey)
+        {
+            return ExecuteMethod(() => Functions.GetIniString(null, p_strSection, p_strKey));
+        }
+
+        /// <summary>
+        /// Retrieves the specified Fallout.ini value as an integer.
+        /// </summary>
+        /// <param name="p_strSection">The section containing the value to retrieve.</param>
+        /// <param name="p_strKey">The key of the value to retrieve.</param>
+        /// <seealso cref="GetFalloutIniString(string, string)"/>
+        public static int GetFalloutIniInt(string p_strSection, string p_strKey)
+        {
+            return ExecuteMethod(() => Functions.GetIniInt(null, p_strSection, p_strKey));
         }
 
         #endregion

@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using Components.Interface;
 
 namespace Components.Scripting.CSharpScript

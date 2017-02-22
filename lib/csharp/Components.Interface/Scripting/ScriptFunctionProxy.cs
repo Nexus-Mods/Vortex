@@ -7,6 +7,7 @@ using System.Text;
 using System.Security;
 using System.Security.Permissions;
 using System.Threading.Tasks;
+using Utils;
 
 namespace Components.Interface
 {
@@ -150,13 +151,13 @@ namespace Components.Interface
         /// <param name="p_strFrom">The path of the file in the mod to install.</param>
         /// <param name="p_strTo">The path on the file system where the file is to be created.</param>
         /// <returns><c>true</c> if the file was written; <c>false</c> otherwise.</returns>
-        public virtual bool InstallFileFromMod(string p_strFrom, string p_strTo)
+        public virtual bool InstallFileFromMod(string from, string to)
         {
             bool booSuccess = false;
-            string strFrom = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-            string strTo = p_strTo.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            string FromPath = TextUtil.NormalizePath(from, false, false, false);
+            string ToPath = TextUtil.NormalizePath(to, false, false, false);
 
-            modInstallInstructions.Add(Instruction.CreateCopy(strFrom, strTo));
+            modInstallInstructions.Add(Instruction.CreateCopy(FromPath, ToPath));
 
             booSuccess = true;
 
@@ -312,33 +313,34 @@ namespace Components.Interface
         /// </summary>
         /// <param name="p_strMessage">The message to display in the message box.</param>
         /// <param name="p_strTitle">The message box's title, display in the title bar.</param>
-        public void MessageBox(string p_strMessage, string p_strTitle)
+        //public void MessageBox(string p_strMessage, string p_strTitle)
+        //{
+        //     ??? This stuff should be handled by the user interaction delegate
+        //}
+
+        /// <summary>
+        /// Shows a message box with the given message, title, and buttons.
+        /// </summary>
+        /// <param name="p_strMessage">The message to display in the message box.</param>
+        /// <param name="p_strTitle">The message box's title, display in the title bar.</param>
+        /// <param name="p_mbbButtons">The buttons to show in the message box.</param>
+        public int MessageBox(string p_strMessage, string p_strTitle)
         {
             // ??? This stuff should be handled by the user interaction delegate
+            return 1;
         }
 
-  //      /// <summary>
-  //      /// Shows a message box with the given message, title, and buttons.
-  //      /// </summary>
-  //      /// <param name="p_strMessage">The message to display in the message box.</param>
-  //      /// <param name="p_strTitle">The message box's title, display in the title bar.</param>
-  //      /// <param name="p_mbbButtons">The buttons to show in the message box.</param>
-  //      public DialogResult MessageBox(string p_strMessage, string p_strTitle)
+        ///// <summary>
+        ///// Shows a message box with the given message, title, buttons, and icon.
+        ///// </summary>
+        ///// <param name="p_strMessage">The message to display in the message box.</param>
+        ///// <param name="p_strTitle">The message box's title, display in the title bar.</param>
+        ///// <param name="p_mbbButtons">The buttons to show in the message box.</param>
+        ///// <param name="p_mdiIcon">The icon to display in the message box.</param>
+        //public DialogResult MessageBox(string p_strMessage, string p_strTitle)
         //{
-  //          // ??? This stuff should be handled by the user interaction delegate
-  //      }
-
-  //      /// <summary>
-  //      /// Shows a message box with the given message, title, buttons, and icon.
-  //      /// </summary>
-  //      /// <param name="p_strMessage">The message to display in the message box.</param>
-  //      /// <param name="p_strTitle">The message box's title, display in the title bar.</param>
-  //      /// <param name="p_mbbButtons">The buttons to show in the message box.</param>
-  //      /// <param name="p_mdiIcon">The icon to display in the message box.</param>
-  //      public DialogResult MessageBox(string p_strMessage, string p_strTitle)
-        //{
-  //          // ??? This stuff should be handled by the user interaction delegate
-  //      }
+        //    // ??? This stuff should be handled by the user interaction delegate
+        //}
 
         #endregion
 
@@ -651,7 +653,11 @@ namespace Components.Interface
         public string GetIniString(string p_strSettingsFileName, string p_strSection, string p_strKey)
         {
             // ??? This value should be returned by the ini delegate
-            return null;
+            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("GetIniString");
+            if (!modInstallInstructions.Contains(UnsupportedFunction))
+                modInstallInstructions.Add(UnsupportedFunction);
+
+            return string.Empty;
         }
 
         /// <summary>
@@ -664,6 +670,10 @@ namespace Components.Interface
         public int GetIniInt(string p_strSettingsFileName, string p_strSection, string p_strKey)
         {
             // ??? This value should be returned by the ini delegate
+            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("GetIniInt");
+            if (!modInstallInstructions.Contains(UnsupportedFunction))
+                modInstallInstructions.Add(UnsupportedFunction);
+
             return 0;
         }
 

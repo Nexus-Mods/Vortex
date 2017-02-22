@@ -55,5 +55,34 @@ namespace Utils
             }
             return lstLines.ToArray();
         }
+
+        public static string NormalizePath(string path, bool dirTerminate = false, bool alternateSeparators = false, bool toLower = true)
+        {
+            string temp = string.Empty;
+
+            if (alternateSeparators)
+            {
+                temp = path
+                    .Replace(Path.DirectorySeparatorChar.ToString() + Path.DirectorySeparatorChar.ToString(), Path.DirectorySeparatorChar.ToString())
+                    .Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    .Trim(Path.AltDirectorySeparatorChar);
+            }
+            else
+            {
+                temp = path
+                    .Replace(Path.AltDirectorySeparatorChar.ToString() + Path.AltDirectorySeparatorChar.ToString(), Path.AltDirectorySeparatorChar.ToString())
+                    .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+                    .Trim(Path.DirectorySeparatorChar);
+            }
+            if (toLower)
+                temp = temp.ToLowerInvariant();
+
+            if (dirTerminate && (temp.Length > 0))
+            {
+                temp += (alternateSeparators ? Path.AltDirectorySeparatorChar : Path.DirectorySeparatorChar);
+            }
+
+            return temp;
+        }
     }
 }

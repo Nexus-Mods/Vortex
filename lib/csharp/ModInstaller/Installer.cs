@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Utils;
 using Components.Interface;
 using Components.Scripting;
 using ModInstaller;
-using System.IO;
 
 namespace Components.ModInstaller
 {
