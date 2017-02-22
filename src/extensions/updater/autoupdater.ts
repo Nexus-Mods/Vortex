@@ -1,65 +1,46 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 
-import { remote } from 'electron';
-
-function setChannel(channel: string,
-                    showErrorNotification: (message: string, detail: string | Error) => void) {
-  const autoUpdater = remote.autoUpdater;
-
-  // const url = `http://localhost:56001/download/channel/${channel}/win`;
-  // TODO: This isn't actually using the channel :( nuts doesn't implement this yet
-  const url = `http://localhost:56000/update/win32/${remote.app.getVersion()}`;
-
-  autoUpdater.setFeedURL(url);
-  autoUpdater.on('error', (err) => {
-    showErrorNotification('checking for update failed', err);
-  });
-  log('info', 'feed url', url);
-  try {
-    if (process.env.NODE_ENV === 'production') {
-      autoUpdater.checkForUpdates();
-    }
-  } catch (e) {
-    showErrorNotification('checking for update failed', e);
-    return;
-  }
-}
+import {ipcMain} from 'electron';
+import {autoUpdater as AUType} from 'electron-updater';
 
 function setupAutoUpdate(api: IExtensionApi) {
-  if (remote === undefined) {
-    log('error', 'auto updater expected to be run in renderer thread');
-    return;
-  }
+  let autoUpdater: typeof AUType = require('electron-updater').autoUpdater;
 
-  const autoUpdater = remote.autoUpdater;
-
-  let channel: string = api.store.getState().settings.update.channel;
-  setChannel(channel, api.showErrorNotification);
-
-  api.onStateChange(['settings', 'update', 'channel'],
-    (oldChannel: string, newChannel: string) => {
-      setChannel(newChannel, api.showErrorNotification);
+  autoUpdater.on('error', (err) => {
+    api.showErrorNotification('checking for update failed', err);
   });
 
-  autoUpdater.on('update-available', () => {
-    log('info', 'update available');
-  });
-  autoUpdater.on('update-not-available', () => {
-    log('info', 'no update available');
-  });
+  autoUpdater.on('update-available',
+                 () => { log('info', 'update available'); });
+  autoUpdater.on('update-not-available',
+                 () => { log('info', 'no update available'); });
   autoUpdater.on('update-downloaded',
-                 (event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) => {
-    log('info', 'update installed');
-    api.sendNotification({
-      type: 'success',
-      message: 'Update available',
-      displayMS: 10000,
-      actions: [{
-        title: 'Restart & Install',
-        action: () => { quitAndUpdate(); },
-      }],
-    });
+                 (event, releaseNotes, releaseName, releaseDate, updateUrl,
+                  quitAndUpdate) => {
+                   log('info', 'update installed');
+                   api.sendNotification({
+                     type: 'success',
+                     message: 'Update available',
+                     displayMS: 10000,
+                     actions: [
+                       {
+                         title: 'Restart & Install',
+                         action: () => { quitAndUpdate(); },
+                       },
+                     ],
+                   });
+                 });
+
+  ipcMain.on('set-update-channel', (event) => {
+    try {
+      log('info', 'set channel');
+      // TODO: the auto updater requires a public github repo
+      // autoUpdater.checkForUpdates();
+    } catch (err) {
+      api.showErrorNotification('checking for update failed', err);
+      return;
+    }
   });
 }
 

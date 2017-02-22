@@ -142,7 +142,9 @@ class ContextProxyHandler implements ProxyHandler<any> {
         !incompatibleExtensions.has(call.extension)
       );
     } else {
-      log('debug', 'all extensions compatible');
+      if (remote !== undefined) {
+        log('debug', 'all extensions compatible');
+      }
     }
   }
 
@@ -201,6 +203,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerTableAttribute: undefined,
       api: undefined,
       once: undefined,
+      onceMain: undefined,
       optional: undefined,
     };
 
@@ -290,35 +293,37 @@ class ExtensionManager {
       store.dispatch(dismissNotification(id));
     };
     this.mApi.store = store;
-    this.mApi.onStateChange = (watchPath: string[], callback: IStateChangeCallback) => {
-      let lastValue;
-      let key = watchPath.join('.');
-      if (this.mWatches[key] === undefined) {
-        this.mWatches[key] = [];
-        this.mReduxWatcher.watch(watchPath,
-          // tslint:disable-next-line: no-unused-variable
-          ({ cbStore, selector, prevState, currentState, prevValue, currentValue }) => {
-            // TODO redux-watch seems to trigger even if the value has not changed. This can
-            //   lead to an endless loop where a state change handler re-sets the same value
-            //   causing an infinite loop
-            if (currentValue === lastValue) {
-              return;
-            }
-            lastValue = currentValue;
-            for (let cb of this.mWatches[key]) {
-              try {
-                cb(prevValue, currentValue);
-              } catch (err) {
-                log('error', 'state change handler failed', {
-                  message: err.message,
-                  stack: err.stack,
-                });
-              }
-            }
-          });
-      }
-      this.mWatches[key].push(callback);
-    };
+    this.mApi.onStateChange = this.stateChangeHandler;
+
+    let{ipcRenderer} = require('electron');
+    ipcRenderer.on(
+        'send-notification',
+        (event, notification) => this.mApi.sendNotification(notification));
+    ipcRenderer.on('show-error-notification',
+                   (event, message, details) =>
+                       this.mApi.showErrorNotification(message, details));
+  }
+
+  /**
+   * set up the api for the main process.
+   * 
+   * @param {Redux.Store<S>} store
+   * @param {NodeJS.Events} ipc channel to the renderer process, in case a call has to be
+   *                            delegated there
+   * 
+   * @memberOf ExtensionManager
+   */
+  public setupApiMain<S>(store: Redux.Store<S>, ipc: Electron.WebContents) {
+    this.mApi.sendNotification = (notification: INotification) =>
+        ipc.emit('send-notification', notification);
+    this.mApi.showErrorNotification =
+        (message: string, details: string | Error) => {
+          // unfortunately it appears we can't send an error object via ipc
+          let errMessage = typeof(details) === 'string' ? details : details.message;
+          ipc.send('show-error-notification', message, errMessage);
+        };
+    this.mApi.store = store;
+    this.mApi.onStateChange = this.stateChangeHandler;
   }
 
   /**
@@ -372,14 +377,16 @@ class ExtensionManager {
    * once.
    */
   public doOnce() {
-    this.mContextProxyHandler.getCalls('once').forEach((args: any[]) => {
-      try {
-        args[0]();
-      } catch (err) {
-        log('warn', 'failed to call once',
-            { err: err.message, stack: err.stack });
-      }
-    });
+    this.mContextProxyHandler.getCalls(remote !== undefined ? 'once' :
+                                                              'onceMain')
+        .forEach((args: any[]) => {
+          try {
+            args[0]();
+          } catch (err) {
+            log('warn', 'failed to call once',
+                {err: err.message, stack: err.stack});
+          }
+        });
   }
 
   public getProtocolHandler(protocol: string) {
@@ -410,6 +417,41 @@ class ExtensionManager {
     return this.mModDB;
   }
 
+  private stateChangeHandler = (watchPath: string[],
+                             callback: IStateChangeCallback) => {
+    let lastValue;
+    let key = watchPath.join('.');
+    if (this.mWatches[key] === undefined) {
+      this.mWatches[key] = [];
+      this.mReduxWatcher.watch(watchPath,
+                               // tslint:disable-next-line: no-unused-variable
+                               ({cbStore, selector, prevState, currentState,
+                                 prevValue, currentValue}) => {
+                                 // TODO redux-watch seems to trigger even if
+                                 // the value has not changed. This can
+                                 //   lead to an endless loop where a state
+                                 //   change handler re-sets the same value
+                                 //   causing an infinite loop
+                                 if (currentValue === lastValue) {
+                                   return;
+                                 }
+                                 lastValue = currentValue;
+                                 for (let cb of this.mWatches[key]) {
+                                   try {
+                                     cb(prevValue, currentValue);
+                                   } catch (err) {
+                                     log('error', 'state change handler failed',
+                                         {
+                                           message: err.message,
+                                           stack: err.stack,
+                                         });
+                                   }
+                                 }
+                               });
+    }
+    this.mWatches[key].push(callback);
+  };
+
   /**
    * initialize all extensions
    */
@@ -421,7 +463,10 @@ class ExtensionManager {
     this.mContextProxyHandler = new ContextProxyHandler(context);
     let contextProxy = new Proxy(context, this.mContextProxyHandler);
     this.mExtensions.forEach((ext) => {
-      log('info', 'init extension', {name: ext.name});
+      if (remote !== undefined) {
+        // log this only once so we don't spam the log file with this
+        log('info', 'init extension', {name: ext.name});
+      }
       this.mContextProxyHandler.setExtension(ext.name);
       try {
         ext.initFunc(contextProxy as IExtensionContext);
@@ -430,7 +475,9 @@ class ExtensionManager {
       }
     });
     this.mContextProxyHandler.unloadIncompatible(ExtensionManager.sUIAPIs);
-    log('info', 'all extensions initialized');
+    if (remote !== undefined) {
+      log('info', 'all extensions initialized');
+    }
   }
 
   private getPath(name: Electron.AppPathName) {

@@ -89,15 +89,17 @@ process.on('uncaughtException', (error) => {
 });
 
 let store: Redux.Store<IState>;
+let extensions: ExtensionManager;
 
 function createStore(): Promise<void> {
   // TODO: we load all the extensions here including their dependencies
   //    like ui components despite the fact we only care about the reducers.
   //    If we could fix this that would probably reduce startup time by a
   //    second or more
-  const extensions: ExtensionManager = new ExtensionManager();
+  extensions = new ExtensionManager();
   return setupStore(basePath, extensions).then((newStore) => {
     store = newStore;
+    extensions.doOnce();
     return Promise.resolve();
   });
 }
@@ -131,7 +133,7 @@ function createWindow() {
   // mainWindow.webContents.openDevTools();
 
   mainWindow.once('ready-to-show', () => {
-    log('info', 'ready to show');
+    extensions.setupApiMain(store, mainWindow.webContents);
     mainWindow.show();
   });
 

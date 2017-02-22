@@ -14,17 +14,18 @@
     "_build_subprojects_out": "node BuildSubprojects.js out",
     "_build_subprojects_app": "node BuildSubprojects.js app",
 
+    "_clean_app": "cd app && rm-local-modules",
+    "_install_app": "cd app && npm install && npm update",
+
     "build_api": "tsc -p ./api && npm install ./api",
 
     "build_rest": "npm run _assets_out && npm run _build_subprojects_out && npm run build_api",
 
-    "prepackage": "npm run build_api && npm run _install_app && npm run _build_subprojects_app && npm run _assets_app && npm install 7zip-bin",
+    "prepackage": "npm run build_api && npm run _clean_app && npm run _install_app && npm run _build_subprojects_app && npm run _assets_app && npm install 7zip-bin",
     "package": "build",
 
     "prestart": "npm run build",
     "start": "cross-env NODE_ENV=development electron .",
-
-    "_install_app": "cd app && npm install && npm update",
 
     "preinstallex": "npm install rm-local-modules && rm-local-modules",
     "installex": "npm install && npm run build",
@@ -77,12 +78,29 @@
     "asar": false,
     "appId": "com.nexusmods.nmm2",
     "win": {
-      "target": "squirrel",
-      "icon": "assets/images/nmm.ico",
-      "iconUrl": "https://staticdelivery.nexusmods.com/contents/Templates/110/favicon.ico"
+      "target": "nsis",
+      "remoteReleases": "https://github.com/Nexus-Mods/NMM2/releases/download/0.4.2",
+      "remoteToken": "008e0c7bfa1a9a2f14df6370dfdac9340ec828a",
+      "publish": ["github"]
     },
     "extraResources": [
       "locales"
+    ],
+    "files": [
+      "**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,test,__tests__,tests,powered-test,example,examples,*.d.ts}",
+      "!**/node_modules/.bin",
+      "!**/*.{o,hprof,orig,pyc,pyo,rbc}",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,thumbs.db,.gitignore,.gitattributes,.editorconfig,.flowconfig,.yarn-metadata.json,.idea,appveyor.yml,.travis.yml,circle.yml,npm-debug.log,.nyc_output,yarn.lock,.yarn-integrity}",
+
+      "!**/*.{pdb,lib,VC.db,exp,gypi,d.ts}",
+      "!**/build/Debug",
+      "!**/build/Release/obj",
+      "!**/build/.vs",
+      "!**/autogypi.json",
+      "!**/binding.gyp",
+      "!**/binding.map"
     ]
   },
   "parserOptions": {
@@ -94,6 +112,8 @@
   "devDependencies": {
     "@types/bluebird": "^3.0.36",
     "@types/content-type": "^1.0.33",
+    "@types/debug": "^0.0.29",
+    "@types/electron": "^1.4.32",
     "@types/enzyme": "^2.5.39",
     "@types/ffi": "^0.0.18",
     "@types/form-data": "^0.0.32",
@@ -148,12 +168,13 @@
     "devtron": "^1.3.0",
     "drivelist": "^3.3.4",
     "electron": "1.4.14",
-    "electron-builder": "^10.8.1",
+    "electron-builder": "^13.11.1",
     "electron-debug": "^1.0.1",
     "electron-devtools-installer": "^2.0.1",
     "electron-edge": "^6.5.2",
     "electron-rebuild": "^1.2.1",
     "electron-squirrel-startup": "^1.0.0",
+    "electron-updater": "^1.7.1",
     "enzyme": "^2.6.0",
     "ffi": "^2.1.0",
     "fs-extra-promise": "^0.4.0",
@@ -167,7 +188,6 @@
     "lodash": "^4.17.4",
     "minimist": "^1.2.0",
     "nbind": "^0.3.6",
-    "nmm-api": "file:api",
     "node-ipc": "^8.9.2",
     "node-rest-client": "^2.0.1",
     "node-sass": "^4.3.0",
@@ -221,6 +241,7 @@
     "icon-extract": "file:lib/cpp/icon-extract",
     "modmeta-db": "file:external\\modmeta-db",
     "nexus-api": "file:lib\\js\\nexus-api",
+    "nmm-api": "file:api",
     "node-7z": "TanninOne/node-7z",
     "packery": "^2.1.1",
     "react": "^15.3.0",

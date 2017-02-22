@@ -9,12 +9,6 @@ const rimraf = require('rimraf');
 const vm = require('vm');
 
 const projectGroups = fs.readJSONSync('./BuildSubprojects.json');
-let buildState;
-try {
-  buildState = fs.readJSONSync('./BuildState.json');
-} catch (err) {
-  buildState = {};
-}
 
 const npmcli = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const rebuild = path.join('node_modules', '.bin', process.platform === 'win32' ? 'electron-rebuild.cmd' : 'electron-rebuild');
@@ -199,6 +193,14 @@ function main(args) {
   }
 
   const buildType = args._[0];
+  const buildStateName = `./BuildState_${buildType}.json`;
+  let buildState;
+
+  try {
+    buildState = fs.readJSONSync(buildStateName);
+  } catch (err) {
+    buildState = {};
+  }
 
   // the projects file contains groups of projects
   // each group is processed in parallel
@@ -215,7 +217,7 @@ function main(args) {
         .then(() => {
           console.log('finished ', project.name);
           buildState[project.name] = new Date().getTime();
-          return fs.writeJSONAsync('./BuildState.json', buildState);
+          return fs.writeJSONAsync(buildStateName, buildState);
         })
         .catch((err) => {
           if (err instanceof Unchanged) {

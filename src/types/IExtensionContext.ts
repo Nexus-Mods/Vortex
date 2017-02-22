@@ -454,6 +454,15 @@ export interface IExtensionContext {
   once: (callback: () => void) => void;
 
   /**
+   * similar to once but this callback will be run (only) on the electron "main" process.
+   * Use this only if you absolutely must (if you don't know what electron main process means, it's
+   * almost certain you don't want this).
+   * While almost all program logic of NMM2 runs in the renderer process, some libraries will not
+   * work correctly on that process so you have to run on the main process.
+   */
+  onceMain: (callback: () => void) => void;
+
+  /**
    * contains various utility functions. It's valid to store this object inside
    * the extension for later use.
    * 

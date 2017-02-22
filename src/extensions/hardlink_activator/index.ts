@@ -45,7 +45,6 @@ class ModActivator extends LinkingActivator {
     try {
       if (fs.statSync(installPath(state)).dev !==
           fs.statSync(activeGameDiscovery.modPath).dev) {
-        log('info', 'hardlink activator not supported because game is on different drive');
         // hard links work only on the same drive
         return 'Works only if mods are installed on the same drive as the game.';
       }
