@@ -155,7 +155,7 @@ function init(context: IExtensionContextExt): boolean {
       (previous: { [gameId: string]: IStatePaths }, current: { [gameId: string]: IStatePaths }) => {
         const gameMode = activeGameId(store.getState());
         if (previous[gameMode] !== current[gameMode]) {
-          let knownMods = Object.keys(store.getState().mods[gameMode]);
+          let knownMods = Object.keys(store.getState().persistent.mods[gameMode]);
           refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
             context.api.store.dispatch(addMod(gameMode, mod));
           }, (modNames: string[]) => {

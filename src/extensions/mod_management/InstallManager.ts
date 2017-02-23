@@ -47,7 +47,7 @@ interface ISupportedInstaller {
   requiredFiles: string[];
 }
 
-type InstructionType = 'copy' | 'submodule' | 'unsupported';
+type InstructionType = 'copy' | 'submodule' | 'generatefile' | 'unsupported';
 
 interface IInstruction {
   type: InstructionType;
@@ -268,8 +268,11 @@ class InstallManager {
       setdefault(instructionGroups, instruction.type, []).push(instruction);
     });
 
-    const copies = result.instructions.filter((instruction) =>
-                                                  instruction.type === 'copy');
+    const copies = result.instructions.filter(
+        (instruction) => instruction.type === 'copy');
+
+    const genfiles = result.instructions.filter(
+        (instruction) => instruction.type === 'generatefile');
 
     const subModule = result.instructions.filter(
         (instruction) => instruction.type === 'submodule');
@@ -311,13 +314,19 @@ class InstallManager {
 
     // process 'copy' instructions during extraction
     return this.extractArchive(archivePath, destinationPath, copies)
+      .then(() => Promise.each(genfiles,
+        (gen) => {
+          let outputPath = path.join(destinationPath, gen.destination);
+          return fs.ensureDirAsync(path.dirname(outputPath))
+          .then(() => fs.writeFileAsync(outputPath, gen.source))
+        })
         // process 'submodule' instructions
         .then(() => Promise.each(
                   subModule,
                   (mod) => this.installInner(mod.path, gameId)
                                .then((resultInner) => this.processInstructions(
                                          api, mod.path, destinationPath, gameId,
-                                         resultInner))));
+                                         resultInner)))));
   }
 
   private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {
@@ -534,8 +543,9 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
         const extractList: string[] = copies.map((instruction) => '"' + instruction.source + '"');
         return fs.writeFileAsync(tmpPath, extractList.join('\n'));
       })
+      .then(() => fs.ensureDirAsync(destinationPath + '.installing'))
       .then(() => extract7z(archivePath, destinationPath + '.installing',
-        { raw: [`-ir@${extractFilePath}`] })
+        { raw: [`-ir@${extractFilePath}`], ssc: false })
         .then((args: string[]) => {
           return fs.renameAsync(destinationPath + '.installing',
             destinationPath);
