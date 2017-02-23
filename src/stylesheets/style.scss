@@ -430,3 +430,15 @@
   flex: 1 0%;
   overflow-y: auto;
 }
+
+.problem-alert > .problem-content {
+  white-space: nowrap;
+  max-height: 1.8em;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+
+.problem-alert:hover > .problem-content {
+  white-space: initial;
+  max-height: 200px;
+}

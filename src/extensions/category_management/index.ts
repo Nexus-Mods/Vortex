@@ -111,7 +111,6 @@ function init(context: IExtensionContext): boolean {
           context.api.store.dispatch(updateCategories(gameMode, {}));
         }
       });
-
     } catch (err) {
       log('error', 'Failed to load categories', err);
       showError(store.dispatch, 'Failed to load categories', err);

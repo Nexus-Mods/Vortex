@@ -8,6 +8,7 @@ export * from './IExtensionContext';
 export * from './IIconDefinition';
 export * from './INotification';
 export * from './IState';
+export * from './ITestResult';
 export * from './ITableAttribute';
 export * from './SortDirection';
 

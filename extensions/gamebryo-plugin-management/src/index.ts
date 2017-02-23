@@ -19,9 +19,11 @@ import PluginPersistor from './util/PluginPersistor';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
+import {access, constants} from 'fs';
 import * as fs from 'fs-extra-promise';
 import { log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
+import * as nodeUtil from 'util';
 
 interface IModState {
   enabled: boolean;
@@ -187,6 +189,12 @@ function startSync(api: types.IExtensionApi) {
   }
 
   const modPath = selectors.currentGameDiscovery(store.getState()).modPath;
+  if (modPath === undefined) {
+    // can this even happen?
+    log('error', 'mod path unknown',
+      { discovery: nodeUtil.inspect(selectors.currentGameDiscovery(store.getState())) });
+    return;
+  }
   // watch the mod directory. if files change, that may mean our plugin list
   // changed, so refresh
   watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
@@ -201,9 +209,40 @@ function startSync(api: types.IExtensionApi) {
   });
 }
 
+function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
+  if (!gameSupported(gameMode)) {
+    return Promise.resolve(undefined);
+  }
+
+  const filePath = path.join(pluginPath(gameMode), 'plugins.txt');
+  return new Promise<types.ITestResult>((resolve, reject) => {
+    access(filePath, constants.W_OK, (err) => {
+      if (err === null) {
+        resolve(undefined);
+      } else {
+        let res: types.ITestResult = {
+          description: {
+            short: 'plugins.txt is write protected',
+            long: 'This file is used to control which plugins the game uses and while it\'s '
+                  + 'write protected NMM2 will not be able to enable or disable plugins.\n'
+                  + 'If you click "fix" the file will be marked writable.',
+          },
+          severity: 'error',
+          automaticFix: () =>
+            fs.chmodAsync(filePath, parseInt('0777', 8)),
+        };
+
+        resolve(res);
+      }
+    });
+  });
+}
+
 function init(context: IExtensionContextExt) {
   register(context);
   initPersistor(context);
+  context.registerTest('plugins-locked', 'gamemode-activated',
+    () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
 
   context.once(() => {
     const store = context.api.store;

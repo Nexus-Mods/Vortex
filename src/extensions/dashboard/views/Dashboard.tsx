@@ -6,6 +6,8 @@ import PackeryItem from './PackeryItem';
 
 import * as React from 'react';
 
+const UPDATE_FREQUENCY_MS = 200;
+
 interface IDashletProps {
   title: string;
   width: 1 | 2 | 3;
@@ -30,6 +32,17 @@ interface IRenderedDash {
  * base layouter for the dashboard. No own content, just layouting
  */
 class Dashboard extends ComponentEx<IProps, {}> {
+
+  private mUpdateTimer: NodeJS.Timer;
+
+  public componentDidMount() {
+    this.startUpdateCycle();
+  }
+
+  public componentWillUnmount() {
+    clearTimeout(this.mUpdateTimer);
+  }
+
   public render(): JSX.Element {
     const { objects } = this.props;
     const state = this.context.api.store.getState();
@@ -42,6 +55,13 @@ class Dashboard extends ComponentEx<IProps, {}> {
     return <PackeryGrid totalWidth={3}>
       {sorted.map(this.renderItem)}
     </PackeryGrid>;
+  }
+
+  private startUpdateCycle = () => {
+    this.mUpdateTimer = setTimeout(() => {
+      this.forceUpdate();
+      this.startUpdateCycle();
+    }, UPDATE_FREQUENCY_MS);
   }
 
   private renderItem = (dash: IDashletProps) => {

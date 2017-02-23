@@ -1,5 +1,6 @@
 import { INotification } from './INotification';
 import { ITableAttribute } from './ITableAttribute';
+import { ITestResult } from './ITestResult';
 import * as Promise from 'bluebird';
 import { IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
@@ -13,6 +14,11 @@ export type PropsCallback = () => Object;
  * profile: state regarding the managed profile. Will be swapped out when the profile changes
  */
 export type PersistingType = 'global' | 'game' | 'profile';
+
+export type EventType = 'settings-changed' | 'gamemode-activated' | 'profile-activated';
+
+export type CheckFunction = () => Promise<ITestResult>;
+
 
 export interface IRegisterSettings {
   (title: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
@@ -437,6 +443,15 @@ export interface IExtensionContext {
    * find the right id in the documentation of the corresponding extension
    */
   registerTableAttribute: (tableId: string, attribute: ITableAttribute) => void;
+
+  /**
+   * add a check that will automatically be run on the specified event.
+   * Such checks can be used by extensions to check the integrity of their own data, of the
+   * application setup or that of the game and present them to the user in a common way.
+   * 
+   * @memberOf IExtensionContext
+   */
+  registerTest: (id: string, event: EventType, check: CheckFunction) => void;
 
   /**
    * called once after the store has been set up and after all extensions have been initialized

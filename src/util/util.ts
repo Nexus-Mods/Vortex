@@ -57,6 +57,18 @@ export function delayed(durationMS: number, value?: any) {
 }
 
 /**
+ * like the python setdefault function:
+ * returns the attribute "key" from "obj". If that attribute doesn't exist
+ * on obj, it will be set to the default value and that is returned.
+ */
+export function setdefault<T>(obj: Object, key: PropertyKey, def: T): T {
+  if (!obj.hasOwnProperty(key)) {
+    obj[key] = def;
+  }
+  return obj[key];
+}
+
+/**
  * copy a file in such a way that it will not replace the target if the copy is
  * somehow interrupted. The file is first copied to a temporary file in the same
  * directory as the destination, then deletes the destination and renames the temp

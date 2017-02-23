@@ -75,7 +75,7 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
  * @template P
  * @template S
  */
-export class ComponentEx<P, S> extends React.PureComponent<P & II18NProps, S> {
+export class ComponentEx<P, S> extends React.Component<P & II18NProps, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: React.PropTypes.object.isRequired,
   };

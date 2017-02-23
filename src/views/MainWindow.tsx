@@ -257,10 +257,15 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }));
   };
 
-  private showLayer = (layer: string) => this.showLayerImpl(layer);
+  private showLayer = (layer: string) => {
+    this.showLayerImpl(layer);
+  }
   private hideLayer = () => this.showLayerImpl('');
 
   private showLayerImpl(layer: string): void {
+    if (this.state.showLayer !== '') {
+      this.props.api.events.emit('hide-modal', this.state.showLayer);
+    }
     this.setState(update(this.state, { showLayer: { $set: layer } }));
   }
 
