@@ -17,7 +17,6 @@ interface IGameInfo {
  * @return {ICategoryDictionary} res 
  * 
  */
-
 function retrieveCategoryList(
   activeGameId: string,
   nexus: Nexus

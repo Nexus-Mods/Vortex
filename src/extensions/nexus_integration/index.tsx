@@ -42,8 +42,11 @@ export interface IExtensionContextExt extends IExtensionContext {
  *   This should be two functions!
  */
 function convertGameId(input: string): string {
-  if (input.toLowerCase() === 'skyrimse') {
+  let inputL = input.toLowerCase();
+  if (inputL === 'skyrimse') {
     return 'skyrimspecialedition';
+  } else if (inputL === 'falloutnv') {
+    return 'newvegas';
   } else {
     return input;
   }

@@ -64,7 +64,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
           );
         } else {
           content = (
-            <FormControl
+            <FormInput
               id={attribute.id}
               type='text'
               label={t(attribute.name)}

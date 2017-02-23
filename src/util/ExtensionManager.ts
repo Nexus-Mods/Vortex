@@ -41,6 +41,7 @@ import {} from '../extensions/settings_metaserver';
 import {} from '../extensions/starter_dashlet';
 import {} from '../extensions/symlink_activator';
 import {} from '../extensions/symlink_activator_elevate';
+import {} from '../extensions/test_runner';
 import {} from '../extensions/updater';
 
 let app = appIn;
@@ -201,6 +202,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerPersistor: undefined,
       registerSettingsHive: undefined,
       registerTableAttribute: undefined,
+      registerTest: undefined,
       api: undefined,
       once: undefined,
       onceMain: undefined,
@@ -658,6 +660,7 @@ class ExtensionManager {
       'installer_fomod',
       'installer_nested_fomod',
       'settings_metaserver',
+      'test_runner',
     ];
 
     const bundledPath = path.resolve(__dirname, '..', 'bundledPlugins');

@@ -1,5 +1,6 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 import {ITableAttribute} from '../../types/ITableAttribute';
+import {ITestResult} from '../../types/ITestResult';
 import {activeGameId, currentActivator, downloadPath, installPath} from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 
@@ -18,13 +19,13 @@ import * as basicInstaller from './util/basicInstaller';
 import refreshMods from './util/refreshMods';
 import supportedActivators from './util/supportedActivators';
 import ActivationButton from './views/ActivationButton';
-import ActivatorDashlet from './views/ActivatorDashlet';
 import DeactivationButton from './views/DeactivationButton';
 import ModList from './views/ModList';
 import Settings from './views/Settings';
 
 import InstallManager from './InstallManager';
 
+import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
@@ -74,9 +75,35 @@ function init(context: IExtensionContextExt): boolean {
     };
   });
 
-  context.registerDashlet('Activator', 3, 50, ActivatorDashlet,
-    (state: any) => supportedActivators(activators, state).length === 0,
-    () => ({ activators }));
+  const validActivatorCheck = () => new Promise<ITestResult>((resolve, reject) => {
+    const state = context.api.store.getState();
+    if (supportedActivators(activators, state).length > 0) {
+      return resolve(undefined);
+    }
+
+    const messages = activators.map(
+      (activator) => `${activator.name} - ${activator.isSupported(state)}`);
+
+    return resolve({
+      description: {
+        short: 'In the current constellation, mods can\'t be activated.',
+        long: messages.join('\n'),
+      },
+      severity: 'error',
+      automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
+        context.api.events.emit('show-modal', 'settings');
+        context.api.events.on('hide-modal', (modal) => {
+          if (modal === 'settings') {
+            fixResolve();
+          }
+        });
+      }),
+    });
+  });
+
+  context.registerTest('valid-activator', 'gamemode-activated', validActivatorCheck);
+  context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
+
 
   context.registerSettings('Mods', Settings, () => ({activators}));
 
@@ -128,7 +155,7 @@ function init(context: IExtensionContextExt): boolean {
       (previous: { [gameId: string]: IStatePaths }, current: { [gameId: string]: IStatePaths }) => {
         const gameMode = activeGameId(store.getState());
         if (previous[gameMode] !== current[gameMode]) {
-          let knownMods = Object.keys(store.getState().mods[gameMode]);
+          let knownMods = Object.keys(store.getState().persistent.mods[gameMode]);
           refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
             context.api.store.dispatch(addMod(gameMode, mod));
           }, (modNames: string[]) => {
