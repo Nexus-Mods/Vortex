@@ -24,7 +24,7 @@ namespace Components.ModInstaller
 
         private static string FomodRoot = "fomod";
         private static string OmodRoot = "omod";
-        private static ISet<string> ScreenshotExtensions = new HashSet<string> { ".png", ".gif", ".jpg", ".jpeg" };
+        private static ISet<string> RequiredExtensions = new HashSet<string> { ".png", ".gif", ".jpg", ".jpeg", ".txt" };
         #endregion
 
         #region Properties
@@ -48,7 +48,7 @@ namespace Components.ModInstaller
             // TODO: I don't think there is a good way to determine which image files are referenced by the installer script without
             //   unpacking it first, right?
             IList<string> RequiredFiles = includeAssets
-                ? modFiles.Where(path => ScreenshotExtensions.Contains(Path.GetExtension(path))).ToList()
+                ? modFiles.Where(path => RequiredExtensions.Contains(Path.GetExtension(path))).ToList()
                 : new List<string>();
 
             return await Task.Run(() =>
