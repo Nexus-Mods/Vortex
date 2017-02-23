@@ -15,12 +15,13 @@ class Plugins extends DelegateBase {
         log('info', 'isActive called', util.inspect(pluginName));
         let state = this.api.store.getState();
 
-        if (state.loadOrder !== undefined) {
+        if (state.loadOrder !== undefined && Object.keys(state.loadOrder).length > 0) {
           log('info', 'isPresent debug state', util.inspect(pluginName));
-          state.loadOrder.forEach((plugin) => {
-            if ((plugin.key !== undefined) &&
-                (plugin.key.toLowerCase() === pluginName.toLowerCase())) {
-              return callback(null, plugin.enabled);
+          let plugins = Object.keys(state.session.plugins.pluginList);
+          plugins.forEach((plugin) => {
+            if ((plugin !== undefined) &&
+                (plugin.toLowerCase() === pluginName.toLowerCase())) {
+              return callback(null, state.loadOrder[plugin].enabled);
             }
           });
         }
@@ -32,11 +33,12 @@ class Plugins extends DelegateBase {
         log('info', 'isPresent called', util.inspect(pluginName));
         let state = this.api.store.getState();
 
-        if (state.loadOrder !== undefined) {
+        if (state.session.plugins !== undefined && state.session.plugins.pluginList !== undefined) {
           log('info', 'isPresent debug state', util.inspect(pluginName));
-          state.loadOrder.forEach((plugin) => {
-            if ((plugin.key !== undefined) &&
-                (plugin.key.toLowerCase() === pluginName.toLowerCase())) {
+          let plugins = Object.keys(state.session.plugins.pluginList);
+          plugins.forEach((plugin) => {
+            if ((plugin !== undefined) &&
+                (plugin.toLowerCase() === pluginName.toLowerCase())) {
               return callback(null, true);
             }
           });

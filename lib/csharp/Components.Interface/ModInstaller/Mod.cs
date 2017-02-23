@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Components.Extensions;
 using Components.Scripting;
 using Utils;
+using System.Diagnostics;
 
 namespace Components.Interface
 {
@@ -22,7 +23,7 @@ namespace Components.Interface
 
         #region Fields
         private string FomodRoot = "fomod";
-        private string ScreenshotFolderName = "screenshot";
+        private string FomodScreenshotPath = "fomod/screenshot";
         private IList<string> ModFiles;
         private string ScreenshotFilesPath = string.Empty;
         private string InstallScriptPath = null;
@@ -142,17 +143,13 @@ namespace Components.Interface
 
         private void GetScreenshotPath(IList<string> listModFiles)
         {
-            foreach (string filePath in listModFiles)
+            IList<string> NormalizedModFile = NormalizePathList(ModFiles);
+            foreach (string filePath in NormalizedModFile)
             {
-                string checkScreenshotPath = Path.GetFileName(Path.GetDirectoryName(filePath));
-                if (checkScreenshotPath.Equals(ScreenshotFolderName, StringComparison.InvariantCultureIgnoreCase))
+                if (filePath.Contains(FomodScreenshotPath, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    string checkFomodPath = Path.GetFileName(Path.GetDirectoryName(checkScreenshotPath));
-                    if (checkFomodPath.Equals(ScreenshotFolderName, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        ScreenshotFilesPath = checkScreenshotPath;
-                        break;
-                    }
+                    ScreenshotFilesPath = Path.GetDirectoryName(filePath);
+                    break;
                 }
             }
         }

@@ -271,7 +271,7 @@ namespace Components.Interface
         /// <returns>The specified file, or <c>null</c> if the file does not exist.</returns>
         public byte[] GetExistingDataFile(string p_strPath)
         {
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("DataFileExists");
+            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("GetExistingDataFile");
             if (!modInstallInstructions.Contains(UnsupportedFunction))
                 modInstallInstructions.Add(UnsupportedFunction);
 
