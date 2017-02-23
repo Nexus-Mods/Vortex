@@ -148,7 +148,7 @@ namespace Components.Interface
             {
                 if (filePath.Contains(FomodScreenshotPath, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    ScreenshotFilesPath = Path.GetDirectoryName(filePath);
+                    ScreenshotFilesPath = filePath;
                     break;
                 }
             }
