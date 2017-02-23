@@ -143,8 +143,21 @@ function processModule(project, buildType, feedback) {
     .then(() => npm(['install', project.module], options, feedback));
 }
 
+function removeModules(project) {
+  if (project.removeModules === undefined) {
+    return Promise.resolve();
+  }
+  console.log(`removing from ${project.path}`, project.removeModules.join(', '));
+
+  return Promise.map(project.removeModules,
+                     (mod) => rimrafAsync(path.join(__dirname, project.path,
+                                                    'node_modules', mod)));
+}
+
 function processCustom(project, buildType, feedback) {
-  let res = npm(['install'], { cwd: project.path }, feedback)
+  let res = 
+    removeModules(project)
+      .then(() => npm(['install'], { cwd: project.path }, feedback))
       .then(() => npm(['run', typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback));
   if (project.copyTo !== undefined) {
     const output = format(project.copyTo, { BUILD_DIR: buildType });
