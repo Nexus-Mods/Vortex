@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Components.Interface;
 using Components.Scripting;
-using ModInstaller;
 
 namespace Components.ModInstaller
 {
@@ -86,10 +85,7 @@ namespace Components.ModInstaller
 
             if (modToInstall.HasInstallScript)
             {
-                ArchiveStructure arch = new ArchiveStructure(modArchiveFileList);
-                string prefix = arch.FindPathPrefix(new string[] { "fomod" }, new string[] { @".*\.esp", @".*\.esm" });
-
-                Instructions = await ScriptedModInstall(modToInstall, prefix, progressDelegate, coreDelegate);
+                Instructions = await ScriptedModInstall(modToInstall, progressDelegate, coreDelegate);
             }
             else
             {
@@ -167,10 +163,10 @@ namespace Components.ModInstaller
         /// <param name="prefixPath">base path for all relative paths</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
         /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
-        protected async Task<IList<Instruction>> ScriptedModInstall(Mod modArchive, string prefixPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
+        protected async Task<IList<Instruction>> ScriptedModInstall(Mod modArchive, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
             IScriptExecutor sexScript = modArchive.InstallScript.Type.CreateExecutor(modArchive, coreDelegate);
-            return await sexScript.Execute(modArchive.InstallScript, prefixPath);
+            return await sexScript.Execute(modArchive.InstallScript);
         }
 
         #endregion

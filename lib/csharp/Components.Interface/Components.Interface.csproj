@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extension\Extensions.cs" />
+    <Compile Include="ModInstaller\ArchiveStructure.cs" />
     <Compile Include="ModInstaller\BaseInstaller.cs" />
     <Compile Include="ModInstaller\CoreDelegates.cs" />
     <Compile Include="ModInstaller\IInstaller.cs" />

@@ -41,7 +41,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ArchiveStructure.cs" />
     <Compile Include="Installer.cs" />
     <Compile Include="InstallerProxy.cs" />
     <Compile Include="ModFormatManager.cs" />

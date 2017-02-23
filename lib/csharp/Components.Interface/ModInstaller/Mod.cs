@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Components.Extensions;
 using Components.Scripting;
 using Utils;
 
@@ -11,6 +12,14 @@ namespace Components.Interface
 {
     public class Mod
     {
+        private static readonly HashSet<string> imageExtensions = new HashSet<string>()
+        {
+            "png",
+            "jpg",
+            "bmp",
+            "gif"
+        };
+
         #region Fields
         private string FomodRoot = "fomod";
         private string ScreenshotFolderName = "screenshot";
@@ -18,6 +27,7 @@ namespace Components.Interface
         private string ScreenshotFilesPath = string.Empty;
         private string InstallScriptPath = null;
         private string TempPath = null;
+        private string PathPrefix = null;
         private IScriptType InstallScriptType = null;
         private IScript ModInstallScript = null;
         #endregion
@@ -29,6 +39,14 @@ namespace Components.Interface
             get
             {
                 return ScreenshotFilesPath;
+            }
+        }
+
+        public string Prefix
+        {
+            get
+            {
+                return PathPrefix;
             }
         }
 
@@ -48,7 +66,7 @@ namespace Components.Interface
         {
             get
             {
-                return InstallScript != null;
+                return ModInstallScript != null;
             }
         }
 
@@ -113,6 +131,12 @@ namespace Components.Interface
                 {
                     ModInstallScript = InstallScriptType.LoadScript(TextUtil.ByteToString(scriptData));
                 });
+
+                await Task.Run(() =>
+                {
+                    ArchiveStructure arch = new ArchiveStructure(ModFiles);
+                    PathPrefix = arch.FindPathPrefix(new string[] { "fomod" }, new string[] { @".*\.esp", @".*\.esm" });
+                });
             }
         }
 
@@ -135,11 +159,14 @@ namespace Components.Interface
 
         public byte[] GetFile(string file)
         {
+            if (!string.IsNullOrEmpty(PathPrefix) || !file.StartsWith(PathPrefix, StringComparison.InvariantCultureIgnoreCase))
+                file = Path.Combine(PathPrefix, file);
             file = TextUtil.NormalizePath(file, false, true);
+
             IList<string> NormalizedModFile = NormalizePathList(ModFiles);
-            if (!NormalizedModFile.Contains(file, StringComparer.InvariantCultureIgnoreCase))
+            if (!NormalizedModFile.Any(x => x.Contains(file, StringComparison.InvariantCultureIgnoreCase)))
             {
-                if (Path.GetFileNameWithoutExtension(file).Equals("screenshot", StringComparison.InvariantCultureIgnoreCase))
+                if (IsImageFile(Path.GetFileName(file)))
                     return (byte[])(new ImageConverter().ConvertTo(new Bitmap(1, 1), typeof(byte[])));
                 else
                     throw new FileNotFoundException("File doesn't exist in FOMod", file);
@@ -194,6 +221,14 @@ namespace Components.Interface
             return DirectoryFiles;
         }
 
+        #region Helper Methods
+
+        private bool IsImageFile(string file)
+        {
+            string FileExtension = Path.GetExtension(file);
+            return (Path.GetFileNameWithoutExtension(file).Equals("screenshot", StringComparison.InvariantCultureIgnoreCase) || imageExtensions.Contains(FileExtension, StringComparer.InvariantCultureIgnoreCase));
+        }
+
         private IList<string> NormalizePathList(IList<string> paths)
         {
             List<string> NormalizedPaths = new List<string>();
@@ -204,7 +239,7 @@ namespace Components.Interface
             return NormalizedPaths;
         }
 
-        public static int CompareOrderFoldersFirst(string x, string y)
+        private static int CompareOrderFoldersFirst(string x, string y)
         {
             if (string.IsNullOrEmpty(x))
             {
@@ -241,5 +276,7 @@ namespace Components.Interface
                 }
             }
         }
+
+        #endregion
     }
 }

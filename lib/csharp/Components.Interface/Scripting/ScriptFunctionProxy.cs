@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Security;
 using System.Security.Permissions;
@@ -117,8 +115,8 @@ namespace Components.Interface
         /// <returns><c>true</c> if the file was written; <c>false</c> otherwise.</returns>
         public bool InstallFolderFromMod(string p_strFrom, bool p_booRecurse)
         {
-            string strFrom = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-            return InstallFolderFromMod(strFrom, strFrom, p_booRecurse);
+            string FromPath = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            return InstallFolderFromMod(FromPath, FromPath, p_booRecurse);
         }
 
         /// <summary>
@@ -130,16 +128,16 @@ namespace Components.Interface
         /// <returns><c>true</c> if the file was written; <c>false</c> otherwise.</returns>
         public bool InstallFolderFromMod(string p_strFrom, string p_strTo, bool p_booRecurse)
         {
-            string strFrom = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-            if (!strFrom.EndsWith(Path.DirectorySeparatorChar.ToString()))
-                strFrom += Path.DirectorySeparatorChar;
-            string strTo = p_strTo.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-            if ((strTo.Length > 0) && (!strTo.EndsWith(Path.DirectorySeparatorChar.ToString())))
-                strTo += Path.DirectorySeparatorChar;
-            foreach (string strMODFile in GetModFileList(strFrom, p_booRecurse))
+            string FromPath = p_strFrom.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            if (!FromPath.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                FromPath += Path.DirectorySeparatorChar;
+            string ToPath = p_strTo.Trim().Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            if ((ToPath.Length > 0) && (!ToPath.EndsWith(Path.DirectorySeparatorChar.ToString())))
+                ToPath += Path.DirectorySeparatorChar;
+            foreach (string strMODFile in GetModFileList(FromPath, p_booRecurse))
             {
-                string strNewFileName = strMODFile.Substring(strFrom.Length);
-                if (!InstallFileFromMod(strMODFile, Path.Combine(strTo, strNewFileName)))
+                string strNewFileName = strMODFile.Substring(FromPath.Length);
+                if (!InstallFileFromMod(strMODFile, Path.Combine(ToPath, strNewFileName)))
                     return false;
             }
             return true;
@@ -155,6 +153,8 @@ namespace Components.Interface
         {
             bool booSuccess = false;
             string FromPath = TextUtil.NormalizePath(from, false, false, false);
+            if (!string.IsNullOrEmpty(Mod.Prefix))
+                FromPath = Path.Combine(Mod.Prefix, FromPath);
             string ToPath = TextUtil.NormalizePath(to, false, false, false);
 
             modInstallInstructions.Add(Instruction.CreateCopy(FromPath, ToPath));
@@ -254,6 +254,9 @@ namespace Components.Interface
         {
             bool FileExists = false;
 
+            if (!string.IsNullOrEmpty(Mod.Prefix))
+                file = Path.Combine(Mod.Prefix, file);
+
             Task.Run(async () => {
                 FileExists = await Core.context.CheckIfFileExists(file);
             }).Wait();
@@ -272,7 +275,7 @@ namespace Components.Interface
             if (!modInstallInstructions.Contains(UnsupportedFunction))
                 modInstallInstructions.Add(UnsupportedFunction);
 
-            return null;
+            return new byte[0];
         }
 
         /// <summary>

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Components.Interface;
-using Components.Scripting;
 using System.Linq;
 using Components.Interface.ui;
 using System.IO;
@@ -17,6 +16,7 @@ namespace Components.Scripting.XmlScript
         private Mod ModArchive = null;
         private CoreDelegates m_Delegates;
         private ConditionStateManager m_csmState;
+
         #region Constructors
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Components.Scripting.XmlScript
         /// <c>false</c> otherwise.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="scpScript"/> is not an
         /// <see cref="XmlScript"/>.</exception>
-        public async override Task<IList<Instruction>> DoExecute(IScript scpScript, string strPrefixPath)
+        public async override Task<IList<Instruction>> DoExecute(IScript scpScript)
         {
             TaskCompletionSource<IList<Instruction>> Source = new TaskCompletionSource<IList<Instruction>>(); 
             List<InstallableFile> PluginsToActivate = new List<InstallableFile>();
@@ -61,7 +61,7 @@ namespace Components.Scripting.XmlScript
             IList<InstallStep> lstSteps = xscScript.InstallSteps;
             HeaderInfo hifHeaderInfo = xscScript.HeaderInfo;
             if (string.IsNullOrEmpty(hifHeaderInfo.ImagePath))
-                hifHeaderInfo.ImagePath = string.IsNullOrEmpty(ModArchive.ScreenshotPath) ? null : Path.Combine(strPrefixPath, ModArchive.ScreenshotPath);
+                hifHeaderInfo.ImagePath = string.IsNullOrEmpty(ModArchive.ScreenshotPath) ? null : Path.Combine(ModArchive.Prefix, ModArchive.ScreenshotPath);
             if ((hifHeaderInfo.Height < 0) && hifHeaderInfo.ShowImage)
                 hifHeaderInfo.Height = 75;
 
@@ -108,11 +108,11 @@ namespace Components.Scripting.XmlScript
                     {
                         FilesToInstall = FilesToInstall.Union(files);
                     }
-                    Source.SetResult(xsiInstaller.Install(xscScript, m_csmState, m_Delegates, strPrefixPath, FilesToInstall, PluginsToActivate));
+                    Source.SetResult(xsiInstaller.Install(xscScript, m_csmState, m_Delegates, FilesToInstall, PluginsToActivate));
                 }
                 else
                 {
-                    sendState(lstSteps, strPrefixPath, selectedOptions, stepIdx);
+                    sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
                 }
             };
             Action cancel = () => {
@@ -123,7 +123,7 @@ namespace Components.Scripting.XmlScript
                 new HeaderImage(hifHeaderInfo.ImagePath, hifHeaderInfo.ShowFade, hifHeaderInfo.Height),
                 select, cont, cancel);
 
-            sendState(lstSteps, strPrefixPath, selectedOptions, stepIdx);
+            sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
 
             return await Source.Task;
         }

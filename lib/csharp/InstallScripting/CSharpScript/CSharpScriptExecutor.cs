@@ -23,7 +23,6 @@ namespace Components.Scripting.CSharpScript
         private static Regex m_regScriptClass = new Regex(@"(class\s+Script\s*:.*?)(\S*BaseScript)");
         private static Regex m_regFommUsing = new Regex(@"\s*using\s*fomm.Scripting\s*;");
         private CSharpScriptFunctionProxy m_csfFunctions = null;
-        private string m_strVirtualActivatorPath = String.Empty;
 
         #region Properties
 
@@ -58,7 +57,7 @@ namespace Components.Scripting.CSharpScript
         /// <c>false</c> otherwise.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="p_scpScript"/> is not a
         /// <see cref="CSharpScript"/>.</exception>
-        public override Task<IList<Instruction>> DoExecute(IScript p_scpScript, string p_strPrefixPath)
+        public override Task<IList<Instruction>> DoExecute(IScript p_scpScript)
         {
             if (!(p_scpScript is CSharpScript))
                 throw new ArgumentException("The given script must be of type CSharpScript.", "p_scpScript");
@@ -144,7 +143,7 @@ namespace Components.Scripting.CSharpScript
 
             string strBaseScriptClassName = m_regScriptClass.Match(p_strCode).Groups[2].ToString();
             string strCode = m_regScriptClass.Replace(p_strCode, "using " + BaseScriptType.Namespace + ";\r\n$1" + BaseScriptType.Name);
-            Regex regOtherScriptClasses = new Regex(String.Format(@"(class\s+\S+\s*:.*?)(?<!\w){0}", strBaseScriptClassName));
+            Regex regOtherScriptClasses = new Regex(string.Format(@"(class\s+\S+\s*:.*?)(?<!\w){0}", strBaseScriptClassName));
             strCode = regOtherScriptClasses.Replace(strCode, "$1" + BaseScriptType.Name);
             strCode = m_regFommUsing.Replace(strCode, "");
             byte[] bteAssembly = sccCompiler.Compile(strCode, BaseScriptType, out cecErrors);

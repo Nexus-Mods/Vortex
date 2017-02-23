@@ -42,11 +42,11 @@ namespace Components.Scripting.XmlScript
         /// <param name="pluginsToActivate">The list of plugins to activate.</param>
         /// <returns><c>true</c> if the installation succeeded;
         /// <c>false</c> otherwise.</returns>
-        public IList<Instruction> Install(XmlScript xscScript, ConditionStateManager csmState, CoreDelegates coreDelegates, string strPrefixPath, IEnumerable<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
+        public IList<Instruction> Install(XmlScript xscScript, ConditionStateManager csmState, CoreDelegates coreDelegates, IEnumerable<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
         {
             try
             {
-                InstallFiles(xscScript, csmState, coreDelegates, strPrefixPath, filesToInstall, pluginsToActivate);
+                InstallFiles(xscScript, csmState, coreDelegates, filesToInstall, pluginsToActivate);
             }
             catch (Exception ex)
             {
@@ -62,7 +62,7 @@ namespace Components.Scripting.XmlScript
         /// <param name="coreDelegates">The Core delegates component.</param>
         /// <param name="filesToInstall">The list of files to install.</param>
         /// <param name="pluginsToActivate">The list of plugins to activate.</param>
-        protected bool InstallFiles(XmlScript xscScript, ConditionStateManager csmState, CoreDelegates coreDelegates, string strPrefixPath, IEnumerable<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
+        protected bool InstallFiles(XmlScript xscScript, ConditionStateManager csmState, CoreDelegates coreDelegates, IEnumerable<InstallableFile> filesToInstall, ICollection<InstallableFile> pluginsToActivate)
         {
             bool HadIssues = false;
             IList<InstallableFile> lstRequiredFiles = xscScript.RequiredInstallFiles;
@@ -70,7 +70,7 @@ namespace Components.Scripting.XmlScript
 
             foreach (InstallableFile iflRequiredFile in lstRequiredFiles)
             {
-                if (!InstallFile(strPrefixPath, iflRequiredFile))
+                if (!InstallFile(iflRequiredFile))
                     HadIssues = true;
             }
 
@@ -78,7 +78,7 @@ namespace Components.Scripting.XmlScript
             {
                 foreach (InstallableFile ilfFile in filesToInstall)
                 {
-                    if (!InstallFile(strPrefixPath, ilfFile)) // ??? , pluginsToActivate.Contains(ilfFile)))
+                    if (!InstallFile(ilfFile)) // ??? , pluginsToActivate.Contains(ilfFile)))
                         HadIssues = true;
                 }
             }
@@ -90,7 +90,7 @@ namespace Components.Scripting.XmlScript
                     if (cisFileSet.Condition.GetIsFulfilled(csmState, coreDelegates))
                         foreach (InstallableFile ilfFile in cisFileSet.Files)
                         {
-                            if (!InstallFile(strPrefixPath, ilfFile))
+                            if (!InstallFile(ilfFile))
                                 HadIssues = true;
                         }
                 }
@@ -109,16 +109,16 @@ namespace Components.Scripting.XmlScript
         /// <param name="p_ilfFile">The file to install.</param>
         /// <returns><c>false</c> if the user cancelled the install;
         /// <c>true</c> otherwise.</returns>
-        protected bool InstallFile(string prefixPath, InstallableFile installableFile)
+        protected bool InstallFile(InstallableFile installableFile)
         {
             if (installableFile.IsFolder)
             {
-                if (!InstallFolderFromMod(installableFile, prefixPath))
+                if (!InstallFolderFromMod(installableFile, ModArchive.Prefix))
                     return false;
             }
             else
             {
-                string strSource = Path.Combine(prefixPath, installableFile.Source);
+                string strSource = Path.Combine(ModArchive.Prefix, installableFile.Source);
                 string strDest = installableFile.Destination;
                 InstallFileFromMod(strSource, strDest);
 

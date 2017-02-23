@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Components.Extensions;
 using Utils;
 
-namespace ModInstaller
+namespace Components.Interface
 {
     /// <summary>
     /// Class with helper functions to analyze the structure of an archive
@@ -15,10 +16,10 @@ namespace ModInstaller
         private FileTree m_ftFiles;
         private ISet<string> m_setIgnore = new HashSet<string> { "__MACOSX" };
 
-        public ArchiveStructure(IEnumerable<String> files)
+        public ArchiveStructure(IEnumerable<string> files)
         {
             // convert all paths to lower case since the FileTree is implemented case sensitive
-            m_ftFiles = new FileTree(files.Select(path => path.ToLowerInvariant()));
+            m_ftFiles = new FileTree(files);
         }
 
         /// <summary>
@@ -29,8 +30,8 @@ namespace ModInstaller
         /// </summary>
         public string FindPathPrefix(IEnumerable<string> stopDirectories, IEnumerable<string> stopFiles)
         {
-            Regex dirExpression = new Regex(String.Join("|", stopDirectories));
-            Regex fileExpression = new Regex(String.Join("|", stopFiles));
+            Regex dirExpression = new Regex(string.Join("|", stopDirectories), RegexOptions.IgnoreCase);
+            Regex fileExpression = new Regex(string.Join("|", stopFiles), RegexOptions.IgnoreCase);
 
             Stack<string> stkPaths = new Stack<string>();
             stkPaths.Push("");
@@ -42,7 +43,7 @@ namespace ModInstaller
                 FileTree node = m_ftFiles.SelectDirectory(strSourcePath);
                 string[] directories = node.SubDirectories
                     .Select(dir => dir.Name)
-                    .Where(name => !m_setIgnore.Contains(name))
+                    .Where(name => !m_setIgnore.Contains(name, StringComparer.InvariantCultureIgnoreCase))
                     .ToArray();
 
                 foreach (string strDirectory in directories)

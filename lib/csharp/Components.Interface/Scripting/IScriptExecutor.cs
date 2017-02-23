@@ -15,6 +15,6 @@ namespace Components.Scripting
 		/// </summary>
 		/// <returns><c>true</c> if the script completed
 		/// successfully; <c>false</c> otherwise.</returns>
-		Task<IList<Instruction>> Execute(IScript p_scpScript, string prefixPath);
+		Task<IList<Instruction>> Execute(IScript p_scpScript);
 	}
 }
