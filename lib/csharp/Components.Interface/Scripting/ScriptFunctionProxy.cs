@@ -252,11 +252,13 @@ namespace Components.Interface
         /// otherwise.</returns>
         public bool DataFileExists(string file)
         {
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("DataFileExists");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            bool FileExists = false;
 
-            return false;
+            Task.Run(async () => {
+                FileExists = await Core.context.CheckIfFileExists(file);
+            }).Wait();
+
+            return FileExists;
         }
 
         /// <summary>
