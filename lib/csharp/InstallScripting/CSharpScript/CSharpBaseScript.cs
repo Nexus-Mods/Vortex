@@ -640,6 +640,20 @@ namespace Components.Scripting.CSharpScript
             return ExecuteMethod(() => Functions.EditIni(p_strSettingsFileName, p_strSection, p_strKey, p_strValue));
         }
 
+        /// <summary>
+        /// Sets the specified value in the Fallout.ini file to the given value. 
+        /// </summary>
+        /// <param name="p_strSection">The section in the Ini file to edit.</param>
+        /// <param name="p_strKey">The key in the Ini file to edit.</param>
+        /// <param name="p_strValue">The value to which to set the key.</param>
+        /// <param name="p_booSaveOld">Not used.</param>
+        /// <returns><c>true</c> if the value was set; <c>false</c>
+        /// if the user chose not to overwrite the existing value.</returns>
+        public static bool EditFalloutINI(string p_strSection, string p_strKey, string p_strValue, bool p_booSaveOld)
+        {
+            return ExecuteMethod(() => (Functions.EditIni(null, p_strSection, p_strKey, p_strValue)));
+        }
+
         #endregion
 
         #endregion
