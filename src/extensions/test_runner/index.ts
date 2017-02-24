@@ -19,16 +19,15 @@
  *   settings-changed: called on startup and whenever the user has changed settings. This will
  *      not necessarily be called on every single settings change, multiple changes may be
  *      aggregated.
- *      check function signature: (oldSettings, newSettings) => Promise
- *        oldSettings will be undefined on startup
  *   gamemode-activated: called on startup and whenever the active game changes.
- *      check function signature: (oldGameId, newGameId) => Promise
  *   profile-activated: called on startup and whenever the active profile changes.
- *      check function signature: (oldProfileId, newProfileId) => Promise
+ *   mod-activated: called whenever one or more mods were activated or deactivated
+ * Further event types can be triggered by extensions
  */
 
-import {CheckFunction, EventType, IExtensionContext} from '../../types/IExtensionContext';
+import {CheckFunction, IExtensionContext} from '../../types/IExtensionContext';
 import {log} from '../../util/log';
+import {activeProfile} from '../../util/selectors';
 import {deleteOrNop, getSafe, setSafe} from '../../util/storeHelper';
 import {setdefault} from '../../util/util';
 
@@ -40,6 +39,8 @@ import * as Promise from 'bluebird';
 
 type CheckEntry = {id: string, check: CheckFunction};
 let checks: { [type: string]: CheckEntry[] } = {};
+
+let triggerDelays: { [type: string]: NodeJS.Timer } = {};
 
 let dashProps = {
   problems: {},
@@ -73,22 +74,37 @@ function runCheck(check: CheckEntry): Promise<void> {
       });
 }
 
-function runChecks(event: EventType): Promise<void> {
-  return Promise.map(getSafe(checks, [event], []), (par: CheckEntry) => runCheck(par))
-      .then(() => {
-        log('debug', 'all checks completed',
-            {event, problemCount: Object.keys(dashProps.problems).length});
-      });
+function runChecks(event: string, delay?: number) {
+  if (triggerDelays[event] !== undefined) {
+    clearTimeout(triggerDelays[event]);
+  }
+
+  triggerDelays[event] = setTimeout(() => {
+    let eventChecks = getSafe(checks, [event], []);
+    log('debug', 'running checks', { event, count: eventChecks.length });
+    Promise.map(eventChecks, (par: CheckEntry) => runCheck(par))
+        .then(() => {
+          log('debug', 'all checks completed',
+              {event, problemCount: Object.keys(dashProps.problems).length});
+        });
+  }, delay || 500);
 }
 
 function init(context: IExtensionContext): boolean {
-  context.registerTest =
-      (id, eventType, check) => { setdefault(checks, eventType, []).push({ id, check }); };
+  context.registerTest = (id, eventType, check) => {
+    log('debug', 'register test', {id, eventType});
+    setdefault(checks, eventType, []).push({id, check});
+  };
 
   context.registerDashlet('Problems', 2, 10, ReportDashlet,
     (state) => Object.keys(dashProps.problems).length > 0, () => dashProps);
 
   context.once(() => {
+    context.api.events.on('trigger-test-run', (eventType: string, delay?: number) => {
+      log('debug', 'triggering test run', eventType);
+      runChecks(eventType, delay);
+    });
+
     context.api.events.on('gamemode-activated', () => {
       runChecks('gamemode-activated');
     });
@@ -99,6 +115,13 @@ function init(context: IExtensionContext): boolean {
 
     context.api.onStateChange(['settings'], () => {
       runChecks('settings-changed');
+    });
+
+    context.api.onStateChange(['persistent', 'profiles'], (prevProfiles, newProfiles) => {
+      const currentProfile = activeProfile(context.api.store.getState());
+      if (prevProfiles[currentProfile.id].modState !== newProfiles[currentProfile.id].modState) {
+        runChecks('mod-activated', 5000);
+      }
     });
   });
 

@@ -3,6 +3,7 @@ import {setPluginList} from './actions/plugins';
 import {loadOrderReducer} from './reducers/loadOrder';
 import {pluginsReducer} from './reducers/plugins';
 import {settingsReducer} from './reducers/settings';
+import {ILoadOrder} from './types/ILoadOrder';
 import {IPlugins} from './types/IPlugins';
 import PluginList from './views/PluginList';
 
@@ -19,6 +20,7 @@ import PluginPersistor from './util/PluginPersistor';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
+import ESPFile from 'esptk';
 import {access, constants} from 'fs';
 import * as fs from 'fs-extra-promise';
 import { log, selectors, types, util } from 'nmm-api';
@@ -238,11 +240,58 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
   });
 }
 
+function testMissingMasters(state: any): Promise<types.ITestResult> {
+  const gameMode = selectors.activeGameId(state);
+  if (!gameSupported(gameMode)) {
+    return Promise.resolve(undefined);
+  }
+
+  const pluginList = state.session.plugins.pluginList;
+
+  const loadOrder: {[plugin: string]: ILoadOrder} = state.loadOrder;
+  const enabledPlugins = Object.keys(loadOrder).filter(
+      (plugin: string) => loadOrder[plugin].enabled);
+  const pluginDetails =
+      enabledPlugins.filter((name: string) => pluginList[name] !== undefined)
+          .map((plugin) => ({
+                 name: plugin,
+                 detail: new ESPFile(pluginList[plugin].filePath)
+               }));
+  const masters = new Set<string>([].concat(pluginDetails
+    .filter((plugin) => plugin.detail.isMaster)
+    .map((plugin) => plugin.name),
+    nativePlugins(gameMode)
+    ).map((name) => name.toLowerCase()));
+
+  let broken = pluginDetails.filter((plugin) => {
+    let missing = plugin.detail.masterList.filter(
+        (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
+    return missing.length > 0;
+  });
+
+  if (broken.length === 0) {
+    return Promise.resolve(undefined);
+  } else {
+    return Promise.resolve({
+      description: {
+        short: 'Missing Masters',
+        long:
+            'Some of the enabled plugins depend on others that are not enabled: \n' +
+                broken.map((plugin) => plugin.name).join(', '),
+      },
+      severity: 'warning' as types.ProblemSeverity,
+    });
+  }
+}
+
 function init(context: IExtensionContextExt) {
   register(context);
   initPersistor(context);
   context.registerTest('plugins-locked', 'gamemode-activated',
     () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
+
+  context.registerTest('master-missing', 'plugins-changed',
+    () => testMissingMasters(context.api.store.getState()));
 
   context.once(() => {
     const store = context.api.store;
@@ -253,7 +302,7 @@ function init(context: IExtensionContextExt) {
         .forEach((gameId: string) => {
           context.api.onStateChange(
               ['persistent', 'profiles', gameId], (oldProfiles, newProfiles) => {
-                const activeProfileId = selectors.activeProfile(store.getState).id;
+                const activeProfileId = selectors.activeProfile(store.getState()).id;
                 const oldProfile = oldProfiles[activeProfileId];
                 const newProfile = newProfiles[activeProfileId];
 
@@ -269,6 +318,10 @@ function init(context: IExtensionContextExt) {
     context.api.onStateChange(['settings', 'profiles', 'nextProfileId'],
       (oldProfileId: string, newProfileId: string) => {
         stopSync();
+    });
+
+    context.api.onStateChange(['loadOrder'], () => {
+      context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
     });
 
     context.api.events.on('profile-activated', (newProfileId: string) => {

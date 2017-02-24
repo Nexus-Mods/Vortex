@@ -15,10 +15,7 @@ export type PropsCallback = () => Object;
  */
 export type PersistingType = 'global' | 'game' | 'profile';
 
-export type EventType = 'settings-changed' | 'gamemode-activated' | 'profile-activated';
-
 export type CheckFunction = () => Promise<ITestResult>;
-
 
 export interface IRegisterSettings {
   (title: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
@@ -451,7 +448,7 @@ export interface IExtensionContext {
    * 
    * @memberOf IExtensionContext
    */
-  registerTest: (id: string, event: EventType, check: CheckFunction) => void;
+  registerTest: (id: string, event: string, check: CheckFunction) => void;
 
   /**
    * called once after the store has been set up and after all extensions have been initialized

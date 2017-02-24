@@ -168,7 +168,7 @@ function removeModules(project) {
 }
 
 function processCustom(project, buildType, feedback) {
-  let res = 
+  let res =
     removeModules(project)
       .then(() => npm(['install'], { cwd: project.path }, feedback))
       .then(() => npm(['run', typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback));
