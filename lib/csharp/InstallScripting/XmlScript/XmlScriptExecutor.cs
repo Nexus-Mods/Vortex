@@ -88,32 +88,36 @@ namespace Components.Scripting.XmlScript
                 }
             };
 
-            int stepIdx = 0;
+            int stepIdx = findNextIdx(lstSteps, -1);
 
             Action<bool> cont = (bool forward) => {
-                if (forward)
+                Task.Run(() =>
                 {
-                    stepIdx = findNextIdx(lstSteps, stepIdx);
-                } else
-                {
-                    stepIdx = findPrevIdx(lstSteps, stepIdx);
-                }
-
-                if (stepIdx == -1)
-                {
-                    m_Delegates.ui.EndDialog();
-                    XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
-                    IEnumerable<InstallableFile> FilesToInstall = new List<InstallableFile>();
-                    foreach (IEnumerable<InstallableFile> files in selectedOptions.Select(option => option.Files))
+                    if (forward)
                     {
-                        FilesToInstall = FilesToInstall.Union(files);
+                        stepIdx = findNextIdx(lstSteps, stepIdx);
                     }
-                    Source.SetResult(xsiInstaller.Install(xscScript, m_csmState, m_Delegates, FilesToInstall, PluginsToActivate));
-                }
-                else
-                {
-                    sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
-                }
+                    else
+                    {
+                        stepIdx = findPrevIdx(lstSteps, stepIdx);
+                    }
+
+                    if (stepIdx == -1)
+                    {
+                        m_Delegates.ui.EndDialog();
+                        XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
+                        IEnumerable<InstallableFile> FilesToInstall = new List<InstallableFile>();
+                        foreach (IEnumerable<InstallableFile> files in selectedOptions.Select(option => option.Files))
+                        {
+                            FilesToInstall = FilesToInstall.Union(files);
+                        }
+                        Source.SetResult(xsiInstaller.Install(xscScript, m_csmState, m_Delegates, FilesToInstall, PluginsToActivate));
+                    }
+                    else
+                    {
+                        sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
+                    }
+                });
             };
             Action cancel = () => {
                 Source.SetCanceled();

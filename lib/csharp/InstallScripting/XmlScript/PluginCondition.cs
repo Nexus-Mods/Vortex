@@ -102,7 +102,7 @@ namespace Components.Scripting.XmlScript
                         return coreDelegates.plugin.IsPresent(PluginPath).Result
                             && !coreDelegates.plugin.IsActive(PluginPath).Result;
                     case PluginState.Missing:
-                        return coreDelegates.plugin.IsPresent(PluginPath).Result;
+                        return !coreDelegates.plugin.IsPresent(PluginPath).Result;
                 }
             }
             return false;
