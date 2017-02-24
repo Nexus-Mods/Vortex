@@ -147,6 +147,8 @@ function removeModules(project) {
   if (project.removeModules === undefined) {
     return Promise.resolve();
   }
+  // TODO temporarily disabled this feature as it causes problems, apparently due to npm caching
+  return Promise.resolve();
   console.log(`removing from ${project.path}`, project.removeModules.join(', '));
 
   return Promise.map(project.removeModules,

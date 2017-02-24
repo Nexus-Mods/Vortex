@@ -19,7 +19,7 @@
 
     "build_api": "tsc -p ./api && npm install ./api",
 
-    "build_rest": "npm run _assets_out && npm run _build_subprojects_out && npm run build_api",
+    "build_rest": "npm run _assets_out && npm run build_api && npm run _build_subprojects_out",
 
     "prepackage": "npm run build_api && npm run _clean_app && npm run _install_app && npm run _build_subprojects_app && npm run _assets_app && npm install 7zip-bin",
     "package": "build",
@@ -217,6 +217,7 @@
     "redux-electron-store": "^0.3.13",
     "redux-thunk": "^2.1.0",
     "redux-watcher": "^0.1.2",
+    "ref": "^1.3.4",
     "ref-union": "^1.0.1",
     "request": "^2.75.0",
     "reselect": "^2.5.4",
