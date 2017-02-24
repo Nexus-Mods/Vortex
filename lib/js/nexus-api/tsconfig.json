@@ -10,6 +10,7 @@
         "rootDir": "./src",
         "outDir": "./lib",
         "sourceMap": true,
+        "skipLibCheck": true,
         "declaration": true
     },
     "files": [
