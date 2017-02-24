@@ -1,5 +1,6 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
+import {getSafe} from '../../../util/storeHelper';
 
 import DelegateBase from './delegateBase';
 
@@ -12,57 +13,52 @@ class Plugins extends DelegateBase {
 
   public isActive =
       (pluginName: string, callback: (err, res: boolean) => void) => {
-        log('info', 'isActive called', util.inspect(pluginName));
-        let state = this.api.store.getState();
+        try {
+          let state = this.api.store.getState();
 
-        if (state.loadOrder !== undefined && Object.keys(state.loadOrder).length > 0) {
-          log('info', 'isPresent debug state', util.inspect(pluginName));
-          let plugins = Object.keys(state.session.plugins.pluginList);
-          plugins.forEach((plugin) => {
-            if ((plugin !== undefined) &&
-                (plugin.toLowerCase() === pluginName.toLowerCase())) {
-              return callback(null, state.loadOrder[plugin].enabled);
-            }
-          });
+          let plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
+          // the installer may use a different case than we have on disk
+          pluginName = plugins.find((plugin) => plugin.toLowerCase() ===
+                                                pluginName.toLowerCase());
+          const enabled =
+              getSafe(state, ['loadOrder', pluginName, 'enabled'], false);
+          return callback(null, enabled);
+        } catch (err) {
+          return callback(err, false);
         }
-        return callback(null, false);
       }
 
   public isPresent =
       (pluginName: string, callback: (err, res: boolean) => void) => {
-        log('info', 'isPresent called', util.inspect(pluginName));
-        let state = this.api.store.getState();
+        try {
+          log('info', 'isPresent called', util.inspect(pluginName));
+          let state = this.api.store.getState();
 
-        if (state.session.plugins !== undefined && state.session.plugins.pluginList !== undefined) {
-          log('info', 'isPresent debug state', util.inspect(pluginName));
-          let plugins = Object.keys(state.session.plugins.pluginList);
-          plugins.forEach((plugin) => {
-            if ((plugin !== undefined) &&
-                (plugin.toLowerCase() === pluginName.toLowerCase())) {
-              return callback(null, true);
-            }
-          });
+          let plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
+          pluginName = plugins.find((plugin) => plugin.toLowerCase() === pluginName.toLowerCase());
+
+          return callback(null, pluginName !== undefined);
+        } catch (err) {
+          return callback(err, false);
         }
-        return callback(null, false);
       }
 
   public getAll = (isActiveOnly: boolean, callback: (err, res: string[]) => void) => {
     log('info', 'getAll called', util.inspect(isActiveOnly));
-    let state = this.api.store.getState();
+    try {
+      let state = this.api.store.getState();
+      let plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
 
-    if (state.loadOrder !== undefined && Object.keys(state.loadOrder).length > 0) {
       log('info', 'getAll debug state', util.inspect(isActiveOnly));
       if (isActiveOnly === true) {
-        let plugins = Object.keys(state.session.plugins.pluginList);
-        return callback(null, plugins.filter((plugin) =>
-          (state.loadOrder[plugin] !== undefined && state.loadOrder[plugin].enabled)));
-      } else {
-        let plugins = Object.keys(state.session.plugins.pluginList);
-        return callback(null, plugins);
+        plugins =
+            plugins.filter((plugin) => getSafe(
+                               state, ['loadOrder', plugin, 'enabled'], false));
       }
+      return callback(null, plugins);
+    } catch (err) {
+      return callback(err, null);
     }
-
-    return callback(null, []);
   }
 }
 

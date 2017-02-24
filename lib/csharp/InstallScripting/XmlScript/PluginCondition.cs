@@ -89,38 +89,24 @@ namespace Components.Scripting.XmlScript
         /// <c>false</c> otherwise.</returns>
         /// <seealso cref="ICondition.GetIsFulfilled(CoreDelegates)"/>
         public bool GetIsFulfilled(ConditionStateManager csmState, CoreDelegates coreDelegates)
-		{
-			string PluginPath = m_strPluginPath;
-            bool active = false;
-            bool present = false;
+        {
+            string PluginPath = m_strPluginPath;
 
             if (coreDelegates != null)
             {
                 switch (m_pnsState)
                 {
                     case PluginState.Active:
-                        Task.Run(async () => {
-                            active = await coreDelegates.plugin.IsActive(PluginPath);
-                        }).Wait();
-
-                        return active;
+                        return coreDelegates.plugin.IsActive(PluginPath).Result;
                     case PluginState.Inactive:
-                        Task.Run(async () => {
-                            active = await coreDelegates.plugin.IsActive(PluginPath);
-                            present = await coreDelegates.plugin.IsPresent(PluginPath);
-                        }).Wait();
-
-                        return (present && !active);
+                        return coreDelegates.plugin.IsPresent(PluginPath).Result
+                            && !coreDelegates.plugin.IsActive(PluginPath).Result;
                     case PluginState.Missing:
-                        Task.Run(async () => {
-                            present = await coreDelegates.plugin.IsPresent(PluginPath);
-                        }).Wait();
-
-                        return present;
+                        return coreDelegates.plugin.IsPresent(PluginPath).Result;
                 }
             }
             return false;
-		}
+        }
 
         /// <summary>
         /// Gets a message describing whether or not the condition is fulfilled.
@@ -134,12 +120,12 @@ namespace Components.Scripting.XmlScript
         /// <returns>A message describing whether or not the condition is fulfilled.</returns>
         /// <seealso cref="ICondition.GetMessage(CoreDelegates)"/>
         public string GetMessage(ConditionStateManager csmState, CoreDelegates coreDelegates)
-		{
-			if (GetIsFulfilled(csmState, coreDelegates))
-				return "Passed";
-			return string.Format("File '{0}' is not {1}.", PluginPath, State.ToString());
-		}
+        {
+            if (GetIsFulfilled(csmState, coreDelegates))
+                return "Passed";
+            return string.Format("File '{0}' is not {1}.", PluginPath, State.ToString());
+        }
 
-		#endregion
-	}
+        #endregion
+    }
 }
