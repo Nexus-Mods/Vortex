@@ -30,6 +30,7 @@
     "preinstallex": "npm install rm-local-modules && rm-local-modules",
     "installex": "npm install && npm run build",
 
+    "preinstall": "git submodule update --init --recursive",
     "postinstall": "typings install",
 
     "lessc": "lessc --clean-css --include-path=node_modules/bootswatch:node_modules/bootstrap-less src/stylesheets/index.less out/assets/css/base.css",
