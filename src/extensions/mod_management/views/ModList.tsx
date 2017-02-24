@@ -204,18 +204,18 @@ class ModList extends ComponentEx<IProps, {}> {
     const { profileId, modState, onSetModEnabled } = this.props;
 
     modIds.forEach((key: string) => {
-      if (!modState[key].enabled) {
+      if (!getSafe(modState, [key, 'enabled'], false)) {
         onSetModEnabled(profileId, key, true);
       }
     });
   }
 
   private disableSelected = (modIds: string[]) => {
-    const { gameMode, modState, onSetModEnabled } = this.props;
+    const { profileId, modState, onSetModEnabled } = this.props;
 
     modIds.forEach((key: string) => {
-      if (modState[key].enabled) {
-        onSetModEnabled(gameMode, key, false);
+      if (getSafe(modState, [key, 'enabled'], false)) {
+        onSetModEnabled(profileId, key, false);
       }
     });
   }
