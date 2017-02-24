@@ -30,7 +30,8 @@ namespace Components.Interface
         /// </summary>
         public string FindPathPrefix(IEnumerable<string> stopDirectories, IEnumerable<string> stopFiles)
         {
-            Regex dirExpression = new Regex(string.Join("|", stopDirectories), RegexOptions.IgnoreCase);
+            List<string> MatchDirectories = stopDirectories.Select(x => "^" + x + "$").ToList();
+            Regex dirExpression = new Regex(string.Join("|", MatchDirectories), RegexOptions.IgnoreCase);
             Regex fileExpression = new Regex(string.Join("|", stopFiles), RegexOptions.IgnoreCase);
 
             Stack<string> stkPaths = new Stack<string>();
