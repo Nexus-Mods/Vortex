@@ -1,0 +1,17 @@
+{
+  "LICENSELIST": [
+    {"name": "NeMO"},
+    {"name": "MIT"},
+    {"name": "ISC"},
+    {"name": "GNU LGPL"},
+    {"name": "BSD-3-Clause"},
+    {"name": "Apache"},
+    {"name": "BSD-2-Clause"},
+    {"name": "GPL-3.0"},
+    {"name": "WTFPL"},
+    {"name": "Unlicense"},
+    {"name": "MIT/X11"},
+    {"name": "BSD"},
+    {"name": "Apache-2.0"}
+  ]
+}

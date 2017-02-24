@@ -1,13 +1,10 @@
-import {showDialog} from '../../actions/notifications';
 import { IExtensionContext } from '../../types/IExtensionContext';
 
+import AboutButton from './views/AboutButton';
+
 function init(context: IExtensionContext): boolean {
-  context.registerIcon('help-icons', 'question', 'About', () => {
-    const {translate} = context.api;
-    const t = translate;
-    context.api.store.dispatch(showDialog('info', t('About'), {
-      message: t('Nexus Mod Manager 2'),
-    }, {}));
+  context.registerIcon('help-icons', AboutButton, () => {
+    return null;
   });
 
   return true;
