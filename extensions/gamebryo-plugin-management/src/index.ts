@@ -255,7 +255,7 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
       enabledPlugins.filter((name: string) => pluginList[name] !== undefined)
           .map((plugin) => ({
                  name: plugin,
-                 detail: new ESPFile(pluginList[plugin].filePath)
+                 detail: new ESPFile(pluginList[plugin].filePath),
                }));
   const masters = new Set<string>([].concat(pluginDetails
     .filter((plugin) => plugin.detail.isMaster)
