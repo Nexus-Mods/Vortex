@@ -1,17 +1,26 @@
 {
   "LICENSELIST": [
-    {"name": "NeMO"},
-    {"name": "MIT"},
-    {"name": "ISC"},
-    {"name": "GNU LGPL"},
-    {"name": "BSD-3-Clause"},
+    {"name": "Nexus"},
+    {"name": "AGPL"},
+    {"name": "AGPLv3.0"},
     {"name": "Apache"},
-    {"name": "BSD-2-Clause"},
-    {"name": "GPL-3.0"},
-    {"name": "WTFPL"},
-    {"name": "Unlicense"},
-    {"name": "MIT/X11"},
+    {"name": "Apache-2.0"},
     {"name": "BSD"},
-    {"name": "Apache-2.0"}
+    {"name": "BSD-2-Clause"},
+    {"name": "BSD-3-Clause"},
+    {"name": "CeCILL"},
+    {"name": "GNU LGPL"},
+    {"name": "GPL-3.0"},
+    {"name": "ISC"},
+    {"name": "LGPLv2.1"},
+    {"name": "MIT"},
+    {"name": "MIT/X11"},
+    {"name": "MPL-2.0"},
+    {"name": "Unicode"},
+    {"name": "Unlicense"},
+    {"name": "W3C"},
+    {"name": "WTFPL"},
+    {"name": "X11"},
+    {"name": "ZLib"}
   ]
 }
