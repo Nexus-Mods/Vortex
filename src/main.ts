@@ -24,6 +24,8 @@ if (doRestart) {
   app.quit();
 }
 
+process.env.Path = process.env.Path + path.delimiter + __dirname;
+
 let mainWindow: Electron.BrowserWindow = null;
 let trayIcon: Electron.Tray = null;
 
