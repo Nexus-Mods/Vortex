@@ -2,6 +2,8 @@ import { ComponentEx, translate } from '../../../util/ComponentEx';
 
 import { ILicense } from '../types/ILicense';
 
+import {remote} from 'electron';
+import * as path from 'path';
 import * as React from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
@@ -17,8 +19,8 @@ class AboutDialog extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, shown, onHide } = this.props;
     const fs = require('fs-extra-promise');
-    const modules = fs.readJSONSync('./modules.json');
-    const licenses = fs.readJSONSync('./licenses.json');
+    const modules = fs.readJSONSync(path.join(remote.app.getAppPath(), 'assets', 'modules.json'));
+    const licenses = fs.readJSONSync(path.join(remote.app.getAppPath(), 'assets', 'licenses.json'));
 
     let licenseList = [];
     let moduleList = [];

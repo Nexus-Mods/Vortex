@@ -60,14 +60,6 @@
       "skipPaths": 1
     },
     {
-      "srcPath": "assets/fonts/*",
-      "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
-    },
-    {
       "srcPath": "locales/*/*",
       "outPath": "",
       "target": [
@@ -77,6 +69,22 @@
     },
     {
       "srcPath": "assets/images/",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "assets/fonts/*",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "assets/*.json",
       "outPath": "",
       "target": [
         "out",

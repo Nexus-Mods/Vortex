@@ -9,7 +9,7 @@
   ],
   "description": "API for the Nexus Mods page",
   "scripts": {
-    "postinstall": "typings install",
+    "postinstall": "typings prune && typings install",
     "build": "tsc -p ."
   },
   "author": "Black Tree Gaming Ltd.",

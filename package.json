@@ -31,7 +31,7 @@
     "installex": "npm install && npm run build",
 
     "preinstall": "git submodule update --init --recursive",
-    "postinstall": "typings install",
+    "postinstall": "typings prune && typings install",
 
     "lessc": "lessc --clean-css --include-path=node_modules/bootswatch:node_modules/bootstrap-less src/stylesheets/index.less out/assets/css/base.css",
     "sassc": "node-sass src/stylesheets/index.scss out/assets/css/base.css",

@@ -4,7 +4,7 @@
   "description": "Serves dependency and other meta information for mod files.",
   "main": "lib/index.js",
   "scripts": {
-    "typings": "typings install",
+    "typings": "typings prune && typings install",
     "build": "tsc -p ."
   },
   "typings": "lib/index",

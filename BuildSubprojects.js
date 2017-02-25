@@ -1,6 +1,7 @@
 const Promise = require('bluebird');
 const { spawn } = require('child_process');
 const copyfiles = require('copyfiles');
+const rebuild = require('electron-rebuild').default;
 const fs = require('fs-extra-promise');
 const glob = require('glob');
 const minimist = require('minimist');
@@ -10,8 +11,10 @@ const vm = require('vm');
 
 const projectGroups = fs.readJSONSync('./BuildSubprojects.json');
 
+const packageJSON = fs.readJSONSync('./package.json');
+
 const npmcli = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-const rebuild = path.join('node_modules', '.bin', process.platform === 'win32' ? 'electron-rebuild.cmd' : 'electron-rebuild');
+//const rebuild = path.join('node_modules', '.bin', process.platform === 'win32' ? 'electron-rebuild.cmd' : 'electron-rebuild');
 const globOptions = { };
 
 const copyfilesAsync = Promise.promisify(copyfiles);
@@ -187,7 +190,9 @@ function processRebuild(project, buildType, feedback) {
     ? __dirname
     : path.join(__dirname, buildType);
 
-  return spawnAsync(rebuild, ['-w', project.module, '-m', moduleDir], {}, feedback);
+  return rebuild(moduleDir, packageJSON.engines.electron, process.arch, [project.module]);
+
+  //return spawnAsync(rebuild, ['-w', project.module, '-m', moduleDir], {}, feedback);
 }
 
 function evalCondition(condition, context) {
