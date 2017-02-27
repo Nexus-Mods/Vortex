@@ -51,7 +51,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
       <Modal show={shown} onHide={this.setLicenseText}>
         <Modal.Header>
           <Modal.Title>
-            {t('About')}
+            {t('About Nexus')}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -124,26 +124,35 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  private retrieveIcon(module) {
+
+    let license = retrieveLicenseText(module.licenseName);
+
+    if (license !== '') {
+      return (
+        <IconButton
+          className='btn-embed'
+          id={module.licenseName}
+          tooltip={module.licenseName}
+          icon='file-text'
+          value={license}
+          onClick={this.setLicenseText}
+        />
+      );
+    } else {
+      return null;
+    }
+  }
+
   private getModules = (moduleList) => {
-    const {t} = this.props;
 
     let modules = moduleList.map((module, j) => {
-
-      let license = retrieveLicenseText(module.licenseName);
-
       return (
         <div key={module.moduleName}>
           <ControlLabel>
-            - {module.moduleName} | License: {module.licenseName}
+            - {module.moduleName} | License
           </ControlLabel>
-          <IconButton
-            className='btn-embed'
-            id={module.licenseName}
-            tooltip={license !== '' ? t('License') : t('No License')}
-            icon={license !== '' ? 'file-text' : 'times-rectangle'}
-            value={license}
-            onClick={this.setLicenseText}
-          />
+          {this.retrieveIcon(module)}
         </div>
       );
     });
