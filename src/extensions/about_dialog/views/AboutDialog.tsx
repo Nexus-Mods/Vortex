@@ -1,28 +1,42 @@
-import { ComponentEx, translate } from '../../../util/ComponentEx';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { showError } from '../../../util/message';
+import { IconButton } from '../../../views/TooltipControls';
 
+import { setLicenseText } from '../actions/session';
 import { ILicense } from '../types/ILicense';
+import retrieveLicenseText from '../util/retrieveLicenseText';
 
-import {remote} from 'electron';
+import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, Modal } from 'react-bootstrap';
-import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
+import { Button, ControlLabel, FormControl, FormGroup, Image, Modal } from 'react-bootstrap';
+
+let app = appIn || remote.app;
 
 export interface IBaseProps {
   shown: boolean;
   onHide: () => void;
 }
 
-type IProps = IBaseProps;
+interface IActionProps {
+  onSetLicenseText: (licenseText: string) => void;
+  onShowError: (message: string, details: string | Error) => void;
+}
 
-class AboutDialog extends ComponentEx<IProps, {}> {
+interface IConnectedProps {
+  licenseText: string;
+}
+
+interface IComponentState { }
+
+type IProps = IBaseProps & IConnectedProps & IActionProps;
+
+class AboutDialog extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
-    const { t, shown, onHide } = this.props;
+    const { licenseText, t, shown, onHide } = this.props;
     const fs = require('fs-extra-promise');
     const modules = fs.readJSONSync(path.join(remote.app.getAppPath(), 'assets', 'modules.json'));
-    const licenses = fs.readJSONSync(path.join(remote.app.getAppPath(), 'assets', 'licenses.json'));
 
-    let licenseList = [];
     let moduleList = [];
     let modulesKeys = Object.keys(modules);
     modulesKeys.forEach((key) => {
@@ -30,41 +44,57 @@ class AboutDialog extends ComponentEx<IProps, {}> {
       moduleList.push(module);
     });
 
-    let licensesKeys = Object.keys(licenses);
-    licensesKeys.forEach((key) => {
-      licenseList = licenses[key].map((item) => {
-        return item;
-      });
-
-    });
+    let imgPath = path.resolve('out', 'assets', 'images', 'nmm.png');
 
     return (
       <Modal show={shown} onHide={onHide}>
         <Modal.Header>
           <Modal.Title>
-            {t('License list')}
+            {t('About')}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div>
-            <Tabs
-              selectedIndex={0}
-            >
-              <TabList>
-                {licenseList.map((license, i) => (
-                  <Tab key={i}>
-                    {license.name}
-                  </Tab>
-                ))}
-              </TabList>
-              {licenseList.map((license, i) =>
-                <TabPanel key={i}>
-                  {
-                    renderTextarea(license, moduleList)
-                  }
-                </TabPanel>)}
-            </Tabs>
-          </div>
+          <form>
+            <FormGroup>
+              <div style={{ textAlign: 'center' }}>
+                <Image
+                  src={imgPath}
+                  width='50px'
+                  height='50px'
+                />
+              </div>
+              <FormControl
+                id='Nexus'
+                key='Nexus'
+                readOnly
+                value={`${t('Info')}: Nexus Manager`}
+              />
+              <FormControl
+                id='Version'
+                key='Version'
+                readOnly
+                value={`${t('Version')}: ${app.getVersion()}`}
+              />
+              <FormControl
+                id='Contributers'
+                key='Contributers'
+                readOnly
+                value={`${t('Contributors')}:`}
+              />
+              <div className='about-panel'>
+                {this.getModules(moduleList)}
+              </div>
+              <FormControl
+                id='License'
+                key='License'
+                readOnly
+                value={`${t('License')}:`}
+              />
+              <div className='about-panel'>
+                {licenseText}
+              </div>
+            </FormGroup>
+          </form>
         </Modal.Body>
         <Modal.Footer>
           <Button
@@ -77,31 +107,63 @@ class AboutDialog extends ComponentEx<IProps, {}> {
       </Modal>
     );
   }
+
+  private setLicenseText = (evt) => {
+    const {onSetLicenseText, onShowError } = this.props;
+
+    try {
+      onSetLicenseText(evt.currentTarget.value);
+    } catch (err) {
+      onShowError('An error occurred showing the license', err);
+    }
+  }
+
+  private getModules = (moduleList) => {
+    const {t} = this.props;
+
+    let modules = moduleList.map((module, j) => {
+
+      let license = retrieveLicenseText(module.licenseName);
+
+      return (
+        <div key={module.moduleName}>
+          <ControlLabel>
+            - {module.moduleName} | License: {module.licenseName}
+          </ControlLabel>
+          <IconButton
+            className='btn-embed'
+            id={module.licenseName}
+            tooltip={license !== '' ? t('License') : t('No License')}
+            icon={license !== '' ? 'file-text' : 'times-rectangle'}
+            value={license}
+            onClick={this.setLicenseText}
+          />
+        </div>
+      );
+    });
+
+    return modules;
+  }
 }
 
-function renderTextarea(license, moduleList) {
-
-  let selected = moduleList.filter((module) => module.licenseName === license.name);
-
-  return (
-    <textarea
-      value={getModules(selected)}
-      readOnly
-      id={'textarea-licenses'}
-      style={{ width: '100%', minHeight: 200, resize: 'none', border: 'none' }}
-    />
-  );
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+  return {
+    onSetLicenseText: (licenseText: string) => {
+      dispatch(setLicenseText(licenseText));
+    },
+    onShowError: (message: string, details: string | Error) => {
+      showError(dispatch, message, details);
+    },
+  };
 }
 
-function getModules(selected) {
-
-  let modules: string = '';
-  selected.map((module, j) =>
-    modules = modules.concat(module.moduleName + '\n')
-  );
-
-  return modules;
+function mapStateToProps(state: any): IConnectedProps {
+  return {
+    licenseText: state.session.about.licenseText,
+  };
 }
 
 export default
-  translate(['common'], { wait: false })(AboutDialog) as React.ComponentClass<IBaseProps>;
+  translate(['common'], { wait: false })(
+    connect(mapStateToProps, mapDispatchToProps)(AboutDialog)
+  ) as React.ComponentClass<IBaseProps>;

@@ -17,6 +17,12 @@
     display: none; 
 }
 
+.about-panel {
+  height: 100%;
+  max-height: 200px;
+  overflow-y: scroll;
+}
+
 .btn-embed {
   padding: 1px 5px;
   border: 0px;
