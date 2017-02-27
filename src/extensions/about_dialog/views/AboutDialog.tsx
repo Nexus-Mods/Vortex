@@ -32,8 +32,9 @@ interface IComponentState { }
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class AboutDialog extends ComponentEx<IProps, IComponentState> {
+
   public render(): JSX.Element {
-    const { licenseText, t, shown, onHide } = this.props;
+    const { licenseText, t, shown } = this.props;
     const fs = require('fs-extra-promise');
     const modules = fs.readJSONSync(path.join(remote.app.getAppPath(), 'assets', 'modules.json'));
 
@@ -47,7 +48,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
     let imgPath = path.resolve('out', 'assets', 'images', 'nmm.png');
 
     return (
-      <Modal show={shown} onHide={onHide}>
+      <Modal show={shown} onHide={this.setLicenseText}>
         <Modal.Header>
           <Modal.Title>
             {t('About')}
@@ -99,7 +100,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
         <Modal.Footer>
           <Button
             id='close'
-            onClick={onHide}
+            onClick={this.setLicenseText}
           >
             {t('Close')}
           </Button>
@@ -109,10 +110,15 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private setLicenseText = (evt) => {
-    const {onSetLicenseText, onShowError } = this.props;
+    const {onHide, onSetLicenseText, onShowError } = this.props;
 
     try {
-      onSetLicenseText(evt.currentTarget.value);
+      if (evt === undefined || evt.currentTarget.id === 'close') {
+        onSetLicenseText(undefined);
+        onHide();
+      } else {
+        onSetLicenseText(evt.currentTarget.value);
+      }
     } catch (err) {
       onShowError('An error occurred showing the license', err);
     }
