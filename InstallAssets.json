@@ -60,6 +60,15 @@
       "skipPaths": 1
     },
     {
+      "srcPath": "src/splash.html",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ],
+      "skipPaths": 1
+    },
+    {
       "srcPath": "locales/*/*",
       "outPath": "",
       "target": [

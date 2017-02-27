@@ -92,6 +92,7 @@ process.on('uncaughtException', (error) => {
 
 let store: Redux.Store<IState>;
 let extensions: ExtensionManager;
+let loadingScreen: Electron.BrowserWindow;
 
 function createStore(): Promise<void> {
   // TODO: we load all the extensions here including their dependencies
@@ -123,6 +124,7 @@ function createWindow() {
     autoHideMenuBar: true,
     show: false,
     title: 'NMM2',
+    transparent: true,
   });
 
   if (getSafe(windowMetrics, ['maximized'], false)) {
@@ -137,6 +139,12 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     extensions.setupApiMain(store, mainWindow.webContents);
     mainWindow.show();
+    if (loadingScreen !== undefined) {
+      loadingScreen.webContents.send('fade-out');
+      setTimeout(() => {
+        loadingScreen.destroy();
+      }, 500);
+    }
   });
 
   mainWindow.on('closed', () => {
@@ -174,13 +182,23 @@ function createWindow() {
   });
 }
 
+function createLoadingScreen() {
+  loadingScreen = new BrowserWindow({
+    frame: false, parent: mainWindow, width: 520, height: 178, transparent: true,
+  });
+  loadingScreen.loadURL(`${__dirname}/splash.html`);
+}
+
 app.on('ready', () => {
   createStore()
   .then(() => {
     createTrayIcon();
     return installDevelExtensions();
   })
-  .then(createWindow)
+  .then(() => {
+    createWindow();
+    createLoadingScreen();
+  })
   .catch((err) => {
     terminate({
       message: 'Startup failed',
