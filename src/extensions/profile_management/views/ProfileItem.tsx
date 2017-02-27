@@ -1,6 +1,6 @@
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';
-import { Button, Icon as TooltipIcon } from '../../../views/TooltipControls';
+import { Button, Icon as TooltipIcon, IconButton } from '../../../views/TooltipControls';
 
 import { IProfile } from '../types/IProfile';
 
@@ -12,6 +12,7 @@ export interface IProps {
   gameName: string;
 
   onActivate: (profileId: string) => void;
+  onClone: (profileId: string) => void;
   onStartEditing: (id: string) => void;
 }
 
@@ -45,34 +46,43 @@ class ProfileItem extends ComponentEx<IProps, {}> {
             tooltip={ t('Number of Mods enabled') }
           />{ enabledMods }
           <div className='pull-right'>
-            <Button
+            <IconButton
               className='btn-embed'
-              id='__select'
+              id={`btn-profile-select-${profile.id}`}
               disabled={ active }
               tooltip={ t('Enable') }
               onClick={ this.activate }
-            >
-              <Icon name='play' />
-            </Button>
-            <Button
+              icon='play'
+            />
+            <IconButton
               className='btn-embed'
-              id='__edit'
+              id={`btn-profile-clone-${profile.id}`}
+              tooltip={ t('Clone') }
+              onClick={ this.cloneProfile }
+              icon='clone'
+            />
+            <IconButton
+              className='btn-embed'
+              id={`btn-profile-edit-${profile.id}`}
               tooltip={ t('Edit') }
               onClick={ this.startEditing }
-            >
-              <Icon name='wrench' />
-            </Button>
-            <Button
+              icon='edit'
+            />
+            <IconButton
               className='btn-embed'
-              id='__remove'
+              id={`btn-profile-remove-${profile.id}`}
               tooltip={ t('Remove') }
-            >
-              <Icon name='remove' />
-            </Button>
+              icon='remove'
+            />
           </div>
         </div>
       </span>
     );
+  }
+
+  private cloneProfile = () => {
+    const { onClone, profile } = this.props;
+    onClone(profile.id);
   }
 
   private activate = () => {

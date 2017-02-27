@@ -12,10 +12,13 @@ import { IProfile } from '../types/IProfile';
 
 import ProfileItem from './ProfileItem';
 
+import { remote } from 'electron';
+import * as fs from 'fs-extra-promise';
+import * as path from 'path';
 import * as React from 'react';
 import { FormControl, ListGroup, ListGroupItem } from 'react-bootstrap';
-
 import update = require('react-addons-update');
+import {generate as shortid} from 'shortid';
 
 interface IConnectedProps {
   gameId: string;
@@ -73,11 +76,13 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
         type='text'
         value={ edit.name }
         onChange={ this.changeEditName }
-        onKeyPress={ null }
+        onKeyPress={ this.handleKeypress }
+        style={{flexGrow: 1}}
       />
     );
     return (
-      <ListGroupItem key={profileId} header={ inputControl }>
+      <ListGroupItem key={profileId} className='inline-form'>
+        {inputControl}
         <Button id='__accept' tooltip={ t('Accept') } onClick={ this.saveEdit }>
           <Icon name='check' />
         </Button>
@@ -86,6 +91,13 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
         </Button>
       </ListGroupItem>
     );
+  }
+
+  private handleKeypress = (evt: React.KeyboardEvent<any>) => {
+    if (evt.which === 13) {
+      evt.preventDefault();
+      this.saveEdit();
+    }
   }
 
   private saveEdit = () => {
@@ -120,10 +132,12 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
     const { edit } = this.state;
 
     const sortedProfiles: string[] = Object.keys(profiles).sort(
-      (lhs: string, rhs: string): number => {
-        return profiles[lhs].name.localeCompare(profiles[rhs].name, language,
-          { sensitivity: 'base' });
-    });
+      (lhs: string, rhs: string): number =>
+        profiles[lhs].gameId !== profiles[rhs].gameId
+          ? profiles[lhs].gameId.localeCompare(profiles[rhs].gameId)
+          : profiles[lhs].name.localeCompare(profiles[rhs].name, language,
+          { sensitivity: 'base' })
+    );
 
     return (
       <ListGroup>
@@ -150,6 +164,7 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
         profile={ profiles[profileId] }
         gameName={ game.name }
         active={ currentProfile === profileId }
+        onClone={ this.onCloneProfile }
         onActivate={ onSetNextProfile }
         onStartEditing={ this.editExistingProfile }
       />
@@ -188,35 +203,10 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
     );
   }
 
-  private sanitizeProfileId(input: string) {
-    // forces id to contain only latin lower case characters and numbers.
-    // This is to ensure we never get into trouble storing or transmitting
-    // such ids in the future
-    return input.toLowerCase().replace(/[^0-9a-z_]/g, (ch) => {
-      if (ch === ' ') {
-        return '_';
-      } else {
-        return ch.charCodeAt(0).toString(16);
-      }
-    });
-  }
-
-  private genProfileId(name: string, profiles: { [id: string]: IProfile }) {
-      let baseId: string = this.sanitizeProfileId(name);
-      let newId: string = baseId;
-      let counter: number = 1;
-      // ensure the id is non-empty and unused
-      while ((profiles.hasOwnProperty(newId)) || (newId === '')) {
-        newId = baseId + '_' + counter.toString();
-        ++counter;
-      }
-      return newId;
-  }
-
   private saveEdit = (profile: IProfile) => {
-    const { onAddProfile, profiles } = this.props;
+    const { onAddProfile } = this.props;
     if (profile.id === '__new') {
-      let newId: string = this.genProfileId(profile.name, profiles);
+      let newId: string = shortid();
       let newProf: IProfile = update(profile, { id: { $set: newId } });
       onAddProfile(newProf);
     } else {
@@ -237,11 +227,26 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
     }));
   };
 
-  private editExistingProfile = (profileId) => {
+  private onCloneProfile = (profileId: string) => {
+    const { onAddProfile, profiles } = this.props;
+    let newProfile = Object.assign({}, profiles[profileId]);
+    newProfile.id = shortid();
+    fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile))
+    .then(() => {
+      onAddProfile(newProfile);
+      this.editExistingProfile(newProfile.id);
+    });
+  }
+
+  private editExistingProfile = (profileId: string) => {
     this.setState(update(this.state, {
       edit: { $set: profileId },
     }));
   }
+}
+
+function profilePath(profile: IProfile): string {
+  return path.join(remote.app.getPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -258,8 +263,7 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
-    onSetNextProfile: (profileId: string) =>
-      dispatch(setNextProfile(profileId)),
+    onSetNextProfile: (profileId: string) => dispatch(setNextProfile(profileId)),
   };
 }
 
