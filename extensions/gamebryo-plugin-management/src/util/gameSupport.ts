@@ -29,6 +29,13 @@ const gameSupport = {
     appDataPath: 'Fallout4',
     pluginTXTFormat: 'fallout4',
     nativePlugins: [
+      'fallout4.esm',
+      'dlcrobot.esm',
+      'dlcworkshop01.esm',
+      'dlccoast.esm',
+      'dlcworkshop02.esm',
+      'dlcworkshop03.esm',
+      'dlcnukaworld.esm',
     ],
   },
   falloutnv: {
