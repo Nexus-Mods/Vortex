@@ -10,7 +10,7 @@ export class LootDatabase extends NBindBase {
   updateMasterlist(masterlistPath: string, repoUrl: string, repoBranch: string,
                    callback: (err: Error, didUpdate: boolean) => void): void;
 
-  getMasterlistRevision(masterlistPath: string, getShortId: boolean): MasterlistInfo;
+  getMasterlistRevision(masterlistPath: string, getShortId: boolean, callback: (err: Error, value: MasterlistInfo) => void): void;
 
   loadLists(masterlistPath: string, userlistPath: string, callback: (err: Error, value: void) => void): void;
 
@@ -22,7 +22,7 @@ export class LootDatabase extends NBindBase {
 
   getPluginTags(pluginName: string): PluginTags;
 
-  sortPlugins(pluginNames: string[]): string[];
+  sortPlugins(pluginNames: string[], callback: (err: Error, value: string[]) => void): void;
 }
 
 export class MasterlistInfo extends NBindBase {

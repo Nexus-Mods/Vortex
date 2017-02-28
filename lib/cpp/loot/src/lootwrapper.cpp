@@ -61,6 +61,19 @@ loot::LanguageCode fromIsoLanguage(const char *code) {
   return iter != langMap.end() ? iter->second : loot::LanguageCode::english;
 }
 
+template <typename T> v8::Local<v8::Value> ToV8(const T &value) {
+  return Nan::New(value);
+}
+
+template <> v8::Local<v8::Value> ToV8(const std::vector<std::string> &value) {
+  v8::Local<v8::Array> res = Nan::New<v8::Array>();
+  uint32_t counter = 0;
+  for (const std::string &val : value) {
+    res->Set(counter++, Nan::New(val.c_str()).ToLocalChecked());
+  }
+  return res;
+}
+
 template <typename ResT>
 class Worker : public Nan::AsyncWorker {
 public:
@@ -85,7 +98,7 @@ public:
 
     v8::Local<v8::Value> argv[] = {
       Nan::Null()
-      , Nan::New(m_Result)
+      , ToV8(m_Result)
     };
 
     m_IntCallback();
@@ -229,10 +242,16 @@ MasterlistInfo LootDatabase::getMasterlistRevision(std::string masterlistPath, b
   return m_Database->GetMasterlistRevision(masterlistPath, getShortId);
 }
 
-std::vector<std::string> LootDatabase::sortPlugins(std::vector<std::string> input)
+void LootDatabase::sortPlugins(std::vector<std::string> input, nbind::cbFunction &callback)
 {
   assertNotBusy();
-  return m_Database->SortPlugins(input);
+  Nan::AsyncQueueWorker(
+    new Worker<std::vector<std::string>>(
+      [this, input]() { return m_Database->SortPlugins(input); },
+      new Nan::Callback(callback.getJsFunction()),
+    [this]() -> void {
+    this->m_Busy = false;
+  }));
 }
 
 loot::GameType LootDatabase::convertGameId(const std::string &gameId) const {

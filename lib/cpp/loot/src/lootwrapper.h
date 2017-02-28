@@ -82,8 +82,7 @@ public:
   std::string getPluginCleanliness(std::string plugin);
   PluginTags getPluginTags(std::string plugin);
 
-
-  std::vector<std::string> sortPlugins(std::vector<std::string> input);
+  void sortPlugins(std::vector<std::string> input, nbind::cbFunction &callback);
 
 private:
 
