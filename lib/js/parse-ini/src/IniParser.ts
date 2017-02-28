@@ -17,7 +17,6 @@ class IniParser {
   }
 
   public write<T>(filePath: string, file: IniFile<T>): Promise<void> {
-    console.log('write', filePath);
     return this.mFormat.write(filePath, file.data, file.changes())
         .then(() => file.apply());
   }

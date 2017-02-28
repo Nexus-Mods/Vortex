@@ -38,7 +38,6 @@ class WinapiFormat implements IIniFormat {
   }
 
   public write(filePath: string, data: any, changes: IChanges): Promise<void> {
-    console.log('changes', changes);
     // TODO: make async!
     changes.removed.forEach((fullKey) => {
       const [section, key] = fullKey.split('.');
