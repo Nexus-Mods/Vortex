@@ -246,6 +246,7 @@
     "nmm-api": "file:api",
     "node-7z": "TanninOne/node-7z",
     "packery": "^2.1.1",
+    "parse-ini": "file:./lib/js/parse-ini",
     "react": "^15.3.0",
     "react-color": "^2.11.1",
     "react-contextmenu": "^1.6.3",

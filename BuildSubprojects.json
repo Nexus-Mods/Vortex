@@ -7,6 +7,14 @@
       "sources": ["src/*.ts"],
       "build": true,
       "module": "modmeta-db"
+    },
+    {
+      "type": "install-module",
+      "name": "parse-ini",
+      "path": "lib/js/parse-ini",
+      "sources": ["src/*.ts"],
+      "build": true,
+      "module": "parse-ini"
     }
   ],
   [
