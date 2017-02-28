@@ -51,7 +51,9 @@ class UI extends DelegateBase {
           showError(this.api.store.dispatch, 'end installer dialog failed',
                     err);
         }
-        this.mStateCB = this.mCancelCB = undefined;
+        // unset the callbacks because they belong to c# so having links here
+        // might prevent the c# object from being cleaned up
+        this.mContinueCB = this.mStateCB = this.mCancelCB = undefined;
       }
 
   public updateState =

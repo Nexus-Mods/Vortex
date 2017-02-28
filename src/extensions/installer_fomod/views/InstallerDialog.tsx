@@ -14,6 +14,7 @@ import { Checkbox, ControlLabel, Form, FormGroup, Modal, Pager,
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 interface IGroupProps {
+  t: I18next.TranslationFunction;
   stepId: number;
   group: IGroup;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
@@ -55,7 +56,8 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       <ControlLabel>
         {group.name}
       </ControlLabel>
-      { group.options.map(this.renderPlugin)}
+      { this.renderNoneOption() }
+      { group.options.map(this.renderPlugin) }
     </FormGroup>);
   }
 
@@ -74,16 +76,38 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     }
   }
 
+  private renderNoneOption = (): JSX.Element => {
+    const {t, group, stepId} = this.props;
+    const {selectedPlugins} = this.state;
+
+    if (group.type !== 'SelectAtMostOne') {
+      return null;
+    }
+
+    const isSelected = selectedPlugins.length === 0;
+    return <Radio
+      id={`radio-${stepId}-${group.id}-none`}
+      key='none'
+      name={group.id.toString()}
+      value='none'
+      checked={isSelected}
+      onChange={this.select}
+    >{t('None')}
+    </Radio>;
+  }
+
   private renderPlugin = (plugin: IPlugin): JSX.Element => {
     const {group, stepId} = this.props;
     const {selectedPlugins} = this.state;
 
     const isSelected = selectedPlugins.indexOf(plugin.id) !== -1;
+    let id = `${stepId}-${group.id}-${plugin.id}`;
 
     switch (group.type) {
       case 'SelectExactlyOne':
+      case 'SelectAtMostOne':
         return <Radio
-          id={`radio-${stepId}-${group.id}-${plugin.id}`}
+          id={'radio-' + id}
           key={plugin.id}
           value={plugin.id}
           name={group.id.toString()}
@@ -91,9 +115,15 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
           onChange={this.select}
         >{plugin.name}
         </Radio>;
-      case 'SelectAll': return <div>{plugin.name}</div>;
+      case 'SelectAll': return <Checkbox
+        id={'checkbox-' + id}
+        key={plugin.id}
+        checked={true}
+      >
+        {plugin.name}
+      </Checkbox>;
       default: return <Checkbox
-        id={`checkbox-${stepId}-${group.id}-${plugin.id}`}
+        id={'checkbox-' + id}
         key={plugin.id}
         value={plugin.id}
         checked={isSelected}
@@ -105,12 +135,19 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
 
   private select = (evt: React.FormEvent<any>) => {
     const {group, onShowDescription} = this.props;
+
+    console.log('select', evt.currentTarget.value);
+    if (evt.currentTarget.value === 'none') {
+      this.setState({ selectedPlugins: [] });
+      return;
+    }
+
     const pluginId = parseInt(evt.currentTarget.value, 10);
 
     const {image, description} = group.options[pluginId];
     onShowDescription(image, description);
 
-    if (group.type === 'SelectExactlyOne') {
+    if (['SelectExactlyOne', 'SelectAtMostOne'].indexOf(group.type) !== -1) {
       this.setState({ selectedPlugins: [pluginId] });
     } else if (this.state.selectedPlugins.indexOf(pluginId) === -1) {
       this.setState(pushSafe(this.state, ['selectedPlugins'], pluginId));
@@ -129,6 +166,7 @@ function getGroupSortFunc(order: OrderType) {
 }
 
 interface IStepProps {
+  t: I18next.TranslationFunction;
   step: IInstallStep;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
   onShowDescription: (image: string, description: string) => void;
@@ -149,6 +187,7 @@ function Step(props: IStepProps) {
   return <Form id='fomod-installer-form'>
     {groupsSorted.map((group: IGroup) =>
       <Group
+        t={props.t}
         key={`${props.step.id}-${group.id}`}
         stepId={props.step.id}
         group={group}
@@ -243,9 +282,10 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
           <ProgressBar now={idx} max={steps.length} />
         </Modal.Header>
         <Modal.Body>
-          <Layout type='row' style={{ position: 'relative' }}>
-            <Flex>
+          <Layout type='row' style={{ position: 'relative', height: 400 }}>
+            <Flex style={{ overflowY: 'auto' }}>
               <Step
+                t={t}
                 step={steps[idx]}
                 onSelect={this.select}
                 onShowDescription={this.showDescription}
