@@ -28,6 +28,7 @@ import { setCurrentProfile, setNextProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
 import { settingsReducer } from './reducers/settings';
 import { IProfile } from './types/IProfile';
+import { IProfileFeature } from './types/IProfileFeature';
 import ProfileView from './views/ProfileView';
 
 import { activeGameId, activeProfile } from './selectors';
@@ -40,6 +41,8 @@ import * as path from 'path';
 import { generate as shortid } from 'shortid';
 
 let profileFiles: { [gameId: string]: string[] } = {};
+
+let profileFeatures: IProfileFeature[] = [];
 
 function profilePath(store: Redux.Store<any>, profile: IProfile): string {
   let app = appIn || remote.app;
@@ -86,12 +89,15 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerProfileFile: (gameId: string, filePath: string) => void;
+  registerProfileFeature: (featureId: string, type: string, icon: string, description: string,
+                           supported: () => boolean) => void;
 }
 
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('clone', 'Profiles', ProfileView, {
     hotkey: 'P',
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
+    props: () => ({ features: profileFeatures }),
   });
 
   context.registerReducer(['persistent', 'profiles'], profilesReducer);
@@ -146,6 +152,18 @@ function init(context: IExtensionContextExt): boolean {
     profileFiles[gameId].push(filePath);
   };
 
+  context.registerProfileFeature =
+      (featureId: string, type: string, icon: string, description: string,
+       supported: () => boolean) => {
+        profileFeatures.push({
+          id: featureId,
+          type,
+          icon,
+          description,
+          supported,
+        });
+      };
+
   // ensure the current profile is always set to a valid value on startup and
   // when changing the game mode 
   context.once(() => {
@@ -159,10 +177,17 @@ function init(context: IExtensionContextExt): boolean {
           refreshProfile(store, profile, 'export')
               .then(() => {
                 store.dispatch(setCurrentProfile(profile.gameId, current));
-                context.api.events.emit('profile-activated', current);
               });
         });
-    refreshProfile(store, activeProfile(store.getState()), 'import');
+
+    context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
+                              (prev: string, current: string) => {
+                                context.api.events.emit('profile-activated',
+                                                        current);
+                              });
+    let initProfile = activeProfile(store.getState());
+    refreshProfile(store, initProfile, 'import')
+        .then(() => context.api.events.emit('profile-activated', initProfile.id));
   });
 
   return true;

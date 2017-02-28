@@ -13,3 +13,7 @@ export const setProfile: any = safeCreateAction('SET_PROFILE');
 export const setModEnabled: any = safeCreateAction(
   'SET_MOD_ENABLED',
   (profileId: string, modId: string, enable: boolean) => ({profileId, modId, enable}));
+
+export const setFeature: any = safeCreateAction(
+  'SET_FEATURE',
+  (profileId: string, featureId: string, value: any) => ({profileId, featureId, value}));

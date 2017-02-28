@@ -13,3 +13,5 @@ export const setSavegameAttribute: any = safeCreateAction('SET_SAVEGAME_ATTRIBUT
 export const clearSavegames: any = safeCreateAction('CLEAR_SAVEGAMES');
 
 export const removeSavegame: any = safeCreateAction('REMOVE_SAVEGAME');
+
+export const setSavegamePath: any = safeCreateAction('SET_SAVEGAME_PATH');

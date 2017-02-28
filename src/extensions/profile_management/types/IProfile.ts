@@ -8,4 +8,5 @@ export interface IProfile {
   gameId: string;
   name: string;
   modState: { [id: string]: IProfileMod };
+  features?: { [featureId: string]: any };
 }

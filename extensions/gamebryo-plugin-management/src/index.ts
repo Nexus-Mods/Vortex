@@ -124,11 +124,9 @@ function register(context: IExtensionContextExt) {
     }),
   });
 
-  if (context.registerProfileFile) {
-    for (let game of supportedGames()) {
-      context.registerProfileFile(game, path.join(pluginPath(game), 'plugins.txt'));
-      context.registerProfileFile(game, path.join(pluginPath(game), 'loadorder.txt'));
-    }
+  for (let game of supportedGames()) {
+    context.registerProfileFile(game, path.join(pluginPath(game), 'plugins.txt'));
+    context.registerProfileFile(game, path.join(pluginPath(game), 'loadorder.txt'));
   }
 
   context.registerStyle(path.join(__dirname, 'plugin_management.scss'));

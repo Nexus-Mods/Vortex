@@ -1,12 +1,8 @@
-.btn-embed {
+.rule-actions>.btn {
   padding: 1px 5px;
   border: 0px;
-  color: $gray-darker;
+  color: currentColor;
   background-color: transparent;
-}
-
-.rule-actions>.btn {
-  @extend .btn-embed;
 }
 
 .rule-actions>.btn:hover {

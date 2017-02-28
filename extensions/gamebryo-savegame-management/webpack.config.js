@@ -22,6 +22,7 @@ module.exports = {
   devtool: 'source-map',
   externals: [
     'bluebird',
+    'ffi',
     'fs',
     'fs-extra-promise',
     'path',
@@ -36,6 +37,7 @@ module.exports = {
     'react-i18next',
     'react-layout-pane',
     'react-redux',
+    'ref',
     'util'
   ]
 };

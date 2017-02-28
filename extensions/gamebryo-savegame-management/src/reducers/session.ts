@@ -1,10 +1,6 @@
 import { types, util } from 'nmm-api';
 
-import {
-  setSavegames, clearSavegames, removeSavegame,
-  setSavegameAttribute,
-  setSavegameState,
-} from '../actions/session';
+import * as actions from '../actions/session';
 
 import update = require('react-addons-update');
 
@@ -13,24 +9,27 @@ import update = require('react-addons-update');
  */
 export const sessionReducer: types.IReducerSpec = {
   reducers: {
-    [setSavegames]: (state, payload) => {
+    [actions.setSavegames]: (state, payload) => {
       return util.setSafe(state, ['saves'], payload);
     },
-    [removeSavegame]: (state, payload) => {
+    [actions.removeSavegame]: (state, payload) => {
       return util.deleteOrNop(state, ['saves', payload]);
     },
-    [setSavegameState]: (state, payload) => {
+    [actions.setSavegameState]: (state, payload) => {
       const { id, savegameState } = payload;
       return update(state, { saves: { [id]: { state: { $set: savegameState } } } });
     },
-    [setSavegameAttribute]: (state, payload) => {
+    [actions.setSavegameAttribute]: (state, payload) => {
       const { id, attribute, value } = payload;
       return update(state, { saves: { [id]: { attributes: { [attribute]: { $set: value } } } } });
     },
-    [clearSavegames]: (state, payload) => {
+    [actions.clearSavegames]: (state, payload) => {
       return update(state, { saves: { $set: {} } });
     },
+    [actions.setSavegamePath]: (state, payload) =>
+      util.setSafe(state, ['savegamePath'], payload),
   }, defaults: {
     saves: {},
+    savegamePath: '',
   },
 };

@@ -1,8 +1,10 @@
 import { ComponentEx, translate } from '../../../util/ComponentEx';
+import { getSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
-import { Button, Icon as TooltipIcon, IconButton } from '../../../views/TooltipControls';
+import { Icon as TooltipIcon, IconButton } from '../../../views/TooltipControls';
 
 import { IProfile } from '../types/IProfile';
+import { IProfileFeature } from '../types/IProfileFeature';
 
 import * as React from 'react';
 
@@ -10,6 +12,7 @@ export interface IProps {
   active: boolean;
   profile: IProfile;
   gameName: string;
+  features: IProfileFeature[];
 
   onActivate: (profileId: string) => void;
   onClone: (profileId: string) => void;
@@ -24,7 +27,7 @@ export interface IProps {
  */
 class ProfileItem extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, active, gameName, profile } = this.props;
+    const { t, active, features, gameName, profile } = this.props;
 
     const enabledMods = Object.keys(profile.modState).reduce(
       (prev: number, key: string): number => {
@@ -40,12 +43,18 @@ class ProfileItem extends ComponentEx<IProps, {}> {
       <span className={className}>
         <h4 className='list-group-item-heading'>{ `${gameName} - ${profile.name}` }</h4>
         <div className='list-group-item-text'>
-          <TooltipIcon
-            id={profile.id}
-            name='cubes'
-            tooltip={ t('Number of Mods enabled') }
-          />{ enabledMods }
-          <div className='pull-right'>
+          <ul className='profile-details'>
+            <li>
+              <TooltipIcon
+                id={profile.id}
+                name='cubes'
+                tooltip={t('Number of Mods enabled')}
+              />
+              {enabledMods}
+            </li>
+          {features.map(this.renderFeature)}
+          </ul>
+          <div className='profile-actions'>
             <IconButton
               className='btn-embed'
               id={`btn-profile-select-${profile.id}`}
@@ -78,6 +87,26 @@ class ProfileItem extends ComponentEx<IProps, {}> {
         </div>
       </span>
     );
+  }
+
+  private renderFeature = (feature: IProfileFeature): JSX.Element => {
+    const { t, profile } = this.props;
+    const id = `icon-profilefeature-${profile.id}-${feature.id}`;
+    return <li key={id}>
+      <TooltipIcon
+        id={id}
+        tooltip={t(feature.description)}
+        name={feature.icon}
+      />
+      {this.renderFeatureValue(feature.type, getSafe(profile, ['features', feature.id], undefined))}
+    </li>;
+  }
+
+  private renderFeatureValue(type: string, value: any) {
+    const { t } = this.props;
+    if (type === 'boolean') {
+      return value === true ? t('yes') : t('no');
+    }
   }
 
   private cloneProfile = () => {

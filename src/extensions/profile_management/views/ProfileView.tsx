@@ -2,23 +2,28 @@ import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 import Icon from '../../../views/Icon';
-import { Button } from '../../../views/TooltipControls';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 
-import { setProfile } from '../actions/profiles';
+import { setFeature, setProfile } from '../actions/profiles';
 import { setNextProfile } from '../actions/settings';
 import { IProfile } from '../types/IProfile';
+import { IProfileFeature } from '../types/IProfileFeature';
 
+import ProfileEdit from './ProfileEdit';
 import ProfileItem from './ProfileItem';
 
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
-import { FormControl, ListGroup, ListGroupItem } from 'react-bootstrap';
+import { ListGroup, ListGroupItem } from 'react-bootstrap';
 import update = require('react-addons-update');
-import {generate as shortid} from 'shortid';
+import { generate as shortid } from 'shortid';
+
+export interface IBaseProps {
+  features: IProfileFeature[];
+}
 
 interface IConnectedProps {
   gameId: string;
@@ -31,94 +36,22 @@ interface IConnectedProps {
 interface IActionProps {
   onAddProfile: (profile: IProfile) => void;
   onSetNextProfile: (profileId: string) => void;
+  onSetFeature: (profileId: string, featureId: string, value: any) => void;
 }
 
 interface IViewState {
   edit: string;
 }
 
-interface IEditState {
-  edit: IProfile;
-}
 
-interface IEditProps {
-  profileId: string;
-  gameId: string;
-  profile?: IProfile;
-  onSaveEdit: (profile: IProfile) => void;
-  onCancelEdit: () => void;
-}
-
-/**
- * list element displayed when editing an item
- * 
- * @class ProfileEdit
- */
-class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
-  constructor(props: IEditProps) {
-    super(props);
-    this.state = props.profile !== undefined
-      ? { edit: Object.assign({}, props.profile) }
-      : { edit: {
-          id: props.profileId,
-          gameId: props.gameId,
-          modState: {},
-          name: '',
-        } };
-  }
-
-  public render(): JSX.Element {
-    const { t, profileId, onCancelEdit } = this.props;
-    const { edit } = this.state;
-    const inputControl = (
-      <FormControl
-        autoFocus
-        type='text'
-        value={ edit.name }
-        onChange={ this.changeEditName }
-        onKeyPress={ this.handleKeypress }
-        style={{flexGrow: 1}}
-      />
-    );
-    return (
-      <ListGroupItem key={profileId} className='inline-form'>
-        {inputControl}
-        <Button id='__accept' tooltip={ t('Accept') } onClick={ this.saveEdit }>
-          <Icon name='check' />
-        </Button>
-        <Button id='__cancel' tooltip={ t('Cancel') } onClick={ onCancelEdit }>
-          <Icon name='times' />
-        </Button>
-      </ListGroupItem>
-    );
-  }
-
-  private handleKeypress = (evt: React.KeyboardEvent<any>) => {
-    if (evt.which === 13) {
-      evt.preventDefault();
-      this.saveEdit();
-    }
-  }
-
-  private saveEdit = () => {
-    this.props.onSaveEdit(this.state.edit);
-  };
-
-  private changeEditName = (evt) => {
-    this.setState(update(this.state, {
-      edit: {
-        name: { $set: evt.target.value },
-      },
-    }));
-  };
-}
+type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 /**
  * presents profiles and allows creation of new ones
  * 
  * @class ProfileView
  */
-class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState> {
+class ProfileView extends ComponentEx<IProps, IViewState> {
   constructor(props) {
     super(props);
 
@@ -128,7 +61,7 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
   }
 
   public render(): JSX.Element {
-    const { language, profiles } = this.props;
+    const { features, language, profiles } = this.props;
     const { edit } = this.state;
 
     const sortedProfiles: string[] = Object.keys(profiles).sort(
@@ -139,16 +72,18 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
           { sensitivity: 'base' })
     );
 
+    const supportedFeatures = features.filter((feature) => feature.supported());
+
     return (
       <ListGroup>
-      { sortedProfiles.map(this.renderProfile) }
+      { sortedProfiles.map((profileId) => this.renderProfile(profileId, supportedFeatures)) }
       { edit === null ? this.renderAddProfile() : null }
       { edit === '__new' ? this.renderEditProfile() : null }
       </ListGroup>
     );
   }
 
-  private renderProfile = (profileId: string): JSX.Element => {
+  private renderProfile = (profileId: string, features: IProfileFeature[]): JSX.Element => {
     const { edit } = this.state;
     if (profileId === edit) {
       return this.renderEditProfile();
@@ -162,6 +97,7 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
       <ProfileItem
         key={ profileId }
         profile={ profiles[profileId] }
+        features={ features }
         gameName={ game.name }
         active={ currentProfile === profileId }
         onClone={ this.onCloneProfile }
@@ -172,18 +108,21 @@ class ProfileView extends ComponentEx<IConnectedProps & IActionProps, IViewState
   }
 
   private renderEditProfile(): JSX.Element {
-    const { t, gameId, profiles } = this.props;
+    const { t, features, gameId, onSetFeature, profiles } = this.props;
     const { edit } = this.state;
     let profile = undefined;
     if (edit !== '__new') {
       profile = profiles[edit];
     }
+
     return (
       <ProfileEdit
         profileId={ edit }
         gameId={ gameId }
         t={ t }
+        features={ features }
         profile={ profile }
+        onSetFeature={ onSetFeature }
         onSaveEdit={ this.saveEdit }
         onCancelEdit={ this.endEdit }
       />
@@ -264,6 +203,8 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
     onSetNextProfile: (profileId: string) => dispatch(setNextProfile(profileId)),
+    onSetFeature: (profileId: string, featureId: string, value: any) =>
+      dispatch(setFeature(profileId, featureId, value)),
   };
 }
 

@@ -5,16 +5,20 @@ const app = appIn || remote.app;
 
 const gameSupport = {
   skyrim: {
-    savesPath: 'skyrim',
+    mygamesPath: 'skyrim',
+    iniName: 'Skyrim.ini',
   },
   skyrimse: {
-    savesPath: 'Skyrim Special Edition',
+    mygamesPath: 'Skyrim Special Edition',
+    iniName: 'Skyrim.ini',
   },
   fallout4: {
-    savesPath: 'Fallout4',
+    mygamesPath: 'Fallout4',
+    iniName: 'Fallout4.ini',
   },
   falloutnv: {
-    savesPath: 'FalloutNV',
+    mygamesPath: 'FalloutNV',
+    iniName: 'Fallout.ini',
   },
 };
 
@@ -22,7 +26,12 @@ export function gameSupported(gameMode: string): boolean {
   return gameSupport[gameMode] !== undefined;
 }
 
-export function savesPath(gameMode: string): string {
-  const savesPath = gameSupport[gameMode].savesPath;
-  return path.join(app.getPath('documents'), 'My Games', savesPath, 'saves');
+export function mygamesPath(gameMode: string): string {
+  return path.join(app.getPath('documents'), 'My Games',
+                   gameSupport[gameMode].mygamesPath);
+}
+
+export function iniPath(gameMode: string): string {
+  const { iniName } = gameSupport[gameMode];
+  return path.join(mygamesPath(gameMode), iniName);
 }
