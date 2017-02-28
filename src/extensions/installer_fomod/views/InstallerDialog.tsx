@@ -119,6 +119,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
         id={'checkbox-' + id}
         key={plugin.id}
         checked={true}
+        readOnly={true}
       >
         {plugin.name}
       </Checkbox>;
@@ -136,7 +137,6 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   private select = (evt: React.FormEvent<any>) => {
     const {group, onShowDescription} = this.props;
 
-    console.log('select', evt.currentTarget.value);
     if (evt.currentTarget.value === 'none') {
       this.setState({ selectedPlugins: [] });
       return;
@@ -279,10 +279,9 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
             icon='remove'
             onClick={this.cancel}
           />
-          <ProgressBar now={idx} max={steps.length} />
         </Modal.Header>
         <Modal.Body>
-          <Layout type='row' style={{ position: 'relative', height: 400 }}>
+          <Layout type='row' style={{ position: 'relative' }}>
             <Flex style={{ overflowY: 'auto' }}>
               <Step
                 t={t}
@@ -291,7 +290,7 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
                 onShowDescription={this.showDescription}
               />
             </Flex>
-            <Fixed style={{ maxWidth: '60%' }}>
+            <Fixed style={{ maxWidth: '60%', overflowY: 'auto' }}>
               { this.renderImage() }
               <ControlLabel readOnly={true}>{currentDescription}</ControlLabel>
             </Fixed>
@@ -299,9 +298,14 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
         </Modal.Body>
         <Modal.Footer>
           <Pager>
-            {lastVisible !== undefined
-              ? <Pager.Item previous onClick={this.prev}>{lastVisible.name}</Pager.Item>
-              : null}
+            {
+              lastVisible !== undefined
+                ? <Pager.Item previous onClick={this.prev}>{lastVisible.name}</Pager.Item>
+                : null
+            }
+            <li>
+              <ProgressBar now={idx} max={steps.length} />
+            </li>
             {
               nextVisible !== undefined
                 ? <Pager.Item next disabled={nextDisabled} onClick={this.next}>
@@ -310,7 +314,7 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
                 : <Pager.Item next disabled={nextDisabled} onClick={this.next}>
                   {t('Finish')}
                 </Pager.Item>
-              }
+            }
           </Pager>
         </Modal.Footer>
       </Modal>

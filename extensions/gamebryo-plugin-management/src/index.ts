@@ -255,8 +255,9 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
                  name: plugin,
                  detail: new ESPFile(pluginList[plugin].filePath),
                }));
+  // previously this only contained plugins that were marked as masters but apparenly
+  // some plugins reference non-masters as their dependency.
   const masters = new Set<string>([].concat(pluginDetails
-    .filter((plugin) => plugin.detail.isMaster)
     .map((plugin) => plugin.name),
     nativePlugins(gameMode)
     ).map((name) => name.toLowerCase()));
@@ -264,6 +265,9 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
   let broken = pluginDetails.filter((plugin) => {
     let missing = plugin.detail.masterList.filter(
         (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
+    if (missing.length > 0) {
+      log('info', 'missing masters', { plugin: plugin.name, missing: missing.join(', ') });
+    }
     return missing.length > 0;
   });
 
