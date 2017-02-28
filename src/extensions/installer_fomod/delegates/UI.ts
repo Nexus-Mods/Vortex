@@ -14,22 +14,17 @@ class UI extends DelegateBase {
   constructor(api: IExtensionApi) {
     super(api);
 
-    api.events.on('fomod-installer-select',
-      (stepId: number, groupId: number, plugins: number[]) => {
-        if (this.mStateCB !== undefined) {
-          this.mStateCB({ stepId, groupId, plugins });
-        }
-      });
-    api.events.on('fomod-installer-continue', (direction) => {
-      if (this.mContinueCB !== undefined) {
-        this.mContinueCB(direction);
-      }
-    });
-    api.events.on('fomod-installer-cancel', () => {
-      if (this.mCancelCB !== undefined) {
-        this.mCancelCB();
-      }
-    });
+    api.events
+      .on('fomod-installer-select', this.onDialogSelect)
+      .on('fomod-installer-continue', this.onDialogContinue)
+      .on('fomod-installer-cancel', this.onDialogEnd);
+  }
+
+  public detach() {
+    this.api.events
+      .removeListener('fomod-installer-select', this.onDialogSelect)
+      .removeListener('fomod-installer-continue', this.onDialogContinue)
+      .removeListener('fomod-installer-cancel', this.onDialogEnd);
   }
 
   public startDialog =
@@ -69,15 +64,34 @@ class UI extends DelegateBase {
         }
       }
 
-  public reportError = (parameters: IReportError) => {
-    try {
-      this.api.showErrorNotification(
-          parameters.title, parameters.message + '\n' + parameters.details);
-    } catch (err) {
-      showError(this.api.store.dispatch,
-                'failed to display error message from installer', err);
+  public reportError =
+      (parameters: IReportError) => {
+        try {
+          this.api.showErrorNotification(
+              parameters.title, parameters.message + '\n' + parameters.details);
+        } catch (err) {
+          showError(this.api.store.dispatch,
+                    'failed to display error message from installer', err);
+        }
+      }
+
+  private onDialogSelect =
+      (stepId: number, groupId: number, plugins: number[]) => {
+        if (this.mStateCB !== undefined) {
+          this.mStateCB({stepId, groupId, plugins});
+        }
+      };
+  private onDialogContinue = (direction) => {
+    if (this.mContinueCB !== undefined) {
+      this.mContinueCB(direction);
     }
-  }
+  };
+
+  private onDialogEnd = () => {
+    if (this.mCancelCB !== undefined) {
+      this.mCancelCB();
+    }
+  };
 }
 
 export default UI;

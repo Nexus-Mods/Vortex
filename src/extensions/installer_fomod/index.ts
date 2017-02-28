@@ -1,10 +1,13 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 
+import { ISupportedResult } from '../mod_management/types/ITestSupported';
+
 import { endDialog, setInstallerDataPath } from './actions/installerUI';
 import Core from './delegates/core';
 import { installerUIReducer } from './reducers/installerUI';
 import InstallerDialog from './views/InstallerDialog';
 
+import * as Promise from 'bluebird';
 import * as edge from 'electron-edge';
 import * as path from 'path';
 
@@ -30,14 +33,12 @@ interface IProgressDelegate {
   (perc: number): void;
 }
 
-function testSupported(files: string[]): Promise<boolean> {
-  return new Promise((resolve, reject) => {
-    testSupportedLib({files}, (err: Error, result: boolean) => {
+function testSupported(files: string[]): Promise<ISupportedResult> {
+  return new Promise<ISupportedResult>((resolve, reject) => {
+    testSupportedLib({files}, (err: Error, result: ISupportedResult) => {
       if ((err !== null) && (err !== undefined)) {
         log('info', 'got err', util.inspect(err));
-        // TODO: hack while the c# installer doesn't work correctly
-        // reject(err);
-        resolve({ supported: true, requiredFiles: [] });
+        reject(err);
       } else {
         log('info', 'got result', util.inspect(result));
         resolve(result);
@@ -78,6 +79,7 @@ function init(context: IExtensionContextExt): boolean {
         context.api.store.dispatch(endDialog());
         return Promise.reject(err);
       })
+      .finally(() => coreDelegates.detach())
       ;
     });
   }

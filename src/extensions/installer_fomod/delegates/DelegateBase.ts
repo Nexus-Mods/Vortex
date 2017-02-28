@@ -7,6 +7,10 @@ class DelegateBase {
     this.mApi = api;
   }
 
+  public detach(): void {
+    // nop
+  }
+
   get api(): IExtensionApi {
     return this.mApi;
   }

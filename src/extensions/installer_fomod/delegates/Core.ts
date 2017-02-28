@@ -16,6 +16,13 @@ export class Core {
     this.ui = new UI(api);
     this.context = new Context(api, gameId);
   }
+
+  public detach() {
+    this.plugin.detach();
+    this.ini.detach();
+    this.ui.detach();
+    this.context.detach();
+  }
 }
 
 export default Core;
