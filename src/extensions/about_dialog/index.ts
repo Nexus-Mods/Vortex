@@ -7,9 +7,7 @@ function init(context: IExtensionContext): boolean {
 
   context.registerReducer(['session', 'about'], sessionReducer);
 
-  context.registerIcon('help-icons', AboutButton, () => {
-    return null;
-  });
+  context.registerIcon('help-icons', AboutButton);
 
   return true;
 }

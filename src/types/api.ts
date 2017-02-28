@@ -15,5 +15,4 @@ export * from './SortDirection';
 export { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 export { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 export { IToolStored } from '../extensions/gamemode_management/types/IToolStored';
-
 export { IProfile } from '../extensions/profile_management/types/IProfile';

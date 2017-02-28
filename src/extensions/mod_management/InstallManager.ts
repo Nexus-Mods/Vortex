@@ -2,6 +2,7 @@ import {showDialog} from '../../actions/notifications';
 import {IDialogResult} from '../../types/IDialog';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {createErrorReport} from '../../util/errorHandling';
+import getNormalizeFunc, {Normalize}  from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
 import {activeGameId, downloadPath} from '../../util/selectors';
 import {setdefault} from '../../util/util';
@@ -168,7 +169,7 @@ class InstallManager {
         })
         .catch((err) => {
           let prom = destinationPath !== undefined
-            ? rimrafAsync(destinationPath, { glob: false }).then(() => undefined)
+            ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 }).then(() => undefined)
             : Promise.resolve();
           prom.then(() => installContext.finishInstallCB(installName, false));
 
@@ -551,22 +552,29 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
       return Promise.resolve();
     }
 
-    return fs.ensureDirAsync(destinationPath + '.installing')
+    let normalize: Normalize;
+
+    const tempPath = destinationPath + '.installing';
+
+    return fs.ensureDirAsync(tempPath)
+        .then(() => getNormalizeFunc(tempPath))
+        .then((normalizeFunc: Normalize) => {
+          normalize = normalizeFunc;
+          return ;
+        })
         .then(() => this.extractFileList(archivePath,
-                                         destinationPath + '.installing',
+                                         tempPath,
                                          copies.map((copy) => copy.source)))
-        .then(() => fs.renameAsync(destinationPath + '.installing',
-                                   destinationPath))
+        .then(() => fs.renameAsync(tempPath, destinationPath))
         .then(() => {
           // TODO hack: the 7z command line doesn't allow files to be renamed
-          // during installation so
-          //  we extract them all and then rename. This also tries to clean up
-          //  dirs that are empty
+          //  during installation so we extract them all and then rename. This
+          //  also tries to clean up dirs that are empty
           //  afterwards but ideally we get a proper 7z lib...
-          let renames =
+          const renames =
               copies.filter((inst) => inst.source !== inst.destination)
                   .reduce((groups, inst) => {
-                    setdefault(groups, inst.source, []).push(inst.destination);
+                    setdefault(groups, normalize(inst.source), []).push(inst.destination);
                     return groups;
                   }, {});
           let affectedDirs = new Set<string>();
@@ -584,10 +592,8 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
                          affDir = path.dirname(affDir);
                        }
                        // if this is the last or only destination for the source
-                       // file, use a rename
-                       // because it's quicker. otherwise copy so that further
-                       // destinations can be
-                       // processed
+                       // file, use a rename because it's quicker. otherwise
+                       // copy so that further destinations can be processed
                        return fs.ensureDirAsync(path.dirname(dest))
                            .then(() => (index !== len - 1) ?
                                            fs.copyAsync(fullSource, dest) :

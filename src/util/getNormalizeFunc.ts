@@ -11,11 +11,15 @@ export type Normalize = (input: string) => string;
 //   file systems. 
 
 function CaseSensitiveNormalize(input: string) {
-  return input;
+  if (path.sep === '\\') {
+    return path.normalize(input).replace('/', path.sep);
+  } else {
+    return path.normalize(input);
+  }
 }
 
 function CaseInsensitiveNormalize(input: string) {
-  return input.toUpperCase();
+  return CaseSensitiveNormalize(input).toUpperCase();
 }
 
 /**

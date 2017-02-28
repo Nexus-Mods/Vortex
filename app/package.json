@@ -54,7 +54,6 @@
     "react-layout-pane": "TanninOne/react-layout-pane",
     "react-redux": "^4.4.5",
     "react-sortable-tree": "^0.1.8",
-    "react-tabs": "^0.8.2",
     "recharts": "^0.20.8",
     "redux": "^3.5.2",
     "redux-act": "^0.5.0",
