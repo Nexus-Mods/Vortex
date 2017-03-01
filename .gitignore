@@ -25,3 +25,4 @@ bld/
 [Bb]in/
 [Oo]bj/
 lib/cpp/loot/loot/
+BuildState*.json
