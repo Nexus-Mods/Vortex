@@ -11,12 +11,7 @@ interface IComponentState {
   dialogVisible: boolean;
 }
 
-interface IBaseProps {
-}
-
-type IProps = IBaseProps;
-
-class AboutButton extends ComponentEx<IBaseProps, IComponentState> {
+class AboutButton extends ComponentEx<{}, IComponentState> {
   constructor(props) {
     super(props);
     this.state = {
@@ -62,4 +57,4 @@ class AboutButton extends ComponentEx<IBaseProps, IComponentState> {
 }
 
 export default
-  translate(['common'], { wait: false })(AboutButton);
+  translate(['common'], { wait: false })(AboutButton) as React.ComponentClass<{}>;
