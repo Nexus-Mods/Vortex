@@ -1,6 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { ITestResult } from '../../types/ITestResult';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
@@ -19,8 +18,6 @@ import HideGameIcon from './views/HideGameIcon';
 import ProgressFooter from './views/ProgressFooter';
 import Settings from './views/Settings';
 
-import * as Promise from 'bluebird';
-
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('gamepad', 'Games', GamePicker, {
     hotkey: 'G',
@@ -33,32 +30,6 @@ function init(context: IExtensionContext): boolean {
 
   context.registerIcon('game-discovered-buttons', HideGameIcon);
   context.registerIcon('game-undiscovered-buttons', HideGameIcon);
-
-  const testOblivionFonts = () => new Promise<ITestResult>((resolve, reject) => {
-
-    // TODO LUCO Missing something here
-
-    const messages = 'List of missing fonts: ';
-
-    return resolve({
-      description: {
-        short: 'Oblivion ini font not installed.',
-        long: messages,
-      },
-      severity: 'error',
-      automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
-        context.api.events.emit('show-modal', 'settings');
-        context.api.events.on('hide-modal', (modal) => {
-          if (modal === 'settings') {
-            fixResolve();
-          }
-        });
-      }),
-    });
-  });
-
-  // LUCO TODO disabled
-  // context.registerTest('oblivion-fonts', 'gamemode-activated', testOblivionFonts);
 
   context.once(() => {
     let store: Redux.Store<IState> = context.api.store;
@@ -101,14 +72,6 @@ function init(context: IExtensionContext): boolean {
       return gameModeManager.setupGameMode(newGameId)
         .then(() => {
           gameModeManager.setGameMode(oldGameId, newGameId);
-
-          if (newGameId === 'oblivion') { // TODO LUCO waiting Oblivion implementation
-          let oblivionIni = getSafe(store.getState(),
-            ['settings', 'gameMode', 'discovered', newGameId, 'path'],
-            null).concat('\Oblivion_default.ini');
-
-          events.emit('oblivion-check-fonts', oblivionIni, newGameId, store);
-          }
 
         }).catch((err) => {
           showError(store.dispatch, 'Failed to set game mode', err);
