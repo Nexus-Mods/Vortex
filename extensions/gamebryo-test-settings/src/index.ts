@@ -2,6 +2,7 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import { selectors, types, util } from 'nmm-api';
 import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
+import * as path from 'path';
 
 let parser = new IniParser(new WinapiFormat());
 
@@ -12,10 +13,14 @@ function init(context): boolean {
     let store: Redux.Store<types.IState> = context.api.store;
     let gameId = selectors.activeGameId(store.getState());
 
-    const messages = 'List of missing fonts: ';
+    let messages = 'List of missing fonts: ';
 
     checkOblivionFont(store, gameId)
       .then((missingFonts: string[]) => {
+
+        missingFonts.forEach(font => {
+          messages = messages.concat('\n ' + font);
+        });
 
         return resolve({
           description: {
@@ -37,20 +42,24 @@ function checkOblivionFont(store: Redux.Store<types.IState>, gameId: string): Pr
     ['settings', 'gameMode', 'discovered', gameId, 'path'],
     null).concat('\Oblivion_default.ini');
 
+  let missingFonts: string[] = [];
+
   return parser.read(oblivionIni)
     .then((iniFile: IniFile<any>) => {
-      let missingFonts: string[] = [];
+      let fonts: string[] = [];
       Object.keys(iniFile.data.Fonts).forEach((key: string) => {
-        let fontFile: string = oblivionIni.concat(iniFile.data.Fonts[key]);
-
-        checkFont(fontFile)
-          .then((result: boolean) => {
-            if (!result) {
-              missingFonts.push(fontFile);
-            }
-          });
+        fonts.push(iniFile.data.Fonts[key]);
       });
 
+      return Promise.each(fonts, (font: string) => {
+        let fontFile: string = path.join(path.dirname(oblivionIni), font);
+        return checkFont(fontFile)
+          .catch(() => {
+            missingFonts.push(fontFile);
+          });
+      });
+    })
+    .then(() => {
       return Promise.resolve(missingFonts);
     });
 }
@@ -59,9 +68,6 @@ function checkFont(fontFile: string): Promise<boolean> {
   return fs.statAsync(fontFile)
     .then((stat: fs.Stats) => {
       return Promise.resolve(true);
-    })
-    .catch((err) => {
-      return Promise.resolve(false);
     });
 }
 
