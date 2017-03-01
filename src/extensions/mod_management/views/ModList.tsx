@@ -1,11 +1,13 @@
 import { showDialog } from '../../../actions/notifications';
 import { IAttributeState } from '../../../types/IAttributeState';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IIconDefinition } from '../../../types/IIconDefinition';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import IconBar from '../../../views/IconBar';
 import SuperTable, {ITableRowAction} from '../../../views/Table';
 
 import { setModEnabled } from '../../profile_management/actions/profiles';
@@ -69,6 +71,7 @@ class ModList extends ComponentEx<IProps, {}> {
   private modNameAttribute: ITableAttribute;
   private modVersionAttribute: ITableAttribute;
   private mModsWithState: { [id: string]: IModWithState };
+  private staticButtons: IIconDefinition[];
 
   constructor(props: IProps) {
     super(props);
@@ -142,6 +145,13 @@ class ModList extends ComponentEx<IProps, {}> {
         action: this.removeSelected,
       },
     ];
+
+    this.staticButtons = [
+      {
+        component: InstallArchiveButton,
+        props: () => ({ }),
+      },
+    ];
   }
 
   public componentWillMount() {
@@ -178,9 +188,11 @@ class ModList extends ComponentEx<IProps, {}> {
     return (
       <Layout type='column'>
         <Fixed>
-          <div>
-            <InstallArchiveButton />
-          </div>
+          <IconBar
+            group='mod-icons'
+            staticElements={this.staticButtons}
+            style={{ width: '100%', display: 'flex' }}
+          />
         </Fixed>
         <Flex>
           <SuperTable
