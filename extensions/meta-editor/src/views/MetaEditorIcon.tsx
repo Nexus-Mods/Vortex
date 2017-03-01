@@ -72,7 +72,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
     const { t } = this.props;
     const { display, info, showRuleEditor } = this.state;
 
-    if (!display) {
+    if (info === undefined) {
       return null;
     }
 
@@ -80,7 +80,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
     let urlState = url.parse(info.sourceURI).host === null ? 'error' : 'success';
 
     return (
-      <Modal show={true} onHide={this.close}>
+      <Modal show={display} onHide={this.close}>
         <Modal.Header><h3>{info.logicalFileName}</h3></Modal.Header>
         <Modal.Body>
           <form>
@@ -274,20 +274,27 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
     }));
   }
 
-  private initEmpty(filePath: string) {
-    const { instanceId, downloads } = this.props;
-    this.setDialogVisible(true, {
+  private getEmptyData(filePath?: string, fileInfo?: any) {
+    let modName = filePath !== undefined
+      ? path.basename(filePath, path.extname(filePath))
+      : '';
+    return {
       modId: '',
-      modName: path.basename(filePath, path.extname(filePath)),
+      modName,
       fileName: filePath,
-      fileSizeBytes: downloads[instanceId].size,
+      fileSizeBytes: fileInfo !== undefined ? fileInfo.size : 0,
       gameId: '',
       fileVersion: '',
-      fileMD5: downloads[instanceId].fileMD5,
+      fileMD5: fileInfo !== undefined ? fileInfo.fileMD5 : '',
       sourceURI: '',
       rules: [],
       details: {},
-    });
+    };
+  }
+
+  private initEmpty(filePath: string) {
+    const { instanceId, downloads } = this.props;
+    this.setDialogVisible(true, this.getEmptyData(filePath, downloads[instanceId]));
   }
 
   private open = () => {
@@ -324,7 +331,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
   };
 
   private close = () => {
-    this.setDialogVisible(false);
+    this.setDialogVisible(false, this.getEmptyData());
   }
 }
 

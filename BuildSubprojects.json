@@ -87,7 +87,7 @@
       "name": "meta-editor",
       "path": "extensions/meta-editor",
       "removeModules": ["nmm-api", "nexus-api"],
-      "sources": ["src/**/*.ts", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/meta-editor"
     }
   ], [

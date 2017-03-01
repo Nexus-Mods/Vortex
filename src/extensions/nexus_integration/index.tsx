@@ -237,6 +237,17 @@ function init(context: IExtensionContextExt): boolean {
       onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl),
     }));
 
+  context.registerIcon('categories-icons', IconButton,
+    () => ({
+      key: 'retrieve-categories',
+      id: 'retrieve-categories',
+      icon: 'download',
+      tooltip: 'Retrieve categories',
+      onClick: () => retrieveCategories(context.api, true),
+    }));
+
+  // context.registerIcon('mod-icons', )
+
   context.registerTableAttribute('mods', {
     id: 'endorsed',
     name: 'Endorsed',
@@ -249,15 +260,6 @@ function init(context: IExtensionContextExt): boolean {
     edit: {},
     isSortable: true,
   });
-
-  context.registerIcon('categories-icons', IconButton,
-    () => ({
-      key: 'retrieve-categories',
-      id: 'retrieve-categories',
-      icon: 'download',
-      tooltip: 'Retrieve categories',
-      onClick: () => retrieveCategories(context.api, true),
-    }));
 
   context.once(() => {
     let state = context.api.store.getState();
