@@ -101,6 +101,14 @@
       ]
     },
     {
+      "srcPath": "assets/licenses/*",
+      "outPath": "",
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
       "srcPath": "extensions/*/index.js",
       "outPath": "",
       "target": [

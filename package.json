@@ -82,7 +82,9 @@
       "target": "nsis",
       "remoteReleases": "https://github.com/Nexus-Mods/NMM2/releases/download/0.4.2",
       "remoteToken": "008e0c7bfa1a9a2f14df6370dfdac9340ec828a",
-      "publish": ["github"]
+      "publish": [
+        "github"
+      ]
     },
     "extraResources": [
       "locales"
@@ -94,7 +96,6 @@
       "!**/*.{o,hprof,orig,pyc,pyo,rbc}",
       "!**/._*",
       "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,thumbs.db,.gitignore,.gitattributes,.editorconfig,.flowconfig,.yarn-metadata.json,.idea,appveyor.yml,.travis.yml,circle.yml,npm-debug.log,.nyc_output,yarn.lock,.yarn-integrity}",
-
       "!**/*.{pdb,lib,VC.db,exp,gypi,d.ts}",
       "!**/build/Debug",
       "!**/build/Release/obj",
@@ -252,6 +253,7 @@
     "react-contextmenu": "^1.6.3",
     "react-dom": "^15.3.0",
     "react-layout-pane": "TanninOne/react-layout-pane",
+    "react-markdown": "^2.4.4",
     "recharts": "^0.20.8",
     "redux-persist": "TanninOne/redux-persist",
     "redux-persist-node-storage": "^1.0.2",

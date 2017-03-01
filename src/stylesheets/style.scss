@@ -488,3 +488,19 @@
   top: 10px;
   right: 5px;
 }
+
+#about-dialog p {
+  margin: 0px;
+}
+
+.license-text {
+  margin-left: 10px;
+  background-color: $gray-lighter;
+}
+
+.license-text-own {
+  margin-left: 10px;
+  background-color: $gray-lighter;
+  max-height: 400px;
+  overflow-y: scroll;
+}

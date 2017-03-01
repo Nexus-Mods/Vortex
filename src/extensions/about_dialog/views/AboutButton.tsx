@@ -1,5 +1,4 @@
-import { IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { ComponentEx, translate } from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
@@ -12,10 +11,12 @@ interface IComponentState {
   dialogVisible: boolean;
 }
 
-interface IConnectedProps {
+interface IBaseProps {
 }
 
-class AboutButton extends ComponentEx<IConnectedProps, IComponentState> {
+type IProps = IBaseProps;
+
+class AboutButton extends ComponentEx<IBaseProps, IComponentState> {
   constructor(props) {
     super(props);
     this.state = {
@@ -60,11 +61,5 @@ class AboutButton extends ComponentEx<IConnectedProps, IComponentState> {
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
-  return {};
-}
-
 export default
-  translate(['common'], { wait: false })(
-    connect(mapStateToProps)(AboutButton)
-  );
+  translate(['common'], { wait: false })(AboutButton);

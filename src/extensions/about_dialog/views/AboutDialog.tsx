@@ -1,106 +1,108 @@
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { showError } from '../../../util/message';
-import { IconButton } from '../../../views/TooltipControls';
+import { ComponentEx, translate } from '../../../util/ComponentEx';
+import {log} from '../../../util/log';
+import Icon from '../../../views/Icon';
 
-import { setLicenseText } from '../actions/session';
 import { ILicense } from '../types/ILicense';
-import retrieveLicenseText from '../util/retrieveLicenseText';
 
-import { app as appIn, remote } from 'electron';
+import { remote } from 'electron';
+import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, ControlLabel, FormControl, FormGroup, Image, Modal } from 'react-bootstrap';
+import { Button, Image, Media, Modal } from 'react-bootstrap';
+import * as ReactMarkdown from 'react-markdown';
 
-let app = appIn || remote.app;
+let modules = {};
+let ownLicenseText: string = '';
+if (remote !== undefined) {
+  try {
+    modules = fs.readJSONSync(path.join(remote.app.getAppPath(), 'assets', 'modules.json')) as any;
+    ownLicenseText = fs.readFileSync(path.join(remote.app.getAppPath(), 'LICENSE.md')).toString();
+  } catch (err) {
+    // should we display this in the ui? It shouldn't ever happen in the release and 99% of users
+    // won't care anyway.
+    log('error', 'failed to read license files', err.message);
+  }
+}
 
 export interface IBaseProps {
   shown: boolean;
   onHide: () => void;
 }
 
-interface IActionProps {
-  onSetLicenseText: (licenseText: string) => void;
-  onShowError: (message: string, details: string | Error) => void;
-}
-
-interface IConnectedProps {
+interface IComponentState {
+  selectedLicense: string;
   licenseText: string;
+  ownLicense: boolean;
 }
 
-interface IComponentState { }
-
-type IProps = IBaseProps & IConnectedProps & IActionProps;
+type IProps = IBaseProps;
 
 class AboutDialog extends ComponentEx<IProps, IComponentState> {
+  private mMounted: boolean;
+  constructor(props) {
+    super(props);
+    this.mMounted = false;
+    this.initState({
+      selectedLicense: undefined,
+      licenseText: undefined,
+      ownLicense: false,
+    });
+  }
+
+  public componentDidMount() {
+    this.mMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = false;
+  }
 
   public render(): JSX.Element {
-    const { licenseText, t, shown } = this.props;
-    const fs = require('fs-extra-promise');
-    const modules = fs.readJSONSync(path.join(remote.app.getAppPath(), 'assets', 'modules.json'));
+    const { t, shown } = this.props;
+    const { ownLicense } = this.state;
 
-    let moduleList = [];
-    let modulesKeys = Object.keys(modules);
-    modulesKeys.forEach((key) => {
-      let module: ILicense = { moduleName: key, licenseName: modules[key].licenses };
-      moduleList.push(module);
-    });
+    let moduleList = Object.keys(modules).map((key) => Object.assign({ key }, modules[key]));
 
-    let imgPath = path.resolve('out', 'assets', 'images', 'nmm.png');
+    const imgPath = path.resolve(remote.app.getAppPath(), 'assets', 'images', 'nmm.png');
+
+    let licenseBox = ownLicense
+      ? <ReactMarkdown
+        className='license-text-own'
+        disallowedTypes={['Link']}
+        source={ownLicenseText}
+      />
+      : (<div style={{ marginTop: 5 }}><p><strong>{t('Third-party libraries')}</strong></p>
+        <div className='about-panel'>
+          {moduleList.map(this.renderModule)}
+        </div>
+      </div>
+      );
 
     return (
-      <Modal show={shown} onHide={this.setLicenseText}>
+      <Modal show={shown} onHide={this.props.onHide}>
         <Modal.Header>
           <Modal.Title>
-            {t('About Nexus')}
+            Nexus Mod Manager 2
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <form>
-            <FormGroup>
-              <div style={{ textAlign: 'center' }}>
-                <Image
-                  src={imgPath}
-                  width='50px'
-                  height='50px'
-                />
-              </div>
-              <FormControl
-                id='Nexus'
-                key='Nexus'
-                readOnly
-                value={`${t('Info')}: Nexus Manager`}
-              />
-              <FormControl
-                id='Version'
-                key='Version'
-                readOnly
-                value={`${t('Version')}: ${app.getVersion()}`}
-              />
-              <FormControl
-                id='Contributers'
-                key='Contributers'
-                readOnly
-                value={`${t('Contributors')}:`}
-              />
-              <div className='about-panel'>
-                {this.getModules(moduleList)}
-              </div>
-              <FormControl
-                id='License'
-                key='License'
-                readOnly
-                value={`${t('License')}:`}
-              />
-              <div className='about-panel'>
-                {licenseText}
-              </div>
-            </FormGroup>
-          </form>
+        <Modal.Body id='about-dialog'>
+          <Media style={{ marginBottom: 5 }}>
+            <Media.Left><Image src={imgPath} /></Media.Left>
+            <Media.Body>
+              <Media.Heading>Nexus Mod Manager 2 {remote.app.getVersion()}</Media.Heading>
+              <p><Icon name='copyright'/> 2017 Black Tree Gaming Ltd.</p>
+              <p>licensed under <a onClick={this.showOwnLicense}>GPL-3</a></p>
+            </Media.Body>
+          </Media>
+          <p><strong>Electron</strong> {process.versions.electron}</p>
+          <p><strong>Node</strong> {process.versions.node}</p>
+          <p><strong>Chrome</strong> {process.versions.chrome}</p>
+          { licenseBox }
         </Modal.Body>
         <Modal.Footer>
           <Button
             id='close'
-            onClick={this.setLicenseText}
+            onClick={this.props.onHide}
           >
             {t('Close')}
           </Button>
@@ -109,76 +111,65 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private setLicenseText = (evt) => {
-    const {onHide, onSetLicenseText, onShowError } = this.props;
+  private showOwnLicense = () => {
+    this.nextState.ownLicense = !this.state.ownLicense;
+  }
 
-    try {
-      if (evt === undefined || evt.currentTarget.id === 'close') {
-        onSetLicenseText(undefined);
-        onHide();
-      } else {
-        onSetLicenseText(evt.currentTarget.value);
-      }
-    } catch (err) {
-      onShowError('An error occurred showing the license', err);
+  private selectLicense = (evt) => {
+    const {t} = this.props;
+
+    let modKey = evt.currentTarget.href.split('#')[1];
+    if (this.state.selectedLicense === modKey) {
+      this.nextState.selectedLicense = undefined;
+      return;
     }
+
+    this.nextState.selectedLicense = modKey;
+
+    const mod: ILicense = modules[modKey];
+    let license = typeof (mod.licenses) === 'string' ? mod.licenses : mod.licenses[0];
+    const licenseFile = mod.licenseFile !== undefined
+      ? path.join(remote.app.getAppPath(), mod.licenseFile)
+      : path.join(remote.app.getAppPath(), 'assets', 'licenses', license + '.md');
+    fs.readFileAsync(licenseFile)
+      .then((licenseText: NodeBuffer) => {
+        if (this.mMounted) {
+          this.nextState.licenseText = licenseText.toString();
+        }
+      })
+      .catch((err) => {
+        this.nextState.licenseText = t('Missing license {{licenseFile}}',
+          { replace: { licenseFile } });
+      })
+      ;
   }
 
-  private retrieveIcon(module) {
-
-    let license = retrieveLicenseText(module.licenseName);
-
-    if (license !== '') {
-      return (
-        <IconButton
-          className='btn-embed'
-          id={module.licenseName}
-          tooltip={module.licenseName}
-          icon='file-text'
-          value={license}
-          onClick={this.setLicenseText}
-        />
-      );
-    } else {
-      return null;
-    }
+  private renderModule = (mod: ILicense) => {
+    const { t } = this.props;
+    const { licenseText, selectedLicense } = this.state;
+    const licenseBox = mod.key !== selectedLicense
+      ? null
+      : <ReactMarkdown
+          className='license-text'
+          disallowedTypes={['Link']}
+          source={licenseText || ''}
+      />;
+    return (
+      <div key={mod.key}>
+        <h5 style={{ display: 'inline' }}>{mod.name} ({mod.version})</h5>
+        {' '}
+        <h6 style={{ display: 'inline' }}>
+          <sup>
+            <a href={`#${mod.key}`} onClick={this.selectLicense}>{mod.licenses} {t('License')}</a>
+          </sup>
+        </h6>
+        {licenseBox}
+      </div>
+    );
   }
-
-  private getModules = (moduleList) => {
-
-    let modules = moduleList.map((module, j) => {
-      return (
-        <div key={module.moduleName}>
-          <ControlLabel>
-            - {module.moduleName} | License
-          </ControlLabel>
-          {this.retrieveIcon(module)}
-        </div>
-      );
-    });
-
-    return modules;
-  }
-}
-
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
-  return {
-    onSetLicenseText: (licenseText: string) => {
-      dispatch(setLicenseText(licenseText));
-    },
-    onShowError: (message: string, details: string | Error) => {
-      showError(dispatch, message, details);
-    },
-  };
-}
-
-function mapStateToProps(state: any): IConnectedProps {
-  return {
-    licenseText: state.session.about.licenseText,
-  };
 }
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(AboutDialog)
+    AboutDialog
   ) as React.ComponentClass<IBaseProps>;
