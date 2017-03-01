@@ -45,6 +45,13 @@ const gameSupport = {
       'falloutnv.esm',
     ],
   },
+  oblivion: {
+    appDataPath: 'oblivion',
+    pluginTXTFormat: 'original',
+    nativePlugins: [
+      'oblivion.esm',
+    ],
+  },
 };
 
 export function pluginPath(gameMode: string): string {

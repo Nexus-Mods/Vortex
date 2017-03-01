@@ -8,6 +8,7 @@
 import factorio from './factorio/index';
 import fallout4 from './fallout4/index';
 import falloutnv from './falloutnv/index';
+import oblivion from './oblivion/index';
 import sims3 from './sims3/index';
 import sims4 from './sims4/index';
 import skyrim from './skyrim/index';

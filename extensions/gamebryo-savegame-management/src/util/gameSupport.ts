@@ -20,6 +20,10 @@ const gameSupport = {
     mygamesPath: 'FalloutNV',
     iniName: 'Fallout.ini',
   },
+  oblivion: {
+    mygamesPath: 'Oblivion',
+    iniName: 'Oblivion.ini',
+  },
 };
 
 export function gameSupported(gameMode: string): boolean {
