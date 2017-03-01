@@ -9,37 +9,25 @@ function init(context): boolean {
 
   const testOblivionFonts = () => new Promise<types.ITestResult>((resolve, reject) => {
 
-    const messages = 'List of missing fonts: ';
-    // missing font Array
-
-    return resolve({
-      description: {
-        short: 'Oblivion ini font not installed.',
-        long: messages,
-      },
-      severity: 'error',
-      automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
-        context.api.events.emit('show-modal', 'settings');
-        context.api.events.on('hide-modal', (modal) => {
-          if (modal === 'settings') {
-            fixResolve();
-          }
-        });
-      }),
-    });
-  });
-
-  context.registerTest('oblivion-fonts', 'gamemode-activated', testOblivionFonts);
-
-  context.once(() => {
-
     let store: Redux.Store<types.IState> = context.api.store;
     let gameId = selectors.activeGameId(store.getState());
 
-    if (gameId === 'skyrim') { // TODO LUCO Wrong check, waiting Oblivion
-      checkOblivionFont(store, gameId);
-    }
+    const messages = 'List of missing fonts: ';
+
+    checkOblivionFont(store, gameId)
+      .then((missingFonts: string[]) => {
+
+        return resolve({
+          description: {
+            short: 'Oblivion ini font not installed.',
+            long: messages,
+          },
+          severity: 'error',
+        });
+      });
   });
+
+  context.registerTest('oblivion-fonts', 'gamemode-activated', testOblivionFonts);
 
   return true;
 }
@@ -62,8 +50,6 @@ function checkOblivionFont(store: Redux.Store<types.IState>, gameId: string): Pr
             }
           });
       });
-      // param check
-      // console.log(missingFonts)
 
       return Promise.resolve(missingFonts);
     });
@@ -71,12 +57,12 @@ function checkOblivionFont(store: Redux.Store<types.IState>, gameId: string): Pr
 
 function checkFont(fontFile: string): Promise<boolean> {
   return fs.statAsync(fontFile)
-  .then((stat: fs.Stats) => {
-    return true;
-  })
-  .catch((err) => {
-    return false;
-  });
+    .then((stat: fs.Stats) => {
+      return Promise.resolve(true);
+    })
+    .catch((err) => {
+      return Promise.resolve(false);
+    });
 }
 
 export default init;
