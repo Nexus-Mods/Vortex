@@ -124,7 +124,6 @@ function createWindow() {
     autoHideMenuBar: true,
     show: false,
     title: 'NMM2',
-    transparent: true,
   });
 
   if (getSafe(windowMetrics, ['maximized'], false)) {
