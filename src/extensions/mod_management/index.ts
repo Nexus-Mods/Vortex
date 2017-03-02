@@ -104,7 +104,6 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTest('valid-activator', 'gamemode-activated', validActivatorCheck);
   context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
 
-
   context.registerSettings('Mods', Settings, () => ({activators}));
 
   context.registerReducer(['settings', 'mods'], settingsReducer);
