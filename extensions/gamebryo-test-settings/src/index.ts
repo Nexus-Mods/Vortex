@@ -7,14 +7,15 @@ import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
 import * as path from 'path';
 
 let parser = new IniParser(new WinapiFormat());
+let oblivionIni: IniFile<any>;
 
-const oblivionDefaultFonts: string[] = [
-  'Data\\Fonts\\Kingthings_Regular.fnt',
-  'Data\\Fonts\\Kingthings_Shadowed.fnt',
-  'Data\\Fonts\\Tahoma_Bold_Small.fnt',
-  'Data\\Fonts\\Daedric_Font.fnt',
-  'Data\\Fonts\\Handwritten.fnt',
-];
+const oblivionDefaultFonts = {
+  'SFontFile_1': 'Data\\Fonts\\Kingthings_Regular.fnt',
+  'SFontFile_2': 'Data\\Fonts\\Kingthings_Shadowed.fnt',
+  'SFontFile_3': 'Data\\Fonts\\Tahoma_Bold_Small.fnt',
+  'SFontFile_4': 'Data\\Fonts\\Daedric_Font.fnt',
+  'SFontFile_5': 'Data\\Fonts\\Handwritten.fnt',
+};
 
 function init(context): boolean {
 
@@ -35,8 +36,11 @@ function init(context): boolean {
           return resolve(undefined);
         }
 
+        let currentProfile = selectors.activeProfile(store.getState());
+
         missingFonts.forEach(font => {
-          messages = messages.concat('\n ' + font);
+          let fontFile: string = path.join(path.dirname(iniPath(currentProfile.gameId)), font);
+          messages = messages.concat('\n ' + fontFile);
         });
 
         return resolve({
@@ -45,6 +49,22 @@ function init(context): boolean {
             long: messages,
           },
           severity: 'error',
+          automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
+            Object.keys(oblivionIni.data.Fonts).forEach((key) => {
+              if (missingFonts.find((item) => {
+                return item === oblivionIni.data.Fonts[key];
+              }) !== undefined) {
+                if (oblivionDefaultFonts[key] !== undefined) {
+                  oblivionIni.data.Fonts[key] = oblivionDefaultFonts[key];
+                } else {
+                  delete oblivionIni.data.Fonts[key];
+                }
+              }
+            });
+
+            parser.write(iniPath(currentProfile.gameId), oblivionIni);
+            fixResolve();
+          }),
         });
       });
   });
@@ -61,10 +81,11 @@ function checkOblivionFont(store: Redux.Store<types.IState>, gameId: string): Pr
   let currentProfile = selectors.activeProfile(store.getState());
   return parser.read(iniPath(currentProfile.gameId))
     .then((iniFile: IniFile<any>) => {
+      oblivionIni = iniFile;
       let fonts: string[] = [];
-      Object.keys(iniFile.data.Fonts).forEach((key: string) => {
-        if (oblivionDefaultFonts.find((item) => item === iniFile.data.Fonts[key]) === undefined) {
-          fonts.push(iniFile.data.Fonts[key]);
+      Object.keys(oblivionIni.data.Fonts).forEach((key: string) => {
+        if (oblivionDefaultFonts[key] !== oblivionIni.data.Fonts[key]) {
+          fonts.push(oblivionIni.data.Fonts[key]);
         }
       });
 
@@ -72,7 +93,7 @@ function checkOblivionFont(store: Redux.Store<types.IState>, gameId: string): Pr
         let fontFile: string = path.join(path.dirname(iniPath(currentProfile.gameId)), font);
         return fs.statAsync(fontFile)
           .catch(() => {
-            missingFonts.push(fontFile);
+            missingFonts.push(font);
           });
       });
     })

@@ -41,12 +41,12 @@ class WinapiFormat implements IIniFormat {
     // TODO: make async!
     changes.removed.forEach((fullKey) => {
       const [section, key] = fullKey.split('.');
-      this.kernel32.WritePrivateProfileString(TEXT(section), TEXT(key), null, TEXT(filePath));
+      this.kernel32.WritePrivateProfileStringA(TEXT(section), TEXT(key), null, TEXT(filePath));
     });
     [].concat(changes.added, changes.changed)
         .forEach((fullKey) => {
           const[section, key] = fullKey.split('.');
-          this.kernel32.WritePrivateProfileString(TEXT(section), TEXT(key),
+          this.kernel32.WritePrivateProfileStringA(TEXT(section), TEXT(key),
                                                   TEXT(data[section][key]),
                                                   TEXT(filePath));
         });
