@@ -504,3 +504,37 @@
   max-height: 400px;
   overflow-y: scroll;
 }
+
+
+#ext-change-dialog .modal-dialog {
+  width: 80%;
+  height: 80%;
+}
+
+#ext-change-dialog .modal-content {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#ext-change-dialog .modal-body {
+  flex: 1 0%;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.padded-text {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+#ext-change-dialog td {
+  padding: 2px;
+}
+
+#ext-change-dialog select {
+  padding: 2px;
+  height: initial;
+}

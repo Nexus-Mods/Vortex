@@ -20,12 +20,13 @@ export interface IFileChange {
    *   file was installed/overwritten by a different application
    *   or the file was changed by an application that didn't edit
    *   in-place (most applications will write to a temporary file
-   *   and on success move the temp file over the original, thus
+   *   and, on success, move the temp file over the original, thus
    *   creating a new file entry)
    * valchange means that the content of the file was changed
    *   in-place (as in: file was opened and then written to)
+   * deleted means that the file was deleted
    */
-  changeType: 'refchange' | 'valchange';
+  changeType: 'refchange' | 'valchange' | 'deleted';
 }
 
 export interface IModActivator {
@@ -113,6 +114,14 @@ export interface IModActivator {
    * @memberOf IModActivator
    */
   externalChanges: (installPath: string, dataPath: string) => Promise<IFileChange[]>;
+
+  /**
+   * forget a set of files, that is: if the this activator keeps track of activation.
+   * This is used to correct the record if "externalChanges()" indicates a file was
+   * activated but is no longer there.
+   * Therefore if externalChanges is implemented, so should forgetFiles
+   */
+  forgetFiles: (filePaths: string[]) => Promise<void>;
 
   /**
    * returns whether this mod activator currently has mods activated in the

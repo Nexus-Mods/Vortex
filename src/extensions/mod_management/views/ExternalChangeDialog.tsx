@@ -1,59 +1,63 @@
-import {ComponentEx, translate} from '../../../util/ComponentEx';
+import {ComponentEx, connect, translate} from '../../../util/ComponentEx';
+import {midClip} from '../../../util/util';
 import {Button} from '../../../views/TooltipControls';
+
+import { confirmExternalChanges, setExternalChangeAction } from '../actions/externalChanges';
+
+import { FileAction, IFileEntry } from '../types/IFileEntry';
 
 import * as React from 'react';
 import { Modal, Table } from 'react-bootstrap';
 
-export type FileActionRef = 'import' | 'drop';
-export type FileActionVal = 'keey';
-
-export type FileAction = FileActionRef | FileActionVal;
-
-export interface IFileEntry {
-  filePath: string;
-  source: string;
-  type: 'refchange' | 'valchange';
-  action: FileAction;
+export interface IBaseProps {
 }
 
-export interface IBaseProps {
-  actions: IFileEntry[];
-  onChangeAction: (fileName: string, action: FileAction) => void;
-  onClose: (cancel: boolean) => void;
+interface IConnectedProps {
+  changes: IFileEntry[];
+}
+
+interface IActionProps {
+  onChangeAction: (fileNames: string[], action: FileAction) => void;
+  onClose: (changes: IFileEntry[], cancel: boolean) => void;
 }
 
 const nop = () => undefined;
 
-const possibleActionsRef = [
-  { key: 'import', text: 'Save modified' },
-  { key: 'drop', text: 'Restore original' },
-];
-
-const possibleActionsVal = [
-  { key: 'keep', text: 'Keep modified' },
-];
+const possibleActions: { [type: string]: { key: string, text: string }[] } = {
+  refchange: [
+    { key: 'import', text: 'Save modified' },
+    { key: 'drop', text: 'Restore original' },
+  ],
+  valchange: [
+    { key: 'keep', text: 'Keep modified' },
+  ],
+  deleted: [
+    { key: 'restore', text: 'Restore from mod' },
+    { key: 'delete', text: 'Delete in mod as well' },
+  ],
+};
 
 interface IRowProps {
   t: I18next.TranslationFunction;
   entry: IFileEntry;
-  onChangeAction: (fileName: string, action: FileAction) => void;
+  onChangeAction: (fileNames: string[], action: FileAction) => void;
 }
 
 class ChangeRow extends React.Component<IRowProps, {}> {
   public render(): JSX.Element {
     const { entry } = this.props;
 
-    const possibleActions = entry.type === 'refchange' ? possibleActionsRef : possibleActionsVal;
+    const actions = possibleActions[entry.type];
 
     return <tr key={entry.filePath}>
-      <td>{entry.filePath}</td>
+      <td><a className='fake-link' title={entry.filePath}>{midClip(entry.filePath, 50)}</a></td>
       <td>
         <select
           className='form-control'
           onChange={this.changeValue}
           value={entry.action}
         >
-          {possibleActions.map((action) => this.renderChoice(action.key, action.text, entry))}
+          {actions.map((action) => this.renderChoice(action.key, action.text, entry))}
         </select>
       </td>
     </tr>;
@@ -61,7 +65,7 @@ class ChangeRow extends React.Component<IRowProps, {}> {
 
   private changeValue = (evt: React.MouseEvent<any>) => {
     const {entry, onChangeAction} = this.props;
-    onChangeAction(entry.filePath, evt.currentTarget.value);
+    onChangeAction([entry.filePath], evt.currentTarget.value);
   }
 
   private renderChoice = (key: string, text: string, entry: IFileEntry): JSX.Element => {
@@ -76,24 +80,42 @@ class ChangeRow extends React.Component<IRowProps, {}> {
   }
 }
 
-class ExternalChangeDialog extends ComponentEx<IBaseProps, {}> {
+type IProps = IBaseProps & IConnectedProps & IActionProps;
+
+class ExternalChangeDialog extends ComponentEx<IProps, {}> {
+  private setAll = {
+    refchange: (evt: React.MouseEvent<any>) => {
+      this.setAllFunc('refchange', evt.currentTarget.href.split('#')[1]);
+    },
+    valchange: (evt: React.MouseEvent<any>) => {
+      this.setAllFunc('valchange', evt.currentTarget.href.split('#')[1]);
+    },
+    deleted: (evt: React.MouseEvent<any>) => {
+      this.setAllFunc('deleted', evt.currentTarget.href.split('#')[1]);
+    },
+  };
+
   public render(): JSX.Element {
-    const { t, actions } = this.props;
+    const { t, changes } = this.props;
 
-    if (actions === undefined) {
-      return null;
-    }
+    const visible = changes !== undefined && changes.length > 0;
 
-    return <Modal show={actions !== undefined} onHide={nop}>
-      <Modal.Header>{t('External Changes')}</Modal.Header>
+    const refChanged = changes.filter((change) => change.type === 'refchange');
+    const valChanged = changes.filter((change) => change.type === 'valchange');
+    const deleted = changes.filter((change) => change.type === 'deleted');
+
+    return <Modal id='ext-change-dialog' show={visible} onHide={nop}>
+      <Modal.Header><h4>{t('External Changes')}</h4></Modal.Header>
       <Modal.Body>
-        {t('One or more files have been modified on disk since NMM2 last activated. '
+        <div className='padded-text' style={{ flex: 0 }} >
+          {t('One or more files have been modified on disk since NMM2 last activated. '
           + 'You have to decide what happens with them.')}
-        <Table>
-          <tbody>
-            {actions.map(this.renderRow)}
-          </tbody>
-        </Table>
+        </div>
+
+        {this.renderChanged(t('These files were modified'), 'valchange', valChanged)}
+        {this.renderChanged(t('These files were replaced (or removed from the mod)'),
+          'refchange', refChanged)}
+        {this.renderChanged(t('These files were deleted'), 'deleted', deleted)}
       </Modal.Body>
       <Modal.Footer>
       <Button
@@ -114,20 +136,82 @@ class ExternalChangeDialog extends ComponentEx<IBaseProps, {}> {
     </Modal>;
   }
 
+  private renderChanged =
+    (text: string, type: string, entries: IFileEntry[]) => {
+    const { t } = this.props;
+    if (entries.length === 0) {
+      return null;
+    }
+
+    const actions = possibleActions[type];
+
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {text}
+        <p>{actions.map((action) => <a
+          key={action.key}
+          onClick={this.setAll[type]}
+          href={'#' + action.key}
+          style={{ marginRight: 10 }}
+        >{t(action.text)}
+        </a>)
+        }</p>
+        <div style={{ overflowY: 'auto' }}>
+          <Table>
+            <tbody>
+              {entries.map(this.renderRow)}
+            </tbody>
+          </Table>
+        </div>
+      </div>
+    );
+  }
+
+  private setAllFunc = (changeType: string, action: FileAction) => {
+    const { changes, onChangeAction } = this.props;
+    onChangeAction(
+      changes
+        .filter((entry) => entry.type as string === changeType)
+        .map((entry) => entry.filePath),
+      action
+    );
+  }
+
   private cancel = () => {
-    this.props.onClose(true);
+    this.props.onClose([], true);
   }
 
   private confirm = () => {
-    this.props.onClose(false);
+    this.props.onClose(this.props.changes, false);
   }
 
   private renderRow = (entry: IFileEntry): JSX.Element => {
     const { t, onChangeAction } = this.props;
 
-    return <ChangeRow entry={entry} t={t} onChangeAction={onChangeAction} />;
+    return (<ChangeRow
+      key={entry.filePath}
+      entry={entry}
+      t={t}
+      onChangeAction={onChangeAction}
+    />);
   }
 }
 
+function mapStateToProps(state: any): IConnectedProps {
+  return {
+    changes: state.session.externalChanges.changes,
+  };
+}
+
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+  return {
+    onChangeAction: (fileName: string[], action: FileAction) =>
+      dispatch(setExternalChangeAction(fileName, action)),
+    onClose: (changes: IFileEntry[], cancel: boolean) =>
+      dispatch(confirmExternalChanges(changes, cancel)),
+  };
+}
+
 export default translate(['common'], { wait: false })(
-  ExternalChangeDialog) as React.ComponentClass<IBaseProps>;
+  connect(mapStateToProps, mapDispatchToProps)(ExternalChangeDialog)
+) as React.ComponentClass<IBaseProps>;

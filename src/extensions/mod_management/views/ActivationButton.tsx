@@ -9,24 +9,12 @@ import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResu
 import { currentActivator, installPath } from '../../mod_management/selectors';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
+import { IFileEntry } from '../types/IFileEntry';
 import { IMod } from '../types/IMod';
-import { IFileChange, IModActivator } from '../types/IModActivator';
-
-import sortMods from '../util/sort';
-
-import { activateMods } from '../modActivation';
-
-import ExternalChangeDialog, { FileAction, IFileEntry } from './ExternalChangeDialog';
+import { IModActivator } from '../types/IModActivator';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
-import * as path from 'path';
 import * as React from 'react';
-import {generate as shortid} from 'shortid';
-
-function UserCanceled() {
-  /* nop */
-};
 
 interface IConnectedProps {
   installPath: string;
@@ -53,9 +41,6 @@ interface IComponentState {
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class ActivationButton extends ComponentEx<IProps, IComponentState> {
-
-  private closeChangeDialog: (cancel: boolean) => void = undefined;
-
   constructor(props) {
     super(props);
     this.initState({ fileActions: undefined });
@@ -64,95 +49,22 @@ class ActivationButton extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     let { t } = this.props;
 
-    return <div style={{ float: 'left' }}><ToolbarIcon
-      id='activate-mods'
-      icon='chain'
-      tooltip={t('Link Mods')}
-      onClick={this.activate}
-    />
-      <ExternalChangeDialog
-        actions={this.state.fileActions}
-        onChangeAction={this.changeFileAction}
-        onClose={this.closeChangeDialog}
+    return <div style={{ float: 'left' }}>
+      <ToolbarIcon
+        id='activate-mods'
+        icon='chain'
+        tooltip={t('Link Mods')}
+        onClick={this.activate}
       />
     </div>;
   }
 
-  private changeFileAction = (fileName: string, action: FileAction) => {
-    this.nextState.fileActions.find(
-      (entry: IFileEntry) => entry.filePath === fileName
-      ).action = action;
-  }
-
   private activate = () => {
-    let { t, activators, currentActivator, gameDiscovery, installPath,
-      mods, modState, onShowError } = this.props;
-
-    let activator: IModActivator = currentActivator !== undefined
-      ? activators.find((act: IModActivator) => act.id === currentActivator)
-      : activators[0];
-
-    let modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
-
-    let notificationId = shortid();
-    this.context.api.sendNotification({
-      id: notificationId,
-      type: 'activity',
-      message: t('Activating mods'),
-      title: t('Activating'),
+    this.context.api.events.emit('activate-mods', (err) => {
+      if (err !== null) {
+        this.props.onShowError('Failed to activate mods', err);
+      }
     });
-
-    let fileActions: IFileEntry[];
-
-    activator.externalChanges(installPath, gameDiscovery.modPath)
-      .then((changes: IFileChange[]) => {
-
-        if (changes.length > 0) {
-          return new Promise<void>((resolve, reject) => {
-            this.closeChangeDialog = (cancel: boolean) => {
-              fileActions = this.nextState.fileActions;
-              this.nextState.fileActions = undefined;
-              cancel ? reject(new UserCanceled()) : resolve();
-            };
-            this.nextState.fileActions = changes.map((change: IFileChange) =>
-              ({
-                filePath: change.filePath,
-                source: change.source,
-                type: change.changeType,
-                action: (change.changeType === 'refchange' ? 'import' : 'keep') as FileAction,
-              }));
-          });
-        } else {
-          return Promise.resolve();
-        }
-      })
-      .then(() => {
-        if (fileActions === undefined) {
-          return Promise.resolve();
-        }
-
-        return Promise.map(fileActions.filter((entry: IFileEntry) => entry.action === 'drop'),
-          (entry) => fs.removeAsync(path.join(gameDiscovery.modPath, entry.filePath)))
-          .then(() => Promise.map(
-            fileActions.filter((entry: IFileEntry) => entry.action === 'import'),
-            (entry) => fs.copyAsync(path.join(gameDiscovery.modPath, entry.filePath),
-                                    path.join(installPath, entry.source, entry.filePath))
-          )).then(() => undefined);
-      })
-      .then(() => sortMods(modList, this.context.api))
-      .then((sortedMods: string[]) => {
-        let sortedModList = modList.sort((lhs: IMod, rhs: IMod) =>
-          sortedMods.indexOf(lhs.id) - sortedMods.indexOf(rhs.id));
-
-        return activateMods(installPath, gameDiscovery.modPath, sortedModList, modState, activator);
-      })
-      .catch(UserCanceled, () => undefined)
-      .catch((err) => {
-        onShowError('failed to activate mods', err);
-      })
-      .finally(() => {
-        this.context.api.dismissNotification(notificationId);
-      });
   };
 }
 

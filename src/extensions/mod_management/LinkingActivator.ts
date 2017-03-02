@@ -163,6 +163,7 @@ abstract class LinkingActivator implements IModActivator {
     return loadData(gameId, 'activation', {})
       .then((activation: any) => {
         currentActivation = activation;
+        // test if the file mentioned in the activation manifest is still a link
         return Promise
           .map(Object.keys(currentActivation),
           (key: string) => {
@@ -170,8 +171,7 @@ abstract class LinkingActivator implements IModActivator {
             const fileModPath =
               path.join(installPath, currentActivation[key].source,
                 currentActivation[key].relPath);
-
-            return fs.lstatAsync(fileModPath)
+            return fs.lstatAsync(fileDataPath)
               .then((stat: fs.Stats): Promise<boolean> => {
                 if (stat.mtime.getTime() !== currentActivation[key].time) {
                   nonLinks.push({
@@ -192,10 +192,31 @@ abstract class LinkingActivator implements IModActivator {
                     changeType: 'refchange',
                   });
                 }
-              });
+              })
+              .catch((err) => {
+                // can't stat, probably the file was deleted
+                nonLinks.push({
+                  filePath: currentActivation[key].relPath,
+                  source: currentActivation[key].source,
+                  changeType: 'deleted',
+                });
+              })
+              ;
           });
       })
       .then(() => Promise.resolve(nonLinks));
+  }
+
+  public forgetFiles(filePaths: string[]): Promise<void> {
+    const state = this.mApi.store.getState();
+    const gameId = activeGameId(state);
+    return loadData(gameId, 'activation', {})
+      .then((activation: any) => {
+        filePaths.forEach((path: string) => {
+          delete activation[path.toUpperCase()];
+        });
+        return saveData(gameId, 'activation', activation);
+      });
   }
 
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;

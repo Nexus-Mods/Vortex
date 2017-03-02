@@ -93,6 +93,10 @@ class ModActivator implements IModActivator {
     return Promise.resolve([]);
   }
 
+  public forgetFiles(filePaths: string[]): Promise<void> {
+    return Promise.resolve();
+  }
+
   public isActive(): boolean {
     return false;
   }
