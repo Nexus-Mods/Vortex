@@ -90,6 +90,18 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     ) : null;
   }
 
+  private translateParts(message: string, t: I18next.TranslationFunction) {
+    // split by linebreak, then by tab, apply translation function, then join
+    // again (replacing tabs with spaces)
+    return message
+      .split('\n')
+      .map((line: string) => line
+        .split('\t')
+        .map((block: string) => t(block))
+        .join(' '))
+      .join('\n');
+  }
+
   private renderContent(content: IDialogContent): JSX.Element {
     let { t } = this.props;
     if (content.options && content.options.translated) {
@@ -105,7 +117,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         key='dialog-content-message'
         wrap={wrap}
         style={{ width: '100%', minHeight: 300, resize: 'none', border: 'none' }}
-        defaultValue={content.message}
+        defaultValue={this.translateParts(content.message, t)}
       />);
     }
 

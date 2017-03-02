@@ -52,6 +52,7 @@
     "react-fontawesome": "^1.1.0",
     "react-i18next": "^1.8.0",
     "react-layout-pane": "TanninOne/react-layout-pane",
+    "react-markdown": "^2.4.4",
     "react-redux": "^4.4.5",
     "react-sortable-tree": "^0.1.8",
     "recharts": "^0.20.8",

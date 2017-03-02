@@ -137,14 +137,11 @@ class LootInterface {
   private enqueue(description: string, step: () => Promise<void>) {
     this.mLootQueue = this.mLootQueue.then(() => {
       this.mOnSetLootActivity(description);
-      let start = new Date().getTime();
       return step()
       .catch((err: Error) => {
         this.mExtensionApi.showErrorNotification('LOOT operation failed', err);
       })
       .finally(() => {
-        let end = new Date().getTime();
-        console.log('prof', description, end - start);
         this.mOnSetLootActivity('');
       });
     });

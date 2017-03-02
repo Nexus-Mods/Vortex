@@ -37,6 +37,7 @@ function init(context: IExtensionContext): boolean {
     isToggleable: true,
     edit: {},
     isSortable: true,
+    isDefaultVisible: false,
   });
 
   return true;

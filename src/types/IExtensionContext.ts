@@ -135,7 +135,7 @@ export interface IExtensionApi {
    * 
    * @memberOf IExtensionApi
    */
-  showErrorNotification?: (message: string, detail: string | Error) => void;
+  showErrorNotification?: (message: string, detail: string | Error | any, isHTML?: boolean) => void;
 
   /**
    * hides a notification by its id

@@ -2,17 +2,30 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
+let tlBlacklist = new Set<string>([
+  '$RECYCLE.BIN',
+  '$$PendingFiles',
+  'Windows',
+]);
+
+function testBlacklist(name: string, filePath: string) {
+  const isTopLevel = filePath.indexOf('\\') === -1;
+  return !isTopLevel || !tlBlacklist.has(name);
+}
+
 function walk(target: string,
               callback: (iterPath: string, stats: fs.Stats) => Promise<any>): Promise<any> {
   let allFileNames: string[];
 
   return fs.readdirAsync(target)
     .then((fileNames: string[]) => {
-      allFileNames = fileNames;
-      return Promise.mapSeries(fileNames, (statPath: string) => {
-        let fullPath: string = path.join(target, statPath);
-        return fs.lstatAsync(fullPath).reflect();
-      });
+      allFileNames = fileNames.filter((fileName) => testBlacklist(fileName, target));
+      return Promise.mapSeries(
+          allFileNames,
+          (statPath: string) => {
+            let fullPath: string = path.join(target, statPath);
+            return fs.lstatAsync(fullPath).reflect();
+          });
     }).then((res: Promise.Inspection<fs.Stats>[]) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory

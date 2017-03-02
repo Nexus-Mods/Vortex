@@ -117,3 +117,23 @@ export function copyFileAtomic(srcPath: string, destPath: string): Promise<void>
   })
   ;
 }
+
+/**
+ * An ellipsis ("this text is too lo...") function. Usually these
+ * functions clip the text at the end but often (i.e. when
+ * clipping file paths) the end of the text is the most interesting part,
+ * so this function clips the middle part of the input.
+ * @param input the input text
+ * @param maxLength the maximum number of characters (including ...)
+ * @return the shortened text
+ */
+export function midClip(input: string, maxLength: number): string {
+  if (input.length <= maxLength) {
+    return input;
+  }
+
+  const half = maxLength / 2;
+  return input.substr(0, half - 2)
+    + '...'
+    + input.substr(input.length - (half - 1));
+}

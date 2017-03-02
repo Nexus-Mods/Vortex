@@ -76,10 +76,23 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
  *                        where Errors are expected we have to be a bit more flexible here. 
  */
 export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
-                             details?: string | Error) {
-  const finalDetails: string = typeof(details) !== 'string' ? renderError(details) : details;
+                             details?: string | Error | any,
+                             isHTML: boolean = false) {
+  const finalDetails: string = renderError(details);
 
   log('error', message, finalDetails);
+
+  const content = isHTML ? {
+    htmlText: finalDetails,
+    options: {
+      wrap: false,
+    },
+  } : {
+    message: finalDetails,
+    options: {
+      wrap: false,
+    },
+  };
 
   dispatch(addNotification({
     type: 'error',
@@ -87,12 +100,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
     actions: details !== undefined ? [{
       title: 'More',
       action: (dismiss: Function) => {
-        dispatch(showDialog('error', 'Error', {
-          htmlText: finalDetails,
-          options: {
-            wrap: false,
-          },
-        }, {
+        dispatch(showDialog('error', 'Error', content, {
           Report: () => createErrorReport('Error', {
             message,
             details: finalDetails,
@@ -104,7 +112,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
   }));
 }
 
-function renderError(err: any): string {
+function renderNodeError(err: Error): string {
   let res: string[] = [];
 
   if (Array.isArray(err)) {
@@ -113,8 +121,6 @@ function renderError(err: any): string {
 
   if (err.message) {
     res.push(err.message);
-  } else if (err.Error) {
-    res.push(err.Error);
   }
 
   if (err.stack) {
@@ -122,4 +128,20 @@ function renderError(err: any): string {
   }
 
   return res.join('\n');
+}
+
+function renderCustomError(err: any): string {
+  return Object.keys(err).map((key: string) => {
+    return key + ':\t' + err[key];
+  }).join('\n');
+}
+
+function renderError(err: string | Error | any): string {
+  if (typeof(err) === 'string') {
+    return err;
+  } else if (err instanceof Error) {
+    return renderNodeError(err);
+  } else {
+    return renderCustomError(err);
+  }
 }

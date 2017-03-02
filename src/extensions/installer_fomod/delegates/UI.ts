@@ -70,7 +70,7 @@ class UI extends DelegateBase {
       (parameters: IReportError) => {
         try {
           this.api.showErrorNotification(
-              parameters.title, parameters.message + '\n' + parameters.details);
+              parameters.title, parameters.message + '\n' + parameters.details, true);
         } catch (err) {
           showError(this.api.store.dispatch,
                     'failed to display error message from installer', err);

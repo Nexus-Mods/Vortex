@@ -52,7 +52,7 @@ class InputButton extends ComponentEx<IProps, IComponentState> {
       return (
         <Button
           id={id}
-          tooltip={t(tooltip)}
+          tooltip={tooltip}
           onClick={this.startInput}
         >
           <Icon set={iconGroup} name={icon} />

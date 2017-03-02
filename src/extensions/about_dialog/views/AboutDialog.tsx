@@ -91,7 +91,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
             <Media.Body>
               <Media.Heading>Nexus Mod Manager 2 {remote.app.getVersion()}</Media.Heading>
               <p><Icon name='copyright'/> 2017 Black Tree Gaming Ltd.</p>
-              <p>licensed under <a onClick={this.showOwnLicense}>GPL-3</a></p>
+              <p>{t('Released under')} <a onClick={this.showOwnLicense}>GPL-3</a> {t('License')}</p>
             </Media.Body>
           </Media>
           <p><strong>Electron</strong> {process.versions.electron}</p>

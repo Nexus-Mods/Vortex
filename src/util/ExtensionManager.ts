@@ -244,7 +244,8 @@ class ExtensionManager {
     this.mPid = process.pid;
     this.mEventEmitter = eventEmitter;
     this.mApi = {
-      showErrorNotification: (message: string, details: string | Error) => {
+      showErrorNotification:
+        (message: string, details: string | Error | any, isHTML: boolean = false) => {
         if (typeof(details) === 'string') {
           dialog.showErrorBox(message, details);
         } else {
@@ -288,8 +289,9 @@ class ExtensionManager {
     this.mApi.sendNotification = (notification: INotification) => {
       store.dispatch(addNotification(notification));
     };
-    this.mApi.showErrorNotification = (message: string, details: string | Error) => {
-      showError(store.dispatch, message, details);
+    this.mApi.showErrorNotification =
+      (message: string, details: string | Error | any, isHTML: boolean = false) => {
+      showError(store.dispatch, message, details, isHTML);
     };
     this.mApi.dismissNotification = (id: string) => {
       store.dispatch(dismissNotification(id));
