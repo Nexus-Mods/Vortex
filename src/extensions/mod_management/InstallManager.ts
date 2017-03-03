@@ -203,8 +203,7 @@ class InstallManager {
     let fileList: IZipEntry[] = [];
     // get list of files in the archive
     return new Promise((resolve, reject) => {
-             this.mTask.list(archivePath, {})
-                 .progress((files: any[]) => {
+             this.mTask.list(archivePath, {}, (files: any[]) => {
                    fileList.push(
                        ...files.filter((spec) => spec.attr[0] !== 'D'));
                  })
