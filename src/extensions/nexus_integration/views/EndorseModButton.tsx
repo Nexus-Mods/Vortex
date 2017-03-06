@@ -60,7 +60,7 @@ class EndorseModButton extends ComponentEx<IProps, {}> {
 
   private endorseMod = () => {
     let { api, endorsedStatus, id, modId, onEndorseMod, version } = this.props;
-    onEndorseMod(api, endorsedStatus, modId, id, version);
+    onEndorseMod(api, modId, id, version, endorsedStatus);
   };
 }
 

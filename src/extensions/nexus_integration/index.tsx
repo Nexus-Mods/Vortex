@@ -151,14 +151,14 @@ function processErrorMessage(
   }
 }
 
-function endorseMod(api: IExtensionApi, endorsedStatus: string,
-                    modId: string, id: string, version: string) {
+function endorseMod(api: IExtensionApi, modId: string, 
+                    id: string, version: string, endorsedStatus: string) {
   let gameId;
   currentGame(api.store)
     .then((game: IGameStored) => {
       gameId = game.id;
       log('info', 'endorse mod ', modId);
-      return retrieveEndorsedMod(gameId, nexus, endorsedStatus, modId, version);
+      return retrieveEndorsedMod(nexus, gameId, modId, version, endorsedStatus);
     })
     .then((endorsed: string) => {
       api.store.dispatch(setModAttribute(gameId, id, 'endorsed', endorsed));
@@ -208,9 +208,9 @@ function getEndorsedIcon(api: IExtensionApi, mod: IMod) {
 
 }
 
-function endorseEmitter(api: IExtensionApi, endorsedStatus: string,
-                        modId: string, id: string, version: string) {
-  api.events.emit('endorse-mod', [endorsedStatus, modId, id, version]);
+function endorseEmitter(api: IExtensionApi, modId: string,
+                        id: string, version: string, endorsedStatus: string) {
+  api.events.emit('endorse-mod', [modId, id, version, endorsedStatus]);
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -280,11 +280,11 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('endorse-mod', (result: any) => {
-      let endorsedStatus = result[0];
-      let modId = result[1];
-      let id = result[2];
-      let version = result[3];
-      endorseMod(context.api, endorsedStatus, modId, id, version);
+      let modId = result[0];
+      let id = result[1];
+      let version = result[2];
+      let endorsedStatus = result[3];
+      endorseMod(context.api, modId, id, version, endorsedStatus);
     });
 
     context.api.onStateChange(['settings', 'nexus', 'associateNXM'],

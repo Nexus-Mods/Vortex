@@ -12,11 +12,11 @@ import Nexus from 'nexus-api';
  */
 
 function retrieveEndorsedMod(
-  activeGameId: string,
   nexus: Nexus,
-  endorseStatus: string,
+  activeGameId: string,
   modId: string,
   version: string,
+  endorseStatus: string,
 ): Promise<string> {
   return new Promise<string>((resolve, reject) => {
 
