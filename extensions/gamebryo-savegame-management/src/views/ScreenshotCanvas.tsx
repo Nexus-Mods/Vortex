@@ -36,6 +36,7 @@ class ScreenshotCanvas extends React.Component<ICanvasProps, {}> {
       ref={this.refCanvas}
       width={dim.width}
       height={dim.height}
+      style={{ width: '100%' }}
     />);
   }
 

@@ -146,7 +146,7 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
   public render(): JSX.Element {
     const { attributes } = this.props;
     return (
-      <form style={{ minWidth: 300 }}>
+      <form>
       {attributes.map((obj) => this.renderDetail(obj))}
       </form>
     );

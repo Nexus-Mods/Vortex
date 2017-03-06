@@ -43,7 +43,6 @@ interface IViewState {
   edit: string;
 }
 
-
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 /**
@@ -64,22 +63,25 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const { features, language, profiles } = this.props;
     const { edit } = this.state;
 
-    const sortedProfiles: string[] = Object.keys(profiles).sort(
-      (lhs: string, rhs: string): number =>
-        profiles[lhs].gameId !== profiles[rhs].gameId
-          ? profiles[lhs].gameId.localeCompare(profiles[rhs].gameId)
-          : profiles[lhs].name.localeCompare(profiles[rhs].name, language,
-          { sensitivity: 'base' })
-    );
+    const sortedProfiles: string[] = this.sortProfiles(profiles, language);
 
     const supportedFeatures = features.filter((feature) => feature.supported());
 
     return (
-      <ListGroup>
+      <ListGroup style={{ overflowY: 'auto', height: '100%' }}>
       { sortedProfiles.map((profileId) => this.renderProfile(profileId, supportedFeatures)) }
-      { edit === null ? this.renderAddProfile() : null }
-      { edit === '__new' ? this.renderEditProfile() : null }
+      { this.renderAddOrEdit(edit) }
       </ListGroup>
+    );
+  }
+
+  private sortProfiles(profiles: { [id: string]: IProfile }, language: string) {
+    return Object.keys(profiles).sort(
+      (lhs: string, rhs: string): number =>
+        profiles[lhs].gameId !== profiles[rhs].gameId
+          ? profiles[lhs].gameId.localeCompare(profiles[rhs].gameId)
+          : profiles[lhs].name.localeCompare(profiles[rhs].name, language,
+            { sensitivity: 'base' })
     );
   }
 
@@ -105,6 +107,14 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         onStartEditing={ this.editExistingProfile }
       />
     );
+  }
+
+  private renderAddOrEdit(editId: string) {
+    return editId === null
+      ? this.renderAddProfile()
+      : editId === '__new'
+        ? this.renderEditProfile()
+        : null;
   }
 
   private renderEditProfile(): JSX.Element {

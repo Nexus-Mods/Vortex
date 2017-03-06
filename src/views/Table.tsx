@@ -20,6 +20,7 @@ import * as React from 'react';
 import update = require('react-addons-update');
 import {Table} from 'react-bootstrap';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
+import * as SplitPane from 'react-split-pane';
 import { createSelector } from 'reselect';
 
 export interface IChangeDataHandler {
@@ -112,25 +113,25 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           </div>
         </Fixed>
         <Flex>
-          <Layout type='row'>
-            <Flex id='table-main-pane'>
+          <SplitPane split='vertical' defaultSize={300} primary='second'>
+            <div id='table-main-pane'>
               <Table bordered condensed hover>
                 <thead>
                   <tr>
                     {this.mVisibleAttributes.map(this.renderHeaderField)}
-                    { hasActions
+                    {hasActions
                       ? <th className={`table-${tableId} header-action`}>{t('Actions')}</th>
                       : null
                     }
                   </tr>
                 </thead>
-                { this.renderBody(this.mVisibleAttributes) }
+                {this.renderBody(this.mVisibleAttributes)}
               </Table>
-            </Flex>
-            <Fixed id='table-details-pane'>
+            </div>
+            <div id='table-details-pane'>
               {this.renderDetails(lastSelected)}
-            </Fixed>
-          </Layout>
+            </div>
+          </SplitPane>
         </Flex>
         <Fixed>
           {this.renderSelectionActions()}
