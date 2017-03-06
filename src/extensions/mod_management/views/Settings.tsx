@@ -3,14 +3,17 @@ import {DialogActions, DialogType, IDialogContent} from '../../../types/IDialog'
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
-import { setSafe } from '../../../util/storeHelper';
+import { getSafe, setSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
+import More from '../../../views/More';
 import { Button } from '../../../views/TooltipControls';
 import { setActivator, setPath } from '../actions/settings';
 import { IModActivator } from '../types/IModActivator';
 import { IStatePaths } from '../types/IStateSettings';
 import resolvePath, {PathKey, pathDefaults} from '../util/resolvePath';
 import supportedActivators from '../util/supportedActivators';
+
+import getText from '../texts';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -26,8 +29,8 @@ interface IBaseProps {
 }
 
 interface IConnectedProps {
-  paths: { [gameId: string]: IStatePaths };
   gameMode: string;
+  paths: { [gameId: string]: IStatePaths };
   currentActivator: string;
   state: any;
 }
@@ -79,7 +82,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, activators, currentActivator, gameMode } = this.props;
+    const { t, activators, currentActivator } = this.props;
     const { paths, supportedActivators } = this.state;
 
     return (
@@ -97,9 +100,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           </Modal.Body>
         </Modal>
         </Panel>
-        <ControlLabel>{ t('Activation Method') }</ControlLabel>
+        <ControlLabel>
+          { t('Deployment Method') }
+          <More id='more-deploy' name={t('Deployment')} >
+            {getText('deployment', t)}
+          </More>
+        </ControlLabel>
         <FormGroup validationState={ activators !== undefined ? undefined : 'error' }>
-          { this.renderActivators(supportedActivators, currentActivator[gameMode]) }
+          { this.renderActivators(supportedActivators, currentActivator) }
         </FormGroup>
       </form>
     );
@@ -324,9 +332,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 function mapStateToProps(state: any): IConnectedProps {
   const gameMode = activeGameId(state);
   return {
-    paths: state.settings.mods.paths,
     gameMode,
-    currentActivator: state.settings.mods.activator,
+    paths: state.settings.mods.paths,
+    currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),
     state,
   };
 }

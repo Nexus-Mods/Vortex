@@ -108,7 +108,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, {}> {
       <Modal.Header><h4>{t('External Changes')}</h4></Modal.Header>
       <Modal.Body>
         <div className='padded-text' style={{ flex: 0 }} >
-          {t('One or more files have been modified on disk since NMM2 last activated. '
+          {t('One or more files have been modified on disk since NMM2 last deployed. '
           + 'You have to decide what happens with them.')}
         </div>
 
@@ -120,7 +120,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, {}> {
       <Modal.Footer>
       <Button
         id='btn-cancel-activation'
-        tooltip={t('Cancel activation')}
+        tooltip={t('Cancel deployment')}
         onClick={this.cancel}
       >
         {t('Cancel')}

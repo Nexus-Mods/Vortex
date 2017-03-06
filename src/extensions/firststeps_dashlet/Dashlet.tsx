@@ -2,8 +2,10 @@ import { II18NProps } from '../../types/II18NProps';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { activeGameId, basePath } from '../../util/selectors';
 import Icon from '../../views/Icon';
+import More from '../../views/More';
 import { IconButton } from '../../views/TooltipControls';
 
+import getTextModManagement from '../mod_management/texts';
 import { setAssociatedWithNXMURLs } from '../nexus_integration/actions/settings';
 
 import { dismissStep } from './actions';
@@ -18,6 +20,7 @@ interface IConnectedState {
   gameMode: string;
   basePath: string;
   associatedWithNXM: boolean;
+  autoDeploy: boolean;
   dismissAll: boolean;
   steps: { [stepId: string]: boolean };
 }
@@ -63,7 +66,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
 
         return (<span>
           <Interpolate
-            i18nKey='Data for this game will be stored in {{path}}\nOpen {{link}} to change'
+            i18nKey='Data for this game will be stored in {{path}}\nOpen {{link}} to change.'
             path={path}
             link={link}
           />
@@ -79,6 +82,26 @@ class Dashlet extends ComponentEx<IProps, {}> {
           {t('Do you want NMM2 to handle download links on Nexus?')}
           {' '}<Button onClick={this.associateNXM}>{t('Associate')}</Button>
           </span>);
+      },
+    },
+    {
+      id: 'deploy-automation',
+      condition: (props: IProps) => true,
+      render: (props: IProps): JSX.Element => {
+        const {t, autoDeploy} = props;
+        const enabled = autoDeploy ? t('enabled') : t('disabled');
+        const link = <a onClick={this.openSettings}><Icon name='gear'/>{t('Settings')}</a>;
+        const more = (<More id='more-deploy-dash' name={t('Deployment')}>
+          {getTextModManagement('deployment', t)}
+        </More>);
+        return (<span>
+          <Interpolate
+            i18nKey='Automatic deployment{{more}} is {{enabled}}. Open {{link}} to change.'
+            more={more}
+            enabled={enabled}
+            link={link}
+          />
+        </span>);
       },
     },
   ];
@@ -133,6 +156,7 @@ function mapStateToProps(state: any): IConnectedState {
     gameMode: activeGameId(state),
     basePath: basePath(state),
     associatedWithNXM: state.settings.nexus.associateNXM,
+    autoDeploy: state.settings.automation.deploy,
     dismissAll: state.settings.firststeps.dismissAll,
     steps: state.settings.firststeps.steps,
   };

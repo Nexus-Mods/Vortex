@@ -83,7 +83,7 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
   let activator: IModActivator =
     activatorId !== undefined
         ? activators.find((act: IModActivator) => act.id === activatorId)
-        : activators[0];
+        : activators.find((act: IModActivator) => act.isSupported(state) === undefined);
 
   let mods = state.persistent.mods[gameMode] || {};
   let modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
@@ -231,6 +231,12 @@ function init(context: IExtensionContextExt): boolean {
       updateModActivation(context)
       .then(() => callback(null))
       .catch((err) => callback(err));
+    });
+
+    context.api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
+      if (store.getState().settings.automation.deploy) {
+        updateModActivation(context);
+      }
     });
 
     context.api.events.on('gamemode-activated', (newGame: string) => {

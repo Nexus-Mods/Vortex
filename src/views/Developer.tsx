@@ -1,5 +1,4 @@
 import * as CoreActions from '../actions/index';
-import * as SettingsInterfaceActions from '../extensions/settings_interface/actions';
 
 import LogMonTool from '../util/DevTools';
 
@@ -56,7 +55,6 @@ class Developer extends Component<{}, {}> {
     super();
 
     addCreators(CoreActions);
-    addCreators(SettingsInterfaceActions);
 
     this.DispatcherTool = createDevTools(<Dispatcher actionCreators={actionCreators} />);
   }

@@ -104,8 +104,10 @@ class ModList extends ComponentEx<IProps, {}> {
       placement: 'table',
       isToggleable: false,
       edit: {
-        onChangeValue: (modId: string, value: any) =>
-          props.onSetModEnabled(props.profileId, modId, value),
+        onChangeValue: (modId: string, value: any) => {
+          props.onSetModEnabled(props.profileId, modId, value);
+          this.context.api.events.emit('mods-enabled', [modId], value);
+        },
       },
       isSortable: false,
     };
@@ -220,6 +222,7 @@ class ModList extends ComponentEx<IProps, {}> {
         onSetModEnabled(profileId, key, true);
       }
     });
+    this.context.api.events.emit('mods-enabled', modIds, true);
   }
 
   private disableSelected = (modIds: string[]) => {
@@ -230,6 +233,7 @@ class ModList extends ComponentEx<IProps, {}> {
         onSetModEnabled(profileId, key, false);
       }
     });
+    this.context.api.events.emit('mods-enabled', modIds, false);
   }
 
   private removeSelected = (modIds: string[]) => {

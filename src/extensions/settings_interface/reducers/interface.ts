@@ -1,6 +1,6 @@
-import { IReducerSpec } from '../../types/IExtensionContext';
+import { IReducerSpec } from '../../../types/IExtensionContext';
 
-import { setLanguage } from './actions';
+import { setLanguage } from '../actions/interface';
 import update = require('react-addons-update');
 
 /**

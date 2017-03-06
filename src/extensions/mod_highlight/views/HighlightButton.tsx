@@ -106,7 +106,7 @@ class HighlightButton extends ComponentEx<IProps, IHighlightButtonState> {
 
     return (
       <div style={{textAlign:'center'}}>
-        <OverlayTrigger trigger='click' placement='bottom' overlay={popoverBottom}>
+        <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popoverBottom}>
           <IconButton
             className={highlightClassName}
             icon={icon !== '' ? icon : 'eye'}

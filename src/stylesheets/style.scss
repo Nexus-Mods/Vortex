@@ -539,6 +539,26 @@
   height: initial;
 }
 
+.more-link {
+  margin-bottom: 8px;
+  margin-left: 0px;
+  margin-right: 0px;
+  width: 10px;
+  color: $link-color;
+  &:hover {
+    color: $link-hover-color;
+  }
+}
+
+.more-popover .popover-content {
+  white-space: pre-wrap;
+}
+
+.more-popover .popover-content p {
+  margin: 0 0 5px;
+  text-indent: 10px;
+}
+
 .Resizer {
   background: #000;
   opacity: .2;

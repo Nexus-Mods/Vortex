@@ -1,4 +1,4 @@
-import safeCreateAction from '../../actions/safeCreateAction';
+import safeCreateAction from '../../../actions/safeCreateAction';
 
 /**
  * change the user interface language
