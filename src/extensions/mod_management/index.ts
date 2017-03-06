@@ -1,6 +1,7 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 import {ITableAttribute} from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
+import Debouncer from '../../util/Debouncer';
 import {
   activeGameId,
   activeProfile,
@@ -227,15 +228,21 @@ function init(context: IExtensionContextExt): boolean {
       });
     }
 
+    let activationTimer = new Debouncer(() => {
+      return updateModActivation(context);
+    }, 2000);
+
     context.api.events.on('activate-mods', (callback: (err: Error) => void) => {
-      updateModActivation(context)
-      .then(() => callback(null))
-      .catch((err) => callback(err));
+      activationTimer.runNow(callback);
+    });
+
+    context.api.events.on('schedule-activate-mods', (callback: (err: Error) => void) => {
+      activationTimer.schedule(callback);
     });
 
     context.api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
       if (store.getState().settings.automation.deploy) {
-        updateModActivation(context);
+        activationTimer.schedule();
       }
     });
 
