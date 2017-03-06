@@ -9,7 +9,7 @@ declare class Nexus {
     setGame(gameId: string): void;
     setKey(apiKey: string): void;
     validateKey(key?: string): Promise<types.IValidateKeyResponse>;
-    endorseMod(version: string, modId: number, endorseStatus: string, gameId?: string): Promise<any>;
+    endorseMod(modId: number, modVersion: string, endorseStatus: string, gameId?: string): Promise<any>;
     getGames(): Promise<types.IGameListEntry[]>;
     getGameInfo(gameId?: string): Promise<types.IGameInfo>;
     getModInfo(modId: number, gameId?: string): Promise<types.IModInfo>;

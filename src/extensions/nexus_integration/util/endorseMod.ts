@@ -11,22 +11,16 @@ import Nexus from 'nexus-api';
  * 
  */
 
-function retrieveEndorsedMod(
-  nexus: Nexus,
-  activeGameId: string,
-  modId: string,
-  version: string,
-  endorseStatus: string,
-): Promise<string> {
+function endorsedMod(nexus: Nexus, gameId: string, nexusModId: number,
+                     version: string, endorseStatus: string): Promise<string> {
   return new Promise<string>((resolve, reject) => {
-
     if (endorseStatus === 'Undecided' || endorseStatus === 'Abstained' || endorseStatus === '') {
       endorseStatus = 'endorse';
     } else  if (endorseStatus === 'Endorsed') {
       endorseStatus = 'abstain';
     }
 
-    nexus.endorseMod(version, parseInt(modId, 10), endorseStatus, activeGameId)
+    nexus.endorseMod(nexusModId, version, endorseStatus, gameId)
       .then((result: any) => {
         resolve(result.status);
       })
@@ -36,4 +30,4 @@ function retrieveEndorsedMod(
   });
 }
 
-export default retrieveEndorsedMod;
+export default endorsedMod;

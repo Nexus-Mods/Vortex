@@ -80,12 +80,14 @@ class Nexus {
     });
   }
 
-  public endorseMod(version: string, modId: number,
+  public endorseMod(modId: number, modVersion: string,
                     endorseStatus: string, gameId?: string): Promise<any> {
     return new Promise<any>((resolve, reject) => {
       this.mRestClient.methods.endorseMod(
-        this.args({ path: this.filter({ modId, gameId, endorseStatus }),
-         data: this.filter({ Version: version }) }),
+        this.args({
+          path: this.filter({ gameId, modId, endorseStatus }),
+          data: this.filter({ Version: modVersion }),
+        }),
         (data, response) => this.handleResult(data, response, resolve, reject));
     });
   }

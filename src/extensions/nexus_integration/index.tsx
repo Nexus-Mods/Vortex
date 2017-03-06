@@ -16,7 +16,7 @@ import { IMod } from '../mod_management/types/IMod';
 import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
 import { settingsReducer } from './reducers/settings';
-import retrieveEndorsedMod from './util/endorseMod';
+import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import EndorseModButton from './views/EndorseModButton';
 import LoginIcon from './views/LoginIcon';
@@ -28,6 +28,7 @@ import * as React from 'react';
 import * as util from 'util';
 
 let nexus: Nexus;
+let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (schema: string,
@@ -130,87 +131,95 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         api.events.emit('retrieve-categories', [gameId, categories, isUpdate], {});
       })
       .catch((err) => {
-        let message = processErrorMessage(err.statusCode, err, gameId, api.translate);
+        let message = processErrorMessage(err.statusCode, err, gameId);
         showError(api.store.dispatch,
           'An error occurred retrieving the Game Info', message);
       });
   });
 };
 
-function processErrorMessage(
-  statusCode: number, errorMessage: string, gameId: string,
-  t: I18next.TranslationFunction) {
-  let message = '';
+function processErrorMessage(statusCode: number, errorMessage: string, gameId: string) {
   if (statusCode === 404) {
-    return message = t('Game not found: {{gameId}}', { replace: { gameId } });
+    return { Error: 'Game not found', Game: gameId };
   } else if ((statusCode >= 500) && (statusCode < 600)) {
-    return message = t('Internal server error');
+    return { Error: 'Internal server error' };
   } else {
-    return message = t('Unknown error, server reported: {{errorMessage}}',
-      { replace: { errorMessage } });
+    return {
+      Error: 'Unknown error',
+      Servermessage: errorMessage,
+    };
   }
 }
 
-function endorseMod(api: IExtensionApi, modId: string, 
-                    id: string, version: string, endorsedStatus: string) {
-  let gameId;
-  currentGame(api.store)
-    .then((game: IGameStored) => {
-      gameId = game.id;
-      log('info', 'endorse mod ', modId);
-      return retrieveEndorsedMod(nexus, gameId, modId, version, endorsedStatus);
-    })
+function endorseModImpl(store: Redux.Store<any>, gameId: string,
+                        modId: string, endorsedStatus: string) {
+  const mod: IMod = getSafe(store.getState(), ['persistent', 'mods', gameId, modId], undefined);
+
+  if (mod === undefined) {
+    log('warn', 'tried to endorse unknown mod', { gameId, modId });
+    return;
+  }
+
+  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+  const version: string = getSafe(mod.attributes, ['version'], undefined);
+
+  store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'pending'));
+  sendEndorseMod(nexus, gameId, nexusModId, version, endorsedStatus)
     .then((endorsed: string) => {
-      api.store.dispatch(setModAttribute(gameId, id, 'endorsed', endorsed));
+      store.dispatch(setModAttribute(gameId, modId, 'endorsed', endorsed));
     })
     .catch((err) => {
-      let message = processErrorMessage(err.statusCode, err.message, gameId, api.translate);
-      showError(api.store.dispatch,
-        'An error occurred endorsing a mod', message);
+      store.dispatch(setModAttribute(gameId, modId, 'endorsed', undefined));
+      let detail = processErrorMessage(err.statusCode, err.message, gameId);
+      showError(store.dispatch, 'An error occurred endorsing a mod', detail);
     });
 };
 
-function getEndorsedIcon(api: IExtensionApi, mod: IMod) {
-  let endorsed: string = getSafe(mod.attributes, ['endorsed'], '');
-  let modId: string = getSafe(mod.attributes, ['modId'], '');
-  let version: string = getSafe(mod.attributes, ['version'], '');
+function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.TranslationFunction) {
+  const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
+  const version: string = getSafe(mod.attributes, ['version'], undefined);
 
+  if ((nexusModId === undefined) || (version === undefined)) {
+    // can't have an endorsement state if we don't know the nexus id of the mod
+    // and apparently we need the version as well
+    return null;
+  }
+
+  const numModId = parseInt(nexusModId, 10);
+
+  if (isNaN(numModId)) {
+    // if the mod id isn't numerical, this isn't a nexus mod
+    // TODO would be better if we had a reliable way to determine if a mod is
+    //   on nexus.
+    return null;
+  }
+
+  const endorsed: string = getSafe(mod.attributes, ['endorsed'], undefined);
+
+  const gameMode = activeGameId(store.getState());
   if (endorsed === undefined) {
-    const gameMode = activeGameId(api.store.getState());
-    if (modId !== undefined) {
-      nexus.getModInfo(parseInt(modId, null), gameMode)
-        .then((modInfo: any) => {
-          api.store.dispatch(setModAttribute(gameMode, mod.id,
-            'endorsed', modInfo.endorsement.endorse_status));
-          if (version === '') {
-            version = modInfo.version;
-            api.store.dispatch(setModAttribute(gameMode, mod.id,
-            'version', modInfo.version));
-          }
-        })
-        .catch((err) => {
-          showError(api.store.dispatch, 'An error occurred endorsing the mod', err.message);
-        });
-    }
+    // if the endorsement state is unknown, request it
+    nexus.getModInfo(parseInt(nexusModId, null), gameMode)
+      .then((modInfo: any) => {
+        store.dispatch(setModAttribute(gameMode, mod.id,
+          'endorsed', modInfo.endorsement.endorse_status));
+      })
+      .catch((err) => {
+        showError(store.dispatch, 'An error occurred looking up the mod', err);
+      });
+    // don't render an endorsement icon while we don't know the current state
+    return null;
   }
 
   return (
     <EndorseModButton
-      api={api}
       endorsedStatus={endorsed}
-      t={api.translate}
-      id={mod.id}
-      modId={modId}
-      version={version}
-      onEndorseMod={endorseEmitter}
+      t={t}
+      gameId={gameMode}
+      modId={mod.id}
+      onEndorseMod={endorseMod}
     />
   );
-
-}
-
-function endorseEmitter(api: IExtensionApi, modId: string,
-                        id: string, version: string, endorsedStatus: string) {
-  api.events.emit('endorse-mod', [modId, id, version, endorsedStatus]);
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -253,7 +262,8 @@ function init(context: IExtensionContextExt): boolean {
     name: 'Endorsed',
     description: 'Endorsed',
     icon: 'star',
-    customRenderer: (mod: IMod) => getEndorsedIcon(context.api, mod),
+    customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
+      createEndorsedIcon(context.api.store, mod, t),
     calc: (mod: IMod) => getSafe(mod.attributes, ['endorsed'], ''),
     placement: 'table',
     isToggleable: true,
@@ -263,9 +273,14 @@ function init(context: IExtensionContextExt): boolean {
 
   context.once(() => {
     let state = context.api.store.getState();
+
     nexus = new Nexus(activeGameId(state),
       getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '')
     );
+
+    endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
+      endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
+
     let registerFunc = () => {
       context.api.registerProtocol('nxm', (url: string) => {
         startDownload(context.api, url);
@@ -279,12 +294,8 @@ function init(context: IExtensionContextExt): boolean {
       retrieveCategories(context.api, isUpdate);
     });
 
-    context.api.events.on('endorse-mod', (result: any) => {
-      let modId = result[0];
-      let id = result[1];
-      let version = result[2];
-      let endorsedStatus = result[3];
-      endorseMod(context.api, modId, id, version, endorsedStatus);
+    context.api.events.on('endorse-mod', (gameId, modId, endorsedStatus) => {
+      endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
     });
 
     context.api.onStateChange(['settings', 'nexus', 'associateNXM'],
