@@ -199,13 +199,16 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
   const gameMode = activeGameId(store.getState());
   if (endorsed === undefined) {
     // if the endorsement state is unknown, request it
-    nexus.getModInfo(parseInt(nexusModId, null), gameMode)
+    nexus.getModInfo(parseInt(nexusModId, 10), convertGameId(gameMode))
       .then((modInfo: any) => {
         store.dispatch(setModAttribute(gameMode, mod.id,
           'endorsed', modInfo.endorsement.endorse_status));
       })
       .catch((err) => {
         showError(store.dispatch, 'An error occurred looking up the mod', err);
+        // prevent this error to come up every time the icon is re-rendered
+        store.dispatch(setModAttribute(gameMode, mod.id,
+          'endorsed', 'Undecided'));
       });
     // don't render an endorsement icon while we don't know the current state
     return null;
