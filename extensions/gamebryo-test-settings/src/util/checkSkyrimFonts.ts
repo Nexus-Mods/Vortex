@@ -24,9 +24,8 @@ export function checkSkyrimFont(
     .then((fontconfig: NodeBuffer) => {
       let textRows = fontconfig.toString().split('\n');
       textRows.forEach(row => {
-        if (row.startsWith('fontlib')) {
-          let font = row.split(' ');
-          fonts.push(font[1].replace(/("|')/g, ''));
+        if (row.startsWith('fontlib ')) {
+          fonts.push(row.trim().replace(/^fontlib +["'](.*)["'].*/, '$1'));
         }
       });
 
