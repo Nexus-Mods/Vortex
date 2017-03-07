@@ -2,7 +2,7 @@ import { iniPath } from './gameSupport';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { selectors, types, util } from 'nmm-api';
+import { selectors, types } from 'nmm-api';
 import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
 import * as path from 'path';
 
@@ -17,8 +17,8 @@ export const oblivionDefaultFonts = {
   'SFontFile_5': 'Data\\Fonts\\Handwritten.fnt',
 };
 
-export function checkOblivionFont(store: Redux.Store<types.IState>,
-                                  gameId: string): Promise<string[]> {
+function checkOblivionFont(store: Redux.Store<types.IState>,
+                           gameId: string): Promise<string[]> {
 
   let missingFonts: string[] = [];
 
@@ -43,8 +43,7 @@ export function checkOblivionFont(store: Redux.Store<types.IState>,
     })
     .then(() => {
       return Promise.resolve(missingFonts);
-    })
-    .catch((err: Error) => {
-      util.showError(store.dispatch, 'Failed to read Oblivion.ini', err);
     });
 }
+
+export default checkOblivionFont;

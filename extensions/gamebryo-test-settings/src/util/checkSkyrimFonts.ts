@@ -3,13 +3,13 @@ import * as fs from 'fs-extra-promise';
 import { selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 
-export const skyrimDefaultFonts = [
+const skyrimDefaultFonts = [
   'Interface\\fonts_console.swf',
   'Interface\\fonts_en.swf',
   'Interface\\fonts_en2.swf',
 ];
 
-export function checkSkyrimFont(
+function checkSkyrimFonts(
   store: Redux.Store<types.IState>,
   gameId: string): Promise<string[]> {
 
@@ -43,8 +43,7 @@ export function checkSkyrimFont(
     })
     .then(() => {
       return Promise.resolve(missingFonts);
-    })
-    .catch((err: Error) => {
-      util.showError(store.dispatch, 'Failed to read fontconfig.txt', err);
     });
 }
+
+export default checkSkyrimFonts;

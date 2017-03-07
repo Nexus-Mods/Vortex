@@ -1,5 +1,5 @@
-import { checkOblivionFont, oblivionDefaultFonts } from './util/checkOblivionFonts';
-import { checkSkyrimFont } from './util/checkSkyrimFonts';
+import checkOblivionFont, { oblivionDefaultFonts } from './util/checkOblivionFonts';
+import checkSkyrimFonts from './util/checkSkyrimFonts';
 import { iniPath } from './util/gameSupport';
 
 import * as Promise from 'bluebird';
@@ -59,7 +59,16 @@ function init(context): boolean {
             fixResolve();
           }),
         });
-      });
+      })
+      .catch((err: Error) => {
+         return resolve({
+          description: {
+            short: 'Failed to read Oblivion.ini.',
+            long: err.toString(),
+          },
+          severity: 'error',
+        });
+    });
   });
 
   const testSkyrimFonts = () => new Promise<types.ITestResult>((resolve, reject) => {
@@ -72,7 +81,7 @@ function init(context): boolean {
 
     let messages = 'List of missing fonts: ';
 
-    checkSkyrimFont(store, gameId)
+    checkSkyrimFonts(store, gameId)
       .then((missingFonts: string[]) => {
 
         if (missingFonts.length === 0) {
@@ -93,7 +102,16 @@ function init(context): boolean {
           },
           severity: 'error',
         });
-      });
+      })
+      .catch((err: Error) => {
+        return resolve({
+          description: {
+            short: 'Failed to read fontconfig.txt.',
+            long: err.toString(),
+          },
+          severity: 'error',
+        });
+    });
   });
 
   context.registerTest('oblivion-fonts', 'gamemode-activated', testOblivionFonts);
