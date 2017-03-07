@@ -89,7 +89,7 @@ class HighlightButton extends ComponentEx<IProps, IHighlightButtonState> {
       <div style={{ textAlign: 'center' }}>
         <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popoverBottom}>
           <IconButton
-            className={color !== '' ? color : 'highlight-default'}
+            className={'highlight-base ' + (color !== '' ? color : 'highlight-default')}
             icon={icon !== '' ? icon : 'eye'}
             id={mod.id}
             tooltip={t('Change Icon')}
@@ -104,7 +104,7 @@ class HighlightButton extends ComponentEx<IProps, IHighlightButtonState> {
       <Button
         type='button'
         key={highlightColor}
-        className={highlightColor}
+        className={'highlight-base ' + highlightColor}
         id={highlightColor}
         value={highlightColor}
         onClick={this.toggleColors}

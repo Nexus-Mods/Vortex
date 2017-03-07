@@ -42,116 +42,95 @@
   }
 }
 
-.highlight-1 {
+.highlight-base {
   padding: 1px 5px;
   border: 0px;
   color: $gray-darker;
-  background-color: #ff0000;
   &:hover {
     color: $link-hover-color;
-    background-color: #ff0000;
   }
   &:active {
     color: $link-hover-color;
-    background-color: #ff0000;
   }
   &:focus {
     color: $link-hover-color;
+  }
+}
+
+.highlight-1 {
+  background-color: #ff0000;
+  &:hover {
+    background-color: #ff0000;
+  }
+  &:active {
+    background-color: #ff0000;
+  }
+  &:focus {
     background-color: #ff0000;
   }
 }
 
 .highlight-2 {
-  padding: 1px 5px;
-  border: 0px;
-  color: $gray-darker;
   background-color: #03a9f4;
   &:hover {
-    color: $link-hover-color;
     background-color: #03a9f4;
   }
   &:active {
-    color: $link-hover-color;
     background-color: #03a9f4;
   }
   &:focus {
-    color: $link-hover-color;
     background-color: #03a9f4;
   }
 }
 
 .highlight-3 {
-  padding: 1px 5px;
-  border: 0px;
-  color: $gray-darker;
   background-color: #4caf50;
   &:hover {
-    color: $link-hover-color;
     background-color: #4caf50;
   }
   &:active {
-    color: $link-hover-color;
     background-color: #4caf50;
   }
   &:focus {
-    color: $link-hover-color;
     background-color: #4caf50;
   }
 }
 
 .highlight-4 {
-  padding: 1px 5px;
-  border: 0px;
-  color: $gray-darker;
   background-color: #cddc39;
   &:hover {
-    color: $link-hover-color;
     background-color: #cddc39;
   }
   &:active {
-    color: $link-hover-color;
     background-color: #cddc39;
   }
   &:focus {
-    color: $link-hover-color;
     background-color: #cddc39;
   }
 }
 
 .highlight-5 {
-  padding: 1px 5px;
-  border: 0px;
-  color: $gray-darker;
   background-color: #ff9800;
   &:hover {
-    color: $link-hover-color;
     background-color: #ff9800;
   }
   &:active {
-    color: $link-hover-color;
     background-color: #ff9800;
   }
   &:focus {
-    color: $link-hover-color;
     background-color: #ff9800;
   }
 }
 
 .highlight-default {
-  padding: 1px 5px;
-  border: 0px;
-  color: $gray-darker;
   background-color: transparent;
   &:hover {
-    color: $link-hover-color;
     background-color: transparent;
   }
   &:active {
-    color: $link-hover-color;
     background-color: transparent;
   }
   &:focus {
-    color: $link-hover-color;
     background-color: transparent;
   }
 }
