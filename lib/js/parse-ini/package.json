@@ -20,6 +20,7 @@
     "@types/ref": "^0.0.28"
   },
   "dependencies": {
+    "bluebird": "^3.5.0",
     "ffi": "^2.2.0",
     "lodash": "^4.17.4",
     "ref": "^1.3.4"

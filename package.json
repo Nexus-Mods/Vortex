@@ -18,7 +18,9 @@
     "_install_app": "cd app && npm install && npm update",
 
     "build_api": "tsc -p ./api && npm install ./api",
-    "build_js_libs": "tsc -p ./lib/js/nexus-api && tsc -p ./lib/js/parse-ini",
+    "build_nexus-api": "cd lib/js/nexus-api && npm install && npm run build", 
+    "build_parse-ini": "cd lib/js/parse-ini && npm install && npm run build", 
+    "build_js_libs": "npm run build_nexus-api && npm run build_parse-ini",    
 
     "build_rest": "npm run _assets_out && npm run build_api && npm run _build_subprojects_out",
 
