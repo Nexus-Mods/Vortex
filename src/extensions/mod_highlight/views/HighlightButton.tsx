@@ -10,7 +10,15 @@ import { IMod } from '../../mod_management/types/IMod';
 import * as React from 'react';
 
 import { Button, ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
-import { CirclePicker } from 'react-color';
+
+let cssHighlightList: string[] = [
+  'highlight-1',
+  'highlight-2',
+  'highlight-3',
+  'highlight-4',
+  'highlight-5',
+  'highlight-default',
+];
 
 export interface IBaseProps {
   mod: IMod;
@@ -47,36 +55,12 @@ class HighlightButton extends ComponentEx<IProps, IHighlightButtonState> {
   }
 
   public render(): JSX.Element {
-    let {mod, t } = this.props;
+    let { mod, t } = this.props;
     let color = getSafe(mod.attributes, ['color'], '');
     let icon = getSafe(mod.attributes, ['icon'], '');
-    let modColors: string[] = ['#ff0000', '#03a9f4', '#4caf50', '#cddc39', '#ff9800', '#ffffff'];
+
     let modIcon: string[] = ['bomb', 'map', 'shield', 'flask',
-     'flag', 'hotel', 'bolt', 'home', 'eye'];
-    let spacing: number = 10;
-    let highlightClassName = '';
-
-    switch (color) {
-      case '#ff0000':
-        highlightClassName = 'color-highlight-1';
-        break;
-      case '#03a9f4':
-        highlightClassName = 'color-highlight-2';
-        break;
-      case '#4caf50':
-        highlightClassName = 'color-highlight-3';
-        break;
-      case '#cddc39':
-        highlightClassName = 'color-highlight-4';
-        break;
-      case '#ff9800':
-        highlightClassName = 'color-highlight-5';
-        break;
-
-      default:
-        highlightClassName = 'btn-embed';
-        break;
-    }
+      'flag', 'hotel', 'bolt', 'home', 'eye'];
 
     const popoverBottom = (
       <Popover
@@ -85,15 +69,12 @@ class HighlightButton extends ComponentEx<IProps, IHighlightButtonState> {
         title={t('Highlight Settings')}
       >
         <FormGroup key={mod.id}>
-          <ControlLabel>{t('Select mod color')}
+          <ControlLabel>{t('Select theme')}
           </ControlLabel>
           <div key='dialog-form-colors'>
-            <CirclePicker
-              onChange={this.toggleColors}
-              colors={modColors}
-              width='100%'
-              circleSpacing={spacing}
-            />
+            {cssHighlightList.map((highlightColor) => {
+              return this.renderHighlightColor(highlightColor);
+            })}
           </div>
           <ControlLabel>{t('Select mod icon')}
           </ControlLabel>
@@ -105,16 +86,31 @@ class HighlightButton extends ComponentEx<IProps, IHighlightButtonState> {
     );
 
     return (
-      <div style={{textAlign:'center'}}>
+      <div style={{ textAlign: 'center' }}>
         <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popoverBottom}>
           <IconButton
-            className={highlightClassName}
+            className={color !== '' ? color : 'highlight-default'}
             icon={icon !== '' ? icon : 'eye'}
             id={mod.id}
             tooltip={t('Change Icon')}
           />
         </OverlayTrigger>
       </div>
+    );
+  }
+
+  private renderHighlightColor(highlightColor: string): JSX.Element {
+    return (
+      <Button
+        type='button'
+        key={highlightColor}
+        className={highlightColor}
+        id={highlightColor}
+        value={highlightColor}
+        onClick={this.toggleColors}
+      >
+        <Icon name={highlightColor === 'highlight-default' ? 'minus-circle' : 'plus-circle'} />
+      </Button>
     );
   }
 
@@ -134,13 +130,13 @@ class HighlightButton extends ComponentEx<IProps, IHighlightButtonState> {
   }
 
   private toggleIcon = (evt) => {
-    let { gameMode, mod, onSetModAttribute} = this.props;
+    let { gameMode, mod, onSetModAttribute } = this.props;
     onSetModAttribute(gameMode, mod.id, 'icon', evt.currentTarget.id);
   }
 
   private toggleColors = (color) => {
-    let { gameMode, mod, onSetModAttribute} = this.props;
-    onSetModAttribute(gameMode, mod.id, 'color', color.hex);
+    let { gameMode, mod, onSetModAttribute } = this.props;
+    onSetModAttribute(gameMode, mod.id, 'color', color.currentTarget.value);
   }
 
 }
