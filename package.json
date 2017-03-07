@@ -18,9 +18,6 @@
     "_install_app": "cd app && npm install && npm update",
 
     "build_api": "tsc -p ./api && npm install ./api",
-    "build_nexus-api": "cd lib/js/nexus-api && npm install && npm run build", 
-    "build_parse-ini": "cd lib/js/parse-ini && npm install && npm run build", 
-    "build_js_libs": "npm run build_nexus-api && npm run build_parse-ini",    
 
     "build_rest": "npm run _assets_out && npm run build_api && npm run _build_subprojects_out",
 
@@ -33,7 +30,7 @@
     "preinstallex": "npm install rm-local-modules && rm-local-modules",
     "installex": "npm install && npm run build",
 
-    "preinstall": "git submodule update --init --recursive && npm run build_js_libs",
+    "preinstall": "git submodule update --init --recursive",
     "postinstall": "typings prune && typings install",
 
     "lessc": "lessc --clean-css --include-path=node_modules/bootswatch:node_modules/bootstrap-less src/stylesheets/index.less out/assets/css/base.css",
