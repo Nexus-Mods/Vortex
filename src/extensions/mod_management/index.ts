@@ -242,7 +242,7 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
       if (store.getState().settings.automation.deploy) {
-        activationTimer.schedule();
+        activationTimer.schedule(undefined);
       }
     });
 

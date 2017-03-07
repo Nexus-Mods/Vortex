@@ -1,10 +1,11 @@
-import {selectRows, setAttributeSort, setAttributeVisible} from '../actions/tables';
+import {selectRows, setAttributeSort, setAttributeVisible, setSplitPos} from '../actions/tables';
 import {IAttributeState} from '../types/IAttributeState';
 import {IIconDefinition} from '../types/IIconDefinition';
 import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
+import Debouncer from '../util/Debouncer';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import {getSafe, setSafe} from '../util/storeHelper';
 
@@ -41,6 +42,7 @@ export interface IBaseProps {
 interface IConnectedProps {
   attributeState: { [id: string]: IAttributeState };
   rowState: { [id: string]: IRowState };
+  splitPos: number;
   language: string;
 }
 
@@ -48,6 +50,7 @@ interface IActionProps {
   onSelectRows: (tableId: string, rowIds: string[], selected: boolean) => void;
   onSetAttributeVisible: (tableId: string, attributeId: string, visible: boolean) => void;
   onSetAttributeSort: (tableId: string, attributeId: string, direction: SortDirection) => void;
+  onSetSplitPos: (tableId: string, pos: number) => void;
 }
 
 interface IExtensionProps {
@@ -59,6 +62,7 @@ type LookupCalculated = { [rowId: string]: { [attributeId: string]: any } };
 interface IComponentState {
   lastSelected?: string;
   calculatedValues?: LookupCalculated;
+  splitMax: number;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps;
@@ -73,15 +77,23 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps;
 class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private mVisibleAttributes: ITableAttribute[];
+  private mSplitDebouncer: Debouncer;
+  private mSplitContainer: any;
 
   constructor(props: IProps) {
     super(props);
     this.state = {
-      lastSelected: undefined,
+      lastSelected: Object.keys(props.rowState).find((key) => props.rowState[key].selected),
       calculatedValues: undefined,
+      splitMax: 9999,
     };
     this.mVisibleAttributes = this.visibleAttributes(props.objects, props.attributeState);
     this.updateCalculatedValues(props);
+
+    this.mSplitDebouncer = new Debouncer((...args) => {
+      props.onSetSplitPos(props.tableId, args[0]);
+      return null;
+    }, 100);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -95,7 +107,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, actions, objects, tableId } = this.props;
+    const { t, actions, objects, splitPos, tableId } = this.props;
+    const { splitMax } = this.state;
     const { lastSelected } = this.state;
 
     let hasActions = false;
@@ -113,7 +126,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           </div>
         </Fixed>
         <Flex>
-          <SplitPane split='vertical' defaultSize={300} primary='second'>
+          <SplitPane
+            split='vertical'
+            maxSize={splitMax}
+            defaultSize={splitPos}
+            onChange={this.changeSplitPos}
+            primary='second'
+            ref={this.setSplitRef}
+          >
             <div id='table-main-pane'>
               <Table bordered condensed hover>
                 <thead>
@@ -152,6 +172,25 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return <tbody>
       {sorted.map((row) => this.renderRow(row, visibleAttributes))}
     </tbody>;
+  }
+
+  private setSplitRef = (ref) => {
+    this.mSplitContainer = ref;
+  }
+
+  private changeSplitPos = (value) => {
+    this.mSplitDebouncer.schedule(undefined, value);
+    const totalWidth = this.mSplitContainer.splitPane.offsetWidth;
+    let maxWidth = Math.min(
+      totalWidth * 0.5,
+      totalWidth - 700,
+    );
+
+    if (maxWidth !== this.state.splitMax) {
+      this.setState(update(this.state, {
+        splitMax: { $set: maxWidth },
+      }));
+    }
   }
 
   private updateCalculatedValues(props) {
@@ -235,7 +274,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderDetails = (rowId: string) => {
-    if (rowId === undefined) {
+    if ((rowId === undefined) || (this.state.calculatedValues === undefined)) {
       return null;
     }
 
@@ -456,6 +495,7 @@ function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedProps {
     attributeState: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'attributes'], {}),
     rowState: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'rows'], {}),
     language: state.settings.interface.language,
+    splitPos: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'splitPos'], 200),
   };
 }
 
@@ -467,6 +507,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
       dispatch(setAttributeVisible(tableId, attributeId, visible)),
     onSetAttributeSort: (tableId: string, attributeId: string, dir: SortDirection) =>
       dispatch(setAttributeSort(tableId, attributeId, dir)),
+    onSetSplitPos: (tableId: string, pos: number) => dispatch(setSplitPos(tableId, pos)),
   };
 }
 

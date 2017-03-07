@@ -11,19 +11,20 @@ type Callback = (err: Error) => void;
  */
 class Debouncer {
   private mDebounceMS: number;
-  private mFunc: () => Error | Promise<void>;
+  private mFunc: (...args: any[]) => Error | Promise<void>;
   private mTimer: NodeJS.Timer;
 
   private mCallbacks: Callback[] = [];
   private mRunning: boolean = false;
   private mReschedule: 'no' | 'yes' | 'immediately' = 'no';
+  private mArgs: any[] = [];
 
-  constructor(func: () => Error | Promise<void>, debounceMS: number) {
+  constructor(func: (...args: any[]) => Error | Promise<void>, debounceMS: number) {
     this.mFunc = func;
     this.mDebounceMS = debounceMS;
   }
 
-  public schedule(callback?: (err: Error) => void) {
+  public schedule(callback: (err: Error) => void, ...args: any[]) {
     if (this.mTimer !== undefined) {
       clearTimeout(this.mTimer);
     }
@@ -31,6 +32,8 @@ class Debouncer {
     if (callback !== undefined) {
       this.mCallbacks.push(callback);
     }
+
+    this.mArgs = args;
 
     if (this.mRunning) {
       if (this.mReschedule !== 'immediately') {
@@ -41,7 +44,7 @@ class Debouncer {
     }
   }
 
-  public runNow(callback?: (err: Error) => void) {
+  public runNow(callback: (err: Error) => void, ...args: any[]) {
     if (this.mTimer !== undefined) {
       clearTimeout(this.mTimer);
     }
@@ -49,6 +52,8 @@ class Debouncer {
     if (callback !== undefined) {
       this.mCallbacks.push(callback);
     }
+
+    this.mArgs = args;
 
     if (this.mRunning) {
       this.mReschedule = 'immediately';
@@ -66,9 +71,11 @@ class Debouncer {
     this.mRunning = true;
     let callbacks = this.mCallbacks;
     this.mCallbacks = [];
+    let args = this.mArgs;
+    this.mArgs = [];
     this.mTimer = undefined;
 
-    let prom: Error | Promise<void> = this.mFunc();
+    let prom: Error | Promise<void> = this.mFunc(...args);
     if (prom instanceof Promise) {
       prom.then(() => { callbacks.forEach((cb) => cb(null)); })
           .catch((err: Error) => { callbacks.forEach((cb) => cb(err)); })
@@ -79,7 +86,7 @@ class Debouncer {
               this.run();
             } else if (this.mReschedule === 'yes') {
               this.mReschedule = 'no';
-              this.schedule();
+              this.schedule(undefined);
             }
           });
     } else {

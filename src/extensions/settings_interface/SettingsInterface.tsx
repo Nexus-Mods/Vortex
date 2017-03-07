@@ -91,12 +91,18 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
         </FormGroup>
         <FormGroup>
           <ControlLabel>{t('Automation')}</ControlLabel>
-          <Checkbox checked={autoDeployment} onChange={this.toggleAutoDeployment}>
-            { t('Deploy mods immediately when they get enabled') }
-          </Checkbox>
-          <More id='more-deploy-settings' name={t('Deployment')}>
-            {getTextModManagement('deployment', t)}
-          </More>
+          <div>
+            <Checkbox
+              checked={autoDeployment}
+              onChange={this.toggleAutoDeployment}
+              style={{ display: 'inline' }}
+            >
+              {t('Deploy mods immediately when they get enabled')}
+            </Checkbox>
+            <More id='more-deploy-settings' name={t('Deployment')}>
+              {getTextModManagement('deployment', t)}
+            </More>
+          </div>
         </FormGroup>
       </form>
     );

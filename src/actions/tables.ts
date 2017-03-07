@@ -12,3 +12,7 @@ export const setAttributeSort: any = safeCreateAction(
     'SET_ATTRIBUTE_SORT',
     (tableId: string, attributeId: string, direction: SortDirection) =>
         ({tableId, attributeId, direction}));
+
+export const setSplitPos: any = safeCreateAction(
+    'SET_SPLIT_POS',
+    (tableId: string, pos: number) => ({ tableId, pos }));

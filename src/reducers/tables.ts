@@ -33,6 +33,8 @@ export const tableReducer: IReducerSpec = {
       const { tableId, attributeId, direction } = payload;
       return setSafe(state, [tableId, 'attributes', attributeId, 'sortDirection'], direction);
     },
+    [actions.setSplitPos]: (state, payload) =>
+      setSafe(state, [payload.tableId, 'splitPos'], payload.pos),
   },
   defaults: {
   },
