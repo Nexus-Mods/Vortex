@@ -1,24 +1,15 @@
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
 import { ComponentEx } from '../../util/ComponentEx';
-import { log } from '../../util/log';
 import Icon from '../../views/Icon';
 import { Button } from '../../views/TooltipControls';
 
-import elevated from '../../util/elevated';
-
-import ipc = require('node-ipc');
-
-import runElevatedCustomTool from './runElevatedCustomTool';
-
-import { execFile } from 'child_process';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
 import { Image } from 'react-bootstrap';
 import { ContextMenu, ContextMenuLayer, MenuItem } from 'react-contextmenu';
-import { generate as shortid } from 'shortid';
 
 export interface IRemoveTool {
   (gameId: string, toolId: string): void;
@@ -30,47 +21,10 @@ interface IContextMenuProps {
   gameId: string;
   discovery: boolean;
   onRemoveTool: IRemoveTool;
+  onRunTool: (toolId: string) => void;
   onAddNewTool: () => void;
   onChangeToolParams: (toolId: string) => void;
   onShowError: (message: string, details?: string) => void;
-}
-
-// run the specified tool in a separate process with elevated
-// permissions
-function runToolElevated(tool: IDiscoveredTool,
-                         onError: (message: string, details: string) => void) {
-  let toolCWD = tool.currentWorkingDirectory !== undefined ?
-    tool.currentWorkingDirectory : path.dirname(tool.path);
-  let elevatedTool = {
-    id: tool.id,
-    toolPath: tool.path.replace(/\\/g, '\\\\'),
-    parameters: tool.parameters,
-    toolCWD,
-  };
-
-  // the ipc path has to be different every time so that
-  // the ipc lib doesn't report EADDRINUSE when the same tool
-  // is started multiple times.
-  // Also node-ipc has a bug and would crash the application
-  // if that were to happen
-  const ipcPath: string = 'tool_elevated_' + shortid();
-  // communicate with the elevated process via ipc
-  ipc.serve(ipcPath, () => {
-    ipc.server.on('finished', (modPath: string) => {
-      ipc.server.stop();
-    });
-    ipc.server.on('socket.disconnected', () => {
-      log('info', 'disconnected');
-    });
-    ipc.server.on('log', (ipcData: any) => {
-      log(ipcData.level, ipcData.message, ipcData.meta);
-      onError(ipcData.message, ipcData.meta.err);
-    });
-    // run it
-    elevated(ipcPath, runElevatedCustomTool,
-      elevatedTool);
-  });
-  ipc.server.start();
 }
 
 class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
@@ -106,31 +60,7 @@ class MyContextMenu extends ComponentEx<IContextMenuProps, {}> {
   private nop = () => undefined;
 
   private runCustomTool = (e, data) => {
-    try {
-      let params: string[] = data.parameters.split(' ');
-      execFile(data.path, params, (err, output) => {
-        if (err) {
-          log('info', 'error', { err });
-          return;
-        }
-      });
-    } catch (err) {
-      if (err.errno === 'UNKNOWN') {
-        const {dialog} = require('electron').remote;
-        dialog.showMessageBox({
-          buttons: ['Ok', 'Cancel'],
-          title: 'Missing elevation',
-          message: data.id + ' cannot be started because it requires elevation. ' +
-          'Would you like to run the tool elevated?',
-        }, (buttonIndex) => {
-          if (buttonIndex === 0) {
-            runToolElevated(data, this.props.onShowError);
-          }
-        });
-      } else {
-        log('info', 'failed to run custom tool', { err });
-      }
-    }
+    this.props.onRunTool(data);
   };
 
   private handleRemoveClick = (e, data: IDiscoveredTool) => {
@@ -155,6 +85,7 @@ export interface IProps {
   game: IGame;
   toolId: string;
   tool: IDiscoveredTool;
+  onRunTool: (toolId: string) => void;
   onChangeToolLocation: (gameId: string, toolId: string, result: IDiscoveredTool) => void;
   onRemoveTool: IRemoveTool;
   onAddNewTool: () => void;
@@ -215,7 +146,8 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   }
 
   public render() {
-    const { t, game, toolId, tool, onAddNewTool, onRemoveTool, onShowError } = this.props;
+    const { t, game, toolId, tool, onAddNewTool, onRemoveTool,
+            onShowError } = this.props;
     let toolPath = tool.path;
     const valid = (toolPath !== undefined) && (toolPath !== '');
 
@@ -232,6 +164,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
           tool={tool}
           gameId={game.id}
           discovery={valid}
+          onRunTool={this.props.onRunTool}
           onRemoveTool={onRemoveTool}
           onAddNewTool={onAddNewTool}
           onChangeToolParams={this.handleEditTool}
@@ -253,37 +186,8 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   }
 
   private runTool = () => {
-    let { onShowError, tool } = this.props;
-    // we shouldn't get here if the tool is not discovered
-    let discoveredTool = tool as IDiscoveredTool;
-    try {
-      let execOptions = {
-        cwd: discoveredTool.currentWorkingDirectory !== undefined ?
-        discoveredTool.currentWorkingDirectory : path.dirname(discoveredTool.path),
-      };
-
-      execFile(discoveredTool.path, discoveredTool.parameters, execOptions, (err, output) => {
-        if (err) {
-          log('error', 'failed to spawn', { err, path: discoveredTool.path });
-        }
-      });
-    } catch (err) {
-      if (err.errno === 'UNKNOWN') {
-        const {dialog} = require('electron').remote;
-        dialog.showMessageBox({
-          buttons: ['Ok', 'Cancel'],
-          title: 'Missing elevation',
-          message: tool.name + ' cannot be started because it requires elevation. ' +
-          'Would you like to run the tool elevated?',
-        }, (buttonIndex) => {
-          if (buttonIndex === 0) {
-            runToolElevated(discoveredTool, onShowError);
-          }
-        });
-      } else {
-        log('info', 'failed to run custom tool', { err: err.message });
-      }
-    }
+    let { onRunTool, tool } = this.props;
+    onRunTool(tool.id);
   };
 }
 

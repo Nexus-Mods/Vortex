@@ -93,8 +93,8 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
   context.api.sendNotification({
     id: notificationId,
     type: 'activity',
-    message: t('Activating mods'),
-    title: t('Activating'),
+    message: t('Deploying mods'),
+    title: t('Deploying'),
   });
 
   // test if anything was changed by an external application
@@ -238,6 +238,10 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('schedule-activate-mods', (callback: (err: Error) => void) => {
       activationTimer.schedule(callback);
+    });
+
+    context.api.events.on('await-activation', (callback: (err: Error) => void) => {
+      activationTimer.wait(callback);
     });
 
     context.api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {

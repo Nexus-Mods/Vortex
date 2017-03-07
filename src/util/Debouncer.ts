@@ -15,6 +15,7 @@ class Debouncer {
   private mTimer: NodeJS.Timer;
 
   private mCallbacks: Callback[] = [];
+  private mAddCallbacks: Callback[] = [];
   private mRunning: boolean = false;
   private mReschedule: 'no' | 'yes' | 'immediately' = 'no';
   private mArgs: any[] = [];
@@ -24,12 +25,19 @@ class Debouncer {
     this.mDebounceMS = debounceMS;
   }
 
+  /**
+   * schedule the function and invoke the callback once that is done
+   * @param callback the callback to invoke upon completion
+   * @param args the arguments to pass to the function. When the timer expires
+   *             and the function actually gets invoked, only the last set of
+   *             parameters will be used
+   */
   public schedule(callback: (err: Error) => void, ...args: any[]) {
     if (this.mTimer !== undefined) {
       clearTimeout(this.mTimer);
     }
 
-    if (callback !== undefined) {
+    if ((callback !== undefined) && (callback !== null)) {
       this.mCallbacks.push(callback);
     }
 
@@ -44,12 +52,22 @@ class Debouncer {
     }
   }
 
+  /**
+   * run the function immediately without waiting for the timer
+   * to run out. (It does cancel the timer though and invokes all
+   * scheduled timeouts)
+   * 
+   * @param {(err: Error) => void} callback 
+   * @param {...any[]} args 
+   * 
+   * @memberOf Debouncer
+   */
   public runNow(callback: (err: Error) => void, ...args: any[]) {
     if (this.mTimer !== undefined) {
       clearTimeout(this.mTimer);
     }
 
-    if (callback !== undefined) {
+    if ((callback !== undefined) && (callback !== null)) {
       this.mCallbacks.push(callback);
     }
 
@@ -58,6 +76,33 @@ class Debouncer {
     if (this.mRunning) {
       this.mReschedule = 'immediately';
     } else {
+      this.run();
+    }
+  }
+
+  /**
+   * wait for the completion of the current timer without scheduling it.
+   * if the function is not scheduled currently the callback will be
+   * called (as a success) immediately.
+   * This does not reset the timer
+   * 
+   * @param {(err: Error) => void} callback 
+   * @param {boolean} immediately if set (default is false) the function gets called
+   *                              immediately instead of awaiting the timer
+   * 
+   * @memberOf Debouncer
+   */
+  public wait(callback: (err: Error) => void, immediately: boolean = false) {
+    if ((this.mTimer === undefined) && !this.mRunning) {
+      // not scheduled
+      return callback(null);
+    }
+
+    this.mAddCallbacks.push(callback);
+
+    if (immediately && !this.mRunning)  {
+      clearTimeout(this.mTimer);
+
       this.run();
     }
   }
@@ -77,8 +122,8 @@ class Debouncer {
 
     let prom: Error | Promise<void> = this.mFunc(...args);
     if (prom instanceof Promise) {
-      prom.then(() => { callbacks.forEach((cb) => cb(null)); })
-          .catch((err: Error) => { callbacks.forEach((cb) => cb(err)); })
+      prom.then(() => this.invokeCallbacks(callbacks, null))
+          .catch((err: Error) => this.invokeCallbacks(callbacks, err))
           .finally(() => {
             this.mRunning = false;
             if (this.mReschedule === 'immediately') {
@@ -91,8 +136,14 @@ class Debouncer {
           });
     } else {
       this.mRunning = false;
-      callbacks.forEach((cb) => cb(prom as Error));
+      this.invokeCallbacks(callbacks, prom as Error);
     }
+  }
+
+  private invokeCallbacks(localCallbacks: Callback[], err: Error) {
+    localCallbacks.forEach((cb) => cb(err));
+    this.mAddCallbacks.forEach((cb) => cb(err));
+    this.mAddCallbacks = [];
   }
 
   private startTimer() {

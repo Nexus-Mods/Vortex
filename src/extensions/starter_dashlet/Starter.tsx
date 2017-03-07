@@ -1,5 +1,8 @@
+import { showDialog } from '../../actions/notifications';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -13,9 +16,11 @@ import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult'
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IToolStored } from '../gamemode_management/types/IToolStored';
 
+import runToolElevated from './runToolElevated';
 import ToolButton from './ToolButton';
 import ToolEditDialog from './ToolEditDialog';
 
+import * as Promise from 'bluebird';
 import { execFile } from 'child_process';
 import * as path from 'path';
 import * as React from 'react';
@@ -32,7 +37,9 @@ interface IActionProps {
   onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => void;
   onRemoveDiscoveredTool: (gameId: string, toolId: string) => void;
   onChangeToolParams: (toolId: string) => void;
-  onShowError: (message: string, details?: string) => void;
+  onShowError: (message: string, details?: string | Error) => void;
+  onShowDialog: (type: DialogType, title: string, content: IDialogContent,
+                 actions: DialogActions) => Promise<IDialogResult>;
 }
 
 interface IConnectedProps {
@@ -40,6 +47,7 @@ interface IConnectedProps {
   knownGames: IGameStored[];
   discoveredGames: { [id: string]: IDiscoveryResult };
   discoveredTools: { [id: string]: IDiscoveredTool };
+  autoDeploy: boolean;
 }
 
 type IWelcomeScreenProps = IConnectedProps & IActionProps;
@@ -90,11 +98,99 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   private startGame = () => {
-    const { discoveredGames, gameMode } = this.props;
-    const game = this.currentGame();
-    const discovery = discoveredGames[gameMode];
+    this.startDeploy()
+    .then((doStart: boolean) => {
+      const {discoveredGames, gameMode} = this.props;
+      if (doStart) {
+        const game = this.currentGame();
+        const discovery = discoveredGames[gameMode];
 
-    execFile(path.join(discovery.path, game.executable));
+        execFile(path.join(discovery.path, game.executable));
+      }
+    })
+    .catch((err: Error) => {
+      this.props.onShowError('Failed to activate', err);
+    })
+    ;
+  }
+
+ private runTool = (toolId: string) => {
+    this.startDeploy()
+      .then((doStart: boolean) => {
+        if (!doStart) {
+          return;
+        }
+        const { discoveredTools, onShowError } = this.props;
+
+        let discoveredTool = discoveredTools[toolId];
+        try {
+          let execOptions = {
+            cwd: discoveredTool.currentWorkingDirectory !== undefined ?
+              discoveredTool.currentWorkingDirectory : path.dirname(discoveredTool.path),
+          };
+
+          execFile(discoveredTool.path, discoveredTool.parameters, execOptions, (err, output) => {
+            if (err) {
+              log('error', 'failed to spawn', { err, path: discoveredTool.path });
+            }
+          });
+        } catch (err) {
+          if (err.errno === 'UNKNOWN') {
+            const { dialog } = require('electron').remote;
+            dialog.showMessageBox({
+              buttons: ['Ok', 'Cancel'],
+              title: 'Missing elevation',
+              message: discoveredTool.name + ' cannot be started because it requires elevation. ' +
+              'Would you like to run the tool elevated?',
+            }, (buttonIndex) => {
+              if (buttonIndex === 0) {
+                runToolElevated(discoveredTool, onShowError);
+              }
+            });
+          } else {
+            log('info', 'failed to run custom tool', { err: err.message });
+          }
+        }
+    });
+  }
+
+  private startDeploy(): Promise<boolean> {
+    const { autoDeploy, onShowDialog } = this.props;
+    if (!autoDeploy) {
+      return onShowDialog('question', 'Deploy now?', {
+        message: 'You should deploy mods now, otherwise the mods in game '
+               + 'will be outdated',
+      }, {
+        Cancel: null,
+        Skip: null,
+        Deploy: null,
+      })
+      .then((result) => {
+        switch (result.action) {
+          case 'Skip': return Promise.resolve(true);
+          case 'Deploy': return new Promise<boolean>((resolve, reject) => {
+            this.context.api.events.emit('activate-mods', (err) => {
+              if (err !== null) {
+                reject(err);
+              } else {
+                resolve(true);
+              }
+            });
+          });
+          default: return Promise.resolve(false);
+        }
+      });
+    } else {
+      return new Promise<boolean>((resolve, reject) => {
+        this.context.api.events.emit('await-activation', (err: Error) => {
+          if (err !== null) {
+            reject(err);
+          } else {
+            resolve(true);
+          }
+        });
+      });
+    }
   }
 
   private renderGameIcon = (game: IGameStored): JSX.Element => {
@@ -220,6 +316,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
         game={game}
         toolId={tool.id}
         tool={tool}
+        onRunTool={this.runTool}
         onChangeToolLocation={onAddDiscoveredTool}
         onRemoveTool={onRemoveDiscoveredTool}
         onAddNewTool={this.addNewTool}
@@ -251,6 +348,7 @@ function mapStateToProps(state: any): IConnectedProps {
     discoveredGames: state.settings.gameMode.discovered,
     discoveredTools: getSafe(state, [ 'settings', 'gameMode',
                                       'discovered', gameMode, 'tools' ], {}),
+    autoDeploy: state.settings.automation.deploy,
   };
 }
 
@@ -265,7 +363,10 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onChangeToolParams: (toolId: string) => {
       dispatch(changeToolParams(toolId));
     },
-    onShowError: (message: string, details?: string) => showError(dispatch, message, details),
+    onShowError: (message: string, details?: string | Error) =>
+      showError(dispatch, message, details),
+    onShowDialog: (type, title, content, actions) =>
+      dispatch(showDialog(type, title, content, actions)),
   };
 }
 
@@ -276,4 +377,4 @@ export default
     bindStore: false,
   } as any)(
     connect(mapStateToProps, mapDispatchToProps)(Starter)
-  );
+ );
