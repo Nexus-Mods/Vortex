@@ -226,14 +226,17 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   private disableSelected = (modIds: string[]) => {
-    const { profileId, modState, onSetModEnabled } = this.props;
+    this.disableModsInner(modIds);
+    this.context.api.events.emit('mods-enabled', modIds, false);
+  }
 
+  private disableModsInner(modIds: string[]) {
+    const { profileId, modState, onSetModEnabled } = this.props;
     modIds.forEach((key: string) => {
       if (getSafe(modState, [key, 'enabled'], false)) {
         onSetModEnabled(profileId, key, false);
       }
     });
-    this.context.api.events.emit('mods-enabled', modIds, false);
   }
 
   private removeSelected = (modIds: string[]) => {
@@ -260,10 +263,21 @@ class ModList extends ComponentEx<IProps, {}> {
         disableDependent = result.action === 'Remove' && result.input.dependents;
 
         if (removeMods) {
-          return Promise.map(modIds, (key: string) => {
+          this.disableModsInner(modIds);
+          return new Promise<void>((resolve, reject) => {
+            this.context.api.events.emit('activate-mods', (err: Error) => {
+              if (err === null) {
+                resolve();
+              } else {
+                reject(err);
+              }
+            });
+          })
+          .then(() => Promise.map(modIds, (key: string) => {
             let fullPath = path.join(installPath, mods[key].installationPath);
             return fs.removeAsync(fullPath);
-          }).then(() => undefined);
+          }))
+          .then(() => undefined);
         } else {
           return Promise.resolve();
         }
