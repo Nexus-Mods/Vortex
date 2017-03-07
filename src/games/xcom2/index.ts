@@ -6,6 +6,7 @@ const game: IGame = {
   logo: 'logo.png',
   mergeMods: false,
   queryModPath: () => 'ComGame/Mods',
+  iniFilePath: () => '',
   executable: () => 'XCom2.exe',
   requiredFiles: [
     'XComGame',

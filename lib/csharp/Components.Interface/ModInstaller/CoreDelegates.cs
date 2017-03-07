@@ -10,6 +10,8 @@ namespace Components.Interface
     using ContinueCB = Action<bool>;
     using CancelCB = Action;
 
+    #region Plugin
+
     public class PluginDelegates
     {
         private Func<object, Task<object>> mGetAll;
@@ -48,6 +50,50 @@ namespace Components.Interface
             return (bool)res;
         }
     }
+
+    #endregion
+
+    #region Ini
+
+    public class IniDelegates
+    {
+        private Func<object[], Task<object>> mGetIniString;
+        private Func<object[], Task<object>> mGetIniInt;
+
+        public IniDelegates(dynamic source)
+        {
+            mGetIniString = source.getIniString;
+            mGetIniInt = source.getIniInt;
+        }
+
+        public async Task<string> GetIniString(string iniFileName, string iniSection, string iniKey)
+        {
+            string[] Params = new string[] { iniFileName, iniSection, iniKey };
+            object res = await mGetIniString(Params);
+            if (res != null)
+            {
+                return res.ToString();
+            }
+            else
+                return string.Empty;
+        }
+
+        public async Task<int> GetIniInt(string iniFileName, string iniSection, string iniKey)
+        {
+            string[] Params = new string[] { iniFileName, iniSection, iniKey };
+            object res = await mGetIniInt(Params);
+            if (res != null)
+            {
+                return (int)res;
+            }
+            else
+                return -1;
+        }
+    }
+
+    #endregion
+
+    #region Context
 
     public class ContextDelegates
     {
@@ -96,6 +142,10 @@ namespace Components.Interface
             return (bool)res;
         }
     }
+
+    #endregion
+
+    #region UI
 
     public struct HeaderImage
     {
@@ -255,15 +305,19 @@ namespace Components.Interface
         }
     }
 
+    #endregion
+
     public class CoreDelegates
     {
         private PluginDelegates mPluginDelegates;
         private ContextDelegates mContextDelegates;
+        private IniDelegates mIniDelegates;
         private ui.Delegates mUIDelegates;
 
         public CoreDelegates(dynamic source)
         {
             mPluginDelegates = new PluginDelegates(source.plugin);
+            mIniDelegates = new IniDelegates(source.ini);
             mContextDelegates = new ContextDelegates(source.context);
             mUIDelegates = new ui.Delegates(source.ui);
         }
@@ -273,6 +327,14 @@ namespace Components.Interface
             get
             {
                 return mPluginDelegates;
+            }
+        }
+
+        public IniDelegates ini
+        {
+            get
+            {
+                return mIniDelegates;
             }
         }
 

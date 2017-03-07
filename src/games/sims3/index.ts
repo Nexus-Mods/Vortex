@@ -30,6 +30,10 @@ function findGame() {
   });
 }
 
+function getIniPath() {
+  return '';
+}
+
 function modPath(): string {
   return path.join(remote.app.getPath('documents'), 'Electronic Arts', 'The Sims 3', 'Mods');
 }
@@ -50,6 +54,7 @@ const game: IGame = {
   name: 'The Sims 3',
   mergeMods: false,
   queryPath: findGame,
+  iniFilePath: getIniPath,
   queryModPath: modPath,
   logo: 'logo.png',
   executable: () => 'game/bin/TS3.exe',

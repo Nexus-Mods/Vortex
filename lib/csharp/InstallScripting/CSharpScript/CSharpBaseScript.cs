@@ -578,48 +578,48 @@ namespace Components.Scripting.CSharpScript
         /// <summary>
         /// Retrieves the specified settings value as a string.
         /// </summary>
-        /// <param name="p_strSettingsFileName">The name of the settings file from which to retrieve the value.</param>
-        /// <param name="p_strSection">The section containing the value to retrieve.</param>
-        /// <param name="p_strKey">The key of the value to retrieve.</param>
+        /// <param name="settingsFileName">The name of the settings file from which to retrieve the value.</param>
+        /// <param name="section">The section containing the value to retrieve.</param>
+        /// <param name="key">The key of the value to retrieve.</param>
         /// <returns>The specified value as a string.</returns>
-        public static string GetIniString(string p_strSettingsFileName, string p_strSection, string p_strKey)
+        public static string GetIniString(string settingsFileName, string section, string key)
         {
-            return ExecuteMethod(() => Functions.GetIniString(p_strSettingsFileName, p_strSection, p_strKey));
+            return ExecuteMethod(() => Functions.GetIniString(settingsFileName, section, key));
         }
 
         /// <summary>
         /// Retrieves the specified settings value as an integer.
         /// </summary>
-        /// <param name="p_strSettingsFileName">The name of the settings file from which to retrieve the value.</param>
-        /// <param name="p_strSection">The section containing the value to retrieve.</param>
-        /// <param name="p_strKey">The key of the value to retrieve.</param>
+        /// <param name="settingsFileName">The name of the settings file from which to retrieve the value.</param>
+        /// <param name="section">The section containing the value to retrieve.</param>
+        /// <param name="key">The key of the value to retrieve.</param>
         /// <returns>The specified value as an integer.</returns>
-        public static int GetIniInt(string p_strSettingsFileName, string p_strSection, string p_strKey)
+        public static int GetIniInt(string settingsFileName, string section, string key)
         {
-            return ExecuteMethod(() => Functions.GetIniInt(p_strSettingsFileName, p_strSection, p_strKey));
+            return ExecuteMethod(() => Functions.GetIniInt(settingsFileName, section, key));
         }
 
         /// <summary>
         /// Retrieves the specified Fallout.ini value as a string.
         /// </summary>
-        /// <param name="p_strSection">The section containing the value to retrieve.</param>
-        /// <param name="p_strKey">The key of the value to retrieve.</param>
+        /// <param name="section">The section containing the value to retrieve.</param>
+        /// <param name="key">The key of the value to retrieve.</param>
         /// <returns>The specified value as a string.</returns>
         /// <seealso cref="GetFalloutIniInt(string, string)"/>
-        public static string GetFalloutIniString(string p_strSection, string p_strKey)
+        public static string GetFalloutIniString(string section, string key)
         {
-            return ExecuteMethod(() => Functions.GetIniString(null, p_strSection, p_strKey));
+            return ExecuteMethod(() => Functions.GetIniString(null, section, key));
         }
 
         /// <summary>
         /// Retrieves the specified Fallout.ini value as an integer.
         /// </summary>
-        /// <param name="p_strSection">The section containing the value to retrieve.</param>
-        /// <param name="p_strKey">The key of the value to retrieve.</param>
+        /// <param name="section">The section containing the value to retrieve.</param>
+        /// <param name="key">The key of the value to retrieve.</param>
         /// <seealso cref="GetFalloutIniString(string, string)"/>
-        public static int GetFalloutIniInt(string p_strSection, string p_strKey)
+        public static int GetFalloutIniInt(string section, string key)
         {
-            return ExecuteMethod(() => Functions.GetIniInt(null, p_strSection, p_strKey));
+            return ExecuteMethod(() => Functions.GetIniInt(null, section, key));
         }
 
         #endregion

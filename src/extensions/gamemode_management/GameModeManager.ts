@@ -153,6 +153,7 @@ class GameModeManager {
       logo: game.logo,
       modPath: game.queryModPath(),
       pluginPath: game.pluginPath,
+      iniFilePath: game.iniFilePath(),
       requiredFiles: game.requiredFiles,
       supportedTools: game.supportedTools !== null
         ? game.supportedTools.map(this.storeTool)

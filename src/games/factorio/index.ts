@@ -25,6 +25,10 @@ function findGame(): Promise<string> {
   });
 }
 
+function getIniPath() {
+  return '';
+}
+
 function modPath(): string {
   if (process.platform === 'win32') {
     return path.join(remote.app.getPath('appData'), 'Factorio', 'mods');
@@ -50,6 +54,7 @@ const game: IGame = {
   name: 'Factorio',
   mergeMods: false,
   queryPath: findGame,
+  iniFilePath: getIniPath,
   queryModPath: modPath,
   logo: 'logo.png',
   executable: gameExecutable,

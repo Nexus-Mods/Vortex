@@ -651,35 +651,37 @@ namespace Components.Interface
         /// <summary>
         /// Retrieves the specified settings value as a string.
         /// </summary>
-        /// <param name="p_strSettingsFileName">The name of the settings file from which to retrieve the value.</param>
-        /// <param name="p_strSection">The section containing the value to retrieve.</param>
-        /// <param name="p_strKey">The key of the value to retrieve.</param>
+        /// <param name="settingsFileName">The name of the settings file from which to retrieve the value.</param>
+        /// <param name="section">The section containing the value to retrieve.</param>
+        /// <param name="key">The key of the value to retrieve.</param>
         /// <returns>The specified value as a string.</returns>
-        public string GetIniString(string p_strSettingsFileName, string p_strSection, string p_strKey)
+        public string GetIniString(string settingsFileName, string section, string key)
         {
-            // ??? This value should be returned by the ini delegate
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("GetIniString");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            string IniValue = string.Empty;
 
-            return string.Empty;
+            Task.Run(async () => {
+                IniValue = await Core.ini.GetIniString(settingsFileName, section, key);
+            }).Wait();
+
+            return IniValue;
         }
 
         /// <summary>
         /// Retrieves the specified settings value as an integer.
         /// </summary>
-        /// <param name="p_strSettingsFileName">The name of the settings file from which to retrieve the value.</param>
-        /// <param name="p_strSection">The section containing the value to retrieve.</param>
-        /// <param name="p_strKey">The key of the value to retrieve.</param>
+        /// <param name="settingsFileName">The name of the settings file from which to retrieve the value.</param>
+        /// <param name="section">The section containing the value to retrieve.</param>
+        /// <param name="key">The key of the value to retrieve.</param>
         /// <returns>The specified value as an integer.</returns>
-        public int GetIniInt(string p_strSettingsFileName, string p_strSection, string p_strKey)
+        public int GetIniInt(string settingsFileName, string section, string key)
         {
-            // ??? This value should be returned by the ini delegate
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("GetIniInt");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            int IniValue = -1;
 
-            return 0;
+            Task.Run(async () => {
+                IniValue = await Core.ini.GetIniInt(settingsFileName, section, key);
+            }).Wait();
+
+            return IniValue;
         }
 
         #endregion

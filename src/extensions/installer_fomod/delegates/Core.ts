@@ -12,7 +12,7 @@ export class Core {
 
   constructor(api: IExtensionApi, gameId: string) {
     this.plugin = new Plugins(api);
-    this.ini = new Ini(api);
+    this.ini = new Ini(api, gameId);
     this.ui = new UI(api);
     this.context = new Context(api, gameId);
   }

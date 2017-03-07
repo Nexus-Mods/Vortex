@@ -6,6 +6,7 @@ export interface IGameStored {
   logo?: string;
   modPath: string;
   pluginPath?: string;
+  iniFilePath: string;
   requiredFiles: string[];
   executable: string;
   supportedTools: IToolStored[];

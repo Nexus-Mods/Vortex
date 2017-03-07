@@ -1,8 +1,13 @@
 import { IGame } from '../../types/IGame';
 import { ITool } from '../../types/ITool';
 
+import { app as appIn, remote } from 'electron';
+import * as path from 'path';
+
 import * as Promise from 'bluebird';
 import Registry = require('winreg');
+
+const app = appIn || remote.app;
 
 function findGame() {
   if (Registry === undefined) {
@@ -24,6 +29,10 @@ function findGame() {
       }
     });
   });
+}
+
+function getIniPath() {
+  return path.join(app.getPath('documents'), 'My Games', 'Skyrim', 'Skyrim.ini');
 }
 
 let tools: ITool[] = [
@@ -73,6 +82,7 @@ const game: IGame = {
   name: 'Skyrim',
   mergeMods: true,
   queryPath: findGame,
+  iniFilePath: getIniPath,
   supportedTools: tools,
   queryModPath: () => './data',
   logo: 'logo.png',
