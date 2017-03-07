@@ -24,6 +24,14 @@
   ],
   "copy": [
     {
+      "srcPath": "LICENSE.md",
+      "outPath": "",
+      "skipPaths": 0,
+      "target": [
+        "app"
+      ]
+    },
+    {
       "srcPath": "src/stylesheets",
       "outPath": "assets/css",
       "skipPaths": 2,

@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Parse ini files, supporting different ini formats",
   "main": "./lib/index.js",
+  "files": [
+    "lib/"
+  ],
   "scripts": {
     "build": "tsc -p ."
   },
