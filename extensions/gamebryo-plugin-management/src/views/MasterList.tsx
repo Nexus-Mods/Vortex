@@ -23,6 +23,9 @@ class MasterList extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
     const {masters} = this.props;
+    if (masters === undefined) {
+      return null;
+    }
     return (<ListGroup>
       {masters.map(this.renderPlugin)}
     </ListGroup>);
