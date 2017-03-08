@@ -84,6 +84,14 @@
     },
     {
       "type": "build-copy",
+      "name": "gamebryo-profile-management",
+      "path": "extensions/gamebryo-profile-management",
+      "removeModules": ["nmm-api", "nexus-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-profile-management"
+    },
+    {
+      "type": "build-copy",
       "name": "meta-editor",
       "path": "extensions/meta-editor",
       "removeModules": ["nmm-api", "nexus-api"],

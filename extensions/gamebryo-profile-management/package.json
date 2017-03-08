@@ -1,0 +1,53 @@
+{
+  "name": "gamebryo-profile-management",
+  "version": "0.0.1",
+  "description": "Management for gamebryo profile management",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "tsc": "tsc -p .",
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
+    "clear": "rm-local-modules",
+    "prebuild": "typings prune && typings install",
+    "build": "npm run tsc && npm run webpack",
+    "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-profile-management",
+    "buildDev": "npm run build && npm run installDev"
+  },
+  "author": "",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@types/electron": "^1.4.32",
+    "@types/fs-extra-promise": "^0.0.31",
+    "@types/iconv-lite": "^0.0.1",
+    "@types/react": "^0.14.55",
+    "@types/react-addons-update": "^0.14.14",
+    "@types/react-bootstrap": "^0.0.37",
+    "@types/react-dom": "^0.14.19",
+    "@types/react-i18next": "^1.7.5",
+    "@types/react-redux": "^4.4.35",
+    "@types/react-router": "^2.0.41",
+    "babel-core": "^6.14.0",
+    "babel-loader": "^6.2.5",
+    "babel-polyfill": "^6.13.0",
+    "bluebird": "^3.4.6",
+    "copyfiles": "^1.0.0",
+    "fs-extra-promise": "^0.4.1",
+    "i18next": "^3.5.1",
+    "json-loader": "^0.5.4",
+    "nmm-api": "file:../../api",
+    "parse-ini": "file:../../lib/js/parse-ini",
+    "react": "^15.3.2",
+    "react-addons-update": "^15.3.2",
+    "react-bootstrap": "^0.30.6",
+    "react-dom": "^15.3.2",
+    "react-i18next": "^1.10.1",
+    "redux-act": "^1.1.0",
+    "rm-local-modules": "^0.0.2",
+    "webpack": "^1.13.2"
+  }
+}
