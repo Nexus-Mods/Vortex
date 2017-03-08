@@ -126,10 +126,6 @@ function createWindow() {
     title: 'NMM2',
   });
 
-  if (getSafe(windowMetrics, ['maximized'], false)) {
-    mainWindow.maximize();
-  }
-
   mainWindow.loadURL(`file://${__dirname}/index.html`);
   // opening the devtools automatically can be very useful if the renderer has
   // trouble loading the page
@@ -138,6 +134,11 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     extensions.setupApiMain(store, mainWindow.webContents);
     mainWindow.show();
+
+    if (getSafe(windowMetrics, ['maximized'], false)) {
+      mainWindow.maximize();
+    }
+
     if (loadingScreen !== undefined) {
       loadingScreen.webContents.send('fade-out');
       setTimeout(() => {
