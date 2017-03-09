@@ -84,11 +84,11 @@
     },
     {
       "type": "build-copy",
-      "name": "gamebryo-profile-management",
-      "path": "extensions/gamebryo-profile-management",
+      "name": "local-gamesettings",
+      "path": "extensions/local-gamesettings",
       "removeModules": ["nmm-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
-      "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-profile-management"
+      "copyTo": "{BUILD_DIR}/bundledPlugins/local-gamesettings"
     },
     {
       "type": "build-copy",

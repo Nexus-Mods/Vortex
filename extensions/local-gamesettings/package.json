@@ -1,7 +1,7 @@
 {
-  "name": "gamebryo-profile-management",
+  "name": "local-gamesettings",
   "version": "0.0.1",
-  "description": "Management for gamebryo profile management",
+  "description": "Management for local game settings",
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
@@ -10,7 +10,7 @@
     "clear": "rm-local-modules",
     "prebuild": "typings prune && typings install",
     "build": "npm run tsc && npm run webpack",
-    "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-profile-management",
+    "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/local-gamesettings",
     "buildDev": "npm run build && npm run installDev"
   },
   "author": "",

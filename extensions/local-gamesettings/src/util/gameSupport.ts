@@ -48,4 +48,3 @@ export function profilePath(store: Redux.Store<any>, profile: types.IProfile): s
 export function backupPath(store: Redux.Store<any>, profile: types.IProfile): string {
   return path.join(app.getPath('userData'), profile.gameId);
 }
-
