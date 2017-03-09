@@ -8,10 +8,12 @@ import update = require('react-addons-update');
  */
 export const windowReducer: IReducerSpec = {
   reducers: {
-    [actions.setWindowSize]: (state, payload) => update(state, { size: { $set: payload } }),
-    [actions.setWindowPosition]: (state, payload) => update(state, { position: { $set: payload } }),
-    [actions.setMaximized]: (state, payload) => update(state, { maximized: { $set: payload } }),
-    [actions.setTabsMinimized]: (state, payload) =>
+    [actions.setWindowSize as any]: (state, payload) => update(state, { size: { $set: payload } }),
+    [actions.setWindowPosition as any]: (state, payload) =>
+     update(state, { position: { $set: payload } }),
+    [actions.setMaximized as any]: (state, payload) =>
+     update(state, { maximized: { $set: payload } }),
+    [actions.setTabsMinimized as any]: (state, payload) =>
       update(state, { tabsMinimized: { $set: payload } }),
   },
   defaults: {

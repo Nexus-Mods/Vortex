@@ -8,7 +8,7 @@ import * as actions from '../actions/settings';
  */
 export const settingsReducer: IReducerSpec = {
   reducers: {
-    [actions.setMaxDownloads]: (state, payload) => {
+    [actions.setMaxDownloads as any]: (state, payload) => {
       return setSafe(state, [ 'maxParallelDownloads' ], payload);
     },
   },

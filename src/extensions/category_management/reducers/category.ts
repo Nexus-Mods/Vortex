@@ -8,13 +8,13 @@ import { loadCategories, renameCategory, updateCategories } from '../actions/cat
  */
 export const categoryReducer: IReducerSpec = {
   reducers: {
-    [loadCategories]: (state, payload) => {
+    [loadCategories as any]: (state, payload) => {
       return setOrNop(state, [payload.gameId], payload.gameCategories);
     },
-    [updateCategories]: (state, payload) => {
+    [updateCategories as any]: (state, payload) => {
       return setSafe(state, [payload.gameId], payload.gameCategories);
     },
-    [renameCategory]: (state, payload) => {
+    [renameCategory as any]: (state, payload) => {
       return setOrNop(state, [payload.gameId, payload.categoryId, 'name'], payload.name);
     },
   }, defaults: {

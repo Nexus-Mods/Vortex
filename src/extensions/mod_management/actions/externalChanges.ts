@@ -9,9 +9,9 @@ import UserCanceled from '../util/UserCanceled';
  * stores info about files that were changed outside the control of NMM2. The user
  * will be asked how to deal with them
  */
-export const setExternalChanges: any = safeCreateAction('SET_EXTERNAL_CHANGES');
+export const setExternalChanges = safeCreateAction('SET_EXTERNAL_CHANGES');
 
-export const setExternalChangeAction: any = safeCreateAction('SET_EXTERNAL_CHANGE_ACTION',
+export const setExternalChangeAction = safeCreateAction('SET_EXTERNAL_CHANGE_ACTION',
   (filePaths: string[], action: string) => ({ filePaths, action }));
 
 let curResolve = undefined;

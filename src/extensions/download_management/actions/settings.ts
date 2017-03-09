@@ -1,3 +1,3 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 
-export const setMaxDownloads: any = safeCreateAction('SET_MAX_DOWNLOADS');
+export const setMaxDownloads = safeCreateAction('SET_MAX_DOWNLOADS');

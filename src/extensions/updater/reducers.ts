@@ -9,7 +9,7 @@ import update = require('react-addons-update');
  */
 const settingsReducer: IReducerSpec = {
   reducers: {
-    [setUpdateChannel]: (state, payload) => update(state, { channel: { $set: payload } }),
+    [setUpdateChannel as any]: (state, payload) => update(state, { channel: { $set: payload } }),
   },
   defaults: {
     channel: 'stable',

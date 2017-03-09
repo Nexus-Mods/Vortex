@@ -12,7 +12,7 @@ let counter = 1;
  */
 export const notificationsReducer: IReducerSpec = {
   reducers: {
-    [actions.startNotification]: (state, payload) => {
+    [actions.startNotification as any]: (state, payload) => {
       let temp = state;
       if (payload.id === undefined) {
         payload.id = `__auto_${counter++}`;
@@ -29,14 +29,14 @@ export const notificationsReducer: IReducerSpec = {
         return update(temp, { notifications: { $push: [payload] } });
       }
     },
-    [actions.dismissNotification]: (state, payload) => {
+    [actions.dismissNotification as any]: (state, payload) => {
       return removeValueIf(removeValueIf(state, [ 'notifications' ], (noti) => noti.id === payload),
                            [ 'global_notifications' ], (noti) => noti.id === payload);
     },
-    [actions.addDialog]: (state, payload) => {
+    [actions.addDialog as any]: (state, payload) => {
       return update(state, { dialogs: { $push: [payload] } });
     },
-    [actions.dismissDialog]: (state, payload) => {
+    [actions.dismissDialog as any]: (state, payload) => {
       return removeValueIf(state, [ 'dialogs' ], (dialog) => dialog.id === payload);
     },
   },

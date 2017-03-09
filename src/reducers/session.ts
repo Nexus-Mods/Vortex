@@ -8,7 +8,7 @@ import { setSafe } from '../util/storeHelper';
  */
 export const sessionReducer: IReducerSpec = {
   reducers: {
-    [actions.displayGroup]: (state, payload) => {
+    [actions.displayGroup as any]: (state, payload) => {
       return setSafe(state, [ 'displayGroups', payload.groupId ], payload.itemId);
     },
   },

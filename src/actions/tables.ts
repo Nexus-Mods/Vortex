@@ -2,17 +2,17 @@ import {SortDirection} from '../types/SortDirection';
 
 import safeCreateAction from './safeCreateAction';
 
-export const selectRows: any = safeCreateAction('SELECT_ROWS',
+export const selectRows = safeCreateAction('SELECT_ROWS',
   (tableId: string, rowIds: string[], selected: boolean) => ({ tableId, rowIds, selected }));
 
-export const setAttributeVisible: any = safeCreateAction('SET_ATTRIBUTE_VISIBLE',
+export const setAttributeVisible = safeCreateAction('SET_ATTRIBUTE_VISIBLE',
   (tableId: string, attributeId: string, visible: boolean) => ({ tableId, attributeId, visible }));
 
-export const setAttributeSort: any = safeCreateAction(
+export const setAttributeSort = safeCreateAction(
     'SET_ATTRIBUTE_SORT',
     (tableId: string, attributeId: string, direction: SortDirection) =>
         ({tableId, attributeId, direction}));
 
-export const setSplitPos: any = safeCreateAction(
+export const setSplitPos = safeCreateAction(
     'SET_SPLIT_POS',
     (tableId: string, pos: number) => ({ tableId, pos }));

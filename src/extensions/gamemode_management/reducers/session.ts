@@ -7,7 +7,7 @@ import update = require('react-addons-update');
  */
 export const sessionReducer: IReducerSpec = {
   reducers: {
-    [setKnownGames]: (state, payload) => update(state, { known: { $set: payload } }),
+    [setKnownGames as any]: (state, payload) => update(state, { known: { $set: payload } }),
   },
   defaults: {
     known: null,

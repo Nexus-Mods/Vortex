@@ -8,7 +8,7 @@ import * as actions from './actions';
  */
 const settingsReducer: IReducerSpec = {
   reducers: {
-    [actions.dismissStep]:
+    [actions.dismissStep as any]:
     (state, payload) => setSafe(state, ['steps', payload], true),
   },
   defaults: {

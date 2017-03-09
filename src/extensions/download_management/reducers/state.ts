@@ -11,7 +11,7 @@ export const speedDataPoints = 15;
  */
 export const stateReducer: IReducerSpec = {
   reducers: {
-    [action.initDownload]: (state, payload) => {
+    [action.initDownload as any]: (state, payload) => {
       if (state.files[payload.id] !== undefined) {
         // The code that called this action can't continue using this id.
         // We rely on the calling code to have a reliable way of generating unique id so
@@ -35,7 +35,7 @@ export const stateReducer: IReducerSpec = {
         fileMD5: undefined,
       });
     },
-    [action.downloadProgress]: (state, payload) => {
+    [action.downloadProgress as any]: (state, payload) => {
       if (state.files[payload.id] === undefined) {
         return state;
       }
@@ -45,13 +45,13 @@ export const stateReducer: IReducerSpec = {
         size: payload.total,
       });
     },
-    [action.setDownloadFilePath]: (state, payload) => {
+    [action.setDownloadFilePath as any]: (state, payload) => {
       return setOrNop(state, [ 'files', payload.id, 'localPath' ], payload.filePath);
     },
-    [action.setDownloadHash]: (state, payload) => {
+    [action.setDownloadHash as any]: (state, payload) => {
       return setOrNop(state, [ 'files', payload.id, 'fileMD5' ], payload.fileMD5);
     },
-    [action.setDownloadHashByFile]: (state, payload) => {
+    [action.setDownloadHashByFile as any]: (state, payload) => {
       const downloadId = Object.keys(state.files).find(
         (id: string) => state.files[id].localPath === payload.fileName);
       if (downloadId === undefined) {
@@ -62,13 +62,13 @@ export const stateReducer: IReducerSpec = {
         size: payload.fileSize,
       });
     },
-    [action.startDownload]: (state, payload) => {
+    [action.startDownload as any]: (state, payload) => {
       if (getSafe<string>(state, [ 'files', payload.id, 'state' ], 'unknown') !== 'init') {
         return state;
       }
       return setOrNop(state, [ 'files', payload.id, 'state' ], 'started');
     },
-    [action.finishDownload]: (state, payload) => {
+    [action.finishDownload as any]: (state, payload) => {
       if (state.files[payload.id] === undefined) {
         return state;
       }
@@ -77,7 +77,7 @@ export const stateReducer: IReducerSpec = {
         failCause: payload.failCause,
       });
     },
-    [action.pauseDownload]: (state, payload) => {
+    [action.pauseDownload as any]: (state, payload) => {
       if (['finished', 'failed'].indexOf(
           getSafe(state, [ 'files', payload.id, 'state' ], undefined)) !== -1) {
         return state;
@@ -85,7 +85,7 @@ export const stateReducer: IReducerSpec = {
       return setOrNop(state, [ 'files', payload.id, 'state' ],
                       payload.paused ? 'paused' : 'started');
     },
-    [action.setDownloadSpeed]: (state, payload) => {
+    [action.setDownloadSpeed as any]: (state, payload) => {
       let temp = setSafe(state, ['speed'], payload);
       let speeds = state.speedHistory !== undefined ? state.speedHistory.slice() : [];
       speeds.push(payload);
@@ -94,10 +94,10 @@ export const stateReducer: IReducerSpec = {
       }
       return setSafe(temp, ['speedHistory'], speeds);
     },
-    [action.removeDownload]: (state, payload) => {
+    [action.removeDownload as any]: (state, payload) => {
       return deleteOrNop(state, [ 'files', payload.id ]);
     },
-    [action.addLocalDownload]: (state, payload) => {
+    [action.addLocalDownload as any]: (state, payload) => {
       return setSafe(state, [ 'files', payload.id ], {
         state: 'finished',
         game: payload.game,

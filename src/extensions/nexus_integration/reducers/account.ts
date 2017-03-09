@@ -9,7 +9,7 @@ import update = require('react-addons-update');
  */
 export const accountReducer: IReducerSpec = {
   reducers: {
-    [setUserAPIKey]: (state, payload) => update(state, { APIKey: { $set: payload } }),
+    [setUserAPIKey as any]: (state, payload) => update(state, { APIKey: { $set: payload } }),
   },
   defaults: {
     APIKey: undefined,

@@ -8,9 +8,9 @@ import { setFeature, setModEnabled, setProfile } from '../actions/profiles';
  */
 export const profilesReducer: IReducerSpec = {
   reducers: {
-    [setProfile]: (state, payload) =>
+    [setProfile as any]: (state, payload) =>
       setSafe(state, [payload.id], Object.assign({}, getSafe(state, [payload.id], {}), payload)),
-    [setModEnabled]: (state, payload) => {
+    [setModEnabled as any]: (state, payload) => {
       const { profileId, modId, enable } = payload;
 
       return setSafe(
@@ -18,7 +18,7 @@ export const profilesReducer: IReducerSpec = {
         [profileId, 'modState', modId, 'enabled'],
         enable);
     },
-    [setFeature]: (state, payload) => {
+    [setFeature as any]: (state, payload) => {
       const { profileId, featureId, value } = payload;
       return setSafe(state, [profileId, 'features', featureId], value);
     },

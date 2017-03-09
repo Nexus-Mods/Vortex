@@ -8,11 +8,11 @@ import { setActivator, setPath } from '../actions/settings';
  */
 export const settingsReducer: IReducerSpec = {
   reducers: {
-    [setPath]: (state, payload) => {
+    [setPath as any]: (state, payload) => {
       const { gameId, key, path } = payload;
       return setSafe(state, [ 'paths', gameId, key ], path);
     },
-    [setActivator]: (state, payload) => {
+    [setActivator as any]: (state, payload) => {
       const { gameId, activatorId } = payload;
       return setSafe(state, [ 'activator', gameId ], activatorId);
     },

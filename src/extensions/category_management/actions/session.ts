@@ -1,11 +1,11 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 
-export const setSearchString: any = safeCreateAction('SET_SEARCH_STRING');
+export const setSearchString = safeCreateAction('SET_SEARCH_STRING');
 
-export const setSearchFocusIndex: any = safeCreateAction('SET_SEARCH_FOCUS_INDEX');
+export const setSearchFocusIndex = safeCreateAction('SET_SEARCH_FOCUS_INDEX');
 
-export const setSearchFoundCount: any = safeCreateAction('SET_SEARCH_FOUND_COUNT');
+export const setSearchFoundCount = safeCreateAction('SET_SEARCH_FOUND_COUNT');
 
-export const setTreeDataObject: any = safeCreateAction('SET_TREE_DATA_OBJECT');
+export const setTreeDataObject = safeCreateAction('SET_TREE_DATA_OBJECT');
 
-export const setHiddenCategories: any = safeCreateAction('SET_HIDDEN_CATEGORIES');
+export const setHiddenCategories = safeCreateAction('SET_HIDDEN_CATEGORIES');

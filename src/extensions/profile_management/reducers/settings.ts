@@ -5,10 +5,10 @@ import { setCurrentProfile, setNextProfile } from '../actions/settings';
 
 export const settingsReducer: IReducerSpec = {
   reducers: {
-    [setNextProfile]: (state, payload) => {
+    [setNextProfile as any]: (state, payload) => {
       return setSafe(state, ['nextProfileId'], payload.profileId);
     },
-    [setCurrentProfile]: (state, payload) => {
+    [setCurrentProfile as any]: (state, payload) => {
       const { gameId, profileId } = payload;
       let res = setSafe(state, ['activeProfileId'], profileId);
       res = setSafe(res, ['lastActiveProfile', gameId], profileId);

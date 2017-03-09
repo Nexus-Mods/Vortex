@@ -8,15 +8,15 @@ import * as actions from './actions';
  */
 const settingsReducer: IReducerSpec = {
   reducers: {
-    [actions.addMetaserver]:
+    [actions.addMetaserver as any]:
     (state, payload) => setSafe(state, ['servers', payload.id], {
         url: payload.url,
         cacheDurationSec: payload.cacheDurationSec || 86400,
         priority: Object.keys(state.servers).length,
       }),
-    [actions.removeMetaserver]:
+    [actions.removeMetaserver as any]:
         (state, payload) => deleteOrNop(state, ['servers', payload.id]),
-    [actions.setPriorities]:
+    [actions.setPriorities as any]:
         (state, payload) => {
           let copy = Object.assign({}, state);
           payload.ids.forEach((id, idx) => {

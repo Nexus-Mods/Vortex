@@ -2,16 +2,16 @@ import { safeCreateAction } from 'nmm-api';
 
 import { SavegameState } from '../types/ISavegame';
 
-export const setSavegames: any = safeCreateAction('SET_SAVEGAMES');
+export const setSavegames = safeCreateAction('SET_SAVEGAMES');
 
-export const setSavegameState: any = safeCreateAction('SET_SAVEGAME_STATE',
+export const setSavegameState = safeCreateAction('SET_SAVEGAME_STATE',
   (id: string, savegameState: SavegameState) => ({ id, savegameState }));
 
-export const setSavegameAttribute: any = safeCreateAction('SET_SAVEGAME_ATTRIBUTE',
+export const setSavegameAttribute = safeCreateAction('SET_SAVEGAME_ATTRIBUTE',
   (id: string, attribute: string, value: any) => ({ id, attribute, value }));
 
-export const clearSavegames: any = safeCreateAction('CLEAR_SAVEGAMES');
+export const clearSavegames = safeCreateAction('CLEAR_SAVEGAMES');
 
-export const removeSavegame: any = safeCreateAction('REMOVE_SAVEGAME');
+export const removeSavegame = safeCreateAction('REMOVE_SAVEGAME');
 
-export const setSavegamePath: any = safeCreateAction('SET_SAVEGAME_PATH');
+export const setSavegamePath = safeCreateAction('SET_SAVEGAME_PATH');

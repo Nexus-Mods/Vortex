@@ -9,12 +9,12 @@ import update = require('react-addons-update');
  */
 export const discoveryReducer: IReducerSpec = {
   reducers: {
-    [discoveryProgress]: (state, payload) => update(state, {
+    [discoveryProgress as any]: (state, payload) => update(state, {
       running: { $set: true },
       progress: { $set: payload.percent },
       directory: { $set: payload.directory },
     }),
-    [discoveryFinished]: (state, payload) => update(state, {
+    [discoveryFinished as any]: (state, payload) => update(state, {
       running: { $set: false },
       progress: { $set: -1 },
       directory: { $set: '' },

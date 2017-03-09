@@ -8,9 +8,9 @@ import { setExternalChangeAction, setExternalChanges } from '../actions/external
  */
 export const externalChangesReducer: IReducerSpec = {
   reducers: {
-    [setExternalChanges]: (state, payload) =>
+    [setExternalChanges as any]: (state, payload) =>
       setSafe(state, ['changes'], payload),
-    [setExternalChangeAction]: (state, payload) => {
+    [setExternalChangeAction as any]: (state, payload) => {
       const changeSet = new Set(payload.filePaths);
       let current = state;
       // TODO: This seems quite inefficient

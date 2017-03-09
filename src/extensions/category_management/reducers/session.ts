@@ -10,19 +10,19 @@ import update = require('react-addons-update');
  */
 export const sessionReducer: IReducerSpec = {
   reducers: {
-    [setSearchFocusIndex]: (state, payload) => {
+    [setSearchFocusIndex as any]: (state, payload) => {
       return update(state, { searchFocusIndex: { $set: payload } });
     },
-    [setSearchFoundCount]: (state, payload) => {
+    [setSearchFoundCount as any]: (state, payload) => {
       return update(state, { searchFoundCount: { $set: payload } });
     },
-    [setSearchString]: (state, payload) => {
+    [setSearchString as any]: (state, payload) => {
       return update(state, { searchString: { $set: payload } });
     },
-    [setHiddenCategories]: (state, payload) => {
+    [setHiddenCategories as any]: (state, payload) => {
       return update(state, { isHidden: { $set: payload } });
     },
-    [setTreeDataObject]: (state, payload) => {
+    [setTreeDataObject as any]: (state, payload) => {
       return update(state, { treeDataObject: { $set: payload } });
     },
   },

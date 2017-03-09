@@ -1,3 +1,3 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 
-export const setAutoDeployment: any = safeCreateAction('SET_AUTO_DEPLOYMENT');
+export const setAutoDeployment = safeCreateAction('SET_AUTO_DEPLOYMENT');

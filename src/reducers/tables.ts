@@ -8,7 +8,7 @@ import { deleteOrNop, setSafe } from '../util/storeHelper';
  */
 export const tableReducer: IReducerSpec = {
   reducers: {
-    [actions.selectRows]: (state, payload) => {
+    [actions.selectRows as any]: (state, payload) => {
       const { tableId, rowIds, selected } = payload;
       // TODO: this is a bit wasteful, copying the state for each row being changed
       let copy = state;
@@ -25,15 +25,15 @@ export const tableReducer: IReducerSpec = {
 
       return copy;
     },
-    [actions.setAttributeVisible]: (state, payload) => {
+    [actions.setAttributeVisible as any]: (state, payload) => {
       const { tableId, attributeId, visible } = payload;
       return setSafe(state, [tableId, 'attributes', attributeId, 'enabled'], visible);
     },
-    [actions.setAttributeSort]: (state, payload) => {
+    [actions.setAttributeSort as any]: (state, payload) => {
       const { tableId, attributeId, direction } = payload;
       return setSafe(state, [tableId, 'attributes', attributeId, 'sortDirection'], direction);
     },
-    [actions.setSplitPos]: (state, payload) =>
+    [actions.setSplitPos as any]: (state, payload) =>
       setSafe(state, [payload.tableId, 'splitPos'], payload.pos),
   },
   defaults: {

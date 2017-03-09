@@ -8,7 +8,7 @@ import update = require('react-addons-update');
  */
 const settingsReducer: IReducerSpec = {
   reducers: {
-    [setLanguage]: (state, payload) => update(state, { language: { $set: payload } }),
+    [setLanguage as any]: (state, payload) => update(state, { language: { $set: payload } }),
   },
   defaults: {
     language: 'en-GB',

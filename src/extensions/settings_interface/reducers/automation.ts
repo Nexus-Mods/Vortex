@@ -8,7 +8,7 @@ import update = require('react-addons-update');
  */
 const automationReducer: IReducerSpec = {
   reducers: {
-    [setAutoDeployment]: (state, payload) => update(state, { deploy: { $set: payload } }),
+    [setAutoDeployment as any]: (state, payload) => update(state, { deploy: { $set: payload } }),
   },
   defaults: {
     deploy: true,

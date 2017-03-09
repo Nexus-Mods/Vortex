@@ -14,19 +14,19 @@ export * from '../types/IDialog';
  * left unset, in that case one will be generated
  * TODO: this stores a function into the store which seems to work but isn't supported
  */
-export const startNotification: any = safeCreateAction('ADD_NOTIFICATION');
+export const startNotification = safeCreateAction('ADD_NOTIFICATION');
 
 /**
  * dismiss a notification. Takes the id of the notification
  */
-export const dismissNotification: any = safeCreateAction('DISMISS_NOTIFICATION');
+export const dismissNotification = safeCreateAction('DISMISS_NOTIFICATION');
 
 /**
  * show a modal dialog to the user
  *
  * don't call this directly, use showDialog
  */
-export const addDialog: any = safeCreateAction(
+export const addDialog = safeCreateAction(
     'SHOW_MODAL_DIALOG',
     (id: string, type: string, title: string, content: IDialogContent, actions: string[]) =>
         ({id, type, title, content, actions}));
@@ -38,7 +38,7 @@ export const addDialog: any = safeCreateAction(
  * you leak (a tiny amount of) memory and the action callbacks aren't called.
  * Use closeDialog instead
  */
-export const dismissDialog: any = safeCreateAction('DISMISS_MODAL_DIALOG');
+export const dismissDialog = safeCreateAction('DISMISS_MODAL_DIALOG');
 
 /**
  * 

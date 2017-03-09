@@ -7,7 +7,7 @@ import {setAutoSortEnabled} from '../actions/settings';
  */
 export const settingsReducer: types.IReducerSpec = {
   reducers: {
-    [setAutoSortEnabled]: (state, payload) => {
+    [setAutoSortEnabled as any]: (state, payload) => {
       return util.setSafe(state, ['autoSort'], payload);
     },
   },
