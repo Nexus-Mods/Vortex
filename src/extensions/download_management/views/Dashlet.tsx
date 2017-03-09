@@ -34,7 +34,7 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
     return (<div>
       <h5>{t('{{ count }} download', {
         count: activeDownloads.length,
-        replace: { count: activeDownloads.length }
+        replace: { count: activeDownloads.length },
       })}</h5>
       <div style={{ textAlign: '-webkit-center' }} >
         <AreaChart width={200} height={200} data={data}>

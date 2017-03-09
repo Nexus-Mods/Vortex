@@ -16,4 +16,3 @@ const automationReducer: IReducerSpec = {
 };
 
 export default automationReducer;
-

@@ -3,7 +3,7 @@ import Icon from '../../views/Icon';
 import * as React from 'react';
 import { Image } from 'react-bootstrap';
 
-interface IToolIconProps {
+export interface IToolIconProps {
   valid: boolean;
   imageUrl: string;
   imageId: number;

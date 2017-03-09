@@ -44,10 +44,9 @@ export interface IExtensibleProps {
  * @returns {React.ComponentClass<P>} the wrapper component
  */
 export function extend(registerFunc: Function) {
-  //if (process.type === 'renderer') {
   const ExtensionManagerImpl: typeof ExtensionManager = require('./ExtensionManager').default;
   ExtensionManagerImpl.registerUIAPI(registerFunc.name);
-  //}
+
   return <P, S>(ComponentToWrap: React.ComponentClass<P>): any => {
     return class __ExtendedComponent extends React.Component<IExtensibleProps & P, S> {
       public static contextTypes: React.ValidationMap<any> = {

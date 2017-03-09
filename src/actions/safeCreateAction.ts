@@ -1,6 +1,6 @@
 import { createAction, types } from 'redux-act';
 
-type ActionCreator<Sig> = Sig;
+export type ActionCreator<Sig> = Sig;
 
 function safeCreateAction<P, M>(description: string): ActionCreator<(...args: any[]) => any>;
 function safeCreateAction<P, M, Sig>(description: string, payloadReducer: Sig): ActionCreator<Sig>;

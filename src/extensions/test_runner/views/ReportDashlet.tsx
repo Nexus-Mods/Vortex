@@ -49,4 +49,3 @@ class ReporterDashlet extends ComponentEx<IProps, {}> {
 }
 
 export default ReporterDashlet as React.ComponentClass<IBaseProps>;
-
