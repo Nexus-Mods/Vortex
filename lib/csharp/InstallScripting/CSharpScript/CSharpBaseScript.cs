@@ -608,7 +608,7 @@ namespace Components.Scripting.CSharpScript
         /// <seealso cref="GetFalloutIniInt(string, string)"/>
         public static string GetFalloutIniString(string section, string key)
         {
-            return ExecuteMethod(() => Functions.GetIniString(null, section, key));
+            return ExecuteMethod(() => Functions.GetIniString("Fallout.ini", section, key));
         }
 
         /// <summary>
@@ -619,7 +619,31 @@ namespace Components.Scripting.CSharpScript
         /// <seealso cref="GetFalloutIniString(string, string)"/>
         public static int GetFalloutIniInt(string section, string key)
         {
-            return ExecuteMethod(() => Functions.GetIniInt(null, section, key));
+            return ExecuteMethod(() => Functions.GetIniInt("Fallout.ini", section, key));
+        }
+
+        /// <summary>
+        /// Retrieves the specified FalloutPrefs.ini value as a string.
+        /// </summary>
+        /// <param name="p_strSection">The section containing the value to retrieve.</param>
+        /// <param name="p_strKey">The key of the value to retrieve.</param>
+        /// <returns>The specified value as a string.</returns>
+        /// <seealso cref="GetPrefsIniInt(string, string)"/>
+        public string GetPrefsIniString(string p_strSection, string p_strKey)
+        {
+            return ExecuteMethod(() => Functions.GetIniString("FalloutPrefs.ini", p_strSection, p_strKey));
+        }
+
+        /// <summary>
+        /// Retrieves the specified FalloutPrefs.ini value as an integer.
+        /// </summary>
+        /// <param name="p_strSection">The section containing the value to retrieve.</param>
+        /// <param name="p_strKey">The key of the value to retrieve.</param>
+        /// <returns>The specified value as an integer.</returns>
+        /// <seealso cref="GetPrefsIniString(string, string)"/>
+        public int GetPrefsIniInt(string p_strSection, string p_strKey)
+        {
+            return ExecuteMethod(() => Functions.GetIniInt("FalloutPrefs.ini", p_strSection, p_strKey));
         }
 
         #endregion
