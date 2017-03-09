@@ -7,23 +7,23 @@ const app = appIn || remote.app;
 const gameSupport = {
   skyrim: {
     mygamesPath: 'skyrim',
-    iniFiles: ['Skyrim.ini', 'SkyrimPrefs.ini'],
+    gameSettingsFiles: ['Skyrim.ini', 'SkyrimPrefs.ini'],
   },
   skyrimse: {
     mygamesPath: 'Skyrim Special Edition',
-    iniFiles: ['Skyrim.ini'],
+    gameSettingsFiles: ['Skyrim.ini'],
   },
   fallout4: {
     mygamesPath: 'Fallout4',
-    iniFiles: ['Fallout4.ini'],
+    gameSettingsFiles: ['Fallout4.ini'],
   },
   falloutnv: {
     mygamesPath: 'FalloutNV',
-    iniFiles: ['Fallout.ini'],
+    gameSettingsFiles: ['Fallout.ini'],
   },
   oblivion: {
     mygamesPath: 'Oblivion',
-    iniFiles: ['Oblivion.ini'],
+    gameSettingsFiles: ['Oblivion.ini'],
   },
 };
 
@@ -36,9 +36,17 @@ export function mygamesPath(gameMode: string): string {
                    gameSupport[gameMode].mygamesPath);
 }
 
-export function iniFiles(gameMode: string): string[] {
-  const { iniFiles } = gameSupport[gameMode];
-  return iniFiles;
+export function gameSettingsFiles(gameMode: string, customPath: string): string[] {
+  const { gameSettingsFiles } = gameSupport[gameMode];
+  if (customPath === null) {
+    return gameSettingsFiles;
+  } else {
+    let fileList: string[] = [];
+    gameSettingsFiles.forEach(file => {
+      fileList.push(path.join(customPath, file));
+    });
+    return fileList;
+  }
 }
 
 export function profilePath(store: Redux.Store<any>, profile: types.IProfile): string {
