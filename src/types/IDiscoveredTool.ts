@@ -4,5 +4,5 @@ export interface IDiscoveredTool extends ITool {
   path: string;
   hidden: boolean;
   custom: boolean;
-  currentWorkingDirectory: string;
+  workingDirectory: string;
 }

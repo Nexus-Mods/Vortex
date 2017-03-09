@@ -35,7 +35,7 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
           hidden: false,
           parameters: [],
           custom: false,
-          currentWorkingDirectory: toolPath,
+          workingDirectory: toolPath,
         }));
       } else {
         log('debug', 'tool not found', tool.id);
@@ -49,7 +49,7 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
                 hidden: false,
                 parameters: [],
                 custom: false,
-                currentWorkingDirectory: resolvedPath,
+                workingDirectory: resolvedPath,
               }));
             }
             return null;
@@ -86,6 +86,7 @@ export function quickDiscovery(knownGames: IGame[],
             modPath: game.queryModPath(),
             tools: {},
             hidden: false,
+            environment: game.environment,
           });
         } else {
           log('debug', 'game not found', game.id);
@@ -216,7 +217,7 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
             path: path.join(testPath, application.executable()),
             hidden: false,
             custom: false,
-            currentWorkingDirectory: testPath,
+            workingDirectory: testPath,
           }));
         }
       })

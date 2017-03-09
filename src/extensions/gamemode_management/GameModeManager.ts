@@ -152,7 +152,7 @@ class GameModeManager {
       id: game.id,
       logo: game.logo,
       modPath: game.queryModPath(),
-      pluginPath: game.pluginPath,
+      extensionPath: game.pluginPath,
       iniFilePath: game.iniFilePath(),
       requiredFiles: game.requiredFiles,
       supportedTools: game.supportedTools !== null
@@ -169,6 +169,7 @@ class GameModeManager {
       logo: tool.logo,
       executable: tool.executable(),
       parameters: tool.parameters || [],
+      environment: tool.environment,
     };
   }
 

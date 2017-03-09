@@ -7,4 +7,5 @@ export interface IDiscoveryResult {
   tools?: {
     [id: string]: ITool;
   };
+  environment?: { [key: string]: string };
 }

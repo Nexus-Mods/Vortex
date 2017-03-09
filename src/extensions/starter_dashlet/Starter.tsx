@@ -7,16 +7,18 @@ import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';
-import { Button } from '../../views/TooltipControls';
 
-import { addDiscoveredTool, changeToolParams,
-         removeDiscoveredTool } from '../gamemode_management/actions/settings';
+import { addDiscoveredTool,
+         setToolVisible } from '../gamemode_management/actions/settings';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IToolStored } from '../gamemode_management/types/IToolStored';
 
+import { setPrimaryTool } from './actions';
+
 import runToolElevated from './runToolElevated';
+import StarterInfo from './StarterInfo';
 import ToolButton from './ToolButton';
 import ToolEditDialog from './ToolEditDialog';
 
@@ -24,22 +26,22 @@ import * as Promise from 'bluebird';
 import { execFile } from 'child_process';
 import * as path from 'path';
 import * as React from 'react';
-import { Media } from 'react-bootstrap';
+import { Dropdown, Media, MenuItem } from 'react-bootstrap';
 import update = require('react-addons-update');
 import { generate as shortid } from 'shortid';
 
 interface IWelcomeScreenState {
-  editTool: string;
+  editTool: StarterInfo;
   counter: number;
 }
 
 interface IActionProps {
   onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => void;
-  onRemoveDiscoveredTool: (gameId: string, toolId: string) => void;
-  onChangeToolParams: (toolId: string) => void;
+  onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => void;
   onShowError: (message: string, details?: string | Error) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
+  onMakePrimary: (gameId: string, toolId: string) => void;
 }
 
 interface IConnectedProps {
@@ -48,6 +50,7 @@ interface IConnectedProps {
   discoveredGames: { [id: string]: IDiscoveryResult };
   discoveredTools: { [id: string]: IDiscoveredTool };
   autoDeploy: boolean;
+  primaryTool: string;
 }
 
 type IWelcomeScreenProps = IConnectedProps & IActionProps;
@@ -63,7 +66,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   public render(): JSX.Element {
-    let { t, gameMode, knownGames } = this.props;
+    let { gameMode, knownGames } = this.props;
 
     if (gameMode === undefined) {
       return null;
@@ -72,7 +75,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     let game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
 
     return (
-      <Media>
+      <Media style={{ overflow: 'visible' }}>
         <Media.Left>
           {this.renderGameIcon(game)}
           {this.renderEditToolDialog()}
@@ -81,77 +84,153 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
           <Media.Heading>
             {game === undefined ? gameMode : game.name}
           </Media.Heading>
-          <Button
-            id='start-game-btn'
-            tooltip={t('Start Game')}
-            onClick={this.startGame}
-          >
-            <Icon name='play' className='game-start-btn' />
-          </Button>
-          <h5>
-            {t('Tools:')}
-          </h5>
-          {game === undefined ? null : this.renderSupportedToolsIcons(game)}
+          {this.renderToolIcons(game)}
         </Media.Right>
       </Media>
     );
   }
 
-  private startGame = () => {
+  private renderToolIcons(game: IGameStored): JSX.Element {
+    const { discoveredGames, discoveredTools, primaryTool } = this.props;
+
+    if (game === undefined) {
+      return null;
+    }
+
+    const gameDiscovery = discoveredGames[game.id];
+
+    const knownTools: IToolStored[] = game.supportedTools;
+    const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
+
+    // add the main game executable
+    let starters: StarterInfo[] = [
+      new StarterInfo(game, gameDiscovery),
+    ];
+
+    // add the tools provided by the game extension (whether they are found or not)
+    knownTools.forEach((tool: IToolStored) => {
+      starters.push(new StarterInfo(game, gameDiscovery, tool, discoveredTools[tool.id]));
+    });
+
+    // finally, add those tools that were added manually
+    Object.keys(discoveredTools)
+      .filter(toolId => !preConfTools.has(toolId))
+      .forEach(toolId => {
+        try {
+          starters.push(new StarterInfo(game, gameDiscovery, undefined, discoveredTools[toolId]));
+        } catch (err) {
+          log('error', 'tool configuration invalid', { gameId: game.id, toolId });
+        }
+      }
+      );
+
+    let primary = primaryTool || game.id;
+
+    const hidden = starters.filter(starter =>
+      (discoveredTools[starter.id] !== undefined)
+      && (discoveredTools[starter.id].hidden === true)
+    );
+
+    const visible = starters.filter(starter =>
+      starter.isGame
+      || (starter.id === primary)
+      || (discoveredTools[starter.id] === undefined)
+      || (discoveredTools[starter.id].hidden !== true)
+    );
+
+    return (<div>
+      {this.renderTool(starters.find(starter => starter.id === primary), true)}
+      <div style={{ display: 'inline' }}>
+        {visible.filter(starter => starter.id !== primary)
+          .map(starter => this.renderTool(starter, false))}
+        {this.renderAddButton(hidden)}
+      </div>
+    </div>);
+  }
+
+  private renderTool = (starter: StarterInfo, primary: boolean) => {
+    const {t} = this.props;
+    if (starter === undefined) {
+      return null;
+    }
+    return <ToolButton
+      t={t}
+      key={starter.id}
+      starter={starter}
+      primary={primary}
+      onRun={this.startTool}
+      onEdit={this.editTool}
+      onRemove={this.removeTool}
+      onMakePrimary={this.makePrimary}
+    />;
+  }
+
+  private renderAddButton(hidden: StarterInfo[]) {
+    const {t} = this.props;
+    // <IconButton id='add-tool-icon' icon='plus' tooltip={t('Add Tool')} />
+    return (<Dropdown id='add-tool-button'>
+      <Dropdown.Toggle>
+        <Icon name='plus' />
+      </Dropdown.Toggle>
+      <Dropdown.Menu>
+        {hidden.map(starter => <MenuItem
+          eventKey={starter.id}
+          onSelect={this.unhide}
+        >{starter.name}
+        </MenuItem>)}
+        <MenuItem
+          onSelect={this.addNewTool}
+        >
+        {t('New...')}
+        </MenuItem>
+      </Dropdown.Menu>
+    </Dropdown>);
+  }
+
+  private unhide = (toolId: any) => {
+    const { gameMode, onSetToolVisible }  = this.props;
+    onSetToolVisible(gameMode, toolId, true);
+  }
+
+  private startTool = (starter: StarterInfo) => {
+    const { t, onShowDialog, onShowError } = this.props;
     this.startDeploy()
     .then((doStart: boolean) => {
-      const {discoveredGames, gameMode} = this.props;
       if (doStart) {
-        const game = this.currentGame();
-        const discovery = discoveredGames[gameMode];
-
-        execFile(path.join(discovery.path, game.executable));
+        try {
+          execFile(starter.exePath, {
+            cwd: starter.workingDirectory,
+            env: Object.assign({}, process.env, starter.environment),
+          });
+        } catch (err) {
+          // TODO: as of the current electron version (1.4.14) the error isn't precise
+          //   enough to determine if the error was actually lack of elevation but among
+          //   the errors that report "UNKNOWN" this should be the most likely one.
+          if (err.errno === 'UNKNOWN') {
+            onShowDialog('question', t('Requires elevation'), {
+              message: t('{{name}} cannot be started because it requires elevation. ' +
+                'Would you like to run the tool elevated?', {
+                  replace: {
+                    name: starter.name,
+                  },
+                }),
+              options: {
+                translated: true,
+              },
+            }, {
+              Cancel: null,
+              'Run elevated': () => runToolElevated(starter, onShowError),
+            });
+          } else {
+            log('info', 'failed to run custom tool', { err: err.message });
+          }
+        }
       }
     })
     .catch((err: Error) => {
       this.props.onShowError('Failed to activate', err);
     })
     ;
-  }
-
- private runTool = (toolId: string) => {
-    this.startDeploy()
-      .then((doStart: boolean) => {
-        if (!doStart) {
-          return;
-        }
-        const { discoveredTools, onShowError } = this.props;
-
-        let discoveredTool = discoveredTools[toolId];
-        try {
-          let execOptions = {
-            cwd: discoveredTool.currentWorkingDirectory !== undefined ?
-              discoveredTool.currentWorkingDirectory : path.dirname(discoveredTool.path),
-          };
-
-          execFile(discoveredTool.path, discoveredTool.parameters, execOptions, (err, output) => {
-            if (err) {
-              log('error', 'failed to spawn', { err, path: discoveredTool.path });
-            }
-          });
-        } catch (err) {
-          if (err.errno === 'UNKNOWN') {
-            const { dialog } = require('electron').remote;
-            dialog.showMessageBox({
-              buttons: ['Ok', 'Cancel'],
-              title: 'Missing elevation',
-              message: discoveredTool.name + ' cannot be started because it requires elevation. ' +
-              'Would you like to run the tool elevated?',
-            }, (buttonIndex) => {
-              if (buttonIndex === 0) {
-                runToolElevated(discoveredTool, onShowError);
-              }
-            });
-          } else {
-            log('info', 'failed to run custom tool', { err: err.message });
-          }
-        }
-    });
   }
 
   private startDeploy(): Promise<boolean> {
@@ -198,96 +277,20 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
       // assumption is that this can only happen during startup
       return <Icon name='spinner' pulse />;
     } else {
-      let logoPath = path.join(game.pluginPath, game.logo);
+      let logoPath = path.join(game.extensionPath, game.logo);
       return <img className='welcome-game-logo' src={logoPath} />;
     }
   }
 
-  private renderSupportedToolsIcons = (game: IGameStored): JSX.Element => {
-    let knownTools: IToolStored[] = game.supportedTools;
-    let { discoveredTools } = this.props;
-
-    if (knownTools === null) {
-      return null;
-    }
-
-    let tools: IDiscoveredTool[] = this.mergeTools(knownTools, discoveredTools);
-
-    return (
-      <div>
-        {tools.map((tool) => this.renderSupportedTool(game, tool))}
-      </div>
-    );
-  }
-
-  private mergeTools(knownTools: IToolStored[],
-                     discoveredTools: { [id: string]: IDiscoveredTool }): IDiscoveredTool[] {
-    let result: IDiscoveredTool[] = knownTools.map((tool: IToolStored): IDiscoveredTool => {
-      return Object.assign({}, tool, {
-        executable: () => tool.executable,
-        path: '',
-        hidden: false,
-        parameters: [],
-        custom: false,
-        currentWorkingDirectory: '',
-        requiredFiles: [],
-      });
-    });
-
-    let lookup = result.reduce((prev: Object, current: IDiscoveredTool, idx: number) => {
-      prev[current.id] = idx;
-      return prev;
-    }, {});
-
-    Object.keys(discoveredTools).forEach((key: string) => {
-      if (!(key in lookup)) {
-        result.push(discoveredTools[key]);
-      } else {
-        result[lookup[key]] = Object.assign({}, result[lookup[key]], discoveredTools[key]);
-      }
-    });
-
-    return result.filter((tool: IDiscoveredTool) => tool !== undefined ? !tool.hidden : null);
-  }
-
-  private currentGame(): IGameStored {
-    const { gameMode, knownGames } = this.props;
-    return knownGames.find((ele) => ele.id === gameMode);
-  }
-
   private renderEditToolDialog() {
-    const toolId = this.state.editTool;
-    if (toolId === undefined) {
+    const { editTool } = this.state;
+    if (editTool === undefined) {
       return null;
-    }
-
-    const { discoveredTools } = this.props;
-    const game = this.currentGame();
-    let tool: IDiscoveredTool = {
-      hidden: false,
-      id: toolId,
-      custom: false,
-      name: '',
-      path: '',
-      parameters: [],
-      currentWorkingDirectory: '',
-      requiredFiles: [],
-      executable: () => '',
-    };
-    let knownTool = game.supportedTools.find((ele) => ele.id === toolId);
-    if (knownTool !== undefined) {
-      tool = Object.assign({}, tool, knownTool);
-    } else {
-      tool.custom = true;
-    }
-    if (toolId in discoveredTools) {
-      tool = Object.assign({}, tool, discoveredTools[toolId]);
     }
 
     return (
       <ToolEditDialog
-        game={ game }
-        tool={ tool }
+        tool={ editTool }
         onClose={ this.closeEditDialog }
       />
     );
@@ -303,39 +306,38 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     }));
   }
 
-  private renderSupportedTool = (game: IGameStored,
-                                 tool: IToolStored | IDiscoveredTool): JSX.Element => {
-    let { t, onAddDiscoveredTool, onRemoveDiscoveredTool, onShowError } = this.props;
-
-    let key = `${tool.id}_${this.state.counter}`;
-
-    return (
-      <ToolButton
-        t={t}
-        key={key}
-        game={game}
-        toolId={tool.id}
-        tool={tool}
-        onRunTool={this.runTool}
-        onChangeToolLocation={onAddDiscoveredTool}
-        onRemoveTool={onRemoveDiscoveredTool}
-        onAddNewTool={this.addNewTool}
-        onChangeToolParams={this.editTool}
-        onShowError={onShowError}
-      />
-    );
-  }
-
   private addNewTool = () => {
+    const { gameMode, discoveredGames, knownGames } = this.props;
+
+    let game: IGameStored = knownGames.find(ele => ele.id === gameMode);
+    let empty = new StarterInfo(game, discoveredGames[gameMode], undefined, {
+      id: shortid(),
+      path: '',
+      hidden: false,
+      custom: true,
+      workingDirectory: '',
+      name: '',
+      executable: undefined,
+      requiredFiles: [],
+      logo: '',
+    });
     this.setState(update(this.state, {
-      editTool: { $set: shortid() },
+      editTool: { $set: empty },
     }));
   }
 
-  private editTool = (toolId: string) => {
+  private editTool = (starter: StarterInfo) => {
     this.setState(update(this.state, {
-      editTool: { $set: toolId },
+      editTool: { $set: starter },
     }));
+  }
+
+  private removeTool = (starter: StarterInfo) => {
+    this.props.onSetToolVisible(starter.gameId, starter.id, false);
+  };
+
+  private makePrimary = (starter: StarterInfo) => {
+    this.props.onMakePrimary(starter.gameId, starter.isGame ? undefined : starter.id);
   }
 };
 
@@ -349,6 +351,7 @@ function mapStateToProps(state: any): IConnectedProps {
     discoveredTools: getSafe(state, [ 'settings', 'gameMode',
                                       'discovered', gameMode, 'tools' ], {}),
     autoDeploy: state.settings.automation.deploy,
+    primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', gameMode], undefined),
   };
 }
 
@@ -357,16 +360,14 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => {
       dispatch(addDiscoveredTool(gameId, toolId, result));
     },
-    onRemoveDiscoveredTool: (gameId: string, toolId: string) => {
-      dispatch(removeDiscoveredTool(gameId, toolId));
-    },
-    onChangeToolParams: (toolId: string) => {
-      dispatch(changeToolParams(toolId));
+    onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => {
+      dispatch(setToolVisible(gameId, toolId, visible));
     },
     onShowError: (message: string, details?: string | Error) =>
       showError(dispatch, message, details),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
+    onMakePrimary: (gameId: string, toolId: string) => dispatch(setPrimaryTool(gameId, toolId)),
   };
 }
 

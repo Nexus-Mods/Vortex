@@ -92,14 +92,6 @@ export interface ISettingsProfiles {
   activeProfileId: string;
 }
 
-export interface IToolStored {
-  id: string;
-  name: string;
-  logo: string;
-  executable: string;
-  parameters: string[];
-}
-
 export interface ISettingsGameMode {
   lastActiveProfile: { [gameId: string]: string };
   discovered: { [id: string]: IDiscoveryResult };

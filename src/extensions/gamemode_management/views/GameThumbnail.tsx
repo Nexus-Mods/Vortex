@@ -21,7 +21,7 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     let { t, game, active, type } = this.props;
 
-    const logoPath: string = path.join(game.pluginPath, game.logo);
+    const logoPath: string = path.join(game.extensionPath, game.logo);
 
     return (
       <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>

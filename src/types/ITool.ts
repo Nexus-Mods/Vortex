@@ -95,4 +95,10 @@ export interface ITool {
    * @memberOf ITool
    */
   parameters?: string[];
+
+  /**
+   * variables to add to the environment when starting this exe. These are in addition to
+   * (and replacing) existing variables that would be passed automatically.
+   */
+  environment?: { [key: string]: string };
 }

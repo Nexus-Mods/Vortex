@@ -1,8 +1,8 @@
-import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import elevated from '../../util/elevated';
 import {log} from '../../util/log';
 
 import runElevatedCustomTool from './runElevatedCustomTool';
+import StarterInfo from './StarterInfo';
 
 import ipc = require('node-ipc');
 import * as path from 'path';
@@ -10,14 +10,14 @@ import { generate as shortid } from 'shortid';
 
 // run the specified tool in a separate process with elevated
 // permissions
-function runToolElevated(tool: IDiscoveredTool,
+function runToolElevated(starter: StarterInfo,
                          onError: (message: string, details: string) => void) {
-  let toolCWD = tool.currentWorkingDirectory !== undefined ?
-    tool.currentWorkingDirectory : path.dirname(tool.path);
+  let toolCWD = starter.workingDirectory !== undefined ?
+    starter.workingDirectory : path.dirname(starter.exePath);
   let elevatedTool = {
-    id: tool.id,
-    toolPath: tool.path.replace(/\\/g, '\\\\'),
-    parameters: tool.parameters,
+    id: starter.id,
+    toolPath: starter.exePath.replace(/\\/g, '\\\\'),
+    parameters: starter.commandLine,
     toolCWD,
   };
 

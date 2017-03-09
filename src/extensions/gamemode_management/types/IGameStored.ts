@@ -5,7 +5,7 @@ export interface IGameStored {
   name: string;
   logo?: string;
   modPath: string;
-  pluginPath?: string;
+  extensionPath?: string;
   iniFilePath: string;
   requiredFiles: string[];
   executable: string;

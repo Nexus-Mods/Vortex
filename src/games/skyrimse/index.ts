@@ -90,6 +90,9 @@ const game: IGame = {
   requiredFiles: [
     'SkyrimSE.exe',
   ],
+  environment: {
+    SteamAPPId: '489830',
+  },
 };
 
 export default game;

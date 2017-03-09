@@ -307,8 +307,15 @@
 }
 
 .tool-icon {
-  width: 32px;
-  height: 32px;
+  width: auto;
+  height: auto;
+  max-width: 32px;
+  max-height: 32px;
+}
+
+.tool-button-primary .tool-icon {
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .tool-icon.invalid {
@@ -318,6 +325,35 @@
 
 .tool-icon.valid {
   color: $brand-info;
+}
+
+.tool-dropdown {
+  margin-right: 10px;
+  margin-bottom: 10px;
+  display: inline-flex;
+  flex-direction: row;
+  float: left;
+}
+
+.tool-dropdown .tool-button-primary {
+  width: 96px;
+  height: 96px;
+}
+
+.tool-dropdown .tool-button {
+  flex: 1;
+  padding: 0px;
+  width: 48px;
+  height: 48px;
+}
+
+.tool-dropdown .dropdown-toggle {
+  flex: 0;
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+  border-left-color: $gray-lighter;
+  border-left-style: solid;
+  border-left-width: 1px;
 }
 
 .react-context-menu-link.disabled {
@@ -609,4 +645,10 @@ Resizer.disabled {
 
 Resizer.disabled:hover {
   border-color: transparent;
+}
+
+.env-edit-buttons {
+  position: absolute;
+  top: 3px;
+  right: 3px;
 }

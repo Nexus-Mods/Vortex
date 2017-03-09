@@ -4,4 +4,5 @@ export interface IToolStored {
   logo: string;
   executable: string;
   parameters: string[];
+  environment: { [key: string]: string };
 }

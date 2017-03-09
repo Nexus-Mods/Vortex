@@ -90,6 +90,9 @@ const game: IGame = {
   requiredFiles: [
     'TESV.exe',
   ],
+  environment: {
+    SteamAPPId: '72850',
+  },
 };
 
 export default game;

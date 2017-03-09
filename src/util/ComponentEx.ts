@@ -3,7 +3,7 @@ import * as React from 'react';
 import { IComponentContext } from '../types/IComponentContext';
 import { II18NProps } from '../types/II18NProps';
 
-import {setSafe} from './storeHelper';
+import { deleteOrNop, setSafe } from './storeHelper';
 
 export { translate } from 'react-i18next';
 export { connect } from 'react-redux';
@@ -36,6 +36,14 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
 
   public get(target: T, key: PropertyKey): any {
     return this.derive(target, key);
+  }
+
+  public deleteProperty(target: T, key: PropertyKey): boolean {
+    delete target[key];
+    const fullPath = [].concat(this.mPath, key);
+    this.mBaseObject = deleteOrNop(this.mBaseObject, fullPath);
+    this.mComponent.setState(this.mBaseObject);
+    return true;
   }
 
   public set(target: T, key: PropertyKey, value: any, receiver: any): boolean {

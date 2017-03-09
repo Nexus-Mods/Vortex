@@ -18,17 +18,17 @@ export const addDiscoveredTool: any =
   (gameId: string, toolId: string, result: IDiscoveredTool) => ({ gameId, toolId, result }));
 
 /**
- * change tool's info
+ * set visibility of a tool. Tools that have been added by the user will be removed entirely whereas
+ * discovered tools (those where we have code to discover them) are merely hidden
  */
-export const changeToolParams: any =
-  safeCreateAction('CHANGE_TOOL_PARAMS',
-  (toolId: string) => ({ toolId }));
+export const setToolVisible: any = safeCreateAction('SET_TOOL_VISIBLE',
+(gameId: string, toolId: string, visible: boolean) => ({ gameId, toolId, visible }));
 
 /**
- * remove info about a discovered tool
+ * change parameters for a game (i.e. call arguments, environment, ...)
  */
-export const removeDiscoveredTool: any = safeCreateAction('REMOVE_DISCOVERED_TOOL',
-(gameId: string, toolId: string) => ({ gameId, toolId }));
+export const setGameParameters: any = safeCreateAction('SET_GAME_PARAMETERS',
+(gameId: string, parameters: any) => ({ gameId, parameters }));
 
 /**
  * hide or unhide a game
