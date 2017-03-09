@@ -258,7 +258,7 @@ function init(context: IExtensionContextExt): boolean {
         // current activator is not valid for this game. This should only occur
         // if compatibility of the activator has changed
         if (supported.length > 0) {
-          context.api.store.dispatch(setActivator(supported[0].id));
+          context.api.store.dispatch(setActivator(supported[0].id, newGame));
         }
       }
 

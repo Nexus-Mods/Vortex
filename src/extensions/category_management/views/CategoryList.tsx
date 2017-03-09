@@ -561,7 +561,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onUpdateCategories: (activeGameId: string, categories: ICategoryDictionary) => {
       dispatch(updateCategories(activeGameId, categories));
     },
-    onRenameCategory: (activeGameId: string, categoryId: string, newCategory: {}) => {
+    onRenameCategory: (activeGameId: string, categoryId: string, newCategory: string) => {
       dispatch(renameCategory(activeGameId, categoryId, newCategory));
     },
     onSetSearchString: (text: string) => {
