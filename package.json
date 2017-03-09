@@ -215,7 +215,7 @@
     "react-shallow-testutils": "^2.0.0",
     "react-sortable-tree": "^0.1.8",
     "redux": "^3.5.2",
-    "redux-act": "^1.1.0",
+    "redux-act": "^1.1.1",
     "redux-devtools": "^3.3.1",
     "redux-devtools-dispatch": "^2.2.0",
     "redux-devtools-log-monitor": "^1.1.1",

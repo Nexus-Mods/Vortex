@@ -9,7 +9,6 @@
 /// <reference path="react-sortable-tree.d.ts" />
 /// <reference path="redux-electron-store.d.ts" />
 /// <reference path="redux-devtools-dispatch.d.ts" />
-/// <reference path="redux-act.d.ts" />
 /// <reference path="redux-persist.d.ts" />
 /// <reference path="redux-watcher.d.ts" />
 /// <reference path="react-layout-pane.d.ts" />

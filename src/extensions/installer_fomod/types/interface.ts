@@ -51,9 +51,9 @@ export interface IStateCallback {
 export interface IInstallerInfo {
   moduleName: string;
   image: IHeaderImage;
-  select: IStateCallback;
-  cont: (direction: Direction) => void;
-  cancel: () => void;
+  select?: IStateCallback;
+  cont?: (direction: Direction) => void;
+  cancel?: () => void;
 }
 
 export interface IInstallerState {
