@@ -2,6 +2,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IState } from '../../../types/IState';
+import { isNullOrWhitespace } from '../../../util/util';
 import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
@@ -96,7 +97,9 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
   private addSearchPath = () => {
     this.context.api.selectDir({})
     .then((dirName: string) => {
-      this.props.onAddPath(dirName);
+      if (!isNullOrWhitespace(dirName)) {
+        this.props.onAddPath(dirName);
+      }
     })
     .catch((err) => {
       log('info', 'search path selection cancelled', { err });

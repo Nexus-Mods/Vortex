@@ -1,6 +1,7 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
 import {getSafe} from '../../../util/storeHelper';
+import {isNullOrWhitespace} from '../../../util/util';
 import {IGameStored} from '../../gamemode_management/types/IGameStored';
 import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
 import * as path from 'path';
@@ -83,10 +84,6 @@ class Ini extends DelegateBase {
         return Promise.resolve(callback(null, iniValue));
       });
   }
-}
-
-function isNullOrWhitespace(check: string) {
-    return (!check || 0 === check.trim().length);
 }
 
 export default Ini;

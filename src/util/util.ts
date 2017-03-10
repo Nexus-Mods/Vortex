@@ -137,3 +137,11 @@ export function midClip(input: string, maxLength: number): string {
     + '...'
     + input.substr(input.length - (half - 1));
 }
+
+/**
+ * test if a string is null, undefined or consists only of whitespaces
+ * @param {string} check the string to check
+ */
+export function isNullOrWhitespace(check: string): boolean {
+    return (!check || 0 === check.trim().length);
+}
