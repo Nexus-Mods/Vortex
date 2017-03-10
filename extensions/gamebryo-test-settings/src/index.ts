@@ -5,7 +5,6 @@ import { iniPath } from './util/gameSupport';
 import * as Promise from 'bluebird';
 import { selectors, types } from 'nmm-api';
 import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
-import * as path from 'path';
 
 let parser = new IniParser(new WinapiFormat());
 let oblivionIni: IniFile<any>;
@@ -30,7 +29,6 @@ function init(context): boolean {
         let currentProfile = selectors.activeProfile(store.getState());
 
         const fontList = missingFonts.join('\n');
-
 
         return Promise.resolve({
           description: {
