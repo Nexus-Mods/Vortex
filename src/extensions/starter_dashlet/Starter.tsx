@@ -174,11 +174,13 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
       </Dropdown.Toggle>
       <Dropdown.Menu>
         {hidden.map(starter => <MenuItem
+          key={starter.id}
           eventKey={starter.id}
           onSelect={this.unhide}
         >{starter.name}
         </MenuItem>)}
         <MenuItem
+          key='__add'
           onSelect={this.addNewTool}
         >
         {t('New...')}

@@ -1,49 +1,44 @@
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { selectors, types, util } from 'nmm-api';
+import { types, util } from 'nmm-api';
 import * as path from 'path';
 
-const skyrimDefaultFonts = [
-  'Interface\\fonts_console.swf',
-  'Interface\\fonts_en.swf',
-  'Interface\\fonts_en2.swf',
-];
+const skyrimDefaultFonts = new Set<string>([
+  'interface\\fonts_console.swf',
+  'interface\\fonts_en.swf',
+  'interface\\fonts_en2.swf',
+]);
 
-function checkSkyrimFonts(
-  store: Redux.Store<types.IState>,
-  gameId: string): Promise<string[]> {
+function checkSkyrimFonts(state: types.IState, gameId: string): Promise<string[]> {
 
-  let missingFonts: string[] = [];
-  let currentProfile = selectors.activeProfile(store.getState());
-  let gamePath = util.getSafe(store.getState(),
-    ['settings', 'gameMode', 'discovered', currentProfile.gameId], undefined);
-  let fontconfigTxt = path.join(gamePath.path, 'Data\\Interface\\fontconfig.txt');
-  let fonts: string[] = [];
+  const gameDiscovery: types.IDiscoveryResult = util.getSafe(state,
+    ['settings', 'gameMode', 'discovered', gameId], undefined);
+  const fontconfigTxt = path.join(gameDiscovery.modPath, 'interface', 'fontconfig.txt');
 
   return fs.readFileAsync(fontconfigTxt)
     .then((fontconfig: NodeBuffer) => {
-      let textRows = fontconfig.toString().split('\n');
-      textRows.forEach(row => {
-        if (row.startsWith('fontlib ')) {
-          fonts.push(row.trim().replace(/^fontlib +["'](.*)["'].*/, '$1'));
-        }
-      });
+      // extract fonts from fontlib lines
+      let rows = fontconfig.toString().split('\n');
+      const fonts: string[] =
+        rows.filter(row => row.startsWith('fontlib '))
+            .map(row => row.trim().replace(/^fontlib +["'](.*)["'].*/, '$1').toLowerCase());
 
-      let removedFonts = fonts.filter((font: string) =>
-        skyrimDefaultFonts.indexOf(font) === -1);
+      // filter the known fonts shipped with the game
+      let removedFonts = fonts
+        .filter((font: string) => !skyrimDefaultFonts.has(font));
 
-      return Promise.each(removedFonts, (font: string) => {
-        let fontFile: string = path.join(gamePath.path, font);
+      // test the remaining files for existence
+      // TODO: I guess we should also check in bsas, right?
+      return Promise.map(removedFonts, (font: string) => {
+        const fontFile: string = path.join(gameDiscovery.modPath, font);
         return fs.statAsync(fontFile)
-          .catch(() => {
-            missingFonts.push(font);
-          });
+          .then(() => null)
+          .catch(() => fontFile);
       });
-
     })
-    .then(() => {
-      return Promise.resolve(missingFonts);
-    });
+    .then((missingFonts: string[]) =>
+      Promise.resolve(missingFonts.filter(font => font !== null))
+    );
 }
 
 export default checkSkyrimFonts;

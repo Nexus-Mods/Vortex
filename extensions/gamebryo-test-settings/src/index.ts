@@ -12,36 +12,32 @@ let oblivionIni: IniFile<any>;
 
 function init(context): boolean {
 
-  const testOblivionFonts = () => new Promise<types.ITestResult>((resolve, reject) => {
+  const testOblivionFonts = (): Promise<types.ITestResult> => {
     let store: Redux.Store<types.IState> = context.api.store;
     let gameId = selectors.activeGameId(store.getState());
 
     if (gameId !== 'oblivion') {
-      return resolve(undefined);
+      return Promise.resolve(undefined);
     }
 
-    let messages = 'List of missing fonts: ';
-
-    checkOblivionFont(store, gameId)
+    return checkOblivionFont(store, gameId)
       .then((missingFonts: string[]) => {
 
         if (missingFonts.length === 0) {
-          return resolve(undefined);
+          return Promise.resolve(undefined);
         }
 
         let currentProfile = selectors.activeProfile(store.getState());
 
-        missingFonts.forEach(font => {
-          let fontFile: string = path.join(path.dirname(iniPath(currentProfile.gameId)), font);
-          messages = messages.concat('\n ' + fontFile);
-        });
+        const fontList = missingFonts.join('\n');
 
-        return resolve({
+
+        return Promise.resolve({
           description: {
-            short: 'Oblivion ini font not installed.',
-            long: messages,
+            short: 'Fonts missing.',
+            long: 'Fonts referenced in oblivion.ini don\'t seem to be installed:\n' + fontList,
           },
-          severity: 'error',
+          severity: 'error' as types.ProblemSeverity,
           automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
             Object.keys(oblivionIni.data.Fonts).forEach((key) => {
               if (missingFonts.find((item) => {
@@ -61,58 +57,51 @@ function init(context): boolean {
         });
       })
       .catch((err: Error) => {
-         return resolve({
+         return Promise.resolve({
           description: {
             short: 'Failed to read Oblivion.ini.',
             long: err.toString(),
           },
-          severity: 'error',
+          severity: 'error' as types.ProblemSeverity,
         });
     });
-  });
+  };
 
-  const testSkyrimFonts = () => new Promise<types.ITestResult>((resolve, reject) => {
+  const testSkyrimFonts = (): Promise<types.ITestResult> => {
     let store: Redux.Store<types.IState> = context.api.store;
     let gameId = selectors.activeGameId(store.getState());
 
     if ((gameId !== 'skyrim') && (gameId !== 'skyrimse')) {
-      return resolve(undefined);
+      return Promise.resolve(undefined);
     }
 
-    let messages = 'List of missing fonts: ';
-
-    checkSkyrimFonts(store, gameId)
+    return checkSkyrimFonts(store.getState(), gameId)
       .then((missingFonts: string[]) => {
 
         if (missingFonts.length === 0) {
-          return resolve(undefined);
+          return Promise.resolve(undefined);
         }
 
-        let currentProfile = selectors.activeProfile(store.getState());
+        const fontList = missingFonts.join('\n');
 
-        missingFonts.forEach(font => {
-          let fontFile: string = path.join(path.dirname(iniPath(currentProfile.gameId)), font);
-          messages = messages.concat('\n ' + fontFile);
-        });
-
-        return resolve({
+        return Promise.resolve({
           description: {
-            short: 'Fontconfig txt font not installed.',
-            long: messages,
+            short: 'Fonts missing.',
+            long: 'Fonts referenced in fontconfig.txt don\'t seem to be installed:\n' + fontList,
           },
-          severity: 'error',
+          severity: 'error' as types.ProblemSeverity,
         });
       })
       .catch((err: Error) => {
-        return resolve({
+        return Promise.resolve({
           description: {
             short: 'Failed to read fontconfig.txt.',
             long: err.toString(),
           },
-          severity: 'error',
+          severity: 'error' as types.ProblemSeverity,
         });
     });
-  });
+  };
 
   context.registerTest('oblivion-fonts', 'gamemode-activated', testOblivionFonts);
   context.registerTest('skyrim-fonts', 'gamemode-activated', testSkyrimFonts);

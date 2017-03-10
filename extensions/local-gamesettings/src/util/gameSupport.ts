@@ -49,10 +49,10 @@ export function gameSettingsFiles(gameMode: string, customPath: string): string[
   }
 }
 
-export function profilePath(store: Redux.Store<any>, profile: types.IProfile): string {
+export function profilePath(profile: types.IProfile): string {
   return path.join(app.getPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
-export function backupPath(store: Redux.Store<any>, profile: types.IProfile): string {
+export function backupPath(profile: types.IProfile): string {
   return path.join(app.getPath('userData'), profile.gameId);
 }
