@@ -23,6 +23,8 @@ interface IConnectedState {
   autoDeploy: boolean;
   dismissAll: boolean;
   steps: { [stepId: string]: boolean };
+  searchPaths: string[];
+  discoveryRunning: boolean;
 }
 
 interface IActionProps {
@@ -85,6 +87,41 @@ class Dashlet extends ComponentEx<IProps, {}> {
       },
     },
     {
+      id: 'manual-search',
+      condition: (props: IProps) => true,
+      render: (props: IProps): JSX.Element => {
+        const {t, discoveryRunning, searchPaths} = props;
+
+
+        if (discoveryRunning) {
+          return <span>
+          <a onClick={this.openGames}>
+            {t('Discovery running')}<Icon name='spinner' pulse/>
+          </a></span>;
+        } else {
+          const gameModeLink =
+            <a onClick={this.openGames}><Icon name='gamepad'/>{t('discovered')}</a>;
+          const searchLink =
+            <a onClick={this.startManualSearch}>{t('search your disks')}</a>;
+          const settingsLink =
+            <a onClick={this.openSettings}><Icon name='gear' />{searchPaths.sort().join(', ')}</a>;
+
+          const text = 'If games you have installed weren\'t {{discovered}}, NMM2 can {{search}} '
+            + 'for them. This can take some time. Currenty these directories will be searched: '
+            + '{{settings}}.';
+
+          return (<span>
+            <Interpolate
+              i18nKey={text}
+              discovered={gameModeLink}
+              search={searchLink}
+              settings={settingsLink}
+            />
+          </span>);
+        }
+      },
+    },
+    {
       id: 'deploy-automation',
       condition: (props: IProps) => true,
       render: (props: IProps): JSX.Element => {
@@ -137,6 +174,10 @@ class Dashlet extends ComponentEx<IProps, {}> {
     this.context.api.events.emit('show-modal', 'settings');
   }
 
+  private startManualSearch = () => {
+    this.context.api.events.emit('start-discovery');
+  }
+
   private openGames = () => {
     this.context.api.events.emit('show-main-page', 'Games');
   }
@@ -159,6 +200,8 @@ function mapStateToProps(state: any): IConnectedState {
     autoDeploy: state.settings.automation.deploy,
     dismissAll: state.settings.firststeps.dismissAll,
     steps: state.settings.firststeps.steps,
+    searchPaths: state.settings.gameMode.searchPaths,
+    discoveryRunning: state.session.discovery.running,
   };
 }
 
