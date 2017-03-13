@@ -483,9 +483,8 @@ namespace Components.Interface
         /// <param name="p_booActivate">Whether to activate the plugin.</param>
         public void SetPluginActivation(string p_strPluginPath, bool p_booActivate)
         {
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("SetPluginActivation");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            /* The system automatically activates all plugins upon deployment so there's no
+            need for adding further instructions here.*/
         }
 
         #endregion
