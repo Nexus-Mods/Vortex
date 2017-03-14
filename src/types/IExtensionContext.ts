@@ -1,3 +1,5 @@
+import { Archive } from '../util/archives';
+
 import { INotification } from './INotification';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
@@ -110,6 +112,29 @@ export interface IPersistor {
   setItem(key: string, value: string | number, cb: (error: Error) => void): void;
   removeItem(key: string, cb: (error: Error) => void): void;
   getAllKeys(cb: (error: Error, keys?: string[]) => void): void;
+}
+
+/**
+ * options that can be passed to archive handler on opening
+ */
+export interface IArchiveOptions {
+  // if set, the archive should be integrity-checked on loading (i.e. crc checks) if possible
+  // whether this is supported and how much it slows down loading depends on the file type.
+  verify?: boolean;
+}
+
+/**
+ * interface for archive handlers, exposing files inside archives to to other extensions
+ * 
+ * @export
+ * @interface IArchiveHandler
+ */
+export interface IArchiveHandler {
+  readDir(archPath: string): Promise<string[]>;
+}
+
+export interface IArchiveHandlerCreator {
+  (fileName: string, options: IArchiveOptions): Promise<IArchiveHandler>;
 }
 
 /**
@@ -262,6 +287,10 @@ export interface IExtensionApi {
    */
   saveModMeta: (modInfo: IModInfo) => Promise<void>;
 
+  /**
+   * opens an archive
+   */
+  openArchive: (archivePath: string) => Promise<Archive>;
 }
 
 /**
@@ -449,6 +478,14 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerTest: (id: string, event: string, check: CheckFunction) => void;
+
+  /**
+   * register a handler for archive types so the content of such archives is exposed to
+   * the application (especially other extensions)
+   * 
+   * @memberOf IExtensionContext
+   */
+  registerArchiveType: (extension: string, handler: IArchiveHandlerCreator) => void;
 
   /**
    * called once after the store has been set up and after all extensions have been initialized

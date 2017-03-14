@@ -1,13 +1,15 @@
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import { IExtensionInit } from '../types/Extension';
-import { IExtensionApi, IExtensionContext, ILookupDetails,
-         IOpenOptions, IStateChangeCallback } from '../types/IExtensionContext';
+import { IArchiveHandler, IArchiveHandlerCreator, IExtensionApi, IExtensionContext,
+         ILookupDetails, IOpenOptions, IStateChangeCallback } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
-import { log } from '../util/log';
-import { showError } from '../util/message';
-import { activeGameId } from '../util/selectors';
-import { getSafe } from '../util/storeHelper';
+
+import { Archive } from './archives';
+import { log } from './log';
+import { showError } from './message';
+import { activeGameId } from './selectors';
+import { getSafe } from './storeHelper';
 
 import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
@@ -203,6 +205,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerSettingsHive: undefined,
       registerTableAttribute: undefined,
       registerTest: undefined,
+      registerArchiveType: undefined,
       api: undefined,
       once: undefined,
       onceMain: undefined,
@@ -234,6 +237,7 @@ class ExtensionManager {
   private mReduxWatcher: any;
   private mWatches: WatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
+  private mArchiveHandlers: { [extension: string]: IArchiveHandlerCreator };
   private mModDB: ModDB;
   private mModDBGame: string;
   private mModDBAPIKey: string;
@@ -266,6 +270,7 @@ class ExtensionManager {
       lookupModReference: this.lookupModReference,
       lookupModMeta: this.lookupModMeta,
       saveModMeta: this.saveModMeta,
+      openArchive: this.openArchive,
     };
     this.mExtensions = this.loadExtensions();
     this.initExtensions();
@@ -551,6 +556,10 @@ class ExtensionManager {
     this.mProtocolHandlers[protocol] = callback;
   }
 
+  private registerArchiveHandler = (extension: string, handler: IArchiveHandlerCreator) => {
+    this.mArchiveHandlers[extension] = handler;
+  }
+
   private deregisterProtocol(protocol: string) {
     log('info', 'deregister protocol');
     if (process.execPath.endsWith('electron.exe')) {
@@ -597,6 +606,23 @@ class ExtensionManager {
       this.modDB.insert(modInfo);
       resolve();
     });
+  }
+
+  private openArchive = (archivePath: string): Promise<Archive> => {
+    if (this.mArchiveHandlers === undefined) {
+      // lazy loading the archive handlers
+      this.mArchiveHandlers = {};
+      this.apply('registerArchiveType', this.registerArchiveHandler);
+    }
+    const ext = path.extname(archivePath).substr(1);
+    const creator = this.mArchiveHandlers[ext];
+    if (creator === undefined) {
+      return Promise.reject(new Error('unsupported archive format ' + ext));
+    }
+    return creator(archivePath, {})
+      .then((handler: IArchiveHandler) => {
+        return Promise.resolve(new Archive(handler));
+      });
   }
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {

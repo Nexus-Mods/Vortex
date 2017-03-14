@@ -1,0 +1,30 @@
+{
+  "name": "gamebryo-bsa-support",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./out/index.js",
+  "scripts": {
+    "tsc": "tsc -p .",
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
+    "clear": "rm-local-modules",
+    "postinstall": "electron-rebuild -w bsatk",
+    "copy_bsatk": "copyfiles -f ./node_modules/bsatk/build/Release/nbind.node ./dist/bsatk",
+    "prebuild": "typings prune && typings install",
+    "build": "npm run tsc && npm run webpack && npm run copy_bsatk",
+    "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-bsa-support",
+    "buildDev": "npm run build && npm run installDev"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/electron": "^1.4.32",
+    "@types/fs-extra-promise": "^0.0.31",
+    "@types/react": "^0.14.55",
+    "@types/react-redux": "^4.4.35",
+    "electron-rebuild": "^1.5.7",
+    "nmm-api": "file:../../api",
+    "bsatk": "file:../../lib/cpp/bsatk",
+    "rm-local-modules": "^0.0.2",
+    "webpack": "^1.13.2"
+  }
+}
