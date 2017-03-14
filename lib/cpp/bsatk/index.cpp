@@ -3,6 +3,62 @@
 #include <vector>
 #include <nan.h>
 
+
+const char *convertErrorCode(BSA::EErrorCode code) {
+  switch (code) {
+    case BSA::ERROR_ACCESSFAILED: return "access failed";
+    case BSA::ERROR_CANCELED: return "canceled";
+    case BSA::ERROR_FILENOTFOUND: return "file not found";
+    case BSA::ERROR_INVALIDDATA: return "invalid data";
+    case BSA::ERROR_INVALIDHASHES: return "invalid hashes";
+    case BSA::ERROR_SOURCEFILEMISSING: return "source file missing";
+    case BSA::ERROR_ZLIBINITFAILED: return "zlib init failed";
+    case BSA::ERROR_NONE: return nullptr;
+    default: return "unknown";
+  }
+}
+
+class ExtractWorker : public Nan::AsyncWorker {
+public:
+  ExtractWorker(std::shared_ptr<BSA::Archive> archive,
+             BSA::File::Ptr file,
+             const char *outputrDirectory,
+             Nan::Callback *appCallback)
+    : Nan::AsyncWorker(appCallback)
+    , m_Archive(archive)
+    , m_File(file)
+    , m_OutputDirectory(outputrDirectory)
+  {}
+
+  void Execute() {
+    BSA::EErrorCode code;
+    if (m_File.get() != nullptr) {
+      code = m_Archive->extract(m_File, m_OutputDirectory.c_str());
+    }
+    else {
+      code = m_Archive->extractAll(m_OutputDirectory.c_str(),
+        [](int, std::string) { return true; });
+    }
+    if (code != BSA::ERROR_NONE) {
+      SetErrorMessage(convertErrorCode(code));
+    }
+  }
+
+  void HandleOKCallback() {
+    Nan::HandleScope scope;
+
+    v8::Local<v8::Value> argv[] = {
+      Nan::Null()
+    };
+
+    callback->Call(1, argv);
+  }
+private:
+  std::shared_ptr<BSA::Archive> m_Archive;
+  std::shared_ptr<BSA::File> m_File;
+  std::string m_OutputDirectory;
+};
+
 class BSAFile {
 public:
   BSAFile(std::shared_ptr<BSA::File> file)
@@ -23,8 +79,7 @@ class BSAFolder {
 public:
   BSAFolder(std::shared_ptr<BSA::Folder> folder)
     : m_Folder(folder)
-  {
-  }
+  {}
 
   std::string getName() const { return m_Folder->getName(); }
   std::string getFullPath() const { return m_Folder->getFullPath(); }
@@ -54,7 +109,6 @@ public:
   }
 
   ~BSArchive() {
-    m_Wrapped->close();
   }
 
   BSAFolder getRoot() {
@@ -65,8 +119,7 @@ public:
     switch (m_Wrapped->getType()) {
       case BSA::Archive::TYPE_OBLIVION: return "oblivion";
       case BSA::Archive::TYPE_SKYRIM:   return "skyrim";
-      // fallout 3 and fallout nv use the same type as
-      // skyrim
+      // fallout 3 and fallout nv use the same type as skyrim
       default: return nullptr;
     }
   }
@@ -78,22 +131,19 @@ public:
     }
   }
 
-private:
-
-  const char *convertErrorCode(BSA::EErrorCode code) {
-    switch (code) {
-      case BSA::ERROR_ACCESSFAILED: return "access failed";
-      case BSA::ERROR_CANCELED: return "canceled";
-      case BSA::ERROR_FILENOTFOUND: return "file not found";
-      case BSA::ERROR_INVALIDDATA: return "invalid data";
-      case BSA::ERROR_INVALIDHASHES: return "invalid hashes";
-      case BSA::ERROR_SOURCEFILEMISSING: return "source file missing";
-      case BSA::ERROR_ZLIBINITFAILED: return "zlib init failed";
-      case BSA::ERROR_NONE: return nullptr;
-      default: return "unknown";
-    }
+  void extractFile(BSAFile file, const char *outputDirectory, nbind::cbFunction callback) {
+    Nan::AsyncQueueWorker(
+      new ExtractWorker(m_Wrapped, file.getWrappee(), outputDirectory,
+        new Nan::Callback(callback.getJsFunction())
+    ));
   }
 
+  void extractAll(const char *outputDirectory, nbind::cbFunction callback) {
+    Nan::AsyncQueueWorker(
+      new ExtractWorker(m_Wrapped, std::shared_ptr<BSA::File>(), outputDirectory,
+        new Nan::Callback(callback.getJsFunction())
+    ));
+  }
 private:
   std::shared_ptr<BSA::Archive> m_Wrapped;
 };
@@ -102,14 +152,14 @@ class LoadWorker : public Nan::AsyncWorker {
 public:
   LoadWorker(const char *fileName, bool testHashes, Nan::Callback *appCallback)
     : Nan::AsyncWorker(appCallback)
-    , m_FileName(fileName)
+    , m_OutputDirectory(fileName)
     , m_TestHashes(testHashes)
   {
   }
 
   void Execute() {
     try {
-      m_Result = new BSArchive(m_FileName.c_str(), m_TestHashes);
+      m_Result = new BSArchive(m_OutputDirectory.c_str(), m_TestHashes);
     }
     catch (const std::exception &e) {
       SetErrorMessage(e.what());
@@ -127,14 +177,9 @@ public:
     callback->Call(2, argv);
     delete m_Result;
   }
-
-  void HandleErrorCallback() {
-    Nan::AsyncWorker::HandleErrorCallback();
-  }
-
 private:
   BSArchive *m_Result;
-  std::string m_FileName;
+  std::string m_OutputDirectory;
   bool m_TestHashes;
 };
 
@@ -170,6 +215,8 @@ NBIND_CLASS(BSArchive) {
   NBIND_CONSTRUCT<const char*, bool>();
   NBIND_GETTER(getType);
   NBIND_GETTER(getRoot);
+  NBIND_METHOD(extractFile);
+  NBIND_METHOD(extractAll);
 }
 
 NBIND_FUNCTION(loadBSA);

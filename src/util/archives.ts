@@ -18,4 +18,16 @@ export class Archive {
   public readDir(dirPath: string): Promise<string[]> {
     return this.mHandler.readDir(dirPath);
   }
+
+  public readFile(filePath: string): NodeJS.ReadableStream {
+    return this.mHandler.readFile(filePath);
+  }
+
+  public extractFile(filePath: string, outputPath: string): Promise<void> {
+    return this.mHandler.extractFile(filePath, outputPath);
+  }
+
+  public extractAll(outputPath: string): Promise<void> {
+    return this.mHandler.extractAll(outputPath);
+  }
 }

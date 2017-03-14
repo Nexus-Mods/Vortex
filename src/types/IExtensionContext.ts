@@ -131,6 +131,9 @@ export interface IArchiveOptions {
  */
 export interface IArchiveHandler {
   readDir(archPath: string): Promise<string[]>;
+  readFile(filePath: string): NodeJS.ReadableStream;
+  extractFile(filePath: string, outputPath: string): Promise<void>;
+  extractAll(outputPath: string): Promise<void>;
 }
 
 export interface IArchiveHandlerCreator {

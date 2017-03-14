@@ -2,6 +2,8 @@ declare module 'bsatk' {
   export class BSArchive {
     type: number;
     root: BSAFolder;
+    extractFile: (file: BSAFile, outputDirectory: string, callback: (err: Error) => void) => void;
+    extractAll: (outputDirectory: string, callback: (err: Error) => void) => void;
   }
 
   export class BSAFile {
