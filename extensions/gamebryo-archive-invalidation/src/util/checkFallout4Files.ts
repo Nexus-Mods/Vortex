@@ -3,7 +3,7 @@ import * as fs from 'fs-extra-promise';
 import { types } from 'nmm-api';
 import * as path from 'path';
 
-function checkSkyrimFiles(
+function checkFallout4Files(
   store: Redux.Store<types.IState>,
   gameId: string,
   gamePath: string): Promise<string[]> {
@@ -13,7 +13,7 @@ function checkSkyrimFiles(
   return fs.readdirAsync(gamePath)
     .then((files) => {
       let fileName: string[] = files.filter((file) => {
-        return file.startsWith('Skyrim - ', 0) && path.extname(file) === '.bsa';
+        return file.startsWith('Fallout4 - ', 0) && path.extname(file) === '.ba2';
       });
 
       return Promise.all(fileName.map((file) => {
@@ -30,4 +30,4 @@ function checkSkyrimFiles(
     });
 }
 
-export default checkSkyrimFiles;
+export default checkFallout4Files;
