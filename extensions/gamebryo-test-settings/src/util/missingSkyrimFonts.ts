@@ -3,14 +3,8 @@ import * as fs from 'fs-extra-promise';
 import { types, util } from 'nmm-api';
 import * as path from 'path';
 
-const skyrimDefaultFonts = new Set<string>([
-  'interface\\fonts_console.swf',
-  'interface\\fonts_en.swf',
-  'interface\\fonts_en2.swf',
-]);
-
-function checkSkyrimFonts(state: types.IState, gameId: string): Promise<string[]> {
-
+function missingSkyrimFonts(state: types.IState, skyrimDefaultFonts: Set<string>,
+                            gameId: string): Promise<string[]> {
   const gameDiscovery: types.IDiscoveryResult = util.getSafe(state,
     ['settings', 'gameMode', 'discovered', gameId], undefined);
   const fontconfigTxt = path.join(gameDiscovery.modPath, 'interface', 'fontconfig.txt');
@@ -41,4 +35,4 @@ function checkSkyrimFonts(state: types.IState, gameId: string): Promise<string[]
     );
 }
 
-export default checkSkyrimFonts;
+export default missingSkyrimFonts;
