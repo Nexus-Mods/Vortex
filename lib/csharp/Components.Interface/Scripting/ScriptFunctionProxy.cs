@@ -231,17 +231,19 @@ namespace Components.Interface
         /// <summary>
         /// Gets a filtered list of all files in a user's Data directory.
         /// </summary>
-        /// <param name="p_strPath">The subdirectory of the Data directory from which to get the listing.</param>
+        /// <param name="folderPath">The subdirectory of the Data directory from which to get the listing.</param>
         /// <param name="p_strPattern">The pattern against which to filter the file paths.</param>
         /// <param name="p_booAllFolders">Whether or not to search through subdirectories.</param>
         /// <returns>A filtered list of all files in a user's Data directory.</returns>
-        public string[] GetExistingDataFileList(string p_strPath, string p_strPattern, bool p_booAllFolders)
+        public string[] GetExistingDataFileList(string folderPath, string p_strPattern, bool p_booAllFolders)
         {
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("GetExistingDataFileList");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            string[] FileList = null;
 
-            return null;
+            Task.Run(async () => {
+                FileList = await Core.context.GetExistingDataFileList(folderPath);
+            }).Wait();
+
+            return FileList;
         }
 
         /// <summary>
@@ -265,17 +267,19 @@ namespace Components.Interface
         }
 
         /// <summary>
-        /// Gets the speified file from the user's Data directory.
+        /// Gets the specified file from the user's Data directory.
         /// </summary>
-        /// <param name="p_strPath">The path of the file to retrieve.</param>
+        /// <param name="filePath">The path of the file to retrieve.</param>
         /// <returns>The specified file, or <c>null</c> if the file does not exist.</returns>
-        public byte[] GetExistingDataFile(string p_strPath)
+        public byte[] GetExistingDataFile(string filePath)
         {
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("GetExistingDataFile");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            byte[] DataFile = null;
 
-            return new byte[0];
+            Task.Run(async () => {
+                DataFile = await Core.context.GetExistingDataFile(filePath);
+            }).Wait();
+
+            return DataFile;
         }
 
         /// <summary>

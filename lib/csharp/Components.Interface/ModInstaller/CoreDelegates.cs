@@ -102,6 +102,8 @@ namespace Components.Interface
         private Func<object, Task<object>> mGetExtenderVersion;
         private Func<object, Task<object>> mIsExtenderPresent;
         private Func<object, Task<object>> mCheckIfFileExists;
+        private Func<object, Task<object>> mGetExistingDataFile;
+        private Func<object, Task<object>> mGetExistingDataFileList;
 
         public ContextDelegates(dynamic source)
         {
@@ -110,6 +112,8 @@ namespace Components.Interface
             mCheckIfFileExists = source.checkIfFileExists;
             mGetExtenderVersion = source.getExtenderVersion;
             mIsExtenderPresent = source.isExtenderPresent;
+            mGetExistingDataFile = source.getExistingDataFile;
+            mGetExistingDataFileList = source.getExistingDataFileList;
         }
 
         public async Task<string> GetAppVersion()
@@ -140,6 +144,18 @@ namespace Components.Interface
         {
             object res = await mCheckIfFileExists(fileName);
             return (bool)res;
+        }
+
+        public async Task<byte[]> GetExistingDataFile(string dataFile)
+        {
+            object res = await mGetExistingDataFile(dataFile);
+            return (byte[])res;
+        }
+
+        public async Task<string[]> GetExistingDataFileList(string folderPath)
+        {
+            object res = await mGetExistingDataFileList(folderPath);
+            return (string[])res;
         }
     }
 

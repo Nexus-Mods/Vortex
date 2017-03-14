@@ -8,6 +8,7 @@ import {IGameStored} from '../../gamemode_management/types/IGameStored';
 
 import DelegateBase from './DelegateBase';
 
+import * as Promise from 'bluebird';
 import { app as appIn, remote} from 'electron';
 import getVersion from 'exe-version';
 import * as fs from 'fs-extra-promise';
@@ -88,6 +89,30 @@ export class Context extends DelegateBase {
         fs.statAsync(fullFilePath)
             .reflect()
             .then((stat) => callback(null, stat.isFulfilled()));
+      }
+
+    public getExistingDataFile =
+      (fileName: string, callback: (err, res: any ) => void) => {
+        log('info', 'getExistingDataFile called', util.inspect(fileName));
+        let state = this.api.store.getState();
+        let currentGameInfo = currentGameDiscovery(state);
+        let fullFilePath = path.join(currentGameInfo.modPath, fileName);
+
+        fs.readFileAsync(fullFilePath)
+        .then((readBytes) => callback(null, readBytes))
+        .catch(() => callback(null, null));
+      }
+
+    public getExistingDataFileList =
+      (folderPath: string, callback: (err, res: string[] ) => void) => {
+        log('info', 'getExistingDataFileList called', util.inspect(folderPath));
+        let state = this.api.store.getState();
+        let currentGameInfo = currentGameDiscovery(state);
+        let fullFilePath = path.join(currentGameInfo.modPath, folderPath);
+
+        fs.readdirAsync(fullFilePath)
+        .then((fileList) => callback(null, fileList))
+        .catch(() => callback(null, null));
       }
 }
 
