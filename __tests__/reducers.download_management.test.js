@@ -183,6 +183,6 @@ describe('setDownloadSpeed', () => {
   it('sets the download speed', () => {
     const input = { speed: 0 };
     const result = stateReducer.reducers.SET_DOWNLOAD_SPEED(input, 42);
-    expect(result).toEqual({ speed: 42 });
+    expect(result.speed).toEqual(42);
   });
 });
