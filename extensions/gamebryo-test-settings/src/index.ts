@@ -1,4 +1,4 @@
-import { iniPath } from './util/gameSupport';
+import { iniPath, interfaceBSA } from './util/gameSupport';
 import missingOblivionFont, { oblivionDefaultFonts } from './util/missingOblivionFonts';
 import missingSkyrimFonts from './util/missingSkyrimFonts';
 
@@ -73,11 +73,7 @@ function testOblivionFontsImpl(store: Redux.Store<types.IState>) {
   );
 }
 
-let skyrimDefaultFonts: Set<string>; /* = new Set<string>([
-  'interface\\fonts_console.swf',
-  'interface\\fonts_en.swf',
-  'interface\\fonts_en2.swf',
-]);*/
+let defaultFonts: { [gameId: string]: Set<string> } = {};
 
 function testSkyrimFontsImpl(context: types.IExtensionContext) {
   const store = context.api.store;
@@ -90,12 +86,14 @@ function testSkyrimFontsImpl(context: types.IExtensionContext) {
     return Promise.resolve(undefined);
   }
 
-  let prom = skyrimDefaultFonts !== undefined
+  let prom = defaultFonts[gameId] !== undefined
     ? Promise.resolve(undefined)
     : context.api.openArchive(path.join(gameDiscovery.modPath, 'Skyrim - Interface.bsa'))
     .then((archive: util.Archive) => archive.readDir('interface'))
     .then((files: string[]) => {
-      skyrimDefaultFonts = new Set<string>(files.filter(name => path.extname(name) === '.swf'));
+      defaultFonts[gameId] = new Set<string>(files
+        .filter(name => path.extname(name) === '.swf')
+        .map(name => path.join('interface', name)));
     })
     .catch((err: Error) => {
       context.api.showErrorNotification('failed to read default fonts', err);
@@ -103,7 +101,7 @@ function testSkyrimFontsImpl(context: types.IExtensionContext) {
     });
 
   return prom
-    .then(() => missingSkyrimFonts(store.getState(), skyrimDefaultFonts, gameId))
+    .then(() => missingSkyrimFonts(store.getState(), defaultFonts[gameId], gameId))
     .then((missingFonts: string[]) => {
 
       if (missingFonts.length === 0) {

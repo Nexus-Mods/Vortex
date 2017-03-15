@@ -86,7 +86,7 @@
       "type": "build-copy",
       "name": "gamebryo-bsa-support",
       "path": "extensions/gamebryo-bsa-support",
-      "removeModules": ["nmm-api", "nexus-api"],
+      "removeModules": ["nmm-api", "nexus-api", "bsatk"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-bsa-support"
     },
