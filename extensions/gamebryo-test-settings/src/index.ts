@@ -1,4 +1,4 @@
-import { iniPath, interfaceBSA } from './util/gameSupport';
+import { iniPath } from './util/gameSupport';
 import missingOblivionFont, { oblivionDefaultFonts } from './util/missingOblivionFonts';
 import missingSkyrimFonts from './util/missingSkyrimFonts';
 
