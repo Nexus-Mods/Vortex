@@ -103,7 +103,7 @@ namespace Components.Interface
         private Func<object, Task<object>> mIsExtenderPresent;
         private Func<object, Task<object>> mCheckIfFileExists;
         private Func<object, Task<object>> mGetExistingDataFile;
-        private Func<object, Task<object>> mGetExistingDataFileList;
+        private Func<object[], Task<object>> mGetExistingDataFileList;
 
         public ContextDelegates(dynamic source)
         {
@@ -152,9 +152,10 @@ namespace Components.Interface
             return (byte[])res;
         }
 
-        public async Task<string[]> GetExistingDataFileList(string folderPath)
+        public async Task<string[]> GetExistingDataFileList(string folderPath, string searchFilter, bool isRecursive)
         {
-            object res = await mGetExistingDataFileList(folderPath);
+            object[] Params = new object[] { folderPath, searchFilter, isRecursive };
+            object res = await mGetExistingDataFileList(Params);
             return (string[])res;
         }
     }

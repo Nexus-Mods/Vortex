@@ -2,6 +2,7 @@ import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
 import {currentGameDiscovery} from '../../../util/selectors';
 import {getSafe} from '../../../util/storeHelper';
+import {isNullOrWhitespace} from '../../../util/util';
 
 import {IDiscoveryResult} from '../../gamemode_management/types/IDiscoveryResult';
 import {IGameStored} from '../../gamemode_management/types/IGameStored';
@@ -104,16 +105,49 @@ export class Context extends DelegateBase {
       }
 
     public getExistingDataFileList =
-      (folderPath: string, callback: (err, res: string[] ) => void) => {
-        log('info', 'getExistingDataFileList called', util.inspect(folderPath));
+      (searchOptions: any[], callback: (err, res: string[] ) => void) => {
+        log('info', 'getExistingDataFileList called', util.inspect(searchOptions[0]));
         let state = this.api.store.getState();
         let currentGameInfo = currentGameDiscovery(state);
-        let fullFilePath = path.join(currentGameInfo.modPath, folderPath);
+        let fullFilePath = path.join(currentGameInfo.modPath, searchOptions[0]);
 
-        fs.readdirAsync(fullFilePath)
-        .then((fileList) => callback(null, fileList))
-        .catch(() => callback(null, null));
+        if (searchOptions[2] === true) {
+          this.readDirRecursive(fullFilePath, searchOptions[1])
+            .then((fileList) => callback(null, fileList))
+            .catch(() => callback(null, null));
+        } else {
+          fs.readdirAsync(fullFilePath)
+            .then((fileList) => callback(null, fileList))
+            .catch(() => callback(null, null));
+        }
       }
+
+    private readDirRecursive =
+     (rootFolder: string, filter: string): Promise<string[]> => {
+      let fileList: string[] = [];
+      fs.readdirAsync(rootFolder)
+      .then((folderContent) =>
+        folderContent.forEach((fileName) => {
+            let subFolder = path.join(rootFolder, fileName);
+            fs.statAsync(subFolder)
+            .then((stats) => {
+              if (stats.isDirectory()) {
+                this.readDirRecursive(subFolder, filter)
+                  .then((subList) => fileList.push.apply(fileList, subList));
+              } else {
+                if (!isNullOrWhitespace(filter)) {
+                  let currentFileName = path.basename(fileName);
+                  if (currentFileName.indexOf(filter) > -1) {
+                    fileList.push(fileName);
+                  }
+                } else {
+                  fileList.push(fileName);
+                }
+              }
+            });
+        }));
+      return Promise.resolve(fileList);
+    }
 }
 
 export default Context;

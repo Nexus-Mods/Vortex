@@ -232,15 +232,15 @@ namespace Components.Interface
         /// Gets a filtered list of all files in a user's Data directory.
         /// </summary>
         /// <param name="folderPath">The subdirectory of the Data directory from which to get the listing.</param>
-        /// <param name="p_strPattern">The pattern against which to filter the file paths.</param>
-        /// <param name="p_booAllFolders">Whether or not to search through subdirectories.</param>
+        /// <param name="searchPattern">The pattern against which to filter the file paths.</param>
+        /// <param name="isRecursive">Whether or not to search through subdirectories.</param>
         /// <returns>A filtered list of all files in a user's Data directory.</returns>
-        public string[] GetExistingDataFileList(string folderPath, string p_strPattern, bool p_booAllFolders)
+        public string[] GetExistingDataFileList(string folderPath, string searchPattern, bool isRecursive)
         {
             string[] FileList = null;
 
             Task.Run(async () => {
-                FileList = await Core.context.GetExistingDataFileList(folderPath);
+                FileList = await Core.context.GetExistingDataFileList(folderPath, searchPattern, isRecursive);
             }).Wait();
 
             return FileList;
