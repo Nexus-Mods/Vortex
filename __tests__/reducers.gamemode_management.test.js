@@ -66,3 +66,49 @@ describe('setGameParameters', () => {
     expect(result).toEqual({ 'discovered': {gameId1: gameParameters } });
   });
 });
+
+describe('addDiscoveredGame', () => {
+  it('add the discovered game', () => {
+    let input = { 'discovered': { gameId1: { path: 'path1', modPath: 'modPath1' } } }; 
+    let game = {
+      path: 'path2',
+      modPath: 'modPath2',
+    };
+    let result = settingsReducer.reducers.ADD_DISCOVERED_GAME(input, { id: 'gameId1',  result: game });
+    expect(result).toEqual({ 'discovered': { gameId1: game } });
+  });
+    it('fail if the game doesn\'t exist', () => {
+    let input = { 'discovered': { gameId1: { path: 'path1', modPath: 'modPath1' } } }; 
+    let game = {
+      path: 'path2',
+      modPath: 'modPath2',
+    };
+    let result = settingsReducer.reducers.ADD_DISCOVERED_GAME(input, { id: 'gameId2',  result: game });
+    expect(result).toEqual({ 'discovered': { gameId1: game } });
+  });
+});
+
+describe('addDiscoveredTool', () => {
+  it('add the discovered tool', () => {
+    let input = { 'discovered': {gameId1: { 'tools': { toolId1: { path: 'tool1 path', hidden: false, custom: false, workingDirectory: 'C:' }} } }}; 
+    let parameters = {
+      path: 'tool2 path',
+      hidden: false,
+      custom: true,
+      workingDirectory: 'C:',
+    };
+    let result = settingsReducer.reducers.ADD_DISCOVERED_TOOL(input, { gameId: 'gameId1', toolId: 'toolId1',  result: parameters });
+    expect(result).toEqual({ 'discovered': { gameId1: { 'tools': { toolId1: parameters } } } });
+  });
+   it('fail if the game doesn\'t exist', () => {
+    let input = { 'discovered': {gameId1: { 'tools': { toolId1: { path: 'tool1 path', hidden: false, custom: false, workingDirectory: 'C:' }} } } }; 
+    let parameters = {
+      path: 'tool2 path',
+      hidden: false,
+      custom: true,
+      workingDirectory: 'C:',
+    };
+    let result = settingsReducer.reducers.ADD_DISCOVERED_TOOL(input, { gameId: 'gameId2', toolId: 'tool2',  result: parameters });
+    expect(result).toEqual({ 'discovered': { gameId1: { 'tools': { toolId1: parameters } } } });
+  });
+});
