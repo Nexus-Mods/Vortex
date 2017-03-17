@@ -156,11 +156,14 @@ class ModDB {
       });
 
     return promise.then(() => {
-      let lookupKey = `${hashResult}:${hashFileSize}`;
-      if (gameId !== undefined) {
-        lookupKey += ':' + gameId;
-        if (modId !== undefined) {
-          lookupKey += ':' + modId;
+      let lookupKey = `${hashResult}`;
+      if (hashFileSize !== undefined) {
+        lookupKey += ':' + hashFileSize;
+        if (gameId !== undefined) {
+          lookupKey += ':' + gameId;
+          if (modId !== undefined) {
+            lookupKey += ':' + modId;
+          }
         }
       }
       return this.getAllByKey(lookupKey, gameId);
@@ -276,7 +279,7 @@ class ModDB {
         fileSizeBytes: nexusObj.file_details.file_size,
         logicalFileName: nexusObj.file_details.name,
         fileVersion: semvish.clean(nexusObj.file_details.version),
-        gameId: nexusObj.mod.game_domain,
+        gameId,
         modName: nexusObj.mod.name,
         modId: nexusObj.mod.mod_id,
         sourceURI: urlFragments.join('/'),

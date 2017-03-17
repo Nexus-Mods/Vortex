@@ -1,6 +1,8 @@
+import safeCreateAction from '../../../actions/safeCreateAction';
+
 import { IMod, ModState } from '../types/IMod';
 
-import safeCreateAction from '../../../actions/safeCreateAction';
+import { IRule } from 'modmeta-db';
 
 export const addMod = safeCreateAction('ADD_MOD',
   (gameId: string, mod: IMod) => ({ gameId, mod }));
@@ -28,3 +30,9 @@ export const setModInstallationPath = safeCreateAction('SET_MOD_INSTALLATION_PAT
 export const setModAttribute = safeCreateAction('SET_MOD_ATTRIBUTE',
   (gameId: string, modId: string, attribute: string, value: any) =>
     ({ gameId, modId, attribute, value }));
+
+/**
+ * add a dependency rule for this mod
+ */
+export const addModRule = safeCreateAction('SET_MOD_RULE',
+  (gameId: string, modId: string, rule: IRule) => ({ gameId, modId, rule }));

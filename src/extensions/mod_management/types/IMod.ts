@@ -1,3 +1,5 @@
+import { IRule } from 'modmeta-db';
+
 export type ModState =
   'downloading' | 'downloaded' | 'installing' | 'installed';
 
@@ -17,4 +19,6 @@ export interface IMod {
   installationPath?: string;
   // dictionary of extended information fields
   attributes: { [id: string]: any };
+  // list of custom rules for this mod instance
+  rules?: IRule[];
 }

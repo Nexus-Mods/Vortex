@@ -1,5 +1,5 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { deleteOrNop, setSafe } from '../../../util/storeHelper';
+import { deleteOrNop, pushSafe, setSafe } from '../../../util/storeHelper';
 
 import * as actions from '../actions/mods';
 
@@ -28,6 +28,10 @@ export const modsReducer: IReducerSpec = {
       const { gameId, modId, attribute, value } = payload;
       return setSafe(state, [gameId, modId, 'attributes', attribute], value);
     },
+    [actions.addModRule as any]: (state, payload) => {
+      const { gameId, modId, rule } = payload;
+      return pushSafe(state, [gameId, modId, 'rules'], rule);
+    }
   }, defaults: {
   },
 };

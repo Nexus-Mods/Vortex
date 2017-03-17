@@ -20,6 +20,7 @@ function filterModInfo(input: any): any {
   transfer(result, 'modName', input.meta, ['modName']);
   transfer(result, 'fileName', input.meta, ['fileName']);
   transfer(result, 'fileMD5', input.meta, ['fileMD5']);
+  transfer(result, 'fileSize', input.meta, ['fileSize']);
   transfer(result, 'version', input.meta, ['fileVersion']);
   transfer(result, 'logicalFileName', input.meta, ['logicalFileName']);
   transfer(result, 'rules', input.meta, ['rules']);

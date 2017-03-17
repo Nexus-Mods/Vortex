@@ -82,12 +82,16 @@ class ModList extends ComponentEx<IProps, {}> {
       description: 'Name of the mod',
       icon: 'quote-left',
       calc: (mod: IMod) =>
-        getSafe(mod.attributes, ['logicalFileName'], getSafe(mod.attributes, ['name'], '')),
+        getSafe(mod.attributes, ['customFileName'],
+          getSafe(mod.attributes, ['logicalFileName'],
+            getSafe(mod.attributes, ['name'], '')
+          )
+        ),
       placement: 'both',
       isToggleable: false,
       edit: {
         onChangeValue: (modId: string, value: any) =>
-          props.onSetModAttribute(props.gameMode, modId, 'logicalFileName', value),
+          props.onSetModAttribute(props.gameMode, modId, 'customFileName', value),
       },
       isSortable: true,
       sortFunc: (lhs: string, rhs: string, locale: string): number => {

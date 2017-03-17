@@ -108,6 +108,14 @@
     },
     {
       "type": "build-copy",
+      "name": "mod-dependency-manager",
+      "path": "extensions/mod-dependency-manager",
+      "removeModules": ["nmm-api", "nexus-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.scss", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/mod-dependency-manager"
+    },
+    {
+      "type": "build-copy",
       "name": "meta-editor",
       "path": "extensions/meta-editor",
       "removeModules": ["nmm-api", "nexus-api"],

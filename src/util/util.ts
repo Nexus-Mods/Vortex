@@ -1,8 +1,8 @@
+import {log} from './log';
+
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import {file} from 'tmp';
-
-import {log} from './log';
 
 /**
  * count the elements in an array for which the predicate matches

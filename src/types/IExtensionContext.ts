@@ -4,7 +4,7 @@ import { INotification } from './INotification';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 import * as Promise from 'bluebird';
-import { IModInfo, IReference } from 'modmeta-db';
+import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 
 export type PropsCallback = () => Object;
@@ -281,7 +281,7 @@ export interface IExtensionApi {
    * 
    * @memberOf IExtensionApi
    */
-  lookupModMeta: (details: ILookupDetails) => Promise<ILookupDetails[]>;
+  lookupModMeta: (details: ILookupDetails) => Promise<ILookupResult[]>;
 
   /**
    * save meta information about a mod

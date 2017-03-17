@@ -1,0 +1,41 @@
+.btn-dependency {
+  padding: 1px 5px;
+  border: 0px;
+  color: currentColor;
+  background-color: transparent;
+  &:hover {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+  &:active {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+  &:focus {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+}
+
+.btn-dependency-hasrules svg {
+  fill: red;
+}
+
+.btn-dependency-norules svg {
+  fill: green;
+}
+
+.line {
+  border-bottom: 1px solid black;
+}
+
+.line-connect {
+  stroke: green;
+  stroke-width: 3;
+}
+
+.line-disconnect {
+  stroke: red;
+  stroke-dasharray: 5,5;
+  stroke-width: 2;
+}

@@ -11,6 +11,7 @@ import { getSafe } from '../util/storeHelper';
 import DeveloperType from './Developer';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
+import DNDContainer from './DNDContainer';
 import Icon from './Icon';
 import IconBar from './IconBar';
 import MainFooter from './MainFooter';
@@ -245,7 +246,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const page: IMainPage = objects.find((ele) => ele.title === this.state.showPage);
     if (page !== undefined) {
       let props = page.propsFunc();
-      return <page.component id={page.title} key={page.title} {...props} />;
+      return <DNDContainer>
+        <page.component id={page.title} key={page.title} {...props} />
+      </DNDContainer>;
     } else {
       return <Alert>No content pages</Alert>;
     }

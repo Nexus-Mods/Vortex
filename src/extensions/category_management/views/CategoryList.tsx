@@ -4,7 +4,6 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
-import DNDContainer from '../../../views/DNDContainer';
 import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
 import { Button } from '../../../views/TooltipControls';
@@ -163,18 +162,16 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
             &nbsp;/&nbsp;
           {searchFoundCount || 0}
           </span>
-          <DNDContainer>
-            <TreeImpl
-              treeData={treeDataObject}
-              onChange={this.updateTreeData}
-              height={'100%'}
-              autoHeight={false}
-              searchQuery={searchString}
-              searchFocusOffset={searchFocusIndex}
-              searchFinishCallback={this.searchFinishCallback}
-              generateNodeProps={this.generateNodeProps}
-            />
-          </DNDContainer>
+          <TreeImpl
+            treeData={treeDataObject}
+            onChange={this.updateTreeData}
+            height={'100%'}
+            autoHeight={false}
+            searchQuery={searchString}
+            searchFocusOffset={searchFocusIndex}
+            searchFinishCallback={this.searchFinishCallback}
+            generateNodeProps={this.generateNodeProps}
+          />
         </div>
       );
     } else {
