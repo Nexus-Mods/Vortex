@@ -39,7 +39,9 @@ class Packery extends React.Component<IProps, {}> {
 
   public componentDidMount() {
     setTimeout(() => {
-      this.mPackery.layout();
+      if (this.mPackery !== undefined) {
+        this.mPackery.layout();
+      }
     });
   }
 
