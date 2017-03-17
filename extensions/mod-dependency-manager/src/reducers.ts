@@ -30,10 +30,8 @@ const sessionReducer: types.IReducerSpec = {
         return state;
       }
     },
-    [actions.setCreateRule as any]: (state, payload) => {
-      console.log('set create', payload);
-      return util.setSafe(state, ['dialog'], payload);
-    },
+    [actions.setCreateRule as any]: (state, payload) =>
+      util.setSafe(state, ['dialog'], payload),
     [actions.closeDialog as any]: (state, payload) =>
       util.setSafe(state, ['dialog'], undefined),
     [actions.setType as any]: (state, payload) =>

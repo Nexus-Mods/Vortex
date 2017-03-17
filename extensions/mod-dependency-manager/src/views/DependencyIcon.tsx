@@ -3,9 +3,7 @@ import * as actions from '../actions';
 import { ComponentEx, log, selectors, tooltip, types, util } from 'nmm-api';
 
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
-import * as path from 'path';
 import * as React from 'react';
-import {  } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
@@ -247,7 +245,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     // tslint:enable:no-string-literal
       .then((meta: ILookupResult[]) => {
         if (this.mIsMounted && (meta.length > 0)) {
-          console.log('update mod info', meta[0]);
           this.nextState.modInfo = meta[0].value;
         }
       })

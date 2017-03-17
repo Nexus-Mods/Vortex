@@ -31,7 +31,7 @@ export const modsReducer: IReducerSpec = {
     [actions.addModRule as any]: (state, payload) => {
       const { gameId, modId, rule } = payload;
       return pushSafe(state, [gameId, modId, 'rules'], rule);
-    }
+    },
   }, defaults: {
   },
 };

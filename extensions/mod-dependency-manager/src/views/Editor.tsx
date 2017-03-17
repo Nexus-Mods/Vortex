@@ -3,7 +3,7 @@ import * as actions from '../actions';
 import { IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
 import { ComponentEx, actions as nmmActions } from 'nmm-api';
 import * as React from 'react';
-import { Button, Col, ControlLabel, Form, FormControl, FormGroup, Modal, Nav, NavItem } from 'react-bootstrap';
+import { Button, Col, ControlLabel, Form, FormControl, FormGroup, Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 
@@ -78,61 +78,6 @@ class Editor extends ComponentEx<IProps, IComponentState> {
           <Button onClick={this.save}>{t('Save')}</Button>
         </Modal.Footer>
     </Modal>);
-  }
-
-  private renderModInfo = (modInfo: IModInfo): JSX.Element => {
-    const {t} = this.props;
-    const {modId, logicalFileName, fileVersion, fileMD5 } = modInfo;
-    if (logicalFileName === '') {
-      return (
-        <Form horizontal>
-          <FormGroup>
-            <Col sm={3} componentClass={ControlLabel}>{t('MD5')}</Col>
-            <Col sm={9}>
-              <FormControl
-                type='text'
-                value={fileMD5}
-                readOnly={true}
-              />
-            </Col>
-          </FormGroup>
-        </Form>);
-    }
-
-    return (
-      <Form horizontal>
-        <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}>{t('Mod ID')}</Col>
-          <Col sm={9}>
-            <FormControl
-              type='text'
-              value={modId}
-              readOnly={true}
-            />
-          </Col>
-        </FormGroup>
-        <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}>{t('Name')}</Col>
-          <Col sm={9}>
-            <FormControl
-              type='text'
-              value={logicalFileName}
-              readOnly={true}
-            />
-          </Col>
-        </FormGroup>
-        <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}>{t('Version')}</Col>
-          <Col sm={9}>
-            <FormControl
-              type='text'
-              value={fileVersion}
-              readOnly={true}
-            />
-          </Col>
-        </FormGroup>
-      </Form>
-    );
   }
 
   private renderReference = (reference: IReference): JSX.Element => {
