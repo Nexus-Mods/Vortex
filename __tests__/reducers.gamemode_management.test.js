@@ -1,70 +1,70 @@
 import { settingsReducer } from '../src/extensions/gamemode_management/reducers/settings';
 
 describe('setToolVisible', () => {
-  it('set the tool visible', () => {
-    let input = { 'discovered': { gameId1: { 'tools': { toolId1: { hidden: false }} }  } };
+  it('sets the tool visible', () => {
+    let input = { discovered: { gameId1: { tools: { toolId1: { hidden: false }} }  } };
     let result = settingsReducer.reducers.SET_TOOL_VISIBLE(input, { gameId: 'gameId1', toolId: 'toolId1', value: true });
-    expect(result).toEqual({ 'discovered': { gameId1: { 'tools': { toolId1: { hidden: true} } } } });
+    expect(result).toEqual({ discovered: { gameId1: { tools: { toolId1: { hidden: true} } } } });
   });
-   it('fail if the tool doesn\'t exist', () => {
-    let input = { 'discovered': { gameId1: { 'tools': { toolId1: { hidden: false }}}  } };
+   it('fails if the tool doesn\'t exist', () => {
+    let input = { discovered: { gameId1: { tools: { toolId1: { hidden: false }}}  } };
     let result = settingsReducer.reducers.SET_TOOL_VISIBLE(input, { gameId: 'gameId1', toolId: 'toolId2', value: true });
     expect(result).toEqual({ 'discovered': { gameId1: { 'tools': { toolId1: { hidden: true} } } } });
   });
   it('affects only the right game', () => {
-    let input = { 'discovered': { gameId1: { 'tools': { toolId1: { hidden: false }}}, gameId2: { 'tools': { toolId1: { hidden: false }}}  } };
+    let input = { discovered: { gameId1: { tools: { toolId1: { hidden: false }}}, gameId2: { tools: { toolId1: { hidden: false }}}  } };
     let result = settingsReducer.reducers.SET_TOOL_VISIBLE(input, { gameId: 'gameId1', toolId: 'toolId1', value: true });
-    expect(result).toEqual({ 'discovered': { gameId1: { 'tools': { toolId1: { hidden: true} } }, gameId2: { 'tools': { toolId1: { hidden: false} } } } });
+    expect(result).toEqual({ discovered: { gameId1: { tools: { toolId1: { hidden: true} } }, gameId2: { tools: { toolId1: { hidden: false} } } } });
   });
 });
 
 describe('setGameHidden', () => {
-  it('set the game hidden', () => {
-    let input = { 'discovered': { gameId1: { 'hidden': false  }  } };
+  it('sets the game hidden', () => {
+    let input = { discovered: { gameId1: { hidden: false  }  } };
     let result = settingsReducer.reducers.SET_GAME_HIDDEN(input, { gameId: 'gameId1', hidden: true });
-    expect(result).toEqual({ 'discovered': { gameId1: { 'hidden': true } } });
+    expect(result).toEqual({ discovered: { gameId1: { hidden: true } } });
   });
-  it('fail if the game doesn\'t exist', () => {
-    let input = { 'discovered': { gameId1: { 'hidden': false }  } };
+  it('fails if the game doesn\'t exist', () => {
+    let input = { discovered: { gameId1: { 'hidden': false }  } };
     let result = settingsReducer.reducers.SET_GAME_HIDDEN(input, { gameId: 'gameId2', hidden: true });
-    expect(result).toEqual({ 'discovered': { gameId1: { 'hidden': true  }  } });
+    expect(result).toEqual({ discovered: { gameId1: { hidden: true  }  } });
   });
   it('affects only the right game', () => {
-    let input = { 'discovered': { gameId1: { 'hidden': false  }, gameId2: { 'hidden': false  }  } };
+    let input = { discovered: { gameId1: { hidden: false  }, gameId2: { hidden: false  }  } };
     let result = settingsReducer.reducers.SET_GAME_HIDDEN(input, { gameId: 'gameId1', hidden: true });
-    expect(result).toEqual({ 'discovered': { gameId1: { 'hidden': true }, gameId2: { 'hidden': false  } } });
+    expect(result).toEqual({ discovered: { gameId1: { hidden: true }, gameId2: { hidden: false  } } });
   });
 });
 
 describe('addSearchPath', () => {
-  it('add the search path', () => {
-    let input = { 'searchPaths': ['E:','C:'] };
+  it('adds a new drive to the SearchPath array', () => {
+    let input = { searchPaths: ['E:','C:'] };
     let result = settingsReducer.reducers.ADD_SEARCH_PATH(input, 'F:');
-    expect(result).toEqual({ 'searchPaths': ['E:','C:', 'F:']   });
+    expect(result).toEqual({ searchPaths: ['E:','C:', 'F:']   });
   });
-   it('fail if the drive already exist', () => {
-    let input = { 'searchPaths': ['E:','C:'] };
+   it('fails if the drive already exist', () => {
+    let input = { searchPaths: ['E:','C:'] };
     let result = settingsReducer.reducers.ADD_SEARCH_PATH(input, 'C:');
-    expect(result).toEqual({ 'searchPaths': ['E:','C:']   });
+    expect(result).toEqual({ searchPaths: ['E:','C:']   });
   });
 });
 
 describe('removeSearchPath', () => {
-  it('remove the search path', () => {
-    let input = { 'searchPaths': ['E:','C:','F:'] };
+  it('removes the drive to the SearchPath array', () => {
+    let input = { searchPaths: ['E:','C:','F:'] };
     let result = settingsReducer.reducers.REMOVE_SEARCH_PATH(input, 'F:');
-    expect(result).toEqual({ 'searchPaths': ['E:','C:']   });
+    expect(result).toEqual({ searchPaths: ['E:','C:']   });
   });
    it('does nothing if the drive doesn\'t exist', () => {
-    let input = { 'searchPaths': ['E:','C:','F:'] };
+    let input = { searchPaths: ['E:','C:','F:'] };
     let result = settingsReducer.reducers.REMOVE_SEARCH_PATH(input, 'H:');
-    expect(result).toEqual({ 'searchPaths': ['E:','C:', 'F:']   });
+    expect(result).toEqual({ searchPaths: ['E:','C:', 'F:']   });
   });
 });
 
 describe('setGameParameters', () => {
-  it('set the game parameters', () => {
-    let input = { 'discovered': {gameId1: { workingDirectory: 'C:', iconPath: 'old icon', environment: 'old env', commandLine: 'old line' }} }; 
+  it('sets the game parameters', () => {
+    let input = { discovered: {gameId1: { workingDirectory: 'C:', iconPath: 'old icon', environment: 'old env', commandLine: 'old line' }} }; 
     let gameParameters = {
       workingDirectory: 'E:',
       iconPath: 'new icon',
@@ -72,10 +72,10 @@ describe('setGameParameters', () => {
       commandLine: 'new line',
     };
     let result = settingsReducer.reducers.SET_GAME_PARAMETERS(input, { gameId: 'gameId1', parameters: gameParameters });
-    expect(result).toEqual({ 'discovered': {gameId1: gameParameters } });
+    expect(result).toEqual({ discovered: {gameId1: gameParameters } });
   });
-  it('fail if the game doesn\'t exist', () => {
-    let input = { 'discovered': {gameId1: { workingDirectory: 'C:', iconPath: 'old icon', environment: 'old env', commandLine: 'old line' }} }; 
+  it('fails if the game doesn\'t exist', () => {
+    let input = { discovered: {gameId1: { workingDirectory: 'C:', iconPath: 'old icon', environment: 'old env', commandLine: 'old line' }} }; 
     let gameParameters = {
       workingDirectory: 'E:',
       iconPath: 'new icon',
@@ -83,10 +83,10 @@ describe('setGameParameters', () => {
       commandLine: 'new line',
     };
     let result = settingsReducer.reducers.SET_GAME_PARAMETERS(input, { gameId: 'gameId2', parameters: gameParameters });
-    expect(result).toEqual({ 'discovered': {gameId1: gameParameters } });
+    expect(result).toEqual({ discovered: {gameId1: gameParameters } });
   });
    it('affects only the right game', () => {
-    let input = { 'discovered': {gameId1: { workingDirectory: 'C:', iconPath: 'old icon', environment: 'old env', commandLine: 'old line' }, gameId2: { workingDirectory: 'C:', iconPath: 'old icon', environment: 'old env', commandLine: 'old line' }} }; 
+    let input = { discovered: {gameId1: { workingDirectory: 'C:', iconPath: 'old icon', environment: 'old env', commandLine: 'old line' }, gameId2: { workingDirectory: 'C:', iconPath: 'old icon', environment: 'old env', commandLine: 'old line' }} }; 
     let gameParameters = {
       workingDirectory: 'E:',
       iconPath: 'new icon',
@@ -100,31 +100,31 @@ describe('setGameParameters', () => {
       commandLine: 'old line',
     };
     let result = settingsReducer.reducers.SET_GAME_PARAMETERS(input, { gameId: 'gameId1', parameters: gameParameters });
-    expect(result).toEqual({ 'discovered': {gameId1: gameParameters, gameId2: oldGameParameters } });
+    expect(result).toEqual({ discovered: {gameId1: gameParameters, gameId2: oldGameParameters } });
   });
 });
 
 describe('addDiscoveredGame', () => {
-  it('add the discovered game', () => {
-    let input = { 'discovered': { gameId1: { path: 'path1', modPath: 'modPath1' } } }; 
+  it('adds the discovered game', () => {
+    let input = { discovered: { gameId1: { path: 'path1', modPath: 'modPath1' } } }; 
     let game = {
       path: 'path2',
       modPath: 'modPath2',
     };
     let result = settingsReducer.reducers.ADD_DISCOVERED_GAME(input, { id: 'gameId1',  result: game });
-    expect(result).toEqual({ 'discovered': { gameId1: game } });
+    expect(result).toEqual({ discovered: { gameId1: game } });
   });
-    it('fail if the game doesn\'t exist', () => {
-    let input = { 'discovered': { gameId1: { path: 'path1', modPath: 'modPath1' } } }; 
+    it('fails if the game doesn\'t exist', () => {
+    let input = { discovered: { gameId1: { path: 'path1', modPath: 'modPath1' } } }; 
     let game = {
       path: 'path2',
       modPath: 'modPath2',
     };
     let result = settingsReducer.reducers.ADD_DISCOVERED_GAME(input, { id: 'gameId2',  result: game });
-    expect(result).toEqual({ 'discovered': { gameId1: game } });
+    expect(result).toEqual({ discovered: { gameId1: game } });
   });
   it('affects only the right game', () => {
-    let input = { 'discovered': { gameId1: { path: 'path1', modPath: 'modPath1' }, gameId2: { path: 'path1', modPath: 'modPath1' } } }; 
+    let input = { discovered: { gameId1: { path: 'path1', modPath: 'modPath1' }, gameId2: { path: 'path1', modPath: 'modPath1' } } }; 
     let game = {
       path: 'path2',
       modPath: 'modPath2',
@@ -134,13 +134,13 @@ describe('addDiscoveredGame', () => {
       modPath: 'modPath1',
     };
     let result = settingsReducer.reducers.ADD_DISCOVERED_GAME(input, { id: 'gameId1',  result: game });
-    expect(result).toEqual({ 'discovered': { gameId1: game, gameId2: oldGame } });
+    expect(result).toEqual({ discovered: { gameId1: game, gameId2: oldGame } });
   });
 });
 
 describe('addDiscoveredTool', () => {
-  it('add the discovered tool', () => {
-    let input = { 'discovered': {gameId1: { 'tools': { toolId1: { path: 'tool1 path', hidden: false, custom: false, workingDirectory: 'C:' }} } }}; 
+  it('adds the discovered tool', () => {
+    let input = { discovered: {gameId1: { tools: { toolId1: { path: 'tool1 path', hidden: false, custom: false, workingDirectory: 'C:' }} } }}; 
     let parameters = {
       path: 'tool2 path',
       hidden: false,
@@ -148,10 +148,10 @@ describe('addDiscoveredTool', () => {
       workingDirectory: 'C:',
     };
     let result = settingsReducer.reducers.ADD_DISCOVERED_TOOL(input, { gameId: 'gameId1', toolId: 'toolId1',  result: parameters });
-    expect(result).toEqual({ 'discovered': { gameId1: { 'tools': { toolId1: parameters } } } });
+    expect(result).toEqual({ discovered: { gameId1: { tools: { toolId1: parameters } } } });
   });
-   it('fail if the game doesn\'t exist', () => {
-    let input = { 'discovered': {gameId1: { 'tools': { toolId1: { path: 'tool1 path', hidden: false, custom: false, workingDirectory: 'C:' }} } } }; 
+   it('fails if the game doesn\'t exist', () => {
+    let input = { discovered: {gameId1: { tools: { toolId1: { path: 'tool1 path', hidden: false, custom: false, workingDirectory: 'C:' }} } } }; 
     let parameters = {
       path: 'tool2 path',
       hidden: false,
@@ -159,10 +159,10 @@ describe('addDiscoveredTool', () => {
       workingDirectory: 'C:',
     };
     let result = settingsReducer.reducers.ADD_DISCOVERED_TOOL(input, { gameId: 'gameId2', toolId: 'tool2',  result: parameters });
-    expect(result).toEqual({ 'discovered': { gameId1: { 'tools': { toolId1: parameters } } } });
+    expect(result).toEqual({ discovered: { gameId1: { tools: { toolId1: parameters } } } });
   });
   it('affects only the right game', () => {
-    let input = { 'discovered': {gameId1: { 'tools': { toolId1: { path: 'tool1 path', hidden: false, custom: false, workingDirectory: 'C:' }} }, gameId2: { 'tools': { toolId1: { path: 'tool1 path', hidden: false, custom: false, workingDirectory: 'C:' }} } }}; 
+    let input = { discovered: {gameId1: { tools: { toolId1: { path: 'tool1 path', hidden: false, custom: false, workingDirectory: 'C:' }} }, gameId2: { tools: { toolId1: { path: 'tool1 path', hidden: false, custom: false, workingDirectory: 'C:' }} } }}; 
     let parameters = {
       path: 'tool2 path',
       hidden: false,
@@ -176,6 +176,6 @@ describe('addDiscoveredTool', () => {
       workingDirectory: 'C:',
     };
     let result = settingsReducer.reducers.ADD_DISCOVERED_TOOL(input, { gameId: 'gameId1', toolId: 'toolId1',  result: parameters });
-    expect(result).toEqual({ 'discovered': { gameId1: { 'tools': { toolId1: parameters } }, gameId2: { 'tools': { toolId1: oldParameters } }  } });
+    expect(result).toEqual({ discovered: { gameId1: { tools: { toolId1: parameters } }, gameId2: { tools: { toolId1: oldParameters } }  } });
   });
 });
