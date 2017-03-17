@@ -16,29 +16,31 @@ export type ButtonProps = ITooltipProps & typeof BootstrapButton.defaultProps;
  * Button with a tooltip
  * 
  */
-export const Button = (props: ButtonProps) => {
-  let relayProps = Object.assign({}, props);
-  delete relayProps.tooltip;
-  delete relayProps.placement;
+export class Button extends React.Component<ButtonProps, {}> {
+  public render() {
+    let relayProps = Object.assign({}, this.props);
+    delete relayProps.tooltip;
+    delete relayProps.placement;
 
-  if (typeof(props.tooltip) === 'string') {
-    return (<BootstrapButton {...relayProps} title={props.tooltip}>
-      {props.children}
-    </BootstrapButton>);
-  } else {
-    const tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
-    return (
-      <OverlayTrigger
-        overlay={tooltip}
-        placement={props.placement || 'bottom'}
-        delayShow={300}
-        delayHide={150}
-      >
-        <BootstrapButton {...relayProps}>{props.children}</BootstrapButton>
-      </OverlayTrigger>
-    );
+    if (typeof (this.props.tooltip) === 'string') {
+      return (<BootstrapButton {...relayProps} title={this.props.tooltip}>
+        {this.props.children}
+      </BootstrapButton>);
+    } else {
+      const tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
+      return (
+        <OverlayTrigger
+          overlay={tooltip}
+          placement={this.props.placement || 'bottom'}
+          delayShow={300}
+          delayHide={150}
+        >
+          <BootstrapButton {...relayProps}>{this.props.children}</BootstrapButton>
+        </OverlayTrigger>
+      );
+    }
   }
-};
+}
 
 export interface IIconButtonExtraProps {
   icon: string;
@@ -46,31 +48,33 @@ export interface IIconButtonExtraProps {
 
 export type IconButtonProps = ButtonProps & IIconButtonExtraProps;
 
-export const IconButton = (props: IconButtonProps) => {
-  let relayProps = Object.assign({}, props);
-  delete relayProps.tooltip;
-  delete relayProps.placement;
-  delete relayProps.icon;
-  if (typeof(props.tooltip) === 'string') {
-  return (<BootstrapButton {...relayProps} title={props.tooltip}>
-        <SvgIcon name={props.icon} />
+export class IconButton extends React.Component<IconButtonProps, {}> {
+  public render() {
+    let relayProps = Object.assign({}, this.props);
+    delete relayProps.tooltip;
+    delete relayProps.placement;
+    delete relayProps.icon;
+    if (typeof (this.props.tooltip) === 'string') {
+      return (<BootstrapButton {...relayProps} title={this.props.tooltip}>
+        <SvgIcon name={this.props.icon} />
       </BootstrapButton>);
-  } else {
-    const tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
-    return (
-      <OverlayTrigger
-        overlay={tooltip}
-        placement={props.placement || 'bottom'}
-        delayShow={300}
-        delayHide={150}
-      >
-        <BootstrapButton {...relayProps}>
-          <SvgIcon name={props.icon} />
-        </BootstrapButton>
-      </OverlayTrigger>
-    );
+    } else {
+      const tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
+      return (
+        <OverlayTrigger
+          overlay={tooltip}
+          placement={this.props.placement || 'bottom'}
+          delayShow={300}
+          delayHide={150}
+        >
+          <BootstrapButton {...relayProps}>
+            <SvgIcon name={this.props.icon} />
+          </BootstrapButton>
+        </OverlayTrigger>
+      );
+    }
   }
-};
+}
 
 export interface IToggleButtonExtraProps {
   onIcon: string;
@@ -81,63 +85,67 @@ export interface IToggleButtonExtraProps {
 
 export type ToggleButtonProps = ButtonProps & IToggleButtonExtraProps;
 
-export const ToggleButton = (props: ToggleButtonProps) => {
-  let relayProps = Object.assign({}, props);
+export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
+  public render() {
+    let relayProps = Object.assign({}, this.props);
 
-  ['tooltip', 'offTooltip', 'placement', 'onIcon', 'offIcon', 'state'].forEach((prop) => {
-    delete relayProps[prop];
-  });
+    ['tooltip', 'offTooltip', 'placement', 'onIcon', 'offIcon', 'state'].forEach((prop) => {
+      delete relayProps[prop];
+    });
 
-  if (typeof(props.tooltip) === 'string') {
-    return (<BootstrapButton {...relayProps} title={props.tooltip}>
-      <SvgIcon name={props.state ? props.onIcon : props.offIcon} />
-    </BootstrapButton>);
-  } else {
-    const tooltip = (
-      <Popover id={props.id}>
-        {props.state ? props.tooltip : props.offTooltip}
-      </Popover>
-    );
-    return (
-      <OverlayTrigger
-        overlay={tooltip}
-        placement={props.placement || 'bottom'}
-        delayShow={300}
-        delayHide={150}
-      >
-        <BootstrapButton {...relayProps}>
-          <SvgIcon name={props.state ? props.onIcon : props.offIcon} />
-        </BootstrapButton>
-      </OverlayTrigger>
-    );
+    if (typeof (this.props.tooltip) === 'string') {
+      return (<BootstrapButton {...relayProps} title={this.props.tooltip}>
+        <SvgIcon name={this.props.state ? this.props.onIcon : this.props.offIcon} />
+      </BootstrapButton>);
+    } else {
+      const tooltip = (
+        <Popover id={this.props.id}>
+          {this.props.state ? this.props.tooltip : this.props.offTooltip}
+        </Popover>
+      );
+      return (
+        <OverlayTrigger
+          overlay={tooltip}
+          placement={this.props.placement || 'bottom'}
+          delayShow={300}
+          delayHide={150}
+        >
+          <BootstrapButton {...relayProps}>
+            <SvgIcon name={this.props.state ? this.props.onIcon : this.props.offIcon} />
+          </BootstrapButton>
+        </OverlayTrigger>
+      );
+    }
   }
-};
+}
 
 export type NavItemProps = ITooltipProps & typeof BootstrapNavItem.defaultProps;
 
-export const NavItem = (props: NavItemProps) => {
-  let relayProps = Object.assign({}, props);
-  delete relayProps.tooltip;
-  delete relayProps.placement;
+export class NavItem extends React.Component<NavItemProps, {}> {
+  public render() {
+    let relayProps = Object.assign({}, this.props);
+    delete relayProps.tooltip;
+    delete relayProps.placement;
 
-  if (typeof(props.tooltip) === 'string') {
-    return <BootstrapNavItem {...relayProps} title={props.tooltip}>
-      {props.children}
-    </BootstrapNavItem>;
-  } else {
-    let tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
-    return (
-      <OverlayTrigger
-        overlay={tooltip}
-        placement={props.placement || 'bottom'}
-        delayShow={300}
-        delayHide={150}
-      >
-        <BootstrapNavItem {...relayProps}>{props.children}</BootstrapNavItem>
-      </OverlayTrigger>
-    );
+    if (typeof (this.props.tooltip) === 'string') {
+      return <BootstrapNavItem {...relayProps} title={this.props.tooltip}>
+        {this.props.children}
+      </BootstrapNavItem>;
+    } else {
+      let tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
+      return (
+        <OverlayTrigger
+          overlay={tooltip}
+          placement={this.props.placement || 'bottom'}
+          delayShow={300}
+          delayHide={150}
+        >
+          <BootstrapNavItem {...relayProps}>{this.props.children}</BootstrapNavItem>
+        </OverlayTrigger>
+      );
+    }
   }
-};
+}
 
 type FontAwesomeSize = 'lg' | '2x' | '3x' | '4x' | '5x';
 
@@ -168,27 +176,29 @@ export type IconProps = ITooltipProps & IFontAwesomeProps;
  * @export
  * @class Icon
  */
-export const Icon = (props: IconProps) => {
-  let relayProps = Object.assign({}, props);
-  delete relayProps.tooltip;
-  delete relayProps.placement;
+export class Icon extends React.Component<IconProps, {}> {
+  public render() {
+    let relayProps = Object.assign({}, this.props);
+    delete relayProps.tooltip;
+    delete relayProps.placement;
 
-  if (typeof(props.tooltip) === 'string') {
-    return <a className='fake-link' title={props.tooltip}>
-      <SvgIcon {...relayProps} />
-    </a>;
-  } else {
-    const tooltip = <Popover id={props.id}>{props.tooltip}</Popover>;
+    if (typeof (this.props.tooltip) === 'string') {
+      return <a className='fake-link' title={this.props.tooltip}>
+        <SvgIcon {...relayProps} />
+      </a>;
+    } else {
+      const tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
 
-    return (
-      <OverlayTrigger
-        overlay={tooltip}
-        placement={props.placement || 'bottom'}
-        delayShow={300}
-        delayHide={150}
-      >
-        <a className='fake-link'><SvgIcon {...relayProps} /></a>
-      </OverlayTrigger>
-    );
+      return (
+        <OverlayTrigger
+          overlay={tooltip}
+          placement={this.props.placement || 'bottom'}
+          delayShow={300}
+          delayHide={150}
+        >
+          <a className='fake-link'><SvgIcon {...relayProps} /></a>
+        </OverlayTrigger>
+      );
+    }
   }
-};
+}
