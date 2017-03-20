@@ -5,7 +5,7 @@ export interface IReference {
     logicalFileName?: string;
     fileExpression?: string;
 }
-export declare type RuleType = 'before' | 'after' | 'requires' | 'conflics' | 'recommends' | 'provides';
+export declare type RuleType = 'before' | 'after' | 'requires' | 'conflicts' | 'recommends' | 'provides';
 export interface IRule {
     type: RuleType;
     reference: IReference;

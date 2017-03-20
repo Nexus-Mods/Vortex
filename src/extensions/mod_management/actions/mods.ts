@@ -34,5 +34,11 @@ export const setModAttribute = safeCreateAction('SET_MOD_ATTRIBUTE',
 /**
  * add a dependency rule for this mod
  */
-export const addModRule = safeCreateAction('SET_MOD_RULE',
+export const addModRule = safeCreateAction('ADD_MOD_RULE',
+  (gameId: string, modId: string, rule: IRule) => ({ gameId, modId, rule }));
+
+/**
+ * remove a dependency rule from this mod
+ */
+export const removeModRule = safeCreateAction('REMOVE_MOD_RULE',
   (gameId: string, modId: string, rule: IRule) => ({ gameId, modId, rule }));

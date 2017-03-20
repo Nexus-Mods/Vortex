@@ -1,14 +1,84 @@
-import * as actions from '../actions';
+import { setCreateRule, setSource, setTarget } from '../actions';
 
-import { ComponentEx, log, selectors, tooltip, types, util } from 'nmm-api';
+import { ComponentEx, actions, log, selectors, tooltip, types, util } from 'nmm-api';
 
-import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
+import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
 import * as React from 'react';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+
+interface IDescriptionProps {
+  t: I18next.TranslationFunction;
+  rule: IRule;
+  removeable: boolean;
+  key: string;
+  onRemoveRule?: (rule: IRule) => void;
+}
+
+class RuleDescription extends React.Component<IDescriptionProps, {}> {
+
+  public render(): JSX.Element {
+    const {rule, removeable} = this.props;
+
+    const key = this.key(rule);
+    return <div key={ key }>
+      {this.renderType(rule.type)}
+      {' '}
+      {this.renderReference(rule.reference)}
+      {removeable ? this.renderRemove() : null}
+    </div>;
+  }
+
+  private key(rule: IRule) {
+    return rule.type + '_' + rule.reference.logicalFileName
+      || rule.reference.fileExpression
+      || rule.reference.fileMD5;
+  }
+
+  private renderRemove = () => {
+    const {t, rule} = this.props;
+    return (<tooltip.IconButton
+      id={this.key(rule)}
+      className='btn-embed'
+      icon='remove'
+      tooltip={t('Remove')}
+      onClick={this.removeThis}
+    />);
+  }
+
+  private removeThis = () => {
+    this.props.onRemoveRule(this.props.rule);
+  }
+
+  private renderType = (type: RuleType): JSX.Element => {
+    const {t} = this.props;
+    let renderString: string;
+    switch (type) {
+      case 'before': renderString = t('loads before'); break;
+      case 'after': renderString = t('loads after'); break;
+      case 'requires': renderString = t('requires'); break;
+      case 'recommends': renderString = t('recommends'); break;
+      case 'conflicts': renderString = t('conflicts with'); break;
+      case 'provides': renderString = t('provides'); break;
+      default: throw new Error('invalid rule type ' + type);
+    }
+    return <p style={{ display: 'inline' }}>{renderString}</p>;
+  }
+
+  private renderReference = (ref: IReference): JSX.Element => {
+    const style = { display: 'inline' };
+    if ((ref.logicalFileName === undefined) && (ref.fileExpression === undefined)) {
+      return <p style={style}>{ ref.fileMD5 }</p>;
+    }
+    return <p style={style}>
+      {ref.logicalFileName || ref.fileExpression} {ref.versionMatch} (mod: {ref.modId || '?'})
+    </p>;
+  }
+}
 
 export interface IBaseProps {
   mod: types.IMod;
@@ -22,6 +92,7 @@ interface IActionProps {
   onSetSource: (id: string, pos: { x: number, y: number }) => void;
   onSetTarget: (id: string, pos: { x: number, y: number }) => void;
   onEditDialog: (gameId: string, modId: string, reference: IReference, defaultType: string) => void;
+  onRemoveRule: (gameId: string, modId: string, rule: IRule) => void;
 }
 
 interface IComponentState {
@@ -46,27 +117,6 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & IDragProps & IDropPr
 interface IDragInfo {
   onUpdateLine: (targetX: number, targetY: number, isConnect: boolean) => void;
 }
-/*
-function emptyModInfo(gameId: string, mod: types.IMod): IModInfo {
-  let modName = mod.attributes['name'] ||
-    path.basename(mod.installationPath, path.extname(mod.installationPath));
-  // tslint:disable:no-string-literal
-  return {
-    modId: mod.attributes['modId'],
-    modName,
-    fileName: mod.attributes['fileName'] || '',
-    logicalFileName: mod.attributes['logicalFileName'] || '',
-    fileSizeBytes: mod.attributes['fileSize'] || 0,
-    gameId,
-    fileVersion: mod.attributes['version'] || '',
-    fileMD5: mod.attributes['fileMD5'] || '',
-    sourceURI: '',
-    rules: [],
-    details: {},
-  };
-  // tslint:enable:no-string-literal
-}
-*/
 
 function componentCenter(component: React.Component<any, any>) {
   let box = findDOMNode(component).getBoundingClientRect();
@@ -201,8 +251,10 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
     let classes = ['btn-dependency'];
 
-    if ((util.getSafe(this.state, ['modInfo', 'rules'], []).length > 0)
-      || (util.getSafe(mod, ['rules'], []).length > 0)) {
+    let staticRules = util.getSafe(this.state, ['modInfo', 'rules'], []);
+    let customRules = util.getSafe(mod, ['rules'], []);
+
+    if ((staticRules.length > 0) || (customRules.length > 0)) {
       classes.push('btn-dependency-hasrules');
     } else {
       classes.push('btn-dependency-norules');
@@ -211,9 +263,23 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     // TODO are there unfulfilled rules?
     // TODO are there file conflicts with a mod and no rule?
 
+    let popover = <Popover id={`popover-${mod.id}`} style={{ maxWidth: 500 }}>
+      {staticRules.map((rule) =>
+        <RuleDescription rule={rule} t={t} key={this.key(rule)} removeable={false} />)}
+      {customRules.map((rule) =>
+        <RuleDescription
+          rule={rule}
+          t={t}
+          key={this.key(rule)}
+          removeable={true}
+          onRemoveRule={this.removeRule}
+        />)}
+    </Popover>;
+
     return connectDropTarget(
       connectDragSource(
         <div style={{ textAlign: 'center', width: '100%' }}>
+          <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popover}>
           <tooltip.IconButton
             id='btn-meta-data'
             className={classes.join(' ')}
@@ -221,9 +287,22 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
             tooltip={t('Drag to another mod to define dependency')}
             icon='plug'
           />
+          </OverlayTrigger>
         </div>
       )
     );
+  }
+
+  private key = (rule: IRule) => {
+    return rule.type + '_' +
+      rule.reference.logicalFileName
+      || rule.reference.fileExpression
+      || rule.reference.fileMD5;
+  }
+
+  private removeRule = (rule: IRule) => {
+    const { gameId, mod, onRemoveRule } = this.props;
+    onRemoveRule(gameId, mod.id, rule);
   }
 
   private updateMod(mod: types.IMod) {
@@ -269,10 +348,11 @@ function mapStateToProps(state): IConnectedProps {
 
 function mapDispatchToProps(dispatch): IActionProps {
   return {
-    onSetSource: (id, pos) => dispatch(actions.setSource(id, pos)),
-    onSetTarget: (id, pos) => dispatch(actions.setTarget(id, pos)),
+    onSetSource: (id, pos) => dispatch(setSource(id, pos)),
+    onSetTarget: (id, pos) => dispatch(setTarget(id, pos)),
     onEditDialog: (gameId, modId, reference, defaultType) =>
-      dispatch(actions.setCreateRule(gameId, modId, reference, defaultType)),
+      dispatch(setCreateRule(gameId, modId, reference, defaultType)),
+    onRemoveRule: (gameId, modId, rule) => dispatch(actions.removeModRule(gameId, modId, rule)),
   };
 }
 

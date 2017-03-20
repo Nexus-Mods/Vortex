@@ -18,11 +18,11 @@
 }
 
 .btn-dependency-hasrules svg {
-  fill: red;
+  fill: $link-color;
 }
 
 .btn-dependency-norules svg {
-  fill: green;
+  fill: $gray-lighter;
 }
 
 .line {

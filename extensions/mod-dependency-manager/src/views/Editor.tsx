@@ -1,7 +1,7 @@
 import * as actions from '../actions';
 
-import { IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
-import { ComponentEx, actions as nmmActions } from 'nmm-api';
+import { IReference, IRule, RuleType } from 'modmeta-db';
+import { ComponentEx, actions as nmmActions, types, util } from 'nmm-api';
 import * as React from 'react';
 import { Button, Col, ControlLabel, Form, FormControl, FormGroup, Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
@@ -16,6 +16,7 @@ interface IDialog {
 
 interface IConnectedProps {
   dialog: IDialog;
+  mod: types.IMod;
 }
 
 interface IActionProps {
@@ -52,13 +53,13 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, dialog } = this.props;
+    const { t, dialog, mod } = this.props;
     const { reference, type } = this.state;
 
     return (<Modal show={dialog !== undefined} onHide={this.close}>
       {dialog !== undefined
         ? <Modal.Body>
-          {dialog.modId}
+          {this.renderSource(mod)}
           <FormControl
             componentClass='select'
             onChange={this.changeType}
@@ -78,6 +79,12 @@ class Editor extends ComponentEx<IProps, IComponentState> {
           <Button onClick={this.save}>{t('Save')}</Button>
         </Modal.Footer>
     </Modal>);
+  }
+
+  private renderSource = (mod: types.IMod) => {
+    // tslint:disable:no-string-literal
+    return <p>{mod.attributes['logicalFileName']} {mod.attributes['version']}</p>;
+    // tslint:enable:no-string-literal
   }
 
   private renderReference = (reference: IReference): JSX.Element => {
@@ -158,8 +165,13 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 }
 
 function mapStateToProps(state: any): IConnectedProps {
+  const dialog: IDialog = state.session.dependencies.dialog;
+  const mod = dialog !== undefined
+    ? util.getSafe(state, ['persistent', 'mods', dialog.gameId, dialog.modId], undefined)
+    : undefined;
   return {
-    dialog: state.session.dependencies.dialog,
+    dialog,
+    mod,
   };
 }
 
@@ -167,7 +179,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onCloseDialog: () => dispatch(actions.closeDialog()),
     onSetType: (type) => dispatch(actions.setType(type)),
-    onAddRule: (gameId, modId, rule)  => dispatch(nmmActions.addModRule(gameId, modId, rule)),
+    onAddRule: (gameId, modId, rule) =>
+      dispatch(nmmActions.addModRule(gameId, modId, rule)),
   };
 }
 

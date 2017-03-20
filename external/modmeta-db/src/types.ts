@@ -73,7 +73,7 @@ export interface IReference {
   fileExpression?: string;
 }
 
-export type RuleType = 'before' | 'after' | 'requires' | 'conflics' | 'recommends' | 'provides';
+export type RuleType = 'before' | 'after' | 'requires' | 'conflicts' | 'recommends' | 'provides';
 
 /**
  * a rule defining a relation to another mod.
