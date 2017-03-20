@@ -141,7 +141,7 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
         .then(() => undefined);
       // tslint:enable:no-string-literal
     })
-    // sort mods based on their dependencies so the right files get activated
+    // sort (all) mods based on their dependencies so the right files get activated
     .then(() => sortMods(modList, context.api))
     .then((sortedMods: string[]) => {
       let sortedModList =

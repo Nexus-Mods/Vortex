@@ -15,7 +15,7 @@ import * as Promise from 'bluebird';
  * @param {T} fallback
  * @returns {T}
  */
-export function getSafe<T>(state: any, path: string[], fallback: T): T {
+export function getSafe<T>(state: any, path: (string | number)[], fallback: T): T {
   let current = state;
   for (let segment of path) {
     if ((current === undefined) || !current.hasOwnProperty(segment)) {

@@ -1,13 +1,12 @@
-import {IExtensionApi} from '../../../types/IExtensionContext';
+import { IExtensionApi } from '../../../types/IExtensionContext';
+import { log } from '../../../util/log';
+import { getSafe } from '../../../util/storeHelper';
 
 import { IMod } from '../types/IMod';
 
-import { ILookupResult, IReference, IRule, RuleType } from 'modmeta-db';
-
-import { log } from '../../../util/log';
-
 import * as Promise from 'bluebird';
-import {Graph, alg} from 'graphlib';
+import { Graph, alg } from 'graphlib';
+import { ILookupResult, IReference, IRule, RuleType } from 'modmeta-db';
 import * as semver from 'semvish';
 
 interface IBiRule {
@@ -54,19 +53,20 @@ function sortMods(mods: IMod[], api: IExtensionApi): Promise<string[]> {
                 modId: attributes.modId,
               })
         .then((metaInfo: ILookupResult[]) => {
-          if ((metaInfo.length !== 0) &&
-              (metaInfo[0].value.rules !== undefined)) {
-            metaInfo[0].value.rules.forEach((rule: IRule) => {
-              const ref = findByRef(mods, rule.reference);
-              if (ref !== undefined) {
-                if (rule.type === 'before') {
-                  dependencies.setEdge(mod.id, ref.id);
-                } else if (rule.type === 'after') {
-                  dependencies.setEdge(ref.id, mod.id);
-                }
+          const rules = [].concat(
+            getSafe(metaInfo, [0, 'value', 'rules'], []),
+            mod.rules || []
+          );
+          rules.forEach((rule: IRule) => {
+            const ref = findByRef(mods, rule.reference);
+            if (ref !== undefined) {
+              if (rule.type === 'before') {
+                dependencies.setEdge(mod.id, ref.id);
+              } else if (rule.type === 'after') {
+                dependencies.setEdge(ref.id, mod.id);
               }
-            });
-          }
+            }
+          });
           return Promise.resolve();
         });
   };
@@ -78,7 +78,7 @@ function sortMods(mods: IMod[], api: IExtensionApi): Promise<string[]> {
         log('error', 'failed to sort mods',
             {msg: err.message, stack: err.stack});
       })
-      .then(() => { return Promise.resolve(alg.topsort(dependencies)); });
+      .then(() => Promise.resolve(alg.topsort(dependencies)));
 }
 
 export default sortMods;
