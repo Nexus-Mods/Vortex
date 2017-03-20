@@ -13,6 +13,10 @@ export const profilesReducer: IReducerSpec = {
     [setModEnabled as any]: (state, payload) => {
       const { profileId, modId, enable } = payload;
 
+      if (state[profileId] === undefined) {
+        return state;
+      }
+
       return setSafe(
         state,
         [profileId, 'modState', modId, 'enabled'],
@@ -20,6 +24,11 @@ export const profilesReducer: IReducerSpec = {
     },
     [setFeature as any]: (state, payload) => {
       const { profileId, featureId, value } = payload;
+
+      if (state[profileId] === undefined) {
+        return state;
+      }
+
       return setSafe(state, [profileId, 'features', featureId], value);
     },
   },

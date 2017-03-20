@@ -340,7 +340,8 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
     const { dataPath } = this.props;
     const { currentImage } = this.state;
 
-    if ((currentImage === undefined) || (currentImage === null)) {
+    if ((currentImage === undefined) || (currentImage === null)
+        || (dataPath === undefined) || (dataPath === null)) {
       return null;
     }
 

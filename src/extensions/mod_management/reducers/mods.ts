@@ -13,7 +13,7 @@ export const modsReducer: IReducerSpec = {
   reducers: {
     [actions.addMod as any]: (state, payload) => {
       const { gameId, mod } = payload;
-      if (state.gameId === undefined) {
+      if (state[gameId] === undefined) {
         return state;
       }
       return setSafe(state, [gameId, mod.id], mod);

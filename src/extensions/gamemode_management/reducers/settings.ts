@@ -8,15 +8,16 @@ import * as actions from '../actions/settings';
  */
 export const settingsReducer: IReducerSpec = {
   reducers: {
-    [actions.addDiscoveredGame as any]: (state, payload) => {
+    [actions.addDiscoveredGame as any]: (state, payload) =>
       // don't replace previously discovered tools as the settings
       // there may also be user configuration
-      return merge(state, ['discovered', payload.id], payload.result);
-    },
+      merge(state, ['discovered', payload.id], payload.result),
     [actions.addDiscoveredTool as any]: (state, payload) => {
-      return setSafe(state,
-                     ['discovered', payload.gameId, 'tools', payload.toolId],
-                     payload.result);
+      if (state.discovered[payload.gameId] === undefined) {
+        return state;
+      }
+      return setSafe(state, ['discovered', payload.gameId, 'tools', payload.toolId],
+              payload.result);
     },
     [actions.setToolVisible as any]: (state, payload) => {
       // custom added tools can be deleted so we do that instead of hiding them
@@ -31,19 +32,21 @@ export const settingsReducer: IReducerSpec = {
       }
     },
     [actions.setGameParameters as any]: (state, payload) => {
-      // this is effectively the same as addDiscoveredGame but if we were adding safety
-      // checks this would have other checks than addDiscoveredGame
+      if (state.discovered[payload.gameId] === undefined) {
+        return state;
+      }
       return merge(state, ['discovered', payload.gameId], payload.parameters);
     },
-    [actions.setGameHidden as any]: (state, payload) => {
-      return setSafe(state, ['discovered', payload.gameId, 'hidden'], payload.hidden);
-    },
+    [actions.setGameHidden as any]: (state, payload) =>
+      setSafe(state, ['discovered', payload.gameId, 'hidden'], payload.hidden),
     [actions.addSearchPath as any]: (state, payload) => {
+      if (state.searchPaths.indexOf(payload) !== -1) {
+        return state;
+      }
       return pushSafe(state, ['searchPaths'], payload);
     },
-    [actions.removeSearchPath as any]: (state, payload) => {
-      return removeValue(state, ['searchPaths'], payload);
-    },
+    [actions.removeSearchPath as any]: (state, payload) =>
+      removeValue(state, ['searchPaths'], payload),
   },
   defaults: {
     searchPaths: undefined,
