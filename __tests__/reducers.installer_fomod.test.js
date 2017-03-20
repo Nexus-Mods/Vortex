@@ -41,6 +41,6 @@ describe('setInstallerDataPath', () => {
    it('fails if the data path is null', () => {
     let input = { dataPath: '' };
     let result = installerUIReducer.reducers.SET_INSTALLER_DATA_PATH(input, {path: null} );
-    expect(result).toEqual( {dataPath: {path: 'new path' } });
+    expect(result).toEqual( {dataPath: {path: null } });
   });
 });

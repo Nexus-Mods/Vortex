@@ -10,7 +10,7 @@ describe('setPath', () => {
   it('fails if the game doesn\'t exist', () => {
     let input = { paths: { gameId1: { key1: 'path' } } };
     let result = settingsReducer.reducers.SET_MOD_PATH(input, { gameId: 'gameId2', key: 'key1', path: 'New path' });
-    expect(result).toEqual({ paths: { gameId1: { key1: 'New path' } } });
+    expect(result).toEqual({ paths: { gameId1: { key1: 'path' } } });
   });
    it('affects only the right game', () => {
     let input = { paths: { gameId1: { key1: 'path' }, gameId2: { key2: 'path2' } } };
@@ -46,7 +46,7 @@ describe('removeMod', () => {
   it('fails if the game doesn\'t exist', () => {
     let input = { gameId1: { modId1: 'id' } };
     let result = modsReducer.reducers.REMOVE_MOD(input, { gameId: 'gameId2', modId: 'modId1' });
-    expect(result).toEqual({ gameId1: {} });
+    expect(result).toEqual({ gameId1: { modId1: 'id' } });
   });
   it('affects only the right game', () => {
     let input = { gameId1: { modId1: 'id' }, gameId2: { modId1: 'id' } };
@@ -64,7 +64,7 @@ describe('setModInstallationPath', () => {
   it('fails if the game doesn\'t exist', () => {
     let input = { gameId1: { modId1: { 'installationPath': { installPath: 'path' } } } };
     let result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(input, { gameId: 'gameId2', modId: 'modId1', installPath: 'new path' });
-    expect(result).toEqual({ gameId1: { modId1: { 'installationPath': 'new path' } } });
+    expect(result).toEqual({ gameId1: { modId1: { 'installationPath': 'path' } } });
   });
    it('affects only the right game', () => {
     let input = { gameId1: { modId1: { 'installationPath': { installPath: 'path' } } }, gameId2: { modId1: { 'installationPath': { installPath: 'path' } } } };
@@ -82,7 +82,7 @@ describe('setModAttribute', () => {
   it('fails if the game doesn\'t exist', () => {
     let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
     let result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, { gameId: 'gameId2', modId: 'modId1', attribute: 'attribute1', value: 'new value' });
-    expect(result).toEqual({ gameId1: { modId1: { 'attributes': { attribute1: 'new value' } } } });
+    expect(result).toEqual({ gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } });
   });
   it('affects only the right game', () => {
     let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } }, gameId2: { modId1: { 'attributes': { attribute1: 'value' } } } };
@@ -100,7 +100,7 @@ describe('setModState', () => {
   it('fails if the game doesn\'t exist', () => {
     let input = { gameId1: { modId1: { 'state': 'value' } } };
     let result = modsReducer.reducers.SET_MOD_STATE(input, { gameId: 'gameId2', modId: 'modId1', modState: 'new value' });
-    expect(result).toEqual({ gameId1: { modId1: { 'state': 'new value' } } });
+    expect(result).toEqual({ gameId1: { modId1: { 'state': 'value' } } });
   });
    it('affects only the right game', () => {
     let input = { gameId1: { modId1: { 'state': 'value' } }, gameId2: { modId1: { 'state': 'value' } } };
@@ -129,8 +129,14 @@ describe('addMod', () => {
       installationPath: 'path',
       attributes: {},
     };
+     let oldMod = {
+      state: '',
+      id: '',
+      installationPath: '',
+      attributes: {},
+    };
     let result = modsReducer.reducers.ADD_MOD(input, { gameId: 'gameId2', mod: mod });
-    expect(result).toEqual({ gameId1: {modId1: mod} });
+    expect(result).toEqual({ gameId1: {modId1: oldMod} });
   });
    it('affects only the right game', () => {
     let input = { gameId1: { modId1: {state: '', id: '', installationPath: '', attributes: {}} }, gameId2: { modId1: {state: '', id: '', installationPath: '', attributes: {}} } };
