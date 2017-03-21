@@ -49,7 +49,7 @@ class ConflictEditor extends ComponentEx<IProps, {}> {
   }
 
   private renderConflict = (conflict: IConflict) => {
-    const {t, modId, mods} = this.props;
+    const {t, mods} = this.props;
     const popover = <Popover
       className='conflict-popover'
       id={`conflict-popover-${conflict.otherMod}`}
@@ -85,7 +85,7 @@ class ConflictEditor extends ComponentEx<IProps, {}> {
   }
 
   private setRuleType = () => {
-
+    // nop
   }
 
   private save = () => {
@@ -106,7 +106,7 @@ function mapStateToProps(state): IConnectedProps {
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onClose: () => dispatch(setConflictDialog()),
-  }
+  };
 }
 
 export default translate(['common', 'dependency-manager'], {wait: false})(

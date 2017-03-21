@@ -1,4 +1,4 @@
-import { IModInfo, IReference } from 'modmeta-db';
+import { IReference } from 'modmeta-db';
 import { safeCreateAction } from 'nmm-api';
 
 export const setSource = safeCreateAction('SET_MOD_CONNECTION_SOURCE',

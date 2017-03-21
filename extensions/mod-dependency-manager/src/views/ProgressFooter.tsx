@@ -1,6 +1,5 @@
 import { Icon, tooltip } from 'nmm-api';
 import * as React from 'react';
-import { ProgressBar } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 
