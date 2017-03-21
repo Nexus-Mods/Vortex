@@ -14,3 +14,10 @@ export const setCreateRule = safeCreateAction('SET_MOD_CREATE_RULE',
 export const closeDialog = safeCreateAction('CLOSE_MOD_DEPENDENCY_DIALOG');
 
 export const setType = safeCreateAction('SET_MOD_RULE_TYPE');
+
+export const setConflictInfo = safeCreateAction('SET_CONFLICT_INFO');
+
+export const setConflictWorking = safeCreateAction('SET_CONFLICT_WORKING');
+
+export const setConflictDialog = safeCreateAction('SET_CONFLICT_DIALOG',
+  (gameId?: string, modId?: string) => ({ gameId, modId }));

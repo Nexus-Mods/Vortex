@@ -21,6 +21,8 @@
   },
   "devDependencies": {
     "@types/electron": "^1.4.32",
+    "@types/fs-extra-promise": "^0.0.31",
+    "@types/minimatch": "^2.0.29",
     "@types/react": "^0.14.55",
     "@types/react-addons-update": "^0.14.14",
     "@types/react-bootstrap": "^0.0.37",
@@ -34,6 +36,8 @@
     "babel-polyfill": "^6.13.0",
     "bluebird": "^3.4.6",
     "copyfiles": "^1.0.0",
+    "fs-extra-promise": "^0.4.1",
+    "minimatch": "^3.0.3",
     "i18next": "^3.5.1",
     "json-loader": "^0.5.4",
     "modmeta-db": "file:../../external/modmeta-db",

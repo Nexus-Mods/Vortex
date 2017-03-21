@@ -6,8 +6,11 @@
 export * from './message';
 export * from './storeHelper';
 
-import {Archive} from './archives';
+import { Archive } from './archives';
 import runElevated from './elevated';
-import {extend} from './ExtensionProvider';
+import { extend } from './ExtensionProvider';
+import getNormalizeFunc from './getNormalizeFunc';
+import { setdefault } from './util';
+import walk from './walk';
 
-export { Archive, extend, runElevated };
+export { Archive, extend, getNormalizeFunc, runElevated, setdefault, walk };

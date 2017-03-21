@@ -1,3 +1,5 @@
+import renderModName from '../util/renderModName';
+
 import * as actions from '../actions';
 
 import { IReference, IRule, RuleType } from 'modmeta-db';
@@ -32,6 +34,12 @@ interface IComponentState {
 
 type IProps = IConnectedProps & IActionProps;
 
+/**
+ * simple dialog to set dependency rules between two mods
+ * 
+ * @class Editor
+ * @extends {ComponentEx<IProps, IComponentState>}
+ */
 class Editor extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
@@ -82,9 +90,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderSource = (mod: types.IMod) => {
-    // tslint:disable:no-string-literal
-    return <p>{mod.attributes['logicalFileName']} {mod.attributes['version']}</p>;
-    // tslint:enable:no-string-literal
+    return <p>{renderModName(mod)}</p>;
   }
 
   private renderReference = (reference: IReference): JSX.Element => {

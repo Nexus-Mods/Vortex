@@ -2,26 +2,15 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
-let tlBlacklist = new Set<string>([
-  '$RECYCLE.BIN',
-  '$$PendingFiles',
-  'Windows',
-]);
-
-function testBlacklist(name: string, filePath: string) {
-  const isTopLevel = filePath.indexOf('\\') === -1;
-  return !isTopLevel || !tlBlacklist.has(name);
-}
-
 function walk(target: string,
-              callback: (iterPath: string, stats: fs.Stats) => Promise<any>): Promise<any> {
+              callback: (iterPath: string, stats: fs.Stats) => Promise<any>): Promise<void> {
   let allFileNames: string[];
 
   return fs.readdirAsync(target)
     .then((fileNames: string[]) => {
-      allFileNames = fileNames.filter((fileName) => testBlacklist(fileName, target));
+      allFileNames = fileNames;
       return Promise.mapSeries(
-          allFileNames,
+          fileNames,
           (statPath: string) => {
             let fullPath: string = path.join(target, statPath);
             return fs.lstatAsync(fullPath).reflect();
@@ -41,10 +30,12 @@ function walk(target: string,
           subDirs.push(fullPath);
         }
       });
-      return Promise.all(cbPromises.concat(Promise.mapSeries(subDirs, (subDir) => {
-        return walk(subDir, callback);
-      })));
-    });
+      return Promise.all(cbPromises.concat(Promise.mapSeries(subDirs, (subDir) =>
+        walk(subDir, callback)
+      )));
+    })
+    .then(() => undefined)
+    ;
 }
 
 export default walk;

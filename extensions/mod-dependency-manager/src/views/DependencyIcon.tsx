@@ -1,4 +1,6 @@
-import { setCreateRule, setSource, setTarget } from '../actions';
+import { IConflict } from '../types/IConflict';
+
+import { setConflictDialog, setCreateRule, setSource, setTarget } from '../actions';
 
 import { ComponentEx, actions, log, selectors, tooltip, types, util } from 'nmm-api';
 
@@ -86,6 +88,7 @@ export interface IBaseProps {
 
 interface IConnectedProps {
   gameId: string;
+  conflicts: { [modId: string]: IConflict[] };
 }
 
 interface IActionProps {
@@ -93,6 +96,7 @@ interface IActionProps {
   onSetTarget: (id: string, pos: { x: number, y: number }) => void;
   onEditDialog: (gameId: string, modId: string, reference: IReference, defaultType: string) => void;
   onRemoveRule: (gameId: string, modId: string, rule: IRule) => void;
+  onConflictDialog: (gameId: string, modId: string) => void;
 }
 
 interface IComponentState {
@@ -247,7 +251,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, connectDragSource, connectDropTarget, mod } = this.props;
+    const { t, conflicts, connectDragSource, connectDropTarget, mod } = this.props;
 
     let classes = ['btn-dependency'];
 
@@ -276,21 +280,46 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         />)}
     </Popover>;
 
-    return connectDropTarget(
+    let connectorIcon = connectDropTarget(
       connectDragSource(
-        <div style={{ textAlign: 'center', width: '100%' }}>
+        <div style={{ display: 'inline' }}>
           <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popover}>
           <tooltip.IconButton
-            id='btn-meta-data'
+            id={`btn-meta-data-${mod.id}`}
             className={classes.join(' ')}
-            key={mod.id}
+            key={`rules-${mod.id}`}
             tooltip={t('Drag to another mod to define dependency')}
             icon='plug'
           />
           </OverlayTrigger>
-        </div>
+          </div>
       )
     );
+
+    let conflictIcon = null;
+    if (conflicts[mod.id] !== undefined) {
+      let tip = t('Conflicts with: {{conflicts}}', { replace: {
+        conflicts: conflicts[mod.id].map(conflict => conflict.otherMod).join('\n'),
+      } });
+      conflictIcon = <tooltip.IconButton
+        id={`btn-meta-conflicts-${mod.id}`}
+        className='btn-conflict'
+        key={`conflicts-${mod.id}`}
+        tooltip={tip}
+        icon='bolt'
+        onClick={this.openConflictDialog}
+      />;
+    }
+
+    return <div style={{ textAlign: 'center', width: '100%' }}>
+      {connectorIcon}
+      {conflictIcon}
+      </div>;
+  }
+
+  private openConflictDialog = () => {
+    const { gameId, mod, onConflictDialog } = this.props;
+    onConflictDialog(gameId, mod.id);
   }
 
   private key = (rule: IRule) => {
@@ -343,6 +372,7 @@ const DependencyIconDrag =
 function mapStateToProps(state): IConnectedProps {
   return {
     gameId: selectors.activeGameId(state),
+    conflicts: state.session.dependencies.conflicts,
   };
 }
 
@@ -353,6 +383,7 @@ function mapDispatchToProps(dispatch): IActionProps {
     onEditDialog: (gameId, modId, reference, defaultType) =>
       dispatch(setCreateRule(gameId, modId, reference, defaultType)),
     onRemoveRule: (gameId, modId, rule) => dispatch(actions.removeModRule(gameId, modId, rule)),
+    onConflictDialog: (gameId, modId) => dispatch(setConflictDialog(gameId, modId)),
   };
 }
 

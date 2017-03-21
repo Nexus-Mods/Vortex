@@ -22,7 +22,30 @@
 }
 
 .btn-dependency-norules svg {
-  fill: $gray-lighter;
+  fill: $gray-light;
+}
+
+.btn-conflict {
+  padding: 1px 5px;
+  border: 0px;
+  color: currentColor;
+  background-color: transparent;
+  &:hover {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+  &:active {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+  &:focus {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+}
+
+.btn-conflict svg {
+  fill: $link-color;
 }
 
 .line {
@@ -38,4 +61,29 @@
   stroke: red;
   stroke-dasharray: 5,5;
   stroke-width: 2;
+}
+
+.conflict-popover {
+  max-width: 500px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.conflict-popover p {
+  margin-bottom: 0px;
+}
+
+.conflict-rule-select {
+  display: inline;
+  max-width: 200px;
+  vertical-align: top;
+}
+
+.conflict-rule-description {
+  display: inline-block;
+  margin-left: 10px;
+}
+
+.conflict-rule-name {
+  margin: 0px;
 }
