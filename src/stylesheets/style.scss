@@ -232,12 +232,8 @@
   background-color: $table-bg;
 }
 
-.modlist-selected {
-  background-color: $gray-light;
-}
-
 .table-selected {
-  background-color: $gray-light;
+  background-color: $gray-lighter;
 }
 
 .game-thumbnail {
@@ -419,34 +415,39 @@
   margin-left: 6px;
 }
 
-#table-main-pane {
+.table-main-pane {
   height: 100%;
   overflow-y: auto;
 }
 
-#table-details-pane {
+.table-main-pane thead {
+  background-color: $gray-dark;
+  color: $gray-lighter;
+}
+
+.table-details-pane {
   height: 100%;
   overflow-y: auto;
   padding: 5px;
 }
 
-.cell-enabled {
+.cell-enabled, .header-enabled {
   text-align: center;
 }
 
-.cell-version {
+.cell-version, .header-version {
   text-align: right;
 }
 
-.cell-installTime {
+.cell-installTime, .header-installTime {
   text-align: center;
 }
 
-.cell-filetime {
+.cell-filetime, .header-filetime {
   text-align: center;
 }
 
-.cell-progress {
+.cell-progress, .header-progress {
   text-align: center;
 }
 
@@ -651,4 +652,14 @@ Resizer.disabled:hover {
   position: absolute;
   top: 3px;
   right: 3px;
+}
+
+.btn-group,
+.btn-group-vertical {
+  position: initial;
+}
+
+.btn-group > .btn,
+.btn-group-vertical > .btn {
+  position: initial;
 }

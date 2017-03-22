@@ -134,7 +134,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             primary='second'
             ref={this.setSplitRef}
           >
-            <div id='table-main-pane'>
+            <div className='table-main-pane' ref={this.mainPaneRef}>
               <Table bordered condensed hover>
                 <thead>
                   <tr>
@@ -148,7 +148,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                 {this.renderBody(this.mVisibleAttributes)}
               </Table>
             </div>
-            <div id='table-details-pane'>
+            <div className='table-details-pane'>
               {this.renderDetails(lastSelected)}
             </div>
           </SplitPane>
@@ -176,6 +176,23 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private setSplitRef = (ref) => {
     this.mSplitContainer = ref;
+  }
+
+  private translateHeader(event) {
+    let translate = `translate(0, ${event.target.scrollTop}px)`;
+    event.target.querySelector('thead').style.transform = translate;
+  }
+
+  private mainPaneRef = (ref) => {
+    if (ref === null) {
+      return;
+    }
+
+    // not sure if this is necessary, I guess not
+    ref.removeEventListener('scroll', this.translateHeader);
+
+    // translate the header so that it remains in view during scrolling
+    ref.addEventListener('scroll', this.translateHeader);
   }
 
   private changeSplitPos = (value) => {
