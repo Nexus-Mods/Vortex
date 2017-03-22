@@ -371,6 +371,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectRow = (evt: React.MouseEvent<any>) => {
+    let iter = evt.target as any;
+    while (['BUTTON', 'TR', null].indexOf(iter.tagName) === -1) {
+      iter = iter.parentNode;
+    }
+    if (iter.tagName === 'BUTTON') {
+      // don't handle if the click was on a button
+      return;
+    }
+
     const row = (evt.currentTarget as HTMLTableRowElement);
 
     const {attributeState, onSelectRows, rowState, tableId} = this.props;
