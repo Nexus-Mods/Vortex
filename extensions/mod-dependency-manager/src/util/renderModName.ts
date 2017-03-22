@@ -12,7 +12,7 @@ function renderModName(mod: types.IMod) {
   let version = mod.attributes['version'];
   // tslint:enable:no-string-literal
 
-  return version !== undefined ? id + ' ' + version : id;
+  return version !== undefined ? id + ' v' + version : id;
 }
 
 export default renderModName;

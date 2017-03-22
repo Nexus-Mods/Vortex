@@ -595,10 +595,11 @@ class ExtensionManager {
       promise = Promise.resolve();
     }
 
-    return promise.then(() => this.modDB.lookup(detail.filePath, fileMD5,
-                                                fileSize, detail.gameId,
-                                                detail.modId))
-        .then((result: ILookupResult[]) => Promise.resolve(result));
+    return promise
+      .then(() => this.modDB.lookup(detail.filePath, fileMD5,
+        fileSize, detail.gameId,
+        detail.modId))
+      .then((result: ILookupResult[]) => Promise.resolve(result));
   }
 
   private saveModMeta = (modInfo: IModInfo): Promise<void> => {

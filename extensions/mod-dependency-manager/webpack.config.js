@@ -37,6 +37,7 @@ module.exports = {
     'react-layout-pane',
     'react-redux',
     'ref',
+    'semvish',
     'util'
   ]
 };

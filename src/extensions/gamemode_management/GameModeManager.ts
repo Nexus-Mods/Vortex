@@ -151,6 +151,7 @@ class GameModeManager {
       name: game.name,
       id: game.id,
       logo: game.logo,
+      mergeMods: game.mergeMods,
       modPath: game.queryModPath(),
       extensionPath: game.pluginPath,
       iniFilePath: game.iniFilePath(),

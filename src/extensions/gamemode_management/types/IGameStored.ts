@@ -5,6 +5,7 @@ export interface IGameStored {
   name: string;
   logo?: string;
   modPath: string;
+  mergeMods: boolean;
   extensionPath?: string;
   iniFilePath: string;
   requiredFiles: string[];

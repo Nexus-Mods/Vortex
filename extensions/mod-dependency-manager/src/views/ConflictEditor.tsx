@@ -1,9 +1,11 @@
 import { IConflict } from '../types/IConflict';
+import matchReference from '../util/matchReference';
 import renderModName from '../util/renderModName';
 
 import { setConflictDialog } from '../actions';
 
-import { ComponentEx, types } from 'nmm-api';
+import { IReference, IRule } from 'modmeta-db';
+import { ComponentEx, actions as nmmActions, types } from 'nmm-api';
 import * as React from 'react';
 import { Button, FormControl, ListGroup, ListGroupItem,
          Modal, OverlayTrigger, Popover } from 'react-bootstrap';
@@ -19,9 +21,16 @@ interface IConnectedProps {
 
 interface IActionProps {
   onClose: () => void;
+  onAddRule: (gameId: string, modId: string, rule: IRule) => void;
 }
 
 type IProps = IConnectedProps & IActionProps;
+
+type RuleChoice = undefined | 'before' | 'after' | 'conflicts';
+
+interface IComponentState {
+  ruleType: { [modId: string]: RuleChoice };
+}
 
 /**
  * editor displaying mods that conflict with the selected one
@@ -30,7 +39,17 @@ type IProps = IConnectedProps & IActionProps;
  * @class ConflictEditor
  * @extends {ComponentEx<IProps, {}>}
  */
-class ConflictEditor extends ComponentEx<IProps, {}> {
+class ConflictEditor extends ComponentEx<IProps, IComponentState> {
+  constructor(props: IProps) {
+    super(props);
+    this.initState({ ruleType: this.getRuleTypes(props.modId, props.mods, props.conflicts) });
+  }
+
+  public componentWillReceiveProps(nextProps: IProps) {
+    this.nextState.ruleType =
+      this.getRuleTypes(nextProps.modId, nextProps.mods, nextProps.conflicts);
+  }
+
   public render(): JSX.Element {
     const {t, modId, mods, conflicts} = this.props;
 
@@ -48,25 +67,47 @@ class ConflictEditor extends ComponentEx<IProps, {}> {
       </Modal>;
   }
 
+  private getRuleTypes(modId: string,
+                       mods: { [modId: string]: types.IMod },
+                       conflicts: IConflict[]) {
+    let res: { [modId: string]: RuleChoice } = {};
+
+    conflicts.forEach(conflict => {
+      let existingRule = (mods[modId].rules || [])
+        .find(rule => (['before', 'after', 'conflicts'].indexOf(rule.type) !== -1)
+          && matchReference(rule.reference, mods[conflict.otherMod])
+        );
+
+      res[conflict.otherMod] = existingRule !== undefined
+        ? existingRule.type as RuleChoice
+        : undefined;
+    });
+
+    return res;
+  }
+
   private renderConflict = (conflict: IConflict) => {
     const {t, mods} = this.props;
+    const {ruleType} = this.state;
     const popover = <Popover
       className='conflict-popover'
       id={`conflict-popover-${conflict.otherMod}`}
     >
-      { conflict.files.map(fileName => <p key={fileName}>{fileName}</p>) }
+      { conflict.files.sort().map(fileName => <p key={fileName}>{fileName}</p>) }
     </Popover>;
 
     return (<ListGroupItem key={conflict.otherMod}>
       <FormControl
         className='conflict-rule-select'
         componentClass='select'
-        value={undefined}
+        value={ruleType[conflict.otherMod]}
         onChange={this.setRuleType}
+        id={conflict.otherMod}
       >
         <option value={undefined}>{t('No rule')}</option>
         <option value='before'>{t('Load before')}</option>
         <option value='after'>{t('Load after')}</option>
+        <option value='conflicts'>{t('Conflicts with')}</option>
       </FormControl>
       <div className='conflict-rule-description'>
       <p className='conflict-rule-name'>{renderModName(mods[conflict.otherMod])}</p>
@@ -84,11 +125,35 @@ class ConflictEditor extends ComponentEx<IProps, {}> {
     onClose();
   }
 
-  private setRuleType = () => {
-    // nop
+  private setRuleType = (event) => {
+    this.nextState.ruleType[event.currentTarget.id] = event.currentTarget.value;
+  }
+
+  private makeReference = (mod: types.IMod): IReference => {
+    // tslint:disable:no-string-literal
+    return (mod.attributes['logicalFileName'] !== undefined)
+      ? {
+        modId: mod.attributes['modId'],
+        logicalFileName: mod.attributes['logicalFileName'],
+      } : {
+        modId: mod.attributes['modId'],
+        fileExpression: mod.attributes['fileExpression'] || mod.attributes['fileName'],
+      };
+    // tslint:enable:no-string-literal
   }
 
   private save = () => {
+    const { gameId, modId, mods, onAddRule } = this.props;
+    const { ruleType } = this.state;
+    Object.keys(ruleType).forEach(otherId => {
+      if (ruleType[otherId] !== undefined) {
+        onAddRule(gameId, modId, {
+          reference: this.makeReference(mods[otherId]),
+          type: ruleType[otherId],
+        });
+      }
+    });
+
     this.close();
   }
 }
@@ -106,6 +171,8 @@ function mapStateToProps(state): IConnectedProps {
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onClose: () => dispatch(setConflictDialog()),
+    onAddRule: (gameId, modId, rule) =>
+      dispatch(nmmActions.addModRule(gameId, modId, rule)),
   };
 }
 

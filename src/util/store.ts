@@ -74,8 +74,9 @@ export function setupStore(
                          + app.getPath('userData') + '\'',
                        stack: err.stack,
                      });
+                   } else {
+                     resolve(result);
                    }
-                   resolve(result);
                  });
   });
 }

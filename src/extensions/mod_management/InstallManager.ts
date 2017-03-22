@@ -133,7 +133,9 @@ class InstallManager {
           }
 
           installName = this.deriveInstallName(baseName, fullInfo);
-
+          // if the name is already taken, consult the user,
+          // repeat until user canceled, decided to replace the existing
+          // mod or provided a new, unused name
           const checkNameLoop = () => {
             return this.checkModExists(installName, api, gameId) ?
                        this.queryUserReplace(installName, api)

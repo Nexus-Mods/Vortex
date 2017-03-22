@@ -275,13 +275,16 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
   }
 
   private getEmptyData(filePath?: string, fileInfo?: any) {
-    let modName = filePath !== undefined
+    const fileName = filePath !== undefined
+      ? path.basename(filePath, path.extname(filePath))
+      : '';
+    const modName = filePath !== undefined
       ? path.basename(filePath, path.extname(filePath))
       : '';
     return {
       modId: '',
       modName,
-      fileName: filePath,
+      fileName,
       fileSizeBytes: fileInfo !== undefined ? fileInfo.size : 0,
       gameId: '',
       fileVersion: '',
