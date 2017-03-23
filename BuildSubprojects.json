@@ -121,6 +121,14 @@
       "removeModules": ["nmm-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/meta-editor"
+    },
+    {
+      "type": "build-copy",
+      "name": "documentation",
+      "path": "extensions/documentation",
+      "removeModules": ["nmm-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/documentation"
     }
   ], [
     {
