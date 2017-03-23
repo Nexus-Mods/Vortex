@@ -16,6 +16,7 @@ import Icon from './Icon';
 import IconBar from './IconBar';
 import MainFooter from './MainFooter';
 import Notifications from './Notifications';
+import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import { Button, NavItem } from './TooltipControls';
 
@@ -131,7 +132,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderToolbar() {
     return (
-      <Fixed>
+      <Fixed id='main-toolbar'>
+        <object id='nexus-logo' data='assets/images/logo.svg' type='image/svg+xml' />
         <IconBar
           group='application-icons'
           staticElements={this.buttonsLeft}
@@ -149,18 +151,46 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const { t, objects, tabsMinimized } = this.props;
     const { showPage } = this.state;
 
+    const globalPages = objects.filter(page => page.group === 'global');
+    const perGamePages = objects.filter(page => page.group === 'per-game');
+    const supportPages = objects.filter(page => page.group === 'support');
+
+    const sbClass = tabsMinimized ? 'sidebar-compact' : 'sidebar-expanded';
+
     return (
       <Flex>
         <Layout type='row' style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
-          <Fixed>
+          <Fixed id='main-nav-sidebar' className={sbClass}>
+            <QuickLauncher />
+            <div style={{ flexDirection: 'column', height: '100%', display: 'flex' }}>
               <Nav
                 bsStyle='pills'
                 stacked
                 activeKey={showPage}
                 onSelect={this.handleSetPage}
+                style={{ flexGrow: 1 }}
               >
-                {objects !== undefined ? objects.map(this.renderPageButton) : null}
+                {globalPages.map(this.renderPageButton)}
               </Nav>
+              <Nav
+                bsStyle='pills'
+                stacked
+                activeKey={showPage}
+                onSelect={this.handleSetPage}
+                style={{ flexGrow: 1 }}
+              >
+                {perGamePages.map(this.renderPageButton)}
+              </Nav>
+              <Nav
+                bsStyle='pills'
+                stacked
+                activeKey={showPage}
+                onSelect={this.handleSetPage}
+                style={{ flexGrow: 1 }}
+              >
+                {supportPages.map(this.renderPageButton)}
+              </Nav>
+            </div>
             <Button
               tooltip={ tabsMinimized ? t('Restore') : t('Minimize') }
               id='btn-minimize-menu'
@@ -222,7 +252,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderPageButton = (page: IMainPage) => {
-    const { t, tabsMinimized } = this.props;
+    const { t } = this.props;
     return !page.visible() ? null :
       <NavItem
         id={page.title}
@@ -232,11 +262,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         placement='right'
       >
         <Icon name={page.icon} />
-        {tabsMinimized ? null :
-          <span className='menu-label'>
-            {t(page.title)}
-          </span>
-        }
+        <span className='menu-label'>
+          {t(page.title)}
+        </span>
       </NavItem>;
   }
 
@@ -327,6 +355,7 @@ function registerMainPage(instance: MainWindow,
     icon, title, component,
     propsFunc: options.props || emptyFunc,
     visible: options.visible || trueFunc,
+    group: options.group,
   };
 }
 

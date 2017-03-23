@@ -159,6 +159,7 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('cubes', 'Mods', ModList, {
     hotkey: 'M',
+    group: 'per-game',
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
   });
 

@@ -80,6 +80,7 @@ let tools: ITool[] = [
 const game: IGame = {
   id: 'skyrimse',
   name: 'Skyrim Special Edition',
+  shortName: 'SSE',
   mergeMods: true,
   queryPath: findGame,
   iniFilePath: getIniPath,

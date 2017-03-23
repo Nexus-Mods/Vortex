@@ -57,6 +57,7 @@ export interface IExtensionContextExt extends IExtensionContext {
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('download', 'Download', DownloadView, {
     hotkey: 'D',
+    group: 'global',
   });
 
   context.registerSettings('Download', Settings);

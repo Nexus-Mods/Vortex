@@ -60,6 +60,7 @@ function updateSaves(store: Redux.Store<any>,
 function init(context): boolean {
   context.registerMainPage('hdd-o', 'Save Games', SavegameList, {
     hotkey: 'S',
+    group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
   });
 

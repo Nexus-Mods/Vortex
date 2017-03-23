@@ -22,6 +22,7 @@ function init(context: IExtensionContext): boolean {
   context.registerMainPage('book', 'Categories', CategoryList, {
     hotkey: 'C',
     visible: () => activeProfile(context.api.store.getState()) !== undefined,
+    group: 'per-game',
   });
 
   context.registerReducer(['persistent', 'categories'], categoryReducer);

@@ -21,6 +21,7 @@ import Settings from './views/Settings';
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('gamepad', 'Games', GamePicker, {
     hotkey: 'G',
+    group: 'global',
   });
   context.registerSettings('Games', Settings);
   context.registerReducer(['session', 'discovery'], discoveryReducer);

@@ -17,6 +17,72 @@
     display: none; 
 }
 
+#main-toolbar {
+  background-color: #212c31;
+  height: 48px;
+}
+
+#main-toolbar button {
+  background-color: transparent;
+  border-width: 0px;
+  color: #cfd8dc;
+  padding: 10px;
+  &:hover {
+    background-color: $gray-dark;
+  }
+}
+
+#main-toolbar button > svg {
+  width: 24px;
+  height: 24px;
+}
+
+#main-nav-sidebar {
+  background-color: #212c31;
+  transition: max-width 1s;
+}
+
+.sidebar-expanded {
+  max-width: 500px;
+}
+
+.sidebar-compact {
+  max-width: 48px;
+}
+
+.menu-label {
+  transition: opacity 1s;
+}
+
+.sidebar-expanded .menu-label {
+  opacity: 1;
+}
+
+.sidebar-compact .menu-label {
+  opacity: 0;
+}
+
+.sidebar-compact {
+  min-width: 0px;
+}
+
+#nexus-logo {
+  width: 192px;
+  padding: 4px 8px;
+  float: left;
+}
+
+.nav-pills > li > a {
+  color: #cfd8dc;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 10px 25px 10px 16px;
+}
+
+.nav > li > a:hover, .nav > li > a:focus {
+  background-color: $gray-dark;
+}
+
 .about-panel {
   height: 100%;
   max-height: 200px;
@@ -412,7 +478,13 @@
 }
 
 .menu-label {
-  margin-left: 6px;
+  margin-left: 10px;
+  min-width: 125px;
+  font-size: 15px;
+}
+
+.nav-pills > li.active > a, .nav-pills > li.active > a:hover, .nav-pills > li.active > a:focus {
+  border-left: 2px solid $brand-highlight;
 }
 
 .table-main-pane {
@@ -662,4 +734,12 @@ Resizer.disabled:hover {
 .btn-group > .btn,
 .btn-group-vertical > .btn {
   position: initial;
+}
+
+.btn-quicklaunch {
+  width: 100%;
+  text-align: left;
+  background-color: #192125;
+  border-width: 0px;
+  padding: 5px 8px;
 }

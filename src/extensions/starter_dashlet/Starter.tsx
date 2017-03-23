@@ -5,6 +5,8 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
+import StarterInfo from '../../util/StarterInfo';
+import startTool, { DeployResult } from '../../util/startTool';
 import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';
 
@@ -17,13 +19,10 @@ import { IToolStored } from '../gamemode_management/types/IToolStored';
 
 import { setPrimaryTool } from './actions';
 
-import runToolElevated from './runToolElevated';
-import StarterInfo from './StarterInfo';
 import ToolButton from './ToolButton';
 import ToolEditDialog from './ToolEditDialog';
 
 import * as Promise from 'bluebird';
-import { execFile } from 'child_process';
 import * as path from 'path';
 import * as React from 'react';
 import { Dropdown, Media, MenuItem } from 'react-bootstrap';
@@ -165,6 +164,57 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     />;
   }
 
+  private queryElevate = (name: string) => {
+    const { t, onShowDialog } = this.props;
+    return onShowDialog('question', t('Requires elevation'), {
+      message: t('{{name}} cannot be started because it requires elevation. ' +
+        'Would you like to run the tool elevated?', {
+          replace: {
+            name,
+          },
+        }),
+      options: {
+        translated: true,
+      },
+    }, {
+        Cancel: null,
+        'Run elevated': null,
+      }).then(result => {
+        return result.action === 'Run elevated';
+      });
+  }
+
+  private queryDeploy = (): Promise<DeployResult> => {
+    const { autoDeploy, onShowDialog } = this.props;
+    if (autoDeploy) {
+      return Promise.resolve<DeployResult>('auto');
+    } else {
+      return onShowDialog('question', 'Deploy now?', {
+        message: 'You should deploy mods now, otherwise the mods in game '
+               + 'will be outdated',
+      }, {
+        Cancel: null,
+        Skip: null,
+        Deploy: null,
+      })
+      .then((result) => {
+        switch (result.action) {
+          case 'Skip': return Promise.resolve<DeployResult>('skip');
+          case 'Deploy': return Promise.resolve<DeployResult>('yes');
+          default: return Promise.resolve<DeployResult>('cancel');
+        }
+      });
+    }
+  }
+
+  private startTool = (info: StarterInfo) => {
+    startTool(info, this.queryElevate, this.queryDeploy, this.props.onShowError)
+    .catch((err: Error) => {
+      this.props.onShowError('Failed to activate', err);
+    })
+    ;
+  }
+
   private renderAddButton(hidden: StarterInfo[]) {
     const {t} = this.props;
     // <IconButton id='add-tool-icon' icon='plus' tooltip={t('Add Tool')} />
@@ -192,86 +242,6 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   private unhide = (toolId: any) => {
     const { gameMode, onSetToolVisible }  = this.props;
     onSetToolVisible(gameMode, toolId, true);
-  }
-
-  private startTool = (starter: StarterInfo) => {
-    const { t, onShowDialog, onShowError } = this.props;
-    this.startDeploy()
-    .then((doStart: boolean) => {
-      if (doStart) {
-        try {
-          execFile(starter.exePath, {
-            cwd: starter.workingDirectory,
-            env: Object.assign({}, process.env, starter.environment),
-          });
-        } catch (err) {
-          // TODO: as of the current electron version (1.4.14) the error isn't precise
-          //   enough to determine if the error was actually lack of elevation but among
-          //   the errors that report "UNKNOWN" this should be the most likely one.
-          if (err.errno === 'UNKNOWN') {
-            onShowDialog('question', t('Requires elevation'), {
-              message: t('{{name}} cannot be started because it requires elevation. ' +
-                'Would you like to run the tool elevated?', {
-                  replace: {
-                    name: starter.name,
-                  },
-                }),
-              options: {
-                translated: true,
-              },
-            }, {
-              Cancel: null,
-              'Run elevated': () => runToolElevated(starter, onShowError),
-            });
-          } else {
-            log('info', 'failed to run custom tool', { err: err.message });
-          }
-        }
-      }
-    })
-    .catch((err: Error) => {
-      this.props.onShowError('Failed to activate', err);
-    })
-    ;
-  }
-
-  private startDeploy(): Promise<boolean> {
-    const { autoDeploy, onShowDialog } = this.props;
-    if (!autoDeploy) {
-      return onShowDialog('question', 'Deploy now?', {
-        message: 'You should deploy mods now, otherwise the mods in game '
-               + 'will be outdated',
-      }, {
-        Cancel: null,
-        Skip: null,
-        Deploy: null,
-      })
-      .then((result) => {
-        switch (result.action) {
-          case 'Skip': return Promise.resolve(true);
-          case 'Deploy': return new Promise<boolean>((resolve, reject) => {
-            this.context.api.events.emit('activate-mods', (err) => {
-              if (err !== null) {
-                reject(err);
-              } else {
-                resolve(true);
-              }
-            });
-          });
-          default: return Promise.resolve(false);
-        }
-      });
-    } else {
-      return new Promise<boolean>((resolve, reject) => {
-        this.context.api.events.emit('await-activation', (err: Error) => {
-          if (err !== null) {
-            reject(err);
-          } else {
-            resolve(true);
-          }
-        });
-      });
-    }
   }
 
   private renderGameIcon = (game: IGameStored): JSX.Element => {

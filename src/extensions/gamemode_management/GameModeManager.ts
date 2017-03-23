@@ -149,6 +149,7 @@ class GameModeManager {
   private storeGame = (game: IGame): IGameStored => {
     return {
       name: game.name,
+      shortName: game.shortName,
       id: game.id,
       logo: game.logo,
       mergeMods: game.mergeMods,
@@ -167,6 +168,7 @@ class GameModeManager {
     return {
       id: tool.id,
       name: tool.name,
+      shortName: tool.shortName,
       logo: tool.logo,
       executable: tool.executable(),
       parameters: tool.parameters || [],

@@ -118,6 +118,7 @@ let refreshTimer: NodeJS.Timer;
 function register(context: IExtensionContextExt) {
   context.registerMainPage('puzzle-piece', 'Plugins', PluginList, {
     hotkey: 'E',
+    group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
     props: () => ({
       nativePlugins: nativePlugins(selectors.activeGameId(context.api.store.getState())),

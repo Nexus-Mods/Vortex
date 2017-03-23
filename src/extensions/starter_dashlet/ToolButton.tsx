@@ -1,7 +1,7 @@
 import { ComponentEx } from '../../util/ComponentEx';
+import StarterInfo from '../../util/StarterInfo';
 import { Button } from '../../views/TooltipControls';
 
-import StarterInfo from './StarterInfo';
 import ToolIcon from './ToolIcon';
 
 import * as React from 'react';

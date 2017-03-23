@@ -1,10 +1,9 @@
-import { IDiscoveredTool } from '../../types/IDiscoveredTool';
+import { IDiscoveredTool } from '../types/IDiscoveredTool';
+import { getSafe } from '../util/storeHelper';
 
-import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
-import { IGameStored } from '../gamemode_management/types/IGameStored';
-import { IToolStored } from '../gamemode_management/types/IToolStored';
-
-import { getSafe } from '../../util/storeHelper';
+import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
+import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
+import { IToolStored } from '../extensions/gamemode_management/types/IToolStored';
 
 import { remote } from 'electron';
 import * as fs from 'fs';

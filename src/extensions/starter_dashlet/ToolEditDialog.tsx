@@ -2,7 +2,7 @@ import { displayGroup } from '../../actions/session';
 import { IComponentContext } from '../../types/IComponentContext';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-
+import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { Button, IconButton } from '../../views/TooltipControls';
 
 import { log } from '../../util/log';
@@ -10,7 +10,6 @@ import { getSafe } from '../../util/storeHelper';
 
 import { addDiscoveredTool, setGameParameters } from '../gamemode_management/actions/settings';
 
-import StarterInfo, { IStarterInfo } from './StarterInfo';
 import ToolIcon from './ToolIcon';
 
 import * as Promise from 'bluebird';

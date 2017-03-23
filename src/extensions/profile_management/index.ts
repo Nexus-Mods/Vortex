@@ -96,6 +96,7 @@ export interface IExtensionContextExt extends IExtensionContext {
 function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('clone', 'Profiles', ProfileView, {
     hotkey: 'P',
+    group: 'global',
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
     props: () => ({ features: profileFeatures }),
   });

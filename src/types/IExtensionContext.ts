@@ -37,6 +37,7 @@ export interface IRegisterFooter {
 export interface IMainPageOptions {
   hotkey?: string;
   visible?: () => boolean;
+  group: 'global' | 'per-game' | 'support';
   props?: () => any;
 }
 

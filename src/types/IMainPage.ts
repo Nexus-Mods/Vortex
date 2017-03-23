@@ -14,4 +14,5 @@ export interface IMainPage {
   component: React.ComponentClass<any>;
   propsFunc: () => void;
   visible: () => boolean;
+  group: 'global' | 'per-game' | 'support';
 }

@@ -26,6 +26,14 @@ export interface ITool {
   name: string;
 
   /**
+   * short/abbreviated variant of the name, still intended for presentation to the user
+   * this is used when available space is limited. Try to keep it below 8 characters
+   * (there is no fixed limit but layout may break if this is too long)
+   * If none is set, falls back to name
+   */
+  shortName?: string;
+
+  /**
    * path to the image that is to be used as the logo for this tool.
    * Please note: The logo should be easily recognizable and distinguishable from
    * other tools.
