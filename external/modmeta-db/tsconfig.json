@@ -10,7 +10,8 @@
         "rootDir": "./src",
         "outDir": "./lib",
         "sourceMap": false,
-        "declaration": true
+        "declaration": true,
+        "skipLibCheck": true
     },
     "files": [
         "src/index.ts",
