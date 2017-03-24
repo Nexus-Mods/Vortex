@@ -90,7 +90,12 @@ class InstallContext implements IInstallContext {
       this.mSetModAttribute(this.mAddedId, 'installTime', new Date());
       this.mSetModAttribute(this.mAddedId, 'category', info.category);
       this.mSetModAttribute(this.mAddedId, 'version', info.version);
+      this.mSetModAttribute(this.mAddedId, 'currentVersion', info.version);
+      this.mSetModAttribute(this.mAddedId, 'fileId', info.fileId);
+      this.mSetModAttribute(this.mAddedId, 'currentFileId', info.fileId);
       this.mSetModAttribute(this.mAddedId, 'endorsed', '');
+      this.mSetModAttribute(this.mAddedId, 'uploadedTimestamp', info.uploadedTimestamp);
+      this.mSetModAttribute(this.mAddedId, 'bugMessage', '');
 
       if (info !== undefined) {
         Object.keys(info).forEach(

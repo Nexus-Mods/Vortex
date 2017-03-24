@@ -275,6 +275,7 @@ class ModDB {
           `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
       value: {
         fileMD5: nexusObj.file_details.md5,
+        fileId: nexusObj.file_details.file_id,
         fileName: nexusObj.file_details.file_name,
         fileSizeBytes: nexusObj.file_details.file_size,
         logicalFileName: nexusObj.file_details.name,
@@ -283,6 +284,7 @@ class ModDB {
         modName: nexusObj.mod.name,
         modId: nexusObj.mod.mod_id,
         sourceURI: urlFragments.join('/'),
+        uploadedTimestamp: nexusObj.file_details.uploaded_timestamp,
         details: {
           category: nexusObj.mod.category,
           description: nexusObj.mod.description,

@@ -13,7 +13,7 @@ declare class Nexus {
     getGames(): Promise<types.IGameListEntry[]>;
     getGameInfo(gameId?: string): Promise<types.IGameInfo>;
     getModInfo(modId: number, gameId?: string): Promise<types.IModInfo>;
-    getModFiles(modId: number, gameId?: string): Promise<types.IFileInfo[]>;
+    getModFiles(modId: number, gameId?: string): Promise<types.IModFiles>;
     getFileInfo(modId: number, fileId: number, gameId?: string): Promise<types.IFileInfo>;
     getDownloadURLs(modId: number, fileId: number, gameId?: string): Promise<types.IDownloadURL[]>;
     private filter(obj);

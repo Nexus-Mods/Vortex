@@ -8,7 +8,8 @@ import { ComponentEx, connect, extend, translate } from '../../../util/Component
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import IconBar from '../../../views/IconBar';
-import SuperTable, {ITableRowAction} from '../../../views/Table';
+import SuperTable, { ITableRowAction } from '../../../views/Table';
+import { IconButton } from '../../../views/TooltipControls';
 
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
@@ -19,6 +20,7 @@ import { IMod } from '../types/IMod';
 import { INSTALL_TIME } from '../modAttributes';
 import { installPath } from '../selectors';
 
+import CheckModsVersionButton from './CheckModsVersionButton';
 import InstallArchiveButton from './InstallArchiveButton';
 
 import * as Promise from 'bluebird';
@@ -36,7 +38,7 @@ interface IBaseProps {
 }
 
 interface IAttributeStateMap {
-  [ attributeId: string ]: IAttributeState;
+  [attributeId: string]: IAttributeState;
 }
 
 interface IModProps {
@@ -55,7 +57,7 @@ interface IActionProps {
   onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
   onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+    actions: DialogActions) => Promise<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
 }
 
@@ -70,6 +72,7 @@ class ModList extends ComponentEx<IProps, {}> {
   private modEnabledAttribute: ITableAttribute;
   private modNameAttribute: ITableAttribute;
   private modVersionAttribute: ITableAttribute;
+  private modVersionDetailAttribute: ITableAttribute;
   private mModsWithState: { [id: string]: IModWithState };
   private staticButtons: IIconDefinition[];
 
@@ -116,19 +119,33 @@ class ModList extends ComponentEx<IProps, {}> {
       isSortable: false,
     };
 
+    this.modVersionDetailAttribute = {
+      id: 'versionDetail',
+      name: 'Version',
+      description: 'File version (according to the author)',
+      icon: 'birthday-cake',
+      calc: (mod: IMod) => getSafe(mod.attributes, ['version'], ''),
+      placement: 'detail',
+      isToggleable: false,
+      edit: {
+        validate: (input: string) => semver.valid(input) ? 'success' : 'warning',
+        onChangeValue: (modId: string, value: any) =>
+          props.onSetModAttribute(props.gameMode, modId, 'version', value),
+      },
+      isSortable: false,
+    };
+
     this.modVersionAttribute = {
       id: 'version',
       name: 'Version',
       description: 'File version (according to the author)',
       icon: 'birthday-cake',
       calc: (mod: IMod) => getSafe(mod.attributes, ['version'], ''),
-      placement: 'both',
+      customRenderer: (mod: IMod) =>
+        this.renderVersionIcon(mod),
+      placement: 'table',
       isToggleable: true,
-      edit: {
-        validate: (input: string) => semver.valid(input) ? 'success' : 'warning',
-        onChangeValue: (modId: string, value: any) =>
-          props.onSetModAttribute(props.gameMode, modId, 'version', value),
-      },
+      edit: {},
       isSortable: true,
     };
 
@@ -155,7 +172,11 @@ class ModList extends ComponentEx<IProps, {}> {
     this.staticButtons = [
       {
         component: InstallArchiveButton,
-        props: () => ({ }),
+        props: () => ({}),
+      },
+      {
+        component: CheckModsVersionButton,
+        props: () => ({}),
       },
     ];
   }
@@ -179,7 +200,7 @@ class ModList extends ComponentEx<IProps, {}> {
 
   public componentWillReceiveProps(newProps: IProps) {
     if ((this.props.mods !== newProps.mods)
-        || (this.props.modState !== newProps.modState)) {
+      || (this.props.modState !== newProps.modState)) {
       this.updateModsWithState(this.props, newProps);
     }
   }
@@ -188,7 +209,7 @@ class ModList extends ComponentEx<IProps, {}> {
     const { t, gameMode } = this.props;
 
     if (gameMode === undefined) {
-      return <Jumbotron>{ t('Please select a game first') }</Jumbotron>;
+      return <Jumbotron>{t('Please select a game first')}</Jumbotron>;
     }
 
     return (
@@ -209,13 +230,89 @@ class ModList extends ComponentEx<IProps, {}> {
               this.modEnabledAttribute,
               this.modNameAttribute,
               this.modVersionAttribute,
+              this.modVersionDetailAttribute,
               INSTALL_TIME,
             ]}
             actions={this.modActions}
           />
         </Flex>
       </Layout>
+    );
+  }
+
+  private renderVersionIcon = (mod: IMod): JSX.Element => {
+    const version = getSafe(mod.attributes, ['version'], '');
+    const fileId = getSafe(mod.attributes, ['fileId'], '');
+    const currentFileId = getSafe(mod.attributes, ['currentFileId'], '');
+    const currentVersion = getSafe(mod.attributes, ['currentVersion'], '');
+    const bugMessage = getSafe(mod.attributes, ['bugMessage'], '');
+    const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+
+    let versionIcon: string = '';
+    let versionTooltip: string = '';
+    /*
+    a) mod is up-to-date (maybe no icon at all) NOTHING
+    b) mod can be updated (but no rush) 'cloud-download'
+    c) mod can be updated (no rush, but you will have to pick the file yourself) 'external-link'
+    d) mod should be updated because the insalled version is bugged 'bug'
+    e) mod should be disabled because this version is bugged and there is no update 'ban'
+     */
+
+    if (bugMessage !== '') {
+      if (currentFileId === undefined) {
+        versionIcon = 'ban';
+        versionTooltip = 'Mod should be disabled because this version is '
+          + 'bugged and there is no update';
+      } else {
+        versionIcon = 'bug';
+        versionTooltip = 'Mod should be updated because the insalled version is bugged';
+      }
+    } else if ((currentFileId !== undefined && currentFileId !== fileId)
+      && version < currentVersion) {
+      versionIcon = 'cloud-download';
+      versionTooltip = 'Mod can be updated';
+    } else if (currentFileId === undefined && version < currentVersion) {
+      versionIcon = 'external-link';
+      versionTooltip = 'Mod can be updated (but you will have to pick the file yourself)';
+    }
+
+    if (version < currentVersion) {
+      return (
+        <div style={{ textAlign: 'center' }}>
+          {version}
+          <IconButton
+            className='btn-embed'
+            id={nexusModId.toString()}
+            value={currentFileId}
+            tooltip={versionTooltip}
+            icon={versionIcon}
+            onClick={this.downloadMod}
+          />
+        </div>
       );
+    } else {
+      return (
+        <div>
+          {version}
+        </div>
+      );
+    }
+  }
+
+  private downloadMod = (evt) => {
+    const { gameMode } = this.props;
+    let modId = evt.currentTarget.id;
+    let currentFileId = evt.currentTarget.value;
+
+    if (currentFileId === undefined) {
+      const opn = require('opn');
+      let modPageUrl = path.join('http://www.nexusmods.com',
+        gameMode, 'mods', evt.currentTarget.id);
+      opn(modPageUrl);
+    } else {
+      let test = `nxm://${gameMode}/mods/${modId}/files/${currentFileId}`;
+      this.context.api.events.emit('download-updated-mod', test);
+    }
   }
 
   private enableSelected = (modIds: string[]) => {
@@ -277,11 +374,11 @@ class ModList extends ComponentEx<IProps, {}> {
               }
             });
           })
-          .then(() => Promise.map(modIds, (key: string) => {
-            let fullPath = path.join(installPath, mods[key].installationPath);
-            return fs.removeAsync(fullPath);
-          }))
-          .then(() => undefined);
+            .then(() => Promise.map(modIds, (key: string) => {
+              let fullPath = path.join(installPath, mods[key].installationPath);
+              return fs.removeAsync(fullPath);
+            }))
+            .then(() => undefined);
         } else {
           return Promise.resolve();
         }
@@ -322,7 +419,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(setModEnabled(profileId, modId, enabled));
     },
     onShowDialog:
-      (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
+    (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
     onRemoveMod: (gameMode: string, modId: string) => dispatch(removeMod(gameMode, modId)),
   };
 }

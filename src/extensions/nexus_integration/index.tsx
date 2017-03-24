@@ -16,6 +16,7 @@ import { IMod } from '../mod_management/types/IMod';
 import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
 import { settingsReducer } from './reducers/settings';
+import checkModsVersion from './util/checkModsVersion';
 import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import EndorseModButton from './views/EndorseModButton';
@@ -151,8 +152,10 @@ function processErrorMessage(statusCode: number, errorMessage: string, gameId: s
   }
 }
 
-function endorseModImpl(store: Redux.Store<any>, gameId: string,
-                        modId: string, endorsedStatus: string) {
+function endorseModImpl(
+  store: Redux.Store<any>,
+  gameId: string,
+  modId: string, endorsedStatus: string) {
   const mod: IMod = getSafe(store.getState(), ['persistent', 'mods', gameId, modId], undefined);
 
   if (mod === undefined) {
@@ -172,6 +175,34 @@ function endorseModImpl(store: Redux.Store<any>, gameId: string,
       store.dispatch(setModAttribute(gameId, modId, 'endorsed', undefined));
       let detail = processErrorMessage(err.statusCode, err.message, gameId);
       showError(store.dispatch, 'An error occurred endorsing a mod', detail);
+    });
+};
+
+function checkModsVersionImpl(
+  store: Redux.Store<any>,
+  gameId: string,
+  mod: IMod) {
+
+  const version: string = getSafe(mod.attributes, ['version'], undefined);
+  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+  const currentFileId: number = getSafe(mod.attributes, ['currentFileId'], undefined);
+  const uploadedTimestamp: number = getSafe(mod.attributes, ['uploadedTimestamp'], undefined);
+
+  if (mod === undefined) {
+    log('warn', 'tried to check version to an unknown mod', { gameId, nexusModId });
+    return;
+  }
+
+  checkModsVersion(nexus, gameId, nexusModId, currentFileId, version, uploadedTimestamp)
+    .then((result: any) => {
+      if (result !== undefined) {
+        store.dispatch(setModAttribute(gameId, mod.id, 'currentVersion', result.version));
+        store.dispatch(setModAttribute(gameId, mod.id, 'currentFileId', result.file_id));
+      }
+    })
+    .catch((err) => {
+      let detail = processErrorMessage(err.statusCode, err.message, gameId);
+      showError(store.dispatch, 'An error occurred checking mods last version', detail);
     });
 };
 
@@ -295,6 +326,14 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('retrieve-category-list', (isUpdate: boolean) => {
       retrieveCategories(context.api, isUpdate);
+    });
+
+    context.api.events.on('check-mods-version', (gameId, mod) => {
+      checkModsVersionImpl(context.api.store, gameId, mod);
+    });
+
+    context.api.events.on('download-updated-mod', (nxmurl) => {
+      startDownload(context.api, nxmurl);
     });
 
     context.api.events.on('endorse-mod', (gameId, modId, endorsedStatus) => {

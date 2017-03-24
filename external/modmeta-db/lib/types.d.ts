@@ -20,9 +20,11 @@ export interface IModInfo {
     logicalFileName?: string;
     fileVersion: string;
     fileMD5: string;
+    fileId: string;
     sourceURI: any;
     rules?: IRule[];
     expires?: number;
+    uploadedTimestamp: number;
     details?: {
         homepage?: string;
         category?: string;

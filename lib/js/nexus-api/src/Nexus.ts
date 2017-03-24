@@ -124,8 +124,8 @@ class Nexus {
     });
   }
 
-  public getModFiles(modId: number, gameId?: string): Promise<types.IFileInfo[]> {
-    return new Promise<any>((resolve, reject) => {
+  public getModFiles(modId: number, gameId?: string): Promise<types.IModFiles> {
+    return new Promise<types.IModFiles>((resolve, reject) => {
       let req = this.mRestClient.methods.getModFiles(
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
