@@ -117,8 +117,8 @@ public:
 
   const char *getType() const {
     switch (m_Wrapped->getType()) {
-      case BSA::Archive::TYPE_OBLIVION: return "oblivion";
-      case BSA::Archive::TYPE_SKYRIM:   return "skyrim";
+      case BSA::TYPE_OBLIVION: return "oblivion";
+      case BSA::TYPE_SKYRIM:   return "skyrim";
       // fallout 3 and fallout nv use the same type as skyrim
       default: return nullptr;
     }
