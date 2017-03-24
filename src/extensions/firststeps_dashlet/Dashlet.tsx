@@ -7,6 +7,7 @@ import { IconButton } from '../../views/TooltipControls';
 
 import getTextModManagement from '../mod_management/texts';
 import { setAssociatedWithNXMURLs } from '../nexus_integration/actions/settings';
+import getTextProfiles from '../profile_management/texts';
 
 import { dismissStep } from './actions';
 
@@ -21,6 +22,7 @@ interface IConnectedState {
   basePath: string;
   associatedWithNXM: boolean;
   autoDeploy: boolean;
+  profilesVisible: boolean;
   dismissAll: boolean;
   steps: { [stepId: string]: boolean };
   searchPaths: string[];
@@ -92,7 +94,6 @@ class Dashlet extends ComponentEx<IProps, {}> {
       render: (props: IProps): JSX.Element => {
         const {t, discoveryRunning, searchPaths} = props;
 
-
         if (discoveryRunning) {
           return <span>
           <a onClick={this.openGames}>
@@ -140,6 +141,24 @@ class Dashlet extends ComponentEx<IProps, {}> {
           />
         </span>);
       },
+    },
+    {
+      id: 'profile-visibility',
+      condition: (props: IProps) => !props.profilesVisible,
+      render: (props: IProps): JSX.Element => {
+        const { t } = props;
+        const link = <a onClick={this.openSettings}><Icon name='gear'/>{t('Settings')}</a>;
+        const more = (<More id='more-profiles-dash' name={t('Profiles')}>
+          {getTextProfiles('profiles', t)}
+        </More>);
+        return (<span>
+          <Interpolate
+            i18nKey='Profile Management{{more}} is disabled. Open {{link}} to enable.'
+            more={more}
+            link={link}
+          />
+        </span>);
+      }
     },
   ];
 
@@ -198,6 +217,7 @@ function mapStateToProps(state: any): IConnectedState {
     basePath: basePath(state),
     associatedWithNXM: state.settings.nexus.associateNXM,
     autoDeploy: state.settings.automation.deploy,
+    profilesVisible: state.settings.interface.profilesVisible,
     dismissAll: state.settings.firststeps.dismissAll,
     steps: state.settings.firststeps.steps,
     searchPaths: state.settings.gameMode.searchPaths,

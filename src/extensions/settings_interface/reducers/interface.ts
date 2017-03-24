@@ -1,6 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 
-import { setLanguage } from '../actions/interface';
+import * as actions from '../actions/interface';
 import update = require('react-addons-update');
 
 /**
@@ -8,10 +8,14 @@ import update = require('react-addons-update');
  */
 const settingsReducer: IReducerSpec = {
   reducers: {
-    [setLanguage as any]: (state, payload) => update(state, { language: { $set: payload } }),
+    [actions.setLanguage as any]: (state, payload) =>
+      update(state, { language: { $set: payload } }),
+    [actions.setProfilesVisible as any]: (state, payload) =>
+      update(state, { profilesVisible: { $set: payload.visible } }),
   },
   defaults: {
     language: 'en-GB',
+    profilesVisible: false,
   },
 };
 

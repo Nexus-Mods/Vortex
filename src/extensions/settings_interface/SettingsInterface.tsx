@@ -3,9 +3,10 @@ import { log } from '../../util/log';
 import More from '../../views/More';
 
 import getTextModManagement from '../mod_management/texts';
+import getTextProfiles from '../profile_management/texts';
 
 import { setAutoDeployment } from './actions/automation';
-import { setLanguage } from './actions/interface';
+import { setLanguage, setProfilesVisible } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 
 import * as React from 'react';
@@ -24,12 +25,14 @@ interface ILanguage {
 
 interface IConnectedProps {
   currentLanguage: string;
+  profilesVisible: boolean;
   autoDeployment: boolean;
 }
 
 interface IActionProps {
   onSetLanguage: (language: string) => void;
   onSetAutoDeployment: (enabled: boolean) => void;
+  onSetProfilesVisible: (visible: boolean) => void;
 }
 
 interface IState {
@@ -75,7 +78,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   }
 
   public render(): JSX.Element {
-    const { t, autoDeployment, currentLanguage } = this.props;
+    const { t, autoDeployment, currentLanguage, profilesVisible } = this.props;
 
     return (
       <form>
@@ -89,7 +92,22 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
             { this.state.languages.map((language) => { return this.renderLanguage(language); }) }
           </FormControl>
         </FormGroup>
-        <FormGroup>
+        <FormGroup controlId='profiles'>
+          <ControlLabel>{t('Profiles')}</ControlLabel>
+          <div>
+            <Checkbox
+              checked={profilesVisible}
+              onChange={this.toggleProfiles}
+              style={{ display: 'inline' }}
+            >
+              {t('Enable Profile management')}
+            </Checkbox>
+            <More id='more-profile-settings' name={t('Profiles')}>
+              {getTextProfiles('profiles', t)}
+            </More>
+          </div>
+        </FormGroup>
+        <FormGroup controlId='automation'>
           <ControlLabel>{t('Automation')}</ControlLabel>
           <div>
             <Checkbox
@@ -131,11 +149,17 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
     const { autoDeployment, onSetAutoDeployment } = this.props;
     onSetAutoDeployment(!autoDeployment);
   }
+
+  private toggleProfiles = () => {
+    const { profilesVisible, onSetProfilesVisible } = this.props;
+    onSetProfilesVisible(!profilesVisible);
+  }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
     currentLanguage: state.settings.interface.language,
+    profilesVisible: state.settings.interface.profilesVisible,
     autoDeployment: state.settings.automation.deploy,
   };
 }
@@ -148,6 +172,9 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
     onSetAutoDeployment: (enabled: boolean) => {
       dispatch(setAutoDeployment(enabled));
     },
+    onSetProfilesVisible: (visible: boolean) => {
+      dispatch(setProfilesVisible(visible));
+    }
   };
 }
 
