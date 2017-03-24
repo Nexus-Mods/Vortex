@@ -11,7 +11,8 @@
         "outDir": "./lib",
         "sourceMap": false,
         "jsx":"react",
-        "declaration": true
+        "declaration": true,
+        "skipLibCheck": true
     },
     "files": [
         "../typings/index.d.ts",

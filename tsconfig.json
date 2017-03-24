@@ -10,7 +10,8 @@
         "rootDir": "./src",
         "outDir": "./out",
         "sourceMap": true,
-        "jsx":"react"
+        "jsx":"react",
+        "skipLibCheck": true
     },
     "files": [
         "typings/index.d.ts",
