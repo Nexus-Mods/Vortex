@@ -45,7 +45,7 @@ function main(context: types.IExtensionContext) {
       const modPath = selectors.installPath(state);
       const gameId = selectors.activeGameId(state);
       const modState = selectors.activeProfile(state).modState;
-      const mods = Object.keys(state.persistent.mods[gameId])
+      const mods = Object.keys(state.persistent.mods[gameId] || {})
         .filter(modId => util.getSafe(modState, [modId, 'enabled'], false))
         .map(modId => state.persistent.mods[gameId][modId]);
       store.dispatch(setConflictWorking(true));
