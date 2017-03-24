@@ -8,7 +8,7 @@ import { installerUIReducer } from './reducers/installerUI';
 import InstallerDialog from './views/InstallerDialog';
 
 import * as Promise from 'bluebird';
-import * as edge from 'electron-edge';
+import * as edge from 'edge';
 import * as path from 'path';
 
 import * as util from 'util';

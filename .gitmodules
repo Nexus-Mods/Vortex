@@ -1,8 +1,9 @@
+[submodule "lib/cpp/bsatk/bsatk"]
+	path = lib/cpp/bsatk/bsatk
+	url = https://github.com/TanninOne/modorganizer-bsatk
+	branch = noboost
 [submodule "lib/cpp/esptk/esptk"]
 	path = lib/cpp/esptk/esptk
 	url = https://github.com/TanninOne/modorganizer-esptk
 	branch = noboost
-[submodule "lib/cpp/bsatk/bsatk"]
-	path = lib/cpp/bsatk/bsatk
-	url = https://github.com/TanninOne/modorganizer-bsatk
-  branch = noboost
+
