@@ -97,7 +97,8 @@ function init(context: IExtensionContextExt): boolean {
   context.registerMainPage('clone', 'Profiles', ProfileView, {
     hotkey: 'P',
     group: 'global',
-    visible: () => activeGameId(context.api.store.getState()) !== undefined,
+    visible: () => (activeGameId(context.api.store.getState()) !== undefined)
+      && (context.api.store.getState().settings.interface.profilesVisible),
     props: () => ({ features: profileFeatures }),
   });
 

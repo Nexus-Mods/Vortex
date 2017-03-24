@@ -1,5 +1,5 @@
 import { addNotification, dismissNotification } from '../../actions/notifications';
-import { INotification } from '../../types/INotification';
+import { INotification, NotificationType } from '../../types/INotification';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 
@@ -7,7 +7,7 @@ import { addMod, removeMod, setModAttribute,
          setModInstallationPath, setModState } from './actions/mods';
 import { IMod, ModState } from './types/IMod';
 
-import { IInstallContext } from './types/IInstallContext';
+import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 
 import * as path from 'path';
 
@@ -29,6 +29,10 @@ class InstallContext implements IInstallContext {
   private mSetModState: (id: string, state: ModState) => void;
   private mSetModAttribute: (id: string, key: string, value: any) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
+
+  private mAddedId: string;
+  private mIndicatorId: string;
+  private mInstallOutcome: InstallOutcome;
 
   constructor(gameMode: string, dispatch: Redux.Dispatch<any>) {
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
@@ -53,16 +57,17 @@ class InstallContext implements IInstallContext {
       message: 'Installing ' + id,
       type: 'activity',
     });
+    this.mIndicatorId = id;
   }
 
-  public stopIndicator(id: string): void {
-    this.mDismissNotification('install_' + id);
+  public stopIndicator(): void {
+    if (this.mIndicatorId === undefined) {
+      return;
+    }
 
-    this.mAddNotification({
-      type: 'success',
-      message: `${id} installed`,
-      displayMS: 4000,
-    });
+    this.mDismissNotification('install_' + this.mIndicatorId);
+
+    this.mAddNotification(this.outcomeNotification(this.mInstallOutcome, this.mIndicatorId));
   }
 
   public startInstallCB(id: string, archiveId: string): void {
@@ -76,23 +81,27 @@ class InstallContext implements IInstallContext {
         installTime: 'ongoing',
       },
     });
+    this.mAddedId = id;
   }
 
-  public finishInstallCB(id: string, success: boolean, info?: any): void {
-    if (success) {
-      this.mSetModState(id, 'installed');
-      this.mSetModAttribute(id, 'installTime', new Date());
-      this.mSetModAttribute(id, 'category', info.category);
-      this.mSetModAttribute(id, 'version', info.version);
-      this.mSetModAttribute(id, 'endorsed', '');
+  public finishInstallCB(outcome: InstallOutcome, info?: any): void {
+    if (outcome === 'success') {
+      this.mSetModState(this.mAddedId, 'installed');
+      this.mSetModAttribute(this.mAddedId, 'installTime', new Date());
+      this.mSetModAttribute(this.mAddedId, 'category', info.category);
+      this.mSetModAttribute(this.mAddedId, 'version', info.version);
+      this.mSetModAttribute(this.mAddedId, 'endorsed', '');
 
       if (info !== undefined) {
         Object.keys(info).forEach(
-          (key: string) => { this.mSetModAttribute(id, key, info[key]); });
+          (key: string) => { this.mSetModAttribute(this.mAddedId, key, info[key]); });
       }
     } else {
-      this.mRemoveMod(id);
+      if (this.mAddedId !== undefined) {
+        this.mRemoveMod(this.mAddedId);
+      }
     }
+    this.mInstallOutcome = outcome;
   }
 
   public setInstallPathCB(id: string, installPath: string) {
@@ -106,6 +115,25 @@ class InstallContext implements IInstallContext {
 
   public progressCB(percent: number, file: string): void {
     log('debug', 'install progress', { percent, file });
+  }
+
+  private outcomeNotification(outcome: InstallOutcome, id: string): INotification {
+    switch (outcome) {
+      case 'success': return {
+        type: 'success',
+        message: `${id} installed`,
+        displayMS: 4000,
+      };
+      case 'canceled': return {
+        type: 'info',
+        message: 'Installation canceled',
+        displayMS: 2000,
+      };
+      default: return {
+        type: 'error',
+        message: `${id} failed to install`,
+      };
+    }
   }
 }
 

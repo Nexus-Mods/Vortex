@@ -121,10 +121,9 @@ class InstallManager {
     const baseName = path.basename(archivePath, path.extname(archivePath));
     let installName = baseName;
     let fullInfo = Object.assign({}, info);
+    let destinationPath: string;
 
     installContext.startIndicator(baseName);
-
-    let destinationPath: string;
 
     api.lookupModMeta({filePath: archivePath})
         .then((modInfo: ILookupResult[]) => {
@@ -140,6 +139,7 @@ class InstallManager {
             return this.checkModExists(installName, api, gameId) ?
                        this.queryUserReplace(installName, api)
                            .then((newName: string) => {
+                             console.log('new name', newName);
                              installName = newName;
                              return checkNameLoop();
                            }) :
@@ -160,7 +160,7 @@ class InstallManager {
         })
         .then(() => {
           const filteredInfo = filterModInfo(fullInfo);
-          installContext.finishInstallCB(installName, true, filteredInfo);
+          installContext.finishInstallCB('success', filteredInfo);
           if (processDependencies) {
             this.installDependencies(filteredInfo.rules, this.mGetInstallPath(),
                                      installContext, api);
@@ -170,14 +170,15 @@ class InstallManager {
           }
         })
         .catch((err) => {
+          let canceled = err instanceof UserCanceled;
           let prom = destinationPath !== undefined
             ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 }).then(() => undefined)
             : Promise.resolve();
-          prom.then(() => installContext.finishInstallCB(installName, false));
+          prom.then(() => installContext.finishInstallCB(canceled ? 'canceled' : 'failed'));
 
           if (err === undefined) {
             return undefined;
-          } else if (err instanceof UserCanceled) {
+          } else if (canceled) {
             return undefined;
           } else {
             let errMessage = typeof err === 'string' ? err : err.message;
@@ -195,7 +196,7 @@ class InstallManager {
                 });
           }
         })
-        .finally(() => { installContext.stopIndicator(baseName); });
+        .finally(() => { installContext.stopIndicator(); });
   }
 
   /**
@@ -391,7 +392,7 @@ class InstallManager {
             if (result.action === 'Cancel') {
               reject(new UserCanceled());
             } else if (result.action === 'Rename') {
-              resolve(result.input.value);
+              resolve(result.input.newName);
             } else if (result.action === 'Replace') {
               api.events.emit('remove-mod', modId, (err) => {
                 if (err !== null) {

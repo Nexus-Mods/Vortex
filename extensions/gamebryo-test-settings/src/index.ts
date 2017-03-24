@@ -38,7 +38,7 @@ function testOblivionFontsImpl(store: Redux.Store<types.IState>) {
 
   let iniFile: IniFile;
 
-  parser.read(iniPath(gameId))
+  return parser.read(iniPath(gameId))
   .then((iniFileIn: IniFile) => {
     iniFile = iniFileIn;
     return missingOblivionFont(store, iniFile, gameId);
