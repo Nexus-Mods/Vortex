@@ -14,3 +14,9 @@ export const setPath = safeCreateAction('SET_MOD_PATH',
 // previous one
 export const setActivator = safeCreateAction('SET_ACTIVATOR',
   (gameId: string, activatorId: string) => ({ gameId, activatorId }));
+
+/**
+ * sets the updating mods flag
+ */
+export const setUpdatingMods = safeCreateAction('SET_UPDATING_MODS',
+  (gameId: string, updatingMods: boolean) => ({ gameId, updatingMods }));

@@ -7,7 +7,6 @@ import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
 import SuperTable, { ITableRowAction } from '../../../views/Table';
 import { IconButton } from '../../../views/TooltipControls';
@@ -245,49 +244,37 @@ class ModList extends ComponentEx<IProps, {}> {
     const version = getSafe(mod.attributes, ['version'], undefined);
     const fileId = getSafe(mod.attributes, ['fileId'], '');
     const currentFileId = getSafe(mod.attributes, ['currentFileId'], undefined);
-    const updatingMods = getSafe(mod.attributes, ['updatingMods'], undefined);
     const bugMessage = getSafe(mod.attributes, ['bugMessage'], '');
     const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
 
     let versionIcon: string = '';
     let versionTooltip: string = '';
-    /*
-    a) mod is up-to-date (maybe no icon at all) NOTHING
-    b) mod can be updated (but no rush) 'cloud-download'
-    c) mod can be updated (no rush, but you will have to pick the file yourself) 'external-link'
-    d) mod should be updated because the insalled version is bugged 'bug'
-    e) mod should be disabled because this version is bugged and there is no update 'ban'
-     */
+    let versionClassname: string = '';
 
     if (bugMessage !== '') {
       if (currentFileId === undefined) {
         versionIcon = 'ban';
         versionTooltip = 'Mod should be disabled because this version is '
           + 'bugged and there is no update';
+        versionClassname = 'modUpdating-ban';
       } else {
         versionIcon = 'bug';
         versionTooltip = 'Mod should be updated because the insalled version is bugged';
+        versionClassname = 'modUpdating-bug';
       }
-    } else if (currentFileId !== undefined && currentFileId !== fileId) {
+    } else if (currentFileId !== 0 && currentFileId !== fileId) {
       versionIcon = 'cloud-download';
       versionTooltip = 'Mod can be updated';
-    } else if (currentFileId === undefined && fileId !== undefined && version !== undefined) {
+      versionClassname = 'modUpdating-download';
+    } else if (currentFileId === 0 && fileId !== undefined && version !== undefined) {
       versionIcon = 'external-link';
       versionTooltip = 'Mod can be updated (but you will have to pick the file yourself)';
-    }
-
-    if (updatingMods) {
-      return (
-        <div>
-          {version}
-          <Icon name='spinner' pulse />
-        </div>
-      );
+      versionClassname = 'modUpdating-warning';
     }
 
     if (versionIcon !== '') {
       return (
-        <div style={{ textAlign: 'center' }}>
+        <div className={versionClassname} >
           {version}
           <IconButton
             className='btn-embed'
@@ -313,10 +300,10 @@ class ModList extends ComponentEx<IProps, {}> {
     let modId = evt.currentTarget.id;
     let currentFileId = evt.currentTarget.value;
 
-    if (currentFileId === undefined) {
+    if (currentFileId === '') {
       const opn = require('opn');
       let modPageUrl = path.join('http://www.nexusmods.com',
-        gameMode, 'mods', evt.currentTarget.id);
+        gameMode, 'mods', modId);
       opn(modPageUrl);
     } else {
       let test = `nxm://${gameMode}/mods/${modId}/files/${currentFileId}`;

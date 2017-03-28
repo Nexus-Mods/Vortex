@@ -11,6 +11,7 @@ import { IconButton } from '../../views/TooltipControls';
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { setModAttribute } from '../mod_management/actions/mods';
+import { setUpdatingMods } from '../mod_management/actions/settings';
 import { IMod } from '../mod_management/types/IMod';
 
 import NXMUrl from './NXMUrl';
@@ -30,6 +31,7 @@ import * as util from 'util';
 
 let nexus: Nexus;
 let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
+let checkVersionModsReport: string = undefined;
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (schema: string,
@@ -181,33 +183,39 @@ function endorseModImpl(
 function checkModsVersionImpl(
   store: Redux.Store<any>,
   gameId: string,
-  mod: IMod) {
+  mods: { [modId: string]: IMod }): Promise<void[]> {
 
-  if (mod === undefined) {
-    log('warn', 'tried to check version to an unknown mod', { gameId });
-    return;
-  }
+  checkVersionModsReport = '';
 
-  const fileId: number = getSafe(mod.attributes, ['fileId'], undefined);
+  let modsArray = [];
+  const objectKeys = Object.keys(mods);
+  objectKeys.forEach((key) => modsArray.push(mods[key]));
 
-  if (fileId === undefined) {
-    log('warn', 'tried to check version to an unknown mod file', { gameId });
-    return;
-  }
+  return Promise.all(modsArray.map((mod: IMod) => {
 
-  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
-  store.dispatch(setModAttribute(gameId, mod.id, 'updatingMods', true));
+    if (mod === undefined) {
+      log('warn', 'tried to check version to an unknown mod', { gameId });
+      return null;
+    }
 
-  checkModsVersion(nexus, gameId, nexusModId, fileId)
-    .then((currentFileId: number) => {
-      store.dispatch(setModAttribute(gameId, mod.id, 'currentFileId', currentFileId));
-      store.dispatch(setModAttribute(gameId, mod.id, 'updatingMods', undefined));
-    })
-    .catch((err) => {
-      store.dispatch(setModAttribute(gameId, mod.id, 'updatingMods', undefined));
-      showError(store.dispatch, 'An error occurred checking mods last version', err.message);
-    });
-};
+    const fileId: number = getSafe(mod.attributes, ['fileId'], undefined);
+
+    if (fileId === undefined) {
+      log('warn', 'tried to check version to an unknown mod file', { gameId });
+      return null;
+    }
+
+    const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+
+    return checkModsVersion(nexus, gameId, nexusModId, fileId)
+      .then((currentFileId: number) => {
+        store.dispatch(setModAttribute(gameId, mod.id, 'currentFileId', currentFileId));
+      })
+      .catch((err) => {
+        checkVersionModsReport = checkVersionModsReport + err.message + '\n';
+      });
+  }));
+}
 
 function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.TranslationFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
@@ -315,6 +323,9 @@ function init(context: IExtensionContextExt): boolean {
       getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '')
     );
 
+    const gameMode = activeGameId(context.api.store.getState());
+    context.api.store.dispatch(setUpdatingMods(gameMode, false));
+
     endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
       endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
 
@@ -331,8 +342,21 @@ function init(context: IExtensionContextExt): boolean {
       retrieveCategories(context.api, isUpdate);
     });
 
-    context.api.events.on('check-mods-version', (gameId, mod) => {
-      checkModsVersionImpl(context.api.store, gameId, mod);
+    context.api.events.on('check-mods-version', (gameId, mods) => {
+      context.api.store.dispatch(setUpdatingMods(gameId, true));
+      checkModsVersionImpl(context.api.store, gameId, mods)
+        .then(() => {
+          context.api.store.dispatch(setUpdatingMods(gameId, false));
+          if (checkVersionModsReport !== '') {
+            showError(context.api.store.dispatch, 'An error occurred during the Mod Updating',
+              checkVersionModsReport);
+          }
+        })
+        .catch((err) => {
+          context.api.store.dispatch(setUpdatingMods(gameId, false));
+          showError(context.api.store.dispatch, 'An error occurred during the Mod Updating',
+           err.message);
+        });
     });
 
     context.api.events.on('download-updated-mod', (nxmurl) => {
@@ -354,8 +378,8 @@ function init(context: IExtensionContextExt): boolean {
       }
     );
 
-    context.api.events.on('gamemode-activated', (gameMode: string) => {
-      nexus.setGame(gameMode);
+    context.api.events.on('gamemode-activated', (gameId: string) => {
+      nexus.setGame(gameId);
     });
 
     context.api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],

@@ -22,7 +22,7 @@ function checkModsVersion(
   currentFileId: number): Promise<number> {
   return new Promise<number>((resolve, reject) => {
 
-    let fileCategoryIds = ['MAIN ', 'UPDATE', 'OPTIONAL'];
+    let fileCategoryNames = ['MAIN ', 'UPDATE', 'OPTIONAL'];
 
     nexus.getModFiles(modId, gameId)
       .then((result: IModFiles) => {
@@ -33,11 +33,11 @@ function checkModsVersion(
           resolve(updatedFile.new_file_id);
         } else {
           updatedMod = result.files.find((file) => file.file_id === currentFileId &&
-            fileCategoryIds.indexOf(file.category_name) > -1);
+            fileCategoryNames.indexOf(file.category_name) > -1);
           if (updatedMod !== undefined) {
             resolve(updatedMod.file_id);
           } else {
-            resolve(undefined);
+            resolve(0);
           }
         }
       })

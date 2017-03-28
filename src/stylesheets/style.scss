@@ -123,6 +123,26 @@
   }
 }
 
+.modUpdating-warning {
+  color: #cddc39;
+  text-align: center;
+}
+
+.modUpdating-download {
+  color: #4caf50;
+  text-align: center;
+}
+
+.modUpdating-ban {
+  color: #ff0000;
+  text-align: center;
+}
+
+.modUpdating-bug {
+  color: #ff9800;
+  text-align: center;
+}
+
 .highlight-1 {
   background-color: #ff0000;
   &:hover {
