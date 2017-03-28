@@ -152,7 +152,7 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
         modState, activator);
     })
     .catch(UserCanceled, () => undefined)
-    .catch((err) => { context.api.showErrorNotification('failed to activate mods', err); })
+    .catch((err) => { context.api.showErrorNotification('failed to deploy mods', err); })
     .finally(() => { context.api.dismissNotification(notificationId); });
 }
 

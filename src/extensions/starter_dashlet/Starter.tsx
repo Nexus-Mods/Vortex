@@ -208,9 +208,10 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   private startTool = (info: StarterInfo) => {
-    startTool(info, this.queryElevate, this.queryDeploy, this.props.onShowError)
+    startTool(info, this.context.api.events, this.queryElevate,
+              this.queryDeploy, this.props.onShowError)
     .catch((err: Error) => {
-      this.props.onShowError('Failed to activate', err);
+      this.props.onShowError('Failed to deploy', err);
     })
     ;
   }

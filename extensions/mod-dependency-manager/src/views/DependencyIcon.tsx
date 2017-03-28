@@ -235,7 +235,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       this.updateMod(nextProps.mod);
     }
 
-    if (nextProps.isDragging) {
+    if (this.props.isDragging !== nextProps.isDragging) {
       let pos = undefined;
       if (nextProps.isDragging) {
         pos = componentCenter(this);

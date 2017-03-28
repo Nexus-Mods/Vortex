@@ -44,19 +44,36 @@ export class Button extends React.Component<ButtonProps, {}> {
 
 export interface IIconButtonExtraProps {
   icon: string;
+  spin?: boolean;
+  pulse?: boolean;
+  border?: boolean;
+  inverse?: boolean;
+  flip?: 'horizontal' | 'vertical';
+  rotate?: '90' | '180' | '270';
 }
+
+const iconPropNames = new Set(['spin', 'pulse', 'border', 'inverse', 'flip', 'rotate']);
 
 export type IconButtonProps = ButtonProps & IIconButtonExtraProps;
 
 export class IconButton extends React.Component<IconButtonProps, {}> {
   public render() {
-    let relayProps = Object.assign({}, this.props);
-    delete relayProps.tooltip;
-    delete relayProps.placement;
-    delete relayProps.icon;
+    let buttonProps = {};
+    let iconProps = {};
+    Object.keys(this.props).forEach(propKey => {
+      if (['tooltip', 'placement', 'icon'].indexOf(propKey) !== -1) {
+        return;
+      }
+      if (iconPropNames.has(propKey)) {
+        iconProps[propKey] = this.props[propKey];
+      } else {
+        buttonProps[propKey] = this.props[propKey];
+      }
+    });
+
     if (typeof (this.props.tooltip) === 'string') {
-      return (<BootstrapButton {...relayProps} title={this.props.tooltip}>
-        <SvgIcon name={this.props.icon} />
+      return (<BootstrapButton {...buttonProps} title={this.props.tooltip}>
+        <SvgIcon name={this.props.icon} {...iconProps} />
       </BootstrapButton>);
     } else {
       const tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
@@ -67,8 +84,8 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
           delayShow={300}
           delayHide={150}
         >
-          <BootstrapButton {...relayProps}>
-            <SvgIcon name={this.props.icon} />
+          <BootstrapButton {...buttonProps}>
+            <SvgIcon name={this.props.icon} {...iconProps} />
           </BootstrapButton>
         </OverlayTrigger>
       );

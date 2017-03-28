@@ -190,9 +190,7 @@ function processRebuild(project, buildType, feedback) {
     ? __dirname
     : path.join(__dirname, buildType);
 
-  return rebuild(moduleDir, packageJSON.engines.electron, process.arch, [project.module]);
-
-  //return spawnAsync(rebuild, ['-w', project.module, '-m', moduleDir], {}, feedback);
+  return rebuild(moduleDir, packageJSON.engines.electron, process.arch, [project.module], true);
 }
 
 function evalCondition(condition, context) {
@@ -242,11 +240,9 @@ function main(args) {
           if ((lastChange !== undefined) && (lastChange < buildState[project.name])) {
             return Promise.reject(new Unchanged());
           }
-          console.log('start project ', project.name);
           return processProject(project, buildType, feedback);
         })
         .then(() => {
-          console.log('finished ', project.name);
           buildState[project.name] = new Date().getTime();
           return fs.writeJSONAsync(buildStateName, buildState);
         })

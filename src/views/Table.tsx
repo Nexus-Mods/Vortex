@@ -136,7 +136,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           >
             <div className='table-main-pane' ref={this.mainPaneRef}>
               <Table bordered condensed hover>
-                <thead>
+                <thead style={{ transform: 'translate(0, 0)' }}>
                   <tr>
                     {this.mVisibleAttributes.map(this.renderHeaderField)}
                     {hasActions

@@ -30,7 +30,7 @@ export function activateMods(installPath: string,
           try {
             return activator.activate(installPath, destination, mod);
           } catch (err) {
-            log('error', 'failed to activate mod', { err: err.message, id: mod.id });
+            log('error', 'failed to deploy mod', { err: err.message, id: mod.id });
           }
         }
       });

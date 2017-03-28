@@ -47,12 +47,13 @@ function runToolElevated(starter: StarterInfo,
   ipc.server.start();
 }
 
-function startDeploy(queryDeploy: () => Promise<DeployResult>): Promise<boolean> {
+function startDeploy(queryDeploy: () => Promise<DeployResult>,
+                     events: NodeJS.EventEmitter): Promise<boolean> {
   return queryDeploy()
   .then(shouldDeploy => {
     if (shouldDeploy === 'yes') {
       return new Promise<boolean>((resolve, reject) => {
-              this.context.api.events.emit('activate-mods', (err) => {
+              events.emit('activate-mods', (err) => {
                 if (err !== null) {
                   reject(err);
                 } else {
@@ -62,7 +63,7 @@ function startDeploy(queryDeploy: () => Promise<DeployResult>): Promise<boolean>
       });
     } else if (shouldDeploy === 'auto') {
       return new Promise<boolean>((resolve, reject) => {
-        this.context.api.events.emit('await-activation', (err: Error) => {
+        events.emit('await-activation', (err: Error) => {
           if (err !== null) {
             reject(err);
           } else {
@@ -79,11 +80,12 @@ function startDeploy(queryDeploy: () => Promise<DeployResult>): Promise<boolean>
 }
 
 function startTool(starter: StarterInfo,
+                   events: NodeJS.EventEmitter,
                    queryElevate: (name: string) => Promise<boolean>,
                    queryDeploy: () => Promise<DeployResult>,
                    onShowError: (message: string, details?: string | Error) => void
                    ): Promise<void> {
-  return startDeploy(queryDeploy)
+  return startDeploy(queryDeploy, events)
     .then((doStart: boolean) => {
       if (doStart) {
         try {
