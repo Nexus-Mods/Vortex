@@ -98,6 +98,7 @@ class ModList extends ComponentEx<IProps, {}> {
           props.onSetModAttribute(props.gameMode, modId, 'customFileName', value),
       },
       isSortable: true,
+      isFilterable: true,
       sortFunc: (lhs: string, rhs: string, locale: string): number => {
         return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
       },

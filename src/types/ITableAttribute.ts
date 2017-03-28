@@ -43,6 +43,10 @@ export interface ITableAttribute {
    */
   isSortable?: boolean;
   /**
+   * if true, the table can be filtered by this attribute
+   */
+  isFilterable?: boolean;
+  /**
    * if true (default), the column is visible by default otherwise the user has to activate it
    * manually first
    */

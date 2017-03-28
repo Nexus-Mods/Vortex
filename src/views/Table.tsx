@@ -1,4 +1,5 @@
-import {selectRows, setAttributeSort, setAttributeVisible, setSplitPos} from '../actions/tables';
+import {selectRows, setAttributeFilter, setAttributeSort,
+        setAttributeVisible, setSplitPos} from '../actions/tables';
 import {IAttributeState} from '../types/IAttributeState';
 import {IIconDefinition} from '../types/IIconDefinition';
 import {IRowState, IState, ITableState} from '../types/IState';
@@ -44,12 +45,14 @@ interface IConnectedProps {
   rowState: { [id: string]: IRowState };
   splitPos: number;
   language: string;
+  filter: { [id: string]: any };
 }
 
 interface IActionProps {
   onSelectRows: (tableId: string, rowIds: string[], selected: boolean) => void;
   onSetAttributeVisible: (tableId: string, attributeId: string, visible: boolean) => void;
   onSetAttributeSort: (tableId: string, attributeId: string, direction: SortDirection) => void;
+  onSetAttributeFilter: (tableId: string, attributeId: string, filter: any) => void;
   onSetSplitPos: (tableId: string, pos: number) => void;
 }
 
@@ -168,7 +171,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    let sorted: any[] = this.sortedRows(attributeState, visibleAttributes, data, language);
+    const filtered: { [key: string]: any } = this.filteredRows(visibleAttributes, data);
+    const sorted: any[] = this.sortedRows(attributeState, visibleAttributes, filtered, language);
     return <tbody>
       {sorted.map((row) => this.renderRow(row, visibleAttributes))}
     </tbody>;
@@ -246,6 +250,29 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return lhs < rhs ? -1
       : lhs === rhs  ? 0
       : 1;
+  }
+
+  private filteredRows(attributes: ITableAttribute[],
+                       data: { [id: string]: any }) {
+    const { filter } = this.props;
+    const { calculatedValues } = this.state;
+
+    if (filter === undefined) {
+      return data;
+    }
+
+    let result = {};
+    Object.keys(calculatedValues).filter(rowId => {
+      // return only elements for which we can't find an attribute
+      // that doesn't match the corresponding filter
+      return attributes.find(attribute =>
+        filter[attribute.id] !== undefined
+        && filter[attribute.id] !== null
+        && (calculatedValues[rowId][attribute.id].indexOf(filter[attribute.id]) === -1)
+      ) === undefined;
+    })
+    .forEach(key => result[key] = data[key]);
+    return result;
   }
 
   private sortedRows(attributeState: { [id: string]: IAttributeState },
@@ -466,7 +493,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderHeaderField = (attribute: ITableAttribute): JSX.Element => {
-    const { t, tableId } = this.props;
+    const { t, filter, tableId } = this.props;
 
     const attributeState = this.getAttributeState(attribute);
 
@@ -477,7 +504,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           key={attribute.id}
           attribute={attribute}
           state={attributeState}
+          filter={filter !== undefined ? filter[attribute.id] : undefined}
           onSetSortDirection={ this.setSortDirection }
+          onSetFilter={ this.setFilter }
           t={t}
         />
       );
@@ -514,14 +543,20 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     onSetAttributeSort(tableId, id, direction);
   }
+
+  private setFilter = (attributeId?: string, filter?: any) => {
+    const { onSetAttributeFilter, tableId } = this.props;
+    onSetAttributeFilter(tableId, attributeId, filter);
+  }
 }
 
 function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedProps {
   return {
+    language: state.settings.interface.language,
     attributeState: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'attributes'], {}),
     rowState: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'rows'], {}),
-    language: state.settings.interface.language,
     splitPos: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'splitPos'], 200),
+    filter: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'filter'], undefined),
   };
 }
 
@@ -534,6 +569,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
     onSetAttributeSort: (tableId: string, attributeId: string, dir: SortDirection) =>
       dispatch(setAttributeSort(tableId, attributeId, dir)),
     onSetSplitPos: (tableId: string, pos: number) => dispatch(setSplitPos(tableId, pos)),
+    onSetAttributeFilter: (tableId: string, attributeId: string, filter: any) =>
+      dispatch(setAttributeFilter(tableId, attributeId, filter)),
   };
 }
 

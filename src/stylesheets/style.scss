@@ -763,3 +763,12 @@ Resizer.disabled:hover {
   border-width: 0px;
   padding: 5px 8px;
 }
+
+.table > thead > tr > th {
+  vertical-align: top;
+}
+
+.form-field-compact {
+  padding: 2px;
+  height: 20px;
+}

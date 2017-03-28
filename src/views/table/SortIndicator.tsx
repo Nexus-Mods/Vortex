@@ -1,5 +1,6 @@
-import { SortDirection } from '../types/SortDirection';
-import Icon from '../views/Icon';
+import { SortDirection } from '../../types/SortDirection';
+
+import Icon from '../Icon';
 
 import * as React from 'react';
 
