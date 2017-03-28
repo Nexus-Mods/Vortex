@@ -20,6 +20,8 @@ export interface IModInfo {
 }
 export interface IFileInfo {
     file_id: number;
+    category_id: number;
+    category_name: string;
     name: string;
     version: string;
     size: number;
@@ -35,7 +37,7 @@ export interface IModFiles {
     files: IFileInfo[];
 }
 export interface IFileUpdates {
-    new_file_id: string;
+    new_file_id: number;
     new_file_name: string;
     old_file_id: number;
     old_file_name: string;

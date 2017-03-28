@@ -7,6 +7,7 @@ import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
 import SuperTable, { ITableRowAction } from '../../../views/Table';
 import { IconButton } from '../../../views/TooltipControls';
@@ -241,10 +242,10 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   private renderVersionIcon = (mod: IMod): JSX.Element => {
-    const version = getSafe(mod.attributes, ['version'], '');
+    const version = getSafe(mod.attributes, ['version'], undefined);
     const fileId = getSafe(mod.attributes, ['fileId'], '');
-    const currentFileId = getSafe(mod.attributes, ['currentFileId'], '');
-    const currentVersion = getSafe(mod.attributes, ['currentVersion'], '');
+    const currentFileId = getSafe(mod.attributes, ['currentFileId'], undefined);
+    const updatingMods = getSafe(mod.attributes, ['updatingMods'], undefined);
     const bugMessage = getSafe(mod.attributes, ['bugMessage'], '');
     const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
 
@@ -267,16 +268,24 @@ class ModList extends ComponentEx<IProps, {}> {
         versionIcon = 'bug';
         versionTooltip = 'Mod should be updated because the insalled version is bugged';
       }
-    } else if ((currentFileId !== undefined && currentFileId !== fileId)
-      && version < currentVersion) {
+    } else if (currentFileId !== undefined && currentFileId !== fileId) {
       versionIcon = 'cloud-download';
       versionTooltip = 'Mod can be updated';
-    } else if (currentFileId === undefined && version < currentVersion) {
+    } else if (currentFileId === undefined && fileId !== undefined && version !== undefined) {
       versionIcon = 'external-link';
       versionTooltip = 'Mod can be updated (but you will have to pick the file yourself)';
     }
 
-    if (version < currentVersion) {
+    if (updatingMods) {
+      return (
+        <div>
+          {version}
+          <Icon name='spinner' pulse />
+        </div>
+      );
+    }
+
+    if (versionIcon !== '') {
       return (
         <div style={{ textAlign: 'center' }}>
           {version}

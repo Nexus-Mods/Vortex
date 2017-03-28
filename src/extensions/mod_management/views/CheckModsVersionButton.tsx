@@ -28,8 +28,7 @@ class CheckVersionButton extends ComponentEx<IConnectedProps, {}> {
     if (mods !== undefined) {
       Object.keys(mods).forEach((key: string) => {
         return new Promise<void>((resolve, reject) => {
-          this.context.api.events.emit('check-mods-version',
-            gameMode, mods[key]);
+          this.context.api.events.emit('check-mods-version', gameMode, mods[key]);
         });
       });
     }

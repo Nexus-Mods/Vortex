@@ -183,26 +183,29 @@ function checkModsVersionImpl(
   gameId: string,
   mod: IMod) {
 
-  const version: string = getSafe(mod.attributes, ['version'], undefined);
-  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
-  const currentFileId: number = getSafe(mod.attributes, ['currentFileId'], undefined);
-  const uploadedTimestamp: number = getSafe(mod.attributes, ['uploadedTimestamp'], undefined);
-
   if (mod === undefined) {
-    log('warn', 'tried to check version to an unknown mod', { gameId, nexusModId });
+    log('warn', 'tried to check version to an unknown mod', { gameId });
     return;
   }
 
-  checkModsVersion(nexus, gameId, nexusModId, currentFileId, version, uploadedTimestamp)
-    .then((result: any) => {
-      if (result !== undefined) {
-        store.dispatch(setModAttribute(gameId, mod.id, 'currentVersion', result.version));
-        store.dispatch(setModAttribute(gameId, mod.id, 'currentFileId', result.file_id));
-      }
+  const fileId: number = getSafe(mod.attributes, ['fileId'], undefined);
+
+  if (fileId === undefined) {
+    log('warn', 'tried to check version to an unknown mod file', { gameId });
+    return;
+  }
+
+  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+  store.dispatch(setModAttribute(gameId, mod.id, 'updatingMods', true));
+
+  checkModsVersion(nexus, gameId, nexusModId, fileId)
+    .then((currentFileId: number) => {
+      store.dispatch(setModAttribute(gameId, mod.id, 'currentFileId', currentFileId));
+      store.dispatch(setModAttribute(gameId, mod.id, 'updatingMods', undefined));
     })
     .catch((err) => {
-      let detail = processErrorMessage(err.statusCode, err.message, gameId);
-      showError(store.dispatch, 'An error occurred checking mods last version', detail);
+      store.dispatch(setModAttribute(gameId, mod.id, 'updatingMods', undefined));
+      showError(store.dispatch, 'An error occurred checking mods last version', err.message);
     });
 };
 

@@ -1,12 +1,17 @@
+import { IFileInfo, IFileUpdates, IModFiles } from '../types/IModfiles';
+
 import Nexus from 'nexus-api';
 
 /**
  * check the mod version by the server call
  * 
- * @param {string} activeGameId
  * @param {Nexus} nexus
- * @param {string} modId,
- * @return {boolean} isEndorsed
+ * @param {string} gameId
+ * @param {string} modId
+ * @param {number} currentFileId
+ * @param {string} version
+ * @param {number} uploadedTimestamp
+ * @return {Promise<IFileInfo>} updatedMod
  * 
  */
 
@@ -14,34 +19,40 @@ function checkModsVersion(
   nexus: Nexus,
   gameId: string,
   modId: number,
-  currentFileId: number,
-  version: string,
-  uploadedTimestamp: number): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
+  currentFileId: number): Promise<number> {
+  return new Promise<number>((resolve, reject) => {
+
+    let fileCategoryIds = ['MAIN ', 'UPDATE', 'OPTIONAL'];
 
     nexus.getModFiles(modId, gameId)
-      .then((result: any) => {
+      .then((result: IModFiles) => {
+        let updatedMod: IFileInfo = undefined;
 
-        let updatedMod = null;
-
-        if (result.file_updates.length > 0) {
-          updatedMod = result.file_updates.find((file) => file.old_file_id === currentFileId);
+        let updatedFile = checkFileUpdates(result.file_updates, currentFileId);
+        if (updatedFile !== undefined) {
+          resolve(updatedFile.new_file_id);
+        } else {
+          updatedMod = result.files.find((file) => file.file_id === currentFileId &&
+            fileCategoryIds.indexOf(file.category_name) > -1);
           if (updatedMod !== undefined) {
-            updatedMod = result.files.find((file) => file.file_id === updatedMod.new_file_id);
-            resolve(updatedMod);
+            resolve(updatedMod.file_id);
+          } else {
+            resolve(undefined);
           }
-        }
-
-        if (result.files.length > 0) {
-          updatedMod = result.files.find((file) => file.version > version &&
-            file.uploaded_timestamp > uploadedTimestamp && file.is_primary === true);
-          resolve(updatedMod);
         }
       })
       .catch((err) => {
         reject(err);
       });
   });
+}
+
+function checkFileUpdates(fileUpdates: IFileUpdates[], currentFileId: number) {
+  let updatedFile = fileUpdates.find((file) => file.old_file_id === currentFileId);
+  if (updatedFile !== undefined) {
+    checkFileUpdates(fileUpdates, updatedFile.new_file_id);
+  }
+  return updatedFile;
 }
 
 export default checkModsVersion;
