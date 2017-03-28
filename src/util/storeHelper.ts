@@ -27,8 +27,8 @@ export function getSafe<T>(state: any, path: (string | number)[], fallback: T): 
   return current;
 }
 
-export function mutateSafe<T>(state: T, path: string[], value: any) {
-  let firstElement: string = path[0];
+export function mutateSafe<T>(state: T, path: (string | number)[], value: any) {
+  let firstElement = path[0];
   if (path.length === 1) {
     state[firstElement] = value;
   } else {
@@ -49,11 +49,11 @@ export function mutateSafe<T>(state: T, path: string[], value: any) {
  * @param {*} value
  * @returns {T}
  */
-export function setSafe<T>(state: T, path: string[], value: any): T {
+export function setSafe<T>(state: T, path: (string | number)[], value: any): T {
   if (path.length === 0) {
     return Object.assign({}, value);
   }
-  let firstElement: string = path[0];
+  let firstElement = path[0];
   let copy;
   if (Array.isArray(state)) {
     copy = state.slice();
@@ -112,8 +112,8 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
  * @param {*} value
  * @returns {T}
  */
-export function changeOrNop<T>(state: T, path: string[], value: any): T {
-  let firstElement: string = path[0];
+export function changeOrNop<T>(state: T, path: (string | number)[], value: any): T {
+  let firstElement: string | number = path[0];
   let result = state;
   if (path.length === 1) {
     if (state.hasOwnProperty(firstElement)) {
@@ -141,8 +141,8 @@ export function changeOrNop<T>(state: T, path: string[], value: any): T {
  * @param {string[]} path
  * @returns {T}
  */
-export function deleteOrNop<T>(state: T, path: string[]): T {
-  let firstElement: string = path[0];
+export function deleteOrNop<T>(state: T, path: (string | number)[]): T {
+  let firstElement = path[0];
   let result = state;
   if (path.length === 1) {
     if (state.hasOwnProperty(firstElement)) {
@@ -162,9 +162,14 @@ export function deleteOrNop<T>(state: T, path: string[]): T {
   return result;
 }
 
-function setDefaultArray<T>(state: T, path: string[], fallback: any[]): T {
-  let firstElement: string = path[0];
-  let copy = Object.assign({}, state);
+function setDefaultArray<T>(state: T, path: (string | number)[], fallback: any[]): T {
+  let firstElement = path[0];
+  let copy;
+  if (Array.isArray(state)) {
+    copy = state.slice();
+  } else {
+    copy = Object.assign({}, state);
+  }
   if (path.length === 1) {
     if (!copy.hasOwnProperty(firstElement) || (copy[firstElement] === undefined)) {
       copy[firstElement] = fallback;
@@ -191,7 +196,7 @@ function setDefaultArray<T>(state: T, path: string[], fallback: any[]): T {
  * @param {*} value
  * @returns {T}
  */
-export function pushSafe<T>(state: T, path: string[], value: any): T {
+export function pushSafe<T>(state: T, path: (string | number)[], value: any): T {
   let copy = setDefaultArray(state, path, []);
   getSafe(copy, path, undefined).push(value);
   return copy;
@@ -207,7 +212,7 @@ export function pushSafe<T>(state: T, path: string[], value: any): T {
  * @param {*} value
  * @returns {T}
  */
-export function removeValue<T>(state: T, path: string[], value: any): T {
+export function removeValue<T>(state: T, path: (string | number)[], value: any): T {
   let copy = setDefaultArray(state, path, []);
   let list = getSafe(copy, path, undefined);
   const idx = list.indexOf(value);
@@ -227,7 +232,7 @@ export function removeValue<T>(state: T, path: string[], value: any): T {
  * @param {(element: any) => boolean} predicate
  * @returns {T}
  */
-export function removeValueIf<T>(state: T, path: string[],
+export function removeValueIf<T>(state: T, path: (string | number)[],
                                  predicate: (element: any) => boolean): T {
   return setSafe(state, path, getSafe(state, path, []).filter((ele) => !predicate(ele)));
 }
@@ -242,7 +247,7 @@ export function removeValueIf<T>(state: T, path: string[],
  * @param {Object} value
  * @returns {T}
  */
-export function merge<T>(state: T, path: string[], value: Object): T {
+export function merge<T>(state: T, path: (string | number)[], value: Object): T {
   const newVal = Object.assign({}, getSafe(state, path, {}), value);
   return setSafe(state, path, newVal);
 }

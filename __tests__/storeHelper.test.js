@@ -102,6 +102,11 @@ describe('pushSafe', () => {
     let res = helper.pushSafe({}, [ 'someList' ], 'a');
     expect(res).toEqual({ someList: ['a'] });
   });
+  it('works with numeric path component', () => {
+    let input = { tl: [ { a: [ 1, 2 ] } ] };
+    let res = helper.pushSafe(input, [ 'tl', 0, 'a' ], 3);
+    expect(res).toEqual({ tl: [ { a: [ 1, 2, 3 ] } ] });
+  });
 });
 
 describe('removeValue', () => {
