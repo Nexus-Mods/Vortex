@@ -25,6 +25,7 @@ import InstallArchiveButton from './InstallArchiveButton';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as opn from 'opn';
 import * as path from 'path';
 import * as React from 'react';
 import { Jumbotron } from 'react-bootstrap';
@@ -243,7 +244,7 @@ class ModList extends ComponentEx<IProps, {}> {
   private renderVersionIcon = (mod: IMod): JSX.Element => {
     const version = getSafe(mod.attributes, ['version'], undefined);
     const fileId = getSafe(mod.attributes, ['fileId'], '');
-    const currentFileId = getSafe(mod.attributes, ['currentFileId'], undefined);
+    const newestFileId = getSafe(mod.attributes, ['newestFileId'], undefined);
     const bugMessage = getSafe(mod.attributes, ['bugMessage'], '');
     const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
 
@@ -252,7 +253,7 @@ class ModList extends ComponentEx<IProps, {}> {
     let versionClassname: string = '';
 
     if (bugMessage !== '') {
-      if (currentFileId === undefined) {
+      if (newestFileId === undefined) {
         versionIcon = 'ban';
         versionTooltip = 'Mod should be disabled because this version is '
           + 'bugged and there is no update';
@@ -262,14 +263,16 @@ class ModList extends ComponentEx<IProps, {}> {
         versionTooltip = 'Mod should be updated because the insalled version is bugged';
         versionClassname = 'modUpdating-bug';
       }
-    } else if (currentFileId !== 0 && currentFileId !== fileId) {
-      versionIcon = 'cloud-download';
-      versionTooltip = 'Mod can be updated';
-      versionClassname = 'modUpdating-download';
-    } else if (currentFileId === 0 && fileId !== undefined && version !== undefined) {
-      versionIcon = 'external-link';
-      versionTooltip = 'Mod can be updated (but you will have to pick the file yourself)';
-      versionClassname = 'modUpdating-warning';
+    } else if (newestFileId !== undefined) {
+      if (newestFileId !== 0 && newestFileId !== fileId) {
+        versionIcon = 'cloud-download';
+        versionTooltip = 'Mod can be updated';
+        versionClassname = 'modUpdating-download';
+      } else if (newestFileId === 0 && fileId !== undefined && version !== undefined) {
+        versionIcon = 'external-link';
+        versionTooltip = 'Mod can be updated (but you will have to pick the file yourself)';
+        versionClassname = 'modUpdating-warning';
+      }
     }
 
     if (versionIcon !== '') {
@@ -279,7 +282,7 @@ class ModList extends ComponentEx<IProps, {}> {
           <IconButton
             className='btn-embed'
             id={nexusModId.toString()}
-            value={currentFileId}
+            value={newestFileId}
             tooltip={versionTooltip}
             icon={versionIcon}
             onClick={this.downloadMod}
@@ -298,15 +301,14 @@ class ModList extends ComponentEx<IProps, {}> {
   private downloadMod = (evt) => {
     const { gameMode } = this.props;
     let modId = evt.currentTarget.id;
-    let currentFileId = evt.currentTarget.value;
+    let newestFileId = evt.currentTarget.value;
 
-    if (currentFileId === '') {
-      const opn = require('opn');
+    if (newestFileId === '0') {
       let modPageUrl = path.join('http://www.nexusmods.com',
         gameMode, 'mods', modId);
       opn(modPageUrl);
     } else {
-      let test = `nxm://${gameMode}/mods/${modId}/files/${currentFileId}`;
+      let test = `nxm://${gameMode}/mods/${modId}/files/${newestFileId}`;
       this.context.api.events.emit('download-updated-mod', test);
     }
   }

@@ -251,6 +251,7 @@
     "nexus-api": "file:lib\\js\\nexus-api",
     "nmm-api": "file:api",
     "node-7z": "Nexus-Mods/node-7z",
+    "opn": "4.0.2",
     "packery": "^2.1.1",
     "parse-ini": "file:./lib/js/parse-ini",
     "react": "^15.3.0",

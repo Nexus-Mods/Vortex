@@ -208,8 +208,8 @@ function checkModsVersionImpl(
     const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
 
     return checkModsVersion(nexus, gameId, nexusModId, fileId)
-      .then((currentFileId: number) => {
-        store.dispatch(setModAttribute(gameId, mod.id, 'currentFileId', currentFileId));
+      .then((newestFileId: number) => {
+        store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId', newestFileId));
       })
       .catch((err) => {
         checkVersionModsReport = checkVersionModsReport + err.message + '\n';
