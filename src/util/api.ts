@@ -8,9 +8,10 @@ export * from './storeHelper';
 
 import { Archive } from './archives';
 import runElevated from './elevated';
+import { terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import getNormalizeFunc from './getNormalizeFunc';
 import { setdefault } from './util';
 import walk from './walk';
 
-export { Archive, extend, getNormalizeFunc, runElevated, setdefault, walk };
+export { Archive, extend, getNormalizeFunc, runElevated, setdefault, terminate, walk };

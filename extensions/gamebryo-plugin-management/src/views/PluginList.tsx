@@ -8,6 +8,7 @@ import {
   IPlugins,
 } from '../types/IPlugins';
 
+import DependencyIcon from './DependencyIcon';
 import MasterList from './MasterList';
 import PluginFlags, {getPluginFlags} from './PluginFlags';
 
@@ -50,6 +51,7 @@ interface IComponentState {
   selectedPlugin: string;
   pluginsLoot: { [name: string]: IPluginLoot };
   pluginsParsed: { [name: string]: IPluginParsed };
+  pluginsCombined: { [name: string]: IPluginCombined };
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -63,6 +65,10 @@ function toHex(num: number) {
     res = '0' + res;
   }
   return res;
+}
+
+function num(num: number) {
+  return num !== undefined && num !== null ? num : -1;
 }
 
 class PluginList extends ComponentEx<IProps, IComponentState> {
@@ -107,6 +113,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       edit: {},
       isSortable: true,
       calc: (plugin: IPluginCombined) => plugin.loadOrder,
+      sortFunc: (lhs: number, rhs: number) => num(lhs) - num(rhs),
       placement: 'table',
     },
     {
@@ -118,6 +125,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       isSortable: true,
       calc: (plugin: IPluginCombined) => toHex(plugin.modIndex),
       placement: 'table',
+    },
+    {
+      id: 'dependencies',
+      name: 'Dependencies',
+      description: 'Relations to other plugins',
+      icon: 'plug',
+      placement: 'table',
+      customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
+        <DependencyIcon plugin={plugin} t={t} />,
+      calc: (mod) => null,
+      isToggleable: true,
+      edit: {},
+      isSortable: false,
     },
     {
       id: 'masters',
@@ -132,7 +152,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       id: 'loot_messages',
       name: 'Loot Messages',
       edit: {},
-      customRenderer: this.renderLootMessages,
+      customRenderer: (plugin: IPluginCombined) => this.renderLootMessages(plugin),
       calc: (plugin: IPluginCombined) => plugin.messages,
       placement: 'detail',
     },
@@ -144,6 +164,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       selectedPlugin: undefined,
       pluginsParsed: {},
       pluginsLoot: {},
+      pluginsCombined: {},
     };
     const {t, onSetAutoSortEnabled} = props;
 
@@ -209,39 +230,22 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-    const { plugins } = this.props;
+    this.updatePlugins(this.props.plugins);
+  }
 
-    let pluginNames: string[] = Object.keys(plugins);
+  public componentWillReceiveProps(nextProps) {
+    if (this.props.plugins !== nextProps.plugins) {
+      this.updatePlugins(nextProps.plugins);
+    }
 
-    let stateUpdate = { pluginsParsed: {}, pluginsLoot: undefined };
-
-    Promise.each(pluginNames, (pluginName: string) => {
-      return new Promise((resolve, reject) => {
-        let esp = new ESPFile(plugins[pluginName].filePath);
-        stateUpdate.pluginsParsed[pluginName] = {
-          $set: {
-            isMaster: esp.isMaster,
-            description: esp.description,
-            author: esp.author,
-            masterList: esp.masterList,
-          },
-        };
-        resolve();
-      });
-    })
-      .then(() => {
-        this.context.api.events.emit('plugin-details',
-          pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
-            stateUpdate.pluginsLoot = { $set: resolved };
-            this.setState(update(this.state, stateUpdate));
-          });
-      });
+    if (this.props.loadOrder !== nextProps.loadOrder) {
+      this.applyLoadOrder(nextProps.loadOrder);
+    }
   }
 
   public render(): JSX.Element {
-    const { t, plugins, lootActivity } = this.props;
-
-    const detailed = this.detailedPlugins(Object.keys(plugins));
+    const { t, lootActivity } = this.props;
+    const { pluginsCombined } = this.state;
 
     return (
       <Layout type='column'>
@@ -263,11 +267,50 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             tableId='gamebryo-plugins'
             actions={this.actions}
             staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
-            data={detailed}
+            data={pluginsCombined}
           />
         </Flex>
       </Layout>
     );
+  }
+
+  private updatePlugins(plugins: IPlugins) {
+    let pluginNames: string[] = Object.keys(plugins);
+
+    let pluginsParsed = {};
+    let pluginsLoot = undefined;
+
+    Promise.each(pluginNames, (pluginName: string) => {
+      return new Promise((resolve, reject) => {
+        let esp = new ESPFile(plugins[pluginName].filePath);
+        pluginsParsed[pluginName] = {
+          isMaster: esp.isMaster,
+          description: esp.description,
+          author: esp.author,
+          masterList: esp.masterList,
+        };
+        resolve();
+      });
+    })
+      .then(() => {
+        return new Promise((resolve, reject) => {
+          this.context.api.events.emit('plugin-details',
+            pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
+              pluginsLoot = resolved;
+              resolve();
+            });
+        });
+      })
+      .then(() => {
+        const pluginsCombined = this.detailedPlugins(plugins, pluginsLoot,
+          pluginsParsed);
+
+        this.setState(update(this.state, {
+          pluginsParsed: { $set: pluginsParsed },
+          pluginsLoot: { $set: pluginsLoot },
+          pluginsCombined: { $set: pluginsCombined },
+        }));
+      });
   }
 
   private enableSelected = (pluginIds: string[]) => {
@@ -290,7 +333,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private updateModIndex(pluginObjects: IPluginCombined[]) {
+  private modIndices(pluginObjects: ILoadOrder[]): { [pluginId: string]: number } {
     // overly complicated?
     // This sorts the whole plugin list by the load order, inserting the installed
     // native plugins at the top in their hard-coded order. Then it assigns
@@ -314,16 +357,24 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
 
     let modIndex = 0;
+    let res = {};
     byLO.forEach((plugin: IPluginCombined) => {
       if (plugin.enabled || plugin.isNative) {
-        plugin.modIndex = modIndex++;
+        res[plugin.name] = modIndex++;
+      } else {
+        res[plugin.name] = -1;
       }
     });
+    return res;
   }
 
-  private detailedPlugins(pluginNames: string[]): { [id: string]: IPluginCombined } {
-    const { plugins, loadOrder } = this.props;
-    const {pluginsLoot, pluginsParsed} = this.state;
+  private detailedPlugins(plugins: IPlugins,
+                          pluginsLoot: { [pluginId: string]: IPluginLoot },
+                          pluginsParsed: { [pluginId: string]: IPluginParsed },
+                          ): { [id: string]: IPluginCombined } {
+    const { loadOrder } = this.props;
+
+    const pluginNames = Object.keys(plugins);
 
     let pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) => {
       return Object.assign({}, {
@@ -334,14 +385,40 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         pluginsLoot[pluginName], pluginsParsed[pluginName]);
     });
 
-    this.updateModIndex(pluginObjects);
-
+    let modIndices = this.modIndices(pluginObjects);
     let result: { [id: string]: IPluginCombined } = {};
     pluginObjects.forEach((plugin: IPluginCombined) => {
       result[plugin.name] = plugin;
+      result[plugin.name].modIndex = modIndices[plugin.name];
     });
 
     return result;
+  }
+
+  private applyLoadOrder(loadOrder: { [pluginId: string]: ILoadOrder }) {
+    const { pluginsCombined } = this.state;
+
+    let updateSet = {};
+    let pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
+    pluginsFlat.forEach(plugin => {
+      let lo = loadOrder[plugin.name] || {
+        enabled: false,
+        loadOrder: undefined,
+      };
+      pluginsFlat[plugin.name] = lo;
+      updateSet[plugin.name] = {
+        enabled: { $set: lo.enabled },
+        loadOrder: { $set: lo.loadOrder },
+      };
+    });
+    let modIndices = this.modIndices(pluginsFlat);
+    Object.keys(modIndices).forEach(pluginId => {
+      updateSet[pluginId].modIndex = { $set: modIndices[pluginId] };
+    });
+
+    this.setState(update(this.state, {
+      pluginsCombined: updateSet,
+    }));
   }
 
   private translateLootMessageType(input: string) {
@@ -353,7 +430,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }[input];
   }
 
-  private renderLootMessages = (plugin: IPluginCombined) => {
+  private renderLootMessages(plugin: IPluginCombined) {
     if (plugin.messages === undefined) {
       return null;
     }

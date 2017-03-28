@@ -3,9 +3,13 @@ import {setPluginList} from './actions/plugins';
 import {loadOrderReducer} from './reducers/loadOrder';
 import {pluginsReducer} from './reducers/plugins';
 import {settingsReducer} from './reducers/settings';
+import userlistReducer from './reducers/userlist';
+import userlistEditReducer from './reducers/userlistEdit';
 import {ILoadOrder} from './types/ILoadOrder';
 import {IPlugins} from './types/IPlugins';
+import Connector from './views/Connector';
 import PluginList from './views/PluginList';
+import UserlistEditor from './views/UserlistEditor';
 
 import LootInterface from './autosort';
 
@@ -17,6 +21,7 @@ import {
   supportedGames,
 } from './util/gameSupport';
 import PluginPersistor from './util/PluginPersistor';
+import UserlistPersistor from './util/UserlistPersistor';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
@@ -111,7 +116,8 @@ interface IExtensionContextExt extends types.IExtensionContext {
   registerProfileFile: (gameId: string, filePath: string) => void;
 }
 
-let persistor: PluginPersistor;
+let pluginPersistor: PluginPersistor;
+let userlistPersistor: UserlistPersistor;
 let loot: LootInterface;
 let refreshTimer: NodeJS.Timer;
 
@@ -134,7 +140,16 @@ function register(context: IExtensionContextExt) {
 
   context.registerReducer(['session', 'plugins'], pluginsReducer);
   context.registerReducer(['loadOrder'], loadOrderReducer);
+  context.registerReducer(['userlist'], userlistReducer);
   context.registerReducer(['settings', 'plugins'], settingsReducer);
+  context.registerReducer(['session', 'pluginDependencies'], userlistEditReducer);
+
+  context.registerTest('plugins-locked', 'gamemode-activated',
+    () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
+  context.registerTest('master-missing', 'plugins-changed',
+    () => testMissingMasters(context.api.store.getState()));
+  context.registerDialog('plugin-dependencies-connector', Connector);
+  context.registerDialog('userlist-editor', UserlistEditor);
 }
 
 /**
@@ -144,11 +159,17 @@ function register(context: IExtensionContextExt) {
 function initPersistor(context: IExtensionContextExt) {
   // TODO: Currently need to stop this from being called in the main process.
   //   This is mega-ugly and needs to go
-  if ((persistor === undefined) && (remote !== undefined)) {
-    persistor = new PluginPersistor();
+  if ((pluginPersistor === undefined) && (remote !== undefined)) {
+    pluginPersistor = new PluginPersistor();
   }
-  if (persistor !== undefined) {
-    context.registerPersistor('loadOrder', persistor);
+  if ((userlistPersistor === undefined) && (remote !== undefined)) {
+    userlistPersistor = new UserlistPersistor();
+  }
+  if (pluginPersistor !== undefined) {
+    context.registerPersistor('loadOrder', pluginPersistor);
+  }
+  if (userlistPersistor !== undefined) {
+    context.registerPersistor('userlist', userlistPersistor);
   }
 }
 
@@ -179,14 +200,20 @@ function stopSync() {
     watcher = undefined;
   }
 
-  persistor.stopSync();
+  pluginPersistor.stopSync();
 }
 
 function startSync(api: types.IExtensionApi) {
   const store = api.store;
 
-  if (persistor !== undefined) {
-    persistor.loadFiles(selectors.activeGameId(store.getState()));
+  const gameId = selectors.activeGameId(store.getState());
+
+  if (pluginPersistor !== undefined) {
+    pluginPersistor.loadFiles(gameId);
+  }
+
+  if (userlistPersistor !== undefined) {
+    userlistPersistor.loadFiles(gameId);
   }
 
   const modPath = selectors.currentGameDiscovery(store.getState()).modPath;
@@ -290,11 +317,6 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
 function init(context: IExtensionContextExt) {
   register(context);
   initPersistor(context);
-  context.registerTest('plugins-locked', 'gamemode-activated',
-    () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
-
-  context.registerTest('master-missing', 'plugins-changed',
-    () => testMissingMasters(context.api.store.getState()));
 
   context.once(() => {
     const store = context.api.store;

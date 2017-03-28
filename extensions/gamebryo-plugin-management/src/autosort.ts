@@ -4,9 +4,10 @@ import {IPluginsLoot} from './types/IPlugins';
 import {gameSupported, lootAppPath, pluginPath} from './util/gameSupport';
 
 import * as Promise from 'bluebird';
+import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import {GameId, LootDatabase} from 'loot';
-import {selectors, types} from 'nmm-api';
+import {log, selectors, types} from 'nmm-api';
 import * as path from 'path';
 
 class LootInterface {
@@ -15,6 +16,13 @@ class LootInterface {
   private mOnSetLootActivity: (activity: string) => void;
   private mExtensionApi: types.IExtensionApi;
   private mOnFirstInit: () => void;
+
+  private mUserlistTime: Date;
+
+  private sortAsync;
+  private loadListsAsync;
+  private updateAsync;
+  private evalListsAsync;
 
   constructor(context: types.IExtensionContext) {
     let store = context.api.store;
@@ -42,19 +50,19 @@ class LootInterface {
     context.api.events.on('autosort-plugins', () => {
       if (store.getState().settings.plugins.autoSort && (this.mLoot !== undefined)) {
         const t = this.mExtensionApi.translate;
-        const sortAsync = Promise.promisify(this.mLoot.sortPlugins,
-                                              {context: this.mLoot});
+        const state = store.getState();
+        const gameMode = selectors.activeGameId(state);
+        this.readLists(gameMode as GameId);
         this.enqueue(t('Sorting plugins'), () => {
-          const state = store.getState();
           let pluginNames: string[] = Object.keys(state.loadOrder);
           pluginNames = pluginNames.filter((name: string) =>
             state.session.plugins.pluginList[name] !== undefined
           );
 
-          return sortAsync(pluginNames)
-          .then((sorted: string[]) => {
-            store.dispatch(setPluginOrder(sorted));
-          });
+          return this.sortAsync(pluginNames)
+            .then((sorted: string[]) => {
+              store.dispatch(setPluginOrder(sorted));
+            });
         });
       }
       return Promise.resolve();
@@ -85,9 +93,38 @@ class LootInterface {
         });
       }
 
+  private readLists(gameMode: GameId) {
+    const t = this.mExtensionApi.translate;
+
+    const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
+    const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
+
+    this.enqueue(t('Load Lists'), () => {
+      return fs.statAsync(userlistPath)
+        .then((stat: fs.Stats) => {
+          return Promise.resolve(stat.mtime);
+        })
+        .catch(() => Promise.resolve(null))
+        .then(mtime => {
+          // load & evaluate lists first time we need them and whenever
+          // the userlist has changed
+          if ((this.mUserlistTime === undefined) || (this.mUserlistTime !== mtime)) {
+            log('info', '(re-)loading loot lists');
+            return this.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '')
+              .then(() => this.evalListsAsync())
+              .then(() => this.mUserlistTime = mtime);
+          } else {
+            return Promise.resolve();
+          }
+        })
+        ;
+    });
+  }
+
   private init(gameMode: GameId, gamePath: string) {
     const t = this.mExtensionApi.translate;
     this.mLoot = new LootDatabase(gameMode, gamePath, pluginPath(gameMode));
+    this.promisify();
 
     // little bit of hackery: If tasks are queued before the game mode is activated
     // we assume they are intended for the first active game mode.
@@ -103,24 +140,13 @@ class LootInterface {
     this.enqueue(t('Update Masterlist'), () => {
       return fs.ensureDirAsync(path.dirname(masterlistPath))
           .then(() => {
-            const updateAsync = Promise.promisify(this.mLoot.updateMasterlist,
-                                                  {context: this.mLoot});
-            return updateAsync(masterlistPath,
-                               `https://github.com/loot/${gameMode}.git`,
-                               'v0.10')
+            return this.updateAsync(masterlistPath,
+                                   `https://github.com/loot/${gameMode}.git`,
+                                   'v0.10')
                 .then(() => undefined);
           });
     });
-    this.enqueue(t('Load Lists'), () => {
-      const loadListsAsync =
-          Promise.promisify(this.mLoot.loadLists, {context: this.mLoot});
-      return loadListsAsync(masterlistPath, '');
-    });
-    this.enqueue(t('Eval Lists'), () => {
-      const evalListsAsync =
-          Promise.promisify(this.mLoot.evalLists, {context: this.mLoot});
-      return evalListsAsync();
-    });
+    this.readLists(gameMode);
     if (preInitQueue) {
       // there were tasks enqueued before the game mode was activated. Now we can run them.
       // enqueue a new promise that resolves once those pre-init tasks are done and unblock them.
@@ -132,6 +158,17 @@ class LootInterface {
         });
       });
     }
+  }
+
+  private promisify() {
+    this.sortAsync = Promise.promisify(this.mLoot.sortPlugins,
+      { context: this.mLoot });
+    this.loadListsAsync =
+      Promise.promisify(this.mLoot.loadLists, { context: this.mLoot });
+    this.updateAsync = Promise.promisify(this.mLoot.updateMasterlist,
+      { context: this.mLoot });
+    this.evalListsAsync =
+      Promise.promisify(this.mLoot.evalLists, { context: this.mLoot });
   }
 
   private enqueue(description: string, step: () => Promise<void>) {
