@@ -14,6 +14,7 @@ import { sessionReducer } from './reducers/session';
 import { allCategories } from './selectors';
 import { ICategoryDictionary } from './types/IcategoryDictionary';
 import { ITreeDataObject } from './types/ITrees';
+import CategoryFilter from './util/CategoryFilter';
 import createTreeDataObject from './util/createTreeDataObject';
 import { retrieveCategory, retrieveCategoryDetail } from './util/retrieveCategoryPath';
 import CategoryList from './views/CategoryList';
@@ -39,6 +40,7 @@ function init(context: IExtensionContext): boolean {
     isToggleable: true,
     edit: {},
     isSortable: true,
+    filter: new CategoryFilter(),
   });
 
   context.registerTableAttribute('mods', {

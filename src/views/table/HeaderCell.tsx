@@ -14,7 +14,7 @@ export interface IHeaderProps {
   className: string;
   attribute: ITableAttribute;
   state: IAttributeState;
-  filter: any;
+  doFilter: boolean;
   onSetSortDirection: (id: string, dir: SortDirection) => void;
   onSetFilter: (id?: string, filter?: any) => void;
   t: Function;
@@ -22,14 +22,14 @@ export interface IHeaderProps {
 
 class HeaderCell extends React.Component<IHeaderProps, {}> {
   public render(): JSX.Element {
-    const { t, attribute, className, filter } = this.props;
+    const { t, attribute, className, doFilter } = this.props;
     return (
       <th className={`table-header-cell ${className}`} key={attribute.id}>
         <div>{ t(attribute.name) }
         { attribute.isSortable ? this.renderSortIndicator() : null }
-        { attribute.isFilterable ? this.renderFilterIndicator() : null }
+        { attribute.filter !== undefined ? this.renderFilterIndicator() : null }
         </div>
-        {filter !== undefined ? this.renderFilter(filter || '') : null }
+        { doFilter ? this.props.children : null }
       </th>
     );
   }
@@ -44,22 +44,13 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     );
   }
 
-  private renderFilter(filter: any): JSX.Element {
-    return <FormControl
-      className='form-field-compact'
-      type='text'
-      value={filter}
-      onChange={this.changeFilter}
-    />;
-  }
-
   private renderFilterIndicator(): JSX.Element {
     const { t, attribute } = this.props;
     return (
       <IconButton
         id={`btn-filter-${attribute.id}`}
         className='btn-embed pull-right'
-        icon='search'
+        icon='filter'
         tooltip={t('Filter')}
         onClick={this.toggleFilter}
       />
@@ -72,17 +63,12 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
   }
 
   private toggleFilter = () => {
-    const { attribute, filter, onSetFilter } = this.props;
-    if (filter === undefined) {
-      onSetFilter(attribute.id, null);
-    } else {
+    const { attribute, doFilter, onSetFilter } = this.props;
+    if (doFilter) {
       onSetFilter(undefined);
+    } else {
+      onSetFilter(attribute.id, null);
     }
-  }
-
-  private changeFilter = (evt) => {
-    const { attribute, onSetFilter } = this.props;
-    onSetFilter(attribute.id, evt.currentTarget.value);
   }
 }
 

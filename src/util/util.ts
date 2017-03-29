@@ -143,5 +143,17 @@ export function midClip(input: string, maxLength: number): string {
  * @param {string} check the string to check
  */
 export function isNullOrWhitespace(check: string): boolean {
-    return (!check || 0 === check.trim().length);
+    return (!check || (check.trim().length === 0));
+}
+
+/**
+ * return whether the specified value is "truthy" (not one of
+ * these: undefined, null, 0, -0, NaN "")
+ * 
+ * Obviously one could just do "if (val)" but js noobs
+ * may be aware what values that accepts exactly and whether that was
+ * intentional. This is more explicit.
+ */
+export function truthy(val: any): boolean {
+  return !!val;
 }

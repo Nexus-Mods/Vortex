@@ -9,6 +9,7 @@ import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import Debouncer from '../util/Debouncer';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import {getSafe, setSafe} from '../util/storeHelper';
+import {truthy} from '../util/util';
 
 import IconBar from './IconBar';
 import AttributeToggle from './table/AttributeToggle';
@@ -265,10 +266,18 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     Object.keys(calculatedValues).filter(rowId => {
       // return only elements for which we can't find an attribute
       // that doesn't match the corresponding filter
-      return attributes.find(attribute =>
-        filter[attribute.id] !== undefined
-        && filter[attribute.id] !== null
-        && (calculatedValues[rowId][attribute.id].indexOf(filter[attribute.id]) === -1)
+      return attributes.find(attribute => {
+        if (attribute.filter === undefined) {
+          return false;
+        }
+
+        let value = attribute.filter.raw
+          ? data[rowId].attributes[attribute.id]
+          : calculatedValues[rowId][attribute.id];
+
+        return truthy(filter[attribute.id])
+        && !attribute.filter.matches(filter[attribute.id], value, this.context.api.store.getState())
+      }
       ) === undefined;
     })
     .forEach(key => result[key] = data[key]);
@@ -497,6 +506,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const attributeState = this.getAttributeState(attribute);
 
+    const filt = (attribute.filter !== undefined) && (filter !== undefined)
+      ? (filter[attribute.id] || null)
+      : undefined;
+
     if (attributeState.enabled) {
       return (
         <HeaderCell
@@ -504,11 +517,17 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           key={attribute.id}
           attribute={attribute}
           state={attributeState}
-          filter={filter !== undefined ? filter[attribute.id] : undefined}
+          doFilter={filt !== undefined}
           onSetSortDirection={ this.setSortDirection }
           onSetFilter={ this.setFilter }
           t={t}
-        />
+        >
+        { attribute.filter !== undefined ? <attribute.filter.component
+          filter={filt}
+          attributeId={attribute.id}
+          onSetFilter={this.setFilter}
+        /> : null }
+        </HeaderCell>
       );
     } else {
       return null;

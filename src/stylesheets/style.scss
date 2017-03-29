@@ -770,5 +770,45 @@ Resizer.disabled:hover {
 
 .form-field-compact {
   padding: 2px;
-  height: 20px;
+  height: 24px;
+}
+
+.select-compact {
+  padding: 0px;
+  height: auto;
+
+  .Select-value {
+    margin: 0px;
+    padding: 0px;
+  }
+  .Select-value-icon {
+    padding: 0px 7px;
+  }
+  .Select-value-label {
+    padding: 0px 7px;
+  }
+  .Select-control {
+    height: 20px;
+    //line-height: 0px;
+  }
+  .Select-input {
+    height: 20px;
+    input {
+      height: 100%;
+    }
+  }
+  .Select-placeholder {
+    //line-height: 22px;
+    font-weight: normal;
+  }
+  .Select--multi {
+    //line-height: 15px;
+    padding: 0px 5px;
+  }
+  .Select.arrow-zone {
+    font-size: 11px;
+  }
+  .Select-menu-outer {
+    margin-top: 2px;
+  }
 }

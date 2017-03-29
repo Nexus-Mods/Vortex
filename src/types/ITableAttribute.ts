@@ -9,6 +9,18 @@ export interface IEditChoice {
   text: string;
 }
 
+export interface IFilterProps {
+  filter: any;
+  attributeId: string;
+  onSetFilter: (attributeId: string, value: any) => void;
+}
+
+export interface ITableFilter {
+  matches: (filter: any, value: any, state: any) => boolean;
+  raw: boolean;
+  component: React.ComponentClass<IFilterProps>;
+}
+
 /**
  * declaration of an attribute of a table
  * 
@@ -43,9 +55,9 @@ export interface ITableAttribute {
    */
   isSortable?: boolean;
   /**
-   * if true, the table can be filtered by this attribute
+   * if set, the table can be filtered by this attribute using the specified control
    */
-  isFilterable?: boolean;
+  filter?: ITableFilter;
   /**
    * if true (default), the column is visible by default otherwise the user has to activate it
    * manually first

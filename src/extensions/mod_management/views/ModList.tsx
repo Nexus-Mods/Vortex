@@ -9,6 +9,7 @@ import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import IconBar from '../../../views/IconBar';
 import SuperTable, { ITableRowAction } from '../../../views/Table';
+import TextFilter from '../../../views/table/TextFilter';
 import { IconButton } from '../../../views/TooltipControls';
 
 import { setModEnabled } from '../../profile_management/actions/profiles';
@@ -98,7 +99,7 @@ class ModList extends ComponentEx<IProps, {}> {
           props.onSetModAttribute(props.gameMode, modId, 'customFileName', value),
       },
       isSortable: true,
-      isFilterable: true,
+      filter: new TextFilter(true),
       sortFunc: (lhs: string, rhs: string, locale: string): number => {
         return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
       },
