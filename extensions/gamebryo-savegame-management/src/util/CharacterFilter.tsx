@@ -10,7 +10,6 @@ interface IConnectedProps {
 
 type IProps = types.IFilterProps & IConnectedProps;
 
-
 export class CharacterFilterComponent extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { filter, savegames } = this.props;
@@ -41,7 +40,7 @@ export class CharacterFilterComponent extends React.Component<IProps, {}> {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     savegames: state.session.saves.saves,
-  }
+  };
 }
 
 const FilterConn = connect(mapStateToProps)(

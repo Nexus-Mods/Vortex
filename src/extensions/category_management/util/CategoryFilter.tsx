@@ -75,4 +75,3 @@ class CategoryFilter implements ITableFilter {
 }
 
 export default CategoryFilter;
-
