@@ -89,6 +89,25 @@
   overflow-y: scroll;
 }
 
+.btn-version-column {
+  padding: 1px 1px;
+  border: 0px;
+  color: currentColor;
+  background-color: transparent;
+  &:hover {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+  &:active {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+  &:focus {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+}
+
 .btn-embed {
   padding: 1px 5px;
   border: 0px;

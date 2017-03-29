@@ -17,6 +17,7 @@ import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { removeMod, setModAttribute } from '../actions/mods';
 import { IMod } from '../types/IMod';
+import ChangelogsButton from '../views/ChangelogsButton';
 
 import { INSTALL_TIME } from '../modAttributes';
 import { installPath } from '../selectors';
@@ -282,21 +283,40 @@ class ModList extends ComponentEx<IProps, {}> {
         <div className={versionClassname} >
           {version}
           <IconButton
-            className='btn-embed'
+            className='btn-version-column'
             id={nexusModId.toString()}
             value={newestFileId}
             tooltip={versionTooltip}
             icon={versionIcon}
             onClick={this.downloadMod}
           />
+          {this.renderChangelogs(mod)}
         </div>
       );
     } else {
       return (
         <div>
           {version}
+          {this.renderChangelogs(mod)}
         </div>
       );
+    }
+  }
+
+  private renderChangelogs = (mod: IMod): JSX.Element => {
+    const changelogs = getSafe(mod.attributes, ['changelogsText'], undefined);
+    const { gameMode } = this.props;
+
+    if (changelogs !== undefined) {
+      return (
+        <ChangelogsButton
+          gameMode={gameMode}
+          mod={mod}
+          changelogsText={changelogs}
+        />
+      );
+    } else {
+      return null;
     }
   }
 
