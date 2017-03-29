@@ -1,8 +1,9 @@
 import { ISavegame } from './types/ISavegame';
+import CharacterFilter from './util/CharacterFilter';
 import PluginList from './views/PluginList';
 import ScreenshotCanvas from './views/ScreenshotCanvas';
 
-import { types } from 'nmm-api';
+import { TableTextFilter, types } from 'nmm-api';
 import * as React from 'react';
 
 export const SAVEGAME_ID: types.ITableAttribute = {
@@ -27,6 +28,7 @@ export const CHARACTER_NAME: types.ITableAttribute = {
   placement: 'both',
   isToggleable: true,
   isSortable: true,
+  filter: new CharacterFilter(),
   edit: {},
   sortFunc: (lhs: string, rhs: string, locale: string): number => {
     return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
@@ -104,5 +106,6 @@ export const FILENAME: types.ITableAttribute = {
   isToggleable: true,
   isSortable: true,
   isDefaultVisible: false,
+  filter: new TableTextFilter(true),
   edit: {},
 };

@@ -43,7 +43,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   const gameId = activeGameId(state);
   return {
     categories: state.persistent.categories[gameId],
-  }
+  };
 }
 
 const CategoryFilterComponentConn = connect(mapStateToProps)(
@@ -52,8 +52,6 @@ const CategoryFilterComponentConn = connect(mapStateToProps)(
 class CategoryFilter implements ITableFilter {
   public component = CategoryFilterComponentConn;
   public raw = true;
-  constructor() {
-  }
 
   public matches(filter: any, value: any, state: IState): boolean {
     const filtList = filter as string[];

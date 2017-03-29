@@ -7,7 +7,7 @@ $select-input-border-radius:        $input-border-radius !default;
 $select-input-border-focus:         $input-border-focus !default;
 $select-input-border-width:         2px !default;
 $select-input-height:               35px !default;
-$select-input-internal-height:      $line-height-base !default;
+$select-input-internal-height:      $line-height-computed !default;
 //$select-input-internal-height:      ($select-input-height - ($select-input-border-width * 2)) !default;
 $select-input-placeholder:          $gray-light !default;
 $select-text-color:                 $text-color !default;

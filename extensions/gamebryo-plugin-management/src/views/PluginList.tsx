@@ -16,7 +16,7 @@ import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import {SimpleMessage} from 'loot';
 import {ComponentEx, ITableRowAction, IconBar,
-        Table, selectors, tooltip, types, util} from 'nmm-api';
+        Table, TableTextFilter, selectors, tooltip, types, util} from 'nmm-api';
 import * as React from 'react';
 import update = require('react-addons-update');
 import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
@@ -85,6 +85,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       isSortable: true,
       calc: (plugin: IPluginCombined) => plugin.name,
       placement: 'both',
+      filter: new TableTextFilter(true),
     },
     {
       id: 'flags',

@@ -1,5 +1,7 @@
 import { ITableAttribute } from '../../types/ITableAttribute';
 
+import TextFilter from '../../views/table/TextFilter';
+
 import { IDownload } from './types/IDownload';
 
 import * as React from 'react';
@@ -15,6 +17,7 @@ export const FILE_NAME: ITableAttribute = {
   isToggleable: false,
   edit: {},
   isSortable: true,
+  filter: new TextFilter(true),
 };
 
 function progress(props) {
