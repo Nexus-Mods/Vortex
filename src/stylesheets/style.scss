@@ -367,6 +367,24 @@
   max-height: 200px;
 }
 
+.game-thumbnail-img-list {
+  max-width: 150px;
+  max-height: 50px;
+}
+
+.game-thumbnail-container-list {
+  width: 150px;
+  min-width: 50px;
+  padding: 0px;
+  margin: 0px;
+  text-align: center;
+}
+
+.game-thumbnail-img-large {
+  max-width: 200px;
+  max-height: 300px;
+}
+
 .game-thumbnail-bottom {
   position: absolute;
   left: 0px;
@@ -773,6 +791,7 @@ Resizer.disabled:hover {
 .btn-group > .btn,
 .btn-group-vertical > .btn {
   position: initial;
+  display: inline-block;
 }
 
 .btn-quicklaunch {
@@ -831,4 +850,18 @@ Resizer.disabled:hover {
   .Select-menu-outer {
     margin-top: 0px;
   }
+}
+
+#gamepicker-layout {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+}
+
+.btn-toggle-on {
+  background-color: $gray-dark;
+}
+
+.btngroup-game-list {
+  display: inline-flex;
 }

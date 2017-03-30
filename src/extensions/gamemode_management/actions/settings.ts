@@ -11,6 +11,12 @@ export const addDiscoveredGame =
   (id: string, result: IDiscoveryResult) => ({ id, result }));
 
 /**
+ * override the path of a game that's already been discovered
+ */
+export const setGamePath = safeCreateAction('SET_GAME_PATH',
+  (gameId: string, gamePath: string, modPath: string) => ({ gameId, gamePath, modPath }));
+
+/**
  * add info about a discovered tool
  */
 export const addDiscoveredTool =
@@ -45,3 +51,6 @@ export const addSearchPath = safeCreateAction('ADD_SEARCH_PATH');
  * remove a search path
  */
 export const removeSearchPath = safeCreateAction('REMOVE_SEARCH_PATH');
+
+export const setPickerLayout = safeCreateAction('SET_GAMEPICKER_LAYOUT',
+  (layout: 'list' | 'small' | 'large') => ({ layout }));

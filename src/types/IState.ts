@@ -99,6 +99,7 @@ export interface ISettingsGameMode {
   lastActiveProfile: { [gameId: string]: string };
   discovered: { [id: string]: IDiscoveryResult };
   searchPaths: string[];
+  pickerLayout: 'list' | 'small' | 'large';
 }
 
 export interface ISettingsDownloads {

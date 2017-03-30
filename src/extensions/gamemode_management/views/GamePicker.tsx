@@ -5,18 +5,20 @@ import getAttr from '../../../util/getAttr';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
-import { Button } from '../../../views/TooltipControls';
+import { Button, IconButton } from '../../../views/TooltipControls';
 
+import { setGamePath } from '../../gamemode_management/actions/settings';
 import { IProfile } from '../../profile_management/types/IProfile';
 
-import { setGameHidden } from '../actions/settings';
+import { setGameHidden, setPickerLayout } from '../actions/settings';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
+import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
 
 import * as React from 'react';
-import { ProgressBar } from 'react-bootstrap';
+import { ListGroup, ListGroupItem, ProgressBar } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import update = require('react-addons-update');
@@ -28,10 +30,13 @@ interface IConnectedProps {
   knownGames: IGameStored[];
   gameMode: string;
   discovery: IDiscoveryState;
+  pickerLayout: 'list' | 'small' | 'large';
 }
 
 interface IActionProps {
   onHide: (gameId: string, hidden: boolean) => void;
+  onSetPickerLayout: (layout: 'list' | 'small' | 'large') => void;
+  onSetGamePath: (gameId: string, gamePath: string, modPath: string) => void;
 }
 
 interface IComponentState {
@@ -60,7 +65,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
   }
 
   public render(): JSX.Element {
-    const { t, discoveredGames, discovery, knownGames, profiles } = this.props;
+    const { t, discoveredGames, discovery, knownGames, pickerLayout, profiles } = this.props;
     const { showHidden } = this.state;
 
     // TODO lots of computation and it doesn't actually change except through discovery
@@ -91,16 +96,39 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
       <Layout type='column'>
         <Fixed>
           <div>
-          <Button
-            id='show-hidden-games'
-            tooltip={ t('Show / Hide hidden games') }
-            onClick={ this.toggleHidden }
-          >
-            <Icon name={ showHidden ? 'eye-slash' : 'eye' }/>
-          </Button>
+            <Button
+              id='show-hidden-games'
+              tooltip={t('Show / Hide hidden games')}
+              onClick={this.toggleHidden}
+            >
+              <Icon name={showHidden ? 'eye-slash' : 'eye'} />
+            </Button>
+          </div>
+          <div id='gamepicker-layout'>
+            <IconButton
+              id='gamepicker-layout-list'
+              className={ pickerLayout === 'list' ? 'btn-toggle-on' : 'btn-toggle-off' }
+              onClick={ this.setLayoutList }
+              icon='list'
+              tooltip={t('List')}
+            />
+            <IconButton
+              id='gamepicker-layout-grid'
+              className={ pickerLayout === 'small' ? 'btn-toggle-on' : 'btn-toggle-off' }
+              onClick={ this.setLayoutSmall }
+              icon='th'
+              tooltip={t('Small Icons')}
+            />
+            <IconButton
+              id='gamepicker-layout-grid-large'
+              className={ pickerLayout === 'large' ? 'btn-toggle-on' : 'btn-toggle-off' }
+              onClick={ this.setLayoutLarge }
+              icon='th-large'
+              tooltip={t('Large Icons')}
+            />
           </div>
         </Fixed>
-        <Flex style={{ height: '100%', overflowY: 'auto' }}>
+        <Flex style={{ height: '100%', overflowY: 'auto', padding: '5px' }}>
           <span style={{ display: 'table' }}>
             <h3>{ t('Managed') }</h3>
             { this.renderGames(managedGameList, 'managed') }
@@ -145,6 +173,18 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
     this.setState(update(this.state, { showHidden: { $set: !this.state.showHidden } }));
   }
 
+  private setLayoutList = () => {
+    this.props.onSetPickerLayout('list');
+  }
+
+  private setLayoutSmall = () => {
+    this.props.onSetPickerLayout('small');
+  }
+
+  private setLayoutLarge = () => {
+    this.props.onSetPickerLayout('large');
+  }
+
   private startDiscovery = () => {
     this.context.api.events.emit('start-discovery');
   }
@@ -153,19 +193,62 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
     this.context.api.events.emit('cancel-discovery');
   }
 
-  private renderGames = (games: IGameStored[], type: string) => {
-    const { gameMode } = this.props;
+  private renderGames = (games: IGameStored[], type: string): JSX.Element => {
+    const { gameMode, pickerLayout } = this.props;
+    switch (pickerLayout) {
+      case 'list': return this.renderGamesList(games, type, gameMode);
+      case 'small': return this.renderGamesSmall(games, type, gameMode);
+      case 'large': return this.renderGamesLarge(games, type, gameMode);
+      default: throw new Error('invalid picker layout ' + pickerLayout);
+    }
+  }
 
-    return games.map((game: IGameStored) => {
-      return (
+  private renderGamesList(games: IGameStored[], type: string, gameMode: string) {
+    const { discoveredGames } = this.props;
+    return <ListGroup>
+      { games.map(game =>
+        <GameRow
+          key={game.id}
+          game={game}
+          discovery={discoveredGames[game.id]}
+          type={type}
+          active={game.id === gameMode}
+          onSetGamePath={this.setGamePath}
+        />)
+      }
+      </ListGroup>;
+  }
+
+  private renderGamesSmall(games: IGameStored[], type: string, gameMode: string) {
+    return <div>
+      { games.map(game =>
         <GameThumbnail
           key={game.id}
+          large={false}
           game={game}
           type={type}
           active={game.id === gameMode}
-        />
-      );
-    });
+        />)
+      }
+    </div>;
+  }
+
+  private renderGamesLarge(games: IGameStored[], type: string, gameMode: string) {
+    return <div>
+      { games.map(game =>
+        <GameThumbnail
+          key={game.id}
+          large={true}
+          game={game}
+          type={type}
+          active={game.id === gameMode}
+        />)
+      }
+    </div>;
+  }
+
+  private setGamePath = (gameId: string, gamePath: string, modPath: string) => {
+    this.props.onSetGamePath(gameId, gamePath, modPath);
   }
 }
 
@@ -174,6 +257,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode: activeGameId(state),
     lastActiveProfile: state.settings.gameMode.lastActiveProfile,
     discoveredGames: state.settings.gameMode.discovered,
+    pickerLayout: state.settings.gameMode.pickerLayout,
     profiles: state.persistent.profiles,
     knownGames: state.session.gameMode.known,
     discovery: state.session.discovery,
@@ -183,6 +267,9 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onHide: (gameId: string, hidden: boolean) => dispatch(setGameHidden(gameId, hidden)),
+    onSetPickerLayout: (layout) => dispatch(setPickerLayout(layout)),
+    onSetGamePath: (gameId: string, gamePath: string, modPath: string) =>
+      dispatch(setGamePath(gameId, gamePath, modPath)),
   };
 }
 

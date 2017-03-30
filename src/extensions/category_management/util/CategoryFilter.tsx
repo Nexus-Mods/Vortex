@@ -22,7 +22,7 @@ class CategoryFilterComponent extends React.Component<IProps, {}> {
     const options = Object.keys(categories).map(id => ({
       value: id,
       label: categories[id].name,
-    }));
+    })).sort((lhs, rhs) => lhs.label.localeCompare(rhs.label));
 
     return <Select
       multi

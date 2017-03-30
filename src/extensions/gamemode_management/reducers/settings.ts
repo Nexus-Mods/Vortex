@@ -1,6 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import { deleteOrNop, getSafe, merge,
-         pushSafe, removeValue, setSafe } from '../../../util/storeHelper';
+         pushSafe, removeValue, setOrNop, setSafe } from '../../../util/storeHelper';
 import * as actions from '../actions/settings';
 
 /**
@@ -12,6 +12,10 @@ export const settingsReducer: IReducerSpec = {
       // don't replace previously discovered tools as the settings
       // there may also be user configuration
       merge(state, ['discovered', payload.id], payload.result),
+    [actions.setGamePath as any]: (state, payload) =>
+      setOrNop(setOrNop(state,
+        ['discovered', payload.gameId, 'path'], payload.gamePath),
+        ['discovered', payload.gameId, 'modPath'], payload.modPath),
     [actions.addDiscoveredTool as any]: (state, payload) => {
       if (state.discovered[payload.gameId] === undefined) {
         return state;
@@ -47,9 +51,12 @@ export const settingsReducer: IReducerSpec = {
     },
     [actions.removeSearchPath as any]: (state, payload) =>
       removeValue(state, ['searchPaths'], payload),
+    [actions.setPickerLayout as any]: (state, payload) =>
+      setSafe(state, ['pickerLayout'], payload.layout),
   },
   defaults: {
     searchPaths: undefined,
     discovered: {},
+    pickerLayout: 'list',
   },
 };

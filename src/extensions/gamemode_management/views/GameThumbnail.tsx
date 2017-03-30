@@ -9,6 +9,7 @@ import { Panel } from 'react-bootstrap';
 export interface IProps {
   game: IGameStored;
   active: boolean;
+  large: boolean;
   type: string;
 }
 
@@ -19,14 +20,17 @@ export interface IProps {
  */
 class GameThumbnail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    let { t, game, active, type } = this.props;
+    let { t, active, game, large, type } = this.props;
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
     return (
       <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
         <div style={{ position: 'relative', top: '0px' }}>
-        <img className='game-thumbnail-img' src={ logoPath } />
+        <img
+          className={ large ? 'game-thumbnail-img-large' : 'game-thumbnail-img' }
+          src={ logoPath }
+        />
         </div>
         <div className='game-thumbnail-bottom'>
           <h3>{ t(game.name) }</h3>
