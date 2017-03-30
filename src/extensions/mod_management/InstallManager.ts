@@ -1,18 +1,20 @@
-import {showDialog} from '../../actions/notifications';
-import {IDialogResult} from '../../types/IDialog';
-import {IExtensionApi} from '../../types/IExtensionContext';
-import {createErrorReport} from '../../util/errorHandling';
-import getNormalizeFunc, {Normalize}  from '../../util/getNormalizeFunc';
-import {log} from '../../util/log';
-import {activeGameId, downloadPath} from '../../util/selectors';
-import {setdefault} from '../../util/util';
+import { showDialog } from '../../actions/notifications';
+import { IDialogResult } from '../../types/IDialog';
+import { IExtensionApi } from '../../types/IExtensionContext';
+import { createErrorReport } from '../../util/errorHandling';
+import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
+import { log } from '../../util/log';
+import { activeGameId, activeProfile, downloadPath } from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
+import { setdefault } from '../../util/util';
+import { IDownload } from '../download_management/types/IDownload';
+import { setModEnabled } from '../profile_management/actions/profiles';
 
-import {IDownload} from '../download_management/types/IDownload';
-
-import {IDependency} from './types/IDependency';
-import {IInstall} from './types/IInstall';
-import {IModInstaller} from './types/IModInstaller';
-import {ISupportedResult, ITestSupported} from './types/ITestSupported';
+import { IDependency } from './types/IDependency';
+import { IInstall } from './types/IInstall';
+import { IMod } from './types/IMod';
+import { IModInstaller } from './types/IModInstaller';
+import { ISupportedResult, ITestSupported } from './types/ITestSupported';
 import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 
@@ -20,11 +22,11 @@ import InstallContext from './InstallContext';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import {IHashResult, ILookupResult, IReference, IRule, genHash} from 'modmeta-db';
+import { IHashResult, ILookupResult, IReference, IRule, genHash } from 'modmeta-db';
 import Zip = require('node-7z');
 import * as path from 'path';
 import * as rimraf from 'rimraf';
-import {dir as tmpDir, file as tmpFile} from 'tmp';
+import { dir as tmpDir, file as tmpFile } from 'tmp';
 
 // TODO the type declaration for rimraf is actually wrong atm (v0.0.28)
 interface IRimrafOptions {
@@ -65,7 +67,7 @@ interface IInstructionGroups {
 }
 
 // tslint:disable-next-line:no-empty
-function UserCanceled() {}
+function UserCanceled() { }
 
 /**
  * central class for the installation process
@@ -90,9 +92,11 @@ class InstallManager {
    * 
    * @memberOf InstallManager
    */
-  public addInstaller(priority: number, testSupported: ITestSupported,
-                      install: IInstall) {
-    this.mInstallers.push({priority, testSupported, install});
+  public addInstaller(
+    priority: number,
+    testSupported: ITestSupported,
+    install: IInstall) {
+    this.mInstallers.push({ priority, testSupported, install });
     this.mInstallers.sort((lhs: IModInstaller, rhs: IModInstaller): number => {
       return lhs.priority - rhs.priority;
     });
@@ -110,12 +114,13 @@ class InstallManager {
    * @param {*} info existing information about the mod (i.e. stuff retrieved
    *                 from the download page)
    */
-  public install(archiveId: string,
-                 archivePath: string,
-                 gameId: string,
-                 api: IExtensionApi,
-                 info: any, processDependencies: boolean,
-                 callback?: (error: Error, id: string) => void) {
+  public install(
+    archiveId: string,
+    archivePath: string,
+    gameId: string,
+    api: IExtensionApi,
+    info: any, processDependencies: boolean,
+    callback?: (error: Error, id: string) => void) {
     const installContext = new InstallContext(gameId, api.store.dispatch);
 
     const baseName = path.basename(archivePath, path.extname(archivePath));
@@ -125,78 +130,95 @@ class InstallManager {
 
     installContext.startIndicator(baseName);
 
-    api.lookupModMeta({filePath: archivePath})
-        .then((modInfo: ILookupResult[]) => {
-          if (modInfo.length > 0) {
-            fullInfo.meta = modInfo[0].value;
-          }
+    api.lookupModMeta({ filePath: archivePath })
+      .then((modInfo: ILookupResult[]) => {
+        if (modInfo.length > 0) {
+          fullInfo.meta = modInfo[0].value;
+        }
 
-          installName = this.deriveInstallName(baseName, fullInfo);
-          // if the name is already taken, consult the user,
-          // repeat until user canceled, decided to replace the existing
-          // mod or provided a new, unused name
-          const checkNameLoop = () => {
-            return this.checkModExists(installName, api, gameId) ?
-                       this.queryUserReplace(installName, api)
-                           .then((newName: string) => {
-                             console.log('new name', newName);
-                             installName = newName;
-                             return checkNameLoop();
-                           }) :
-                       Promise.resolve(installName);
-          };
+        installName = this.deriveInstallName(baseName, fullInfo);
+        // if the name is already taken, consult the user,
+        // repeat until user canceled, decided to replace the existing
+        // mod or provided a new, unused name
+        const checkNameLoop = () => {
+          return this.checkModExists(installName, api, gameId) ?
+            this.queryUserReplace(installName, api)
+              .then((newName: string) => {
+                console.log('new name', newName);
+                installName = newName;
+                return checkNameLoop();
+              }) :
+            Promise.resolve(installName);
+        };
 
-          return checkNameLoop();
-        })
-        .then(() => {
-          installContext.startInstallCB(installName, archiveId);
+        return checkNameLoop();
+      })
+      .then(() => {
+        const currentProfile = activeProfile(api.store.getState());
+        let oldMod = this.checkPreviousVersionExists(fullInfo.meta.fileId, api, gameId);
+        if (oldMod !== undefined) {
+          return this.userVersionChoice(oldMod, api)
+            .then((action: string) => {
+              if (action === 'Install') {
+                return null;
+              } else if (action === 'Replace') {
+                api.store.dispatch(setModEnabled(currentProfile.id, oldMod.id, false));
+                api.events.emit('mods-enabled', [oldMod.id], false);
+              }
+            });
+        } else {
+          return null;
+        }
+      })
+      .then(() => {
+        installContext.startInstallCB(installName, archiveId);
 
-          destinationPath = path.join(this.mGetInstallPath(), installName);
-          return this.installInner(archivePath, gameId);
-        })
-        .then((result) => {
-          installContext.setInstallPathCB(installName, destinationPath);
-          return this.processInstructions(api, archivePath, destinationPath, gameId, result);
-        })
-        .then(() => {
-          const filteredInfo = filterModInfo(fullInfo);
-          installContext.finishInstallCB('success', filteredInfo);
-          if (processDependencies) {
-            this.installDependencies(filteredInfo.rules, this.mGetInstallPath(),
-                                     installContext, api);
-          }
-          if (callback !== undefined) {
-            callback(null, installName);
-          }
-        })
-        .catch((err) => {
-          let canceled = err instanceof UserCanceled;
-          let prom = destinationPath !== undefined
-            ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 }).then(() => undefined)
-            : Promise.resolve();
-          prom.then(() => installContext.finishInstallCB(canceled ? 'canceled' : 'failed'));
+        destinationPath = path.join(this.mGetInstallPath(), installName);
+        return this.installInner(archivePath, gameId);
+      })
+      .then((result) => {
+        installContext.setInstallPathCB(installName, destinationPath);
+        return this.processInstructions(api, archivePath, destinationPath, gameId, result);
+      })
+      .then(() => {
+        const filteredInfo = filterModInfo(fullInfo);
+        installContext.finishInstallCB('success', filteredInfo);
+        if (processDependencies) {
+          this.installDependencies(filteredInfo.rules, this.mGetInstallPath(),
+            installContext, api);
+        }
+        if (callback !== undefined) {
+          callback(null, installName);
+        }
+      })
+      .catch((err) => {
+        let canceled = err instanceof UserCanceled;
+        let prom = destinationPath !== undefined
+          ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 }).then(() => undefined)
+          : Promise.resolve();
+        prom.then(() => installContext.finishInstallCB(canceled ? 'canceled' : 'failed'));
 
-          if (err === undefined) {
-            return undefined;
-          } else if (canceled) {
-            return undefined;
-          } else {
-            let errMessage = typeof err === 'string' ? err : err.message;
+        if (err === undefined) {
+          return undefined;
+        } else if (canceled) {
+          return undefined;
+        } else {
+          let errMessage = typeof err === 'string' ? err : err.message;
 
-            return genHash(archivePath)
-                .then((hashResult: IHashResult) => {
-                  let id =
-                      `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
-                  installContext.reportError(
-                      'Installation failed',
-                      `The installer ${id} failed: ${errMessage}`);
-                  if (callback !== undefined) {
-                    callback(err, installName);
-                  }
-                });
-          }
-        })
-        .finally(() => { installContext.stopIndicator(); });
+          return genHash(archivePath)
+            .then((hashResult: IHashResult) => {
+              let id =
+                `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
+              installContext.reportError(
+                'Installation failed',
+                `The installer ${id} failed: ${errMessage}`);
+              if (callback !== undefined) {
+                callback(err, installName);
+              }
+            });
+        }
+      })
+      .finally(() => { installContext.stopIndicator(); });
   }
 
   /**
@@ -206,91 +228,96 @@ class InstallManager {
     let fileList: IZipEntry[] = [];
     // get list of files in the archive
     return new Promise((resolve, reject) => {
-             this.mTask.list(archivePath, {}, (files: any[]) => {
-                   fileList.push(
-                       ...files.filter((spec) => spec.attr[0] !== 'D'));
-                 })
-                 .then(() => { resolve(); });
-           })
-        .then(() => this.getInstaller(
-                  fileList.map((entry: IZipEntry) => entry.name)))
-        .then((supportedInstaller: ISupportedInstaller) => {
-          if (supportedInstaller === undefined) {
-            throw new Error('no installer supporting this file');
-          }
-          const {installer, requiredFiles} = supportedInstaller;
-          let cleanup: () => void;
-          let reqFilesPath: string;
-          // extract the requested files, then initiate the actual install
-          return new Promise<string>((resolve, reject) => {
-                   tmpDir({unsafeCleanup: true},
-                          (err: any, tmpPath: string,
-                           cleanupCallback: () => void) => {
-                            if (err !== null) {
-                              reject(err);
-                            }
-                            cleanup = cleanupCallback;
-                            resolve(tmpPath);
-                          });
-                 })
-              .then((tmpPath: string) => {
-                reqFilesPath = tmpPath;
-                if (requiredFiles.length > 0) {
-                  return this.extractFileList(archivePath, tmpPath, requiredFiles);
-                } else {
-                  return undefined;
-                }
-              })
-              .then(() => installer.install(
-                        fileList.map((entry: IZipEntry) => entry.name),
-                        reqFilesPath, gameId,
-                        (perc: number) => log('info', 'progress', perc)))
-              .finally(() => {
-                if (cleanup !== undefined) {
-                  cleanup();
-                }
-              });
-        });
+      this.mTask.list(archivePath, {}, (files: any[]) => {
+        fileList.push(
+          ...files.filter((spec) => spec.attr[0] !== 'D'));
+      })
+        .then(() => { resolve(); });
+    })
+      .then(() => this.getInstaller(
+        fileList.map((entry: IZipEntry) => entry.name)))
+      .then((supportedInstaller: ISupportedInstaller) => {
+        if (supportedInstaller === undefined) {
+          throw new Error('no installer supporting this file');
+        }
+        const { installer, requiredFiles } = supportedInstaller;
+        let cleanup: () => void;
+        let reqFilesPath: string;
+        // extract the requested files, then initiate the actual install
+        return new Promise<string>((resolve, reject) => {
+          tmpDir({ unsafeCleanup: true },
+            (err: any, tmpPath: string,
+              cleanupCallback: () => void) => {
+              if (err !== null) {
+                reject(err);
+              }
+              cleanup = cleanupCallback;
+              resolve(tmpPath);
+            });
+        })
+          .then((tmpPath: string) => {
+            reqFilesPath = tmpPath;
+            if (requiredFiles.length > 0) {
+              return this.extractFileList(archivePath, tmpPath, requiredFiles);
+            } else {
+              return undefined;
+            }
+          })
+          .then(() => installer.install(
+            fileList.map((entry: IZipEntry) => entry.name),
+            reqFilesPath, gameId,
+            (perc: number) => log('info', 'progress', perc)))
+          .finally(() => {
+            if (cleanup !== undefined) {
+              cleanup();
+            }
+          });
+      });
   }
 
-  private extractFileList(archivePath: string, outputPath: string,
-                          files: string[]): Promise<void> {
+  private extractFileList(
+    archivePath: string,
+    outputPath: string,
+    files: string[]): Promise<void> {
     let extractFilePath: string;
     // write the file list to a temporary file, then use that as the
     // input file for 7zip, to avoid quoting problems
     return new Promise<string>((resolve, reject) => {
-             tmpFile({ keep: true } as any,
-                     (err: any, tmpPath: string, fd: number,
-                      cleanupCB: () => void) => {
-                       if (err !== null) {
-                         reject(err);
-                       } else {
-                         fs.closeAsync(fd).then(() => resolve(tmpPath));
-                       }
-                     });
-           })
-        .then((tmpPath: string) => {
-          extractFilePath = tmpPath;
-          const extractList: string[] =
-              files.map((filePath: string) => '"' + filePath + '"');
-          return fs.writeFileAsync(tmpPath, extractList.join('\n'));
-        })
-        .then(() => this.mTask.extractFull(
-                  archivePath, outputPath,
-                  {raw: [`-ir@${extractFilePath}`], ssc: false}))
-        .finally(() => fs.unlinkAsync(extractFilePath))
-        .then(() => undefined);
+      tmpFile({ keep: true } as any,
+        (err: any, tmpPath: string, fd: number,
+          cleanupCB: () => void) => {
+          if (err !== null) {
+            reject(err);
+          } else {
+            fs.closeAsync(fd).then(() => resolve(tmpPath));
+          }
+        });
+    })
+      .then((tmpPath: string) => {
+        extractFilePath = tmpPath;
+        const extractList: string[] =
+          files.map((filePath: string) => '"' + filePath + '"');
+        return fs.writeFileAsync(tmpPath, extractList.join('\n'));
+      })
+      .then(() => this.mTask.extractFull(
+        archivePath, outputPath,
+        { raw: [`-ir@${extractFilePath}`], ssc: false }))
+      .finally(() => fs.unlinkAsync(extractFilePath))
+      .then(() => undefined);
   }
 
-  private processInstructions(api: IExtensionApi, archivePath: string, destinationPath: string,
-                              gameId: string,
-                              result: {instructions: IInstruction[]}) {
+  private processInstructions(
+    api: IExtensionApi,
+    archivePath: string,
+    destinationPath: string,
+    gameId: string,
+    result: { instructions: IInstruction[] }) {
     if (result.instructions === null) {
       // this is the signal that the installer has already reported what went wrong
       return Promise.reject(null);
     }
     if ((result.instructions === undefined) ||
-        (result.instructions.length === 0)) {
+      (result.instructions.length === 0)) {
       return Promise.reject('installer returned no instructions');
     }
 
@@ -301,46 +328,46 @@ class InstallManager {
     });
 
     const copies = result.instructions.filter(
-        (instruction) => instruction.type === 'copy');
+      (instruction) => instruction.type === 'copy');
 
     const genfiles = result.instructions.filter(
-        (instruction) => instruction.type === 'generatefile');
+      (instruction) => instruction.type === 'generatefile');
 
     const subModule = result.instructions.filter(
-        (instruction) => instruction.type === 'submodule');
+      (instruction) => instruction.type === 'submodule');
 
     if (instructionGroups.unsupported !== undefined) {
       let missing = instructionGroups.unsupported.map((instruction) => instruction.source);
       const makeReport = () =>
-          genHash(archivePath)
-              .then(
-                  (hashResult: IHashResult) => createErrorReport(
-                      'Installer failed',
-                      {
-                        message: 'The installer uses unimplemented functions',
-                        details:
-                            `Missing instructions: ${missing.join(', ')}\n` +
-                                `Installer name: ${path.basename(archivePath)}\n` +
-                                `MD5 checksum: ${hashResult.md5sum}\n`,
-                      },
-                      ['installer']));
+        genHash(archivePath)
+          .then(
+          (hashResult: IHashResult) => createErrorReport(
+            'Installer failed',
+            {
+              message: 'The installer uses unimplemented functions',
+              details:
+              `Missing instructions: ${missing.join(', ')}\n` +
+              `Installer name: ${path.basename(archivePath)}\n` +
+              `MD5 checksum: ${hashResult.md5sum}\n`,
+            },
+            ['installer']));
       const showUnsupportedDialog = () => api.store.dispatch(showDialog(
-          'info', 'Installer unsupported',
-          {
-            message:
-                'This installer is (partially) unsupported as it\'s ' +
-                'using functionality that hasn\'t been implemented yet. ' +
-                'Please help us fix this by submitting an error report with a link to this mod.',
-          },
-          {
-            Report: makeReport,
-            Close: null,
-          }));
+        'info', 'Installer unsupported',
+        {
+          message:
+          'This installer is (partially) unsupported as it\'s ' +
+          'using functionality that hasn\'t been implemented yet. ' +
+          'Please help us fix this by submitting an error report with a link to this mod.',
+        },
+        {
+          Report: makeReport,
+          Close: null,
+        }));
 
       api.sendNotification({
         type: 'info',
         message: 'Installer unsupported',
-        actions: [{title: 'More', action: showUnsupportedDialog}],
+        actions: [{ title: 'More', action: showUnsupportedDialog }],
       });
     }
 
@@ -350,82 +377,128 @@ class InstallManager {
         (gen) => {
           let outputPath = path.join(destinationPath, gen.destination);
           return fs.ensureDirAsync(path.dirname(outputPath))
-          .then(() => fs.writeFileAsync(outputPath, gen.source));
+            .then(() => fs.writeFileAsync(outputPath, gen.source));
         })
         // process 'submodule' instructions
         .then(() => Promise.each(
-                  subModule,
-                  (mod) => this.installInner(mod.path, gameId)
-                               .then((resultInner) => this.processInstructions(
-                                         api, mod.path, destinationPath, gameId,
-                                         resultInner)))));
+          subModule,
+          (mod) => this.installInner(mod.path, gameId)
+            .then((resultInner) => this.processInstructions(
+              api, mod.path, destinationPath, gameId,
+              resultInner)))));
   }
 
   private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {
     return installName in (api.store.getState().persistent.mods[gameMode] || {});
   }
 
-  private queryUserReplace(modId: string, api: IExtensionApi): Promise<string> {
+  private checkPreviousVersionExists(
+    fileId: number,
+    api: IExtensionApi,
+    gameMode: string): IMod {
+    let mods = api.store.getState().persistent.mods[gameMode];
+    let mod: IMod;
+    Object.keys(mods).forEach(key => {
+      const newestFileId: number = getSafe(mods[key].attributes, ['newestFileId'], undefined);
+      const currentFileId: number = getSafe(mods[key].attributes, ['fileId'], undefined);
+      if (newestFileId !== currentFileId && newestFileId === fileId) {
+        mod = mods[key];
+      }
+    });
+
+    return mod;
+  }
+
+  private userVersionChoice(oldMod: IMod, api: IExtensionApi): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       api.store
-          .dispatch(showDialog(
-              'question', 'Mod exists',
-              {
-                message:
-                    'This mod seems to be installed already. You can replace the ' +
-                    'existing one or install the new one under a different name ' +
-                    '(this name is used internally, you can still change the display name ' +
-                    'to anything you want).',
-                formcontrol: [{
-                  id: 'newName',
-                  type: 'input',
-                  value: modId,
-                  label: 'Name',
-                }],
-              },
-              {
-                Cancel: null,
-                Replace: null,
-                Rename: null,
-              }))
-          .then((result: IDialogResult) => {
-            if (result.action === 'Cancel') {
-              reject(new UserCanceled());
-            } else if (result.action === 'Rename') {
-              resolve(result.input.newName);
-            } else if (result.action === 'Replace') {
-              api.events.emit('remove-mod', modId, (err) => {
-                if (err !== null) {
-                  reject(err);
-                } else {
-                  resolve(modId);
-                }
-              });
-            }
-          });
+        .dispatch(showDialog(
+          'question', 'Previous mod version found',
+          {
+            message:
+            'A previous version seems to be installed already. ' +
+            'You can replace the existing one or install the new one as a separate mod, ' +
+            'leaving the older version intact. In this case only the current profile ' +
+            'will use the new version.',
+            formcontrol: [],
+          },
+          {
+            Cancel: null,
+            Replace: null,
+            Install: null,
+          }))
+        .then((result: IDialogResult) => {
+          if (result.action === 'Cancel') {
+            reject(new UserCanceled());
+          } else {
+            resolve(result.action);
+          }
+        });
     });
   }
 
-  private getInstaller(fileList: string[],
-                       offsetIn?: number): Promise<ISupportedInstaller> {
+  private queryUserReplace(modId: string, api: IExtensionApi): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      api.store
+        .dispatch(showDialog(
+          'question', 'Mod exists',
+          {
+            message:
+            'This mod seems to be installed already. You can replace the ' +
+            'existing one or install the new one under a different name ' +
+            '(this name is used internally, you can still change the display name ' +
+            'to anything you want).',
+            formcontrol: [{
+              id: 'newName',
+              type: 'input',
+              value: modId,
+              label: 'Name',
+            }],
+          },
+          {
+            Cancel: null,
+            Replace: null,
+            Rename: null,
+          }))
+        .then((result: IDialogResult) => {
+          if (result.action === 'Cancel') {
+            reject(new UserCanceled());
+          } else if (result.action === 'Rename') {
+            resolve(result.input.newName);
+          } else if (result.action === 'Replace') {
+            api.events.emit('remove-mod', modId, (err) => {
+              if (err !== null) {
+                reject(err);
+              } else {
+                resolve(modId);
+              }
+            });
+          }
+        });
+    });
+  }
+
+  private getInstaller(
+    fileList: string[],
+    offsetIn?: number): Promise<ISupportedInstaller> {
     let offset = offsetIn || 0;
     if (offset >= this.mInstallers.length) {
       return Promise.resolve(undefined);
     }
     return this.mInstallers[offset].testSupported(fileList).then(
-        (testResult: ISupportedResult) => {
-          if (testResult.supported === true) {
-            return Promise.resolve({
-              installer: this.mInstallers[offset],
-              requiredFiles: testResult.requiredFiles,
-            });
-          } else {
-            return this.getInstaller(fileList, offset + 1);
-          }
-        }).catch((err) => {
-          log('warn', 'failed to test installer support', err.message);
+      (testResult: ISupportedResult) => {
+        if (testResult.supported === true) {
+          return Promise.resolve({
+            installer: this.mInstallers[offset],
+            requiredFiles: testResult.requiredFiles,
+          });
+        } else {
           return this.getInstaller(fileList, offset + 1);
-        });
+        }
+      }).catch((err) => {
+        log('warn', 'failed to test installer support', err.message);
+        return this.getInstaller(fileList, offset + 1);
+      });
   }
 
   /**
@@ -444,49 +517,54 @@ class InstallManager {
     return archiveName;
   }
 
-  private downloadModAsync(requirement: IReference, sourceURI: string,
-                           api: IExtensionApi): Promise<string> {
+  private downloadModAsync(
+    requirement: IReference,
+    sourceURI: string,
+    api: IExtensionApi): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       if (!api.events.emit('start-download', [sourceURI], {},
-                                   (error, id) => {
-                                     if (error === null) {
-                                       resolve(id);
-                                     } else {
-                                       reject(error);
-                                     }
-                                   })) {
+        (error, id) => {
+          if (error === null) {
+            resolve(id);
+          } else {
+            reject(error);
+          }
+        })) {
         reject(new Error('download manager not installed?'));
       }
     });
   }
 
-  private doInstallDependencies(dependencies: IDependency[],
-                                api: IExtensionApi): Promise<void> {
+  private doInstallDependencies(
+    dependencies: IDependency[],
+    api: IExtensionApi): Promise<void> {
     return Promise.all(dependencies.map((dep: IDependency) => {
-                    if (dep.download === undefined) {
-                      return this.downloadModAsync(
-                                     dep.reference,
-                                     dep.lookupResults[0].value.sourceURI,
-                                     api)
-                          .then((downloadId: string) => {
-                            return this.installModAsync(dep.reference, api,
-                                                        downloadId);
-                          });
-                    } else {
-                      return this.installModAsync(dep.reference, api,
-                                                  dep.download);
-                    }
-                  }))
-        .catch((err) => {
-          api.showErrorNotification('Failed to install dependencies',
-                                            err.message);
-        })
-        .then(() => undefined);
+      if (dep.download === undefined) {
+        return this.downloadModAsync(
+          dep.reference,
+          dep.lookupResults[0].value.sourceURI,
+          api)
+          .then((downloadId: string) => {
+            return this.installModAsync(dep.reference, api,
+              downloadId);
+          });
+      } else {
+        return this.installModAsync(dep.reference, api,
+          dep.download);
+      }
+    }))
+      .catch((err) => {
+        api.showErrorNotification('Failed to install dependencies',
+          err.message);
+      })
+      .then(() => undefined);
   }
 
-  private installDependencies(rules: IRule[], installPath: string,
-                              installContext: InstallContext,
-                              api: IExtensionApi): Promise<void> {
+  private installDependencies(
+    rules: IRule[],
+    installPath: string,
+    installContext: InstallContext,
+    api: IExtensionApi): Promise<void> {
     let notificationId = `${installPath}_activity`;
     api.sendNotification({
       id: notificationId,
@@ -494,51 +572,53 @@ class InstallManager {
       message: 'Checking dependencies',
     });
     return gatherDependencies(rules, api)
-        .then((dependencies: IDependency[]) => {
-          api.dismissNotification(notificationId);
+      .then((dependencies: IDependency[]) => {
+        api.dismissNotification(notificationId);
 
-          if (dependencies.length === 0) {
-            return Promise.resolve();
-          }
+        if (dependencies.length === 0) {
+          return Promise.resolve();
+        }
 
-          let requiredDownloads =
-              dependencies.reduce((prev: number, current: IDependency) => {
-                return prev + (current.download ? 0 : 1);
-              }, 0);
+        let requiredDownloads =
+          dependencies.reduce((prev: number, current: IDependency) => {
+            return prev + (current.download ? 0 : 1);
+          }, 0);
 
-          return new Promise<void>((resolve, reject) => {
-            let message =
-                `This mod has unresolved dependencies. ${dependencies.length} mods have to be
+        return new Promise<void>((resolve, reject) => {
+          let message =
+            `This mod has unresolved dependencies. ${dependencies.length} mods have to be
 installed, ${requiredDownloads} of them have to be downloaded first.`;
 
-            api.store.dispatch(
-                showDialog('question', 'Install Dependencies', {message}, {
-                  "Don't install": null,
-                  Install:
-                      () => this.doInstallDependencies(dependencies, api),
-                }));
-          });
-        })
-        .catch((err) => {
-          api.dismissNotification(notificationId);
-          api.showErrorNotification('Failed to check dependencies', err);
+          api.store.dispatch(
+            showDialog('question', 'Install Dependencies', { message }, {
+              "Don't install": null,
+              Install:
+              () => this.doInstallDependencies(dependencies, api),
+            }));
         });
+      })
+      .catch((err) => {
+        api.dismissNotification(notificationId);
+        api.showErrorNotification('Failed to check dependencies', err);
+      });
   }
 
-  private installModAsync(requirement: IReference, api: IExtensionApi,
-                          downloadId: string): Promise<string> {
+  private installModAsync(
+    requirement: IReference,
+    api: IExtensionApi,
+    downloadId: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
       let download: IDownload = state.persistent.downloads.files[downloadId];
       let fullPath: string = path.join(downloadPath(state), download.localPath);
       this.install(downloadId, fullPath, download.game || activeGameId(state),
-                   api, download.modInfo, false, (error, id) => {
-                     if (error === null) {
-                       resolve(id);
-                     } else {
-                       reject(error);
-                     }
-                   });
+        api, download.modInfo, false, (error, id) => {
+          if (error === null) {
+            resolve(id);
+          } else {
+            reject(error);
+          }
+        });
     });
   }
   /**
@@ -548,8 +628,10 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
    * @param {string} archivePath path to the archive file
    * @param {string} destinationPath path to install to
    */
-  private extractArchive(archivePath: string, destinationPath: string,
-                         copies: IInstruction[]): Promise<void> {
+  private extractArchive(
+    archivePath: string,
+    destinationPath: string,
+    copies: IInstruction[]): Promise<void> {
     if (copies.length === 0) {
       return Promise.resolve();
     }
@@ -559,58 +641,58 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
     const tempPath = destinationPath + '.installing';
 
     return fs.ensureDirAsync(tempPath)
-        .then(() => getNormalizeFunc(tempPath))
-        .then((normalizeFunc: Normalize) => {
-          normalize = normalizeFunc;
-          return ;
-        })
-        .then(() => this.extractFileList(archivePath,
-                                         tempPath,
-                                         copies.map((copy) => copy.source)))
-        .then(() => fs.renameAsync(tempPath, destinationPath))
-        .then(() => {
-          // TODO hack: the 7z command line doesn't allow files to be renamed
-          //  during installation so we extract them all and then rename. This
-          //  also tries to clean up dirs that are empty
-          //  afterwards but ideally we get a proper 7z lib...
-          const renames =
-              copies.filter((inst) => inst.source !== inst.destination)
-                  .reduce((groups, inst) => {
-                    setdefault(groups, normalize(inst.source), []).push(inst.destination);
-                    return groups;
-                  }, {});
-          let affectedDirs = new Set<string>();
-          return Promise
-              .map(Object.keys(renames),
-                   (source: string) => {
-                     return Promise.each(renames[source], (destination: string,
-                                                           index: number,
-                                                           len: number) => {
-                       const fullSource = path.join(destinationPath, source);
-                       const dest = path.join(destinationPath, destination);
-                       let affDir = path.dirname(fullSource);
-                       while (affDir.length > destinationPath.length) {
-                         affectedDirs.add(affDir);
-                         affDir = path.dirname(affDir);
-                       }
-                       // if this is the last or only destination for the source
-                       // file, use a rename because it's quicker. otherwise
-                       // copy so that further destinations can be processed
-                       return fs.ensureDirAsync(path.dirname(dest))
-                           .then(() => (index !== len - 1) ?
-                                           fs.copyAsync(fullSource, dest) :
-                                           fs.renameAsync(fullSource, dest));
-                     });
-                   })
-              .then(() => Promise.each(Array.from(affectedDirs)
-                                           .sort((lhs: string, rhs: string) =>
-                                                     rhs.length - lhs.length),
-                                       (affectedPath: string) => {
-                                         return fs.rmdirAsync(affectedPath)
-                                             .catch(() => undefined);
-                                       }));
-        })
-        .then(() => undefined);
+      .then(() => getNormalizeFunc(tempPath))
+      .then((normalizeFunc: Normalize) => {
+        normalize = normalizeFunc;
+        return;
+      })
+      .then(() => this.extractFileList(archivePath,
+        tempPath,
+        copies.map((copy) => copy.source)))
+      .then(() => fs.renameAsync(tempPath, destinationPath))
+      .then(() => {
+        // TODO hack: the 7z command line doesn't allow files to be renamed
+        //  during installation so we extract them all and then rename. This
+        //  also tries to clean up dirs that are empty
+        //  afterwards but ideally we get a proper 7z lib...
+        const renames =
+          copies.filter((inst) => inst.source !== inst.destination)
+            .reduce((groups, inst) => {
+              setdefault(groups, normalize(inst.source), []).push(inst.destination);
+              return groups;
+            }, {});
+        let affectedDirs = new Set<string>();
+        return Promise
+          .map(Object.keys(renames),
+          (source: string) => {
+            return Promise.each(renames[source], (destination: string,
+              index: number,
+              len: number) => {
+              const fullSource = path.join(destinationPath, source);
+              const dest = path.join(destinationPath, destination);
+              let affDir = path.dirname(fullSource);
+              while (affDir.length > destinationPath.length) {
+                affectedDirs.add(affDir);
+                affDir = path.dirname(affDir);
+              }
+              // if this is the last or only destination for the source
+              // file, use a rename because it's quicker. otherwise
+              // copy so that further destinations can be processed
+              return fs.ensureDirAsync(path.dirname(dest))
+                .then(() => (index !== len - 1) ?
+                  fs.copyAsync(fullSource, dest) :
+                  fs.renameAsync(fullSource, dest));
+            });
+          })
+          .then(() => Promise.each(Array.from(affectedDirs)
+            .sort((lhs: string, rhs: string) =>
+              rhs.length - lhs.length),
+            (affectedPath: string) => {
+              return fs.rmdirAsync(affectedPath)
+                .catch(() => undefined);
+            }));
+      })
+      .then(() => undefined);
   }
 }
 
