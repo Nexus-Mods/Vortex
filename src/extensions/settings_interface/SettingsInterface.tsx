@@ -6,8 +6,9 @@ import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
 import { setAutoDeployment } from './actions/automation';
-import { setLanguage, setProfilesVisible } from './actions/interface';
+import { setAdvancedMode, setLanguage, setProfilesVisible } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
+import getText from './texts';
 
 import * as React from 'react';
 import { Checkbox, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
@@ -27,12 +28,14 @@ interface IConnectedProps {
   currentLanguage: string;
   profilesVisible: boolean;
   autoDeployment: boolean;
+  advanced: boolean;
 }
 
 interface IActionProps {
   onSetLanguage: (language: string) => void;
   onSetAutoDeployment: (enabled: boolean) => void;
   onSetProfilesVisible: (visible: boolean) => void;
+  onSetAdvancedMode: (advanced: boolean) => void;
 }
 
 interface IState {
@@ -78,7 +81,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   }
 
   public render(): JSX.Element {
-    const { t, autoDeployment, currentLanguage, profilesVisible } = this.props;
+    const { t, advanced, autoDeployment, currentLanguage, profilesVisible } = this.props;
 
     return (
       <form>
@@ -92,19 +95,33 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
             { this.state.languages.map((language) => { return this.renderLanguage(language); }) }
           </FormControl>
         </FormGroup>
-        <FormGroup controlId='profiles'>
-          <ControlLabel>{t('Profiles')}</ControlLabel>
+        <FormGroup controlId='advanced'>
+          <ControlLabel>{t('Advanced')}</ControlLabel>
           <div>
-            <Checkbox
-              checked={profilesVisible}
-              onChange={this.toggleProfiles}
-              style={{ display: 'inline' }}
-            >
-              {t('Enable Profile management')}
-            </Checkbox>
-            <More id='more-profile-settings' name={t('Profiles')}>
-              {getTextProfiles('profiles', t)}
-            </More>
+            <div>
+              <Checkbox
+                checked={advanced}
+                onChange={this.toggleAdvanced}
+                style={{ display: 'inline' }}
+              >
+                {t('Enable advanced mode')}
+              </Checkbox>
+              <More id='more-advanced-settings' name={t('Advanced')}>
+                {getText('advanced', t)}
+              </More>
+            </div>
+            <div>
+              <Checkbox
+                checked={profilesVisible}
+                onChange={this.toggleProfiles}
+                style={{ display: 'inline' }}
+              >
+                {t('Enable Profile management')}
+              </Checkbox>
+              <More id='more-profile-settings' name={t('Profiles')}>
+                {getTextProfiles('profiles', t)}
+              </More>
+            </div>
           </div>
         </FormGroup>
         <FormGroup controlId='automation'>
@@ -154,12 +171,18 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
     const { profilesVisible, onSetProfilesVisible } = this.props;
     onSetProfilesVisible(!profilesVisible);
   }
+
+  private toggleAdvanced = () => {
+    const { advanced, onSetAdvancedMode } = this.props;
+    onSetAdvancedMode(!advanced);
+  }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
     currentLanguage: state.settings.interface.language,
     profilesVisible: state.settings.interface.profilesVisible,
+    advanced: state.settings.interface.advanced,
     autoDeployment: state.settings.automation.deploy,
   };
 }
@@ -174,7 +197,10 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
     },
     onSetProfilesVisible: (visible: boolean) => {
       dispatch(setProfilesVisible(visible));
-    }
+    },
+    onSetAdvancedMode: (advanced: boolean) => {
+      dispatch(setAdvancedMode(advanced));
+    },
   };
 }
 

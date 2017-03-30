@@ -87,6 +87,8 @@ export interface IStateDownloads {
 
 export interface ISettingsInterface {
   language: string;
+  advanced: boolean;
+  profilesVisible: boolean;
 }
 
 export interface ISettingsProfiles {
