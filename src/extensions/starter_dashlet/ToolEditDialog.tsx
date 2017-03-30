@@ -218,12 +218,14 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 readOnly
               />
               <InputGroup.Button>
+              { this.state.tool.isGame ? null :
                 <IconButton
                   id='change-tool-path'
                   tooltip={t('Change')}
                   onClick={this.handleChangePath}
                   icon='folder-open'
                 />
+              }
               </InputGroup.Button>
             </InputGroup>
 

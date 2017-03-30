@@ -161,6 +161,7 @@ class GameModeManager {
         ? game.supportedTools.map(this.storeTool)
         : [],
       executable: game.executable(),
+      environment: game.environment,
     };
   }
 

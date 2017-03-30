@@ -392,6 +392,10 @@
   width: 100%;
 }
 
+.game-list-selected {
+  background-color: $gray-lighter;
+}
+
 .welcome-game-logo {
   max-height: 200px;
 }
@@ -785,7 +789,10 @@ Resizer.disabled:hover {
 
 .btn-group,
 .btn-group-vertical {
-  position: initial;
+  position: static;
+  &.dropdown {
+    position: relative;
+  }
 }
 
 .btn-group > .btn,
@@ -819,6 +826,7 @@ Resizer.disabled:hover {
     margin: 0px;
     padding: 0px;
     height: 20px;
+    white-space: nowrap;
   }
   .Select-value-icon {
     padding: 0px 7px;
@@ -864,4 +872,28 @@ Resizer.disabled:hover {
 
 .btngroup-game-list {
   display: inline-flex;
+}
+
+#starter-dashlet {
+  overflow: visible;
+  margin: 5px;
+}
+
+.main-page {
+  transition: visibility 0s 300ms, opacity 300ms;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.main-page-current {
+  opacity: 1;
+  z-index: 1000;
+  transition-delay: 0s;
+}
+
+.main-page-hidden {
+  opacity: 0;
+  z-index: 0;
+  visibility: hidden;
 }

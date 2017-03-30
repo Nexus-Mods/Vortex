@@ -24,7 +24,6 @@ import * as React from 'react';
 import { Alert, Modal, Nav } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 import update = require('react-addons-update');
-import ReactCSSTransitionGroup = require('react-addons-css-transition-group');
 
 export interface IBaseProps {
   className: string;
@@ -38,6 +37,7 @@ export interface IExtendedProps {
 export interface IMainWindowState {
   showLayer: string;
   showPage: string;
+  loadedPages: string[];
 }
 
 export interface IConnectedProps {
@@ -65,6 +65,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.state = {
       showLayer: '',
       showPage: '',
+      loadedPages: [],
     };
 
     this.buttonsLeft = [
@@ -96,15 +97,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public componentWillMount() {
     if (this.props.objects.length > 0) {
-      this.setState(update(this.state, {
-        showPage: { $set: this.props.objects[0].title },
-      }));
+      this.setMainPage(this.props.objects[0].title);
     }
 
     this.props.api.events.on('show-main-page', (title) => {
-      this.setState(update(this.state, {
-        showPage: { $set: title },
-      }));
+      this.setMainPage(title);
     });
 
     this.props.api.events.on('show-modal', (id) => {
@@ -201,13 +198,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             </Button>
           </Fixed>
           <Flex>
-            <ReactCSSTransitionGroup
-              transitionName='mainpage'
-              transitionEnterTimeout={250}
-              transitionLeaveTimeout={250}
-            >
-            { this.renderCurrentPage() }
-            </ReactCSSTransitionGroup>
+            <DNDContainer>
+              { objects.map((obj) =>
+                this.renderPage(this.state.showPage === obj.title ? 'current' : 'hidden', obj))
+              }
+            </DNDContainer>
           </Flex>
         </Layout>
         <Notifications id='notifications' />
@@ -268,24 +263,27 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       </NavItem>;
   }
 
-  private renderCurrentPage = () => {
-    let { objects } = this.props;
+  private renderPage(type: string, page: IMainPage) {
+    if (this.state.loadedPages.indexOf(page.title) === -1) {
+      // don't render pages that have never been opened
+      return null;
+    }
 
-    const page: IMainPage = objects.find((ele) => ele.title === this.state.showPage);
     if (page !== undefined) {
       let props = page.propsFunc();
-      return <DNDContainer>
-        <page.component id={page.title} key={page.title} {...props} />
-      </DNDContainer>;
+      return <div key={page.title} className={`main-page main-page-${type}`}>
+        <page.component
+          id={page.title}
+          key={page.title}
+          {...props}
+        /></div>;
     } else {
       return <Alert>No content pages</Alert>;
     }
   };
 
   private handleSetPage = (key) => {
-    this.setState(update(this.state, {
-      showPage: { $set: key },
-    }));
+    this.setMainPage(key);
   };
 
   private showLayer = (layer: string) => {
@@ -298,6 +296,20 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       this.props.api.events.emit('hide-modal', this.state.showLayer);
     }
     this.setState(update(this.state, { showLayer: { $set: layer } }));
+  }
+
+  private setMainPage = (title: string) => {
+    // set the page as "loaded", set it as the shown page next frame.
+    // this way it gets rendered as hidden once and can then "transition"
+    // to visible
+    this.setState(update(this.state, {
+      loadedPages: { $push: [ title ] },
+    }));
+    setImmediate(() => {
+      this.setState(update(this.state, {
+        showPage: { $set: title },
+      }));
+    });
   }
 
   private toggleMenu = () => {

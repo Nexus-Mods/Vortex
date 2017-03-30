@@ -74,7 +74,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     let game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
 
     return (
-      <Media style={{ overflow: 'visible' }}>
+      <Media id='starter-dashlet'>
         <Media.Left>
           {this.renderGameIcon(game)}
           {this.renderEditToolDialog()}

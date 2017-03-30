@@ -12,4 +12,5 @@ export interface IGameStored {
   requiredFiles: string[];
   executable: string;
   supportedTools: IToolStored[];
+  environment?: { [key: string]: string };
 }

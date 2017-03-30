@@ -7,7 +7,7 @@ const game: IGame = {
   mergeMods: false,
   queryModPath: () => 'ComGame/Mods',
   iniFilePath: () => '',
-  executable: () => 'XCom2.exe',
+  executable: () => 'Binaries/Win64/XCom2.exe',
   requiredFiles: [
     'XComGame',
     'XComGame/CookedPCConsole/3DUIBP.upk',

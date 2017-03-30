@@ -19,6 +19,7 @@ export interface IProps {
   active: boolean;
   type: string;
   onSetGamePath: (gameId: string, gamePath: string, modsPath: string) => void;
+  onSetGameDiscovery: (gameId: string, result: IDiscoveryResult) => void;
 }
 
 /**
@@ -32,15 +33,15 @@ class GameRow extends ComponentEx<IProps, {}> {
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
-    const location = discovery !== undefined
+    const location = (discovery !== undefined) && (discovery.path !== undefined)
               ? <Advanced>
                 <a onClick={this.openLocation}>{discovery.path}</a>
                 {discovery.path}
                 </Advanced>
-              : <a onClick={this.openLocation}>t('Browse...') }</a>;
+              : <a onClick={this.openLocation}>{t('Browse...') }</a>;
 
     return (
-      <ListGroupItem bsStyle={ active ? 'info' : undefined }>
+      <ListGroupItem className={ active ? 'game-list-selected' : undefined }>
         <Media>
           <Media.Left>
             <div className='game-thumbnail-container-list'>
@@ -65,7 +66,7 @@ class GameRow extends ComponentEx<IProps, {}> {
   }
 
   private openLocation = () => {
-    const { discovery, game, onSetGamePath } = this.props;
+    const { discovery, game, onSetGameDiscovery, onSetGamePath } = this.props;
     if (discovery !== undefined) {
       remote.dialog.showOpenDialog(null, {
         properties: ['openDirectory'],
@@ -79,20 +80,27 @@ class GameRow extends ComponentEx<IProps, {}> {
           onSetGamePath(game.id, fileNames[0], modPath);
         }
       });
+    } else {
+      remote.dialog.showOpenDialog(null, {
+        properties: ['openDirectory'],
+      }, (fileNames: string[]) => {
+        if (fileNames !== undefined) {
+          let modPath = game.modPath;
+          if (!path.isAbsolute(modPath)) {
+            modPath = path.resolve(fileNames[0], modPath);
+          }
+          onSetGameDiscovery(game.id, {
+            path: fileNames[0],
+            modPath,
+            tools: {},
+            hidden: false,
+            environment: game.environment,
+          });
+        }
+      });
     }
   }
 }
-
-/*
-    let className = active ? 'list-group-item active' : 'list-group-item';
-
-    return (
-      <span className={className}>
-        <h4 className='list-group-item-heading'>{ `${gameName} - ${profile.name}` }</h4>
-        <div className='list-group-item-text'>
-          <ul className='profile-details'>
-
-*/
 
 export default
   translate(['common'], { wait: false })(GameRow) as React.ComponentClass<IProps>;

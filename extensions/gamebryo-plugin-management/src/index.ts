@@ -325,6 +325,10 @@ function init(context: IExtensionContextExt) {
 
     Object.keys(store.getState().persistent.profiles)
         .forEach((gameId: string) => {
+          if (!gameSupported(gameId)) {
+            return;
+          }
+          // this handles the case that the content of a profile changes
           context.api.onStateChange(
               ['persistent', 'profiles', gameId], (oldProfiles, newProfiles) => {
                 const activeProfileId = selectors.activeProfile(store.getState()).id;
@@ -353,7 +357,6 @@ function init(context: IExtensionContextExt) {
       const newProfile =
           util.getSafe(store.getState(),
                        ['persistent', 'profiles', newProfileId], {} as any);
-
       if (!gameSupported(newProfile.gameId)) {
         return;
       }
@@ -366,11 +369,13 @@ function init(context: IExtensionContextExt) {
     });
 
     const currentProfile = selectors.activeProfile(store.getState());
-    updatePluginList(store, currentProfile.modState)
-    .then(() => {
-      startSync(context.api);
-      context.api.events.emit('autosort-plugins');
-    });
+    if (gameSupported(currentProfile.gameId)) {
+      updatePluginList(store, currentProfile.modState)
+        .then(() => {
+          startSync(context.api);
+          context.api.events.emit('autosort-plugins');
+        });
+    }
   });
 
   return true;

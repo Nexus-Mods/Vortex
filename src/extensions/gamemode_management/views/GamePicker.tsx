@@ -10,7 +10,7 @@ import { Button, IconButton } from '../../../views/TooltipControls';
 import { setGamePath } from '../../gamemode_management/actions/settings';
 import { IProfile } from '../../profile_management/types/IProfile';
 
-import { setGameHidden, setPickerLayout } from '../actions/settings';
+import { addDiscoveredGame, setGameHidden, setPickerLayout } from '../actions/settings';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
@@ -18,7 +18,7 @@ import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
 
 import * as React from 'react';
-import { ListGroup, ListGroupItem, ProgressBar } from 'react-bootstrap';
+import { ListGroup, ProgressBar } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import update = require('react-addons-update');
@@ -37,6 +37,7 @@ interface IActionProps {
   onHide: (gameId: string, hidden: boolean) => void;
   onSetPickerLayout: (layout: 'list' | 'small' | 'large') => void;
   onSetGamePath: (gameId: string, gamePath: string, modPath: string) => void;
+  onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) => void;
 }
 
 interface IComponentState {
@@ -214,6 +215,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
           type={type}
           active={game.id === gameMode}
           onSetGamePath={this.setGamePath}
+          onSetGameDiscovery={this.addDiscoveredGame}
         />)
       }
       </ListGroup>;
@@ -250,6 +252,10 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
   private setGamePath = (gameId: string, gamePath: string, modPath: string) => {
     this.props.onSetGamePath(gameId, gamePath, modPath);
   }
+
+  private addDiscoveredGame = (gameId: string, discovery: IDiscoveryResult) => {
+    this.props.onAddDiscoveredGame(gameId, discovery);
+  }
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -270,6 +276,8 @@ function mapDispatchToProps(dispatch): IActionProps {
     onSetPickerLayout: (layout) => dispatch(setPickerLayout(layout)),
     onSetGamePath: (gameId: string, gamePath: string, modPath: string) =>
       dispatch(setGamePath(gameId, gamePath, modPath)),
+    onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) =>
+      dispatch(addDiscoveredGame(gameId, result)),
   };
 }
 

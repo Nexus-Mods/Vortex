@@ -6,7 +6,7 @@ import refreshSavegames from './util/refreshSavegames';
 import SavegameList from './views/SavegameList';
 
 import * as fs from 'fs-extra-promise';
-import { selectors, util } from 'nmm-api';
+import { selectors, types, util } from 'nmm-api';
 import IniParser, {IniFile, WinapiFormat} from 'parse-ini';
 
 let parser = new IniParser(new WinapiFormat());
@@ -73,6 +73,12 @@ function init(context): boolean {
     const store: Redux.Store<any> = context.api.store;
 
     context.api.events.on('profile-activated', (profileId: string) => {
+      const profile: types.IProfile =
+          util.getSafe(store.getState(),
+                       ['persistent', 'profiles', profileId], {} as any);
+      if (!gameSupported(profile.gameId)) {
+        return;
+      }
       updateSaves(store, profileId)
           .then((failedReads: string[]) => {
             if (failedReads.length > 0) {
