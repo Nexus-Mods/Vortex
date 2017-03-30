@@ -24,6 +24,7 @@ class ModDB {
                     fileMD5: nexusObj.file_details.md5,
                     fileId: nexusObj.file_details.file_id,
                     fileName: nexusObj.file_details.file_name,
+                    changelogHtml: nexusObj.file_details.changelog_html,
                     fileSizeBytes: nexusObj.file_details.file_size,
                     logicalFileName: nexusObj.file_details.name,
                     fileVersion: semvish.clean(nexusObj.file_details.version),

@@ -26,6 +26,7 @@ function filterModInfo(input: any): any {
   transfer(result, 'author', input.meta, ['details', 'author']);
   transfer(result, 'homepage', input.meta, ['details', 'homepage']);
   transfer(result, 'fileId', input.meta, ['fileId']);
+  transfer(result, 'changelogHtml', input.meta, ['changelogHtml']);
   transfer(result, 'version', input.meta, ['fileVersion']);
   transfer(result, 'logicalFileName', input.meta, ['fileName']);
   transfer(result, 'uploadedTimestamp', input.meta, ['uploadedTimestamp']);

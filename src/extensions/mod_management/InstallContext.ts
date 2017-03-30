@@ -92,6 +92,7 @@ class InstallContext implements IInstallContext {
       this.mSetModAttribute(this.mAddedId, 'version', info.version);
       this.mSetModAttribute(this.mAddedId, 'fileId', info.fileId);
       this.mSetModAttribute(this.mAddedId, 'newestFileId', info.fileId);
+      this.mSetModAttribute(this.mAddedId, 'changelogHtml', info.changelogHtml);
       this.mSetModAttribute(this.mAddedId, 'endorsed', '');
       this.mSetModAttribute(this.mAddedId, 'bugMessage', '');
 

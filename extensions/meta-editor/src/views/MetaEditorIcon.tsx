@@ -287,6 +287,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
       fileName,
       fileId: '',
       uploadedTimestamp: undefined,
+      changelogHtml: '',
       fileSizeBytes: fileInfo !== undefined ? fileInfo.size : 0,
       gameId: '',
       fileVersion: '',

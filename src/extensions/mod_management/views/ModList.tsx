@@ -304,7 +304,7 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   private renderChangelogs = (mod: IMod): JSX.Element => {
-    const changelogs = getSafe(mod.attributes, ['changelogsText'], undefined);
+    const changelogs = getSafe(mod.attributes, ['changelogHtml'], undefined);
     const { gameMode } = this.props;
 
     if (changelogs !== undefined) {

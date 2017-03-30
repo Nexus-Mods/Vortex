@@ -25,6 +25,7 @@ export interface IModInfo {
     rules?: IRule[];
     expires?: number;
     uploadedTimestamp: number;
+    changelogHtml: string;
     details?: {
         homepage?: string;
         category?: string;
