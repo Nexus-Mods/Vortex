@@ -31,10 +31,6 @@ function findGame() {
   });
 }
 
-function getIniPath() {
-  return path.join(app.getPath('documents'), 'My Games', 'Oblivion', 'Oblivion.ini');
-}
-
 let tools: ITool[] = [
   {
     id: 'loot',
@@ -55,7 +51,6 @@ const game: IGame = {
   name: 'Oblivion',
   mergeMods: true,
   queryPath: findGame,
-  iniFilePath: getIniPath,
   supportedTools: tools,
   queryModPath: () => './data',
   logo: 'logo.png',

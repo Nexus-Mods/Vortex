@@ -31,10 +31,6 @@ function findGame() {
   });
 }
 
-function getIniPath() {
-  return path.join(app.getPath('documents'), 'My Games', 'Skyrim Special Edition', 'Skyrim.ini');
-}
-
 let tools: ITool[] = [
   {
     id: 'SSEEdit',
@@ -83,7 +79,6 @@ const game: IGame = {
   shortName: 'SSE',
   mergeMods: true,
   queryPath: findGame,
-  iniFilePath: getIniPath,
   supportedTools: tools,
   queryModPath: () => './data',
   logo: 'logo.png',

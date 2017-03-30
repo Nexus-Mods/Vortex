@@ -31,10 +31,6 @@ function findGame() {
   });
 }
 
-function getIniPath() {
-  return path.join(app.getPath('documents'), 'My Games', 'Skyrim', 'Skyrim.ini');
-}
-
 let tools: ITool[] = [
   {
     id: 'TES5Edit',
@@ -82,7 +78,6 @@ const game: IGame = {
   name: 'Skyrim',
   mergeMods: true,
   queryPath: findGame,
-  iniFilePath: getIniPath,
   supportedTools: tools,
   queryModPath: () => './data',
   logo: 'logo.png',

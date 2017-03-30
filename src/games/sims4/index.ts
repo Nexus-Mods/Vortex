@@ -28,10 +28,6 @@ function findGame(): Promise<string> {
   });
 }
 
-function getIniPath() {
-  return '';
-}
-
 function modPath(): string {
   return path.join(remote.app.getPath('documents'), 'Electronic Arts', 'The Sims 4', 'Mods');
 }
@@ -41,7 +37,6 @@ const game: IGame = {
   name: 'The Sims 4',
   mergeMods: false,
   queryPath: findGame,
-  iniFilePath: getIniPath,
   queryModPath: modPath,
   logo: 'logo.png',
   executable: () => 'game/bin/TS4.exe',

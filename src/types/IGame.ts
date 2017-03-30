@@ -20,14 +20,6 @@ export interface IGame extends ITool {
   queryModPath: () => string;
 
   /**
-   * determine the directory where the ini file for this game
-   * is stored.
-   * 
-   * @memberOf IGame
-   */
-  iniFilePath: () => string;
-
-  /**
    * list of tools that support this game
    * 
    * @memberOf IGame

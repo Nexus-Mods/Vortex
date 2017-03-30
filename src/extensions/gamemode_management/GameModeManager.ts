@@ -155,7 +155,6 @@ class GameModeManager {
       mergeMods: game.mergeMods,
       modPath: game.queryModPath(),
       extensionPath: game.pluginPath,
-      iniFilePath: game.iniFilePath(),
       requiredFiles: game.requiredFiles,
       supportedTools: game.supportedTools !== null
         ? game.supportedTools.map(this.storeTool)

@@ -2,11 +2,15 @@ import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
 import {getSafe} from '../../../util/storeHelper';
 import {isNullOrWhitespace} from '../../../util/util';
+
 import {IGameStored} from '../../gamemode_management/types/IGameStored';
-import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
-import * as path from 'path';
+
+import { getIniFilePath } from '../util/gameSupport';
 
 import DelegateBase from './DelegateBase';
+
+import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
+import * as path from 'path';
 
 class Ini extends DelegateBase {
   private gameId: string;
@@ -30,7 +34,7 @@ class Ini extends DelegateBase {
     let selectedFile = params[0];
     let iniSection = params[1];
     let iniKey = params[2];
-    let baseIniFile = this.gameInfo.iniFilePath;
+    let baseIniFile = getIniFilePath(this.gameInfo.id);
 
     if (!isNullOrWhitespace(selectedFile)) {
       baseIniFile = path.join(path.dirname(baseIniFile), selectedFile);
@@ -62,7 +66,7 @@ class Ini extends DelegateBase {
     let selectedFile = params[0];
     let iniSection = params[1];
     let iniKey = params[2];
-    let baseIniFile = this.gameInfo.iniFilePath;
+    let baseIniFile = getIniFilePath(this.gameInfo.id);
 
     if (!isNullOrWhitespace(selectedFile)) {
       baseIniFile = path.join(path.dirname(baseIniFile), selectedFile);

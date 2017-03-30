@@ -31,10 +31,6 @@ function findGame() {
   });
 }
 
-function getIniPath() {
-  return path.join(app.getPath('documents'), 'My Games', 'Fallout4', 'Fallout4.ini');
-}
-
 let tools: ITool[] = [
   {
     id: 'FO4Edit',
@@ -73,7 +69,6 @@ const game: IGame = {
   name: 'Fallout 4',
   mergeMods: true,
   queryPath: findGame,
-  iniFilePath: getIniPath,
   supportedTools: tools,
   queryModPath: () => './data',
   logo: 'logo.png',
