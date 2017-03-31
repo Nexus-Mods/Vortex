@@ -212,7 +212,8 @@ function checkModsVersionImpl(
         store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId', newestFileId));
       })
       .catch((err) => {
-        checkVersionModsReport = checkVersionModsReport + err.message + '\n';
+        let detail = processErrorMessage(err.statusCode, err.message, gameId);
+        checkVersionModsReport = checkVersionModsReport + detail.Error + '\n';
       });
   }));
 }
