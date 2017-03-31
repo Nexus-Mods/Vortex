@@ -89,10 +89,16 @@ function startTool(starter: StarterInfo,
     .then((doStart: boolean) => {
       if (doStart) {
         try {
-          execFile(starter.exePath, {
-            cwd: starter.workingDirectory,
-            env: Object.assign({}, process.env, starter.environment),
-        });
+          execFile(starter.exePath,
+                   {
+                     cwd: starter.workingDirectory,
+                     env: Object.assign({}, process.env, starter.environment),
+                   },
+                   (err: Error, stdout: string, stderr: string) => {
+                     if (err !== null) {
+                       onShowError('Failed to run executable', err);
+                     }
+                   });
       } catch (err) {
         // TODO: as of the current electron version (1.4.14) the error isn't precise
         //   enough to determine if the error was actually lack of elevation but among

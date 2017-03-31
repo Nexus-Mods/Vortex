@@ -3,7 +3,7 @@ import * as Promise from 'bluebird';
 type Callback = (err: Error) => void;
 
 /**
- * management function. Prevents a function from being called to often
+ * management function. Prevents a function from being called too often
  * and, for function returning a promise it ensures that it's not run
  * again (through this Debouncer) before the promise is resolved.
  * 

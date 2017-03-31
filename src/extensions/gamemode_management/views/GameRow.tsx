@@ -40,8 +40,13 @@ class GameRow extends ComponentEx<IProps, {}> {
                 </Advanced>
               : <a onClick={this.openLocation}>{t('Browse...') }</a>;
 
+    let classes = [ 'game-list-item' ];
+    if (active) {
+      classes.push('game-list-selected');
+    }
+
     return (
-      <ListGroupItem className={ active ? 'game-list-selected' : undefined }>
+      <ListGroupItem className={ classes.join(' ') }>
         <Media>
           <Media.Left>
             <div className='game-thumbnail-container-list'>

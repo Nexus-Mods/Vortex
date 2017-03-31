@@ -36,7 +36,7 @@ function testArchivesAge(store: Redux.Store<types.IState>) {
           severity: 'warning',
           automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
                           return Promise.map(files,
-                                             file => fs.utimes(
+                                             file => fs.utimesAsync(
                                                  path.join(gamePath, file),
                                                  age.getTime() / 1000,
                                                  age.getTime() / 1000))

@@ -75,7 +75,7 @@ export function terminate(error: ITermination) {
   try {
     let action = dialog.showMessageBox(null, {
       type: 'error',
-      buttons: ['Report', 'Quit'],
+      buttons: ['Report', 'Ignore', 'Quit'],
       title: 'An unrecoverable error occured',
       message: error.message,
       detail: error.details + '\n' + error.stack,
@@ -84,6 +84,21 @@ export function terminate(error: ITermination) {
 
     if (action === 0) {
       createErrorReport('Crash', error, ['bug', 'crash']);
+    } else if (action === 1) {
+      action = dialog.showMessageBox(null, {
+        type: 'error',
+        buttons: ['Quit', 'I won\'t whine'],
+        title: 'Are you sure?',
+        message: 'This error was unhandled and so there is ' +
+                 'no way to know what subsequent errors this ' +
+                 'may cause. You may lose data!\n' +
+                 'We ask that you refrain from reporting issues ' +
+                 'that happen from here on out in this session.',
+        noLink: true,
+      });
+      if (action === 1) {
+        return;
+      }
     }
   } catch (err) {
     // if the crash occurs before the application is ready, the dialog module can't be

@@ -7,7 +7,6 @@ import {
   activeProfile,
   currentActivator,
   currentGameDiscovery,
-  downloadPath,
   installPath,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
@@ -28,6 +27,7 @@ import {IStatePaths} from './types/IStateSettings';
 import {ITestSupported} from './types/ITestSupported';
 import * as basicInstaller from './util/basicInstaller';
 import refreshMods from './util/refreshMods';
+import resolvePath from './util/resolvePath';
 import sortMods from './util/sort';
 import supportedActivators from './util/supportedActivators';
 import UserCanceled from './util/UserCanceled';
@@ -302,9 +302,11 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on(
         'start-install-download',
         (downloadId: string, callback?: (error, id: string) => void) => {
-          let download: IDownload =
-              store.getState().persistent.downloads.files[downloadId];
-          let fullPath: string = path.join(downloadPath(store.getState()), download.localPath);
+          const state = store.getState();
+          const download: IDownload = state.persistent.downloads.files[downloadId];
+          const inPaths = state.settings.mods.paths;
+          const downloadPath: string = resolvePath('download', inPaths, download.game);
+          let fullPath: string = path.join(downloadPath, download.localPath);
           installManager.install(downloadId, fullPath, download.game, context.api,
                                  download.modInfo, true, callback);
         });

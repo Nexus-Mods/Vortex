@@ -531,6 +531,10 @@
   padding: 4px;
 }
 
+.form-horizontal .has-feedback label ~ .form-control-feedback {
+  top: 0px;
+}
+
 .btn-menu-minimize {
   bottom: 0px;
   position: absolute;
@@ -898,4 +902,8 @@ Resizer.disabled:hover {
   opacity: 0;
   z-index: 0;
   visibility: hidden;
+}
+
+#img-add-game {
+  margin-bottom: 10px;
 }
