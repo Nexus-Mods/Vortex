@@ -194,18 +194,23 @@ function checkModsVersionImpl(
   return Promise.all(modsArray.map((mod: IMod) => {
 
     if (mod === undefined) {
-      log('warn', 'tried to check version to an unknown mod', { gameId });
+      checkVersionModsReport = 'Tried to check version to an unknown mod.';
       return null;
     }
 
     const fileId: number = getSafe(mod.attributes, ['fileId'], undefined);
 
     if (fileId === undefined) {
-      log('warn', 'tried to check version to an unknown mod file', { gameId });
+      checkVersionModsReport = 'Tried to check version to an unknown mod file.';
       return null;
     }
 
     const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+
+    if (gameId === null) {
+      checkVersionModsReport = 'Tried to check version to an unknown game Id.';
+      return null;
+    }
 
     return checkModsVersion(nexus, gameId, nexusModId, fileId)
       .then((newestFileId: number) => {
