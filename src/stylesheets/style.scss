@@ -11,6 +11,7 @@
   width: 250px;
   max-height: 90%;
   overflow-y: auto;
+  z-index: 2000;
 }
 
 #notifications::-webkit-scrollbar { 
@@ -836,7 +837,6 @@ Resizer.disabled:hover {
   }
   .Select-control {
     height: 20px;
-    //line-height: 0px;
   }
   .Select-input {
     height: 20px;
@@ -845,11 +845,9 @@ Resizer.disabled:hover {
     }
   }
   .Select-placeholder {
-    //line-height: 22px;
     font-weight: normal;
   }
   .Select--multi {
-    //line-height: 15px;
     padding: 0px 5px;
   }
   .Select.arrow-zone {
@@ -872,6 +870,10 @@ Resizer.disabled:hover {
 
 .btngroup-game-list {
   display: inline-flex;
+}
+
+.game-list-item .media-right {
+  vertical-align: middle;
 }
 
 #starter-dashlet {
