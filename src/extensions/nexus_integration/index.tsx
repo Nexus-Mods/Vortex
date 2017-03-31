@@ -207,6 +207,11 @@ function checkModsVersionImpl(
 
     const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
 
+    if (nexusModId === null) {
+      checkVersionModsReport = 'Tried to check version to an unknown mod Id.';
+      return null;
+    }
+
     if (gameId === null) {
       checkVersionModsReport = 'Tried to check version to an unknown game Id.';
       return null;
