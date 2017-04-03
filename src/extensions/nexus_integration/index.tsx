@@ -145,8 +145,10 @@ function processErrorMessage(statusCode: number, errorMessage: string, gameId: s
   if (statusCode === 404) {
     return { Error: 'Game not found', Game: gameId };
   } else if ((statusCode >= 500) && (statusCode < 600)) {
-    return { Error: 'Something is wrong with the Nexus server, nothing can be ' +
-     'done on your end: Internal server error' };
+    return {
+      Error: 'Something is wrong with the Nexus server, nothing can be ' +
+      'done on your end: Internal server error'
+    };
   } else {
     return {
       Error: 'Unknown error',
@@ -189,6 +191,7 @@ function checkModsVersionImpl(
   checkVersionModsReport = '';
 
   let modsArray = [];
+  let gameNotFoundFlag: boolean = false;
   const objectKeys = Object.keys(mods);
   objectKeys.forEach((key) => modsArray.push(mods[key]));
 
@@ -224,7 +227,14 @@ function checkModsVersionImpl(
       })
       .catch((err) => {
         let detail = processErrorMessage(err.statusCode, err.message, gameId);
-        checkVersionModsReport = checkVersionModsReport + detail.Error + '\n';
+        if (err.statusCode === 404) {
+          if (!gameNotFoundFlag) {
+            gameNotFoundFlag = true;
+            checkVersionModsReport = detail.Error + '\n';
+          }
+        } else {
+          checkVersionModsReport = checkVersionModsReport + detail.Error + '\n';
+        }
       });
   }));
 }
@@ -367,7 +377,7 @@ function init(context: IExtensionContextExt): boolean {
         .catch((err) => {
           context.api.store.dispatch(setUpdatingMods(gameId, false));
           showError(context.api.store.dispatch, 'An error occurred during the Mod Updating',
-           err.message);
+            err.message);
         });
     });
 

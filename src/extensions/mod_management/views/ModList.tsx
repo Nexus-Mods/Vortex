@@ -250,31 +250,35 @@ class ModList extends ComponentEx<IProps, {}> {
     const newestFileId = getSafe(mod.attributes, ['newestFileId'], undefined);
     const bugMessage = getSafe(mod.attributes, ['bugMessage'], '');
     const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+    const fileCategory: string = getSafe(mod.attributes, ['fileCategory'], undefined);
+    const isPrimary: boolean = getSafe(mod.attributes, ['isPrimary'], undefined);
 
     let versionIcon: string = '';
     let versionTooltip: string = '';
     let versionClassname: string = '';
 
-    if (bugMessage !== '') {
-      if (newestFileId === undefined) {
-        versionIcon = 'ban';
-        versionTooltip = 'Mod should be disabled because this version is '
-          + 'bugged and there is no update';
-        versionClassname = 'modUpdating-ban';
-      } else {
-        versionIcon = 'bug';
-        versionTooltip = 'Mod should be updated because the insalled version is bugged';
-        versionClassname = 'modUpdating-bug';
-      }
-    } else if (newestFileId !== undefined) {
-      if (newestFileId !== 0 && newestFileId !== fileId) {
-        versionIcon = 'cloud-download';
-        versionTooltip = 'Mod can be updated';
-        versionClassname = 'modUpdating-download';
-      } else if (newestFileId === 0 && fileId !== undefined && version !== undefined) {
-        versionIcon = 'external-link';
-        versionTooltip = 'Mod can be updated (but you will have to pick the file yourself)';
-        versionClassname = 'modUpdating-warning';
+    if (fileCategory !== 'MAIN' && !isPrimary) {
+      if (bugMessage !== '') {
+        if (newestFileId === undefined) {
+          versionIcon = 'ban';
+          versionTooltip = 'Mod should be disabled because this version is '
+            + 'bugged and there is no update';
+          versionClassname = 'modUpdating-ban';
+        } else {
+          versionIcon = 'bug';
+          versionTooltip = 'Mod should be updated because the insalled version is bugged';
+          versionClassname = 'modUpdating-bug';
+        }
+      } else if (newestFileId !== undefined) {
+        if (newestFileId !== 0 && newestFileId !== fileId) {
+          versionIcon = 'cloud-download';
+          versionTooltip = 'Mod can be updated';
+          versionClassname = 'modUpdating-download';
+        } else if (newestFileId === 0 && fileId !== undefined && version !== undefined) {
+          versionIcon = 'external-link';
+          versionTooltip = 'Mod can be updated (but you will have to pick the file yourself)';
+          versionClassname = 'modUpdating-warning';
+        }
       }
     }
 
@@ -304,7 +308,9 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   private renderChangelogs = (mod: IMod): JSX.Element => {
-    const changelogs = getSafe(mod.attributes, ['changelogHtml'], undefined);
+    let changelogs = getSafe(mod.attributes, ['changelogHtml'], undefined);
+    let regex = /<br[^>]*>/gi;
+    changelogs = changelogs.replace(regex, '\n');
     const { gameMode } = this.props;
 
     if (changelogs !== undefined) {

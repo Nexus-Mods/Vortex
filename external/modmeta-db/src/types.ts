@@ -101,6 +101,8 @@ export interface IModInfo {
   modId: string;
   modName: string;
   fileName: string;
+  fileCategory: string;
+  isPrimary: boolean;
   fileSizeBytes: number;
   gameId: string;
   logicalFileName?: string;

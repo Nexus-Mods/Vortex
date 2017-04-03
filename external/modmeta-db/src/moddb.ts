@@ -277,6 +277,8 @@ class ModDB {
         fileMD5: nexusObj.file_details.md5,
         fileId: nexusObj.file_details.file_id,
         fileName: nexusObj.file_details.file_name,
+        fileCategory: nexusObj.file_details.category_name,
+        isPrimary: nexusObj.file_details.is_primary,
         changelogHtml: nexusObj.file_details.changelog_html,
         fileSizeBytes: nexusObj.file_details.file_size,
         logicalFileName: nexusObj.file_details.name,

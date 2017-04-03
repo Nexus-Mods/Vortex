@@ -30,6 +30,8 @@ function filterModInfo(input: any): any {
   transfer(result, 'version', input.meta, ['fileVersion']);
   transfer(result, 'logicalFileName', input.meta, ['fileName']);
   transfer(result, 'uploadedTimestamp', input.meta, ['uploadedTimestamp']);
+  transfer(result, 'fileCategory', input.meta, ['fileCategory']);
+  transfer(result, 'isPrimary', input.meta, ['isPrimary']);
 
   return result;
 }
