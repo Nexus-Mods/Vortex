@@ -4,12 +4,14 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import Advanced from '../../../views/Advanced';
 import Icon from '../../../views/Icon';
 import { Button, IconButton } from '../../../views/TooltipControls';
 
 import { setGamePath } from '../../gamemode_management/actions/settings';
 import { IProfile } from '../../profile_management/types/IProfile';
 
+import { setAddGameDialogVisible } from '../actions/session';
 import { addDiscoveredGame, setGameHidden, setPickerLayout } from '../actions/settings';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
@@ -22,6 +24,21 @@ import { ListGroup, ProgressBar } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 import update = require('react-addons-update');
+
+function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
+  return {
+    id,
+    name: discovered.name,
+    shortName: discovered.shortName,
+    executable: discovered.executable,
+    mergeMods: discovered.mergeMods,
+    extensionPath: discovered.extensionPath,
+    logo: discovered.logo,
+    modPath: discovered.modPath,
+    requiredFiles: [],
+    supportedTools: [],
+  };
+}
 
 interface IConnectedProps {
   lastActiveProfile: { [gameId: string]: string };
@@ -38,6 +55,7 @@ interface IActionProps {
   onSetPickerLayout: (layout: 'list' | 'small' | 'large') => void;
   onSetGamePath: (gameId: string, gamePath: string, modPath: string) => void;
   onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) => void;
+  onSetAddGameDialogVisible: () => void;
 }
 
 interface IComponentState {
@@ -93,19 +111,37 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
       }
     });
 
+    Object.keys(discoveredGames).forEach(gameId => {
+      if (knownGames.find(game => game.id === gameId) === undefined) {
+        if (profileGames.has(gameId)) {
+          managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
+        } else {
+          discoveredGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
+        }
+      }
+    });
+
     return (
       <Layout type='column'>
         <Fixed>
           <div>
-            <Button
-              id='show-hidden-games'
-              tooltip={t('Show / Hide hidden games')}
-              onClick={this.toggleHidden}
-            >
-              <Icon name={showHidden ? 'eye-slash' : 'eye'} />
-            </Button>
+            <Advanced>
+              <Button
+                id='add-game-manually'
+                tooltip={t('Manually add a game')}
+                onClick={this.showAddGameDialog}
+              >
+                {t('Add Game')}
+              </Button>
+            </Advanced>
           </div>
           <div id='gamepicker-layout'>
+            <IconButton
+              id='show-hidden-games'
+              tooltip={t('Show / Hide hidden games')}
+              onClick={ this.toggleHidden }
+              icon={showHidden ? 'eye-slash' : 'eye'}
+            />
             <IconButton
               id='gamepicker-layout-list'
               className={ pickerLayout === 'list' ? 'btn-toggle-on' : 'btn-toggle-off' }
@@ -168,6 +204,10 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
         </Fixed>
       </Layout>
     );
+  }
+
+  private showAddGameDialog = () => {
+    this.props.onSetAddGameDialogVisible();
   }
 
   private toggleHidden = () => {
@@ -278,6 +318,7 @@ function mapDispatchToProps(dispatch): IActionProps {
       dispatch(setGamePath(gameId, gamePath, modPath)),
     onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) =>
       dispatch(addDiscoveredGame(gameId, result)),
+    onSetAddGameDialogVisible: () => dispatch(setAddGameDialogVisible(true)),
   };
 }
 

@@ -65,50 +65,51 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   public render(): JSX.Element {
-    let { gameMode, knownGames } = this.props;
+    let { discoveredGames, gameMode, knownGames } = this.props;
 
     if (gameMode === undefined) {
       return null;
     }
 
-    let game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
+    const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
+    const discoveredGame = discoveredGames[gameMode];
+    const gameName = getSafe(discoveredGame, ['name'], getSafe(game, ['name'], gameMode));
 
     return (
       <Media id='starter-dashlet'>
         <Media.Left>
-          {this.renderGameIcon(game)}
+          {this.renderGameIcon(game, discoveredGame)}
           {this.renderEditToolDialog()}
         </Media.Left>
         <Media.Right>
           <Media.Heading>
-            {game === undefined ? gameMode : game.name}
+            {gameName}
           </Media.Heading>
-          {this.renderToolIcons(game)}
+          {this.renderToolIcons(game, discoveredGame)}
         </Media.Right>
       </Media>
     );
   }
 
-  private renderToolIcons(game: IGameStored): JSX.Element {
-    const { discoveredGames, discoveredTools, primaryTool } = this.props;
+  private renderToolIcons(game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element {
+    const { discoveredTools, primaryTool } = this.props;
 
-    if (game === undefined) {
+    if ((game === undefined) && (discoveredGame === undefined)) {
       return null;
     }
 
-    const gameDiscovery = discoveredGames[game.id];
-
-    const knownTools: IToolStored[] = game.supportedTools;
+    const gameId = discoveredGame.id || game.id;
+    const knownTools: IToolStored[] = getSafe(game, ['supportedTools'], []);
     const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
 
     // add the main game executable
     let starters: StarterInfo[] = [
-      new StarterInfo(game, gameDiscovery),
+      new StarterInfo(game, discoveredGame),
     ];
 
     // add the tools provided by the game extension (whether they are found or not)
     knownTools.forEach((tool: IToolStored) => {
-      starters.push(new StarterInfo(game, gameDiscovery, tool, discoveredTools[tool.id]));
+      starters.push(new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]));
     });
 
     // finally, add those tools that were added manually
@@ -116,14 +117,14 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
       .filter(toolId => !preConfTools.has(toolId))
       .forEach(toolId => {
         try {
-          starters.push(new StarterInfo(game, gameDiscovery, undefined, discoveredTools[toolId]));
+          starters.push(new StarterInfo(game, discoveredGame, undefined, discoveredTools[toolId]));
         } catch (err) {
-          log('error', 'tool configuration invalid', { gameId: game.id, toolId });
+          log('error', 'tool configuration invalid', { gameId, toolId });
         }
       }
       );
 
-    let primary = primaryTool || game.id;
+    let primary = primaryTool || gameId;
 
     const hidden = starters.filter(starter =>
       (discoveredTools[starter.id] !== undefined)
@@ -245,12 +246,15 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     onSetToolVisible(gameMode, toolId, true);
   }
 
-  private renderGameIcon = (game: IGameStored): JSX.Element => {
-    if (game === undefined) {
+  private renderGameIcon = (game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element => {
+    if ((game === undefined) && (discoveredGame === undefined)) {
       // assumption is that this can only happen during startup
       return <Icon name='spinner' pulse />;
     } else {
-      let logoPath = path.join(game.extensionPath, game.logo);
+      let logoPath = path.join(
+        getSafe(discoveredGame, ['extensionPath'], getSafe(game, ['extensionPath'], '')),
+        getSafe(discoveredGame, ['logo'], getSafe(game, ['logo'], ''))
+        );
       return <img className='welcome-game-logo' src={logoPath} />;
     }
   }

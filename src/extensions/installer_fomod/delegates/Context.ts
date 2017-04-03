@@ -36,28 +36,30 @@ export class Context extends DelegateBase {
   constructor(api: IExtensionApi, gameId: string) {
     super(api);
     this.gameId = gameId;
+
     this.gameDiscovery =
         getSafe(api.store.getState(),
                 ['settings', 'gameMode', 'discovered', gameId], undefined);
     this.gameInfo =
         getSafe(api.store.getState(), ['session', 'gameMode', 'known'], [])
             .find((game) => game.id === gameId);
-    if ((this.gameDiscovery === undefined) || (this.gameInfo === undefined)) {
-      throw new Error('game not installed');
+    if (this.gameDiscovery === undefined) {
+      throw new Error(`game (${gameId}) not installed`);
     }
   }
 
   public getAppVersion =
       (dummy: any, callback: (err, res: string) => void) => {
-        log('info', 'getAppVersion called', '');
+        log('info', 'getAppVersion called');
         return callback(null, app.getVersion());
       }
 
   public getCurrentGameVersion =
       (dummy: any, callback: (err, res: string) => void) => {
-        log('info', 'getCurrentGameVersion called', '');
+        log('info', 'getCurrentGameVersion called');
+        const executable = this.gameDiscovery.executable || this.gameInfo.executable;
         const gameExePath =
-            path.join(this.gameDiscovery.path, this.gameInfo.executable);
+            path.join(this.gameDiscovery.path, executable);
         return callback(null, getVersion(gameExePath));
       }
 

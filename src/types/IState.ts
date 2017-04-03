@@ -118,6 +118,7 @@ export interface ISettings {
 
 export interface ISessionGameMode {
   known: IGameStored[];
+  addDialogVisible: boolean;
 }
 
 /**

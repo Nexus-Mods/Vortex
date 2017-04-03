@@ -3,6 +3,7 @@ import { IComponentContext } from '../../types/IComponentContext';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
+import { FormPathItem, FormTextItem } from '../../views/FormFields';
 import { Button, IconButton } from '../../views/TooltipControls';
 
 import { log } from '../../util/log';
@@ -17,7 +18,7 @@ import * as fs from 'fs-extra-promise';
 import { extractIconToFile } from 'icon-extract';
 import * as path from 'path';
 import * as React from 'react';
-import { ControlLabel, Form, FormControl, InputGroup, ListGroup,
+import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
@@ -185,7 +186,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
 
   public render(): JSX.Element {
     const { t, onClose, tool } = this.props;
-    let realName = this.state.tool.name;
+    const { isGame, name } = this.state.tool;
+    let realName = name;
     if ((realName === undefined) && (tool !== undefined)) {
       realName = tool.name;
     }
@@ -199,74 +201,85 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
         </Modal.Header>
 
         <Modal.Body>
-          <Form>
-            <ControlLabel>{t('Name')}</ControlLabel>
-            <FormControl
-              type='text'
-              value={realName}
+          <Form horizontal>
+            <FormTextItem
+              t={t}
+              controlId='name'
+              label={t('Name')}
               placeholder={t('Name')}
-              onChange={this.handleChangeName}
+              stateKey='name'
+              value={realName}
+              onChangeValue={this.handleChange}
               maxLength={50}
             />
-
-            <ControlLabel>{t('Target')}</ControlLabel>
-            <InputGroup>
-              <FormControl
+            {isGame ?
+              <FormTextItem
+                t={t}
+                controlId='target'
+                label={t('Target')}
+                placeholder={t('Target')}
+                stateKey='target'
                 value={this.state.tool.exePath}
-                placeholder={t('Path to executable')}
-                ref={this.setPathControl}
                 readOnly
+              /> :
+              <FormPathItem
+                t={t}
+                controlId='target'
+                label={t('Target')}
+                placeholder={t('Target')}
+                stateKey='exePath'
+                value={this.state.tool.exePath}
+                onChangeValue={this.handleChange}
+                directory={false}
               />
-              <InputGroup.Button>
-              { this.state.tool.isGame ? null :
-                <IconButton
-                  id='change-tool-path'
-                  tooltip={t('Change')}
-                  onClick={this.handleChangePath}
-                  icon='folder-open'
-                />
-              }
-              </InputGroup.Button>
-            </InputGroup>
-
-            <ControlLabel>{t('Command Line')}</ControlLabel>
-            <FormControl
-              type='text'
-              value={this.state.tool.commandLine.join(' ')}
+            }
+            <FormTextItem
+              t={t}
+              controlId='cmdline'
+              label={t('Command Line')}
               placeholder={t('Command Line Parameters')}
-              onChange={this.handleChangeParameters}
+              stateKey='commandLine'
+              value={this.state.tool.commandLine.join(' ')}
+              onChangeValue={this.handleChangeParameters}
             />
 
-            <ControlLabel>{t('Start in')}</ControlLabel>
-            <InputGroup>
-              <FormControl
-                value={this.state.tool.workingDirectory}
+            <FormPathItem
+                t={t}
+                controlId='workingdir'
+                label={t('Start In')}
                 placeholder={t('Working Directory')}
-                readOnly
-              />
-              <InputGroup.Button>
-                <IconButton
-                  id='change-current-working-directory-path'
-                  tooltip={t('Change')}
-                  onClick={this.setWorkingDirectory}
-                  icon='folder-open'
-                />
-              </InputGroup.Button>
-            </InputGroup>
+                stateKey='workingDirectory'
+                value={this.state.tool.workingDirectory}
+                onChangeValue={this.handleChange}
+                directory={true}
+                readOnly={isGame}
+            />
 
-            <ControlLabel>{t('Environment Variables')}</ControlLabel>
-            {this.renderEnvironment(this.state.tool.environment)}
+            <FormGroup>
+              <Col sm={3}>
+                <ControlLabel>{t('Environment Variables')}</ControlLabel>
+              </Col>
+              <Col sm={9}>
+                {this.renderEnvironment(this.state.tool.environment) }
+              </Col>
+            </FormGroup>
 
-            <ControlLabel>{t('Icon')}</ControlLabel>
-            <FormControl.Static>
-              <Button
-                id='change-tool-icon'
-                tooltip={t('Change')}
-                onClick={this.handleChangeIcon}
-              >
-                <ToolIcon imageUrl={tool.iconPath} imageId={this.state.imageId} valid={true} />
-              </Button>
-            </FormControl.Static>
+            <FormGroup>
+              <Col sm={3}>
+                <ControlLabel>{t('Icon')}</ControlLabel>
+              </Col>
+              <Col sm={9}>
+                <FormControl.Static>
+                  <Button
+                    id='change-tool-icon'
+                    tooltip={t('Change')}
+                    onClick={this.handleChangeIcon}
+                  >
+                    <ToolIcon imageUrl={tool.iconPath} imageId={this.state.imageId} valid={true} />
+                  </Button>
+                </FormControl.Static>
+              </Col>
+            </FormGroup>
           </Form>
         </Modal.Body>
         <Modal.Footer>
@@ -340,16 +353,12 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     this.nextState.imageId = new Date().getTime();
   }
 
-  private handleChange(field: string, value: any): void {
+  private handleChange = (field: string, value: any): void => {
     this.nextState.tool[field] = value;
   }
 
-  private handleChangeName = (event) => {
-    this.handleChange('name', event.target.value);
-  }
-
-  private handleChangeParameters = (event) => {
-    this.handleChange('commandLine', event.target.value.split(' '));
+  private handleChangeParameters = (key, value) => {
+    this.handleChange('commandLine', value.split(' '));
   }
 
   private setWorkingDirectory = () => {

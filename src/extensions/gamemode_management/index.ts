@@ -13,6 +13,7 @@ import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 
 import GameModeManager from './GameModeManager';
+import AddGameDialog from './views/AddGameDialog';
 import GamePicker from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
 import ProgressFooter from './views/ProgressFooter';
@@ -29,8 +30,11 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
   context.registerFooter('discovery-progress', ProgressFooter);
 
+  context.registerIcon('game-managed-buttons', HideGameIcon);
   context.registerIcon('game-discovered-buttons', HideGameIcon);
   context.registerIcon('game-undiscovered-buttons', HideGameIcon);
+
+  context.registerDialog('add-game', AddGameDialog);
 
   context.once(() => {
     let store: Redux.Store<IState> = context.api.store;
@@ -73,11 +77,10 @@ function init(context: IExtensionContext): boolean {
       return gameModeManager.setupGameMode(newGameId)
         .then(() => {
           gameModeManager.setGameMode(oldGameId, newGameId);
-
         }).catch((err) => {
           showError(store.dispatch, 'Failed to set game mode', err);
-          // try to revert
-          store.dispatch(setNextProfile(oldProfileId));
+          // unset profile
+          store.dispatch(setNextProfile(undefined));
         });
     };
 

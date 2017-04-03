@@ -43,17 +43,17 @@ class StarterInfo implements IStarterInfo {
 
   constructor(game: IGameStored, gameDiscovery: IDiscoveryResult,
               tool?: IToolStored, toolDiscovery?: IDiscoveredTool) {
-    this.gameId = game.id;
-    this.mExtensionPath = game.extensionPath;
+    this.gameId = gameDiscovery.id || game.id;
+    this.mExtensionPath = gameDiscovery.extensionPath || game.extensionPath;
 
     if ((tool === undefined) && (toolDiscovery === undefined)) {
-      this.id = game.id;
+      this.id = this.gameId;
       this.isGame = true;
       this.initFromGame(game, gameDiscovery);
     } else {
       this.id = getSafe(toolDiscovery, ['id'], getSafe(tool, ['id'], undefined));
       this.isGame = false;
-      this.initFromTool(game, tool, toolDiscovery);
+      this.initFromTool(this.gameId, tool, toolDiscovery);
     }
     if ((this.id === undefined) || (this.name === undefined) || (this.mLogoName === undefined)) {
       throw new Error('invalid starter information');
@@ -69,17 +69,17 @@ class StarterInfo implements IStarterInfo {
   }
 
   private initFromGame(game: IGameStored, gameDiscovery: IDiscoveryResult) {
-    this.name = game.name;
-    this.exePath = path.join(gameDiscovery.path, game.executable);
+    this.name = gameDiscovery.name || game.name;
+    this.exePath = path.join(gameDiscovery.path, gameDiscovery.executable || game.executable);
     this.commandLine = [];
     this.workingDirectory = gameDiscovery.path;
     this.environment = gameDiscovery.environment || {};
-    this.iconOutPath = this.gameIconRW(game.id);
+    this.iconOutPath = this.gameIconRW(this.gameId);
 
-    this.mLogoName = game.logo;
+    this.mLogoName = gameDiscovery.logo || game.logo;
   }
 
-  private initFromTool(game: IGameStored, tool: IToolStored, toolDiscovery: IDiscoveredTool) {
+  private initFromTool(gameId: string, tool: IToolStored, toolDiscovery: IDiscoveredTool) {
     if (toolDiscovery !== undefined) {
       this.name = getSafe(toolDiscovery, ['name'], getSafe(tool, ['name'], undefined));
       this.exePath = toolDiscovery.path;
@@ -99,7 +99,7 @@ class StarterInfo implements IStarterInfo {
       this.environment = tool.environment;
       this.mLogoName = tool.logo;
     }
-    this.iconOutPath = this.toolIconRW(game.id, this.id);
+    this.iconOutPath = this.toolIconRW(gameId, this.id);
   }
 
   private gameIcon(gameId: string, extensionPath: string, logo: string) {

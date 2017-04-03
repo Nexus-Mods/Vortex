@@ -1,13 +1,8 @@
 import { IGame } from '../../types/IGame';
 import { ITool } from '../../types/ITool';
 
-import { app as appIn, remote } from 'electron';
-import * as path from 'path';
-
 import * as Promise from 'bluebird';
 import Registry = require('winreg');
-
-const app = appIn || remote.app;
 
 function findGame() {
   if (Registry === undefined) {

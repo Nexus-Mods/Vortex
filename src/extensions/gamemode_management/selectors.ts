@@ -26,3 +26,19 @@ export function currentGameDiscovery(state: any): IDiscoveryResult {
   const gameMode = activeGameId(state);
   return getSafe(state, ['settings', 'gameMode', 'discovered', gameMode], undefined);
 }
+
+export function gameName(state: any, gameId: string): string {
+  const fromDiscovery = getSafe(
+      state, ['settings', 'gameMode', 'discovered', gameId, 'name'], undefined);
+  if (fromDiscovery !== undefined) {
+    return fromDiscovery;
+  }
+
+  const known = getSafe(state, ['session', 'gameMode', 'known'], [] as IGameStored[])
+                    .find(game => game.id === gameId);
+  if (known !== undefined) {
+    return known.name;
+  } else {
+    return undefined;
+  }
+}

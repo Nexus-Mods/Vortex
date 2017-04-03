@@ -48,12 +48,20 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { game } = this.props;
+    const { game, gameDiscovery } = this.props;
     const { starter } = this.state;
+
+    if (starter === undefined) {
+      return null;
+    }
+
+    let displayName =
+      getSafe(gameDiscovery, ['shortName'], getSafe(game, ['shortName'], undefined))
+      || getSafe(gameDiscovery, ['name'], getSafe(game, ['name'], undefined));
 
     return (<Button className='btn-quicklaunch' onClick={this.start}>
       <ToolIcon imageId={42} imageUrl={starter.iconPath} valid={true} />
-      <span className='menu-label'>{ game.shortName || game.name }</span>
+      <span className='menu-label'>{ displayName }</span>
     </Button>);
   }
 
@@ -107,12 +115,16 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   private makeStarter(props: IProps): StarterInfo {
-    const { discoveredTools, game, gameDiscovery, primaryTool } = this.props;
+    const { discoveredTools, game, gameDiscovery, primaryTool } = props;
+    if (gameDiscovery === undefined) {
+      return undefined;
+    }
+
     if (primaryTool === undefined) {
       return new StarterInfo(game, gameDiscovery);
     } else {
       return new StarterInfo(game, gameDiscovery,
-                             game.supportedTools[primaryTool],
+                             game !== undefined ? game.supportedTools[primaryTool] : undefined,
                              discoveredTools[primaryTool]);
     }
   }

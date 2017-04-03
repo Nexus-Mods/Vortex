@@ -7,7 +7,7 @@ export interface IGameStored {
   logo?: string;
   modPath: string;
   mergeMods: boolean;
-  extensionPath?: string;
+  extensionPath: string;
   requiredFiles: string[];
   executable: string;
   supportedTools: IToolStored[];

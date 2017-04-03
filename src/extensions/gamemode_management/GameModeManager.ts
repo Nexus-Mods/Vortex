@@ -74,14 +74,14 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public setGameMode(oldMode: string, newMode: string): Promise<void> {
-    if (this.mStore.getState().session.gameMode.known.findIndex((knownGame: IGameStored) => {
-      return knownGame.id === newMode;
-    }) === -1) {
+    let game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
+    let gameDiscovery = this.mStore.getState().settings.gameMode.discovered[newMode];
+    if ((game === undefined) && (gameDiscovery === undefined)) {
       // new game mode is not valid
       return Promise.reject(new Error('unknown game mode'));
     }
 
-    log('info', 'changed game mode', {oldMode, newMode, process: process.type});
+    log('info', 'changed game mode', {oldMode, newMode});
     this.mOnGameModeActivated(newMode);
   }
 
@@ -94,10 +94,12 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public setupGameMode(gameMode: string): Promise<void> {
-    let game: IGame = this.mKnownGames.find((ele: IGame) => ele.id === gameMode);
-    if (game === undefined) {
+    let game = this.mKnownGames.find(knownGame => knownGame.id === gameMode);
+    let gameDiscovery = this.mStore.getState().settings.gameMode.discovered[gameMode];
+
+    if ((game === undefined) && (gameDiscovery === undefined)) {
       return Promise.reject(new Error('invalid game mode'));
-    } else if (game.setup === undefined) {
+    } else if ((game === undefined) || (game.setup === undefined)) {
       return Promise.resolve();
     } else {
       return game.setup();

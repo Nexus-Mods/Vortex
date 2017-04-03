@@ -1,4 +1,5 @@
-import {IExtensionContext} from '../../types/IExtensionContext';
+import { IExtensionContext } from '../../types/IExtensionContext';
+import { log } from '../../util/log';
 
 import { ISupportedResult } from '../mod_management/types/ITestSupported';
 
@@ -12,8 +13,6 @@ import * as edge from 'edge';
 import * as path from 'path';
 
 import * as util from 'util';
-
-import {log} from '../../util/log';
 
 const testSupportedLib = edge.func({
   assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller',

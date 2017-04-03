@@ -1,8 +1,10 @@
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
+import { getSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
 
+import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 
 import { setFeature, setProfile } from '../actions/profiles';
@@ -31,6 +33,7 @@ interface IConnectedProps {
   profiles: { [id: string]: IProfile };
   language: string;
   games: IGameStored[];
+  discoveredGames: { [gameId: string]: IDiscoveryResult };
 }
 
 interface IActionProps {
@@ -91,16 +94,18 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
       return this.renderEditProfile();
     }
 
-    const { currentProfile, games, onSetNextProfile, profiles } = this.props;
+    const { currentProfile, discoveredGames, games, onSetNextProfile, profiles } = this.props;
 
-    let game = games.find((iter: IGameStored) => iter.id === profiles[profileId].gameId);
+    const game = games.find((iter: IGameStored) => iter.id === profiles[profileId].gameId);
+    const discovered = discoveredGames[profiles[profileId].gameId];
+    const gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
 
     return (profileId === this.state.edit) ? null : (
       <ProfileItem
         key={ profileId }
         profile={ profiles[profileId] }
         features={ features }
-        gameName={ game.name }
+        gameName={ gameName }
         active={ currentProfile === profileId }
         onClone={ this.onCloneProfile }
         onActivate={ onSetNextProfile }
@@ -206,6 +211,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     profiles: state.persistent.profiles,
     language: state.settings.interface.language,
     games: state.session.gameMode.known,
+    discoveredGames: state.settings.gameMode.discovered,
   };
 }
 
