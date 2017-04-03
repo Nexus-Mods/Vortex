@@ -155,9 +155,14 @@ class InstallManager {
       })
       .then(() => {
         const currentProfile = activeProfile(api.store.getState());
-        let oldMod = this.checkPreviousVersionExists(fullInfo.meta.fileId, api, gameId);
+
+        let oldMod = undefined;
+        if (fullInfo.meta !== undefined) {
+          oldMod = this.retrievePreviousVersionMod(fullInfo.meta.fileId, api.store, gameId);
+        }
+
         if (oldMod !== undefined) {
-          return this.userVersionChoice(oldMod, api)
+          return this.userVersionChoice(oldMod, api.store)
             .then((action: string) => {
               if (action === 'Install') {
                 return null;
@@ -392,11 +397,11 @@ class InstallManager {
     return installName in (api.store.getState().persistent.mods[gameMode] || {});
   }
 
-  private checkPreviousVersionExists(
+  private retrievePreviousVersionMod(
     fileId: number,
-    api: IExtensionApi,
+    store: Redux.Store<any>,
     gameMode: string): IMod {
-    let mods = api.store.getState().persistent.mods[gameMode];
+    let mods = store.getState().persistent.mods[gameMode];
     let mod: IMod;
     Object.keys(mods).forEach(key => {
       const newestFileId: number = getSafe(mods[key].attributes, ['newestFileId'], undefined);
@@ -409,10 +414,9 @@ class InstallManager {
     return mod;
   }
 
-  private userVersionChoice(oldMod: IMod, api: IExtensionApi): Promise<string> {
+  private userVersionChoice(oldMod: IMod, store: Redux.Store<any>): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      api.store
-        .dispatch(showDialog(
+      store.dispatch(showDialog(
           'question', 'Previous mod version found',
           {
             message:

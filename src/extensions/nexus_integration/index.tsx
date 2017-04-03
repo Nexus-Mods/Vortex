@@ -145,7 +145,8 @@ function processErrorMessage(statusCode: number, errorMessage: string, gameId: s
   if (statusCode === 404) {
     return { Error: 'Game not found', Game: gameId };
   } else if ((statusCode >= 500) && (statusCode < 600)) {
-    return { Error: 'Internal server error' };
+    return { Error: 'Something is wrong with the Nexus server, nothing can be ' +
+     'done on your end: Internal server error' };
   } else {
     return {
       Error: 'Unknown error',
@@ -194,26 +195,26 @@ function checkModsVersionImpl(
   return Promise.all(modsArray.map((mod: IMod) => {
 
     if (mod === undefined) {
-      checkVersionModsReport = 'Tried to check version to an unknown mod.';
+      log('warn', 'tried to check version to an unknown mod', { gameId });
       return null;
     }
 
     const fileId: number = getSafe(mod.attributes, ['fileId'], undefined);
 
     if (fileId === undefined) {
-      checkVersionModsReport = 'Tried to check version to an unknown mod file.';
+      log('warn', 'tried to check version to an unknown mod file', { gameId });
       return null;
     }
 
     const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
 
     if (nexusModId === null) {
-      checkVersionModsReport = 'Tried to check version to an unknown mod Id.';
+      log('warn', 'tried to check version to an unknown mod id', { nexusModId });
       return null;
     }
 
     if (gameId === null) {
-      checkVersionModsReport = 'Tried to check version to an unknown game Id.';
+      log('warn', 'tried to check version to an unknown game id', { gameId });
       return null;
     }
 
