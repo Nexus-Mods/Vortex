@@ -1,3 +1,5 @@
+import { log } from './log';
+
 import i18n = require('i18next');
 import FSBackend = require('i18next-node-fs-backend');
 
@@ -10,6 +12,7 @@ if (dirName.endsWith('.asar')) {
 }
 
 const basePath = path.normalize(path.join(dirName, 'locales'));
+log('info', 'reading localizations', basePath);
 
 let debugging = false;
 
@@ -20,6 +23,12 @@ interface ITranslationEntry {
 }
 let missingKeys = { common: {} };
 
+export interface IInitResult {
+  i18n: I18next.I18n;
+  tFunc: I18next.TranslationFunction;
+  error?: Error;
+}
+
 /**
  * initialize the internationalization library
  * 
@@ -27,40 +36,47 @@ let missingKeys = { common: {} };
  * @param {string} language
  * @returns {I18next.I18n}
  */
-function init(language: string): I18next.I18n {
-  return i18n
-    .use(FSBackend)
-    .init({
-      lng: language,
-      fallbackLng: 'en',
-      fallbackNS: 'common',
+function init(language: string): Promise<IInitResult> {
+  return new Promise<IInitResult>((resolve, reject) => {
+    const res = i18n.use(FSBackend).init(
+        {
+          lng: language,
+          fallbackLng: 'en',
+          fallbackNS: 'common',
 
-      ns: ['common'],
-      defaultNS: 'common',
+          ns: ['common'],
+          defaultNS: 'common',
 
-      nsSeparator: ':::',
-      keySeparator: '::',
+          nsSeparator: ':::',
+          keySeparator: '::',
 
-      debug: false,
+          debug: false,
 
-      saveMissing: debugging,
+          saveMissing: debugging,
 
-      missingKeyHandler: (lng, ns, key, fallbackValue) => {
-        if (missingKeys[ns] === undefined) {
-          missingKeys[ns] = {};
-        }
-        missingKeys[ns][key] = key;
-      },
+          missingKeyHandler: (lng, ns, key, fallbackValue) => {
+            if (missingKeys[ns] === undefined) {
+              missingKeys[ns] = {};
+            }
+            missingKeys[ns][key] = key;
+          },
 
-      interpolation: {
-        escapeValue: false,
-      },
+          interpolation: {
+            escapeValue: false,
+          },
 
-      backend: {
-        loadPath: path.join(basePath, '{{lng}}', '{{ns}}.json'),
-        addPath: path.join(basePath, '{{lng}}', '{{ns}}.missing.json'),
-      },
-    });
+          backend: {
+            loadPath: path.join(basePath, '{{lng}}', '{{ns}}.json'),
+            addPath: path.join(basePath, '{{lng}}', '{{ns}}.missing.json'),
+          },
+        },
+        (error, tFunc) => {
+          if ((error !== null) && (error !== undefined)) {
+            return resolve({ i18n: res, tFunc: str => str, error });
+          }
+          resolve({ i18n: res, tFunc });
+        });
+  });
 }
 
 export function debugTranslations(enable?: boolean) {

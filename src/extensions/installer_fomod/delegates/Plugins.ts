@@ -2,7 +2,7 @@ import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
 import {getSafe} from '../../../util/storeHelper';
 
-import DelegateBase from './delegateBase';
+import DelegateBase from './DelegateBase';
 
 import * as util from 'util';
 

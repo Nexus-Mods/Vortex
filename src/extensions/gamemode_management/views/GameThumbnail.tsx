@@ -1,4 +1,4 @@
-import { ComponentEx, translate } from '../../../util/ComponentEx';
+import { ComponentEx } from '../../../util/ComponentEx';
 import IconBar from '../../../views/IconBar';
 import { IGameStored } from '../types/IGameStored';
 
@@ -7,6 +7,7 @@ import * as React from 'react';
 import { Panel } from 'react-bootstrap';
 
 export interface IProps {
+  t: I18next.TranslationFunction;
   game: IGameStored;
   active: boolean;
   large: boolean;
@@ -45,5 +46,4 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
   }
 }
 
-export default
-  translate(['common'], { wait: false })(GameThumbnail) as React.ComponentClass<IProps>;
+export default GameThumbnail as React.ComponentClass<IProps>;

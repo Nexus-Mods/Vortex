@@ -1,4 +1,4 @@
-import { ComponentEx, translate } from '../../../util/ComponentEx';
+import { ComponentEx } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
 import { Icon as TooltipIcon, IconButton } from '../../../views/TooltipControls';
@@ -9,6 +9,7 @@ import { IProfileFeature } from '../types/IProfileFeature';
 import * as React from 'react';
 
 export interface IProps {
+  t: I18next.TranslationFunction;
   active: boolean;
   profile: IProfile;
   gameName: string;
@@ -125,7 +126,4 @@ class ProfileItem extends ComponentEx<IProps, {}> {
   }
 }
 
-export default
-  translate(['common'], { wait: false })(
-    ProfileItem
-  ) as React.ComponentClass<IProps>;
+export default ProfileItem as React.ComponentClass<IProps>;

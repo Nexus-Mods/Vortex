@@ -6,7 +6,7 @@ import { II18NProps } from '../types/II18NProps';
 import { IIconDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
 import { IState } from '../types/IState';
-import { connect, extend, translate } from '../util/ComponentEx';
+import { connect, extend } from '../util/ComponentEx';
 import { getSafe } from '../util/storeHelper';
 import DeveloperType from './Developer';
 import Dialog from './Dialog';
@@ -26,6 +26,7 @@ import { Fixed, Flex, Layout } from 'react-layout-pane';
 import update = require('react-addons-update');
 
 export interface IBaseProps {
+  t: I18next.TranslationFunction;
   className: string;
   api: IExtensionApi;
 }
@@ -361,7 +362,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 function registerMainPage(instance: MainWindow,
                           icon: string,
                           title: string,
-                          component: React.ComponentClass<any>,
+                          component: React.ComponentClass<any> | React.StatelessComponent<any>,
                           options: IMainPageOptions) {
   return {
     icon, title, component,
@@ -372,8 +373,6 @@ function registerMainPage(instance: MainWindow,
 }
 
 export default
-  translate(['common'], { wait: false })(
-    extend(registerMainPage)(
-      connect(mapStateToProps, mapDispatchToProps)(MainWindow)
-    )
+  extend(registerMainPage)(
+    connect(mapStateToProps, mapDispatchToProps)(MainWindow)
   ) as React.ComponentClass<IBaseProps>;

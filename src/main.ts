@@ -2,6 +2,9 @@
  * entry point for the main process
  */
 
+import timeRequire from './util/timeRequire';
+let stopTime = timeRequire();
+
 import 'source-map-support/register';
 
 import { setMaximized, setWindowPosition, setWindowSize } from './actions/window';
@@ -12,17 +15,14 @@ import ExtensionManager from './util/ExtensionManager';
 import { log, setupLogging } from  './util/log';
 import { setupStore } from './util/store';
 import { getSafe } from './util/storeHelper';
+import { delayed } from './util/util';
 
 import * as Promise from 'bluebird';
 import { BrowserWindow, Menu, Tray, app } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
-import doRestart = require('electron-squirrel-startup');
-
-if (doRestart) {
-  app.quit();
-}
+stopTime();
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -139,11 +139,18 @@ function createWindow() {
       mainWindow.maximize();
     }
 
+    // ensure the splash screen remains visible
+    loadingScreen.setAlwaysOnTop(true);
+
     if (loadingScreen !== undefined) {
-      loadingScreen.webContents.send('fade-out');
-      setTimeout(() => {
-        loadingScreen.destroy();
-      }, 500);
+      // don't fade out immediately, otherwise the it looks odd
+      // as the main window appears at the same time
+      delayed(200)
+      .then(() => loadingScreen.webContents.send('fade-out'))
+      // wait for the fade out animation to finish before destroying
+      // the window
+      .then(() => delayed(500))
+      .then(() => loadingScreen.destroy());
     }
   });
 
@@ -182,22 +189,38 @@ function createWindow() {
   });
 }
 
-function createLoadingScreen() {
+function createLoadingScreen(): Promise<undefined> {
+  return new Promise<undefined>((resolve, reject) => {
+  // TODO: we can't use the mainWindow as the parent here because it's not created yet.
+  //       this makes the main window hide the splash screen as soon as it shows up.
+  //       we can't create it yet because stuff isn't loaded yet. Maybe if we could create
+  //       the main window in an "empty" mode where it doesn't try to load extensions&access
+  //       the store...
   loadingScreen = new BrowserWindow({
-    frame: false, parent: mainWindow, width: 520, height: 178, transparent: true,
-  });
+    frame: false, parent: mainWindow, width: 520, height: 178, transparent: true, show: false,
+    skipTaskbar: true, javascript: false, webgl: false, backgroundThrottling: false, sandbox: false,
+  } as any);
   loadingScreen.loadURL(`${__dirname}/splash.html`);
+  loadingScreen.once('ready-to-show', () => {
+    loadingScreen.show();
+    resolve();
+  });
+  });
 }
 
 app.on('ready', () => {
-  createStore()
+  createLoadingScreen()
+  // TODO horrible hack! This delays all loading by 200 ms but if we don't the splash screen
+  //   doesn't become visible until _after_ most of the initialization happened (loading the
+  //   the store and extensions)
+  .then(() => delayed(200))
+  .then(() => createStore())
   .then(() => {
     createTrayIcon();
     return installDevelExtensions();
   })
   .then(() => {
     createWindow();
-    createLoadingScreen();
   })
   .catch((err) => {
     terminate({

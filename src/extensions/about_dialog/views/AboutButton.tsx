@@ -1,8 +1,10 @@
+import asyncRequire, { Placeholder } from '../../../util/asyncRequire';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';
 import { Button } from '../../../views/TooltipControls';
 
-import AboutDialog from './AboutDialog';
+import AboutDialogT from './AboutDialog';
+let AboutDialog: typeof AboutDialogT = Placeholder;
 
 import * as React from 'react';
 import update = require('react-addons-update');
@@ -17,6 +19,14 @@ class AboutButton extends ComponentEx<{}, IComponentState> {
     this.state = {
       dialogVisible: false,
     };
+  }
+
+  public componentWillMount() {
+    asyncRequire('./AboutDialog', __dirname)
+    .then(AboutDialogIn => {
+      AboutDialog = AboutDialogIn.default;
+      this.forceUpdate();
+    });
   }
 
   public render(): JSX.Element {

@@ -1,12 +1,12 @@
 import { INotification, INotificationAction, NotificationType } from '../types/INotification';
-import { ComponentEx, translate } from '../util/ComponentEx';
+import { ComponentEx } from '../util/ComponentEx';
 import Icon from '../views/Icon';
 
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
 
 interface IActionProps {
-  t: (text: string) => string;
+  t: I18next.TranslationFunction;
   onDismiss: () => void;
 }
 
@@ -20,6 +20,7 @@ class Action extends React.Component<IActionProps & INotificationAction, {}> {
 }
 
 export interface IProps {
+  t: I18next.TranslationFunction;
   params: INotification;
   onDismiss: (id: string) => void;
 }
@@ -77,5 +78,4 @@ class Notification extends ComponentEx<IProps, {}> {
   private dismiss = () => this.props.onDismiss(this.props.params.id);
 }
 
-export default
-  translate(['common'], { wait: false })(Notification) as React.ComponentClass<IProps>;
+export default Notification;

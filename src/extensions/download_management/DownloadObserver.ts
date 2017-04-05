@@ -18,7 +18,7 @@ import DownloadManager from './DownloadManager';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import {IHashResult, genHash} from 'modmeta-db';
+import {IHashResult} from 'modmeta-db';
 import * as path from 'path';
 import {generate as shortid} from 'shortid';
 
@@ -105,6 +105,7 @@ export class DownloadObserver {
               callback(new Error('html result'), id);
             }
           } else {
+            const { genHash } = require('modmeta-db');
             genHash(res.filePath)
                 .then((md5Hash: IHashResult) => {
                   this.mStore.dispatch(setDownloadHash(id, md5Hash.md5sum));

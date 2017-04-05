@@ -89,6 +89,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   private renderProfile = (profileId: string, features: IProfileFeature[]): JSX.Element => {
+    const { t } = this.props;
     const { edit } = this.state;
     if (profileId === edit) {
       return this.renderEditProfile();
@@ -102,6 +103,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     return (profileId === this.state.edit) ? null : (
       <ProfileItem
+        t={ t }
         key={ profileId }
         profile={ profiles[profileId] }
         features={ features }

@@ -1,12 +1,13 @@
 import { showDialog } from '../../actions/notifications';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import asyncRequire, { Placeholder } from '../../util/asyncRequire';
+import { ComponentEx, connect } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import StarterInfo from '../../util/StarterInfo';
-import startTool, { DeployResult } from '../../util/startTool';
+import { DeployResult } from '../../util/startTool';
 import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';
 
@@ -20,7 +21,8 @@ import { IToolStored } from '../gamemode_management/types/IToolStored';
 import { setPrimaryTool } from './actions';
 
 import ToolButton from './ToolButton';
-import ToolEditDialog from './ToolEditDialog';
+import ToolEditDialogT from './ToolEditDialog';
+let ToolEditDialog: typeof ToolEditDialogT = Placeholder;
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
@@ -62,6 +64,14 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
       editTool: undefined,
       counter: 1,
     };
+  }
+
+  public componentWillMount() {
+    asyncRequire('./ToolEditDialog', __dirname)
+    .then(moduleIn => {
+      ToolEditDialog = moduleIn.default;
+      this.forceUpdate();
+    });
   }
 
   public render(): JSX.Element {
@@ -209,6 +219,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   private startTool = (info: StarterInfo) => {
+    let { startTool } = require('../../util/startTool');
     startTool(info, this.context.api.events, this.queryElevate,
               this.queryDeploy, this.props.onShowError)
     .catch((err: Error) => {
@@ -348,11 +359,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-export default
-  translate(['common'], {
-    wait: true,
-    bindI18n: 'languageChanged loaded',
-    bindStore: false,
-  } as any)(
-    connect(mapStateToProps, mapDispatchToProps)(Starter)
- );
+export default connect(mapStateToProps, mapDispatchToProps)(Starter);

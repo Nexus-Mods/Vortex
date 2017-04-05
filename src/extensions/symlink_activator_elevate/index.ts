@@ -1,5 +1,6 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
-import elevated from  '../../util/elevated';
+import * as elevatedT from  '../../util/elevated';
+import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { activeGameId } from '../../util/selectors';
 
@@ -14,6 +15,8 @@ import ipc = require('node-ipc');
 import * as path from 'path';
 
 import { remoteCode } from './remoteCode';
+
+const elevated = lazyRequire<typeof elevatedT.default>('../../util/elevated', __dirname, 'default');
 
 class ModActivator implements IModActivator {
   public id: string;

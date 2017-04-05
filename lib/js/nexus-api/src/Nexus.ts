@@ -1,7 +1,7 @@
 import * as types from './types';
 
 import * as Promise from 'bluebird';
-import { Client } from 'node-rest-client';
+import * as restT from 'node-rest-client';
 
 interface IRequestArgs {
   headers?: any;
@@ -34,12 +34,13 @@ class NexusError extends Error {
  * @class Nexus
  */
 class Nexus {
-  private mRestClient: Client;
+  private mRestClient: restT.Client;
   private mBaseData: IRequestArgs;
 
   private mBaseURL = 'https://api.nexusmods.com/v1';
 
   constructor(game: string, apiKey: string, timeout?: number) {
+    let { Client } = require('node-rest-client') as typeof restT;
     this.mRestClient = new Client();
     this.mBaseData = {
       headers: {

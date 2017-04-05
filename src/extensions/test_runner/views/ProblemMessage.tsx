@@ -1,5 +1,5 @@
 import {ITestResult, ProblemSeverity} from '../../../types/ITestResult';
-import {ComponentEx, translate} from '../../../util/ComponentEx';
+import {ComponentEx} from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';
 
 import * as Promise from 'bluebird';
@@ -7,6 +7,7 @@ import * as React from 'react';
 import {Alert, Button} from 'react-bootstrap';
 
 export interface IBaseProps {
+  t: I18next.TranslationFunction;
   problemId: string;
   problem: ITestResult;
   onResolveProblem: (id: string) => void;
@@ -78,6 +79,4 @@ class ProblemMessage extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-export default translate(['common', 'problems'], {wait: true})(
-  ProblemMessage
-) as React.ComponentClass<IBaseProps>;
+export default ProblemMessage as React.ComponentClass<IBaseProps>;

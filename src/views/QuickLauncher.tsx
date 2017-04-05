@@ -8,7 +8,7 @@ import { ComponentEx, connect } from '../util/ComponentEx';
 import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
 import StarterInfo from '../util/StarterInfo';
-import startTool, { DeployResult } from '../util/startTool';
+import { DeployResult } from '../util/startTool';
 import { getSafe } from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
@@ -110,6 +110,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
   private start = () => {
     const { onShowError } = this.props;
+    let { startTool } = require('../util/startTool');
     startTool(this.state.starter, this.context.api.events,
               this.queryElevate, this.queryDeploy, onShowError);
   }

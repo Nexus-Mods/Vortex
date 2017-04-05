@@ -23,7 +23,7 @@ function main(context: types.IExtensionContext) {
     description: 'Relations to other mods',
     icon: 'plug',
     placement: 'table',
-    customRenderer: (mod) => <DependencyIcon mod={mod} />,
+    customRenderer: (mod, detailCell, t) => <DependencyIcon mod={mod} t={t} />,
     calc: (mod) => null,
     isToggleable: true,
     edit: {},

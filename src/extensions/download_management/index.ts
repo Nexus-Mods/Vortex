@@ -1,4 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import LazyComponent from '../../util/LazyComponent';
 import { activeGameId, downloadPath } from '../../util/selectors';
 
 import { addLocalDownload, removeDownload, setDownloadHashByFile,
@@ -8,8 +9,8 @@ import { stateReducer } from './reducers/state';
 import { IDownload } from './types/IDownload';
 import { ProtocolHandlers } from './types/ProtocolHandlers';
 import Dashlet from './views/Dashlet';
-import DownloadView from './views/DownloadView';
-import Settings from './views/Settings';
+import {} from './views/DownloadView';
+import {} from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';
 
 import DownloadManager from './DownloadManager';
@@ -55,12 +56,13 @@ export interface IExtensionContextExt extends IExtensionContext {
 }
 
 function init(context: IExtensionContextExt): boolean {
-  context.registerMainPage('download', 'Download', DownloadView, {
-    hotkey: 'D',
-    group: 'global',
-  });
+  context.registerMainPage('download', 'Download',
+                           LazyComponent('./views/DownloadView', __dirname), {
+                             hotkey: 'D',
+                             group: 'global',
+                           });
 
-  context.registerSettings('Download', Settings);
+  context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
 
   context.registerFooter('speed-o-meter', SpeedOMeter);
 

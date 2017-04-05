@@ -20,7 +20,9 @@ export type PersistingType = 'global' | 'game' | 'profile';
 export type CheckFunction = () => Promise<ITestResult>;
 
 export interface IRegisterSettings {
-  (title: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
+  (title: string,
+   element: React.ComponentClass<any> | React.StatelessComponent<any>,
+   props?: PropsCallback): void;
 }
 
 export interface IRegisterIcon {
@@ -42,7 +44,7 @@ export interface IMainPageOptions {
 }
 
 export interface IRegisterMainPage {
-  (icon: string, title: string, element: React.ComponentClass<any>,
+  (icon: string, title: string, element: React.ComponentClass<any> | React.StatelessComponent<any>,
    options: IMainPageOptions): void;
 }
 
@@ -53,7 +55,9 @@ export interface IRegisterDashlet {
 }
 
 export interface IRegisterDialog {
-  (id: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
+  (id: string,
+   element: React.ComponentClass<any> | React.StatelessComponent<any>,
+   props?: PropsCallback): void;
 }
 
 export interface IRegisterProtocol {

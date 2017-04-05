@@ -4,6 +4,7 @@ import { IExtensionInit } from '../types/Extension';
 import { IArchiveHandler, IArchiveHandlerCreator, IExtensionApi, IExtensionContext,
          ILookupDetails, IOpenOptions, IStateChangeCallback } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
+import lazyRequire from '../util/lazyRequire';
 
 import { Archive } from './archives';
 import { log } from './log';
@@ -14,7 +15,9 @@ import { getSafe } from './storeHelper';
 import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs';
-import { IHashResult, ILookupResult, IModInfo, IReference, ModDB, genHash } from 'modmeta-db';
+import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
+import * as modmetaT from 'modmeta-db';
+const modmeta = lazyRequire<typeof modmetaT>('modmeta-db');
 import * as path from 'path';
 import { types as ratypes } from 'redux-act';
 import ReduxWatcher = require('redux-watcher');
@@ -238,7 +241,7 @@ class ExtensionManager {
   private mWatches: WatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
   private mArchiveHandlers: { [extension: string]: IArchiveHandlerCreator };
-  private mModDB: ModDB;
+  private mModDB: modmetaT.ModDB;
   private mModDBGame: string;
   private mModDBAPIKey: string;
   private mPid: number;
@@ -402,16 +405,17 @@ class ExtensionManager {
     return this.mProtocolHandlers[protocol] || null;
   }
 
-  get modDB() {
+  get modDB(): modmetaT.ModDB {
     const currentGame = activeGameId(this.mApi.store.getState());
     const currentKey =
         getSafe(this.mApi.store.getState(),
                 ['confidential', 'account', 'nexus', 'APIKey'], '');
     // TODO this is a hack!
-    if ((this.mModDB === undefined) || (currentGame !== this.mModDBGame) ||
-        (currentKey !== this.mModDBAPIKey)) {
+    if ((this.mModDB === undefined)
+        || (currentGame !== this.mModDBGame)
+        || (currentKey !== this.mModDBAPIKey)) {
       log('info', 'init moddb connection');
-      this.mModDB = new ModDB(currentGame, [
+      this.mModDB = new modmeta.ModDB(currentGame, [
         {
           protocol: 'nexus',
           url: 'https://api.nexusmods.com/v1',
@@ -419,6 +423,8 @@ class ExtensionManager {
           cacheDurationSec: 86400,
         },
       ]);
+      this.mModDBGame = currentGame;
+      this.mModDBAPIKey = currentKey;
     }
     // TODO the mod db doesn't depend on the store but it must only be instantiated
     //   in one process and this is a cheap way of achieving that
@@ -586,7 +592,7 @@ class ExtensionManager {
     let promise: Promise<void>;
 
     if (fileMD5 === undefined) {
-      promise = genHash(detail.filePath).then((res: IHashResult) => {
+      promise = modmeta.genHash(detail.filePath).then((res: IHashResult) => {
         fileMD5 = res.md5sum;
         fileSize = res.numBytes;
         this.getApi().events.emit('filehash-calculated', detail.filePath, fileMD5, fileSize);
@@ -651,7 +657,11 @@ class ExtensionManager {
       .filter((name) => fs.statSync(path.join(extensionsPath, name)).isDirectory())
       .map((name) => {
         try {
-          return this.loadDynamicExtension(path.join(extensionsPath, name));
+          const before = new Date().getTime();
+          let ext = this.loadDynamicExtension(path.join(extensionsPath, name));
+          const loadTime = new Date().getTime() - before;
+          log('debug', 'loaded extension', { name, loadTime });
+          return ext;
         } catch (err) {
           log('warn', 'failed to load dynamic extension', { name, error: err.message });
           return undefined;
@@ -695,10 +705,13 @@ class ExtensionManager {
     const bundledPath = path.resolve(__dirname, '..', 'bundledPlugins');
     log('info', 'bundle at', bundledPath);
     const extensionsPath = path.join(app.getPath('userData'), 'plugins');
-    return staticExtensions.map((name: string) => ({
-      name, initFunc: require(`../extensions/${name}/index`).default,
-    })).concat(this.loadDynamicExtensions(bundledPath))
-      .concat(this.loadDynamicExtensions(extensionsPath));
+    return staticExtensions
+      .map((name: string) => ({
+          name,
+          initFunc: require(`../extensions/${name}/index`).default,
+        }))
+        .concat(this.loadDynamicExtensions(bundledPath))
+        .concat(this.loadDynamicExtensions(extensionsPath));
   }
 }
 

@@ -1,4 +1,4 @@
-import { ComponentEx, translate } from '../../../util/ComponentEx';
+import { ComponentEx } from '../../../util/ComponentEx';
 import Advanced from '../../../views/Advanced';
 import IconBar from '../../../views/IconBar';
 
@@ -13,6 +13,7 @@ import * as React from 'react';
 import { ListGroupItem, Media } from 'react-bootstrap';
 
 export interface IProps {
+  t: I18next.TranslationFunction;
   game: IGameStored;
   discovery?: IDiscoveryResult;
   mods?: { [modId: string]: IMod };
@@ -107,5 +108,4 @@ class GameRow extends ComponentEx<IProps, {}> {
   }
 }
 
-export default
-  translate(['common'], { wait: false })(GameRow) as React.ComponentClass<IProps>;
+export default GameRow as React.ComponentClass<IProps>;

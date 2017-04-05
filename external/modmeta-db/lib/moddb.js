@@ -2,7 +2,6 @@
 const Promise = require("bluebird");
 const leveljs = require("level-js");
 const levelup = require("levelup");
-const node_rest_client_1 = require("node-rest-client");
 const semvish = require("semvish");
 const util_1 = require("./util");
 const util = require("util");
@@ -57,7 +56,8 @@ class ModDB {
             'gameId',
         ];
         this.mGameId = gameId;
-        this.mRestClient = new node_rest_client_1.Client();
+        let { Client } = require('node-rest-client');
+        this.mRestClient = new Client();
         this.mServers = servers;
         this.mTimeout = timeoutMS;
         this.promisify();

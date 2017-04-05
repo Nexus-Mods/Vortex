@@ -50,18 +50,33 @@ function getMergeText(t: I18next.TranslationFunction) {
  * @extends {ComponentEx<IProps, IComponentState>}
  */
 class AddGameDialog extends ComponentEx<IProps, IComponentState> {
+  private mMounted: boolean = false;
   constructor(props: IProps) {
     super(props);
     this.initState({ game: undefined, imgCounter: 0 });
   }
 
   public componentWillMount() {
-    this.reset();
+    this.mMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = false;
+  }
+
+  public componentWillReceiveProps(nextProps: IProps) {
+    if (!this.props.visible && nextProps.visible && this.mMounted) {
+      this.reset();
+    }
   }
 
   public render(): JSX.Element {
     const { t, visible } = this.props;
     const { game, imgCounter } = this.state;
+
+    if (game === undefined) {
+      return null;
+    }
 
     let logoPath = path.join(game.extensionPath, game.logo);
 
@@ -228,7 +243,7 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private reset = () => {
-    let id = shortid();
+    const id = shortid();
     this.nextState.game = {
       id,
       extensionPath: path.join(remote.app.getPath('userData'), id),

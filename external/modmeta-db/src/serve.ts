@@ -1,5 +1,3 @@
-import bodyParser = require('body-parser');
-
 import ModDB from './moddb';
 import {ILookupResult} from './types';
 
@@ -10,6 +8,7 @@ import {ILookupResult} from './types';
  */
 export function serveREST(db: ModDB, portIn?: number) {
   const express = require('express');
+  const bodyParser = require('body-parser');
   let app = express();
   let router = express.Router();
   let port = portIn || 51666;

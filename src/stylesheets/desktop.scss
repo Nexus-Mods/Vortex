@@ -33,6 +33,10 @@ html, body, #content {
 }
 
 // in native ui's, the cursor doesn't change to a hand over buttons
+[role="button"] {
+  cursor: default;
+}
+
 a, .btn {
   cursor: default;
 }

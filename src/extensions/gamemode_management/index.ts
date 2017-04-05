@@ -1,5 +1,6 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
@@ -14,17 +15,17 @@ import { settingsReducer } from './reducers/settings';
 
 import GameModeManager from './GameModeManager';
 import AddGameDialog from './views/AddGameDialog';
-import GamePicker from './views/GamePicker';
+import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
 import ProgressFooter from './views/ProgressFooter';
-import Settings from './views/Settings';
+import {} from './views/Settings';
 
 function init(context: IExtensionContext): boolean {
-  context.registerMainPage('gamepad', 'Games', GamePicker, {
+  context.registerMainPage('gamepad', 'Games', LazyComponent('./views/GamePicker', __dirname), {
     hotkey: 'G',
     group: 'global',
   });
-  context.registerSettings('Games', Settings);
+  context.registerSettings('Games', LazyComponent('./views/Settings', __dirname));
   context.registerReducer(['session', 'discovery'], discoveryReducer);
   context.registerReducer(['session', 'gameMode'], sessionReducer);
   context.registerReducer(['settings', 'gameMode'], settingsReducer);

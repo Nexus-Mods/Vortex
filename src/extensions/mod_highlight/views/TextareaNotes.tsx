@@ -1,5 +1,5 @@
 import { IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { ComponentEx, connect } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 
 import { setModAttribute } from '../../mod_management/actions/mods';
@@ -43,7 +43,7 @@ class TextareaNotes extends ComponentEx<IProps, IMainWindowState> {
   }
 
   public render(): JSX.Element {
-    let {mod } = this.props;
+    let { mod } = this.props;
     let notes: string =  mod !== undefined ? getSafe(mod.attributes, ['notes'], '') : '';
 
     return (
@@ -76,6 +76,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(TextareaNotes)
+  connect(mapStateToProps, mapDispatchToProps)(
+    TextareaNotes
   ) as React.ComponentClass<IBaseProps>;

@@ -7,6 +7,7 @@ import * as path from 'path';
 function main(context: types.IExtensionContext) {
   context.registerIcon('downloads-action-icons', MetaEditorIcon, () => ({
     key: 'meta-editor-icon',
+    t: context.api.translate,
   }));
 
   context.registerStyle(path.join(__dirname, 'metaeditor.scss'));

@@ -11,7 +11,9 @@ import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
 import * as React from 'react';
-import { Checkbox, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
+import {
+  Checkbox, ControlLabel, FormControl, FormGroup
+} from 'react-bootstrap';
 
 import update = require('react-addons-update');
 

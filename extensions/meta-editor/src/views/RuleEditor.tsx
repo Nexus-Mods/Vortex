@@ -1,5 +1,5 @@
-import { IHashResult, ILookupResult, IReference, RuleType, genHash } from 'modmeta-db';
-import { ComponentEx, FormFeedbackAwesome, types } from 'nmm-api';
+import { IHashResult, ILookupResult, IReference, RuleType } from 'modmeta-db';
+import { ComponentEx, FormFeedbackAwesome } from 'nmm-api';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup,
          Modal, Nav, NavItem } from 'react-bootstrap';
@@ -34,12 +34,6 @@ const MD5Expression = /[a-f0-9]{32}/;
  * @extends {ComponentEx<IRule, IComponentState>}
  */
 class RuleEditor extends ComponentEx<IRule, IComponentState> {
-  public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
-  };
-
-  public context: types.IComponentContext;
-
   constructor(props) {
     super(props);
     this.state = {
@@ -108,7 +102,7 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
             type='text'
             value={modId}
             onChange={this.setModId}
-            />
+          />
         </FormGroup>
         <FormGroup>
           <ControlLabel>{t('Logical File Name')}</ControlLabel>
@@ -116,7 +110,7 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
             type='text'
             value={logicalFileName}
             onChange={this.setFileName}
-            />
+          />
         </FormGroup>
         <FormGroup>
           <ControlLabel>{t('Version Match')}</ControlLabel>
@@ -124,7 +118,7 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
             type='text'
             value={versionMatch}
             onChange={this.setVersionMatch}
-            />
+          />
         </FormGroup>
       </form>
     );
@@ -202,6 +196,7 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
         // TODO always use hash because lookup by meta information is not currently
         //   supported on the web side
         this.setState(update(this.state, { md5: { $set: '...' } }));
+        const { genHash } = require('modmeta-db');
         return genHash(filePath);
         /*
         if (result.length === 0) {

@@ -245,10 +245,11 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
   }
 
   private renderGamesList(games: IGameStored[], type: string, gameMode: string) {
-    const { discoveredGames } = this.props;
+    const { t, discoveredGames } = this.props;
     return <ListGroup>
       { games.map(game =>
         <GameRow
+          t={t}
           key={game.id}
           game={game}
           discovery={discoveredGames[game.id]}
@@ -262,9 +263,11 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
   }
 
   private renderGamesSmall(games: IGameStored[], type: string, gameMode: string) {
+    const { t } = this.props;
     return <div>
       { games.map(game =>
         <GameThumbnail
+          t={t}
           key={game.id}
           large={false}
           game={game}
@@ -276,9 +279,11 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
   }
 
   private renderGamesLarge(games: IGameStored[], type: string, gameMode: string) {
+    const { t } = this.props;
     return <div>
       { games.map(game =>
         <GameThumbnail
+          t={t}
           key={game.id}
           large={true}
           game={game}

@@ -1,7 +1,6 @@
 import { IHashResult } from './types';
 
 import * as Promise from 'bluebird';
-import {createHash} from 'crypto';
 import * as fs from 'fs-extra-promise';
 
 /**
@@ -16,6 +15,7 @@ import * as fs from 'fs-extra-promise';
 export function genHash(filePath: string): Promise<IHashResult> {
   return new Promise<IHashResult>((resolve, reject) => {
     try {
+      const { createHash } = require('crypto');
       let hash = createHash('md5');
       let size = 0;
       let stream = fs.createReadStream(filePath);

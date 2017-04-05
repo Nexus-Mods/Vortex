@@ -11,7 +11,6 @@ import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
 import update = require('react-addons-update');
-import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import semver = require('semver');
 import * as url from 'url';
@@ -19,6 +18,7 @@ import * as url from 'url';
 import * as nodeUtil from 'util';
 
 export interface IBaseProps {
+  t: I18next.TranslationFunction;
   instanceId: string;
 }
 
@@ -36,13 +36,6 @@ interface IMetaEditorState {
 type IProps = IBaseProps & IConnectedProps;
 
 class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
-
-  public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
-  };
-
-  public context: types.IComponentContext;
-
   constructor(props) {
     super(props);
 
@@ -348,7 +341,4 @@ function mapStateToProps(state): IConnectedProps {
   };
 }
 
-export default
-  translate(['common'], { wait: false })(
-    connect(mapStateToProps)(MetaEditorIcon)
-  ) as React.ComponentClass<IBaseProps>;
+export default connect(mapStateToProps)(MetaEditorIcon) as React.ComponentClass<IBaseProps>;

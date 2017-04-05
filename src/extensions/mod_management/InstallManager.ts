@@ -22,8 +22,8 @@ import InstallContext from './InstallContext';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { IHashResult, ILookupResult, IReference, IRule, genHash } from 'modmeta-db';
-import Zip = require('node-7z');
+import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
+import ZipT = require('node-7z');
 import * as path from 'path';
 import * as rimraf from 'rimraf';
 import { dir as tmpDir, file as tmpFile } from 'tmp';
@@ -77,9 +77,11 @@ function UserCanceled() { }
 class InstallManager {
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: () => string;
-  private mTask = new Zip();
+  private mTask: ZipT;
 
-  constructor(installPath: () => string) { this.mGetInstallPath = installPath; }
+  constructor(installPath: () => string) {
+    this.mGetInstallPath = installPath;
+  }
 
   /**
    * add an installer extension
@@ -121,6 +123,10 @@ class InstallManager {
     api: IExtensionApi,
     info: any, processDependencies: boolean,
     callback?: (error: Error, id: string) => void) {
+    if (this.mTask === undefined) {
+      const Zip: typeof ZipT = require('node-7z');
+      this.mTask = new Zip();
+    }
 
     let fullInfo = Object.assign({}, info);
     let destinationPath: string;
@@ -219,6 +225,7 @@ class InstallManager {
           } else if (canceled) {
             return undefined;
           } else {
+            const { genHash } = require('modmeta-db');
             let errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;
 
             return genHash(archivePath)
@@ -394,6 +401,7 @@ class InstallManager {
 
     if (instructionGroups.unsupported !== undefined) {
       let missing = instructionGroups.unsupported.map((instruction) => instruction.source);
+      const { genHash } = require('modmeta-db');
       const makeReport = () =>
         genHash(archivePath)
           .then(

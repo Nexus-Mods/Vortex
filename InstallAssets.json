@@ -80,7 +80,13 @@
       "srcPath": "locales/*/*",
       "outPath": "",
       "target": [
-        "out",
+        "out"
+      ]
+    },
+    {
+      "srcPath": "locales/*/*",
+      "outPath": "app",
+      "target": [
         "app"
       ]
     },

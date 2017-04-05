@@ -3,6 +3,7 @@ import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import {modsReducer} from '../mod_management/reducers/mods';
+import { IMod } from '../mod_management/types/IMod';
 
 import HighlightButton from './views/HighlightButton';
 import TextareaNotes from './views/TextareaNotes';
@@ -19,7 +20,10 @@ function init(context: IExtensionContext): boolean {
     description: 'Mod Notes',
     icon: 'sticky-note',
     placement: 'detail',
-    customRenderer: (mod) => getTextareaNotes(context.api, mod),
+    customRenderer: (mod) => {
+      const gameMode = activeGameId(context.api.store.getState());
+      return getTextareaNotes(gameMode, mod);
+    },
     calc: (mod) => getSafe(mod.attributes, ['notes'], ''),
     isToggleable: false,
     edit: {},
@@ -32,7 +36,10 @@ function init(context: IExtensionContext): boolean {
     description: 'Mod Highlight',
     icon: 'lightbulb-o',
     placement: 'table',
-    customRenderer: (mod) => getHighlightIcon(context.api, mod),
+    customRenderer: (mod, detailCell, t) => {
+      const gameMode = activeGameId(context.api.store.getState());
+      return renderHighlightIcon(gameMode, mod, t);
+    },
     calc: (mod) => getSafe(mod.attributes, ['icon'], ''),
     isToggleable: true,
     edit: {},
@@ -43,8 +50,7 @@ function init(context: IExtensionContext): boolean {
   return true;
 }
 
-function getTextareaNotes(api: IExtensionApi, mod) {
-  const gameMode = activeGameId(api.store.getState());
+function getTextareaNotes(gameMode: string, mod: IMod) {
   return (
     <TextareaNotes
       gameMode={gameMode}
@@ -53,12 +59,11 @@ function getTextareaNotes(api: IExtensionApi, mod) {
   );
 }
 
-function getHighlightIcon(api: IExtensionApi, mod) {
-  const gameMode = activeGameId(api.store.getState());
+function renderHighlightIcon(gameMode: string, mod: IMod, t: I18next.TranslationFunction) {
   return (
     <HighlightButton
       gameMode={gameMode}
-      t={api.translate}
+      t={t}
       mod={mod}
     />
   );

@@ -10,7 +10,6 @@ import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
-import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 
 interface IDescriptionProps {
@@ -83,6 +82,7 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
 }
 
 export interface IBaseProps {
+  t: I18next.TranslationFunction;
   mod: types.IMod;
 }
 
@@ -388,6 +388,6 @@ function mapDispatchToProps(dispatch): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(DependencyIconDrag)
+  connect(mapStateToProps, mapDispatchToProps)(
+    DependencyIconDrag
   ) as React.ComponentClass<IBaseProps>;

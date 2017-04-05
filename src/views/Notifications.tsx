@@ -22,10 +22,6 @@ interface IActionProps {
 }
 
 class Notifications extends ComponentEx<IProps & IActionProps & IConnectedProps, {}> {
-  constructor(props) {
-    super(props);
-  }
-
   public render(): JSX.Element {
     const { id, notifications } = this.props;
 
@@ -53,7 +49,7 @@ class Notifications extends ComponentEx<IProps & IActionProps & IConnectedProps,
 
     let translated: INotification = Object.assign({}, notification);
     translated.message = t(translated.message);
-    return <Notification key={notification.id} params={translated} onDismiss={onDismiss} />;
+    return <Notification t={t} key={notification.id} params={translated} onDismiss={onDismiss} />;
   }
 }
 
@@ -70,7 +66,7 @@ function mapDispatchToProps(dispatch): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'], { wait: true })(
     connect(mapStateToProps, mapDispatchToProps)(
       Notifications)
-  ) as React.ComponentClass<IProps>;
+   ) as React.ComponentClass<IProps>;

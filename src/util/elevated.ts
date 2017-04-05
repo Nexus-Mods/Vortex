@@ -35,11 +35,6 @@ const SHELLEXECUTEINFO = struct({
 
 const SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
 let shell32;
-if (process.platform === 'win32') {
-  shell32 = new ffi.Library('Shell32', {
-    ShellExecuteExA: ['bool', [SHELLEXECUTEINFOPtr]],
-  });
-}
 
 function execInfo(scriptPath: string, parameters?: string[]) {
   const instApp = ref.alloc(voidPtr);
@@ -113,6 +108,13 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string, main
  */
 function runElevated(ipcPath: string, func: Function,
                      args?: Object, moduleBase?: string): Promise<any> {
+  if (shell32 === undefined) {
+    if (process.platform === 'win32') {
+      shell32 = new ffi.Library('Shell32', {
+        ShellExecuteExA: ['bool', [SHELLEXECUTEINFOPtr]],
+      });
+    }
+  }
   return new Promise((resolve, reject) => {
     tmp.file((err: any, tmpPath: string, fd: number, cleanup: () => void) => {
       if (err) {

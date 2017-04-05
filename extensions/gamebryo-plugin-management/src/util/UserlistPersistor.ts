@@ -78,7 +78,6 @@ class UserlistPersistor implements types.IPersistor {
     }
 
     this.mSerializing = true;
-
     return fs.writeFileAsync(this.mUserlistPath, safeDump(this.mUserlist))
       .catch((err) => {
         // TODO: report to the user? The problem is that this might occur repeatedly so we
@@ -119,8 +118,7 @@ class UserlistPersistor implements types.IPersistor {
           details: err,
         });
       }
-    })
-    ;
+    });
   }
 }
 

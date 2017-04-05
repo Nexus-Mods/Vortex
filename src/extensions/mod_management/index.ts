@@ -2,6 +2,7 @@ import {IExtensionContext} from '../../types/IExtensionContext';
 import {ITableAttribute} from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
 import Debouncer from '../../util/Debouncer';
+import LazyComponent from '../../util/LazyComponent';
 import {
   activeGameId,
   activeProfile,
@@ -33,9 +34,9 @@ import supportedActivators from './util/supportedActivators';
 import UserCanceled from './util/UserCanceled';
 import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
-import ExternalChangeDialog from './views/ExternalChangeDialog';
-import ModList from './views/ModList';
-import Settings from './views/Settings';
+import {} from './views/ExternalChangeDialog';
+import {} from './views/ModList';
+import {} from './views/Settings';
 
 import InstallManager from './InstallManager';
 import { activateMods } from './modActivation';
@@ -157,7 +158,8 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
 }
 
 function init(context: IExtensionContextExt): boolean {
-  context.registerMainPage('cubes', 'Mods', ModList, {
+  context.registerMainPage('cubes', 'Mods',
+    LazyComponent('./views/ModList', __dirname), {
     hotkey: 'M',
     group: 'per-game',
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
@@ -206,9 +208,11 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTest('valid-activator', 'gamemode-activated', validActivatorCheck);
   context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
 
-  context.registerSettings('Mods', Settings, () => ({activators}));
+  context.registerSettings('Mods', LazyComponent('./views/Settings', __dirname),
+                           () => ({activators}));
 
-  context.registerDialog('external-changes', ExternalChangeDialog);
+  context.registerDialog('external-changes',
+                         LazyComponent('./views/ExternalChangeDialog', __dirname));
 
   context.registerReducer(['session', 'externalChanges'], externalChangesReducer);
   context.registerReducer(['settings', 'mods'], settingsReducer);

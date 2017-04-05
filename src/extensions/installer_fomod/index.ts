@@ -1,4 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 
 import { ISupportedResult } from '../mod_management/types/ITestSupported';
@@ -9,30 +10,28 @@ import { installerUIReducer } from './reducers/installerUI';
 import InstallerDialog from './views/InstallerDialog';
 
 import * as Promise from 'bluebird';
-import * as edge from 'edge';
+import * as edgeT from 'edge';
+const edge = lazyRequire<typeof edgeT>('edge');
 import * as path from 'path';
 
 import * as util from 'util';
 
-const testSupportedLib = edge.func({
-  assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller',
-                             'ModInstaller.dll'),
-  typeName: 'Components.ModInstaller.InstallerProxy',
-  methodName: 'TestSupported',
-});
-
-const installLib = edge.func({
-  assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller',
-                             'ModInstaller.dll'),
-  typeName: 'Components.ModInstaller.InstallerProxy',
-  methodName: 'Install',
-});
-
+let testSupportedLib;
+let installLib;
 interface IProgressDelegate {
   (perc: number): void;
 }
 
 function testSupported(files: string[]): Promise<ISupportedResult> {
+  if (testSupportedLib === undefined) {
+    testSupportedLib = edge.func({
+      assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller',
+                                 'ModInstaller.dll'),
+      typeName: 'Components.ModInstaller.InstallerProxy',
+      methodName: 'TestSupported',
+    });
+  }
+
   return new Promise<ISupportedResult>((resolve, reject) => {
     testSupportedLib({files}, (err: Error, result: ISupportedResult) => {
       if ((err !== null) && (err !== undefined)) {
@@ -49,6 +48,15 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
 function install(files: string[], scriptPath: string,
                  progressDelegate: IProgressDelegate,
                  coreDelegates: Core): Promise<any> {
+  if (installLib === undefined) {
+    installLib = edge.func({
+      assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller',
+                                 'ModInstaller.dll'),
+      typeName: 'Components.ModInstaller.InstallerProxy',
+      methodName: 'Install',
+    });
+  }
+
   return new Promise((resolve, reject) => {
     installLib({ files, scriptPath, progressDelegate, coreDelegates },
       (err: Error, result: any) => {

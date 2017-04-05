@@ -2,6 +2,9 @@
  * entry point for the renderer process(es)
  */
 
+import timeRequire from './util/timeRequire';
+let stopTime = timeRequire();
+
 import 'source-map-support/register';
 
 import * as path from 'path';
@@ -52,6 +55,8 @@ import thunkMiddleware from 'redux-thunk';
 
 log('debug', 'renderer process started');
 
+stopTime();
+
 // allow promises to be cancelled.
 Promise.config({ cancellation: true });
 
@@ -100,12 +105,14 @@ process.on('uncaughtException', (error) => {
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
+stopTime = timeRequire();
 const extensions: ExtensionManager = new ExtensionManager(eventEmitter);
 let extReducers = extensions.getReducers();
 
 const store: Store<any> = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
+stopTime();
 log('debug', 'renderer connected to store');
 
 // tslint:disable-next-line:no-unused-variable
@@ -133,12 +140,20 @@ store.subscribe(() => {
   }
 });
 
-const i18n = getI18n(store.getState().settings.interface.language);
+let i18n;
+let tFunc;
+let error;
 
-extensions.setTranslation(i18n);
-
-extendStore(store, extensions)
+getI18n(store.getState().settings.interface.language)
+  .then(res => {
+    ({ i18n, tFunc, error } = res);
+    extensions.setTranslation(i18n);
+    return extendStore(store, extensions);
+  })
   .then(() => {
+    if (error !== undefined) {
+      showError(store.dispatch, 'failed to initialize localization', error);
+    }
     extensions.doOnce();
     initApplicationMenu(extensions);
     loadExtensionCSS(extensions);
@@ -147,7 +162,7 @@ extendStore(store, extensions)
       <Provider store={store}>
         <I18nextProvider i18n={i18n}>
           <ExtensionProvider extensions={extensions}>
-            <MainWindow className='full-height' api={extensions.getApi()} />
+            <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
           </ExtensionProvider>
         </I18nextProvider>
       </Provider>,

@@ -125,5 +125,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-export default translate([ 'common' ], { wait: false })(
+export default translate([ 'common', 'gamebryo-plugin' ], { wait: false })(
   connect(mapStateToProps, mapDispatchToProps)(Editor)) as React.ComponentClass<{}>;

@@ -1,5 +1,6 @@
-import { countIf } from '../../util/util';
+import lazyRequire from '../../util/lazyRequire';
 
+import { countIf } from '../../util/util';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
 import { IProgressCallback } from './types/IProgressCallback';
@@ -11,11 +12,13 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as http from 'http';
 import * as path from 'path';
-import request = require('request');
+import requestT = require('request');
 import * as url from 'url';
 import contentType = require('content-type');
 
 import { log } from '../../util/log';
+
+const request = lazyRequire<typeof requestT>('request');
 
 interface IDownload {
   id: string;
@@ -48,7 +51,7 @@ interface IFinishCallback {
  */
 class DownloadWorker {
   private mJob: IDownloadJob;
-  private mRequest: request.Request;
+  private mRequest: requestT.Request;
   private mProgressCB: (bytes: number) => void;
   private mFinishCB: IFinishCallback;
   private mHeadersCB: (headers: any) => void;

@@ -1,6 +1,7 @@
 
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
+import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
@@ -22,7 +23,7 @@ import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import EndorseModButton from './views/EndorseModButton';
 import LoginIcon from './views/LoginIcon';
-import Settings from './views/Settings';
+import {} from './views/Settings';
 
 import * as Promise from 'bluebird';
 import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
@@ -291,7 +292,7 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
 
 function init(context: IExtensionContextExt): boolean {
   context.registerFooter('login', LoginIcon, () => ({ nexus }));
-  context.registerSettings('Download', Settings);
+  context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
 

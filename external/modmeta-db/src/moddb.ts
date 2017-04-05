@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
 import leveljs = require('level-js');
 import levelup = require('levelup');
-import { Client } from 'node-rest-client';
+import * as restT from 'node-rest-client';
 import * as semvish from 'semvish';
 
 import {IHashResult, ILookupResult, IModInfo} from './types';
@@ -43,7 +43,7 @@ class ModDB {
   private mDB: IDatabase;
   private mServers: IServer[];
   private mModKeys: string[];
-  private mRestClient: Client;
+  private mRestClient: restT.Client;
   private mTimeout: number;
   private mGameId: string;
 
@@ -71,6 +71,7 @@ class ModDB {
     ];
 
     this.mGameId = gameId;
+    let { Client } = require('node-rest-client') as typeof restT;
     this.mRestClient = new Client();
     this.mServers = servers;
     this.mTimeout = timeoutMS;

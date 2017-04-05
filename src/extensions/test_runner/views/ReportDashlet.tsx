@@ -1,5 +1,5 @@
 import {ITestResult} from '../../../types/ITestResult';
-import {ComponentEx} from '../../../util/ComponentEx';
+import {ComponentEx, translate} from '../../../util/ComponentEx';
 
 import ProblemMessage from './ProblemMessage';
 
@@ -7,7 +7,6 @@ import * as React from 'react';
 import {ListGroup} from 'react-bootstrap';
 
 export interface IBaseProps {
-  t: I18next.TranslationFunction;
   problems: { [id: string]: ITestResult };
   onResolveProblem: (id: string) => void;
 }
@@ -31,11 +30,12 @@ class ReporterDashlet extends ComponentEx<IProps, {}> {
   }
 
   private renderProblem = (problemId: string): JSX.Element => {
-    const {problems} = this.props;
+    const {t, problems} = this.props;
 
     const problem = problems[problemId];
 
     return <ProblemMessage
+      t={t}
       key={problemId}
       problemId={problemId}
       problem={problem}
@@ -48,4 +48,6 @@ class ReporterDashlet extends ComponentEx<IProps, {}> {
   }
 }
 
-export default ReporterDashlet as React.ComponentClass<IBaseProps>;
+export default translate(['common', 'problems'], { wait: false })(
+  ReporterDashlet
+) as React.ComponentClass<IBaseProps>;

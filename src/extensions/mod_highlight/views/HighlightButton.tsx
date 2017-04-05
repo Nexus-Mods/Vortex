@@ -1,5 +1,5 @@
 import { IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { ComponentEx, connect } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
 import { IconButton } from '../../../views/TooltipControls';
@@ -153,6 +153,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(HighlightButton)
+  connect(mapStateToProps, mapDispatchToProps)(
+    HighlightButton
   ) as React.ComponentClass<IBaseProps>;
