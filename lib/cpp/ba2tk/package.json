@@ -1,0 +1,19 @@
+{
+  "name": "ba2tk",
+  "version": "1.0.0",
+  "description": "read information from gamebryo ba2 files (very basic)",
+  "scripts": {
+    "autogypi": "autogypi",
+    "node-gyp": "node-gyp",
+    "install": "autogypi && node-gyp configure build"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "autogypi": "^0.2.2",
+    "nbind": "^0.3.5",
+    "node-gyp": "^3.4.0",
+    "segfault-handler": "^1.0.0",
+    "tmp": "0.0.29"
+  }
+}
