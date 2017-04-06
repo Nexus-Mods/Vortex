@@ -13,7 +13,7 @@ interface IConnectedProps {
   updateRunning: boolean;
 }
 
-class CheckVersionButton extends ComponentEx<IConnectedProps, {}> {
+class CheckVersionsButton extends ComponentEx<IConnectedProps, {}> {
   public render(): JSX.Element {
     let { t, updateRunning } = this.props;
 
@@ -52,5 +52,5 @@ function mapStateToProps(state: any): IConnectedProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps)(CheckVersionButton)
+    connect(mapStateToProps)(CheckVersionsButton)
   );

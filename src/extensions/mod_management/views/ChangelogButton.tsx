@@ -13,7 +13,7 @@ export interface IBaseProps {
   changelogsText: string;
 }
 
-export interface IChangelogsButtonState {
+export interface IChangelogButtonState {
   showLayer: string;
 }
 
@@ -27,7 +27,7 @@ type IProps = IBaseProps & IConnectedProps;
  * 
  * @class ChangelogsButton
  */
-class ChangelogsButton extends ComponentEx<IProps, IChangelogsButtonState> {
+class ChangelogButton extends ComponentEx<IProps, IChangelogButtonState> {
 
   constructor(props: IProps) {
     super(props);
@@ -72,5 +72,5 @@ function mapStateToProps(state: IState): IConnectedProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps)(ChangelogsButton)
+    connect(mapStateToProps)(ChangelogButton)
   ) as React.ComponentClass<IBaseProps>;

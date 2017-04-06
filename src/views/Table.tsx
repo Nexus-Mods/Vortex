@@ -276,7 +276,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           : calculatedValues[rowId][attribute.id];
 
         return truthy(filter[attribute.id])
-        && !attribute.filter.matches(filter[attribute.id], value, this.context.api.store.getState())
+        && !attribute.filter.matches(filter[attribute.id],
+         value, this.context.api.store.getState());
       }
       ) === undefined;
     })
