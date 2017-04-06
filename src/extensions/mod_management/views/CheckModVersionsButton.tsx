@@ -27,8 +27,9 @@ class CheckVersionsButton extends ComponentEx<IConnectedProps, {}> {
       return <ToolbarIcon
         id='check-mods-version'
         icon='calendar-check-o'
-        tooltip={t('Check mods version')}
+        text={t('Check mods version')}
         onClick={this.checkModsVersion}
+        buttonType='both'
       />;
     }
   }

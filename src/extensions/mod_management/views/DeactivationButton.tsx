@@ -40,7 +40,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     return <ToolbarIcon
       id='activate-mods'
       icon='chain-broken'
-      tooltip={ t('Unlink Mods') }
+      text={ t('Unlink Mods') }
       onClick={ this.activate }
     />;
   }

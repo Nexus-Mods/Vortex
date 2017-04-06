@@ -1,3 +1,4 @@
+import { setOverlayOpen } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
 
 import { IComponentContext } from '../types/IComponentContext';
@@ -18,7 +19,7 @@ import MainFooter from './MainFooter';
 import Notifications from './Notifications';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
-import { Button, NavItem } from './TooltipControls';
+import { Button, IconButton, NavItem } from './TooltipControls';
 
 import * as React from 'react';
 import { Alert, Modal, Nav } from 'react-bootstrap';
@@ -43,10 +44,12 @@ export interface IMainWindowState {
 
 export interface IConnectedProps {
   tabsMinimized: boolean;
+  overlayOpen: boolean;
 }
 
 export interface IActionProps {
   onSetTabsMinimized: (minimized: boolean) => void;
+  onSetOverlayOpen: (open: boolean) => void;
 }
 
 export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps & II18NProps;
@@ -60,6 +63,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private buttonsLeft: IIconDefinition[];
   private buttonsRight: IIconDefinition[];
 
+  private settingsPage: IMainPage;
+
   constructor(props: IProps) {
     super(props);
 
@@ -69,15 +74,24 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       loadedPages: [],
     };
 
+    this.settingsPage = {
+      title: 'Settings',
+      group: 'global',
+      component: Settings,
+      icon: 'sliders',
+      propsFunc: () => undefined,
+      visible: () =>  true,
+    };
+
     this.buttonsLeft = [
     ];
 
     this.buttonsRight = [
-      {
+/*      {
         icon: 'gear',
         title: 'Settings',
         action: () => this.showLayer('settings'),
-      },
+      },*/
     ];
 
     if (process.env.NODE_ENV === 'development') {
@@ -121,7 +135,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         { this.renderFooter() }
         </Layout>
         <Dialog />
-        { this.renderModalSettings() }
+        { /* this.renderModalSettings() */ }
         { this.renderDeveloperModal() }
         <DialogContainer />
       </div>
@@ -129,12 +143,21 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderToolbar() {
+    const {t} = this.props;
+
     return (
       <Fixed id='main-toolbar'>
         <object id='nexus-logo' data='assets/images/logo.svg' type='image/svg+xml' />
         <IconBar
           group='application-icons'
           staticElements={this.buttonsLeft}
+        />
+        <IconButton
+          id='btn-open-flyout'
+          icon='ellipsis-v'
+          tooltip={t('Functions')}
+          onClick={this.toggleOverlay}
+          className='pull-right'
         />
         <IconBar
           group='help-icons'
@@ -169,6 +192,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
                 style={{ flexGrow: 1 }}
               >
                 {globalPages.map(this.renderPageButton)}
+                {this.renderPageButton(this.settingsPage)}
               </Nav>
               <Nav
                 bsStyle='pills'
@@ -198,10 +222,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               <Icon name={ tabsMinimized ? 'angle-double-right' : 'angle-double-left' } />
             </Button>
           </Fixed>
-          <Flex>
+          <Flex id='main-window-pane'>
             <DNDContainer>
               { objects.map((obj) =>
                 this.renderPage(this.state.showPage === obj.title ? 'current' : 'hidden', obj))
+              }
+              { this.renderPage(this.state.showPage === 'Settings' ? 'current' : 'hidden',
+                               this.settingsPage)
               }
             </DNDContainer>
           </Flex>
@@ -219,7 +246,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     );
   }
 
-  private renderModalSettings() {
+  /* private renderModalSettings() {
     const { t } = this.props;
     const { showLayer } = this.state;
     return (
@@ -245,7 +272,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         </Modal.Footer>
       </Modal>
     );
-  }
+  } */
 
   private renderPageButton = (page: IMainPage) => {
     const { t } = this.props;
@@ -283,6 +310,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
   };
 
+  private toggleOverlay = () => {
+    this.props.onSetOverlayOpen(!this.props.overlayOpen);
+  }
+
   private handleSetPage = (key) => {
     this.setMainPage(key);
   };
@@ -300,6 +331,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private setMainPage = (title: string) => {
+    if (this.state.showPage !== title) {
+      this.props.onSetOverlayOpen(false);
+    }
     // set the page as "loaded", set it as the shown page next frame.
     // this way it gets rendered as hidden once and can then "transition"
     // to visible
@@ -350,12 +384,14 @@ function emptyFunc() {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
+    overlayOpen: state.session.base.overlayOpen,
   };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetTabsMinimized: (minimized: boolean) => dispatch(setTabsMinimized(minimized)),
+    onSetOverlayOpen: (open: boolean) => dispatch(setOverlayOpen(open)),
   };
 }
 

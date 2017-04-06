@@ -53,7 +53,7 @@ class ActivationButton extends ComponentEx<IProps, IComponentState> {
       <ToolbarIcon
         id='activate-mods'
         icon='chain'
-        tooltip={t('Link Mods')}
+        text={t('Link Mods')}
         onClick={this.activate}
       />
     </div>;

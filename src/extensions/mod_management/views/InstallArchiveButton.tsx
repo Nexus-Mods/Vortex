@@ -22,8 +22,9 @@ class InstallButton extends ComponentEx<IConnectedProps, {}> {
     return <ToolbarIcon
       id='install-from-archive'
       icon='archive'
-      tooltip={ t('Install from file') }
+      text={ t('Install from file') }
       onClick={ this.startInstallFile }
+      buttonType='both'
     />;
   }
 

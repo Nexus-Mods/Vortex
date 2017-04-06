@@ -15,11 +15,11 @@
 }
 
 #notifications::-webkit-scrollbar { 
-    display: none; 
+  display: none; 
 }
 
 #main-toolbar {
-  background-color: #212c31;
+  background-color: $brand-bg;
   height: 48px;
 }
 
@@ -39,8 +39,13 @@
 }
 
 #main-nav-sidebar {
-  background-color: #212c31;
+  background-color: $brand-bg;
   transition: max-width 1s;
+}
+
+#main-window-pane {
+  background-color: $brand-darkbg;
+  color: #cfd8dc;
 }
 
 .sidebar-expanded {
@@ -78,6 +83,11 @@
   overflow: hidden;
   white-space: nowrap;
   padding: 10px 25px 10px 16px;
+}
+
+.nav-pills > li > a > svg {
+  width: 18px;
+  height: 18px;
 }
 
 .nav > li > a:hover, .nav > li > a:focus {
@@ -559,8 +569,13 @@
 }
 
 .table-main-pane thead {
-  background-color: $gray-dark;
+  background-color: #202c3d;
   color: $gray-lighter;
+}
+
+.table-main-pane tbody {
+  background-color: white;
+  color: black;
 }
 
 .table-details-pane {
@@ -902,6 +917,26 @@ Resizer.disabled:hover {
   opacity: 0;
   z-index: 0;
   visibility: hidden;
+}
+
+.main-page .overlay {
+  position: absolute;
+  height: 100%;
+  z-index: 1500;
+  top: 0px;
+  right: 0px;
+  max-width: 0%;
+  background: $brand-darkbg;
+  border-style: solid;
+  border-color: lighten($brand-bg, 30%);
+  border-width: 0px;
+  transition: max-width 500ms cubic-bezier(0, 1, 1, 1), border-width 0ms 500ms;
+}
+
+.main-page .overlay.in {
+  max-width: 30%;
+  border-width: 2px;
+  transition: max-width 500ms cubic-bezier(1, 0, 1, 1), border-width 0ms 0ms;
 }
 
 #img-add-game {

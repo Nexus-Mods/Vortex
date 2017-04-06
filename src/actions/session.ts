@@ -6,3 +6,9 @@ import safeCreateAction from './safeCreateAction';
  */
 export const displayGroup = safeCreateAction('DISPLAY_GROUP',
   (groupId: string, itemId?: string) => ({ groupId, itemId }));
+
+/**
+ * open the overlay for the current page
+ */
+export const setOverlayOpen = safeCreateAction('SET_OVERLAY_OPEN',
+  (open: boolean) => ({ open }));

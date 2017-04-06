@@ -139,7 +139,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             ref={this.setSplitRef}
           >
             <div className='table-main-pane' ref={this.mainPaneRef}>
-              <Table bordered condensed hover>
+              <Table condensed striped hover>
                 <thead style={{ transform: 'translate(0, 0)' }}>
                   <tr>
                     {this.mVisibleAttributes.map(this.renderHeaderField)}
@@ -276,8 +276,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           : calculatedValues[rowId][attribute.id];
 
         return truthy(filter[attribute.id])
-        && !attribute.filter.matches(filter[attribute.id],
-         value, this.context.api.store.getState());
+        && !attribute.filter.matches(filter[attribute.id], value,
+                                     this.context.api.store.getState());
       }
       ) === undefined;
     })

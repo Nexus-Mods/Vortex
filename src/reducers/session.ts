@@ -8,11 +8,13 @@ import { setSafe } from '../util/storeHelper';
  */
 export const sessionReducer: IReducerSpec = {
   reducers: {
-    [actions.displayGroup as any]: (state, payload) => {
-      return setSafe(state, [ 'displayGroups', payload.groupId ], payload.itemId);
-    },
+    [actions.displayGroup as any]: (state, payload) =>
+      setSafe(state, [ 'displayGroups', payload.groupId ], payload.itemId),
+    [actions.setOverlayOpen as any]: (state, payload) =>
+      setSafe(state, [ 'overlayOpen' ], payload.open),
   },
   defaults: {
     displayGroups: {},
+    overlayOpen: false,
   },
 };

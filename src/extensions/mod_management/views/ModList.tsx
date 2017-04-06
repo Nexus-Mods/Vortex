@@ -8,6 +8,7 @@ import { ComponentEx, connect, extend, translate } from '../../../util/Component
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import IconBar from '../../../views/IconBar';
+import MainPage from '../../../views/MainPage';
 import SuperTable, { ITableRowAction } from '../../../views/Table';
 import TextFilter from '../../../views/table/TextFilter';
 import { IconButton } from '../../../views/TooltipControls';
@@ -32,7 +33,6 @@ import * as opn from 'opn';
 import * as path from 'path';
 import * as React from 'react';
 import { ButtonGroup, DropdownButton, Jumbotron, MenuItem } from 'react-bootstrap';
-import { Fixed, Flex, Layout } from 'react-layout-pane';
 import * as semver from 'semver';
 
 type IModWithState = IMod & IProfileMod;
@@ -257,15 +257,8 @@ class ModList extends ComponentEx<IProps, {}> {
     }
 
     return (
-      <Layout type='column'>
-        <Fixed>
-          <IconBar
-            group='mod-icons'
-            staticElements={this.staticButtons}
-            style={{ width: '100%', display: 'flex' }}
-          />
-        </Fixed>
-        <Flex>
+      <MainPage>
+        <MainPage.Body>
           <SuperTable
             tableId='mods'
 
@@ -279,8 +272,16 @@ class ModList extends ComponentEx<IProps, {}> {
             ]}
             actions={this.modActions}
           />
-        </Flex>
-      </Layout>
+        </MainPage.Body>
+        <MainPage.Overlay>
+          <IconBar
+            group='mod-icons'
+            staticElements={this.staticButtons}
+            buttonType='text'
+            style={{ width: '100%', display: 'flex' }}
+          />
+        </MainPage.Overlay>
+      </MainPage>
     );
   }
 
