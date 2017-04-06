@@ -21,7 +21,7 @@ class SortIndicator extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { direction } = this.props;
     return (
-      <div style={{ float: 'right' }} onClick={ this.cycleDirection }>
+      <div style={{ display: 'inline' }} onClick={ this.cycleDirection }>
         <Icon name={ this.icon(direction) } />
       </div>
     );

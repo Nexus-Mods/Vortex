@@ -11,6 +11,7 @@ export interface IBaseProps {
   instanceId?: string | string[];
   tooltipPlacement?: 'top' | 'right' | 'bottom' | 'left';
   buttonType?: 'text' | 'icon' | 'both';
+  orientation?: 'horizontal' | 'vertical';
 }
 
 export interface IExtensionProps {
@@ -18,6 +19,10 @@ export interface IExtensionProps {
 }
 
 type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes<any>;
+
+function iconSort(lhs: IIconDefinition, rhs: IIconDefinition): number {
+  return (lhs.position || 100) - (rhs.position || 100);
+}
 
 /**
  * represents an extensible row of icons/buttons
@@ -31,11 +36,16 @@ type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes<any>;
 class IconBar extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
-    const { id, objects, className, style } = this.props;
+    const { id, objects, orientation, className, style } = this.props;
 
     return (
-      <ButtonGroup id={id} className={className} style={style} >
-        { objects.map(this.renderIcon) }
+      <ButtonGroup
+        id={id}
+        className={className}
+        style={style}
+        vertical={orientation === 'vertical'}
+      >
+        { objects.sort(iconSort).map(this.renderIcon) }
       </ButtonGroup>
     );
   }
@@ -85,7 +95,7 @@ class IconBar extends React.Component<IProps, {}> {
         icon.props !== undefined ? icon.props() : {},
         { key: id }
       );
-      return <icon.component {...props} />;
+      return <icon.component {...props} buttonType={buttonType} />;
     }
   }
 }
@@ -106,6 +116,7 @@ class IconBar extends React.Component<IProps, {}> {
  */
 function registerIcon(instance: IconBar,
                       group: string,
+                      position: number,
                       iconOrComponent: string | React.ComponentClass<any>,
                       titleOrProps: string | Function,
                       actionOrCondition?: () => void | boolean,
@@ -113,10 +124,10 @@ function registerIcon(instance: IconBar,
   if (instance.props.group === group) {
     if (typeof(iconOrComponent) === 'string') {
       return { type: 'simple', icon: iconOrComponent, title: titleOrProps,
-               action: actionOrCondition, condition };
+               position, action: actionOrCondition, condition };
     } else {
       return { type: 'ext', component: iconOrComponent, props: titleOrProps,
-               condition: actionOrCondition };
+               position, condition: actionOrCondition };
     }
   } else {
     return undefined;

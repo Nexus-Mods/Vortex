@@ -3,7 +3,7 @@ import { IExtensionContext } from '../../types/IExtensionContext';
 import AboutButton from './views/AboutButton';
 
 function init(context: IExtensionContext): boolean {
-  context.registerIcon('help-icons', AboutButton);
+  context.registerIcon('help-icons', 200, AboutButton);
 
   return true;
 }

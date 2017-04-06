@@ -8,7 +8,6 @@ import { IconButton } from '../TooltipControls';
 import SortIndicator from './SortIndicator';
 
 import * as React from 'react';
-import { FormControl } from 'react-bootstrap';
 
 export interface IHeaderProps {
   className: string;
@@ -25,11 +24,16 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     const { t, attribute, className, doFilter } = this.props;
     return (
       <th className={`table-header-cell ${className}`} key={attribute.id}>
-        <div>{ t(attribute.name) }
-        { attribute.isSortable ? this.renderSortIndicator() : null }
-        { attribute.filter !== undefined ? this.renderFilterIndicator() : null }
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className='flex-rest' style={{ display: 'flex', flexDirection: 'row' }}>
+            <p className='vcenter flex-rest'>{ t(attribute.name) }</p>
+            <div style={{ margin: 'auto 5px auto auto', whiteSpace: 'nowrap' }}>
+            { attribute.filter !== undefined ? this.renderFilterIndicator() : null }
+            { attribute.isSortable ? this.renderSortIndicator() : null }
+            </div>
+          </div>
+          { doFilter ? this.props.children : null }
         </div>
-        { doFilter ? this.props.children : null }
       </th>
     );
   }
@@ -49,7 +53,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     return (
       <IconButton
         id={`btn-filter-${attribute.id}`}
-        className='btn-embed pull-right'
+        className='btn-embed btn-table-filter'
         icon='filter'
         tooltip={t('Filter')}
         onClick={this.toggleFilter}

@@ -105,19 +105,20 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['persistent', 'profiles'], profilesReducer);
   context.registerReducer(['settings', 'profiles'], settingsReducer);
 
-  context.registerIcon('game-discovered-buttons', 'asterisk', 'Manage', (instanceIds: string[]) => {
-    let profileId = shortid();
-    let gameId = instanceIds[0];
-    context.api.store.dispatch(setProfile({
-      id: profileId,
-      gameId,
-      name: 'Default',
-      modState: {},
-    }));
-    context.api.store.dispatch(setNextProfile(profileId));
+  context.registerIcon('game-discovered-buttons', 100, 'asterisk', 'Manage',
+    (instanceIds: string[]) => {
+      let profileId = shortid();
+      let gameId = instanceIds[0];
+      context.api.store.dispatch(setProfile({
+        id: profileId,
+        gameId,
+        name: 'Default',
+        modState: {},
+      }));
+      context.api.store.dispatch(setNextProfile(profileId));
   });
 
-  context.registerIcon('game-managed-buttons', 'play', 'Activate', (instanceIds: string[]) => {
+  context.registerIcon('game-managed-buttons', 100, 'play', 'Activate', (instanceIds: string[]) => {
     let store = context.api.store;
     let state: IState = store.getState();
     let gameId = instanceIds[0];

@@ -45,7 +45,7 @@
 
 #main-window-pane {
   background-color: $brand-darkbg;
-  color: #cfd8dc;
+  color: $text-color;
 }
 
 .sidebar-expanded {
@@ -349,7 +349,7 @@
 }
 
 .table-selected {
-  background-color: $gray-lighter;
+  background-color: $brand-lightbg;
 }
 
 .game-thumbnail {
@@ -404,7 +404,7 @@
 }
 
 .game-list-selected {
-  background-color: $gray-lighter;
+  background-color: $brand-lightbg;
 }
 
 .welcome-game-logo {
@@ -551,6 +551,10 @@
   border: 0px;
   padding: 0px;
   width: 100%;
+  background-color: $brand-lightbg;
+  &:focus {
+    background-color: lighten($brand-lightbg, 30%);
+  }
 }
 
 .menu-label {
@@ -569,19 +573,49 @@
 }
 
 .table-main-pane thead {
-  background-color: #202c3d;
   color: $gray-lighter;
+  background-image: linear-gradient($brand-bg, $brand-bg), 
+        linear-gradient($table-header-border-color,$table-header-border-color);
+  background-clip: content-box, padding-box;
+}
+
+.table-main-pane thead th {
+  padding: $table-header-border-width 0px $table-header-border-width !important;
+  height: 100%;
+}
+
+.table-main-pane thead th > div {
+  height: 100%;
+  min-height: 48px;
+  display: flex;
+  flex-direction: row;
+}
+
+.table-main-pane thead th:first-child {
+  padding-left: $table-header-border-width !important;
+}
+
+.table-main-pane thead th:last-child {
+  padding-right: $table-header-border-width !important;
 }
 
 .table-main-pane tbody {
-  background-color: white;
-  color: black;
+  background-color: $brand-bg;
+//  color: black;
 }
 
 .table-details-pane {
   height: 100%;
   overflow-y: auto;
   padding: 5px;
+}
+
+.table-layout {
+  margin: 10px;
+}
+
+.btn-table-filter {
+  height: 100%;
 }
 
 .cell-enabled, .header-enabled {
@@ -601,6 +635,10 @@
 }
 
 .cell-progress, .header-progress {
+  text-align: center;
+}
+
+.header-action {
   text-align: center;
 }
 
@@ -749,58 +787,6 @@
   text-indent: 10px;
 }
 
-.Resizer {
-  background: #000;
-  opacity: .2;
-  z-index: 1;
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
-  box-sizing: border-box;
-  -moz-background-clip: padding;
-  -webkit-background-clip: padding;
-  background-clip: padding-box;
-}
-
-.Resizer:hover {
-  -webkit-transition: all 2s ease;
-  transition: all 2s ease;
-}
-
-.Resizer.horizontal {
-  height: 11px;
-  margin: -5px 0;
-  border-top: 5px solid rgba(255, 255, 255, 0);
-  border-bottom: 5px solid rgba(255, 255, 255, 0);
-  cursor: row-resize;
-  width: 100%;
-}
-
-.Resizer.horizontal:hover {
-  border-top: 5px solid rgba(0, 0, 0, 0.5);
-  border-bottom: 5px solid rgba(0, 0, 0, 0.5);
-}
-
-.Resizer.vertical {
-  width: 11px;
-  margin: 0 -5px;
-  border-left: 5px solid rgba(255, 255, 255, 0);
-  border-right: 5px solid rgba(255, 255, 255, 0);
-  cursor: col-resize;
-}
-
-.Resizer.vertical:hover {
-  border-left: 5px solid rgba(0, 0, 0, 0.5);
-  border-right: 5px solid rgba(0, 0, 0, 0.5);
-}
-
-Resizer.disabled {
-  cursor: not-allowed;
-}
-
-Resizer.disabled:hover {
-  border-color: transparent;
-}
-
 .env-edit-buttons {
   position: absolute;
   top: 3px;
@@ -827,6 +813,10 @@ Resizer.disabled:hover {
   background-color: #192125;
   border-width: 0px;
   padding: 5px 8px;
+}
+
+.table {
+  margin-bottom: 0px;
 }
 
 .table > thead > tr > th {
@@ -922,7 +912,7 @@ Resizer.disabled:hover {
 .main-page .overlay {
   position: absolute;
   height: 100%;
-  z-index: 1500;
+  z-index: $zindex-navbar-fixed;
   top: 0px;
   right: 0px;
   max-width: 0%;
@@ -930,15 +920,49 @@ Resizer.disabled:hover {
   border-style: solid;
   border-color: lighten($brand-bg, 30%);
   border-width: 0px;
-  transition: max-width 500ms cubic-bezier(0, 1, 1, 1), border-width 0ms 500ms;
+  transition: max-width 300ms cubic-bezier(0, 1, 1, 1), border-width 0ms 300ms;
 }
 
 .main-page .overlay.in {
   max-width: 30%;
   border-width: 2px;
-  transition: max-width 500ms cubic-bezier(1, 0, 1, 1), border-width 0ms 0ms;
+  transition: max-width 300ms cubic-bezier(1, 0, 1, 1), border-width 0ms 0ms;
+}
+
+.main-page .global-overlay {
+  position: absolute;
+  bottom: 0px;
 }
 
 #img-add-game {
   margin-bottom: 10px;
+}
+
+.btn-toolbar-text {
+  margin: 0px 0px 0px 10px;
+  display: inline;
+}
+
+.vcenter {
+  margin: auto 0px auto 0px;
+}
+
+.flex-rest {
+  flex: 1 1 0%;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  border: 1px solid $table-header-border-color;
+}
+
+::-webkit-scrollbar-track {
+  background-color: $brand-bg;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: $table-header-border-color;
+  box-shadow: inset 0 0 1px 1px $brand-darkbg;
+  -webkit-box-shadow: inset 0 0 1px 1px $brand-darkbg;
 }

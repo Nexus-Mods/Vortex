@@ -8,6 +8,7 @@ export interface ITooltipProps {
   tooltip: string | React.ReactElement<any>;
   id: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
+  buttonType?: 'text' | 'icon' | 'both';
 }
 
 export type ButtonProps = ITooltipProps & typeof BootstrapButton.defaultProps;
@@ -104,20 +105,30 @@ export type ToggleButtonProps = ButtonProps & IToggleButtonExtraProps;
 
 export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
   public render() {
+    const {state} = this.props;
     let relayProps = Object.assign({}, this.props);
 
-    ['tooltip', 'offTooltip', 'placement', 'onIcon', 'offIcon', 'state'].forEach((prop) => {
+    ['buttonType', 'tooltip', 'offTooltip', 'placement',
+     'onIcon', 'offIcon', 'state'].forEach((prop) => {
       delete relayProps[prop];
     });
 
-    if (typeof (this.props.tooltip) === 'string') {
-      return (<BootstrapButton {...relayProps} title={this.props.tooltip}>
-        <SvgIcon name={this.props.state ? this.props.onIcon : this.props.offIcon} />
+    const bType = this.props.buttonType || 'icon';
+    const icon = state ? this.props.onIcon : this.props.offIcon;
+    const tooltipText = state ? this.props.tooltip : this.props.offTooltip;
+
+    if (typeof (tooltipText) === 'string') {
+      return (<BootstrapButton {...relayProps} title={tooltipText}>
+        { ['icon', 'both'].indexOf(bType) !== -1 ? <SvgIcon name={icon} /> : null }
+        { ['text', 'both'].indexOf(bType) !== -1
+          ? <p className='btn-toolbar-text'>{tooltipText}</p>
+          : null }
+        { this.props.children }
       </BootstrapButton>);
     } else {
       const tooltip = (
         <Popover id={this.props.id}>
-          {this.props.state ? this.props.tooltip : this.props.offTooltip}
+          {tooltipText}
         </Popover>
       );
       return (
@@ -128,7 +139,11 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
           delayHide={150}
         >
           <BootstrapButton {...relayProps}>
-            <SvgIcon name={this.props.state ? this.props.onIcon : this.props.offIcon} />
+            { ['icon', 'both'].indexOf(bType) !== -1 ? <SvgIcon name={icon} /> : null }
+            { ['text', 'both'].indexOf(bType) !== -1
+              ? <p className='btn-toolbar-text'>{tooltipText}</p>
+              : null }
+            { this.props.children }
           </BootstrapButton>
         </OverlayTrigger>
       );

@@ -23,6 +23,11 @@ $brand-danger:          #E74C3C;
 
 $brand-bg:              #202c3d;
 $brand-darkbg:          #192431;
+$brand-lightbg:         #283e51;
+
+$table-header-border-width: 2px;
+$table-header-border-color: #145076;
+
 
 //== Scaffolding
 //
@@ -31,7 +36,7 @@ $brand-darkbg:          #192431;
 //** Background color for `<body>`.
 $body-bg:               $brand-bg;
 //** Global text color on `<body>`.
-$text-color:            $brand-primary;
+$text-color:            #cfd8dc;
 
 //** Global textual link color.
 $link-color:            $brand-success;
@@ -129,11 +134,11 @@ $table-cell-padding:            8px;
 $table-condensed-cell-padding:  2px;
 
 //** Default background color used for all tables.
-$table-bg:                      white;
+$table-bg:                      $brand-bg;
 //** Background color used for `.table-striped`.
 $table-bg-accent:               #e9e9e9;
 //** Background color used for `.table-hover`.
-$table-bg-hover:                $gray-lighter;
+$table-bg-hover:                $brand-lightbg;
 $table-bg-active:               $table-bg-hover;
 
 //** Border color for table and cell borders.
@@ -599,7 +604,7 @@ $modal-title-padding:         15px;
 $modal-title-line-height:     $line-height-base;
 
 //** Background color of modal content area
-$modal-content-bg:                             #fff;
+$modal-content-bg:                             $brand-bg;
 //** Modal content border color
 $modal-content-border-color:                   rgba(0,0,0,.2);
 //** Modal content border color **for IE8**

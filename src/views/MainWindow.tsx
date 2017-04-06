@@ -13,16 +13,18 @@ import DeveloperType from './Developer';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
+import GlobalOverlay from './GlobalOverlay';
 import Icon from './Icon';
 import IconBar from './IconBar';
 import MainFooter from './MainFooter';
+import MainPageContainer from './MainPageContainer';
 import Notifications from './Notifications';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import { Button, IconButton, NavItem } from './TooltipControls';
 
 import * as React from 'react';
-import { Alert, Modal, Nav } from 'react-bootstrap';
+import { Modal, Nav } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 import update = require('react-addons-update');
 
@@ -60,8 +62,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     api: React.PropTypes.object.isRequired,
   };
 
-  private buttonsLeft: IIconDefinition[];
-  private buttonsRight: IIconDefinition[];
+  private applicationButtons: IIconDefinition[];
 
   private settingsPage: IMainPage;
 
@@ -83,26 +84,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       visible: () =>  true,
     };
 
-    this.buttonsLeft = [
+    this.applicationButtons = [
     ];
-
-    this.buttonsRight = [
-/*      {
-        icon: 'gear',
-        title: 'Settings',
-        action: () => this.showLayer('settings'),
-      },*/
-    ];
-
-    if (process.env.NODE_ENV === 'development') {
-      this.buttonsRight.push(
-        {
-          icon: 'wrench',
-          title: 'Developer',
-          action: () => this.showLayer('developer'),
-        }
-      );
-    }
   }
 
   public getChildContext(): IComponentContext {
@@ -150,7 +133,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <object id='nexus-logo' data='assets/images/logo.svg' type='image/svg+xml' />
         <IconBar
           group='application-icons'
-          staticElements={this.buttonsLeft}
+          staticElements={this.applicationButtons}
         />
         <IconButton
           id='btn-open-flyout'
@@ -158,11 +141,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           tooltip={t('Functions')}
           onClick={this.toggleOverlay}
           className='pull-right'
-        />
-        <IconBar
-          group='help-icons'
-          className='pull-right'
-          staticElements={this.buttonsRight}
         />
       </Fixed>
     );
@@ -177,6 +155,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const supportPages = objects.filter(page => page.group === 'support');
 
     const sbClass = tabsMinimized ? 'sidebar-compact' : 'sidebar-expanded';
+
+    const globalOverlay = <GlobalOverlay t={t}/>;
+
+    let pages = objects.map(obj => this.renderPage(obj, globalOverlay));
+    pages.push(this.renderPage(this.settingsPage, globalOverlay));
 
     return (
       <Flex>
@@ -224,12 +207,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           </Fixed>
           <Flex id='main-window-pane'>
             <DNDContainer>
-              { objects.map((obj) =>
-                this.renderPage(this.state.showPage === obj.title ? 'current' : 'hidden', obj))
-              }
-              { this.renderPage(this.state.showPage === 'Settings' ? 'current' : 'hidden',
-                               this.settingsPage)
-              }
+              {pages}
             </DNDContainer>
           </Flex>
         </Layout>
@@ -291,23 +269,19 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       </NavItem>;
   }
 
-  private renderPage(type: string, page: IMainPage) {
-    if (this.state.loadedPages.indexOf(page.title) === -1) {
+  private renderPage(page: IMainPage, globalOverlay: JSX.Element) {
+    const { loadedPages, showPage } = this.state;
+
+    if (loadedPages.indexOf(page.title) === -1) {
       // don't render pages that have never been opened
       return null;
     }
-
-    if (page !== undefined) {
-      let props = page.propsFunc();
-      return <div key={page.title} className={`main-page main-page-${type}`}>
-        <page.component
-          id={page.title}
-          key={page.title}
-          {...props}
-        /></div>;
-    } else {
-      return <Alert>No content pages</Alert>;
-    }
+    return <MainPageContainer
+      key={page.title}
+      page={page}
+      active={showPage === page.title}
+      globalOverlay={globalOverlay}
+    />;
   };
 
   private toggleOverlay = () => {
@@ -318,9 +292,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.setMainPage(key);
   };
 
-  private showLayer = (layer: string) => {
-    this.showLayerImpl(layer);
-  }
   private hideLayer = () => this.showLayerImpl('');
 
   private showLayerImpl(layer: string): void {

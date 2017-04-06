@@ -13,4 +13,5 @@ export interface IIconDefinition {
   props?: () => Object;
   action?: (instanceId: string | string[]) => void;
   condition?: (instanceId: string | string[]) => boolean;
+  position?: number;
 }

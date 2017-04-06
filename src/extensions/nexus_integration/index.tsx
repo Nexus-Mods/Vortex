@@ -304,7 +304,7 @@ function init(context: IExtensionContextExt): boolean {
       });
   });
 
-  context.registerIcon('download-icons', InputButton,
+  context.registerIcon('download-icons', 100, InputButton,
     () => ({
       key: 'input-nxm-url',
       id: 'input-nxm-url',
@@ -314,7 +314,7 @@ function init(context: IExtensionContextExt): boolean {
       onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl),
     }));
 
-  context.registerIcon('categories-icons', IconButton,
+  context.registerIcon('categories-icons', 100, IconButton,
     () => ({
       key: 'retrieve-categories',
       id: 'retrieve-categories',

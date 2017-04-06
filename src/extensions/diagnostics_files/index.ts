@@ -4,7 +4,7 @@ import { exec } from 'child_process';
 import { app as appIn, remote } from 'electron';
 
 function init(context: IExtensionContext): boolean {
-  context.registerIcon('help-icons', 'bug', 'Diagnostics Files', () => {
+  context.registerIcon('help-icons', 100, 'bug', 'Diagnostics Files', () => {
     exec('start ' + logPath(context.api.store));
   });
 

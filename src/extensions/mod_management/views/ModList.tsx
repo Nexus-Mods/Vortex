@@ -39,6 +39,7 @@ type IModWithState = IMod & IProfileMod;
 
 interface IBaseProps {
   objects: ITableAttribute[];
+  globalOverlay: JSX.Element;
 }
 
 interface IAttributeStateMap {
@@ -280,6 +281,7 @@ class ModList extends ComponentEx<IProps, {}> {
             buttonType='text'
             style={{ width: '100%', display: 'flex' }}
           />
+          {this.props.globalOverlay}
         </MainPage.Overlay>
       </MainPage>
     );

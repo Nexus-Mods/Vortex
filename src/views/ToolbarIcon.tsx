@@ -21,7 +21,10 @@ class ToolbarIcon extends React.Component<IToolbarIconProps, {}> {
     return (
       <Button tooltip={text} id={id} placement={placement} onClick={this.invokeAction}>
         { ['icon', 'both'].indexOf(bType) !== -1 ? <Icon name={icon} /> : null }
-        { ['text', 'both'].indexOf(bType) !== -1 ? <p>{text}</p> : null }
+        { ['text', 'both'].indexOf(bType) !== -1
+          ? <p className='btn-toolbar-text'>{text}</p>
+          : null }
+        { this.props.children }
       </Button>
     );
   }

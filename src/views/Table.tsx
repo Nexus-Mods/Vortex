@@ -122,8 +122,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       hasActions = rowActions.length > 0;
     }
 
+    let actionHeader = hasActions
+      ? <th className={`table-${tableId} header-action`}>
+          <div>
+            <p className='vcenter'>{t('Actions')}</p>
+          </div>
+        </th>
+      : null;
+
     return (
-      <Layout type='column'>
+      <Layout className='table-layout' type='column'>
         <Fixed>
           <div className='pull-right'>
             {objects.map(this.renderAttributeToggle)}
@@ -139,14 +147,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             ref={this.setSplitRef}
           >
             <div className='table-main-pane' ref={this.mainPaneRef}>
-              <Table condensed striped hover>
+              <Table condensed hover>
                 <thead style={{ transform: 'translate(0, 0)' }}>
                   <tr>
                     {this.mVisibleAttributes.map(this.renderHeaderField)}
-                    {hasActions
-                      ? <th className={`table-${tableId} header-action`}>{t('Actions')}</th>
-                      : null
-                    }
+                    { actionHeader }
                   </tr>
                 </thead>
                 {this.renderBody(this.mVisibleAttributes)}
@@ -340,7 +345,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const rowData = this.state.calculatedValues[rowId];
 
-    if (rowData === undefined) {
+    if ((rowData === undefined) || (data[rowId] === undefined)) {
       return null;
     }
 
