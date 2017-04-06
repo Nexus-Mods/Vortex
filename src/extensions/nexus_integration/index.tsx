@@ -148,7 +148,7 @@ function processErrorMessage(statusCode: number, errorMessage: string, gameId: s
   } else if ((statusCode >= 500) && (statusCode < 600)) {
     return {
       Error: 'Something is wrong with the Nexus server, nothing can be ' +
-      'done on your end: Internal server error'
+      'done on your end: Internal server error',
     };
   } else {
     return {
@@ -322,8 +322,6 @@ function init(context: IExtensionContextExt): boolean {
       tooltip: 'Retrieve categories',
       onClick: () => retrieveCategories(context.api, true),
     }));
-
-  // context.registerIcon('mod-icons', )
 
   context.registerTableAttribute('mods', {
     id: 'endorsed',

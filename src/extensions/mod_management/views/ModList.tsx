@@ -331,7 +331,7 @@ class ModList extends ComponentEx<IProps, {}> {
         } else {
           versionIcon = {
             icon: 'bug',
-            tooltip: 'Mod should be updated because the insalled version is bugged',
+            tooltip: 'Mod should be updated because the installed version is bugged',
             classname: 'modUpdating-bug',
           };
         }
@@ -481,8 +481,8 @@ class ModList extends ComponentEx<IProps, {}> {
         gameMode, 'mods', modId);
       opn(modPageUrl);
     } else {
-      let test = `nxm://${gameMode}/mods/${modId}/files/${newestFileId}`;
-      this.context.api.events.emit('download-updated-mod', test);
+      const url = `nxm://${gameMode}/mods/${modId}/files/${newestFileId}`;
+      this.context.api.events.emit('download-updated-mod', url);
     }
   }
 
