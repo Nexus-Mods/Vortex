@@ -19,6 +19,7 @@ import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
 import { settingsReducer } from './reducers/settings';
 import checkModsVersion from './util/checkModsVersion';
+import convertGameId from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import EndorseModButton from './views/EndorseModButton';
@@ -46,16 +47,6 @@ export interface IExtensionContextExt extends IExtensionContext {
  *   far coincides with the nxm link format except for upper/lower case.
  *   This should be two functions!
  */
-function convertGameId(input: string): string {
-  let inputL = input.toLowerCase();
-  if (inputL === 'skyrimse') {
-    return 'skyrimspecialedition';
-  } else if (inputL === 'falloutnv') {
-    return 'newvegas';
-  } else {
-    return input;
-  }
-}
 
 function startDownload(api: IExtensionApi, nxmurl: string) {
   const url: NXMUrl = new NXMUrl(nxmurl);
@@ -144,7 +135,11 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
 
 function processErrorMessage(statusCode: number, errorMessage: string, gameId: string) {
   if (statusCode === 404) {
-    return { Error: 'Game not found', Game: gameId };
+    if (errorMessage !== undefined) {
+      return { Error: errorMessage, Game: gameId };
+   } else {
+      return { Error: 'Game not found', Game: gameId };
+    }
   } else if ((statusCode >= 500) && (statusCode < 600)) {
     return {
       Error: 'Something is wrong with the Nexus server, nothing can be ' +

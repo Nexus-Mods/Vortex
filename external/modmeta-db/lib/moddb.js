@@ -28,7 +28,7 @@ class ModDB {
                     changelogHtml: nexusObj.file_details.changelog_html,
                     fileSizeBytes: nexusObj.file_details.file_size,
                     logicalFileName: nexusObj.file_details.name,
-                    fileVersion: semvish.clean(nexusObj.file_details.version),
+                    fileVersion: semvish.clean(nexusObj.file_details.version, true),
                     gameId,
                     modName: nexusObj.mod.name,
                     modId: nexusObj.mod.mod_id,

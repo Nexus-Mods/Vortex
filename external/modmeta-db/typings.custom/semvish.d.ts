@@ -10,7 +10,7 @@ declare module 'semvish' {
   export function lte(v1: string, v2: string);
   export function cmp(v1: string, comparator: string, v2: string);
 
-  export function clean(version: string);
+  export function clean(version: string, loose: boolean);
   export function valid(version: string);
   export function satisfies(version: string, range: string, loose: boolean);
 }

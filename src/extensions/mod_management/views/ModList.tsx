@@ -11,15 +11,17 @@ import IconBar from '../../../views/IconBar';
 import MainPage from '../../../views/MainPage';
 import SuperTable, { ITableRowAction } from '../../../views/Table';
 import TextFilter from '../../../views/table/TextFilter';
-import { IconButton } from '../../../views/TooltipControls';
 
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { removeMod, setModAttribute } from '../actions/mods';
 import { IMod } from '../types/IMod';
+import { IModProps } from '../types/IModProps';
 import { IVersion, IVersionIcon } from '../types/IVersion';
-import ChangelogButton from '../views/ChangelogButton';
+import retrieveNewModsWithState from '../util/retrieveNewModsWithState';
+import VersionChangelogButton from '../views/VersionChangelogButton';
+import VersionIconButton from '../views/VersionIconButton';
 
 import { INSTALL_TIME } from '../modAttributes';
 import { installPath } from '../selectors';
@@ -29,7 +31,6 @@ import InstallArchiveButton from './InstallArchiveButton';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import * as opn from 'opn';
 import * as path from 'path';
 import * as React from 'react';
 import { ButtonGroup, DropdownButton, Jumbotron, MenuItem } from 'react-bootstrap';
@@ -44,11 +45,6 @@ interface IBaseProps {
 
 interface IAttributeStateMap {
   [attributeId: string]: IAttributeState;
-}
-
-interface IModProps {
-  mods: { [modId: string]: IMod };
-  modState: { [modId: string]: IProfileMod };
 }
 
 interface IConnectedProps extends IModProps {
@@ -150,7 +146,7 @@ class ModList extends ComponentEx<IProps, {}> {
       icon: 'birthday-cake',
       calc: (mod: IMod) => getSafe(mod.attributes, ['version'], ''),
       customRenderer: (mod: IMod) =>
-        this.renderVersionIcon(mod),
+        this.renderVersion(mod),
       placement: 'table',
       isToggleable: true,
       edit: {},
@@ -194,52 +190,11 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   public updateModsWithState(oldProps: IModProps, newProps: IModProps) {
-
-    let newModsWithState = {};
-    Object.keys(newProps.mods).forEach((modId: string) => {
-
-      const nexusModId: number = parseInt(getSafe(newProps.mods[modId].attributes,
-        ['modId'], undefined), 10);
-
-      let enabledModId = Object.keys(newProps.mods).filter((key) => {
-        if (parseInt(getSafe(newProps.mods[key].attributes, ['modId'],
-          undefined), 10) === nexusModId && getSafe(newProps.modState, [key, 'enabled'], false)) {
-          return key;
-        } else {
-          return null;
-        }
-      });
-
-      let modIdList = Object.keys(newModsWithState).filter((key) =>
-        parseInt(getSafe(newModsWithState[key].attributes, ['modId'],
-          undefined), 10) === nexusModId);
-
-      if (modIdList.length === 0) {
-        if ((oldProps.mods[modId] !== newProps.mods[modId])
-          || (oldProps.modState[modId] !== newProps.modState[modId])) {
-          if (enabledModId.length > 0) {
-            modId = enabledModId[0];
-          }
-          newModsWithState[modId] = Object.assign({}, newProps.mods[modId],
-            newProps.modState[modId]);
-        } else {
-          if (enabledModId.length > 0) {
-            newModsWithState[enabledModId[0]] = Object.assign({}, newProps.mods[enabledModId[0]],
-              newProps.modState[enabledModId[0]]);
-          } else if (this.modAction === 'removing') {
-            if (newProps.mods[modId] !== undefined) {
-              newModsWithState[modId] = Object.assign({}, newProps.mods[modId],
-                newProps.modState[modId]);
-            }
-          } else {
-            if (this.mModsWithState[modId] !== undefined) {
-              newModsWithState[modId] = Object.assign({}, newProps.mods[modId],
-                newProps.modState[modId]);
-            }
-          }
-        }
-      }
-    });
+    let newModsWithState = retrieveNewModsWithState(
+      oldProps,
+      newProps,
+      this.mModsWithState,
+      this.modAction);
     this.mModsWithState = newModsWithState;
   }
 
@@ -287,7 +242,7 @@ class ModList extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderVersionIcon = (mod: IMod): JSX.Element => {
+  private renderVersion = (mod: IMod): JSX.Element => {
 
     const { mods, modState } = this.props;
     const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
@@ -328,13 +283,13 @@ class ModList extends ComponentEx<IProps, {}> {
             icon: 'ban',
             tooltip: 'Mod should be disabled because this version is '
             + 'bugged and there is no update',
-            classname: 'modUpdating-ban',
+            classname: 'mod-updating-ban',
           };
         } else {
           versionIcon = {
             icon: 'bug',
             tooltip: 'Mod should be updated because the installed version is bugged',
-            classname: 'modUpdating-bug',
+            classname: 'mod-updating-bug',
           };
         }
       } else if (newestFileId !== undefined) {
@@ -342,13 +297,13 @@ class ModList extends ComponentEx<IProps, {}> {
           versionIcon = {
             icon: 'cloud-download',
             tooltip: 'Mod can be updated',
-            classname: 'modUpdating-download',
+            classname: 'mod-updating-download',
           };
         } else if (newestFileId === 0 && fileId !== undefined && version !== undefined) {
           versionIcon = {
             icon: 'external-link',
             tooltip: 'Mod can be updated (but you will have to pick the file yourself)',
-            classname: 'modUpdating-warning',
+            classname: 'mod-updating-warning',
           };
         }
       }
@@ -356,13 +311,13 @@ class ModList extends ComponentEx<IProps, {}> {
 
     return (
       <div className={versionIcon !== undefined ? versionIcon.classname : null}>
-        {this.renderVersion(versions, selectedVersion, mod, version,
+        {this.renderVersionParams(versions, selectedVersion, mod, version,
           versionIcon, nexusModId, newestFileId)}
       </div>
     );
   }
 
-  private renderVersion(
+  private renderVersionParams(
     versions: IVersion[],
     selectedVersion: string,
     mod: IMod,
@@ -371,6 +326,8 @@ class ModList extends ComponentEx<IProps, {}> {
     nexusModId: number,
     newestFileId: string): JSX.Element {
 
+    const { gameMode } = this.props;
+
     if (versions.length === 0) {
       return null;
     } else if (versions.length < 2) {
@@ -378,8 +335,16 @@ class ModList extends ComponentEx<IProps, {}> {
         <div>
           {versions[0].version}
           <ButtonGroup id={selectedVersion}>
-            {this.renderIconButton(versionIcon, nexusModId, newestFileId)}
-            {this.renderChangelog(mod)}
+            <VersionIconButton
+              newestFileId={newestFileId}
+              nexusModId={nexusModId}
+              versionIcon={versionIcon}
+              gameMode={gameMode}
+              api={this.context.api}
+            />
+            <VersionChangelogButton
+              mod={mod}
+            />
           </ButtonGroup>
         </div>);
     } else {
@@ -393,8 +358,16 @@ class ModList extends ComponentEx<IProps, {}> {
           >
             {versions.map((ver) => { return this.renderVersionOptions(ver, selectedVersion); })}
           </DropdownButton>
-          {this.renderIconButton(versionIcon, nexusModId, newestFileId)}
-          {this.renderChangelog(mod)}
+          <VersionIconButton
+            newestFileId={newestFileId}
+            nexusModId={nexusModId}
+            versionIcon={versionIcon}
+            gameMode={gameMode}
+            api={this.context.api}
+          />
+          <VersionChangelogButton
+            mod={mod}
+          />
         </ButtonGroup>
       );
     }
@@ -430,61 +403,6 @@ class ModList extends ComponentEx<IProps, {}> {
         onSetModEnabled(profileId, newVersion, true);
       }
       this.context.api.events.emit('mods-enabled', [newVersion], true);
-    }
-  }
-
-  private renderChangelog = (mod: IMod): JSX.Element => {
-    let changelog = getSafe(mod.attributes, ['changelogHtml'], undefined);
-    let regex = /<br[^>]*>/gi;
-    if (changelog !== undefined) {
-      changelog = changelog.replace(regex, '\n');
-    }
-    const { gameMode } = this.props;
-
-    if (changelog !== undefined) {
-      return (
-        <ChangelogButton
-          gameMode={gameMode}
-          mod={mod}
-          changelogsText={changelog}
-        />
-      );
-    } else {
-      return null;
-    }
-  }
-
-  private renderIconButton = (versionIcon: IVersionIcon, nexusModId: number,
-    newestFileId: string): JSX.Element => {
-    if (versionIcon !== undefined) {
-      return (
-        <IconButton
-          className='btn-version-column'
-          id={nexusModId.toString()}
-          value={newestFileId}
-          tooltip={versionIcon.tooltip}
-          icon={versionIcon.icon}
-          onClick={this.downloadMod}
-        />
-      );
-    } else {
-      return null;
-    }
-
-  }
-
-  private downloadMod = (evt) => {
-    const { gameMode } = this.props;
-    let modId = evt.currentTarget.id;
-    let newestFileId = evt.currentTarget.value;
-
-    if (newestFileId === '0') {
-      let modPageUrl = path.join('http://www.nexusmods.com',
-        gameMode, 'mods', modId);
-      opn(modPageUrl);
-    } else {
-      const url = `nxm://${gameMode}/mods/${modId}/files/${newestFileId}`;
-      this.context.api.events.emit('download-updated-mod', url);
     }
   }
 
