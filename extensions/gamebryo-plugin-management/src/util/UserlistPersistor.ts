@@ -78,7 +78,8 @@ class UserlistPersistor implements types.IPersistor {
     }
 
     this.mSerializing = true;
-    return fs.writeFileAsync(this.mUserlistPath, safeDump(this.mUserlist))
+    return fs.writeFileAsync(this.mUserlistPath + '.tmp', safeDump(this.mUserlist))
+      .then(() => fs.renameAsync(this.mUserlistPath + '.tmp', this.mUserlistPath))
       .catch((err) => {
         // TODO: report to the user? The problem is that this might occur repeatedly so we
         //   need to be careful to not spam the user
@@ -86,8 +87,7 @@ class UserlistPersistor implements types.IPersistor {
       })
       .finally(() => {
         this.mSerializing = false;
-      })
-      ;
+      });
   }
 
   private deserialize(): Promise<void> {
