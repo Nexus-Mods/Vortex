@@ -18,8 +18,6 @@ import contentType = require('content-type');
 
 import { log } from '../../util/log';
 
-const request = lazyRequire<typeof requestT>('request');
-
 interface IDownload {
   id: string;
   fd?: number;
@@ -71,6 +69,8 @@ class DownloadWorker {
   }
 
   public assignJob(job: IDownloadJob) {
+    const request: typeof requestT = require('request');
+
     this.mRequest = request({
       method: 'GET',
       uri: job.url,
