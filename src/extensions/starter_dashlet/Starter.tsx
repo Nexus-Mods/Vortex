@@ -219,7 +219,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   private startTool = (info: StarterInfo) => {
-    let { startTool } = require('../../util/startTool');
+    let startTool = require('../../util/startTool').default;
     startTool(info, this.context.api.events, this.queryElevate,
               this.queryDeploy, this.props.onShowError)
     .catch((err: Error) => {

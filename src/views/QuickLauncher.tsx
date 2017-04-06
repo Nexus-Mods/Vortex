@@ -110,7 +110,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
   private start = () => {
     const { onShowError } = this.props;
-    let { startTool } = require('../util/startTool');
+    let startTool = require('../util/startTool').default;
     startTool(this.state.starter, this.context.api.events,
               this.queryElevate, this.queryDeploy, onShowError);
   }
