@@ -140,7 +140,7 @@ function processErrorMessage(statusCode: number, errorMessage: string, gameId: s
   } else {
     return {
       Error: 'Unknown error',
-      Servermessage: errorMessage,
+      Servermessage: errorMessage + ' ( Status Code: ' + statusCode + ')',
     };
   }
 }
@@ -198,21 +198,25 @@ function checkModsVersionImpl(
       return null;
     }
 
-    return checkModsVersion(nexus, convertGameId(gameId), nexusModId, fileId)
-      .then((newestFileId: number) => {
-        store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId', newestFileId));
-      })
-      .catch((err) => {
-        let detail = processErrorMessage(err.statusCode, err.message, gameId);
-        if (err.statusCode === 404) {
-          if (!gameNotFoundFlag) {
-            gameNotFoundFlag = true;
-            checkVersionModsReport = detail.Error + '\n';
+    if (nexusModId !== 0) {
+      return checkModsVersion(nexus, convertGameId(gameId), nexusModId, fileId)
+        .then((newestFileId: number) => {
+          store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId', newestFileId));
+        })
+        .catch((err) => {
+          let detail = processErrorMessage(err.statusCode, err.message, gameId);
+          if (err.statusCode === 404) {
+            if (!gameNotFoundFlag) {
+              gameNotFoundFlag = true;
+              checkVersionModsReport = detail.Error + '\n';
+            }
+          } else {
+            checkVersionModsReport = checkVersionModsReport + detail.Error + '\n';
           }
-        } else {
-          checkVersionModsReport = checkVersionModsReport + detail.Error + '\n';
-        }
-      });
+        });
+    } else {
+      return null;
+    }
   }));
 }
 
