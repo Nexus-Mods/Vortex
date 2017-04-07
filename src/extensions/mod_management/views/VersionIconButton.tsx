@@ -26,9 +26,9 @@ interface IConnectedProps {
 type IProps = IBaseProps & IConnectedProps;
 
 /**
- * Changelogs Button
+ * VersionIcon Button
  * 
- * @class ChangelogsButton
+ * @class VersionIconButton
  */
 class VersionIconButton extends ComponentEx<IProps, IVersionIconButtonState> {
 

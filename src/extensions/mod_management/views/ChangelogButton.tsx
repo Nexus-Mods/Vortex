@@ -10,7 +10,7 @@ import { FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
 export interface IBaseProps {
   mod: IMod;
   gameMode: string;
-  changelogsText: string;
+  changelogText: string;
 }
 
 export interface IChangelogButtonState {
@@ -23,9 +23,9 @@ interface IConnectedProps {
 type IProps = IBaseProps & IConnectedProps;
 
 /**
- * Changelogs Button
+ * Changelog Button
  * 
- * @class ChangelogsButton
+ * @class ChangelogButton
  */
 class ChangelogButton extends ComponentEx<IProps, IChangelogButtonState> {
 
@@ -38,16 +38,16 @@ class ChangelogButton extends ComponentEx<IProps, IChangelogButtonState> {
   }
 
   public render(): JSX.Element {
-    let { changelogsText, mod, t } = this.props;
+    let { changelogText, mod, t } = this.props;
 
     const popoverBottom = (
       <Popover
         id='popover-positioned-scrolling-bottom'
-        title={t('Changelogs')}
+        title={t('Changelog')}
       >
         <FormGroup key={mod.id}>
-          <div key='dialog-form-changelogs'>
-           {changelogsText}
+          <div key='dialog-form-changelog'>
+           {changelogText}
           </div>
         </FormGroup>
       </Popover>

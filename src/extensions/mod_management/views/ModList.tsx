@@ -245,7 +245,7 @@ class ModList extends ComponentEx<IProps, {}> {
   private renderVersion = (mod: IMod): JSX.Element => {
 
     const { mods, modState } = this.props;
-    const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+    const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
     let versions: IVersion[] = [];
     let selectedVersion: string = '';
 
@@ -329,7 +329,11 @@ class ModList extends ComponentEx<IProps, {}> {
     const { gameMode } = this.props;
 
     if (versions.length === 0) {
-      return null;
+      return (
+        <div>
+          {version}
+        </div>
+      );
     } else if (versions.length < 2) {
       return (
         <div>

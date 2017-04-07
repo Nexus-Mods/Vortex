@@ -22,9 +22,9 @@ interface IConnectedProps {
 type IProps = IBaseProps & IConnectedProps;
 
 /**
- * Changelogs Button
+ * VersionChangelog Button
  * 
- * @class ChangelogsButton
+ * @class VersionChangelogButton
  */
 class VersionChangelogButton extends ComponentEx<IProps, IVersionChangelogButtonState> {
 
@@ -39,8 +39,8 @@ class VersionChangelogButton extends ComponentEx<IProps, IVersionChangelogButton
   public render(): JSX.Element {
     let { mod, t } = this.props;
 
-    let changelog = getSafe(mod.attributes, ['changelogHtml'], undefined);
-    let regex = /<br[^>]*>/gi;
+    let changelog = getSafe(mod.attributes, ['changelogHtml'], null);
+    const regex = /<br[^>]*>/gi;
     if (changelog !== null) {
       changelog = changelog.replace(regex, '\n');
     }

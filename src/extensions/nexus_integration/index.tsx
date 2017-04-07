@@ -40,14 +40,6 @@ export interface IExtensionContextExt extends IExtensionContext {
     handler: (inputUrl: string) => Promise<string[]>) => void;
 }
 
-/**
- * convert the game id from either our internal format or the format
- * used in NXM links to the format used in the nexus api.
- * TODO: This works only as one function because our internal id so
- *   far coincides with the nxm link format except for upper/lower case.
- *   This should be two functions!
- */
-
 function startDownload(api: IExtensionApi, nxmurl: string) {
   const url: NXMUrl = new NXMUrl(nxmurl);
 
@@ -164,7 +156,7 @@ function endorseModImpl(
     return;
   }
 
-  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
 
   store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'pending'));
@@ -199,21 +191,10 @@ function checkModsVersionImpl(
     }
 
     const fileId: number = getSafe(mod.attributes, ['fileId'], undefined);
-
-    if (fileId === undefined) {
-      log('warn', 'tried to check version to an unknown mod file', { gameId });
-      return null;
-    }
-
-    const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+    const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
 
     if (nexusModId === null) {
       log('warn', 'tried to check version to an unknown mod id', { nexusModId });
-      return null;
-    }
-
-    if (gameId === null) {
-      log('warn', 'tried to check version to an unknown game id', { gameId });
       return null;
     }
 
