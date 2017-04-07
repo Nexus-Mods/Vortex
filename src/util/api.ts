@@ -8,6 +8,7 @@ export * from './storeHelper';
 
 import { Archive } from './archives';
 import AsyncComponent from './AsyncComponent';
+import { NotSupportedError, UserCanceled } from './CustomErrors';
 import runElevated from './elevated';
 import { terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
@@ -23,6 +24,8 @@ export {
   getNormalizeFunc,
   AsyncComponent,
   LazyComponent,
+  NotSupportedError,
+  UserCanceled,
   lazyRequire,
   runElevated,
   setdefault,

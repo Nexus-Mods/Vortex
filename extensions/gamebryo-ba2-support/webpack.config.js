@@ -6,7 +6,7 @@ module.exports = {
   node: { __filename: false, __dirname: false },
   output: {
     libraryTarget: 'commonjs2',
-    library: 'bsa-support',
+    library: 'ba2-support',
     filename: './dist/index.js'
   },
   module: {

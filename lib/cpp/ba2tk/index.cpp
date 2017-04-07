@@ -18,19 +18,22 @@ const char *convertErrorCode(BA2::EErrorCode code) {
   }
 }
 
-class ExtractWorker : public Nan::AsyncWorker {
+class ExtractAllWorker : public Nan::AsyncWorker {
 public:
-  ExtractWorker(std::shared_ptr<BA2::Archive> archive,
-             const char *outputrDirectory,
-             Nan::Callback *appCallback)
+  ExtractAllWorker(std::shared_ptr<BA2::Archive> archive,
+    const char *outputDirectory,
+    bool overwrite,
+    Nan::Callback *appCallback)
     : Nan::AsyncWorker(appCallback)
     , m_Archive(archive)
-    , m_OutputDirectory(outputrDirectory)
+    , m_OutputDirectory(outputDirectory)
+    , m_Overwrite(overwrite)
   {}
 
   void Execute() {
     BA2::EErrorCode code;
-    code = m_Archive->extract(m_OutputDirectory.c_str());
+    code = m_Archive->extractAll(m_OutputDirectory.c_str(),
+      [](int value, std::string fileName) { return true; }, true);
     if (code != BA2::ERROR_NONE) {
       SetErrorMessage(convertErrorCode(code));
     }
@@ -48,6 +51,7 @@ public:
 private:
   std::shared_ptr<BA2::Archive> m_Archive;
   std::string m_OutputDirectory;
+  bool m_Overwrite;
 };
 
 
@@ -66,13 +70,31 @@ public:
 
   ~BA2Archive() {
   }
-  }
 
   void read(const char *fileName) {
     BA2::EErrorCode err = m_Wrapped->read(fileName);
     if (err != BA2::ERROR_NONE) {
       throw std::runtime_error(convertErrorCode(err));
     }
+  }
+
+  const char *getType() const {
+    switch (m_Wrapped->getType()) {
+      case BA2::TYPE_GENERAL: return "general";
+      case BA2::TYPE_DX10: return "dx10";
+      default: return nullptr;
+    }
+  }
+
+  std::vector<std::string> getFileList() const {
+    return m_Wrapped->getFileList();
+  }
+
+  void extractAll(const char *outputDirectory, bool overwrite, nbind::cbFunction callback) const {
+    Nan::AsyncQueueWorker(
+      new ExtractAllWorker(m_Wrapped, outputDirectory, overwrite,
+        new Nan::Callback(callback.getJsFunction())
+      ));
   }
 
 private:
@@ -123,9 +145,10 @@ void loadBA2(const char *fileName, nbind::cbFunction &callback) {
 
 
 NBIND_CLASS(BA2Archive) {
-  NBIND_CONSTRUCT<const char*, bool>();
+  NBIND_CONSTRUCT<const char*>();
   NBIND_GETTER(getType);
-  NBIND_METHOD(extract);
+  NBIND_GETTER(getFileList);
+  NBIND_METHOD(extractAll);
 }
 
 NBIND_FUNCTION(loadBA2);

@@ -11,6 +11,7 @@
                 "index.cpp"
             ],
             "include_dirs": [
+                "./ba2tk/src/common",
                 "./zlib/include"
             ],
             "cflags!": ["-fno-exceptions"],

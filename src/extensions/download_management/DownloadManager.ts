@@ -1,5 +1,3 @@
-import lazyRequire from '../../util/lazyRequire';
-
 import { countIf } from '../../util/util';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
