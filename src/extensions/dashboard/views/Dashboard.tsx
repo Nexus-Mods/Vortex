@@ -6,7 +6,7 @@ import PackeryItem from './PackeryItem';
 
 import * as React from 'react';
 
-const UPDATE_FREQUENCY_MS = 200;
+const UPDATE_FREQUENCY_MS = 1000;
 
 interface IDashletProps {
   title: string;
@@ -58,6 +58,8 @@ class Dashboard extends ComponentEx<IProps, {}> {
   }
 
   private startUpdateCycle = () => {
+    // TODO: this is a hack needed so dashlets get updated even if they get props passed in
+    //   in a way that doesn't properly signal for an update
     this.mUpdateTimer = setTimeout(() => {
       this.forceUpdate();
       this.startUpdateCycle();

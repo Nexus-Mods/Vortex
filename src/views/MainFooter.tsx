@@ -32,7 +32,7 @@ class MainFooter extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { objects } = this.props;
     return (
-      <Well bsStyle='slim'>
+      <Well id='main-footer' bsStyle='slim'>
         { objects.map(this.renderFooter) }
       </Well>
     );

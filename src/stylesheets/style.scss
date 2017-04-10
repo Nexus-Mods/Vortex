@@ -48,6 +48,10 @@
   color: $text-color;
 }
 
+#main-footer {
+  background-color: $brand-bg;
+}
+
 .sidebar-expanded {
   max-width: 500px;
 }
@@ -543,6 +547,14 @@
 
 .form-horizontal .has-feedback label ~ .form-control-feedback {
   top: 0px;
+}
+
+.form-control {
+  background-color: $brand-darkbg;
+}
+
+textarea {
+  background-color: $brand-darkbg;
 }
 
 .btn-menu-minimize {
