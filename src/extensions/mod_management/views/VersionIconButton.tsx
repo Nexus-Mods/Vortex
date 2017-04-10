@@ -23,11 +23,12 @@ type IProps = IBaseProps;
  */
 class VersionIconButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { mod } = this.props;
+    const { mod, state } = this.props;
 
-    const versionIcon = this.getVersionIcon();
+    const tooltip = this.getStateTooltip(state);
+    const icon = this.getStateIcon(state);
 
-    if (versionIcon === undefined) {
+    if (icon === undefined) {
       return null;
     }
 
@@ -35,44 +36,36 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
       <IconButton
         className='btn-version-column'
         id={`btn-version-${mod.id}`}
-        tooltip={versionIcon.tooltip}
-        icon={versionIcon.icon}
+        tooltip={tooltip}
+        icon={icon}
         onClick={this.downloadSelectedMod}
       />
     );
   }
 
-  private getVersionIcon = () => {
-    const { t, state } = this.props;
+  private getStateTooltip(state) {
+    const { t } = this.props;
 
-    if (state === 'bug-update') {
-      return {
-          icon: 'bug',
-          tooltip: t('Mod should be updated because the installed version is bugged'),
-          classname: 'mod-updating-bug',
-        };
-    } else if (state === 'bug-disable') {
-      // no update but this version is still marked as bugged
-      return {
-        icon: 'ban',
-        tooltip: t('Mod should be disabled or downgraded because this version has been '
-          + 'marked as "bugged" by the author'),
-        classname: 'mod-updating-ban',
-      };
-    } else if (state === 'update') {
-      return {
-        icon: 'cloud-download',
-        tooltip: t('Mod can be updated'),
-        classname: 'mod-updating-download',
-      };
-    } else if (state === 'update-site') {
-      return {
-        icon: 'external-link',
-        tooltip: t('Mod can be updated (but you will have to pick the file yourself)'),
-        classname: 'mod-updating-warning',
-      };
-    } else {
-      return undefined;
+    switch (state) {
+      case 'bug-update':
+        return t('Mod should be updated because the installed version is bugged');
+      case 'bug-disable':
+        return t('Mod should be disabled or downgraded because this version has been '
+          + 'marked as "bugged" by the author');
+      case 'update': return t('Mod can be updated');
+      case 'update-site':
+        return t('Mod can be updated (but you will have to pick the file yourself)');
+      default: return undefined;
+    }
+  }
+
+  private getStateIcon(state) {
+    switch (state) {
+      case 'bug-update': return 'bug';
+      case 'bug-disable': return 'ban';
+      case 'update': return 'cloud-download';
+      case 'update-site': return 'external-link';
+      default: return undefined;
     }
   }
 

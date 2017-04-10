@@ -19,7 +19,7 @@ import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
 import { settingsReducer } from './reducers/settings';
 import checkModsVersion from './util/checkModsVersion';
-import convertGameId from './util/convertGameId';
+import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import EndorseModButton from './views/EndorseModButton';
@@ -126,22 +126,30 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
   });
 };
 
-function processErrorMessage(statusCode: number, errorMessage: string, gameId: string) {
-  if (statusCode === 404) {
+interface IRequestError {
+  error: string;
+  game?: string;
+  fatal?: boolean;
+}
+
+function processErrorMessage(
+  statusCode: number, errorMessage: string, gameId: string): IRequestError {
+  if (statusCode === undefined) {
+    return { error: errorMessage };
+  } else if (statusCode === 404) {
     if (errorMessage !== undefined) {
-      return { Error: errorMessage, Game: gameId };
+      return { error: errorMessage, game: gameId };
    } else {
-      return { Error: 'Game not found', Game: gameId };
+      return { error: 'game not found', game: gameId, fatal: true };
     }
   } else if ((statusCode >= 500) && (statusCode < 600)) {
     return {
-      Error: 'Something is wrong with the Nexus server, nothing can be ' +
+      error: 'Something is wrong with the Nexus server, nothing can be ' +
       'done on your end: Internal server error',
     };
   } else {
     return {
-      Error: 'Unknown error',
-      Servermessage: errorMessage + ' ( Status Code: ' + statusCode + ')',
+      error: errorMessage + ' ( Status Code: ' + statusCode + ')',
     };
   }
 }
@@ -180,45 +188,45 @@ function checkModsVersionImpl(
   checkVersionModsReport = '';
 
   let modsArray = [];
-  let gameNotFoundFlag: boolean = false;
   const objectKeys = Object.keys(mods);
   objectKeys.forEach((key) => modsArray.push(mods[key]));
 
-  return Promise.all(modsArray.map((mod: IMod) => {
-
+  return Promise.map(modsArray, (mod: IMod) => {
     if (mod === undefined) {
       log('warn', 'tried to check version to an unknown mod', { gameId });
       return null;
     }
 
-    const fileId: number = getSafe(mod.attributes, ['fileId'], undefined);
-    const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
+    const fileId: string = getSafe(mod.attributes, ['fileId'], undefined);
+    const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
 
-    if (nexusModId === null) {
-      log('warn', 'tried to check version to an unknown mod id', { nexusModId });
+    if (nexusModId === undefined) {
       return null;
     }
 
-    if (nexusModId !== 0 && convertGameId(gameId) !== undefined) {
-      return checkModsVersion(nexus, convertGameId(gameId), nexusModId, fileId)
-        .then((newestFileId: number) => {
-          store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId', newestFileId));
-        })
-        .catch((err) => {
-          let detail = processErrorMessage(err.statusCode, err.message, gameId);
-          if (err.statusCode === 404) {
-            if (!gameNotFoundFlag) {
-              gameNotFoundFlag = true;
-              checkVersionModsReport = detail.Error + '\n';
-            }
-          } else {
-            checkVersionModsReport = checkVersionModsReport + detail.Error + '\n';
-          }
-        });
-    } else {
+    const numModId = parseInt(nexusModId, 10);
+
+    if (isNaN(numModId)) {
+      // if the mod id isn't numerical, this isn't a nexus mod
+      // TODO would be better if we had a reliable way to determine if a mod is
+      //   on nexus.
       return null;
     }
-  }));
+
+    return checkModsVersion(nexus, convertGameId(gameId),
+                            numModId, parseInt(fileId, 10))
+      .then((newestFileId: number) => {
+        store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId',
+          newestFileId !== -1 ? newestFileId : 'unknown'));
+      })
+      .catch((err) => {
+        let detail = processErrorMessage(err.statusCode, err.message, gameId);
+        if (detail.fatal === true) {
+          return Promise.reject(detail);
+        }
+        checkVersionModsReport += `${mod.id}: ${detail.error}\n`;
+      });
+  });
 }
 
 function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.TranslationFunction) {
@@ -348,16 +356,19 @@ function init(context: IExtensionContextExt): boolean {
       context.api.store.dispatch(setUpdatingMods(gameId, true));
       checkModsVersionImpl(context.api.store, gameId, mods)
         .then(() => {
-          context.api.store.dispatch(setUpdatingMods(gameId, false));
           if (checkVersionModsReport !== '') {
-            showError(context.api.store.dispatch, 'An error occurred during the Mod Updating',
+            showError(context.api.store.dispatch,
+              'checking for updates succeeded but there were errors',
               checkVersionModsReport);
           }
         })
         .catch((err) => {
-          context.api.store.dispatch(setUpdatingMods(gameId, false));
-          showError(context.api.store.dispatch, 'An error occurred during the Mod Updating',
+          showError(context.api.store.dispatch,
+            'checking for updates failed',
             err.message);
+        })
+        .finally(() => {
+          context.api.store.dispatch(setUpdatingMods(gameId, false));
         });
     });
 
@@ -387,7 +398,7 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('download-mod-update', (gameId, modId, fileId) => {
       // TODO: Need some way to identify if this request is actually for a nexus mod
-      const url = `nxm://${convertGameId(gameId)}/mods/${modId}/files/${fileId}`;
+      const url = `nxm://${toNXMId(gameId)}/mods/${modId}/files/${fileId}`;
       startDownload(context.api, url);
     });
 

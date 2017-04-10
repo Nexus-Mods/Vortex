@@ -55,6 +55,7 @@ const shouldQuit: boolean = app.makeSingleInstance((commandLine, workingDirector
 
 if (shouldQuit) {
   app.quit();
+  process.exit();
 }
 
 let basePath: string = app.getPath('userData');

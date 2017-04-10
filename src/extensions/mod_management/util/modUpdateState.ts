@@ -8,19 +8,18 @@ function updateState(mod: IModWithState): UpdateState {
   const fileId: string = getSafe(mod.attributes, ['fileId'], undefined);
   const newestFileId: string = getSafe(mod.attributes, ['newestFileId'], undefined);
   const bugMessage: string = getSafe(mod.attributes, ['bugMessage'], undefined);
-  const fileCategory: string = getSafe(mod.attributes, ['fileCategory'], undefined);
 
-  const directUpdate = (fileId !== undefined)
-                    && (newestFileId !== undefined)
+  const hasUpdate = (newestFileId !== undefined)
                     && (newestFileId !== fileId);
-  // if the installed file is listed as old or not listed at all we assume its outdated
-  // but we don't know which file is the replacement
-  const siteUpdate = (fileCategory === null) || (fileCategory === 'OLD');
 
-  if (directUpdate) {
-    return bugMessage ? 'bug-update' : 'update';
-  } else if (siteUpdate) {
-    return bugMessage ? 'bug-update-site' : 'update-site';
+  if (hasUpdate) {
+    // if the newest file id is unknown this means there *is* an update (according to the
+    // site-specific update mechanism) but we don't know which file it is
+    if (newestFileId === 'unknown') {
+      return bugMessage ? 'bug-update-site' : 'update-site';
+    } else {
+      return bugMessage ? 'bug-update' : 'update';
+    }
   } else {
     return bugMessage ? 'bug-disable' : 'current';
   }

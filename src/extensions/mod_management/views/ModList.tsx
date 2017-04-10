@@ -279,8 +279,10 @@ class ModList extends ComponentEx<IProps, {}> {
   private updateClass(state: UpdateState) {
     switch (state) {
       case 'bug-update': return 'mod-updating-bug';
+      case 'bug-update-site': return 'mod-updating-bug';
       case 'bug-disable': return 'mod-updating-ban';
       case 'update': return 'mod-updating-download';
+      case 'update-site': return 'mod-updating-warning';
       default: return 'mod-updating-default';
     }
   }

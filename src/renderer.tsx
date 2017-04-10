@@ -121,6 +121,7 @@ const globalNotifications = new GlobalNotifications(extensions.getApi());
 ipcRenderer.on('external-url', (event, protocol, url) => {
   let handler = extensions.getProtocolHandler(protocol);
   if (handler !== null) {
+    log('info', 'handling url', { url });
     handler(url);
   } else {
     log('warn', 'not handling url, unknown protocol', { url });

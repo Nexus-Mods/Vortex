@@ -1,4 +1,4 @@
-import { IFileInfo, IFileUpdates, IModFiles } from '../types/IModfiles';
+import { IFileUpdates, IModFiles } from '../types/IModfiles';
 
 import Nexus from 'nexus-api';
 
@@ -19,26 +19,29 @@ function checkModsVersion(
   nexus: Nexus,
   gameId: string,
   modId: number,
-  newestFileId: number): Promise<number> {
+  fileId: number): Promise<number> {
   return new Promise<number>((resolve, reject) => {
-
-    let fileCategoryNames = ['MAIN ', 'UPDATE', 'OPTIONAL'];
-
     nexus.getModFiles(modId, gameId)
       .then((result: IModFiles) => {
-        let updatedMod: IFileInfo = undefined;
-
-        let updatedFile = checkFileUpdates(result.file_updates, newestFileId);
+        let findFileId = fileId;
+        const updatedFile = checkFileUpdates(result.file_updates, undefined, fileId);
         if (updatedFile !== undefined) {
-          resolve(updatedFile.new_file_id);
+          // best case: The author has provided file update information and this
+          //   is the newest file. However: We still have to verify that file is
+          //   actually available!
+          findFileId = updatedFile.new_file_id;
+        }
+        const fileCategories = ['MAIN', 'UPDATE', 'OPTIONAL'];
+        // see if the file is in a category that implies it's still up-to-date
+        const remoteFile = result.files.find(file => file.file_id === findFileId);
+        if ((remoteFile === undefined)
+            || (fileCategories.indexOf(remoteFile.category_name) === -1)) {
+          // if it wasn't found (meaning the file has either been removed from
+          // the page or is in category "OLD", mark the file as "updated but
+          // don't know which file)
+          resolve(-1);
         } else {
-          updatedMod = result.files.find((file) => file.file_id === newestFileId &&
-            fileCategoryNames.indexOf(file.category_name) > -1);
-          if (updatedMod !== undefined) {
-            resolve(updatedMod.file_id);
-          } else {
-            resolve(0);
-          }
+          resolve(findFileId);
         }
       })
       .catch((err) => {
@@ -47,12 +50,18 @@ function checkModsVersion(
   });
 }
 
-function checkFileUpdates(fileUpdates: IFileUpdates[], newestFileId: number) {
-  let updatedFile = fileUpdates.find((file) => file.old_file_id === newestFileId);
+/**
+ * based on file update information, find the newest version of the file
+ * @param fileUpdates
+ * @param fileId 
+ */
+function checkFileUpdates(fileUpdates: IFileUpdates[], iterUpdate: IFileUpdates, fileId: number) {
+  let updatedFile = fileUpdates.find(file => file.old_file_id === fileId);
   if (updatedFile !== undefined) {
-    checkFileUpdates(fileUpdates, updatedFile.new_file_id);
+    return checkFileUpdates(fileUpdates, updatedFile, updatedFile.new_file_id);
+  } else {
+    return iterUpdate;
   }
-  return updatedFile;
 }
 
 export default checkModsVersion;

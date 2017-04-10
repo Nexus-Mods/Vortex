@@ -6,8 +6,8 @@
  *   This should be two functions!
  */
 
-function convertGameId(input: string): string {
-  let inputL = input.toLowerCase();
+export function convertGameId(input: string): string {
+  const inputL = input.toLowerCase();
   if (inputL === 'skyrimse') {
     return 'skyrimspecialedition';
   } else if (inputL === 'falloutnv') {
@@ -17,4 +17,11 @@ function convertGameId(input: string): string {
   }
 }
 
-export default convertGameId;
+export function toNXMId(input: string): string {
+  const inputL = input.toLowerCase();
+  if (inputL === 'skyrimse') {
+    return 'SkyrimSE';
+  } else {
+    return input;
+  }
+}
