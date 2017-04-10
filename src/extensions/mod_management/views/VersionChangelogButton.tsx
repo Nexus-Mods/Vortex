@@ -1,5 +1,4 @@
-import { IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { ComponentEx } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 import { IconButton } from '../../../views/TooltipControls';
 
@@ -9,37 +8,27 @@ import * as React from 'react';
 import { FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
 
 export interface IBaseProps {
+  t: I18next.TranslationFunction;
   mod: IMod;
 }
 
-export interface IVersionChangelogButtonState {
-  showLayer: string;
-}
-
-interface IConnectedProps {
-}
-
-type IProps = IBaseProps & IConnectedProps;
+type IProps = IBaseProps;
 
 /**
  * VersionChangelog Button
  * 
  * @class VersionChangelogButton
  */
-class VersionChangelogButton extends ComponentEx<IProps, IVersionChangelogButtonState> {
-
-  constructor(props: IProps) {
-    super(props);
-
-    this.state = {
-      showLayer: '',
-    };
-  }
-
+class VersionChangelogButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     let { mod, t } = this.props;
 
-    let changelog = getSafe(mod.attributes, ['changelogHtml'], null);
+    let changelog = getSafe(mod.attributes, ['changelogHtml'], undefined);
+
+    if (changelog === undefined) {
+      return null;
+    }
+
     const regex = /<br[^>]*>/gi;
     if (changelog !== null) {
       changelog = changelog.replace(regex, '\n');
@@ -58,29 +47,17 @@ class VersionChangelogButton extends ComponentEx<IProps, IVersionChangelogButton
       </Popover>
     );
 
-    if (changelog !== undefined) {
-
-      return (
-        <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popoverBottom}>
-          <IconButton
-            className='btn-version-column'
-            icon='file-text'
-            id={mod.id}
-            tooltip={t('Changelog')}
-          />
-        </OverlayTrigger>
-      );
-    } else {
-      return null;
-    }
+    return (
+      <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popoverBottom}>
+        <IconButton
+          className='btn-version-column'
+          icon='file-text'
+          id={mod.id}
+          tooltip={t('Changelog')}
+        />
+      </OverlayTrigger>
+    );
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
-  return {};
-}
-
-export default
-  translate(['common'], { wait: false })(
-    connect(mapStateToProps)(VersionChangelogButton)
-  ) as React.ComponentClass<IBaseProps>;
+export default VersionChangelogButton as React.ComponentClass<IBaseProps>;

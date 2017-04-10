@@ -26,17 +26,18 @@ it('returns a div', () => {
   expect(win.type).toBe('div');
 });
 
-it('has one modal', () => {
+it('has no modals', () => {
   let win = renderMainWindow();
   let modals = findAll(win, (ele) => (ele !== null) && (ele.type === Modal));
 
   // expecting only the Dialog Modal
-  expect(modals.length).toBe(1);
+  expect(modals.length).toBe(0);
 });
-
+/*
 it('opens settings on click on icon', () => {
   let win = renderMainWindow();
 
   let modals = findAll(win, (ele) => (ele !== null) && (ele.type === Modal) && (ele.props.id === 'modal-settings'));
   expect(modals.length).toBe(1);
 });
+*/

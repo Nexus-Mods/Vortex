@@ -28,6 +28,7 @@ import {} from './views/Settings';
 
 import * as Promise from 'bluebird';
 import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
+import * as opn from 'opn';
 import * as React from 'react';
 import * as util from 'util';
 
@@ -360,10 +361,6 @@ function init(context: IExtensionContextExt): boolean {
         });
     });
 
-    context.api.events.on('download-updated-mod', (nxmurl) => {
-      startDownload(context.api, nxmurl);
-    });
-
     context.api.events.on('endorse-mod', (gameId, modId, endorsedStatus) => {
       endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
     });
@@ -387,6 +384,18 @@ function init(context: IExtensionContextExt): boolean {
       (oldValue: string, newValue: string) => {
         nexus.setKey(newValue);
       });
+
+    context.api.events.on('download-mod-update', (gameId, modId, fileId) => {
+      // TODO: Need some way to identify if this request is actually for a nexus mod
+      const url = `nxm://${convertGameId(gameId)}/mods/${modId}/files/${fileId}`;
+      startDownload(context.api, url);
+    });
+
+    context.api.events.on('open-mod-page', (gameId, modId) => {
+      opn(['http://www.nexusmods.com',
+        convertGameId(gameId), 'mods', modId,
+      ].join('/'));
+    });
   });
 
   return true;

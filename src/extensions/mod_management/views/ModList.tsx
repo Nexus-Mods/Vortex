@@ -6,7 +6,7 @@ import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 import { activeGameId, activeProfile } from '../../../util/selectors';
-import { getSafe } from '../../../util/storeHelper';
+import { getSafe, pushSafe, setSafe } from '../../../util/storeHelper';
 import IconBar from '../../../views/IconBar';
 import MainPage from '../../../views/MainPage';
 import SuperTable, { ITableRowAction } from '../../../views/Table';
@@ -19,7 +19,8 @@ import { removeMod, setModAttribute } from '../actions/mods';
 import { IMod } from '../types/IMod';
 import { IModProps } from '../types/IModProps';
 import { IVersion, IVersionIcon } from '../types/IVersion';
-import retrieveNewModsWithState from '../util/retrieveNewModsWithState';
+import groupMods from '../util/modGrouping';
+import modUpdateState, { UpdateState } from '../util/modUpdateState';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
@@ -75,6 +76,8 @@ class ModList extends ComponentEx<IProps, {}> {
   private modVersionAttribute: ITableAttribute;
   private modVersionDetailAttribute: ITableAttribute;
   private mModsWithState: { [id: string]: IModWithState };
+  private mGroupedMods: { [id: string]: IModWithState[] };
+  private mPrimaryMods: { [id: string]: IModWithState };
   private staticButtons: IIconDefinition[];
 
   private modAction: string = '';
@@ -87,7 +90,7 @@ class ModList extends ComponentEx<IProps, {}> {
       name: 'Mod Name',
       description: 'Name of the mod',
       icon: 'quote-left',
-      calc: (mod: IMod) =>
+      calc: (mod: IModWithState) =>
         getSafe(mod.attributes, ['customFileName'],
           getSafe(mod.attributes, ['logicalFileName'],
             getSafe(mod.attributes, ['name'], '')
@@ -128,7 +131,7 @@ class ModList extends ComponentEx<IProps, {}> {
       name: 'Version',
       description: 'File version (according to the author)',
       icon: 'birthday-cake',
-      calc: (mod: IMod) => getSafe(mod.attributes, ['version'], ''),
+      calc: (mod: IModWithState) => getSafe(mod.attributes, ['version'], ''),
       placement: 'detail',
       isToggleable: false,
       edit: {
@@ -144,9 +147,8 @@ class ModList extends ComponentEx<IProps, {}> {
       name: 'Version',
       description: 'File version (according to the author)',
       icon: 'birthday-cake',
-      calc: (mod: IMod) => getSafe(mod.attributes, ['version'], ''),
-      customRenderer: (mod: IMod) =>
-        this.renderVersion(mod),
+      calc: (mod: IModWithState) => getSafe(mod.attributes, ['version'], ''),
+      customRenderer: this.renderVersion,
       placement: 'table',
       isToggleable: true,
       edit: {},
@@ -189,15 +191,6 @@ class ModList extends ComponentEx<IProps, {}> {
     this.updateModsWithState({ mods: {}, modState: {} }, this.props);
   }
 
-  public updateModsWithState(oldProps: IModProps, newProps: IModProps) {
-    let newModsWithState = retrieveNewModsWithState(
-      oldProps,
-      newProps,
-      this.mModsWithState,
-      this.modAction);
-    this.mModsWithState = newModsWithState;
-  }
-
   public componentWillReceiveProps(newProps: IProps) {
     if ((this.props.mods !== newProps.mods)
       || (this.props.modState !== newProps.modState)) {
@@ -212,13 +205,17 @@ class ModList extends ComponentEx<IProps, {}> {
       return <Jumbotron>{t('Please select a game first')}</Jumbotron>;
     }
 
+    if (this.mGroupedMods === undefined) {
+      return null;
+    }
+
     return (
       <MainPage>
         <MainPage.Body>
           <SuperTable
             tableId='mods'
 
-            data={this.mModsWithState}
+            data={this.mPrimaryMods}
             staticElements={[
               this.modEnabledAttribute,
               this.modNameAttribute,
@@ -242,172 +239,107 @@ class ModList extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderVersion = (mod: IMod): JSX.Element => {
+  private renderVersion = (mod: IModWithState): JSX.Element => {
+    const { t, gameMode } = this.props;
+    const equalMods = this.mGroupedMods[mod.id];
+    const alternatives = equalMods.map(iter => iter.id);
 
-    const { mods, modState } = this.props;
-    const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
-    let versions: IVersion[] = [];
-    let selectedVersion: string = '';
+    const updateState = modUpdateState(mod);
 
-    Object.keys(mods).forEach(key => {
-      if (getSafe(mods[key].attributes, ['modId'], undefined) === nexusModId) {
-        let version: IVersion = {
-          version: getSafe(mods[key].attributes, ['version'], undefined),
-          mod: key,
-        };
-        versions.push(version);
-        if (getSafe(modState, [key, 'enabled'], false)) {
-          selectedVersion = key;
-        }
-      }
-    });
-
-    if (selectedVersion === '') {
-      selectedVersion = mod.id;
-    }
-
-    const version = getSafe(mods[selectedVersion].attributes, ['version'], undefined);
-    const fileId = getSafe(mods[selectedVersion].attributes, ['fileId'], '');
-    const newestFileId = getSafe(mods[selectedVersion].attributes, ['newestFileId'], undefined);
-    const bugMessage = getSafe(mods[selectedVersion].attributes, ['bugMessage'], '');
-    const fileCategory: string = getSafe(mods[selectedVersion].attributes,
-      ['fileCategory'], undefined);
-    const isPrimary: boolean = getSafe(mods[selectedVersion].attributes, ['isPrimary'], undefined);
-
-    let versionIcon: IVersionIcon;
-
-    if (fileCategory !== 'MAIN' && !isPrimary) {
-      if (bugMessage !== '') {
-        if (newestFileId === undefined) {
-          versionIcon = {
-            icon: 'ban',
-            tooltip: 'Mod should be disabled because this version is '
-            + 'bugged and there is no update',
-            classname: 'mod-updating-ban',
-          };
-        } else {
-          versionIcon = {
-            icon: 'bug',
-            tooltip: 'Mod should be updated because the installed version is bugged',
-            classname: 'mod-updating-bug',
-          };
-        }
-      } else if (newestFileId !== undefined) {
-        if (newestFileId !== 0 && newestFileId !== fileId) {
-          versionIcon = {
-            icon: 'cloud-download',
-            tooltip: 'Mod can be updated',
-            classname: 'mod-updating-download',
-          };
-        } else if (newestFileId === 0 && fileId !== undefined && version !== undefined) {
-          versionIcon = {
-            icon: 'external-link',
-            tooltip: 'Mod can be updated (but you will have to pick the file yourself)',
-            classname: 'mod-updating-warning',
-          };
-        }
-      }
-    }
+    const versionDropdown = alternatives.length > 1
+      ? <DropdownButton
+        className='dropdown-version'
+        title={(mod.attributes as any).version || ''}
+        id={`version-dropdown-${mod.id}`}
+        onSelect={this.selectVersion}
+      >
+        {alternatives.map(altId => this.renderVersionOptions(mod.id, altId))}
+      </DropdownButton>
+      : null;
 
     return (
-      <div className={versionIcon !== undefined ? versionIcon.classname : null}>
-        {this.renderVersionParams(versions, selectedVersion, mod, version,
-          versionIcon, nexusModId, newestFileId)}
+      <div className={this.updateClass(updateState)}>
+        {alternatives.length === 1 ? (mod.attributes as any).version : null}
+        <ButtonGroup id={`btngroup-${mod.id}`}>
+          {versionDropdown}
+          <VersionIconButton
+            t={t}
+            mod={mod}
+            gameMode={gameMode}
+            state={updateState}
+          />
+          <VersionChangelogButton
+            t={t}
+            mod={mod}
+          />
+        </ButtonGroup>
       </div>
     );
   }
 
-  private renderVersionParams(
-    versions: IVersion[],
-    selectedVersion: string,
-    mod: IMod,
-    version: string,
-    versionIcon: IVersionIcon,
-    nexusModId: number,
-    newestFileId: string): JSX.Element {
-
-    const { gameMode } = this.props;
-
-    if (versions.length === 0) {
-      return (
-        <div>
-          {version}
-        </div>
-      );
-    } else if (versions.length < 2) {
-      return (
-        <div>
-          {versions[0].version}
-          <ButtonGroup id={selectedVersion}>
-            <VersionIconButton
-              newestFileId={newestFileId}
-              nexusModId={nexusModId}
-              versionIcon={versionIcon}
-              gameMode={gameMode}
-              api={this.context.api}
-            />
-            <VersionChangelogButton
-              mod={mod}
-            />
-          </ButtonGroup>
-        </div>);
-    } else {
-      return (
-        <ButtonGroup id={selectedVersion}>
-          <DropdownButton
-            title={version}
-            id={selectedVersion}
-            onChange={this.selectVersion}
-            onSelect={this.selectVersion}
-          >
-            {versions.map((ver) => { return this.renderVersionOptions(ver, selectedVersion); })}
-          </DropdownButton>
-          <VersionIconButton
-            newestFileId={newestFileId}
-            nexusModId={nexusModId}
-            versionIcon={versionIcon}
-            gameMode={gameMode}
-            api={this.context.api}
-          />
-          <VersionChangelogButton
-            mod={mod}
-          />
-        </ButtonGroup>
-      );
+  private updateClass(state: UpdateState) {
+    switch (state) {
+      case 'bug-update': return 'mod-updating-bug';
+      case 'bug-disable': return 'mod-updating-ban';
+      case 'update': return 'mod-updating-download';
+      default: return 'mod-updating-default';
     }
   }
 
-  private renderVersionOptions(version: IVersion, selectedVersion: string): JSX.Element {
-    let versionOptions: { oldVersion: string, newVersion: string } = {
-      oldVersion: selectedVersion,
-      newVersion: version.mod,
-    };
-
+  private renderVersionOptions(modId: string, altId: string): JSX.Element {
     return (
-      <MenuItem eventKey={versionOptions} value={version.mod} key={version.mod}>
-        {version.version}
+      <MenuItem eventKey={{ modId, altId }} key={altId}>
+        {(this.mModsWithState[altId].attributes as any).version}
       </MenuItem>
     );
   }
 
-  private selectVersion = (evt) => {
-    const { profileId, modState, onSetModEnabled } = this.props;
-    let oldVersion = evt.oldVersion;
-    let newVersion = evt.newVersion;
-
-    this.modAction = 'enabling';
-
-    if (oldVersion !== newVersion) {
-      if (getSafe(modState, [oldVersion, 'enabled'], false)) {
-        onSetModEnabled(profileId, oldVersion, false);
+  private updateModsWithState(oldProps: IModProps, newProps: IModProps) {
+    let changed = false;
+    let newModsWithState = {};
+    Object.keys(newProps.mods).forEach((modId: string) => {
+      if ((oldProps.mods[modId] !== newProps.mods[modId])
+        || (oldProps.modState[modId] !== newProps.modState[modId])) {
+        newModsWithState[modId] = Object.assign({}, newProps.mods[modId], newProps.modState[modId]);
+        changed = true;
+      } else {
+        newModsWithState[modId] = this.mModsWithState[modId];
       }
-      this.context.api.events.emit('mods-enabled', [oldVersion], false);
+    });
+    this.mModsWithState = newModsWithState;
 
-      if (!getSafe(modState, [newVersion, 'enabled'], false)) {
-        onSetModEnabled(profileId, newVersion, true);
-      }
-      this.context.api.events.emit('mods-enabled', [newVersion], true);
+    if (changed) {
+      this.updateModGrouping();
     }
+  }
+
+  private updateModGrouping() {
+    const modList = Object.keys(this.mModsWithState).map(key => this.mModsWithState[key]);
+    const grouped = groupMods(modList, { groupBy: 'file', multipleEnabled: false });
+    this.mGroupedMods = grouped.reduce((prev: { [id: string]: IModWithState[] }, value) =>
+      setSafe(prev, [value[0].id], value)
+      , {});
+
+    this.mPrimaryMods = Object.keys(this.mGroupedMods).reduce(
+      (prev: { [id: string]: IModWithState }, value) => {
+        const prim = this.mGroupedMods[value][0];
+        return setSafe(prev, [ value ], prim);
+      }, {});
+  }
+
+  private selectVersion = (evt) => {
+    const { profileId, onSetModEnabled } = this.props;
+    const { modId, altId } = evt;
+
+    if (modId === altId) {
+      return;
+    }
+
+    onSetModEnabled(profileId, modId, false);
+    onSetModEnabled(profileId, altId, true);
+
+    this.context.api.events.emit('mods-enabled', [modId], false);
+    this.context.api.events.emit('mods-enabled', [altId], true);
   }
 
   private enableSelected = (modIds: string[]) => {

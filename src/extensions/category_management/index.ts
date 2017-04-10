@@ -6,6 +6,7 @@ import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import { setModAttribute } from '../mod_management/actions/mods';
+import { IModWithState } from '../mod_management/types/IModProps';
 
 import { loadCategories, updateCategories } from './actions/category';
 import { setTreeDataObject } from './actions/session';
@@ -35,8 +36,8 @@ function init(context: IExtensionContext): boolean {
     description: 'Category',
     icon: 'book',
     placement: 'table',
-    calc: (mod) => mod.attributes.category !== undefined ?
-        retrieveCategory(mod.attributes.category, context.api.store) : null,
+    calc: (mod: IModWithState) => (mod.attributes as any).category !== undefined ?
+        retrieveCategory((mod.attributes as any).category, context.api.store) : null,
     isToggleable: true,
     edit: {},
     isSortable: true,
@@ -48,8 +49,8 @@ function init(context: IExtensionContext): boolean {
     name: 'Category Detail',
     description: 'Category Detail',
     icon: 'angle-double-right',
-    calc: (mod) => mod.attributes.category !== undefined ?
-      retrieveCategoryDetail(mod.attributes.category, context.api.store) : null,
+    calc: (mod: IModWithState) => (mod.attributes as any).category !== undefined ?
+      retrieveCategoryDetail((mod.attributes as any).category, context.api.store) : null,
     edit: {
       choices: () => {
         const store = context.api.store;

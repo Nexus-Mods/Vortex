@@ -1,78 +1,93 @@
-import { IExtensionApi } from '../../../types/IExtensionContext';
-import { IState } from '../../../types/IState';
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { ComponentEx } from '../../../util/ComponentEx';
+import { getSafe } from '../../../util/storeHelper';
 import { IconButton } from '../../../views/TooltipControls';
 
-import { IVersionIcon } from '../../mod_management/types/IVersion';
-import downloadMod from '../../nexus_integration/util/downloadMod';
+import { IModWithState } from '../types/IModProps';
+import { UpdateState } from '../util/modUpdateState';
 
 import * as React from 'react';
 
 export interface IBaseProps {
-  versionIcon: IVersionIcon;
-  nexusModId: number;
-  newestFileId: string;
+  t: I18next.TranslationFunction;
   gameMode: string;
-  api: IExtensionApi;
+  mod: IModWithState;
+  state: UpdateState;
 }
 
-export interface IVersionIconButtonState {
-  showLayer: string;
-}
-
-interface IConnectedProps {
-}
-
-type IProps = IBaseProps & IConnectedProps;
+type IProps = IBaseProps;
 
 /**
  * VersionIcon Button
  * 
  * @class VersionIconButton
  */
-class VersionIconButton extends ComponentEx<IProps, IVersionIconButtonState> {
+class VersionIconButton extends ComponentEx<IProps, {}> {
+  public render(): JSX.Element {
+    const { mod } = this.props;
 
-  constructor(props: IProps) {
-    super(props);
+    const versionIcon = this.getVersionIcon();
 
-    this.state = {
-      showLayer: '',
-    };
+    if (versionIcon === undefined) {
+      return null;
+    }
+
+    return (
+      <IconButton
+        className='btn-version-column'
+        id={`btn-version-${mod.id}`}
+        tooltip={versionIcon.tooltip}
+        icon={versionIcon.icon}
+        onClick={this.downloadSelectedMod}
+      />
+    );
   }
 
-  public render(): JSX.Element {
-    let { nexusModId, newestFileId, versionIcon } = this.props;
+  private getVersionIcon = () => {
+    const { t, state } = this.props;
 
-    if (versionIcon !== undefined) {
-      return (
-        <IconButton
-          className='btn-version-column'
-          id={nexusModId.toString()}
-          value={newestFileId}
-          tooltip={versionIcon.tooltip}
-          icon={versionIcon.icon}
-          onClick={this.downloadSelectedMod}
-        />
-      );
+    if (state === 'bug-update') {
+      return {
+          icon: 'bug',
+          tooltip: t('Mod should be updated because the installed version is bugged'),
+          classname: 'mod-updating-bug',
+        };
+    } else if (state === 'bug-disable') {
+      // no update but this version is still marked as bugged
+      return {
+        icon: 'ban',
+        tooltip: t('Mod should be disabled or downgraded because this version has been '
+          + 'marked as "bugged" by the author'),
+        classname: 'mod-updating-ban',
+      };
+    } else if (state === 'update') {
+      return {
+        icon: 'cloud-download',
+        tooltip: t('Mod can be updated'),
+        classname: 'mod-updating-download',
+      };
+    } else if (state === 'update-site') {
+      return {
+        icon: 'external-link',
+        tooltip: t('Mod can be updated (but you will have to pick the file yourself)'),
+        classname: 'mod-updating-warning',
+      };
     } else {
-      return null;
+      return undefined;
     }
   }
 
-  private downloadSelectedMod = (evt) => {
-    let { api, gameMode } = this.props;
-    let modId = evt.currentTarget.id;
-    let newestFileId = evt.currentTarget.value;
+  private downloadSelectedMod = () => {
+    const { gameMode, mod, state } = this.props;
+    const newestFileId = getSafe(mod.attributes, ['newestFileId'], undefined);
 
-    downloadMod(modId, newestFileId, gameMode, api);
+    if ((state === 'update') || (state === 'bug-update')) {
+      this.context.api.events.emit('download-mod-update',
+        gameMode, (mod.attributes as any).modId, newestFileId);
+    } else if ((state === 'update-site') || (state === 'bug-update-site')) {
+      this.context.api.events.emit('open-mod-page',
+        gameMode, (mod.attributes as any).modId);
+    }
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
-  return {};
-}
-
-export default
-  translate(['common'], { wait: false })(
-    connect(mapStateToProps)(VersionIconButton)
-  ) as React.ComponentClass<IBaseProps>;
+export default VersionIconButton as React.ComponentClass<IBaseProps>;
