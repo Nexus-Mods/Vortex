@@ -1,5 +1,6 @@
 import {ITableAttribute} from '../../types/ITableAttribute';
 import {getSafe} from '../../util/storeHelper';
+import DateTimeFilter from '../../views/table/DateTimeFilter';
 
 import {IMod} from './types/IMod';
 
@@ -29,6 +30,10 @@ export const INSTALL_TIME: ITableAttribute = {
   isToggleable: true,
   edit: {},
   isSortable: true,
+  filter: new DateTimeFilter(),
+  sortFunc: (lhs: Date, rhs: Date): number => {
+    return (rhs.valueOf() - lhs.valueOf());
+  },
 };
 
 export const VERSION: ITableAttribute = {
