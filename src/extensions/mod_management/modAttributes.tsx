@@ -2,7 +2,6 @@ import {ITableAttribute} from '../../types/ITableAttribute';
 import {getSafe} from '../../util/storeHelper';
 import DateTimeFilter from '../../views/table/DateTimeFilter';
 
-import { IMod } from './types/IMod';
 import { IModWithState } from './types/IModProps';
 
 export const INSTALL_TIME: ITableAttribute = {
