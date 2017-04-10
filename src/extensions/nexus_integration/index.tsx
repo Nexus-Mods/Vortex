@@ -198,7 +198,7 @@ function checkModsVersionImpl(
       return null;
     }
 
-    if (nexusModId !== 0) {
+    if (nexusModId !== 0 && convertGameId(gameId) !== undefined) {
       return checkModsVersion(nexus, convertGameId(gameId), nexusModId, fileId)
         .then((newestFileId: number) => {
           store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId', newestFileId));
