@@ -26,23 +26,25 @@ class TableCell extends React.Component<ICellProps, {}> {
       return attribute.customRenderer(rowData, false, t);
     }
 
-    if (rowData instanceof Date) {
-      return <span>{rowData.toLocaleString(language)}</span>;
-    } else if (typeof (rowData) === 'string') {
-      return <span>{rowData}</span>;
-    } else if (typeof (rowData) === 'boolean') {
-      return <IconButton
-        className='btn-embed'
-        id={`toggle-${rowId}-${attribute.id}`}
-        tooltip={attribute.name}
-        icon={ rowData ? 'check-square-o' : 'square-o' }
-        onClick={this.toggle}
-      />;
-    } else if ((rowData === undefined) || (rowData === null)) {
+    if ((rowData === undefined) || (rowData === null)) {
       return <span>{' '}</span>;
     } else {
-      return <span>{rowData.toString()}</span>;
+      const cellType = typeof(rowData);
+      if (cellType === 'string') {
+        return <span>{rowData}</span>;
+      } else if (cellType === 'boolean') {
+        return <IconButton
+          className='btn-embed'
+          id={`toggle-${rowId}-${attribute.id}`}
+          tooltip={attribute.name}
+          icon={rowData ? 'check-square-o' : 'square-o'}
+          onClick={this.toggle}
+        />;
+      } else if ((cellType === 'object') && (rowData instanceof Date)) {
+        return <span>{rowData.toLocaleString(language)}</span>;
+      }
     }
+    return <span>{rowData.toString()}</span>;
   }
 
   private toggle = () => {

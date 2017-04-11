@@ -7,11 +7,11 @@ import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 import {setSafe} from '../../../util/storeHelper';
-import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
 import InputButton from '../../../views/InputButton';
+import MainPage from '../../../views/MainPage';
 import SuperTable, {ITableRowAction} from '../../../views/Table';
-import {Button} from '../../../views/TooltipControls';
+import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import DateTimeFilter from '../../../views/table/DateTimeFilter';
 import TextFilter from '../../../views/table/TextFilter';
@@ -62,25 +62,26 @@ interface IComponentState {
 
 interface IAllGamesButtonProps {
   id: string;
+  buttonType: 'icon' | 'text' | 'both';
   showAll: boolean;
   onClick: Function;
   t: (input: string) => string;
 }
 
 const AllGamesButton = (props) => {
-  const { t, id, onClick, showAll } = props;
+  const { t, buttonType, id, onClick, showAll } = props;
   let tooltip =
     showAll
     ? t('Hide downloads from other games')
     : t('Show downloads from other games');
   return (
-    <Button
+    <ToolbarIcon
       id={id}
-      tooltip={tooltip}
+      text={tooltip}
       onClick={onClick}
-    >
-      <Icon name={showAll ? 'eye' : 'eye-slash'}/>
-    </Button>
+      icon={showAll ? 'eye' : 'eye-slash'}
+      buttonType={buttonType}
+    />
   );
 };
 
@@ -224,26 +225,30 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     }
 
     return (
-      <Layout type='column'>
-        <Fixed>
+      <MainPage>
+        <Layout type='column'>
+          <Flex style={{ height: '100%', overflowY: 'auto' }} >
+            <SuperTable
+              tableId='downloads'
+              data={downloads}
+              staticElements={[FILE_NAME, this.fileTimeColumn, this.gameColumn, PROGRESS]}
+              actions={this.actions}
+            />
+          </Flex>
+          <Fixed>
+            <DownloadDropzone />
+          </Fixed>
+        </Layout>
+        <MainPage.Overlay>
           <IconBar
             group='download-icons'
             staticElements={this.staticButtons}
             style={{ width: '100%', display: 'flex' }}
+            buttonType='both'
+            orientation='vertical'
           />
-        </Fixed>
-        <Flex style={{ height: '100%', overflowY: 'auto' }} >
-          <SuperTable
-            tableId='downloads'
-            data={downloads}
-            staticElements={[ FILE_NAME, this.fileTimeColumn, this.gameColumn, PROGRESS ]}
-            actions={this.actions}
-          />
-        </Flex>
-        <Fixed>
-          <DownloadDropzone />
-        </Fixed>
-      </Layout>
+        </MainPage.Overlay>
+      </MainPage>
     );
   }
 

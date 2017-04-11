@@ -1,6 +1,7 @@
 import Line from './Line';
 
-import { ComponentEx, util } from 'nmm-api';
+import * as _ from 'lodash';
+import { PureComponentEx, util } from 'nmm-api';
 import * as React from 'react';
 import { connect } from 'react-redux';
 
@@ -14,9 +15,10 @@ interface IConnectorProps {
   target?: { id: string, pos: ICoord };
 }
 
-class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
-  constructor(props: IConnectorProps) {
-    super(props);
+class ConnectorImpl extends PureComponentEx<IConnectorProps, {}> {
+  public shouldComponentUpdate(nextProps: IConnectorProps) {
+    return !_.isEqual(this.props.source, nextProps.source)
+        || !_.isEqual(this.props.target, nextProps.target);
   }
 
   public render(): JSX.Element {

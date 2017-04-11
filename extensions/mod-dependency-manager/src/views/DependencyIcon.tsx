@@ -6,7 +6,7 @@ import { ComponentEx, actions, log, selectors, tooltip, types, util } from 'nmm-
 
 import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
 import * as React from 'react';
-import { OverlayTrigger, Popover } from 'react-bootstrap';
+import { Overlay, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
@@ -102,6 +102,7 @@ interface IActionProps {
 interface IComponentState {
   reference: IReference;
   modInfo: IModInfo;
+  showOverlay: boolean;
 }
 
 interface IDragProps {
@@ -209,11 +210,12 @@ function collectDrop(connect: __ReactDnd.DropTargetConnector,
 
 class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private mIsMounted: boolean;
+  private mRef: JSX.Element;
 
   constructor(props: IProps) {
     super(props);
 
-    this.initState({ modInfo: undefined, reference: undefined });
+    this.initState({ modInfo: undefined, reference: undefined, showOverlay: false });
     this.mIsMounted = false;
   }
 
@@ -283,16 +285,25 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     let connectorIcon = connectDropTarget(
       connectDragSource(
         <div style={{ display: 'inline' }}>
-          <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popover}>
           <tooltip.IconButton
             id={`btn-meta-data-${mod.id}`}
             className={classes.join(' ')}
             key={`rules-${mod.id}`}
             tooltip={t('Drag to another mod to define dependency')}
             icon='plug'
+            ref={this.setRef}
+            onClick={this.toggleOverlay}
           />
-          </OverlayTrigger>
-          </div>
+          <Overlay
+            show={this.state.showOverlay}
+            onHide={this.hideOverlay}
+            placement='left'
+            rootClose={true}
+            target={this.mRef as any}
+          >
+            {popover}
+          </Overlay>
+        </div>
       )
     );
 
@@ -311,10 +322,22 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       />;
     }
 
-    return <div style={{ textAlign: 'center', width: '100%' }}>
+    return <div style={{ textAlign: 'center', width: '100%', position: 'relative' }}>
       {connectorIcon}
       {conflictIcon}
       </div>;
+  }
+
+  private setRef = (ref) => {
+    this.mRef = ref;
+  }
+
+  private toggleOverlay = () => {
+    this.nextState.showOverlay = !this.state.showOverlay;
+  }
+
+  private hideOverlay = () => {
+    this.nextState.showOverlay = false;
   }
 
   private openConflictDialog = () => {

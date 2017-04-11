@@ -17,7 +17,7 @@ export type ButtonProps = ITooltipProps & typeof BootstrapButton.defaultProps;
  * Button with a tooltip
  * 
  */
-export class Button extends React.Component<ButtonProps, {}> {
+export class Button extends React.PureComponent<ButtonProps, {}> {
   public render() {
     let relayProps = Object.assign({}, this.props);
     delete relayProps.tooltip;

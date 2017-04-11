@@ -1,4 +1,5 @@
 import { IComponentContext } from '../../../types/IComponentContext';
+import { IIconDefinition } from '../../../types/IIconDefinition';
 import { IDiscoveryState, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
@@ -6,6 +7,9 @@ import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import Advanced from '../../../views/Advanced';
 import Icon from '../../../views/Icon';
+import IconBar from '../../../views/IconBar';
+import MainPage from '../../../views/MainPage';
+import ToolbarIcon from '../../../views/ToolbarIcon';
 import { Button, IconButton } from '../../../views/TooltipControls';
 
 import { setGamePath } from '../../gamemode_management/actions/settings';
@@ -122,87 +126,99 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
     });
 
     return (
-      <Layout type='column'>
-        <Fixed>
-          <div>
-            <Advanced>
-              <Button
-                id='add-game-manually'
-                tooltip={t('Manually add a game')}
-                onClick={this.showAddGameDialog}
-              >
-                {t('Add Game')}
-              </Button>
-            </Advanced>
-          </div>
-          <div id='gamepicker-layout'>
-            <IconButton
-              id='show-hidden-games'
-              tooltip={t('Show / Hide hidden games')}
-              onClick={ this.toggleHidden }
-              icon={showHidden ? 'eye-slash' : 'eye'}
-            />
-            <IconButton
-              id='gamepicker-layout-list'
-              className={ pickerLayout === 'list' ? 'btn-toggle-on' : 'btn-toggle-off' }
-              onClick={ this.setLayoutList }
-              icon='list'
-              tooltip={t('List')}
-            />
-            <IconButton
-              id='gamepicker-layout-grid'
-              className={ pickerLayout === 'small' ? 'btn-toggle-on' : 'btn-toggle-off' }
-              onClick={ this.setLayoutSmall }
-              icon='th'
-              tooltip={t('Small Icons')}
-            />
-            <IconButton
-              id='gamepicker-layout-grid-large'
-              className={ pickerLayout === 'large' ? 'btn-toggle-on' : 'btn-toggle-off' }
-              onClick={ this.setLayoutLarge }
-              icon='th-large'
-              tooltip={t('Large Icons')}
-            />
-          </div>
-        </Fixed>
-        <Flex style={{ height: '100%', overflowY: 'auto', padding: '5px' }}>
-          <span style={{ display: 'table' }}>
-            <h3>{ t('Managed') }</h3>
-            { this.renderGames(managedGameList, 'managed') }
-          </span>
-          <span style={{ display: 'table' }}>
-            <h3>{ t('Discovered') }</h3>
-            { this.renderGames(discoveredGameList, 'discovered') }
-          </span>
-          <span style={{ display: 'table' }}>
-            <h3>{ t('Supported') }</h3>
-            { this.renderGames(supportedGameList, 'undiscovered') }
-          </span>
-        </Flex>
-        <Fixed style={{ height: '40px' }} >
-          <Layout type='row'>
-            <Flex>
-              <ProgressBar
-                active={ discovery.running }
-                min={ 0 }
-                max={ 100 }
-                now={ discovery.progress }
-                label={ discovery.directory }
-              />
-            </Flex>
+      <MainPage>
+        <MainPage.Body>
+          <Layout type='column'>
             <Fixed>
-              <Button
-                id='start-discovery'
-                tooltip={ discovery.running ? t('Stop search') : t('Search for games') }
-                onClick={ discovery.running ? this.stopDiscovery : this.startDiscovery }
-                placement='top'
-              >
-                <Icon name={ discovery.running ? 'stop' : 'search' } />
-              </Button>
+              <div id='gamepicker-layout'>
+                <IconButton
+                  id='gamepicker-layout-list'
+                  className={pickerLayout === 'list' ? 'btn-toggle-on' : 'btn-toggle-off'}
+                  onClick={this.setLayoutList}
+                  icon='list'
+                  tooltip={t('List')}
+                />
+                <IconButton
+                  id='gamepicker-layout-grid'
+                  className={pickerLayout === 'small' ? 'btn-toggle-on' : 'btn-toggle-off'}
+                  onClick={this.setLayoutSmall}
+                  icon='th'
+                  tooltip={t('Small Icons')}
+                />
+                <IconButton
+                  id='gamepicker-layout-grid-large'
+                  className={pickerLayout === 'large' ? 'btn-toggle-on' : 'btn-toggle-off'}
+                  onClick={this.setLayoutLarge}
+                  icon='th-large'
+                  tooltip={t('Large Icons')}
+                />
+              </div>
+            </Fixed>
+            <Flex style={{ height: '100%', overflowY: 'auto', padding: '5px' }}>
+              <span style={{ display: 'table' }}>
+                <h3>{t('Managed')}</h3>
+                {this.renderGames(managedGameList, 'managed')}
+              </span>
+              <span style={{ display: 'table' }}>
+                <h3>{t('Discovered')}</h3>
+                {this.renderGames(discoveredGameList, 'discovered')}
+              </span>
+              <span style={{ display: 'table' }}>
+                <h3>{t('Supported')}</h3>
+                {this.renderGames(supportedGameList, 'undiscovered')}
+              </span>
+            </Flex>
+            <Fixed style={{ height: '40px' }} >
+              <Layout type='row'>
+                <Flex>
+                  <ProgressBar
+                    active={discovery.running}
+                    min={0}
+                    max={100}
+                    now={discovery.progress}
+                    label={discovery.directory}
+                  />
+                </Flex>
+                <Fixed>
+                  <Button
+                    id='start-discovery'
+                    tooltip={discovery.running ? t('Stop search') : t('Search for games')}
+                    onClick={discovery.running ? this.stopDiscovery : this.startDiscovery}
+                    placement='top'
+                  >
+                    <Icon name={discovery.running ? 'stop' : 'search'} />
+                  </Button>
+                </Fixed>
+              </Layout>
             </Fixed>
           </Layout>
-        </Fixed>
-      </Layout>
+        </MainPage.Body>
+        <MainPage.Overlay>
+          <IconBar
+            group='game-icons'
+            staticElements={[]}
+            buttonType='both'
+            orientation='vertical'
+          >
+            <ToolbarIcon
+              id='show-hidden-games'
+              text={t('Show / Hide hidden games')}
+              onClick={ this.toggleHidden }
+              icon={showHidden ? 'eye-slash' : 'eye'}
+              buttonType='both'
+            />
+            <Advanced>
+              <ToolbarIcon
+                id='add-game-manually'
+                text={t('Add Game')}
+                onClick={this.showAddGameDialog}
+                icon='plus'
+                buttonType='both'
+              />
+            </Advanced>
+          </IconBar>
+        </MainPage.Overlay>
+      </MainPage>
     );
   }
 

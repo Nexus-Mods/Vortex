@@ -8,10 +8,10 @@ import Table, {IChangeDataHandler, ITableRowAction, makeGetSelection} from './Ta
 import DateTimeFilter from './table/DateTimeFilter';
 import NumericFilter from './table/NumericFilter';
 import TextFilter from './table/TextFilter';
-
+import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
 
 export {Advanced, DNDContainer, FormFeedbackAwesome, IChangeDataHandler, Icon, IconBar,
         ITableRowAction, MainPage, Table, DateTimeFilter as TableDateTimeFilter,
         NumericFilter as TableNumericFilter, TextFilter as TableTextFilter,
-        makeGetSelection, tooltip}
+        makeGetSelection, ToolbarIcon, tooltip}

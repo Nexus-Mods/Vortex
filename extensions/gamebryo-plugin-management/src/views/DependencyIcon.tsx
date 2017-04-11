@@ -8,7 +8,7 @@ import { ComponentEx, selectors, tooltip } from 'nmm-api';
 
 import { IReference, IRule, RuleType } from 'modmeta-db';
 import * as React from 'react';
-import { OverlayTrigger, Popover } from 'react-bootstrap';
+import { Overlay, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
@@ -103,6 +103,7 @@ interface IActionProps {
 
 interface IComponentState {
   reference: string;
+  showOverlay: boolean;
 }
 
 interface IDragProps {
@@ -210,11 +211,12 @@ function collectDrop(connect: __ReactDnd.DropTargetConnector,
 
 class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private mIsMounted: boolean;
+  private mRef: JSX.Element;
 
   constructor(props: IProps) {
     super(props);
 
-    this.initState({ reference: undefined });
+    this.initState({ reference: undefined, showOverlay: false });
     this.mIsMounted = false;
   }
 
@@ -293,22 +295,43 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     let connectorIcon = connectDropTarget(
       connectDragSource(
         <div style={{ display: 'inline' }}>
-          <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popover}>
           <tooltip.IconButton
             id={`btn-meta-data-${plugin.name}`}
             className={classes.join(' ')}
             key={`rules-${plugin.name}`}
             tooltip={t('Drag to another plugin to set userlist rule')}
             icon='plug'
+            ref={this.setRef}
+            onClick={this.toggleOverlay}
           />
-          </OverlayTrigger>
-          </div>
+          <Overlay
+            show={this.state.showOverlay}
+            onHide={this.hideOverlay}
+            placement='left'
+            rootClose={true}
+            target={this.mRef as any}
+          >
+            {popover}
+          </Overlay>
+        </div>
       )
     );
 
     return <div style={{ textAlign: 'center', width: '100%' }}>
       {connectorIcon}
       </div>;
+  }
+
+  private setRef = (ref) => {
+    this.mRef = ref;
+  }
+
+  private toggleOverlay = () => {
+    this.nextState.showOverlay = !this.state.showOverlay;
+  }
+
+  private hideOverlay = () => {
+    this.nextState.showOverlay = false;
   }
 
   private renderRule = (name: string, type: string) => {

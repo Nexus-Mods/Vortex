@@ -1,6 +1,7 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId, activeProfile, currentGameDiscovery } from '../../../util/selectors';
+import Advanced from '../../../views/Advanced';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
@@ -13,7 +14,7 @@ import { IModActivator } from '../types/IModActivator';
 import { deactivateMods } from '../modActivation';
 
 import * as React from 'react';
-import {generate as shortid} from 'shortid';
+import { generate as shortid } from 'shortid';
 
 interface IConnectedProps {
   installPath: string;
@@ -27,22 +28,24 @@ interface IActionProps {
   onShowError: (message: string, details?: string) => void;
 }
 
-interface IBaseProps {
+export interface IBaseProps {
   activators: IModActivator[];
+  buttonType: 'text' | 'icon' | 'both';
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class DeactivationButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    let { t } = this.props;
+    let { t, buttonType } = this.props;
 
-    return <ToolbarIcon
+    return <Advanced><ToolbarIcon
       id='activate-mods'
       icon='chain-broken'
-      text={ t('Unlink Mods') }
+      text={ t('Purge Mods') }
       onClick={ this.activate }
-    />;
+      buttonType={ buttonType }
+    /></Advanced>;
   }
 
   private activate = () => {
@@ -90,4 +93,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(DeactivationButton)
-  );
+  ) as React.ComponentClass<IBaseProps>;

@@ -69,10 +69,11 @@ export function extend(registerFunc: Function) {
       }
 
       public render(): JSX.Element {
+        const { children } = this.props;
         let wrapProps = Object.assign({}, this.props, { objects: this.mExtensions });
         delete wrapProps.staticElements;
         delete wrapProps.group;
-        return React.createElement(ComponentToWrap, wrapProps, []);
+        return React.createElement(ComponentToWrap, wrapProps, children);
       }
     };
   };

@@ -1,5 +1,7 @@
 import { IIconDefinition } from '../types/IIconDefinition';
 import { IExtensibleProps, extend } from '../util/ExtensionProvider';
+
+import DynamicProps from './DynamicProps';
 import ToolbarIcon from './ToolbarIcon';
 
 import * as React from 'react';
@@ -45,6 +47,7 @@ class IconBar extends React.Component<IProps, {}> {
         style={style}
         vertical={orientation === 'vertical'}
       >
+        { this.props.children }
         { objects.sort(iconSort).map(this.renderIcon) }
       </ButtonGroup>
     );
@@ -90,12 +93,20 @@ class IconBar extends React.Component<IProps, {}> {
           return prev;
         }
       }, {});
-      const props = Object.assign({},
+      const staticProps = Object.assign({},
         unknownProps,
-        icon.props !== undefined ? icon.props() : {},
-        { key: id }
+        { key: id, buttonType },
       );
-      return <icon.component {...props} buttonType={buttonType} />;
+      if (icon.props !== undefined) {
+        return <DynamicProps
+          key={id}
+          dynamicProps={icon.props}
+          staticProps={staticProps}
+          component={icon.component}
+        />;
+      } else {
+        return <icon.component {...staticProps} />;
+      }
     }
   }
 }

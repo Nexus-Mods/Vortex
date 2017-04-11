@@ -9,18 +9,19 @@ export interface IToolbarIconProps {
   text: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
   buttonType?: 'icon' | 'text' | 'both';
+  iconSet?: string;
   icon: string;
   onClick: (ids: string[]) => void;
 }
 
-class ToolbarIcon extends React.Component<IToolbarIconProps, {}> {
+class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
   public render(): JSX.Element {
-    const { buttonType, id, text, icon } = this.props;
+    const { buttonType, id, text, icon, iconSet } = this.props;
     const placement = this.props.placement || 'bottom';
     let bType = buttonType || 'icon';
     return (
       <Button tooltip={text} id={id} placement={placement} onClick={this.invokeAction}>
-        { ['icon', 'both'].indexOf(bType) !== -1 ? <Icon name={icon} /> : null }
+        { ['icon', 'both'].indexOf(bType) !== -1 ? <Icon set={iconSet} name={icon} /> : null }
         { ['text', 'both'].indexOf(bType) !== -1
           ? <p className='btn-toolbar-text'>{text}</p>
           : null }

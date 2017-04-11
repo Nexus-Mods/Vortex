@@ -4,6 +4,7 @@ import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { getSafe } from '../util/storeHelper';
 
 import Icon from './Icon';
+import ToolbarIcon from './ToolbarIcon';
 import { Button } from './TooltipControls';
 
 import * as React from 'react';
@@ -17,6 +18,7 @@ export interface IBaseProps {
   tooltip: string;
   onConfirmed: (input: string) => void;
   groupId: string;
+  buttonType?: 'text' | 'icon' | 'both';
 }
 
 interface IActionProps {
@@ -43,20 +45,17 @@ class InputButton extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    return this.renderContent();
-  }
-
-  private renderContent() {
-    const { t, displayGroups, groupId, icon, iconGroup, id, tooltip } = this.props;
+    const { t, buttonType, displayGroups, groupId, icon, iconGroup, id, tooltip } = this.props;
     if (getSafe(displayGroups, [ groupId ], undefined) !== id) {
       return (
-        <Button
+        <ToolbarIcon
           id={id}
-          tooltip={tooltip}
+          text={tooltip}
           onClick={this.startInput}
-        >
-          <Icon set={iconGroup} name={icon} />
-        </Button>
+          iconSet={iconGroup}
+          icon={icon}
+          buttonType={buttonType}
+        />
       );
     } else {
       const { input } = this.state;

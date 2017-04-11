@@ -15,8 +15,8 @@ import PluginFlags, {getPluginFlags} from './PluginFlags';
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import {SimpleMessage} from 'loot';
-import {ComponentEx, ITableRowAction, IconBar,
-        Table, TableTextFilter, selectors, tooltip, types, util} from 'nmm-api';
+import {ComponentEx, ITableRowAction, IconBar, MainPage,
+        Table, TableTextFilter, ToolbarIcon, selectors, types, util} from 'nmm-api';
 import * as React from 'react';
 import update = require('react-addons-update');
 import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
@@ -200,29 +200,28 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     this.staticButtons = [
       {
-        component: tooltip.ToggleButton,
-        props: (): tooltip.ToggleButtonProps => {
+        component: ToolbarIcon,
+        props: () => {
           const {autoSort} = this.props;
           return {
             id: 'btn-autosort-loot',
             key: 'btn-autosort-loot',
-            onIcon: 'lock',
-            offIcon: 'unlock',
-            tooltip: t('Autosort enabled (using LOOT)'),
-            offTooltip: t('Autosort disabled (using LOOT)'),
+            icon: autoSort ? 'lock' : 'unlock',
+            text: autoSort ? t('Autosort enabled (using LOOT)')
+                           : t('Autosort disabled (using LOOT)'),
             state: autoSort,
             onClick: () => onSetAutoSortEnabled(!autoSort),
           };
         },
       },
       {
-        component: tooltip.IconButton,
-        props: (): tooltip.IconButtonProps => {
+        component: ToolbarIcon,
+        props: () => {
           return {
             id: 'btn-sort',
             key: 'btn-sort',
             icon: 'sort-amount-asc',
-            tooltip: t('Sort now'),
+            text: t('Sort now'),
             onClick: () => this.context.api.events.emit('autosort-plugins'),
           };
         },
@@ -249,29 +248,31 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { pluginsCombined } = this.state;
 
     return (
-      <Layout type='column'>
-        <Fixed style={{minHeight: 32}}>
-          <Layout type='row'>
-            <Flex>
-              <IconBar
-                group='gamebryo-plugin-icons'
-                staticElements={this.staticButtons}
-              />
-            </Flex>
+      <MainPage>
+        <MainPage.Body>
+          <Layout type='column'>
             <Fixed>
               <h4>{t(lootActivity)}</h4>
             </Fixed>
+            <Flex>
+              <Table
+                tableId='gamebryo-plugins'
+                actions={this.actions}
+                staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
+                data={pluginsCombined}
+              />
+            </Flex>
           </Layout>
-        </Fixed>
-        <Flex>
-          <Table
-            tableId='gamebryo-plugins'
-            actions={this.actions}
-            staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
-            data={pluginsCombined}
+        </MainPage.Body>
+        <MainPage.Overlay>
+          <IconBar
+            group='gamebryo-plugin-icons'
+            staticElements={this.staticButtons}
+            buttonType='both'
+            orientation='vertical'
           />
-        </Flex>
-      </Layout>
+        </MainPage.Overlay>
+      </MainPage>
     );
   }
 

@@ -229,10 +229,9 @@ class ModList extends ComponentEx<IProps, {}> {
           <IconBar
             group='mod-icons'
             staticElements={this.staticButtons}
-            buttonType='text'
-            style={{ width: '100%', display: 'flex' }}
+            buttonType='both'
+            orientation='vertical'
           />
-          {this.props.globalOverlay}
         </MainPage.Overlay>
       </MainPage>
     );

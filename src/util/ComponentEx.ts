@@ -15,7 +15,7 @@ interface IProxyEntry<T> {
 }
 
 export class StateProxyHandler<T> implements ProxyHandler<T> {
-  private mComponent: ComponentEx<any, T>;
+  private mComponent: ComponentEx<any, T> | PureComponentEx<any, T>;
   private mPath: string[];
   private mBaseObject: T;
   private mSubProxies: { [key: string]: {
@@ -23,7 +23,8 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
     obj: any,
   } };
 
-  constructor(component: ComponentEx<any, T>, baseObject: T, objPath: string[]) {
+  constructor(component: ComponentEx<any, T> | PureComponentEx<any, T>,
+              baseObject: T, objPath: string[]) {
     this.mComponent = component;
     this.mPath = objPath;
     this.mBaseObject = baseObject;
@@ -84,6 +85,24 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
  * @template S
  */
 export class ComponentEx<P, S> extends React.Component<P & II18NProps, S> {
+  public static contextTypes: React.ValidationMap<any> = {
+    api: React.PropTypes.object.isRequired,
+  };
+
+  public context: IComponentContext;
+
+  public nextState: S;
+
+  protected initState(value: S) {
+    this.state = value;
+
+    let proxyHandler = new StateProxyHandler(this, value, []);
+
+    this.nextState = new Proxy<S>(value, proxyHandler);
+  };
+}
+
+export class PureComponentEx<P, S> extends React.PureComponent<P & II18NProps, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: React.PropTypes.object.isRequired,
   };

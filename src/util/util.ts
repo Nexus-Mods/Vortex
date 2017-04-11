@@ -151,7 +151,7 @@ export function isNullOrWhitespace(check: string): boolean {
  * these: undefined, null, 0, -0, NaN "")
  * 
  * Obviously one could just do "if (val)" but js noobs
- * may be aware what values that accepts exactly and whether that was
+ * may not be aware what values that accepts exactly and whether that was
  * intentional. This is more explicit.
  */
 export function truthy(val: any): boolean {

@@ -1,5 +1,6 @@
 import { DialogActions, DialogType,
          IDialogContent, IDialogResult, showDialog } from '../../../actions/notifications';
+import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId, activeProfile } from '../../../util/selectors';
@@ -9,7 +10,6 @@ import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResu
 import { currentActivator, installPath } from '../../mod_management/selectors';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
-import { IFileEntry } from '../types/IFileEntry';
 import { IMod } from '../types/IMod';
 import { IModActivator } from '../types/IModActivator';
 
@@ -30,33 +30,24 @@ interface IActionProps {
   onShowError: (message: string, details?: string) => void;
 }
 
-interface IBaseProps {
+export interface IBaseProps {
   activators: IModActivator[];
-}
-
-interface IComponentState {
-  fileActions: IFileEntry[];
+  buttonType: 'text' | 'icon' | 'both';
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-class ActivationButton extends ComponentEx<IProps, IComponentState> {
-  constructor(props) {
-    super(props);
-    this.initState({ fileActions: undefined });
-  }
-
+class ActivationButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    let { t } = this.props;
+    let { t, buttonType } = this.props;
 
-    return <div style={{ float: 'left' }}>
-      <ToolbarIcon
-        id='activate-mods'
-        icon='chain'
-        text={t('Link Mods')}
-        onClick={this.activate}
-      />
-    </div>;
+    return <ToolbarIcon
+      id='activate-mods'
+      icon='chain'
+      text={t('Deploy Mods')}
+      onClick={this.activate}
+      buttonType={buttonType}
+    />;
   }
 
   private activate = () => {
@@ -68,11 +59,11 @@ class ActivationButton extends ComponentEx<IProps, IComponentState> {
   };
 }
 
-function activeGameDiscovery(state: any)  {
+function activeGameDiscovery(state: IState)  {
   return state.settings.gameMode.discovered[activeGameId(state)];
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   const profile = activeProfile(state);
   const gameMode = activeGameId(state);
 
@@ -85,7 +76,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
   return {
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
@@ -96,4 +87,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(ActivationButton)
-  );
+  ) as React.ComponentClass<IBaseProps>;

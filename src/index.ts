@@ -10,4 +10,4 @@ import * as selectors from './util/selectors';
 
 export * from './views/api';
 export { actions, types, log, selectors, safeCreateAction, util }
-export { ComponentEx } from './util/ComponentEx';
+export { ComponentEx, PureComponentEx } from './util/ComponentEx';

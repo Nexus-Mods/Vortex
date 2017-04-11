@@ -65,27 +65,23 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
 
     const imgPath = path.resolve(remote.app.getAppPath(), 'assets', 'images', 'nmm.png');
 
-    let licenseBox = ownLicense
-      ? <ReactMarkdown
-        className='license-text-own'
-        disallowedTypes={['Link']}
-        source={ownLicenseText}
-      />
-      : (<div style={{ marginTop: 5 }}><p><strong>{t('Third-party libraries')}</strong></p>
-        <div className='about-panel'>
-          {moduleList.map(this.renderModule)}
-        </div>
-      </div>
-      );
+    let body = null;
 
-    return (
-      <Modal show={shown} onHide={this.props.onHide}>
-        <Modal.Header>
-          <Modal.Title>
-            Nexus Mod Manager 2
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body id='about-dialog'>
+    if (shown) {
+      const licenseBox = ownLicense
+        ? <ReactMarkdown
+          className='license-text-own'
+          disallowedTypes={['Link']}
+          source={ownLicenseText}
+        />
+        : (<div style={{ marginTop: 5 }}><p><strong>{t('Third-party libraries')}</strong></p>
+          <div className='about-panel'>
+            {moduleList.map(this.renderModule)}
+          </div>
+        </div>
+        );
+
+      body = <Modal.Body id='about-dialog'>
           <Media style={{ marginBottom: 5 }}>
             <Media.Left><Image src={imgPath} /></Media.Left>
             <Media.Body>
@@ -98,7 +94,17 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
           <p><strong>Node</strong> {process.versions.node}</p>
           <p><strong>Chrome</strong> {process.versions.chrome}</p>
           { licenseBox }
-        </Modal.Body>
+        </Modal.Body>;
+    }
+
+    return (
+      <Modal show={shown} onHide={this.props.onHide}>
+        <Modal.Header>
+          <Modal.Title>
+            Nexus Mod Manager 2
+          </Modal.Title>
+        </Modal.Header>
+        {body}
         <Modal.Footer>
           <Button
             id='close'

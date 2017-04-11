@@ -1,5 +1,6 @@
 import { ComponentEx } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 import { IconButton } from '../../../views/TooltipControls';
 
 import { IMod } from '../../mod_management/types/IMod';
@@ -25,7 +26,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
 
     let changelog = getSafe(mod.attributes, ['changelogHtml'], undefined);
 
-    if (changelog === undefined) {
+    if (!truthy(changelog)) {
       return null;
     }
 
