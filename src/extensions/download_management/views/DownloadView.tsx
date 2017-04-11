@@ -13,6 +13,9 @@ import InputButton from '../../../views/InputButton';
 import SuperTable, {ITableRowAction} from '../../../views/Table';
 import {Button} from '../../../views/TooltipControls';
 
+import DateTimeFilter from '../../../views/table/DateTimeFilter';
+import TextFilter from '../../../views/table/TextFilter';
+
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { downloadPath } from '../../mod_management/selectors';
 
@@ -113,6 +116,10 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       edit: {},
       isSortable: true,
+      filter: new TextFilter(true),
+      sortFunc: (lhs: string, rhs: string, locale: string): number => {
+        return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
+      },
     };
 
     this.fileTimeColumn = {
@@ -136,6 +143,10 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       edit: {},
       isSortable: true,
+      filter: new DateTimeFilter(),
+      sortFunc: (lhs: Date, rhs: Date): number => {
+        return (rhs.valueOf() - lhs.valueOf());
+      },
     };
 
     this.staticButtons = [

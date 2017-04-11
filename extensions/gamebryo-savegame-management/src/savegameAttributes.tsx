@@ -3,7 +3,7 @@ import CharacterFilter from './util/CharacterFilter';
 import PluginList from './views/PluginList';
 import ScreenshotCanvas from './views/ScreenshotCanvas';
 
-import { TableTextFilter, types } from 'nmm-api';
+import { TableDateTimeFilter, TableNumericFilter, TableTextFilter, types } from 'nmm-api';
 import * as React from 'react';
 
 export const SAVEGAME_ID: types.ITableAttribute = {
@@ -44,6 +44,10 @@ export const LEVEL: types.ITableAttribute = {
   placement: 'both',
   isToggleable: true,
   isSortable: true,
+  filter: new TableNumericFilter(),
+  sortFunc: (lhs: number, rhs: number): number => {
+    return (rhs - lhs);
+  },
   edit: {},
 };
 
@@ -56,6 +60,10 @@ export const LOCATION: types.ITableAttribute = {
   placement: 'both',
   isToggleable: true,
   isSortable: true,
+  filter: new TableTextFilter(true),
+  sortFunc: (lhs: string, rhs: string, locale: string): number => {
+    return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
+  },
   edit: {},
 };
 
@@ -68,6 +76,10 @@ export const CREATION_TIME: types.ITableAttribute = {
   placement: 'both',
   isToggleable: true,
   isSortable: true,
+  filter: new TableDateTimeFilter(),
+  sortFunc: (lhs: Date, rhs: Date): number => {
+    return (rhs.valueOf() - lhs.valueOf());
+  },
   edit: {},
 };
 

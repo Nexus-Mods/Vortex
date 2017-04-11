@@ -3,12 +3,12 @@ import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 
-export class DateTimeFilterComponent extends React.Component<IFilterProps, {}> {
+export class NumericFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {
     const { filter } = this.props;
     return <FormControl
       className='form-field-compact'
-      type='Date'
+      type='number'
       value={filter || ''}
       onChange={this.changeFilter}
     />;
@@ -20,15 +20,15 @@ export class DateTimeFilterComponent extends React.Component<IFilterProps, {}> {
   }
 }
 
-class DateTimeFilter implements ITableFilter {
-  public component = DateTimeFilterComponent;
+class NumericFilter implements ITableFilter {
+  public component = NumericFilterComponent;
   public raw = false;
 
   constructor() { }
 
   public matches(filter: any, value: any): boolean {
-      return (new Date(value) >= new Date(filter));
+      return (value >= filter);
   }
 }
 
-export default DateTimeFilter;
+export default NumericFilter;
