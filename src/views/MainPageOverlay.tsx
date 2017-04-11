@@ -1,26 +1,26 @@
+import { IExtensionApi } from '../types/IExtensionContext';
+
 import * as React from 'react';
 
 interface IComponentContext {
-  page: { overlayOpen: boolean };
+  api: IExtensionApi;
+  selectOverlay: (overlay: JSX.Element) => void;
 }
 
 class MainPageOverlay extends React.Component<{}, {}> {
   public static contextTypes: React.ValidationMap<any> = {
-    page: React.PropTypes.shape({
-      overlayOpen: React.PropTypes.bool.isRequired,
-    }),
+    api: React.PropTypes.object.isRequired,
+    selectOverlay: React.PropTypes.func.isRequired,
   };
 
   public context: IComponentContext;
 
   public render(): JSX.Element {
-    let classes = [ 'overlay' ];
-    if (this.context.page.overlayOpen) {
-      classes.push('in');
-    }
-    return <div className={classes.join(' ')}>
-      {this.props.children}
-    </div>;
+    this.context.selectOverlay(
+      <div>
+        {this.props.children}
+      </div>);
+    return null;
   }
 }
 

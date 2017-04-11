@@ -553,6 +553,10 @@
   background-color: $brand-darkbg;
 }
 
+.form-control[disabled], .form-control[readonly] {
+  background-color: $brand-lightbg;
+}
+
 textarea {
   background-color: $brand-darkbg;
 }
@@ -809,12 +813,16 @@ textarea {
   right: 3px;
 }
 
-.btn-group,
-.btn-group-vertical {
+.btn-group {
   position: static;
   &.dropdown {
     position: relative;
   }
+}
+
+.btn-group-vertical {
+  display: flex;
+  flex-direction: column;
 }
 
 .btn-group > .btn,
@@ -925,7 +933,7 @@ textarea {
   visibility: hidden;
 }
 
-.main-page .overlay {
+#main-window-pane .overlay {
   position: absolute;
   height: 100%;
   z-index: $zindex-navbar-fixed;
@@ -937,17 +945,18 @@ textarea {
   border-color: lighten($brand-bg, 30%);
   border-width: 0px;
   transition: max-width 300ms cubic-bezier(0, 1, 1, 1), border-width 0ms 300ms;
+  display: flex;
+  flex-direction: column;
 }
 
-.main-page .overlay.in {
+#main-window-pane .overlay.in {
   max-width: 30%;
   border-width: 2px;
   transition: max-width 300ms cubic-bezier(1, 0, 1, 1), border-width 0ms 0ms;
 }
 
-.main-page .global-overlay {
-  position: absolute;
-  bottom: 0px;
+.overlay-spacer {
+  flex: 1 1 0%;
 }
 
 #img-add-game {
@@ -969,6 +978,11 @@ textarea {
 
 .dropdown-version {
   padding: 0px 10px;
+}
+
+// more pronounced popover shadow. just cause
+.popover {
+  box-shadow: 5px 5px 10px rgba(0,0,0,.6);
 }
 
 ::-webkit-scrollbar {

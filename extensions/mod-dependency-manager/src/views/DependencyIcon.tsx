@@ -322,7 +322,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       />;
     }
 
-    return <div style={{ textAlign: 'center', width: '100%', position: 'relative' }}>
+    return <div style={{ textAlign: 'center', width: '100%' }}>
       {connectorIcon}
       {conflictIcon}
       </div>;

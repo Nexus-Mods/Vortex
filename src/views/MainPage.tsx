@@ -9,28 +9,11 @@ import * as React from 'react';
 export interface IBaseProps {
 }
 
-interface IConnectedProps {
-  overlayOpen: boolean;
-}
-
-type IProps = IBaseProps & IConnectedProps;
+type IProps = IBaseProps;
 
 class MainPage extends ComponentEx<IProps, {}> {
   public static Body = Body;
   public static Overlay = Overlay;
-  public static childContextTypes: React.ValidationMap<any> = {
-    page: React.PropTypes.shape({
-      overlayOpen: React.PropTypes.bool.isRequired,
-    }),
-  };
-
-  public getChildContext() {
-    return {
-      page: {
-        overlayOpen: this.props.overlayOpen,
-      },
-    };
-  }
 
   public render(): JSX.Element {
     const { children } = this.props;
@@ -40,15 +23,9 @@ class MainPage extends ComponentEx<IProps, {}> {
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
-  return {
-    overlayOpen: state.session.base.overlayOpen,
-  };
-}
-
-export interface IMainPage extends React.ClassicComponentClass<{}> {
+export interface IMainPage extends React.ComponentClass<{}> {
   Body: typeof Body;
   Overlay: typeof Overlay;
 }
 
-export default connect(mapStateToProps)(MainPage) as IMainPage;
+export default MainPage as IMainPage;

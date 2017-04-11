@@ -17,6 +17,7 @@ import GlobalOverlay from './GlobalOverlay';
 import Icon from './Icon';
 import IconBar from './IconBar';
 import MainFooter from './MainFooter';
+import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
 import Notifications from './Notifications';
 import QuickLauncher from './QuickLauncher';
@@ -65,6 +66,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private applicationButtons: IIconDefinition[];
 
   private settingsPage: IMainPage;
+
+  private pageOverlay: JSX.Element = null;
 
   constructor(props: IProps) {
     super(props);
@@ -147,7 +150,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderBody() {
-    const { t, objects, tabsMinimized } = this.props;
+    const { t, objects, overlayOpen, tabsMinimized } = this.props;
     const { showPage } = this.state;
 
     const globalPages = objects.filter(page => page.group === 'global');
@@ -209,6 +212,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             <DNDContainer>
               {pages}
             </DNDContainer>
+            <MainOverlay pageOverlay={this.pageOverlay} open={overlayOpen} />
           </Flex>
         </Layout>
         <Notifications id='notifications' />
@@ -280,9 +284,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       key={page.title}
       page={page}
       active={showPage === page.title}
-      globalOverlay={globalOverlay}
+      onSelectOverlay={this.selectOverlay}
     />;
-  };
+  }
+
+  private selectOverlay = (ref) => {
+    this.pageOverlay = ref;
+  }
 
   private toggleOverlay = () => {
     this.props.onSetOverlayOpen(!this.props.overlayOpen);
@@ -304,6 +312,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private setMainPage = (title: string) => {
     if (this.state.showPage !== title) {
       this.props.onSetOverlayOpen(false);
+      this.selectOverlay(null);
     }
     // set the page as "loaded", set it as the shown page next frame.
     // this way it gets rendered as hidden once and can then "transition"
