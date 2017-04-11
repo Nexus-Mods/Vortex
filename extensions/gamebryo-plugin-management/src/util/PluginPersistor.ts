@@ -206,6 +206,11 @@ class PluginPersistor implements types.IPersistor {
     }
     return phaseOne
     .then((data: NodeBuffer) => {
+      if (data.length === 0) {
+        // not even a header? I don't trust this
+        // TODO: This is just a workaround
+        return Promise.reject(new Error('empty file encountered'));
+      }
       let keys: string[] = this.filterFileData(decode(data, 'latin-1'), true);
       this.initFromKeyList(newPlugins, keys, true);
       this.mPlugins = newPlugins;
