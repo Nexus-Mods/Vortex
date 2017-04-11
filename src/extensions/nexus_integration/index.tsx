@@ -24,6 +24,7 @@ import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import EndorseModButton from './views/EndorseModButton';
 import LoginIcon from './views/LoginIcon';
+import NexusModIdDetail from './views/NexusModIdDetail';
 import {} from './views/Settings';
 
 import * as Promise from 'bluebird';
@@ -229,6 +230,23 @@ function checkModsVersionImpl(
   });
 }
 
+function renderNexusModIdDetail(
+  store: Redux.Store<any>,
+  mod: IMod,
+  t: I18next.TranslationFunction) {
+  const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
+  const gameMode = activeGameId(store.getState());
+  return (
+    <NexusModIdDetail
+      modId={mod.id}
+      nexusModId={nexusModId}
+      gameId={gameMode}
+      t={t}
+      store={store}
+    />
+  );
+}
+
 function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.TranslationFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
@@ -324,6 +342,20 @@ function init(context: IExtensionContextExt): boolean {
     isToggleable: true,
     edit: {},
     isSortable: true,
+  });
+
+  context.registerTableAttribute('mods', {
+    id: 'nexusModId',
+    name: 'Nexus Mod Id',
+    description: 'Nexus Mod Id',
+    icon: 'external-link',
+    customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
+      renderNexusModIdDetail(context.api.store, mod, t),
+    calc: (mod: IMod) => getSafe(mod.attributes, ['modId'], undefined),
+    placement: 'detail',
+    isToggleable: false,
+    edit: {},
+    isSortable: false,
   });
 
   context.once(() => {
