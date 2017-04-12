@@ -7,7 +7,9 @@ import { log } from '../../util/log';
 import { activeGameId, activeProfile, downloadPath, gameName } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
+
 import { IDownload } from '../download_management/types/IDownload';
+import modName from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
 import { IDependency } from './types/IDependency';
@@ -136,6 +138,8 @@ class InstallManager {
     let installGameId;
     let installContext;
 
+    let filteredInfo;
+
     this.queryGameId(api.store, downloadGameId)
         .then(gameId => {
           installGameId = gameId;
@@ -166,12 +170,14 @@ class InstallManager {
           return checkNameLoop();
         })
         .then(() => {
+          filteredInfo = filterModInfo(fullInfo);
+
           const currentProfile = activeProfile(api.store.getState());
 
           let oldMod = undefined;
-          if (fullInfo.meta !== undefined) {
-            oldMod = this.retrievePreviousVersionMod(fullInfo.meta.fileId, api.store,
-                                                     installGameId);
+          if (filteredInfo.fileId !== undefined) {
+            oldMod = this.findPreviousVersionMod(filteredInfo.fileId, api.store,
+                                                 installGameId);
           }
 
           if (oldMod !== undefined) {
@@ -200,7 +206,6 @@ class InstallManager {
                                           installGameId, result);
         })
         .then(() => {
-          const filteredInfo = filterModInfo(fullInfo);
           installContext.finishInstallCB('success', filteredInfo);
           if (processDependencies) {
             this.installDependencies(filteredInfo.rules, this.mGetInstallPath(),
@@ -458,7 +463,7 @@ class InstallManager {
     return installName in (api.store.getState().persistent.mods[gameMode] || {});
   }
 
-  private retrievePreviousVersionMod(
+  private findPreviousVersionMod(
     fileId: number,
     store: Redux.Store<any>,
     gameMode: string): IMod {
@@ -478,13 +483,12 @@ class InstallManager {
   private userVersionChoice(oldMod: IMod, store: Redux.Store<any>): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       store.dispatch(showDialog(
-          'question', 'Previous mod version found',
+          'question', modName(oldMod),
           {
             message:
-            'A previous version seems to be installed already. ' +
-            'You can replace the existing one or install the new one as a separate mod, ' +
-            'leaving the older version intact. In this case only the current profile ' +
-            'will use the new version.',
+            'An older version of this mod is already installed.' +
+            'You can replace the existing one or install this one alongside it. ' +
+            'If you have other profiles they will remain with the old version.',
             formcontrol: [],
           },
           {

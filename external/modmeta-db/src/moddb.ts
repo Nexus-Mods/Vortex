@@ -276,11 +276,7 @@ class ModDB {
           `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
       value: {
         fileMD5: nexusObj.file_details.md5,
-        fileId: nexusObj.file_details.file_id,
         fileName: nexusObj.file_details.file_name,
-        fileCategory: nexusObj.file_details.category_name,
-        isPrimary: nexusObj.file_details.is_primary,
-        changelogHtml: nexusObj.file_details.changelog_html,
         fileSizeBytes: nexusObj.file_details.file_size,
         logicalFileName: nexusObj.file_details.name,
         fileVersion: semvish.clean(nexusObj.file_details.version, true),
@@ -288,7 +284,6 @@ class ModDB {
         modName: nexusObj.mod.name,
         modId: nexusObj.mod.mod_id,
         sourceURI: urlFragments.join('/'),
-        uploadedTimestamp: nexusObj.file_details.uploaded_timestamp,
         details: {
           category: nexusObj.mod.category,
           description: nexusObj.mod.description,

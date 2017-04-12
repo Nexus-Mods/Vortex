@@ -101,19 +101,14 @@ export interface IModInfo {
   modId: string;
   modName: string;
   fileName: string;
-  fileCategory: string;
-  isPrimary: boolean;
   fileSizeBytes: number;
   gameId: string;
   logicalFileName?: string;
   fileVersion: string;
   fileMD5: string;
-  fileId: string;
   sourceURI: any;
   rules?: IRule[];
   expires?: number;
-  uploadedTimestamp: number;
-  changelogHtml: string;
   details?: {
     homepage?: string;
     category?: string;
