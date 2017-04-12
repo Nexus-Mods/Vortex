@@ -27,7 +27,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
     let changelog = getSafe(mod.attributes, ['changelogHtml'], undefined);
     let newestChangelog = getSafe(mod.attributes, ['newestChangelogHtml'], undefined);
 
-    if (!truthy(changelog) || !truthy(newestChangelog)) {
+    if (!truthy(changelog) && !truthy(newestChangelog)) {
       return null;
     }
 
@@ -36,7 +36,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
       changelog = changelog.replace(regex, '\n');
     }
 
-    if (newestChangelog !== null) {
+    if (newestChangelog !== undefined) {
       newestChangelog = newestChangelog.replace(regex, '\n');
     }
 

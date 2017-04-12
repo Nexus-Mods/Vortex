@@ -226,7 +226,7 @@ function checkModsVersionImpl(
         store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId',
           checkModVersionResult !== null ? checkModVersionResult.newFileId : 'unknown'));
 
-        store.dispatch(setModAttribute(gameId, mod.id, 'newestChangelog',
+        store.dispatch(setModAttribute(gameId, mod.id, 'newestChangelogHtml',
           checkModVersionResult !== null ? checkModVersionResult.changeLog : 'unknown'));
         return null;
       })
