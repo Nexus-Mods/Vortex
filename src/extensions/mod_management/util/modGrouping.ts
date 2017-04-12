@@ -11,22 +11,25 @@ function byModId(input: IModWithState[]): IModWithState[][] {
 }
 
 function fileId(value: IModWithState): string {
-    let result = getSafe(value.attributes, ['logicalFileName'], undefined);
-    if (result !== undefined) {
-      return 'l' + result;
-    }
-    result = getSafe(value.attributes, ['fileExpression'], undefined);
-    if (result !== undefined) {
-      return 'e' + result;
-    }
-    return 'i' + value.id;
+  let result = getSafe(value.attributes, ['logicalFileName'], undefined);
+  if (result !== undefined) {
+    return 'l' + result;
+  }
+  result = getSafe(value.attributes, ['fileExpression'], undefined);
+  if (result !== undefined) {
+    return 'e' + result;
+  }
+  result = getSafe(value.attributes, ['newestFileId'], 'unknown');
+  if (result !== 'unknown') {
+    return 'n' + result;
+  }
+  return 'i' + value.id;
 }
 
 function byFile(input: IModWithState[]): IModWithState[][] {
   const result = input.reduce((prev: { [fileId: string]: IModWithState[] }, value) => {
     return pushSafe(prev, [fileId(value)], value);
   }, {});
-
   return Object.keys(result).map(fileId => result[fileId]);
 }
 
