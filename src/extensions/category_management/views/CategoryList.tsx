@@ -150,7 +150,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, IComponen
           <Button
             id='selectNextMatch'
             tooltip={t('Next')}
-            type='submit'
+            type='button'
             disabled={!searchFoundCount}
             onClick={this.selectNextMatch}
           >

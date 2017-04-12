@@ -16,11 +16,6 @@ interface IActionProps {
   onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
 }
 
-export interface IMainWindowState {
-  showLayer: string;
-  showPage: string;
-}
-
 interface IConnectedProps {
 }
 
@@ -31,16 +26,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
  * 
  * @class TextareaNotes
  */
-class TextareaNotes extends ComponentEx<IProps, IMainWindowState> {
-
-  constructor(props: IProps) {
-    super(props);
-
-    this.state = {
-      showLayer: '',
-      showPage: '',
-    };
-  }
+class TextareaNotes extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
     let { mod } = this.props;

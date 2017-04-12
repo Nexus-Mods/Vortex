@@ -30,10 +30,6 @@ interface IActionProps {
   onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
 }
 
-export interface IHighlightButtonState {
-  showLayer: string;
-}
-
 interface IConnectedProps {
 }
 
@@ -44,15 +40,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
  * 
  * @class HighlightButton
  */
-class HighlightButton extends ComponentEx<IProps, IHighlightButtonState> {
-
-  constructor(props: IProps) {
-    super(props);
-
-    this.state = {
-      showLayer: '',
-    };
-  }
+class HighlightButton extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
     let { mod, t } = this.props;
