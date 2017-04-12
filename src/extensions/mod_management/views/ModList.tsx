@@ -205,19 +205,7 @@ class ModList extends ComponentEx<IProps, {}> {
     }
 
     if (this.mGroupedMods === undefined) {
-      return (
-        <MainPage>
-          <MainPage.Overlay>
-          <IconBar
-            group='mod-icons'
-            staticElements={this.staticButtons}
-            buttonType='text'
-            style={{ width: '100%', display: 'flex' }}
-          />
-          {this.props.globalOverlay}
-        </MainPage.Overlay>
-      </MainPage>
-      );
+      return null;
     }
 
     return (
@@ -320,11 +308,7 @@ class ModList extends ComponentEx<IProps, {}> {
     });
     this.mModsWithState = newModsWithState;
 
-    if (oldProps.mods !== newProps.mods) {
-      changed = true;
-    }
-
-    if (changed) {
+    if (changed || (this.mGroupedMods === undefined)) {
       this.updateModGrouping();
     }
   }
