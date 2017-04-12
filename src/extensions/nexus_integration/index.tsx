@@ -1,4 +1,3 @@
-
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import LazyComponent from '../../util/LazyComponent';
@@ -15,10 +14,12 @@ import { setModAttribute } from '../mod_management/actions/mods';
 import { setUpdatingMods } from '../mod_management/actions/settings';
 import { IMod } from '../mod_management/types/IMod';
 import modName from '../mod_management/util/modName';
+import { IProfileMod } from '../profile_management/types/IProfile';
 
 import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
 import { settingsReducer } from './reducers/settings';
+import { ICheckModVersionResult } from './types/ICheckModVersionResult';
 import checkModsVersion from './util/checkModsVersion';
 import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
@@ -34,6 +35,8 @@ import * as opn from 'opn';
 import * as React from 'react';
 import * as util from 'util';
 
+type IModWithState = IMod & IProfileMod;
+
 let nexus: Nexus;
 let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
 
@@ -42,7 +45,7 @@ export interface IExtensionContextExt extends IExtensionContext {
     handler: (inputUrl: string) => Promise<string[]>) => void;
 }
 
-function startDownload(api: IExtensionApi, nxmurl: string) {
+function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boolean) {
   const url: NXMUrl = new NXMUrl(nxmurl);
 
   let nexusFileInfo: IFileInfo;
@@ -67,7 +70,7 @@ function startDownload(api: IExtensionApi, nxmurl: string) {
       }
       let uris: string[] = urls.map((item: IDownloadURL) => item.URI);
       log('debug', 'got download urls', { uris });
-      api.events.emit('start-download', uris, {
+      api.events.emit('start-download', automaticInstall, uris, {
         game: url.gameId.toLowerCase(),
         nexus: {
           ids: { gameId, modId: url.modId, fileId: url.fileId },
@@ -187,10 +190,11 @@ function endorseModImpl(
 function checkModsVersionImpl(
   store: Redux.Store<any>,
   gameId: string,
+  groupedMods: { [id: string]: IModWithState[] },
   mods: { [modId: string]: IMod }): Promise<string[]> {
 
   let modsArray = [];
-  const objectKeys = Object.keys(mods);
+  const objectKeys = Object.keys(groupedMods);
   objectKeys.forEach((key) => modsArray.push(mods[key]));
 
   return Promise.map(modsArray, (mod: IMod) => {
@@ -217,10 +221,13 @@ function checkModsVersionImpl(
 
     return checkModsVersion(nexus, convertGameId(gameId),
       numModId, parseInt(fileId, 10))
-      .then((newestFileId: number) => {
+      .then((checkModVersionResult: ICheckModVersionResult) => {
         // TODO merge this with retrieveModInfo
         store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId',
-          newestFileId !== -1 ? newestFileId : 'unknown'));
+          checkModVersionResult !== null ? checkModVersionResult.newFileId : 'unknown'));
+
+        store.dispatch(setModAttribute(gameId, mod.id, 'newestChangelog',
+          checkModVersionResult !== null ? checkModVersionResult.changeLog : 'unknown'));
         return null;
       })
       .catch((err) => {
@@ -330,7 +337,7 @@ function init(context: IExtensionContextExt): boolean {
       groupId: 'download-buttons',
       icon: 'nexus',
       tooltip: 'Download NXM URL',
-      onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl),
+      onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl, false),
     }));
 
   context.registerIcon('categories-icons', 100, IconButton,
@@ -345,7 +352,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', {
     id: 'endorsed',
     name: 'Endorsed',
-    description: 'Endorsed',
+    description: 'The endorsed Icon',
     icon: 'star',
     customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
       createEndorsedIcon(context.api.store, mod, t),
@@ -359,7 +366,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', {
     id: 'nexusModId',
     name: 'Nexus Mod Id',
-    description: 'Nexus Mod Id',
+    description: 'The Nexus Mod Id and the Nexus Mod Page link inside the detail section',
     icon: 'external-link',
     customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
       renderNexusModIdDetail(context.api.store, mod, t),
@@ -385,7 +392,7 @@ function init(context: IExtensionContextExt): boolean {
 
     let registerFunc = () => {
       context.api.registerProtocol('nxm', (url: string) => {
-        startDownload(context.api, url);
+        startDownload(context.api, url, false);
       });
     };
     if (context.api.store.getState().settings.nexus.associateNXM) {
@@ -396,9 +403,9 @@ function init(context: IExtensionContextExt): boolean {
       retrieveCategories(context.api, isUpdate);
     });
 
-    context.api.events.on('check-mods-version', (gameId, mods) => {
+    context.api.events.on('check-mods-version', (gameId, groupedMods, mods) => {
       context.api.store.dispatch(setUpdatingMods(gameId, true));
-      checkModsVersionImpl(context.api.store, gameId, mods)
+      checkModsVersionImpl(context.api.store, gameId, groupedMods, mods)
         .then((errorMessages: string[]) => {
           if (errorMessages.length !== 0) {
             showError(context.api.store.dispatch,
@@ -443,7 +450,7 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on('download-mod-update', (gameId, modId, fileId) => {
       // TODO: Need some way to identify if this request is actually for a nexus mod
       const url = `nxm://${toNXMId(gameId)}/mods/${modId}/files/${fileId}`;
-      startDownload(context.api, url);
+      startDownload(context.api, url, true);
     });
 
     context.api.events.on('open-mod-page', (gameId, modId) => {

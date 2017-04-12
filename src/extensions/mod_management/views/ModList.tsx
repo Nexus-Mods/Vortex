@@ -177,7 +177,7 @@ class ModList extends ComponentEx<IProps, {}> {
       },
       {
         component: CheckModVersionsButton,
-        props: () => ({}),
+        props: () => ({groupedMods: this.mGroupedMods}),
       },
     ];
   }

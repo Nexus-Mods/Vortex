@@ -103,7 +103,7 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
     evt.preventDefault();
     let url = evt.dataTransfer.getData('Url');
     if (url !== '') {
-      this.context.api.events.emit('start-download', [url], {});
+      this.context.api.events.emit('start-download', false, [url], {});
     } else if (evt.dataTransfer.files.length > 0) {
       const item = evt.dataTransfer.files.item(0);
       const destination = path.join(downloadPath, item.name);

@@ -2,6 +2,7 @@ export interface IFileInfo {
   file_id: number;
   category_id: number;
   category_name: string;
+  changelog_html: string;
   name: string;
   version: string;
   size: number;

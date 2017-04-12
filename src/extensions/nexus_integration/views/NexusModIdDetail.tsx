@@ -3,8 +3,10 @@ import { IconButton } from '../../../views/TooltipControls';
 
 import { setModAttribute } from '../../mod_management/actions/mods';
 
+import FormFeedback from '../../../views/FormFeedbackAwesome';
+
 import * as React from 'react';
-import { FormControl } from 'react-bootstrap';
+import { FormControl, FormGroup } from 'react-bootstrap';
 
 export interface IProps {
   gameId: string;
@@ -27,9 +29,9 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
       return (
         <div>
           <FormControl
-              type='text'
-              value={nexusModId}
-              onChange={this.updateNexusModId}
+            type='text'
+            value={nexusModId}
+            onChange={this.updateNexusModId}
           />
           <IconButton
             className='btn-version-column'
@@ -43,17 +45,16 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
     } else {
       return (
         <div>
-          <FormControl
+          <FormGroup
+            validationState={'warning'}
+          >
+            <FormControl
               type='text'
               value={nexusModId}
               onChange={this.updateNexusModId}
-          />
-          <IconButton
-            className='btn-version-column'
-            id={modId}
-            tooltip={t('Nexus Mod Id is empty')}
-            icon='ban'
-          />
+            />
+            <FormFeedback />
+          </FormGroup>
         </div>
       );
     }
@@ -65,7 +66,7 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
     store.dispatch(setModAttribute(gameId, modId, 'modId', nexusModId));
   };
 
-   private openPage = () => {
+  private openPage = () => {
     const { gameId, nexusModId } = this.props;
     this.context.api.events.emit('open-mod-page', gameId, nexusModId);
   };

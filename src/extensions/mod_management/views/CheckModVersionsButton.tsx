@@ -2,9 +2,17 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
+import { IProfileMod } from '../../profile_management/types/IProfile';
+
 import { IMod } from '../types/IMod';
 
 import * as React from 'react';
+
+type IModWithState = IMod & IProfileMod;
+
+export interface IProps {
+  groupedMods: { [id: string]: IModWithState[] };
+}
 
 interface IConnectedProps {
   mods: { [modId: string]: IMod };
@@ -12,7 +20,7 @@ interface IConnectedProps {
   updateRunning: boolean;
 }
 
-class CheckVersionsButton extends ComponentEx<IConnectedProps, {}> {
+class CheckVersionsButton extends ComponentEx<IConnectedProps & IProps, {}> {
   public render(): JSX.Element {
     let { t, updateRunning } = this.props;
 
@@ -37,9 +45,10 @@ class CheckVersionsButton extends ComponentEx<IConnectedProps, {}> {
   }
 
   private checkModsVersion = () => {
-    const { gameMode, mods } = this.props;
-    if (mods !== undefined) {
-      this.context.api.events.emit('check-mods-version', gameMode, mods);
+    const { gameMode, groupedMods, mods } = this.props;
+
+    if (groupedMods !== undefined) {
+      this.context.api.events.emit('check-mods-version', gameMode, groupedMods, mods);
     }
   };
 }

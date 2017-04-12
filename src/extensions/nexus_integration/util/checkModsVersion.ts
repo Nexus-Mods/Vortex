@@ -1,3 +1,4 @@
+import { ICheckModVersionResult } from '../types/ICheckModVersionResult';
 import { IFileUpdates, IModFiles } from '../types/IModfiles';
 
 import Nexus from 'nexus-api';
@@ -19,8 +20,8 @@ function checkModsVersion(
   nexus: Nexus,
   gameId: string,
   modId: number,
-  fileId: number): Promise<number> {
-  return new Promise<number>((resolve, reject) => {
+  fileId: number): Promise<ICheckModVersionResult> {
+  return new Promise<ICheckModVersionResult>((resolve, reject) => {
     nexus.getModFiles(modId, gameId)
       .then((result: IModFiles) => {
         let findFileId = fileId;
@@ -34,14 +35,21 @@ function checkModsVersion(
         const fileCategories = ['MAIN', 'UPDATE', 'OPTIONAL'];
         // see if the file is in a category that implies it's still up-to-date
         const remoteFile = result.files.find(file => file.file_id === findFileId);
+
         if ((remoteFile === undefined)
-            || (fileCategories.indexOf(remoteFile.category_name) === -1)) {
+          || (fileCategories.indexOf(remoteFile.category_name) === -1)) {
           // if it wasn't found (meaning the file has either been removed from
           // the page or is in category "OLD", mark the file as "updated but
           // don't know which file)
-          resolve(-1);
+          resolve(null);
         } else {
-          resolve(findFileId);
+          let file = result.files.find(file => file.file_id === findFileId);
+
+          let modVersionResult: ICheckModVersionResult = {
+            newFileId: findFileId,
+            changeLog: file !== undefined ? file.changelog_html : undefined,
+          };
+          resolve(modVersionResult);
         }
       })
       .catch((err) => {
