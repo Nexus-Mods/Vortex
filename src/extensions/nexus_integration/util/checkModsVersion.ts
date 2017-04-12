@@ -102,7 +102,7 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
     .filter(change => change !== undefined)
     .join('</br>');
 
-  update(dispatch, gameId, mod, 'newestChangelog', changelog);
+  update(dispatch, gameId, mod, 'newestChangelogHtml', changelog);
 
   const updatedFile = fileUpdate.length > 0
     ? files.files.find(file => file.file_id === fileUpdate[fileUpdate.length - 1].new_file_id)
