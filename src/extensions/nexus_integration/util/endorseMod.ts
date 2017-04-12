@@ -1,3 +1,4 @@
+import * as Promise from 'bluebird';
 import Nexus from 'nexus-api';
 
 /**
@@ -11,23 +12,17 @@ import Nexus from 'nexus-api';
  * 
  */
 
-function endorsedMod(nexus: Nexus, gameId: string, nexusModId: number,
-                     version: string, endorseStatus: string): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
-    if (endorseStatus === 'Undecided' || endorseStatus === 'Abstained' || endorseStatus === '') {
-      endorseStatus = 'endorse';
-    } else  if (endorseStatus === 'Endorsed') {
-      endorseStatus = 'abstain';
-    }
+function endorseMod(nexus: Nexus, gameId: string, nexusModId: number,
+                    version: string, endorseStatus: string): Promise<string> {
+  if (endorseStatus === 'Undecided' || endorseStatus === 'Abstained' ||
+      endorseStatus === '') {
+    endorseStatus = 'endorse';
+  } else if (endorseStatus === 'Endorsed') {
+    endorseStatus = 'abstain';
+  }
 
-    nexus.endorseMod(nexusModId, version, endorseStatus, gameId)
-      .then((result: any) => {
-        resolve(result.status);
-      })
-      .catch((err) => {
-        reject(err);
-      });
-  });
+  return nexus.endorseMod(nexusModId, version, endorseStatus, gameId)
+      .then(result => result.status);
 }
 
-export default endorsedMod;
+export default endorseMod;

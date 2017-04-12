@@ -188,9 +188,9 @@ $btn-border-radius-small:        $border-radius-small;
 //##
 
 //** `<input>` background color
-$input-bg:                       #fff;
+$input-bg:                       $brand-darkbg;
 //** `<input disabled>` background color
-$input-bg-disabled:              $gray-lighter;
+$input-bg-disabled:              $brand-lightbg;
 
 //** Text color for `<input>`s
 $input-color:                    $text-color;
@@ -239,7 +239,7 @@ $cursor-disabled:                not-allowed;
 //## Dropdown menu container and contents.
 
 //** Background for the dropdown menu.
-$dropdown-bg:                    #fff;
+$dropdown-bg:                    $brand-darkbg;
 //** Dropdown menu `border-color`.
 $dropdown-border:                rgba(0,0,0,.15);
 //** Dropdown menu `border-color` **for IE8**.

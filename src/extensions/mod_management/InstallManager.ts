@@ -250,52 +250,54 @@ class InstallManager {
   private installInner(archivePath: string, gameId: string) {
     let fileList: IZipEntry[] = [];
     // get list of files in the archive
-    return new Promise((resolve, reject) => {
-      this.mTask.list(archivePath, {}, (files: any[]) => {
-        fileList.push(
-           ...files.filter((spec) => spec.attr[0] !== 'D'));
-      })
-        .then(() => { resolve(); });
-    })
-      .then(() => this.getInstaller(
-        fileList.map((entry: IZipEntry) => entry.name)))
-      .then((supportedInstaller: ISupportedInstaller) => {
-        if (supportedInstaller === undefined) {
-          throw new Error('no installer supporting this file');
-        }
-        const { installer, requiredFiles } = supportedInstaller;
-        let cleanup: () => void;
-        let reqFilesPath: string;
-        // extract the requested files, then initiate the actual install
-        return new Promise<string>((resolve, reject) => {
-          tmpDir({ unsafeCleanup: true },
-            (err: any, tmpPath: string,
-              cleanupCallback: () => void) => {
-              if (err !== null) {
-                reject(err);
-              }
-              cleanup = cleanupCallback;
-              resolve(tmpPath);
-            });
+    return this.mTask.list(archivePath, {},
+                           (files: any[]) => {
+                             fileList.push(...files.filter(
+                                 (spec) => spec.attr[0] !== 'D'));
+                           })
+        .catch(err => {
+          return Promise.reject(err);
         })
-          .then((tmpPath: string) => {
-            reqFilesPath = tmpPath;
-            if (requiredFiles.length > 0) {
-              return this.extractFileList(archivePath, tmpPath, requiredFiles);
-            } else {
-              return undefined;
-            }
-          })
-          .then(() => installer.install(
-            fileList.map((entry: IZipEntry) => entry.name),
-            reqFilesPath, gameId,
-            (perc: number) => log('info', 'progress', perc)))
-          .finally(() => {
-            if (cleanup !== undefined) {
-              cleanup();
+        .then(() => this.getInstaller(
+                  fileList.map((entry: IZipEntry) => entry.name)))
+        .then((supportedInstaller: ISupportedInstaller) => {
+          if (supportedInstaller === undefined) {
+            throw new Error('no installer supporting this file');
           }
+          const {installer, requiredFiles} = supportedInstaller;
+          let cleanup: () => void;
+          let reqFilesPath: string;
+          // extract the requested files, then initiate the actual install
+          return new Promise<string>((resolve, reject) => {
+                   tmpDir({unsafeCleanup: true},
+                          (err: any, tmpPath: string,
+                           cleanupCallback: () => void) => {
+                            if (err !== null) {
+                              reject(err);
+                            }
+                            cleanup = cleanupCallback;
+                            resolve(tmpPath);
+                          });
+                 })
+              .then((tmpPath: string) => {
+                reqFilesPath = tmpPath;
+                if (requiredFiles.length > 0) {
+                  return this.extractFileList(archivePath, tmpPath,
+                                              requiredFiles);
+                } else {
+                  return undefined;
+                }
+              })
+              .then(() => installer.install(
+                        fileList.map((entry: IZipEntry) => entry.name),
+                        reqFilesPath, gameId,
+                        (perc: number) => log('info', 'progress', perc)))
+              .finally(() => {
+                if (cleanup !== undefined) {
+                  cleanup();
+                }
+              });
         });
-      });
   }
 
   private queryGameId(store: Redux.Store<any>,

@@ -7,6 +7,7 @@ export interface IValidateKeyResponse {
     email: string;
     url: string;
 }
+export declare type EndorsedStatus = 'Undecided' | 'Abstained' | 'Endorsed';
 export interface IModInfo {
     id: number;
     category_id: number;
@@ -17,6 +18,9 @@ export interface IModInfo {
     description: string;
     version: string;
     author: string;
+    endorsement: {
+        endorse_status: EndorsedStatus;
+    };
 }
 export interface IFileInfo {
     file_id: number;

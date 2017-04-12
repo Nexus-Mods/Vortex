@@ -8,6 +8,8 @@ export interface IValidateKeyResponse {
   url: string;
 };
 
+export type EndorsedStatus = 'Undecided' | 'Abstained' | 'Endorsed';
+
 export interface IModInfo {
   id: number;
   category_id: number;
@@ -18,6 +20,9 @@ export interface IModInfo {
   description: string;
   version: string;
   author: string;
+  endorsement: {
+    endorse_status: EndorsedStatus,
+  };
 }
 
 export interface IFileInfo {

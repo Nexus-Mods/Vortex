@@ -1,6 +1,5 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
-import Icon from '../../../views/Icon';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { IMod } from '../types/IMod';
@@ -18,11 +17,14 @@ class CheckVersionsButton extends ComponentEx<IConnectedProps, {}> {
     let { t, updateRunning } = this.props;
 
     if (updateRunning) {
-      return (
-        <div>
-          <Icon name='spinner' pulse />
-        </div>
-      );
+      return <ToolbarIcon
+        id='check-mods-version'
+        icon='spinner'
+        text={t('Check mods version')}
+        buttonType='both'
+        disabled={true}
+        pulse={true}
+      />;
     } else {
       return <ToolbarIcon
         id='check-mods-version'

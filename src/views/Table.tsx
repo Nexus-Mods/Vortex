@@ -269,8 +269,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     let result = {};
     Object.keys(calculatedValues).filter(rowId => {
-      // return only elements for which we can't find an attribute
-      // that doesn't match the corresponding filter
+      // filter out rows which no longer exist
+      if (data[rowId] === undefined) {
+        return false;
+      }
+      // return only elements for which we can't find a non-matching filter
+      // (in other work: Keep only those items that match all filters)
       return attributes.find(attribute => {
         if (attribute.filter === undefined) {
           return false;
@@ -322,9 +326,17 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     let dataIds = Object.keys(data).filter((key) => calculatedValues[key] !== undefined);
 
     return dataIds.sort((lhsId: string, rhsId: string): number => {
-      let res = sortFunction(calculatedValues[lhsId][sortAttribute.id],
-                             calculatedValues[rhsId][sortAttribute.id],
-                             locale);
+      let res = 0;
+      if (calculatedValues[lhsId][sortAttribute.id] === undefined) {
+        res = calculatedValues[rhsId][sortAttribute.id] === undefined ? 0 : -1;
+      } else if (calculatedValues[rhsId][sortAttribute.id] === undefined) {
+        res = 1;
+      } else {
+        res = sortFunction(calculatedValues[lhsId][sortAttribute.id],
+          calculatedValues[rhsId][sortAttribute.id],
+          locale);
+      }
+
       if (descending) {
         res *= -1;
       }

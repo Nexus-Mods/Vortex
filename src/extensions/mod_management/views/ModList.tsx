@@ -19,6 +19,7 @@ import { removeMod, setModAttribute } from '../actions/mods';
 import { IMod } from '../types/IMod';
 import { IModProps } from '../types/IModProps';
 import groupMods from '../util/modGrouping';
+import modName from '../util/modName';
 import modUpdateState, { UpdateState } from '../util/modUpdateState';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
@@ -89,17 +90,12 @@ class ModList extends ComponentEx<IProps, {}> {
       name: 'Mod Name',
       description: 'Name of the mod',
       icon: 'quote-left',
-      calc: (mod: IModWithState) =>
-        getSafe(mod.attributes, ['customFileName'],
-          getSafe(mod.attributes, ['logicalFileName'],
-            getSafe(mod.attributes, ['name'], '')
-          )
-        ),
+      calc: (mod) => modName(mod),
       placement: 'both',
       isToggleable: false,
       edit: {
         onChangeValue: (modId: string, value: any) =>
-          props.onSetModAttribute(props.gameMode, modId, 'customFileName', value),
+          props.onSetModAttribute(this.props.gameMode, modId, 'customFileName', value),
       },
       isSortable: true,
       filter: new TextFilter(true),
@@ -118,7 +114,7 @@ class ModList extends ComponentEx<IProps, {}> {
       isToggleable: false,
       edit: {
         onChangeValue: (modId: string, value: any) => {
-          props.onSetModEnabled(props.profileId, modId, value);
+          props.onSetModEnabled(this.props.profileId, modId, value);
           this.context.api.events.emit('mods-enabled', [modId], value);
         },
       },
@@ -136,7 +132,7 @@ class ModList extends ComponentEx<IProps, {}> {
       edit: {
         validate: (input: string) => semver.valid(input) ? 'success' : 'warning',
         onChangeValue: (modId: string, value: any) =>
-          props.onSetModAttribute(props.gameMode, modId, 'version', value),
+          props.onSetModAttribute(this.props.gameMode, modId, 'version', value),
       },
       isSortable: false,
     };
@@ -151,7 +147,7 @@ class ModList extends ComponentEx<IProps, {}> {
       placement: 'table',
       isToggleable: true,
       edit: {},
-      isSortable: true,
+      isSortable: false,
     };
 
     this.modActions = [
@@ -307,6 +303,12 @@ class ModList extends ComponentEx<IProps, {}> {
       }
     });
     this.mModsWithState = newModsWithState;
+
+    // if the new mod list is a subset of the old one (including the empty set)
+    // the above check wouldn't notice that change
+    if (Object.keys(newProps.mods).length < Object.keys(oldProps.mods).length) {
+      changed = true;
+    }
 
     if (changed || (this.mGroupedMods === undefined)) {
       this.updateModGrouping();

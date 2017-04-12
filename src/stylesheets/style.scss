@@ -158,23 +158,19 @@
 }
 
 .mod-updating-warning {
-  color: #cddc39;
-  text-align: right;
+  color: $brand-warning;
 }
 
 .mod-updating-download {
-  color: #4caf50;
-  text-align: right;
+  color: $link-color;
 }
 
 .mod-updating-ban {
-  color: #ff0000;
-  text-align: right;
+  color: $brand-danger;
 }
 
 .mod-updating-bug {
-  color: #ff9800;
-  text-align: right;
+  color: $brand-danger;
 }
 
 .highlight-1 {
@@ -549,14 +545,6 @@
   top: 0px;
 }
 
-.form-control {
-  background-color: $brand-darkbg;
-}
-
-.form-control[disabled], .form-control[readonly] {
-  background-color: $brand-lightbg;
-}
-
 textarea {
   background-color: $brand-darkbg;
 }
@@ -815,7 +803,11 @@ textarea {
 
 .btn-group {
   position: static;
-  &.dropdown {
+  // inside tables we can't use "relative" because then the dropdown overlays the header.
+  // This rule makes the dropdown relative only when it's open. This way it will still overlay
+  // the header but only if the user interacts with it. This looks slightly broken but it's
+  // actually useful.
+  &.dropdown.open {
     position: relative;
   }
 }

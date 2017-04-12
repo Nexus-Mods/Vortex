@@ -49,7 +49,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
     );
 
     return (
-      <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popoverBottom}>
+      <OverlayTrigger trigger='click' rootClose placement='right' overlay={popoverBottom}>
         <IconButton
           className='btn-version-column'
           icon='file-text'

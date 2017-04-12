@@ -173,7 +173,7 @@ class Nexus {
   }
 
   private handleResult(data, response, resolve, reject) {
-    if (response.statusCode === 200) {
+    if ((response.statusCode >= 200) && (response.statusCode < 300)) {
       try {
         resolve(data);
       } catch (err) {

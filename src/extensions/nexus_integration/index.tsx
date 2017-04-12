@@ -14,6 +14,7 @@ import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { setModAttribute } from '../mod_management/actions/mods';
 import { setUpdatingMods } from '../mod_management/actions/settings';
 import { IMod } from '../mod_management/types/IMod';
+import modName from '../mod_management/util/modName';
 
 import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
@@ -28,14 +29,13 @@ import NexusModIdDetail from './views/NexusModIdDetail';
 import {} from './views/Settings';
 
 import * as Promise from 'bluebird';
-import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
+import Nexus, { IDownloadURL, IFileInfo, IModInfo } from 'nexus-api';
 import * as opn from 'opn';
 import * as React from 'react';
 import * as util from 'util';
 
 let nexus: Nexus;
 let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
-let checkVersionModsReport: string = undefined;
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (schema: string,
@@ -129,6 +129,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
 
 interface IRequestError {
   error: string;
+  servermessage?: string;
   game?: string;
   fatal?: boolean;
 }
@@ -137,20 +138,22 @@ function processErrorMessage(
   statusCode: number, errorMessage: string, gameId: string): IRequestError {
   if (statusCode === undefined) {
     return { error: errorMessage };
-  } else if (statusCode === 404) {
-    if (errorMessage !== undefined) {
-      return { error: errorMessage, game: gameId };
-   } else {
-      return { error: 'game not found', game: gameId, fatal: true };
-    }
-  } else if ((statusCode >= 500) && (statusCode < 600)) {
+  } else if ((statusCode >= 400) && (statusCode < 500)) {
     return {
-      error: 'Something is wrong with the Nexus server, nothing can be ' +
-      'done on your end: Internal server error',
+      error: 'Server couldn\'t process this request.\nMaybe the locally stored '
+      + 'info about the mod is wrong\nor the mod was removed from Nexus.',
+      servermessage: errorMessage,
+      fatal: errorMessage === undefined,
+    };
+ } else if ((statusCode >= 500) && (statusCode < 600)) {
+    return {
+      error: 'The server reported an internal error. Please try again later.',
+      servermessage: errorMessage,
     };
   } else {
     return {
-      error: errorMessage + ' ( Status Code: ' + statusCode + ')',
+      error: 'Unexpected error reported by the server',
+      servermessage: (errorMessage || '') + ' ( Status Code: ' + statusCode + ')',
     };
   }
 }
@@ -170,13 +173,13 @@ function endorseModImpl(
   const version: string = getSafe(mod.attributes, ['version'], undefined);
 
   store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'pending'));
-  sendEndorseMod(nexus, gameId, nexusModId, version, endorsedStatus)
+  sendEndorseMod(nexus, convertGameId(gameId), nexusModId, version, endorsedStatus)
     .then((endorsed: string) => {
       store.dispatch(setModAttribute(gameId, modId, 'endorsed', endorsed));
     })
     .catch((err) => {
-      store.dispatch(setModAttribute(gameId, modId, 'endorsed', undefined));
-      let detail = processErrorMessage(err.statusCode, err.message, gameId);
+      store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'Undecided'));
+      const detail = processErrorMessage(err.statusCode, err.message, gameId);
       showError(store.dispatch, 'An error occurred endorsing a mod', detail);
     });
 };
@@ -184,9 +187,7 @@ function endorseModImpl(
 function checkModsVersionImpl(
   store: Redux.Store<any>,
   gameId: string,
-  mods: { [modId: string]: IMod }): Promise<void[]> {
-
-  checkVersionModsReport = '';
+  mods: { [modId: string]: IMod }): Promise<string[]> {
 
   let modsArray = [];
   const objectKeys = Object.keys(mods);
@@ -215,19 +216,28 @@ function checkModsVersionImpl(
     }
 
     return checkModsVersion(nexus, convertGameId(gameId),
-                            numModId, parseInt(fileId, 10))
+      numModId, parseInt(fileId, 10))
       .then((newestFileId: number) => {
+        // TODO merge this with retrieveModInfo
         store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId',
           newestFileId !== -1 ? newestFileId : 'unknown'));
+        return null;
       })
       .catch((err) => {
         let detail = processErrorMessage(err.statusCode, err.message, gameId);
         if (detail.fatal === true) {
           return Promise.reject(detail);
         }
-        checkVersionModsReport += `${mod.id}: ${detail.error}\n`;
+
+        let name = modName(mod, { version: true });
+        if (detail.servermessage !== undefined) {
+          return `${name}:\n${detail.error}\nServer said: "${detail.servermessage}"`;
+        } else {
+          return `${name}:\n${detail.error}`;
+        }
       });
-  });
+  })
+  .then(errorMessages => errorMessages.filter(msg => msg !== null));
 }
 
 function renderNexusModIdDetail(
@@ -248,53 +258,55 @@ function renderNexusModIdDetail(
 }
 
 function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.TranslationFunction) {
+  const endorsed: string = getSafe(mod.attributes, ['endorsed'], undefined);
+  const gameMode = activeGameId(store.getState());
+  if (endorsed !== undefined) {
+    return (
+      <EndorseModButton
+        endorsedStatus={endorsed}
+        t={t}
+        gameId={gameMode}
+        modId={mod.id}
+        onEndorseMod={endorseMod}
+      />
+    );
+  }
+
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
 
-  if ((nexusModId === undefined) || (version === undefined)) {
-    // can't have an endorsement state if we don't know the nexus id of the mod
-    // and apparently we need the version as well
-    return null;
+  // can't have an endorsement state if we don't know the nexus id or if it's
+  // invalid as a nexus id. And apparently we need the version as well
+  if ((nexusModId !== undefined)
+      && (version !== undefined)
+      && !isNaN(parseInt(nexusModId, 10))) {
+    // if it could be a mod from nexus, treat the endorsement state as undecided. 
+    store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
   }
 
-  const numModId = parseInt(nexusModId, 10);
+  return null;
+}
 
-  if (isNaN(numModId)) {
-    // if the mod id isn't numerical, this isn't a nexus mod
-    // TODO would be better if we had a reliable way to determine if a mod is
-    //   on nexus.
-    return null;
-  }
+// TODO we should call this in response to the nexus-id being changed and
+// if the info is currently missing
+function retrieveModInfo(store: Redux.Store<any>, gameId: string,
+                         mod: IMod, t: I18next.TranslationFunction) {
+  const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
 
-  const endorsed: string = getSafe(mod.attributes, ['endorsed'], undefined);
-
-  const gameMode = activeGameId(store.getState());
-  if (endorsed === undefined) {
-    // if the endorsement state is unknown, request it
-    nexus.getModInfo(parseInt(nexusModId, 10), convertGameId(gameMode))
-      .then((modInfo: any) => {
-        store.dispatch(setModAttribute(gameMode, mod.id,
-          'endorsed', modInfo.endorsement.endorse_status));
-      })
-      .catch((err) => {
-        showError(store.dispatch, 'An error occurred looking up the mod', err);
-        // prevent this error to come up every time the icon is re-rendered
-        store.dispatch(setModAttribute(gameMode, mod.id,
-          'endorsed', 'Undecided'));
-      });
-    // don't render an endorsement icon while we don't know the current state
-    return null;
-  }
-
-  return (
-    <EndorseModButton
-      endorsedStatus={endorsed}
-      t={t}
-      gameId={gameMode}
-      modId={mod.id}
-      onEndorseMod={endorseMod}
-    />
-  );
+  // if the endorsement state is unknown, request it
+  nexus.getModInfo(parseInt(nexusModId, 10), convertGameId(gameId))
+    .then((modInfo: IModInfo) => {
+      // TODO update *all* nexus attributes (i.e. also changelog, latest version, ...)
+      store.dispatch(setModAttribute(gameId, mod.id,
+        'endorsed', modInfo.endorsement.endorse_status));
+    })
+    .catch((err) => {
+      showError(store.dispatch, 'An error occurred looking up the mod', err);
+      // prevent this error to come up every time the icon is re-rendered
+      store.dispatch(setModAttribute(gameId, mod.id, 'endorsed', 'Undecided'));
+    });
+  // don't render an endorsement icon while we don't know the current state
+  return null;
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -337,7 +349,7 @@ function init(context: IExtensionContextExt): boolean {
     icon: 'star',
     customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
       createEndorsedIcon(context.api.store, mod, t),
-    calc: (mod: IMod) => getSafe(mod.attributes, ['endorsed'], ''),
+    calc: (mod: IMod) => getSafe(mod.attributes, ['endorsed'], undefined),
     placement: 'table',
     isToggleable: true,
     edit: {},
@@ -387,11 +399,11 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on('check-mods-version', (gameId, mods) => {
       context.api.store.dispatch(setUpdatingMods(gameId, true));
       checkModsVersionImpl(context.api.store, gameId, mods)
-        .then(() => {
-          if (checkVersionModsReport !== '') {
+        .then((errorMessages: string[]) => {
+          if (errorMessages.length !== 0) {
             showError(context.api.store.dispatch,
               'checking for updates succeeded but there were errors',
-              checkVersionModsReport);
+              errorMessages.join('\n\n'));
           }
         })
         .catch((err) => {

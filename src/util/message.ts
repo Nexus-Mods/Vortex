@@ -131,6 +131,9 @@ function renderNodeError(err: Error): string {
 }
 
 function renderCustomError(err: any): string {
+  if (err === undefined) {
+    return 'Unknown error';
+  }
   return Object.keys(err).map((key: string) => {
     return key + ':\t' + err[key];
   }).join('\n');
