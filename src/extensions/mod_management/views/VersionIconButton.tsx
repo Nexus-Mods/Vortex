@@ -44,7 +44,9 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
   }
 
   private getStateTooltip(state) {
-    const { t } = this.props;
+    const { t, mod } = this.props;
+
+    const newVersion = getSafe(mod.attributes, ['newestVersion'], '?');
 
     switch (state) {
       case 'bug-update':
@@ -52,7 +54,9 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
       case 'bug-disable':
         return t('Mod should be disabled or downgraded because this version has been '
           + 'marked as "bugged" by the author');
-      case 'update': return t('Mod can be updated');
+      case 'update': return t('Mod can be updated (Current version: {{newVersion}})', { replace: {
+        newVersion,
+      } });
       case 'update-site':
         return t('Mod can be updated (but you will have to pick the file yourself)');
       default: return undefined;

@@ -19,8 +19,7 @@ import { IProfileMod } from '../profile_management/types/IProfile';
 import NXMUrl from './NXMUrl';
 import { accountReducer } from './reducers/account';
 import { settingsReducer } from './reducers/settings';
-import { ICheckModVersionResult } from './types/ICheckModVersionResult';
-import checkModsVersion from './util/checkModsVersion';
+import { checkModsVersion } from './util/checkModsVersion';
 import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
@@ -30,7 +29,7 @@ import NexusModIdDetail from './views/NexusModIdDetail';
 import {} from './views/Settings';
 
 import * as Promise from 'bluebird';
-import Nexus, { IDownloadURL, IFileInfo, IModInfo } from 'nexus-api';
+import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
 import * as opn from 'opn';
 import * as React from 'react';
 import * as util from 'util';
@@ -193,46 +192,13 @@ function checkModsVersionImpl(
   groupedMods: { [id: string]: IModWithState[] },
   mods: { [modId: string]: IMod }): Promise<string[]> {
 
-  let modsArray = [];
-  const objectKeys = Object.keys(groupedMods);
-  objectKeys.forEach((key) => modsArray.push(mods[key]));
+  const modsList = Object.keys(mods).map(modId => mods[modId]);
 
-  return Promise.map(modsArray, (mod: IMod) => {
-    if (mod === undefined) {
-      log('warn', 'tried to check version to an unknown mod', { gameId });
-      return null;
-    }
-
-    const fileId: string = getSafe(mod.attributes, ['fileId'], undefined);
-    const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
-
-    if (nexusModId === undefined) {
-      return null;
-    }
-
-    const numModId = parseInt(nexusModId, 10);
-
-    if (isNaN(numModId)) {
-      // if the mod id isn't numerical, this isn't a nexus mod
-      // TODO would be better if we had a reliable way to determine if a mod is
-      //   on nexus.
-      return null;
-    }
-
-    return checkModsVersion(nexus, convertGameId(gameId),
-      numModId, parseInt(fileId, 10))
-      .then((checkModVersionResult: ICheckModVersionResult) => {
-        // TODO merge this with retrieveModInfo
-        store.dispatch(setModAttribute(gameId, mod.id, 'newestFileId',
-          checkModVersionResult !== null ? checkModVersionResult.newFileId : 'unknown'));
-
-        store.dispatch(setModAttribute(gameId, mod.id, 'newestChangelog',
-          checkModVersionResult !== null ? checkModVersionResult.changeLog : 'unknown'));
-        return null;
-      })
+  return Promise.map(modsList, (mod: IMod) => {
+    return checkModsVersion(store.dispatch, nexus, gameId, mod)
       .catch((err) => {
         let detail = processErrorMessage(err.statusCode, err.message, gameId);
-        if (detail.fatal === true) {
+        if (detail.fatal) {
           return Promise.reject(detail);
         }
 
@@ -244,7 +210,7 @@ function checkModsVersionImpl(
         }
       });
   })
-  .then(errorMessages => errorMessages.filter(msg => msg !== null));
+  .then(errorMessages => errorMessages.filter(msg => msg !== undefined));
 }
 
 function renderNexusModIdDetail(
@@ -291,28 +257,6 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
     store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
   }
 
-  return null;
-}
-
-// TODO we should call this in response to the nexus-id being changed and
-// if the info is currently missing
-function retrieveModInfo(store: Redux.Store<any>, gameId: string,
-                         mod: IMod, t: I18next.TranslationFunction) {
-  const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
-
-  // if the endorsement state is unknown, request it
-  nexus.getModInfo(parseInt(nexusModId, 10), convertGameId(gameId))
-    .then((modInfo: IModInfo) => {
-      // TODO update *all* nexus attributes (i.e. also changelog, latest version, ...)
-      store.dispatch(setModAttribute(gameId, mod.id,
-        'endorsed', modInfo.endorsement.endorse_status));
-    })
-    .catch((err) => {
-      showError(store.dispatch, 'An error occurred looking up the mod', err);
-      // prevent this error to come up every time the icon is re-rendered
-      store.dispatch(setModAttribute(gameId, mod.id, 'endorsed', 'Undecided'));
-    });
-  // don't render an endorsement icon while we don't know the current state
   return null;
 }
 

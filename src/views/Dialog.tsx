@@ -118,6 +118,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         wrap={wrap}
         style={{ width: '100%', minHeight: 300, resize: 'none', border: 'none' }}
         defaultValue={this.translateParts(content.message, t)}
+        readOnly={true}
       />);
     }
 

@@ -26,6 +26,7 @@ export interface IFileInfo {
     file_id: number;
     category_id: number;
     category_name: string;
+    changelog_html: string;
     name: string;
     version: string;
     size: number;
@@ -37,10 +38,10 @@ export interface IFileInfo {
     is_primary: boolean;
 }
 export interface IModFiles {
-    file_updates: IFileUpdates[];
+    file_updates: IFileUpdate[];
     files: IFileInfo[];
 }
-export interface IFileUpdates {
+export interface IFileUpdate {
     new_file_id: number;
     new_file_name: string;
     old_file_id: number;
