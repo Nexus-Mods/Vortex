@@ -16,6 +16,7 @@ import SuperTable, {ITableRowAction} from '../../../views/Table';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import DateTimeFilter from '../../../views/table/DateTimeFilter';
+import GameFilter from '../../../views/table/GameFilter';
 import TextFilter from '../../../views/table/TextFilter';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -155,7 +156,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       edit: {},
       isSortable: true,
-      filter: new TextFilter(true),
+      filter: new GameFilter(),
       sortFunc: (lhs: string, rhs: string, locale: string): number => {
         return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
       },
