@@ -17,7 +17,6 @@ import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import DateTimeFilter from '../../../views/table/DateTimeFilter';
 import GameFilter from '../../../views/table/GameFilter';
-import TextFilter from '../../../views/table/TextFilter';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { downloadPath } from '../../mod_management/selectors';

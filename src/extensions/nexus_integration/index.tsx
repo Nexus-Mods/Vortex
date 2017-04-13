@@ -8,6 +8,8 @@ import { currentGame, getSafe } from '../../util/storeHelper';
 import InputButton from '../../views/InputButton';
 import { IconButton } from '../../views/TooltipControls';
 
+import EndorsementFilter from '../../views/table/EndorsementFilter';
+
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { setModAttribute } from '../mod_management/actions/mods';
@@ -305,6 +307,7 @@ function init(context: IExtensionContextExt): boolean {
     isToggleable: true,
     edit: {},
     isSortable: true,
+    filter: new EndorsementFilter(),
   });
 
   context.registerTableAttribute('mods', {
