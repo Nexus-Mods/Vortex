@@ -1,16 +1,11 @@
 interface NodeModule {
-  hot: any
+  hot: any;
 }
-/*
-declare namespace Electron {
-  interface Session {
-    protocol: any
-  }
-}*/
 
 declare namespace NodeJS {
   interface Global {
     logger: any;
+    language: string;
   }
 }
 
