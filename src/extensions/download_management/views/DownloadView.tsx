@@ -145,9 +145,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       edit: {},
       isSortable: true,
       filter: new DateTimeFilter(),
-      sortFunc: (lhs: Date, rhs: Date): number => {
-        return (rhs.valueOf() - lhs.valueOf());
-      },
     };
 
     this.staticButtons = [

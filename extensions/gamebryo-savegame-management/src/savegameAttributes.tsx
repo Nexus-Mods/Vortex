@@ -77,9 +77,6 @@ export const CREATION_TIME: types.ITableAttribute = {
   isToggleable: true,
   isSortable: true,
   filter: new TableDateTimeFilter(),
-  sortFunc: (lhs: Date, rhs: Date): number => {
-    return (rhs.valueOf() - lhs.valueOf());
-  },
   edit: {},
 };
 

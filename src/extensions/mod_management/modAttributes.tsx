@@ -15,7 +15,4 @@ export const INSTALL_TIME: ITableAttribute = {
   edit: {},
   isSortable: true,
   filter: new DateTimeFilter(),
-  sortFunc: (lhs: Date, rhs: Date): number => {
-    return (rhs.valueOf() - lhs.valueOf());
-  },
 };
