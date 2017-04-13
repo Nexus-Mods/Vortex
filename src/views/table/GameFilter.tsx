@@ -1,15 +1,14 @@
 import { IGameStored } from '../../extensions/gamemode_management/types/IGameStored';
 import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
 
-import { types } from 'nmm-api';
 import * as React from 'react';
 import { connect } from 'react-redux';
 import * as Select from 'react-select';
-interface IConnectedProps {
+export interface IConnectedProps {
   games: { [gameId: string]: IGameStored};
 }
 
-type IProps = types.IFilterProps & IConnectedProps;
+export type IProps = IFilterProps & IConnectedProps;
 
 export class GameFilterComponent extends React.Component<IProps, {}> {
   public render(): JSX.Element {
@@ -45,9 +44,9 @@ function mapStateToProps(state: any): IConnectedProps {
 }
 
 const FilterConn = connect(mapStateToProps)(
-  GameFilterComponent) as React.ComponentClass<types.IFilterProps>;
+  GameFilterComponent) as React.ComponentClass<IFilterProps>;
 
-class GameFilter implements types.ITableFilter {
+class GameFilter implements ITableFilter {
   public component = FilterConn;
   public raw = false;
 
