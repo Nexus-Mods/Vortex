@@ -129,11 +129,9 @@ ipcRenderer.on('external-url', (event, protocol, url) => {
 });
 
 let currentLanguage: string = store.getState().settings.interface.language;
-global.language = currentLanguage;
 store.subscribe(() => {
   let newLanguage: string = store.getState().settings.interface.language;
   if (newLanguage !== currentLanguage) {
-    global.language = newLanguage;
     currentLanguage = newLanguage;
     changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {
