@@ -103,11 +103,15 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
     this.initState({ mtime: undefined });
   }
 
-  public componentWillMount() {
+  public componentWillReceiveProps() {
     const { download, downloadPath } = this.props;
-    return fs.statAsync(path.join(downloadPath, download.localPath))
-    .then((stat: fs.Stats) => this.nextState.mtime = stat.mtime
-    );
+    if (download.localPath === undefined) {
+        return null;
+    } else {
+      return fs.statAsync(path.join(downloadPath, download.localPath))
+        .then((stat: fs.Stats) => this.nextState.mtime = stat.mtime
+        );
+    }
   }
 
   public render(): JSX.Element {
