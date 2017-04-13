@@ -69,13 +69,13 @@ function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boo
       }
       let uris: string[] = urls.map((item: IDownloadURL) => item.URI);
       log('debug', 'got download urls', { uris });
-      api.events.emit('start-download', automaticInstall, uris, {
+      api.events.emit('start-download', uris, {
         game: url.gameId.toLowerCase(),
         nexus: {
           ids: { gameId, modId: url.modId, fileId: url.fileId },
           fileInfo: nexusFileInfo,
         },
-      });
+      }, automaticInstall);
     })
     .catch((err) => {
       api.sendNotification({

@@ -56,8 +56,8 @@ export class DownloadObserver {
     events.on('remove-download',
               (downloadId) => this.handleRemoveDownload(downloadId));
     events.on('start-download',
-              (automaticInstall, urls, modInfo, callback?) =>
-                  this.handleStartDownload(automaticInstall, urls, modInfo, events, callback));
+              (urls, modInfo, automaticInstall, callback?) =>
+                  this.handleStartDownload(urls, modInfo, automaticInstall, events, callback));
   }
 
   private transformURLS(urls: string[]): Promise<string[]> {
@@ -75,8 +75,8 @@ export class DownloadObserver {
         }, []);
   }
 
-  private handleStartDownload(automaticInstall: boolean, urls: string[], modInfo: any,
-                              events: NodeJS.EventEmitter,
+  private handleStartDownload(urls: string[], modInfo: any,
+                              automaticInstall: boolean, events: NodeJS.EventEmitter,
                               callback?: (error: Error, id: string) => void) {
     let id = shortid();
     let gameMode = modInfo.game || activeGameId(this.mStore.getState());

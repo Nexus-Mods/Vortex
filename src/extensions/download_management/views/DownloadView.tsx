@@ -257,7 +257,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   private startDownload = (url: string) => {
-    this.context.api.events.emit('start-download', false, [url], {});
+    this.context.api.events.emit('start-download', [url], {}, false);
   }
 
   private pause = (downloadIds: string[]) => {
