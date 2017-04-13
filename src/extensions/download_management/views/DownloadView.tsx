@@ -5,8 +5,10 @@ import { IDialogResult } from '../../../types/IDialog';
 import { IIconDefinition } from '../../../types/IIconDefinition';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { getCurrentLanguage } from '../../../util/i18n';
+import relativeTime from '../../../util/relativeTime';
 import { activeGameId } from '../../../util/selectors';
-import {setSafe} from '../../../util/storeHelper';
+import { setSafe } from '../../../util/storeHelper';
 import IconBar from '../../../views/IconBar';
 import InputButton from '../../../views/InputButton';
 import MainPage from '../../../views/MainPage';
@@ -85,6 +87,43 @@ const AllGamesButton = (props) => {
   );
 };
 
+interface IFileTimeProps {
+  t: I18next.TranslationFunction;
+  language: string;
+  detail: boolean;
+  download: IDownload;
+  downloadPath: string;
+}
+
+class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
+  constructor(props: IFileTimeProps) {
+    super(props);
+
+    this.initState({ mtime: undefined });
+  }
+
+  public componentWillMount() {
+    const { download, downloadPath } = this.props;
+    return fs.statAsync(path.join(downloadPath, download.localPath))
+    .then((stat: fs.Stats) => this.nextState.mtime = stat.mtime
+    );
+  }
+
+  public render(): JSX.Element {
+    const { t, detail, download, language } = this.props;
+    const { mtime } = this.state;
+    if ((download.localPath === undefined) || (mtime === undefined)) {
+      return null;
+    }
+
+    if (detail) {
+      return <p>{mtime.toLocaleString(language)}</p>;
+    } else {
+      return <p>{relativeTime(mtime, t)}</p>;
+    }
+  }
+}
+
 class DownloadView extends ComponentEx<IProps, IComponentState> {
   public static contextTypes: React.ValidationMap<any> = {
     api: React.PropTypes.object.isRequired,
@@ -92,7 +131,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
   public context: IComponentContext;
   private staticButtons: IIconDefinition[];
-
   private gameColumn: ITableAttribute;
   private fileTimeColumn: ITableAttribute;
   private actions: ITableRowAction[];
@@ -128,6 +166,18 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       name: 'File Time',
       description: 'Time the file was last modified',
       icon: 'calendar-plus-o',
+      customRenderer: (attributes: IDownload, detail: boolean, t) => {
+        if (attributes.game !== this.props.gameMode) {
+          return undefined;
+        }
+        return <FileTime
+          t={t}
+          download={attributes}
+          downloadPath={this.props.downloadPath}
+          detail={detail}
+          language={getCurrentLanguage()}
+        />;
+      },
       calc: (attributes: IDownload) => {
         if (attributes.localPath === undefined) {
           return undefined;

@@ -3,7 +3,7 @@ import CharacterFilter from './util/CharacterFilter';
 import PluginList from './views/PluginList';
 import ScreenshotCanvas from './views/ScreenshotCanvas';
 
-import { TableDateTimeFilter, TableNumericFilter, TableTextFilter, types } from 'nmm-api';
+import { TableDateTimeFilter, TableNumericFilter, TableTextFilter, types, util } from 'nmm-api';
 import * as React from 'react';
 
 export const SAVEGAME_ID: types.ITableAttribute = {
@@ -72,6 +72,16 @@ export const CREATION_TIME: types.ITableAttribute = {
   name: 'Creation Time',
   description: 'File creation time',
   icon: 'calendar-plus-o',
+  customRenderer: (savegame: ISavegame, detail: boolean, t) => {
+    if (detail) {
+      const lang = util.getCurrentLanguage();
+      return <p>
+        {new Date((savegame.attributes as any).creationtime).toLocaleString(lang)}
+      </p>;
+    } else {
+      return <p>{ util.relativeTime(new Date((savegame.attributes as any).creationtime), t) }</p>;
+    }
+  },
   calc: (savegame: ISavegame) => new Date((savegame.attributes as any).creationtime),
   placement: 'both',
   isToggleable: true,

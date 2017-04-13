@@ -5,7 +5,6 @@ interface NodeModule {
 declare namespace NodeJS {
   interface Global {
     logger: any;
-    language: string;
   }
 }
 

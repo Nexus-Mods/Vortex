@@ -15,6 +15,7 @@ const basePath = path.normalize(path.join(dirName, 'locales'));
 log('info', 'reading localizations', basePath);
 
 let debugging = false;
+let currentLanguage = 'en';
 
 interface ITranslationEntry {
   lng: string;
@@ -37,8 +38,9 @@ export interface IInitResult {
  * @returns {I18next.I18n}
  */
 function init(language: string): Promise<IInitResult> {
+  currentLanguage = language;
   return new Promise<IInitResult>((resolve, reject) => {
-    const res = i18n.use(FSBackend).init(
+    const res: I18next.I18n = i18n.use(FSBackend).init(
         {
           lng: language,
           fallbackLng: 'en',
@@ -72,11 +74,17 @@ function init(language: string): Promise<IInitResult> {
         },
         (error, tFunc) => {
           if ((error !== null) && (error !== undefined)) {
-            return resolve({ i18n: res, tFunc: str => str, error });
+            return resolve({i18n: res, tFunc: str => str, error});
           }
-          resolve({ i18n: res, tFunc });
+          resolve({i18n: res, tFunc});
         });
+    res.on('languageChanged',
+           (newLanguage: string) => { currentLanguage = newLanguage; });
   });
+}
+
+export function getCurrentLanguage() {
+  return currentLanguage;
 }
 
 export function debugTranslations(enable?: boolean) {
