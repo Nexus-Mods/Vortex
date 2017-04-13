@@ -1,5 +1,6 @@
 import { ITableAttribute } from '../../types/ITableAttribute';
 
+import SelectionFilter from '../../views/table/SelectionFilter';
 import TextFilter from '../../views/table/TextFilter';
 
 import { IDownload } from './types/IDownload';
@@ -50,4 +51,5 @@ export const PROGRESS: ITableAttribute = {
   isToggleable: true,
   edit: {},
   isSortable: true,
+  filter: new SelectionFilter(['Error', 'Finished', 'In Progress']),
 };
