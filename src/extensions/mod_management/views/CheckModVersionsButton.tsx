@@ -8,7 +8,7 @@ import { IMod } from '../types/IMod';
 
 import * as React from 'react';
 
-type IModWithState = IMod & IProfileMod;
+export type IModWithState = IMod & IProfileMod;
 
 export interface IProps {
   groupedMods: { [id: string]: IModWithState[] };
