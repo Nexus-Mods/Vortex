@@ -133,7 +133,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     return (
       <Fixed id='main-toolbar'>
-        <object id='nexus-logo' data='assets/images/logo.svg' type='image/svg+xml' />
+        <QuickLauncher />
+        {/*<object id='nexus-logo' data='assets/images/logo.svg' type='image/svg+xml' />*/}
         <IconBar
           group='application-icons'
           staticElements={this.applicationButtons}
@@ -168,7 +169,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       <Flex>
         <Layout type='row' style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
           <Fixed id='main-nav-sidebar' className={sbClass}>
-            <QuickLauncher />
             <div style={{ flexDirection: 'column', height: '100%', display: 'flex' }}>
               <Nav
                 bsStyle='pills'

@@ -20,7 +20,7 @@ let curReject = undefined;
 function defaultAction(changeType: string): FileAction {
   switch (changeType) {
     case 'refchange': return 'import';
-    case 'valchanged': return 'keep';
+    case 'valchange': return 'keep';
     case 'deleted': return 'restore';
     default: throw new Error('invalid file change ' + changeType);
   }

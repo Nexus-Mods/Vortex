@@ -3,6 +3,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import asyncRequire, { Placeholder } from '../../util/asyncRequire';
 import { ComponentEx, connect } from '../../util/ComponentEx';
+import { UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
@@ -223,7 +224,9 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     startTool(info, this.context.api.events, this.queryElevate,
               this.queryDeploy, this.props.onShowError)
     .catch((err: Error) => {
-      this.props.onShowError('Failed to deploy', err);
+      if (!(err instanceof UserCanceled)) {
+        this.props.onShowError('Failed to deploy', err);
+      }
     })
     ;
   }

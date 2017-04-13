@@ -95,9 +95,9 @@ class ModActivator extends LinkingActivator {
       if (linkStats.nlink === 1) {
         return false;
       } else {
-        return fs.lstatAsync(sourcePath).then((sourceStats: fs.Stats) => {
-          return linkStats.ino === sourceStats.ino;
-        });
+        return fs.lstatAsync(sourcePath).then(
+          (sourceStats: fs.Stats) => linkStats.ino === sourceStats.ino
+        );
       }
     });
   }

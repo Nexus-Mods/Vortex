@@ -1,28 +1,32 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import { activeGameId } from '../../util/selectors';
 import walk from '../../util/walk';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
-import { IMod } from '../mod_management/types/IMod';
-import { IFileChange, IModActivator } from '../mod_management/types/IModActivator';
+import LinkingActivator from '../mod_management/LinkingActivator';
+import { IModActivator } from '../mod_management/types/IModActivator';
 
 import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
 import * as fsOrig from 'fs';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
-class ModActivator implements IModActivator {
+const app = appIn || remote.app;
+
+class ModActivator extends LinkingActivator {
   public id: string;
   public name: string;
   public description: string;
 
-  constructor() {
-    this.id = 'symlink_activator';
-    this.name = 'Symlink activator';
-    this.description = 'Installs the mods by setting symlinks in the destination directory. '
-                     + 'This implementation requires the account running NMM2 to have write access '
-                     + 'to the mod directory. On Windows the account has to be an administrator.';
+  constructor(api: IExtensionApi) {
+    super(
+        'symlink_activator', 'Symlink activator',
+        'Installs the mods by setting symlinks in the destination directory. ' +
+            'This implementation requires the account running NMM2 to have write access ' +
+            'to the mod directory. On Windows the account has to be an administrator.',
+            api);
   }
 
   public isSupported(state: any): string {
@@ -38,67 +42,63 @@ class ModActivator implements IModActivator {
 
     try {
       fsOrig.accessSync(activeGameDiscovery.modPath, fsOrig.constants.W_OK);
-      // TODO on windows, try to create a symlink to determine if
-      //   this is an administrator account
-      return undefined;
+      if (!this.ensureAdmin()) {
+        return 'Requires admin rights on windows';
+      }
     } catch (err) {
       return err.message;
     }
   }
 
-  public prepare(dataPath: string): Promise<void> {
-    return Promise.resolve();
+  protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
+    return fs.symlinkAsync(sourcePath, linkPath);
   }
 
-  public finalize(dataPath: string): Promise<void> {
-    return Promise.resolve();
-  }
-
-  public activate(installPath: string, dataPath: string, mod: IMod): Promise<void> {
-    const sourceBase: string = mod.installationPath;
-    return walk(path.join(installPath, mod.installationPath),
-                (iterPath: string, stat: fs.Stats) => {
-                  let relPath: string = path.relative(sourceBase, iterPath);
-                  let dest: string = path.join(dataPath, relPath);
-                  if (stat.isDirectory()) {
-                    return fs.mkdirAsync(dest);
-                  } else {
-                    return fs.symlinkAsync(iterPath, dest)
-                        .then(() => {
-                          log('info', 'installed', {iterPath, dest});
-                        })
-                        .catch((err) => {
-                          log('info', 'error', {err: err.message});
-                          throw err;
-                        });
-                  }
-                });
-  }
-
-  public purge(installPath: string, dataPath: string): Promise<void> {
-    return walk(dataPath, (iterPath: string, stat: fs.Stats) => {
-      if (stat.isSymbolicLink()) {
-        return fs.realpathAsync(iterPath)
-          .then((realPath: string) => {
-            log('info', 'real path', realPath);
-            // TODO: we should check here if the link actually leads to the
-            //   our mods directory
-            return fs.unlinkAsync(iterPath);
-          });
+  protected unlinkFile(linkPath: string): Promise<void> {
+    return fs.lstatAsync(linkPath)
+    .then(stats => {
+      if (stats.isSymbolicLink()) {
+        return fs.removeAsync(linkPath);
+      } else {
+        // should we report the attempt to remove a non-link as an error?
+        log('warn', 'attempt to unlink a file that\'s not a link', { linkPath });
       }
     });
   }
 
-  public externalChanges(installPath: string, dataPath: string): Promise<IFileChange[]> {
-    return Promise.resolve([]);
+  protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
+    // purge by removing all symbolic links that point to a file inside the install directory
+    return walk(dataPath, (iterPath: string, stats: fs.Stats) => {
+      if (!stats.isSymbolicLink()) {
+        return Promise.resolve();
+      }
+      return fs.readlinkAsync(iterPath)
+      .then((symlinkPath) => {
+        if (!path.relative(installPath, symlinkPath).startsWith('..')) {
+          return fs.removeAsync(symlinkPath);
+        }
+      });
+    });
   }
 
-  public forgetFiles(filePaths: string[]): Promise<void> {
-    return Promise.resolve();
+  protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
+    return fs.readlinkAsync(linkPath)
+    .then(symlinkPath => symlinkPath === sourcePath)
+    // readlink throws an "unknown" error if the file is no link at all. Super helpful
+    .catch(() => false);
   }
 
-  public isActive(): boolean {
-    return false;
+  private ensureAdmin(): boolean {
+    const userData = app.getPath('userData');
+    // any file we know exists
+    const srcFile = path.join(userData, 'Cookies');
+    const destFile = path.join(userData, '__link_test');
+    try {
+      fs.linkSync(srcFile, destFile);
+      fs.removeSync(destFile);
+    } catch (err) {
+      return false;
+    }
   }
 
   private isGamebryoGame(gameId: string): boolean {
@@ -111,7 +111,7 @@ export interface IExtensionContextEx extends IExtensionContext {
 }
 
 function init(context: IExtensionContextEx): boolean {
-  context.registerModActivator(new ModActivator());
+  context.registerModActivator(new ModActivator(context.api));
 
   return true;
 }

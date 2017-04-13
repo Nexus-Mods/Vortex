@@ -1,11 +1,11 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
+import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import * as elevatedT from  '../../util/elevated';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { activeGameId } from '../../util/selectors';
 
-import { IMod } from '../mod_management/types/IMod';
-import { IFileChange, IModActivator } from '../mod_management/types/IModActivator';
+import LinkingActivator from '../mod_management/LinkingActivator';
+import { IModActivator } from '../mod_management/types/IModActivator';
 
 import walk from './walk';
 
@@ -16,9 +16,9 @@ import * as path from 'path';
 
 import { remoteCode } from './remoteCode';
 
-const elevated = lazyRequire<typeof elevatedT.default>('../../util/elevated', __dirname, 'default');
+const elevated = lazyRequire<typeof elevatedT>('../../util/elevated', __dirname);
 
-class ModActivator implements IModActivator {
+class ModActivator extends LinkingActivator {
   public id: string;
   public name: string;
   public description: string;
@@ -27,14 +27,22 @@ class ModActivator implements IModActivator {
   private mOutstanding: string[];
   private mDone: () => void;
 
-  constructor() {
-    this.id = 'symlink_activator_elevated';
-    this.name = 'Symlink activator (Elevated)';
-    this.description = 'Installs the mods by setting symlinks in the destination directory. '
-                     + 'This implementation will create the symlinks using a separate process '
-                     + 'with elevated permissions and therefore works even if NMM2 isn\'t run '
-                     + 'as administrator.';
+  constructor(api: IExtensionApi) {
+    super(
+        'symlink_activator_elevated', 'Symlink activator (Elevated)',
+        'Installs the mods by setting symlinks in the destination directory. ' +
+            'This implementation will create the symlinks using a separate process ' +
+            'with elevated permissions and therefore works even if NMM2 isn\'t run ' +
+            'as administrator.', api);
     this.mElevatedClient = null;
+  }
+
+  public prepare(dataPath: string): Promise<void> {
+    return this.startElevated().then(() => super.prepare(dataPath));
+  }
+
+  public finalize(dataPath: string): Promise<void> {
+    return super.finalize(dataPath).then(() => this.stopElevated());
   }
 
   public isSupported(state: any): string {
@@ -48,7 +56,52 @@ class ModActivator implements IModActivator {
     return undefined;
   }
 
-  public prepare(dataPath: string): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.mOutstanding.push(sourcePath);
+
+      ipc.server.emit(this.mElevatedClient, 'link-file',
+        { source: sourcePath, destination: linkPath });
+      resolve();
+    });
+  }
+
+  protected unlinkFile(linkPath: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.mOutstanding.push(linkPath);
+
+      ipc.server.emit(this.mElevatedClient, 'remove-link',
+        { destination: linkPath });
+      resolve();
+    });
+  }
+
+  protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
+    // purge by removing all symbolic links that point to a file inside
+    // the install directory
+    return this.startElevated()
+    .then(() => walk(dataPath, (iterPath: string, stats: fs.Stats) => {
+          if (!stats.isSymbolicLink()) {
+            return Promise.resolve();
+          }
+          return fs.readlinkAsync(iterPath).then((symlinkPath) => {
+            if (!path.relative(installPath, symlinkPath).startsWith('..')) {
+              ipc.server.emit(this.mElevatedClient, 'remove-link',
+                              {destination: iterPath});
+            }
+          });
+        }))
+    .then(() => this.stopElevated());
+  }
+
+  protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
+    return fs.readlinkAsync(linkPath)
+    .then(symlinkPath => symlinkPath === sourcePath)
+    // readlink throws an "unknown" error if the file is no link at all. Super helpful
+    .catch(() => false);
+  }
+
+  private startElevated(): Promise<void> {
     this.mOutstanding = [];
     this.mDone = null;
     const ipcPath: string = 'nmm_elevate_symlink';
@@ -71,59 +124,21 @@ class ModActivator implements IModActivator {
         ipc.server.on('log', (data: any) => {
           log(data.level, data.message, data.meta);
         });
-        return elevated(ipcPath, remoteCode, { gugu: 42 }, __dirname);
+        return elevated.default(ipcPath, remoteCode, { gugu: 42 }, __dirname);
       });
       ipc.server.start();
     });
   }
 
-  public finalize(dataPath: string): Promise<void> {
+  private stopElevated() {
     return new Promise<void>((resolve, reject) => {
-      this.mDone = resolve;
+      this.mDone = () => {
+        resolve();
+      };
       if (this.mOutstanding.length === 0) {
         this.finish();
       }
     });
-  }
-
-  public activate(installPath: string, dataPath: string, mod: IMod): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.mOutstanding.push(mod.installationPath);
-
-      ipc.server.emit(this.mElevatedClient, 'create-link',
-        { source: path.join(installPath, mod.installationPath), destination: dataPath });
-      resolve();
-    });
-  }
-
-  public deactivate(dataPath: string, mod: IMod): Promise<void> {
-    return Promise.reject(new Error('not implemented'));
-  }
-
-  public purge(installPath: string, dataPath: string): Promise<void> {
-    log('info', 'deactivate mods', { dataPath });
-    return walk(dataPath, (iterPath: string, stat: fs.Stats) => {
-      if (stat.isSymbolicLink()) {
-        return fs.realpathAsync(iterPath)
-          .then((realPath: string) => {
-            // TODO: we should check here if the link actually leads to the
-            //   our mods directory
-            return fs.unlinkAsync(iterPath);
-          });
-      }
-    });
-  }
-
-  public externalChanges(installPath: string, dataPath: string): Promise<IFileChange[]> {
-    return Promise.resolve([]);
-  }
-
-  public forgetFiles(filePaths: string[]): Promise<void> {
-    return Promise.resolve();
-  }
-
-  public isActive(): boolean {
-    return false;
   }
 
   private finish() {
@@ -142,7 +157,7 @@ export interface IExtensionContextEx extends IExtensionContext {
 }
 
 function init(context: IExtensionContextEx): boolean {
-  context.registerModActivator(new ModActivator());
+  context.registerModActivator(new ModActivator(context.api));
 
   return true;
 }

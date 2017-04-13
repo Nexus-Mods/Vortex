@@ -45,12 +45,14 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
         id='popover-positioned-scrolling-bottom'
         title={t('Changelogs')}
       >
-        <FormGroup key={mod.id}>
-          <ControlLabel>{t('Current Changelog')}</ControlLabel>
+        <FormGroup>
+          <ControlLabel>{t('Current Version')}</ControlLabel>
           <div key='dialog-form-changelog'>
             {changelog}
           </div>
-          <ControlLabel>{t('Next Changelog')}</ControlLabel>
+        </FormGroup>
+        <FormGroup>
+          <ControlLabel>{t('Newest Version')}</ControlLabel>
           <div key='dialog-form-newestChangelog'>
             {newestChangelog}
           </div>
