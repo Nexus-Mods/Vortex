@@ -1,6 +1,6 @@
 import { ITableAttribute } from '../../types/ITableAttribute';
 
-import SelectionFilter from '../../views/table/SelectionFilter';
+import DownloadProgressFilter from '../../views/table/DownloadProgressFilter';
 import TextFilter from '../../views/table/TextFilter';
 
 import { IDownload } from './types/IDownload';
@@ -39,6 +39,17 @@ function progress(props) {
   }
 }
 
+function calc(props) {
+  const {t, download} = props;
+  const {state, received, size} = download;
+
+  if (state === 'init') {
+    return (received / size);
+  } else {
+    return state;
+  }
+}
+
 export const PROGRESS: ITableAttribute = {
   id: 'progress',
   name: 'Progress',
@@ -46,10 +57,10 @@ export const PROGRESS: ITableAttribute = {
   icon: 'clock-o',
   customRenderer: (download: IDownload, detailCell: boolean, t: I18next.TranslationFunction) =>
     progress({ download, t }),
-  calc: (download: IDownload, t: I18next.TranslationFunction) => download.received / download.size,
+  calc: (download: IDownload, t: I18next.TranslationFunction) => calc({download, t}),
   placement: 'table',
   isToggleable: true,
   edit: {},
   isSortable: true,
-  filter: new SelectionFilter(['Error', 'Finished', 'In Progress']),
+  filter: new DownloadProgressFilter(),
 };
