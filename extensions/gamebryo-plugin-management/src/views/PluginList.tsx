@@ -16,7 +16,8 @@ import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import {SimpleMessage} from 'loot';
 import {ComponentEx, ITableRowAction, IconBar, MainPage,
-        Table, TableTextFilter, ToolbarIcon, selectors, types, util} from 'nmm-api';
+        Table, TablePluginFlagsFilter, TableTextFilter, ToolbarIcon,
+        selectors, types, util} from 'nmm-api';
 import * as React from 'react';
 import update = require('react-addons-update');
 import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
@@ -93,10 +94,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       icon: 'flag',
       isToggleable: true,
       edit: {},
-      isSortable: false,
+      isSortable: true,
       customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
         <PluginFlags plugin={plugin} t={t} />,
-      calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t).length,
+      calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),
+      sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
+      filter: new TablePluginFlagsFilter(),
       placement: 'table',
     },
     {
