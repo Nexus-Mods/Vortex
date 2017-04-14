@@ -10,22 +10,28 @@ function relativeTime(date: Date, t: I18next.TranslationFunction): string {
   if (deltaSec < SEC_PER_MIN) {
     return t('seconds ago');
   } else if (deltaSec < SEC_PER_HOUR) {
-    const count = Math.floor(deltaSec / SEC_PER_MIN);
+    const count = !isNaN(Math.floor(deltaSec / SEC_PER_MIN)) ?
+      Math.floor(deltaSec / SEC_PER_MIN) : 0;
     return t('{{ count }} minute ago', { count });
   } else if (deltaSec < SEC_PER_DAY) {
-    const count = Math.floor(deltaSec / SEC_PER_HOUR);
+    const count = !isNaN(Math.floor(deltaSec / SEC_PER_HOUR)) ?
+      Math.floor(deltaSec / SEC_PER_HOUR) : 0;
     return t('{{ count }} hour ago', { count });
   } else if (deltaSec < SEC_PER_WEEK) {
-    const count = Math.floor(deltaSec / SEC_PER_DAY);
+    const count = !isNaN(Math.floor(deltaSec / SEC_PER_DAY)) ?
+      Math.floor(deltaSec / SEC_PER_DAY) : 0;
     return t('{{ count }} day ago', { count });
   } else if (deltaSec < SEC_PER_MONTH) {
-    const count = Math.floor(deltaSec / SEC_PER_WEEK);
+    const count = !isNaN(Math.floor(deltaSec / SEC_PER_WEEK)) ?
+      Math.floor(deltaSec / SEC_PER_WEEK) : 0;
     return t('{{ count }} week ago', { count });
   } else if (deltaSec < SEC_PER_YEAR) {
-    const count = Math.floor(deltaSec / SEC_PER_MONTH);
+    const count = !isNaN(Math.floor(deltaSec / SEC_PER_MONTH)) ?
+      Math.floor(deltaSec / SEC_PER_MONTH) : 0;
     return t('{{ count }} month ago', { count });
   } else {
-    const count = Math.floor(deltaSec / SEC_PER_YEAR);
+    const count = !isNaN(Math.floor(deltaSec / SEC_PER_YEAR)) ?
+      Math.floor(deltaSec / SEC_PER_YEAR) : 0;
     return t('{{ count }} year ago', { count });
   }
 }
