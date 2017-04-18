@@ -1,12 +1,10 @@
 import { ComponentEx } from '../../../util/ComponentEx';
 import FormFeedback from '../../../views/FormFeedbackAwesome';
-import Icon from '../../../views/Icon';
-import { Button } from '../../../views/TooltipControls';
 
 import { setModAttribute } from '../../mod_management/actions/mods';
 
 import * as React from 'react';
-import { FormControl, FormGroup, InputGroup } from 'react-bootstrap';
+import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 
 export interface IProps {
   gameId: string;
@@ -23,44 +21,30 @@ export interface IProps {
  */
 class NexusModIdDetail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { modId, nexusModId, t } = this.props;
+    const { nexusModId, t } = this.props;
 
-    if (nexusModId !== undefined && nexusModId !== '') {
-      return (
-        <InputGroup>
+    const isIdValid = (nexusModId !== undefined) && !isNaN(parseInt(nexusModId, 10));
+
+    return (
+      <div>
+        <FormGroup
+          validationState={isIdValid ? 'success' : 'warning'}
+        >
           <FormControl
             type='text'
-            value={nexusModId}
+            value={nexusModId || ''}
             onChange={this.updateNexusModId}
           />
-          <InputGroup.Button>
-            <Button
-              id={modId}
-              tooltip={t('Visit che corresponding Nexus mod page')}
-              onClick={this.openPage}
-            >
-              <Icon name='external-link' />
-            </Button>
-          </InputGroup.Button>
-        </InputGroup>
-      );
-    } else {
-      return (
-        <div>
-          <FormGroup
-            validationState={'warning'}
-          >
-            <FormControl
-              type='text'
-              value={nexusModId}
-              onChange={this.updateNexusModId}
-            />
-            <FormFeedback />
-          </FormGroup>
-        </div>
-      );
-    }
+          <FormFeedback />
+          <ControlLabel>
+            {isIdValid ? <p><a onClick={this.openPage}>{t('Visit on www.nexusmods.com')}</a></p>
+                       : <p>{t('Nexus Mod Ids are numbers')}</p>}
+          </ControlLabel>
+        </FormGroup>
+      </div>
+    );
   }
+
   private updateNexusModId = (evt) => {
     const { gameId, modId, store } = this.props;
     const nexusModId = evt.currentTarget.value;

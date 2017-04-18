@@ -396,6 +396,7 @@ class ModList extends ComponentEx<IProps, {}> {
         disableDependent = result.action === 'Remove' && result.input.dependents;
 
         if (removeMods) {
+          // TODO this could be more efficient by not doing a clean deployment
           this.disableModsInner(modIds);
           return new Promise<void>((resolve, reject) => {
             this.context.api.events.emit('activate-mods', (err: Error) => {

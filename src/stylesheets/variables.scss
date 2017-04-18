@@ -197,7 +197,6 @@ $input-color:                    $text-color;
 //** `<input>` border color
 $input-border:                   #dce4ec;
 
-// TODO: Rename `$input-border-radius` to `$input-border-radius-base` in v4
 //** Default `.form-control` border radius
 // This has no effect on `<select>`s in some browsers, due to the limited stylability of `<select>`s in CSS.
 $input-border-radius:            $border-radius-base;
@@ -546,7 +545,7 @@ $tooltip-arrow-color:         $tooltip-bg;
 //** Popover body background color
 $popover-bg:                          $brand-darkbg;
 //** Popover maximum width
-$popover-max-width:                   276px;
+$popover-max-width:                   400px;
 //** Popover border color
 $popover-border-color:                rgba(0,0,0,1);
 //** Popover fallback border color

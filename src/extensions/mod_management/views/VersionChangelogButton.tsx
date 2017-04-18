@@ -7,6 +7,7 @@ import { IMod } from '../../mod_management/types/IMod';
 
 import * as React from 'react';
 import { ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
+import * as ReactSafeHtml from 'react-safe-html';
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -24,20 +25,11 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     let { mod, t } = this.props;
 
-    let changelog = getSafe(mod.attributes, ['changelogHtml'], undefined);
-    let newestChangelog = getSafe(mod.attributes, ['newestChangelogHtml'], undefined);
+    let changelog = getSafe(mod.attributes, ['changelog'], undefined);
+    let newestChangelog = getSafe(mod.attributes, ['newestChangelog'], undefined);
 
     if (!truthy(changelog) && !truthy(newestChangelog)) {
       return null;
-    }
-
-    const regex = /<br[^>]*>/gi;
-    if (changelog !== null) {
-      changelog = changelog.replace(regex, '\n');
-    }
-
-    if (newestChangelog !== undefined) {
-      newestChangelog = newestChangelog.replace(regex, '\n');
     }
 
     const popoverBottom = (
@@ -48,13 +40,13 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
         <FormGroup>
           <ControlLabel>{t('Current Version')}</ControlLabel>
           <div key='dialog-form-changelog'>
-            {changelog}
+            {this.renderChangelog(changelog)}
           </div>
         </FormGroup>
         <FormGroup>
           <ControlLabel>{t('Newest Version')}</ControlLabel>
           <div key='dialog-form-newestChangelog'>
-            {newestChangelog}
+            {this.renderChangelog(newestChangelog)}
           </div>
         </FormGroup>
       </Popover>
@@ -70,6 +62,20 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
         />
       </OverlayTrigger>
     );
+  }
+
+  private renderChangelog(changelog: { format: 'html' | 'text', content: string}): JSX.Element {
+    if (changelog === undefined) {
+      return null;
+    }
+    if (changelog.format === 'html') {
+      let components = ReactSafeHtml.components.makeElements({});
+      components.br = ReactSafeHtml.components.createSimpleElement('br', {});
+
+      return <ReactSafeHtml html={changelog.content} components={components} />;
+    } else {
+      return <p>{changelog.content}</p>;
+    }
   }
 }
 

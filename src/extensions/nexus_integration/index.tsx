@@ -295,7 +295,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', {
     id: 'endorsed',
     name: 'Endorsed',
-    description: 'The endorsed Icon',
+    description: 'Endorsement state on Nexus',
     icon: 'star',
     customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
       createEndorsedIcon(context.api.store, mod, t),
@@ -309,8 +309,8 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerTableAttribute('mods', {
     id: 'nexusModId',
-    name: 'Nexus Mod Id',
-    description: 'The Nexus Mod Id and the Nexus Mod Page link inside the detail section',
+    name: 'Nexus Mod ID',
+    description: 'Internal ID used by www.nexusmods.com',
     icon: 'external-link',
     customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
       renderNexusModIdDetail(context.api.store, mod, t),

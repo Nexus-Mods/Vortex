@@ -8,14 +8,17 @@ function transfer(info: any, key: string, source: any, path: string[]) {
 }
 
 function filterModInfo(input: any): any {
-  let result = {};
+  let result: any = {};
 
   // TODO these should be extensions 
   transfer(result, 'modId', input.nexus, ['ids', 'modId']);
   transfer(result, 'fileId', input.nexus, ['ids', 'fileId']);
   transfer(result, 'fileType', input.nexus, ['fileInfo', 'category_name']);
   transfer(result, 'isPrimary', input.nexus, ['fileInfo', 'is_primary']);
-  transfer(result, 'changelogHtml', input.nexus, ['fileInfo', 'changelog_html']);
+  let nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
+  if (nexusChangelog !== undefined) {
+    result.changelog = { format: 'html', content: nexusChangelog };
+  }
   transfer(result, 'uploadedTimestamp', input.nexus, ['fileInfo', 'uploaded_timestamp']);
   transfer(result, 'version', input.nexus, ['fileInfo', 'version']);
 

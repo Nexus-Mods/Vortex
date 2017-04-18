@@ -162,7 +162,7 @@
 }
 
 .mod-updating-download {
-  color: $link-color;
+  color: $brand-warning;
 }
 
 .mod-updating-ban {
@@ -616,6 +616,10 @@ textarea {
 
 .table-layout {
   margin: 10px;
+}
+
+.table tbody>tr>td {
+  vertical-align: middle;
 }
 
 .btn-table-filter {

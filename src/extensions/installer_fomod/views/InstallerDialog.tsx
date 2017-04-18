@@ -120,6 +120,8 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
         key={plugin.id}
         checked={true}
         readOnly={true}
+        value={plugin.id}
+        onClick={this.showDescription}
       >
         {plugin.name}
       </Checkbox>;
@@ -134,8 +136,17 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     }
   }
 
-  private select = (evt: React.FormEvent<any>) => {
+  private showDescription = (evt: React.FormEvent<any>) => {
     const {group, onShowDescription} = this.props;
+
+    const pluginId = parseInt(evt.currentTarget.value, 10);
+    const {image, description} = group.options[pluginId];
+
+    onShowDescription(image, description);
+  }
+
+  private select = (evt: React.FormEvent<any>) => {
+    const {group} = this.props;
 
     if (evt.currentTarget.value === 'none') {
       this.setState({ selectedPlugins: [] });
@@ -144,8 +155,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
 
     const pluginId = parseInt(evt.currentTarget.value, 10);
 
-    const {image, description} = group.options[pluginId];
-    onShowDescription(image, description);
+    this.showDescription(evt);
 
     if (['SelectExactlyOne', 'SelectAtMostOne'].indexOf(group.type) !== -1) {
       this.setState({ selectedPlugins: [pluginId] });
@@ -263,7 +273,6 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
     });
 
     const nextDisabled = this.state.invalidGroups.length > 0;
-
     return (
       <Modal
         id='fomod-installer-dialog'

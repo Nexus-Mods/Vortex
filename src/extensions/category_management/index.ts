@@ -33,7 +33,7 @@ function init(context: IExtensionContext): boolean {
   context.registerTableAttribute('mods', {
     id: 'category',
     name: 'Category',
-    description: 'Category',
+    description: 'Mod Category',
     icon: 'book',
     placement: 'table',
     calc: (mod: IModWithState) => (mod.attributes as any).category !== undefined ?
@@ -46,8 +46,8 @@ function init(context: IExtensionContext): boolean {
 
   context.registerTableAttribute('mods', {
     id: 'category_detail',
-    name: 'Category Detail',
-    description: 'Category Detail',
+    name: 'Category',
+    description: 'Mod Category',
     icon: 'angle-double-right',
     calc: (mod: IModWithState) => (mod.attributes as any).category !== undefined ?
       retrieveCategoryDetail((mod.attributes as any).category, context.api.store) : null,
