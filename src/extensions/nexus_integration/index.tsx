@@ -233,7 +233,16 @@ function renderNexusModIdDetail(
 }
 
 function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.TranslationFunction) {
-  const endorsed: string = getSafe(mod.attributes, ['endorsed'], undefined);
+  const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
+  const version: string = getSafe(mod.attributes, ['version'], undefined);
+
+  // TODO this is not a reliable way to determine if the mod is from nexus
+  const isNexusMod: boolean = (nexusModId !== undefined)
+      && (version !== undefined)
+      && !isNaN(parseInt(nexusModId, 10));
+
+  const endorsed: string = getSafe(mod.attributes, ['endorsed'],
+                                   isNexusMod ? 'Undecided' : undefined);
   const gameMode = activeGameId(store.getState());
   if (endorsed !== undefined) {
     return (
@@ -245,18 +254,6 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
         onEndorseMod={endorseMod}
       />
     );
-  }
-
-  const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
-  const version: string = getSafe(mod.attributes, ['version'], undefined);
-
-  // can't have an endorsement state if we don't know the nexus id or if it's
-  // invalid as a nexus id. And apparently we need the version as well
-  if ((nexusModId !== undefined)
-      && (version !== undefined)
-      && !isNaN(parseInt(nexusModId, 10))) {
-    // if it could be a mod from nexus, treat the endorsement state as undecided. 
-    store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
   }
 
   return null;
