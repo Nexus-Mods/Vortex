@@ -155,5 +155,17 @@
   "An error occurred endorsing a mod": "Ein Fehler ist beim endorsen der Mod aufgetreten",
   "Error:": "Fehler:",
   "Game not found": "Spiel nicht gefunden",
-  "Game:": "Spiel:"
+  "Game:": "Spiel:",
+  "{{ count }} minute ago": "Vor einer Minute",
+  "{{ count }} hour ago": "Vor einer Stunde",
+  "{{ count }} day ago": "Vor einem Tag",
+  "{{ count }} week ago": "Vor einer Woche",
+  "{{ count }} month ago": "Vor einem Monat",
+  "{{ count }} year ago": "Vor einem Jahr",
+  "{{ count }} minute ago_plural": "Vor {{ count }} Minuten",
+  "{{ count }} hour ago_plural": "Vor {{ count }} Stunden",
+  "{{ count }} day ago_plural": "Vor {{ count }} Tagen",
+  "{{ count }} week ago_plural": "Vor {{ count }} Wochen",
+  "{{ count }} month ago_plural": "Vor {{ count }} Monaten",
+  "{{ count }} year ago_plural": "Vor {{ count }} Jahren"
 }
