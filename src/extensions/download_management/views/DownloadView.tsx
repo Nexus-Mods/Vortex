@@ -102,15 +102,15 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
     this.initState({ mtime: undefined });
   }
 
-  public componentWillReceiveProps() {
-    const { download, downloadPath } = this.props;
-    if (download.localPath === undefined) {
-        return null;
-    } else {
-      return fs.statAsync(path.join(downloadPath, download.localPath))
-        .then((stat: fs.Stats) => this.nextState.mtime = stat.mtime
-        );
-    }
+  public componentWillMount() {
+    this.updateTime();
+  }
+
+  public componentWillReceiveProps(nextProps: IFileTimeProps) {
+    if ((this.props.downloadPath !== nextProps.downloadPath)
+      || (this.props.download !== nextProps.download)) {
+        this.updateTime();
+      }
   }
 
   public render(): JSX.Element {
@@ -124,6 +124,17 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
       return <p>{mtime.toLocaleString(language)}</p>;
     } else {
       return <p>{relativeTime(mtime, t)}</p>;
+    }
+  }
+
+  private updateTime() {
+    const { download, downloadPath } = this.props;
+    if (download.localPath === undefined) {
+        return null;
+    } else {
+      return fs.statAsync(path.join(downloadPath, download.localPath))
+        .then((stat: fs.Stats) => this.nextState.mtime = stat.mtime
+        );
     }
   }
 }
