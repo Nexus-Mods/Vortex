@@ -1,4 +1,4 @@
-import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
+import {IFilterProps, ITableFilter} from '../../../types/ITableAttribute';
 
 import * as React from 'react';
 import * as Select from 'react-select';

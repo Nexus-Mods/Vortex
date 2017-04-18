@@ -1,6 +1,6 @@
 import { ITableAttribute } from '../../types/ITableAttribute';
 
-import DownloadProgressFilter from '../../views/table/DownloadProgressFilter';
+import DownloadProgressFilter from './views/DownloadProgressFilter';
 import TextFilter from '../../views/table/TextFilter';
 
 import { IDownload } from './types/IDownload';

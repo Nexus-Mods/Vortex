@@ -7,12 +7,11 @@ import MainPage from './MainPage';
 import Table, {IChangeDataHandler, ITableRowAction, makeGetSelection} from './Table';
 import DateTimeFilter from './table/DateTimeFilter';
 import NumericFilter from './table/NumericFilter';
-import PluginFlagsFilter from './table/PluginFlagsFilter';
 import TextFilter from './table/TextFilter';
 import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
 
 export {Advanced, DNDContainer, FormFeedbackAwesome, IChangeDataHandler, Icon, IconBar,
         ITableRowAction, MainPage, Table, DateTimeFilter as TableDateTimeFilter,
-        NumericFilter as TableNumericFilter, PluginFlagsFilter as TablePluginFlagsFilter,
-        TextFilter as TableTextFilter, makeGetSelection, ToolbarIcon, tooltip}
+        NumericFilter as TableNumericFilter, TextFilter as TableTextFilter,
+        makeGetSelection, ToolbarIcon, tooltip}

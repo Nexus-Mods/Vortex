@@ -11,12 +11,13 @@ import {
 import DependencyIcon from './DependencyIcon';
 import MasterList from './MasterList';
 import PluginFlags, {getPluginFlags} from './PluginFlags';
+import PluginFlagsFilter from './PluginFlagsFilter';
 
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import {SimpleMessage} from 'loot';
 import {ComponentEx, ITableRowAction, IconBar, MainPage,
-        Table, TablePluginFlagsFilter, TableTextFilter, ToolbarIcon,
+        Table, TableTextFilter, ToolbarIcon,
         selectors, types, util} from 'nmm-api';
 import * as React from 'react';
 import update = require('react-addons-update');
@@ -99,7 +100,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         <PluginFlags plugin={plugin} t={t} />,
       calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),
       sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
-      filter: new TablePluginFlagsFilter(),
+      filter: new PluginFlagsFilter(),
       placement: 'table',
     },
     {

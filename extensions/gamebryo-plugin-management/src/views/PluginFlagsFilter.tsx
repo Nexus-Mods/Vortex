@@ -1,10 +1,10 @@
-import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
+import { types } from 'nmm-api';
 
 import * as React from 'react';
 import * as Select from 'react-select';
 
 
-export class PluginFlagFilterComponent extends React.Component<IFilterProps, {}> {
+export class PluginFlagFilterComponent extends React.Component<types.IFilterProps, {}> {
   public render(): JSX.Element {
     const { filter } = this.props;
 
@@ -29,7 +29,7 @@ export class PluginFlagFilterComponent extends React.Component<IFilterProps, {}>
   }
 }
 
-class PluginFlagsFilter implements ITableFilter {
+class PluginFlagsFilter implements types.ITableFilter {
   public component = PluginFlagFilterComponent;
   public raw = false;
 

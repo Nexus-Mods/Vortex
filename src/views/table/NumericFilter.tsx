@@ -24,8 +24,6 @@ class NumericFilter implements ITableFilter {
   public component = NumericFilterComponent;
   public raw = false;
 
-  constructor() { }
-
   public matches(filter: any, value: any): boolean {
       return (value >= filter);
   }

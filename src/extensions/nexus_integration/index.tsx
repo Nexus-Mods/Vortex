@@ -8,7 +8,7 @@ import { currentGame, getSafe } from '../../util/storeHelper';
 import InputButton from '../../views/InputButton';
 import { IconButton } from '../../views/TooltipControls';
 
-import EndorsementFilter from '../../views/table/EndorsementFilter';
+import EndorsementFilter from './views/EndorsementFilter';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';

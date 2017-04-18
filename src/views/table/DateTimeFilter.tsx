@@ -24,8 +24,6 @@ class DateTimeFilter implements ITableFilter {
   public component = DateTimeFilterComponent;
   public raw = false;
 
-  constructor() { }
-
   public matches(filter: any, value: any): boolean {
       return (new Date(value) >= new Date(filter));
   }
