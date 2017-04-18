@@ -9,7 +9,7 @@ describe('setModEnabled', () => {
   it('fails if the profile doesn\'t exist', () => {
     let input = { profileId1: { modState: { modId1: { enabled: { enable: false } }  } } };
     let result = profilesReducer.reducers.SET_MOD_ENABLED(input, { profileId: 'profileId2', modId: 'modId1', enable: true });
-    expect(result).toEqual({ profileId1: { modState: { modId1: { enabled: false } } } });
+    expect(result).toEqual({ profileId1: { modState: { modId1: { enabled: { enable: false } } } } });
   });
    it('affects only the right profile', () => {
     let input = { profileId1: { modState: { modId1: { enabled: { enable: false } }  } }, profileId2: { modState: { modId1: { enabled: { enable: false } }  } } };
