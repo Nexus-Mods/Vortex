@@ -87,6 +87,40 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
       ;
 }
 
+/**
+ * activate the specified game (using the last active profile for that game).
+ * Will ask the user if the game was never active (how would this happen?)
+ * 
+ * @param {string} gameId 
+ */
+function activateGame(store: Redux.Store<IState>, gameId: string) {
+  const state: IState = store.getState();
+  const profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId],
+    undefined);
+  if (profileId === undefined) {
+    let profiles = getSafe(state, ['persistent', 'profiles'], []);
+    let gameProfiles: IProfile[] = Object.keys(profiles)
+      .filter((id: string) => profiles[id].gameId === gameId)
+      .map((id: string) => profiles[id]);
+    store.dispatch(showDialog('question', 'Choose profile', {
+      message: 'Please choose the profile to use with this game',
+      choices: gameProfiles.map((profile: IProfile, idx: number) =>
+        ({ id: profile.id, text: profile.name, value: idx === 0 })),
+    }, {
+        Activate: null,
+      }))
+      .then((dialogResult: IDialogResult) => {
+        if (dialogResult.action === 'Activate') {
+          let selectedId = Object.keys(dialogResult.input).find(
+            (id: string) => dialogResult.input[id]);
+          store.dispatch(setNextProfile(selectedId));
+        }
+      });
+  } else {
+    store.dispatch(setNextProfile(profileId));
+  }
+}
+
 export interface IExtensionContextExt extends IExtensionContext {
   registerProfileFile: (gameId: string, filePath: string) => void;
   registerProfileFeature: (featureId: string, type: string, icon: string, description: string,
@@ -119,33 +153,7 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerIcon('game-managed-buttons', 100, 'play', 'Activate', (instanceIds: string[]) => {
-    let store = context.api.store;
-    let state: IState = store.getState();
-    let gameId = instanceIds[0];
-    let profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId],
-                            undefined);
-    if (profileId === undefined) {
-      let profiles = getSafe(state, ['persistent', 'profiles'], []);
-      let gameProfiles: IProfile[] = Object.keys(profiles)
-        .filter((id: string) => profiles[id].gameId === gameId)
-        .map((id: string) => profiles[id]);
-      store.dispatch(showDialog('question', 'Choose profile', {
-        message: 'Please choose the profile to use with this game',
-        choices: gameProfiles.map((profile: IProfile, idx: number) =>
-          ({ id: profile.id, text: profile.name, value: idx === 0 })),
-      }, {
-        Activate: null,
-      }))
-      .then((dialogResult: IDialogResult) => {
-        if (dialogResult.action === 'Activate') {
-          let selectedId = Object.keys(dialogResult.input).find(
-            (id: string) => dialogResult.input[id]);
-          store.dispatch(setNextProfile(selectedId));
-        }
-      });
-    } else {
-      store.dispatch(setNextProfile(profileId));
-    }
+    activateGame(context.api.store, instanceIds[0]);
   });
 
   context.registerProfileFile = (gameId: string, filePath: string) => {
@@ -171,6 +179,10 @@ function init(context: IExtensionContextExt): boolean {
   // when changing the game mode 
   context.once(() => {
     let store = context.api.store;
+
+    context.api.events.on('activate-game', (gameId: string) => {
+      activateGame(store, gameId);
+    });
 
     context.api.onStateChange(
         ['settings', 'profiles', 'nextProfileId'],

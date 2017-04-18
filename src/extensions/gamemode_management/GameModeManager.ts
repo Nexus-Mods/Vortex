@@ -26,7 +26,6 @@ type EmptyCB = () => void;
  * @class GameModeManager
  */
 class GameModeManager {
-
   private mBasePath: string;
   private mError: boolean;
   private mStore: Redux.Store<IState>;

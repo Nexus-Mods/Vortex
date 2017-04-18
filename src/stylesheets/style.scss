@@ -832,7 +832,7 @@ textarea {
   text-align: left;
   background-color: #192125;
   border-width: 0px;
-  padding: 5px 8px;
+  padding: 8px !important;
 }
 
 .table {
@@ -974,6 +974,11 @@ textarea {
 
 .dropdown-version {
   padding: 0px 10px;
+}
+
+.dropdown-menu {
+  margin-top: 0px;
+  border-top-width: 0px;
 }
 
 // more pronounced popover shadow. just cause

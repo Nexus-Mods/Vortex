@@ -28,6 +28,41 @@ export interface IStarterInfo {
  * @class StarterInfo
  */
 class StarterInfo implements IStarterInfo {
+  public static getGameIcon(game: IGameStored, gameDiscovery: IDiscoveryResult): string {
+    const extensionPath = gameDiscovery.extensionPath || game.extensionPath;
+    const logoName = gameDiscovery.logo || game.logo;
+    return StarterInfo.gameIcon(game.id, extensionPath, logoName);
+  }
+
+  private static gameIcon(gameId: string, extensionPath: string, logo: string) {
+    try {
+      const iconPath = this.gameIconRW(gameId);
+      fs.statSync(iconPath);
+      return iconPath;
+    } catch (err) {
+      return path.join(extensionPath, logo);
+    }
+  }
+
+  private static gameIconRW(gameId: string) {
+    return path.join(remote.app.getPath('userData'), gameId, 'icon.png');
+  }
+
+  private static toolIcon(gameId: string, extensionPath: string,
+                          toolId: string, toolLogo: string): string {
+    try {
+      const iconPath = this.toolIconRW(gameId, toolId);
+      fs.statSync(iconPath);
+      return iconPath;
+    } catch (err) {
+      return path.join(extensionPath, toolLogo);
+    }
+  }
+  private static toolIconRW(gameId: string, toolId: string) {
+    return path.join(remote.app.getPath('userData'),
+      gameId, 'icons', toolId + '.png');
+  }
+
   public id: string;
   public gameId: string;
   public isGame: boolean;
@@ -62,9 +97,9 @@ class StarterInfo implements IStarterInfo {
 
   public get iconPath(): string {
     if (this.isGame) {
-      return this.gameIcon(this.gameId, this.mExtensionPath, this.mLogoName);
+      return StarterInfo.gameIcon(this.gameId, this.mExtensionPath, this.mLogoName);
     } else {
-      return this.toolIcon(this.gameId, this.mExtensionPath, this.id, this.mLogoName);
+      return StarterInfo.toolIcon(this.gameId, this.mExtensionPath, this.id, this.mLogoName);
     }
   }
 
@@ -74,7 +109,7 @@ class StarterInfo implements IStarterInfo {
     this.commandLine = [];
     this.workingDirectory = gameDiscovery.path;
     this.environment = gameDiscovery.environment || {};
-    this.iconOutPath = this.gameIconRW(this.gameId);
+    this.iconOutPath = StarterInfo.gameIconRW(this.gameId);
 
     this.mLogoName = gameDiscovery.logo || game.logo;
   }
@@ -99,37 +134,9 @@ class StarterInfo implements IStarterInfo {
       this.environment = tool.environment;
       this.mLogoName = tool.logo;
     }
-    this.iconOutPath = this.toolIconRW(gameId, this.id);
+    this.iconOutPath = StarterInfo.toolIconRW(gameId, this.id);
   }
 
-  private gameIcon(gameId: string, extensionPath: string, logo: string) {
-    try {
-      const iconPath = this.gameIconRW(gameId);
-      fs.statSync(iconPath);
-      return iconPath;
-    } catch (err) {
-      return path.join(extensionPath, logo);
-    }
-  }
-
-  private gameIconRW(gameId: string) {
-    return path.join(remote.app.getPath('userData'), gameId, 'icon.png');
-  }
-
-  private toolIcon(gameId: string, extensionPath: string,
-                   toolId: string, toolLogo: string): string {
-    try {
-      const iconPath = this.toolIconRW(gameId, toolId);
-      fs.statSync(iconPath);
-      return iconPath;
-    } catch (err) {
-      return path.join(extensionPath, toolLogo);
-    }
-  }
-  private toolIconRW(gameId: string, toolId: string) {
-    return path.join(remote.app.getPath('userData'),
-      gameId, 'icons', toolId + '.png');
-  }
 }
 
 export default StarterInfo;

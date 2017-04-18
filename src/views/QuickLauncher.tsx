@@ -1,6 +1,7 @@
 import { showDialog } from '../actions/notifications';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
+import { IProfile } from '../extensions/profile_management/types/IProfile';
 import ToolIcon from '../extensions/starter_dashlet/ToolIcon';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
@@ -10,10 +11,15 @@ import { activeGameId, currentGame, currentGameDiscovery } from '../util/selecto
 import StarterInfo from '../util/StarterInfo';
 import { DeployResult } from '../util/startTool';
 import { getSafe } from '../util/storeHelper';
+import { IconButton } from '../views/TooltipControls';
 
 import * as Promise from 'bluebird';
 import * as React from 'react';
-import { Button } from 'react-bootstrap';
+import { DropdownButton, MenuItem } from 'react-bootstrap';
+
+export interface IBaseProps {
+  t: I18next.TranslationFunction;
+}
 
 interface IConnectedProps {
   gameMode: string;
@@ -23,6 +29,9 @@ interface IConnectedProps {
   autoDeploy: boolean;
   primaryTool: string;
   tabsMinimized: boolean;
+  profiles: { [profileId: string]: IProfile };
+  discoveredGames: { [gameId: string]: IDiscoveryResult };
+  knownGames: IGameStored[];
 }
 
 interface IActionProps {
@@ -31,7 +40,7 @@ interface IActionProps {
                  actions: DialogActions) => Promise<IDialogResult>;
 }
 
-type IProps = IConnectedProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
   starter: StarterInfo;
@@ -48,21 +57,78 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { game, gameDiscovery } = this.props;
+    const { t, discoveredGames, game, knownGames, profiles } = this.props;
     const { starter } = this.state;
 
     if (starter === undefined) {
       return null;
     }
 
-    let displayName =
-      getSafe(gameDiscovery, ['shortName'], getSafe(game, ['shortName'], undefined))
-      || getSafe(gameDiscovery, ['name'], getSafe(game, ['name'], undefined));
+    const managedGamesIds = new Set<string>(Object.keys(profiles)
+      .map(profileId => profiles[profileId].gameId)
+      .filter(gameId => !getSafe(discoveredGames, [gameId, 'hidden'], false))
+    );
 
-    return (<Button className='btn-quicklaunch' onClick={this.start}>
-      <ToolIcon imageId={42} imageUrl={starter.iconPath} valid={true} />
-      <span className='menu-label'>{ displayName }</span>
-    </Button>);
+    // TODO this leaves out manually added games
+    const managedGames = Array.from(managedGamesIds)
+      .map(gameId => knownGames.find(iter => iter.id === gameId))
+      .filter(iter => iter !== undefined);
+
+    return (<div style={{ display: 'inline' }}>
+      <DropdownButton
+        id='dropdown-quicklaunch'
+        className='btn-quicklaunch'
+        title={this.renderGameOption(game, starter) as any}
+        key={game.id}
+        onSelect={this.changeGame}
+      >
+        {
+          managedGames.map(managedGame =>
+            <MenuItem key={managedGame.id} eventKey={managedGame.id}>
+              {this.renderGameOption(managedGame)}
+            </MenuItem>)
+        }
+        <MenuItem key='__more' eventKey='__more'>{t('... More')}</MenuItem>
+      </DropdownButton>
+      <IconButton
+        id='btn-quicklaunch-play'
+        icon='play'
+        tooltip={t('Launch')}
+        onClick={this.start}
+      />
+    </div>
+    );
+  }
+
+  private renderGameOption = (managedGame: IGameStored, starter?: StarterInfo) => {
+    const { discoveredGames } = this.props;
+
+    const discovered = discoveredGames[managedGame.id];
+
+    const iconPath = starter !== undefined
+      ? starter.iconPath
+      : StarterInfo.getGameIcon(managedGame, discovered);
+
+    const displayName =
+      getSafe(discovered, ['shortName'], getSafe(managedGame, ['shortName'], undefined))
+      || getSafe(discovered, ['name'], getSafe(managedGame, ['name'], undefined));
+
+    return (
+      <div style={{ display: 'inline-block' }}>
+        <div style={{ minWidth: 32, display: 'inline-block', textAlign: 'center' }} >
+        <ToolIcon imageId={42} imageUrl={iconPath} valid={true} />
+        </div>
+        <span className='menu-label'>{displayName}</span>
+      </div>
+    );
+  }
+
+  private changeGame = (gameId) => {
+    if (gameId === '__more') {
+      this.context.api.events.emit('show-main-page', 'Games');
+    } else {
+      this.context.api.events.emit('activate-game', gameId);
+    }
   }
 
   private queryElevate = (name: string) => {
@@ -143,6 +209,10 @@ function mapStateToProps(state: any): IConnectedProps {
     autoDeploy: state.settings.automation.deploy,
     primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', gameMode], undefined),
     tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
+
+    knownGames: state.session.gameMode.known,
+    profiles: state.persistent.profiles,
+    discoveredGames: state.settings.gameMode.discovered,
   };
 }
 
@@ -157,4 +227,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default connect(mapStateToProps, mapDispatchToProps)(
   QuickLauncher
-) as React.ComponentClass<{}>;
+) as React.ComponentClass<IBaseProps>;

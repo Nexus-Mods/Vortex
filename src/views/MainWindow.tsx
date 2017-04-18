@@ -133,7 +133,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     return (
       <Fixed id='main-toolbar'>
-        <QuickLauncher />
+        <QuickLauncher t={t} />
         {/*<object id='nexus-logo' data='assets/images/logo.svg' type='image/svg+xml' />*/}
         <IconBar
           group='application-icons'
