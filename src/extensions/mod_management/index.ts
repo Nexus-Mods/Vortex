@@ -13,6 +13,7 @@ import {
 import {getSafe} from '../../util/storeHelper';
 
 import {IDownload} from '../download_management/types/IDownload';
+import {setModEnabled} from '../profile_management/actions/profiles';
 
 import {showExternalChanges} from './actions/externalChanges';
 import {addMod, removeMod} from './actions/mods';
@@ -82,7 +83,7 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
   const profile = activeProfile(state);
   const modState = profile !== undefined ? profile.modState : {};
 
-  let activator: IModActivator =
+  const activator: IModActivator =
     activatorId !== undefined
         ? activators.find((act: IModActivator) => act.id === activatorId)
         : activators.find((act: IModActivator) => act.isSupported(state) === undefined);
@@ -250,6 +251,7 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
+      console.log('mod enabled state changed');
       if (store.getState().settings.automation.deploy) {
         activationTimer.schedule(undefined);
       }
@@ -300,7 +302,7 @@ function init(context: IExtensionContextExt): boolean {
         (archivePath: string, callback?: (error, id: string) => void) => {
           installManager.install(null, archivePath,
                                  activeGameId(store.getState()), context.api,
-                                 {}, true, callback);
+                                 {}, true, false, callback);
         });
 
     context.api.events.on(
@@ -312,22 +314,41 @@ function init(context: IExtensionContextExt): boolean {
           const downloadPath: string = resolvePath('download', inPaths, download.game);
           let fullPath: string = path.join(downloadPath, download.localPath);
           installManager.install(downloadId, fullPath, download.game, context.api,
-                                 download.modInfo, true, callback);
+                                 download.modInfo, true, false, callback);
         });
 
     context.api.events.on(
         'remove-mod', (modId: string, callback?: (error: Error) => void) => {
-          let mods: {[id: string]: IMod};
+          const state = store.getState();
+          let mod: IMod;
           let fullPath: string;
-          const gameMode = activeGameId(store.getState());
+          const gameMode = activeGameId(state);
           try {
-            mods = store.getState().persistent.mods[gameMode];
-            fullPath = path.join(installPath(store.getState()),
-                                 mods[modId].installationPath);
+            const mods = state.persistent.mods[gameMode];
+            mod = mods[modId];
+            fullPath = path.join(installPath(state), mod.installationPath);
           } catch (err) {
             callback(err);
           }
-          fs.removeAsync(fullPath)
+
+          // we need to remove the mod from activation, otherwise me might leave orphaned
+          // links in the mod dierctory
+          const currentProfile = activeProfile(state);
+          store.dispatch(setModEnabled(currentProfile.id, modId, false));
+
+          const activatorId = currentActivator(state);
+          const activator: IModActivator =
+              activatorId !== undefined ?
+                  activators.find((act: IModActivator) =>
+                                      act.id === activatorId) :
+                  activators.find((act: IModActivator) =>
+                                      act.isSupported(state) === undefined);
+
+          const dataPath = currentGameDiscovery(state).modPath;
+          activator.prepare(dataPath, false)
+              .then(() => activator.deactivate(installPath(state), dataPath, mod))
+              .then(() => activator.finalize(dataPath))
+              .then(() => fs.removeAsync(fullPath))
               .then(() => {
                 store.dispatch(removeMod(gameMode, modId));
                 callback(null);

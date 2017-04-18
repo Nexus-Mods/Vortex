@@ -67,12 +67,16 @@ export interface IModActivator {
   isSupported: (state: any) => string;
 
   /**
-   * called before any calls to activate, in case the
+   * called before any calls to activate/deactivate, in case the
    * activator needs to do pre-processing
-   * 
+   * @param {string} dataPath the path where files will be deployed to
+   * @param {boolean} clean whether the activate commands should be treated
+   *                        as deltas (false) to the existing activation or whether
+   *                        we're deploying from scratch (true)
+   *
    * @memberOf IModActivator
    */
-  prepare: (dataPath: string) => Promise<void>;
+  prepare: (dataPath: string, clean: boolean) => Promise<void>;
 
   /**
    * called after an activate call was made for all active mods,
@@ -91,6 +95,11 @@ export interface IModActivator {
    * @memberOf IModActivator
    */
   activate: (installPath: string, dataPath: string, mod: IMod) => Promise<void>;
+
+  /**
+   * deactivate the specified mod, removing all files it has deployed to the destination
+   */
+  deactivate: (installPath: string, dataPath: string, mod: IMod) => Promise<void>;
 
   /**
    * deactivate all mods at the destination location

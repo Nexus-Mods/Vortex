@@ -112,18 +112,26 @@ class InstallManager {
    * @param {string} archiveId id of the download. may be null if the download isn't
    *                           in our download archive
    * @param {string} archivePath path to the archive file
-   * @param {string} installPath path to install mods into (not including the
-   * mod name)
-   * @param {IExtensionContext} context extension context
+   * @param {string} downloadGameId gameId of the download as reported by the downloader
+   * @param {IExtensionApi} extension api
    * @param {*} info existing information about the mod (i.e. stuff retrieved
    *                 from the download page)
+   * @param {boolean} processDependencies if true, test if the installed mod is dependent
+   *                                      of others and tries to install those too
+   * @param {boolean} enable if true, enable the mod after installation
+   * @param {Function} callback callback once this is finished
+   * 
+   * TODO return a promise instead of callback
+   * TODO the callback isn't called if the installation is canceled by the user
    */
   public install(
     archiveId: string,
     archivePath: string,
     downloadGameId: string,
     api: IExtensionApi,
-    info: any, processDependencies: boolean,
+    info: any,
+    processDependencies: boolean,
+    enable: boolean,
     callback?: (error: Error, id: string) => void) {
     if (this.mTask === undefined) {
       const Zip: typeof ZipT = require('node-7z');
@@ -134,7 +142,8 @@ class InstallManager {
     let destinationPath: string;
 
     const baseName = path.basename(archivePath, path.extname(archivePath));
-    let installName = baseName;
+    const currentProfile = activeProfile(api.store.getState());
+    let modId = baseName;
     let installGameId;
     let installContext;
 
@@ -153,18 +162,21 @@ class InstallManager {
             fullInfo.meta = modInfo[0].value;
           }
 
-          installName = this.deriveInstallName(baseName, fullInfo);
+          modId = this.deriveInstallName(baseName, fullInfo);
           // if the name is already taken, consult the user,
           // repeat until user canceled, decided to replace the existing
           // mod or provided a new, unused name
           const checkNameLoop = () => {
-            return this.checkModExists(installName, api, installGameId) ?
-                       this.queryUserReplace(installName, api)
-                           .then((newName: string) => {
-                             installName = newName;
+            return this.checkModExists(modId, api, installGameId) ?
+                       this.queryUserReplace(modId, api)
+                           .then((choice: { name: string, enable: boolean }) => {
+                             modId = choice.name;
+                             if (choice.enable) {
+                               enable = true;
+                             }
                              return checkNameLoop();
                            }) :
-                       Promise.resolve(installName);
+                       Promise.resolve(modId);
           };
 
           return checkNameLoop();
@@ -172,22 +184,37 @@ class InstallManager {
         .then(() => {
           filteredInfo = filterModInfo(fullInfo);
 
-          const currentProfile = activeProfile(api.store.getState());
-
-          let oldMod = undefined;
-          if (filteredInfo.fileId !== undefined) {
-            oldMod = this.findPreviousVersionMod(filteredInfo.fileId, api.store,
-                                                 installGameId);
-          }
+          // TODO this relies entirely on the file id
+          const oldMod =
+              (filteredInfo.fileId !== undefined) ?
+                  this.findPreviousVersionMod(filteredInfo.fileId, api.store,
+                                              installGameId) :
+                  undefined;
 
           if (oldMod !== undefined) {
+            const wasEnabled = getSafe(currentProfile.modState, [oldMod.id, 'enabled'], false);
             return this.userVersionChoice(oldMod, api.store)
                 .then((action: string) => {
                   if (action === 'Install') {
+                    enable = enable || wasEnabled;
                     return null;
                   } else if (action === 'Replace') {
-                    api.store.dispatch(setModEnabled(currentProfile.id, oldMod.id, false));
-                    api.events.emit('mods-enabled', [oldMod.id], false);
+                    // we need to remove the old mod before continuing. This ensures
+                    // the mod is deactivated and undeployed (as to not leave dangling
+                    // links) and it ensures we do a clean install of the mod
+                    return new Promise((resolve, reject) => {
+                      api.events.emit('remove-mod', oldMod.id, (error: Error) => {
+                        if (error !== null) {
+                          return Promise.reject(error);
+                        } else {
+                          // use the same mod id as the old version so that all profiles
+                          // keep using it.
+                          modId = oldMod.id;
+                          enable = enable || wasEnabled;
+                          return Promise.resolve();
+                        }
+                      });
+                    });
                   }
                 });
           } else {
@@ -195,24 +222,27 @@ class InstallManager {
           }
         })
         .then(() => {
-          installContext.startInstallCB(installName, archiveId);
+          installContext.startInstallCB(modId, archiveId);
 
-          destinationPath = path.join(this.mGetInstallPath(), installName);
+          destinationPath = path.join(this.mGetInstallPath(), modId);
           return this.installInner(archivePath, installGameId);
         })
         .then((result) => {
-          installContext.setInstallPathCB(installName, destinationPath);
+          installContext.setInstallPathCB(modId, destinationPath);
           return this.processInstructions(api, archivePath, destinationPath,
                                           installGameId, result);
         })
         .then(() => {
           installContext.finishInstallCB('success', filteredInfo);
+          if (enable) {
+            api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
+          }
           if (processDependencies) {
             this.installDependencies(filteredInfo.rules, this.mGetInstallPath(),
                                      installContext, api);
           }
           if (callback !== undefined) {
-            callback(null, installName);
+            callback(null, modId);
           }
         })
         .catch((err) => {
@@ -241,7 +271,7 @@ class InstallManager {
                       'Installation failed',
                       `The installer ${id} failed: ${errMessage}`);
                   if (callback !== undefined) {
-                    callback(err, installName);
+                    callback(err, modId);
                   }
                 });
           }
@@ -463,10 +493,8 @@ class InstallManager {
     return installName in (api.store.getState().persistent.mods[gameMode] || {});
   }
 
-  private findPreviousVersionMod(
-    fileId: number,
-    store: Redux.Store<any>,
-    gameMode: string): IMod {
+  private findPreviousVersionMod(fileId: number, store: Redux.Store<any>,
+                                 gameMode: string): IMod {
     let mods = store.getState().persistent.mods[gameMode];
     let mod: IMod;
     Object.keys(mods).forEach(key => {
@@ -506,8 +534,8 @@ class InstallManager {
     });
   }
 
-  private queryUserReplace(modId: string, api: IExtensionApi): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
+  private queryUserReplace(modId: string, api: IExtensionApi) {
+    return new Promise<{ name: string, enable: boolean }>((resolve, reject) => {
       api.store
         .dispatch(showDialog(
           'question', 'Mod exists',
@@ -516,7 +544,7 @@ class InstallManager {
             'This mod seems to be installed already. You can replace the ' +
             'existing one or install the new one under a different name ' +
             '(this name is used internally, you can still change the display name ' +
-            'to anything you want).',
+            'to anything you want later).',
             formcontrol: [{
               id: 'newName',
               type: 'input',
@@ -533,13 +561,15 @@ class InstallManager {
           if (result.action === 'Cancel') {
             reject(new UserCanceled());
           } else if (result.action === 'Rename') {
-            resolve(result.input.newName);
+            resolve({ name: result.input.newName, enable: false });
           } else if (result.action === 'Replace') {
+            const currentProfile = activeProfile(api.store.getState());
+            const wasEnabled = getSafe(currentProfile.modState, [modId, 'enabled'], false);
             api.events.emit('remove-mod', modId, (err) => {
               if (err !== null) {
                 reject(err);
               } else {
-                resolve(modId);
+                resolve({ name: modId, enable: wasEnabled });
               }
             });
           }
@@ -681,7 +711,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
       let download: IDownload = state.persistent.downloads.files[downloadId];
       let fullPath: string = path.join(downloadPath(state), download.localPath);
       this.install(downloadId, fullPath, download.game || activeGameId(state),
-        api, download.modInfo, false, (error, id) => {
+        api, download.modInfo, false, false, (error, id) => {
           if (error === null) {
             resolve(id);
           } else {

@@ -23,7 +23,7 @@ export function activateMods(installPath: string,
                              mods: IMod[],
                              modState: { [id: string]: IProfileMod },
                              activator: IModActivator): Promise<void> {
-  return activator.prepare(destination)
+  return activator.prepare(destination, true)
     .then(() => {
       return Promise.each(mods, (mod: IMod) => {
         if (getSafe(modState, [mod.id, 'enabled'], false)) {

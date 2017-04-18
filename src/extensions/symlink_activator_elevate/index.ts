@@ -37,8 +37,8 @@ class ModActivator extends LinkingActivator {
     this.mElevatedClient = null;
   }
 
-  public prepare(dataPath: string): Promise<void> {
-    return this.startElevated().then(() => super.prepare(dataPath));
+  public prepare(dataPath: string, clean: boolean): Promise<void> {
+    return this.startElevated().then(() => super.prepare(dataPath, clean));
   }
 
   public finalize(dataPath: string): Promise<void> {

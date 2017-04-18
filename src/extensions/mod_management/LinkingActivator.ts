@@ -48,11 +48,20 @@ abstract class LinkingActivator implements IModActivator {
 
   public abstract isSupported(state: any): string;
 
-  public prepare(dataPath: string): Promise<void> {
-    this.mNewActivation = {};
+  public prepare(dataPath: string, clean: boolean): Promise<void> {
     return getNormalizeFunc(dataPath)
       .then((func: Normalize) => {
         this.mNormalize = func;
+        if (clean) {
+          this.mNewActivation = {};
+        } else {
+          const state = this.mApi.store.getState();
+          const gameId = activeGameId(state);
+          return loadData(gameId, 'activation', {})
+          .then((activation) => {
+            return this.mNewActivation = activation;
+          });
+        }
       });
   }
 
@@ -140,6 +149,18 @@ abstract class LinkingActivator implements IModActivator {
            }).then(() => undefined);
   }
 
+  public deactivate(installPath: string, dataPath: string,
+                    mod: IMod): Promise<void> {
+    const sourceBase = path.join(installPath, mod.installationPath);
+    return walk(sourceBase, (iterPath: string, stats: fs.Stats) => {
+             if (!stats.isDirectory()) {
+               const relPath: string = path.relative(sourceBase, iterPath);
+               delete this.mNewActivation[this.mNormalize(relPath)];
+             }
+             return Promise.resolve();
+           }).then(() => undefined);
+  }
+
   public purge(installPath: string, dataPath: string): Promise<void> {
     return this.purgeLinks(installPath, dataPath).then(() => {
       const store = this.mApi.store;
@@ -171,7 +192,7 @@ abstract class LinkingActivator implements IModActivator {
             const fileModPath =
               path.join(installPath, currentActivation[key].source,
                 currentActivation[key].relPath);
-            return fs.lstatAsync(fileDataPath)
+            return fs.statAsync(fileDataPath)
               .then((stat: fs.Stats): Promise<boolean> => {
                 if (stat.mtime.getTime() !== currentActivation[key].time) {
                   nonLinks.push({
