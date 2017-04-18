@@ -1,12 +1,12 @@
 import { ComponentEx } from '../../../util/ComponentEx';
-import { IconButton } from '../../../views/TooltipControls';
+import FormFeedback from '../../../views/FormFeedbackAwesome';
+import Icon from '../../../views/Icon';
+import { Button } from '../../../views/TooltipControls';
 
 import { setModAttribute } from '../../mod_management/actions/mods';
 
-import FormFeedback from '../../../views/FormFeedbackAwesome';
-
 import * as React from 'react';
-import { FormControl, FormGroup } from 'react-bootstrap';
+import { FormControl, FormGroup, InputGroup } from 'react-bootstrap';
 
 export interface IProps {
   gameId: string;
@@ -27,20 +27,22 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
 
     if (nexusModId !== undefined && nexusModId !== '') {
       return (
-        <div>
+        <InputGroup>
           <FormControl
             type='text'
             value={nexusModId}
             onChange={this.updateNexusModId}
           />
-          <IconButton
-            className='btn-version-column'
-            id={modId}
-            tooltip={t('Visit che corresponding Nexus mod page')}
-            icon='external-link'
-            onClick={this.openPage}
-          />
-        </div>
+          <InputGroup.Button>
+            <Button
+              id={modId}
+              tooltip={t('Visit che corresponding Nexus mod page')}
+              onClick={this.openPage}
+            >
+              <Icon name='external-link' />
+            </Button>
+          </InputGroup.Button>
+        </InputGroup>
       );
     } else {
       return (
