@@ -40,7 +40,7 @@ function progress(props) {
 }
 
 function calc(props) {
-  const {t, download} = props;
+  const {download} = props;
   const {state, received, size} = download;
 
   if (state === 'init') {

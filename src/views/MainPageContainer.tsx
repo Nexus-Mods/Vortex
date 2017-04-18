@@ -15,7 +15,7 @@ export interface IMainPageContext {
 
 type IProps = IBaseProps;
 
-function nop() {}
+const nop = () => undefined;
 
 class MainPageContainer extends ComponentEx<IBaseProps, {}> {
   public static childContextTypes: React.ValidationMap<any> = {

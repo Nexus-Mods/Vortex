@@ -4,7 +4,7 @@ import { IconButton } from './TooltipControls';
 import { remote } from 'electron';
 import * as React from 'react';
 import { Checkbox, Col, ControlLabel,
-         FormControl, FormControlProps, FormGroup,
+         FormControl, FormGroup,
          InputGroup } from 'react-bootstrap';
 
 export interface IFormItemProps {

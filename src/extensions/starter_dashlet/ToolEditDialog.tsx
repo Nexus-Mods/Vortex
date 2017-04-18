@@ -6,7 +6,6 @@ import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { FormPathItem, FormTextItem } from '../../views/FormFields';
 import { Button, IconButton } from '../../views/TooltipControls';
 
-import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 
 import { addDiscoveredTool, setGameParameters } from '../gamemode_management/actions/settings';
@@ -20,7 +19,6 @@ import * as path from 'path';
 import * as React from 'react';
 import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
-import * as ReactDOM from 'react-dom';
 
 interface IEnvButtonProps {
   t: I18next.TranslationFunction;
@@ -167,21 +165,12 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
 
   public context: IComponentContext;
 
-  private mPathControl = null;
-
   constructor(props: IProps) {
     super(props);
     this.initState({
       tool: Object.assign({}, props.tool),
       imageId: new Date().getTime(),
     });
-  }
-
-  public componentDidUpdate(prevProps: IProps, prevState: IToolEditState) {
-    if (prevState.tool.exePath !== this.state.tool.exePath) {
-      let node: any = ReactDOM.findDOMNode(this.mPathControl);
-      node.scrollLeft = node.scrollWidth;
-    }
   }
 
   public render(): JSX.Element {
@@ -229,7 +218,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 placeholder={t('Target')}
                 stateKey='exePath'
                 value={this.state.tool.exePath}
-                onChangeValue={this.handleChange}
+                onChangeValue={this.handleChangePath}
                 directory={false}
               />
             }
@@ -345,10 +334,6 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     delete this.nextState.tool.environment[key];
   }
 
-  private setPathControl = (ctrl) => {
-    this.mPathControl = ctrl;
-  }
-
   private clearCache() {
     this.nextState.imageId = new Date().getTime();
   }
@@ -361,46 +346,21 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     this.handleChange('commandLine', value.split(' '));
   }
 
-  private setWorkingDirectory = () => {
-    this.context.api.selectDir({})
-    .then((dirName: string) => {
-      this.handleChange('workingDirectory', dirName);
-    })
-    .catch((err) => {
-      log('info', 'search path selection cancelled', { err });
-    });
-  }
-
-  private handleChangePath = () => {
-    const { t, tool } = this.props;
+  private handleChangePath = (field: 'exePath', filePath: string) => {
+    const { tool } = this.props;
 
     const iconPath = tool.iconPath;
     let toolPath: string;
 
-    this.context.api.selectExecutable({
-      defaultPath: this.state.tool.exePath,
-      title: t('Select Executable'),
-    })
-    .then((filePath: string) => {
-      if (filePath === undefined) {
-        return Promise.reject(null);
-      }
-      this.handleChange('exePath', filePath);
-      if (!this.state.tool.name) {
-        this.handleChange('name', path.basename(filePath, path.extname(filePath)));
-      }
-      if (!this.state.tool.workingDirectory) {
-        this.handleChange('workingDirectory', path.dirname(filePath));
-      }
-      toolPath = filePath;
-      return fs.statAsync(iconPath);
-    })
-    .catch(() => {
-      if (toolPath !== undefined) {
-        // stat failed so there is no icon yet
-        this.useImage(toolPath);
-      }
-    });
+    this.handleChange('exePath', filePath);
+    if (!this.state.tool.name) {
+      this.handleChange('name', path.basename(filePath, path.extname(filePath)));
+    }
+    if (!this.state.tool.workingDirectory) {
+      this.handleChange('workingDirectory', path.dirname(filePath));
+    }
+    toolPath = filePath;
+    return fs.statAsync(iconPath);
   }
 
   private handleChangeIcon = () => {

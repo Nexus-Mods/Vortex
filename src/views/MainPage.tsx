@@ -1,5 +1,4 @@
-import { IState } from '../types/IState';
-import { ComponentEx, connect } from '../util/ComponentEx';
+import { ComponentEx } from '../util/ComponentEx';
 
 import Body from './MainPageBody';
 import Overlay from './MainPageOverlay';

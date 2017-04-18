@@ -1,5 +1,4 @@
 import { IComponentContext } from '../../../types/IComponentContext';
-import { IIconDefinition } from '../../../types/IIconDefinition';
 import { IDiscoveryState, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';

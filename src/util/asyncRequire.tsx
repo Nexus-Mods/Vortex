@@ -1,5 +1,3 @@
-import Icon from '../views/Icon';
-
 import * as Promise from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';

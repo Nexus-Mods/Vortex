@@ -1,7 +1,6 @@
 import {IState} from '../../../types/IState';
 import asyncRequire from '../../../util/asyncRequire';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
-import Icon from '../../../views/Icon';
 
 import {speedDataPoints} from '../reducers/state';
 import {IDownload} from '../types/IDownload';

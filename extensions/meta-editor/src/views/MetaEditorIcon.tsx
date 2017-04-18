@@ -1,7 +1,7 @@
 import RuleEditor from './RuleEditor';
 
 import { ComponentEx, FormFeedbackAwesome, Icon,
-         log, selectors, tooltip, types,
+         log, selectors, tooltip,
          util } from 'nmm-api';
 
 import { ILookupResult, IModInfo, IReference,

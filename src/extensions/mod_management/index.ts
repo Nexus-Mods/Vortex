@@ -251,7 +251,6 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
-      console.log('mod enabled state changed');
       if (store.getState().settings.automation.deploy) {
         activationTimer.schedule(undefined);
       }

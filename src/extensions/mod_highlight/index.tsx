@@ -1,4 +1,4 @@
-import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionContext } from '../../types/IExtensionContext';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 

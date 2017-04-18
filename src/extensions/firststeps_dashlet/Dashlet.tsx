@@ -158,7 +158,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
             link={link}
           />
         </span>);
-      }
+      },
     },
   ];
 

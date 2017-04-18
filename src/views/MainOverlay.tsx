@@ -52,4 +52,3 @@ class MainOverlay extends ComponentEx<IProps, {}> {
 }
 
 export default MainOverlay as React.ComponentClass<IBaseProps>;
-
