@@ -1,7 +1,8 @@
-import { setHiddenCategories, setSearchFocusIndex, setSearchFoundCount,
-   setSearchString, setTreeDataObject } from '../actions/session';
-
 import { IReducerSpec } from '../../../types/IExtensionContext';
+import {setSafe} from '../../../util/storeHelper';
+
+import * as actions from '../actions/session';
+
 
 import update = require('react-addons-update');
 
@@ -10,21 +11,23 @@ import update = require('react-addons-update');
  */
 export const sessionReducer: IReducerSpec = {
   reducers: {
-    [setSearchFocusIndex as any]: (state, payload) => {
+    [actions.setSearchFocusIndex as any]: (state, payload) => {
       return update(state, { searchFocusIndex: { $set: payload } });
     },
-    [setSearchFoundCount as any]: (state, payload) => {
+    [actions.setSearchFoundCount as any]: (state, payload) => {
       return update(state, { searchFoundCount: { $set: payload } });
     },
-    [setSearchString as any]: (state, payload) => {
+    [actions.setSearchString as any]: (state, payload) => {
       return update(state, { searchString: { $set: payload } });
     },
-    [setHiddenCategories as any]: (state, payload) => {
+    [actions.showHiddenCategories as any]: (state, payload) => {
       return update(state, { isHidden: { $set: payload } });
     },
-    [setTreeDataObject as any]: (state, payload) => {
+    [actions.setTreeDataObject as any]: (state, payload) => {
       return update(state, { treeDataObject: { $set: payload } });
     },
+    [actions.showCategoriesDialog as any]: (state, payload) =>
+      setSafe(state, [ 'showDialog' ], payload),
   },
   defaults: {
     searchFocusIndex: 0,
@@ -32,5 +35,6 @@ export const sessionReducer: IReducerSpec = {
     searchString: '',
     treeDataObject: undefined,
     isHidden: false,
+    showDialog: false,
   },
 };

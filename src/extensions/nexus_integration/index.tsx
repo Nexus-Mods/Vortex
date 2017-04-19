@@ -121,7 +121,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         return retrieveCategoryList(convertGameId(gameId), nexus);
       })
       .then((categories: ICategoryDictionary) => {
-        api.events.emit('retrieve-categories', [gameId, categories, isUpdate], {});
+        api.events.emit('retrieve-categories', gameId, categories, isUpdate);
       })
       .catch((err) => {
         let message = processErrorMessage(err.statusCode, err, gameId);

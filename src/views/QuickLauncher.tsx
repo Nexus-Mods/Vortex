@@ -92,7 +92,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       </DropdownButton>
       <IconButton
         id='btn-quicklaunch-play'
-        icon='play'
+        icon='caret-square-o-right'
         tooltip={t('Launch')}
         onClick={this.start}
       />

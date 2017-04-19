@@ -1,16 +1,15 @@
-
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
-import { activeGameId, activeProfile } from '../../util/selectors';
+import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import { setModAttribute } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/types/IModProps';
 
 import { loadCategories, updateCategories } from './actions/category';
-import { setTreeDataObject } from './actions/session';
-import { categoryReducer } from './reducers/category';
+import { setTreeDataObject, showCategoriesDialog } from './actions/session';
+import {categoryReducer} from './reducers/category';
 import { sessionReducer } from './reducers/session';
 import { allCategories } from './selectors';
 import { ICategoryDictionary } from './types/IcategoryDictionary';
@@ -18,13 +17,12 @@ import { ITreeDataObject } from './types/ITrees';
 import CategoryFilter from './util/CategoryFilter';
 import createTreeDataObject from './util/createTreeDataObject';
 import { retrieveCategory, retrieveCategoryDetail } from './util/retrieveCategoryPath';
-import CategoryList from './views/CategoryList';
+import CategoryDialog from './views/CategoryDialog';
 
 function init(context: IExtensionContext): boolean {
-  context.registerMainPage('book', 'Categories', CategoryList, {
-    hotkey: 'C',
-    visible: () => activeProfile(context.api.store.getState()) !== undefined,
-    group: 'per-game',
+  context.registerDialog('categories', CategoryDialog);
+  context.registerIcon('mod-icons', 100, 'sitemap', 'Categories', () => {
+    context.api.store.dispatch(showCategoriesDialog(true));
   });
 
   context.registerReducer(['persistent', 'categories'], categoryReducer);
@@ -87,16 +85,11 @@ function init(context: IExtensionContext): boolean {
     const store: Redux.Store<any> = context.api.store;
 
     try {
-      context.api.events.on('retrieve-categories', (result) => {
-        let isUpdate = result[2];
-        let categories = result[1];
-        let gameId = result[0];
-
+      context.api.events.on('retrieve-categories', (gameId, categories, isUpdate) => {
         if (isUpdate) {
           context.api.store.dispatch(updateCategories(gameId, categories));
 
-          let mods: any = getSafe(store.getState(), ['mods', gameId], {});
-
+          const mods: any = getSafe(store.getState(), ['mods', gameId], {});
           store.dispatch(setTreeDataObject(createTreeDataObject(categories,
             mods, false)));
 
