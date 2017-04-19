@@ -60,19 +60,19 @@ describe('removeMod', () => {
 
 describe('setModInstallationPath', () => {
   it('sets the mod installation path', () => {
-    let input = { gameId1: { modId1: { 'installationPath': { installPath: 'path' } } } };
-    let result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(input, { gameId: 'gameId1', modId: 'modId1', installPath: 'new path' });
-    expect(result).toEqual({ gameId1: { modId1: { 'installationPath': 'new path' } } });
+    let input = { gameId1: { modId1: { installationPath: 'installPath' } } };
+    let result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(input, { gameId: 'gameId1', modId: 'modId1', installPath: 'New installPath' });
+    expect(result).toEqual({ gameId1: { modId1: { installationPath: 'New installPath' } } });
   });
-  it('fails if the game doesn\'t exist', () => {
-    let input = { gameId1: { modId1: { 'installationPath': { installPath: 'path' } } } };
-    let result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(input, { gameId: 'gameId2', modId: 'modId1', installPath: 'new path' });
-    expect(result).toEqual({ gameId1: { modId1: { 'installationPath': { installPath: 'path' } } } });
+  it('does nothing if the game doesn\'t exist', () => {
+    let input = { gameId1: { modId1: { installationPath: 'installPath' } } };
+    let result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(input, { gameId: 'gameId2', modId: 'modId1', installPath: 'New installPath' });
+    expect(result).toEqual({ gameId1: { modId1: { installationPath: 'installPath' } } });
   });
    it('affects only the right game', () => {
-    let input = { gameId1: { modId1: { 'installationPath': { installPath: 'path' } } }, gameId2: { modId1: { 'installationPath': { installPath: 'path' } } } };
-    let result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(input, { gameId: 'gameId1', modId: 'modId1', installPath: 'new path' });
-    expect(result).toEqual({ gameId1: { modId1: { 'installationPath': 'new path' } }, gameId2: { modId1: { 'installationPath': { installPath: 'path' } } } });
+    let input = { gameId1: { modId1: { installationPath: 'installPath' } }, gameId2: { modId1: { installationPath: 'installPath' } } };
+    let result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(input, { gameId: 'gameId1', modId: 'modId1', installPath: 'New installPath' });
+    expect(result).toEqual({ gameId1: { modId1: { installationPath: 'New installPath' } }, gameId2: { modId1: { installationPath: 'installPath' } } });
   });
 });
 

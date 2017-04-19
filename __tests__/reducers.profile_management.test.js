@@ -2,37 +2,37 @@ import { profilesReducer } from '../src/extensions/profile_management/reducers/p
 
 describe('setModEnabled', () => {
   it('sets the mod enabled', () => {
-    let input = { profileId1: { modState: { modId1: { enabled: { enable: false } }  } } };
+    let input = { profileId1: { modState: { modId1: { enabled: false }  } } };
     let result = profilesReducer.reducers.SET_MOD_ENABLED(input, { profileId: 'profileId1', modId: 'modId1', enable: true });
     expect(result).toEqual({ profileId1: { modState: { modId1: { enabled: true } } } });
   });
   it('fails if the profile doesn\'t exist', () => {
-    let input = { profileId1: { modState: { modId1: { enabled: { enable: false } }  } } };
+    let input = { profileId1: { modState: { modId1: { enabled: false } } } };
     let result = profilesReducer.reducers.SET_MOD_ENABLED(input, { profileId: 'profileId2', modId: 'modId1', enable: true });
-    expect(result).toEqual({ profileId1: { modState: { modId1: { enabled: { enable: false } } } } });
+    expect(result).toEqual({ profileId1: { modState: { modId1: { enabled: false } } } });
   });
    it('affects only the right profile', () => {
-    let input = { profileId1: { modState: { modId1: { enabled: { enable: false } }  } }, profileId2: { modState: { modId1: { enabled: { enable: false } }  } } };
+    let input = { profileId1: { modState: { modId1: { enabled: false }  } }, profileId2: { modState: { modId1: { enabled: false }  } } };
     let result = profilesReducer.reducers.SET_MOD_ENABLED(input, { profileId: 'profileId1', modId: 'modId1', enable: true });
-    expect(result).toEqual({ profileId1: { modState: { modId1: { enabled: true } } }, profileId2: { modState: { modId1: { enabled: {'enable': false} } } } });
+    expect(result).toEqual({ profileId1: { modState: { modId1: { enabled: true } } }, profileId2: { modState: { modId1: { enabled: false } } } });
   });
 });
 
 
 describe('setFeature', () => {
   it('sets the value for the profile feature', () => {
-    let input = { profileId1: { features: { featureId1: 'old Value' } } };
+    let input = { profileId1: { features: { featureId1: 'value' } } };
     let result = profilesReducer.reducers.SET_FEATURE(input, { profileId: 'profileId1', featureId: 'featureId1', value: 'new Value' });
     expect(result).toEqual({ profileId1: { features: {  featureId1: 'new Value' } } });
   });
    it('fails if the profile doesn\'t exist', () => {
-    let input = { profileId1: { features: { featureId1: 'old Value' } } };
+    let input = { profileId1: { features: { featureId1: 'value' } } };
     let result = profilesReducer.reducers.SET_FEATURE(input, { profileId: 'profileId2', featureId: 'featureId1', value: 'new Value' });
-    expect(result).toEqual({ profileId1: { features: {  featureId1: 'old Value' } } });
+    expect(result).toEqual({ profileId1: { features: {  featureId1: 'value' } } });
   });
    it('affects only the right profile', () => {
-    let input = { profileId1: { features: { featureId1: 'old Value' } }, profileId2: { features: { featureId1: 'old Value' } } };
+    let input = { profileId1: { features: { featureId1: 'value' } }, profileId2: { features: { featureId1: 'value' } } };
     let result = profilesReducer.reducers.SET_FEATURE(input, { profileId: 'profileId1', featureId: 'featureId1', value: 'new Value' });
-    expect(result).toEqual({ profileId1: { features: {  featureId1: 'new Value' } }, profileId2: { features: {  featureId1: 'old Value' } } });
+    expect(result).toEqual({ profileId1: { features: {  featureId1: 'new Value' } }, profileId2: { features: {  featureId1: 'value' } } });
   });
 });
