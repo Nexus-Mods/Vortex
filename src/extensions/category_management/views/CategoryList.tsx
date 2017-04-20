@@ -1,7 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
-import { IIconDefinition } from '../../../types/IIconDefinition';
+import { IActionDefinition } from '../../../types/IIconDefinition';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import lazyRequire from '../../../util/lazyRequire';
 import { showError } from '../../../util/message';
@@ -67,7 +67,7 @@ type IProps = IConnectedProps & IActionProps;
  */
 class CategoryList extends ComponentEx<IProps, IComponentState> {
   public context: IComponentContext;
-  private mButtons: IIconDefinition[];
+  private mButtons: IActionDefinition[];
 
   constructor(props) {
     super(props);

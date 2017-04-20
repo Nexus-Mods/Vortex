@@ -1,14 +1,16 @@
 import SvgIcon from './Icon';
+import { ButtonType } from './IconBar';
 
 import * as React from 'react';
 import { Button as BootstrapButton, NavItem as BootstrapNavItem,
-         OverlayTrigger, Popover } from 'react-bootstrap';
+  OverlayTrigger, Popover,
+} from 'react-bootstrap';
 
 export interface ITooltipProps {
   tooltip: string | React.ReactElement<any>;
   id: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
-  buttonType?: 'text' | 'icon' | 'both';
+  buttonType?: ButtonType;
 }
 
 export type ButtonProps = ITooltipProps & typeof BootstrapButton.defaultProps;

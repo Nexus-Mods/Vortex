@@ -421,6 +421,10 @@
   height: 32px;
 }
 
+.media {
+  overflow: visible;
+}
+
 .media-heading {
   font-family: BebasNeue;
 }
@@ -889,6 +893,8 @@ textarea {
   position: absolute;
   top: 0px;
   right: 0px;
+  // this is overlayed by the game list otherwise
+  z-index: 1;
 }
 
 .btn-toggle-on {
@@ -897,6 +903,10 @@ textarea {
 
 .btngroup-game-list {
   display: inline-flex;
+}
+
+.btngroup-collapsed .btn {
+  @extend .btn-embed;
 }
 
 .game-list-item .media-right {
@@ -977,6 +987,7 @@ textarea {
 .dropdown-menu {
   margin-top: 0px;
   border-top-width: 0px;
+  min-width: initial;
 }
 
 // more pronounced popover shadow. just cause
@@ -1014,6 +1025,10 @@ textarea {
 
 .btn.disabled, .btn[disabled], fieldset[disabled] .btn {
   cursor: initial;
+}
+
+a[role=menuitem] svg {
+  margin-right: 10px;
 }
 
 ::-webkit-scrollbar {

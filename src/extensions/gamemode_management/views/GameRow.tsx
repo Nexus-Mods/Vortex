@@ -64,6 +64,7 @@ class GameRow extends ComponentEx<IProps, {}> {
               group={`game-${type}-buttons`}
               instanceId={game.id}
               staticElements={[]}
+              collapse={true}
             />
           </Media.Right>
         </Media>

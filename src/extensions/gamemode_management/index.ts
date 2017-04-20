@@ -31,9 +31,9 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
   context.registerFooter('discovery-progress', ProgressFooter);
 
-  context.registerIcon('game-managed-buttons', 100, HideGameIcon);
-  context.registerIcon('game-discovered-buttons', 100, HideGameIcon);
-  context.registerIcon('game-undiscovered-buttons', 100, HideGameIcon);
+  context.registerAction('game-managed-buttons', 100, HideGameIcon, {});
+  context.registerAction('game-discovered-buttons', 100, HideGameIcon, {});
+  context.registerAction('game-undiscovered-buttons', 100, HideGameIcon, {});
 
   context.registerDialog('add-game', AddGameDialog);
 

@@ -139,7 +139,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['persistent', 'profiles'], profilesReducer);
   context.registerReducer(['settings', 'profiles'], settingsReducer);
 
-  context.registerIcon('game-discovered-buttons', 100, 'asterisk', 'Manage',
+  context.registerAction('game-discovered-buttons', 100, 'asterisk', {}, 'Manage',
     (instanceIds: string[]) => {
       let profileId = shortid();
       let gameId = instanceIds[0];
@@ -152,9 +152,13 @@ function init(context: IExtensionContextExt): boolean {
       context.api.store.dispatch(setNextProfile(profileId));
   });
 
-  context.registerIcon('game-managed-buttons', 100, 'play', 'Activate', (instanceIds: string[]) => {
+  context.registerAction('game-managed-buttons', 100, 'play', {
+    noCollapse: true,
+  }, 'Activate', (instanceIds: string[]) => {
     activateGame(context.api.store, instanceIds[0]);
-  });
+  }, (instanceIds: string[]) =>
+      activeGameId(context.api.store.getState()) !== instanceIds[0],
+  );
 
   context.registerProfileFile = (gameId: string, filePath: string) => {
     if (profileFiles[gameId] === undefined) {

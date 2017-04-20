@@ -1,4 +1,4 @@
-import { IIconDefinition } from '../types/IIconDefinition';
+import { IActionDefinition } from '../types/IIconDefinition';
 import { ComponentEx } from '../util/ComponentEx';
 
 import IconBar from './IconBar';
@@ -13,7 +13,7 @@ export interface IBaseProps {
 type IProps = IBaseProps;
 
 class MainOverlay extends ComponentEx<IProps, {}> {
-  private buttons: IIconDefinition[];
+  private buttons: IActionDefinition[];
 
   constructor(props: IProps) {
     super(props);

@@ -1,5 +1,6 @@
 import { Archive } from '../util/archives';
 
+import { IActionOptions } from './IIconDefinition';
 import { INotification } from './INotification';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
@@ -25,12 +26,14 @@ export interface IRegisterSettings {
    props?: PropsCallback): void;
 }
 
-export interface IRegisterIcon {
+export interface IRegisterAction {
   (group: string,
    position: number,
-   icon: string | React.ComponentClass<any> | React.StatelessComponent<any>,
-   title?: string | PropsCallback,
-   action?: (instanceIds: string[]) => void): void;
+   iconOrComponent: string | React.ComponentClass<any> | React.StatelessComponent<any>,
+   options: IActionOptions,
+   titleOrProps?: string | PropsCallback,
+   actionOrCondition?: (instanceIds?: string[]) => void | boolean,
+   condition?: (instanceIds?: string[]) => boolean): void;
 }
 
 export interface IRegisterFooter {
@@ -361,12 +364,12 @@ export interface IExtensionContext {
   registerSettings: IRegisterSettings;
 
   /**
-   * register a toolbar icon
+   * register an action (can be a button or a menu item)
    * 
    * @type {IRegisterIcon}
    * @memberOf IExtensionContext
    */
-  registerIcon: IRegisterIcon;
+  registerAction: IRegisterAction;
 
   /**
    * registers a page for the main content area

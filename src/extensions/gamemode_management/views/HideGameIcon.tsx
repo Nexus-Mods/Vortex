@@ -1,6 +1,7 @@
 import { ComponentEx, connect } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
-import { IconButton } from '../../../views/TooltipControls';
+import { ButtonType } from '../../../views/IconBar';
+import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 
@@ -10,6 +11,7 @@ import * as React from 'react';
 
 export interface IBaseProps {
   instanceId: string;
+  buttonType: ButtonType;
 }
 
 interface IConnectedProps {
@@ -24,14 +26,15 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class HideGameIcon extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { instanceId, gamesDiscovered } = this.props;
+    const { buttonType, instanceId, gamesDiscovered } = this.props;
     const t = this.context.api.translate;
     const hidden = getSafe(gamesDiscovered, [instanceId, 'hidden'], false);
-    return (<IconButton
-      tooltip={t('Show/Hide')}
+    return (<ToolbarIcon
       id={`hide-${instanceId}`}
       icon={ hidden ? 'eye' : 'eye-slash' }
+      text={ hidden ? t('Show') : t('Hide')}
       onClick={this.toggleHidden}
+      buttonType={ buttonType }
     />);
   }
   private toggleHidden = () => {

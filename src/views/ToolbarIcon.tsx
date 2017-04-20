@@ -1,4 +1,5 @@
 import Icon from './Icon';
+import { ButtonType } from './IconBar';
 import { Button } from './TooltipControls';
 
 import * as React from 'react';
@@ -8,7 +9,7 @@ export interface IToolbarIconProps {
   instanceId?: string[];
   text: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
-  buttonType?: 'icon' | 'text' | 'both';
+  buttonType?: ButtonType;
   iconSet?: string;
   icon: string;
   onClick?: (ids: string[]) => void;
@@ -19,6 +20,14 @@ export interface IToolbarIconProps {
 class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
   public render(): JSX.Element {
     const { buttonType, id, text, icon, iconSet, pulse, disabled} = this.props;
+    if (buttonType === 'menu') {
+      return (
+        <div onClick={this.invokeAction}>
+          <Icon set={iconSet} name={icon} pulse={pulse} />
+          {text}
+        </div>
+      );
+    }
     const placement = this.props.placement || 'bottom';
     let bType = buttonType || 'icon';
     return (

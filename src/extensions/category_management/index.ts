@@ -20,7 +20,7 @@ import CategoryDialog from './views/CategoryDialog';
 
 function init(context: IExtensionContext): boolean {
   context.registerDialog('categories', CategoryDialog);
-  context.registerIcon('mod-icons', 100, 'sitemap', 'Categories', () => {
+  context.registerAction('mod-icons', 100, 'sitemap', {}, 'Categories', () => {
     context.api.store.dispatch(showCategoriesDialog(true));
   });
 

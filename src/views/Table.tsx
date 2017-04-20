@@ -1,7 +1,7 @@
 import {selectRows, setAttributeFilter, setAttributeSort,
         setAttributeVisible, setSplitPos} from '../actions/tables';
 import {IAttributeState} from '../types/IAttributeState';
-import {IIconDefinition} from '../types/IIconDefinition';
+import {IActionDefinition} from '../types/IIconDefinition';
 import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
@@ -30,7 +30,7 @@ export interface IChangeDataHandler {
   (rowId: string, attributeId: string, newValue: any): void;
 }
 
-export interface ITableRowAction extends IIconDefinition {
+export interface ITableRowAction extends IActionDefinition {
   singleRowAction?: boolean;
   multiRowAction?: boolean;
 }

@@ -164,14 +164,14 @@ function init(context: IExtensionContextExt): boolean {
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
   });
 
-  context.registerIcon('mod-icons', 105, ActivationButton, () => {
+  context.registerAction('mod-icons', 105, ActivationButton, () => {
     return {
       key: 'activate-button',
       activators,
     };
   });
 
-  context.registerIcon('mod-icons', 110, DeactivationButton, () => {
+  context.registerAction('mod-icons', 110, DeactivationButton, () => {
     return {
       key: 'deactivate-button',
       activators,

@@ -1,7 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
 import { IAttributeState } from '../../../types/IAttributeState';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
-import { IIconDefinition } from '../../../types/IIconDefinition';
+import { IActionDefinition } from '../../../types/IIconDefinition';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
@@ -78,7 +78,7 @@ class ModList extends ComponentEx<IProps, {}> {
   private mModsWithState: { [id: string]: IModWithState };
   private mGroupedMods: { [id: string]: IModWithState[] };
   private mPrimaryMods: { [id: string]: IModWithState };
-  private staticButtons: IIconDefinition[];
+  private staticButtons: IActionDefinition[];
 
   private modAction: string = '';
 

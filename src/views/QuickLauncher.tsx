@@ -88,7 +88,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
               {this.renderGameOption(managedGame)}
             </MenuItem>)
         }
-        <MenuItem key='__more' eventKey='__more'>{t('... More')}</MenuItem>
+        <MenuItem key='__more' eventKey='__more'>{t('More...')}</MenuItem>
       </DropdownButton>
       <IconButton
         id='btn-quicklaunch-play'

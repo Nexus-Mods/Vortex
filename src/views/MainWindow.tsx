@@ -4,7 +4,7 @@ import { setTabsMinimized } from '../actions/window';
 import { IComponentContext } from '../types/IComponentContext';
 import { IExtensionApi, IMainPageOptions } from '../types/IExtensionContext';
 import { II18NProps } from '../types/II18NProps';
-import { IIconDefinition } from '../types/IIconDefinition';
+import { IActionDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
 import { IState } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
@@ -63,7 +63,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     api: React.PropTypes.object.isRequired,
   };
 
-  private applicationButtons: IIconDefinition[];
+  private applicationButtons: IActionDefinition[];
 
   private settingsPage: IMainPage;
 

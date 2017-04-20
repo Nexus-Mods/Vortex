@@ -2,7 +2,7 @@ import { showDialog } from '../../../actions/notifications';
 import { selectRows } from '../../../actions/tables';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IDialogResult } from '../../../types/IDialog';
-import { IIconDefinition } from '../../../types/IIconDefinition';
+import { IActionDefinition } from '../../../types/IIconDefinition';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getCurrentLanguage } from '../../../util/i18n';
@@ -145,7 +145,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   };
 
   public context: IComponentContext;
-  private staticButtons: IIconDefinition[];
+  private staticButtons: IActionDefinition[];
   private gameColumn: ITableAttribute;
   private fileTimeColumn: ITableAttribute;
   private actions: ITableRowAction[];

@@ -272,7 +272,7 @@ function init(context: IExtensionContextExt): boolean {
       });
   });
 
-  context.registerIcon('download-icons', 100, InputButton,
+  context.registerAction('download-icons', 100, InputButton,
     () => ({
       key: 'input-nxm-url',
       id: 'input-nxm-url',
@@ -282,7 +282,7 @@ function init(context: IExtensionContextExt): boolean {
       onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl, false),
     }));
 
-  context.registerIcon('categories-icons', 100, 'download', 'Retrieve categories',
+  context.registerAction('categories-icons', 100, 'download', {}, 'Retrieve categories',
     () => retrieveCategories(context.api, true));
 
   context.registerTableAttribute('mods', {

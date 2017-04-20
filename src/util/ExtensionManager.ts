@@ -200,7 +200,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerDashlet: undefined,
       registerDialog: undefined,
       registerSettings: undefined,
-      registerIcon: undefined,
+      registerAction: undefined,
       registerFooter: undefined,
       registerReducer: undefined,
       registerStyle: undefined,

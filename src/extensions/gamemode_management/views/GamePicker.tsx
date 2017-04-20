@@ -144,13 +144,6 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
                   icon='th'
                   tooltip={t('Small Icons')}
                 />
-                <IconButton
-                  id='gamepicker-layout-grid-large'
-                  className={pickerLayout === 'large' ? 'btn-toggle-on' : 'btn-toggle-off'}
-                  onClick={this.setLayoutLarge}
-                  icon='th-large'
-                  tooltip={t('Large Icons')}
-                />
               </div>
             </Fixed>
             <Flex style={{ height: '100%', overflowY: 'auto', padding: '5px' }}>
@@ -237,10 +230,6 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
     this.props.onSetPickerLayout('small');
   }
 
-  private setLayoutLarge = () => {
-    this.props.onSetPickerLayout('large');
-  }
-
   private startDiscovery = () => {
     this.context.api.events.emit('start-discovery');
   }
@@ -254,7 +243,6 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
     switch (pickerLayout) {
       case 'list': return this.renderGamesList(games, type, gameMode);
       case 'small': return this.renderGamesSmall(games, type, gameMode);
-      case 'large': return this.renderGamesLarge(games, type, gameMode);
       default: throw new Error('invalid picker layout ' + pickerLayout);
     }
   }
@@ -285,22 +273,6 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
           t={t}
           key={game.id}
           large={false}
-          game={game}
-          type={type}
-          active={game.id === gameMode}
-        />)
-      }
-    </div>;
-  }
-
-  private renderGamesLarge(games: IGameStored[], type: string, gameMode: string) {
-    const { t } = this.props;
-    return <div>
-      { games.map(game =>
-        <GameThumbnail
-          t={t}
-          key={game.id}
-          large={true}
           game={game}
           type={type}
           active={game.id === gameMode}

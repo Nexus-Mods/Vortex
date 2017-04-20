@@ -1,28 +1,32 @@
-import { IIconDefinition } from '../types/IIconDefinition';
+import { IActionDefinition, IActionOptions } from '../types/IIconDefinition';
 import { IExtensibleProps, extend } from '../util/ExtensionProvider';
 
 import DynamicProps from './DynamicProps';
+import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
 
 import * as React from 'react';
-import { ButtonGroup } from 'react-bootstrap';
+import { ButtonGroup, DropdownButton, MenuItem } from 'react-bootstrap';
+
+export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
 
 export interface IBaseProps {
   className?: string;
   group: string;
   instanceId?: string | string[];
   tooltipPlacement?: 'top' | 'right' | 'bottom' | 'left';
-  buttonType?: 'text' | 'icon' | 'both';
+  buttonType?: ButtonType;
   orientation?: 'horizontal' | 'vertical';
+  collapse?: boolean;
 }
 
 export interface IExtensionProps {
-  objects: IIconDefinition[];
+  objects: IActionDefinition[];
 }
 
 type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes<any>;
 
-function iconSort(lhs: IIconDefinition, rhs: IIconDefinition): number {
+function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
   return (lhs.position || 100) - (rhs.position || 100);
 }
 
@@ -36,29 +40,72 @@ function iconSort(lhs: IIconDefinition, rhs: IIconDefinition): number {
  * @extends {ComponentEx<IProps, {}>}
  */
 class IconBar extends React.Component<IProps, {}> {
-
   public render(): JSX.Element {
-    const { id, objects, orientation, className, style } = this.props;
+    const { collapse, id, objects, orientation, className, style } = this.props;
 
-    return (
-      <ButtonGroup
-        id={id}
-        className={className}
-        style={style}
-        vertical={orientation === 'vertical'}
-      >
-        { this.props.children }
-        { objects.sort(iconSort).map(this.renderIcon) }
-      </ButtonGroup>
-    );
+    if (collapse) {
+      const dotdotdot: any = <Icon name='ellipsis-v' />;
+      let collapsed: IActionDefinition[] = [];
+      let unCollapsed: IActionDefinition[] = [];
+
+      objects.forEach(action => {
+        if ((action.options === undefined) || !action.options.noCollapse) {
+          collapsed.push(action);
+        } else {
+          unCollapsed.push(action);
+        }
+      });
+
+      return (
+        <ButtonGroup
+          id={id}
+          className={className + ' btngroup-collapsed'}
+          style={style}
+        >
+          { collapsed.length === 0 ? null : <DropdownButton
+            className='btn-embed'
+            id={`btn-menu-${id}`}
+            noCaret
+            title={dotdotdot}
+            bsStyle='default'
+            pullRight={true}
+          >
+            {collapsed.sort(iconSort).map(this.renderMenuItem)}
+          </DropdownButton> }
+          {unCollapsed.sort(iconSort).map(this.renderIcon)}
+        </ButtonGroup>);
+    } else {
+      return (
+        <ButtonGroup
+          id={id}
+          className={className}
+          style={style}
+          vertical={orientation === 'vertical'}
+        >
+          {this.props.children}
+          {objects.sort(iconSort).map(this.renderIcon)}
+        </ButtonGroup>
+      );
+    }
   }
 
-  private renderIcon = (icon: IIconDefinition, index: number) => {
+  private renderMenuItem = (icon: IActionDefinition, index: number) => {
+    const { instanceId } = this.props;
+
+    const id = `${instanceId || '1'}_${index}`;
+    return <MenuItem key={id} eventKey={id}>{this.renderIconInner(icon, index, 'menu')}</MenuItem>;
+  }
+
+  private renderIcon = (icon: IActionDefinition, index: number) =>
+    this.renderIconInner(icon, index);
+
+  private renderIconInner = (icon: IActionDefinition, index: number,
+                             forceButtonType?: ButtonType) => {
     const { buttonType, instanceId, tooltipPlacement } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
-    // don't render anything if the condition doesn't match
 
+    // don't render anything if the condition doesn't match
     try {
       if ((icon.condition !== undefined) && !icon.condition(instanceIds)) {
         return null;
@@ -78,7 +125,7 @@ class IconBar extends React.Component<IProps, {}> {
         text={icon.title}
         onClick={icon.action}
         placement={tooltipPlacement}
-        buttonType={buttonType}
+        buttonType={forceButtonType || buttonType}
       />;
     } else {
       // custom case. the caller can pass properties via the props() function and by
@@ -95,7 +142,7 @@ class IconBar extends React.Component<IProps, {}> {
       }, {});
       const staticProps = Object.assign({},
         unknownProps,
-        { key: id, buttonType },
+        { key: id, buttonType: forceButtonType || buttonType },
       );
       if (icon.props !== undefined) {
         return <DynamicProps
@@ -125,20 +172,22 @@ class IconBar extends React.Component<IProps, {}> {
  * @param {*} action the action to call on click
  * @returns
  */
-function registerIcon(instance: IconBar,
-                      group: string,
-                      position: number,
-                      iconOrComponent: string | React.ComponentClass<any>,
-                      titleOrProps: string | Function,
-                      actionOrCondition?: () => void | boolean,
-                      condition?: () => boolean): Object {
+function registerAction(instance: IconBar,
+                        group: string,
+                        position: number,
+                        iconOrComponent: string | React.ComponentClass<any>,
+                        options: IActionOptions,
+                        titleOrProps?: string | Function,
+                        actionOrCondition?: (instanceIds?: string[]) => void | boolean,
+                        condition?: () => boolean,
+                        ): Object {
   if (instance.props.group === group) {
     if (typeof(iconOrComponent) === 'string') {
       return { type: 'simple', icon: iconOrComponent, title: titleOrProps,
-               position, action: actionOrCondition, condition };
+               position, action: actionOrCondition, options, condition };
     } else {
       return { type: 'ext', component: iconOrComponent, props: titleOrProps,
-               position, condition: actionOrCondition };
+               position, condition: actionOrCondition, options };
     }
   } else {
     return undefined;
@@ -146,5 +195,5 @@ function registerIcon(instance: IconBar,
 }
 
 export default
-  extend(registerIcon)(IconBar
+  extend(registerAction)(IconBar
   ) as React.ComponentClass<IBaseProps & IExtensibleProps & React.HTMLAttributes<any> & any>;
