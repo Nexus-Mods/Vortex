@@ -8,14 +8,13 @@ import { setModAttribute } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/types/IModProps';
 
 import { loadCategories, updateCategories } from './actions/category';
-import { setTreeDataObject, showCategoriesDialog } from './actions/session';
+import { showCategoriesDialog } from './actions/session';
 import {categoryReducer} from './reducers/category';
 import { sessionReducer } from './reducers/session';
 import { allCategories } from './selectors';
 import { ICategoryDictionary } from './types/IcategoryDictionary';
-import { ITreeDataObject } from './types/ITrees';
+import { ICategoriesTree } from './types/ITrees';
 import CategoryFilter from './util/CategoryFilter';
-import createTreeDataObject from './util/createTreeDataObject';
 import { retrieveCategory, retrieveCategoryDetail } from './util/retrieveCategoryPath';
 import CategoryDialog from './views/CategoryDialog';
 
@@ -34,8 +33,8 @@ function init(context: IExtensionContext): boolean {
     description: 'Mod Category',
     icon: 'book',
     placement: 'table',
-    calc: (mod: IModWithState) => (mod.attributes as any).category !== undefined ?
-        retrieveCategory((mod.attributes as any).category, context.api.store) : null,
+    calc: (mod: IModWithState) => mod.attributes['category'] !== undefined ?
+        retrieveCategory(mod.attributes['category'], context.api.store) : null,
     isToggleable: true,
     edit: {},
     isSortable: true,
@@ -47,8 +46,8 @@ function init(context: IExtensionContext): boolean {
     name: 'Category',
     description: 'Mod Category',
     icon: 'angle-double-right',
-    calc: (mod: IModWithState) => (mod.attributes as any).category !== undefined ?
-      retrieveCategoryDetail((mod.attributes as any).category, context.api.store) : null,
+    calc: (mod: IModWithState) => mod.attributes['category'] !== undefined ?
+      retrieveCategoryDetail(mod.attributes['category'], context.api.store) : null,
     edit: {
       choices: () => {
         const store = context.api.store;
@@ -88,20 +87,14 @@ function init(context: IExtensionContext): boolean {
       context.api.events.on('retrieve-categories', (gameId, categories, isUpdate) => {
         if (isUpdate) {
           context.api.store.dispatch(updateCategories(gameId, categories));
-
-          const mods: any = getSafe(store.getState(), ['mods', gameId], {});
-          store.dispatch(setTreeDataObject(createTreeDataObject(categories,
-            mods, false)));
-
         } else {
           context.api.store.dispatch(loadCategories(gameId, categories));
         }
       });
 
       context.api.events.on('gamemode-activated', (gameMode: string) => {
-        let categories: ITreeDataObject[] = getSafe(store.getState(), ['persistent', 'categories',
-          gameMode], []);
-        store.dispatch(setTreeDataObject(undefined));
+        let categories: ICategoriesTree[] = getSafe(store.getState(),
+          ['persistent', 'categories', gameMode], undefined);
         if (categories === undefined) {
           context.api.events.emit('retrieve-category-list', false, {});
         } else if (categories.length === 0) {

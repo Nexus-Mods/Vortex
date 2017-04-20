@@ -6,7 +6,6 @@ import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import InputButton from '../../views/InputButton';
-import { IconButton } from '../../views/TooltipControls';
 
 import EndorsementFilter from './views/EndorsementFilter';
 
@@ -283,14 +282,8 @@ function init(context: IExtensionContextExt): boolean {
       onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl, false),
     }));
 
-  context.registerIcon('categories-icons', 100, IconButton,
-    () => ({
-      key: 'retrieve-categories',
-      id: 'retrieve-categories',
-      icon: 'download',
-      tooltip: 'Retrieve categories',
-      onClick: () => retrieveCategories(context.api, true),
-    }));
+  context.registerIcon('categories-icons', 100, 'download', 'Retrieve categories',
+    () => retrieveCategories(context.api, true));
 
   context.registerTableAttribute('mods', {
     id: 'endorsed',

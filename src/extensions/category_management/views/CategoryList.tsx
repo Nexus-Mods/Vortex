@@ -1,165 +1,184 @@
 import { showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IIconDefinition } from '../../../types/IIconDefinition';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import lazyRequire from '../../../util/lazyRequire';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
 import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
-import { Button } from '../../../views/TooltipControls';
+import { Button, IconButton } from '../../../views/TooltipControls';
 
-import { renameCategory, updateCategories } from '../actions/category';
-import * as sessionActions from '../actions/session';
-import { ICategoryDictionary } from '../types/IcategoryDictionary';
-import { IAddedTree, IRemovedTree, IRenamedTree,
-  IToggleExpandedTree, ITreeDataObject } from '../types/ITrees';
-import createCategoryDictionary from '../util/createCategoryDictionary';
+import { IMod } from '../../mod_management/types/IMod';
+
+import { removeCategory, renameCategory, setCategory } from '../actions/category';
+import { ICategory } from '../types/ICategoryDictionary';
+import { ICategoriesTree } from '../types/ITrees';
 import createTreeDataObject from '../util/createTreeDataObject';
-import generateSubtitle from '../util/generateSubtitle';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
+import { FormControl } from 'react-bootstrap';
 import * as SortableTreeT from 'react-sortable-tree';
 
 const tree = lazyRequire<typeof SortableTreeT>('react-sortable-tree');
 
+const nop = () => undefined;
+
+interface ISearchMatch {
+  node: ICategoriesTree;
+  path: string[];
+  treeIndex: number;
+}
+
 interface IActionProps {
   onShowError: (message: string, details: string | Error) => void;
-  onUpdateCategories: (activeGameId: string, categories: ICategoryDictionary) => void;
+  onSetCategory: (gameId: string, categoryId: string, category: ICategory) => void;
+  onRemoveCategory: (gameId: string, categoryId: string) => void;
   onRenameCategory: (activeGameId: string, categoryId: string, newCategory: {}) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
     actions: DialogActions) => Promise<IDialogResult>;
-  onSetSearchFocusIndex: (focusIndex: number) => void;
-  onSetSearchFoundCount: (foundCount: number) => void;
-  onShowHiddenCategories: (showHidden: boolean) => void;
-  onSetSearchString: (text: string) => void;
-  onSetTreeDataObject: (tree: {}) => void;
 }
 
 interface IConnectedProps {
   gameMode: string;
   language: string;
-  categories: [ICategory];
+  categories: ICategory[];
+  mods: { [ modId: string ]: IMod };
+}
+
+interface IComponentState {
+  treeData: ICategoriesTree[];
+  expanded: string[];
+  showEmpty: boolean;
   searchString: string;
   searchFocusIndex: number;
   searchFoundCount: number;
-  treeDataObject: {};
-  mods: any;
-  showHidden: boolean;
 }
 
-interface ICategory {
-  categoryId: number;
-  name: string;
-  parentCategory: number | false;
-}
+type IProps = IConnectedProps & IActionProps;
 
 /**
  * displays the list of categories related for the current game.
  * 
  */
-class CategoryList extends ComponentEx<IConnectedProps & IActionProps, {}> {
-
+class CategoryList extends ComponentEx<IProps, IComponentState> {
   public context: IComponentContext;
+  private mButtons: IIconDefinition[];
 
   constructor(props) {
     super(props);
-    this.state = {
-      treeDataObject: undefined,
-    };
+    this.initState({
+      treeData: [],
+      expanded: [],
+      showEmpty: true,
+      searchString: '',
+      searchFocusIndex: 0,
+      searchFoundCount: 0,
+    });
+
+    const { t } = props;
+
+    this.mButtons = [
+      {
+        title: t('Expand All'),
+        icon: 'expand',
+        action: this.expandAll,
+      }, {
+        title: t('Collapse All'),
+        icon: 'compress',
+        action: this.collapseAll,
+      }, {
+        title: t('Add Root Category'),
+        icon: 'indent',
+        action: this.addRootCategory,
+      }, {
+        title: t('Show/Hide empty categories'),
+        icon: 'low-vision',
+        action: this.toggleShowEmpty,
+      },
+    ];
   }
 
   public componentWillMount() {
-      this.loadTree();
+    this.refreshTree(this.props);
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if (this.props.categories !== newProps.categories) {
+      this.refreshTree(newProps);
+    }
   }
 
   public render(): JSX.Element {
-    const { t, searchString, searchFocusIndex,
-      searchFoundCount, treeDataObject } = this.props;
+    const { t } = this.props;
+    const { expanded, searchString, searchFocusIndex,
+      searchFoundCount, showEmpty, treeData } = this.state;
+
+    const expandedTreeData =
+      this.applyExpand(treeData, showEmpty, new Set(expanded));
 
     const Tree = tree.SortableTreeWithoutDndContext;
-    if (treeDataObject !== undefined) {
+    if (treeData !== undefined) {
       return (
         <div style={{ height: 500 }}>
-          <Button
-            id='expandAll'
-            tooltip={t('Expand All')}
-            value='true'
-            onClick={this.toggleExpandedForAll}
-          >
-            <Icon name={'expand'} />
-          </Button>
-          <Button
-            id='collapseAll'
-            tooltip={t('Collapse All')}
-            value='false'
-            onClick={this.toggleExpandedForAll}
-          >
-            <Icon name={'compress'} />
-          </Button>
-          <Button
-            id='add-root-category'
-            tooltip={t('Add Root Category')}
-            onClick={this.addRootCategory}
-          >
-            <Icon name={'indent'} />
-          </Button>
-          <Button
-            id='hide-show-empty-categories'
-            tooltip={t('Hide / Show empty categories')}
-            onClick={this.showHiddenCategories}
-          >
-            <Icon name={'low-vision'} />
-          </Button>
           <IconBar
             group='categories-icons'
-            staticElements={[]}
+            staticElements={this.mButtons}
           />
-          <label>
-            Search:&nbsp;
-          <input
-              id='find-box'
-              type='text'
-              value={searchString === undefined ? '' : searchString}
-              onChange={this.searchString}
-          />
-          </label>
-          <Button
-            id='selectPrevMatch'
-            tooltip={t('Prev')}
-            type='button'
-            disabled={!searchFoundCount}
-            onClick={this.selectPrevMatch}
-          >
-            &lt;
-          </Button>
-          <Button
-            id='selectNextMatch'
-            tooltip={t('Next')}
-            type='button'
-            disabled={!searchFoundCount}
-            onClick={this.selectNextMatch}
-          >
-            &gt;
-          </Button>
-          <span>
-            &nbsp;
-          {searchFoundCount > 0 ? (searchFocusIndex + 1) : 0}
-            &nbsp;/&nbsp;
-          {searchFoundCount || 0}
-          </span>
-
+          <div className='search-category-box'>
+            <div style={{ display: 'inline-block' }}>
+              <FormControl
+                id='search-category-input'
+                type='text'
+                placeholder={t('Search')}
+                value={searchString || ''}
+                onChange={this.startSearch}
+              />
+              <span className='search-position' >
+                {
+                  t('{{ pos }} of {{ total }}', {
+                    replace: {
+                      pos: searchFoundCount > 0 ? (searchFocusIndex + 1) : 0,
+                      total: searchFoundCount || 0,
+                    },
+                  })
+                }
+              </span>
+            </div>
+            <IconButton
+              id='btn-search-category-prev'
+              className='btn-embed'
+              icon='angle-up'
+              tooltip={t('Prev')}
+              type='button'
+              disabled={!searchFoundCount}
+              onClick={this.selectPrevMatch}
+            />
+            <IconButton
+              id='btn-search-category-next'
+              className='btn-embed'
+              icon='angle-down'
+              tooltip={t('Next')}
+              type='button'
+              disabled={!searchFoundCount}
+              onClick={this.selectNextMatch}
+            />
+            </div>
           <Tree
-            treeData={treeDataObject}
-            onChange={this.updateTreeData}
+            treeData={expandedTreeData}
+            onChange={nop}
+            onVisibilityToggle={this.toggleVisibility}
+            onMoveNode={this.moveNode}
             style={{ height: '95%' }}
             autoHeight={false}
             searchQuery={searchString}
             searchFocusOffset={searchFocusIndex}
             searchFinishCallback={this.searchFinishCallback}
+            getNodeKey={this.getNodeKey}
             generateNodeProps={this.generateNodeProps}
           />
         </div>
@@ -169,10 +188,10 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, {}> {
         <div style={{ height: '90%' }}>
           <Button
             id='add-category'
-            tooltip={t('Add Category')}
+            tooltip={t('Add Root Category')}
             onClick={this.addRootCategory}
           >
-            <Icon name={'indent'} />
+            <Icon name='indent' />
           </Button>
           <IconBar
             group='categories-icons'
@@ -183,91 +202,86 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, {}> {
     }
   }
 
-  private showHiddenCategories = () => {
-    const {categories, gameMode, showHidden, mods,
-       onShowError, onShowHiddenCategories, onSetTreeDataObject} = this.props;
+  private getNonEmptyCategories(treeData: ICategoriesTree[], ancestry: string[]): string[] {
+    let res: string[] = [];
+    treeData.forEach(category => {
+      if (category.modCount > 0) {
+        res.push(category.categoryId);
+        res = res.concat(ancestry);
+      }
+      res = res.concat(this.getNonEmptyCategories(category.children,
+                                                  [].concat(ancestry, [category.categoryId])));
+    });
+    return res;
+  }
+
+  private applyExpand(treeData: ICategoriesTree[], showEmpty: boolean,
+                      expanded: Set<string>): ICategoriesTree[] {
+    let filtered: Set<string>;
+    if (showEmpty) {
+      const { categories, gameMode } = this.props;
+      filtered = new Set(Object.keys(categories[gameMode]));
+    } else {
+      filtered = new Set(this.getNonEmptyCategories(treeData, []));
+    }
+
+    return treeData.map(obj => {
+      if (!filtered.has(obj.categoryId)) {
+        return undefined;
+      }
+      let copy: ICategoriesTree = Object.assign({}, obj);
+      copy.expanded = expanded.has(copy.categoryId);
+      copy.children = this.applyExpand(copy.children, showEmpty, expanded);
+      return copy;
+    })
+    .filter(obj => obj !== undefined)
+    ;
+  }
+
+  private toggleShowEmpty = () => {
+    const {t, categories, gameMode, mods, onShowError} = this.props;
+    const { showEmpty } = this.state;
 
     try {
-      let createdTree = createTreeDataObject(categories[gameMode],
-       mods, showHidden !== undefined ? !showHidden : false);
-      onSetTreeDataObject(createdTree);
-      onShowHiddenCategories(!showHidden);
-
+      const newTree = createTreeDataObject(t, categories[gameMode], mods);
+      this.nextState.treeData = newTree;
+      this.nextState.showEmpty = !showEmpty;
     } catch (err) {
       onShowError('An error occurred hiding/showing the empty categories', err);
     }
   }
 
-  private toggleExpandedForAll = (event) => {
-    const {onShowError, onSetTreeDataObject, treeDataObject} = this.props;
-    let expanded: boolean;
-
-    if (event.currentTarget === undefined) {
-      expanded = true;
-    } else {
-      expanded = event.currentTarget.value === 'true' ? true : false;
-    }
-
-    try {
-      let isExpanded = expanded;
-      let newTree: IToggleExpandedTree = {
-        treeData: treeDataObject,
-        expanded: isExpanded,
-      };
-
-      let updatedTree = tree.toggleExpandedForAll(newTree);
-      onSetTreeDataObject(updatedTree);
-
-    } catch (err) {
-      onShowError('An error occurred expanding/collapsing the categories tree', err);
-    }
+  private expandAll = () => {
+    const { categories, gameMode } = this.props;
+    this.nextState.expanded = Object.keys(categories[gameMode]);
   }
 
-  private renameCategory = ({ node, path }) => {
-    const {gameMode, onShowDialog, onShowError,
-      onRenameCategory, onSetTreeDataObject, treeDataObject} = this.props;
+  private collapseAll = () => {
+    this.nextState.expanded = [];
+  }
+
+  private renameCategory = (info: { node: ICategoriesTree, path: string[] }) => {
+    const {gameMode, onShowDialog, onRenameCategory} = this.props;
     onShowDialog('info', 'Rename Category', {
-      formcontrol: [{ id: 'newCategory', type: 'text', value: node.title, label: 'Category' }],
+      formcontrol: [{ id: 'newCategory', type: 'text', value: info.node.title, label: 'Category' }],
     }, {
         Cancel: null,
         Rename: null,
       }).then((result: IDialogResult) => {
-        const renameCategory = result.action === 'Rename' && result.input.newCategory !== undefined;
-        if (renameCategory) {
-          try {
-            let nodePath = path;
-            let newTree: IRenamedTree = {
-              treeData: treeDataObject,
-              path: nodePath,
-              newNode: {
-                rootId: node.rootId, title: result.input.newCategory,
-                subtitle: node.subtitle, expanded: node.expanded,
-                parentId: node.parentId, children: node.children,
-              },
-              getNodeKey: tree.defaultGetNodeKey,
-              ignoreCollapsed: true,
-            };
-
-            const updatedTree = tree.changeNodeAtPath(newTree);
-
-            onRenameCategory(gameMode, node.rootId,
-              { name: result.input.newCategory, parentCategory: node.parentId, order: node.order });
-            onSetTreeDataObject(updatedTree);
-
-          } catch (err) {
-            onShowError('An error occurred renaming the category', err);
-          }
+        if ((result.action === 'Rename') && (result.input.newCategory !== undefined)) {
+          onRenameCategory(gameMode, info.node.categoryId, {
+            name: result.input.newCategory,
+            parentCategory: info.node.parentId,
+            order: info.node.order });
         }
       });
   }
 
-  private addCategory = ({ node, path }) => {
-    const {categories, gameMode, showHidden, mods, onShowDialog, onShowError,
-      onSetTreeDataObject, onUpdateCategories, t, treeDataObject} = this.props;
-    let addCategory = true;
+  private addCategory = (info: { node: ICategoriesTree, path: string[] }) => {
+    const {categories, gameMode, onSetCategory, onShowDialog, onShowError} = this.props;
     let lastIndex = this.searchLastRootId(categories);
 
-    onShowDialog('question', 'Add new Category', {
+    onShowDialog('question', 'Add Child Category', {
       formcontrol: [
         { id: 'newCategory', type: 'text', value: '', label: 'Category Name' },
         {
@@ -279,8 +293,7 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, {}> {
         Cancel: null,
         Add: null,
       }).then((result: IDialogResult) => {
-        addCategory = result.action === 'Add';
-        if (addCategory) {
+        if (result.action === 'Add') {
           let checkId = Object.keys(categories[gameMode]).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
@@ -288,47 +301,18 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, {}> {
           } else if (result.input.newCategoryId === '') {
             onShowError('An error occurred adding the new category', 'Category ID empty.');
           } else {
-            try {
-              let newTree: IAddedTree = {
-                treeData: treeDataObject,
-                newNode: {
-                  rootId: result.input.newCategoryId,
-                  title: result.input.newCategory,
-                  subtitle: mods !== undefined ?
-                  t(generateSubtitle(result.input.newCategoryId, mods)) : '',
-                  expanded: true,
-                  parentId: node.rootId,
-                },
-                parentKey: path[1] === undefined ? path[0] : path[1],
-                getNodeKey: tree.defaultGetNodeKey,
-                ignoreCollapsed: true,
-                expandParent: true,
-              };
-
-              let updatedTree = tree.addNodeUnderParent(newTree);
-
-              onSetTreeDataObject(updatedTree.treeData);
-              if (showHidden) {
-                this.showHiddenCategories();
-              }
-
-              if (showHidden !== undefined && !showHidden) {
-                let categoryDictionary: ICategoryDictionary =
-                 createCategoryDictionary(updatedTree.treeData);
-                onUpdateCategories(gameMode, categoryDictionary);
-              }
-
-            } catch (err) {
-              onShowError('An error occurred adding the new category', err);
-            }
+            onSetCategory(gameMode, result.input.newCategoryId, {
+              name: result.input.newCategory,
+              parentCategory: info.node.categoryId,
+              order: 0,
+            });
           }
         }
       });
   }
 
   private addRootCategory = () => {
-    const {categories, gameMode, showHidden, mods, onShowDialog, onShowError,
-      onSetTreeDataObject, onUpdateCategories, t, treeDataObject} = this.props;
+    const {categories, gameMode, onSetCategory, onShowDialog, onShowError} = this.props;
     let addCategory = true;
     let lastIndex = this.searchLastRootId(categories);
 
@@ -346,46 +330,18 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, {}> {
       }).then((result: IDialogResult) => {
         addCategory = result.action === 'Add';
         if (addCategory) {
-          let checkId = Object.keys(categories[gameMode]).filter((id: string) =>
+          const checkId = Object.keys(categories[gameMode]).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
             onShowError('An error occurred adding the new category', 'ID already used.');
           } else if (result.input.newCategoryId === '') {
             onShowError('An error occurred adding the new category', 'Category ID empty.');
           } else {
-            try {
-              let newTree: IAddedTree = {
-                treeData: treeDataObject,
-                newNode: {
-                  rootId: result.input.newCategoryId,
-                  title: result.input.newCategory,
-                  subtitle: mods !== undefined ?
-                  t(generateSubtitle(result.input.newCategoryId, mods)) : '',
-                  expanded: true,
-                  parentId: undefined,
-                },
-                parentKey: undefined,
-                getNodeKey: tree.defaultGetNodeKey,
-                ignoreCollapsed: false,
-                expandParent: false,
-              };
-
-              let updatedTree = tree.addNodeUnderParent(newTree);
-
-              onSetTreeDataObject(updatedTree.treeData);
-              if (showHidden) {
-                this.showHiddenCategories();
-              }
-
-              if (showHidden !== undefined && !showHidden) {
-                let categoryDictionary: ICategoryDictionary =
-                 createCategoryDictionary(updatedTree.treeData);
-                onUpdateCategories(gameMode, categoryDictionary);
-              }
-
-            } catch (err) {
-              onShowError('An error occurred adding the new Root category', err);
-            }
+            onSetCategory(gameMode, result.input.newCategoryId, {
+              name: result.input.newCategory,
+              parentCategory: undefined,
+              order: 0,
+            });
           }
         }
       });
@@ -405,38 +361,25 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, {}> {
   }
 
   private selectPrevMatch = () => {
-    const { onSetSearchFocusIndex, searchFocusIndex, searchFoundCount } = this.props;
+    const { searchFocusIndex, searchFoundCount } = this.state;
 
-    if (searchFocusIndex !== null) {
-      onSetSearchFocusIndex((searchFoundCount + searchFocusIndex - 1) % searchFoundCount);
-    } else {
-      onSetSearchFocusIndex(searchFoundCount - 1);
-    }
+    this.nextState.searchFocusIndex = (searchFoundCount + searchFocusIndex - 1) % searchFoundCount;
   }
 
   private selectNextMatch = () => {
-    const { onSetSearchFocusIndex, searchFocusIndex, searchFoundCount } = this.props;
+    const { searchFocusIndex, searchFoundCount } = this.state;
 
-    if (searchFocusIndex !== null) {
-      onSetSearchFocusIndex((searchFocusIndex + 1) % searchFoundCount);
-    } else {
-      onSetSearchFocusIndex(0);
-    }
+    this.nextState.searchFocusIndex = (searchFocusIndex + 1) % searchFoundCount;
   }
 
-  private loadTree() {
-    const { categories, gameMode, showHidden,  mods, onShowError,
-       onShowHiddenCategories, onSetTreeDataObject} = this.props;
-
-    if (showHidden === undefined) {
-      onShowHiddenCategories(false);
-    }
+  private refreshTree(props: IProps) {
+    const { t } = this.props;
+    const { categories, gameMode, mods, onShowError } = props;
 
     if (categories[gameMode] !== undefined) {
       if (categories[gameMode].length !== 0) {
-        let createdTree = createTreeDataObject(categories[gameMode], mods, false);
-
-        onSetTreeDataObject(createdTree);
+        this.nextState.treeData =
+          createTreeDataObject(t, categories[gameMode], mods);
       } else {
         const globalPersistentPath = path.join(remote.app.getPath('userData'), 'state');
         onShowError('An error occurred loading the categories.',
@@ -447,49 +390,32 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, {}> {
     }
   }
 
-  private searchString = (event) => {
-    const { onSetSearchString} = this.props;
-    onSetSearchString(event.target.value);
+  private startSearch = (event) => {
+    this.nextState.searchString = event.target.value;
   }
 
-  private searchFinishCallback = (event) => {
-    const {onSetSearchFocusIndex, onSetSearchFoundCount, searchFocusIndex} = this.props;
-    onSetSearchFoundCount(event.length);
-    onSetSearchFocusIndex(event.length > 0 ? searchFocusIndex % event.length : 0);
+  private searchFinishCallback = (matches: ISearchMatch[]) => {
+    const { searchFocusIndex } = this.state;
+    // important: Avoid updating the state if the values haven't changed because
+    //  changeing the state causes a re-render and a re-render causes the tree to search
+    //  again (why?) which causes a new finish callback -> infinite loop
+    if (this.state.searchFoundCount !== matches.length) {
+      this.nextState.searchFoundCount = matches.length;
+    }
+    const newFocusIndex = matches.length > 0 ? searchFocusIndex % matches.length : 0;
+    if (this.state.searchFocusIndex !== newFocusIndex) {
+    this.nextState.searchFocusIndex = newFocusIndex;
+    }
   };
 
-  private removeCategory = ({ path }) => {
-    const {gameMode, showHidden, onShowError,
-      onSetTreeDataObject, onUpdateCategories, treeDataObject} = this.props;
-    try {
-      const nodePath = path;
-      const newTree: IRemovedTree = {
-        treeData: treeDataObject,
-        path: nodePath,
-        getNodeKey: tree.defaultGetNodeKey,
-        ignoreCollapsed: true,
-      };
-
-      let updatedTree = tree.removeNodeAtPath(newTree);
-      onSetTreeDataObject(updatedTree);
-
-      if (showHidden) {
-        this.showHiddenCategories();
-      }
-
-      if (showHidden === false) {
-        const categoryDictionary: ICategoryDictionary =
-          createCategoryDictionary(updatedTree);
-        onUpdateCategories(gameMode, categoryDictionary);
-      }
-    } catch (err) {
-      onShowError('An error occurred deleting the category', err);
-    }
+  private removeCategory = (categoryId: string) => {
+    const {gameMode, onRemoveCategory} = this.props;
+    onRemoveCategory(gameMode, categoryId);
   };
 
   private generateNodeProps = (rowInfo) => {
     const {t} = this.props;
-    rowInfo = {
+    return {
       buttons: [
         <Button
           id='rename-category'
@@ -498,15 +424,15 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, {}> {
           value={rowInfo}
           onClick={this.renameCategory.bind(this, rowInfo)}
         >
-          <Icon name={'pencil'} />
+          <Icon name='pencil' />
         </Button>,
         <Button
           id='add-category'
           className='btn-embed'
-          tooltip={t('Add Category')}
+          tooltip={t('Add Child Category')}
           onClick={this.addCategory.bind(this, rowInfo)}
         >
-          <Icon name={'indent'} />
+          <Icon name='indent' />
         </Button>,
         <Button
           id='remove-category'
@@ -518,17 +444,30 @@ class CategoryList extends ComponentEx<IConnectedProps & IActionProps, {}> {
         </Button>,
       ],
     };
-    return rowInfo;
   }
 
-  private updateTreeData = (treeDataObject: ITreeDataObject[]) => {
-    const { gameMode, showHidden, onSetTreeDataObject,
-       onUpdateCategories } = this.props;
-    let categories: ICategoryDictionary = createCategoryDictionary(treeDataObject);
-    if (showHidden !== undefined && !showHidden) {
-      onUpdateCategories(gameMode, categories);
+  private getNodeKey = (args: { node: ICategoriesTree, treeIndex: number }) => {
+    return args.node.categoryId;
+  }
+
+  private toggleVisibility =
+    (args: {treeData: ICategoriesTree[], node: ICategoriesTree, expanded: boolean}) => {
+    if (args.expanded) {
+      this.nextState.expanded.push(args.node.categoryId);
+    } else {
+      this.nextState.expanded.splice(this.nextState.expanded.indexOf(args.node.categoryId));
     }
-    onSetTreeDataObject(treeDataObject);
+  }
+
+  private moveNode =
+    (args: { treeData: ICategoriesTree[], node: ICategoriesTree,
+             treeIndex: number, path: string[] }): void => {
+    const { gameMode, onSetCategory } = this.props;
+    onSetCategory(gameMode, args.node.categoryId, {
+      name: args.node.title,
+      order: args.node.order,
+      parentCategory: args.path[args.path.length - 2],
+    });
   }
 }
 
@@ -538,31 +477,18 @@ function mapStateToProps(state: any): IConnectedProps {
     gameMode,
     language: state.settings.interface.language,
     categories: state.persistent.categories,
-    searchString: state.session.categories.searchString,
-    searchFocusIndex: state.session.categories.searchFocusIndex,
-    searchFoundCount: state.session.categories.searchFoundCount,
-    treeDataObject: state.session.categories.treeDataObject,
     mods: state.persistent.mods[gameMode],
-    showHidden: state.session.categories.isHidden,
   };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
-    onUpdateCategories: (activeGameId: string, categories: ICategoryDictionary) =>
-      dispatch(updateCategories(activeGameId, categories)),
-    onRenameCategory: (activeGameId: string, categoryId: string, newCategory: string) =>
-      dispatch(renameCategory(activeGameId, categoryId, newCategory)),
-    onSetSearchString: (text: string) =>
-      dispatch(sessionActions.setSearchString(text)),
-    onSetSearchFocusIndex: (focusIndex: number) =>
-      dispatch(sessionActions.setSearchFocusIndex(focusIndex)),
-    onSetSearchFoundCount: (foundCount: number) =>
-      dispatch(sessionActions.setSearchFoundCount(foundCount)),
-    onShowHiddenCategories: (showHidden: boolean) =>
-      dispatch(sessionActions.showHiddenCategories(showHidden)),
-    onSetTreeDataObject: (treeObject: {}) =>
-      dispatch(sessionActions.setTreeDataObject(treeObject)),
+    onRenameCategory: (gameId: string, categoryId: string, newCategory: string) =>
+      dispatch(renameCategory(gameId, categoryId, newCategory)),
+    onSetCategory: (gameId: string, categoryId: string, category: ICategory) =>
+      dispatch(setCategory(gameId, categoryId, category)),
+    onRemoveCategory: (gameId: string, categoryId: string) =>
+      dispatch(removeCategory(gameId, categoryId)),
     onShowError: (message: string, details: string | Error) =>
       showError(dispatch, message, details),
     onShowDialog: (type, title, content, actions) =>

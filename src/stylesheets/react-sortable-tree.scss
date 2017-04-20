@@ -1,0 +1,15 @@
+.rst__rowContents {
+  background-color: $brand-darkbg;
+}
+
+.rst__moveHandle {
+  background-color: $brand-lightbg;
+}
+
+.rst__lineChildren:after {
+  background-color: $gray-lighter;
+}
+
+.rst__lineFullVertical:after, .rst__lineHalfHorizontalRight:before, .rst__lineHalfVerticalBottom:after, .rst__lineHalfVerticalTop:after {
+  background-color: $gray-lighter;
+}

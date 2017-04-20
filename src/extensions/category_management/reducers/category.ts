@@ -1,18 +1,22 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { setOrNop, setSafe } from '../../../util/storeHelper';
+import {deleteOrNop, setOrNop, setSafe} from '../../../util/storeHelper';
 
-import { loadCategories, renameCategory, updateCategories } from '../actions/category';
+import * as actions from '../actions/category';
 
 /**
  * reducer for changes to ephemeral session state
  */
 export const categoryReducer: IReducerSpec = {
   reducers: {
-    [loadCategories as any]: (state, payload) =>
+    [actions.loadCategories as any]: (state, payload) =>
       setOrNop(state, [payload.gameId], payload.gameCategories),
-    [updateCategories as any]: (state, payload) =>
+    [actions.setCategory as any]: (state, payload) =>
+      setSafe(state, [payload.gameId, payload.id], payload.category),
+    [actions.removeCategory as any]: (state, payload) =>
+      deleteOrNop(state, [payload.gameId, payload.id]),
+    [actions.updateCategories as any]: (state, payload) =>
       setSafe(state, [payload.gameId], payload.gameCategories),
-    [renameCategory as any]: (state, payload) =>
+    [actions.renameCategory as any]: (state, payload) =>
       setOrNop(state, [payload.gameId, payload.categoryId, 'name'], payload.name),
   }, defaults: {
   },

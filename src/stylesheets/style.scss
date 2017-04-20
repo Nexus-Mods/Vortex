@@ -1,5 +1,3 @@
-//@import "flatly/variables";
-
 /**
  * styles for custom controls
  */
@@ -984,6 +982,38 @@ textarea {
 // more pronounced popover shadow. just cause
 .popover {
   box-shadow: 5px 5px 10px rgba(0,0,0,.6);
+}
+
+#btn-search-category-prev, #btn-search-category-next {
+  padding: 0px;
+}
+
+#btn-search-category-prev svg, #btn-search-category-next svg {
+  height: 24px;
+}
+
+.search-category-box {
+  margin-left: 10px;
+  position: absolute;
+  top: $modal-inner-padding;
+  right: $modal-inner-padding;
+}
+
+#search-category-input {
+  padding-right: 50px;
+}
+
+.search-position {
+  width: 100%;
+  text-align: right;
+  display: block;
+  margin-top: -25px;
+  margin-left: -5px;
+  pointer-events: none;
+}
+
+.btn.disabled, .btn[disabled], fieldset[disabled] .btn {
+  cursor: initial;
 }
 
 ::-webkit-scrollbar {

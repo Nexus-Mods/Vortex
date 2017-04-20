@@ -1,3 +1,7 @@
+import {getSafe} from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
+
+import { IMod } from '../../mod_management/types/IMod';
 
 /**
  * generate the category's subtitle
@@ -7,20 +11,15 @@
  * @return {string}
  */
 
-function generateSubtitle(rootId: string, mods: any) {
-  let modsCount = Object.keys(mods).filter((id: string) => {
-    if (mods[id].attributes.category !== undefined) {
-      if (mods[id].attributes.category.toString() === rootId) {
-        return id;
-      }
-    }
-  });
+function generateSubtitle(t: I18next.TranslationFunction,
+                          categoryId: string,
+                          mods: { [categoryId: string]: IMod[] }) {
+  let modsCount = getSafe(mods, [categoryId], []).length;
 
-  if (modsCount.length === 0) {
-    return '';
+  if (modsCount === 0) {
+    return t('Empty');
   } else {
-    return modsCount.length === 1 ? modsCount.length + ' mod installed' :
-      modsCount.length + ' mods installed';
+    return t('{{ count }} mod installed', {count: modsCount});
   }
 }
 
