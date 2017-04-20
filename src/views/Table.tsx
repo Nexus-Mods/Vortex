@@ -543,6 +543,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         { attribute.filter !== undefined ? <attribute.filter.component
           filter={filt}
           attributeId={attribute.id}
+          t={t}
           onSetFilter={this.setFilter}
         /> : null }
         </HeaderCell>

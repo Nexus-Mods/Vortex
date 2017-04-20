@@ -12,6 +12,7 @@ export interface IEditChoice {
 export interface IFilterProps {
   filter: any;
   attributeId: string;
+  t: I18next.TranslationFunction;
   onSetFilter: (attributeId: string, value: any) => void;
 }
 
