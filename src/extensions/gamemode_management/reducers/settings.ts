@@ -44,7 +44,7 @@ export const settingsReducer: IReducerSpec = {
     [actions.setGameHidden as any]: (state, payload) =>
       setSafe(state, ['discovered', payload.gameId, 'hidden'], payload.hidden),
     [actions.addSearchPath as any]: (state, payload) => {
-      if (state.searchPaths.indexOf(payload) !== -1) {
+      if ((state.searchPaths !== undefined) && (state.searchPaths.indexOf(payload) !== -1)) {
         return state;
       }
       return pushSafe(state, ['searchPaths'], payload);

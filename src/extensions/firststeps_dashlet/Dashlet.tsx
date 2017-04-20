@@ -90,7 +90,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
     },
     {
       id: 'manual-search',
-      condition: (props: IProps) => true,
+      condition: (props: IProps) => props.searchPaths !== undefined,
       render: (props: IProps): JSX.Element => {
         const {t, discoveryRunning, searchPaths} = props;
 
