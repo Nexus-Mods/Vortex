@@ -130,7 +130,6 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private makeReference = (mod: types.IMod): IReference => {
-    // tslint:disable:no-string-literal
     return (mod.attributes['logicalFileName'] !== undefined)
       ? {
         modId: mod.attributes['modId'],
@@ -139,7 +138,6 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
         modId: mod.attributes['modId'],
         fileExpression: mod.attributes['fileExpression'] || mod.attributes['fileName'],
       };
-    // tslint:enable:no-string-literal
   }
 
   private save = () => {

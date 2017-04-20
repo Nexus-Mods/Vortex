@@ -49,8 +49,8 @@ function byEnabled(input: IModWithState[]): IModWithState[][] {
   }
   // disabled mods are only added to the group with the highest version enabled mod
   let primaryGroup = groups.sort(
-    (lhs, rhs) => compare((rhs[0].attributes as any).version,
-                          (lhs[0].attributes as any).version))[0];
+    (lhs, rhs) => compare(rhs[0].attributes['version'],
+                          lhs[0].attributes['version']))[0];
   input.filter((mod => !mod.enabled)).forEach(mod => primaryGroup.push(mod));
   return groups;
 }

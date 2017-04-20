@@ -72,7 +72,6 @@ class StarterInfo implements IStarterInfo {
   public commandLine: string[];
   public workingDirectory: string;
   public environment: { [key: string]: string };
-
   private mExtensionPath: string;
   private mLogoName: string;
 

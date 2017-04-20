@@ -120,7 +120,6 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
         actionGroups[action.action].push(action);
       });
 
-      // tslint:disable:no-string-literal
       // process the actions that the user selected in the dialog
       return Promise.map(actionGroups['drop'] || [],
         // delete the files the user wants to drop
@@ -141,7 +140,6 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
           }
         })
         .then(() => undefined);
-      // tslint:enable:no-string-literal
     })
     // sort (all) mods based on their dependencies so the right files get activated
     .then(() => sortMods(modList, context.api))

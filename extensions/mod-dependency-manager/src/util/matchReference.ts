@@ -4,7 +4,6 @@ import { types } from 'nmm-api';
 import { satisfies } from 'semvish';
 
 function matchReference(reference: IReference, mod: types.IMod) {
-  // tslint:disable:no-string-literal
   if ((reference.fileMD5 !== undefined) &&
       (reference.fileMD5 !== mod.attributes['fileMD5'])) {
     return false;
@@ -26,7 +25,6 @@ function matchReference(reference: IReference, mod: types.IMod) {
     return false;
   }
   return true;
-  // tslint:enable:no-string-literal
 }
 
 export default matchReference;

@@ -243,7 +243,7 @@ class ModList extends ComponentEx<IProps, {}> {
     const versionDropdown = alternatives.length > 1
       ? <DropdownButton
         className='dropdown-version'
-        title={(mod.attributes as any).version || ''}
+        title={mod.attributes['version'] || ''}
         id={`version-dropdown-${mod.id}`}
         onSelect={this.selectVersion}
       >
@@ -253,7 +253,7 @@ class ModList extends ComponentEx<IProps, {}> {
 
     return (
       <div className={this.updateClass(updateState)}>
-        {alternatives.length === 1 ? (mod.attributes as any).version : null}
+        {alternatives.length === 1 ? mod.attributes['version'] : null}
         <ButtonGroup id={`btngroup-${mod.id}`}>
           {versionDropdown}
           <VersionIconButton
@@ -285,7 +285,7 @@ class ModList extends ComponentEx<IProps, {}> {
   private renderVersionOptions(modId: string, altId: string): JSX.Element {
     return (
       <MenuItem eventKey={{ modId, altId }} key={altId}>
-        {(this.mModsWithState[altId].attributes as any).version}
+        {this.mModsWithState[altId].attributes['version']}
       </MenuItem>
     );
   }

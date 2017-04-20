@@ -358,7 +358,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   private updateMod(mod: types.IMod) {
-    // tslint:disable:no-string-literal
     this.nextState.reference = {
       fileMD5: mod.attributes['fileMD5'],
       versionMatch: mod.attributes['version'],
@@ -373,7 +372,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       gameId: this.props.gameId,
       modId: mod.attributes['modId'],
     })
-    // tslint:enable:no-string-literal
       .then((meta: ILookupResult[]) => {
         if (this.mIsMounted && (meta.length > 0)) {
           this.nextState.modInfo = meta[0].value;

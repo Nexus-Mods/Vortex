@@ -46,11 +46,10 @@ function sortMods(mods: IMod[], api: IExtensionApi): Promise<string[]> {
   let dependencies = new Graph();
 
   const modMapper = (mod: IMod) => {
-    const attributes = mod.attributes as any;
     return api.lookupModMeta({
-                fileMD5: attributes.fileMD5,
-                fileSize: attributes.size,
-                modId: attributes.modId,
+                fileMD5: mod.attributes['fileMD5'],
+                fileSize: mod.attributes['size'],
+                modId: mod.attributes['modId'],
               })
         .then((metaInfo: ILookupResult[]) => {
           const rules = [].concat(

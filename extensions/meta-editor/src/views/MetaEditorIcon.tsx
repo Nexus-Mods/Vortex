@@ -267,7 +267,7 @@ class MetaEditorIcon extends ComponentEx<IProps, IMetaEditorState> {
     }));
   }
 
-  private getEmptyData(filePath?: string, fileInfo?: any) {
+  private getEmptyData(filePath?: string, fileInfo?: any): IModInfo {
     const fileName = filePath !== undefined
       ? path.basename(filePath, path.extname(filePath))
       : '';
