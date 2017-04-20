@@ -18,16 +18,18 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
   private mComponent: ComponentEx<any, T> | PureComponentEx<any, T>;
   private mPath: string[];
   private mBaseObject: T;
+  private mParent: StateProxyHandler<T>;
   private mSubProxies: { [key: string]: {
     proxy: any,
     obj: any,
   } };
 
   constructor(component: ComponentEx<any, T> | PureComponentEx<any, T>,
-              baseObject: T, objPath: string[]) {
+              baseObject: T, parent: StateProxyHandler<T>, objPath: string[]) {
     this.mComponent = component;
     this.mPath = objPath;
     this.mBaseObject = baseObject;
+    this.mParent = parent;
     this.mSubProxies = {};
   }
 
@@ -42,17 +44,33 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
   public deleteProperty(target: T, key: PropertyKey): boolean {
     delete target[key];
     const fullPath = [].concat(this.mPath, key);
-    this.mBaseObject = deleteOrNop(this.mBaseObject, fullPath);
-    this.mComponent.setState(this.mBaseObject);
+    this.setBaseObject(deleteOrNop(this.baseObject(), fullPath));
+    this.mComponent.setState(this.baseObject());
     return true;
   }
 
   public set(target: T, key: PropertyKey, value: any, receiver: any): boolean {
     target[key] = value;
     const fullPath = [].concat(this.mPath, key);
-    this.mBaseObject = setSafe(this.mBaseObject, fullPath, value);
-    this.mComponent.setState(this.mBaseObject);
+    this.setBaseObject(setSafe(this.baseObject(), fullPath, value));
     return true;
+  }
+
+  private baseObject(): T {
+    if (this.mParent === undefined) {
+      return this.mBaseObject;
+    } else {
+      return this.mParent.baseObject();
+    }
+  }
+
+  private setBaseObject(newObj: T) {
+    if (this.mParent === undefined) {
+      this.mBaseObject = newObj;
+      this.mComponent.setState(this.mBaseObject);
+    } else {
+      this.mParent.setBaseObject(newObj);
+    }
   }
 
   private derive(obj: T, key: PropertyKey) {
@@ -63,7 +81,7 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
     if (!(key in this.mSubProxies) || (obj[key] !== this.mSubProxies[key].obj)) {
       this.mSubProxies[key] = {
         proxy: new Proxy(obj[key],
-        new StateProxyHandler(this.mComponent, this.mBaseObject, [].concat(this.mPath, key))),
+        new StateProxyHandler(this.mComponent, null, this, [].concat(this.mPath, key))),
         obj: obj[key],
       };
     }
@@ -96,7 +114,7 @@ export class ComponentEx<P, S> extends React.Component<P & II18NProps, S> {
   protected initState(value: S) {
     this.state = value;
 
-    let proxyHandler = new StateProxyHandler(this, value, []);
+    let proxyHandler = new StateProxyHandler(this, value, undefined, []);
 
     this.nextState = new Proxy<S>(value, proxyHandler);
   };
@@ -114,7 +132,7 @@ export class PureComponentEx<P, S> extends React.PureComponent<P & II18NProps, S
   protected initState(value: S) {
     this.state = value;
 
-    let proxyHandler = new StateProxyHandler(this, value, []);
+    let proxyHandler = new StateProxyHandler(this, value, undefined, []);
 
     this.nextState = new Proxy<S>(value, proxyHandler);
   };
