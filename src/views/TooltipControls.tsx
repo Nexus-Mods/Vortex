@@ -21,7 +21,7 @@ export type ButtonProps = ITooltipProps & typeof BootstrapButton.defaultProps;
  */
 export class Button extends React.PureComponent<ButtonProps, {}> {
   public render() {
-    let relayProps = Object.assign({}, this.props);
+    let relayProps: any = Object.assign({}, this.props);
     delete relayProps.tooltip;
     delete relayProps.placement;
 
@@ -157,7 +157,7 @@ export type NavItemProps = ITooltipProps & typeof BootstrapNavItem.defaultProps;
 
 export class NavItem extends React.Component<NavItemProps, {}> {
   public render() {
-    let relayProps = Object.assign({}, this.props);
+    let relayProps: any = Object.assign({}, this.props);
     delete relayProps.tooltip;
     delete relayProps.placement;
 
@@ -212,7 +212,7 @@ export type IconProps = ITooltipProps & IFontAwesomeProps;
  */
 export class Icon extends React.Component<IconProps, {}> {
   public render() {
-    let relayProps = Object.assign({}, this.props);
+    let relayProps: any = Object.assign({}, this.props);
     delete relayProps.tooltip;
     delete relayProps.placement;
 
