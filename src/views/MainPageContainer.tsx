@@ -1,6 +1,7 @@
 import { IMainPage } from '../types/IMainPage';
 import { ComponentEx } from '../util/ComponentEx';
 
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 
 export interface IBaseProps {
@@ -19,8 +20,8 @@ const nop = () => undefined;
 
 class MainPageContainer extends ComponentEx<IBaseProps, {}> {
   public static childContextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
-    selectOverlay: React.PropTypes.func.isRequired,
+    api: PropTypes.object.isRequired,
+    selectOverlay: PropTypes.func.isRequired,
   };
 
   public getChildContext() {

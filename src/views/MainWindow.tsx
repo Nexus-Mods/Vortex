@@ -24,6 +24,7 @@ import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import { Button, IconButton, NavItem } from './TooltipControls';
 
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Modal, Nav } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
@@ -60,7 +61,7 @@ export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProp
 export class MainWindow extends React.Component<IProps, IMainWindowState> {
   // tslint:disable-next-line:no-unused-variable
   public static childContextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
+    api: PropTypes.object.isRequired,
   };
 
   private applicationButtons: IActionDefinition[];

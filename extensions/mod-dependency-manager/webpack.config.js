@@ -33,6 +33,7 @@ module.exports = {
     'react-act',
     'react-addons-update',
     'react-bootstrap',
+    'react-dom',
     'react-i18next',
     'react-layout-pane',
     'react-redux',

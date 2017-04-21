@@ -1,4 +1,5 @@
 import { DragDropManager } from 'dnd-core';
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import HTML5Backend from 'react-dnd-html5-backend';
 
@@ -13,7 +14,7 @@ function getContext(): DragDropManager {
 
 class DNDContainer extends React.Component<{}, {}> {
   public static childContextTypes: React.ValidationMap<any> = {
-    dragDropManager: React.PropTypes.object.isRequired,
+    dragDropManager: PropTypes.object.isRequired,
   };
 
   public getChildContext() {

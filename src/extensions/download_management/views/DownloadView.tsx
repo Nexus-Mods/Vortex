@@ -30,6 +30,7 @@ import DownloadDropzone from './DownloadDropzone';
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
@@ -141,7 +142,7 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
 
 class DownloadView extends ComponentEx<IProps, IComponentState> {
   public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
+    api: PropTypes.object.isRequired,
   };
 
   public context: IComponentContext;

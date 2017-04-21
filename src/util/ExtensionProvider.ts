@@ -1,5 +1,6 @@
 import ExtensionManager from './ExtensionManager';
 
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 
 export interface IExtensionProps {
@@ -17,7 +18,7 @@ export interface IExtensionProps {
 export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
   // tslint:disable-next-line:no-unused-variable
   private static childContextTypes = {
-    extensions: React.PropTypes.object.isRequired,
+    extensions: PropTypes.object.isRequired,
   };
 
   public getChildContext(): Object {
@@ -50,7 +51,7 @@ export function extend(registerFunc: Function) {
   return <P, S>(ComponentToWrap: React.ComponentClass<P>): any => {
     return class __ExtendedComponent extends React.Component<IExtensibleProps & P, S> {
       public static contextTypes: React.ValidationMap<any> = {
-        extensions: React.PropTypes.object.isRequired,
+        extensions: PropTypes.object.isRequired,
       };
 
       public context: IExtensionProps;

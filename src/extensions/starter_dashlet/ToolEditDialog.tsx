@@ -16,6 +16,7 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import { extractIconToFile } from 'icon-extract';
 import * as path from 'path';
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
@@ -160,7 +161,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
+    api: PropTypes.object.isRequired,
   };
 
   public context: IComponentContext;

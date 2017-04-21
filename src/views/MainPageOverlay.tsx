@@ -1,5 +1,6 @@
 import { IExtensionApi } from '../types/IExtensionContext';
 
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 
 interface IComponentContext {
@@ -9,8 +10,8 @@ interface IComponentContext {
 
 class MainPageOverlay extends React.Component<{}, {}> {
   public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
-    selectOverlay: React.PropTypes.func.isRequired,
+    api: PropTypes.object.isRequired,
+    selectOverlay: PropTypes.func.isRequired,
   };
 
   public context: IComponentContext;

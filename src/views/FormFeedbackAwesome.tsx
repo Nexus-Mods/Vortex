@@ -2,6 +2,7 @@ import Icon from './Icon';
 
 import classNames = require('classnames');
 import * as _ from 'lodash';
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 
 export interface IFormFeedbackProps {
@@ -11,7 +12,7 @@ export interface IFormFeedbackProps {
 
 class FormFeedbackAwesome extends React.Component<IFormFeedbackProps, {}> {
   public static contextTypes: React.ValidationMap<any> = {
-    $bs_formGroup: React.PropTypes.object,
+    $bs_formGroup: PropTypes.object,
   };
 
   public static defaultProps = {

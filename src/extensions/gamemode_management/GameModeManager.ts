@@ -215,7 +215,8 @@ class GameModeManager {
         try {
           return this.loadDynamicGame(path.join(extensionsPath, name));
         } catch (err) {
-          log('warn', 'failed to load game extension', { error: err.message });
+          log('warn', 'failed to load game extension',
+              { error: err.message, stack: err.stack });
           return undefined;
         }
       });

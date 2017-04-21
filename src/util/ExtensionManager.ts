@@ -663,7 +663,8 @@ class ExtensionManager {
           log('debug', 'loaded extension', { name, loadTime });
           return ext;
         } catch (err) {
-          log('warn', 'failed to load dynamic extension', { name, error: err.message });
+          log('warn', 'failed to load dynamic extension',
+              { name, error: err.message, stack: err.stack });
           return undefined;
         }
       });

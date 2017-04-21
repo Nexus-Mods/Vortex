@@ -8,6 +8,7 @@ import { finishDownload, initDownload,
 
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import update = require('react-addons-update');
 import { generate as shortid } from 'shortid';
@@ -31,7 +32,7 @@ type IProps = IConnectedProps & IActionProps;
 
 class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
   public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
+    api: PropTypes.object.isRequired,
   };
 
   public context: IComponentContext;

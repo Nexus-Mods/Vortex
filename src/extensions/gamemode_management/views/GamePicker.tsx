@@ -22,6 +22,7 @@ import { IGameStored } from '../types/IGameStored';
 import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
 
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { ListGroup, ProgressBar } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
@@ -73,7 +74,7 @@ interface IComponentState {
 class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentState> {
 
   public static contextTypes: React.ValidationMap<any> = {
-    api: React.PropTypes.object.isRequired,
+    api: PropTypes.object.isRequired,
   };
 
   public context: IComponentContext;
