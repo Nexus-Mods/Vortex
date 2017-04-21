@@ -23,9 +23,9 @@ $select-menu-max-height:            340px;
 $select-option-color:               lighten($select-text-color, 20%) !default;
 $select-option-bg:                  $select-input-bg !default;
 $select-option-focused-color:       $select-text-color !default;
-$select-option-focused-bg:          $brand-lightbg !default; // pale blue
+$select-option-focused-bg:          $brand-secondary !default; // pale blue
 $select-option-selected-color:      $select-text-color !default;
-$select-option-selected-bg:         $brand-lightbg !default; // lightest blue
+$select-option-selected-bg:         $brand-secondary !default; // lightest blue
 $select-option-disabled-color:      lighten($select-text-color, 60%) !default;
 
 $select-noresults-color:            lighten($select-text-color, 40%) !default;

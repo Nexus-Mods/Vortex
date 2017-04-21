@@ -1,8 +1,3 @@
-// Flatly 3.3.7
-// Variables
-// --------------------------------------------------
-
-
 //== Colors
 //
 //## Gray and brand colors for use across Bootstrap.
@@ -15,15 +10,18 @@ $gray-light:             #b4bcc2;   // #999
 $gray-lighter:           #ecf0f1; // #eee
 
 $brand-primary:         #2C3E50;
-$brand-highlight:       #FAA330;
-$brand-success:         #18BC9C;
+//$brand-highlight:       #FAA330;
+$brand-highlight:       #428BCA;
+$brand-success:         #5DB85C;
 $brand-info:            #3498DB;
-$brand-warning:         #F39C12;
-$brand-danger:          #E74C3C;
+$brand-warning:         #F1AE4E;
+$brand-danger:          #D95450;
 
-$brand-bg:              #202c3d;
-$brand-darkbg:          #192431;
-$brand-lightbg:         #283e51;
+$brand-secondary:         #283e51;
+
+$brand-bg:              #192431;
+$brand-menu:            #202c3d;
+$brand-secondary:       #0c5886;
 
 $table-header-border-width: 2px;
 $table-header-border-color: #145076;
@@ -34,9 +32,9 @@ $table-header-border-color: #145076;
 //## Settings for some of the most global styles.
 
 //** Background color for `<body>`.
-$body-bg:               $brand-bg;
+$body-bg:               $brand-menu;
 //** Global text color on `<body>`.
-$text-color:            #cfd8dc;
+$text-color:            #eeeeee;
 
 //** Global textual link color.
 $link-color:            $brand-success;
@@ -50,13 +48,13 @@ $link-hover-decoration: underline;
 //
 //## Font, line-height, and color for body text, headings, and more.
 
-$font-family-sans-serif:  "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+$font-family-sans-serif:  "Roboto", "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
 $font-family-serif:       Georgia, "Times New Roman", Times, serif;
 //** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
 $font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace;
 $font-family-base:        $font-family-sans-serif;
 
-$font-size-base:          13px;
+$font-size-base:          14px;
 $font-size-large:         ceil(($font-size-base * 1.25)); // ~18px
 $font-size-small:         ceil(($font-size-base * 0.85)); // ~12px
 
@@ -134,11 +132,11 @@ $table-cell-padding:            8px;
 $table-condensed-cell-padding:  2px;
 
 //** Default background color used for all tables.
-$table-bg:                      $brand-bg;
+$table-bg:                      $brand-menu;
 //** Background color used for `.table-striped`.
 $table-bg-accent:               #e9e9e9;
 //** Background color used for `.table-hover`.
-$table-bg-hover:                $brand-lightbg;
+$table-bg-hover:                $brand-secondary;
 $table-bg-active:               $table-bg-hover;
 
 //** Border color for table and cell borders.
@@ -152,8 +150,8 @@ $table-border-color:            $gray-lighter;
 $btn-font-weight:                normal;
 
 $btn-default-color:              #fff;
-$btn-default-bg:                 #0c5886;
-$btn-default-border:             darken($btn-default-bg, 20%);
+$btn-default-bg:                 $brand-secondary;
+$btn-default-border:             $btn-default-bg;
 
 $btn-primary-color:              $btn-default-color;
 $btn-primary-bg:                 $brand-primary;
@@ -188,9 +186,9 @@ $btn-border-radius-small:        $border-radius-small;
 //##
 
 //** `<input>` background color
-$input-bg:                       $brand-darkbg;
+$input-bg:                       $brand-bg;
 //** `<input disabled>` background color
-$input-bg-disabled:              $brand-lightbg;
+$input-bg-disabled:              $brand-secondary;
 
 //** Text color for `<input>`s
 $input-color:                    $text-color;
@@ -238,7 +236,7 @@ $cursor-disabled:                not-allowed;
 //## Dropdown menu container and contents.
 
 //** Background for the dropdown menu.
-$dropdown-bg:                    $brand-darkbg;
+$dropdown-bg:                    $brand-bg;
 //** Dropdown menu `border-color`.
 $dropdown-border:                rgba(0,0,0,.15);
 //** Dropdown menu `border-color` **for IE8**.
@@ -543,7 +541,7 @@ $tooltip-arrow-color:         $tooltip-bg;
 //##
 
 //** Popover body background color
-$popover-bg:                          $brand-darkbg;
+$popover-bg:                          $brand-bg;
 //** Popover maximum width
 $popover-max-width:                   400px;
 //** Popover border color
@@ -603,7 +601,7 @@ $modal-title-padding:         15px;
 $modal-title-line-height:     $line-height-base;
 
 //** Background color of modal content area
-$modal-content-bg:                             $brand-bg;
+$modal-content-bg:                             $brand-menu;
 //** Modal content border color
 $modal-content-border-color:                   rgba(0,0,0,.2);
 //** Modal content border color **for IE8**
@@ -709,7 +707,7 @@ $list-group-link-heading-color: #333;
 //
 //##
 
-$panel-bg:                    $brand-darkbg;
+$panel-bg:                    $brand-bg;
 $panel-body-padding:          15px;
 $panel-heading-padding:       10px 15px;
 $panel-footer-padding:        $panel-heading-padding;

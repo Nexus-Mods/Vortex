@@ -17,7 +17,7 @@
 }
 
 #main-toolbar {
-  background-color: $brand-bg;
+  background-color: $brand-menu;
   height: 48px;
 }
 
@@ -37,17 +37,26 @@
 }
 
 #main-nav-sidebar {
-  background-color: $brand-bg;
+  background-color: $brand-menu;
   transition: max-width 1s;
 }
 
+#main-nav-container {
+  flex-direction: 'column';
+  height: '100%';
+  display: 'flex';
+  overflow-y: auto;
+  // padding to accomodate the absolute-positioned minimize-button
+  padding-bottom: 24px;
+}
+
 #main-window-pane {
-  background-color: $brand-darkbg;
+  background-color: $brand-bg;
   color: $text-color;
 }
 
 #main-footer {
-  background-color: $brand-bg;
+  background-color: $brand-menu;
 }
 
 .sidebar-expanded {
@@ -88,12 +97,20 @@
 }
 
 .nav-pills > li > a > svg {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
 }
 
 .nav > li > a:hover, .nav > li > a:focus {
   background-color: $gray-dark;
+}
+
+.nav-pills > li.active > a, .nav-pills > li.active > a:hover, .nav-pills > li.active > a:focus {
+  border-left: 5px solid $brand-warning;
+}
+
+.nav-pills>li>a>.svg-icon {
+  height: initial;
 }
 
 .about-panel {
@@ -122,7 +139,7 @@
 }
 
 .btn-embed {
-  padding: 1px 5px;
+  padding: 0px;
   border: 0px;
   color: currentColor;
   background-color: transparent;
@@ -137,6 +154,15 @@
   &:focus {
     color: $link-hover-color;
     background-color: initial;
+  }
+}
+
+btn-default {
+  &:hover {
+    background-color: lighten($brand-secondary, 20%);
+  }
+  &:active {
+    background-color: darken($brand-secondary, 20%);
   }
 }
 
@@ -347,7 +373,7 @@
 }
 
 .table-selected {
-  background-color: $brand-lightbg;
+  background-color: $brand-secondary;
 }
 
 .game-thumbnail {
@@ -402,7 +428,7 @@
 }
 
 .game-list-selected {
-  background-color: $brand-lightbg;
+  background-color: $brand-secondary;
 }
 
 .welcome-game-logo {
@@ -425,21 +451,13 @@
   overflow: visible;
 }
 
-.media-heading {
-  font-family: BebasNeue;
-}
-
 .icon {
   fill: currentColor;
-  height: calc(#{$font-size-base} + 2px);
-  width: calc(#{$font-size-base} + 2px);
+  height: calc(#{$font-size-base} + 3px);
+  width: calc(#{$font-size-base} + 3px);
   display: inline-block;
   vertical-align: middle;
-  margin: 1px;
-}
-
-.nav-pills>li>a>.svg-icon {
-  height: initial;
+  margin: 4px;
 }
 
 .tool-icon {
@@ -548,7 +566,7 @@
 }
 
 textarea {
-  background-color: $brand-darkbg;
+  background-color: $brand-bg;
 }
 
 .btn-menu-minimize {
@@ -557,20 +575,16 @@ textarea {
   border: 0px;
   padding: 0px;
   width: 100%;
-  background-color: $brand-lightbg;
-  &:focus {
-    background-color: lighten($brand-lightbg, 30%);
-  }
+  background-color: #283e51;
+/*  &:focus {
+    background-color: lighten($brand-secondary, 30%);
+  }*/
 }
 
 .menu-label {
   margin-left: 10px;
   min-width: 125px;
   font-size: 15px;
-}
-
-.nav-pills > li.active > a, .nav-pills > li.active > a:hover, .nav-pills > li.active > a:focus {
-  border-left: 2px solid $brand-highlight;
 }
 
 .table-main-pane {
@@ -580,7 +594,7 @@ textarea {
 
 .table-main-pane thead {
   color: $gray-lighter;
-  background-image: linear-gradient($brand-bg, $brand-bg), 
+  background-image: linear-gradient($brand-menu, $brand-menu), 
         linear-gradient($table-header-border-color,$table-header-border-color);
   background-clip: content-box, padding-box;
 }
@@ -606,7 +620,7 @@ textarea {
 }
 
 .table-main-pane tbody {
-  background-color: $brand-bg;
+  background-color: $brand-menu;
 //  color: black;
 }
 
@@ -923,6 +937,7 @@ textarea {
   position: absolute;
   width: 100%;
   height: 100%;
+  padding: 10px;
 }
 
 .main-page-current {
@@ -944,9 +959,9 @@ textarea {
   top: 0px;
   right: 0px;
   max-width: 0%;
-  background: $brand-darkbg;
+  background: $brand-bg;
   border-style: solid;
-  border-color: lighten($brand-bg, 30%);
+  border-color: lighten($brand-menu, 30%);
   border-width: 0px;
   transition: max-width 300ms cubic-bezier(0, 1, 1, 1), border-width 0ms 300ms;
   display: flex;
@@ -1038,15 +1053,15 @@ a[role=menuitem] svg {
 }
 
 ::-webkit-scrollbar-track {
-  background-color: $brand-bg;
+  background-color: $brand-menu;
 }
 
 ::-webkit-scrollbar-thumb {
   background-color: $table-header-border-color;
-  box-shadow: inset 0 0 1px 1px $brand-darkbg;
-  -webkit-box-shadow: inset 0 0 1px 1px $brand-darkbg;
+  box-shadow: inset 0 0 1px 1px $brand-bg;
+  -webkit-box-shadow: inset 0 0 1px 1px $brand-bg;
 }
 
 ::-webkit-scrollbar-corner {
-  background-color: $brand-lightbg;
+  background-color: $brand-secondary;
 }

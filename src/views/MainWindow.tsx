@@ -170,7 +170,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       <Flex>
         <Layout type='row' style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
           <Fixed id='main-nav-sidebar' className={sbClass}>
-            <div style={{ flexDirection: 'column', height: '100%', display: 'flex' }}>
+            <div id='main-nav-container'>
               <Nav
                 bsStyle='pills'
                 stacked
