@@ -45,10 +45,12 @@ export class NumericFilterComponent extends React.Component<IFilterProps, {}> {
 
   private changeFilter = (evt) => {
     const { attributeId, onSetFilter } = this.props;
+    this.lastAttributeId = attributeId;
+    this.lastValue = evt.currentTarget.value;
     onSetFilter(attributeId, evt.currentTarget.value);
   }
 
-    private toggleDirection = (evt) => {
+  private toggleDirection = (evt) => {
     if (this.lastValue === undefined) {
       return;
     }
