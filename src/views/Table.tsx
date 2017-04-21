@@ -1,7 +1,7 @@
 import {selectRows, setAttributeFilter, setAttributeSort,
         setAttributeVisible, setSplitPos} from '../actions/tables';
+import {IActionDefinition} from '../types/IActionDefinition';
 import {IAttributeState} from '../types/IAttributeState';
-import {IActionDefinition} from '../types/IIconDefinition';
 import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';

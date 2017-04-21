@@ -1,10 +1,10 @@
 import { setOverlayOpen } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
 
+import { IActionDefinition } from '../types/IActionDefinition';
 import { IComponentContext } from '../types/IComponentContext';
 import { IExtensionApi, IMainPageOptions } from '../types/IExtensionContext';
 import { II18NProps } from '../types/II18NProps';
-import { IActionDefinition } from '../types/IIconDefinition';
 import { IMainPage } from '../types/IMainPage';
 import { IState } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';

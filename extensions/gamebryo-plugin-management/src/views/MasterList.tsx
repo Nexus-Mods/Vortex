@@ -1,4 +1,4 @@
-import { nativePlugins } from '../util/gameSupport';
+import { gameSupported, nativePlugins } from '../util/gameSupport';
 
 import { selectors } from 'nmm-api';
 import * as React from 'react';
@@ -47,6 +47,9 @@ class MasterList extends React.Component<IProps, {}> {
 const loadOrder = (state) => state.loadOrder;
 
 let enabledPlugins = createSelector(loadOrder, selectors.activeGameId, (order, gameId) => {
+  if (!gameSupported(gameId)) {
+    return new Set<string>([]);
+  }
   return new Set<string>([].concat(nativePlugins(gameId), Object.keys(order)
     .filter((pluginName: string) => order[pluginName].enabled)
     .map((pluginName: string) => pluginName.toLowerCase())

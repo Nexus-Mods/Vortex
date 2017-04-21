@@ -1,4 +1,4 @@
-import { IActionDefinition, IActionOptions } from '../types/IIconDefinition';
+import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
 import { IExtensibleProps, extend } from '../util/ExtensionProvider';
 
 import DynamicProps from './DynamicProps';

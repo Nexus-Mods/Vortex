@@ -49,11 +49,12 @@ class ModActivator extends LinkingActivator {
         return 'Works only if mods are installed on the same drive as the game.';
       }
     } catch (err) {
-      log('warn', 'failed to stat. directory missing?', {
+      // this can happen when managing the the game for the first time
+      log('info', 'failed to stat. directory missing?', {
         dir1: installPath(state), dir2: activeGameDiscovery.modPath,
         err: util.inspect(err),
       });
-      return err.message;
+      return 'Game not fully initialized yet, this should disappear soon.';
     }
 
     return undefined;

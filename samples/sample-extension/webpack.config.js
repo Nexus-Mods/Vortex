@@ -27,20 +27,24 @@ module.exports = {
   ],
   externals: [
     'bluebird',
+    'ffi',
     'fs',
     'fs-extra-promise',
-    'path',
+    'lodash',
     'nbind',
     'net',
     'nmm-api',
     'node',
+    'path',
     'react',
     'react-act',
     'react-addons-update',
     'react-bootstrap',
+    'react-dom',
     'react-i18next',
     'react-layout-pane',
     'react-redux',
+    'ref',
     'util'
   ]
 };

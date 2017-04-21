@@ -16,7 +16,7 @@ const settingsReducer: IReducerSpec = {
       update(state, { profilesVisible: { $set: payload.visible } }),
   },
   defaults: {
-    language: 'en-GB',
+    language: 'en',
     advanced: false,
     profilesVisible: false,
   },

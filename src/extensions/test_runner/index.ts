@@ -119,6 +119,10 @@ function init(context: IExtensionContext): boolean {
 
     context.api.onStateChange(['persistent', 'profiles'], (prevProfiles, newProfiles) => {
       const currentProfile = activeProfile(context.api.store.getState());
+      if (currentProfile === undefined) {
+        // nop
+        return;
+      }
       if (prevProfiles[currentProfile.id].modState !== newProfiles[currentProfile.id].modState) {
         runChecks('mod-activated', 5000);
       }

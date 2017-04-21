@@ -1,7 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
+import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IAttributeState } from '../../../types/IAttributeState';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
-import { IActionDefinition } from '../../../types/IIconDefinition';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';

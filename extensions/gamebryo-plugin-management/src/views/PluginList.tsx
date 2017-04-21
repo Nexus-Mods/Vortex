@@ -74,7 +74,7 @@ function num(num: number) {
 }
 
 class PluginList extends ComponentEx<IProps, IComponentState> {
-  private staticButtons: types.IIconDefinition[];
+  private staticButtons: types.IActionDefinition[];
   private pluginEnabledAttribute: types.ITableAttribute;
   private actions: ITableRowAction[];
 

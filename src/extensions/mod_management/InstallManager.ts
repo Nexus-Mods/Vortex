@@ -495,7 +495,7 @@ class InstallManager {
 
   private findPreviousVersionMod(fileId: number, store: Redux.Store<any>,
                                  gameMode: string): IMod {
-    let mods = store.getState().persistent.mods[gameMode];
+    let mods = store.getState().persistent.mods[gameMode] || {};
     let mod: IMod;
     Object.keys(mods).forEach(key => {
       const newestFileId: number = getSafe(mods[key].attributes, ['newestFileId'], undefined);

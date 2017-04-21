@@ -1,4 +1,4 @@
-import { IActionDefinition } from '../types/IIconDefinition';
+import { IActionDefinition } from '../types/IActionDefinition';
 import { ComponentEx } from '../util/ComponentEx';
 
 import IconBar from './IconBar';

@@ -1,6 +1,6 @@
 import { Archive } from '../util/archives';
 
-import { IActionOptions } from './IIconDefinition';
+import { IActionOptions } from './IActionDefinition';
 import { INotification } from './INotification';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';

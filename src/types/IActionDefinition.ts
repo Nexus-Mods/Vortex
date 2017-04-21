@@ -8,7 +8,7 @@ export interface IActionOptions {
  * interface of an icon within one of the icon bars
  * 
  * @export
- * @interface IIconDefinition
+ * @interface IActionDefinition
  */
 export interface IActionDefinition {
   icon?: string;

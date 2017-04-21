@@ -357,7 +357,7 @@ function init(context: IExtensionContextExt) {
       const newProfile =
           util.getSafe(store.getState(),
                        ['persistent', 'profiles', newProfileId], {} as any);
-      if (!gameSupported(newProfile.gameId)) {
+      if ((newProfile === undefined) || !gameSupported(newProfile.gameId)) {
         return;
       }
 

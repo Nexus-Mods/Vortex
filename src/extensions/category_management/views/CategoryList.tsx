@@ -1,7 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
+import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
-import { IActionDefinition } from '../../../types/IIconDefinition';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import lazyRequire from '../../../util/lazyRequire';
 import { showError } from '../../../util/message';

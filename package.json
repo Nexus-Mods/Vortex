@@ -80,6 +80,7 @@
     "asarUnpack": [
       "7z.exe",
       "LICENSE.md",
+      "bundledPlugins",
       "lib/modinstaller"
     ],
     "appId": "com.nexusmods.nmm2",

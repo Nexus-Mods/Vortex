@@ -22,10 +22,14 @@ interface IProgressDelegate {
   (perc: number): void;
 }
 
+function dirname() {
+  return __dirname.replace('app.asar', 'app.asar.unpacked');
+}
+
 function testSupported(files: string[]): Promise<ISupportedResult> {
   if (testSupportedLib === undefined) {
     testSupportedLib = edge.func({
-      assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller',
+      assemblyFile: path.resolve(dirname(), '..', '..', 'lib', 'ModInstaller',
                                  'ModInstaller.dll'),
       typeName: 'Components.ModInstaller.InstallerProxy',
       methodName: 'TestSupported',
@@ -50,7 +54,7 @@ function install(files: string[], scriptPath: string,
                  coreDelegates: Core): Promise<any> {
   if (installLib === undefined) {
     installLib = edge.func({
-      assemblyFile: path.resolve(__dirname, '..', '..', 'lib', 'ModInstaller',
+      assemblyFile: path.resolve(dirname(), '..', '..', 'lib', 'ModInstaller',
                                  'ModInstaller.dll'),
       typeName: 'Components.ModInstaller.InstallerProxy',
       methodName: 'Install',

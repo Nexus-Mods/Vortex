@@ -5,7 +5,7 @@ import MetaEditorIcon from './views/MetaEditorIcon';
 import * as path from 'path';
 
 function main(context: types.IExtensionContext) {
-  context.registerIcon('downloads-action-icons', 100, MetaEditorIcon, () => ({
+  context.registerAction('downloads-action-icons', 100, MetaEditorIcon, {}, () => ({
     key: 'meta-editor-icon',
     t: context.api.translate,
   }));

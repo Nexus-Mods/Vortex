@@ -190,7 +190,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
   }
 
   private openSettings = () => {
-    this.context.api.events.emit('show-modal', 'settings');
+    this.context.api.events.emit('show-main-page', 'Settings');
   }
 
   private startManualSearch = () => {

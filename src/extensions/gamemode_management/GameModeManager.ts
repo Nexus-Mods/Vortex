@@ -204,7 +204,7 @@ class GameModeManager {
     log('info', 'looking for game support plugins', extensionsPath);
 
     if (!fs.existsSync(extensionsPath)) {
-      log('warn', 'failed to load game extensions, path doesn\'t exist', extensionsPath);
+      log('info', 'no game extensions installed');
       fs.mkdirSync(extensionsPath);
       return [];
     }

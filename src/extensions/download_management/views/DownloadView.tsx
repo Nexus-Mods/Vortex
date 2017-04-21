@@ -1,8 +1,8 @@
 import { showDialog } from '../../../actions/notifications';
 import { selectRows } from '../../../actions/tables';
+import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IDialogResult } from '../../../types/IDialog';
-import { IActionDefinition } from '../../../types/IIconDefinition';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getCurrentLanguage } from '../../../util/i18n';

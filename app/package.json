@@ -1,6 +1,6 @@
 {
   "name": "nmm2",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "productName": "Nexus Mod Manager 2 Retribution",
   "description": "Nexus Mod Manager 2 Retribution",
   "author": "Black Tree Gaming Ltd.",
@@ -57,6 +57,7 @@
     "react-layout-pane": "Nexus-Mods/react-layout-pane",
     "react-markdown": "^2.4.4",
     "react-redux": "^4.4.5",
+    "react-safe-html": "^0.4.0",
     "react-select": "^1.0.0-rc.3",
     "react-sortable-tree": "^0.1.8",
     "react-split-pane": "^0.1.58",
