@@ -63,9 +63,9 @@ class ChangeRow extends React.Component<IRowProps, {}> {
     </tr>;
   }
 
-  private changeValue = (evt: React.MouseEvent<any>) => {
+  private changeValue = (evt: React.ChangeEvent<HTMLSelectElement>) => {
     const {entry, onChangeAction} = this.props;
-    onChangeAction([entry.filePath], evt.currentTarget.value);
+    onChangeAction([entry.filePath], evt.currentTarget.value as FileAction);
   }
 
   private renderChoice = (key: string, text: string, entry: IFileEntry): JSX.Element => {

@@ -58,7 +58,7 @@ export function extend(registerFunc: Function) {
       private mExtensions: any[];
 
       public componentWillMount(): void {
-        const { staticElements } = this.props;
+        const { staticElements }: any = this.props;
         this.mExtensions = staticElements ? staticElements.slice() : [];
 
         this.context.extensions.apply(registerFunc.name, (...args) => {
@@ -71,7 +71,7 @@ export function extend(registerFunc: Function) {
 
       public render(): JSX.Element {
         const { children } = this.props;
-        let wrapProps = Object.assign({}, this.props, { objects: this.mExtensions });
+        let wrapProps: any = Object.assign({}, this.props, { objects: this.mExtensions });
         delete wrapProps.staticElements;
         delete wrapProps.group;
         return React.createElement(ComponentToWrap, wrapProps, children);
