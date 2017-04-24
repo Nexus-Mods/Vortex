@@ -89,10 +89,12 @@
     "appId": "com.nexusmods.nmm2",
     "win": {
       "target": "nsis",
-      "remoteReleases": "https://github.com/Nexus-Mods/NMM2/releases/download/0.4.2",
-      "remoteToken": "008e0c7bfa1a9a2f14df6370dfdac9340ec828a",
       "publish": [
-        "github"
+        {
+          "provider": "github",
+          "token": "008e0c7bfa1a9a2f14df6370dfdac9340ec828a",
+          "private": true
+    }
       ]
     },
     "extraResources": [
@@ -112,7 +114,12 @@
       "!**/autogypi.json",
       "!**/binding.gyp",
       "!**/binding.map",
-      "!**/build/src/Release/obj"
+      "!**/build/src/Release/obj",
+      "!**/node_modules/edge/lib/native",
+      "!**/node_modules/edge/src",
+      "!**/node_modules/node-sass/{build, src, vendor}",
+      "!**/node_modules/react-layout-pane/{demo, docs}",
+      "!**/node_modules/recharts/{umd}"
     ]
   },
   "parserOptions": {

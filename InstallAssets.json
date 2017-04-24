@@ -85,7 +85,7 @@
     },
     {
       "srcPath": "locales/*/*",
-      "outPath": "app",
+      "outPath": "",
       "target": [
         "app"
       ]
