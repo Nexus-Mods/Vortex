@@ -34,9 +34,9 @@ import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
-function objectFilter(obj: Object, filter: (key: string, value: any) => boolean) {
-  let result = {};
-  for (let key in obj) {
+function objectFilter(obj: any, filter: (key: string, value: any) => boolean) {
+  const result = {};
+  for (const key in obj) {
     if (obj.hasOwnProperty(key) && filter(key, obj[key])) {
       result[key] = obj[key];
     }
@@ -67,13 +67,13 @@ interface IAllGamesButtonProps {
   id: string;
   buttonType: 'icon' | 'text' | 'both';
   showAll: boolean;
-  onClick: Function;
+  onClick: () => void;
   t: (input: string) => string;
 }
 
 const AllGamesButton = (props) => {
   const { t, buttonType, id, onClick, showAll } = props;
-  let tooltip =
+  const tooltip =
     showAll
     ? t('Hide downloads from other games')
     : t('Show downloads from other games');
@@ -134,8 +134,7 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
         return null;
     } else {
       return fs.statAsync(path.join(downloadPath, download.localPath))
-        .then((stat: fs.Stats) => this.nextState.mtime = stat.mtime
-        );
+        .then((stat: fs.Stats) => this.nextState.mtime = stat.mtime);
     }
   }
 }
@@ -164,7 +163,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       description: 'The game this download is associated with',
       icon: 'gamepad',
       calc: (attributes: IDownload) => {
-        let game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
+        const game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
         return game ? this.props.t(game.name) : attributes.game;
       },
       placement: 'both',
@@ -186,13 +185,15 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         if (attributes.game !== this.props.gameMode) {
           return undefined;
         }
-        return <FileTime
-          t={t}
-          download={attributes}
-          downloadPath={this.props.downloadPath}
-          detail={detail}
-          language={getCurrentLanguage()}
-        />;
+        return (
+          <FileTime
+            t={t}
+            download={attributes}
+            downloadPath={this.props.downloadPath}
+            detail={detail}
+            language={getCurrentLanguage()}
+          />
+        );
       },
       calc: (attributes: IDownload) => {
         if (attributes.localPath === undefined) {
@@ -202,9 +203,8 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
           return undefined;
         }
         return fs.statAsync(path.join(this.props.downloadPath, attributes.localPath))
-        .then((stat: fs.Stats) =>
-          Promise.resolve(stat.mtime)
-        );
+        .then(
+          stat => Promise.resolve(stat.mtime));
       },
       placement: 'both',
       isToggleable: true,
@@ -279,7 +279,8 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    let { downloads, gameMode } = this.props;
+    let { downloads } = this.props;
+    const { gameMode } = this.props;
     const { showAll } = this.state;
 
     if (!showAll) {
@@ -348,7 +349,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   private remove = (downloadIds: string[]) => {
-    let removeId = (id: string) => {
+    const removeId = (id: string) => {
       this.props.onDeselect(id);
       this.context.api.events.emit('remove-download', id);
     };
@@ -358,7 +359,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     } else {
       const { t, onShowDialog } = this.props;
 
-      let downloadNames = downloadIds.map((downloadId: string) => (
+      const downloadNames = downloadIds.map((downloadId: string) => (
         this.getDownload(downloadId).localPath
       ));
 
@@ -395,8 +396,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
   private installable = (downloadIds: string[]) => {
     return downloadIds.find(
-      (id: string) => this.getDownload(id).state === 'finished'
-    ) !== undefined;
+      (id: string) => this.getDownload(id).state === 'finished') !== undefined;
   }
 
   private inspect = (downloadId: string) => {
@@ -440,5 +440,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-    translate(['common'], { wait: false })(DownloadView)
-  );
+    translate(['common'], { wait: false })(DownloadView));

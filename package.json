@@ -78,12 +78,13 @@
     "collectCoverage": true
   },
   "build": {
-    "asar": false,
+    "asar": true,
     "asarUnpack": [
       "7z.exe",
       "LICENSE.md",
       "bundledPlugins",
-      "lib/modinstaller"
+      "lib/modinstaller",
+      "assets/css/variables.scss"
     ],
     "appId": "com.nexusmods.nmm2",
     "win": {

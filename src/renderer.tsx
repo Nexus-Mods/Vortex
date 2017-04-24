@@ -12,7 +12,7 @@ import * as ReactDOM from 'react-dom';
 
 if (process.env.NODE_ENV === 'production') {
   // TODO the following hacks should, supposedly increase react
-  //  performance by avoiding unnecessary "if (process.env.NODE_ENV === )" 
+  //  performance by avoiding unnecessary "if (process.env.NODE_ENV === )"
   //  calls and speeding up the rest by turning process.env into a static
   //  object.
   //  I have not yet made any benchmarks to verify that
@@ -49,7 +49,7 @@ import { changeLanguage } from 'i18next';
 import * as React from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
-import { Store, applyMiddleware, compose, createStore } from 'redux';
+import { applyMiddleware, compose, createStore, Store } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 import thunkMiddleware from 'redux-thunk';
 
@@ -63,8 +63,8 @@ Promise.config({ cancellation: true });
 // set up store. Through the electronEnhancer this is automatically
 // synchronized with the main process store
 
-let filter = true;
-let middleware = [
+const filter = true;
+const middleware = [
   thunkMiddleware,
 ];
 
@@ -76,28 +76,28 @@ if (process.env.NODE_ENV === 'development') {
   enhancer = compose(
     applyMiddleware(...middleware),
     electronEnhancer({ filter }),
-    DevTools.instrument()
+    DevTools.instrument(),
   );
 } else {
   enhancer = compose(
     applyMiddleware(...middleware),
-    electronEnhancer({ filter })
+    electronEnhancer({ filter }),
   );
 }
 
 process.on('uncaughtException', (error) => {
-  let details: ITermination = undefined;
+  let details: ITermination;
 
   switch (typeof error) {
     case 'object': {
       details = { message: error.message, details: error.stack };
-    } break;
+    }              break;
     case 'string': {
       details = { message: error };
-    } break;
+    }              break;
     default: {
       details = { message: error };
-    } break;
+    }        break;
   }
 
   terminate(details);
@@ -107,7 +107,7 @@ const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 stopTime = timeRequire();
 const extensions: ExtensionManager = new ExtensionManager(eventEmitter);
-let extReducers = extensions.getReducers();
+const extReducers = extensions.getReducers();
 
 const store: Store<any> = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
@@ -119,7 +119,7 @@ log('debug', 'renderer connected to store');
 const globalNotifications = new GlobalNotifications(extensions.getApi());
 
 ipcRenderer.on('external-url', (event, protocol, url) => {
-  let handler = extensions.getProtocolHandler(protocol);
+  const handler = extensions.getProtocolHandler(protocol);
   if (handler !== null) {
     log('info', 'handling url', { url });
     handler(url);
@@ -130,7 +130,7 @@ ipcRenderer.on('external-url', (event, protocol, url) => {
 
 let currentLanguage: string = store.getState().settings.interface.language;
 store.subscribe(() => {
-  let newLanguage: string = store.getState().settings.interface.language;
+  const newLanguage: string = store.getState().settings.interface.language;
   if (newLanguage !== currentLanguage) {
     currentLanguage = newLanguage;
     changeLanguage(newLanguage, (err, t) => {
@@ -158,7 +158,7 @@ getI18n(store.getState().settings.interface.language)
     extensions.doOnce();
     initApplicationMenu(extensions);
     loadExtensionCSS(extensions);
-    // render the page content 
+    // render the page content
     ReactDOM.render(
       <Provider store={store}>
         <I18nextProvider i18n={i18n}>
@@ -167,7 +167,7 @@ getI18n(store.getState().settings.interface.language)
           </ExtensionProvider>
         </I18nextProvider>
       </Provider>,
-      document.getElementById('content')
+      document.getElementById('content'),
     );
   });
 

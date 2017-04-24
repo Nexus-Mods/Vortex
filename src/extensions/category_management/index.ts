@@ -54,7 +54,7 @@ function init(context: IExtensionContext): boolean {
         const categories: ICategoryDictionary = allCategories(store.getState());
         const treeDataOrder: string[] = Object.keys(categories)
           .map((id: string) => {
-            return categories[id].order.toString();
+            return (categories[id].order || 0).toString();
           });
 
         const language: string = store.getState().settings.interface.language;
@@ -93,7 +93,7 @@ function init(context: IExtensionContext): boolean {
       });
 
       context.api.events.on('gamemode-activated', (gameMode: string) => {
-        let categories: ICategoriesTree[] = getSafe(store.getState(),
+        const categories: ICategoriesTree[] = getSafe(store.getState(),
           ['persistent', 'categories', gameMode], undefined);
         if (categories === undefined) {
           context.api.events.emit('retrieve-category-list', false, {});

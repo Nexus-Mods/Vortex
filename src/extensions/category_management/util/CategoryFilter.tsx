@@ -24,16 +24,18 @@ class CategoryFilterComponent extends React.Component<IProps, {}> {
       label: categories[id].name,
     })).sort((lhs, rhs) => lhs.label.localeCompare(rhs.label));
 
-    return <Select
-      multi
-      className='select-compact'
-      options={options}
-      value={filter}
-      onChange={this.changeFilter}
-    />;
+    return (
+      <Select
+        multi
+        className='select-compact'
+        options={options}
+        value={filter}
+        onChange={this.changeFilter}
+      />
+    );
   }
 
-  private changeFilter = (value: { value: string, label: string }[]) => {
+  private changeFilter = (value: Array<{ value: string, label: string }>) => {
     const { attributeId, onSetFilter } = this.props;
     onSetFilter(attributeId, value.map(val => val.value));
   }
@@ -64,7 +66,7 @@ class CategoryFilter implements ITableFilter {
   private categoryChain(category: string, state: IState): Set<string> {
     const gameId = activeGameId(state);
     const categories = state.persistent.categories[gameId];
-    let result = new Set<string>();
+    const result = new Set<string>();
     let iter = category;
     while (truthy(iter)) {
       result.add(iter);

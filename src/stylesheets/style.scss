@@ -42,9 +42,9 @@
 }
 
 #main-nav-container {
-  flex-direction: 'column';
-  height: '100%';
-  display: 'flex';
+  flex-direction: column;
+  height: 100%;
+  display: flex;
   overflow-y: auto;
   // padding to accomodate the absolute-positioned minimize-button
   padding-bottom: 24px;
@@ -93,20 +93,21 @@
   color: #cfd8dc;
   overflow: hidden;
   white-space: nowrap;
-  padding: 10px 25px 10px 16px;
+  padding: 10px 25px 10px 10px;
 }
 
+/*
 .nav-pills > li > a > svg {
   width: 24px;
   height: 24px;
-}
+}*/
 
 .nav > li > a:hover, .nav > li > a:focus {
   background-color: $gray-dark;
 }
 
 .nav-pills > li.active > a, .nav-pills > li.active > a:hover, .nav-pills > li.active > a:focus {
-  border-left: 5px solid $brand-warning;
+  border-left: 2px solid $brand-warning;
 }
 
 .nav-pills>li>a>.svg-icon {

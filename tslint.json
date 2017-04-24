@@ -12,12 +12,18 @@
     "quotemark": [
       true,
       "single",
+      "jsx-single",
       "avoid-escape"
     ],
     "jsx-no-lambda": true,
     "jsx-alignment": true,
     "jsx-no-multiline-js":  false,
-    "no-string-literal": false
+    "jsx-boolean-value": false,
+    "max-classes-per-file": [
+      false, 5
+    ],
+    "no-string-literal": false,
+    "arrow-parens": false
   },
   "rulesDirectory": []
 }
