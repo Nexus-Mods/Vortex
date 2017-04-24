@@ -26,7 +26,7 @@ class DNDContainer extends React.Component<{}, {}> {
   public render(): JSX.Element {
     const {children} = this.props;
 
-    let childCount = React.Children.count(children);
+    const childCount = React.Children.count(children);
     if (childCount === 0) {
       // should this be reported as an error? it might just be the child Element
       // is disabled/hidden for whatever reason

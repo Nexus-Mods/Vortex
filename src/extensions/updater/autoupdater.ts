@@ -5,7 +5,7 @@ import {ipcMain} from 'electron';
 import {autoUpdater as AUType} from 'electron-updater';
 
 function setupAutoUpdate(api: IExtensionApi) {
-  let autoUpdater: typeof AUType = require('electron-updater').autoUpdater;
+  const autoUpdater: typeof AUType = require('electron-updater').autoUpdater;
 
   autoUpdater.on('error', (err) => {
     api.showErrorNotification('checking for update failed', err);

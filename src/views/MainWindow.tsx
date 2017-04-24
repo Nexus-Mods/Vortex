@@ -122,7 +122,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         { this.renderFooter() }
         </Layout>
         <Dialog />
-        { /* this.renderModalSettings() */ }
         { this.renderDeveloperModal() }
         <DialogContainer />
       </div>
@@ -163,7 +162,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     const globalOverlay = <GlobalOverlay t={t}/>;
 
-    let pages = objects.map(obj => this.renderPage(obj, globalOverlay));
+    const pages = objects.map(obj => this.renderPage(obj, globalOverlay));
     pages.push(this.renderPage(this.settingsPage, globalOverlay));
 
     return (
@@ -259,7 +258,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderPageButton = (page: IMainPage) => {
     const { t } = this.props;
-    return !page.visible() ? null :
+    return !page.visible() ? null : (
       <NavItem
         id={page.title}
         key={page.title}
@@ -271,7 +270,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <span className='menu-label'>
           {t(page.title)}
         </span>
-      </NavItem>;
+      </NavItem>
+    );
   }
 
   private renderPage(page: IMainPage, globalOverlay: JSX.Element) {
@@ -281,12 +281,14 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       // don't render pages that have never been opened
       return null;
     }
-    return <MainPageContainer
-      key={page.title}
-      page={page}
-      active={showPage === page.title}
-      onSelectOverlay={this.selectOverlay}
-    />;
+    return (
+      <MainPageContainer
+        key={page.title}
+        page={page}
+        active={showPage === page.title}
+        onSelectOverlay={this.selectOverlay}
+      />
+    );
   }
 
   private selectOverlay = (ref) => {
@@ -299,7 +301,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private handleSetPage = (key) => {
     this.setMainPage(key);
-  };
+  }
 
   private hideLayer = () => this.showLayerImpl('');
 
@@ -391,5 +393,5 @@ function registerMainPage(instance: MainWindow,
 
 export default
   extend(registerMainPage)(
-    connect(mapStateToProps, mapDispatchToProps)(MainWindow)
+    connect(mapStateToProps, mapDispatchToProps)(MainWindow),
   ) as React.ComponentClass<IBaseProps>;

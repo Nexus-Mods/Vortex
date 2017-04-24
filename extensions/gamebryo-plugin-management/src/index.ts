@@ -36,7 +36,9 @@ interface IModState {
   enabled: boolean;
 }
 
-type IModStates = { [modId: string]: IModState };
+interface IModStates {
+  [modId: string]: IModState;
+}
 
 function isPlugin(fileName: string): boolean {
   return ['.esp', '.esm'].indexOf(path.extname(fileName).toLowerCase()) !== -1;
@@ -53,15 +55,15 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
   const state = store.getState();
 
   const gameMode = selectors.activeGameId(state);
-  let pluginSources: { [pluginName: string]: string } = {};
+  const pluginSources: { [pluginName: string]: string } = {};
 
   const currentDiscovery = selectors.currentGameDiscovery(state);
-  let readErrors = [];
+  const readErrors = [];
 
   const gameMods = state.persistent.mods[gameMode] || {};
 
   return Promise.map(Object.keys(gameMods), (modId: string) => {
-    let mod = gameMods[modId];
+    const mod = gameMods[modId];
     return fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
     .then((fileNames: string[]) => {
       fileNames
@@ -82,20 +84,19 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
         store.dispatch,
         'Failed to read some mods',
         'The following mods could not be searched (see log for details):\n' +
-          readErrors.join('\n')
-        );
+          readErrors.join('\n'));
     }
     if (currentDiscovery === undefined) {
       return Promise.resolve([]);
     }
-    let modPath = currentDiscovery.modPath;
+    const modPath = currentDiscovery.modPath;
     return fs.readdirAsync(modPath);
   })
   .then((fileNames: string[]) => {
-    let pluginNames: string[] = fileNames.filter(isPlugin);
-    let pluginStates: IPlugins = {};
+    const pluginNames: string[] = fileNames.filter(isPlugin);
+    const pluginStates: IPlugins = {};
     pluginNames.forEach((fileName: string) => {
-      let modName = pluginSources[fileName];
+      const modName = pluginSources[fileName];
       pluginStates[fileName] = {
         modName: modName || '',
         filePath: path.join(currentDiscovery.modPath, fileName),
@@ -131,7 +132,7 @@ function register(context: IExtensionContextExt) {
     }),
   });
 
-  for (let game of supportedGames()) {
+  for (const game of supportedGames()) {
     context.registerProfileFile(game, path.join(pluginPath(game), 'plugins.txt'));
     context.registerProfileFile(game, path.join(pluginPath(game), 'loadorder.txt'));
   }
@@ -248,7 +249,7 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
       if (err === null) {
         resolve(undefined);
       } else {
-        let res: types.ITestResult = {
+        const res: types.ITestResult = {
           description: {
             short: 'plugins.txt is write protected',
             long: 'This file is used to control which plugins the game uses and while it\'s '
@@ -285,13 +286,12 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
                }));
   // previously this only contained plugins that were marked as masters but apparenly
   // some plugins reference non-masters as their dependency.
-  const masters = new Set<string>([].concat(pluginDetails
-    .map((plugin) => plugin.name),
-    nativePlugins(gameMode)
-    ).map((name) => name.toLowerCase()));
+  const masters = new Set<string>([].concat(
+    pluginDetails.map(plugin => plugin.name),
+    nativePlugins(gameMode)).map(name => name.toLowerCase()));
 
-  let broken = pluginDetails.filter((plugin) => {
-    let missing = plugin.detail.masterList.filter(
+  const broken = pluginDetails.filter((plugin) => {
+    const missing = plugin.detail.masterList.filter(
         (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
     if (missing.length > 0) {
       log('info', 'missing masters', { plugin: plugin.name, missing: missing.join(', ') });

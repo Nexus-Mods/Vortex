@@ -28,9 +28,9 @@ export function syncFromProfile(
   onError: (error: string, details: string | Error) => void): Promise<void> {
   log('debug', 'sync from profile', { profilePath, sourceFiles });
   return Promise.map(sourceFiles, (filePath: string) => {
-    let srcPath = path.join(profilePath, path.basename(filePath));
+    const srcPath = path.join(profilePath, path.basename(filePath));
     return copyFileAtomic(srcPath, filePath)
-    .catch((err) => {
+    .catch(err => {
       if (err.code !== 'ENOENT') {
         onError('failed to sync from profile', err);
       }
