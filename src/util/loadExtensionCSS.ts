@@ -3,23 +3,27 @@ import { log } from './log';
 import * as sass from 'node-sass';
 import * as path from 'path';
 
+function asarUnpacked(input) {
+  return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
+}
+
 /**
  * compile and add style sheets from extensions
- * 
+ *
  * @param {any} extensions
  */
 function loadExtensionCSS(extensions) {
-  let stylesheets = [
+  const stylesheets = [
     'variables',
   ];
 
   extensions.apply('registerStyle',
-                   (filePath: string) => { stylesheets.push(filePath); });
+    (filePath: string) => stylesheets.push(asarUnpacked(filePath)));
 
   const sassIndex: string =
       stylesheets.map((name: string) => `@import "${name.replace(/\\/g, '\\\\')}";\n`).join('\n');
 
-  const assetsPath = path.resolve(__dirname, '..', 'assets', 'css');
+  const assetsPath = path.resolve(asarUnpacked(__dirname), '..', 'assets', 'css');
 
   sass.render({
                 outFile: path.join(assetsPath, 'theme.css'),
@@ -30,7 +34,7 @@ function loadExtensionCSS(extensions) {
                 if (err !== null) {
                   log('error', 'failed to render css', err.message);
                 } else {
-                  let style = document.createElement('style');
+                  const style = document.createElement('style');
                   style.type = 'text/css';
                   style.innerHTML = output.css;
                   document.getElementsByTagName('head')[0].appendChild(style);
