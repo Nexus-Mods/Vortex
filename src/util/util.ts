@@ -6,7 +6,7 @@ import {file} from 'tmp';
 
 /**
  * count the elements in an array for which the predicate matches
- * 
+ *
  * @export
  * @template T
  * @param {T[]} container
@@ -21,7 +21,7 @@ export function countIf<T>(container: T[], predicate: (value: T) => boolean): nu
 
 /**
  * calculate the sum of the elements of an array
- * 
+ *
  * @export
  * @param {number[]} container
  * @returns {number}
@@ -34,7 +34,7 @@ export function sum(container: number[]): number {
 
 /**
  * promise-equivalent of setTimeout
- * 
+ *
  * @export
  * @param {number} durationMS
  * @param {*} [value]
@@ -43,7 +43,7 @@ export function sum(container: number[]): number {
 export function delayed(durationMS: number, value?: any) {
   let timer: NodeJS.Timer;
   let reject: (err: Error) => void;
-  let res = new Promise((resolve, rejectPar) => {
+  const res = new Promise((resolve, rejectPar) => {
     timer = setTimeout(() => {
       resolve(value);
     }, durationMS);
@@ -61,7 +61,7 @@ export function delayed(durationMS: number, value?: any) {
  * returns the attribute "key" from "obj". If that attribute doesn't exist
  * on obj, it will be set to the default value and that is returned.
  */
-export function setdefault<T>(obj: Object, key: PropertyKey, def: T): T {
+export function setdefault<T>(obj: any, key: PropertyKey, def: T): T {
   if (!obj.hasOwnProperty(key)) {
     obj[key] = def;
   }
@@ -74,7 +74,7 @@ export function setdefault<T>(obj: Object, key: PropertyKey, def: T): T {
  * directory as the destination, then deletes the destination and renames the temp
  * to destination. Since the rename is atomic and the deletion only happens after
  * a successful write this should minimize the risk of error.
- * 
+ *
  * @export
  * @param {string} srcPath
  * @param {string} destPath
@@ -94,9 +94,9 @@ export function copyFileAtomic(srcPath: string, destPath: string): Promise<void>
       resolve(fd);
     });
   })
-  .then((fd: number) => fs.closeAsync(fd)
-  ).then(() => fs.copyAsync(srcPath, tmpPath)
-  ).then(() => fs.unlinkAsync(destPath).catch((err) => {
+  .then((fd: number) => fs.closeAsync(fd))
+  .then(() => fs.copyAsync(srcPath, tmpPath))
+  .then(() => fs.unlinkAsync(destPath).catch((err) => {
     if (err.code === 'EPERM') {
       // if the file is currently in use, try a second time
       // 100ms later
@@ -105,14 +105,15 @@ export function copyFileAtomic(srcPath: string, destPath: string): Promise<void>
     } else {
       Promise.reject(err);
     }
-  })
-  ).catch((err) => {
-    return err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err);
-  }
-  ).then(() => fs.renameAsync(tmpPath, destPath)
-  ).catch((err) => {
+  }))
+  .catch(err =>
+    err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+  .then(() => fs.renameAsync(tmpPath, destPath))
+  .catch(err => {
     log('info', 'failed to copy', {srcPath, destPath, err: err.stack});
-    cleanup();
+    if (cleanup !== undefined) {
+      cleanup();
+    }
     return Promise.reject(err);
   })
   ;
@@ -149,7 +150,7 @@ export function isNullOrWhitespace(check: string): boolean {
 /**
  * return whether the specified value is "truthy" (not one of
  * these: undefined, null, 0, -0, NaN "")
- * 
+ *
  * Obviously one could just do "if (val)" but js noobs
  * may not be aware what values that accepts exactly and whether that was
  * intentional. This is more explicit.
