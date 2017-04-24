@@ -1,3 +1,5 @@
+import { DialogActions, DialogType,
+         IDialogContent, showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IDiscoveryState, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -60,6 +62,8 @@ interface IActionProps {
   onSetGamePath: (gameId: string, gamePath: string, modPath: string) => void;
   onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) => void;
   onSetAddGameDialogVisible: () => void;
+  onShowDialog: (type: DialogType, title: string,
+                 content: IDialogContent, actions: DialogActions) => void;
 }
 
 interface IComponentState {
@@ -67,8 +71,8 @@ interface IComponentState {
 }
 
 /**
- * picker/configuration for game modes 
- * 
+ * picker/configuration for game modes
+ *
  * @class GamePicker
  */
 class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentState> {
@@ -99,9 +103,9 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
     const profileGames = new Set<string>(
       Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId));
 
-    let managedGameList: IGameStored[] = [];
-    let discoveredGameList: IGameStored[] = [];
-    let supportedGameList: IGameStored[] = [];
+    const managedGameList: IGameStored[] = [];
+    const discoveredGameList: IGameStored[] = [];
+    const supportedGameList: IGameStored[] = [];
 
     displayedGames.forEach((game: IGameStored) => {
       if (getSafe(discoveredGames, [game.id, 'path'], undefined) !== undefined) {
@@ -250,36 +254,41 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
 
   private renderGamesList(games: IGameStored[], type: string, gameMode: string) {
     const { t, discoveredGames } = this.props;
-    return <ListGroup>
-      { games.map(game =>
-        <GameRow
-          t={t}
-          key={game.id}
-          game={game}
-          discovery={discoveredGames[game.id]}
-          type={type}
-          active={game.id === gameMode}
-          onSetGamePath={this.setGamePath}
-          onSetGameDiscovery={this.addDiscoveredGame}
-        />)
-      }
-      </ListGroup>;
+    return (
+      <ListGroup>
+        {games.map(game => (
+          <GameRow
+            t={t}
+            key={game.id}
+            game={game}
+            discovery={discoveredGames[game.id]}
+            type={type}
+            active={game.id === gameMode}
+            onSetGamePath={this.setGamePath}
+            onSetGameDiscovery={this.addDiscoveredGame}
+            onShowDialog={this.props.onShowDialog}
+          />))
+        }
+      </ListGroup>
+    );
   }
 
   private renderGamesSmall(games: IGameStored[], type: string, gameMode: string) {
     const { t } = this.props;
-    return <div>
-      { games.map(game =>
-        <GameThumbnail
-          t={t}
-          key={game.id}
-          large={false}
-          game={game}
-          type={type}
-          active={game.id === gameMode}
-        />)
-      }
-    </div>;
+    return (
+      <div>
+        {games.map(game => (
+          <GameThumbnail
+            t={t}
+            key={game.id}
+            large={false}
+            game={game}
+            type={type}
+            active={game.id === gameMode}
+          />))
+        }
+      </div>
+    );
   }
 
   private setGamePath = (gameId: string, gamePath: string, modPath: string) => {
@@ -305,17 +314,21 @@ function mapStateToProps(state: IState): IConnectedProps {
 
 function mapDispatchToProps(dispatch): IActionProps {
   return {
-    onHide: (gameId: string, hidden: boolean) => dispatch(setGameHidden(gameId, hidden)),
-    onSetPickerLayout: (layout) => dispatch(setPickerLayout(layout)),
+    onHide: (gameId: string, hidden: boolean) =>
+      dispatch(setGameHidden(gameId, hidden)),
+    onSetPickerLayout: (layout) =>
+      dispatch(setPickerLayout(layout)),
     onSetGamePath: (gameId: string, gamePath: string, modPath: string) =>
       dispatch(setGamePath(gameId, gamePath, modPath)),
     onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) =>
       dispatch(addDiscoveredGame(gameId, result)),
-    onSetAddGameDialogVisible: () => dispatch(setAddGameDialogVisible(true)),
+    onSetAddGameDialogVisible: () =>
+      dispatch(setAddGameDialogVisible(true)),
+    onShowDialog: (type, title, content, actions) =>
+      dispatch(showDialog(type, title, content, actions)),
   };
 }
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(GamePicker)
-  ) as React.ComponentClass<{}>;
+    connect(mapStateToProps, mapDispatchToProps)(GamePicker)) as React.ComponentClass<{}>;
