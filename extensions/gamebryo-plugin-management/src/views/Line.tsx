@@ -21,18 +21,20 @@ const Line = (props: ILineProps) => {
   const boxWidth = Math.abs(target.x - source.x) + 80;
   const boxHeight = Math.abs(target.y - source.y) + 4;
 
-  let path = curved
+  const path = curved
    ? `M ${source.x - left} ${source.y - top}
   Q ${boxWidth} ${boxHeight / 2} ${target.x - left} ${target.y - top}`
    : `M ${source.x - left} ${source.y - top} L ${target.x - left} ${target.y - top}`;
 
-  return (<svg
-    width={boxWidth}
-    height={boxHeight}
-    style={{ position: 'fixed', top, left }}
-  >
-    <path className={className} d={path} fill='none'/>
-  </svg>);
+  return (
+    <svg
+      width={boxWidth}
+      height={boxHeight}
+      style={{ position: 'fixed', top, left, pointerEvents: 'none' }}
+    >
+      <path className={className} d={path} fill='none' />
+    </svg>
+  );
 };
 
 export default Line;

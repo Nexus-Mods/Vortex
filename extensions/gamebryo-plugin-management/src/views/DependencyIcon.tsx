@@ -33,12 +33,14 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
     const {rule, removeable} = this.props;
 
     const key = this.key(rule);
-    return <div key={ key }>
-      {this.renderType(rule.type)}
-      {' '}
-      {this.renderReference(rule.reference)}
-      {removeable ? this.renderRemove() : null}
-    </div>;
+    return (
+      <div key={key}>
+        {this.renderType(rule.type)}
+        {' '}
+        {this.renderReference(rule.reference)}
+        {removeable ? this.renderRemove() : null}
+      </div>
+    );
   }
 
   private key(rule: IRule) {
@@ -49,13 +51,15 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
 
   private renderRemove = () => {
     const {t, rule} = this.props;
-    return (<tooltip.IconButton
-      id={this.key(rule)}
-      className='btn-embed'
-      icon='remove'
-      tooltip={t('Remove')}
-      onClick={this.removeThis}
-    />);
+    return (
+      <tooltip.IconButton
+        id={this.key(rule)}
+        className='btn-embed'
+        icon='remove'
+        tooltip={t('Remove')}
+        onClick={this.removeThis}
+      />
+    );
   }
 
   private removeThis = () => {
@@ -77,9 +81,11 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
     if ((ref.logicalFileName === undefined) && (ref.fileExpression === undefined)) {
       return <p style={style}>{ ref.fileMD5 }</p>;
     }
-    return <p style={style}>
-      {ref.logicalFileName || ref.fileExpression} {ref.versionMatch} (mod: {ref.modId || '?'})
-    </p>;
+    return (
+      <p style={style}>
+        {ref.logicalFileName || ref.fileExpression} {ref.versionMatch} (mod: {ref.modId || '?'})
+      </p>
+    );
   }
 }
 
@@ -125,7 +131,7 @@ interface IDragInfo {
 }
 
 function componentCenter(component: React.Component<any, any>) {
-  let box = findDOMNode(component).getBoundingClientRect();
+  const box = findDOMNode(component).getBoundingClientRect();
   return {
     x: box.left + box.width / 2,
     y: box.top + box.height / 2,
@@ -231,13 +237,13 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
   public componentWillReceiveProps(nextProps: IProps) {
     if (this.props.isDragging !== nextProps.isDragging) {
-      let pos = undefined;
+      let pos;
       if (nextProps.isDragging) {
         pos = componentCenter(this);
       }
       nextProps.onSetSource(nextProps.plugin.name, pos);
     } else if (this.props.isOver !== nextProps.isOver) {
-      let pos = undefined;
+      let pos;
       if (nextProps.isOver) {
         pos = componentCenter(this);
       }
@@ -248,39 +254,45 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, connectDragSource, connectDropTarget, plugin, userlist } = this.props;
 
-    let classes = ['btn-dependency'];
+    const classes = ['btn-dependency'];
 
-    let lootRules: ILOOTPlugin = userlist.find(rule => rule.name === plugin.name) || {
+    const lootRules: ILOOTPlugin = userlist.find(rule => rule.name === plugin.name) || {
       name: plugin.name,
     };
 
-    let popoverBlocks = [];
+    const popoverBlocks = [];
 
     if ((lootRules.after !== undefined) && (lootRules.after.length > 0)) {
-      popoverBlocks.push(<div key='after'>
-        {t('Loads after:')}
-        <ul>
-          {(lootRules.after || []).map(name => this.renderRule(name, 'after'))}
-        </ul>
-      </div>);
+      popoverBlocks.push((
+        <div key='after'>
+          {t('Loads after:')}
+          <ul>
+            {(lootRules.after || []).map(name => this.renderRule(name, 'after'))}
+          </ul>
+        </div>
+      ));
     }
 
     if ((lootRules.req !== undefined) && (lootRules.req.length > 0)) {
-      popoverBlocks.push(<div key='requires'>
+      popoverBlocks.push((
+        <div key='requires'>
         {t('Requires:')}
         <ul>
           {(lootRules.req || []).map(name => this.renderRule(name, 'requires'))}
         </ul>
-      </div>);
+      </div>
+      ));
     }
 
     if ((lootRules.inc !== undefined) && (lootRules.inc.length > 0)) {
-      popoverBlocks.push(<div key='incompatible'>
+      popoverBlocks.push((
+        <div key='incompatible'>
         {t('Incompatible:')}
         <ul>
           {(lootRules.inc || []).map(name => this.renderRule(name, 'incompatible'))}
         </ul>
-      </div>);
+      </div>
+      ));
     }
 
     if (popoverBlocks.length > 0) {
@@ -288,12 +300,13 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     } else {
       popoverBlocks.push(t('Drag to another connector to define load order rules.'));
     }
-    const popover = <Popover id={`popover-${plugin.name}`} style={{ maxWidth: 500 }}>
+    const popover = (
+      <Popover id={`popover-${plugin.name}`} style={{ maxWidth: 500 }}>
       {popoverBlocks}
-    </Popover>;
+    </Popover>
+    );
 
-    let connectorIcon = connectDropTarget(
-      connectDragSource(
+    const connectorIcon = connectDragSource(
         <div style={{ display: 'inline' }}>
           <tooltip.IconButton
             id={`btn-meta-data-${plugin.name}`}
@@ -313,13 +326,12 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           >
             {popover}
           </Overlay>
-        </div>
-      )
-    );
+        </div>);
 
-    return <div style={{ textAlign: 'center', width: '100%' }}>
-      {connectorIcon}
-      </div>;
+    return connectDropTarget(
+      <div style={{ textAlign: 'center', width: '100%' }}>
+        {connectorIcon}
+      </div>);
   }
 
   private setRef = (ref) => {
@@ -336,16 +348,18 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
   private renderRule = (name: string, type: string) => {
     const { t } = this.props;
-    return <li key={name}>{name}
-      <tooltip.IconButton
-        id={`btn-rule-remove-${name}`}
-        value={`${type}:${name}`}
-        className='btn-embed'
-        icon='remove'
-        tooltip={t('Remove')}
-        onClick={this.onRemove}
-      />
-    </li>;
+    return (
+      <li key={name}>{name}
+        <tooltip.IconButton
+          id={`btn-rule-remove-${name}`}
+          value={`${type}:${name}`}
+          className='btn-embed'
+          icon='remove'
+          tooltip={t('Remove')}
+          onClick={this.onRemove}
+        />
+      </li>
+    );
   }
   /*
   private removeRule = (plugin: string, type: string, reference: string) => {
@@ -355,7 +369,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
   private onRemove = (evt) => {
     const { gameId, plugin, onRemoveRule } = this.props;
-    let [ type, pluginId ] = splitOnce(evt.currentTarget.value, ':');
+    const [ type, pluginId ] = splitOnce(evt.currentTarget.value, ':');
     onRemoveRule(gameId, plugin.name, pluginId, type);
   }
 }
@@ -386,5 +400,5 @@ function mapDispatchToProps(dispatch): IActionProps {
 }
 
 export default
-    connect(mapStateToProps, mapDispatchToProps)(DependencyIconDrag
-  ) as React.ComponentClass<IBaseProps>;
+  connect(mapStateToProps, mapDispatchToProps)(
+      DependencyIconDrag) as React.ComponentClass<IBaseProps>;

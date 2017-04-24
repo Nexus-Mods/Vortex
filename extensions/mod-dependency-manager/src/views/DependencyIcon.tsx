@@ -2,7 +2,7 @@ import { IConflict } from '../types/IConflict';
 
 import { setConflictDialog, setCreateRule, setSource, setTarget } from '../actions';
 
-import { ComponentEx, actions, log, selectors, tooltip, types, util } from 'nmm-api';
+import { actions, ComponentEx, log, selectors, tooltip, types, util } from 'nmm-api';
 
 import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
 import * as React from 'react';
@@ -26,12 +26,14 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
     const {rule, removeable} = this.props;
 
     const key = this.key(rule);
-    return <div key={ key }>
-      {this.renderType(rule.type)}
-      {' '}
-      {this.renderReference(rule.reference)}
-      {removeable ? this.renderRemove() : null}
-    </div>;
+    return (
+      <div key={key}>
+        {this.renderType(rule.type)}
+        {' '}
+        {this.renderReference(rule.reference)}
+        {removeable ? this.renderRemove() : null}
+      </div>
+    );
   }
 
   private key(rule: IRule) {
@@ -42,13 +44,15 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
 
   private renderRemove = () => {
     const {t, rule} = this.props;
-    return (<tooltip.IconButton
-      id={this.key(rule)}
-      className='btn-embed'
-      icon='remove'
-      tooltip={t('Remove')}
-      onClick={this.removeThis}
-    />);
+    return (
+      <tooltip.IconButton
+        id={this.key(rule)}
+        className='btn-embed'
+        icon='remove'
+        tooltip={t('Remove')}
+        onClick={this.removeThis}
+      />
+    );
   }
 
   private removeThis = () => {
@@ -75,9 +79,11 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
     if ((ref.logicalFileName === undefined) && (ref.fileExpression === undefined)) {
       return <p style={style}>{ ref.fileMD5 }</p>;
     }
-    return <p style={style}>
-      {ref.logicalFileName || ref.fileExpression} {ref.versionMatch} (mod: {ref.modId || '?'})
-    </p>;
+    return (
+      <p style={style}>
+        {ref.logicalFileName || ref.fileExpression} {ref.versionMatch} (mod: {ref.modId || '?'})
+    </p>
+    );
   }
 }
 
@@ -124,7 +130,7 @@ interface IDragInfo {
 }
 
 function componentCenter(component: React.Component<any, any>) {
-  let box = findDOMNode(component).getBoundingClientRect();
+  const box = findDOMNode(component).getBoundingClientRect();
   return {
     x: box.left + box.width / 2,
     y: box.top + box.height / 2,
@@ -238,13 +244,13 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     }
 
     if (this.props.isDragging !== nextProps.isDragging) {
-      let pos = undefined;
+      let pos;
       if (nextProps.isDragging) {
         pos = componentCenter(this);
       }
       nextProps.onSetSource(nextProps.mod.id, pos);
     } else if (this.props.isOver !== nextProps.isOver) {
-      let pos = undefined;
+      let pos;
       if (nextProps.isOver) {
         pos = componentCenter(this);
       }
@@ -255,10 +261,10 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, conflicts, connectDragSource, connectDropTarget, mod } = this.props;
 
-    let classes = ['btn-dependency'];
+    const classes = ['btn-dependency'];
 
-    let staticRules = util.getSafe(this.state, ['modInfo', 'rules'], []);
-    let customRules = util.getSafe(mod, ['rules'], []);
+    const staticRules = util.getSafe(this.state, ['modInfo', 'rules'], []);
+    const customRules = util.getSafe(mod, ['rules'], []);
 
     if ((staticRules.length > 0) || (customRules.length > 0)) {
       classes.push('btn-dependency-hasrules');
@@ -266,24 +272,25 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       classes.push('btn-dependency-norules');
     }
 
-    // TODO are there unfulfilled rules?
-    // TODO are there file conflicts with a mod and no rule?
+    // TODO: are there unfulfilled rules?
+    // TODO: are there file conflicts with a mod and no rule?
 
-    let popover = <Popover id={`popover-${mod.id}`} style={{ maxWidth: 500 }}>
-      {staticRules.map((rule) =>
-        <RuleDescription rule={rule} t={t} key={this.key(rule)} removeable={false} />)}
-      {customRules.map((rule) =>
-        <RuleDescription
-          rule={rule}
-          t={t}
-          key={this.key(rule)}
-          removeable={true}
-          onRemoveRule={this.removeRule}
-        />)}
-    </Popover>;
+    const popover = (
+      <Popover id={`popover-${mod.id}`} style={{ maxWidth: 500 }}>
+        {staticRules.map((rule) =>
+          <RuleDescription rule={rule} t={t} key={this.key(rule)} removeable={false} />)}
+        {customRules.map((rule) => (
+          <RuleDescription
+            rule={rule}
+            t={t}
+            key={this.key(rule)}
+            removeable={true}
+            onRemoveRule={this.removeRule}
+          />))}
+      </Popover>
+    );
 
-    let connectorIcon = connectDropTarget(
-      connectDragSource(
+    const connectorIcon = connectDragSource(
         <div style={{ display: 'inline' }}>
           <tooltip.IconButton
             id={`btn-meta-data-${mod.id}`}
@@ -303,29 +310,30 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           >
             {popover}
           </Overlay>
-        </div>
-      )
-    );
+        </div>);
 
     let conflictIcon = null;
     if (conflicts[mod.id] !== undefined) {
-      let tip = t('Conflicts with: {{conflicts}}', { replace: {
+      const tip = t('Conflicts with: {{conflicts}}', { replace: {
         conflicts: conflicts[mod.id].map(conflict => conflict.otherMod).join('\n'),
       } });
-      conflictIcon = <tooltip.IconButton
-        id={`btn-meta-conflicts-${mod.id}`}
-        className='btn-conflict'
-        key={`conflicts-${mod.id}`}
-        tooltip={tip}
-        icon='bolt'
-        onClick={this.openConflictDialog}
-      />;
+      conflictIcon = (
+        <tooltip.IconButton
+          id={`btn-meta-conflicts-${mod.id}`}
+          className='btn-conflict'
+          key={`conflicts-${mod.id}`}
+          tooltip={tip}
+          icon='bolt'
+          onClick={this.openConflictDialog}
+        />
+      );
     }
 
-    return <div style={{ textAlign: 'center', width: '100%' }}>
-      {connectorIcon}
-      {conflictIcon}
-      </div>;
+    return connectDropTarget(
+      <div style={{ textAlign: 'center', width: '100%' }}>
+        {connectorIcon}
+        {conflictIcon}
+      </div>);
   }
 
   private setRef = (ref) => {
@@ -410,5 +418,4 @@ function mapDispatchToProps(dispatch): IActionProps {
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-    DependencyIconDrag
-  ) as React.ComponentClass<IBaseProps>;
+    DependencyIconDrag) as React.ComponentClass<IBaseProps>;

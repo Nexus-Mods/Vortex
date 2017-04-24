@@ -28,12 +28,14 @@ class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
 
     const lineClass = target.id !== null ? 'line-connect' : 'line-disconnect';
 
-    return (<Line
-      source={source.pos}
-      target={target.pos}
-      className={lineClass}
-      curved={target.id !== null}
-    />);
+    return (
+      <Line
+        source={source.pos}
+        target={target.pos}
+        className={lineClass}
+        curved={target.id !== null}
+      />
+    );
   }
 }
 
