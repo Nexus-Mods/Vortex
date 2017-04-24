@@ -52,7 +52,7 @@ export const stateReducer: IReducerSpec = {
       return setOrNop(state, [ 'files', payload.id, 'fileMD5' ], payload.fileMD5);
     },
     [action.setDownloadHashByFile as any]: (state, payload) => {
-      const downloadId = Object.keys(state.files).find(
+      const downloadId = Object.keys(state.files || {}).find(
         (id: string) => state.files[id].localPath === payload.fileName);
       if (downloadId === undefined) {
         return state;
@@ -86,7 +86,7 @@ export const stateReducer: IReducerSpec = {
                       payload.paused ? 'paused' : 'started');
     },
     [action.setDownloadSpeed as any]: (state, payload) => {
-      let temp = setSafe(state, ['speed'], payload);
+      const temp = setSafe(state, ['speed'], payload);
       let speeds = state.speedHistory !== undefined ? state.speedHistory.slice() : [];
       speeds.push(payload);
       if (speeds.length > speedDataPoints) {
