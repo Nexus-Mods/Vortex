@@ -1,5 +1,5 @@
 import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
-import { IExtensibleProps, extend } from '../util/ExtensionProvider';
+import { extend, IExtensibleProps } from '../util/ExtensionProvider';
 
 import DynamicProps from './DynamicProps';
 import Icon from './Icon';
@@ -35,7 +35,7 @@ function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
  * In the simplest form this is simply a bunch of buttons that will run
  * an action if clicked, but an icon can also be more dynamic (i.e. rendering
  * dynamic content or having multiple states)
- * 
+ *
  * @class IconBar
  * @extends {ComponentEx<IProps, {}>}
  */
@@ -45,8 +45,8 @@ class IconBar extends React.Component<IProps, {}> {
 
     if (collapse) {
       const dotdotdot: any = <Icon name='ellipsis-v' />;
-      let collapsed: IActionDefinition[] = [];
-      let unCollapsed: IActionDefinition[] = [];
+      const collapsed: IActionDefinition[] = [];
+      const unCollapsed: IActionDefinition[] = [];
 
       objects.forEach(action => {
         if ((action.options === undefined) || !action.options.noCollapse) {
@@ -62,16 +62,19 @@ class IconBar extends React.Component<IProps, {}> {
           className={className + ' btngroup-collapsed'}
           style={style}
         >
-          { collapsed.length === 0 ? null : <DropdownButton
-            className='btn-embed'
-            id={`btn-menu-${id}`}
-            noCaret
-            title={dotdotdot}
-            bsStyle='default'
-            pullRight={true}
-          >
-            {collapsed.sort(iconSort).map(this.renderMenuItem)}
-          </DropdownButton> }
+          {collapsed.length === 0 ? null : (
+            <DropdownButton
+              className='btn-embed'
+              id={`btn-menu-${id}`}
+              noCaret
+              title={dotdotdot}
+              bsStyle='default'
+              pullRight={true}
+            >
+              {collapsed.sort(iconSort).map(this.renderMenuItem)}
+            </DropdownButton>
+          )
+          }
           {unCollapsed.sort(iconSort).map(this.renderIcon)}
         </ButtonGroup>);
     } else {
@@ -97,7 +100,7 @@ class IconBar extends React.Component<IProps, {}> {
   }
 
   private renderIcon = (icon: IActionDefinition, index: number) =>
-    this.renderIconInner(icon, index);
+    this.renderIconInner(icon, index)
 
   private renderIconInner = (icon: IActionDefinition, index: number,
                              forceButtonType?: ButtonType) => {
@@ -117,16 +120,18 @@ class IconBar extends React.Component<IProps, {}> {
     const id = `${instanceId || '1'}_${index}`;
     if (icon.icon !== undefined) {
       // simple case
-      return <ToolbarIcon
-        key={id}
-        id={id}
-        instanceId={instanceIds}
-        icon={icon.icon}
-        text={icon.title}
-        onClick={icon.action}
-        placement={tooltipPlacement}
-        buttonType={forceButtonType || buttonType}
-      />;
+      return (
+        <ToolbarIcon
+          key={id}
+          id={id}
+          instanceId={instanceIds}
+          icon={icon.icon}
+          text={icon.title}
+          onClick={icon.action}
+          placement={tooltipPlacement}
+          buttonType={forceButtonType || buttonType}
+        />
+      );
     } else {
       // custom case. the caller can pass properties via the props() function and by
       // passing the prop to the iconbar. the props on the iconbar that we don't handle are
@@ -145,12 +150,14 @@ class IconBar extends React.Component<IProps, {}> {
         { key: id, buttonType: forceButtonType || buttonType },
       );
       if (icon.props !== undefined) {
-        return <DynamicProps
-          key={id}
-          dynamicProps={icon.props}
-          staticProps={staticProps}
-          component={icon.component}
-        />;
+        return (
+          <DynamicProps
+            key={id}
+            dynamicProps={icon.props}
+            staticProps={staticProps}
+            component={icon.component}
+          />
+        );
       } else {
         return <icon.component {...staticProps} />;
       }
@@ -162,7 +169,7 @@ class IconBar extends React.Component<IProps, {}> {
  * called to register an extension icon. Please note that this function is called once for every
  * icon bar in the ui for each icon. Only the bar with matching group name should accept the icon
  * by returning a descriptor object.
- * 
+ *
  * @param {IconBar} instance the bar to test against. Please note that this is not actually an
  *                           IconBar instance but the Wrapper, as the bar itself is not yet
  *                           registered, but all props are there
@@ -177,10 +184,10 @@ function registerAction(instance: IconBar,
                         position: number,
                         iconOrComponent: string | React.ComponentClass<any>,
                         options: IActionOptions,
-                        titleOrProps?: string | Function,
+                        titleOrProps?: string | (() => any),
                         actionOrCondition?: (instanceIds?: string[]) => void | boolean,
                         condition?: () => boolean,
-                        ): Object {
+                        ): any {
   if (instance.props.group === group) {
     if (typeof(iconOrComponent) === 'string') {
       return { type: 'simple', icon: iconOrComponent, title: titleOrProps,
@@ -194,6 +201,7 @@ function registerAction(instance: IconBar,
   }
 }
 
+export type ExportType = IBaseProps & IExtensibleProps & React.HTMLAttributes<any> & any;
+
 export default
-  extend(registerAction)(IconBar
-  ) as React.ComponentClass<IBaseProps & IExtensibleProps & React.HTMLAttributes<any> & any>;
+  extend(registerAction)(IconBar) as React.ComponentClass<ExportType>;

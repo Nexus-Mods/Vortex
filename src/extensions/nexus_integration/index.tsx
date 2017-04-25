@@ -42,7 +42,7 @@ let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (schema: string,
-    handler: (inputUrl: string) => Promise<string[]>) => void;
+                             handler: (inputUrl: string) => Promise<string[]>) => void;
 }
 
 function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boolean) {
@@ -50,7 +50,7 @@ function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boo
 
   let nexusFileInfo: IFileInfo;
 
-  let gameId = convertGameId(url.gameId);
+  const gameId = convertGameId(url.gameId);
 
   nexus.getFileInfo(url.modId, url.fileId, gameId)
     .then((fileInfo: IFileInfo) => {
@@ -68,7 +68,7 @@ function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boo
       if (urls === null) {
         throw { message: 'No download locations (yet)' };
       }
-      let uris: string[] = urls.map((item: IDownloadURL) => item.URI);
+      const uris: string[] = urls.map((item: IDownloadURL) => item.URI);
       log('debug', 'got download urls', { uris });
       api.events.emit('start-download', uris, {
         game: url.gameId.toLowerCase(),
@@ -123,12 +123,12 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         api.events.emit('retrieve-categories', gameId, categories, isUpdate);
       })
       .catch((err) => {
-        let message = processErrorMessage(err.statusCode, err, gameId);
+        const message = processErrorMessage(err.statusCode, err, gameId);
         showError(api.store.dispatch,
           'An error occurred retrieving the Game Info', message);
       });
   });
-};
+}
 
 interface IRequestError {
   error: string;
@@ -185,7 +185,7 @@ function endorseModImpl(
       const detail = processErrorMessage(err.statusCode, err.message, gameId);
       showError(store.dispatch, 'An error occurred endorsing a mod', detail);
     });
-};
+}
 
 function checkModsVersionImpl(
   store: Redux.Store<any>,
@@ -198,12 +198,12 @@ function checkModsVersionImpl(
   return Promise.map(modsList, (mod: IMod) => {
     return checkModsVersion(store.dispatch, nexus, gameId, mod)
       .catch((err) => {
-        let detail = processErrorMessage(err.statusCode, err.message, gameId);
+        const detail = processErrorMessage(err.statusCode, err.message, gameId);
         if (detail.fatal) {
           return Promise.reject(detail);
         }
 
-        let name = modName(mod, { version: true });
+        const name = modName(mod, { version: true });
         if (detail.servermessage !== undefined) {
           return `${name}:\n${detail.error}\nServer said: "${detail.servermessage}"`;
         } else {
@@ -267,12 +267,10 @@ function init(context: IExtensionContextExt): boolean {
   context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {
     const nxm: NXMUrl = new NXMUrl(nxmurl);
     return nexus.getDownloadURLs(nxm.modId, nxm.fileId, convertGameId(nxm.gameId))
-      .map((url: IDownloadURL): string => {
-        return url.URI;
-      });
+      .map((url: IDownloadURL): string => url.URI);
   });
 
-  context.registerAction('download-icons', 100, InputButton,
+  context.registerAction('download-icons', 100, InputButton, {},
     () => ({
       key: 'input-nxm-url',
       id: 'input-nxm-url',
@@ -315,11 +313,10 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.once(() => {
-    let state = context.api.store.getState();
+    const state = context.api.store.getState();
 
     nexus = new Nexus(activeGameId(state),
-      getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '')
-    );
+      getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''));
 
     const gameMode = activeGameId(context.api.store.getState());
     context.api.store.dispatch(setUpdatingMods(gameMode, false));
@@ -327,7 +324,7 @@ function init(context: IExtensionContextExt): boolean {
     endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
       endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
 
-    let registerFunc = () => {
+    const registerFunc = () => {
       context.api.registerProtocol('nxm', (url: string) => {
         startDownload(context.api, url, false);
       });
@@ -372,8 +369,7 @@ function init(context: IExtensionContextExt): boolean {
         } else {
           context.api.deregisterProtocol('nxm');
         }
-      }
-    );
+      });
 
     context.api.events.on('gamemode-activated', (gameId: string) => {
       nexus.setGame(gameId);
