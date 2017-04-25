@@ -17,12 +17,13 @@ export interface IProps {
 
   onActivate: (profileId: string) => void;
   onClone: (profileId: string) => void;
+  onRemove: (profileId: string) => void;
   onStartEditing: (id: string) => void;
 }
 
 /**
  * presents profiles and allows creation of new ones
- * 
+ *
  * @class ProfileView
  * @extends {React.Component<IConnectedProps, {}>}
  */
@@ -38,7 +39,7 @@ class ProfileItem extends ComponentEx<IProps, {}> {
     // TODO: not using ListGroupItem because it puts the content into
     //       <p>-tags so it doesn't support 'complex' content
 
-    let className = active ? 'list-group-item active' : 'list-group-item';
+    const className = active ? 'list-group-item active' : 'list-group-item';
 
     return (
       <span className={className}>
@@ -82,6 +83,7 @@ class ProfileItem extends ComponentEx<IProps, {}> {
               className='btn-embed'
               id={`btn-profile-remove-${profile.id}`}
               tooltip={ t('Remove') }
+              onClick={ this.removeProfile }
               icon='remove'
             />
           </div>
@@ -93,14 +95,19 @@ class ProfileItem extends ComponentEx<IProps, {}> {
   private renderFeature = (feature: IProfileFeature): JSX.Element => {
     const { t, profile } = this.props;
     const id = `icon-profilefeature-${profile.id}-${feature.id}`;
-    return <li key={id}>
-      <TooltipIcon
-        id={id}
-        tooltip={t(feature.description)}
-        name={feature.icon}
-      />
-      {this.renderFeatureValue(feature.type, getSafe(profile, ['features', feature.id], undefined))}
-    </li>;
+    return (
+      <li key={id}>
+        <TooltipIcon
+          id={id}
+          tooltip={t(feature.description)}
+          name={feature.icon}
+        />
+        {
+          this.renderFeatureValue(feature.type,
+                                  getSafe(profile, ['features', feature.id], undefined))
+        }
+      </li>
+    );
   }
 
   private renderFeatureValue(type: string, value: any) {
@@ -113,6 +120,11 @@ class ProfileItem extends ComponentEx<IProps, {}> {
   private cloneProfile = () => {
     const { onClone, profile } = this.props;
     onClone(profile.id);
+  }
+
+  private removeProfile = () => {
+    const { onRemove, profile } = this.props;
+    onRemove(profile.id);
   }
 
   private activate = () => {

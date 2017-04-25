@@ -5,6 +5,8 @@ import safeCreateAction from '../../../actions/safeCreateAction';
  */
 export const setProfile = safeCreateAction('SET_PROFILE');
 
+export const removeProfile = safeCreateAction('REMOVE_PROFILE');
+
 /**
  * enable or disable a mod in a profile
  */

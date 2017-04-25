@@ -40,12 +40,12 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 
-let profileFiles: { [gameId: string]: string[] } = {};
+const profileFiles: { [gameId: string]: string[] } = {};
 
-let profileFeatures: IProfileFeature[] = [];
+const profileFeatures: IProfileFeature[] = [];
 
 function profilePath(store: Redux.Store<any>, profile: IProfile): string {
-  let app = appIn || remote.app;
+  const app = appIn || remote.app;
 
   return path.join(app.getPath('userData'), profile.gameId, 'profiles', profile.id);
 }
@@ -90,16 +90,16 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
 /**
  * activate the specified game (using the last active profile for that game).
  * Will ask the user if the game was never active (how would this happen?)
- * 
- * @param {string} gameId 
+ *
+ * @param {string} gameId
  */
 function activateGame(store: Redux.Store<IState>, gameId: string) {
   const state: IState = store.getState();
   const profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId],
     undefined);
   if (profileId === undefined) {
-    let profiles = getSafe(state, ['persistent', 'profiles'], []);
-    let gameProfiles: IProfile[] = Object.keys(profiles)
+    const profiles = getSafe(state, ['persistent', 'profiles'], []);
+    const gameProfiles: IProfile[] = Object.keys(profiles)
       .filter((id: string) => profiles[id].gameId === gameId)
       .map((id: string) => profiles[id]);
     store.dispatch(showDialog('question', 'Choose profile', {
@@ -111,7 +111,7 @@ function activateGame(store: Redux.Store<IState>, gameId: string) {
       }))
       .then((dialogResult: IDialogResult) => {
         if (dialogResult.action === 'Activate') {
-          let selectedId = Object.keys(dialogResult.input).find(
+          const selectedId = Object.keys(dialogResult.input).find(
             (id: string) => dialogResult.input[id]);
           store.dispatch(setNextProfile(selectedId));
         }
@@ -141,8 +141,8 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerAction('game-discovered-buttons', 100, 'asterisk', {}, 'Manage',
     (instanceIds: string[]) => {
-      let profileId = shortid();
-      let gameId = instanceIds[0];
+      const profileId = shortid();
+      const gameId = instanceIds[0];
       context.api.store.dispatch(setProfile({
         id: profileId,
         gameId,
@@ -180,9 +180,9 @@ function init(context: IExtensionContextExt): boolean {
       };
 
   // ensure the current profile is always set to a valid value on startup and
-  // when changing the game mode 
+  // when changing the game mode
   context.once(() => {
-    let store = context.api.store;
+    const store = context.api.store;
 
     context.api.events.on('activate-game', (gameId: string) => {
       activateGame(store, gameId);
@@ -191,8 +191,8 @@ function init(context: IExtensionContextExt): boolean {
     context.api.onStateChange(
         ['settings', 'profiles', 'nextProfileId'],
         (prev: string, current: string) => {
-          let state: IState = store.getState();
-          let profile = state.persistent.profiles[current];
+          const state: IState = store.getState();
+          const profile = state.persistent.profiles[current];
           refreshProfile(store, profile, 'export')
               .then(() => {
                 store.dispatch(setCurrentProfile(profile.gameId, current));
@@ -204,7 +204,7 @@ function init(context: IExtensionContextExt): boolean {
                                 context.api.events.emit('profile-activated',
                                                         current);
                               });
-    let initProfile = activeProfile(store.getState());
+    const initProfile = activeProfile(store.getState());
     refreshProfile(store, initProfile, 'import')
         .then(() => context.api.events.emit('profile-activated', initProfile.id));
   });

@@ -1,16 +1,18 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { getSafe, setSafe } from '../../../util/storeHelper';
+import { deleteOrNop, getSafe, setSafe } from '../../../util/storeHelper';
 
-import { setFeature, setModEnabled, setProfile } from '../actions/profiles';
+import * as actions from '../actions/profiles';
 
 /**
  * reducer for changes to ephemeral session state
  */
 export const profilesReducer: IReducerSpec = {
   reducers: {
-    [setProfile as any]: (state, payload) =>
+    [actions.setProfile as any]: (state, payload) =>
       setSafe(state, [payload.id], Object.assign({}, getSafe(state, [payload.id], {}), payload)),
-    [setModEnabled as any]: (state, payload) => {
+    [actions.removeProfile as any]: (state, payload) =>
+      deleteOrNop(state, [ payload ]),
+    [actions.setModEnabled as any]: (state, payload) => {
       const { profileId, modId, enable } = payload;
 
       if (state[profileId] === undefined) {
@@ -22,7 +24,7 @@ export const profilesReducer: IReducerSpec = {
         [profileId, 'modState', modId, 'enabled'],
         enable);
     },
-    [setFeature as any]: (state, payload) => {
+    [actions.setFeature as any]: (state, payload) => {
       const { profileId, featureId, value } = payload;
 
       if (state[profileId] === undefined) {

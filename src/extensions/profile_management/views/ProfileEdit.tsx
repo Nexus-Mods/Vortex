@@ -26,7 +26,7 @@ export interface IEditProps {
 
 /**
  * list element displayed when editing an item
- * 
+ *
  * @class ProfileEdit
  */
 class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
@@ -77,14 +77,16 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
     const { t } = this.props;
     const { edit } = this.state;
     if (feature.type === 'boolean') {
-      return (<Checkbox
-        id={feature.id}
-        key={feature.id}
-        checked={getSafe(edit, ['features', feature.id], false)}
-        onChange={this.toggleCheckbox}
-      >
-        {t(feature.description)}
-      </Checkbox>);
+      return (
+        <Checkbox
+          id={feature.id}
+          key={feature.id}
+          checked={getSafe(edit, ['features', feature.id], false)}
+          onChange={this.toggleCheckbox}
+        >
+          {t(feature.description)}
+        </Checkbox>
+      );
     }
   }
 
@@ -104,7 +106,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
 
   private saveEdit = () => {
     this.props.onSaveEdit(this.state.edit);
-  };
+  }
 
   private changeEditName = (evt) => {
     this.setState(update(this.state, {
@@ -112,7 +114,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
         name: { $set: evt.target.value },
       },
     }));
-  };
+  }
 }
 
 export default ProfileEdit;

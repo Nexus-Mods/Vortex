@@ -1,3 +1,5 @@
+import { DialogActions, DialogType, IDialogContent, IDialogResult,
+         showDialog } from '../../../actions/notifications';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
@@ -7,7 +9,7 @@ import Icon from '../../../views/Icon';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 
-import { setFeature, setProfile } from '../actions/profiles';
+import { removeProfile, setFeature, setProfile } from '../actions/profiles';
 import { setNextProfile } from '../actions/settings';
 import { IProfile } from '../types/IProfile';
 import { IProfileFeature } from '../types/IProfileFeature';
@@ -38,8 +40,11 @@ interface IConnectedProps {
 
 interface IActionProps {
   onAddProfile: (profile: IProfile) => void;
+  onRemoveProfile: (profileId: string) => void;
   onSetNextProfile: (profileId: string) => void;
   onSetFeature: (profileId: string, featureId: string, value: any) => void;
+  onShowDialog: (type: DialogType, title: string, content: IDialogContent,
+                 actions: DialogActions) => void;
 }
 
 interface IViewState {
@@ -50,7 +55,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 /**
  * presents profiles and allows creation of new ones
- * 
+ *
  * @class ProfileView
  */
 class ProfileView extends ComponentEx<IProps, IViewState> {
@@ -84,8 +89,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         profiles[lhs].gameId !== profiles[rhs].gameId
           ? profiles[lhs].gameId.localeCompare(profiles[rhs].gameId)
           : profiles[lhs].name.localeCompare(profiles[rhs].name, language,
-            { sensitivity: 'base' })
-    );
+            { sensitivity: 'base' }));
   }
 
   private renderProfile = (profileId: string, features: IProfileFeature[]): JSX.Element => {
@@ -110,6 +114,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         gameName={ gameName }
         active={ currentProfile === profileId }
         onClone={ this.onCloneProfile }
+        onRemove={ this.onRemoveProfile }
         onActivate={ onSetNextProfile }
         onStartEditing={ this.editExistingProfile }
       />
@@ -127,13 +132,14 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   private renderEditProfile(): JSX.Element {
     const { t, features, gameId, onSetFeature, profiles } = this.props;
     const { edit } = this.state;
-    let profile = undefined;
+    let profile;
     if (edit !== '__new') {
       profile = profiles[edit];
     }
 
     return (
       <ProfileEdit
+        key={ edit }
         profileId={ edit }
         gameId={ gameId }
         t={ t }
@@ -162,36 +168,47 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   private saveEdit = (profile: IProfile) => {
     const { onAddProfile } = this.props;
     if (profile.id === '__new') {
-      let newId: string = shortid();
-      let newProf: IProfile = update(profile, { id: { $set: newId } });
+      const newId: string = shortid();
+      const newProf: IProfile = update(profile, { id: { $set: newId } });
       onAddProfile(newProf);
     } else {
       onAddProfile(profile);
     }
     this.endEdit();
-  };
+  }
 
   private endEdit = () => {
     this.setState(update(this.state, {
       edit: { $set: null },
     }));
-  };
+  }
 
   private editNewProfile = () => {
     this.setState(update(this.state, {
       edit: { $set: '__new' },
     }));
-  };
+  }
 
   private onCloneProfile = (profileId: string) => {
     const { onAddProfile, profiles } = this.props;
-    let newProfile = Object.assign({}, profiles[profileId]);
+    const newProfile = Object.assign({}, profiles[profileId]);
     newProfile.id = shortid();
     fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile))
     .then(() => {
       onAddProfile(newProfile);
       this.editExistingProfile(newProfile.id);
     });
+  }
+
+  private onRemoveProfile = (profileId: string) => {
+    const { onRemoveProfile, onShowDialog, profiles } = this.props;
+    onShowDialog('question', 'Confirm', {
+      message: 'Remove this profile? This can\'t be undone',
+    }, {
+        Cancel: null,
+        Remove: () => fs.removeAsync(profilePath(profiles[profileId]))
+          .then(() => onRemoveProfile(profileId)),
+      });
   }
 
   private editExistingProfile = (profileId: string) => {
@@ -220,15 +237,16 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
+    onRemoveProfile: (profileId: string) => dispatch(removeProfile(profileId)),
     onSetNextProfile: (profileId: string) => dispatch(setNextProfile(profileId)),
     onSetFeature: (profileId: string, featureId: string, value: any) =>
       dispatch(setFeature(profileId, featureId, value)),
+    onShowDialog: (type, title, content, actions) =>
+      dispatch(showDialog(type, title, content, actions)),
   };
 }
 
 export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
-      ProfileView
-    )
-  ) as React.ComponentClass<{}>;
+      ProfileView)) as React.ComponentClass<{}>;
