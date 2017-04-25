@@ -668,7 +668,12 @@ textarea {
   height: 16px;
 }
 
-.header-action {
+.header-dependencies {
+  text-align: center;
+}
+
+.header-action p {
+  width: 100%;
   text-align: center;
 }
 
@@ -990,7 +995,7 @@ textarea {
 }
 
 .vcenter {
-  margin: auto 0px auto 0px;
+  margin: auto 0 auto 0;
 }
 
 .flex-rest {
