@@ -73,7 +73,7 @@ function UserCanceled() { }
 
 /**
  * central class for the installation process
- * 
+ *
  * @class InstallManager
  */
 class InstallManager {
@@ -87,13 +87,13 @@ class InstallManager {
 
   /**
    * add an installer extension
-   * 
+   *
    * @param {number} priority priority of the installer. the lower the number the higher
    *                          the priority, so at priority 0 the extension would always be
    *                          the first to be queried
    * @param {ITestSupported} testSupported
    * @param {IInstall} install
-   * 
+   *
    * @memberOf InstallManager
    */
   public addInstaller(
@@ -120,7 +120,7 @@ class InstallManager {
    *                                      of others and tries to install those too
    * @param {boolean} enable if true, enable the mod after installation
    * @param {Function} callback callback once this is finished
-   * 
+   *
    * TODO return a promise instead of callback
    * TODO the callback isn't called if the installation is canceled by the user
    */
@@ -138,7 +138,7 @@ class InstallManager {
       this.mTask = new Zip();
     }
 
-    let fullInfo = Object.assign({}, info);
+    const fullInfo = Object.assign({}, info);
     let destinationPath: string;
 
     const baseName = path.basename(archivePath, path.extname(archivePath));
@@ -225,7 +225,7 @@ class InstallManager {
           installContext.startInstallCB(modId, archiveId);
 
           destinationPath = path.join(this.mGetInstallPath(), modId);
-          return this.installInner(archivePath, installGameId);
+          return this.installInner(api.store, archivePath, installGameId);
         })
         .then((result) => {
           installContext.setInstallPathCB(modId, destinationPath);
@@ -245,9 +245,9 @@ class InstallManager {
             callback(null, modId);
           }
         })
-        .catch((err) => {
-          let canceled = err instanceof UserCanceled;
-          let prom =
+        .catch(err => {
+          const canceled = (err instanceof UserCanceled) || err.message === 'Canceled';
+          const prom =
               destinationPath !== undefined ?
                   rimrafAsync(destinationPath, {glob: false, maxBusyTries: 1})
                       .then(() => undefined) :
@@ -261,12 +261,11 @@ class InstallManager {
             return undefined;
           } else {
             const { genHash } = require('modmeta-db');
-            let errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;
+            const errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;
 
             return genHash(archivePath)
                 .then((hashResult: IHashResult) => {
-                  let id =
-                      `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
+                  const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
                   installContext.reportError(
                       'Installation failed',
                       `The installer ${id} failed: ${errMessage}`);
@@ -282,8 +281,8 @@ class InstallManager {
   /**
    * find the right installer for the specified archive, then install
    */
-  private installInner(archivePath: string, gameId: string) {
-    let fileList: IZipEntry[] = [];
+  private installInner(store: Redux.Store<any>, archivePath: string, gameId: string) {
+    const fileList: IZipEntry[] = [];
     // get list of files in the archive
     return this.mTask.list(archivePath, {},
                            (files: any[]) => {
@@ -317,8 +316,8 @@ class InstallManager {
               .then((tmpPath: string) => {
                 reqFilesPath = tmpPath;
                 if (requiredFiles.length > 0) {
-                  return this.extractFileList(archivePath, tmpPath,
-                                              requiredFiles);
+                  return this.extractFileList(store, archivePath,
+                                              tmpPath, requiredFiles);
                 } else {
                   return undefined;
                 }
@@ -342,7 +341,7 @@ class InstallManager {
       if (getSafe(store.getState(),
                   ['settings', 'gameMode', 'discovered', downloadGameId],
                   undefined) === undefined) {
-        let btnLabel =
+        const btnLabel =
             `Install for "${gameName(store.getState(), currentGameId)}"`;
         store.dispatch(showDialog(
             'question', 'Game not installed',
@@ -376,6 +375,7 @@ class InstallManager {
   }
 
   private extractFileList(
+    store: Redux.Store<any>,
     archivePath: string,
     outputPath: string,
     files: string[]): Promise<void> {
@@ -383,27 +383,56 @@ class InstallManager {
     // write the file list to a temporary file, then use that as the
     // input file for 7zip, to avoid quoting problems
     return new Promise<string>((resolve, reject) => {
-      tmpFile({ keep: true } as any,
-        (err: any, tmpPath: string, fd: number,
-          cleanupCB: () => void) => {
-          if (err !== null) {
-            reject(err);
-          } else {
-            fs.closeAsync(fd).then(() => resolve(tmpPath));
-          }
-        });
-    })
-      .then((tmpPath: string) => {
-        extractFilePath = tmpPath;
-        const extractList: string[] =
-          files.map((filePath: string) => '"' + filePath + '"');
-        return fs.writeFileAsync(tmpPath, extractList.join('\n'));
-      })
-      .then(() => this.mTask.extractFull(
-        archivePath, outputPath,
-        { raw: [`-ir@${extractFilePath}`], ssc: false }))
-      .finally(() => fs.unlinkAsync(extractFilePath))
-      .then(() => undefined);
+             tmpFile({ keep: true } as any,
+                     (err: any, tmpPath: string, fd: number,
+                      cleanupCB: () => void) => {
+                       if (err !== null) {
+                         reject(err);
+                       } else {
+                         fs.closeAsync(fd).then(() => resolve(tmpPath));
+                       }
+                     });
+           })
+        .then((tmpPath: string) => {
+          extractFilePath = tmpPath;
+          const extractList: string[] =
+              files.map((filePath: string) => '"' + filePath + '"');
+          return fs.writeFileAsync(tmpPath, extractList.join('\n'));
+        })
+        .then(() => this.mTask.extractFull(
+                  archivePath, outputPath,
+                  {raw: [`-ir@${extractFilePath}`], ssc: false},
+                  () => undefined,
+                  () => this.queryPassword(store)))
+        .finally(() => fs.unlinkAsync(extractFilePath))
+        .then(() => undefined);
+  }
+
+  private queryPassword(store: Redux.Store<any>): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      store
+          .dispatch(showDialog(
+              'info', 'Password Protected',
+              {
+                formcontrol: [{
+                  id: 'password',
+                  type: 'password',
+                  value: '',
+                  label: 'A password is required to extract this archive',
+                }],
+              },
+              {
+                Cancel: null,
+                Continue: null,
+              }))
+          .then((result: IDialogResult) => {
+            if (result.action === 'Continue') {
+              resolve(result.input['password']);
+            } else {
+              reject(new UserCanceled());
+            }
+          });
+    });
   }
 
   private processInstructions(
@@ -421,7 +450,7 @@ class InstallManager {
       return Promise.reject('installer returned no instructions');
     }
 
-    let instructionGroups: IInstructionGroups = {};
+    const instructionGroups: IInstructionGroups = {};
 
     result.instructions.forEach((instruction) => {
       setdefault(instructionGroups, instruction.type, []).push(instruction);
@@ -437,7 +466,7 @@ class InstallManager {
       (instruction) => instruction.type === 'submodule');
 
     if (instructionGroups.unsupported !== undefined) {
-      let missing = instructionGroups.unsupported.map((instruction) => instruction.source);
+      const missing = instructionGroups.unsupported.map((instruction) => instruction.source);
       const { genHash } = require('modmeta-db');
       const makeReport = () =>
         genHash(archivePath)
@@ -473,17 +502,17 @@ class InstallManager {
     }
 
     // process 'copy' instructions during extraction
-    return this.extractArchive(archivePath, destinationPath, copies)
+    return this.extractArchive(api.store, archivePath, destinationPath, copies)
       .then(() => Promise.each(genfiles,
         (gen) => {
-          let outputPath = path.join(destinationPath, gen.destination);
+          const outputPath = path.join(destinationPath, gen.destination);
           return fs.ensureDirAsync(path.dirname(outputPath))
             .then(() => fs.writeFileAsync(outputPath, gen.source));
         })
         // process 'submodule' instructions
         .then(() => Promise.each(
           subModule,
-          (mod) => this.installInner(mod.path, gameId)
+          (mod) => this.installInner(api.store, mod.path, gameId)
             .then((resultInner) => this.processInstructions(
               api, mod.path, destinationPath, gameId,
               resultInner)))));
@@ -495,7 +524,7 @@ class InstallManager {
 
   private findPreviousVersionMod(fileId: number, store: Redux.Store<any>,
                                  gameMode: string): IMod {
-    let mods = store.getState().persistent.mods[gameMode] || {};
+    const mods = store.getState().persistent.mods[gameMode] || {};
     let mod: IMod;
     Object.keys(mods).forEach(key => {
       const newestFileId: number = getSafe(mods[key].attributes, ['newestFileId'], undefined);
@@ -580,7 +609,7 @@ class InstallManager {
   private getInstaller(
     fileList: string[],
     offsetIn?: number): Promise<ISupportedInstaller> {
-    let offset = offsetIn || 0;
+    const offset = offsetIn || 0;
     if (offset >= this.mInstallers.length) {
       return Promise.resolve(undefined);
     }
@@ -664,7 +693,7 @@ class InstallManager {
     installPath: string,
     installContext: InstallContext,
     api: IExtensionApi): Promise<void> {
-    let notificationId = `${installPath}_activity`;
+    const notificationId = `${installPath}_activity`;
     api.sendNotification({
       id: notificationId,
       type: 'activity',
@@ -678,13 +707,13 @@ class InstallManager {
           return Promise.resolve();
         }
 
-        let requiredDownloads =
+        const requiredDownloads =
           dependencies.reduce((prev: number, current: IDependency) => {
             return prev + (current.download ? 0 : 1);
           }, 0);
 
         return new Promise<void>((resolve, reject) => {
-          let message =
+          const message =
             `This mod has unresolved dependencies. ${dependencies.length} mods have to be
 installed, ${requiredDownloads} of them have to be downloaded first.`;
 
@@ -708,8 +737,8 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
     downloadId: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
-      let download: IDownload = state.persistent.downloads.files[downloadId];
-      let fullPath: string = path.join(downloadPath(state), download.localPath);
+      const download: IDownload = state.persistent.downloads.files[downloadId];
+      const fullPath: string = path.join(downloadPath(state), download.localPath);
       this.install(downloadId, fullPath, download.game || activeGameId(state),
         api, download.modInfo, false, false, (error, id) => {
           if (error === null) {
@@ -728,6 +757,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
    * @param {string} destinationPath path to install to
    */
   private extractArchive(
+    store: Redux.Store<any>,
     archivePath: string,
     destinationPath: string,
     copies: IInstruction[]): Promise<void> {
@@ -745,7 +775,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
         normalize = normalizeFunc;
         return;
       })
-      .then(() => this.extractFileList(archivePath,
+      .then(() => this.extractFileList(store, archivePath,
         tempPath,
         copies.map((copy) => copy.source)))
       .then(() => fs.renameAsync(tempPath, destinationPath))
@@ -760,27 +790,26 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
               setdefault(groups, normalize(inst.source), []).push(inst.destination);
               return groups;
             }, {});
-        let affectedDirs = new Set<string>();
+        const affectedDirs = new Set<string>();
         return Promise
           .map(Object.keys(renames),
           (source: string) => {
-            return Promise.each(renames[source], (destination: string,
-              index: number,
-              len: number) => {
-              const fullSource = path.join(destinationPath, source);
-              const dest = path.join(destinationPath, destination);
-              let affDir = path.dirname(fullSource);
-              while (affDir.length > destinationPath.length) {
-                affectedDirs.add(affDir);
-                affDir = path.dirname(affDir);
-              }
-              // if this is the last or only destination for the source
-              // file, use a rename because it's quicker. otherwise
-              // copy so that further destinations can be processed
-              return fs.ensureDirAsync(path.dirname(dest))
-                .then(() => (index !== len - 1) ?
-                  fs.copyAsync(fullSource, dest) :
-                  fs.renameAsync(fullSource, dest));
+            return Promise.each(renames[source],
+              (destination: string, index: number, len: number) => {
+                const fullSource = path.join(destinationPath, source);
+                const dest = path.join(destinationPath, destination);
+                let affDir = path.dirname(fullSource);
+                while (affDir.length > destinationPath.length) {
+                  affectedDirs.add(affDir);
+                  affDir = path.dirname(affDir);
+                }
+                // if this is the last or only destination for the source
+                // file, use a rename because it's quicker. otherwise
+                // copy so that further destinations can be processed
+                return fs.ensureDirAsync(path.dirname(dest))
+                  .then(() => (index !== len - 1) ?
+                    fs.copyAsync(fullSource, dest) :
+                    fs.renameAsync(fullSource, dest));
             });
           })
           .then(() => Promise.each(Array.from(affectedDirs)
