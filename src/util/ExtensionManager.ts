@@ -1,8 +1,8 @@
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import { IExtensionInit } from '../types/Extension';
-import { IArchiveHandler, IArchiveHandlerCreator, IExtensionApi, IExtensionContext,
-         ILookupDetails, IOpenOptions, IStateChangeCallback } from '../types/IExtensionContext';
+import { ArchiveHandlerCreator, IArchiveHandler, IExtensionApi, IExtensionContext,
+         ILookupDetails, IOpenOptions, StateChangeCallback } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
 import lazyRequire from '../util/lazyRequire';
 
@@ -70,7 +70,7 @@ interface IRegisteredExtension {
   initFunc: IExtensionInit;
 }
 
-type WatcherRegistry = { [watchPath: string]: IStateChangeCallback[] };
+type WatcherRegistry = { [watchPath: string]: StateChangeCallback[] };
 
 interface IInitCall {
   extension: string;
@@ -240,7 +240,7 @@ class ExtensionManager {
   private mReduxWatcher: any;
   private mWatches: WatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
-  private mArchiveHandlers: { [extension: string]: IArchiveHandlerCreator };
+  private mArchiveHandlers: { [extension: string]: ArchiveHandlerCreator };
   private mModDB: modmetaT.ModDB;
   private mModDBGame: string;
   private mModDBAPIKey: string;
@@ -267,7 +267,7 @@ class ExtensionManager {
         return this.mTranslator !== undefined ? this.mTranslator.t(input, options) : input;
       },
       getPath: this.getPath,
-      onStateChange: (path: string[], callback: IStateChangeCallback) => undefined,
+      onStateChange: (path: string[], callback: StateChangeCallback) => undefined,
       registerProtocol: this.registerProtocol,
       deregisterProtocol: this.deregisterProtocol,
       lookupModReference: this.lookupModReference,
@@ -433,7 +433,7 @@ class ExtensionManager {
   }
 
   private stateChangeHandler = (watchPath: string[],
-                             callback: IStateChangeCallback) => {
+                                callback: StateChangeCallback) => {
     let lastValue;
     let key = watchPath.join('.');
     if (this.mWatches[key] === undefined) {
@@ -562,7 +562,7 @@ class ExtensionManager {
     this.mProtocolHandlers[protocol] = callback;
   }
 
-  private registerArchiveHandler = (extension: string, handler: IArchiveHandlerCreator) => {
+  private registerArchiveHandler = (extension: string, handler: ArchiveHandlerCreator) => {
     this.mArchiveHandlers[extension] = handler;
   }
 
@@ -637,7 +637,7 @@ class ExtensionManager {
     if (fs.existsSync(indexPath)) {
       // TODO: workaround. redux-act stores a global set of action creator ids and throws if
       //  there would be a duplicate. Since extensions might import actions we already have loaded
-      //  here, that mechanism would fail. 
+      //  here, that mechanism would fail.
       ratypes.clear();
 
       return { name: path.basename(extensionPath), initFunc: require(indexPath).default };
