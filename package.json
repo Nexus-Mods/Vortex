@@ -218,7 +218,6 @@
     "npm-watch": "^0.1.6",
     "parse-ini": "file:lib/js/parse-ini",
     "prop-types": "^15.5.8",
-    "rc-slider": "^7.0.1",
     "react-addons-css-transition-group": "^15.3.1",
     "react-addons-perf": "^15.4.1",
     "react-addons-shallow-compare": "^15.4.1",

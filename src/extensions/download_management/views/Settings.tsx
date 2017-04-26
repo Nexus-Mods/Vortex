@@ -2,11 +2,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { setMaxDownloads } from '../actions/settings';
 
 import * as React from 'react';
-import { ControlLabel, FormGroup } from 'react-bootstrap';
-import ReactSlider = require('rc-slider');
-
-interface IBaseProps {
-}
+import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 
 interface IConnectedProps {
   parallelDownloads: number;
@@ -16,7 +12,7 @@ interface IActionProps {
   onSetMaxDownloads: (value: number) => void;
 }
 
-type IProps = IBaseProps & IActionProps & IConnectedProps;
+type IProps = IActionProps & IConnectedProps;
 
 class Settings extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
@@ -26,11 +22,11 @@ class Settings extends ComponentEx<IProps, {}> {
       <form>
         <FormGroup>
           <ControlLabel>{ t('Parallel downloads: ') + parallelDownloads.toString() }</ControlLabel>
-          <ReactSlider
+          <FormControl
+            type='range'
             value={ parallelDownloads }
             min={1}
             max={10}
-            tipFormatter={ null }
             onChange={ this.onChangeParallelDownloads }
           />
         </FormGroup>
@@ -38,9 +34,9 @@ class Settings extends ComponentEx<IProps, {}> {
     );
   }
 
-  private onChangeParallelDownloads = (newValue) => {
+  private onChangeParallelDownloads = (evt) => {
     const { onSetMaxDownloads } = this.props;
-    onSetMaxDownloads(newValue);
+    onSetMaxDownloads(evt.currentTarget.value);
   }
 }
 
@@ -50,7 +46,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Function): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetMaxDownloads: (value: number) => dispatch(setMaxDownloads(value)),
   };
@@ -58,5 +54,5 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(Settings)
-  ) as React.ComponentClass<{}>;
+    connect(mapStateToProps, mapDispatchToProps)(
+      Settings)) as React.ComponentClass<{}>;
