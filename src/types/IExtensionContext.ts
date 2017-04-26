@@ -1,14 +1,17 @@
 import { Archive } from '../util/archives';
+import ReduxProp from '../util/ReduxProp';
 
 import { IActionOptions } from './IActionDefinition';
 import { INotification } from './INotification';
+import {IState} from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
+
 import * as Promise from 'bluebird';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 
-export type PropsCallback = () => Object;
+export type PropsCallback = () => any;
 
 /**
  * determines where persisted state is stored and when it gets loaded.
@@ -20,49 +23,44 @@ export type PersistingType = 'global' | 'game' | 'profile';
 
 export type CheckFunction = () => Promise<ITestResult>;
 
-export interface IRegisterSettings {
+export type RegisterSettings =
   (title: string,
    element: React.ComponentClass<any> | React.StatelessComponent<any>,
-   props?: PropsCallback): void;
-}
+   props?: PropsCallback) => void;
 
-export interface IRegisterAction {
+export type RegisterAction =
   (group: string,
    position: number,
    iconOrComponent: string | React.ComponentClass<any> | React.StatelessComponent<any>,
    options: IActionOptions,
    titleOrProps?: string | PropsCallback,
    actionOrCondition?: (instanceIds?: string[]) => void | boolean,
-   condition?: (instanceIds?: string[]) => boolean): void;
-}
+   condition?: (instanceIds?: string[]) => boolean) => void;
 
-export interface IRegisterFooter {
-  (id: string, element: React.ComponentClass<any>, props?: PropsCallback): void;
-}
+export type RegisterFooter =
+  (id: string, element: React.ComponentClass<any>, props?: PropsCallback) => void;
 
 export interface IMainPageOptions {
   hotkey?: string;
   visible?: () => boolean;
   group: 'global' | 'per-game' | 'support';
   props?: () => any;
+  badge?: ReduxProp<any>;
 }
 
-export interface IRegisterMainPage {
+export type RegisterMainPage =
   (icon: string, title: string, element: React.ComponentClass<any> | React.StatelessComponent<any>,
-   options: IMainPageOptions): void;
-}
+   options: IMainPageOptions) => void;
 
-export interface IRegisterDashlet {
+export type RegisterDashlet =
   (title: string, width: 1 | 2 | 3, position: number,
-    component: React.ComponentClass<any>, isVisible?: (state) => boolean,
-    props?: PropsCallback): void;
-}
+   component: React.ComponentClass<any>, isVisible?: (state) => boolean,
+   props?: PropsCallback) => void;
 
-export interface IRegisterDialog {
+export type RegisterDialog =
   (id: string,
    element: React.ComponentClass<any> | React.StatelessComponent<any>,
-   props?: PropsCallback): void;
-}
+   props?: PropsCallback) => void;
 
 export interface IRegisterProtocol {
   (protocol: string, callback: (url: string) => void);
@@ -79,14 +77,13 @@ export interface IOpenOptions {
   filters?: IFileFilter[];
 }
 
-export interface IStateChangeCallback {
-  (previous: any, current: any): void;
-}
+export type StateChangeCallback =
+  (previous: any, current: any) => void;
 
 /**
  * additional detail to further narrow down which file is meant
  * in a lookup
- * 
+ *
  * @export
  * @interface ILookupDetails
  */
@@ -102,7 +99,7 @@ export interface ILookupDetails {
  * a persistor is used to hook a data file into the store.
  * This way any data file can be made available through the store and
  * updated through actions, as long as it can be represented in json
- * 
+ *
  * @export
  * @interface IPersistor
  */
@@ -111,9 +108,9 @@ export interface IPersistor {
    * called once the persistor is hooked up and active. The persistor can call this
    * if data has changed outside the application and the store will rehydrate with the
    * new data
-   * 
+   *
    * @param {() => void} cb
-   * 
+   *
    * @memberOf IPersistor
    */
   setResetCallback(cb: () => void): void;
@@ -134,7 +131,7 @@ export interface IArchiveOptions {
 
 /**
  * interface for archive handlers, exposing files inside archives to to other extensions
- * 
+ *
  * @export
  * @interface IArchiveHandler
  */
@@ -145,13 +142,12 @@ export interface IArchiveHandler {
   extractAll(outputPath: string): Promise<void>;
 }
 
-export interface IArchiveHandlerCreator {
-  (fileName: string, options: IArchiveOptions): Promise<IArchiveHandler>;
-}
+export type ArchiveHandlerCreator =
+  (fileName: string, options: IArchiveOptions) => Promise<IArchiveHandler>;
 
 /**
- * interface for convenience functions made available to extensions 
- * 
+ * interface for convenience functions made available to extensions
+ *
  * @export
  * @interface IExtensionApi
  */
@@ -159,7 +155,7 @@ export interface IExtensionApi {
   /**
    * show a notification to the user.
    * This is not available in the call to registerReducer
-   * 
+   *
    * @type {INotification}
    * @memberOf IExtensionApi
    */
@@ -169,35 +165,35 @@ export interface IExtensionApi {
    * show an error message to the user.
    * This is a convenience wrapper for sendNotification.
    * This is not available in the call to registerReducer
-   * 
+   *
    * @memberOf IExtensionApi
    */
   showErrorNotification?: (message: string, detail: string | Error | any, isHTML?: boolean) => void;
 
   /**
    * hides a notification by its id
-   * 
+   *
    * @memberOf IExtensionApi
    */
   dismissNotification?: (id: string) => void;
 
   /**
    * show a system dialog to open a single file
-   * 
+   *
    * @memberOf IExtensionApi
    */
   selectFile: (options: IOpenOptions) => Promise<string>;
 
   /**
    * show a system dialog to select an executable file
-   * 
+   *
    * @memberOf IExtensionApi
    */
   selectExecutable: (options: IOpenOptions) => Promise<string>;
 
   /**
    * show a system dialog to open a single directory
-   * 
+   *
    * @memberOf IExtensionApi
    */
   selectDir: (options: IOpenOptions) => Promise<string>;
@@ -211,7 +207,7 @@ export interface IExtensionApi {
    *   will be a different object whenever the state is changed.
    *   Thus you should *not* store/bind the state directly unless you
    *   actually want a "snapshot" of the state.
-   * 
+   *
    * @type {Redux.Store<any>}
    * @memberOf IExtensionApi
    */
@@ -219,7 +215,7 @@ export interface IExtensionApi {
 
   /**
    * event emitter
-   * 
+   *
    * @type {NodeJS.EventEmitter}
    * @memberOf IExtensionApi
    */
@@ -232,7 +228,7 @@ export interface IExtensionApi {
 
   /**
    * retrieve path for a known directory location.
-   * 
+   *
    * Note: This uses electrons ids for known folder locations.
    * Please write your extensions to always use the appropriate
    * folder location returned from this function, especially
@@ -241,7 +237,7 @@ export interface IExtensionApi {
    * If NMM2 introduces a way for users to customise storage locations
    * then getPath will return the customised path so you don't have to
    * adjust your extension.
-   * 
+   *
    * @type {Electron.AppPathName}
    * @memberOf IExtensionApi
    */
@@ -249,18 +245,18 @@ export interface IExtensionApi {
 
   /**
    * register a callback for changes to the state
-   * 
+   *
    * @param {string[]} path path in the state-tree to watch for changes,
    *                   i.e. [ 'settings', 'interface', 'language' ] would call the callback
-   *                   for all changes to the interface language  
-   * 
+   *                   for all changes to the interface language
+   *
    * @memberOf IExtensionApi
    */
-  onStateChange?: (path: string[], callback: IStateChangeCallback) => void;
+  onStateChange?: (path: string[], callback: StateChangeCallback) => void;
 
   /**
    * registers an uri protocol to be handled by this application
-   * 
+   *
    * @type {IRegisterProtocol}
    * @memberOf IExtensionContext
    */
@@ -268,14 +264,14 @@ export interface IExtensionApi {
 
   /**
    * deregister an uri protocol currently being handled by us
-   * 
+   *
    * @memberOf IExtensionApi
    */
   deregisterProtocol: (protocol: string) => void;
 
   /**
    * find meta information about a mod
-   * 
+   *
    * @memberOf IExtensionApi
    */
   lookupModReference: (ref: IReference) => Promise<ILookupDetails[]>;
@@ -287,14 +283,14 @@ export interface IExtensionApi {
    * Please note that it's still possible for the file to get multiple
    * matches, i.e. if it has been re-uploaded, potentially for a different
    * game.
-   * 
+   *
    * @memberOf IExtensionApi
    */
   lookupModMeta: (details: ILookupDetails) => Promise<ILookupResult[]>;
 
   /**
    * save meta information about a mod
-   * 
+   *
    * @memberOf IExtensionApi
    */
   saveModMeta: (modInfo: IModInfo) => Promise<void>;
@@ -309,7 +305,7 @@ export interface IExtensionApi {
  * specification a reducer registration has to follow.
  * defaults must be an object with the same keys as
  * reducers
- * 
+ *
  * @export
  * @interface IReducerSpec
  */
@@ -320,7 +316,7 @@ export interface IReducerSpec {
 
 /**
  * The extension context is an object passed into all extensions during initialisation.
- * 
+ *
  * There are three main parts to this object:
  * a) api. This is an object that contains various functions and objects to interact with the
  *    main application. During runtime of the application (that is: after the startup phase)
@@ -357,54 +353,54 @@ export interface IReducerSpec {
 export interface IExtensionContext {
   /**
    * register a settings page
-   * 
+   *
    * @type {IRegisterSettings}
    * @memberOf IExtensionContext
    */
-  registerSettings: IRegisterSettings;
+  registerSettings: RegisterSettings;
 
   /**
    * register an action (can be a button or a menu item)
-   * 
+   *
    * @type {IRegisterIcon}
    * @memberOf IExtensionContext
    */
-  registerAction: IRegisterAction;
+  registerAction: RegisterAction;
 
   /**
    * registers a page for the main content area
-   * 
+   *
    * @type {IRegisterMainPage}
    * @memberOf IExtensionContext
    */
-  registerMainPage: IRegisterMainPage;
+  registerMainPage: RegisterMainPage;
 
   /**
    * register a dashlet to be displayed on the welcome screen
    */
-  registerDashlet: IRegisterDashlet;
+  registerDashlet: RegisterDashlet;
 
   /**
    * register a dialog (or any control that is rendered independent of the main content area
    * really)
    * This dialog has to control its own visibility
    */
-  registerDialog: IRegisterDialog;
+  registerDialog: RegisterDialog;
 
   /**
    * registers a element to be displayed in the footer
-   * 
+   *
    * @type {IRegisterFooter}
    * @memberOf IExtensionContext
    */
-  registerFooter: IRegisterFooter;
+  registerFooter: RegisterFooter;
 
   /**
    * register a reducer to introduce new set-operations on the application
    * state.
    * Note: For obvious reasons this is executed before the store is set up so
    * many api operations are not possible during this call
-   * 
+   *
    * The first part of the path decides how and if state persisted:
    *   * window, settings, persistent are always persisted and automatically restored
    *   * session and all other will not be persisted at all. Although session is not
@@ -423,12 +419,12 @@ export interface IExtensionContext {
    *   serializable. This means: strings, numbers, booleans, arrays, objects are fine but
    *   functions are not. If you absolutely need to store a callback or something then create
    *   a "registry" or factory and store just an id that allows you to retrieve or generate
-   *   the function on demand. 
-   * 
+   *   the function on demand.
+   *
    * @param {string[]} path The path within the settings store
    * @param {IReducerSpec} spec a IReducerSpec object that contains reducer functions and defaults
    *        for the newly introduced settings
-   * 
+   *
    * @memberOf IExtensionContext
    */
   registerReducer: (path: string[], spec: IReducerSpec) => void;
@@ -440,7 +436,7 @@ export interface IExtensionContext {
    * Do not use this on a hive that is registered with "registerPersistor". With this function,
    * NMM2 takes care of storing/restoring the data, with registerPersistor you can customize the
    * file format.
-   * 
+   *
    * @param {PersistingType} type controls where the state is stored and when it is loaded
    * @param {string} hive the top-level key inside the state.
    *
@@ -459,7 +455,7 @@ export interface IExtensionContext {
    *                          be updated on disk. Higher values reduce load and disk activity
    *                          but more data could be lost in case of an application crash.
    *                          Defaults to 200 ms
-   * 
+   *
    * @memberOf IExtensionContext
    */
   registerPersistor: (hive: string, persistor: IPersistor, debounce?: number) => void;
@@ -469,7 +465,7 @@ export interface IExtensionContext {
    * This is expected to be a less file and it will be compiled to css at startup
    * time together will all other extensions and variables.less. This means you can
    * access all the variables defined there.
-   * 
+   *
    * @memberOf IExtensionContext
    */
   registerStyle: (filePath: string) => void;
@@ -486,7 +482,7 @@ export interface IExtensionContext {
    * add a check that will automatically be run on the specified event.
    * Such checks can be used by extensions to check the integrity of their own data, of the
    * application setup or that of the game and present them to the user in a common way.
-   * 
+   *
    * @memberOf IExtensionContext
    */
   registerTest: (id: string, event: string, check: CheckFunction) => void;
@@ -494,22 +490,22 @@ export interface IExtensionContext {
   /**
    * register a handler for archive types so the content of such archives is exposed to
    * the application (especially other extensions)
-   * 
+   *
    * @memberOf IExtensionContext
    */
-  registerArchiveType: (extension: string, handler: IArchiveHandlerCreator) => void;
+  registerArchiveType: (extension: string, handler: ArchiveHandlerCreator) => void;
 
   /**
    * called once after the store has been set up and after all extensions have been initialized
    * This means that if your extension registers its own extension function
    * (@see registerExtensionFunction) then those registrations happen before once is called.
-   * 
+   *
    * You shouldn't make assumptions on the order in which extensions are loaded and on them to be
    * loaded synchronously, so if you have initialization code that requires another extension to
    * be initialized first, you should check if that happened already in your "once" call and react
    * to some sort of event that would indicate that other initialization to be finished (usually
    * a state change)
-   * 
+   *
    * @memberOf IExtensionContext
    */
   once: (callback: () => void) => void;
@@ -526,7 +522,7 @@ export interface IExtensionContext {
   /**
    * contains various utility functions. It's valid to store this object inside
    * the extension for later use.
-   * 
+   *
    * @type {IExtensionApi}
    * @memberOf IExtensionContext
    */

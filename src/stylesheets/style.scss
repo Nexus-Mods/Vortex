@@ -38,7 +38,7 @@
 
 #main-nav-sidebar {
   background-color: $brand-menu;
-  transition: max-width 1s;
+  transition: max-width $expand-sidebar-delay;
 }
 
 #main-nav-container {
@@ -64,11 +64,12 @@
 }
 
 .sidebar-compact {
+  min-width: 0px;
   max-width: 48px;
 }
 
 .menu-label {
-  transition: opacity 1s;
+  transition: opacity $expand-sidebar-delay, min-width $expand-sidebar-delay;
 }
 
 .sidebar-expanded .menu-label {
@@ -77,10 +78,22 @@
 
 .sidebar-compact .menu-label {
   opacity: 0;
+  width: 0;
+  overflow-x: visible;
+  min-width: 0;
+  display: inline-block;
 }
 
-.sidebar-compact {
-  min-width: 0px;
+.sidebar-expanded .badge {
+  margin-left: 0px;
+  transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
+}
+
+.sidebar-compact .badge {
+  padding: 3px;
+  font-size: $font-size-small;
+  margin-left: -18px !important;
+  transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
 }
 
 #nexus-logo {

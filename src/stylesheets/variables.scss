@@ -26,6 +26,7 @@ $brand-secondary:       #0c5886;
 $table-header-border-width: 2px;
 $table-header-border-color: #145076;
 
+$expand-sidebar-delay: 300ms;
 
 //== Scaffolding
 //
@@ -776,7 +777,7 @@ $well-border:                 transparent;
 $badge-color:                 #fff;
 //** Linked badge text color on hover
 $badge-link-hover-color:      #fff;
-$badge-bg:                    $brand-primary;
+$badge-bg:                    $brand-danger;
 
 //** Badge text color in active nav link
 $badge-active-color:          $brand-primary;

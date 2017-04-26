@@ -37,9 +37,11 @@ class MainPageContainer extends ComponentEx<IBaseProps, {}> {
 
     const props = page.propsFunc();
 
-    return <div className={`main-page main-page-${active ? 'active' : 'hidden'}`}>
-      <page.component {...props} active={active} />
-    </div>;
+    return (
+      <div className={`main-page main-page-${active ? 'active' : 'hidden'}`}>
+        <page.component {...props} active={active} />
+      </div>
+    );
   }
 }
 

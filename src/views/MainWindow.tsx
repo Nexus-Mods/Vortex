@@ -24,11 +24,65 @@ import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import { Button, IconButton, NavItem } from './TooltipControls';
 
+import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Modal, Nav } from 'react-bootstrap';
+import { Badge, Modal, Nav } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 import update = require('react-addons-update');
+
+interface IPageButtonProps {
+  t: I18next.TranslationFunction;
+  page: IMainPage;
+}
+
+class PageButton extends React.Component<IPageButtonProps, {}> {
+
+  public componentWillMount() {
+    const { page } = this.props;
+    if (page.badge) {
+      page.badge.attach(this);
+    }
+  }
+
+  public componentWillUnmount() {
+    const { page } = this.props;
+    if (page.badge) {
+      page.badge.detach(this);
+    }
+  }
+
+  public render() {
+    const { t, page } = this.props;
+    const restProps = _.omit(this.props, ['t', 'page']);
+    return !page.visible() ? null : (
+      <NavItem
+        id={page.title}
+        key={page.title}
+        eventKey={page.title}
+        tooltip={t(page.title)}
+        placement='right'
+        {...restProps}
+      >
+        <Icon name={page.icon} />
+        <span className='menu-label'>
+          {t(page.title)}
+        </span>
+        {this.renderBadge()}
+      </NavItem>
+    );
+  }
+
+  private renderBadge() {
+    const { page } = this.props;
+
+    if (page.badge === undefined) {
+      return null;
+    }
+
+    return <Badge>{page.badge.calculate()}</Badge>;
+  }
+}
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -257,21 +311,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   } */
 
   private renderPageButton = (page: IMainPage) => {
-    const { t } = this.props;
-    return !page.visible() ? null : (
-      <NavItem
-        id={page.title}
-        key={page.title}
-        eventKey={page.title}
-        tooltip={t(page.title)}
-        placement='right'
-      >
-        <Icon name={page.icon} />
-        <span className='menu-label'>
-          {t(page.title)}
-        </span>
-      </NavItem>
-    );
+    return <PageButton key={page.title} t={this.props.t} page={page} />;
   }
 
   private renderPage(page: IMainPage, globalOverlay: JSX.Element) {
@@ -388,6 +428,7 @@ function registerMainPage(instance: MainWindow,
     propsFunc: options.props || emptyFunc,
     visible: options.visible || trueFunc,
     group: options.group,
+    badge: options.badge,
   };
 }
 
