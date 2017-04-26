@@ -21,7 +21,7 @@ interface IExtensionProps {
   objects: IDashletProps[];
 }
 
-type IProps = IExtensionProps;
+type IProps = { active: boolean } & IExtensionProps;
 
 interface IRenderedDash {
   props: IDashletProps;
@@ -43,6 +43,17 @@ class Dashboard extends ComponentEx<IProps, {}> {
     clearTimeout(this.mUpdateTimer);
   }
 
+  public componentWillReceiveProps(nextProps: IProps) {
+    if (this.props.active !== nextProps.active) {
+      if (nextProps.active && (this.mUpdateTimer === undefined)) {
+        this.startUpdateCycle();
+      } else if (!nextProps.active && (this.mUpdateTimer !== undefined)) {
+        clearTimeout(this.mUpdateTimer);
+        this.mUpdateTimer = undefined;
+      }
+    }
+  }
+
   public render(): JSX.Element {
     const { objects } = this.props;
     const state = this.context.api.store.getState();
@@ -52,9 +63,11 @@ class Dashboard extends ComponentEx<IProps, {}> {
       .filter((dash: IDashletProps) => (dash.isVisible === undefined) || dash.isVisible(state))
       ;
 
-    return <PackeryGrid totalWidth={3}>
-      {sorted.map(this.renderItem)}
-    </PackeryGrid>;
+    return (
+      <PackeryGrid totalWidth={3}>
+        {sorted.map(this.renderItem)}
+      </PackeryGrid>
+    );
   }
 
   private startUpdateCycle = () => {
@@ -68,9 +81,11 @@ class Dashboard extends ComponentEx<IProps, {}> {
 
   private renderItem = (dash: IDashletProps) => {
     const componentProps = dash.props !== undefined ? dash.props() : {};
-    return <PackeryItem key={dash.title} width={dash.width}>
+    return (
+      <PackeryItem key={dash.title} width={dash.width}>
         <dash.component t={this.props.t} {...componentProps} />
-      </PackeryItem>;
+      </PackeryItem>
+    );
   }
 }
 
@@ -86,6 +101,4 @@ function registerDashlet(instance: Dashboard,
 
 export default translate([ 'common' ], { wait: true })(
   extend(registerDashlet)(
-    Dashboard
-  )
-) as React.ComponentClass<{}>;
+    Dashboard)) as React.ComponentClass<{}>;
