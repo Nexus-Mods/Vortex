@@ -43,12 +43,18 @@ class PageButton extends React.Component<IPageButtonProps, {}> {
     if (page.badge) {
       page.badge.attach(this);
     }
+    if (page.activity) {
+      page.activity.attach(this);
+    }
   }
 
   public componentWillUnmount() {
     const { page } = this.props;
     if (page.badge) {
       page.badge.detach(this);
+    }
+    if (page.activity) {
+      page.activity.attach(this);
     }
   }
 
@@ -69,6 +75,7 @@ class PageButton extends React.Component<IPageButtonProps, {}> {
           {t(page.title)}
         </span>
         {this.renderBadge()}
+        {this.renderActivity()}
       </NavItem>
     );
   }
@@ -81,6 +88,16 @@ class PageButton extends React.Component<IPageButtonProps, {}> {
     }
 
     return <Badge>{page.badge.calculate()}</Badge>;
+  }
+
+  private renderActivity() {
+    const { page } = this.props;
+
+    if ((page.activity === undefined) || !page.activity.calculate()) {
+      return null;
+    }
+
+    return <Icon name='spinner' pulse />;
   }
 }
 
@@ -429,6 +446,7 @@ function registerMainPage(instance: MainWindow,
     visible: options.visible || trueFunc,
     group: options.group,
     badge: options.badge,
+    activity: options.activity,
   };
 }
 

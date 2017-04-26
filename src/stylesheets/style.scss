@@ -96,6 +96,17 @@
   transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
 }
 
+.sidebar-expanded .icon-spinner {
+  margin-left: 5px;
+  transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
+}
+
+.sidebar-compact .icon-spinner {
+  margin-left: -12px;
+  height: 12px;
+  transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
+}
+
 #nexus-logo {
   width: 192px;
   padding: 4px 8px;

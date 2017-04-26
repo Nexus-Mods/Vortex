@@ -46,6 +46,7 @@ export interface IMainPageOptions {
   group: 'global' | 'per-game' | 'support';
   props?: () => any;
   badge?: ReduxProp<any>;
+  activity?: ReduxProp<boolean>;
 }
 
 export type RegisterMainPage =

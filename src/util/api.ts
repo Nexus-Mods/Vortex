@@ -16,6 +16,7 @@ import getNormalizeFunc from './getNormalizeFunc';
 import { getCurrentLanguage } from './i18n';
 import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
+import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import { setdefault } from './util';
 import walk from './walk';
@@ -30,9 +31,10 @@ export {
   NotSupportedError,
   UserCanceled,
   lazyRequire,
+  ReduxProp,
   relativeTime,
   runElevated,
   setdefault,
   terminate,
-  walk
+  walk,
 };

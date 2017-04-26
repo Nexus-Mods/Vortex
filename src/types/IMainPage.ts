@@ -18,4 +18,5 @@ export interface IMainPage {
   visible: () => boolean;
   group: 'global' | 'per-game' | 'support';
   badge?: ReduxProp<any>;
+  activity?: ReduxProp<boolean>;
 }

@@ -6,6 +6,7 @@ import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
+import {IDownload} from '../download_management/types/IDownload';
 import { setNextProfile } from '../profile_management/actions/settings';
 
 import { addSearchPath } from './actions/settings';
@@ -14,6 +15,8 @@ import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 
 import GameModeManager from './GameModeManager';
+
+import ReduxProp from '../../util/ReduxProp';
 import AddGameDialog from './views/AddGameDialog';
 import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
@@ -21,9 +24,14 @@ import ProgressFooter from './views/ProgressFooter';
 import {} from './views/Settings';
 
 function init(context: IExtensionContext): boolean {
+  const activity = new ReduxProp(context.api, [
+    ['session', 'discovery'],
+    ], (discovery: any) => discovery.running);
+
   context.registerMainPage('gamepad', 'Games', LazyComponent('./views/GamePicker', __dirname), {
     hotkey: 'G',
     group: 'global',
+    activity,
   });
   context.registerSettings('Games', LazyComponent('./views/Settings', __dirname));
   context.registerReducer(['session', 'discovery'], discoveryReducer);
@@ -38,11 +46,11 @@ function init(context: IExtensionContext): boolean {
   context.registerDialog('add-game', AddGameDialog);
 
   context.once(() => {
-    let store: Redux.Store<IState> = context.api.store;
-    let events = context.api.events;
+    const store: Redux.Store<IState> = context.api.store;
+    const events = context.api.events;
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
-    let gameModeManager = new GameModeManagerImpl(
+    const gameModeManager = new GameModeManagerImpl(
       context.api.getPath('userData'), (gameMode: string) => {
         events.emit('gamemode-activated', gameMode);
       });
@@ -61,7 +69,7 @@ function init(context: IExtensionContext): boolean {
         if (error) {
           throw error;
         }
-        for (let disk of disks.sort()) {
+        for (const disk of disks.sort()) {
           // 'system' drives are the non-removable ones
           if (disk.system) {
             store.dispatch(addSearchPath(disk.mountpoint));
