@@ -4,6 +4,8 @@ import { SavegameState } from '../types/ISavegame';
 
 export const setSavegames = safeCreateAction('SET_SAVEGAMES');
 
+export const setProfileSavegames = safeCreateAction('SET_PROFILE_SAVEGAMES');
+
 export const setSavegameState = safeCreateAction('SET_SAVEGAME_STATE',
   (id: string, savegameState: SavegameState) => ({ id, savegameState }));
 
@@ -15,3 +17,9 @@ export const clearSavegames = safeCreateAction('CLEAR_SAVEGAMES');
 export const removeSavegame = safeCreateAction('REMOVE_SAVEGAME');
 
 export const setSavegamePath = safeCreateAction('SET_SAVEGAME_PATH');
+
+export const showSavegamesDialog = safeCreateAction('SHOW_SAVEGAMES_DIALOG');
+
+export const selectAllSavegames = safeCreateAction('SELECT_ALL_SAVEGAMES');
+
+export const setSelectedProfile = safeCreateAction('SET_SELECTED_PROFILE');

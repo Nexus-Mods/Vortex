@@ -8,14 +8,14 @@ import {
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { ComponentEx, ITableRowAction, Table, actions, types } from 'nmm-api';
+import { actions, ComponentEx, IconBar, ITableRowAction, MainPage, Table, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
-import {translate} from 'react-i18next';
-import {connect} from 'react-redux';
+import { translate } from 'react-i18next';
+import { connect } from 'react-redux';
 
 // current typings know neither the function nor the return value
-declare var createImageBitmap: (imgData: ImageData) => Promise<any>;
+declare const createImageBitmap: (imgData: ImageData) => Promise<any>;
 
 class Dimensions {
   public width: number;
@@ -26,9 +26,6 @@ class Dimensions {
   }
 }
 
-interface IProps {
-}
-
 interface IConnectedProps {
   saves: { [saveId: string]: ISavegame };
   savesPath: string;
@@ -36,7 +33,10 @@ interface IConnectedProps {
 
 interface IActionProps {
   onRemoveSavegame: (savegameId: string) => void;
-  onShowDialog: (type: types.DialogType, title: string, content: types.IDialogContent,
+  onShowDialog: (
+    type: types.DialogType,
+    title: string,
+    content: types.IDialogContent,
     actions: types.DialogActions) => Promise<types.IDialogResult>;
 }
 
@@ -44,11 +44,11 @@ interface IComponentState {
   selectedSavegame: string;
 }
 
-type Props = IProps & IConnectedProps & IActionProps;
+type Props = IConnectedProps & IActionProps;
 
 /**
  * displays the list of savegames installed for the current game.
- * 
+ *
  */
 class SavegameList extends ComponentEx<Props, IComponentState> {
   public screenshotCanvas: HTMLCanvasElement;
@@ -73,14 +73,25 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     const { saves } = this.props;
 
     return (
-      <Table
-        tableId='savegames'
-        data={saves}
-        actions={this.savegameActions}
-        staticElements={[
-          SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
-          LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
-      />
+      <MainPage>
+        <MainPage.Body>
+          <Table
+            tableId='savegames'
+            data={saves}
+            actions={this.savegameActions}
+            staticElements={[
+              SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
+              LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
+          />
+        </MainPage.Body>
+        <MainPage.Overlay>
+          <IconBar
+            group='savegames-icons'
+            buttonType='both'
+            orientation='vertical'
+          />
+        </MainPage.Overlay>
+      </MainPage>
     );
   }
 
@@ -103,9 +114,9 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         if (removeSavegame) {
           return Promise.map(instanceIds, (id: string) => {
             return fs.removeAsync(path.join(savesPath, id))
-            .then(() => {
-              onRemoveSavegame(id);
-            });
+              .then(() => {
+                onRemoveSavegame(id);
+              });
           }).then(() => undefined);
         } else {
           return Promise.resolve();
@@ -131,5 +142,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(SavegameList)
+    connect(mapStateToProps, mapDispatchToProps)(SavegameList),
   ) as React.ComponentClass<{}>;

@@ -12,6 +12,9 @@ export const sessionReducer: types.IReducerSpec = {
     [actions.setSavegames as any]: (state, payload) => {
       return util.setSafe(state, ['saves'], payload);
     },
+    [actions.setProfileSavegames as any]: (state, payload) => {
+      return util.setSafe(state, ['profileSaves'], payload);
+    },
     [actions.removeSavegame as any]: (state, payload) => {
       return util.deleteOrNop(state, ['saves', payload]);
     },
@@ -23,6 +26,15 @@ export const sessionReducer: types.IReducerSpec = {
       const { id, attribute, value } = payload;
       return update(state, { saves: { [id]: { attributes: { [attribute]: { $set: value } } } } });
     },
+    [actions.showSavegamesDialog as any]: (state, payload) => {
+      return util.setSafe(state, ['showDialog'], payload);
+    },
+    [actions.setSelectedProfile as any]: (state, payload) => {
+      return util.setSafe(state, ['selectedProfile'], payload);
+    },
+    [actions.selectAllSavegames as any]: (state, payload) => {
+      return util.setSafe(state, ['selectAllSavegames'], payload);
+    },
     [actions.clearSavegames as any]: (state, payload) => {
       return update(state, { saves: { $set: {} } });
     },
@@ -30,6 +42,10 @@ export const sessionReducer: types.IReducerSpec = {
       util.setSafe(state, ['savegamePath'], payload),
   }, defaults: {
     saves: {},
+    profileSaves: {},
     savegamePath: '',
+    showDialog: false,
+    selectAllSavegames: false,
+    selectedProfile: undefined,
   },
 };

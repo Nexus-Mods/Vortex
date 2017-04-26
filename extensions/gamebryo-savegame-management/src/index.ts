@@ -1,22 +1,24 @@
-import { clearSavegames, setSavegamePath, setSavegames } from './actions/session';
+import { clearSavegames, setSavegamePath,
+   setSavegames, showSavegamesDialog } from './actions/session';
 import { sessionReducer } from './reducers/session';
 import { ISavegame } from './types/ISavegame';
 import {gameSupported, iniPath, mygamesPath} from './util/gameSupport';
 import refreshSavegames from './util/refreshSavegames';
 import SavegameList from './views/SavegameList';
+import SavegamesDialog from './views/SavegamesDialog';
 
 import * as fs from 'fs-extra-promise';
 import { selectors, types, util } from 'nmm-api';
 import IniParser, {IniFile, WinapiFormat} from 'parse-ini';
 
-let parser = new IniParser(new WinapiFormat());
+const parser = new IniParser(new WinapiFormat());
 
 function updateSaves(store: Redux.Store<any>,
                      profileId: string): Promise<string[]> {
-  let currentProfile = selectors.activeProfile(store.getState());
+  const currentProfile = selectors.activeProfile(store.getState());
   return parser.read(iniPath(currentProfile.gameId))
       .then((iniFile: IniFile<any>) => {
-        let localPath = `Saves/${profileId}`;
+        const localPath = `Saves/${profileId}`;
         // TODO we should provide a way for the user to set his own
         //   save path without overwriting it
         if (util.getSafe(currentProfile, ['features', 'local_saves'], false)) {
@@ -33,14 +35,14 @@ function updateSaves(store: Redux.Store<any>,
           return;
         }
 
-        let readPath = mygamesPath(currentProfile.gameId) + '\\' +
+        const readPath = mygamesPath(currentProfile.gameId) + '\\' +
                        iniFile.data.General.SLocalSavePath;
 
         return fs.ensureDirAsync(readPath)
             .then(() => Promise.resolve(readPath));
       })
       .then((readPath: string) => {
-        let newSavegames: ISavegame[] = [];
+        const newSavegames: ISavegame[] = [];
         return refreshSavegames(readPath, (save: ISavegame): void => {
                  if (store.getState().session.saves[save.id] === undefined) {
                    newSavegames.push(save);
@@ -48,7 +50,7 @@ function updateSaves(store: Redux.Store<any>,
                }).then((failedReads: string[]) => Promise.resolve({ newSavegames, failedReads }));
       })
       .then((result: { newSavegames: ISavegame[], failedReads: string[] }) => {
-        let savesDict: {[id: string]: ISavegame} = {};
+        const savesDict: {[id: string]: ISavegame} = {};
         result.newSavegames.forEach(
             (save: ISavegame) => { savesDict[save.id] = save; });
 
@@ -58,6 +60,12 @@ function updateSaves(store: Redux.Store<any>,
 }
 
 function init(context): boolean {
+
+  context.registerDialog('savegames', SavegamesDialog);
+  context.registerAction('savegames-icons', 200, 'cog', {}, 'Transfer Savegames', () => {
+    context.api.store.dispatch(showSavegamesDialog(true));
+  });
+
   context.registerMainPage('hdd-o', 'Save Games', SavegameList, {
     hotkey: 'S',
     group: 'per-game',
