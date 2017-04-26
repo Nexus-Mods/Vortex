@@ -4,8 +4,12 @@ import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
 import { log } from '../../util/log';
 
-import { discoveryFinished, discoveryProgress } from './actions/discovery';
-import { setKnownGames } from './actions/session';
+import {
+  discoveryFinished,
+  discoveryProgress,
+  setPhaseCount,
+} from './actions/discovery';
+import {setKnownGames} from './actions/session';
 import { addDiscoveredGame, addDiscoveredTool } from './actions/settings';
 import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
@@ -22,7 +26,7 @@ type EmptyCB = () => void;
 
 /**
  * discovers game modes
- * 
+ *
  * @class GameModeManager
  */
 class GameModeManager {
@@ -44,14 +48,14 @@ class GameModeManager {
 
   /**
    * attach this manager to the specified store
-   * 
+   *
    * @param {Redux.Store<IStateEx>} store
-   * 
+   *
    * @memberOf GameModeManager
    */
   public attachToStore(store: Redux.Store<IState>) {
     let gamesPath: string = path.resolve(__dirname, '..', '..', 'games');
-    let games: IGame[] = this.loadDynamicGames(gamesPath);
+    const games: IGame[] = this.loadDynamicGames(gamesPath);
     gamesPath = path.join(remote.app.getPath('userData'), 'games');
     this.mKnownGames = games.concat(this.loadDynamicGames(gamesPath));
 
@@ -61,20 +65,20 @@ class GameModeManager {
     //      are now no longer known
     // TODO verify that previously discovered games are still available in
     //      their existing location
-    let gamesStored: IGameStored[] = this.mKnownGames.map(this.storeGame);
+    const gamesStored: IGameStored[] = this.mKnownGames.map(this.storeGame);
     store.dispatch(setKnownGames(gamesStored));
   }
 
   /**
    * update the game mode being managed
-   * 
+   *
    * @param {string} newMode
-   * 
+   *
    * @memberOf GameModeManager
    */
   public setGameMode(oldMode: string, newMode: string): Promise<void> {
-    let game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
-    let gameDiscovery = this.mStore.getState().settings.gameMode.discovered[newMode];
+    const game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
+    const gameDiscovery = this.mStore.getState().settings.gameMode.discovered[newMode];
     if ((game === undefined) && (gameDiscovery === undefined)) {
       // new game mode is not valid
       return Promise.reject(new Error('unknown game mode'));
@@ -86,15 +90,15 @@ class GameModeManager {
 
   /**
    * prepare change to a different game mode
-   * 
+   *
    * @param {string} gameMode
    * @returns {Promise<void>}
-   * 
+   *
    * @memberOf GameModeManager
    */
   public setupGameMode(gameMode: string): Promise<void> {
-    let game = this.mKnownGames.find(knownGame => knownGame.id === gameMode);
-    let gameDiscovery = this.mStore.getState().settings.gameMode.discovered[gameMode];
+    const game = this.mKnownGames.find(knownGame => knownGame.id === gameMode);
+    const gameDiscovery = this.mStore.getState().settings.gameMode.discovered[gameMode];
 
     if ((game === undefined) && (gameDiscovery === undefined)) {
       return Promise.reject(new Error('invalid game mode'));
@@ -108,7 +112,7 @@ class GameModeManager {
   /**
    * starts game discovery, only using the search function from the game
    * extension
-   * 
+   *
    * @memberOf GameModeManager
    */
   public startQuickDiscovery() {
@@ -117,21 +121,24 @@ class GameModeManager {
 
   /**
    * start game discovery using known files
-   * 
+   *
    * @memberOf GameModeManager
    */
   public startSearchDiscovery(): void {
-    let progress: Progress = new Progress(0, 100, (percent: number, label: string) => {
-      this.mStore.dispatch(discoveryProgress(percent, label));
-    });
+    const progressCallback = (idx: number, percent: number, label: string) =>
+            this.mStore.dispatch(discoveryProgress(idx, percent, label));
+
+    const searchPaths = this.mStore.getState().settings.gameMode.searchPaths;
+
+    this.mStore.dispatch(setPhaseCount(searchPaths.length));
 
     this.mActiveSearch = searchDiscovery(
       this.mKnownGames,
       this.mStore.getState().settings.gameMode.discovered,
-      this.mStore.getState().settings.gameMode.searchPaths,
+      searchPaths,
       this.onDiscoveredGame,
       this.onDiscoveredTool,
-      progress)
+      progressCallback)
     .finally(() => {
       this.mStore.dispatch(discoveryFinished());
     });
@@ -139,7 +146,7 @@ class GameModeManager {
 
   /**
    * stop search discovery
-   * 
+   *
    * @memberOf GameModeManager
    */
   public stopSearchDiscovery(): void {
@@ -190,9 +197,9 @@ class GameModeManager {
 
   private loadDynamicGame(extensionPath: string): IGame {
     log('info', 'loading game support from', extensionPath);
-    let indexPath = path.join(extensionPath, 'index.js');
+    const indexPath = path.join(extensionPath, 'index.js');
     if (fs.existsSync(indexPath)) {
-      let res: IGame = require(indexPath).default;
+      const res: IGame = require(indexPath).default;
       res.pluginPath = extensionPath;
       return res;
     } else {

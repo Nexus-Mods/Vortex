@@ -149,21 +149,25 @@ export interface IState {
   };
 }
 
-/**
- * state of the (lengthy) gamemode discovery
- * 
- * @export
- * @interface IDiscoveryState
- */
-export interface IDiscoveryState {
-  running: boolean;
+export interface IDiscoveryPhase {
   progress: number;
   directory: string;
 }
 
 /**
+ * state of the (lengthy) gamemode discovery
+ *
+ * @export
+ * @interface IDiscoveryState
+ */
+export interface IDiscoveryState {
+  running: boolean;
+  phases: { [id: number]: IDiscoveryPhase };
+}
+
+/**
  * gamemode-related application settings
- * 
+ *
  * @export
  * @interface ISettings
  */

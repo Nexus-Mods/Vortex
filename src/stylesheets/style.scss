@@ -1066,6 +1066,22 @@ a[role=menuitem] svg {
   margin-right: 10px;
 }
 
+.discovery-progress-0 {
+  background-color: $brand-success;
+}
+
+.discovery-progress-1 {
+  background-color: $brand-info;
+}
+
+.discovery-progress-2 {
+  background-color: $brand-warning;
+}
+
+.discovery-progress-3 {
+  background-color: $brand-danger;
+}
+
 ::-webkit-scrollbar {
   width: 12px;
   height: 12px;

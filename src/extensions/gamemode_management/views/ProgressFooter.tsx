@@ -1,13 +1,10 @@
+import { IDiscoveryPhase, IDiscoveryState } from '../../../types/IState';
+import { sum } from '../../../util/util';
 import Icon from '../../../views/Icon';
+
 import * as React from 'react';
 import { ProgressBar } from 'react-bootstrap';
 import { connect } from 'react-redux';
-
-interface IDiscoveryState {
-  running: boolean;
-  progress: number;
-  directory: string;
-}
 
 interface IConnectedProps {
   discovery: IDiscoveryState;
@@ -18,6 +15,10 @@ type IProps = IConnectedProps;
 const ProgressFooter = (props: IProps) => {
   const { discovery } = props;
 
+  const phaseIds = Object.keys(discovery.phases);
+  const totalProgress =
+    sum(phaseIds.map(idx => discovery.phases[idx].progress)) / phaseIds.length;
+
   return discovery.running ? (
     <div style={{ display: 'inline', marginLeft: 5, marginRight: 5 }}>
       <Icon name='search' />
@@ -26,7 +27,7 @@ const ProgressFooter = (props: IProps) => {
           active={true}
           min={0}
           max={100}
-          now={discovery.progress}
+          now={totalProgress}
           className='progress-embed'
         />
       </div>

@@ -3,6 +3,7 @@ import { IGame } from '../../../types/IGame';
 import { ITool } from '../../../types/ITool';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 
@@ -22,12 +23,12 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
     return;
   }
 
-  for (let tool of tools) {
+  for (const tool of tools) {
     if (tool.queryPath === undefined) {
       continue;
     }
 
-    let toolPath = tool.queryPath();
+    const toolPath = tool.queryPath();
     if (typeof(toolPath) === 'string') {
       if (toolPath) {
         onDiscoveredTool(tool.id, Object.assign({}, tool, {
@@ -71,13 +72,13 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
 export function quickDiscovery(knownGames: IGame[],
                                onDiscoveredGame: DiscoveredCB,
                                onDiscoveredTool: DiscoveredToolCB) {
-  for (let game of knownGames) {
+  for (const game of knownGames) {
     quickDiscoveryTools(game.supportedTools, onDiscoveredTool);
     if (game.queryPath === undefined) {
       continue;
     }
     try {
-      let gamePath = game.queryPath();
+      const gamePath = game.queryPath();
       if (typeof (gamePath) === 'string') {
         if (gamePath) {
           log('info', 'found game', { name: game.name, location: gamePath });
@@ -115,7 +116,7 @@ export function quickDiscovery(knownGames: IGame[],
  * recursively walk the specified directory, calling
  * the resultCB whenever a file or directory from the
  * matchList was hit.
- * 
+ *
  * @param {string} searchPath
  * @param {Set<string>} matchList
  * @param {Set<string>} blackList
@@ -125,24 +126,28 @@ export function quickDiscovery(knownGames: IGame[],
  *                    search folder, i.e. in a case-insensitive fs
  *                    it will upper-case the input. the entries of
  *                    matchList and blackList will be normalized within
- *                    the same function. 
+ *                    the same function.
  * @returns
  */
 function walk(searchPath: string,
               matchList: Set<string>,
-              blackList: Set<string>,
+              blackList: RegExp,
               resultCB: (path: string) => void,
               progress: Progress,
               normalize: Normalize) {
-  if (blackList.has(searchPath)) {
+  if (!searchPath.endsWith(path.sep)) {
+    searchPath += path.sep;
+  }
+
+  if (blackList.test(searchPath)) {
     return null;
   }
 
-  let statPaths: string[] = [];
+  const statPaths: string[] = [];
 
   return fs.readdirAsync(searchPath)
     .then((fileNames: string[]) => {
-      for (let fileName of fileNames) {
+      for (const fileName of fileNames) {
         const filePath = path.join(searchPath, fileName);
         if (matchList.has(normalize(fileName))) {
           log('info', 'potential match', fileName);
@@ -157,15 +162,15 @@ function walk(searchPath: string,
       return Promise.map(statPaths, (statPath: string) => {
         return fs.statAsync(statPath).reflect();
       });
-    }).then((res: Promise.Inspection<fs.Stats>[]) => {
+    }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
-      let dirPaths: string[] = res.reduce(
+      const dirPaths: string[] = res.reduce(
         (prev, cur: Promise.Inspection<fs.Stats>, idx: number) => {
           if (cur.isFulfilled() && cur.value().isDirectory()) {
             return prev.concat(idx);
           } else if (!cur.isFulfilled()) {
-            if ([ 'EPERM', 'ENOENT' ].indexOf(cur.reason().code) === -1) {
+            if ([ 'EPERM', 'ENOENT', 'EBUSY' ].indexOf(cur.reason().code) === -1) {
               log('warn', 'stat failed',
                   { path: cur.reason().path, error: cur.reason().code,
                     type: typeof(cur.reason().code) });
@@ -176,7 +181,7 @@ function walk(searchPath: string,
           }
           return prev;
         }, []);
-      if (progress !== undefined) {
+      if (progress) {
         // count number of directories to be used as the step counter in the progress bar
         progress.setStepCount(dirPaths.length);
       }
@@ -185,13 +190,14 @@ function walk(searchPath: string,
       if (dirPaths === undefined) {
         return undefined;
       }
-      return Promise.mapSeries(dirPaths, (idx) => {
-        let subProgess = progress !== undefined ? progress.derive() : undefined;
-        if (progress !== undefined) {
+      return Promise.mapSeries(dirPaths, idx => {
+        let subProgress;
+        if (truthy(progress)) {
+          subProgress = progress.derive();
           progress.completed(statPaths[idx]);
         }
         return walk(statPaths[idx], matchList, blackList, resultCB,
-         subProgess !== null ? subProgess : progress, normalize);
+         subProgress, normalize);
       });
     }).catch((err) => {
       log('warn', 'walk failed', { msg: err.message });
@@ -206,7 +212,7 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
                       return fs.statAsync(path.join(testPath, fileName));
                     })
       .then(() => {
-        let game = application as IGame;
+        const game = application as IGame;
         if (game.queryModPath !== undefined) {
           onDiscoveredGame(gameId, {
             path: testPath,
@@ -226,9 +232,15 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
       });
 }
 
+const blackList = [
+  String.raw`.:\\\$Recycle.Bin\\.*`,
+  String.raw`.:\\\$\$PendingFiles\\.*`,
+  String.raw`C:\\windows`,
+];
+
 /**
  * run the "search"-discovery based on required files as specified by the game extension
- * 
+ *
  * @export
  * @param {IGame[]} knownGames
  * @param {{ [id: string]: any }} discoveredGames
@@ -237,23 +249,22 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
  * @param {Progress} progressObj
  * @returns {Promise<any[]>}
  */
-export function searchDiscovery(knownGames: IGame[],
-                                discoveredGames: { [id: string]: any },
-                                searchPaths: string[],
-                                onDiscoveredGame: DiscoveredCB,
-                                onDiscoveredTool: DiscoveredToolCB,
-                                progressObj: Progress): Promise<any[]> {
-  type FileEntry = {
-    fileName: string,
-    gameId: string,
-    application: ITool
-  };
+export function searchDiscovery(
+    knownGames: IGame[], discoveredGames: {[id: string]: any},
+    searchPaths: string[], onDiscoveredGame: DiscoveredCB,
+    onDiscoveredTool: DiscoveredToolCB,
+    progressCB: (idx: number, percent: number, label: string) => void): Promise<any> {
+  interface IFileEntry {
+    fileName: string;
+    gameId: string;
+    application: ITool;
+  }
 
-  let files: FileEntry[] = [];
+  const files: IFileEntry[] = [];
 
   knownGames.forEach((knownGame: IGame) => {
     if (!(knownGame.id in discoveredGames)) {
-      for (let required of knownGame.requiredFiles) {
+      for (const required of knownGame.requiredFiles) {
         files.push({ fileName: required, gameId: knownGame.id, application: knownGame });
       }
     }
@@ -261,7 +272,7 @@ export function searchDiscovery(knownGames: IGame[],
       knownGame.supportedTools.forEach((supportedTool: ITool) => {
         if (getSafe(discoveredGames, [knownGame.id, 'tools', supportedTool.id, 'path'], undefined)
             === undefined) {
-          for (let required of supportedTool.requiredFiles) {
+          for (const required of supportedTool.requiredFiles) {
             files.push({fileName: required, gameId: knownGame.id, application: supportedTool});
           }
         }
@@ -271,39 +282,43 @@ export function searchDiscovery(knownGames: IGame[],
 
   // retrieve only the basenames of required files because the walk only ever looks
   // at the last path component of a file
-  const matchList: string[] = files.map((entry: FileEntry) => {
+  const matchList: string[] = files.map((entry: IFileEntry) => {
     return path.basename(entry.fileName);
   });
 
-  progressObj.setStepCount(searchPaths.length);
+  const blExp = new RegExp(blackList.join('|'));
 
-  return Promise.mapSeries(searchPaths,
-      (searchPath: string) => {
+  return Promise.map(searchPaths,
+      (searchPath: string, index: number) => {
         log('info', 'searching for games & tools', { searchPaths });
+        const progressObj = new Progress(0, 100, (percent, label) =>
+          progressCB(index, percent, label));
         // recurse through the search path and look for known files. use the appropriate file name
         // normalization
         return getNormalizeFunc(searchPath)
           .then((normalize: Normalize) => {
-            let matchListNorm = new Set(matchList.map(normalize));
-            return walk(searchPath, matchListNorm, new Set<string>(), (foundPath: string) => {
-              let matches: FileEntry[] = files.filter((entry: FileEntry) => {
-                return normalize(foundPath).endsWith(normalize(entry.fileName));
-              });
+            const matchListNorm = new Set(matchList.map(normalize));
+            return walk(
+                searchPath, matchListNorm, blExp, (foundPath: string) => {
+                  const matches: IFileEntry[] =
+                      files.filter((entry: IFileEntry) => {
+                        return normalize(foundPath)
+                            .endsWith(normalize(entry.fileName));
+                      });
 
-              for (let match of matches) {
-                let testPath: string =
-                  foundPath.substring(0, foundPath.length - match.fileName.length);
-                let application: ITool = match.application;
-                testApplicationDirValid(application, testPath, match.gameId,
-                                        onDiscoveredGame, onDiscoveredTool);
-              }
-              return false;
-            }, progressObj, normalize);
+                  for (const match of matches) {
+                    const testPath: string = foundPath.substring(
+                        0, foundPath.length - match.fileName.length);
+                    const application: ITool = match.application;
+                    testApplicationDirValid(application, testPath, match.gameId,
+                                            onDiscoveredGame, onDiscoveredTool);
+                  }
+                  return false;
+                }, progressObj, normalize);
           })
           .then(() => {
             progressObj.completed(searchPath);
             return null;
           });
-      }
-    );
+      });
 }

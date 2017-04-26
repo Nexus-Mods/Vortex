@@ -1,7 +1,7 @@
 import { DialogActions, DialogType,
          IDialogContent, showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
-import { IDiscoveryState, IState } from '../../../types/IState';
+import { IDiscoveryPhase, IDiscoveryState, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
 import { activeGameId } from '../../../util/selectors';
@@ -168,13 +168,10 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
             <Fixed style={{ height: '40px' }} >
               <Layout type='row'>
                 <Flex>
-                  <ProgressBar
-                    active={discovery.running}
-                    min={0}
-                    max={100}
-                    now={discovery.progress}
-                    label={discovery.directory}
-                  />
+                  <ProgressBar>
+                  {Object.keys(discovery.phases)
+                    .map(idx => discovery.phases[idx]).map(this.renderProgress)}
+                  </ProgressBar>
                 </Flex>
                 <Fixed>
                   <Button
@@ -216,6 +213,25 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
           </IconBar>
         </MainPage.Overlay>
       </MainPage>
+    );
+  }
+
+  private renderProgress = (phase: IDiscoveryPhase, idx: number): JSX.Element => {
+    const { discovery } = this.props;
+    if (phase === undefined) {
+      return <ProgressBar />;
+    }
+    return (
+      <ProgressBar
+        striped={phase.progress < 100}
+        key={idx}
+        className={ `discovery-progress-${idx % 4}` }
+        active={phase.progress < 100}
+        min={0}
+        max={100 * Object.keys(discovery.phases).length}
+        now={phase.progress}
+        label={phase.directory}
+      />
     );
   }
 
