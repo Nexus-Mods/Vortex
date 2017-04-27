@@ -47,12 +47,12 @@ export const modsReducer: IReducerSpec = {
       }
       let idx = -1;
       if (['after', 'before'].indexOf(rule.type) !== -1) {
-        let filteredRef = _.omitBy(rule.reference, _.isUndefined);
+        const filteredRef = _.omitBy(rule.reference, _.isUndefined);
         idx = getSafe(state, [gameId, modId, 'rules'], [])
                   .findIndex((iterRule: IRule) => {
-                    let typeMatch =
+                    const typeMatch =
                         ['after', 'before'].indexOf(rule.type) !== -1;
-                    let filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
+                    const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
                     return typeMatch && _.isEqual(filteredRef, filteredIter);
                   });
       }

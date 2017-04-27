@@ -16,9 +16,9 @@ import PluginFlagsFilter from './PluginFlagsFilter';
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import {SimpleMessage} from 'loot';
-import {ComponentEx, ITableRowAction, IconBar, MainPage,
-        Table, TableTextFilter, ToolbarIcon,
-        selectors, types, util} from 'nmm-api';
+import {ComponentEx, IconBar, ITableRowAction, MainPage,
+        selectors, Table, TableTextFilter, ToolbarIcon,
+        types, util} from 'nmm-api';
 import * as React from 'react';
 import update = require('react-addons-update');
 import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
@@ -281,14 +281,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private updatePlugins(plugins: IPlugins) {
-    let pluginNames: string[] = Object.keys(plugins);
+    const pluginNames: string[] = Object.keys(plugins);
 
-    let pluginsParsed = {};
-    let pluginsLoot = undefined;
+    const pluginsParsed = {};
+    let pluginsLoot;
 
     Promise.each(pluginNames, (pluginName: string) => {
       return new Promise((resolve, reject) => {
-        let esp = new ESPFile(plugins[pluginName].filePath);
+        const esp = new ESPFile(plugins[pluginName].filePath);
         pluginsParsed[pluginName] = {
           isMaster: esp.isMaster,
           description: esp.description,
@@ -345,25 +345,25 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     // native plugins at the top in their hard-coded order. Then it assigns
     // the ascending mod index to all enabled plugins.
 
-    let { nativePlugins } = this.props;
-    let installedNative = nativePlugins.filter((name: string) => {
+    const { nativePlugins } = this.props;
+    const installedNative = nativePlugins.filter((name: string) => {
       return pluginObjects.find(
         (plugin: IPluginCombined) => name === plugin.name.toLowerCase()) !== undefined;
     });
 
     function nativeIdx(name: string): number {
-      let idx = installedNative.indexOf(name.toLowerCase());
+      const idx = installedNative.indexOf(name.toLowerCase());
       return idx !== -1 ? idx : undefined;
     }
 
-    let byLO = pluginObjects.sort((lhs: IPluginCombined, rhs: IPluginCombined) => {
-      let lhsLO = lhs.isNative ? nativeIdx(lhs.name) : lhs.loadOrder + 1000;
-      let rhsLO = rhs.isNative ? nativeIdx(rhs.name) : rhs.loadOrder + 1000;
+    const byLO = pluginObjects.sort((lhs: IPluginCombined, rhs: IPluginCombined) => {
+      const lhsLO = lhs.isNative ? nativeIdx(lhs.name) : lhs.loadOrder + 1000;
+      const rhsLO = rhs.isNative ? nativeIdx(rhs.name) : rhs.loadOrder + 1000;
       return lhsLO - rhsLO;
     });
 
     let modIndex = 0;
-    let res = {};
+    const res = {};
     byLO.forEach((plugin: IPluginCombined) => {
       if (plugin.enabled || plugin.isNative) {
         res[plugin.name] = modIndex++;
@@ -382,7 +382,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     const pluginNames = Object.keys(plugins);
 
-    let pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) => {
+    const pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) => {
       return Object.assign({}, {
         name: pluginName,
         modIndex: -1,
@@ -391,8 +391,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         pluginsLoot[pluginName], pluginsParsed[pluginName]);
     });
 
-    let modIndices = this.modIndices(pluginObjects);
-    let result: { [id: string]: IPluginCombined } = {};
+    const modIndices = this.modIndices(pluginObjects);
+    const result: { [id: string]: IPluginCombined } = {};
     pluginObjects.forEach((plugin: IPluginCombined) => {
       result[plugin.name] = plugin;
       result[plugin.name].modIndex = modIndices[plugin.name];
@@ -404,10 +404,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private applyLoadOrder(loadOrder: { [pluginId: string]: ILoadOrder }) {
     const { pluginsCombined } = this.state;
 
-    let updateSet = {};
-    let pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
+    const updateSet = {};
+    const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
     pluginsFlat.forEach(plugin => {
-      let lo = loadOrder[plugin.name] || {
+      const lo = loadOrder[plugin.name] || {
         enabled: false,
         loadOrder: undefined,
       };
@@ -417,7 +417,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         loadOrder: { $set: lo.loadOrder },
       };
     });
-    let modIndices = this.modIndices(pluginsFlat);
+    const modIndices = this.modIndices(pluginsFlat);
     Object.keys(modIndices).forEach(pluginId => {
       updateSet[pluginId].modIndex = { $set: modIndices[pluginId] };
     });
@@ -482,6 +482,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 export default
   translate(['common', 'gamebryo-plugin'], {wait: false})(
     connect(mapStateToProps, mapDispatchToProps)(
-      PluginList
-    )
-  ) as React.ComponentClass<IBaseProps>;
+      PluginList)) as React.ComponentClass<IBaseProps>;

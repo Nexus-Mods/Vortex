@@ -59,7 +59,7 @@ interface IActionProps {
   onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
   onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-    actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Promise<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
 }
 
@@ -67,7 +67,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 /**
  * displays the list of mods installed for the current game.
- * 
+ *
  */
 class ModList extends ComponentEx<IProps, {}> {
   private modActions: ITableRowAction[];
@@ -241,15 +241,16 @@ class ModList extends ComponentEx<IProps, {}> {
     const updateState = modUpdateState(mod);
 
     const versionDropdown = alternatives.length > 1
-      ? <DropdownButton
-        className='dropdown-version'
-        title={mod.attributes['version'] || ''}
-        id={`version-dropdown-${mod.id}`}
-        onSelect={this.selectVersion}
-      >
-        {alternatives.map(altId => this.renderVersionOptions(mod.id, altId))}
-      </DropdownButton>
-      : null;
+      ? (
+        <DropdownButton
+          className='dropdown-version'
+          title={mod.attributes['version'] || ''}
+          id={`version-dropdown-${mod.id}`}
+          onSelect={this.selectVersion}
+        >
+          {alternatives.map(altId => this.renderVersionOptions(mod.id, altId))}
+        </DropdownButton>
+      ) : null;
 
     return (
       <div className={this.updateClass(updateState)}>
@@ -292,7 +293,7 @@ class ModList extends ComponentEx<IProps, {}> {
 
   private updateModsWithState(oldProps: IModProps, newProps: IModProps) {
     let changed = false;
-    let newModsWithState = {};
+    const newModsWithState = {};
     Object.keys(newProps.mods).forEach((modId: string) => {
       if ((oldProps.mods[modId] !== newProps.mods[modId])
         || (oldProps.modState[modId] !== newProps.modState[modId])) {
@@ -408,7 +409,7 @@ class ModList extends ComponentEx<IProps, {}> {
             });
           })
             .then(() => Promise.map(modIds, (key: string) => {
-              let fullPath = path.join(installPath, mods[key].installationPath);
+              const fullPath = path.join(installPath, mods[key].installationPath);
               return fs.removeAsync(fullPath);
             }))
             .then(() => undefined);
@@ -464,6 +465,5 @@ function registerModAttribute(instance: ModList, attribute: ITableAttribute) {
 export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
-      extend(registerModAttribute)(ModList)
-    )
-  ) as React.ComponentClass<{}>;
+      extend(registerModAttribute)(
+        ModList))) as React.ComponentClass<{}>;

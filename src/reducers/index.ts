@@ -17,7 +17,7 @@ import { combineReducers } from 'redux';
 import { createReducer } from 'redux-act';
 
 function deriveReducer(path, ele): Redux.Reducer<any> {
-  let attributes: string[] = Object.keys(ele);
+  const attributes: string[] = Object.keys(ele);
 
   if ((attributes.indexOf('reducers') !== -1)
       && (attributes.indexOf('defaults') !== -1)) {
@@ -37,7 +37,7 @@ function deriveReducer(path, ele): Redux.Reducer<any> {
 
 /**
  * very simplistic deep merge.
- * 
+ *
  * @param {*} lhs
  * @param {*} rhs
  * @returns {*}
@@ -48,8 +48,8 @@ function deepMerge(lhs: any, rhs: any): any {
     return lhs || rhs;
   }
 
-  let result = {};
-  for (let key of Object.keys(lhs).concat(Object.keys(rhs))) {
+  const result = {};
+  for (const key of Object.keys(lhs).concat(Object.keys(rhs))) {
     if ((lhs[key] === undefined) || (rhs[key] === undefined)) {
       result[key] = lhs[key] || rhs[key];
     }
@@ -83,9 +83,9 @@ function addToTree(tree: any, path: string[], spec: IReducerSpec) {
   }
 }
 
-function recursiveObjectKeys(tree: Object, prefix: string = '') {
+function recursiveObjectKeys(tree: any, prefix: string = '') {
   let result = [];
-  for (let key of Object.keys(tree)) {
+  for (const key of Object.keys(tree)) {
     const fullKey = prefix + '.' + key;
     result.push(fullKey);
     if ((typeof(tree[key]) === 'object') && (tree[key] !== null)) {
@@ -97,13 +97,13 @@ function recursiveObjectKeys(tree: Object, prefix: string = '') {
 
 /**
  * initialize reducer tree
- * 
+ *
  * @export
  * @param {IExtensionReducer[]} extensionReducers
  * @returns
  */
-export default function (extensionReducers: IExtensionReducer[]) {
-  let tree = {
+export default function(extensionReducers: IExtensionReducer[]) {
+  const tree = {
     confidential: {
       account: {
       },

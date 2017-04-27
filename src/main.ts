@@ -3,7 +3,7 @@
  */
 
 import timeRequire from './util/timeRequire';
-let stopTime = timeRequire();
+const stopTime = timeRequire();
 
 import 'source-map-support/register';
 
@@ -12,13 +12,13 @@ import { IState, IWindow } from './types/IState';
 import { installDevelExtensions } from './util/devel';
 import { ITermination, terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
-import { log, setupLogging } from  './util/log';
+import { log, setupLogging } from './util/log';
 import { setupStore } from './util/store';
 import { getSafe } from './util/storeHelper';
 import { delayed } from './util/util';
 
 import * as Promise from 'bluebird';
-import { BrowserWindow, Menu, Tray, app } from 'electron';
+import { app, BrowserWindow, Menu, Tray } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
@@ -32,7 +32,7 @@ let trayIcon: Electron.Tray = null;
 const urlExp = /([a-z\-]+):\/\/.*/i;
 
 function createTrayIcon() {
-  let imgPath = path.resolve(__dirname, 'assets', 'images',
+  const imgPath = path.resolve(__dirname, 'assets', 'images',
                       process.platform === 'win32' ? 'nmm.ico' : 'nmm.png');
   trayIcon = new Tray(imgPath);
 
@@ -43,8 +43,8 @@ function createTrayIcon() {
 
 const shouldQuit: boolean = app.makeSingleInstance((commandLine, workingDirectory): boolean => {
   // send everything that looks like an url we handle to be opened
-  for (let arg of commandLine) {
-    let match = arg.match(urlExp);
+  for (const arg of commandLine) {
+    const match = arg.match(urlExp);
     if (match !== null) {
       mainWindow.webContents.send('external-url', match[1], arg);
     }
@@ -58,7 +58,7 @@ if (shouldQuit) {
   process.exit();
 }
 
-let basePath: string = app.getPath('userData');
+const basePath: string = app.getPath('userData');
 // set up some "global" components
 setupLogging(basePath, process.env.NODE_ENV === 'development');
 
@@ -74,18 +74,18 @@ fs.ensureDirSync(basePath);
 log('info', `using ${basePath} as the storage directory`);
 
 process.on('uncaughtException', (error) => {
-  let details: ITermination = undefined;
+  let details: ITermination;
 
   switch (typeof error) {
     case 'object': {
       details = { message: error.message, details: error.stack };
-    } break;
+    }              break;
     case 'string': {
       details = { message: error };
-    } break;
+    }              break;
     default: {
       details = { message: error };
-    } break;
+    }        break;
   }
 
   terminate(details);
@@ -116,7 +116,7 @@ let moveTimer: NodeJS.Timer;
 // main window setup
 
 function createWindow() {
-  let windowMetrics: IWindow = store.getState().settings.window;
+  const windowMetrics: IWindow = store.getState().settings.window;
   mainWindow = new BrowserWindow({
     height: getSafe(windowMetrics, ['size', 'height'], undefined),
     width: getSafe(windowMetrics, ['size', 'width'], undefined),
@@ -170,7 +170,7 @@ function createWindow() {
   });
 
   mainWindow.on('resize', () => {
-    let size: number[] = mainWindow.getSize();
+    const size: number[] = mainWindow.getSize();
     if (resizeTimer !== undefined) {
       clearTimeout(resizeTimer);
     }
@@ -181,7 +181,7 @@ function createWindow() {
   });
 
   mainWindow.on('move', (evt) => {
-    let pos: number[] = mainWindow.getPosition();
+    const pos: number[] = mainWindow.getPosition();
     if (moveTimer !== undefined) {
       clearTimeout(moveTimer);
     }
