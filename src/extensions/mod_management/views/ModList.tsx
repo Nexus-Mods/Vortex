@@ -206,6 +206,13 @@ class ModList extends ComponentEx<IProps, {}> {
 
     return (
       <MainPage>
+        <MainPage.Header>
+          <IconBar
+            group='mod-icons'
+            staticElements={this.staticButtons}
+            buttonType='icon'
+          />
+        </MainPage.Header>
         <MainPage.Body>
           <SuperTable
             tableId='mods'

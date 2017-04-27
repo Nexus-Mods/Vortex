@@ -6,7 +6,7 @@ export interface IActionOptions {
 
 /**
  * interface of an icon within one of the icon bars
- * 
+ *
  * @export
  * @interface IActionDefinition
  */
@@ -14,7 +14,7 @@ export interface IActionDefinition {
   icon?: string;
   title?: string;
   component?: React.ComponentClass<any> | React.StatelessComponent<any>;
-  props?: () => Object;
+  props?: () => any;
   action?: (instanceId: string | string[]) => void;
   condition?: (instanceId: string | string[]) => boolean;
   position?: number;

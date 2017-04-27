@@ -23,6 +23,8 @@ import HideGameIcon from './views/HideGameIcon';
 import ProgressFooter from './views/ProgressFooter';
 import {} from './views/Settings';
 
+let gameModeManager: GameModeManager;
+
 function init(context: IExtensionContext): boolean {
   const activity = new ReduxProp(context.api, [
     ['session', 'discovery'],
@@ -39,6 +41,21 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
   context.registerFooter('discovery-progress', ProgressFooter);
 
+  context.registerAction('game-icons', 100, 'refresh', {}, 'Quickscan', () => {
+    if (gameModeManager !== undefined) {
+      gameModeManager.startQuickDiscovery()
+      .then((gameNames: string[]) => {
+        const message = gameNames.length === 0
+          ? 'No new games found'
+          : gameNames.map(name => '- ' + name).join('\n');
+        context.api.sendNotification({
+          type: 'success',
+          message: 'Discovery completed\n' + message,
+        });
+      });
+    }
+  });
+
   context.registerAction('game-managed-buttons', 100, HideGameIcon, {});
   context.registerAction('game-discovered-buttons', 100, HideGameIcon, {});
   context.registerAction('game-undiscovered-buttons', 100, HideGameIcon, {});
@@ -50,7 +67,7 @@ function init(context: IExtensionContext): boolean {
     const events = context.api.events;
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
-    const gameModeManager = new GameModeManagerImpl(
+    gameModeManager = new GameModeManagerImpl(
       context.api.getPath('userData'), (gameMode: string) => {
         events.emit('gamemode-activated', gameMode);
       });

@@ -19,6 +19,7 @@
 #main-toolbar {
   background-color: $brand-menu;
   height: 48px;
+  display: flex;
 }
 
 #main-toolbar button {
@@ -120,12 +121,6 @@
   padding: 10px 25px 10px 10px;
   -webkit-user-drag: none;
 }
-
-/*
-.nav-pills > li > a > svg {
-  width: 24px;
-  height: 24px;
-}*/
 
 .nav > li > a:hover, .nav > li > a:focus {
   background-color: $gray-dark;
@@ -388,6 +383,15 @@ btn-default {
 .mainpage-leave.mainpage-leave-active {
   opacity: 0;
   transition: opacity 150ms ease-out;
+}
+
+.mainpage-header {
+  flex: 1 1 0%;
+  display: flex;
+}
+
+.flex-fill {
+  flex: 1 1 0%;
 }
 
 .mod-installing {
@@ -746,16 +750,20 @@ textarea {
   margin: 5px 0px;
 }
 
-.problem-alert > .problem-content {
+div > .hover-expand {
   white-space: nowrap;
   max-height: 1.8em;
   overflow: hidden;
   transition: max-height 0.5s ease;
 }
 
-.problem-alert:hover > .problem-content {
+div:hover > .hover-expand {
   white-space: initial;
   max-height: 200px;
+}
+
+.hover-expand span {
+  display: block;
 }
 
 .profile-details {
@@ -935,11 +943,7 @@ textarea {
 }
 
 #gamepicker-layout {
-  position: absolute;
-  top: 0px;
-  right: 0px;
-  // this is overlayed by the game list otherwise
-  z-index: 1;
+  text-align: right;
 }
 
 .btn-toggle-on {

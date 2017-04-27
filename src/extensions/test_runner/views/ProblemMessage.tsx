@@ -34,13 +34,13 @@ class ProblemMessage extends ComponentEx<IProps, IComponentState> {
     const {t, problem} = this.props;
     const style = this.styleFrom(problem.severity);
 
-    let lines = problem.description.long.split('\n')
+    const lines = problem.description.long.split('\n')
       .map((line, idx) => <span key={idx}>{t(line)}<br/></span>);
 
     return (
       <Alert className='problem-alert' bsStyle={style}>
         <h4>{t(problem.description.short)}</h4>
-        <p className='problem-content'>{lines}</p>
+        <p className='hover-expand'>{lines}</p>
         <p>{this.renderFixButton(problem.automaticFix)}</p>
       </Alert>
     );
@@ -55,9 +55,12 @@ class ProblemMessage extends ComponentEx<IProps, IComponentState> {
 
     return (fixRunning
       ? <Icon name='spinner' pulse />
-      : <Button onClick={this.startFix}>
-        {t('Fix')}
-      </Button>);
+      : (
+        <Button onClick={this.startFix}>
+          {t('Fix')}
+        </Button>
+      )
+    );
   }
 
   private startFix = () => {

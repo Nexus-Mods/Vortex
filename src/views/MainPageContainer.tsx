@@ -8,6 +8,7 @@ export interface IBaseProps {
   page: IMainPage;
   active: boolean;
   onSelectOverlay: (overlay: JSX.Element) => void;
+  onSelectHeader: (header: JSX.Element) => void;
 }
 
 export interface IMainPageContext {
@@ -22,13 +23,15 @@ class MainPageContainer extends ComponentEx<IBaseProps, {}> {
   public static childContextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     selectOverlay: PropTypes.func.isRequired,
+    selectHeader: PropTypes.func.isRequired,
   };
 
   public getChildContext() {
-    const { active, onSelectOverlay } = this.props;
+    const { active, onSelectHeader, onSelectOverlay } = this.props;
     return {
       api: this.context.api,
       selectOverlay: active ? onSelectOverlay : nop,
+      selectHeader: active ? onSelectHeader : nop,
     };
   }
 

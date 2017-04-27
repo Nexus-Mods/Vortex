@@ -139,6 +139,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private settingsPage: IMainPage;
 
+  private pageHeader: JSX.Element = null;
   private pageOverlay: JSX.Element = null;
 
   constructor(props: IProps) {
@@ -159,8 +160,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       visible: () =>  true,
     };
 
-    this.applicationButtons = [
-    ];
+    this.applicationButtons = [];
   }
 
   public getChildContext(): IComponentContext {
@@ -210,6 +210,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           group='application-icons'
           staticElements={this.applicationButtons}
         />
+        {this.pageHeader || <div className='mainpage-header'/>}
         <IconButton
           id='btn-open-flyout'
           icon='ellipsis-v'
@@ -344,8 +345,19 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         page={page}
         active={showPage === page.title}
         onSelectOverlay={this.selectOverlay}
+        onSelectHeader={this.selectHeader}
       />
     );
+  }
+
+  private selectHeader = (ref) => {
+    const wasSet = this.pageHeader !== null;
+    this.pageHeader = ref;
+    if (!wasSet && (ref !== null)) {
+      setImmediate(() => {
+        this.forceUpdate();
+      });
+    }
   }
 
   private selectOverlay = (ref) => {
@@ -373,6 +385,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     if (this.state.showPage !== title) {
       this.props.onSetOverlayOpen(false);
       this.selectOverlay(null);
+      this.selectHeader(null);
     }
     // set the page as "loaded", set it as the shown page next frame.
     // this way it gets rendered as hidden once and can then "transition"

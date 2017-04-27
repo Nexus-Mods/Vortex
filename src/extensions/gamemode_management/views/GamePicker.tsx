@@ -1,5 +1,6 @@
 import { DialogActions, DialogType,
          IDialogContent, showDialog } from '../../../actions/notifications';
+import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IDiscoveryPhase, IDiscoveryState, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -8,7 +9,7 @@ import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import Advanced from '../../../views/Advanced';
 import Icon from '../../../views/Icon';
-import IconBar from '../../../views/IconBar';
+import IconBar, { ButtonType } from '../../../views/IconBar';
 import MainPage from '../../../views/MainPage';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 import { Button, IconButton } from '../../../views/TooltipControls';
@@ -70,18 +71,54 @@ interface IComponentState {
   showHidden: boolean;
 }
 
+interface IShowHiddenButtonProps {
+  t: I18next.TranslationFunction;
+  showHidden: boolean;
+  toggleHidden: () => void;
+  buttonType: ButtonType;
+}
+
+function ShowHiddenButton(props: IShowHiddenButtonProps) {
+  return (
+    <ToolbarIcon
+      id='show-hidden-games'
+      text={props.t('Show / Hide hidden games')}
+      onClick={props.toggleHidden}
+      icon={props.showHidden ? 'eye-slash' : 'eye'}
+      buttonType={props.buttonType}
+    />
+  );
+}
+
+interface IAddGameButtonProps {
+  t: I18next.TranslationFunction;
+  showAddGameDialog: () => void;
+  buttonType: ButtonType;
+}
+
+function AddGameButton(props: IAddGameButtonProps) {
+  return (
+    <Advanced>
+      <ToolbarIcon
+        id='add-game-manually'
+        text={props.t('Add Game')}
+        onClick={props.showAddGameDialog}
+        icon='plus'
+        buttonType={props.buttonType}
+      />
+    </Advanced>
+  );
+}
+
 /**
  * picker/configuration for game modes
  *
  * @class GamePicker
  */
 class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentState> {
-
-  public static contextTypes: React.ValidationMap<any> = {
-    api: PropTypes.object.isRequired,
-  };
-
   public context: IComponentContext;
+
+  private buttons: IActionDefinition[];
 
   constructor(props) {
     super(props);
@@ -89,6 +126,19 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
     this.state = {
       showHidden: false,
     };
+
+    this.buttons = [
+      {
+        component: AddGameButton,
+        props: () =>
+          ({ t: this.props.t, showAddGameDialog: this.showAddGameDialog }),
+      },
+      {
+        component: ShowHiddenButton,
+        props: () =>
+          ({ t: this.props.t, showHidden: this.state.showHidden, toggleHidden: this.toggleHidden }),
+      },
+    ];
   }
 
   public render(): JSX.Element {
@@ -131,26 +181,32 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
 
     return (
       <MainPage>
+        <MainPage.Header>
+          <IconBar
+            className='flex-fill'
+            group='game-icons'
+            staticElements={this.buttons}
+            buttonType='icon'
+          />
+          <div id='gamepicker-layout'>
+            <IconButton
+              id='gamepicker-layout-list'
+              className={pickerLayout === 'list' ? 'btn-toggle-on' : 'btn-toggle-off'}
+              onClick={this.setLayoutList}
+              icon='list'
+              tooltip={t('List')}
+            />
+            <IconButton
+              id='gamepicker-layout-grid'
+              className={pickerLayout === 'small' ? 'btn-toggle-on' : 'btn-toggle-off'}
+              onClick={this.setLayoutSmall}
+              icon='th'
+              tooltip={t('Small Icons')}
+            />
+          </div>
+        </MainPage.Header>
         <MainPage.Body>
           <Layout type='column'>
-            <Fixed>
-              <div id='gamepicker-layout'>
-                <IconButton
-                  id='gamepicker-layout-list'
-                  className={pickerLayout === 'list' ? 'btn-toggle-on' : 'btn-toggle-off'}
-                  onClick={this.setLayoutList}
-                  icon='list'
-                  tooltip={t('List')}
-                />
-                <IconButton
-                  id='gamepicker-layout-grid'
-                  className={pickerLayout === 'small' ? 'btn-toggle-on' : 'btn-toggle-off'}
-                  onClick={this.setLayoutSmall}
-                  icon='th'
-                  tooltip={t('Small Icons')}
-                />
-              </div>
-            </Fixed>
             <Flex style={{ height: '100%', overflowY: 'auto', padding: '5px' }}>
               <span style={{ display: 'table' }}>
                 <h3>{t('Managed')}</h3>
@@ -190,27 +246,10 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
         <MainPage.Overlay>
           <IconBar
             group='game-icons'
-            staticElements={[]}
+            staticElements={this.buttons}
             buttonType='both'
             orientation='vertical'
-          >
-            <ToolbarIcon
-              id='show-hidden-games'
-              text={t('Show / Hide hidden games')}
-              onClick={ this.toggleHidden }
-              icon={showHidden ? 'eye-slash' : 'eye'}
-              buttonType='both'
-            />
-            <Advanced>
-              <ToolbarIcon
-                id='add-game-manually'
-                text={t('Add Game')}
-                onClick={this.showAddGameDialog}
-                icon='plus'
-                buttonType='both'
-              />
-            </Advanced>
-          </IconBar>
+          />
         </MainPage.Overlay>
       </MainPage>
     );

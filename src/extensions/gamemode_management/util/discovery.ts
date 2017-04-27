@@ -71,15 +71,16 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
  */
 export function quickDiscovery(knownGames: IGame[],
                                onDiscoveredGame: DiscoveredCB,
-                               onDiscoveredTool: DiscoveredToolCB) {
-  for (const game of knownGames) {
+                               onDiscoveredTool: DiscoveredToolCB): Promise<string[]> {
+  return Promise.map(knownGames, (game) => new Promise<string>((resolve, reject) => {
     quickDiscoveryTools(game.supportedTools, onDiscoveredTool);
     if (game.queryPath === undefined) {
-      continue;
+      resolve();
     }
     try {
       const gamePath = game.queryPath();
       if (typeof (gamePath) === 'string') {
+        // synchronous
         if (gamePath) {
           log('info', 'found game', { name: game.name, location: gamePath });
           onDiscoveredGame(game.id, {
@@ -89,11 +90,15 @@ export function quickDiscovery(knownGames: IGame[],
             hidden: false,
             environment: game.environment,
           });
+          resolve(game.name);
         } else {
           log('debug', 'game not found', game.id);
+          resolve();
         }
       } else {
-        (gamePath as Promise<string>).then((resolvedPath) => {
+        // asynchronous
+        (gamePath as Promise<string>)
+        .then(resolvedPath => {
           if (resolvedPath) {
             log('info', 'found game', { name: game.name, location: resolvedPath });
             onDiscoveredGame(game.id, {
@@ -101,15 +106,19 @@ export function quickDiscovery(knownGames: IGame[],
               modPath: game.queryModPath(),
             });
           }
-          return null;
+          resolve(game.name);
         }).catch((err) => {
           log('debug', 'game not found', { id: game.id, err: err.message });
+          resolve();
         });
       }
     } catch (err) {
       log('warn', 'failed to use game support plugin', { id: game.id, err: err.message });
+      // TODO: this may not be the right thing to do, just because one game support plugin doesn't
+      //   work we shouldn't cancel the whole discovery?
+      reject(err);
     }
-  }
+  })).then(gameNames => gameNames.filter(name => name !== undefined));
 }
 
 /**

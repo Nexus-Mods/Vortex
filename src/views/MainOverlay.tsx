@@ -32,22 +32,24 @@ class MainOverlay extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
     const { open, pageOverlay } = this.props;
-    let classes = [ 'overlay' ];
+    const classes = [ 'overlay' ];
     if (open) {
       classes.push('in');
     }
-    return <div className={classes.join(' ')}>
-      { pageOverlay }
-      <div className='overlay-spacer '/>
-      <div className='global-overlay'>
-        <IconBar
-          group='help-icons'
-          staticElements={this.buttons}
-          buttonType='both'
-          orientation='vertical'
-        />
+    return (
+      <div className={classes.join(' ')}>
+        {pageOverlay}
+        <div className='overlay-spacer ' />
+        <div className='global-overlay'>
+          <IconBar
+            group='help-icons'
+            staticElements={this.buttons}
+            buttonType='both'
+            orientation='vertical'
+          />
+        </div>
       </div>
-    </div>;
+    );
   }
 }
 

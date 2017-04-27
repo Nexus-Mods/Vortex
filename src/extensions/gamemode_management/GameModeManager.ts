@@ -116,7 +116,7 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public startQuickDiscovery() {
-    quickDiscovery(this.mKnownGames, this.onDiscoveredGame, this.onDiscoveredTool);
+    return quickDiscovery(this.mKnownGames, this.onDiscoveredGame, this.onDiscoveredTool);
   }
 
   /**

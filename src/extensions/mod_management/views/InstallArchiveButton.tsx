@@ -1,6 +1,7 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 
+import { ButtonType } from '../../../views/IconBar';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { IStatePaths } from '../types/IStateSettings';
@@ -10,22 +11,30 @@ import * as React from 'react';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
+interface IBaseProps {
+  buttonType: ButtonType;
+}
+
 interface IConnectedProps {
   paths: IStatePaths;
   gameMode: string;
 }
 
-class InstallButton extends ComponentEx<IConnectedProps, {}> {
-  public render(): JSX.Element {
-    let { t } = this.props;
+type IProps = IBaseProps & IConnectedProps;
 
-    return <ToolbarIcon
-      id='install-from-archive'
-      icon='archive'
-      text={ t('Install from file') }
-      onClick={ this.startInstallFile }
-      buttonType='both'
-    />;
+class InstallButton extends ComponentEx<IProps, {}> {
+  public render(): JSX.Element {
+    const { t, buttonType } = this.props;
+
+    return (
+      <ToolbarIcon
+        id='install-from-archive'
+        icon='plus'
+        text={t('Install from file')}
+        onClick={this.startInstallFile}
+        buttonType={buttonType}
+      />
+    );
   }
 
   private startInstallFile = () => {
@@ -51,5 +60,5 @@ function mapStateToProps(state: any): IConnectedProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps)(InstallButton)
-  );
+    connect(mapStateToProps)(
+      InstallButton)) as React.ComponentClass<IBaseProps>;
