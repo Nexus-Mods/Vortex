@@ -12,3 +12,9 @@ export const displayGroup = safeCreateAction('DISPLAY_GROUP',
  */
 export const setOverlayOpen = safeCreateAction('SET_OVERLAY_OPEN',
   (open: boolean) => ({ open }));
+
+export const startActivity = safeCreateAction('START_ACTIVITY',
+  (group: string, activityId: string) => ({ group, activityId }));
+
+export const stopActivity = safeCreateAction('STOP_ACTIVITY',
+  (group: string, activityId: string) => ({ group, activityId }));

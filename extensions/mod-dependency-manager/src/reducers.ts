@@ -38,8 +38,6 @@ const sessionReducer: types.IReducerSpec = {
       util.setSafe(state, ['dialog', 'type'], payload),
     [actions.setConflictInfo as any]: (state, payload) =>
       util.setSafe(state, ['conflicts'], payload),
-    [actions.setConflictWorking as any]: (state, payload) =>
-      util.setSafe(state, ['working'], payload),
     [actions.setConflictDialog as any]: (state, payload) =>
       util.setSafe(state, ['conflictDialog'], payload),
   }, defaults: {
@@ -47,7 +45,6 @@ const sessionReducer: types.IReducerSpec = {
     dialog: undefined,
     conflicts: {},
     conflictDialog: undefined,
-    working: false,
   },
 };
 

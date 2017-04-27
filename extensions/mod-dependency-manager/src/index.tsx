@@ -9,10 +9,10 @@ import DependencyIcon from './views/DependencyIcon';
 import Editor from './views/Editor';
 import ProgressFooter from './views/ProgressFooter';
 
-import { setConflictInfo, setConflictWorking } from './actions';
+import { setConflictInfo } from './actions';
 import connectionReducer from './reducers';
 
-import { selectors, types, util } from 'nmm-api';
+import { actions, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 
@@ -48,11 +48,13 @@ function main(context: types.IExtensionContext) {
       const mods = Object.keys(state.persistent.mods[gameId] || {})
         .filter(modId => util.getSafe(modState, [modId, 'enabled'], false))
         .map(modId => state.persistent.mods[gameId][modId]);
-      store.dispatch(setConflictWorking(true));
+      store.dispatch(actions.startActivity('mods', 'conflicts'));
       determineConflicts(modPath, mods)
         .then((conflictMap) => {
           store.dispatch(setConflictInfo(conflictMap));
-          store.dispatch(setConflictWorking(false));
+        })
+        .finally(() => {
+          store.dispatch(actions.stopActivity('mods', 'conflicts'));
         });
     });
   });

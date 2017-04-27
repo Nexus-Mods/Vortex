@@ -1,4 +1,4 @@
-import { Icon, tooltip } from 'nmm-api';
+import { Icon, tooltip, util } from 'nmm-api';
 import * as React from 'react';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
@@ -26,7 +26,7 @@ const ProgressFooter = (props: IProps) => {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    working: state.session.dependencies.working,
+    working: util.getSafe(state, [ 'session', 'base', 'activity', 'mods' ], []).length > 0,
   };
 }
 

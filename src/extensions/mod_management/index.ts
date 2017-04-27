@@ -3,6 +3,7 @@ import {ITableAttribute} from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
 import Debouncer from '../../util/Debouncer';
 import LazyComponent from '../../util/LazyComponent';
+import ReduxProp from '../../util/ReduxProp';
 import {
   activeGameId,
   activeProfile,
@@ -47,7 +48,7 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 
-let activators: IModActivator[] = [];
+const activators: IModActivator[] = [];
 
 let installManager: InstallManager;
 
@@ -57,7 +58,7 @@ interface IInstaller {
   install: IInstall;
 }
 
-let installers: IInstaller[] = [];
+const installers: IInstaller[] = [];
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerModAttribute: (attribute: ITableAttribute) => void;
@@ -88,10 +89,10 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
         ? activators.find((act: IModActivator) => act.id === activatorId)
         : activators.find((act: IModActivator) => act.isSupported(state) === undefined);
 
-  let mods = state.persistent.mods[gameMode] || {};
-  let modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
+  const mods = state.persistent.mods[gameMode] || {};
+  const modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
 
-  let notificationId = shortid();
+  const notificationId = shortid();
   context.api.sendNotification({
     id: notificationId,
     type: 'activity',
@@ -112,7 +113,7 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
         return Promise.resolve();
       }
 
-      let actionGroups: { [type: string]: IFileEntry[] } = {};
+      const actionGroups: { [type: string]: IFileEntry[] } = {};
       fileActions.forEach((action: IFileEntry) => {
         if (actionGroups[action.action] === undefined) {
           actionGroups[action.action] = [];
@@ -144,7 +145,7 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
     // sort (all) mods based on their dependencies so the right files get activated
     .then(() => sortMods(modList, context.api))
     .then((sortedMods: string[]) => {
-      let sortedModList =
+      const sortedModList =
         modList.sort((lhs: IMod, rhs: IMod) => sortedMods.indexOf(lhs.id) -
           sortedMods.indexOf(rhs.id));
 
@@ -157,11 +158,16 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
 }
 
 function init(context: IExtensionContextExt): boolean {
+  const modsActivity = new ReduxProp(context.api, [
+    ['session', 'base', 'activity', 'mods'],
+  ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
+
   context.registerMainPage('cubes', 'Mods',
     LazyComponent('./views/ModList', __dirname), {
     hotkey: 'M',
     group: 'per-game',
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
+    activity: modsActivity,
   });
 
   context.registerAction('mod-icons', 105, ActivationButton, () => {
@@ -232,7 +238,7 @@ function init(context: IExtensionContextExt): boolean {
       });
     }
 
-    let activationTimer = new Debouncer(() => {
+    const activationTimer = new Debouncer(() => {
       return updateModActivation(context);
     }, 2000);
 
@@ -255,8 +261,8 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('gamemode-activated', (newGame: string) => {
-      let configuredActivator = currentActivator(store.getState());
-      let supported = supportedActivators(activators, store.getState());
+      const configuredActivator = currentActivator(store.getState());
+      const supported = supportedActivators(activators, store.getState());
       if (supported.find((activator: IModActivator) =>
         activator.id === configuredActivator) === undefined) {
         // current activator is not valid for this game. This should only occur
@@ -266,7 +272,7 @@ function init(context: IExtensionContextExt): boolean {
         }
       }
 
-      let knownMods = Object.keys(getSafe(store.getState(), ['persistent', 'mods', newGame], {}));
+      const knownMods = Object.keys(getSafe(store.getState(), ['persistent', 'mods', newGame], {}));
       refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
         context.api.store.dispatch(addMod(newGame, mod));
       }, (modNames: string[]) => {
@@ -284,7 +290,7 @@ function init(context: IExtensionContextExt): boolean {
       (previous: { [gameId: string]: IStatePaths }, current: { [gameId: string]: IStatePaths }) => {
         const gameMode = activeGameId(store.getState());
         if (previous[gameMode] !== current[gameMode]) {
-          let knownMods = Object.keys(store.getState().persistent.mods[gameMode]);
+          const knownMods = Object.keys(store.getState().persistent.mods[gameMode]);
           refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
             context.api.store.dispatch(addMod(gameMode, mod));
           }, (modNames: string[]) => {
@@ -309,7 +315,7 @@ function init(context: IExtensionContextExt): boolean {
           const download: IDownload = state.persistent.downloads.files[downloadId];
           const inPaths = state.settings.mods.paths;
           const downloadPath: string = resolvePath('download', inPaths, download.game);
-          let fullPath: string = path.join(downloadPath, download.localPath);
+          const fullPath: string = path.join(downloadPath, download.localPath);
           installManager.install(downloadId, fullPath, download.game, context.api,
                                  download.modInfo, true, false, callback);
         });

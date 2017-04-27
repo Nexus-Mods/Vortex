@@ -123,6 +123,9 @@ let loot: LootInterface;
 let refreshTimer: NodeJS.Timer;
 
 function register(context: IExtensionContextExt) {
+  const lootActivity = new util.ReduxProp(context.api, [
+    ['session', 'plugins', 'lootActivity'],
+  ], (activity: string) => (activity !== undefined) && (activity !== ''));
   context.registerMainPage('puzzle-piece', 'Plugins', PluginList, {
     hotkey: 'E',
     group: 'per-game',
@@ -130,6 +133,7 @@ function register(context: IExtensionContextExt) {
     props: () => ({
       nativePlugins: nativePlugins(selectors.activeGameId(context.api.store.getState())),
     }),
+    activity: lootActivity,
   });
 
   for (const game of supportedGames()) {
