@@ -16,9 +16,11 @@ export const INSTALL_TIME: ITableAttribute = {
   customRenderer: (mod: IModWithState, detail: boolean, t) => {
     if (detail) {
       const lang = getCurrentLanguage();
-      return <p>
-        {new Date(getSafe(mod.attributes, ['installTime'], '')).toLocaleString(lang)}
-      </p>;
+      return (
+        <p>
+          {new Date(getSafe(mod.attributes, ['installTime'], '')).toLocaleString(lang)}
+        </p>
+      );
     } else {
       return <p>{ relativeTime(new Date(getSafe(mod.attributes, ['installTime'], '')), t) }</p>;
     }

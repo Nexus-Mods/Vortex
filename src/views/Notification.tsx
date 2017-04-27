@@ -40,7 +40,9 @@ class Notification extends ComponentEx<IProps, {}> {
     return (
       <Alert bsStyle={this.styleName} onDismiss={this.dismiss}>
         { this.typeToIcon(type) }{' '}
-        <p className='hover-expand'>{ message.split('\n').map(line => <span>{line}</span>) }</p>
+        <p className='hover-expand'>
+          { message.split('\n').map((line, idx) => <span key={idx}>{line}</span>) }
+        </p>
         <p>
           { actions !== undefined ? actions.map(this.renderAction) : null }
         </p>

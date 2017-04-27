@@ -174,7 +174,7 @@ function walk(searchPath: string,
     }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
-      const dirPaths: string[] = res.reduce(
+      const dirIdxs: number[] = res.reduce(
         (prev, cur: Promise.Inspection<fs.Stats>, idx: number) => {
           if (cur.isFulfilled() && cur.value().isDirectory()) {
             return prev.concat(idx);
@@ -192,14 +192,14 @@ function walk(searchPath: string,
         }, []);
       if (progress) {
         // count number of directories to be used as the step counter in the progress bar
-        progress.setStepCount(dirPaths.length);
+        progress.setStepCount(dirIdxs.length);
       }
       // allow the gc to drop the stats results
       res = [];
-      if (dirPaths === undefined) {
+      if (dirIdxs === undefined) {
         return undefined;
       }
-      return Promise.mapSeries(dirPaths, idx => {
+      return Promise.mapSeries(dirIdxs, idx => {
         let subProgress;
         if (truthy(progress)) {
           subProgress = progress.derive();
@@ -208,8 +208,14 @@ function walk(searchPath: string,
         return walk(statPaths[idx], matchList, blackList, resultCB,
          subProgress, normalize);
       });
-    }).catch((err) => {
-      log('warn', 'walk failed', { msg: err.message });
+    }).catch(err => {
+      if ([ 'EPERM' ].indexOf(err.code) === -1) {
+        log('warn', 'walk failed', { msg: err.message });
+      } else {
+        // TODO: this can happen if the recursion hits a junction point and I
+        // couldn't figure out how to recognize a junction point in node.js
+        log('info', 'walk failed', { msg: err.message });
+      }
     });
 }
 

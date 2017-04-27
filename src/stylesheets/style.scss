@@ -71,6 +71,7 @@
 
 .menu-label {
   transition: opacity $expand-sidebar-delay, min-width $expand-sidebar-delay;
+  vertical-align: middle;
 }
 
 .sidebar-expanded .menu-label {
