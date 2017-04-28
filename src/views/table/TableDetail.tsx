@@ -40,7 +40,6 @@ class DetailCell extends React.Component<ICellProps, {}> {
             <FormControl
               id={attribute.id}
               componentClass='select'
-              placeholder={t('No category')}
               value={key}
               onChange={this.changeCell}
             >
@@ -155,16 +154,18 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
   private renderDetail = (attribute: ITableAttribute) => {
     const { t, language, rawData, rowData } = this.props;
 
-    return <DetailCell
-      t={t}
-      key={`detail-${rowData.__id}-${attribute.id}`}
-      attribute={attribute}
-      language={language}
-      rowData={rowData}
-      rawData={rawData}
-      rowId={rowData.__id}
-      onChangeData={this.onChangeData}
-    />;
+    return (
+      <DetailCell
+        t={t}
+        key={`detail-${rowData.__id}-${attribute.id}`}
+        attribute={attribute}
+        language={language}
+        rowData={rowData}
+        rawData={rawData}
+        rowId={rowData.__id}
+        onChangeData={this.onChangeData}
+      />
+    );
   }
 
   private onChangeData = (rowId: string, attributeId: string, value: any) => {

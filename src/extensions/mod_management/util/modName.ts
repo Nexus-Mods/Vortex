@@ -7,7 +7,7 @@ export interface INameOptions {
 }
 
 function modName(mod: IMod, options?: INameOptions): string {
-  let fields = [];
+  const fields = [];
   fields.push(getSafe(mod.attributes, ['customFileName'],
                  getSafe(mod.attributes, ['logicalFileName'],
                          getSafe(mod.attributes, ['name'], ''))));

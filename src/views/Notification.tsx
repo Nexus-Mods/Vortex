@@ -37,11 +37,15 @@ class Notification extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
     const { actions, message, type } = this.props.params;
+
+    const lines = message.split('\n');
+
     return (
       <Alert bsStyle={this.styleName} onDismiss={this.dismiss}>
         { this.typeToIcon(type) }{' '}
+        { lines[0] }
         <p className='hover-expand'>
-          { message.split('\n').map((line, idx) => <span key={idx}>{line}</span>) }
+          { lines.slice(1).map((line, idx) => <span key={idx}>{line}</span>) }
         </p>
         <p>
           { actions !== undefined ? actions.map(this.renderAction) : null }

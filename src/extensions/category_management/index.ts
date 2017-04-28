@@ -31,7 +31,7 @@ function init(context: IExtensionContext): boolean {
     id: 'category',
     name: 'Category',
     description: 'Mod Category',
-    icon: 'book',
+    icon: 'sitemap',
     placement: 'table',
     calc: (mod: IModWithState) => mod.attributes['category'] !== undefined ?
         retrieveCategory(mod.attributes['category'], context.api.store) : null,

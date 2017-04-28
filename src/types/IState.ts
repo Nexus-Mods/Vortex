@@ -11,7 +11,7 @@ import { IProfile } from '../extensions/profile_management/types/IProfile';
 
 /**
  * interface to represent a position on the screen
- * 
+ *
  * @export
  * @interface IPosition
  */
@@ -21,8 +21,8 @@ export interface IPosition {
 }
 
 /**
- * interface to represent pixel-dimensions on the screen 
- * 
+ * interface to represent pixel-dimensions on the screen
+ *
  * @export
  * @interface IDimensions
  */
@@ -33,7 +33,7 @@ export interface IDimensions {
 
 /**
  * interface for window state
- * 
+ *
  * @export
  * @interface IWindow
  */
@@ -46,7 +46,7 @@ export interface IWindow {
 
 /**
  * state regarding all manner of user interaction
- * 
+ *
  * @export
  * @interface INotificationState
  */
@@ -56,7 +56,7 @@ export interface INotificationState {
 }
 
 /**
- * "ephemeral" session state. 
+ * "ephemeral" session state.
  * This state is generated at startup and forgotten at application exit
  *
  * @export
@@ -125,7 +125,7 @@ export interface ISessionGameMode {
 /**
  * interface for the top-level state object
  * this should precisely mirror the reducer structure
- * 
+ *
  * @export
  * @interface IState
  */

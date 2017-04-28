@@ -66,37 +66,38 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     const managedGamesIds = new Set<string>(Object.keys(profiles)
       .map(profileId => profiles[profileId].gameId)
-      .filter(gameId => !getSafe(discoveredGames, [gameId, 'hidden'], false))
-    );
+      .filter(gameId => !getSafe(discoveredGames, [gameId, 'hidden'], false)));
 
     // TODO this leaves out manually added games
     const managedGames = Array.from(managedGamesIds)
       .map(gameId => knownGames.find(iter => iter.id === gameId))
       .filter(iter => iter !== undefined);
 
-    return (<div style={{ display: 'inline' }}>
-      <DropdownButton
-        id='dropdown-quicklaunch'
-        className='btn-quicklaunch'
-        title={this.renderGameOption(game, starter) as any}
-        key={game.id}
-        onSelect={this.changeGame}
-      >
-        {
-          managedGames.map(managedGame =>
-            <MenuItem key={managedGame.id} eventKey={managedGame.id}>
-              {this.renderGameOption(managedGame)}
-            </MenuItem>)
-        }
-        <MenuItem key='__more' eventKey='__more'>{t('More...')}</MenuItem>
-      </DropdownButton>
-      <IconButton
-        id='btn-quicklaunch-play'
-        icon='caret-square-o-right'
-        tooltip={t('Launch')}
-        onClick={this.start}
-      />
-    </div>
+    return (
+      <div className='container-quicklaunch'>
+        <DropdownButton
+          id='dropdown-quicklaunch'
+          className='btn-quicklaunch'
+          title={this.renderGameOption(game, starter) as any}
+          key={game.id}
+          onSelect={this.changeGame}
+        >
+          {
+            managedGames.map(managedGame => (
+              <MenuItem key={managedGame.id} eventKey={managedGame.id}>
+                {this.renderGameOption(managedGame)}
+              </MenuItem>
+              ))
+          }
+          <MenuItem key='__more' eventKey='__more'>{t('More...')}</MenuItem>
+        </DropdownButton>
+        <IconButton
+          id='btn-quicklaunch-play'
+          icon='caret-square-o-right'
+          tooltip={t('Launch')}
+          onClick={this.start}
+        />
+      </div>
     );
   }
 
@@ -176,7 +177,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
   private start = () => {
     const { onShowError } = this.props;
-    let startTool = require('../util/startTool').default;
+    const startTool = require('../util/startTool').default;
     startTool(this.state.starter, this.context.api.events,
               this.queryElevate, this.queryDeploy, onShowError);
   }
@@ -198,7 +199,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 }
 
 function mapStateToProps(state: any): IConnectedProps {
-  let gameMode: string = activeGameId(state);
+  const gameMode: string = activeGameId(state);
 
   return {
     gameMode,
@@ -226,5 +227,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(
-  QuickLauncher
-) as React.ComponentClass<IBaseProps>;
+  QuickLauncher) as React.ComponentClass<IBaseProps>;

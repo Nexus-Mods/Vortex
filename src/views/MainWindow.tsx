@@ -37,7 +37,6 @@ interface IPageButtonProps {
 }
 
 class PageButton extends React.Component<IPageButtonProps, {}> {
-
   public componentWillMount() {
     const { page } = this.props;
     if (page.badge) {
@@ -60,23 +59,15 @@ class PageButton extends React.Component<IPageButtonProps, {}> {
 
   public render() {
     const { t, page } = this.props;
-    const restProps = _.omit(this.props, ['t', 'page']);
-    return !page.visible() ? null : (
-      <NavItem
-        id={page.title}
-        key={page.title}
-        eventKey={page.title}
-        tooltip={t(page.title)}
-        placement='right'
-        {...restProps}
-      >
+    return (
+      <div>
         <Icon name={page.icon} />
         <span className='menu-label'>
           {t(page.title)}
         </span>
         {this.renderBadge()}
         {this.renderActivity()}
-      </NavItem>
+      </div>
     );
   }
 
@@ -329,7 +320,21 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   } */
 
   private renderPageButton = (page: IMainPage) => {
-    return <PageButton key={page.title} t={this.props.t} page={page} />;
+    const { t } = this.props;
+    return !page.visible() ? null : (
+      <NavItem
+        id={page.title}
+        key={page.title}
+        eventKey={page.title}
+        tooltip={t(page.title)}
+        placement='right'
+      >
+        <PageButton
+          t={this.props.t}
+          page={page}
+        />
+      </NavItem>
+    );
   }
 
   private renderPage(page: IMainPage, globalOverlay: JSX.Element) {
