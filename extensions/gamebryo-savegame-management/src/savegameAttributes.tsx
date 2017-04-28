@@ -75,11 +75,13 @@ export const CREATION_TIME: types.ITableAttribute = {
   customRenderer: (savegame: ISavegame, detail: boolean, t) => {
     if (detail) {
       const lang = util.getCurrentLanguage();
-      return <p>
-        {new Date((savegame.attributes as any).creationtime).toLocaleString(lang)}
-      </p>;
+      return (
+        <p>
+          {new Date((savegame.attributes as any).creationtime).toLocaleString(lang)}
+        </p>
+      );
     } else {
-      return <p>{ util.relativeTime(new Date((savegame.attributes as any).creationtime), t) }</p>;
+      return <p>{util.relativeTime(new Date((savegame.attributes as any).creationtime), t)}</p>;
     }
   },
   calc: (savegame: ISavegame) => new Date((savegame.attributes as any).creationtime),

@@ -15,20 +15,21 @@ export class CharacterFilterComponent extends React.Component<IProps, {}> {
     const { filter, savegames } = this.props;
 
     const characters = new Set(Object.keys(savegames).map(
-      saveId => (savegames[saveId].attributes as any).name)
-    );
+      saveId => (savegames[saveId].attributes as any).name));
 
     const options = Array.from(characters).map(name => ({
       label: name,
       value: name,
     }));
 
-    return <Select
-      className='select-compact'
-      options={options}
-      value={filter}
-      onChange={this.changeFilter}
-    />;
+    return (
+      <Select
+        className='select-compact'
+        options={options}
+        value={filter}
+        onChange={this.changeFilter}
+      />
+    );
   }
 
   private changeFilter = (value: { value: string, label: string }) => {

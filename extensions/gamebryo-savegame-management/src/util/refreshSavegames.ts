@@ -26,11 +26,11 @@ class Dimensions {
  */
 function refreshSavegames(savesPath: string,
                           onAddSavegame: (save: ISavegame) => void): Promise<string[]> {
-  let failedReads: string[] = [];
+  const failedReads: string[] = [];
   return fs.readdirAsync(savesPath)
     .then((savegameNames: string[]) => {
       return Promise.each(savegameNames, (savegameName: string) => {
-        let savegamePath = path.join(savesPath, savegameName);
+        const savegamePath = path.join(savesPath, savegameName);
         return loadSaveGame(savegamePath, onAddSavegame)
         .catch((err: Error) => {
           failedReads.push(savegameName);
@@ -44,17 +44,17 @@ function refreshSavegames(savesPath: string,
 }
 
 function timestampFormat(timestamp: number) {
-  let date: Date = new Date(timestamp * 1000);
+  const date: Date = new Date(timestamp * 1000);
   return date;
 }
 
-function loadSaveGame(file: string, onAddSavegame: Function): Promise<void> {
+function loadSaveGame(file: string, onAddSavegame: (save: ISavegame) => void): Promise<void> {
   return fs.statAsync(file).then((stat: fs.Stats) => {
     if (['.ess', '.fos'].indexOf(path.extname(file)) === -1) {
       return;
     }
 
-    let sg = new savegameLib.GamebryoSaveGame(file);
+    const sg = new savegameLib.GamebryoSaveGame(file);
 
     const save: ISavegame = {
       id: path.basename(file),

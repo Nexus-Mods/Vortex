@@ -1,20 +1,27 @@
 import {
-  selectAllSavegames, setProfileSavegames, setSavegames,
+  setSavegames, setSelectAllSavegames,
   setSelectedProfile, showSavegamesDialog,
 } from '../actions/session';
-import { ISavegame } from '../types/ISavegame';
+import { CHARACTER_NAME, FILENAME } from '../savegameAttributes';
+import { ISavegame, ISelectedSave } from '../types/ISavegame';
 import { gameSupported, iniPath, mygamesPath } from '../util/gameSupport';
 import refreshSavegames from '../util/refreshSavegames';
-import exportSavegameFile from '../util/savegameManager';
+import exportSavegameFile from '../util/savegameFileManager';
 
+import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { ComponentEx, selectors, Table, tooltip, types, util } from 'nmm-api';
+import { actions, ComponentEx, selectors, tooltip, types, util } from 'nmm-api';
 import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
 import * as path from 'path';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup, InputGroup, Modal } from 'react-bootstrap';
+import {
+  Button, Checkbox, ControlLabel, FormControl, FormGroup,
+  InputGroup, Modal, Table,
+} from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import update = require('react-addons-update');
+import { Flex } from 'react-layout-pane';
 
 const parser = new IniParser(new WinapiFormat());
 
@@ -29,22 +36,41 @@ interface IConnectedProps {
   profiles: { [id: string]: types.IProfile };
   profile: types.IProfile;
   saves: { [saveId: string]: ISavegame };
-  profileSaves: { [saveId: string]: ISavegame };
-  selectAllSavegames: boolean;
   savegamePath: string;
   selectedProfile: types.IProfile;
+  selectAllSavegames: boolean;
 }
 
 interface IActionProps {
   onShowSelf: (show: boolean) => void;
-  onSelectAllSavegames: (selectAll: boolean) => void;
-  onSetProfileSavegames: (saves: { [saveId: string]: ISavegame }) => void;
+  onSelectAllSavegames: (selectAllSavegames: boolean) => void;
   onSetSelectedProfile: (selectedProfile: types.IProfile) => void;
+  onShowError: (message: string, details?: string | Error) => void;
+}
+
+interface IComponentState {
+  selectedSavegames: ISelectedSave[];
+  profileSaves: { [saveId: string]: ISavegame };
+  characters: string[];
 }
 
 type IProps = IConnectedProps & IActionProps;
 
-class SavegamesDialog extends ComponentEx<IProps, {}> {
+class SavegamesDialog extends ComponentEx<IProps, IComponentState> {
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      selectedSavegames: [],
+      profileSaves: {},
+      characters: [],
+    };
+  }
+
+  public componentWillMount(): void {
+    this.props.onSelectAllSavegames(false);
+  }
+
   public render(): JSX.Element {
     const { t, showDialog } = this.props;
 
@@ -64,10 +90,10 @@ class SavegamesDialog extends ComponentEx<IProps, {}> {
   }
 
   private renderProfiles = () => {
-    const { gameMode, profile, profiles, savegamePath } = this.props;
+    const { gameMode, profile, profiles, t } = this.props;
     return (
       <div>
-        <ControlLabel>Profiles</ControlLabel>
+        <ControlLabel>{t('Profiles')}</ControlLabel>
         <FormControl componentClass='select' multiple>
           <option
             id='GLOBAL'
@@ -86,17 +112,67 @@ class SavegamesDialog extends ComponentEx<IProps, {}> {
             } else {
               return null;
             }
-
           })}
         </FormControl>
       </div>
     );
   }
 
+  private updateSaves(selectedProfileId: string): Promise<string[]> {
+    const { gameMode, profiles, saves } = this.props;
+    return parser.read(iniPath(gameMode))
+      .then((iniFile: IniFile<any>) => {
+
+        const localPath = `Saves/${selectedProfileId}/`;
+
+        if (selectedProfileId !== 'GLOBAL') {
+          iniFile.data.General.SLocalSavePath = localPath;
+        } else {
+          iniFile.data.General.SLocalSavePath = 'Saves\\';
+        }
+
+        if (!gameSupported(gameMode)) {
+          return;
+        }
+
+        const readPath = path.join(mygamesPath(gameMode),
+          iniFile.data.General.SLocalSavePath);
+
+        return fs.ensureDirAsync(readPath)
+          .then(() => Promise.resolve(readPath));
+      })
+      .then((readPath: string) => {
+        const newSavegames: ISavegame[] = [];
+        return refreshSavegames(readPath, (save: ISavegame): void => {
+          newSavegames.push(save);
+        }).then((failedReads: string[]) => Promise.resolve({ newSavegames, failedReads }));
+      })
+      .then((result: { newSavegames: ISavegame[], failedReads: string[] }) => {
+        const savesDict: { [id: string]: ISavegame } = {};
+        const characters: string[] = [];
+        result.newSavegames.forEach(
+          (save: ISavegame) => {
+
+            if (characters.indexOf(save.attributes['name']) === -1) {
+              characters.push(save.attributes['name']);
+            }
+            return savesDict[save.id] = save;
+          });
+
+        this.setState(update(this.state, { characters: { $set: characters } }));
+        this.setState(update(this.state, { profileSaves: { $set: savesDict } }));
+        return Promise.resolve(result.failedReads);
+      });
+  }
+
   private renderSavegames = (evt) => {
-    const { gameMode, profiles, profileSaves, saves, savegamePath } = this.props;
+    const { gameMode, profiles,
+      saves, selectAllSavegames, t } = this.props;
+    const { profileSaves } = this.state;
 
     if (evt !== null) {
+      this.setState(update(this.state, { selectedSavegames: { $set: [] } }));
+      this.props.onSelectAllSavegames(false);
       const selectedProfileId = evt.target.id;
 
       this.updateSaves(selectedProfileId);
@@ -110,90 +186,113 @@ class SavegamesDialog extends ComponentEx<IProps, {}> {
 
     return (
       <div>
-        <ControlLabel>Savegames</ControlLabel>
-        <InputGroup>
-          <FormControl componentClass='select' multiple style={{ minHeight: 96, minWidth: '100%' }}>
-            {Object.keys(profileSaves).map((key) => {
-              return this.renderSavegameOptions(profileSaves[key]);
-            })}
-          </FormControl>
-          {this.renderSavegamesButtons(profileSaves)}
-        </InputGroup>
+        <ControlLabel>{t('Savegames')}</ControlLabel>
+        <Flex style={{ height: 400, overflowY: 'auto' }} >
+          <InputGroup style={{ width: '100%', maxHeight: 300 }}>
+            <Table bordered>
+              <thead>
+                <tr>
+                  <th>
+                    <tooltip.IconButton
+                      className='btn-embed'
+                      id='btn-select-all-savegames'
+                      icon={selectAllSavegames ? 'check-square-o' : 'square-o'}
+                      tooltip={!selectAllSavegames ?
+                        t('Check all savegames') : t('Uncheck all savegames')}
+                      onClick={this.selectAllSavegames}
+                    />
+                  </th>
+                  <th>{t('CHARACTER')}</th>
+                  <th>{t('FILENAME')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.keys(profileSaves).map((key) => {
+                  return this.renderTableBody(profileSaves[key]);
+                })}
+              </tbody>
+            </Table>
+          </InputGroup>
+        </Flex>
+        {this.renderSavegamesButtons(profileSaves)}
       </div>
     );
   }
 
-  private updateSaves(selectedProfileId: string): Promise<string[]> {
-    const { gameMode, profiles, saves } = this.props;
-    return parser.read(iniPath(gameMode))
-      .then((iniFile: IniFile<any>) => {
+  private renderTableBody(save: ISavegame): JSX.Element {
+    const { characters, selectedSavegames } = this.state;
 
-        const localPath = `Saves/${selectedProfileId}`;
+    const selected: ISelectedSave = selectedSavegames.find((selectedSavegame) =>
+      selectedSavegame.saveGameId === save.id);
 
-        if (selectedProfileId !== 'GLOBAL') {
-          iniFile.data.General.SLocalSavePath = localPath;
-        } else {
-          iniFile.data.General.SLocalSavePath = 'Saves\\';
-        }
+    return (
+      <tr key={save.id}>
+        <td style={{ textAlign: 'center' }}>
+          <Checkbox
+            id={save.id}
+            onChange={this.saveSelected}
+            checked={selected !== undefined ? selected.enable : false}
+          />
+        </td>
+        <td>{save.attributes['name']}</td>
+        <td>{save.attributes['filename']}</td>
+      </tr>
+    );
+  }
 
-        if (!gameSupported(gameMode)) {
-          return;
-        }
+  private saveSelected = (evt) => {
+    const { selectedSavegames } = this.state;
 
-        const readPath = mygamesPath(gameMode) + '\\' +
-          iniFile.data.General.SLocalSavePath;
+    const selected: ISelectedSave = selectedSavegames.find((save) =>
+      save.saveGameId === evt.target.id);
 
-        return fs.ensureDirAsync(readPath)
-          .then(() => Promise.resolve(readPath));
-      })
-      .then((readPath: string) => {
-        const newSavegames: ISavegame[] = [];
-        return refreshSavegames(readPath, (save: ISavegame): void => {
-          if (saves[save.id] === undefined) {
-            newSavegames.push(save);
-          }
-        }).then((failedReads: string[]) => Promise.resolve({ newSavegames, failedReads }));
-      })
-      .then((result: { newSavegames: ISavegame[], failedReads: string[] }) => {
-        const savesDict: { [id: string]: ISavegame } = {};
-        result.newSavegames.forEach(
-          (save: ISavegame) => { savesDict[save.id] = save; });
+    if (selected === undefined) {
+      const save: ISelectedSave = {
+        saveGameId: evt.target.id,
+        enable: true,
+      };
+      selectedSavegames.push(save);
+    } else {
+      selectedSavegames.splice(selectedSavegames.indexOf(selected), 1);
+    }
 
-        this.props.onSetProfileSavegames(savesDict);
-        return Promise.resolve(result.failedReads);
-      });
+    this.setState(update(this.state, { selectedSavegames: { $set: selectedSavegames } }));
   }
 
   private renderSavegamesButtons = (profileSaves: { [saveId: string]: ISavegame }) => {
-    const { selectAllSavegames, t } = this.props;
+    const { t } = this.props;
+    const { characters } = this.state;
     if (Object.keys(profileSaves).length > 0) {
       return (
         <InputGroup.Button>
           <div>
-            <tooltip.IconButton
+            <tooltip.Button
               id='btn-copy-savegames'
-              icon='clone'
               tooltip={t('Import selection (copy)')}
               onClick={this.moveSavegames}
-              value={'copy'}
-            />
-          </div>
-          <div>
-            <tooltip.IconButton
+              value={'copying'}
+            >
+              {t('COPY')}
+            </tooltip.Button>
+            <tooltip.Button
               id='btn-move-savegames'
-              icon='exchange'
               tooltip={t('Import selection (move)')}
               onClick={this.moveSavegames}
-              value={'move'}
-            />
+              value={'moving'}
+            >
+              {t('MOVE')}
+            </tooltip.Button>
           </div>
           <div>
-            <tooltip.IconButton
-              id='btn-select-all-savegames'
-              icon={selectAllSavegames ? 'compress' : 'expand'}
-              tooltip={t('Select all savegames')}
-              onClick={this.selectAllSavegames}
-            />
+            <FormControl
+              componentClass='select'
+              onChange={this.selectChar}
+            >
+              <option key='' value=''>
+                -----
+              </option>
+              {characters.map((char) => this.renderChar(char))};
+            </FormControl>
           </div>
         </InputGroup.Button>
 
@@ -203,23 +302,82 @@ class SavegamesDialog extends ComponentEx<IProps, {}> {
     }
   }
 
-  private selectAllSavegames = () => {
+  private renderChar = (char: string) => {
+    return (
+      <option key={char} value={char}>
+        {char}
+      </option>
+    );
+  }
+
+  private selectChar = (evt) => {
+    const { profileSaves, selectedSavegames } = this.state;
+
+    const saves: ISelectedSave[] = [];
+
+    this.setState(update(this.state, { selectedSavegames: { $set: saves } }));
+
+    if (evt.target.value !== '') {
+      Object.keys(profileSaves).map((key) => {
+
+        if (profileSaves[key].attributes['name'] === evt.target.value) {
+          const save: ISelectedSave = {
+            saveGameId: profileSaves[key].id,
+            enable: true,
+          };
+          saves.push(save);
+        }
+      });
+
+      this.setState(update(this.state, { selectedSavegames: { $set: saves } }));
+    }
+  }
+
+  private selectAllSavegames = (evt) => {
     const { selectAllSavegames } = this.props;
+    const { profileSaves, selectedSavegames } = this.state;
+
+    const saves: ISelectedSave[] = [];
+
+    this.setState(update(this.state, { selectedSavegames: { $set: saves } }));
+
+    if (selectAllSavegames === false) {
+      Object.keys(profileSaves).map((key) => {
+        const save: ISelectedSave = {
+          saveGameId: profileSaves[key].id,
+          enable: !selectAllSavegames,
+        };
+        saves.push(save);
+      });
+      this.setState(update(this.state, { selectedSavegames: { $set: saves } }));
+    }
+
     this.props.onSelectAllSavegames(!selectAllSavegames);
   }
 
   private moveSavegames = (evt) => {
-    const { gameMode, profile, savegamePath, selectedProfile } = this.props;
+    const { gameMode, profile,
+      profiles, savegamePath, selectedProfile } = this.props;
+    const { profileSaves, selectedSavegames } = this.state;
     const action = evt.target.value;
-    const sourceSavePath = path.join(mygamesPath(selectedProfile !== undefined ?
+
+    const sourceSavePath = path.join(mygamesPath(profile.gameId), 'Saves\\',
+      selectedProfile !== undefined ? selectedProfile.id : '');
+
+    const destSavePath = path.join(mygamesPath(selectedProfile !== undefined ?
       selectedProfile.gameId : gameMode), savegamePath);
-    const destSavePath = path.join(mygamesPath(profile.gameId),
-      savegamePath, profile.id);
 
-    /*console.log(sourceSavePath);
-    console.log(destSavePath);*/
+    exportSavegameFile(selectedSavegames, sourceSavePath,
+      destSavePath, action === 'moving' ? false : true)
+      .then((failedCopies: string[]) => {
 
-    // exportSavegameFile(sourceSavePath, destSavePath, action === 'move' ? false : true);
+        if (failedCopies.length > 0) {
+          const files = failedCopies.join('\n');
+          this.props.onShowError('An error occurred ' + action + ' these files: \n' + files);
+        }
+        this.setState(update(this.state, { selectedSavegames: { $set: [] } }));
+        this.updateSaves(selectedProfile !== undefined ? selectedProfile.id : 'GLOBAL');
+      });
   }
 
   private renderProfilesOptions(profile: types.IProfile): JSX.Element {
@@ -235,20 +393,10 @@ class SavegamesDialog extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderSavegameOptions(save: ISavegame): JSX.Element {
-    const { selectAllSavegames } = this.props;
-    return (
-      <option
-        key={save.id}
-        value={save.id}
-        selected={selectAllSavegames}
-      >
-        {save.id}
-      </option>
-    );
-  }
-
   private hide = () => {
+    this.props.onSetSelectedProfile(undefined);
+    this.props.onSelectAllSavegames(false);
+    this.setState(update(this.state, { selectedSavegames: { $set: [] } }));
     this.props.onShowSelf(false);
   }
 }
@@ -262,10 +410,9 @@ function mapStateToProps(state: any): IConnectedProps {
     profiles: state.persistent.profiles,
     profile,
     saves: state.session.saves.saves,
-    selectAllSavegames: state.session.saves.selectAllSavegames,
     savegamePath: state.session.saves.savegamePath,
     selectedProfile: state.session.saves.selectedProfile,
-    profileSaves: state.session.saves.profileSaves,
+    selectAllSavegames: state.session.saves.selectAllSavegames,
   };
 }
 
@@ -273,12 +420,12 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onShowSelf: (show: boolean) =>
       dispatch(showSavegamesDialog(show)),
-    onSelectAllSavegames: (selectAll: boolean) =>
-      dispatch(selectAllSavegames(selectAll)),
-    onSetProfileSavegames: (saves: { [saveId: string]: ISavegame }) =>
-      dispatch(setProfileSavegames(saves)),
+    onSelectAllSavegames: (selectAllSavegames: boolean) =>
+      dispatch(setSelectAllSavegames(selectAllSavegames)),
     onSetSelectedProfile: (selectedProfile: types.IProfile) =>
       dispatch(setSelectedProfile(selectedProfile)),
+    onShowError: (message: string, details?: string | Error) =>
+      util.showError(dispatch, message, details),
   };
 }
 

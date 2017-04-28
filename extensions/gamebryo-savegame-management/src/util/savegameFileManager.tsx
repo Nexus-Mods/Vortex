@@ -1,5 +1,8 @@
+import { ISelectedSave } from '../types/ISavegame';
+
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as path from 'path';
 
 /**
  * copy or move a savegame file
@@ -8,19 +11,36 @@ import * as fs from 'fs-extra-promise';
  * @param {string} destSavePath
  * @param {boolean} justCopy
  */
-function exportSavegameFile(sourceSavePath: string, destSavePath: string,
-                            justCopy: boolean): Promise<boolean> {
-  let success: boolean = false;
+function exportSavegameFile(
+  savegames: ISelectedSave[],
+  sourceSavePath: string,
+  destSavePath: string,
+  justCopy: boolean): Promise<string[]> {
+  const failedCopies: string[] = [];
+
   if (justCopy) {
-    fs.copyAsync(sourceSavePath, destSavePath)
-      .then(() => success = true)
-      .catch(() => success = false);
+    return Promise.map(savegames, (save: ISelectedSave) => {
+      return fs.copyAsync(path.join(sourceSavePath, save.saveGameId),
+        path.join(destSavePath, save.saveGameId))
+        .catch((err: Error) => {
+          failedCopies.push(save.saveGameId + ' - ' + err.message);
+        });
+    })
+      .then(() => {
+        return Promise.resolve(failedCopies);
+      });
   } else {
-    fs.renameAsync(sourceSavePath, destSavePath)
-      .then(() => success = true)
-      .catch(() => success = false);
+    return Promise.map(savegames, (save: ISelectedSave) => {
+      return fs.renameAsync(path.join(sourceSavePath, save.saveGameId),
+        path.join(destSavePath, save.saveGameId))
+        .catch((err: Error) => {
+          failedCopies.push(save.saveGameId + ' - ' + err.message);
+        });
+    })
+      .then(() => {
+        return Promise.resolve(failedCopies);
+      });
   }
-  return this.success;
 }
 
 export default exportSavegameFile;

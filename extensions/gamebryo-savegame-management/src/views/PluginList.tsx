@@ -34,38 +34,42 @@ class PluginList extends React.Component<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const {plugins} = this.props;
-    return (<ListGroup>
-      {plugins.map(this.renderPlugin)}
-    </ListGroup>);
+    const { plugins } = this.props;
+    return (
+      <ListGroup>
+        {plugins.map(this.renderPlugin)}
+      </ListGroup>
+    );
   }
 
   private renderPlugin = (pluginName: string): JSX.Element => {
     const { installedESPs } = this.state;
-    let isInstalled = installedESPs === undefined || installedESPs.has(pluginName.toLowerCase());
-    return (<ListGroupItem
-      style={{ padding: 5 }}
-      key={`plugin-${pluginName}`}
-      bsStyle={ isInstalled ? undefined : 'warning' }
-    >
-      {pluginName}
-    </ListGroupItem>);
+    const isInstalled = installedESPs === undefined || installedESPs.has(pluginName.toLowerCase());
+    return (
+      <ListGroupItem
+        style={{ padding: 5 }}
+        key={`plugin-${pluginName}`}
+        bsStyle={isInstalled ? undefined : 'warning'}
+      >
+        {pluginName}
+      </ListGroupItem>
+    );
   }
 
   private refreshInstalled() {
     const { discoveredGames, gameMode } = this.props;
     const discovery = discoveredGames[gameMode];
     fs.readdirAsync(discovery.modPath)
-    .then((files: string[]) => {
-      let plugins = files.filter((fileName: string) => {
-        const ext = path.extname(fileName).toLowerCase();
-        return ['.esp', '.esm'].indexOf(ext) !== -1;
-      }).map((fileName) => fileName.toLowerCase());
+      .then((files: string[]) => {
+        const plugins = files.filter((fileName: string) => {
+          const ext = path.extname(fileName).toLowerCase();
+          return ['.esp', '.esm'].indexOf(ext) !== -1;
+        }).map((fileName) => fileName.toLowerCase());
 
-      this.setState(update(this.state, {
-        installedESPs: { $set: new Set<string>(plugins) },
-      }));
-    });
+        this.setState(update(this.state, {
+          installedESPs: { $set: new Set<string>(plugins) },
+        }));
+      });
   }
 }
 
