@@ -9,12 +9,18 @@ import * as fs from 'fs-extra-promise';
  * @param {boolean} justCopy
  */
 function exportSavegameFile(sourceSavePath: string, destSavePath: string,
-                            justCopy: boolean): Promise<void> {
+                            justCopy: boolean): Promise<boolean> {
+  let success: boolean = false;
   if (justCopy) {
-    return fs.copyAsync(sourceSavePath, destSavePath);
+    fs.copyAsync(sourceSavePath, destSavePath)
+      .then(() => success = true)
+      .catch(() => success = false);
   } else {
-    return fs.renameAsync(sourceSavePath, destSavePath);
+    fs.renameAsync(sourceSavePath, destSavePath)
+      .then(() => success = true)
+      .catch(() => success = false);
   }
+  return this.success;
 }
 
 export default exportSavegameFile;
