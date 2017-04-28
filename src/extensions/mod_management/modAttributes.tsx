@@ -14,15 +14,23 @@ export const INSTALL_TIME: ITableAttribute = {
   description: 'Time when this mod was installed',
   icon: 'calendar-plus-o',
   customRenderer: (mod: IModWithState, detail: boolean, t) => {
+    const timeString = getSafe(mod.attributes, ['installTime'], undefined);
     if (detail) {
       const lang = getCurrentLanguage();
       return (
         <p>
-          {new Date(getSafe(mod.attributes, ['installTime'], '')).toLocaleString(lang)}
+          {
+            timeString !== undefined
+              ? new Date(timeString).toLocaleString(lang)
+              : t('Not installed')
+          }
         </p>
       );
     } else {
-      return <p>{ relativeTime(new Date(getSafe(mod.attributes, ['installTime'], '')), t) }</p>;
+      if (timeString === undefined) {
+        return <p>{t('Not installed')}</p>;
+      }
+      return <p>{ relativeTime(new Date(timeString), t) }</p>;
     }
   },
   calc: (mod: IModWithState) => new Date(getSafe(mod.attributes, ['installTime'], '')),

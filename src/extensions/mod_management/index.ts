@@ -321,11 +321,10 @@ function init(context: IExtensionContextExt): boolean {
         });
 
     context.api.events.on(
-        'remove-mod', (modId: string, callback?: (error: Error) => void) => {
+        'remove-mod', (gameMode: string, modId: string, callback?: (error: Error) => void) => {
           const state = store.getState();
           let mod: IMod;
           let fullPath: string;
-          const gameMode = activeGameId(state);
           try {
             const mods = state.persistent.mods[gameMode];
             mod = mods[modId];
@@ -335,7 +334,7 @@ function init(context: IExtensionContextExt): boolean {
           }
 
           // we need to remove the mod from activation, otherwise me might leave orphaned
-          // links in the mod dierctory
+          // links in the mod directory
           const currentProfile = activeProfile(state);
           store.dispatch(setModEnabled(currentProfile.id, modId, false));
 

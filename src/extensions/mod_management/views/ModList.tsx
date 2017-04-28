@@ -12,12 +12,14 @@ import MainPage from '../../../views/MainPage';
 import SuperTable, { ITableRowAction } from '../../../views/Table';
 import TextFilter from '../../../views/table/TextFilter';
 
+import { IDownload } from '../../download_management/types/IDownload';
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { removeMod, setModAttribute } from '../actions/mods';
 import { IMod } from '../types/IMod';
 import { IModProps } from '../types/IModProps';
+import filterModInfo from '../util/filterModInfo';
 import groupMods from '../util/modGrouping';
 import modName from '../util/modName';
 import modUpdateState, { UpdateState } from '../util/modUpdateState';
@@ -106,15 +108,62 @@ class ModList extends ComponentEx<IProps, {}> {
 
     this.modEnabledAttribute = {
       id: 'enabled',
-      name: 'Enabled',
+      name: 'Status',
       description: 'Is mod enabled in current profile',
       icon: 'check-o',
-      calc: (mod: IModWithState) => mod.enabled || false,
+      calc: (mod: IModWithState) => {
+        if (mod.state === 'downloaded') {
+          return 'Not Installed';
+        }
+        return mod.enabled === true ? 'Enabled' : 'Disabled';
+      },
       placement: 'table',
       isToggleable: false,
       edit: {
+        inline: true,
+        choices: () => [
+          { key: 'enabled', text: 'Enabled' },
+          { key: 'disabled', text: 'Disabled' },
+          { key: 'uninstalled', text: 'Not Installed' },
+        ],
         onChangeValue: (modId: string, value: any) => {
-          props.onSetModEnabled(this.props.profileId, modId, value);
+          const { onRemoveMod, onSetModEnabled, gameMode, profileId } = this.props;
+
+          if (value === undefined) {
+            // cycle
+            if (this.mModsWithState[modId].state === 'downloaded') {
+              // cycle from "not installed" -> "disabled"
+              this.context.api.events.emit('start-install-download', modId);
+            } else {
+              // enabled and disabled toggle to each other so the toggle
+              // will never remove the mod
+              if (this.mModsWithState[modId].enabled === true) {
+                onSetModEnabled(profileId, modId, false);
+              } else {
+                onSetModEnabled(profileId, modId, true);
+              }
+            }
+          } else {
+            // direct selection
+            if (value === 'uninstalled') {
+              // selected "not installed"
+              this.context.api.events.emit('remove-mod', gameMode, modId);
+            } else if (this.mModsWithState[modId].state === 'downloaded') {
+              // selected "enabled" or "disabled" from "not installed" so first the mod
+              // needs to be installed
+              this.context.api.events.emit('start-install-download', modId, (err, id) => {
+                if (err !== null) {
+                  return this.context.api.showErrorNotification('Failed to install mod', err);
+                }
+                if (value === 'enabled') {
+                  onSetModEnabled(profileId, id, true);
+                }
+              });
+            } else {
+              // selected "enabled" or "disabled" from the other one
+              onSetModEnabled(profileId, modId, value === 'enabled');
+            }
+          }
           this.context.api.events.emit('mods-enabled', [modId], value);
         },
       },
@@ -183,12 +232,13 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   public componentWillMount() {
-    this.updateModsWithState({ mods: {}, modState: {} }, this.props);
+    this.updateModsWithState({ mods: {}, modState: {}, downloads: {} }, this.props);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
     if ((this.props.mods !== newProps.mods)
-      || (this.props.modState !== newProps.modState)) {
+      || (this.props.modState !== newProps.modState)
+      || (this.props.downloads !== newProps.downloads)) {
       this.updateModsWithState(this.props, newProps);
     }
   }
@@ -197,7 +247,8 @@ class ModList extends ComponentEx<IProps, {}> {
     const { t, gameMode } = this.props;
 
     if (gameMode === undefined) {
-      return <Jumbotron>{t('Please select a game first')}</Jumbotron>;
+      // shouldn't happen
+      return null;
     }
 
     if (this.mGroupedMods === undefined) {
@@ -299,9 +350,14 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   private updateModsWithState(oldProps: IModProps, newProps: IModProps) {
+    const { gameMode } = this.props;
     let changed = false;
     const newModsWithState = {};
-    Object.keys(newProps.mods).forEach((modId: string) => {
+
+    const installedIds = new Set<string>();
+
+    Object.keys(newProps.mods).forEach(modId => {
+      installedIds.add(newProps.mods[modId].archiveId);
       if ((oldProps.mods[modId] !== newProps.mods[modId])
         || (oldProps.modState[modId] !== newProps.modState[modId])) {
         newModsWithState[modId] = Object.assign({}, newProps.mods[modId], newProps.modState[modId]);
@@ -310,13 +366,42 @@ class ModList extends ComponentEx<IProps, {}> {
         newModsWithState[modId] = this.mModsWithState[modId];
       }
     });
-    this.mModsWithState = newModsWithState;
+
+    Object.keys(newProps.downloads).forEach(archiveId => {
+      if (!installedIds.has(archiveId) && (newProps.downloads[archiveId].game === gameMode)) {
+        if (oldProps.downloads[archiveId] === newProps.downloads[archiveId]) {
+          newModsWithState[archiveId] = this.mModsWithState[archiveId];
+          return;
+        }
+        const filtered = filterModInfo(newProps.downloads[archiveId].modInfo);
+
+        const attributes: any = {
+          customFileName: filtered.fileName || newProps.downloads[archiveId].localPath,
+        };
+
+        const version = getSafe(filtered, ['version'], undefined);
+        if (filtered.version !== undefined) {
+          attributes.version = filtered.version;
+        }
+
+        newModsWithState[archiveId] = {
+            id: archiveId,
+            state: 'downloaded',
+            archiveId,
+            attributes,
+        };
+        changed = true;
+      }
+    });
 
     // if the new mod list is a subset of the old one (including the empty set)
     // the above check wouldn't notice that change
-    if (Object.keys(newProps.mods).length < Object.keys(oldProps.mods).length) {
+    if ((this.mModsWithState === undefined) ||
+        (Object.keys(newModsWithState).length < Object.keys(this.mModsWithState).length)) {
       changed = true;
     }
+
+    this.mModsWithState = newModsWithState;
 
     if (changed || (this.mGroupedMods === undefined)) {
       this.updateModGrouping();
@@ -387,9 +472,20 @@ class ModList extends ComponentEx<IProps, {}> {
     let removeArchive: boolean;
     let disableDependent: boolean;
 
+    const modNames = modIds.map(modId => {
+      let name = modName(this.mModsWithState[modId], {
+        version: true,
+      });
+      if (this.mModsWithState[modId].state === 'downloaded') {
+        name += ' ' + t('(Archive only)');
+      }
+      return name;
+    });
+
     onShowDialog('question', 'Confirm deletion', {
       message: t('Do you really want to delete this mod?',
-        { count: modIds.length, replace: { count: modIds.length } }) + '\n' + modIds.join('\n'),
+        { count: modIds.length, replace: { count: modIds.length } })
+        + '\n' + modNames.join('\n'),
       checkboxes: [
         { id: 'mod', text: t('Remove Mod'), value: true },
         { id: 'archive', text: t('Remove Archive'), value: false },
@@ -416,6 +512,9 @@ class ModList extends ComponentEx<IProps, {}> {
             });
           })
             .then(() => Promise.map(modIds, (key: string) => {
+              if (mods[key] === undefined) {
+                return Promise.resolve();
+              }
               const fullPath = path.join(installPath, mods[key].installationPath);
               return fs.removeAsync(fullPath);
             }))
@@ -425,12 +524,13 @@ class ModList extends ComponentEx<IProps, {}> {
         }
       })
       .then(() => {
-        modIds.forEach((key: string) => {
+        modIds.forEach(key => {
+          const archiveId = this.mModsWithState[key].archiveId;
           if (removeMods) {
             onRemoveMod(gameMode, key);
           }
           if (removeArchive) {
-            this.context.api.events.emit('remove-download', mods[key].archiveId);
+            this.context.api.events.emit('remove-download', archiveId);
           }
         });
       });
@@ -444,6 +544,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   return {
     mods: state.persistent.mods[gameMode] || {},
     modState: profile !== undefined ? profile.modState : {},
+    downloads: state.persistent.downloads.files || {},
     gameMode,
     profileId: profile.id,
     language: state.settings.interface.language,

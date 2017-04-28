@@ -1,21 +1,22 @@
 import {getSafe} from '../../../util/storeHelper';
 
 function transfer(info: any, key: string, source: any, path: string[]) {
-  let value = getSafe(source, path, undefined);
+  const value = getSafe(source, path, undefined);
   if (value !== undefined) {
     info[key] = value;
   }
 }
 
 function filterModInfo(input: any): any {
-  let result: any = {};
+  const result: any = {};
 
-  // TODO these should be extensions 
+  // TODO these should be extensions
   transfer(result, 'modId', input.nexus, ['ids', 'modId']);
   transfer(result, 'fileId', input.nexus, ['ids', 'fileId']);
   transfer(result, 'fileType', input.nexus, ['fileInfo', 'category_name']);
   transfer(result, 'isPrimary', input.nexus, ['fileInfo', 'is_primary']);
-  let nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
+  transfer(result, 'fileName', input.nexus, ['fileInfo', 'name']);
+  const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
   if (nexusChangelog !== undefined) {
     result.changelog = { format: 'html', content: nexusChangelog };
   }

@@ -237,7 +237,7 @@ $cursor-disabled:                not-allowed;
 //## Dropdown menu container and contents.
 
 //** Background for the dropdown menu.
-$dropdown-bg:                    $brand-bg;
+$dropdown-bg:                    $brand-secondary;
 //** Dropdown menu `border-color`.
 $dropdown-border:                rgba(0,0,0,.15);
 //** Dropdown menu `border-color` **for IE8**.
@@ -246,7 +246,7 @@ $dropdown-fallback-border:       #ccc;
 $dropdown-divider-bg:            #e5e5e5;
 
 //** Dropdown link text color.
-$dropdown-link-color:            $gray-dark;
+$dropdown-link-color:            $gray-lighter;
 //** Hover color for dropdown links.
 $dropdown-link-hover-color:      #fff;
 //** Hover background for dropdown links.

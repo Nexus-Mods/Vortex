@@ -203,16 +203,17 @@ class InstallManager {
                     // the mod is deactivated and undeployed (as to not leave dangling
                     // links) and it ensures we do a clean install of the mod
                     return new Promise((resolve, reject) => {
-                      api.events.emit('remove-mod', oldMod.id, (error: Error) => {
-                        if (error !== null) {
-                          return Promise.reject(error);
-                        } else {
-                          // use the same mod id as the old version so that all profiles
-                          // keep using it.
-                          modId = oldMod.id;
-                          enable = enable || wasEnabled;
-                          return Promise.resolve();
-                        }
+                      api.events.emit('remove-mod', currentProfile.gameId, oldMod.id,
+                        (error: Error) => {
+                          if (error !== null) {
+                            return Promise.reject(error);
+                          } else {
+                            // use the same mod id as the old version so that all profiles
+                            // keep using it.
+                            modId = oldMod.id;
+                            enable = enable || wasEnabled;
+                            return Promise.resolve();
+                          }
                       });
                     });
                   }
@@ -594,7 +595,7 @@ class InstallManager {
           } else if (result.action === 'Replace') {
             const currentProfile = activeProfile(api.store.getState());
             const wasEnabled = getSafe(currentProfile.modState, [modId, 'enabled'], false);
-            api.events.emit('remove-mod', modId, (err) => {
+            api.events.emit('remove-mod', currentProfile.gameId, modId, (err) => {
               if (err !== null) {
                 reject(err);
               } else {

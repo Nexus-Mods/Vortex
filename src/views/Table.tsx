@@ -26,9 +26,7 @@ import {Fixed, Flex, Layout} from 'react-layout-pane';
 import * as SplitPane from 'react-split-pane';
 import { createSelector } from 'reselect';
 
-export interface IChangeDataHandler {
-  (rowId: string, attributeId: string, newValue: any): void;
-}
+export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
 export interface ITableRowAction extends IActionDefinition {
   singleRowAction?: boolean;
@@ -61,11 +59,13 @@ interface IExtensionProps {
   objects: ITableAttribute[];
 }
 
-type LookupCalculated = { [rowId: string]: { [attributeId: string]: any } };
+export interface ILookupCalculated {
+  [rowId: string]: { [attributeId: string]: any };
+}
 
 interface IComponentState {
   lastSelected?: string;
-  calculatedValues?: LookupCalculated;
+  calculatedValues?: ILookupCalculated;
   splitMax: number;
 }
 
@@ -100,9 +100,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }, 100);
   }
 
+  public componentWillMount() {
+    this.updateSelection(this.props);
+  }
+
   public componentWillReceiveProps(newProps: IProps) {
     if (newProps.data !== this.props.data) {
       this.updateCalculatedValues(newProps);
+      this.updateSelection(newProps);
     }
     if (newProps.attributeState !== this.props.attributeState) {
       const { attributeState, objects } = newProps;
@@ -122,13 +127,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       hasActions = rowActions.length > 0;
     }
 
-    let actionHeader = hasActions
-      ? <th className={`table-${tableId} header-action`}>
+    const actionHeader = hasActions
+      ? (
+        <th className={`table-${tableId} header-action`}>
           <div>
             <p className='vcenter'>{t('Actions')}</p>
           </div>
         </th>
-      : null;
+      ) : null;
 
     return (
       <Layout className='table-layout' type='column'>
@@ -179,9 +185,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const filtered: { [key: string]: any } = this.filteredRows(visibleAttributes, data);
     const sorted: any[] = this.sortedRows(attributeState, visibleAttributes, filtered, language);
-    return <tbody>
-      {sorted.map((row) => this.renderRow(row, visibleAttributes))}
-    </tbody>;
+    return (
+      <tbody>
+        {sorted.map((row) => this.renderRow(row, visibleAttributes))}
+      </tbody>
+    );
   }
 
   private setSplitRef = (ref) => {
@@ -189,7 +197,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private translateHeader(event) {
-    let translate = `translate(0, ${event.target.scrollTop}px)`;
+    const translate = `translate(0, ${event.target.scrollTop}px)`;
     event.target.querySelector('thead').style.transform = translate;
   }
 
@@ -208,7 +216,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private changeSplitPos = (value) => {
     this.mSplitDebouncer.schedule(undefined, value);
     const totalWidth = this.mSplitContainer.splitPane.offsetWidth;
-    let maxWidth = Math.min(
+    const maxWidth = Math.min(
       totalWidth * 0.5,
       totalWidth - 700,
     );
@@ -223,7 +231,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private updateCalculatedValues(props) {
     const { t, data, objects } = props;
 
-    let newValues: LookupCalculated = this.state.calculatedValues || {};
+    let newValues: ILookupCalculated = this.state.calculatedValues || {};
 
     // recalculate each attribute in each row
     Promise.map(Object.keys(data), (rowId: string) => {
@@ -242,14 +250,20 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                 },
               });
             }
-          })
-      );
+          }));
     }).then(() => {
       // once everything is recalculated, update the cache
       this.setState(update(this.state, {
         calculatedValues: { $set: newValues },
       }));
     });
+  }
+
+  private updateSelection(props: IProps) {
+    // unselect rows that are no longer in the data
+    const vanished = Object.keys(props.rowState).filter(rowId =>
+      props.rowState[rowId].selected && (props.data[rowId] === undefined));
+    props.onSelectRows(props.tableId, vanished, false);
   }
 
   private standardSort(lhs: any, rhs: any): number {
@@ -267,7 +281,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return data;
     }
 
-    let result = {};
+    const result = {};
     Object.keys(calculatedValues).filter(rowId => {
       // filter out rows which no longer exist
       if (data[rowId] === undefined) {
@@ -280,15 +294,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           return false;
         }
 
-        let value = attribute.filter.raw
+        const value = attribute.filter.raw
           ? data[rowId].attributes[attribute.id]
           : calculatedValues[rowId][attribute.id];
 
         return truthy(filter[attribute.id])
         && !attribute.filter.matches(filter[attribute.id], value,
                                      this.context.api.store.getState());
-      }
-      ) === undefined;
+      }) === undefined;
     })
     .forEach(key => result[key] = data[key]);
     return result;
@@ -300,12 +313,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                      locale: string): any[] {
     const { calculatedValues } = this.state;
 
-    let sortAttribute: ITableAttribute = attributes.find((attribute: ITableAttribute) => {
+    const sortAttribute: ITableAttribute = attributes.find((attribute: ITableAttribute) => {
       return (attributeState[attribute.id] !== undefined)
           && (attributeState[attribute.id].sortDirection !== 'none');
     });
 
-    let idsToRows = (rowId: string) => ({
+    const idsToRows = (rowId: string) => ({
       id: rowId,
       data: data[rowId],
     });
@@ -321,9 +334,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       sortFunction = this.standardSort;
     }
 
-    let descending = attributeState[sortAttribute.id].sortDirection === 'desc';
+    const descending = attributeState[sortAttribute.id].sortDirection === 'desc';
 
-    let dataIds = Object.keys(data).filter((key) => calculatedValues[key] !== undefined);
+    const dataIds = Object.keys(data).filter((key) => calculatedValues[key] !== undefined);
 
     return dataIds.sort((lhsId: string, rhsId: string): number => {
       let res = 0;
@@ -352,8 +365,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const {t, data, language, objects} = this.props;
 
     const detailAttributes = objects.filter((attribute: ITableAttribute) =>
-      attribute.placement !== 'table'
-    );
+      attribute.placement !== 'table');
 
     const rowData = this.state.calculatedValues[rowId];
 
@@ -361,18 +373,20 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    return <TableDetail
-      t={t}
-      rowId={rowId}
-      rowData={rowData}
-      rawData={data[rowId]}
-      attributes={detailAttributes}
-      language={language}
-    />;
-  };
+    return (
+      <TableDetail
+        t={t}
+        rowId={rowId}
+        rowData={rowData}
+        rawData={data[rowId]}
+        attributes={detailAttributes}
+        language={language}
+      />
+    );
+  }
 
   private renderSelectionActions(): JSX.Element {
-    const {t, actions, rowState} = this.props;
+    const {t, actions, rowState, tableId} = this.props;
 
     const selected = Object.keys(rowState).filter((key: string) => rowState[key].selected);
     const selectedCount = selected.length;
@@ -392,7 +406,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         </h4>
         {' '}
         <IconBar
-          group='${tableId}-multiaction-icons'
+          group={`${tableId}-multiaction-icons`}
           className='table-actions'
           style={{ marginBottom: 5 }}
           tooltipPlacement='top'
@@ -406,7 +420,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private renderAttributeToggle = (attr: ITableAttribute) => {
     const { t } = this.props;
 
-    let attributeState = this.getAttributeState(attr);
+    const attributeState = this.getAttributeState(attr);
 
     return !attr.isToggleable ? null : (
       <AttributeToggle
@@ -417,7 +431,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         onSetAttributeVisible={this.setAttributeVisible}
       />
     );
-  };
+  }
 
   private setAttributeVisible = (attributeId: string, visible: boolean) => {
     const { onSetAttributeVisible, tableId } = this.props;
@@ -446,13 +460,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }
       onSelectRows(tableId, [row.id], !wasSelected);
     } else if (evt.shiftKey) {
-      // shift-click -> select everything between this row and the last one clicked, 
+      // shift-click -> select everything between this row and the last one clicked,
       //                deselect everything else
       const { objects, data, language } = this.props;
       const visibleAttributes: ITableAttribute[] =
         this.visibleAttributes(objects, attributeState);
 
-      let selection: Set<string> = new Set([row.id, this.state.lastSelected]);
+      const selection: Set<string> = new Set([row.id, this.state.lastSelected]);
       let selecting = false;
 
       this.sortedRows(attributeState, visibleAttributes, data, language)
@@ -478,7 +492,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       onSelectRows(tableId, Object.keys(rowState), false);
       onSelectRows(tableId, [row.id], true);
     }
-  };
+  }
 
   private renderRow(data: any, visibleAttributes: ITableAttribute[]): JSX.Element {
     const { t, actions, language, rowState, tableId } = this.props;
@@ -510,7 +524,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private visibleAttributes(attributes: ITableAttribute[],
                             attributeStates: { [id: string]: IAttributeState }): ITableAttribute[] {
     return attributes.filter((attribute: ITableAttribute) => {
-      let state = this.getAttributeState(attribute, attributeStates);
+      const state = this.getAttributeState(attribute, attributeStates);
       if (attribute.placement === 'detail') {
         return false;
       } else {
@@ -540,12 +554,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           onSetFilter={ this.setFilter }
           t={t}
         >
-        { attribute.filter !== undefined ? <attribute.filter.component
-          filter={filt}
-          attributeId={attribute.id}
-          t={t}
-          onSetFilter={this.setFilter}
-        /> : null }
+          {attribute.filter !== undefined ? (
+            <attribute.filter.component
+              filter={filt}
+              attributeId={attribute.id}
+              t={t}
+              onSetFilter={this.setFilter}
+            />
+         ) : null }
         </HeaderCell>
       );
     } else {
@@ -570,7 +586,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const { objects, onSetAttributeSort, tableId } = this.props;
 
     // reset all other columns because we can't really support multisort with this ui
-    for (let testId of objects.map((attribute) => attribute.id)) {
+    for (const testId of objects.map((attribute) => attribute.id)) {
       const attrState = this.getAttributeState(
         objects.find((attribute: ITableAttribute) => attribute.id === testId));
 
@@ -637,7 +653,4 @@ export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
       extend(registerTableAttribute)(
-        SuperTable
-      )
-    )
-  ) as React.ComponentClass<IBaseProps & IExtensibleProps>;
+        SuperTable))) as React.ComponentClass<IBaseProps & IExtensibleProps>;

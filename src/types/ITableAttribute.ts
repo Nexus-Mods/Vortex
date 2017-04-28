@@ -24,7 +24,7 @@ export interface ITableFilter {
 
 /**
  * declaration of an attribute of a table
- * 
+ *
  * @export
  * @interface IModAttribute
  */
@@ -100,11 +100,16 @@ export interface ITableAttribute {
   /**
    * describes how editing for this field should work. Only one out of "choices", "validate"
    * should be used
-   * 
+   *
    * Please note that this only works if no customRenderer is set. Otherwise that renderer
    * will have to implement its own editing functionality
    */
   edit: {
+    /**
+     * allow inline editing of this cell
+     */
+    inline?: boolean,
+
     /**
      * if set, this field is a drop-down selection with the choices returned by this function.
      * Please note: the value returned by calc has to appear in the text-field of one of these
@@ -118,8 +123,12 @@ export interface ITableAttribute {
     validate?: (input: string) => ValidationState,
 
     /**
-     * called when this attribute was changed for an object.
-     * If this is undefined, the field is readonly
+     * called when this attribute was changed for an object. The way editing is presented to the
+     * user (if you didn't specify a customRenderer) depends on the value type.
+     * Potentially "newValue" can be undefined which signals a "toggle" or "cycle to the next
+     * value"
+     *
+     * If this attribute is undefined, the field is readonly
      */
     onChangeValue?: (rowId: string, newValue: any) => void,
   };

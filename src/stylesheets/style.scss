@@ -128,7 +128,9 @@
 }
 
 .nav-pills > li.active > a, .nav-pills > li.active > a:hover, .nav-pills > li.active > a:focus {
-  border-left: 2px solid $brand-warning;
+  border-left: 4px solid $brand-warning;
+  // regular padding - border
+  padding-left: 6px;
 }
 
 .nav-pills>li>a>.svg-icon {
@@ -891,6 +893,11 @@ div:hover > .hover-expand {
   padding: 8px !important;
 }
 
+.container-quicklaunch {
+  display: 'inline';
+  margin-right: 20px;
+}
+
 .table {
   margin-bottom: 0px;
 }
@@ -1097,6 +1104,39 @@ a[role=menuitem] svg {
 
 .discovery-progress-3 {
   background-color: $brand-danger;
+}
+
+.btn-mods-enabled-enabled, .toggle-mods-enabled-enabled {
+  background-color: $brand-success;
+}
+
+.btn-mods-enabled-disabled, .toggle-mods-enabled-disabled {
+  background-color: $gray;
+}
+
+.btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled {
+  background-color: $brand-info;
+}
+
+.option-mods-enabled-uninstalled {
+  background-color: $brand-danger;
+}
+
+.table-mods .dropdown > button {
+  padding: 2px 10px;
+  border: 0px;
+  min-width: 100px;
+}
+
+.table-mods .dropdown {
+  display: inline-flex;
+}
+
+#dropdown-mods-enabled {
+  padding: 2px 5px;
+  border: 0px;
+  border-left: 1px solid $gray-light;
+  min-width: 0px;
 }
 
 ::-webkit-scrollbar {
