@@ -360,7 +360,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode: activeGameId(state),
     lastActiveProfile: state.settings.gameMode.lastActiveProfile,
     discoveredGames: state.settings.gameMode.discovered,
-    pickerLayout: state.settings.gameMode.pickerLayout,
+    pickerLayout: state.settings.gameMode.pickerLayout || 'list',
     profiles: state.persistent.profiles,
     knownGames: state.session.gameMode.known,
     discovery: state.session.discovery,
