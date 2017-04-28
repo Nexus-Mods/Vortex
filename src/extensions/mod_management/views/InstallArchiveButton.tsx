@@ -11,7 +11,7 @@ import * as React from 'react';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
-interface IBaseProps {
+export interface IBaseProps {
   buttonType: ButtonType;
 }
 
