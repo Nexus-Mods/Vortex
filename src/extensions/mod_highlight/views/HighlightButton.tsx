@@ -11,7 +11,7 @@ import * as React from 'react';
 
 import { Button, ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
 
-let cssHighlightList: string[] = [
+const cssHighlightList: string[] = [
   'highlight-1',
   'highlight-2',
   'highlight-3',
@@ -37,17 +37,22 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 /**
  * Highlight Button
- * 
+ *
  * @class HighlightButton
  */
 class HighlightButton extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
-    let { mod, t } = this.props;
-    let color = getSafe(mod.attributes, ['color'], '');
-    let icon = getSafe(mod.attributes, ['icon'], '');
+    const { mod, t } = this.props;
 
-    let modIcon: string[] = ['bomb', 'map', 'shield', 'flask',
+    if (mod.state !== 'installed') {
+      return null;
+    }
+
+    const color = getSafe(mod.attributes, ['color'], '');
+    const icon = getSafe(mod.attributes, ['icon'], '');
+
+    const modIcon: string[] = ['bomb', 'map', 'shield', 'flask',
       'flag', 'hotel', 'bolt', 'home', 'eye'];
 
     const popoverBottom = (
@@ -117,12 +122,12 @@ class HighlightButton extends ComponentEx<IProps, {}> {
   }
 
   private toggleIcon = (evt) => {
-    let { gameMode, mod, onSetModAttribute } = this.props;
+    const { gameMode, mod, onSetModAttribute } = this.props;
     onSetModAttribute(gameMode, mod.id, 'icon', evt.currentTarget.id);
   }
 
   private toggleColors = (color) => {
-    let { gameMode, mod, onSetModAttribute } = this.props;
+    const { gameMode, mod, onSetModAttribute } = this.props;
     onSetModAttribute(gameMode, mod.id, 'color', color.currentTarget.value);
   }
 
@@ -142,5 +147,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-    HighlightButton
-  ) as React.ComponentClass<IBaseProps>;
+    HighlightButton) as React.ComponentClass<IBaseProps>;

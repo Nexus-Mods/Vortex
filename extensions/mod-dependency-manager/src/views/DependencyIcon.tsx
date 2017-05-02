@@ -261,6 +261,10 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, conflicts, connectDragSource, connectDropTarget, mod } = this.props;
 
+    if (mod.state !== 'installed') {
+      return null;
+    }
+
     const classes = ['btn-dependency'];
 
     const staticRules = util.getSafe(this.state, ['modInfo', 'rules'], []);
