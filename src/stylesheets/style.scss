@@ -1139,6 +1139,16 @@ a[role=menuitem] svg {
   min-width: 0px;
 }
 
+.group-addon-btn {
+  padding: 0px;
+  width: 26px;
+}
+
+.group-addon-btn button {
+  padding: 0px;
+  width: 100%;
+}
+
 ::-webkit-scrollbar {
   width: 12px;
   height: 12px;

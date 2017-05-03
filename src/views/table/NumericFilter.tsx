@@ -1,62 +1,85 @@
 import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
-
-import { IconButton } from '../../views/TooltipControls';
+import { truthy } from '../../util/util';
+import { Button } from '../../views/TooltipControls';
 
 import * as React from 'react';
 import { FormControl, InputGroup } from 'react-bootstrap';
 
-let comparisonHigherThan: boolean = true;
-
 export class NumericFilterComponent extends React.Component<IFilterProps, {}> {
-  private lastAttributeId;
-  private lastValue;
+  private currentComparison: 'eq' | 'ge' | 'le';
+  private currentValue: number;
+  private comparisons;
+
+  constructor(props: IFilterProps) {
+    super(props);
+
+    const filt = props.filter || { comparison: 'eq', value: '' };
+    this.currentValue = filt.value;
+    this.currentComparison = filt.comparison;
+
+    this.comparisons = {
+      eq: {
+        symbol: '=',
+        tooltip: props.t('Equal'),
+      },
+      ge: {
+        symbol: '\u2265',
+        tooltip: props.t('Higher or Equal'),
+      },
+      le: {
+        symbol: '\u2264',
+        tooltip: props.t('Less or Equal'),
+      },
+    };
+  }
 
   public render(): JSX.Element {
     const { filter, t } = this.props;
-    let directionIcon;
-    let tooltip = t('Toggle higher/lower than');
 
-    if (comparisonHigherThan) {
-      directionIcon = 'long-arrow-down';
-    } else {
-      directionIcon = 'long-arrow-up';
-    }
+    const filt = filter || { comparison: 'eq', value: '' };
+
+    const currentComparison = this.comparisons[filt.comparison];
 
     return (
-      <InputGroup>
+      <InputGroup style={{ width: '100%' }}>
+        <InputGroup.Addon className='group-addon-btn'>
+          <Button
+            id='btn-numeric-direction'
+            className='btn-embed'
+            onClick={this.toggleDirection}
+            tooltip={currentComparison.tooltip}
+          >
+            {currentComparison.symbol}
+          </Button>
+        </InputGroup.Addon>
         <FormControl
           className='form-field-compact'
           type='number'
-          value={filter || ''}
+          value={filt.value}
           onChange={this.changeFilter}
         />
-        <InputGroup.Button>
-          <IconButton
-            className='btn-embed'
-            id='toggleDate'
-            tooltip={tooltip}
-            icon={directionIcon}
-            onClick={this.toggleDirection}
-          />
-        </InputGroup.Button>
       </InputGroup>
     );
   }
 
   private changeFilter = (evt) => {
     const { attributeId, onSetFilter } = this.props;
-    this.lastAttributeId = attributeId;
-    this.lastValue = evt.currentTarget.value;
-    onSetFilter(attributeId, evt.currentTarget.value);
+    this.currentValue = evt.currentTarget.value;
+    onSetFilter(attributeId,
+      { comparison: this.currentComparison, value: this.currentValue });
   }
 
   private toggleDirection = (evt) => {
-    if (this.lastValue === undefined) {
-      return;
-    }
-    comparisonHigherThan = !comparisonHigherThan;
-    const { onSetFilter } = this.props;
-    onSetFilter(this.lastAttributeId, this.lastValue);
+    const { attributeId, filter, onSetFilter }  = this.props;
+
+    const filt = filter || { comparison: 'eq', value: '' };
+
+    const options = ['eq', 'ge', 'le'];
+    this.currentComparison =
+      options[(options.indexOf(filt.comparison) + 1) % options.length] as any;
+
+    onSetFilter(attributeId,
+      { comparison: this.currentComparison, value: this.currentValue });
   }
 }
 
@@ -64,8 +87,18 @@ class NumericFilter implements ITableFilter {
   public component = NumericFilterComponent;
   public raw = false;
 
-  public matches(filter: any, value: any): boolean {
-      return (comparisonHigherThan) ? (value >= filter) : (value <= filter);
+  public matches(filter: any, input: number): boolean {
+    const { comparison, value } = filter;
+
+    if (!truthy(value)) {
+      return true;
+    }
+
+    return {
+      eq: (lhs, rhs) => lhs === rhs,
+      ge: (lhs, rhs) => lhs >= rhs,
+      le: (lhs, rhs) => lhs <= rhs,
+    }[comparison](input, parseInt(value, 10));
   }
 }
 

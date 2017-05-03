@@ -6,12 +6,14 @@ import { FormControl } from 'react-bootstrap';
 export class TextFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {
     const { filter } = this.props;
-    return <FormControl
-      className='form-field-compact'
-      type='text'
-      value={filter || ''}
-      onChange={this.changeFilter}
-    />;
+    return (
+      <FormControl
+        className='form-field-compact'
+        type='text'
+        value={filter || ''}
+        onChange={this.changeFilter}
+      />
+    );
   }
 
   private changeFilter = (evt) => {
