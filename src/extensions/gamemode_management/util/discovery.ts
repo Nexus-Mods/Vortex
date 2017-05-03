@@ -75,7 +75,7 @@ export function quickDiscovery(knownGames: IGame[],
   return Promise.map(knownGames, (game) => new Promise<string>((resolve, reject) => {
     quickDiscoveryTools(game.supportedTools, onDiscoveredTool);
     if (game.queryPath === undefined) {
-      resolve();
+      return resolve();
     }
     try {
       const gamePath = game.queryPath();

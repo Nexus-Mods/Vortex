@@ -70,7 +70,9 @@ interface IRegisteredExtension {
   initFunc: IExtensionInit;
 }
 
-type WatcherRegistry = { [watchPath: string]: StateChangeCallback[] };
+interface IWatcherRegistry {
+  [watchPath: string]: StateChangeCallback[];
+}
 
 interface IInitCall {
   extension: string;
@@ -81,7 +83,7 @@ interface IInitCall {
 
 interface IApiAddition {
   key: string;
-  callback: Function;
+  callback: (...args: any[]) => void;
 }
 
 class ContextProxyHandler implements ProxyHandler<any> {
@@ -95,7 +97,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
     this.mContext = context;
     this.mInitCalls = [];
     this.mApiAdditions = [];
-    let that = this;
+    const that = this;
     this.mOptional = new Proxy({}, {
       get(target, key: PropertyKey): any {
         return (...args) => {
@@ -115,8 +117,8 @@ class ContextProxyHandler implements ProxyHandler<any> {
    */
   public getCalls(name: string): any[][] {
     return this.mInitCalls.filter((call: IInitCall) =>
-      call.key === name
-    ).map((call: IInitCall) => call.arguments);
+      call.key === name)
+    .map((call: IInitCall) => call.arguments);
   }
 
   public invokeAdditions() {
@@ -131,13 +133,14 @@ class ContextProxyHandler implements ProxyHandler<any> {
    * remove all init calls from incompatible extesions
    */
   public unloadIncompatible(furtherAPIs: Set<string>) {
-    let addAPIs: string[] = this.mApiAdditions.map((addition: IApiAddition) => addition.key);
-    let fullAPI = new Set([...furtherAPIs, ...this.staticAPIs, ...addAPIs]);
+    const addAPIs: string[] = this.mApiAdditions.map((addition: IApiAddition) => addition.key);
+    const fullAPI = new Set([...furtherAPIs, ...this.staticAPIs, ...addAPIs]);
 
-    let incompatibleExtensions = new Set<string>();
+    const incompatibleExtensions = new Set<string>();
 
-    this.mInitCalls.filter((call: IInitCall) => !call.optional && !fullAPI.has(call.key)
-    ).forEach((call: IInitCall) => {
+    this.mInitCalls.filter(
+      (call: IInitCall) => !call.optional && !fullAPI.has(call.key))
+    .forEach((call: IInitCall) => {
       log('debug', 'unsupported api call', { extension: call.extension, api: call.key });
       incompatibleExtensions.add(call.extension);
     });
@@ -145,8 +148,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       log('info', 'extensions ignored for using unsupported api',
           { extensions: Array.from(incompatibleExtensions).join(', ') });
       this.mInitCalls = this.mInitCalls.filter((call: IInitCall) =>
-        !incompatibleExtensions.has(call.extension)
-      );
+        !incompatibleExtensions.has(call.extension));
     } else {
       if (remote !== undefined) {
         log('debug', 'all extensions compatible');
@@ -195,7 +197,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
   private get staticAPIs() {
     // trick so we get a compile time error from tsc if this object doesn't
     // match the interface
-    let dummy: IExtensionContext = {
+    const dummy: IExtensionContext = {
       registerMainPage: undefined,
       registerDashlet: undefined,
       registerDialog: undefined,
@@ -223,7 +225,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
 /**
  * interface to extensions. This loads extensions and provides the api extensions
  * use
- * 
+ *
  * @class ExtensionManager
  */
 class ExtensionManager {
@@ -238,7 +240,7 @@ class ExtensionManager {
   private mTranslator: I18next.I18n;
   private mEventEmitter: NodeJS.EventEmitter;
   private mReduxWatcher: any;
-  private mWatches: WatcherRegistry = {};
+  private mWatches: IWatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
   private mArchiveHandlers: { [extension: string]: ArchiveHandlerCreator };
   private mModDB: modmetaT.ModDB;
@@ -285,10 +287,10 @@ class ExtensionManager {
 
   /**
    * sets up the extension manager to work with the specified store
-   * 
+   *
    * @template S State interface
    * @param {Redux.Store<S>} store
-   * 
+   *
    * @memberOf ExtensionManager
    */
   public setStore<S>(store: Redux.Store<S>) {
@@ -307,7 +309,7 @@ class ExtensionManager {
     this.mApi.store = store;
     this.mApi.onStateChange = this.stateChangeHandler;
 
-    let{ipcRenderer} = require('electron');
+    const {ipcRenderer} = require('electron');
     ipcRenderer.on(
         'send-notification',
         (event, notification) => this.mApi.sendNotification(notification));
@@ -318,11 +320,11 @@ class ExtensionManager {
 
   /**
    * set up the api for the main process.
-   * 
+   *
    * @param {Redux.Store<S>} store
    * @param {NodeJS.Events} ipc channel to the renderer process, in case a call has to be
    *                            delegated there
-   * 
+   *
    * @memberOf ExtensionManager
    */
   public setupApiMain<S>(store: Redux.Store<S>, ipc: Electron.WebContents) {
@@ -331,7 +333,7 @@ class ExtensionManager {
     this.mApi.showErrorNotification =
         (message: string, details: string | Error) => {
           // unfortunately it appears we can't send an error object via ipc
-          let errMessage = typeof(details) === 'string' ? details : details.message;
+          const errMessage = typeof(details) === 'string' ? details : details.message;
           ipc.send('show-error-notification', message, errMessage);
         };
     this.mApi.store = store;
@@ -340,9 +342,9 @@ class ExtensionManager {
 
   /**
    * gain acces to the extension api
-   * 
+   *
    * @returns
-   * 
+   *
    * @memberOf ExtensionManager
    */
   public getApi() {
@@ -353,7 +355,7 @@ class ExtensionManager {
    * retrieve list of all reducers registered by extensions
    */
   public getReducers() {
-    let reducers = [];
+    const reducers = [];
     this.apply('registerReducer', (path: string[], reducer: any) => {
       reducers.push({ path, reducer });
     });
@@ -362,7 +364,7 @@ class ExtensionManager {
 
   /**
    * apply all extensions that were registered by extensions
-   * 
+   *
    * @memberOf ExtensionManager
    */
   public applyExtensionsOfExtensions() {
@@ -372,13 +374,13 @@ class ExtensionManager {
   /**
    * runs the extension init function with the specified register-function
    * set
-   * 
+   *
    * @param {string} funcName
    * @param {Function} func
-   * 
+   *
    * @memberOf ExtensionManager
    */
-  public apply(funcName: string, func: Function) {
+  public apply(funcName: string, func: (...args: any[]) => void) {
     this.mContextProxyHandler.getCalls(funcName).forEach((args: any[]) => {
       func(...args);
     });
@@ -426,16 +428,16 @@ class ExtensionManager {
       this.mModDBGame = currentGame;
       this.mModDBAPIKey = currentKey;
     }
-    // TODO the mod db doesn't depend on the store but it must only be instantiated
+    // TODO: the mod db doesn't depend on the store but it must only be instantiated
     //   in one process and this is a cheap way of achieving that
-    // TODO the fallback to nexus api should somehow be set up in nexus_integration, not here
+    // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
     return this.mModDB;
   }
 
   private stateChangeHandler = (watchPath: string[],
                                 callback: StateChangeCallback) => {
     let lastValue;
-    let key = watchPath.join('.');
+    const key = watchPath.join('.');
     if (this.mWatches[key] === undefined) {
       this.mWatches[key] = [];
       this.mReduxWatcher.watch(watchPath,
@@ -451,7 +453,7 @@ class ExtensionManager {
                                    return;
                                  }
                                  lastValue = currentValue;
-                                 for (let cb of this.mWatches[key]) {
+                                 for (const cb of this.mWatches[key]) {
                                    try {
                                      cb(prevValue, currentValue);
                                    } catch (err) {
@@ -465,19 +467,19 @@ class ExtensionManager {
                                });
     }
     this.mWatches[key].push(callback);
-  };
+  }
 
   /**
    * initialize all extensions
    */
   private initExtensions() {
-    let context = {
+    const context = {
       api: this.mApi,
     };
 
     this.mContextProxyHandler = new ContextProxyHandler(context);
-    let contextProxy = new Proxy(context, this.mContextProxyHandler);
-    this.mExtensions.forEach((ext) => {
+    const contextProxy = new Proxy(context, this.mContextProxyHandler);
+    this.mExtensions.forEach(ext => {
       if (remote !== undefined) {
         // log this only once so we don't spam the log file with this
         log('info', 'init extension', {name: ext.name});
@@ -633,7 +635,7 @@ class ExtensionManager {
   }
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {
-    let indexPath = path.join(extensionPath, 'index.js');
+    const indexPath = path.join(extensionPath, 'index.js');
     if (fs.existsSync(indexPath)) {
       // TODO: workaround. redux-act stores a global set of action creator ids and throws if
       //  there would be a duplicate. Since extensions might import actions we already have loaded
@@ -653,12 +655,12 @@ class ExtensionManager {
       return [];
     }
 
-    let res = fs.readdirSync(extensionsPath)
-      .filter((name) => fs.statSync(path.join(extensionsPath, name)).isDirectory())
-      .map((name) => {
+    const res = fs.readdirSync(extensionsPath)
+      .filter(name => fs.statSync(path.join(extensionsPath, name)).isDirectory())
+      .map(name => {
         try {
           const before = new Date().getTime();
-          let ext = this.loadDynamicExtension(path.join(extensionsPath, name));
+          const ext = this.loadDynamicExtension(path.join(extensionsPath, name));
           const loadTime = new Date().getTime() - before;
           log('debug', 'loaded extension', { name, loadTime });
           return ext;
@@ -675,11 +677,11 @@ class ExtensionManager {
    * retrieves all extensions to the base functionality, both the static
    * and external ones.
    * This loads external extensions from disc synchronously
-   * 
+   *
    * @returns {IExtensionInit[]}
    */
   private loadExtensions(): IRegisteredExtension[] {
-    let staticExtensions = [
+    const staticExtensions = [
       'settings_interface',
       'about_dialog',
       'diagnostics_files',
@@ -711,8 +713,8 @@ class ExtensionManager {
           name,
           initFunc: require(`../extensions/${name}/index`).default,
         }))
-        .concat(this.loadDynamicExtensions(bundledPath))
-        .concat(this.loadDynamicExtensions(extensionsPath));
+        .concat(this.loadDynamicExtensions(bundledPath),
+                this.loadDynamicExtensions(extensionsPath));
   }
 }
 
