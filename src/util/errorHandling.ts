@@ -6,6 +6,8 @@ import {
   shell,
 } from 'electron';
 
+import * as restT from 'node-rest-client';
+
 import {log} from './log';
 
 export interface ITermination {
@@ -15,10 +17,11 @@ export interface ITermination {
 }
 
 // could be a bit more dynamic but how often is this going to change?
-const repo = 'https://github.com/Nexus-Mods/NMM2';
+const repo = 'Nexus-Mods/NMM2';
+const repoURL = 'https://github.com/' + repo;
 
-function createTitle(type: string, error: ITermination) {
-  return `${type}: ${error.message}`;
+function createTitle(type: string, error: ITermination, hash: string) {
+  return `${type}: ${error.message} (hash: ${hash})`;
 }
 
 function createReport(type: string, error: ITermination, version: string) {
@@ -40,21 +43,54 @@ ${error.details}
 `;
 }
 
-declare var Notification: any;
+function genHash(error: ITermination) {
+  const { createHash } = require('crypto');
+  const hash = createHash('md5');
+  if (error.stack) {
+    return hash.update(error.stack).digest('hex');
+  } else {
+    return hash.update(error.message).digest('hex');
+  }
+}
 
 export function createErrorReport(type: string, error: ITermination, labels: string[] = []) {
-  const app = appIn || remote.app;
+  return new Promise((resolve, reject) => {
+    const hash = genHash(error);
 
-  clipboard.writeText(createReport(type, error, app.getVersion()));
-  const title = encodeURIComponent(createTitle(type, error));
-  const body =
-      'Please paste the content of your clipboard here and describe what you did ' +
-      'when the error happened.';
+    const { Client } = require('node-rest-client') as typeof restT;
+    const client = new Client();
+    client.get(`https://api.github.com/repos/${repo}/search/issues`, {
+      q: hash,
+    }, (data, response) => {
+      const app = appIn || remote.app;
+      const dialog = dialogIn || remote.dialog;
 
-  let labelFragments = labels.map((str: string) => `labels[]=${str}`).join('&');
+      let url: string;
+      if ((response.statusCode === 200) && (data.items.length > 0)) {
+        const action = dialog.showMessageBox(null, {
+          type: 'error',
+          buttons: ['Take me there'],
+          title: 'Already reported',
+          message: 'It appears this exact issue was already reported.',
+          noLink: true,
+        });
+        url = data.items[0].html_url;
+      } else {
+        clipboard.writeText(createReport(type, error, app.getVersion()));
 
-  let url = `${repo}/issues/new?title=${title}&${labelFragments}&body=${body}`;
-  shell.openExternal(url);
+        const title = encodeURIComponent(createTitle(type, error, hash));
+        const body =
+          'Please paste the content of your clipboard here and describe what you did ' +
+          'when the error happened.';
+
+        const labelFragments = labels.map((str: string) => `labels[]=${str}`).join('&');
+
+        url = `${repoURL}/issues/new?title=${title}&${labelFragments}&body=${body}`;
+      }
+      shell.openExternal(url);
+      resolve();
+    });
+  });
 }
 
 /**
@@ -83,8 +119,11 @@ export function terminate(error: ITermination) {
     });
 
     if (action === 0) {
+      // Report
       createErrorReport('Crash', error, ['bug', 'crash']);
+      //.then(() => app.exit(1));
     } else if (action === 1) {
+      // Ignore
       action = dialog.showMessageBox(null, {
         type: 'error',
         buttons: ['Quit', 'I won\'t whine'],
@@ -96,9 +135,12 @@ export function terminate(error: ITermination) {
                  'that happen from here on out in this session.',
         noLink: true,
       });
-      if (action === 1) {
-        return;
+      if (action === 0) {
+        app.exit(1);
       }
+    } else {
+      // Quit
+      app.exit(1);
     }
   } catch (err) {
     // if the crash occurs before the application is ready, the dialog module can't be
@@ -106,8 +148,6 @@ export function terminate(error: ITermination) {
     dialog.showErrorBox('An unrecoverable error occured',
       error.message + '\n' + error.details +
       '\nIf you think this is a bug, please report it to the ' +
-      'issue tracker');
+      'issue tracker (github)');
   }
-
-  app.exit(1);
 }
