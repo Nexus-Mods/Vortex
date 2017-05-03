@@ -9,6 +9,7 @@ export * from './storeHelper';
 import { Archive } from './archives';
 import AsyncComponent from './AsyncComponent';
 import { NotSupportedError, UserCanceled } from './CustomErrors';
+import Debouncer from './Debouncer';
 import runElevated from './elevated';
 import { terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
@@ -23,18 +24,19 @@ import walk from './walk';
 
 export {
   Archive,
-  getCurrentLanguage,
-  extend,
-  getNormalizeFunc,
   AsyncComponent,
+  Debouncer,
+  extend,
+  getCurrentLanguage,
+  getNormalizeFunc,
   LazyComponent,
-  NotSupportedError,
-  UserCanceled,
   lazyRequire,
+  NotSupportedError,
   ReduxProp,
   relativeTime,
   runElevated,
   setdefault,
   terminate,
+  UserCanceled,
   walk,
 };

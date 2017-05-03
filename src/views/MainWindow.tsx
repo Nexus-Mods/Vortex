@@ -356,9 +356,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private selectHeader = (ref) => {
-    const wasSet = this.pageHeader !== null;
+    const changed = ref !== this.pageHeader;
     this.pageHeader = ref;
-    if (!wasSet && (ref !== null)) {
+    if (changed) {
       setImmediate(() => {
         this.forceUpdate();
       });

@@ -6,7 +6,7 @@ type Callback = (err: Error) => void;
  * management function. Prevents a function from being called too often
  * and, for function returning a promise it ensures that it's not run
  * again (through this Debouncer) before the promise is resolved.
- * 
+ *
  * @class Debouncer
  */
 class Debouncer {
@@ -56,10 +56,10 @@ class Debouncer {
    * run the function immediately without waiting for the timer
    * to run out. (It does cancel the timer though and invokes all
    * scheduled timeouts)
-   * 
-   * @param {(err: Error) => void} callback 
-   * @param {...any[]} args 
-   * 
+   *
+   * @param {(err: Error) => void} callback
+   * @param {...any[]} args
+   *
    * @memberOf Debouncer
    */
   public runNow(callback: (err: Error) => void, ...args: any[]) {
@@ -85,11 +85,11 @@ class Debouncer {
    * if the function is not scheduled currently the callback will be
    * called (as a success) immediately.
    * This does not reset the timer
-   * 
-   * @param {(err: Error) => void} callback 
+   *
+   * @param {(err: Error) => void} callback
    * @param {boolean} immediately if set (default is false) the function gets called
    *                              immediately instead of awaiting the timer
-   * 
+   *
    * @memberOf Debouncer
    */
   public wait(callback: (err: Error) => void, immediately: boolean = false) {
@@ -114,13 +114,13 @@ class Debouncer {
 
   private run() {
     this.mRunning = true;
-    let callbacks = this.mCallbacks;
+    const callbacks = this.mCallbacks;
     this.mCallbacks = [];
-    let args = this.mArgs;
+    const args = this.mArgs;
     this.mArgs = [];
     this.mTimer = undefined;
 
-    let prom: Error | Promise<void> = this.mFunc(...args);
+    const prom: Error | Promise<void> = this.mFunc(...args);
     if (prom instanceof Promise) {
       prom.then(() => this.invokeCallbacks(callbacks, null))
           .catch((err: Error) => this.invokeCallbacks(callbacks, err))

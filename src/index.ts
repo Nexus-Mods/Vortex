@@ -9,5 +9,5 @@ import { log } from './util/log';
 import * as selectors from './util/selectors';
 
 export * from './views/api';
-export { actions, types, log, selectors, safeCreateAction, util }
+export { actions, types, log, selectors, safeCreateAction, util };
 export { ComponentEx, PureComponentEx } from './util/ComponentEx';
