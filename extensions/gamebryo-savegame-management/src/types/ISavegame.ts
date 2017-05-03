@@ -6,8 +6,3 @@ export interface ISavegame {
   savegameBind: any;
   attributes: { [id: string]: any };
 }
-
-export interface ISelectedSave {
-  saveGameId: string;
-  enable: boolean;
-}

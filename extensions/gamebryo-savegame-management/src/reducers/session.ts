@@ -23,14 +23,8 @@ export const sessionReducer: types.IReducerSpec = {
       const { id, attribute, value } = payload;
       return update(state, { saves: { [id]: { attributes: { [attribute]: { $set: value } } } } });
     },
-    [actions.showSavegamesDialog as any]: (state, payload) => {
+    [actions.showTransferDialog as any]: (state, payload) => {
       return util.setSafe(state, ['showDialog'], payload);
-    },
-    [actions.setSelectedProfile as any]: (state, payload) => {
-      return util.setSafe(state, ['selectedProfile'], payload);
-    },
-    [actions.setSelectAllSavegames as any]: (state, payload) => {
-      return util.setSafe(state, ['selectAllSavegames'], payload);
     },
     [actions.clearSavegames as any]: (state, payload) => {
       return update(state, { saves: { $set: {} } });

@@ -1,5 +1,8 @@
-import { removeSavegame } from '../actions/session';
+import { removeSavegame, showTransferDialog } from '../actions/session';
 import { ISavegame } from '../types/ISavegame';
+import { mygamesPath } from '../util/gameSupport';
+import refreshSavegames from '../util/refreshSavegames';
+import transferSavegames from '../util/transferSavegames';
 
 import {
   CHARACTER_NAME, CREATION_TIME, FILENAME, LEVEL, LOCATION, PLUGINS,
@@ -8,9 +11,12 @@ import {
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { actions, ComponentEx, IconBar, ITableRowAction, MainPage, Table, types } from 'nmm-api';
+import { actions, ComponentEx, Icon, IconBar, ITableRowAction,
+  MainPage, selectors, Table, tooltip, types, util,
+} from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
+import { FormControl } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 
@@ -27,12 +33,16 @@ class Dimensions {
 }
 
 interface IConnectedProps {
+  currentProfile: types.IProfile;
+  profiles: { [id: string]: types.IProfile };
   saves: { [saveId: string]: ISavegame };
   savesPath: string;
+  showTransfer: boolean;
 }
 
 interface IActionProps {
   onRemoveSavegame: (savegameId: string) => void;
+  onHideTransfer: () => void;
   onShowDialog: (
     type: types.DialogType,
     title: string,
@@ -41,7 +51,8 @@ interface IActionProps {
 }
 
 interface IComponentState {
-  selectedSavegame: string;
+  profileId: string;
+  importSaves: { [saveId: string]: ISavegame };
 }
 
 type Props = IConnectedProps & IActionProps;
@@ -51,14 +62,14 @@ type Props = IConnectedProps & IActionProps;
  *
  */
 class SavegameList extends ComponentEx<Props, IComponentState> {
-  public screenshotCanvas: HTMLCanvasElement;
   private savegameActions: ITableRowAction[];
 
   constructor(props) {
     super(props);
-    this.state = {
-      selectedSavegame: undefined,
-    };
+    this.initState({
+      profileId: undefined,
+      importSaves: undefined,
+    });
 
     this.savegameActions = [
       {
@@ -70,19 +81,56 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { saves } = this.props;
+    const { t, saves, showTransfer } = this.props;
+    const { importSaves, profileId } = this.state;
+
+    let actions = this.savegameActions;
+
+    let header: JSX.Element;
+    if (showTransfer) {
+      header = this.renderTransfer();
+      actions = [].concat([{
+        icon: 'sign-in',
+        title: t('Import'),
+        action: this.importSaves,
+      }], this.savegameActions);
+    } else {
+      header = (
+        <IconBar
+          group='savegames-icons'
+          buttonType='icon'
+          orientation='vertical'
+        />
+      );
+    }
+
+    let content = null;
+    if (!showTransfer || (importSaves !== undefined)) {
+      content = (
+        <Table
+          tableId='savegames'
+          data={showTransfer ? importSaves : saves}
+          actions={actions}
+          staticElements={[
+            SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
+            LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
+        />
+      );
+    } else {
+      if (profileId === undefined) {
+        content = <h4>{t('Please select a profile to import from')}</h4>;
+      } else {
+        content = <Icon name='spinner' pulse />;
+      }
+    }
 
     return (
       <MainPage>
+        <MainPage.Header>
+          {header}
+        </MainPage.Header>
         <MainPage.Body>
-          <Table
-            tableId='savegames'
-            data={saves}
-            actions={this.savegameActions}
-            staticElements={[
-              SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
-              LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
-          />
+          {content}
         </MainPage.Body>
         <MainPage.Overlay>
           <IconBar
@@ -95,12 +143,100 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     );
   }
 
+  private renderTransfer() {
+    const { t, currentProfile, profiles } = this.props;
+
+    const activeHasLocalSaves = util.getSafe(currentProfile, ['features', 'local_saves'], false);
+
+    const profileOptions = Object.keys(profiles)
+      .filter(profileId =>
+        // only profiles that use local saves
+        util.getSafe(profiles[profileId], ['features', 'local_saves'], false)
+        // for the current game
+        && (profiles[profileId].gameId === currentProfile.gameId)
+        // and don't list the import target itself
+        && (profiles[profileId].id !== currentProfile.id));
+
+    return (
+      <div style={{ whiteSpace: 'nowrap' }}>
+        {t('Import from') + ' '}
+        <FormControl
+          style={{ display: 'inline-block' }}
+          componentClass='select'
+          onChange={this.selectProfile}
+        >
+          <option>------</option>
+          {activeHasLocalSaves ? (
+            <option
+              key='__global'
+              value='__global'
+            >
+              {t('Global')}
+            </option>
+          ) : null }
+          {profileOptions.map(profileId => this.renderProfilesOption(profileId))}
+        </FormControl>
+        <tooltip.IconButton
+          id='btn-transfer-save-cancel'
+          tooltip={t('Cancel')}
+          icon='remove'
+          onClick={this.cancelTransfer}
+        />
+      </div>
+    );
+  }
+
+  private renderProfilesOption(profileId: string): JSX.Element {
+    const { t, profiles } = this.props;
+    const profile = profiles[profileId];
+    return (
+      <option
+        key={profile.id}
+        value={profile.id}
+      >
+        {t('Profile') + ': ' + profile.name}
+      </option>
+    );
+  }
+
+  private cancelTransfer = () => {
+    this.props.onHideTransfer();
+  }
+
+  private selectProfile = (evt) => {
+    const profileId = evt.currentTarget.value;
+    this.nextState.profileId = profileId;
+    this.loadSaves(profileId);
+  }
+
+  private loadSaves(selectedProfileId: string): Promise<void> {
+    const { currentProfile, profiles, saves } = this.props;
+
+    const savesPath = path.join(mygamesPath(currentProfile.gameId), 'Saves',
+      (selectedProfileId === '__global' ? '' : selectedProfileId));
+
+    const newSavegames: ISavegame[] = [];
+
+    this.nextState.importSaves = undefined;
+
+    return refreshSavegames(savesPath, (save: ISavegame): void => {
+      newSavegames.push(save);
+    })
+      .then(() => {
+        const savesDict: { [id: string]: ISavegame } = {};
+        newSavegames.forEach(save => savesDict[save.id] = save);
+
+        this.nextState.importSaves = savesDict;
+        return Promise.resolve();
+      });
+  }
+
   private remove = (instanceIds: string[]) => {
     const { t, savesPath, onRemoveSavegame, onShowDialog } = this.props;
 
     let removeSavegame = true;
 
-    onShowDialog('question', t('Confirm deletion'), {
+    onShowDialog('question', t('Confirm Deletion'), {
       message: t('Do you really want to remove these files?\n{{saveIds}}',
         { replace: { saveIds: instanceIds.join('\n') } }),
       options: {
@@ -123,12 +259,64 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         }
       });
   }
+
+  private importSaves = (instanceIds: string[]) => {
+    const { t, currentProfile, onShowDialog, saves, savesPath } = this.props;
+    const { importSaves, profileId } = this.state;
+
+    const fileNames = instanceIds.map(id => importSaves[id].attributes['filename']);
+
+    onShowDialog('question', t('Import Savegames'), {
+      message: t('The following files will be imported:\n{{saveIds}}\n'
+        + 'Do you want to move them or create a copy?',
+        { replace: { saveIds: fileNames.join('\n') } }),
+      options: {
+        translated: true,
+      },
+    }, {
+        Cancel: null,
+        Move: null,
+        Copy: null,
+      })
+      .then((result: types.IDialogResult) => {
+        if (result.action === 'Cancel') {
+          return;
+        }
+        const gameId = currentProfile.gameId;
+        const sourceSavePath = path.join(
+          mygamesPath(gameId), 'Saves', profileId !== '__global' ? profileId : '');
+
+        const activeHasLocalSaves =
+          util.getSafe(currentProfile, ['features', 'local_saves'], false);
+        const destSavePath = path.join(
+          mygamesPath(gameId), 'Saves', activeHasLocalSaves ? currentProfile.id : '');
+
+        return transferSavegames(fileNames, sourceSavePath, destSavePath, result.action === 'Copy');
+      })
+      .then((failedCopies: string[]) => {
+        if (failedCopies.length === 0) {
+          this.context.api.sendNotification({
+            type: 'success',
+            message: t('{{ count }} savegame imported', { count: fileNames.length }),
+            displayMS: 2000,
+          });
+        } else {
+          this.context.api.showErrorNotification(
+            t('Not all savegames could be imported'),
+            failedCopies.join('\n'));
+        }
+      });
+  }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
+  const currentProfile = selectors.activeProfile(state);
   return {
+    currentProfile,
+    profiles: state.persistent.profiles,
     saves: state.session.saves.saves,
     savesPath: state.session.saves.savegamePath,
+    showTransfer: state.session.saves.showDialog,
   };
 }
 
@@ -137,6 +325,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onRemoveSavegame: (savegameId: string) => dispatch(removeSavegame(savegameId)),
     onShowDialog: (type, title, content, dialogActions) =>
       dispatch(actions.showDialog(type, title, content, dialogActions)),
+    onHideTransfer: () => dispatch(showTransferDialog(false)),
   };
 }
 
