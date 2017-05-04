@@ -50,23 +50,31 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
     };
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public componentWillMount() {
+    if (this.props.APIKey !== undefined) {
+      this.loadUserInfo(this.props.APIKey);
+    }
+  }
 
-    if (nextProps.APIKey !== undefined) {
-      this.loadUserInfo(nextProps.APIKey);
-    } else {
-      const keyData: IValidateKeyData = {
-        userId: 0,
-        name: '',
-        isPremium: false,
-        isSupporter: false,
-        email: '',
-        profileUrl: '',
-      };
+  public componentWillReceiveProps(newProps: IProps) {
 
-      this.setState(update(this.state, {
-        validateKeyData: { $set: keyData },
-      }));
+    if ((this.props.APIKey !== newProps.APIKey)) {
+      if (newProps.APIKey !== undefined) {
+        this.loadUserInfo(newProps.APIKey);
+      } else {
+        const keyData: IValidateKeyData = {
+          userId: 0,
+          name: '',
+          isPremium: false,
+          isSupporter: false,
+          email: '',
+          profileUrl: '',
+        };
+
+        this.setState(update(this.state, {
+          validateKeyData: { $set: keyData },
+        }));
+      }
     }
   }
 
