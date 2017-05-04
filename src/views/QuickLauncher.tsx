@@ -5,7 +5,7 @@ import { IProfile } from '../extensions/profile_management/types/IProfile';
 import ToolIcon from '../extensions/starter_dashlet/ToolIcon';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
-import { ComponentEx, connect } from '../util/ComponentEx';
+import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
 import StarterInfo from '../util/StarterInfo';
@@ -18,7 +18,6 @@ import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 
 export interface IBaseProps {
-  t: I18next.TranslationFunction;
 }
 
 interface IConnectedProps {
@@ -226,5 +225,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(
-  QuickLauncher) as React.ComponentClass<IBaseProps>;
+export default
+  connect(mapStateToProps, mapDispatchToProps)(
+    translate(['common'], { wait: false })(QuickLauncher),
+  );

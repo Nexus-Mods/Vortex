@@ -21,7 +21,6 @@ type IProps = IBaseProps & IExtendedProps;
 
 /**
  * Footer on the main window. Can be extended
- * 
  * @class MainFooter
  */
 class MainFooter extends ComponentEx<IProps, {}> {
@@ -39,7 +38,7 @@ class MainFooter extends ComponentEx<IProps, {}> {
   }
 
   private renderFooter(footer: IFooter): JSX.Element {
-    let props = footer.props !== undefined ? footer.props() : {};
+    const props = footer.props !== undefined ? footer.props() : {};
     return <footer.component key={ footer.id } {...props} />;
   }
 }
@@ -53,5 +52,5 @@ function registerFooter(instance: MainFooter,
 
 export default
   translate(['common'], { wait: false })(
-    extend(registerFooter)(MainFooter)
+    extend(registerFooter)(MainFooter),
   ) as React.ComponentClass<IBaseProps>;

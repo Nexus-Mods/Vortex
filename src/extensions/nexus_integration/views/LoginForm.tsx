@@ -7,6 +7,7 @@ import FormFeedbackAwesome from '../../../views/FormFeedbackAwesome';
 import { Button } from '../../../views/TooltipControls';
 
 import { setUserAPIKey } from '../actions/account';
+import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, Image } from 'react-bootstrap';
@@ -15,6 +16,7 @@ import update = require('react-addons-update');
 export interface IProps {
   onClose: () => void;
   nexus: Nexus;
+  validateKeyData: IValidateKeyData;
 }
 
 interface ILoginFormState {
@@ -27,6 +29,7 @@ interface ILoginFormState {
   statusCodeMessage: string;
   isPremium: boolean;
   isSupporter: boolean;
+  profileUrl: string;
 }
 
 interface IConnectedProps {
@@ -59,6 +62,7 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
       statusCodeMessage: '',
       isPremium: false,
       isSupporter: false,
+      profileUrl: '',
     };
   }
 
@@ -69,16 +73,16 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
   }
 
   public render(): JSX.Element {
-    const {APIKey} = this.props;
+    const { APIKey } = this.props;
     const propAPIKey = this.props.APIKey;
 
     return (
       <form onSubmit={this.apiKeySubmit} >
-      {APIKey === undefined ? this.renderKeyInput() : this.renderAccountInfo()}
-      { this.renderSubmitButton(propAPIKey) }
+        {APIKey === undefined ? this.renderKeyInput() : this.renderAccountInfo()}
+        {this.renderSubmitButton(propAPIKey)}
       </form>
     );
-  };
+  }
 
   private renderKeyInput() {
     const { t } = this.props;
@@ -98,21 +102,21 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
           placeholder={t('User APIKey')}
           onChange={this.handleChangeAPIKey}
         />
-        <FormFeedbackAwesome pending={validation.pending}/>
+        <FormFeedbackAwesome pending={validation.pending} />
       </FormGroup>
     );
   }
 
   private renderAccountInfo() {
     const { t } = this.props;
-    const { name, email, isPremium, isSupporter, userId } = this.state;
+    const { name, email, isPremium, isSupporter, profileUrl, userId } = this.state;
 
     return (
       <FormGroup
         controlId='formUserInfo'
       >
         <div>
-          <Image src='./images/avatar.png' width='90' height='90' rounded />
+          <Image src={profileUrl} width='90' height='90' rounded />
         </div>
         <div>
           <ControlLabel>{t('User ID: {{userId}}', { replace: { userId } })}</ControlLabel>
@@ -142,12 +146,16 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
   private renderSubmitButton(propAPIKey: string): JSX.Element {
     const { t } = this.props;
     return (propAPIKey === undefined)
-      ? <Button id='submit-apikey' type='submit' tooltip={ t('Submit') }>
-          { t('Submit') }
+      ? (
+        <Button id='submit-apikey' type='submit' tooltip={t('Submit')}>
+          {t('Submit')}
         </Button>
-      : <Button id='remove-apikey' type='submit' tooltip={ t('Remove Key') }>
-          { t('Remove Key') }
-        </Button>;
+      )
+      : (
+        <Button id='remove-apikey' type='submit' tooltip={t('Remove Key')}>
+          {t('Remove Key')}
+        </Button>
+      );
   }
 
   private handleChange(event, field) {
@@ -194,42 +202,38 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
       }));
 
       nexus.validateKey(APIKey)
-      .then((data: IValidateKeyResponse) => {
-        onSetAPIKey(APIKey);
-        this.setState(update(this.state, {
-          userId: { $set: data.user_id },
-          name: { $set: data.name },
-          isPremium: { $set: data['is_premium?'] },
-          isSupporter: { $set: data['is_supporter?'] },
-          email: { $set: data.email },
-        }));
-      })
-      .catch((err) => {
-        this.setState(update(this.state, {
-          statusCode: { $set: err.statusCode },
-          statusCodeMessage: { $set: err.message },
-        }));
-      });
+        .then((data: IValidateKeyResponse) => {
+          onSetAPIKey(APIKey);
+          this.setState(update(this.state, {
+            userId: { $set: data.user_id },
+            name: { $set: data.name },
+            isPremium: { $set: data['is_premium?'] },
+            isSupporter: { $set: data['is_supporter?'] },
+            email: { $set: data.email },
+            profileUrl: { $set: data.profile_url },
+          }));
+        })
+        .catch((err) => {
+          this.setState(update(this.state, {
+            statusCode: { $set: err.statusCode },
+            statusCodeMessage: { $set: err.message },
+          }));
+        });
     }
   }
 
   private loadUserInfo() {
-    const { nexus } = this.props;
-    const { APIKey } = this.state;
-    const propAPIKey = this.props.APIKey;
 
-    this.setState(update(this.state, { isSubmitted: { $set: true } }));
+    const { validateKeyData } = this.props;
 
-    nexus.validateKey(APIKey !== '' ? APIKey : propAPIKey)
-      .then((data: IValidateKeyResponse) => {
-        this.setState(update(this.state, {
-          userId: { $set: data.user_id },
-          name: { $set: data.name },
-          isPremium: { $set: data['is_premium?'] },
-          isSupporter: { $set: data['is_supporter?'] },
-          email: { $set: data.email },
-        }));
-      });
+    this.setState(update(this.state, {
+      userId: { $set: validateKeyData.userId },
+      name: { $set: validateKeyData.name },
+      isPremium: { $set: validateKeyData.isPremium },
+      isSupporter: { $set: validateKeyData.isSupporter },
+      email: { $set: validateKeyData.email },
+      profileUrl: { $set: validateKeyData.profileUrl },
+    }));
   }
 
   private handleChangeAPIKey = (event) => {
@@ -241,7 +245,7 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-     APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
+    APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
   };
 }
 
@@ -249,11 +253,11 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onShowLoginError:
-      (message: string) => dispatch(showDialog('error', 'Error', { message }, { Close: null })),
+    (message: string) => dispatch(showDialog('error', 'Error', { message }, { Close: null })),
   };
 }
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(LoginForm)
+    connect(mapStateToProps, mapDispatchToProps)(LoginForm),
   ) as React.ComponentClass<IProps>;

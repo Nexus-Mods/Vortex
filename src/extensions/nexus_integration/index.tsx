@@ -7,7 +7,8 @@ import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import InputButton from '../../views/InputButton';
 
-import EndorsementFilter from './views/EndorsementFilter';
+import FunctionsButton from '../../views/FunctionsButton';
+import QuickLauncher from '../../views/QuickLauncher';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
@@ -24,6 +25,7 @@ import { checkModsVersion } from './util/checkModsVersion';
 import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
+import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import LoginIcon from './views/LoginIcon';
 import NexusModIdDetail from './views/NexusModIdDetail';
@@ -259,7 +261,9 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
 }
 
 function init(context: IExtensionContextExt): boolean {
-  context.registerFooter('login', LoginIcon, () => ({ nexus }));
+  context.registerToolbar('functions', FunctionsButton, () => ({ }));
+  context.registerToolbar('login', LoginIcon, () => ({ nexus }));
+  context.registerToolbar('quick', QuickLauncher, () => ({ }));
   context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);

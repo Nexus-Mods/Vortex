@@ -1,5 +1,7 @@
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 
+import { IValidateKeyData } from '../types/IValidateKeyData';
+
 import LoginForm from './LoginForm';
 
 import * as React from 'react';
@@ -9,6 +11,7 @@ export interface IBaseProps {
   shown: boolean;
   APIKey: string;
   nexus: any;
+  validateKeyData: IValidateKeyData;
   onHide: () => void;
 }
 
@@ -16,7 +19,7 @@ type IProps = IBaseProps;
 
 class LoginDialog extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, APIKey, nexus, shown, onHide } = this.props;
+    const { t, APIKey, nexus, shown, onHide, validateKeyData } = this.props;
     return (
       <Modal show={shown} onHide={ onHide }>
         <Modal.Header>
@@ -25,7 +28,7 @@ class LoginDialog extends ComponentEx<IProps, {}> {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <LoginForm onClose={ onHide } nexus={ nexus } />
+          <LoginForm onClose={ onHide } nexus={ nexus } validateKeyData={validateKeyData} />
         </Modal.Body>
       </Modal>
     );

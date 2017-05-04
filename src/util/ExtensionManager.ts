@@ -210,6 +210,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerSettingsHive: undefined,
       registerTableAttribute: undefined,
       registerTest: undefined,
+      registerToolbar: undefined,
       registerArchiveType: undefined,
       api: undefined,
       once: undefined,

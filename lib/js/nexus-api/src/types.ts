@@ -5,8 +5,8 @@ export interface IValidateKeyResponse {
   is_premium: boolean;
   is_supporter: boolean;
   email: string;
-  url: string;
-};
+  profile_url: string;
+}
 
 export type EndorsedStatus = 'Undecided' | 'Abstained' | 'Endorsed';
 

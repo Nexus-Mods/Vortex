@@ -5,7 +5,7 @@ export interface IValidateKeyResponse {
     is_premium: boolean;
     is_supporter: boolean;
     email: string;
-    url: string;
+    profile_url: string;
 }
 export declare type EndorsedStatus = 'Undecided' | 'Abstained' | 'Endorsed';
 export interface IModInfo {

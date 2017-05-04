@@ -40,6 +40,9 @@ export type RegisterAction =
 export type RegisterFooter =
   (id: string, element: React.ComponentClass<any>, props?: PropsCallback) => void;
 
+export type RegisterToolbar =
+  (id: string, element: React.ComponentClass<any>, props?: PropsCallback) => void;
+
 export interface IMainPageOptions {
   hotkey?: string;
   visible?: () => boolean;
@@ -395,6 +398,14 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerFooter: RegisterFooter;
+
+  /**
+   * registers a element to be displayed in the toolbar
+   *
+   * @type {IRegisterToolbar}
+   * @memberOf IExtensionContext
+   */
+  registerToolbar: RegisterToolbar;
 
   /**
    * register a reducer to introduce new set-operations on the application

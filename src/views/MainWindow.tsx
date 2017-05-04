@@ -19,6 +19,7 @@ import IconBar from './IconBar';
 import MainFooter from './MainFooter';
 import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
+import MainToolbar from './MainToolbar';
 import Notifications from './Notifications';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
@@ -27,7 +28,7 @@ import { Button, IconButton, NavItem } from './TooltipControls';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Badge, Modal, Nav } from 'react-bootstrap';
+import { Badge, ControlLabel, FormGroup, Modal, Nav } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 import update = require('react-addons-update');
 
@@ -148,7 +149,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       component: Settings,
       icon: 'sliders',
       propsFunc: () => undefined,
-      visible: () =>  true,
+      visible: () => true,
     };
 
     this.applicationButtons = [];
@@ -179,36 +180,22 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <div>
         <Layout type='column'>
-        { this.renderToolbar() }
-        { this.renderBody() }
-        { this.renderFooter() }
+          {this.renderToolbar()}
+          {this.renderBody()}
+          {this.renderFooter()}
         </Layout>
         <Dialog />
-        { this.renderDeveloperModal() }
+        {this.renderDeveloperModal()}
         <DialogContainer />
       </div>
     );
   }
 
   private renderToolbar() {
-    const {t} = this.props;
-
+    const { t } = this.props;
     return (
       <Fixed id='main-toolbar'>
-        <QuickLauncher t={t} />
-        {/*<object id='nexus-logo' data='assets/images/logo.svg' type='image/svg+xml' />*/}
-        <IconBar
-          group='application-icons'
-          staticElements={this.applicationButtons}
-        />
-        {this.pageHeader || <div className='mainpage-header'/>}
-        <IconButton
-          id='btn-open-flyout'
-          icon='ellipsis-v'
-          tooltip={t('Functions')}
-          onClick={this.toggleOverlay}
-          className='pull-right'
-        />
+        <MainToolbar />
       </Fixed>
     );
   }
@@ -223,7 +210,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     const sbClass = tabsMinimized ? 'sidebar-compact' : 'sidebar-expanded';
 
-    const globalOverlay = <GlobalOverlay t={t}/>;
+    const globalOverlay = <GlobalOverlay t={t} />;
 
     const pages = objects.map(obj => this.renderPage(obj, globalOverlay));
     pages.push(this.renderPage(this.settingsPage, globalOverlay));
@@ -263,12 +250,12 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               </Nav>
             </div>
             <Button
-              tooltip={ tabsMinimized ? t('Restore') : t('Minimize') }
+              tooltip={tabsMinimized ? t('Restore') : t('Minimize')}
               id='btn-minimize-menu'
-              onClick={ this.toggleMenu }
+              onClick={this.toggleMenu}
               className='btn-menu-minimize'
             >
-              <Icon name={ tabsMinimized ? 'angle-double-right' : 'angle-double-left' } />
+              <Icon name={tabsMinimized ? 'angle-double-right' : 'angle-double-left'} />
             </Button>
           </Fixed>
           <Flex id='main-window-pane'>
@@ -396,7 +383,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     // this way it gets rendered as hidden once and can then "transition"
     // to visible
     this.setState(update(this.state, {
-      loadedPages: { $push: [ title ] },
+      loadedPages: { $push: [title] },
     }));
     setImmediate(() => {
       this.setState(update(this.state, {
@@ -453,11 +440,12 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-function registerMainPage(instance: MainWindow,
-                          icon: string,
-                          title: string,
-                          component: React.ComponentClass<any> | React.StatelessComponent<any>,
-                          options: IMainPageOptions) {
+function registerMainPage(
+  instance: MainWindow,
+  icon: string,
+  title: string,
+  component: React.ComponentClass<any> | React.StatelessComponent<any>,
+  options: IMainPageOptions) {
   return {
     icon, title, component,
     propsFunc: options.props || emptyFunc,
