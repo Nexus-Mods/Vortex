@@ -134,7 +134,11 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
           onClick={this.showLoginLayer}
           className='pull-right'
         >
-          <Image src={validateKeyData.profileUrl} style={{ width: '32px', height: '32px' }} />
+          <Image
+            src={validateKeyData.profileUrl}
+            circle
+            style={{height: 32, width: 32}}
+          />
         </Button>
       );
     } else {
