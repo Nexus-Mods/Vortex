@@ -120,8 +120,8 @@ export function terminate(error: ITermination) {
 
     if (action === 0) {
       // Report
-      createErrorReport('Crash', error, ['bug', 'crash']);
-      //.then(() => app.exit(1));
+      createErrorReport('Crash', error, ['bug', 'crash'])
+      .then(() => app.exit(1));
     } else if (action === 1) {
       // Ignore
       action = dialog.showMessageBox(null, {
