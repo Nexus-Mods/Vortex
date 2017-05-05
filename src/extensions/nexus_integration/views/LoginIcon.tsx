@@ -108,12 +108,15 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
 
     if (validateKeyData.name !== '') {
       return (
-        <FormGroup bsSize={'small'} className='pull-right'>
-          <div>
-            <ControlLabel>{validateKeyData.name}</ControlLabel>
+        <FormGroup
+          bsSize={'small'}
+          className='pull-right'
+        >
+          <div style={{marginTop: '10px'}}>
+            {validateKeyData.name}
           </div>
-          <div>
-            <a style={{ color: 'red' }} onClick={this.logOut}>{t('Log out')}</a>
+          <div >
+            <a style={{ color: '#03a9f4' }} onClick={this.logOut}>{t('Log out')}</a>
           </div>
         </FormGroup>
       );
@@ -137,7 +140,7 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
           <Image
             src={validateKeyData.profileUrl}
             circle
-            style={{height: 32, width: 32}}
+            style={{ height: 32, width: 32 }}
           />
         </Button>
       );

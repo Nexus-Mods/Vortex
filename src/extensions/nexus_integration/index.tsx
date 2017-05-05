@@ -7,9 +7,6 @@ import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import InputButton from '../../views/InputButton';
 
-import FunctionsButton from '../../views/FunctionsButton';
-import QuickLauncher from '../../views/QuickLauncher';
-
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { setModAttribute } from '../mod_management/actions/mods';
@@ -29,7 +26,7 @@ import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import LoginIcon from './views/LoginIcon';
 import NexusModIdDetail from './views/NexusModIdDetail';
-import {} from './views/Settings';
+import { } from './views/Settings';
 
 import * as Promise from 'bluebird';
 import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
@@ -43,8 +40,9 @@ let nexus: Nexus;
 let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
 
 export interface IExtensionContextExt extends IExtensionContext {
-  registerDownloadProtocol: (schema: string,
-                             handler: (inputUrl: string) => Promise<string[]>) => void;
+  registerDownloadProtocol: (
+    schema: string,
+    handler: (inputUrl: string) => Promise<string[]>) => void;
 }
 
 function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boolean) {
@@ -150,7 +148,7 @@ function processErrorMessage(
       servermessage: errorMessage,
       fatal: errorMessage === undefined,
     };
- } else if ((statusCode >= 500) && (statusCode < 600)) {
+  } else if ((statusCode >= 500) && (statusCode < 600)) {
     return {
       error: 'The server reported an internal error. Please try again later.',
       servermessage: errorMessage,
@@ -213,7 +211,7 @@ function checkModsVersionImpl(
         }
       });
   })
-  .then(errorMessages => errorMessages.filter(msg => msg !== undefined));
+    .then(errorMessages => errorMessages.filter(msg => msg !== undefined));
 }
 
 function renderNexusModIdDetail(
@@ -239,11 +237,11 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
 
   // TODO this is not a reliable way to determine if the mod is from nexus
   const isNexusMod: boolean = (nexusModId !== undefined)
-      && (version !== undefined)
-      && !isNaN(parseInt(nexusModId, 10));
+    && (version !== undefined)
+    && !isNaN(parseInt(nexusModId, 10));
 
   const endorsed: string = getSafe(mod.attributes, ['endorsed'],
-                                   isNexusMod ? 'Undecided' : undefined);
+    isNexusMod ? 'Undecided' : undefined);
   const gameMode = activeGameId(store.getState());
   if (endorsed !== undefined) {
     return (
@@ -261,9 +259,8 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
 }
 
 function init(context: IExtensionContextExt): boolean {
-  context.registerToolbar('functions', FunctionsButton, () => ({ }));
-  context.registerToolbar('login', LoginIcon, () => ({ nexus }));
-  context.registerToolbar('quick', QuickLauncher, () => ({ }));
+
+  context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
