@@ -117,7 +117,6 @@ class TableCell extends React.Component<ICellProps, {}> {
 export interface IRowProps {
   t: I18next.TranslationFunction;
   tableId: string;
-  key: string;
   data: any;
   rawData: any;
   attributes: ITableAttribute[];
@@ -148,7 +147,7 @@ class TableRow extends React.Component<IRowProps, {}> {
     let hasActions = false;
     if (actions !== undefined) {
       const rowActions = actions.filter((action) =>
-        action.singleRowAction === undefined || action.singleRowAction);
+        (action.singleRowAction === undefined) || action.singleRowAction);
       hasActions = rowActions.length > 0;
     }
 
@@ -169,6 +168,7 @@ class TableRow extends React.Component<IRowProps, {}> {
                   instanceId={data.__id}
                   className='table-actions'
                   staticElements={actions}
+                  collapse={true}
                 />
               </td>
             ) : null

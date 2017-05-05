@@ -125,6 +125,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   // tslint:disable-next-line:no-unused-variable
   public static childContextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
+    menuLayer: PropTypes.object,
   };
 
   private applicationButtons: IActionDefinition[];
@@ -133,6 +134,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private pageHeader: JSX.Element = null;
   private pageOverlay: JSX.Element = null;
+  private menuLayer: JSX.Element = null;
 
   constructor(props: IProps) {
     super(props);
@@ -157,7 +159,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public getChildContext(): IComponentContext {
     const { api } = this.props;
-    return { api };
+    return { api, menuLayer: this.menuLayer };
   }
 
   public componentWillMount() {
@@ -179,6 +181,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   public render(): JSX.Element {
     return (
       <div>
+        <div id='menu-layer' ref={this.setMenuLayer} />
         <Layout type='column'>
           {this.renderToolbar()}
           {this.renderBody()}
@@ -354,6 +357,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private selectOverlay = (ref) => {
     this.pageOverlay = ref;
+  }
+
+  private setMenuLayer = (ref) => {
+    this.menuLayer = ref;
   }
 
   private toggleOverlay = () => {

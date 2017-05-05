@@ -4,9 +4,14 @@ import { extend, IExtensibleProps } from '../util/ExtensionProvider';
 import DynamicProps from './DynamicProps';
 import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
+import { IconButton } from './TooltipControls';
 
+import * as _ from 'lodash';
+import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { ButtonGroup, DropdownButton, MenuItem } from 'react-bootstrap';
+import update = require('react-addons-update');
+import { ButtonGroup, Dropdown, DropdownButton, MenuItem } from 'react-bootstrap';
+import { Overlay } from 'react-overlays';
 
 export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
 
@@ -30,6 +35,29 @@ function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
   return (lhs.position || 100) - (rhs.position || 100);
 }
 
+interface IPortalMenuProps {
+  open: boolean;
+  layer: any;
+  target: JSX.Element;
+  children?: React.ReactNode[];
+  onClose: () => void;
+}
+
+function PortalMenu(props: IPortalMenuProps) {
+  return (
+    <Overlay
+      show={props.open}
+      container={props.layer}
+      placement='bottom'
+      target={props.target}
+    >
+      <Dropdown.Menu style={{ display: 'block' }} onClose={props.onClose} open={props.open}>
+        { props.children }
+      </Dropdown.Menu>
+    </Overlay>
+  );
+}
+
 /**
  * represents an extensible row of icons/buttons
  * In the simplest form this is simply a bunch of buttons that will run
@@ -39,16 +67,43 @@ function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
  * @class IconBar
  * @extends {ComponentEx<IProps, {}>}
  */
-class IconBar extends React.Component<IProps, {}> {
+class IconBar extends React.Component<IProps, { open: boolean }> {
+  public static contextTypes: React.ValidationMap<any> = {
+    menuLayer: PropTypes.object,
+  };
+
+  public context: { menuLayer: JSX.Element };
+
+  private buttonRef: JSX.Element;
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      open: false,
+    };
+  }
+
   public render(): JSX.Element {
-    const { collapse, id, objects, orientation, className, style } = this.props;
+    const { collapse, id, instanceId, objects, orientation, className, style } = this.props;
+
+    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+    const icons = objects.filter(icon => {
+      // don't render anything if the condition doesn't match
+      try {
+        return (icon.condition === undefined)
+            || icon.condition(instanceIds);
+      } catch (err) {
+        return false;
+      }
+    });
 
     if (collapse) {
       const dotdotdot: any = <Icon name='ellipsis-v' />;
       const collapsed: IActionDefinition[] = [];
       const unCollapsed: IActionDefinition[] = [];
 
-      objects.forEach(action => {
+      icons.forEach(action => {
         if ((action.options === undefined) || !action.options.noCollapse) {
           collapsed.push(action);
         } else {
@@ -63,16 +118,26 @@ class IconBar extends React.Component<IProps, {}> {
           style={style}
         >
           {collapsed.length === 0 ? null : (
-            <DropdownButton
-              className='btn-embed'
-              id={`btn-menu-${id}`}
-              noCaret
-              title={dotdotdot}
-              bsStyle='default'
-              pullRight={true}
-            >
-              {collapsed.sort(iconSort).map(this.renderMenuItem)}
-            </DropdownButton>
+            <div>
+              <IconButton
+                id={`btn-menu-${id}`}
+                className='btn-embed'
+                onClick={this.toggleCollapsed}
+                tooltip={''}
+                icon='ellipsis-v'
+                ref={this.setButtonRef}
+              >
+                {dotdotdot}
+              </IconButton>
+              <PortalMenu
+                layer={this.context.menuLayer}
+                open={this.state.open}
+                target={this.buttonRef}
+                onClose={this.toggleCollapsed}
+              >
+                {collapsed.sort(iconSort).map(this.renderMenuItem)}
+              </PortalMenu>
+            </div>
           )
           }
           {unCollapsed.sort(iconSort).map(this.renderIcon)}
@@ -86,7 +151,7 @@ class IconBar extends React.Component<IProps, {}> {
           vertical={orientation === 'vertical'}
         >
           {this.props.children}
-          {objects.sort(iconSort).map(this.renderIcon)}
+          {icons.sort(iconSort).map(this.renderIcon)}
         </ButtonGroup>
       );
     }
@@ -107,15 +172,6 @@ class IconBar extends React.Component<IProps, {}> {
     const { buttonType, instanceId, tooltipPlacement } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
-
-    // don't render anything if the condition doesn't match
-    try {
-      if ((icon.condition !== undefined) && !icon.condition(instanceIds)) {
-        return null;
-      }
-    } catch (err) {
-      return null;
-    }
 
     const id = `${instanceId || '1'}_${index}`;
     if (icon.icon !== undefined) {
@@ -162,6 +218,16 @@ class IconBar extends React.Component<IProps, {}> {
         return <icon.component {...staticProps} />;
       }
     }
+  }
+
+  private setButtonRef = (ref) => {
+    this.buttonRef = ref;
+  }
+
+  private toggleCollapsed = () => {
+    this.setState(update(this.state, {
+      open: { $set: !this.state.open },
+    }));
   }
 }
 
