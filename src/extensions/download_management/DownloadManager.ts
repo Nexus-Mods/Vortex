@@ -1,7 +1,7 @@
 import { countIf } from '../../util/util';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
-import { IProgressCallback } from './types/IProgressCallback';
+import { ProgressCallback } from './types/IProgressCallback';
 
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
@@ -29,33 +29,31 @@ interface IDownload {
   headers?: any;
   assembler?: FileAssembler;
   chunks: IDownloadJob[];
-  promises: Promise<any>[];
-  progressCB?: IProgressCallback;
+  promises: Array<Promise<any>>;
+  progressCB?: ProgressCallback;
   finishCB: (res: IDownloadResult) => void;
   failedCB: (err) => void;
 }
 
-interface IFinishCallback {
-  (): void;
-}
+type FinishCallback = () => void;
 
 /**
  * a download worker. A worker is started to download one chunk of a file,
  * they are currently not reused.
- * 
+ *
  * @class DownloadWorker
  */
 class DownloadWorker {
   private mJob: IDownloadJob;
   private mRequest: requestT.Request;
   private mProgressCB: (bytes: number) => void;
-  private mFinishCB: IFinishCallback;
+  private mFinishCB: FinishCallback;
   private mHeadersCB: (headers: any) => void;
   private mUserAgent: string;
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
-              finishCB: IFinishCallback,
+              finishCB: FinishCallback,
               headersCB: (headers: any) => void,
               userAgent: string) {
     this.mProgressCB = progressCB;
@@ -117,16 +115,16 @@ class DownloadWorker {
       let size = response.headers['content-length'];
       if ('content-range' in response.headers) {
         const rangeExp: RegExp = /bytes (\d)*-(\d*)\/(\d*)/i;
-        let sizeMatch: string[] = response.headers['content-range'].match(rangeExp);
+        const sizeMatch: string[] = response.headers['content-range'].match(rangeExp);
         if (sizeMatch.length > 1) {
           size = parseInt(sizeMatch[3], 10);
         }
       }
 
-      let fileName = undefined;
+      let fileName;
       if ('content-disposition' in response.headers) {
         const fileNameExp: RegExp = /filename=(.*)/i;
-        let nameMatch: string[] = response.headers['content-disposition'].match(fileNameExp);
+        const nameMatch: string[] = response.headers['content-disposition'].match(fileNameExp);
         if (nameMatch.length > 1) {
           fileName = nameMatch[1];
         }
@@ -144,11 +142,10 @@ class DownloadWorker {
 
 /**
  * manages downloads
- * 
+ *
  * @class DownloadManager
  */
 class DownloadManager {
-
   private mMinChunkSize: number;
   private mMaxWorkers: number;
   private mMaxChunks: number;
@@ -157,18 +154,17 @@ class DownloadManager {
   private mQueue: IDownload[] = [];
   private mNextId: number = 0;
   private mSpeedCalculator: SpeedCalculator;
-  private mCurrentTick: number;
   private mUserAgent: string;
 
   /**
    * Creates an instance of DownloadManager.
-   * 
+   *
    * @param {string} downloadPath default path to download to if the enqueue command doesn't
    *                 specify otherwise
    * @param {number} maxWorkers maximum number of workers downloading data at once. should be bigger
    *                            than maxChunks
    * @param {number} maxChunks maximum number of chunks per file being downloaded at once
-   * 
+   *
    * @memberOf DownloadManager
    */
   constructor(downloadPath: string, maxWorkers: number, maxChunks: number,
@@ -180,10 +176,6 @@ class DownloadManager {
     this.mMaxChunks = maxChunks;
     this.mUserAgent = userAgent;
     this.mSpeedCalculator = new SpeedCalculator(5, speedCB);
-
-    setInterval(() => {
-      this.mCurrentTick = new Date().getTime() / 1000;
-    }, 1000);
   }
 
   public setDownloadPath(downloadPath: string) {
@@ -196,25 +188,25 @@ class DownloadManager {
 
   /**
    * enqueues a download
-   * 
+   *
    * @param {string[]} urls
    * @param {(received: number, total: number) => void} progressCB
    * @param {string} [destinationPath]
    * @returns {Promise<string>}
-   * 
+   *
    * @memberOf DownloadManager
    */
-  public enqueue(id: string, urls: string[], progressCB: IProgressCallback,
+  public enqueue(id: string, urls: string[], progressCB: ProgressCallback,
                  destinationPath?: string): Promise<IDownloadResult> {
     const nameTemplate: string = decodeURI(path.basename(url.parse(urls[0]).pathname));
-    let destPath = destinationPath || this.mDownloadPath;
+    const destPath = destinationPath || this.mDownloadPath;
     return fs.ensureDirAsync(destPath)
     .then(() => {
       return this.unusedName(destPath, nameTemplate);
     })
     .then((filePath: string) => {
       return new Promise<IDownloadResult>((resolve, reject) => {
-        let download: IDownload = {
+        const download: IDownload = {
           id,
           origName: nameTemplate,
           tempName: filePath,
@@ -238,9 +230,9 @@ class DownloadManager {
 
   /**
    * cancel a download. This stops the download but doesn't remove the file
-   * 
+   *
    * @param {string} id
-   * 
+   *
    * @memberOf DownloadManager
    */
   public cancel(id: string) {
@@ -274,7 +266,7 @@ class DownloadManager {
   }
 
   private cancelDownload(download: IDownload, err) {
-    for (let chunk of download.chunks) {
+    for (const chunk of download.chunks) {
       if (chunk.state === 'running') {
         this.mBusyWorkers[chunk.workerId].cancel();
       }
@@ -299,7 +291,7 @@ class DownloadManager {
   private startWorker(download: IDownload) {
     const workerId: number = this.mNextId++;
     this.mSpeedCalculator.initCounter(workerId);
-    let job: IDownloadJob = download.chunks.find((ele) => ele.state === 'init');
+    const job: IDownloadJob = download.chunks.find((ele) => ele.state === 'init');
     job.state = 'running';
     job.workerId = workerId;
 
@@ -309,10 +301,8 @@ class DownloadManager {
     job.dataCB = (offset: number, data: Buffer) => {
       download.assembler.addChunk(offset, data);
       download.received += data.byteLength;
-      if (download.lastProgressSent !== this.mCurrentTick) {
-        download.progressCB(download.received, download.size, download.tempName);
-        download.lastProgressSent = this.mCurrentTick;
-      }
+      download.progressCB(download.received, download.size,
+                          download.tempName);
     };
 
     this.mBusyWorkers[workerId] = new DownloadWorker(job,
@@ -331,7 +321,7 @@ class DownloadManager {
     download.assembler.setTotalSize(size);
 
     if (size > this.mMinChunkSize) {
-      let chunkSize = Math.ceil(Math.max(this.mMinChunkSize, size / this.mMaxChunks));
+      const chunkSize = Math.ceil(Math.max(this.mMinChunkSize, size / this.mMaxChunks));
       let offset = this.mMinChunkSize + 1;
       while (offset < size) {
         download.chunks.push({
@@ -349,7 +339,7 @@ class DownloadManager {
   private finishChunk(download: IDownload, job: IDownloadJob) {
     job.state = 'finished';
     this.stopWorker(job.workerId);
-    let unfinished = download.chunks.find(
+    const unfinished = download.chunks.find(
       (chunk: IDownloadJob) => chunk.state !== 'finished');
     if (unfinished === undefined) {
       let finalPath = download.tempName;
@@ -385,7 +375,7 @@ class DownloadManager {
    * sample.txt, sample.1.txt, sample.2.txt ... until an unused name is found.
    * That file is created empty in an atomic operation no other call to unusedName
    * will return the same file name.
-   * 
+   *
    * @param {string} destination
    * @param {string} fileName
    * @returns {Promise<string>}
@@ -394,11 +384,11 @@ class DownloadManager {
     return new Promise<string>((resolve, reject) => {
       let fd = null;
       let counter = 0;
-      let ext = path.extname(fileName);
-      let base = path.basename(fileName, ext);
+      const ext = path.extname(fileName);
+      const base = path.basename(fileName, ext);
       let fullPath = path.join(destination, fileName);
 
-      let loop = () => {
+      const loop = () => {
         fs.openAsync(fullPath, 'wx')
           .then((newFd) => {
             fd = newFd;

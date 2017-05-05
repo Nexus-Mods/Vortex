@@ -1,3 +1,1 @@
-export interface IProgressCallback {
-  (received: number, total: number, filePath?: string): void;
-}
+export type ProgressCallback = (received: number, total: number, filePath?: string) => void;

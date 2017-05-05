@@ -39,7 +39,7 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
 
 /**
  * connect the download manager with the main application through events
- * 
+ *
  * @class DownloadObserver
  */
 export class DownloadObserver {
@@ -78,8 +78,8 @@ export class DownloadObserver {
   private handleStartDownload(urls: string[], modInfo: any,
                               automaticInstall: boolean, events: NodeJS.EventEmitter,
                               callback?: (error: Error, id: string) => void) {
-    let id = shortid();
-    let gameMode = modInfo.game || activeGameId(this.mStore.getState());
+    const id = shortid();
+    const gameMode = modInfo.game || activeGameId(this.mStore.getState());
     this.mStore.dispatch(initDownload(id, urls, modInfo, gameMode));
 
     const downloadPath = resolvePath('download',
@@ -89,11 +89,22 @@ export class DownloadObserver {
 
     return this.transformURLS(urls)
         .then((derivedUrls: string[]) => {
+          let lastUpdateTick = 0;
+          let lastUpdatePerc = 0;
           return this.mManager.enqueue(
               id, derivedUrls,
-              (received: number, total: number, updatedFilePath?: string) =>
-                  progressUpdate(this.mStore, id, received, total,
-                                 updatedFilePath),
+              (received: number, total: number, updatedFilePath?: string) => {
+                // avoid updating too frequently because it causes ui updates
+                const now = new Date().getTime();
+                const newPerc = Math.floor((received * 100) / total);
+                if ((now - lastUpdateTick < 200) || (newPerc === lastUpdatePerc)) {
+                  return;
+                }
+                lastUpdateTick = now;
+                lastUpdatePerc = newPerc;
+                progressUpdate(this.mStore, id, received, total,
+                               updatedFilePath);
+              },
               downloadPath);
         })
         .then((res: {filePath: string, headers: any}) => {

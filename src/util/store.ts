@@ -27,7 +27,7 @@ const logMiddleware = (store) => (next) => (action) => {
 
 /**
  * initialize redux store
- * 
+ *
  * @export
  * @param {string} basePath
  * @param {ExtensionManager} extensions
@@ -54,7 +54,7 @@ export function setupStore(
       }
     });
 
-    let result = createStore<IState>(reducer(extReducers), enhancer);
+    const result = createStore<IState>(reducer(extReducers), enhancer);
     persistStore(result,
                  {
                    storage: new StorageLogger(
@@ -83,7 +83,7 @@ export function setupStore(
 
 /**
  * apply the registerPersistor extensions to this store
- * 
+ *
  * @export
  * @param {Redux.Store<IState>} store
  * @param {ExtensionManager} extensions
@@ -97,14 +97,14 @@ export function extendStore(store: Redux.Store<IState>,
     queue = queue.then(() => {
       return new Promise<void>((resolve, reject) => {
         // persistor settings
-        let settings = {
+        const settings = {
           storage: persistor,
           whitelist: [hive],
           debounce: debounce || 200,
           keyPrefix: '',
         };
         // automatically rehydrate
-        let internalPersistor = persistStore(store, settings, (err, state) => {
+        const internalPersistor = persistStore(store, settings, (err, state) => {
           if (err !== null) {
             reject(err);
           } else {
