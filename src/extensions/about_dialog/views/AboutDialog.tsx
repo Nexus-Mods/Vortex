@@ -61,7 +61,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
     const { t, shown } = this.props;
     const { ownLicense } = this.state;
 
-    let moduleList = Object.keys(modules).map((key) => Object.assign({ key }, modules[key]));
+    const moduleList = Object.keys(modules).map((key) => Object.assign({ key }, modules[key]));
 
     const imgPath = path.resolve(remote.app.getAppPath(), 'assets', 'images', 'nmm.png');
 
@@ -69,19 +69,22 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
 
     if (shown) {
       const licenseBox = ownLicense
-        ? <ReactMarkdown
-          className='license-text-own'
-          disallowedTypes={['Link']}
-          source={ownLicenseText}
-        />
-        : (<div style={{ marginTop: 5 }}><p><strong>{t('Third-party libraries')}</strong></p>
+        ? (
+          <ReactMarkdown
+            className='license-text-own'
+            disallowedTypes={['Link']}
+            source={ownLicenseText}
+          />
+        ) : (
+          <div style={{ marginTop: 5 }}><p><strong>{t('Third-party libraries')}</strong></p>
           <div className='about-panel'>
             {moduleList.map(this.renderModule)}
           </div>
         </div>
         );
 
-      body = <Modal.Body id='about-dialog'>
+      body = (
+        <Modal.Body id='about-dialog'>
           <Media style={{ marginBottom: 5 }}>
             <Media.Left><Image src={imgPath} /></Media.Left>
             <Media.Body>
@@ -94,7 +97,8 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
           <p><strong>Node</strong> {process.versions.node}</p>
           <p><strong>Chrome</strong> {process.versions.chrome}</p>
           { licenseBox }
-        </Modal.Body>;
+        </Modal.Body>
+      );
     }
 
     return (
@@ -124,7 +128,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
   private selectLicense = (evt) => {
     const {t} = this.props;
 
-    let modKey = evt.currentTarget.href.split('#')[1];
+    const modKey = evt.currentTarget.href.split('#')[1];
     if (this.state.selectedLicense === modKey) {
       this.nextState.selectedLicense = undefined;
       return;
@@ -133,7 +137,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
     this.nextState.selectedLicense = modKey;
 
     const mod: ILicense = modules[modKey];
-    let license = typeof (mod.licenses) === 'string' ? mod.licenses : mod.licenses[0];
+    const license = typeof (mod.licenses) === 'string' ? mod.licenses : mod.licenses[0];
     const licenseFile = mod.licenseFile !== undefined
       ? path.join(remote.app.getAppPath(), mod.licenseFile)
       : path.join(remote.app.getAppPath(), 'assets', 'licenses', license + '.md');
@@ -155,11 +159,13 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
     const { licenseText, selectedLicense } = this.state;
     const licenseBox = mod.key !== selectedLicense
       ? null
-      : <ReactMarkdown
+      : (
+        <ReactMarkdown
           className='license-text'
           disallowedTypes={['Link']}
           source={licenseText || ''}
-      />;
+        />
+      );
     return (
       <div key={mod.key}>
         <h5 style={{ display: 'inline' }}>{mod.name} ({mod.version})</h5>
@@ -177,5 +183,4 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
 
 export default
   translate(['common'], { wait: false })(
-    AboutDialog
-  ) as React.ComponentClass<IBaseProps>;
+    AboutDialog) as React.ComponentClass<IBaseProps>;

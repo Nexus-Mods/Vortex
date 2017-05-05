@@ -17,13 +17,15 @@ type IProps = IExtendedProps;
 
 class DialogContainer extends React.Component<IProps, {}> {
   public render(): JSX.Element {
-    let {objects} = this.props;
-    return (<div>
-    { objects.map(this.renderDialog) }
-    </div>);
+    const { objects } = this.props;
+    return (
+      <div>
+        {objects.map(this.renderDialog)}
+      </div>
+    );
   }
   private renderDialog(dialog: IExtDialog): JSX.Element {
-    let props = dialog.props !== undefined ? dialog.props() : {};
+    const props = dialog.props !== undefined ? dialog.props() : {};
     return <dialog.component key={dialog.id} {...props} />;
   }
 }
@@ -34,5 +36,4 @@ function registerDialog(instance, id: string, component: React.ComponentClass<an
 }
 
 export default extend(registerDialog)(
-  DialogContainer
-  ) as React.ComponentClass<{}>;
+  DialogContainer) as React.ComponentClass<{}>;

@@ -4,7 +4,7 @@ export default function<T>(moduleId: string, basedir?: string, exportId?: string
   const handler = {
     get(target, name) {
       if (target.mod === undefined) {
-        let modulePath = reqResolve.sync(
+        const modulePath = reqResolve.sync(
             moduleId, basedir !== undefined ? {basedir} : undefined);
         target.mod = require(modulePath);
       }

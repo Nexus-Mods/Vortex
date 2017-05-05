@@ -93,10 +93,10 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
 /**
  * convenience extension for React.Component that adds support for the
  * i18n library.
- * 
+ *
  * This whole module is just here to reduce the code required for "decorated"
  * components.
- * 
+ *
  * @export
  * @class ComponentEx
  * @extends {(React.Component<P & II18NProps, S>)}
@@ -106,6 +106,7 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
 export class ComponentEx<P, S> extends React.Component<P & II18NProps, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
+    menuLayer: PropTypes.object,
   };
 
   public context: IComponentContext;
@@ -115,15 +116,16 @@ export class ComponentEx<P, S> extends React.Component<P & II18NProps, S> {
   protected initState(value: S) {
     this.state = value;
 
-    let proxyHandler = new StateProxyHandler(this, value, undefined, []);
+    const proxyHandler = new StateProxyHandler(this, value, undefined, []);
 
     this.nextState = new Proxy<S>(value, proxyHandler);
-  };
+  }
 }
 
 export class PureComponentEx<P, S> extends React.PureComponent<P & II18NProps, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
+    menuLayer: PropTypes.object,
   };
 
   public context: IComponentContext;
@@ -133,8 +135,8 @@ export class PureComponentEx<P, S> extends React.PureComponent<P & II18NProps, S
   protected initState(value: S) {
     this.state = value;
 
-    let proxyHandler = new StateProxyHandler(this, value, undefined, []);
+    const proxyHandler = new StateProxyHandler(this, value, undefined, []);
 
     this.nextState = new Proxy<S>(value, proxyHandler);
-  };
+  }
 }

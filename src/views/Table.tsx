@@ -503,7 +503,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     const rowActions = actions.filter(
-      (action) => action.singleRowAction === undefined || action.singleRowAction);
+      (action) => (action.singleRowAction === undefined) || action.singleRowAction);
 
     return (
       <TableRow

@@ -29,7 +29,7 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
       );
     }
     const placement = this.props.placement || 'bottom';
-    let bType = buttonType || 'icon';
+    const bType = buttonType || 'icon';
     return (
       <Button
         tooltip={text}

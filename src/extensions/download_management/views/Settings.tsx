@@ -21,7 +21,9 @@ class Settings extends ComponentEx<IProps, {}> {
     return (
       <form>
         <FormGroup>
-          <ControlLabel>{ t('Parallel downloads: ') + parallelDownloads.toString() }</ControlLabel>
+          <ControlLabel>
+            { t('Parallel downloads') + ': ' + parallelDownloads.toString() }
+          </ControlLabel>
           <FormControl
             type='range'
             value={ parallelDownloads }

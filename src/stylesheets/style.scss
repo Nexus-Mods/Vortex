@@ -1149,6 +1149,18 @@ a[role=menuitem] svg {
   width: 100%;
 }
 
+#menu-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1035;
+  pointer-events: none;
+}
+
+#menu-layer > * {
+  pointer-events: initial;
+}
+
 ::-webkit-scrollbar {
   width: 12px;
   height: 12px;
