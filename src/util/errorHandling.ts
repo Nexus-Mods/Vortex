@@ -1,3 +1,4 @@
+import { spawn } from 'child_process';
 import {
   app as appIn,
   clipboard,
@@ -5,8 +6,9 @@ import {
   remote,
   shell,
 } from 'electron';
-
+import * as fs from 'fs-extra-promise';
 import * as restT from 'node-rest-client';
+import * as path from 'path';
 
 import {log} from './log';
 
@@ -53,42 +55,70 @@ function genHash(error: ITermination) {
   }
 }
 
+function spawnSelf(args: string[]) {
+  const app = appIn || remote.app;
+  if (process.execPath.endsWith('electron.exe')) {
+    // development version
+    args = [path.resolve(__dirname, '..', '..')].concat(args);
+  }
+  spawn(process.execPath, args, {
+    detached: true,
+  });
+}
+
 export function createErrorReport(type: string, error: ITermination, labels: string[] = []) {
-  return new Promise((resolve, reject) => {
-    const hash = genHash(error);
+  const app = appIn || remote.app;
+  const reportPath = path.join(app.getPath('userData'), 'crashinfo.json');
+  fs.writeFileSync(reportPath, JSON.stringify({
+    type, error, labels}));
+  spawnSelf(['--report', reportPath]);
+}
 
-    const { Client } = require('node-rest-client') as typeof restT;
-    const client = new Client();
-    client.get(`https://api.github.com/repos/${repo}/search/issues`, {
-      q: hash,
-    }, (data, response) => {
-      const app = appIn || remote.app;
-      const dialog = dialogIn || remote.dialog;
+export function sendReport(fileName: string) {
+  return fs.readFileAsync(fileName)
+    .then(reportData => {
+    const {type, error, labels} = JSON.parse(reportData.toString());
+    return new Promise((resolve, reject) => {
+      const hash = genHash(error);
 
-      let url: string;
-      if ((response.statusCode === 200) && (data.items.length > 0)) {
-        const action = dialog.showMessageBox(null, {
-          type: 'error',
-          buttons: ['Take me there'],
-          title: 'Already reported',
-          message: 'It appears this exact issue was already reported.',
-          noLink: true,
-        });
-        url = data.items[0].html_url;
-      } else {
-        clipboard.writeText(createReport(type, error, app.getVersion()));
+      const {Client} = require('node-rest-client') as typeof restT;
+      const client = new Client();
+      client.get(
+          `https://api.github.com/repos/${repo}/search/issues`,
+          {
+            q: hash,
+          },
+          (data, response) => {
+            const app = appIn || remote.app;
+            const dialog = dialogIn || remote.dialog;
 
-        const title = encodeURIComponent(createTitle(type, error, hash));
-        const body =
-          'Please paste the content of your clipboard here and describe what you did ' +
-          'when the error happened.';
+            let url: string;
+            if ((response.statusCode === 200) && (data.items.length > 0)) {
+              const action = dialog.showMessageBox(null, {
+                type: 'error',
+                buttons: ['Take me there'],
+                title: 'Already reported',
+                message: 'It appears this exact issue was already reported.',
+                noLink: true,
+              });
+              url = data.items[0].html_url;
+            } else {
+              clipboard.writeText(createReport(type, error, app.getVersion()));
 
-        const labelFragments = labels.map((str: string) => `labels[]=${str}`).join('&');
+              const title = encodeURIComponent(createTitle(type, error, hash));
+              const body =
+                  'Please paste the content of your clipboard here and describe what you did ' +
+                  'when the error happened.';
 
-        url = `${repoURL}/issues/new?title=${title}&${labelFragments}&body=${body}`;
-      }
-      shell.openExternal(url);
-      resolve();
+              const labelFragments =
+                  labels.map((str: string) => `labels[]=${str}`).join('&');
+
+              url =
+                  `${repoURL}/issues/new?title=${title}&${labelFragments}&body=${body}`;
+            }
+            shell.openExternal(url);
+            resolve();
+          });
     });
   });
 }
@@ -120,8 +150,8 @@ export function terminate(error: ITermination) {
 
     if (action === 0) {
       // Report
-      createErrorReport('Crash', error, ['bug', 'crash'])
-      .then(() => app.exit(1));
+      createErrorReport('Crash', error, ['bug', 'crash']);
+      app.exit(1);
     } else if (action === 1) {
       // Ignore
       action = dialog.showMessageBox(null, {

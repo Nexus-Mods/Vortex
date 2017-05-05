@@ -12,7 +12,7 @@ import { IState, IWindow } from './types/IState';
 import commandLine, { IParameters } from './util/commandLine';
 import delayed from './util/delayed';
 import * as develT from './util/devel';
-import { ITermination, terminate } from './util/errorHandling';
+import { ITermination, sendReport, terminate } from './util/errorHandling';
 import ExtensionManagerT from './util/ExtensionManager';
 import { log, setupLogging } from './util/log';
 import * as storeT from './util/store';
@@ -27,10 +27,18 @@ stopTime();
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
+const basePath: string = app.getPath('userData');
+let store: Redux.Store<IState>;
+let extensions: ExtensionManagerT;
+let loadingScreen: Electron.BrowserWindow;
+
 let mainWindow: Electron.BrowserWindow = null;
 let trayIcon: Electron.Tray = null;
 
-const mainArgs = commandLine(process.argv);
+// timers used to prevent window resize/move from constantly causeing writes to the
+// store
+let resizeTimer: NodeJS.Timer;
+let moveTimer: NodeJS.Timer;
 
 function createTrayIcon() {
   const imgPath = path.resolve(__dirname, 'assets', 'images',
@@ -48,54 +56,6 @@ function applyArguments(args: IParameters) {
   }
 }
 
-const shouldQuit: boolean = app.makeSingleInstance((secondaryArgv, workingDirectory) => {
-  // this is called inside the primary process with the parameters of
-  // the secondary one whenever an additional instance is started
-  applyArguments(commandLine(secondaryArgv));
-});
-
-if (shouldQuit) {
-  app.quit();
-  process.exit();
-}
-
-const basePath: string = app.getPath('userData');
-// set up some "global" components
-setupLogging(basePath, process.env.NODE_ENV === 'development');
-
-log('info', 'logging set up');
-
-if (process.env.NODE_ENV === 'development') {
-  log('info', 'enabling debugging');
-  app.commandLine.appendSwitch('remote-debugging-port', '9222');
-}
-
-// determine where to store settings
-fs.ensureDirSync(basePath);
-log('info', `using ${basePath} as the storage directory`);
-
-process.on('uncaughtException', (error) => {
-  let details: ITermination;
-
-  switch (typeof error) {
-    case 'object': {
-      details = { message: error.message, details: error.stack };
-    }              break;
-    case 'string': {
-      details = { message: error };
-    }              break;
-    default: {
-      details = { message: error };
-    }        break;
-  }
-
-  terminate(details);
-});
-
-let store: Redux.Store<IState>;
-let extensions: ExtensionManagerT;
-let loadingScreen: Electron.BrowserWindow;
-
 function createStore(): Promise<void> {
   // TODO: we load all the extensions here including their dependencies
   //    like ui components despite the fact we only care about the reducers.
@@ -111,14 +71,9 @@ function createStore(): Promise<void> {
   });
 }
 
-// timers used to prevent window resize/move from constantly causeing writes to the
-// store
-let resizeTimer: NodeJS.Timer;
-let moveTimer: NodeJS.Timer;
-
 // main window setup
 
-function createWindow() {
+function createWindow(args: IParameters) {
   const { getSafe } = require('./util/storeHelper') as typeof storeHelperT;
   const windowMetrics: IWindow = store.getState().settings.window;
   mainWindow = new BrowserWindow({
@@ -160,7 +115,7 @@ function createWindow() {
       .then(() => loadingScreen.destroy());
     }
 
-    applyArguments(mainArgs);
+    applyArguments(args);
   });
 
   mainWindow.on('closed', () => {
@@ -217,42 +172,100 @@ function createLoadingScreen(): Promise<undefined> {
   });
 }
 
-app.on('ready', () => {
-  createLoadingScreen()
-  // TODO: horrible hack! This delays all loading by 200 ms but if we don't, the splash screen
-  //   doesn't become visible until _after_ most of the initialization happened (loading the
-  //   the store and extensions)
-  .then(() => delayed(200))
-  .then(() => createStore())
-  .then(() => {
-    createTrayIcon();
-    if (process.env.NODE_ENV === 'development') {
-      const {installDevelExtensions} = require('./util/devel') as typeof develT;
-      return installDevelExtensions();
-    } else {
-      return Promise.resolve();
-    }
-  })
-  .then(() => {
-    createWindow();
-  })
-  .catch((err) => {
-    terminate({
-      message: 'Startup failed',
-      details: err.message,
-      stack: err.stack,
-    });
+function setupAppEvents(args: IParameters) {
+  app.on('ready', () => {
+    createLoadingScreen()
+        // TODO: horrible hack! This delays all loading by 200 ms but if we
+        // don't, the splash screen
+        //   doesn't become visible until _after_ most of the initialization
+        //   happened (loading the
+        //   the store and extensions)
+        .then(() => delayed(200))
+        .then(() => createStore())
+        .then(() => {
+          createTrayIcon();
+          if (process.env.NODE_ENV === 'development') {
+            const {installDevelExtensions} =
+                require('./util/devel') as typeof develT;
+            return installDevelExtensions();
+          } else {
+            return Promise.resolve();
+          }
+        })
+        .then(() => { createWindow(args); })
+        .catch((err) => {
+          terminate({
+            message: 'Startup failed',
+            details: err.message,
+            stack: err.stack,
+          });
+        });
   });
-});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+
+  app.on('activate', () => {
+    if (mainWindow === null) {
+      createWindow(args);
+    }
+  });
+}
+
+function main() {
+  const mainArgs = commandLine(process.argv);
+
+  if (mainArgs.report) {
+    return sendReport(mainArgs.report)
+    .then(() => app.quit());
+  }
+
+  const shouldQuit: boolean =
+      app.makeSingleInstance((secondaryArgv, workingDirectory) => {
+        // this is called inside the primary process with the parameters of
+        // the secondary one whenever an additional instance is started
+        applyArguments(commandLine(secondaryArgv));
+      });
+
+  if (shouldQuit) {
     app.quit();
+    process.exit();
   }
-});
 
-app.on('activate', () => {
-  if (mainWindow === null) {
-    createWindow();
+  // set up some "global" components
+  setupLogging(basePath, process.env.NODE_ENV === 'development');
+
+  log('info', 'logging set up');
+
+  if (process.env.NODE_ENV === 'development') {
+    log('info', 'enabling debugging');
+    app.commandLine.appendSwitch('remote-debugging-port', '9222');
   }
-});
+
+  // determine where to store settings
+  fs.ensureDirSync(basePath);
+  log('info', `using ${basePath} as the storage directory`);
+
+  process.on('uncaughtException', (error) => {
+    let details: ITermination;
+
+    switch (typeof error) {
+      case 'object': {
+        details = {message: error.message, details: error.stack};
+      }              break;
+      case 'string': {
+        details = {message: error};
+      }              break;
+      default: { details = {message: error}; } break;
+    }
+
+    terminate(details);
+  });
+
+  setupAppEvents(mainArgs);
+}
+
+main();
