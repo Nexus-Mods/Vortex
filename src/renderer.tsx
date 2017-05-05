@@ -115,17 +115,25 @@ extensions.applyExtensionsOfExtensions();
 stopTime();
 log('debug', 'renderer connected to store');
 
+let startupFinished: () => void;
+const startupPromise = new Promise((resolve) => startupFinished = resolve);
+
 // tslint:disable-next-line:no-unused-variable
 const globalNotifications = new GlobalNotifications(extensions.getApi());
 
-ipcRenderer.on('external-url', (event, protocol, url) => {
-  const handler = extensions.getProtocolHandler(protocol);
-  if (handler !== null) {
-    log('info', 'handling url', { url });
-    handler(url);
-  } else {
-    log('warn', 'not handling url, unknown protocol', { url });
-  }
+ipcRenderer.on('external-url', (event, url) => {
+  startupPromise
+    .then(() => {
+      const protocol = url.split(':')[0];
+
+      const handler = extensions.getProtocolHandler(protocol);
+      if (handler !== null) {
+        log('info', 'handling url', { url });
+        handler(url);
+      } else {
+        log('warn', 'not handling url, unknown protocol', { url });
+      }
+    });
 });
 
 let currentLanguage: string = store.getState().settings.interface.language;
@@ -158,6 +166,7 @@ getI18n(store.getState().settings.interface.language)
     extensions.doOnce();
     initApplicationMenu(extensions);
     loadExtensionCSS(extensions);
+    startupFinished();
     // render the page content
     ReactDOM.render(
       <Provider store={store}>

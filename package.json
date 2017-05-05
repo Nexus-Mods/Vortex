@@ -130,6 +130,7 @@
   },
   "devDependencies": {
     "@types/bluebird": "^3.0.36",
+    "@types/commander": "^2.9.0",
     "@types/content-type": "^1.0.33",
     "@types/debug": "^0.0.29",
     "@types/electron": "^1.4.32",
@@ -184,6 +185,7 @@
     "bootstrap-sass": "^3.3.7",
     "bootswatch": "^3.3.7",
     "classnames": "^2.2.5",
+    "commander": "^2.9.0",
     "concurrently": "^3.1.0",
     "content-type": "^1.0.2",
     "copyfiles": "^1.0.0",

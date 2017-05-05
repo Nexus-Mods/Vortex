@@ -2,20 +2,21 @@
  * entry point for the main process
  */
 
+import 'source-map-support/register';
+
 import timeRequire from './util/timeRequire';
 const stopTime = timeRequire();
 
-import 'source-map-support/register';
-
 import { setMaximized, setWindowPosition, setWindowSize } from './actions/window';
 import { IState, IWindow } from './types/IState';
-import { installDevelExtensions } from './util/devel';
+import commandLine, { IParameters } from './util/commandLine';
+import delayed from './util/delayed';
+import * as develT from './util/devel';
 import { ITermination, terminate } from './util/errorHandling';
-import ExtensionManager from './util/ExtensionManager';
+import ExtensionManagerT from './util/ExtensionManager';
 import { log, setupLogging } from './util/log';
-import { setupStore } from './util/store';
-import { getSafe } from './util/storeHelper';
-import { delayed } from './util/util';
+import * as storeT from './util/store';
+import * as storeHelperT from './util/storeHelper';
 
 import * as Promise from 'bluebird';
 import { app, BrowserWindow, Menu, Tray } from 'electron';
@@ -29,7 +30,7 @@ process.env.Path = process.env.Path + path.delimiter + __dirname;
 let mainWindow: Electron.BrowserWindow = null;
 let trayIcon: Electron.Tray = null;
 
-const urlExp = /([a-z\-]+):\/\/.*/i;
+const mainArgs = commandLine(process.argv);
 
 function createTrayIcon() {
   const imgPath = path.resolve(__dirname, 'assets', 'images',
@@ -41,16 +42,16 @@ function createTrayIcon() {
   ]));
 }
 
-const shouldQuit: boolean = app.makeSingleInstance((commandLine, workingDirectory): boolean => {
-  // send everything that looks like an url we handle to be opened
-  for (const arg of commandLine) {
-    const match = arg.match(urlExp);
-    if (match !== null) {
-      mainWindow.webContents.send('external-url', match[1], arg);
-    }
+function applyArguments(args: IParameters) {
+  if (args.download) {
+    mainWindow.webContents.send('external-url', args.download);
   }
+}
 
-  return true;
+const shouldQuit: boolean = app.makeSingleInstance((secondaryArgv, workingDirectory) => {
+  // this is called inside the primary process with the parameters of
+  // the secondary one whenever an additional instance is started
+  applyArguments(commandLine(secondaryArgv));
 });
 
 if (shouldQuit) {
@@ -92,7 +93,7 @@ process.on('uncaughtException', (error) => {
 });
 
 let store: Redux.Store<IState>;
-let extensions: ExtensionManager;
+let extensions: ExtensionManagerT;
 let loadingScreen: Electron.BrowserWindow;
 
 function createStore(): Promise<void> {
@@ -100,6 +101,8 @@ function createStore(): Promise<void> {
   //    like ui components despite the fact we only care about the reducers.
   //    If we could fix this that would probably reduce startup time by a
   //    second or more
+  const { setupStore } = require('./util/store');
+  const ExtensionManager = require('./util/ExtensionManager').default;
   extensions = new ExtensionManager();
   return setupStore(basePath, extensions).then((newStore) => {
     store = newStore;
@@ -116,6 +119,7 @@ let moveTimer: NodeJS.Timer;
 // main window setup
 
 function createWindow() {
+  const { getSafe } = require('./util/storeHelper') as typeof storeHelperT;
   const windowMetrics: IWindow = store.getState().settings.window;
   mainWindow = new BrowserWindow({
     height: getSafe(windowMetrics, ['size', 'height'], undefined),
@@ -155,6 +159,8 @@ function createWindow() {
       .then(() => delayed(500))
       .then(() => loadingScreen.destroy());
     }
+
+    applyArguments(mainArgs);
   });
 
   mainWindow.on('closed', () => {
@@ -213,14 +219,19 @@ function createLoadingScreen(): Promise<undefined> {
 
 app.on('ready', () => {
   createLoadingScreen()
-  // TODO horrible hack! This delays all loading by 200 ms but if we don't the splash screen
+  // TODO: horrible hack! This delays all loading by 200 ms but if we don't, the splash screen
   //   doesn't become visible until _after_ most of the initialization happened (loading the
   //   the store and extensions)
   .then(() => delayed(200))
   .then(() => createStore())
   .then(() => {
     createTrayIcon();
-    return installDevelExtensions();
+    if (process.env.NODE_ENV === 'development') {
+      const {installDevelExtensions} = require('./util/devel') as typeof develT;
+      return installDevelExtensions();
+    } else {
+      return Promise.resolve();
+    }
   })
   .then(() => {
     createWindow();

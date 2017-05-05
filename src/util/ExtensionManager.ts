@@ -558,9 +558,9 @@ class ExtensionManager {
     if (process.execPath.endsWith('electron.exe')) {
       // make it work when using the development version
       app.setAsDefaultProtocolClient(protocol, process.execPath,
-                                     [ path.resolve(__dirname, '..', '..') ]);
+                                     [ path.resolve(__dirname, '..', '..'), '-d' ]);
     } else {
-      app.setAsDefaultProtocolClient(protocol);
+      app.setAsDefaultProtocolClient(protocol, process.execPath, [ '-d' ]);
     }
     this.mProtocolHandlers[protocol] = callback;
   }

@@ -1,3 +1,4 @@
+import delayed from './delayed';
 import {log} from './log';
 
 import * as Promise from 'bluebird';
@@ -30,30 +31,6 @@ export function sum(container: number[]): number {
   return container.reduce((total: number, value: number): number => {
     return total + value;
   }, 0);
-}
-
-/**
- * promise-equivalent of setTimeout
- *
- * @export
- * @param {number} durationMS
- * @param {*} [value]
- * @returns
- */
-export function delayed(durationMS: number, value?: any) {
-  let timer: NodeJS.Timer;
-  let reject: (err: Error) => void;
-  const res = new Promise((resolve, rejectPar) => {
-    timer = setTimeout(() => {
-      resolve(value);
-    }, durationMS);
-    reject = rejectPar;
-  });
-  res.cancel = () => {
-    clearTimeout(timer);
-    reject(new Error('delayed operation canceled'));
-  };
-  return res;
 }
 
 /**
