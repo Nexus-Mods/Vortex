@@ -21,9 +21,11 @@ export interface IHeaderProps {
 }
 
 class HeaderCell extends React.Component<IHeaderProps, {}> {
-  public shouldComponentUpdate(nextProps: IHeaderProps) {
+  public shouldComponentUpdate(nextProps: any) {
     return !_.isEqual(nextProps.state, this.props.state)
-        || nextProps.doFilter !== this.props.doFilter;
+        || nextProps.doFilter !== this.props.doFilter
+        || nextProps.children !== this.props.children
+        ;
   }
 
   public render(): JSX.Element {
