@@ -83,7 +83,7 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
     const { dialogVisible, validateKeyData } = this.state;
 
     return (
-      <span>
+      <span className='pull-right'>
         {this.renderAvatar()}
         {this.renderLoginName()}
         <LoginDialog
@@ -153,7 +153,7 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
           onClick={this.showLoginLayer}
           className='pull-right'
         >
-          <Icon name='user' style={{ color: 'red' }} />
+          <Icon name='user' className='logout-avatar' />
         </Button>
       );
     }
