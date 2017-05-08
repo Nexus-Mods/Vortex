@@ -34,6 +34,7 @@ import InstallArchiveButton from './InstallArchiveButton';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import { ButtonGroup, DropdownButton, Jumbotron, MenuItem } from 'react-bootstrap';
@@ -142,29 +143,33 @@ class ModList extends ComponentEx<IProps, {}> {
               } else {
                 onSetModEnabled(profileId, modId, true);
               }
+              this.context.api.events.emit('mods-enabled', [modId], value);
             }
           } else {
             // direct selection
             if (value === 'uninstalled') {
               // selected "not installed"
-              this.context.api.events.emit('remove-mod', gameMode, modId);
+              this.context.api.events.emit('remove-mod', gameMode, modId, (err) => {
+                if (err !== null) {
+                  return this.context.api.showErrorNotification('Failed to remove mod', err);
+                }
+                this.context.api.events.emit('mods-enabled', [modId], value);
+              });
             } else if (this.mModsWithState[modId].state === 'downloaded') {
               // selected "enabled" or "disabled" from "not installed" so first the mod
               // needs to be installed
               this.context.api.events.emit('start-install-download', modId, (err, id) => {
-                if (err !== null) {
-                  return this.context.api.showErrorNotification('Failed to install mod', err);
-                }
                 if (value === 'enabled') {
                   onSetModEnabled(profileId, id, true);
+                  this.context.api.events.emit('mods-enabled', [modId], value);
                 }
               });
             } else {
               // selected "enabled" or "disabled" from the other one
               onSetModEnabled(profileId, modId, value === 'enabled');
+              this.context.api.events.emit('mods-enabled', [modId], value);
             }
           }
-          this.context.api.events.emit('mods-enabled', [modId], value);
         },
       },
       isSortable: false,
@@ -369,7 +374,8 @@ class ModList extends ComponentEx<IProps, {}> {
 
     Object.keys(newProps.downloads).forEach(archiveId => {
       if (!installedIds.has(archiveId) && (newProps.downloads[archiveId].game === gameMode)) {
-        if (oldProps.downloads[archiveId] === newProps.downloads[archiveId]) {
+        if ((oldProps.downloads[archiveId] === newProps.downloads[archiveId])
+            && (this.mModsWithState[archiveId] !== undefined)) {
           newModsWithState[archiveId] = this.mModsWithState[archiveId];
           return;
         }
@@ -396,30 +402,36 @@ class ModList extends ComponentEx<IProps, {}> {
 
     // if the new mod list is a subset of the old one (including the empty set)
     // the above check wouldn't notice that change
-    if ((this.mModsWithState === undefined) ||
-        (Object.keys(newModsWithState).length < Object.keys(this.mModsWithState).length)) {
+    if (!changed
+        && ((this.mModsWithState === undefined)
+         || (!_.isEqual(Object.keys(newModsWithState), Object.keys(this.mModsWithState))))) {
       changed = true;
     }
 
-    this.mModsWithState = newModsWithState;
-
     if (changed || (this.mGroupedMods === undefined)) {
-      this.updateModGrouping();
+      this.updateModGrouping(newModsWithState);
     }
+    // assign only after mod grouping is updated so these don't go out of sync
+    this.mModsWithState = newModsWithState;
   }
 
-  private updateModGrouping() {
-    const modList = Object.keys(this.mModsWithState).map(key => this.mModsWithState[key]);
+  private updateModGrouping(modsWithState) {
+    const modList = Object.keys(modsWithState).map(key => modsWithState[key]);
     const grouped = groupMods(modList, { groupBy: 'file', multipleEnabled: false });
-    this.mGroupedMods = grouped.reduce((prev: { [id: string]: IModWithState[] }, value) =>
+
+    const groupedMods = grouped.reduce((prev: { [id: string]: IModWithState[] }, value) =>
       setSafe(prev, [value[0].id], value)
       , {});
 
-    this.mPrimaryMods = Object.keys(this.mGroupedMods).reduce(
+    this.mPrimaryMods = Object.keys(groupedMods).reduce(
       (prev: { [id: string]: IModWithState }, value) => {
-        const prim = this.mGroupedMods[value][0];
+        const prim = groupedMods[value][0];
         return setSafe(prev, [ value ], prim);
       }, {});
+
+    // assign after primary mods are calculated so that in case of an error the two don't become
+    // out of sync
+    this.mGroupedMods = groupedMods;
   }
 
   private selectVersion = (evt) => {

@@ -23,7 +23,9 @@ interface IFile {
   time: number;
 }
 
-type Activation = { [relPath: string]: IFile };
+interface IActivation {
+  [relPath: string]: IFile;
+}
 
 /**
  * base class for mod activators that use some form of file-based linking
@@ -35,7 +37,7 @@ abstract class LinkingActivator implements IModActivator {
   public name: string;
   public description: string;
 
-  private mNewActivation: Activation = {};
+  private mNewActivation: IActivation = {};
   private mApi: IExtensionApi;
   private mNormalize: Normalize;
 
@@ -136,7 +138,7 @@ abstract class LinkingActivator implements IModActivator {
     const sourceBase = path.join(installPath, mod.installationPath);
     return walk(sourceBase, (iterPath: string, stats: fs.Stats) => {
              if (!stats.isDirectory()) {
-               let relPath: string = path.relative(sourceBase, iterPath);
+               const relPath: string = path.relative(sourceBase, iterPath);
                // mods are activated in order of ascending priority so
                // overwriting is fine here
                this.mNewActivation[this.mNormalize(relPath)] = {
@@ -179,7 +181,7 @@ abstract class LinkingActivator implements IModActivator {
 
     let currentActivation: any;
 
-    let nonLinks: IFileChange[] = [];
+    const nonLinks: IFileChange[] = [];
 
     return loadData(gameId, 'activation', {})
       .then((activation: any) => {
@@ -245,10 +247,10 @@ abstract class LinkingActivator implements IModActivator {
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
   protected abstract isLink(linkPath: string, sourcePath: string): Promise<boolean>;
 
-  private diffActivation(before: Activation, after: Activation) {
-    let keysBefore = Object.keys(before);
-    let keysAfter = Object.keys(after);
-    let keysBoth = _.intersection(keysBefore, keysAfter);
+  private diffActivation(before: IActivation, after: IActivation) {
+    const keysBefore = Object.keys(before);
+    const keysAfter = Object.keys(after);
+    const keysBoth = _.intersection(keysBefore, keysAfter);
     return {
       added: _.difference(keysAfter, keysBefore),
       removed: _.difference(keysBefore, keysAfter),

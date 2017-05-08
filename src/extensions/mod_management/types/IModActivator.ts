@@ -1,4 +1,5 @@
 import { IMod } from './IMod';
+
 import * as Promise from 'bluebird';
 
 /**
@@ -33,7 +34,7 @@ export interface IModActivator {
 
   /**
    * id of the activator for lookup in code
-   * 
+   *
    * @type {string}
    * @memberOf IModActivator
    */
@@ -41,7 +42,7 @@ export interface IModActivator {
 
   /**
    * name of this activator as presented to the user
-   * 
+   *
    * @type {string}
    * @memberOf IModActivator
    */
@@ -49,7 +50,7 @@ export interface IModActivator {
 
   /**
    * Short description of the activator and it's pros/cons
-   * 
+   *
    * @type {string}
    * @memberOf IModActivator
    */
@@ -59,9 +60,9 @@ export interface IModActivator {
    * determine if this activator is supported in the current environment
    * If the activator is supported, returns undefined. Otherwise a string
    * that explains why the activator isn't available.
-   * 
+   *
    * synchronous 'cause lazy.
-   * 
+   *
    * @memberOf IModActivator
    */
   isSupported: (state: any) => string;
@@ -81,7 +82,7 @@ export interface IModActivator {
   /**
    * called after an activate call was made for all active mods,
    * in case this activator needs to do postprocessing
-   * 
+   *
    * @memberOf IModActivator
    */
   finalize: (dataPath: string) => Promise<void>;
@@ -91,7 +92,7 @@ export interface IModActivator {
    * @param {string} installPath nmm2 path where mods are installed from (source)
    * @param {string} dataPath game path where mods are installed to (destination)
    * @param {string} mod the mod to activate
-   * 
+   *
    * @memberOf IModActivator
    */
   activate: (installPath: string, dataPath: string, mod: IMod) => Promise<void>;
@@ -109,7 +110,7 @@ export interface IModActivator {
    * activator so if the activator can not discover those automatically it
    * it has to do its own bookkeeping.
    * The LinkingActivator base-class does implement such bookkeeping however.
-   * 
+   *
    * @memberOf IModActivator
    */
   purge: (installPath: string, dataPath: string) => Promise<void>;
@@ -119,7 +120,7 @@ export interface IModActivator {
    * activator but have been changed since then by an external application.
    * @param {string} installPath nmm2 path where mods are installed from (source)
    * @param {string} dataPath game path where mods are installed to (destination)
-   * 
+   *
    * @memberOf IModActivator
    */
   externalChanges: (installPath: string, dataPath: string) => Promise<IFileChange[]>;
@@ -135,7 +136,7 @@ export interface IModActivator {
   /**
    * returns whether this mod activator currently has mods activated in the
    * game directory
-   * 
+   *
    * @memberOf IModActivator
    */
   isActive: () => boolean;

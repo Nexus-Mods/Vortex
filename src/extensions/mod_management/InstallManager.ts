@@ -290,9 +290,6 @@ class InstallManager {
                              fileList.push(...files.filter(
                                  (spec) => spec.attr[0] !== 'D'));
                            })
-        .catch(err => {
-          return Promise.reject(err);
-        })
         .then(() => this.getInstaller(
                   fileList.map((entry: IZipEntry) => entry.name)))
         .then((supportedInstaller: ISupportedInstaller) => {
@@ -505,7 +502,7 @@ class InstallManager {
     // process 'copy' instructions during extraction
     return this.extractArchive(api.store, archivePath, destinationPath, copies)
       .then(() => Promise.each(genfiles,
-        (gen) => {
+        gen => {
           const outputPath = path.join(destinationPath, gen.destination);
           return fs.ensureDirAsync(path.dirname(outputPath))
             .then(() => fs.writeFileAsync(outputPath, gen.source));

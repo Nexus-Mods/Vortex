@@ -62,55 +62,61 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
 
   const gameMods = state.persistent.mods[gameMode] || {};
 
-  return Promise.map(Object.keys(gameMods), (modId: string) => {
-    const mod = gameMods[modId];
-    return fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
-    .then((fileNames: string[]) => {
-      fileNames
-      .filter((fileName: string) => ['.esp', '.esm'].indexOf(path.extname(fileName)) !== -1)
-      .forEach((fileName: string) => {
-        pluginSources[fileName] = mod.name || mod.id;
+  const enabledModIds = Object.keys(gameMods).filter(
+      modId => util.getSafe(newModList, [modId, 'enabled'], false));
+
+  return Promise
+      .map(enabledModIds,
+           (modId: string) => {
+             const mod = gameMods[modId];
+             return fs.readdirAsync(path.join(selectors.installPath(state),
+                                              mod.installationPath))
+                 .then((fileNames: string[]) => {
+                   fileNames.filter((fileName: string) =>
+                                        ['.esp', '.esm'].indexOf(
+                                            path.extname(fileName)) !== -1)
+                       .forEach((fileName: string) => {
+                         pluginSources[fileName] = mod.name || mod.id;
+                       });
+                 })
+                 .catch((err: Error) => {
+                   readErrors.push(mod.id);
+                   log('warn', 'failed to read mod directory',
+                       {path: mod.installationPath, error: err.message});
+                 });
+           })
+      .then(() => {
+        if (readErrors.length > 0) {
+          util.showError(
+              store.dispatch, 'Failed to read some mods',
+              'The following mods could not be searched (see log for details):\n' +
+                  readErrors.join('\n') + '\n' + (new Error()).stack);
+        }
+        if (currentDiscovery === undefined) {
+          return Promise.resolve([]);
+        }
+        const modPath = currentDiscovery.modPath;
+        return fs.readdirAsync(modPath);
+      })
+      .then((fileNames: string[]) => {
+        const pluginNames: string[] = fileNames.filter(isPlugin);
+        const pluginStates: IPlugins = {};
+        pluginNames.forEach((fileName: string) => {
+          const modName = pluginSources[fileName];
+          pluginStates[fileName] = {
+            modName: modName || '',
+            filePath: path.join(currentDiscovery.modPath, fileName),
+            isNative:
+                modName === undefined && isNativePlugin(gameMode, fileName),
+          };
+        });
+        store.dispatch(setPluginList(pluginStates));
+        store.dispatch(updateLoadOrder(pluginNames));
+        return Promise.resolve();
+      })
+      .catch((err: Error) => {
+        util.showError(store.dispatch, 'Failed to update plugin list', err);
       });
-    })
-    .catch((err: Error) => {
-      readErrors.push(mod.id);
-      log('warn', 'failed to read mod directory',
-        { path: mod.installationPath, error: err.message });
-    });
-  })
-  .then(() => {
-    if (readErrors.length > 0) {
-      util.showError(
-        store.dispatch,
-        'Failed to read some mods',
-        'The following mods could not be searched (see log for details):\n' +
-          readErrors.join('\n'));
-    }
-    if (currentDiscovery === undefined) {
-      return Promise.resolve([]);
-    }
-    const modPath = currentDiscovery.modPath;
-    return fs.readdirAsync(modPath);
-  })
-  .then((fileNames: string[]) => {
-    const pluginNames: string[] = fileNames.filter(isPlugin);
-    const pluginStates: IPlugins = {};
-    pluginNames.forEach((fileName: string) => {
-      const modName = pluginSources[fileName];
-      pluginStates[fileName] = {
-        modName: modName || '',
-        filePath: path.join(currentDiscovery.modPath, fileName),
-        isNative: modName === undefined && isNativePlugin(gameMode, fileName),
-      };
-    });
-    store.dispatch(setPluginList(pluginStates));
-    store.dispatch(updateLoadOrder(pluginNames));
-    return Promise.resolve();
-  })
-  .catch((err: Error) => {
-    util.showError(store.dispatch, 'Failed to update plugin list', err);
-  })
-  ;
 }
 
 interface IExtensionContextExt extends types.IExtensionContext {
@@ -236,7 +242,7 @@ function startSync(api: types.IExtensionApi) {
     }
     refreshTimer = setTimeout(() => {
       updateCurrentProfile(store)
-          .then(() => { api.events.emit('autosort-plugins'); });
+          .then(() => api.events.emit('autosort-plugins'));
       refreshTimer = undefined;
     }, 500);
   });

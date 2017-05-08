@@ -5,7 +5,7 @@ import { compare } from 'semvish';
 
 function byModId(input: IModWithState[]): IModWithState[][] {
   const byModId = input.reduce((prev: { [modId: string]: IModWithState[] }, value) =>
-    pushSafe(prev, [getSafe(value.attributes, ['modId'], undefined)], value)
+    pushSafe(prev, [getSafe(value, ['attributes', 'modId'], undefined)], value)
     , {});
   return Object.keys(byModId).map(modId => byModId[modId]);
 }
@@ -36,19 +36,19 @@ function byFile(input: IModWithState[]): IModWithState[][] {
 /**
  * contrary to what the name implies, this doesn't group enabled mods with other enabled ones but
  * it ensures that only one enabled mod is in the output.
- * 
- * @param {IModWithState[]} input 
- * @returns {IModWithState[][]} 
+ *
+ * @param {IModWithState[]} input
+ * @returns {IModWithState[][]}
  */
 function byEnabled(input: IModWithState[]): IModWithState[][] {
   // put each enabled mod into its own group. Ideally there should only be one
-  let groups: IModWithState[][] = input.filter((mod => mod.enabled)).map(mod => [mod]);
+  const groups: IModWithState[][] = input.filter((mod => mod.enabled)).map(mod => [mod]);
   // it is of course possible that no mod in input is enabled.
   if (groups.length === 0) {
     return [ input ];
   }
   // disabled mods are only added to the group with the highest version enabled mod
-  let primaryGroup = groups.sort(
+  const primaryGroup = groups.sort(
     (lhs, rhs) => compare(rhs[0].attributes['version'],
                           lhs[0].attributes['version']))[0];
   input.filter((mod => !mod.enabled)).forEach(mod => primaryGroup.push(mod));

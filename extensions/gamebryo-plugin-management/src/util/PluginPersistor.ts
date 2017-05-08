@@ -71,22 +71,29 @@ class PluginPersistor implements types.IPersistor {
     this.mResetCallback = cb;
   }
 
-  public getItem(key: string, cb: (error: Error, result?: string) => void): void {
-    cb(null, JSON.stringify(this.mPlugins));
+  public getItem(key: string, cb?: (error: Error, result?: string) => void): Promise<any> {
+    const res = JSON.stringify(this.mPlugins);
+    if (cb) {
+      cb(null, res);
+    }
+    return Promise.resolve(res);
   }
 
-  public setItem(key: string, value: string, cb: (error: Error) => void): void {
+  public setItem(key: string, value: string, cb?: (error: Error) => void): Promise<void> {
     this.mPlugins = JSON.parse(value);
-    this.serialize().then(() => cb(null));
+    return this.serialize().then(() => cb && cb(null));
   }
 
-  public removeItem(key: string, cb: (error: Error) => void): void {
+  public removeItem(key: string, cb?: (error: Error) => void): Promise<void> {
     delete this.mPlugins[key];
-    this.serialize().then(() => cb(null));
+    return this.serialize().then(() => cb && cb(null));
   }
 
-  public getAllKeys(cb: (error: Error, keys?: string[]) => void): void {
-    cb(null, ['loadOrder']);
+  public getAllKeys(cb?: (error: Error, keys?: string[]) => void): Promise<void> {
+    if (cb) {
+      cb(null, ['loadOrder']);
+    }
+    return Promise.resolve();
   }
 
   private toPluginList(input: string[]) {
@@ -119,10 +126,8 @@ class PluginPersistor implements types.IPersistor {
       return Promise.resolve();
     }
     // ensure we don't try to concurrently write the files
-    this.mSerializeQueue = this.mSerializeQueue.then(() => {
-      this.doSerialize();
-    });
-    return this.mSerializeQueue;
+    return this.mSerializeQueue =
+               this.mSerializeQueue.then(() => this.doSerialize());
   }
 
   private doSerialize(): Promise<void> {
