@@ -7,6 +7,7 @@ import { IconButton } from '../TooltipControls';
 
 import SortIndicator from './SortIndicator';
 
+import * as _ from 'lodash';
 import * as React from 'react';
 
 export interface IHeaderProps {
@@ -16,10 +17,15 @@ export interface IHeaderProps {
   doFilter: boolean;
   onSetSortDirection: (id: string, dir: SortDirection) => void;
   onSetFilter: (id?: string, filter?: any) => void;
-  t: Function;
+  t: I18next.TranslationFunction;
 }
 
 class HeaderCell extends React.Component<IHeaderProps, {}> {
+  public shouldComponentUpdate(nextProps: IHeaderProps) {
+    return !_.isEqual(nextProps.state, this.props.state)
+        || nextProps.doFilter !== this.props.doFilter;
+  }
+
   public render(): JSX.Element {
     const { t, attribute, className, doFilter } = this.props;
     return (
@@ -62,7 +68,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
   }
 
   private setDirection = (dir: SortDirection) => {
-    let { attribute, onSetSortDirection } = this.props;
+    const { attribute, onSetSortDirection } = this.props;
     onSetSortDirection(attribute.id, dir);
   }
 

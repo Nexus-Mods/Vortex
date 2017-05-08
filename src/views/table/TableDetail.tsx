@@ -1,9 +1,10 @@
 import {IEditChoice, ITableAttribute} from '../../types/ITableAttribute';
-import {ComponentEx} from '../../util/ComponentEx';
+import {PureComponentEx} from '../../util/ComponentEx';
 
 import FormFeedback from '../FormFeedbackAwesome';
 import FormInput from '../FormInput';
 
+import * as _ from 'lodash';
 import * as React from 'react';
 import {ControlLabel, FormControl, FormGroup, ListGroup, ListGroupItem} from 'react-bootstrap';
 
@@ -137,9 +138,17 @@ export interface IDetailProps {
   t: I18next.TranslationFunction;
 }
 
-class DetailBox extends ComponentEx<IDetailProps, {}> {
+class DetailBox extends PureComponentEx<IDetailProps, {}> {
   constructor(props: IDetailProps) {
     super(props);
+  }
+
+  public shouldComponentUpdate(nextProps: IDetailProps) {
+    return (this.props.rowId !== nextProps.rowId)
+      || (this.props.language !== nextProps.language)
+      || (this.props.rawData !== nextProps.rawData)
+      || (this.props.rowData !== nextProps.rowData)
+      || !_.isEqual(this.props.attributes, nextProps.attributes);
   }
 
   public render(): JSX.Element {

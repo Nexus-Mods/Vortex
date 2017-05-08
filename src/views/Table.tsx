@@ -5,7 +5,7 @@ import {IAttributeState} from '../types/IAttributeState';
 import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
-import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
+import {connect, extend, PureComponentEx, translate} from '../util/ComponentEx';
 import Debouncer from '../util/Debouncer';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import {getSafe, setSafe} from '../util/storeHelper';
@@ -78,7 +78,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps;
  * - toggleable columns
  * - a detail-pane that gives additional detail on the (last) selected row
  */
-class SuperTable extends ComponentEx<IProps, IComponentState> {
+class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   private mVisibleAttributes: ITableAttribute[];
   private mSplitDebouncer: Debouncer;
