@@ -4,6 +4,7 @@ import { IState } from '../types/IState';
 
 import {terminate} from './errorHandling';
 import ExtensionManager from './ExtensionManager';
+import LevelStorage from './LevelStorage';
 import { log } from './log';
 import StorageLogger from './StorageLogger';
 
@@ -57,8 +58,8 @@ export function setupStore(
     const result = createStore<IState>(reducer(extReducers), enhancer);
     persistStore(result,
                  {
-                   storage: new StorageLogger(
-                       new AsyncNodeStorage(path.join(basePath, 'state'))),
+                   storage: new LevelStorage('state')
+                       /* new AsyncNodeStorage(path.join(basePath, 'state')) */,
                    whitelist,
                    debounce: 200,
                    keyPrefix: 'global_',

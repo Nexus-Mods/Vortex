@@ -181,5 +181,12 @@
       "module": "edge",
       "sources": ["node_modules/edge/build/Release/binding.node"]
     }
+  ], [
+    {
+      "type": "electron-rebuild",
+      "name": "leveldown-rebuild",
+      "module": "leveldown",
+      "sources": ["node_modules/leveldown/build/Release/leveldown.node"]
+    }
   ]
 ]

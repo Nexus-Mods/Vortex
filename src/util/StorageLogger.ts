@@ -1,4 +1,4 @@
-import { LogLevel, log } from './log';
+import { log, LogLevel } from './log';
 
 export interface IStorage {
   getItem: (key: string, cb: (error: Error, result?: string) => void) => any;
@@ -9,7 +9,7 @@ export interface IStorage {
 
 /**
  * logs all write-operations to the redux-persist storage backend
- * 
+ *
  * @class StorageLogger
  * @implements {IStorage}
  */
@@ -23,12 +23,12 @@ class StorageLogger implements IStorage {
     this.mLogLevel = logLevel;
   }
 
-  public getItem (key: string, cb: (error: Error, result?: string) => void) {
+  public getItem(key: string, cb: (error: Error, result?: string) => void) {
     // don't log read access
     return this.mNested.getItem(key, cb);
   }
 
-  public setItem (key: string, value: string | number, cb: (error: Error) => void) {
+  public setItem(key: string, value: string | number, cb: (error: Error) => void) {
     if (typeof(value) === 'string') {
       log(this.mLogLevel, 'set item', { key, value: value.substring(0, 30) });
     } else {
@@ -37,12 +37,12 @@ class StorageLogger implements IStorage {
     this.mNested.setItem(key, value, cb);
   }
 
-  public removeItem (key: string, cb: (error: Error) => void) {
+  public removeItem(key: string, cb: (error: Error) => void) {
     log(this.mLogLevel, 'remove item', { key });
     this.mNested.removeItem(key, cb);
   }
 
-  public getAllKeys (cb: (error: Error, keys?: string[]) => void) {
+  public getAllKeys(cb: (error: Error, keys?: string[]) => void) {
     this.mNested.getAllKeys(cb);
   }
 }
