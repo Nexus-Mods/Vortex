@@ -143,12 +143,26 @@ namespace Components.ModInstaller
         protected async Task<List<Instruction>> BasicModInstall(List<string> fileList, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
             List<Instruction> FilesToInstall = new List<Instruction>();
+            ArchiveStructure arch = new ArchiveStructure(fileList);
+            // TODO: This is very gamebryo-centric
+            string prefix = arch.FindPathPrefix(new string[] { "distantlod", "facegen", "fonts", "interface", "menus", "meshes", "music", "scripts",
+                                                               "shaders", "sound", "strings", "textures", "trees", "video", "skse", "obse", "nvse",
+                                                               "fose", "asi", "SkyProc Patchers" },
+                                                new string[] { @".*\.esp", @".*\.esm" });
 
             await Task.Run(() =>
             {
                 foreach (string ArchiveFile in fileList)
                 {
-                    FilesToInstall.Add(Instruction.CreateCopy(ArchiveFile, ArchiveFile));
+                    string destination;
+                    if (ArchiveFile.StartsWith(prefix))
+                    {
+                        destination = ArchiveFile.Substring(prefix.Length);
+                    } else
+                    {
+                        destination = ArchiveFile;
+                    }
+                    FilesToInstall.Add(Instruction.CreateCopy(ArchiveFile, destination));
                     // Progress should increase.	
                 }
             });

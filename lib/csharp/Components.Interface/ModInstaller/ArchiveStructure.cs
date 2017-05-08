@@ -11,7 +11,7 @@ namespace Components.Interface
     /// <summary>
     /// Class with helper functions to analyze the structure of an archive
     /// </summary>
-    class ArchiveStructure
+    public class ArchiveStructure
     {
         private FileTree m_ftFiles;
         private ISet<string> m_setIgnore = new HashSet<string> { "__MACOSX" };
@@ -23,8 +23,8 @@ namespace Components.Interface
         }
 
         /// <summary>
-        /// This searches through the structure recursively to find one one of the stop folders and returns
-        /// the path up to there.
+        /// This searches through the structure recursively to find one one of the stop folders or files
+        /// and return the path up to there.
         /// This is used to determine the path "prefix" that should be ignored in scripted installers (
         /// the scripts specify paths relative to this prefix)
         /// </summary>
