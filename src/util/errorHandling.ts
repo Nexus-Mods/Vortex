@@ -75,11 +75,11 @@ export function createErrorReport(type: string, error: ITermination, labels: str
   spawnSelf(['--report', reportPath]);
 }
 
-export function sendReport(fileName: string) {
+export function sendReport(fileName: string): Promise<void> {
   return fs.readFileAsync(fileName)
     .then(reportData => {
     const {type, error, labels} = JSON.parse(reportData.toString());
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       const hash = genHash(error);
 
       const {Client} = require('node-rest-client') as typeof restT;
