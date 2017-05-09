@@ -1,6 +1,6 @@
 {
   "name": "modmeta-db",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Serves dependency and other meta information for mod files.",
   "main": "lib/index.js",
   "scripts": {
@@ -30,7 +30,7 @@
   },
   "peerDependencies": {
     "bluebird": "^3.4.6",
-    "level-js": "^2.2.4",
+    "leveldown": "^1.6.0",
     "node-rest-client": "^3.1.0"
   },
   "optionalDependencies": {

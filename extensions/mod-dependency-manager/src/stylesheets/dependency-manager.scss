@@ -1,8 +1,9 @@
-.btn-dependency {
+.btn-embed {
   padding: 1px 5px;
   border: 0px;
   color: currentColor;
   background-color: transparent;
+
   &:hover {
     color: $link-hover-color;
     background-color: initial;
@@ -15,6 +16,10 @@
     color: $link-hover-color;
     background-color: initial;
   }
+}
+
+.btn-dependency {
+  @extend .btn-embed;
 }
 
 .btn-dependency-hasrules svg {
@@ -26,26 +31,16 @@
 }
 
 .btn-conflict {
-  padding: 1px 5px;
-  border: 0px;
-  color: currentColor;
-  background-color: transparent;
-  &:hover {
-    color: $link-hover-color;
-    background-color: initial;
-  }
-  &:active {
-    color: $link-hover-color;
-    background-color: initial;
-  }
-  &:focus {
-    color: $link-hover-color;
-    background-color: initial;
-  }
+  @extend .btn-embed;
 }
 
 .btn-conflict svg {
   fill: $link-color;
+}
+
+.btn-unfulfilled {
+  @extend .btn-embed;
+  color: $brand-danger;
 }
 
 .line {
@@ -53,12 +48,12 @@
 }
 
 .line-connect {
-  stroke: green;
+  stroke: $brand-success;
   stroke-width: 3;
 }
 
 .line-disconnect {
-  stroke: red;
+  stroke: $brand-danger;
   stroke-dasharray: 5,5;
   stroke-width: 2;
 }

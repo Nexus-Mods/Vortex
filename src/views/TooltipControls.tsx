@@ -2,8 +2,9 @@ import SvgIcon from './Icon';
 import { ButtonType } from './IconBar';
 
 import * as React from 'react';
+import update = require('react-addons-update');
 import { Button as BootstrapButton, NavItem as BootstrapNavItem,
-  OverlayTrigger, Popover,
+  Overlay, OverlayTrigger, Popover,
 } from 'react-bootstrap';
 
 export interface ITooltipProps {
@@ -244,5 +245,61 @@ export class Icon extends React.Component<IconProps, {}> {
         </OverlayTrigger>
       );
     }
+  }
+}
+
+export type ClickPopoverProps = ButtonProps & IIconButtonExtraProps & {
+};
+
+export class ClickPopover extends React.Component<ClickPopoverProps, { open: boolean }> {
+  private mRef: JSX.Element;
+
+  constructor(props: ClickPopoverProps) {
+    super(props);
+    this.state = {
+      open: false,
+    };
+  }
+
+  public render(): JSX.Element {
+    const { className, children, icon, id, tooltip } = this.props;
+    const popover = (
+      <Popover id={`popover-${id}`} style={{ maxWidth: 500 }}>
+        {children}
+      </Popover>
+    );
+
+    return (
+      <div style={{ display: 'inline' }}>
+        <IconButton
+          id={`btn-${id}`}
+          className={className}
+          tooltip={tooltip}
+          icon={icon}
+          ref={this.setRef}
+          onClick={this.toggleOverlay}
+        />
+        <Overlay
+          show={this.state.open}
+          onHide={this.hideOverlay}
+          placement='left'
+          rootClose={true}
+          target={this.mRef as any}
+        >
+          {popover}
+        </Overlay>
+      </div>);
+  }
+
+  private toggleOverlay = () => {
+    this.setState(update(this.state, { open: { $set: !this.state.open } }));
+  }
+
+  private hideOverlay = () => {
+    this.setState(update(this.state, { open: { $set: false } }));
+  }
+
+  private setRef = (ref) => {
+    this.mRef = ref;
   }
 }

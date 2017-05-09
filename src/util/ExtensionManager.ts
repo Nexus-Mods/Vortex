@@ -605,8 +605,7 @@ class ExtensionManager {
 
     return promise
       .then(() => this.modDB.lookup(detail.filePath, fileMD5,
-        fileSize, detail.gameId,
-        detail.modId))
+        fileSize, detail.gameId))
       .then((result: ILookupResult[]) => Promise.resolve(result));
   }
 

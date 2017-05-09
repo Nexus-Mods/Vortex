@@ -18,9 +18,7 @@ import * as util from 'util';
 
 let testSupportedLib;
 let installLib;
-interface IProgressDelegate {
-  (perc: number): void;
-}
+type ProgressDelegate = (perc: number) => void;
 
 function dirname() {
   return __dirname.replace('app.asar', 'app.asar.unpacked');
@@ -50,7 +48,7 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
 }
 
 function install(files: string[], scriptPath: string,
-                 progressDelegate: IProgressDelegate,
+                 progressDelegate: ProgressDelegate,
                  coreDelegates: Core): Promise<any> {
   if (installLib === undefined) {
     installLib = edge.func({
@@ -84,7 +82,7 @@ function init(context: IExtensionContextExt): boolean {
     context.registerInstaller(100, testSupported,
     (files, scriptPath, gameId, progressDelegate) => {
       context.api.store.dispatch(setInstallerDataPath(scriptPath));
-      let coreDelegates = new Core(context.api, gameId);
+      const coreDelegates = new Core(context.api, gameId);
       return install(files, scriptPath, progressDelegate, coreDelegates)
       .catch((err) => {
         context.api.store.dispatch(endDialog());

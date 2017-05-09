@@ -12,7 +12,7 @@ function findModByRef(reference: IReference, state: any): string {
   // TODO support non-hash references
   const gameMode = activeGameId(state);
   const mods = state.persistent.mods[gameMode];
-  let existing: string = Object.keys(mods).find((modId: string): boolean => {
+  const existing: string = Object.keys(mods).find((modId: string): boolean => {
     return getSafe(mods[modId], ['attributes', 'fileMD5'], undefined) === reference.fileMD5;
   });
   return existing;
@@ -21,7 +21,7 @@ function findModByRef(reference: IReference, state: any): string {
 function findDownloadByRef(reference: IReference, state: any): string {
   // TODO support non-hash references
   const downloads = state.persistent.downloads.files;
-  let existing: string = Object.keys(downloads).find((dlId: string): boolean => {
+  const existing: string = Object.keys(downloads).find((dlId: string): boolean => {
     return downloads[dlId].fileMD5 === reference.fileMD5;
   });
   return existing;
@@ -30,10 +30,10 @@ function findDownloadByRef(reference: IReference, state: any): string {
 function gatherDependencies(
     rules: IRule[], api: IExtensionApi): Promise<IDependency[]> {
   const state = api.store.getState();
-  let requirements: IRule[] =
+  const requirements: IRule[] =
       rules === undefined ?
           [] :
-          rules.filter((rule: IRule) => { return rule.type === 'requires'; });
+          rules.filter((rule: IRule) => rule.type === 'requires');
 
   // for each requirement, look up the reference and recursively their dependencies
   return Promise.reduce(requirements, (total: IDependency[], rule: IRule) => {

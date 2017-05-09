@@ -5,28 +5,22 @@
 This is an object that contains all the meta information that the server
 holds about a file.
 
-* modId (string) - unique identifier for the mod the file belongs to.
- A mod can be a single file or a bunch of related ones (including older versions).
- On nexus this is a number but in an effort to be more universal we use a string
- in the api. Example: '3863'
-* modName (string) - A human-readable name for the mod. This should never be
- used for anything other than presenting it to the user. Example: 'SkyUI'
 * fileName (string) - physical file name as stored on disk without path and with
  extension. Example: 'SkyUI_5_1-3863-5-1.7z'
 * fileSizeBytes (number) - size of the file in bytes.
-* gameId (string) - unique identifier for the game this file can be used for.
+* gameId (string) - unique identifier for the game this file can be used for. These ids
+ should be kept the same across all servers and should be the same as used by game-support
+ extensions used by NMM2
  Example: 'skyrim'
-* logicalFileName (string, optional) - An abstract name that identifies all versions
- of the _same_ file. Assume you have a mod that replaces armors and it has different
- files for each armor type and different variants of each for different body types.
- You could have logical file names like "LeatherArmor UNP", "LeatherArmor Vanilla"
+* logicalFileName (string, optional) - An abstract name that uniquely identifies all
+ versions of the _same_ file.
+ Assume you have a mod that replaces armors and it has different files for each armor
+ type and different variants of each for different body types.
+ You could have logical file names like "Leather Armor UNP", "Leather Armor Vanilla"
 * fileVersion (string) - version string of the file. This can only be used for
- file references if it follows semantic versioning, otherwise it is
- purely for presentation to the user. Example: '5.1.0'
+ file references if it follows semantic versioning. Example: '5.1.0'
  To a degree non-semantic versions can be used as they are auto-converted, i.e.
  '5.1' -> '5.1.0', '5.05' -> '5.5.0'
-* fileMD5 (string) - MD5 hash of the (complete) file content as a hex string.
- Example: '58e6baf1108091ad59681c20c65dd6d'
 * sourceURI (string) - An url where this file can be downloaded. If this is an
  http(s) link it should be a direct link, the manager will not follow 302 redirects
  or interpret webpages to allow for javascript/html redirections.
@@ -70,14 +64,15 @@ exclusively to identify the file.
 * fileMD5 (string) - The md5 hash of the file. Should usually be enough to identify a
  an exact file. It can not be used in version-range matches. There may still be multiple matches,
  i.e. due to hash collisions or because the same file has been uploaded multiple times
-* modId (string) - Identifies a mod. This may be used to avoid collisions on a hash or
- as part of a key that supports version ranges.
+* fileSizeBytes (number) - size of the file in bytes. Used to avoid collisions when using a md5
+ hash for matching
+* gameId (string) - Identifies a game. Used to avoid collisions when using a md5 hash for matching
 * logicalFileName (string) - Together with modId this identifies the "content" to
  to refence without specifying the version.
 * fileExpression (string) - A regular expression to be matched against the physical file
  name. This can be used in place of logicalFileName if that doesn't exist. (For performance
  reasons this should always only be plan B)
-- versionMatch (string) - A match expression against fileVersion. If used, the reference
+* versionMatch (string) - A match expression against fileVersion. If used, the reference
  will always match the newest file for which this matcher is valid.
  This works only with semantic version numbers and the syntax can be looked up here:
  https://github.com/npm/node-semver#ranges 

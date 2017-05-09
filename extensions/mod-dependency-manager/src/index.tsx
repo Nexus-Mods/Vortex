@@ -39,8 +39,8 @@ function main(context: types.IExtensionContext) {
   context.registerStyle(path.join(__dirname, 'dependency-manager.scss'));
 
   context.once(() => {
+    const store = context.api.store;
     context.api.events.on('profile-activated', () => {
-      const store = context.api.store;
       const state: types.IState = store.getState();
       const modPath = selectors.installPath(state);
       const gameId = selectors.activeGameId(state);
@@ -57,6 +57,8 @@ function main(context: types.IExtensionContext) {
           store.dispatch(actions.stopActivity('mods', 'conflicts'));
         });
     });
+
+    // TODO: conflicts aren't currently updated unless the profile changes
   });
 
   return true;

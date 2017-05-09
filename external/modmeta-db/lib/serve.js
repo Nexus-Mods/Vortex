@@ -2,9 +2,9 @@
 function serveREST(db, portIn) {
     const express = require('express');
     const bodyParser = require('body-parser');
-    let app = express();
-    let router = express.Router();
-    let port = portIn || 51666;
+    const app = express();
+    const router = express.Router();
+    const port = portIn || 51666;
     router.route('/byKey/:file_hash')
         .get((req, res) => {
         db.getByKey(req.params.file_hash)

@@ -5,7 +5,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { IMod } from '../types/IMod';
 
 import * as Promise from 'bluebird';
-import { Graph, alg } from 'graphlib';
+import { alg, Graph } from 'graphlib';
 import { ILookupResult, IReference, IRule, RuleType } from 'modmeta-db';
 import * as semver from 'semvish';
 
@@ -20,11 +20,6 @@ function testRef(mod: IMod, ref: IReference): boolean {
   // if reference is by file hash, use only that
   if (ref.fileMD5 !== undefined) {
     return attr.fileMD5 === ref.fileMD5;
-  }
-
-  // right mod?
-  if (attr.modId !== ref.modId) {
-    return false;
   }
 
   // right file?
@@ -42,20 +37,19 @@ function findByRef(mods: IMod[], reference: IReference): IMod {
   return mods.find((mod: IMod) => testRef(mod, reference));
 }
 
-function sortMods(mods: IMod[], api: IExtensionApi): Promise<string[]> {
-  let dependencies = new Graph();
+function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<string[]> {
+  const dependencies = new Graph();
 
   const modMapper = (mod: IMod) => {
     return api.lookupModMeta({
                 fileMD5: mod.attributes['fileMD5'],
                 fileSize: mod.attributes['size'],
-                modId: mod.attributes['modId'],
+                gameId,
               })
         .then((metaInfo: ILookupResult[]) => {
           const rules = [].concat(
             getSafe(metaInfo, [0, 'value', 'rules'], []),
-            mod.rules || []
-          );
+            mod.rules || []);
           rules.forEach((rule: IRule) => {
             const ref = findByRef(mods, rule.reference);
             if (ref !== undefined) {

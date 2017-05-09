@@ -1,6 +1,12 @@
 import { IConflict } from '../types/IConflict';
+import { IModLookupInfo } from '../types/IModLookupInfo';
+
+import matchReference from '../util/matchReference';
+import renderModName from '../util/renderModName';
 
 import { setConflictDialog, setCreateRule, setSource, setTarget } from '../actions';
+
+import { enabledModKeys } from '../selectors';
 
 import { actions, ComponentEx, log, selectors, tooltip, types, util } from 'nmm-api';
 
@@ -81,7 +87,7 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
     }
     return (
       <p style={style}>
-        {ref.logicalFileName || ref.fileExpression} {ref.versionMatch} (mod: {ref.modId || '?'})
+        {ref.logicalFileName || ref.fileExpression} {ref.versionMatch}
     </p>
     );
   }
@@ -95,6 +101,7 @@ export interface IBaseProps {
 interface IConnectedProps {
   gameId: string;
   conflicts: { [modId: string]: IConflict[] };
+  enabledMods: IModLookupInfo[];
 }
 
 interface IActionProps {
@@ -238,10 +245,13 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public componentWillReceiveProps(nextProps: IProps, nextState: IComponentState) {
     if (this.props.mod !== nextProps.mod) {
       this.updateMod(nextProps.mod);
     }
+
+    const staticRules = util.getSafe(nextState, ['modInfo', 'rules'], undefined);
+    const customRules = util.getSafe(nextProps.mod, ['rules'], undefined);
 
     if (this.props.isDragging !== nextProps.isDragging) {
       let pos;
@@ -259,16 +269,27 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, conflicts, connectDragSource, connectDropTarget, mod } = this.props;
+    const { connectDropTarget, mod } = this.props;
 
     if (mod.state !== 'installed') {
       return null;
     }
 
-    const classes = ['btn-dependency'];
+    return connectDropTarget(
+      <div style={{ textAlign: 'center', width: '100%' }}>
+        {this.renderConnectorIcon(mod)}
+        {this.renderUnfulfilledRules(mod)}
+        {this.renderConflictIcon(mod)}
+      </div>);
+  }
+
+  private renderConnectorIcon(mod: types.IMod) {
+    const {t, connectDragSource} = this.props;
 
     const staticRules = util.getSafe(this.state, ['modInfo', 'rules'], []);
     const customRules = util.getSafe(mod, ['rules'], []);
+
+    const classes = ['btn-dependency'];
 
     if ((staticRules.length > 0) || (customRules.length > 0)) {
       classes.push('btn-dependency-hasrules');
@@ -276,14 +297,11 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       classes.push('btn-dependency-norules');
     }
 
-    // TODO: are there unfulfilled rules?
-    // TODO: are there file conflicts with a mod and no rule?
-
     const popover = (
       <Popover id={`popover-${mod.id}`} style={{ maxWidth: 500 }}>
-        {staticRules.map((rule) =>
+        {staticRules.map(rule =>
           <RuleDescription rule={rule} t={t} key={this.key(rule)} removeable={false} />)}
-        {customRules.map((rule) => (
+        {customRules.map(rule => (
           <RuleDescription
             rule={rule}
             t={t}
@@ -294,7 +312,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       </Popover>
     );
 
-    const connectorIcon = connectDragSource(
+    return connectDragSource(
         <div style={{ display: 'inline' }}>
           <tooltip.IconButton
             id={`btn-meta-data-${mod.id}`}
@@ -315,29 +333,112 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
             {popover}
           </Overlay>
         </div>);
+  }
 
-    let conflictIcon = null;
-    if (conflicts[mod.id] !== undefined) {
-      const tip = t('Conflicts with: {{conflicts}}', { replace: {
-        conflicts: conflicts[mod.id].map(conflict => conflict.otherMod).join('\n'),
-      } });
-      conflictIcon = (
-        <tooltip.IconButton
-          id={`btn-meta-conflicts-${mod.id}`}
-          className='btn-conflict'
-          key={`conflicts-${mod.id}`}
-          tooltip={tip}
-          icon='bolt'
-          onClick={this.openConflictDialog}
-        />
-      );
+  private renderConflictIcon(mod: types.IMod) {
+    const { t, conflicts } = this.props;
+    if (conflicts[mod.id] === undefined) {
+      return null;
     }
 
-    return connectDropTarget(
-      <div style={{ textAlign: 'center', width: '100%' }}>
-        {connectorIcon}
-        {conflictIcon}
-      </div>);
+    const tip = t('Conflicts with: {{conflicts}}', { replace: {
+      conflicts: conflicts[mod.id].map(conflict => conflict.otherMod).join('\n'),
+    } });
+    return (
+      <tooltip.IconButton
+        id={`btn-meta-conflicts-${mod.id}`}
+        className='btn-conflict'
+        key={`conflicts-${mod.id}`}
+        tooltip={tip}
+        icon='bolt'
+        onClick={this.openConflictDialog}
+      />
+    );
+  }
+
+  private renderUnfulfilledRules(mod: types.IMod) {
+    const { t, enabledMods } = this.props;
+
+    const staticRules = util.getSafe(this.state, ['modInfo', 'rules'], []);
+
+    if (!mod.rules && !staticRules) {
+      return null;
+    }
+
+    const conflicts: IModLookupInfo[] = [];
+    const missing: IReference[] = [];
+
+    const extractRule = rule => {
+      if (rule.type === 'conflicts') {
+        const ref = this.findReference(rule.reference, enabledMods);
+        if (ref !== undefined) {
+          conflicts.push(ref);
+        }
+      } else if (rule.type === 'requires') {
+        if (this.findReference(rule.reference, enabledMods) === undefined) {
+          missing.push(rule.reference);
+        }
+      }
+    };
+
+    if (mod.rules) {
+      mod.rules.forEach(extractRule);
+    }
+
+    if (staticRules) {
+      staticRules.forEach(extractRule);
+    }
+
+    if ((conflicts.length === 0) && (missing.length === 0)) {
+      return null;
+    }
+
+    const stringifyConflict = conflict => t('Conflicts with {{name}}', { replace: {
+      name: this.renderModLookup(conflict),
+    } });
+
+    const stringifyMissing = miss => t('Requires {{name}}', { replace: {
+      name: this.renderReference(miss),
+    } });
+
+    const unfulfilled = [].concat(
+        conflicts.map(stringifyConflict),
+        missing.map(stringifyMissing),
+        ).join('\n');
+
+    return (
+      <tooltip.ClickPopover
+        id={`btn-meta-unfulfilled-${mod.id}`}
+        className='btn-unfulfilled'
+        key={`unfulfilled-${mod.id}`}
+        icon='exclamation-triangle'
+        tooltip={t('This mod has unsolved dependencies (click for details)')}
+      >
+        { t('Unfulfilled dependencies:') + '\n' + unfulfilled }
+      </tooltip.ClickPopover>
+    );
+  }
+
+  private renderModLookup(lookupInfo: IModLookupInfo) {
+    const id = lookupInfo.customFileName
+      || lookupInfo.logicalFileName
+      || lookupInfo.name;
+
+    const version = lookupInfo.version;
+
+    return version !== undefined ? id + ' v' + version : id;
+  }
+
+  private renderReference(ref: IReference) {
+    if (ref.fileMD5) {
+      return ref.fileMD5;
+    } else {
+      return (ref.logicalFileName || ref.fileExpression) + ' v' + ref.versionMatch;
+    }
+  }
+
+  private findReference(reference: IReference, mods: IModLookupInfo[]): IModLookupInfo {
+    return mods.find(mod => matchReference(reference, mod));
   }
 
   private setRef = (ref) => {
@@ -375,14 +476,12 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       versionMatch: mod.attributes['version'],
       fileExpression: mod.installationPath,
       logicalFileName: mod.attributes['logicalFileName'],
-      modId: mod.attributes['modId'],
     };
 
     this.context.api.lookupModMeta({
       fileMD5: mod.attributes['fileMD5'],
       fileSize: mod.attributes['fileSize'],
       gameId: this.props.gameId,
-      modId: mod.attributes['modId'],
     })
       .then((meta: ILookupResult[]) => {
         if (this.mIsMounted && (meta.length > 0)) {
@@ -403,9 +502,12 @@ const DependencyIconDrag =
       DependencyIcon));
 
 function mapStateToProps(state): IConnectedProps {
+  const gameId = selectors.activeGameId(state);
+
   return {
-    gameId: selectors.activeGameId(state),
+    gameId,
     conflicts: state.session.dependencies.conflicts,
+    enabledMods: enabledModKeys(state),
   };
 }
 

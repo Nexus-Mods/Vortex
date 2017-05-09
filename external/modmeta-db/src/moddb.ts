@@ -1,5 +1,4 @@
 import * as Promise from 'bluebird';
-import leveljs = require('level-js');
 import levelup = require('levelup');
 import * as restT from 'node-rest-client';
 import * as semvish from 'semvish';
@@ -9,9 +8,9 @@ import { genHash } from './util';
 
 import * as util from 'util';
 
-interface IDatabase extends LevelUp {
-  getAsync?: Function;
-  putAsync?: Function;
+interface ILevelUpAsync extends LevelUp {
+  getAsync?: (key: string) => Promise<any>;
+  putAsync?: (key: string, data: any) => Promise<void>;
 }
 
 interface IRequestArgs {
@@ -40,7 +39,7 @@ export interface IServer {
  * will relay them to a remote server if not found locally
  */
 class ModDB {
-  private mDB: IDatabase;
+  private mDB: ILevelUpAsync;
   private mServers: IServer[];
   private mModKeys: string[];
   private mRestClient: restT.Client;
@@ -49,19 +48,16 @@ class ModDB {
 
   /**
    * constructor
-   * 
-   * @param {string} gameId default game id for lookups
-   * @param {string} servers list of servers we synchronize with
+   *
+   * @param {string} gameId default game id for lookups to the nexus api
+   * @param {IServer} servers list of servers we synchronize with
    * @param {any} database the database backend to use. if not set, tries to use IndexedDB
    * @param {number} timeoutMS timeout in milliseconds for outgoing network requests.
    *                           defaults to 5 seconds
    */
   constructor(gameId: string, servers: IServer[], database?: any, timeoutMS?: number) {
-    this.mDB =
-        levelup('mods', {valueEncoding: 'json', db: database || leveljs});
+    this.mDB = levelup('mods', {valueEncoding: 'json', db: database});
     this.mModKeys = [
-      'modId',
-      'modName',
       'fileName',
       'fileVersion',
       'fileMD5',
@@ -71,7 +67,7 @@ class ModDB {
     ];
 
     this.mGameId = gameId;
-    let { Client } = require('node-rest-client') as typeof restT;
+    const { Client } = require('node-rest-client') as typeof restT;
     this.mRestClient = new Client();
     this.mServers = servers;
     this.mTimeout = timeoutMS;
@@ -80,12 +76,11 @@ class ModDB {
   }
 
   /**
-   * update the gameId (of the game currently being managed)
-   * which is used as the default for lookups if the game id of the file being looked up
-   * isn't available
-   * 
+   * update the gameId which is used as the default for lookups to the nexus
+   * api if the game id of the file being looked up isn't available
+   *
    * @param {string} gameId
-   * 
+   *
    * @memberOf ModDB
    */
   public setGameId(gameId: string) {
@@ -94,10 +89,10 @@ class ModDB {
 
   /**
    * retrieve a mod if the hash (or a full key) is already known
-   * 
+   *
    * @param {string} hash
    * @returns {Promise<ILookupResult[]>}
-   * 
+   *
    * @memberOf ModDB
    */
   public getByKey(key: string): Promise<ILookupResult[]> {
@@ -107,14 +102,14 @@ class ModDB {
   /**
    * insert a mod into the database, potentially overwriting
    * existing data
-   * 
+   *
    * @param {IModInfo} mod
    * @returns {Promise<void>}
-   * 
+   *
    * @memberOf ModDB
    */
   public insert(mod: IModInfo): Promise<void> {
-    let missingKeys = this.missingKeys(mod);
+    const missingKeys = this.missingKeys(mod);
     if (missingKeys.length !== 0) {
       return Promise.reject(new Error('Invalid mod object. Missing keys: ' +
                                       missingKeys.join(', ')));
@@ -128,19 +123,18 @@ class ModDB {
    * parameters.
    * Please note that this may return multiple results, i.e. if
    * the same file has been uploaded for multiple games and gameId
-   * is left undefined 
-   * 
+   * is left undefined
+   *
    * @param {string} filePath
    * @param {string} fileMD5
    * @param {number} fileSize
    * @param {string} [gameId]
-   * @param {string} [modId]
    * @returns {Promise<ILookupResult[]>}
-   * 
+   *
    * @memberOf ModDB
    */
   public lookup(filePath?: string, fileMD5?: string, fileSize?: number,
-                gameId?: string, modId?: string): Promise<ILookupResult[]> {
+                gameId?: string): Promise<ILookupResult[]> {
     let hashResult: string = fileMD5;
     let hashFileSize: number = fileSize;
 
@@ -148,7 +142,7 @@ class ModDB {
       return Promise.resolve([]);
     }
 
-    let promise = fileMD5 !== undefined
+    const promise = fileMD5 !== undefined
       ? Promise.resolve()
       : genHash(filePath).then((res: IHashResult) => {
         hashResult = res.md5sum;
@@ -162,9 +156,6 @@ class ModDB {
         lookupKey += ':' + hashFileSize;
         if (gameId !== undefined) {
           lookupKey += ':' + gameId;
-          if (modId !== undefined) {
-            lookupKey += ':' + modId;
-          }
         }
       }
       return this.getAllByKey(lookupKey, gameId);
@@ -189,7 +180,7 @@ class ModDB {
   }
 
   private nexusBaseData(server: IServer): IRequestArgs {
-    let res = this.restBaseData(server);
+    const res = this.restBaseData(server);
     res.headers.APIKEY = server.apiKey;
     return res;
   }
@@ -198,7 +189,7 @@ class ModDB {
     if (server.protocol === 'nexus') {
       return this.queryServerNexus(server, gameId, hash);
     } else {
-      return this.queryServerMeta(server, gameId, hash);
+      return this.queryServerMeta(server, hash);
     }
   }
 
@@ -213,7 +204,7 @@ class ModDB {
         this.mRestClient.get(
             url, this.nexusBaseData(server), (data, response) => {
               if (response.statusCode === 200) {
-                let result: ILookupResult[] =
+                const result: ILookupResult[] =
                     data.map((nexusObj: any) =>
                                  this.translateFromNexus(nexusObj, gameId));
                 // and return to caller
@@ -228,7 +219,7 @@ class ModDB {
     });
   }
 
-  private queryServerMeta(server: IServer, gameId: string, hash: string): Promise<ILookupResult[]> {
+  private queryServerMeta(server: IServer, hash: string): Promise<ILookupResult[]> {
     const url = `${server.url}/by_hash/${hash}`;
     return new Promise<ILookupResult[]>((resolve, reject) => {
       this.mRestClient.get(url, this.restBaseData(server), (data, response) => {
@@ -252,37 +243,35 @@ class ModDB {
   }
 
   /**
-   * the nexus api currently uses a different api
-   * 
+   * the nexus site currently uses a different api
+   *
    * @private
-   * 
+   *
    * @memberOf ModDB
    */
+  private translateFromNexus = (nexusObj: any, gameId: string):
+      ILookupResult => {
+        const urlFragments = [
+          'nxm:/',
+          nexusObj.mod.game_domain,
+          'mods',
+          nexusObj.mod.mod_id,
+          'files',
+          nexusObj.file_details.file_id,
+        ];
 
-  private translateFromNexus = (nexusObj: any, gameId: string): ILookupResult => {
-    let urlFragments = [
-      'nxm:/',
-      nexusObj.mod.game_domain,
-      'mods',
-      nexusObj.mod.mod_id,
-      'files',
-      nexusObj.file_details.file_id,
-    ];
-
-    const page =
-      `http://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
-    return {
-      key:
-          `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
-      value: {
-        fileMD5: nexusObj.file_details.md5,
-        fileName: nexusObj.file_details.file_name,
-        fileSizeBytes: nexusObj.file_details.file_size,
-        logicalFileName: nexusObj.file_details.name,
+        const page =
+            `http://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
+        return {
+          key:
+              `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
+          value: {
+            fileMD5: nexusObj.file_details.md5,
+            fileName: nexusObj.file_details.file_name,
+            fileSizeBytes: nexusObj.file_details.file_size,
+            logicalFileName: nexusObj.file_details.name,
         fileVersion: semvish.clean(nexusObj.file_details.version, true),
         gameId,
-        modName: nexusObj.mod.name,
-        modId: nexusObj.mod.mod_id,
         sourceURI: urlFragments.join('/'),
         details: {
           category: nexusObj.mod.category,
@@ -292,13 +281,13 @@ class ModDB {
         },
       },
     };
-  };
+  }
 
   private getAllByKey(key: string, gameId: string): Promise<ILookupResult[]> {
     return new Promise<ILookupResult[]>((resolve, reject) => {
-             let result: ILookupResult[] = [];
+             const result: ILookupResult[] = [];
 
-             let stream = this.mDB.createReadStream({
+             const stream = this.mDB.createReadStream({
                gte: key + ':',
                lt: key + 'a:',
              });
@@ -311,7 +300,7 @@ class ModDB {
             return Promise.resolve(results);
           }
 
-          let hash = key.split(':')[0];
+          const hash = key.split(':')[0];
           let remoteResults: ILookupResult[];
 
           return Promise.mapSeries(
@@ -324,9 +313,8 @@ class ModDB {
                                   .then((serverResults: ILookupResult[]) => {
                                     remoteResults = serverResults;
                                     // cache all results in our database
-                                    for (let result of remoteResults) {
-                                      let temp =
-                                          Object.assign({}, result.value);
+                                    for (const result of remoteResults) {
+                                      const temp = Object.assign({}, result.value);
                                       temp.expires =
                                           new Date().getTime() / 1000 +
                                           server.cacheDurationSec;
@@ -334,28 +322,26 @@ class ModDB {
                                     }
                                   })
                                   .catch((err) => {
-                                    // TODO need a way to log without rejecting
+                                    // TODO: need a way to log without rejecting
                                     console.log('failed to query server', err);
                                   });
                             })
-              .then(() =>
-                Promise.resolve(remoteResults || [])
-              );
+              .then(() => Promise.resolve(remoteResults || []));
         });
   }
 
   private makeKey(mod: IModInfo) {
-    return `${mod.fileMD5}:${mod.fileSizeBytes}:${mod.gameId}:${mod.modId}:`;
+    return `${mod.fileMD5}:${mod.fileSizeBytes}:${mod.gameId}:`;
   }
 
   private missingKeys(mod: any) {
-    let actualKeys = new Set(Object.keys(mod));
-    return this.mModKeys.filter((key) => !actualKeys.has(key));
+    const actualKeys = new Set(Object.keys(mod));
+    return this.mModKeys.filter(key => !actualKeys.has(key));
   }
 
   private promisify() {
     this.mDB.getAsync = Promise.promisify(this.mDB.get);
-    this.mDB.putAsync = Promise.promisify(this.mDB.put);
+    this.mDB.putAsync = Promise.promisify(this.mDB.put) as any;
   }
 }
 

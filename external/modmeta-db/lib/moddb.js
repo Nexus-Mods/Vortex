@@ -1,6 +1,5 @@
 "use strict";
 const Promise = require("bluebird");
-const leveljs = require("level-js");
 const levelup = require("levelup");
 const semvish = require("semvish");
 const util_1 = require("./util");
@@ -8,7 +7,7 @@ const util = require("util");
 class ModDB {
     constructor(gameId, servers, database, timeoutMS) {
         this.translateFromNexus = (nexusObj, gameId) => {
-            let urlFragments = [
+            const urlFragments = [
                 'nxm:/',
                 nexusObj.mod.game_domain,
                 'mods',
@@ -26,8 +25,6 @@ class ModDB {
                     logicalFileName: nexusObj.file_details.name,
                     fileVersion: semvish.clean(nexusObj.file_details.version, true),
                     gameId,
-                    modName: nexusObj.mod.name,
-                    modId: nexusObj.mod.mod_id,
                     sourceURI: urlFragments.join('/'),
                     details: {
                         category: nexusObj.mod.category,
@@ -38,11 +35,8 @@ class ModDB {
                 },
             };
         };
-        this.mDB =
-            levelup('mods', { valueEncoding: 'json', db: database || leveljs });
+        this.mDB = levelup('mods', { valueEncoding: 'json', db: database });
         this.mModKeys = [
-            'modId',
-            'modName',
             'fileName',
             'fileVersion',
             'fileMD5',
@@ -51,7 +45,7 @@ class ModDB {
             'gameId',
         ];
         this.mGameId = gameId;
-        let { Client } = require('node-rest-client');
+        const { Client } = require('node-rest-client');
         this.mRestClient = new Client();
         this.mServers = servers;
         this.mTimeout = timeoutMS;
@@ -64,20 +58,20 @@ class ModDB {
         return this.getAllByKey(key, this.mGameId);
     }
     insert(mod) {
-        let missingKeys = this.missingKeys(mod);
+        const missingKeys = this.missingKeys(mod);
         if (missingKeys.length !== 0) {
             return Promise.reject(new Error('Invalid mod object. Missing keys: ' +
                 missingKeys.join(', ')));
         }
         return this.mDB.putAsync(this.makeKey(mod), mod);
     }
-    lookup(filePath, fileMD5, fileSize, gameId, modId) {
+    lookup(filePath, fileMD5, fileSize, gameId) {
         let hashResult = fileMD5;
         let hashFileSize = fileSize;
         if ((filePath === undefined) && (fileMD5 === undefined)) {
             return Promise.resolve([]);
         }
-        let promise = fileMD5 !== undefined
+        const promise = fileMD5 !== undefined
             ? Promise.resolve()
             : util_1.genHash(filePath).then((res) => {
                 hashResult = res.md5sum;
@@ -90,9 +84,6 @@ class ModDB {
                 lookupKey += ':' + hashFileSize;
                 if (gameId !== undefined) {
                     lookupKey += ':' + gameId;
-                    if (modId !== undefined) {
-                        lookupKey += ':' + modId;
-                    }
                 }
             }
             return this.getAllByKey(lookupKey, gameId);
@@ -114,7 +105,7 @@ class ModDB {
         };
     }
     nexusBaseData(server) {
-        let res = this.restBaseData(server);
+        const res = this.restBaseData(server);
         res.headers.APIKEY = server.apiKey;
         return res;
     }
@@ -123,7 +114,7 @@ class ModDB {
             return this.queryServerNexus(server, gameId, hash);
         }
         else {
-            return this.queryServerMeta(server, gameId, hash);
+            return this.queryServerMeta(server, hash);
         }
     }
     queryServerNexus(server, gameId, hash) {
@@ -133,7 +124,7 @@ class ModDB {
             try {
                 this.mRestClient.get(url, this.nexusBaseData(server), (data, response) => {
                     if (response.statusCode === 200) {
-                        let result = data.map((nexusObj) => this.translateFromNexus(nexusObj, gameId));
+                        const result = data.map((nexusObj) => this.translateFromNexus(nexusObj, gameId));
                         resolve(result);
                     }
                     else {
@@ -146,7 +137,7 @@ class ModDB {
             }
         });
     }
-    queryServerMeta(server, gameId, hash) {
+    queryServerMeta(server, hash) {
         const url = `${server.url}/by_hash/${hash}`;
         return new Promise((resolve, reject) => {
             this.mRestClient.get(url, this.restBaseData(server), (data, response) => {
@@ -172,8 +163,8 @@ class ModDB {
     }
     getAllByKey(key, gameId) {
         return new Promise((resolve, reject) => {
-            let result = [];
-            let stream = this.mDB.createReadStream({
+            const result = [];
+            const stream = this.mDB.createReadStream({
                 gte: key + ':',
                 lt: key + 'a:',
             });
@@ -185,7 +176,7 @@ class ModDB {
             if (results.length > 0) {
                 return Promise.resolve(results);
             }
-            let hash = key.split(':')[0];
+            const hash = key.split(':')[0];
             let remoteResults;
             return Promise.mapSeries(this.mServers, (server) => {
                 if (remoteResults) {
@@ -194,8 +185,8 @@ class ModDB {
                 return this.queryServer(server, gameId, hash)
                     .then((serverResults) => {
                     remoteResults = serverResults;
-                    for (let result of remoteResults) {
-                        let temp = Object.assign({}, result.value);
+                    for (const result of remoteResults) {
+                        const temp = Object.assign({}, result.value);
                         temp.expires =
                             new Date().getTime() / 1000 +
                                 server.cacheDurationSec;
@@ -210,11 +201,11 @@ class ModDB {
         });
     }
     makeKey(mod) {
-        return `${mod.fileMD5}:${mod.fileSizeBytes}:${mod.gameId}:${mod.modId}:`;
+        return `${mod.fileMD5}:${mod.fileSizeBytes}:${mod.gameId}:`;
     }
     missingKeys(mod) {
-        let actualKeys = new Set(Object.keys(mod));
-        return this.mModKeys.filter((key) => !actualKeys.has(key));
+        const actualKeys = new Set(Object.keys(mod));
+        return this.mModKeys.filter(key => !actualKeys.has(key));
     }
     promisify() {
         this.mDB.getAsync = Promise.promisify(this.mDB.get);

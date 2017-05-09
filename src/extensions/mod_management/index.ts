@@ -143,7 +143,7 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
         .then(() => undefined);
     })
     // sort (all) mods based on their dependencies so the right files get activated
-    .then(() => sortMods(modList, context.api))
+    .then(() => sortMods(gameMode, modList, context.api))
     .then((sortedMods: string[]) => {
       const sortedModList =
         modList.sort((lhs: IMod, rhs: IMod) => sortedMods.indexOf(lhs.id) -

@@ -7,14 +7,14 @@ export interface IDownloadFailCause {
 
 /**
  * download information
- * 
+ *
  * @export
  * @interface IDownload
  */
 export interface IDownload {
   /**
    * current state of the download
-   * 
+   *
    * @memberOf IDownload
    */
   state: DownloadState;
@@ -22,7 +22,7 @@ export interface IDownload {
   /**
    * if the download failed, this will contain a more detailed description
    * of the error
-   * 
+   *
    * @type {IDownloadFailCause}
    * @memberOf IDownload
    */
@@ -31,7 +31,7 @@ export interface IDownload {
   /**
    * list of urls we know serve this file. Should be sorted by preference.
    * If download from the first url isn't possible, the others may be used
-   * 
+   *
    * @type {string}
    * @memberOf IDownload
    */
@@ -39,7 +39,7 @@ export interface IDownload {
 
   /**
    * path of the file being downloaded to
-   * 
+   *
    * @type {string}
    * @memberOf IDownload
    */
@@ -47,7 +47,7 @@ export interface IDownload {
 
   /**
    * id of the game to which this download applies.
-   * 
+   *
    * @type {string}
    * @memberOf IDownload
    */
@@ -56,7 +56,7 @@ export interface IDownload {
   /**
    * info about the mod being downloaded. This will
    * be associated with the mod entry after its installation
-   * 
+   *
    * @type {{ [key: string]: any }}
    * @memberOf IDownload
    */
@@ -64,7 +64,7 @@ export interface IDownload {
 
   /**
    * hash of the file data
-   * 
+   *
    * @type {string}
    * @memberOf IDownload
    */
@@ -72,7 +72,7 @@ export interface IDownload {
 
   /**
    * size in bytes
-   * 
+   *
    * @type {number}
    * @memberOf IDownload
    */
@@ -80,7 +80,7 @@ export interface IDownload {
 
   /**
    * number of bytes received so far
-   * 
+   *
    * @type {number}
    * @memberOf IDownload
    */

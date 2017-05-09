@@ -1,12 +1,12 @@
 /**
  * reference to a mod file.
- * 
+ *
  * This can be a reference to one exact file, using the md5 hash of that file or
  * to different versions of the same file.
  *
  * When referencing multiple versions of a file you need to specify the modId, the
  * version numbers to accept (see below) and which file to use.
- * 
+ *
  * Usually mods on file repositories like nexus have a name including the version
  * number. To match files with a dynamic version number, you can use either a
  * fileExpression (which is a regex) that should ideally match all versions of a file
@@ -17,11 +17,11 @@
  * logical file names need to be provided by the meta server so they may not
  * exist everywhere but they should be preferred over file expressions where
  * possible.
- * 
+ *
  * versionMatch specifies which version to use. It can be
  * a) =[version number] for an exact version match which works independent of the
  * versioning scheme
- * 
+ *
  * b) a number of other comparison operators. These work correctly only
  * if the referenced mod uses semantic versioning!
  *  >=[version number] matches any version newer than or equal to the one
@@ -30,14 +30,14 @@
  * You can combine multiple rules, like ">=1.2.1 <=1.3.6" to match the newest
  * file in the specified range.
  * "1.2.1 - 1.3.6" would have the same effect.
- * 
+ *
  * Also you can use "1.x" to match the newest file with major version 1.
  * Or "~1.2.1" which would be the same as ">=1.2.1 <1.3.0".
  * Or "^1.2.1" which would be the same as ">=1.2.1 <2.0.0"
- * 
+ *
  * You can find all the available rules at: https://github.com/npm/node-semver
  * (this is the library we use for version matching)
- * 
+ *
  * Rationale: You may be wondering why you should go through the trouble of
  *   specifying mod ranges instead of just giving the newest version that has
  *   been verified to work. The problem is that different mods may have different
@@ -46,7 +46,7 @@
  *   version 3.3 - 5.0, some breakage made it incompatible with the newest version 5.1.
  *   The other mod is compatible with all versions >= 4.6.
  *   If both mods specify ranges we can install 5.0 and all dependencies are fulfilled.
- * 
+ *
  *   If the second mod specifies only the newest version (5.1) as compatible, we have a
  *   conflict and one of the two mods has to be disabled. Or the user has to find out
  *   which version to use, override and thus rendering the complete dependency
@@ -67,7 +67,6 @@
  */
 export interface IReference {
   fileMD5?: string;
-  modId?: string;
   versionMatch?: string;
   logicalFileName?: string;
   fileExpression?: string;
@@ -81,7 +80,7 @@ export type RuleType = 'before' | 'after' | 'requires' | 'conflicts' | 'recommen
  * the exact same file at the same version) or through an IReference, which
  * can match a file with more complex rules, allowing, for example, to get
  * the newest compatible version of a file.
- * 
+ *
  * @export
  * @interface IRule
  */
@@ -93,13 +92,11 @@ export interface IRule {
 
 /**
  * info about a single file
- * 
+ *
  * @export
  * @interface IModInfo
  */
 export interface IModInfo {
-  modId: string;
-  modName: string;
   fileName: string;
   fileSizeBytes: number;
   gameId: string;
@@ -121,7 +118,7 @@ export interface IModInfo {
  * result of a lookup call.
  * There may be multiple items returned if the
  * lookup wasn't precise enough
- * 
+ *
  * @export
  * @interface ILookupResult
  */

@@ -1,6 +1,5 @@
 export interface IReference {
     fileMD5?: string;
-    modId?: string;
     versionMatch?: string;
     logicalFileName?: string;
     fileExpression?: string;
@@ -12,8 +11,6 @@ export interface IRule {
     comment?: string;
 }
 export interface IModInfo {
-    modId: string;
-    modName: string;
     fileName: string;
     fileSizeBytes: number;
     gameId: string;

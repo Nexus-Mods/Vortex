@@ -93,7 +93,6 @@ export interface ILookupDetails {
   fileMD5?: string;
   fileSize?: number;
   gameId?: string;
-  modId?: string;
 }
 
 /**

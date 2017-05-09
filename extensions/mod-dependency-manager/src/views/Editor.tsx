@@ -1,9 +1,9 @@
 import renderModName from '../util/renderModName';
 
-import * as actions from '../actions';
+import { closeDialog, setType } from '../actions';
 
 import { IReference, IRule, RuleType } from 'modmeta-db';
-import { ComponentEx, actions as nmmActions, types, util } from 'nmm-api';
+import { actions, ComponentEx, types, util } from 'nmm-api';
 import * as React from 'react';
 import { Button, Col, ControlLabel, Form, FormControl, FormGroup, Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
@@ -36,7 +36,7 @@ type IProps = IConnectedProps & IActionProps;
 
 /**
  * simple dialog to set dependency rules between two mods
- * 
+ *
  * @class Editor
  * @extends {ComponentEx<IProps, IComponentState>}
  */
@@ -64,29 +64,32 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const { t, dialog, mod } = this.props;
     const { reference, type } = this.state;
 
-    return (<Modal show={dialog !== undefined} onHide={this.close}>
-      {dialog !== undefined
-        ? <Modal.Body>
-          {this.renderSource(mod)}
-          <FormControl
-            componentClass='select'
-            onChange={this.changeType}
-            value={type}
-            style={{ marginTop: 20, marginBottom: 20 }}
-          >
-            <option value='before'>{t('Must load before')}</option>
-            <option value='after'>{t('Must load after')}</option>
-            <option value='requires'>{t('Requires')}</option>
-            <option value='conflicts'>{t('Can\'t be loaded together with')}</option>
-          </FormControl>
-          {this.renderReference(reference)}
-        </Modal.Body>
-        : null }
+    return (
+      <Modal show={dialog !== undefined} onHide={this.close}>
+        {dialog !== undefined
+          ? (
+            <Modal.Body>
+              {this.renderSource(mod)}
+              <FormControl
+                componentClass='select'
+                onChange={this.changeType}
+                value={type}
+                style={{ marginTop: 20, marginBottom: 20 }}
+              >
+                <option value='before'>{t('Must load before')}</option>
+                <option value='after'>{t('Must load after')}</option>
+                <option value='requires'>{t('Requires')}</option>
+                <option value='conflicts'>{t('Can\'t be loaded together with')}</option>
+              </FormControl>
+              {this.renderReference(reference)}
+            </Modal.Body>
+          ) : null}
         <Modal.Footer>
           <Button onClick={this.close}>{t('Cancel')}</Button>
           <Button onClick={this.save}>{t('Save')}</Button>
         </Modal.Footer>
-    </Modal>);
+      </Modal>
+    );
   }
 
   private renderSource = (mod: types.IMod) => {
@@ -95,7 +98,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
   private renderReference = (reference: IReference): JSX.Element => {
     const {t} = this.props;
-    const {modId, logicalFileName, versionMatch, fileExpression, fileMD5} = reference;
+    const {logicalFileName, versionMatch, fileExpression, fileMD5} = reference;
 
     if (logicalFileName === '') {
       return (
@@ -115,16 +118,6 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Form horizontal>
-        <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}>{t('Mod ID')}</Col>
-          <Col sm={9}>
-            <FormControl
-              type='text'
-              value={modId}
-              readOnly={true}
-            />
-          </Col>
-        </FormGroup>
         <FormGroup>
           <Col sm={3} componentClass={ControlLabel}>{t('Name')}</Col>
           <Col sm={9}>
@@ -183,10 +176,10 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
-    onCloseDialog: () => dispatch(actions.closeDialog()),
-    onSetType: (type) => dispatch(actions.setType(type)),
+    onCloseDialog: () => dispatch(closeDialog()),
+    onSetType: (type) => dispatch(setType(type)),
     onAddRule: (gameId, modId, rule) =>
-      dispatch(nmmActions.addModRule(gameId, modId, rule)),
+      dispatch(actions.addModRule(gameId, modId, rule)),
   };
 }
 
