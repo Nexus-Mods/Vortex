@@ -40,3 +40,14 @@ export {
   UserCanceled,
   walk,
 };
+
+// getText functions are rolled up into one function
+export type TextGroup = 'mod';
+import getTextModManagement from '../extensions/mod_management/texts';
+
+export function getText(group: TextGroup, textId: string, t: I18next.TranslationFunction) {
+  if (group === 'mod') {
+    return getTextModManagement(textId, t);
+  }
+  throw new Error('invalid text group: ' + group);
+}

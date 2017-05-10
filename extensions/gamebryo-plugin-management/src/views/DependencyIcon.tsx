@@ -83,7 +83,7 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
     }
     return (
       <p style={style}>
-        {ref.logicalFileName || ref.fileExpression} {ref.versionMatch} (mod: {ref.modId || '?'})
+        {ref.logicalFileName || ref.fileExpression} {ref.versionMatch}
       </p>
     );
   }

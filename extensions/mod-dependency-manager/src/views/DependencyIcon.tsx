@@ -414,7 +414,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         icon='exclamation-triangle'
         tooltip={t('This mod has unsolved dependencies (click for details)')}
       >
-        { t('Unfulfilled dependencies:') + '\n' + unfulfilled }
+        { unfulfilled }
       </tooltip.ClickPopover>
     );
   }

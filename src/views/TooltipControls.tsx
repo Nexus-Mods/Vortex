@@ -126,7 +126,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
 
     if (typeof (tooltipText) === 'string') {
       return (
-        <BootstrapButton {...relayProps} title={tooltipText}>
+        <BootstrapButton {...relayProps as any} title={tooltipText}>
           {['icon', 'both'].indexOf(bType) !== -1 ? <SvgIcon name={icon} /> : null}
           {['text', 'both'].indexOf(bType) !== -1
             ? <p className='btn-toolbar-text'>{tooltipText}</p>
@@ -147,7 +147,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
           delayShow={300}
           delayHide={150}
         >
-          <BootstrapButton {...relayProps}>
+          <BootstrapButton {...relayProps as any}>
             { ['icon', 'both'].indexOf(bType) !== -1 ? <SvgIcon name={icon} /> : null }
             { ['text', 'both'].indexOf(bType) !== -1
               ? <p className='btn-toolbar-text'>{tooltipText}</p>

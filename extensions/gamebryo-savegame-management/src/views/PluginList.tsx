@@ -33,6 +33,13 @@ class PluginList extends React.Component<IProps, IComponentState> {
     this.refreshInstalled();
   }
 
+  public componentWillReceiveProps(nextProps: IProps) {
+    if ((this.props.discoveredGames !== nextProps.discoveredGames)
+        || (this.props.gameMode !== nextProps.gameMode)) {
+      this.refreshInstalled();
+    }
+  }
+
   public render(): JSX.Element {
     const { plugins } = this.props;
     return (

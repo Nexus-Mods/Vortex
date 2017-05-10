@@ -3,11 +3,12 @@ import renderModName from '../util/renderModName';
 import { closeDialog, setType } from '../actions';
 
 import { IReference, IRule, RuleType } from 'modmeta-db';
-import { actions, ComponentEx, types, util } from 'nmm-api';
+import { actions, ComponentEx, FormFeedbackAwesome, More, types, util } from 'nmm-api';
 import * as React from 'react';
 import { Button, Col, ControlLabel, Form, FormControl, FormGroup, Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import * as semver from 'semver';
 
 interface IDialog {
   gameId: string;
@@ -97,10 +98,11 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderReference = (reference: IReference): JSX.Element => {
-    const {t} = this.props;
+    const {t, dialog} = this.props;
     const {logicalFileName, versionMatch, fileExpression, fileMD5} = reference;
 
-    if (logicalFileName === '') {
+    if (((logicalFileName === '') && (fileExpression === ''))
+       || (dialog.reference.versionMatch === undefined)) {
       return (
         <Form horizontal>
           <FormGroup>
@@ -116,42 +118,109 @@ class Editor extends ComponentEx<IProps, IComponentState> {
         </Form>);
     }
 
+    let expressionInvalid = null;
+    if (logicalFileName === undefined) {
+      expressionInvalid = new RegExp(fileExpression).test(dialog.reference.fileExpression)
+        ? null : t('Doesn\'t match the file name');
+    }
+
+    const nameLabel = logicalFileName !== undefined
+      ? <Col sm={3} componentClass={ControlLabel}>{t('Name')}</Col>
+      : (
+        <Col sm={3} componentClass={ControlLabel}>
+          {t('Name matching')}
+          <More id='more-namematch-editor' name={t('Name matching')}>
+            {util.getText('mod', 'namematch', t)}
+          </More>
+        </Col>
+      );
+
+    const versionInvalid =
+      (semver.validRange(versionMatch) === null) ? t('Range invalid')
+      : !semver.satisfies(dialog.reference.versionMatch, versionMatch) ? t('Doesn\'t match the mod')
+      : null;
+
     return (
       <Form horizontal>
         <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}>{t('Name')}</Col>
+          { nameLabel }
           <Col sm={9}>
-            <FormControl
-              type='text'
-              value={logicalFileName || fileExpression}
-              readOnly={true}
-            />
+            <FormGroup
+              style={{ marginLeft: 0, marginRight: 0 }}
+              validationState={expressionInvalid !== null ? 'error' : 'success'}
+            >
+              <FormControl
+                type='text'
+                value={logicalFileName || fileExpression}
+                readOnly={logicalFileName !== undefined}
+                onChange={this.changeFileExpression}
+              />
+              <ControlLabel>{expressionInvalid}</ControlLabel>
+              <FormFeedbackAwesome />
+            </FormGroup>
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}>{t('Version Match')}</Col>
+          <Col sm={3} componentClass={ControlLabel}>
+            {t('Version Match')}
+            <More id='more-versionmatch-editor' name={t('Version matching')}>
+              {util.getText('mod', 'versionmatch', t)}
+            </More>
+          </Col>
           <Col sm={9}>
-            <FormControl
-              type='text'
-              value={versionMatch}
-              readOnly={true}
-            />
+            <FormGroup
+              style={{ marginLeft: 0, marginRight: 0 }}
+              validationState={versionInvalid !== null ? 'error' : 'success'}
+            >
+              <FormControl
+                type='text'
+                value={versionMatch}
+                onChange={this.changeVersion}
+              />
+              <ControlLabel>{versionInvalid}</ControlLabel>
+              <FormFeedbackAwesome />
+            </FormGroup>
           </Col>
         </FormGroup>
       </Form>
     );
   }
 
-  private changeType = (event) => {
-    this.nextState.type = event.currentTarget.value;
+  private changeFileExpression = (evt) => {
+    this.nextState.reference.fileExpression = evt.currentTarget.value;
+  }
+
+  private changeVersion = (evt) => {
+    this.nextState.reference.versionMatch = evt.currentTarget.value;
+  }
+
+  private changeType = (evt) => {
+    this.nextState.type = evt.currentTarget.value;
   }
 
   private save = () => {
     const { dialog, onAddRule } = this.props;
     const { reference, type } = this.state;
 
+    let addRef;
+    if (reference.versionMatch !== undefined) {
+      if (reference.logicalFileName !== undefined) {
+        addRef = {
+          logicalFileName: reference.logicalFileName,
+          versionMatch: reference.versionMatch,
+        };
+      } else {
+        addRef = {
+          fileExpression: reference.fileExpression,
+          versionMatch: reference.versionMatch,
+        };
+      }
+    } else {
+      addRef = { fileMD5: reference.fileMD5 };
+    }
+
     onAddRule(dialog.gameId, dialog.modId, {
-      reference,
+      reference: addRef,
       type,
     });
 
