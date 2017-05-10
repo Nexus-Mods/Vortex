@@ -1,12 +1,12 @@
-import {updateLoadOrder} from './actions/loadOrder';
-import {setPluginList} from './actions/plugins';
-import {loadOrderReducer} from './reducers/loadOrder';
-import {pluginsReducer} from './reducers/plugins';
-import {settingsReducer} from './reducers/settings';
+import { setPluginEnabled, setPluginOrder, updateLoadOrder } from './actions/loadOrder';
+import { setPluginList } from './actions/plugins';
+import { loadOrderReducer } from './reducers/loadOrder';
+import { pluginsReducer } from './reducers/plugins';
+import { settingsReducer } from './reducers/settings';
 import userlistReducer from './reducers/userlist';
 import userlistEditReducer from './reducers/userlistEdit';
-import {ILoadOrder} from './types/ILoadOrder';
-import {IPlugins} from './types/IPlugins';
+import { ILoadOrder } from './types/ILoadOrder';
+import { IPlugins } from './types/IPlugins';
 import Connector from './views/Connector';
 import PluginList from './views/PluginList';
 import UserlistEditor from './views/UserlistEditor';
@@ -26,10 +26,11 @@ import UserlistPersistor from './util/UserlistPersistor';
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import ESPFile from 'esptk';
-import {access, constants} from 'fs';
+import { access, constants } from 'fs';
 import * as fs from 'fs-extra-promise';
 import { log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
+import { generate as shortid } from 'shortid';
 import * as nodeUtil from 'util';
 
 interface IModState {
@@ -263,8 +264,8 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
           description: {
             short: 'plugins.txt is write protected',
             long: 'This file is used to control which plugins the game uses and while it\'s '
-                  + 'write protected NMM2 will not be able to enable or disable plugins.\n'
-                  + 'If you click "fix" the file will be marked writable.',
+            + 'write protected NMM2 will not be able to enable or disable plugins.\n'
+            + 'If you click "fix" the file will be marked writable.',
           },
           severity: 'error',
           automaticFix: () =>
@@ -285,15 +286,15 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
 
   const pluginList = state.session.plugins.pluginList;
 
-  const loadOrder: {[plugin: string]: ILoadOrder} = state.loadOrder;
+  const loadOrder: { [plugin: string]: ILoadOrder } = state.loadOrder;
   const enabledPlugins = Object.keys(loadOrder).filter(
-      (plugin: string) => loadOrder[plugin].enabled);
+    (plugin: string) => loadOrder[plugin].enabled);
   const pluginDetails =
-      enabledPlugins.filter((name: string) => pluginList[name] !== undefined)
-          .map((plugin) => ({
-                 name: plugin,
-                 detail: new ESPFile(pluginList[plugin].filePath),
-               }));
+    enabledPlugins.filter((name: string) => pluginList[name] !== undefined)
+      .map((plugin) => ({
+        name: plugin,
+        detail: new ESPFile(pluginList[plugin].filePath),
+      }));
   // previously this only contained plugins that were marked as masters but apparenly
   // some plugins reference non-masters as their dependency.
   const masters = new Set<string>([].concat(
@@ -302,7 +303,7 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
 
   const broken = pluginDetails.filter((plugin) => {
     const missing = plugin.detail.masterList.filter(
-        (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
+      (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
     if (missing.length > 0) {
       log('info', 'missing masters', { plugin: plugin.name, missing: missing.join(', ') });
     }
@@ -316,12 +317,26 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
       description: {
         short: 'Missing Masters',
         long:
-            'Some of the enabled plugins depend on others that are not enabled: \n' +
-                broken.map((plugin) => plugin.name).join(', '),
+        'Some of the enabled plugins depend on others that are not enabled: \n' +
+        broken.map((plugin) => plugin.name).join(', '),
       },
       severity: 'warning' as types.ProblemSeverity,
     });
   }
+}
+
+function restoreSavegamePlugins(newPlugins: string[], store: Redux.Store<any>): Promise<void> {
+  const listState = store.getState().settings.plugins.pluginlistState || {};
+  const plugins = store.getState().session.plugins.pluginList;
+
+  Object.keys(plugins).map((key) => {
+    if (newPlugins.indexOf(key) === -1) {
+      store.dispatch(setPluginEnabled(key, false));
+    } else {
+      store.dispatch(setPluginEnabled(key, true));
+    }
+  });
+  return Promise.resolve();
 }
 
 function init(context: IExtensionContextExt) {
@@ -334,48 +349,69 @@ function init(context: IExtensionContextExt) {
     loot = new LootInterface(context);
 
     Object.keys(store.getState().persistent.profiles)
-        .forEach((gameId: string) => {
-          if (!gameSupported(gameId)) {
-            return;
-          }
-          // this handles the case that the content of a profile changes
-          context.api.onStateChange(
-              ['persistent', 'profiles', gameId], (oldProfiles, newProfiles) => {
-                const activeProfileId = selectors.activeProfile(store.getState()).id;
-                const oldProfile = oldProfiles[activeProfileId];
-                const newProfile = newProfiles[activeProfileId];
+      .forEach((gameId: string) => {
+        if (!gameSupported(gameId)) {
+          return;
+        }
+        // this handles the case that the content of a profile changes
+        context.api.onStateChange(
+          ['persistent', 'profiles', gameId], (oldProfiles, newProfiles) => {
+            const activeProfileId = selectors.activeProfile(store.getState()).id;
+            const oldProfile = oldProfiles[activeProfileId];
+            const newProfile = newProfiles[activeProfileId];
 
-                if (oldProfile !== newProfile) {
-                  updatePluginList(store, newProfile.modState)
-                      .then(() => {
-                        context.api.events.emit('autosort-plugins');
-                      });
-                }
-              });
-        });
+            if (oldProfile !== newProfile) {
+              updatePluginList(store, newProfile.modState)
+                .then(() => {
+                  context.api.events.emit('autosort-plugins');
+                });
+            }
+          });
+      });
 
     context.api.onStateChange(['settings', 'profiles', 'nextProfileId'],
       (oldProfileId: string, newProfileId: string) => {
         stopSync();
-    });
+      });
 
     context.api.onStateChange(['loadOrder'], () => {
       context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
     });
 
+    context.api.events.on('restore-savegame-plugins', (newPlugins: string[]) => {
+      const notificationId = shortid();
+      context.api.sendNotification({
+        id: notificationId,
+        type: 'activity',
+        message: 'Restoring plugins',
+        title: 'Restoring',
+      });
+
+      restoreSavegamePlugins(newPlugins, context.api.store)
+        .then(() => {
+          store.dispatch(setPluginOrder(newPlugins));
+          context.api.dismissNotification(notificationId);
+          util.showSuccess(store.dispatch, 'Restore savegame\'s plugins complete');
+        })
+        .catch((err: Error) => {
+          context.api.dismissNotification(notificationId);
+          util.showError(store.dispatch, 'Failed to restore savegame\'s plugins', err);
+        });
+    });
+
     context.api.events.on('profile-activated', (newProfileId: string) => {
       const newProfile =
-          util.getSafe(store.getState(),
-                       ['persistent', 'profiles', newProfileId], {} as any);
+        util.getSafe(store.getState(),
+          ['persistent', 'profiles', newProfileId], {} as any);
       if ((newProfile === undefined) || !gameSupported(newProfile.gameId)) {
         return;
       }
 
       updatePluginList(store, newProfile.modState)
-          .then(() => {
-            startSync(context.api);
-            context.api.events.emit('autosort-plugins');
-          });
+        .then(() => {
+          startSync(context.api);
+          context.api.events.emit('autosort-plugins');
+        });
     });
 
     const currentProfile = selectors.activeProfile(store.getState());

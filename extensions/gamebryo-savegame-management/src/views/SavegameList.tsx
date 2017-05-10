@@ -2,6 +2,7 @@ import { removeSavegame, showTransferDialog } from '../actions/session';
 import { ISavegame } from '../types/ISavegame';
 import { mygamesPath } from '../util/gameSupport';
 import refreshSavegames from '../util/refreshSavegames';
+import restoreSavegamePlugins from '../util/restoreSavegamePlugins';
 import transferSavegames from '../util/transferSavegames';
 
 import {
@@ -11,7 +12,8 @@ import {
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { actions, ComponentEx, Icon, IconBar, ITableRowAction,
+import {
+  actions, ComponentEx, Icon, IconBar, ITableRowAction,
   MainPage, selectors, Table, tooltip, types, util,
 } from 'nmm-api';
 import * as path from 'path';
@@ -38,6 +40,8 @@ interface IConnectedProps {
   saves: { [saveId: string]: ISavegame };
   savesPath: string;
   showTransfer: boolean;
+  gameMode: string;
+  discoveredGames: { [id: string]: types.IDiscoveryResult };
 }
 
 interface IActionProps {
@@ -76,6 +80,11 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         icon: 'remove',
         title: props.t('Delete'),
         action: this.remove,
+      },
+      {
+        icon: 'copy',
+        title: props.t('Restore savegame\'s plugins'),
+        action: this.restore,
       },
     ];
   }
@@ -173,7 +182,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
             >
               {t('Global')}
             </option>
-          ) : null }
+          ) : null}
           {profileOptions.map(profileId => this.renderProfilesOption(profileId))}
         </FormControl>
         <tooltip.IconButton
@@ -229,6 +238,13 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         this.nextState.importSaves = savesDict;
         return Promise.resolve();
       });
+  }
+
+  private restore = (instanceId: string) => {
+    const { onShowDialog, saves, savesPath, t } = this.props;
+    const { discoveredGames, gameMode } = this.props;
+    restoreSavegamePlugins(discoveredGames, gameMode, saves,
+      savesPath, instanceId, t, onShowDialog, this.context.api);
   }
 
   private remove = (instanceIds: string[]) => {
@@ -317,6 +333,8 @@ function mapStateToProps(state: any): IConnectedProps {
     saves: state.session.saves.saves,
     savesPath: state.session.saves.savegamePath,
     showTransfer: state.session.saves.showDialog,
+    discoveredGames: state.settings.gameMode.discovered,
+    gameMode: selectors.activeGameId(state),
   };
 }
 
