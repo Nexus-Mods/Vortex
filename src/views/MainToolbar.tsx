@@ -42,18 +42,8 @@ class MainToolbar extends ComponentEx<IProps, {}> {
       </div>
     );
   }
-
-}
-
-function registerToolbar(
-  instance: MainToolbar,
-  id: string,
-  component: React.ComponentClass<any>,
-  props: PropsCallback) {
-  return { id, component, props };
 }
 
 export default
-  translate(['common'], { wait: false })(
-    extend(registerToolbar)(MainToolbar),
+  translate(['common'], { wait: false })((MainToolbar),
   ) as React.ComponentClass<IBaseProps>;
