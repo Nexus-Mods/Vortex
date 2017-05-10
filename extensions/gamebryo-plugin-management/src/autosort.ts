@@ -25,7 +25,7 @@ class LootInterface {
   private evalListsAsync;
 
   constructor(context: types.IExtensionContext) {
-    let store = context.api.store;
+    const store = context.api.store;
 
     this.mLootQueue = new Promise<void>((resolve, reject) => this.mOnFirstInit = resolve);
 
@@ -33,7 +33,7 @@ class LootInterface {
 
     // when the game changes, we need to re-initialize loot for that game
     context.api.events.on('gamemode-activated', (gameMode: string) => {
-      let gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
+      const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
       if (gameSupported(gameMode)) {
         try {
           this.init(gameMode as GameId, gamePath);
@@ -56,7 +56,7 @@ class LootInterface {
         this.enqueue(t('Sorting plugins'), () => {
           let pluginNames: string[] = Object.keys(state.loadOrder);
           pluginNames = pluginNames.filter((name: string) =>
-            state.session.plugins.pluginList[name] !== undefined
+            state.session.plugins.pluginList[name] !== undefined,
           );
 
           return this.sortAsync(pluginNames)
@@ -80,7 +80,7 @@ class LootInterface {
         }
         const t = this.mExtensionApi.translate;
         this.enqueue(t('Reading Plugin Details'), () => {
-          let result: IPluginsLoot = {};
+          const result: IPluginsLoot = {};
           plugins.forEach((pluginName: string) => {
             result[pluginName] = {
               messages: this.mLoot.getPluginMessages(pluginName, 'en'),

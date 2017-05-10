@@ -22,37 +22,39 @@ class MasterList extends React.Component<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const {masters} = this.props;
+    const { masters } = this.props;
     if (masters === undefined) {
       return null;
     }
-    return (<ListGroup>
-      {masters.map(this.renderPlugin)}
-    </ListGroup>);
+    return (
+      <ListGroup>
+        {masters.map(this.renderPlugin)}
+      </ListGroup>);
   }
 
   private renderPlugin = (pluginName: string): JSX.Element => {
     const { installedPlugins } = this.props;
-    let isInstalled = installedPlugins.has(pluginName.toLowerCase());
-    return (<ListGroupItem
-      style={{ padding: 5 }}
-      key={`plugin-${pluginName}`}
-      bsStyle={ isInstalled ? undefined : 'warning' }
-    >
-      {pluginName}
-    </ListGroupItem>);
+    const isInstalled = installedPlugins.has(pluginName.toLowerCase());
+    return (
+      <ListGroupItem
+        style={{ padding: 5 }}
+        key={`plugin-${pluginName}`}
+        bsStyle={isInstalled ? undefined : 'warning'}
+      >
+        {pluginName}
+      </ListGroupItem>);
   }
 }
 
 const loadOrder = (state) => state.loadOrder;
 
-let enabledPlugins = createSelector(loadOrder, selectors.activeGameId, (order, gameId) => {
+const enabledPlugins = createSelector(loadOrder, selectors.activeGameId, (order, gameId) => {
   if (!gameSupported(gameId)) {
     return new Set<string>([]);
   }
   return new Set<string>([].concat(nativePlugins(gameId), Object.keys(order)
     .filter((pluginName: string) => order[pluginName].enabled)
-    .map((pluginName: string) => pluginName.toLowerCase())
+    .map((pluginName: string) => pluginName.toLowerCase()),
   ));
 });
 

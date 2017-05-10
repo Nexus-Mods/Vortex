@@ -11,7 +11,7 @@ const app = appIn || remote.app;
 
 /**
  * persistor syncing to and from the loot userlist.yaml file
- * 
+ *
  * @class UserlistPersistor
  * @implements {types.IPersistor}
  */

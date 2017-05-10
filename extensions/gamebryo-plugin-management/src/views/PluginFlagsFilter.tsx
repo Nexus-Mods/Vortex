@@ -3,24 +3,24 @@ import { types } from 'nmm-api';
 import * as React from 'react';
 import * as Select from 'react-select';
 
-
 export class PluginFlagFilterComponent extends React.Component<types.IFilterProps, {}> {
   public render(): JSX.Element {
     const { filter } = this.props;
 
-    let selectionFilters = [ 'Master', 'Native', 'Dirty', 'Don\'t clean'];
+    const selectionFilters = [ 'Master', 'Native', 'Dirty', 'Don\'t clean'];
 
     const currentFilters = selectionFilters.map(current => ({
       label: current,
       value: current,
     }));
 
-    return <Select
+    return (
+    <Select
       className='select-compact'
       options={currentFilters}
       value={filter || ''}
       onChange={this.changeFilter}
-    />;
+    />);
   }
 
   private changeFilter = (value: { value: string, label: string }) => {
@@ -37,6 +37,5 @@ class PluginFlagsFilter implements types.ITableFilter {
     return (value.includes(filter));
   }
 }
-
 
 export default PluginFlagsFilter;

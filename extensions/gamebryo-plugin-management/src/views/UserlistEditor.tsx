@@ -33,7 +33,7 @@ type IProps = IConnectedProps & IActionProps;
 
 /**
  * simple dialog to set userlist rule between two plugins
- * 
+ *
  * @class Editor
  * @extends {ComponentEx<IProps, IComponentState>}
  */
@@ -53,41 +53,43 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const { dialog } = this.state;
 
-    return (<Modal show={dialog !== undefined} onHide={this.close}>
-      {dialog !== undefined
-        ? <Modal.Body>
-          {dialog.pluginId}
-          <div>
-          <tooltip.IconButton
-            id='btn-swap-rule-plugins'
-            icon='exchange'
-            tooltip={t('Swap plugins')}
-            rotate='90'
-            onClick={this.swapPlugins}
-          />
-          <FormControl
-            componentClass='select'
-            onChange={this.changeType}
-            value={dialog.type}
-            style={{ marginTop: 20, marginBottom: 20, width: 'initial', display: 'inline' }}
-          >
-            <option value='after'>{t('Must load after')}</option>
-            <option value='requires'>{t('Depends on')}</option>
-            <option value='incompatible'>{t('Can\'t be loaded together with')}</option>
-          </FormControl>
-          </div>
-          {dialog.reference}
-        </Modal.Body>
-        : null }
+    return (
+      <Modal show={dialog !== undefined} onHide={this.close}>
+        {dialog !== undefined
+          ? (
+            <Modal.Body>
+            {dialog.pluginId}
+            <div>
+              <tooltip.IconButton
+                id='btn-swap-rule-plugins'
+                icon='exchange'
+                tooltip={t('Swap plugins')}
+                rotate='90'
+                onClick={this.swapPlugins}
+              />
+              <FormControl
+                componentClass='select'
+                onChange={this.changeType}
+                value={dialog.type}
+                style={{ marginTop: 20, marginBottom: 20, width: 'initial', display: 'inline' }}
+              >
+                <option value='after'>{t('Must load after')}</option>
+                <option value='requires'>{t('Depends on')}</option>
+                <option value='incompatible'>{t('Can\'t be loaded together with')}</option>
+              </FormControl>
+            </div>
+            {dialog.reference}
+          </Modal.Body>)
+          : null}
         <Modal.Footer>
           <Button onClick={this.close}>{t('Cancel')}</Button>
           <Button onClick={this.save}>{t('Save')}</Button>
         </Modal.Footer>
-    </Modal>);
+      </Modal>);
   }
 
   private swapPlugins = () => {
-    let temp = this.nextState.dialog.pluginId;
+    const temp = this.nextState.dialog.pluginId;
     this.nextState.dialog.pluginId = this.nextState.dialog.reference;
     this.nextState.dialog.reference = temp;
   }
@@ -125,5 +127,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-export default translate([ 'common', 'gamebryo-plugin' ], { wait: false })(
+export default translate(['common', 'gamebryo-plugin'], { wait: false })(
   connect(mapStateToProps, mapDispatchToProps)(Editor)) as React.ComponentClass<{}>;
