@@ -64,24 +64,6 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
         <Modal.Header><h3>{info.logicalFileName}</h3></Modal.Header>
         <Modal.Body>
           <form>
-            <FormGroup
-              controlId='form-meta-edit'
-            >
-              <ControlLabel>{t('Mod Name')}</ControlLabel>
-              <FormControl
-                type='text'
-                value={info.modName}
-                onChange={this.changeModName}
-              />
-            </FormGroup>
-            <FormGroup>
-              <ControlLabel>{t('Mod ID')}</ControlLabel>
-              <FormControl
-                type='text'
-                value={info.modId}
-                onChange={this.changeModId}
-              />
-            </FormGroup>
             <FormGroup>
               <ControlLabel>{t('File Name')}</ControlLabel>
               <FormControl
@@ -181,9 +163,10 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
     if (reference.fileMD5 !== undefined) {
       return reference.fileMD5;
     } else {
-      return `${reference.modId}:${reference.logicalFileName} - ${reference.versionMatch}`;
+      return `${reference.logicalFileName} - ${reference.versionMatch}`;
     }
   }
+
   private getEmptyData(filePath?: string, fileInfo?: any): IModInfo {
     const fileName = filePath !== undefined
       ? path.basename(filePath, path.extname(filePath))
@@ -192,11 +175,9 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
       ? path.basename(filePath, path.extname(filePath))
       : '';
     return {
-      modId: '',
-      modName,
       fileName,
       fileSizeBytes: fileInfo !== undefined ? fileInfo.size : 0,
-      gameId: '',
+      gameId: fileInfo.game,
       fileVersion: '',
       fileMD5: fileInfo !== undefined ? fileInfo.fileMD5 : '',
       sourceURI: '',
@@ -224,10 +205,16 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
       filePath,
       fileMD5: downloads[downloadId].fileMD5,
       fileSize: downloads[downloadId].size,
+      gameId: downloads[downloadId].game,
      })
       .then((info: ILookupResult[]) => {
         if (info.length > 0) {
-          this.nextState.info = info[0].value;
+          this.nextState.info = Object.assign({
+            filePath,
+            fileMD5: downloads[downloadId].fileMD5,
+            fileSize: downloads[downloadId].size,
+            gameId: downloads[downloadId].game,
+          }, info[0].value);
         } else {
           this.nextState.info = this.getEmptyData(filePath, downloads[downloadId]);
         }
@@ -283,14 +270,6 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
     this.setState(update(this.state, { info: {
       [key]: { $set: value },
     }}));
-  }
-
-  private changeModName = (event) => {
-    this.setField('modName', event.target.value);
-  }
-
-  private changeModId = (event) => {
-    this.setField('modId', event.target.value);
   }
 
   private changeLogicalFileName = (event) => {

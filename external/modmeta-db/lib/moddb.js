@@ -1,11 +1,12 @@
 "use strict";
 const Promise = require("bluebird");
 const levelup = require("levelup");
+const minimatch = require("minimatch");
 const semvish = require("semvish");
 const util_1 = require("./util");
 const util = require("util");
 class ModDB {
-    constructor(gameId, servers, database, timeoutMS) {
+    constructor(dbName, gameId, servers, database, timeoutMS) {
         this.translateFromNexus = (nexusObj, gameId) => {
             const urlFragments = [
                 'nxm:/',
@@ -17,7 +18,7 @@ class ModDB {
             ];
             const page = `http://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
             return {
-                key: `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
+                key: `hash:${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
                 value: {
                     fileMD5: nexusObj.file_details.md5,
                     fileName: nexusObj.file_details.file_name,
@@ -35,7 +36,7 @@ class ModDB {
                 },
             };
         };
-        this.mDB = levelup('mods', { valueEncoding: 'json', db: database });
+        this.mDB = levelup(dbName, { valueEncoding: 'json', db: database });
         this.mModKeys = [
             'fileName',
             'fileVersion',
@@ -57,13 +58,22 @@ class ModDB {
     getByKey(key) {
         return this.getAllByKey(key, this.mGameId);
     }
+    getByLogicalName(logicalName, versionMatch) {
+        return this.getAllByLogicalName(logicalName, versionMatch);
+    }
+    getByExpression(expression, versionMatch) {
+        return this.getAllByExpression(expression, versionMatch);
+    }
     insert(mod) {
         const missingKeys = this.missingKeys(mod);
         if (missingKeys.length !== 0) {
             return Promise.reject(new Error('Invalid mod object. Missing keys: ' +
                 missingKeys.join(', ')));
         }
-        return this.mDB.putAsync(this.makeKey(mod), mod);
+        const key = this.makeKey(mod);
+        return this.mDB.putAsync(key, mod)
+            .then(() => this.mDB.putAsync(this.makeNameLookup(mod), key))
+            .then(() => this.mDB.putAsync(this.makeLogicalLookup(mod), key));
     }
     lookup(filePath, fileMD5, fileSize, gameId) {
         let hashResult = fileMD5;
@@ -109,15 +119,31 @@ class ModDB {
         res.headers.APIKEY = server.apiKey;
         return res;
     }
-    queryServer(server, gameId, hash) {
+    queryServerLogical(server, logicalName, versionMatch) {
         if (server.protocol === 'nexus') {
-            return this.queryServerNexus(server, gameId, hash);
+            return Promise.resolve([]);
+        }
+        const url = `${server.url}/by_name/${logicalName}/versionMatch`;
+        return new Promise((resolve, reject) => {
+            this.mRestClient.get(url, this.restBaseData(server), (data, response) => {
+                if (response.statusCode === 200) {
+                    resolve(data);
+                }
+                else {
+                    reject(new Error(util.inspect(data)));
+                }
+            });
+        });
+    }
+    queryServerHash(server, gameId, hash) {
+        if (server.protocol === 'nexus') {
+            return this.queryServerHashNexus(server, gameId, hash);
         }
         else {
-            return this.queryServerMeta(server, hash);
+            return this.queryServerHashMeta(server, hash);
         }
     }
-    queryServerNexus(server, gameId, hash) {
+    queryServerHashNexus(server, gameId, hash) {
         const realGameId = this.translateNexusGameId(gameId || this.mGameId);
         const url = `${server.url}/games/${realGameId}/mods/md5_search/${hash}`;
         return new Promise((resolve, reject) => {
@@ -137,7 +163,7 @@ class ModDB {
             }
         });
     }
-    queryServerMeta(server, hash) {
+    queryServerHashMeta(server, hash) {
         const url = `${server.url}/by_hash/${hash}`;
         return new Promise((resolve, reject) => {
             this.mRestClient.get(url, this.restBaseData(server), (data, response) => {
@@ -161,17 +187,29 @@ class ModDB {
             return input;
         }
     }
-    getAllByKey(key, gameId) {
+    readRange(type, key, terminate = true) {
         return new Promise((resolve, reject) => {
             const result = [];
-            const stream = this.mDB.createReadStream({
-                gte: key + ':',
-                lt: key + 'a:',
-            });
-            stream.on('data', (data) => { result.push(data); });
-            stream.on('error', (err) => { reject(err); });
-            stream.on('end', () => { resolve(result); });
-        })
+            let stream;
+            if (terminate) {
+                stream = this.mDB.createReadStream({
+                    gte: type + ':' + key + ':',
+                    lt: type + ':' + key + 'a:',
+                });
+            }
+            else {
+                stream = this.mDB.createReadStream({
+                    gte: type + ':' + key,
+                    lte: type + ':' + key + 'zzzzzzzzzzzzzzzzzzz:',
+                });
+            }
+            stream.on('data', (data) => result.push(data));
+            stream.on('error', (err) => reject(err));
+            stream.on('end', () => resolve(result));
+        });
+    }
+    getAllByKey(key, gameId) {
+        return this.readRange('hash', key)
             .then((results) => {
             if (results.length > 0) {
                 return Promise.resolve(results);
@@ -182,26 +220,104 @@ class ModDB {
                 if (remoteResults) {
                     return Promise.resolve();
                 }
-                return this.queryServer(server, gameId, hash)
+                return this.queryServerHash(server, gameId, hash)
                     .then((serverResults) => {
                     remoteResults = serverResults;
                     for (const result of remoteResults) {
                         const temp = Object.assign({}, result.value);
-                        temp.expires =
-                            new Date().getTime() / 1000 +
-                                server.cacheDurationSec;
+                        temp.expires = new Date().getTime() / 1000 +
+                            server.cacheDurationSec;
                         this.insert(result.value);
                     }
                 })
                     .catch((err) => {
                     console.log('failed to query server', err);
                 });
-            })
-                .then(() => Promise.resolve(remoteResults || []));
+            }).then(() => Promise.resolve(remoteResults || []));
+        });
+    }
+    resolveIndex(key) {
+        return new Promise((resolve, reject) => this.mDB.get(key, (err, value) => {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(value);
+            }
+        }));
+    }
+    getAllByLogicalName(logicalName, versionMatch) {
+        const versionFilter = res => semvish.satisfies(res.key.split(':')[2], versionMatch, false);
+        return this.readRange('log', logicalName)
+            .then((results) => Promise.map(results.filter(versionFilter), (indexResult) => this.resolveIndex(indexResult.value)))
+            .then((results) => {
+            if (results.length > 0) {
+                return Promise.resolve(results);
+            }
+            let remoteResults;
+            return Promise.mapSeries(this.mServers, (server) => {
+                if (remoteResults) {
+                    return Promise.resolve();
+                }
+                return this.queryServerLogical(server, logicalName, versionMatch)
+                    .then((serverResults) => {
+                    remoteResults = serverResults;
+                    for (const result of remoteResults) {
+                        const temp = Object.assign({}, result.value);
+                        temp.expires = new Date().getTime() / 1000 +
+                            server.cacheDurationSec;
+                        this.insert(result.value);
+                    }
+                })
+                    .catch((err) => {
+                    console.log('failed to query server', err);
+                });
+            }).then(() => Promise.resolve(remoteResults || []));
+        });
+    }
+    getAllByExpression(expression, versionMatch) {
+        const filter = res => {
+            const [type, fileName, version] = res.key.split(':');
+            return minimatch(fileName, expression)
+                && semvish.satisfies(version, versionMatch, false);
+        };
+        const staticPart = expression.split(/[?*]/)[0];
+        return this.readRange('name', staticPart, false)
+            .then((results) => Promise.map(results.filter(filter), (indexResult) => this.resolveIndex(indexResult.value)))
+            .then((results) => {
+            console.log('res', results);
+            if (results.length > 0) {
+                return Promise.resolve(results);
+            }
+            let remoteResults;
+            return Promise.mapSeries(this.mServers, (server) => {
+                if (remoteResults) {
+                    return Promise.resolve();
+                }
+                return this.queryServerLogical(server, expression, versionMatch)
+                    .then((serverResults) => {
+                    remoteResults = serverResults;
+                    for (const result of remoteResults) {
+                        const temp = Object.assign({}, result.value);
+                        temp.expires = new Date().getTime() / 1000 +
+                            server.cacheDurationSec;
+                        this.insert(result.value);
+                    }
+                })
+                    .catch((err) => {
+                    console.log('failed to query server', err);
+                });
+            }).then(() => Promise.resolve(remoteResults || []));
         });
     }
     makeKey(mod) {
-        return `${mod.fileMD5}:${mod.fileSizeBytes}:${mod.gameId}:`;
+        return `hash:${mod.fileMD5}:${mod.fileSizeBytes}:${mod.gameId}:`;
+    }
+    makeNameLookup(mod) {
+        return `name:${mod.fileName}:${mod.fileVersion}:`;
+    }
+    makeLogicalLookup(mod) {
+        return `log:${mod.logicalFileName}:${mod.fileVersion}:`;
     }
     missingKeys(mod) {
         const actualKeys = new Set(Object.keys(mod));

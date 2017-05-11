@@ -2,6 +2,7 @@ import renderModName from '../util/renderModName';
 
 import { closeDialog, setType } from '../actions';
 
+import * as minimatch from 'minimatch';
 import { IReference, IRule, RuleType } from 'modmeta-db';
 import { actions, ComponentEx, FormFeedbackAwesome, More, types, util } from 'nmm-api';
 import * as React from 'react';
@@ -120,7 +121,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
     let expressionInvalid = null;
     if (logicalFileName === undefined) {
-      expressionInvalid = new RegExp(fileExpression).test(dialog.reference.fileExpression)
+      expressionInvalid = minimatch(dialog.reference.fileExpression, fileExpression)
         ? null : t('Doesn\'t match the file name');
     }
 

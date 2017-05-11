@@ -6,6 +6,7 @@ import { IMod } from '../types/IMod';
 
 import * as Promise from 'bluebird';
 import { alg, Graph } from 'graphlib';
+import * as minimatch from 'minimatch';
 import { ILookupResult, IReference, IRule, RuleType } from 'modmeta-db';
 import * as semver from 'semvish';
 
@@ -25,7 +26,7 @@ function testRef(mod: IMod, ref: IReference): boolean {
   // right file?
   if (((ref.logicalFileName !== undefined) &&
        (ref.logicalFileName !== attr.logicalFileName)) ||
-      (!new RegExp(ref.fileExpression).test(mod.installationPath))) {
+      (!minimatch(mod.installationPath, ref.fileExpression))) {
     return false;
   }
 

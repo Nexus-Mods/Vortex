@@ -23,8 +23,6 @@ function filterModInfo(input: any): any {
   transfer(result, 'uploadedTimestamp', input.nexus, ['fileInfo', 'uploaded_timestamp']);
   transfer(result, 'version', input.nexus, ['fileInfo', 'version']);
 
-  transfer(result, 'modId', input.meta, ['modId']);
-  transfer(result, 'modName', input.meta, ['modName']);
   transfer(result, 'fileName', input.meta, ['fileName']);
   transfer(result, 'fileMD5', input.meta, ['fileMD5']);
   transfer(result, 'fileSize', input.meta, ['fileSize']);

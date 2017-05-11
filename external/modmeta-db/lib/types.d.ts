@@ -31,6 +31,10 @@ export interface ILookupResult {
     key: string;
     value: IModInfo;
 }
+export interface IIndexResult {
+    key: string;
+    value: string;
+}
 export interface IHashResult {
     md5sum: string;
     numBytes: number;

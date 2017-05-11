@@ -28,10 +28,10 @@ function getText(id: string, t: I18next.TranslationFunction) {
         'To be able to match multiple versions of the same file we need a way to identify a set ' +
         'of related files. When the author provides a common name across all versions we use ' +
         'that, but in this case we need to work with expression matching.\n\n' +
-        'This uses a regular expression. You can see google for details, but here is a minimal ' +
-        'primer: Use . (dot) to stand in for any single character and .* for any number of any ' +
+        'This uses a so called "glob pattern". If you used dos or linux you probably know them:\n' +
+        'Use ? to stand in for any single character and * for any number of any ' +
         'character. So if your file name is "SkyUI_5_1-3863-5-1" you can change that to ' +
-        '"SkyUI_.*-3863-.*" and it should match any version of SkyUI (The 3863 part is the mod ' +
+        '"SkyUI_*-3863-*" and it should match any version of SkyUI (The 3863 part is the mod ' +
         'id on Nexus so it should always be the same).');
     default:
       return undefined;

@@ -29,7 +29,7 @@ const MD5Expression = /[a-f0-9]{32}/;
 
 /**
  * editor for dependency rules
- * 
+ *
  * @class RuleEditor
  * @extends {ComponentEx<IRule, IComponentState>}
  */
@@ -243,7 +243,6 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
     this.clear();
     if (this.state.refType === 'meta') {
       onConfirm(ruleType, {
-        modId: this.state.modId,
         logicalFileName: this.state.logicalFileName,
         versionMatch: this.state.versionMatch,
       });
@@ -257,5 +256,4 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
 
 export default
   translate(['common', 'meta-editor'], { wait: false })(
-    RuleEditor
-  ) as React.ComponentClass<IBaseProps>;
+    RuleEditor) as React.ComponentClass<IBaseProps>;

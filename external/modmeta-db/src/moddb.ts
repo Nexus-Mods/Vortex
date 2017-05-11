@@ -1,10 +1,11 @@
 import * as Promise from 'bluebird';
 import levelup = require('levelup');
+import * as minimatch from 'minimatch';
 import * as restT from 'node-rest-client';
 import * as semvish from 'semvish';
 
-import {IHashResult, ILookupResult, IModInfo} from './types';
-import { genHash } from './util';
+import {IHashResult, IIndexResult, ILookupResult, IModInfo} from './types';
+import {genHash} from './util';
 
 import * as util from 'util';
 
@@ -49,14 +50,17 @@ class ModDB {
   /**
    * constructor
    *
+   * @param {string} dbName name for the new databaes
    * @param {string} gameId default game id for lookups to the nexus api
    * @param {IServer} servers list of servers we synchronize with
-   * @param {any} database the database backend to use. if not set, tries to use IndexedDB
+   * @param {any} database the database backend to use. if not set, tries to use leveldb
    * @param {number} timeoutMS timeout in milliseconds for outgoing network requests.
    *                           defaults to 5 seconds
    */
-  constructor(gameId: string, servers: IServer[], database?: any, timeoutMS?: number) {
-    this.mDB = levelup('mods', {valueEncoding: 'json', db: database});
+  constructor(dbName: string,
+              gameId: string, servers: IServer[],
+              database?: any, timeoutMS?: number) {
+    this.mDB = levelup(dbName, {valueEncoding: 'json', db: database});
     this.mModKeys = [
       'fileName',
       'fileVersion',
@@ -100,6 +104,17 @@ class ModDB {
   }
 
   /**
+   * retrieve mods by their logical name and version
+   */
+  public getByLogicalName(logicalName: string, versionMatch: string): Promise<ILookupResult[]> {
+    return this.getAllByLogicalName(logicalName, versionMatch);
+  }
+
+  public getByExpression(expression: string, versionMatch: string): Promise<ILookupResult[]> {
+    return this.getAllByExpression(expression, versionMatch);
+  }
+
+  /**
    * insert a mod into the database, potentially overwriting
    * existing data
    *
@@ -115,7 +130,12 @@ class ModDB {
                                       missingKeys.join(', ')));
     }
 
-    return this.mDB.putAsync(this.makeKey(mod), mod);
+    const key = this.makeKey(mod);
+
+    return this.mDB.putAsync(key, mod)
+      .then(() => this.mDB.putAsync(this.makeNameLookup(mod), key))
+      .then(() => this.mDB.putAsync(this.makeLogicalLookup(mod), key))
+    ;
   }
 
   /**
@@ -185,16 +205,35 @@ class ModDB {
     return res;
   }
 
-  private queryServer(server: IServer, gameId: string, hash: string): Promise<ILookupResult[]> {
+  private queryServerLogical(server: IServer, logicalName: string,
+                             versionMatch: string): Promise<ILookupResult[]> {
     if (server.protocol === 'nexus') {
-      return this.queryServerNexus(server, gameId, hash);
+      // not supported
+      return Promise.resolve([]);
+    }
+
+    const url = `${server.url}/by_name/${logicalName}/versionMatch`;
+    return new Promise<ILookupResult[]>((resolve, reject) => {
+      this.mRestClient.get(url, this.restBaseData(server), (data, response) => {
+        if (response.statusCode === 200) {
+          resolve(data);
+        } else {
+          reject(new Error(util.inspect(data)));
+        }
+      });
+    });
+  }
+
+  private queryServerHash(server: IServer, gameId: string, hash: string): Promise<ILookupResult[]> {
+    if (server.protocol === 'nexus') {
+      return this.queryServerHashNexus(server, gameId, hash);
     } else {
-      return this.queryServerMeta(server, hash);
+      return this.queryServerHashMeta(server, hash);
     }
   }
 
-  private queryServerNexus(server: IServer, gameId: string,
-                           hash: string): Promise<ILookupResult[]> {
+  private queryServerHashNexus(server: IServer, gameId: string,
+                               hash: string): Promise<ILookupResult[]> {
     // no result in our database, look at the backends
     const realGameId = this.translateNexusGameId(gameId || this.mGameId);
 
@@ -219,7 +258,7 @@ class ModDB {
     });
   }
 
-  private queryServerMeta(server: IServer, hash: string): Promise<ILookupResult[]> {
+  private queryServerHashMeta(server: IServer, hash: string): Promise<ILookupResult[]> {
     const url = `${server.url}/by_hash/${hash}`;
     return new Promise<ILookupResult[]>((resolve, reject) => {
       this.mRestClient.get(url, this.restBaseData(server), (data, response) => {
@@ -264,7 +303,7 @@ class ModDB {
             `http://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
         return {
           key:
-              `${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
+              `hash:${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
           value: {
             fileMD5: nexusObj.file_details.md5,
             fileName: nexusObj.file_details.file_name,
@@ -283,18 +322,33 @@ class ModDB {
     };
   }
 
-  private getAllByKey(key: string, gameId: string): Promise<ILookupResult[]> {
-    return new Promise<ILookupResult[]>((resolve, reject) => {
-             const result: ILookupResult[] = [];
+  private readRange<T>(type: 'hash' | 'log' | 'name', key: string,
+                       terminate: boolean = true): Promise<T[]> {
+    return new Promise<T[]>((resolve, reject) => {
+      const result: T[] = [];
 
-             const stream = this.mDB.createReadStream({
-               gte: key + ':',
-               lt: key + 'a:',
-             });
-             stream.on('data', (data: ILookupResult) => { result.push(data); });
-             stream.on('error', (err) => { reject(err); });
-             stream.on('end', () => { resolve(result); });
-           })
+      let stream;
+
+      if (terminate) {
+        stream = this.mDB.createReadStream({
+          gte: type + ':' + key + ':',
+          lt: type + ':' + key + 'a:',
+        });
+      } else {
+        stream = this.mDB.createReadStream({
+          gte: type + ':' + key,
+          lte: type + ':' + key + 'zzzzzzzzzzzzzzzzzzz:',
+        });
+      }
+
+      stream.on('data', (data: T) => result.push(data));
+      stream.on('error', (err) => reject(err));
+      stream.on('end', () => resolve(result));
+    });
+  }
+
+  private getAllByKey(key: string, gameId: string): Promise<ILookupResult[]> {
+    return this.readRange<ILookupResult>('hash', key)
         .then((results: ILookupResult[]) => {
           if (results.length > 0) {
             return Promise.resolve(results);
@@ -303,35 +357,134 @@ class ModDB {
           const hash = key.split(':')[0];
           let remoteResults: ILookupResult[];
 
-          return Promise.mapSeries(
-                            this.mServers,
-                            (server: IServer) => {
-                              if (remoteResults) {
-                                return Promise.resolve();
-                              }
-                              return this.queryServer(server, gameId, hash)
-                                  .then((serverResults: ILookupResult[]) => {
-                                    remoteResults = serverResults;
-                                    // cache all results in our database
-                                    for (const result of remoteResults) {
-                                      const temp = Object.assign({}, result.value);
-                                      temp.expires =
-                                          new Date().getTime() / 1000 +
-                                          server.cacheDurationSec;
-                                      this.insert(result.value);
-                                    }
-                                  })
-                                  .catch((err) => {
-                                    // TODO: need a way to log without rejecting
-                                    console.log('failed to query server', err);
-                                  });
-                            })
-              .then(() => Promise.resolve(remoteResults || []));
+          return Promise.mapSeries(this.mServers, (server: IServer) => {
+                          if (remoteResults) {
+                            return Promise.resolve();
+                          }
+                          return this.queryServerHash(server, gameId, hash)
+                              .then((serverResults: ILookupResult[]) => {
+                                remoteResults = serverResults;
+                                // cache all results in our database
+                                for (const result of remoteResults) {
+                                  const temp = Object.assign({}, result.value);
+                                  temp.expires = new Date().getTime() / 1000 +
+                                                 server.cacheDurationSec;
+                                  this.insert(result.value);
+                                }
+                              })
+                              .catch((err) => {
+                                // TODO: need a way to log without rejecting
+                                console.log('failed to query server', err);
+                              });
+                        }).then(() => Promise.resolve(remoteResults || []));
+        });
+  }
+
+  private resolveIndex(key: string): Promise<ILookupResult> {
+    return new Promise<ILookupResult>(
+        (resolve, reject) => this.mDB.get(key, (err, value) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(value);
+          }
+        }));
+  }
+
+  private getAllByLogicalName(logicalName: string, versionMatch: string) {
+    const versionFilter = res =>
+        semvish.satisfies(res.key.split(':')[2], versionMatch, false);
+    return this.readRange<IIndexResult>('log', logicalName)
+        .then((results: IIndexResult[]) =>
+                  Promise.map(results.filter(versionFilter),
+                              (indexResult: IIndexResult) =>
+                                  this.resolveIndex(indexResult.value)))
+        .then((results: ILookupResult[]) => {
+          if (results.length > 0) {
+            return Promise.resolve(results);
+          }
+
+          let remoteResults: ILookupResult[];
+
+          return Promise.mapSeries(this.mServers, (server: IServer) => {
+                          if (remoteResults) {
+                            return Promise.resolve();
+                          }
+                          return this.queryServerLogical(server, logicalName,
+                                                         versionMatch)
+                              .then((serverResults: ILookupResult[]) => {
+                                remoteResults = serverResults;
+                                // cache all results in our database
+                                for (const result of remoteResults) {
+                                  const temp = Object.assign({}, result.value);
+                                  temp.expires = new Date().getTime() / 1000 +
+                                                 server.cacheDurationSec;
+                                  this.insert(result.value);
+                                }
+                              })
+                              .catch((err) => {
+                                // TODO: need a way to log without rejecting
+                                console.log('failed to query server', err);
+                              });
+                        }).then(() => Promise.resolve(remoteResults || []));
+        });
+  }
+
+  private getAllByExpression(expression: string, versionMatch: string) {
+    const filter = res => {
+      const [type, fileName, version] = res.key.split(':');
+      return minimatch(fileName, expression)
+        && semvish.satisfies(version, versionMatch, false);
+    };
+
+    const staticPart = expression.split(/[?*]/)[0];
+
+    return this.readRange<IIndexResult>('name', staticPart, false)
+        .then((results: IIndexResult[]) =>
+                  Promise.map(results.filter(filter),
+                              (indexResult: IIndexResult) =>
+                                  this.resolveIndex(indexResult.value)))
+        .then((results: ILookupResult[]) => {
+          if (results.length > 0) {
+            return Promise.resolve(results);
+          }
+
+          let remoteResults: ILookupResult[];
+
+          return Promise.mapSeries(this.mServers, (server: IServer) => {
+                          if (remoteResults) {
+                            return Promise.resolve();
+                          }
+                          return this.queryServerLogical(server, expression,
+                                                         versionMatch)
+                              .then((serverResults: ILookupResult[]) => {
+                                remoteResults = serverResults;
+                                // cache all results in our database
+                                for (const result of remoteResults) {
+                                  const temp = Object.assign({}, result.value);
+                                  temp.expires = new Date().getTime() / 1000 +
+                                                 server.cacheDurationSec;
+                                  this.insert(result.value);
+                                }
+                              })
+                              .catch((err) => {
+                                // TODO: need a way to log without rejecting
+                                console.log('failed to query server', err);
+                              });
+                        }).then(() => Promise.resolve(remoteResults || []));
         });
   }
 
   private makeKey(mod: IModInfo) {
-    return `${mod.fileMD5}:${mod.fileSizeBytes}:${mod.gameId}:`;
+    return `hash:${mod.fileMD5}:${mod.fileSizeBytes}:${mod.gameId}:`;
+  }
+
+  private makeNameLookup(mod: IModInfo) {
+    return `name:${mod.fileName}:${mod.fileVersion}:`;
+  }
+
+  private makeLogicalLookup(mod: IModInfo) {
+    return `log:${mod.logicalFileName}:${mod.fileVersion}:`;
   }
 
   private missingKeys(mod: any) {

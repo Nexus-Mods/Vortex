@@ -417,7 +417,9 @@ class ExtensionManager {
         || (currentGame !== this.mModDBGame)
         || (currentKey !== this.mModDBAPIKey)) {
       log('info', 'init moddb connection');
-      this.mModDB = new modmeta.ModDB(currentGame, [
+      this.mModDB = new modmeta.ModDB(
+        path.join(app.getPath('userData'), 'metadb'),
+        currentGame, [
         {
           protocol: 'nexus',
           url: 'https://api.nexusmods.com/v1',

@@ -9,7 +9,7 @@
  *
  * Usually mods on file repositories like nexus have a name including the version
  * number. To match files with a dynamic version number, you can use either a
- * fileExpression (which is a regex) that should ideally match all versions of a file
+ * fileExpression (which is a glob pattern) that should ideally match all versions of a file
  * (i.e. SkyUI_\d+_\d+-3863-\d+-\d+.7z] to match all versions of SkyUI on nexus)
  * or through a "logical" file name, which could be something like
  * "Skimpy Leather Armor UNP" (to differentiate it from the CBBE version under
@@ -125,6 +125,11 @@ export interface IModInfo {
 export interface ILookupResult {
   key: string;
   value: IModInfo;
+}
+
+export interface IIndexResult {
+  key: string;
+  value: string;
 }
 
 export interface IHashResult {

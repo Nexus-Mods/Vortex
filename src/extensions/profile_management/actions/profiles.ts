@@ -10,8 +10,6 @@ export const removeProfile = safeCreateAction('REMOVE_PROFILE');
 /**
  * enable or disable a mod in a profile
  */
-// TODO when we enable/disable a mod we need to also install/uninstall links created
-//   with this mod
 export const setModEnabled = safeCreateAction(
   'SET_MOD_ENABLED',
   (profileId: string, modId: string, enable: boolean) => ({profileId, modId, enable}));
