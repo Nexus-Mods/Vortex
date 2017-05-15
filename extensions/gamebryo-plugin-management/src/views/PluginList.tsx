@@ -256,7 +256,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         <MainPage.Body>
           <Layout type='column'>
             <Fixed>
-              <h4>{t(lootActivity)}</h4>
+              <h4>{lootActivity}</h4>
             </Fixed>
             <Flex>
               <Table

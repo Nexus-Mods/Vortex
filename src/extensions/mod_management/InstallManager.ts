@@ -121,8 +121,8 @@ class InstallManager {
    * @param {boolean} enable if true, enable the mod after installation
    * @param {Function} callback callback once this is finished
    *
-   * TODO return a promise instead of callback
-   * TODO the callback isn't called if the installation is canceled by the user
+   * TODO: return a promise instead of callback
+   * TODO: the callback isn't called if the installation is canceled by the user
    */
   public install(
     archiveId: string,
@@ -154,8 +154,7 @@ class InstallManager {
           installGameId = gameId;
           installContext = new InstallContext(gameId, api.store.dispatch);
           installContext.startIndicator(baseName);
-
-          return api.lookupModMeta({filePath: archivePath});
+          return api.lookupModMeta({filePath: archivePath, gameId});
         })
         .then((modInfo: ILookupResult[]) => {
           if (modInfo.length > 0) {

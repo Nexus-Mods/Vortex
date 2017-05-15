@@ -1,5 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import { terminate } from '../../../util/errorHandling';
+import { log } from '../../../util/log';
 import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from '../../../util/storeHelper';
 
 import * as action from '../actions/state';
@@ -45,16 +46,15 @@ export const stateReducer: IReducerSpec = {
         size: payload.total,
       });
     },
-    [action.setDownloadFilePath as any]: (state, payload) => {
-      return setOrNop(state, [ 'files', payload.id, 'localPath' ], payload.filePath);
-    },
-    [action.setDownloadHash as any]: (state, payload) => {
-      return setOrNop(state, [ 'files', payload.id, 'fileMD5' ], payload.fileMD5);
-    },
+    [action.setDownloadFilePath as any]: (state, payload) =>
+      setOrNop(state, [ 'files', payload.id, 'localPath' ], payload.filePath),
+    [action.setDownloadHash as any]: (state, payload) =>
+      setOrNop(state, [ 'files', payload.id, 'fileMD5' ], payload.fileMD5),
     [action.setDownloadHashByFile as any]: (state, payload) => {
       const downloadId = Object.keys(state.files || {}).find(
         (id: string) => state.files[id].localPath === payload.fileName);
       if (downloadId === undefined) {
+        log('warn', 'unknown download', payload.fileName);
         return state;
       }
       return merge(state, ['files', downloadId], {
@@ -94,11 +94,10 @@ export const stateReducer: IReducerSpec = {
       }
       return setSafe(temp, ['speedHistory'], speeds);
     },
-    [action.removeDownload as any]: (state, payload) => {
-      return deleteOrNop(state, [ 'files', payload.id ]);
-    },
-    [action.addLocalDownload as any]: (state, payload) => {
-      return setSafe(state, [ 'files', payload.id ], {
+    [action.removeDownload as any]: (state, payload) =>
+      deleteOrNop(state, [ 'files', payload.id ]),
+    [action.addLocalDownload as any]: (state, payload) =>
+      setSafe(state, [ 'files', payload.id ], {
         state: 'finished',
         game: payload.game,
         localPath: payload.localPath,
@@ -106,8 +105,7 @@ export const stateReducer: IReducerSpec = {
         urls: [],
         modInfo: {},
         chunks: [],
-      });
-    },
+      }),
   },
   defaults: {
     speed: 0,
