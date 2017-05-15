@@ -15,7 +15,7 @@ interface IProxyEntry<T> {
   path: string[];
 }
 
-export class StateProxyHandler<T> implements ProxyHandler<T> {
+export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
   private mComponent: ComponentEx<any, T> | PureComponentEx<any, T>;
   private mPath: string[];
   private mBaseObject: T;
@@ -103,7 +103,7 @@ export class StateProxyHandler<T> implements ProxyHandler<T> {
  * @template P
  * @template S
  */
-export class ComponentEx<P, S> extends React.Component<P & II18NProps, S> {
+export class ComponentEx<P, S extends object> extends React.Component<P & II18NProps, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,
@@ -122,7 +122,7 @@ export class ComponentEx<P, S> extends React.Component<P & II18NProps, S> {
   }
 }
 
-export class PureComponentEx<P, S> extends React.PureComponent<P & II18NProps, S> {
+export class PureComponentEx<P, S extends object> extends React.PureComponent<P & II18NProps, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,

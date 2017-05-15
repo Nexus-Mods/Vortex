@@ -7,7 +7,7 @@ import * as Promise from 'bluebird';
 /**
  * return an item from state or the fallback if the path doesn't lead
  * to an item.
- * 
+ *
  * @export
  * @template T
  * @param {*} state
@@ -15,9 +15,9 @@ import * as Promise from 'bluebird';
  * @param {T} fallback
  * @returns {T}
  */
-export function getSafe<T>(state: any, path: (string | number)[], fallback: T): T {
+export function getSafe<T>(state: any, path: Array<(string | number)>, fallback: T): T {
   let current = state;
-  for (let segment of path) {
+  for (const segment of path) {
     if ((current === undefined) || !current.hasOwnProperty(segment)) {
       return fallback;
     } else {
@@ -27,8 +27,8 @@ export function getSafe<T>(state: any, path: (string | number)[], fallback: T): 
   return current;
 }
 
-export function mutateSafe<T>(state: T, path: (string | number)[], value: any) {
-  let firstElement = path[0];
+export function mutateSafe<T>(state: T, path: Array<(string | number)>, value: any) {
+  const firstElement = path[0];
   if (path.length === 1) {
     state[firstElement] = value;
   } else {
@@ -41,7 +41,7 @@ export function mutateSafe<T>(state: T, path: (string | number)[], value: any) {
 
 /**
  * set an item in state, creating all intermediate nodes as necessary
- * 
+ *
  * @export
  * @template T
  * @param {T} state
@@ -49,11 +49,11 @@ export function mutateSafe<T>(state: T, path: (string | number)[], value: any) {
  * @param {*} value
  * @returns {T}
  */
-export function setSafe<T>(state: T, path: (string | number)[], value: any): T {
+export function setSafe<T>(state: T, path: Array<(string | number)>, value: any): T {
   if (path.length === 0) {
     return Object.assign({}, value);
   }
-  let firstElement = path[0];
+  const firstElement = path[0];
   let copy;
   if (Array.isArray(state)) {
     copy = state.slice();
@@ -75,7 +75,7 @@ export function setSafe<T>(state: T, path: (string | number)[], value: any): T {
  * sets a value or do nothing if the path (except for the last element) doesn't exist.
  * That is: setOrNop does not create the object hierarchy referenced in the path but
  * it does add a new attribute to the object if necessary.
- * 
+ *
  * @export
  * @template T
  * @param {T} state
@@ -84,14 +84,14 @@ export function setSafe<T>(state: T, path: (string | number)[], value: any): T {
  * @returns {T}
  */
 export function setOrNop<T>(state: T, path: string[], value: any): T {
-  let firstElement: string = path[0];
+  const firstElement: string = path[0];
   let result = state;
   if (path.length === 1) {
     result = Object.assign({}, state);
     result[firstElement] = value;
   } else {
     if (state.hasOwnProperty(firstElement)) {
-      let temp = setOrNop(result[firstElement], path.slice(1), value);
+      const temp = setOrNop(result[firstElement], path.slice(1), value);
       if (temp !== state[firstElement]) {
         result = Object.assign({}, state);
         result[firstElement] = temp;
@@ -104,7 +104,7 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
 /**
  * sets a value or do nothing if the path or the key (last element of the path) doesn't exist.
  * This means changeOrNop only changes a pre-existing object attribute
- * 
+ *
  * @export
  * @template T
  * @param {T} state
@@ -112,8 +112,8 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
  * @param {*} value
  * @returns {T}
  */
-export function changeOrNop<T>(state: T, path: (string | number)[], value: any): T {
-  let firstElement: string | number = path[0];
+export function changeOrNop<T>(state: T, path: Array<(string | number)>, value: any): T {
+  const firstElement: string | number = path[0];
   let result = state;
   if (path.length === 1) {
     if (state.hasOwnProperty(firstElement)) {
@@ -122,7 +122,7 @@ export function changeOrNop<T>(state: T, path: (string | number)[], value: any):
     }
   } else {
     if (state.hasOwnProperty(firstElement)) {
-      let temp = changeOrNop(result[firstElement], path.slice(1), value);
+      const temp = changeOrNop(result[firstElement], path.slice(1), value);
       if (temp !== state[firstElement]) {
         result = Object.assign({}, state);
         result[firstElement] = temp;
@@ -134,24 +134,27 @@ export function changeOrNop<T>(state: T, path: (string | number)[], value: any):
 
 /**
  * delete a value or do nothing if the path doesn't exist
- * 
+ *
  * @export
  * @template T
  * @param {T} state
  * @param {string[]} path
  * @returns {T}
  */
-export function deleteOrNop<T>(state: T, path: (string | number)[]): T {
-  let firstElement = path[0];
-  let result = state;
+export function deleteOrNop<T>(state: T, path: Array<(string | number)>): T {
+  const firstElement = path[0];
+  let result: any = state;
   if (path.length === 1) {
-    if (state.hasOwnProperty(firstElement)) {
+    if (Array.isArray(state)) {
+      result = [].concat(state);
+      result.splice(firstElement as number, 1);
+    } else if (state.hasOwnProperty(firstElement)) {
       result = Object.assign({}, state);
       delete result[firstElement];
     }
   } else {
     if (result.hasOwnProperty(firstElement)) {
-      let temp = deleteOrNop(result[firstElement], path.slice(1));
+      const temp = deleteOrNop(result[firstElement], path.slice(1));
       if (temp !== state[firstElement]) {
         result = Object.assign({}, state);
         result[firstElement] = temp;
@@ -162,8 +165,8 @@ export function deleteOrNop<T>(state: T, path: (string | number)[]): T {
   return result;
 }
 
-function setDefaultArray<T>(state: T, path: (string | number)[], fallback: any[]): T {
-  let firstElement = path[0];
+function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: any[]): T {
+  const firstElement = path[0];
   let copy;
   if (Array.isArray(state)) {
     copy = state.slice();
@@ -188,7 +191,7 @@ function setDefaultArray<T>(state: T, path: (string | number)[], fallback: any[]
 /**
  * push an item to an array inside state. This creates all intermediate
  * nodes and the array itself as necessary
- * 
+ *
  * @export
  * @template T
  * @param {T} state
@@ -196,15 +199,15 @@ function setDefaultArray<T>(state: T, path: (string | number)[], fallback: any[]
  * @param {*} value
  * @returns {T}
  */
-export function pushSafe<T>(state: T, path: (string | number)[], value: any): T {
-  let copy = setDefaultArray(state, path, []);
+export function pushSafe<T>(state: T, path: Array<(string | number)>, value: any): T {
+  const copy = setDefaultArray(state, path, []);
   getSafe(copy, path, undefined).push(value);
   return copy;
 }
 
 /**
  * remove a value from an array by value
- * 
+ *
  * @export
  * @template T
  * @param {T} state
@@ -212,9 +215,9 @@ export function pushSafe<T>(state: T, path: (string | number)[], value: any): T 
  * @param {*} value
  * @returns {T}
  */
-export function removeValue<T>(state: T, path: (string | number)[], value: any): T {
-  let copy = setDefaultArray(state, path, []);
-  let list = getSafe(copy, path, undefined);
+export function removeValue<T>(state: T, path: Array<(string | number)>, value: any): T {
+  const copy = setDefaultArray(state, path, []);
+  const list = getSafe(copy, path, undefined);
   const idx = list.indexOf(value);
   if (idx !== -1) {
     list.splice(idx, 1);
@@ -224,7 +227,7 @@ export function removeValue<T>(state: T, path: (string | number)[], value: any):
 
 /**
  * remove all vales for which the predicate applies
- * 
+ *
  * @export
  * @template T
  * @param {T} state
@@ -232,14 +235,14 @@ export function removeValue<T>(state: T, path: (string | number)[], value: any):
  * @param {(element: any) => boolean} predicate
  * @returns {T}
  */
-export function removeValueIf<T>(state: T, path: (string | number)[],
+export function removeValueIf<T>(state: T, path: Array<(string | number)>,
                                  predicate: (element: any) => boolean): T {
   return setSafe(state, path, getSafe(state, path, []).filter((ele) => !predicate(ele)));
 }
 
 /**
  * shallow merge a value into the store at the  specified location
- * 
+ *
  * @export
  * @template T
  * @param {T} state
@@ -247,7 +250,7 @@ export function removeValueIf<T>(state: T, path: (string | number)[],
  * @param {Object} value
  * @returns {T}
  */
-export function merge<T>(state: T, path: (string | number)[], value: Object): T {
+export function merge<T>(state: T, path: Array<(string | number)>, value: any): T {
   const newVal = Object.assign({}, getSafe(state, path, {}), value);
   return setSafe(state, path, newVal);
 }
@@ -270,7 +273,7 @@ function waitUntil(predicate: () => boolean, interval: number = 100): Promise<vo
  * the return value is a promise because known games are loaded during extension
  * initialization so there is quite a bit of code where we can't be sure
  * if this is yet available
- * 
+ *
  * @export
  * @param {*} state
  * @returns {Promise<IGameStored>}
@@ -280,7 +283,7 @@ export function currentGame(store: Redux.Store<any>): Promise<IGameStored> {
   let knownGames = getSafe(store.getState(), ['session', 'gameMode', 'known'], null);
   if ((knownGames !== null) && (knownGames !== undefined)) {
     const gameMode = activeGameId(store.getState());
-    let res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
+    const res = knownGames.find((ele: IGameStored) => ele.id === gameMode);
     return Promise.resolve(res || fallback);
   } else {
     return waitUntil(() => {
