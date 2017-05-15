@@ -40,7 +40,7 @@ interface IActionProps {
   onRemoveCategory: (gameId: string, categoryId: string) => void;
   onRenameCategory: (activeGameId: string, categoryId: string, newCategory: {}) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-    actions: DialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Promise<IDialogResult>;
 }
 
 interface IConnectedProps {
@@ -63,7 +63,7 @@ type IProps = IConnectedProps & IActionProps;
 
 /**
  * displays the list of categories related for the current game.
- * 
+ *
  */
 class CategoryList extends ComponentEx<IProps, IComponentState> {
   public context: IComponentContext;
@@ -229,7 +229,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       if (!filtered.has(obj.categoryId)) {
         return undefined;
       }
-      let copy: ICategoriesTree = Object.assign({}, obj);
+      const copy: ICategoriesTree = Object.assign({}, obj);
       copy.expanded = expanded.has(copy.categoryId);
       copy.children = this.applyExpand(copy.children, showEmpty, expanded);
       return copy;
@@ -269,17 +269,14 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
         Rename: null,
       }).then((result: IDialogResult) => {
         if ((result.action === 'Rename') && (result.input.newCategory !== undefined)) {
-          onRenameCategory(gameMode, info.node.categoryId, {
-            name: result.input.newCategory,
-            parentCategory: info.node.parentId,
-            order: info.node.order });
+          onRenameCategory(gameMode, info.node.categoryId, result.input.newCategory);
         }
       });
   }
 
   private addCategory = (info: { node: ICategoriesTree, path: string[] }) => {
     const {categories, gameMode, onSetCategory, onShowDialog, onShowError} = this.props;
-    let lastIndex = this.searchLastRootId(categories);
+    const lastIndex = this.searchLastRootId(categories);
 
     onShowDialog('question', 'Add Child Category', {
       formcontrol: [
@@ -294,7 +291,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
         Add: null,
       }).then((result: IDialogResult) => {
         if (result.action === 'Add') {
-          let checkId = Object.keys(categories[gameMode]).filter((id: string) =>
+          const checkId = Object.keys(categories[gameMode]).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
             onShowError('An error occurred adding the new category', 'ID already used.');
@@ -314,7 +311,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   private addRootCategory = () => {
     const {categories, gameMode, onSetCategory, onShowDialog, onShowError} = this.props;
     let addCategory = true;
-    let lastIndex = this.searchLastRootId(categories);
+    const lastIndex = this.searchLastRootId(categories);
 
     onShowDialog('question', 'Add new Root Category', {
       formcontrol: [
@@ -347,7 +344,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private searchLastRootId(categories: Object) {
+  private searchLastRootId(categories: any) {
     const {gameMode} = this.props;
     let maxId = 0;
     if (categories[gameMode] !== undefined) {
@@ -406,42 +403,48 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     if (this.state.searchFocusIndex !== newFocusIndex) {
     this.nextState.searchFocusIndex = newFocusIndex;
     }
-  };
+  }
 
   private removeCategory = (categoryId: string) => {
     const {gameMode, onRemoveCategory} = this.props;
     onRemoveCategory(gameMode, categoryId);
-  };
+  }
 
   private generateNodeProps = (rowInfo) => {
     const {t} = this.props;
     return {
       buttons: [
-        <Button
-          id='rename-category'
-          className='btn-embed'
-          tooltip={t('Rename Category')}
-          value={rowInfo}
-          onClick={this.renameCategory.bind(this, rowInfo)}
-        >
-          <Icon name='pencil' />
-        </Button>,
-        <Button
-          id='add-category'
-          className='btn-embed'
-          tooltip={t('Add Child Category')}
-          onClick={this.addCategory.bind(this, rowInfo)}
-        >
-          <Icon name='indent' />
-        </Button>,
-        <Button
-          id='remove-category'
-          className='btn-embed'
-          tooltip={t('Remove Category')}
-          onClick={this.removeCategory.bind(this, rowInfo)}
-        >
-          <Icon name='remove' />
-        </Button>,
+        (
+          <Button
+            id='rename-category'
+            className='btn-embed'
+            tooltip={t('Rename Category')}
+            value={rowInfo}
+            onClick={this.renameCategory.bind(this, rowInfo)}
+          >
+            <Icon name='pencil' />
+          </Button>
+        ),
+        (
+          <Button
+            id='add-category'
+            className='btn-embed'
+            tooltip={t('Add Child Category')}
+            onClick={this.addCategory.bind(this, rowInfo)}
+          >
+            <Icon name='indent' />
+          </Button>
+        ),
+        (
+          <Button
+            id='remove-category'
+            className='btn-embed'
+            tooltip={t('Remove Category')}
+            onClick={this.removeCategory.bind(this, rowInfo)}
+          >
+            <Icon name='remove' />
+          </Button>
+        ),
       ],
     };
   }
@@ -498,5 +501,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(CategoryList)
-  ) as React.ComponentClass<{}>;
+    connect(mapStateToProps, mapDispatchToProps)(
+      CategoryList))as React.ComponentClass<{}>;
