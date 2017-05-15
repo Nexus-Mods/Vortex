@@ -210,8 +210,8 @@ function init(context: IExtensionContextExt): boolean {
     });
   });
 
-  context.registerTest('valid-activator-gamemode', 'gamemode-activated', validActivatorCheck);
-  context.registerTest('valid-activator-settings', 'settings-changed', validActivatorCheck);
+  context.registerTest('valid-activator', 'gamemode-activated', validActivatorCheck);
+  context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
 
   context.registerSettings('Mods', LazyComponent('./views/Settings', __dirname),
                            () => ({activators}));
