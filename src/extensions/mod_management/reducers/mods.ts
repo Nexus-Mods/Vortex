@@ -45,9 +45,9 @@ export const modsReducer: IReducerSpec = {
       if ((state[gameId] === undefined) || (state[gameId][modId] === undefined)) {
         return state;
       }
+      const filteredRef = _.omitBy(rule.reference, _.isUndefined);
       let idx = -1;
       if (['after', 'before'].indexOf(rule.type) !== -1) {
-        const filteredRef = _.omitBy(rule.reference, _.isUndefined);
         idx = getSafe(state, [gameId, modId, 'rules'], [])
                   .findIndex((iterRule: IRule) => {
                     const typeMatch =
@@ -55,6 +55,12 @@ export const modsReducer: IReducerSpec = {
                     const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
                     return typeMatch && _.isEqual(filteredRef, filteredIter);
                   });
+      } else {
+        idx = getSafe(state, [gameId, modId, 'rules'], [])
+          .findIndex(iterRule => {
+            const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
+            return _.isEqual(filteredRef, filteredIter);
+          });
       }
       if (idx !== -1) {
         return setSafe(state, [gameId, modId, 'rules', idx], rule);
