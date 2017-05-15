@@ -1,36 +1,21 @@
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import { IHashResult } from 'modmeta-db';
 import * as path from 'path';
-
-export interface IModEntry {
-  modId: string;
-  downloadId: string;
-  modName: string;
-  modFilename: string;
-  archivePath: string;
-  modVersion: string;
-  fileEntries: IFileEntry[];
-}
-
-export interface IFileEntry {
-  fileSource: string;
-  fileDestination: string;
-  isActive: boolean;
-  filePriority: number;
-}
+import {IFileEntry as FileEntry, IModEntry as ModEntry} from './nmmEntries';
 
 export class NMMVirtualConfigParser {
-  private source: string;
+  private sourceFile: string;
 
   constructor(nmmFilePath: string) {
-    this.source = nmmFilePath;
+    this.sourceFile = nmmFilePath;
   }
 
   public parseNMMInstall =
-    (callback: (err, res: IModEntry[]) => void) => {
-    const nmmModList: IModEntry[] = [];
+    (callback: (err, res: ModEntry[]) => void) => {
+    const nmmModList: ModEntry[] = [];
     const parser = new DOMParser();
-    fs.readFile(this.source, (err, data) => {
+    fs.readFileAsync(this.sourceFile, (err, data) => {
         const xmlDoc = parser.parseFromString(data.toString('utf-8'), 'text/xml');
         const version = xmlDoc.getElementById('virtualModActivator');
         if (version === undefined) {
@@ -56,7 +41,7 @@ export class NMMVirtualConfigParser {
           const elementArchivePath = modInfo.getAttribute('modFilePath');
           const elementModVersion = modInfo.getAttribute('FileVersion');
 
-          const modFileEntries: IFileEntry[] = [];
+          const modFileEntries: FileEntry[] = [];
 
           for (const fileLink of modInfo.childNodes) {
             const nodeRealPath: string = fileLink.attributes['realPath'];
@@ -64,7 +49,7 @@ export class NMMVirtualConfigParser {
             const nodeLinkPriority = fileLink.childNodes[0].nodeValue;
             const nodeIsActive = fileLink.childNodes[1].nodeValue;
 
-            const fileEntry: IFileEntry = {
+            const fileEntry: FileEntry = {
               fileSource: nodeRealPath,
               fileDestination: nodeVirtualPath,
               isActive: (nodeIsActive === 'true'),
@@ -74,13 +59,23 @@ export class NMMVirtualConfigParser {
             modFileEntries.push(fileEntry);
           }
 
-          const modEntry: IModEntry = {
+          const { genHash } = require('modmeta-db');
+          const modFilePath = path.join(elementArchivePath, elementModFilename);
+          let fileMD5: string;
+
+          fileMD5 = genHash(modFilePath)
+                .then((hashResult: IHashResult) => {
+                  return hashResult.md5sum;
+                });
+
+          const modEntry: ModEntry = {
             modId: elementModId,
             downloadId: elementDownloadId,
             modName: elementModName,
             modFilename: elementModFilename,
             archivePath: elementArchivePath,
             modVersion: elementModVersion,
+            archiveMD5: fileMD5,
             fileEntries: modFileEntries,
           };
 
