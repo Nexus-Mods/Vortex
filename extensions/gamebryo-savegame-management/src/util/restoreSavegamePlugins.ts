@@ -1,3 +1,4 @@
+import { setSaveGameActivity } from '../actions/session';
 import { ISavegame } from '../types/ISavegame';
 
 import * as Promise from 'bluebird';
@@ -35,6 +36,7 @@ function restoreSavegamePlugins(
 
   let plugins: string[] = [];
   const missingPlugins: string[] = [];
+  api.store.dispatch(setSaveGameActivity('Restoring plugins'));
   fs.readdirAsync(discovery.modPath)
     .then((files: string[]) => {
       plugins = files.filter((fileName: string) => {
@@ -50,6 +52,7 @@ function restoreSavegamePlugins(
       });
 
       if (missingPlugins.length > 0) {
+        api.store.dispatch(setSaveGameActivity(undefined));
         onShowDialog('error', t('Restore savegame\'s plugins'), {
           message: t('An error occurred restoring the savegame\'s plugins.\n' +
             'These files are missing, the restore will be canceled.\n\n{{plugins}}',

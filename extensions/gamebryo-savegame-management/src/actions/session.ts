@@ -17,3 +17,5 @@ export const removeSavegame = safeCreateAction('REMOVE_SAVEGAME');
 export const setSavegamePath = safeCreateAction('SET_SAVEGAME_PATH');
 
 export const showTransferDialog = safeCreateAction('SHOW_TRANSFER_DIALOG');
+
+export const setSaveGameActivity = safeCreateAction('SET_SAVEGAME_ACTIVITY');

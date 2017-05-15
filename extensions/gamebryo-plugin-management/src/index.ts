@@ -30,7 +30,6 @@ import { access, constants } from 'fs';
 import * as fs from 'fs-extra-promise';
 import { log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
-import { generate as shortid } from 'shortid';
 import * as nodeUtil from 'util';
 
 interface IModState {
@@ -379,22 +378,15 @@ function init(context: IExtensionContextExt) {
     });
 
     context.api.events.on('restore-savegame-plugins', (newPlugins: string[]) => {
-      const notificationId = shortid();
-      context.api.sendNotification({
-        id: notificationId,
-        type: 'activity',
-        message: 'Restoring plugins',
-        title: 'Restoring',
-      });
 
       restoreSavegamePlugins(newPlugins, context.api.store)
         .then(() => {
           store.dispatch(setPluginOrder(newPlugins));
-          context.api.dismissNotification(notificationId);
+          context.api.events.emit('clean-savegame-activity', undefined);
           util.showSuccess(store.dispatch, 'Restore savegame\'s plugins complete');
         })
         .catch((err: Error) => {
-          context.api.dismissNotification(notificationId);
+          context.api.events.emit('clean-savegame-activity', undefined);
           util.showError(store.dispatch, 'Failed to restore savegame\'s plugins', err);
         });
     });
@@ -402,7 +394,7 @@ function init(context: IExtensionContextExt) {
     context.api.events.on('profile-activated', (newProfileId: string) => {
       const newProfile =
         util.getSafe(store.getState(),
-          ['persistent', 'profiles', newProfileId], {} as any);
+          ['persistent', 'profiles', newProfileId], undefined);
       if ((newProfile === undefined) || !gameSupported(newProfile.gameId)) {
         return;
       }

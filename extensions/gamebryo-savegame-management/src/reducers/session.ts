@@ -29,13 +29,18 @@ export const sessionReducer: types.IReducerSpec = {
     [actions.clearSavegames as any]: (state, payload) => {
       return update(state, { saves: { $set: {} } });
     },
+    [actions.setSaveGameActivity as any]: (state, payload) =>
+      util.setSafe(state, ['saveGameActivity'], payload)
+    ,
     [actions.setSavegamePath as any]: (state, payload) =>
       util.setSafe(state, ['savegamePath'], payload),
-  }, defaults: {
+  },
+  defaults: {
     saves: {},
     savegamePath: '',
     showDialog: false,
     selectAllSavegames: false,
     selectedProfile: undefined,
+    saveGameActivity: undefined,
   },
 };

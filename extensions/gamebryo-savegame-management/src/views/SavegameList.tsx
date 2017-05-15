@@ -20,6 +20,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 import { translate } from 'react-i18next';
+import { Fixed } from 'react-layout-pane';
 import { connect } from 'react-redux';
 
 // current typings know neither the function nor the return value
@@ -42,6 +43,7 @@ interface IConnectedProps {
   showTransfer: boolean;
   gameMode: string;
   discoveredGames: { [id: string]: types.IDiscoveryResult };
+  saveGameActivity: string;
 }
 
 interface IActionProps {
@@ -90,7 +92,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, saves, showTransfer } = this.props;
+    const { t, saves, saveGameActivity, showTransfer } = this.props;
     const { importSaves, profileId } = this.state;
 
     let actions = this.savegameActions;
@@ -139,6 +141,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
           {header}
         </MainPage.Header>
         <MainPage.Body>
+          {this.renderSavegameActivity()}
           {content}
         </MainPage.Body>
         <MainPage.Overlay>
@@ -150,6 +153,23 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         </MainPage.Overlay>
       </MainPage>
     );
+  }
+
+  private renderSavegameActivity() {
+    const { t, saveGameActivity } = this.props;
+    if (saveGameActivity !== undefined) {
+      return (
+        <Fixed>
+          <div>
+            <Icon name='spinner' pulse />
+            {t(saveGameActivity)}
+          </div>
+        </Fixed>
+      );
+    } else {
+      return null;
+    }
+
   }
 
   private renderTransfer() {
@@ -335,6 +355,7 @@ function mapStateToProps(state: any): IConnectedProps {
     showTransfer: state.session.saves.showDialog,
     discoveredGames: state.settings.gameMode.discovered,
     gameMode: selectors.activeGameId(state),
+    saveGameActivity: state.session.saves.saveGameActivity,
   };
 }
 
