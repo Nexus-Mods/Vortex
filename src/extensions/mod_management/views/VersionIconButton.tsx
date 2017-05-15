@@ -18,7 +18,7 @@ type IProps = IBaseProps;
 
 /**
  * VersionIcon Button
- * 
+ *
  * @class VersionIconButton
  */
 class VersionIconButton extends ComponentEx<IProps, {}> {

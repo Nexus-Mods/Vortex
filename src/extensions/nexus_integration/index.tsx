@@ -195,12 +195,16 @@ function checkModsVersionImpl(
 
   const modsList = Object.keys(mods).map(modId => mods[modId]);
 
-  return Promise.map(modsList, (mod: IMod) => {
-    return checkModsVersion(store.dispatch, nexus, gameId, mod)
-      .catch((err) => {
+  return Promise.map(modsList, (mod: IMod) =>
+    checkModsVersion(store.dispatch, nexus, gameId, mod)
+      .catch(err => {
         const detail = processErrorMessage(err.statusCode, err.message, gameId);
         if (detail.fatal) {
           return Promise.reject(detail);
+        }
+
+        if (detail.error === undefined) {
+          return undefined;
         }
 
         const name = modName(mod, { version: true });
@@ -209,8 +213,7 @@ function checkModsVersionImpl(
         } else {
           return `${name}:\n${detail.error}`;
         }
-      });
-  })
+      }))
     .then(errorMessages => errorMessages.filter(msg => msg !== undefined));
 }
 

@@ -10,7 +10,7 @@ import Nexus, { IFileInfo, IFileUpdate, IModFiles, IModInfo } from 'nexus-api';
 
 /**
  * check the mod version by the server call
- * 
+ *
  * @param {Nexus} nexus
  * @param {string} gameId
  * @param {string} modId
@@ -18,7 +18,7 @@ import Nexus, { IFileInfo, IFileUpdate, IModFiles, IModInfo } from 'nexus-api';
  * @param {string} version
  * @param {number} uploadedTimestamp
  * @return {Promise<IFileInfo>} updatedMod
- * 
+ *
  */
 export function checkModsVersion(dispatch: Redux.Dispatch<any>, nexus: Nexus,
                                  gameId: string, mod: IMod): Promise<void> {
@@ -36,10 +36,10 @@ export function checkModsVersion(dispatch: Redux.Dispatch<any>, nexus: Nexus,
 /**
  * based on file update information, find the newest version of the file
  * @param fileUpdates
- * @param fileId 
+ * @param fileId
  */
 function findLatestUpdate(fileUpdates: IFileUpdate[], updateChain: IFileUpdate[], fileId: number) {
-  let updatedFile = fileUpdates.find(file => file.old_file_id === fileId);
+  const updatedFile = fileUpdates.find(file => file.old_file_id === fileId);
   if (updatedFile !== undefined) {
     return findLatestUpdate(fileUpdates,
       updateChain.concat([ updatedFile ]), updatedFile.new_file_id);
@@ -88,8 +88,23 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
                               mod: IMod,
                               files: IModFiles) {
   const fileId = getSafe(mod.attributes, ['fileId'], undefined);
-  let latestFileId = fileId;
-  const fileUpdate: IFileUpdate[] = findLatestUpdate(files.file_updates, [], latestFileId);
+  const latestFileId = fileId;
+  let fileUpdate: IFileUpdate[] = findLatestUpdate(files.file_updates, [], latestFileId);
+  if (fileUpdate.length === 0) {
+    // update not found through update-chain. If there is only a single file that
+    // isn't marked as old we assume that is the right update.
+    const notOld = files.files.filter(file => file.category_id !== 4);
+    if ((notOld.length === 1) && (notOld[0].file_id !== fileId)) {
+      fileUpdate = [{
+        old_file_id: fileId,
+        old_file_name: mod.attributes['fileName'],
+        new_file_id: notOld[0].file_id,
+        new_file_name: notOld[0].file_name,
+        uploaded_time: notOld[0].uploaded_time,
+        uploaded_timestamp: notOld[0].uploaded_timestamp,
+      }];
+    }
+  }
 
   // collect the changelogs of all the versions > currently installed and <= newest
   // TODO this is untested currently, first need to find a mod that provides update info
