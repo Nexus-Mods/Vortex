@@ -285,7 +285,6 @@ class ModDB {
         return this.readRange('name', staticPart, false)
             .then((results) => Promise.map(results.filter(filter), (indexResult) => this.resolveIndex(indexResult.value)))
             .then((results) => {
-            console.log('res', results);
             if (results.length > 0) {
                 return Promise.resolve(results);
             }

@@ -16,8 +16,10 @@ export const enabledModKeys = createSelector(currentGameMods, modState, (mods, m
   Object.keys(mods).forEach(modId => {
     const attributes = mods[modId].attributes;
     if (util.getSafe(modStateIn, [modId, 'enabled'], false)
-        && (attributes['fileMD5'] || attributes['fileName'] || attributes['logicalFileName'])) {
+        && (attributes['fileMD5'] || attributes['fileName']
+            || attributes['logicalFileName'] || attributes['name'])) {
       res.push({
+        id: modId,
         fileMD5: attributes['fileMD5'],
         fileName: attributes['fileName'],
         fileSizeBytes: attributes['fileSizeBytes'],

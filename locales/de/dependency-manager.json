@@ -1,4 +1,5 @@
 {
   "{{ count }} conflicting file": "Ein Dateikonflikt",
-  "{{ count }} conflicting file_plural": "{{ count }} Dateikonflikte"
+  "{{ count }} conflicting file_plural": "{{ count }} Dateikonflikte",
+  "Save": "Speichern"
 }

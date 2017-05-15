@@ -1,4 +1,5 @@
 import { IConflict } from '../types/IConflict';
+import { IModLookupInfo } from '../types/IModLookupInfo';
 
 import isBlacklisted from './blacklist';
 
@@ -7,15 +8,30 @@ import * as fs from 'fs-extra-promise';
 import { types, util } from 'nmm-api';
 import * as path from 'path';
 
-type FileMap = { [filePath: string]: types.IMod[] };
+interface IFileMap {
+  [filePath: string]: types.IMod[];
+}
 
-function getAllFiles(basePath: string, mods: types.IMod[]): Promise<FileMap> {
-  let files: FileMap = {};
+function toLookupInfo(mod: types.IMod): IModLookupInfo {
+  return {
+    id: mod.id,
+    fileMD5: mod.attributes['fileMD5'],
+    customFileName: mod.attributes['customFileName'],
+    fileName: mod.attributes['fileName'],
+    fileSizeBytes: mod.attributes['fileSizeBytes'],
+    logicalFileName: mod.attributes['logicalFileName'],
+    name: mod.attributes['name'],
+    version: mod.attributes['version'],
+  };
+}
+
+function getAllFiles(basePath: string, mods: types.IMod[]): Promise<IFileMap> {
+  const files: IFileMap = {};
   return Promise.map(mods, (mod: types.IMod) => {
     const modPath = path.join(basePath, mod.installationPath);
     return util.walk(modPath, (iterPath: string, stat: fs.Stats) => {
       if (stat.isFile()) {
-        let relPath = path.relative(modPath, iterPath);
+        const relPath = path.relative(modPath, iterPath);
         if (files[relPath] === undefined) {
           files[relPath] = [];
         }
@@ -23,22 +39,23 @@ function getAllFiles(basePath: string, mods: types.IMod[]): Promise<FileMap> {
       }
       return Promise.resolve();
     });
-  }
-  )
+  })
     .then(() => {
       return files;
     });
 }
 
-type ConflictMap = { [lhsId: string]: { [rhsId: string]: string[] } };
+interface IConflictMap {
+  [lhsId: string]: { [rhsId: string]: string[] };
+}
 
-function getConflictMap(files: FileMap): ConflictMap {
+function getConflictMap(files: IFileMap): IConflictMap {
   const conflictFiles = Object.keys(files)
     .filter(filePath => (files[filePath].length > 1) && !isBlacklisted(filePath));
 
-  let conflicts: ConflictMap = {};
+  const conflicts: IConflictMap = {};
   conflictFiles.forEach(filePath => {
-    let file = files[filePath];
+    const file = files[filePath];
     for (let i = 0; i < file.length; ++i) {
       for (let j = 0; j < file.length; ++j) {
         if (i !== j) {
@@ -59,7 +76,7 @@ function findConflicts(basePath: string,
       normFunc = func;
       return getAllFiles(basePath, mods);
     })
-    .then((files: FileMap) => {
+    .then((files: IFileMap) => {
       const conflictMap = getConflictMap(files);
       const conflictsByMod: { [modId: string]: IConflict[] } = {};
       Object.keys(conflictMap).forEach(lhsId => {
@@ -68,7 +85,7 @@ function findConflicts(basePath: string,
             conflictsByMod[lhsId] = [];
           }
           conflictsByMod[lhsId].push({
-            otherMod: rhsId,
+            otherMod: toLookupInfo(mods.find(mod => mod.id === rhsId)),
             files: conflictMap[lhsId][rhsId],
           });
         });

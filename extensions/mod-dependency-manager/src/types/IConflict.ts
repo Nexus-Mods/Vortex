@@ -1,4 +1,6 @@
+import { IModLookupInfo } from './IModLookupInfo';
+
 export interface IConflict {
-  otherMod: string;
+  otherMod: IModLookupInfo;
   files: string[];
 }

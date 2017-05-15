@@ -77,9 +77,9 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     conflicts.forEach(conflict => {
       const existingRule = (mods[modId].rules || [])
         .find(rule => (['before', 'after', 'conflicts'].indexOf(rule.type) !== -1)
-          && matchReference(rule.reference, mods[conflict.otherMod]));
+          && matchReference(rule.reference, conflict.otherMod));
 
-      res[conflict.otherMod] = existingRule !== undefined
+      res[conflict.otherMod.id] = existingRule !== undefined
         ? existingRule.type as RuleChoice
         : undefined;
     });
@@ -99,13 +99,13 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     );
 
     return (
-      <ListGroupItem key={conflict.otherMod}>
+      <ListGroupItem key={conflict.otherMod.id}>
         <FormControl
           className='conflict-rule-select'
           componentClass='select'
-          value={ruleType[conflict.otherMod]}
+          value={ruleType[conflict.otherMod.name]}
           onChange={this.setRuleType}
-          id={conflict.otherMod}
+          id={conflict.otherMod.id}
         >
           <option value={undefined}>{t('No rule')}</option>
           <option value='before'>{t('Load before')}</option>
@@ -113,12 +113,14 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
           <option value='conflicts'>{t('Conflicts with')}</option>
         </FormControl>
         <div className='conflict-rule-description'>
-          <p className='conflict-rule-name'>{renderModName(mods[conflict.otherMod])}</p>
+          <p className='conflict-rule-name'>{renderModName(mods[conflict.otherMod.id])}</p>
           <OverlayTrigger trigger='click' rootClose placement='right' overlay={popover}>
-            <a>{t('{{ count }} conflicting file', {
-              count: conflict.files.length,
-              replace: { count: conflict.files.length },
-            })}</a>
+            <a>{
+              t('{{ count }} conflicting file', {
+                count: conflict.files.length,
+                replace: { count: conflict.files.length },
+              })
+            }</a>
           </OverlayTrigger>
         </div>
       </ListGroupItem>
@@ -135,11 +137,17 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private makeReference = (mod: types.IMod): IReference => {
+    // return a reference that matches by name but any version.
+    // The version-attribute isn't set at all because there is no pattern
+    // in semver that actually matches everything (* doesn't match versions
+    // with "-something" at the end)
     return (mod.attributes['logicalFileName'] !== undefined)
       ? {
         logicalFileName: mod.attributes['logicalFileName'],
       } : {
-        fileExpression: mod.attributes['fileExpression'] || mod.attributes['fileName'],
+        fileExpression: mod.attributes['fileExpression']
+                     || mod.attributes['fileName']
+                     || mod.attributes['name'],
       };
   }
 

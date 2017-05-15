@@ -2,6 +2,7 @@
  * Extension for editing and visualising mod dependencies
  */
 
+import { IBiDirRule } from './types/IBiDirRule';
 import determineConflicts from './util/conflicts';
 import ConflictEditor from './views/ConflictEditor';
 import Connector from './views/Connector';
@@ -12,9 +13,89 @@ import ProgressFooter from './views/ProgressFooter';
 import { setConflictInfo } from './actions';
 import connectionReducer from './reducers';
 
-import { actions, selectors, types, util } from 'nmm-api';
+import * as Promise from 'bluebird';
+import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
+import { actions, log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
+
+function makeReference(mod: IModInfo): IReference {
+  return {
+    fileExpression: mod.fileName,
+    fileMD5: mod.fileMD5,
+    versionMatch: mod.fileVersion,
+    logicalFileName: mod.logicalFileName,
+  };
+}
+
+function makeModReference(mod: types.IMod): IReference {
+  return {
+    fileExpression: mod.attributes['fileName'],
+    fileMD5: mod.attributes['fileMD5'],
+    versionMatch: mod.attributes['version'],
+    logicalFileName: mod.attributes['logicalFileName'],
+  };
+}
+
+// export declare type RuleType =
+// 'before' | 'after' | 'requires' | 'conflicts' | 'recommends' | 'provides';
+function inverseRule(ruleType: RuleType): RuleType {
+  switch (ruleType) {
+    case 'before': return 'after';
+    case 'after': return 'before';
+    case 'conflicts': return 'conflicts';
+    default: throw new Error('unsupported rule ' + ruleType);
+  }
+}
+
+function mapRules(source: IReference, rules: IRule[]): IBiDirRule[] {
+  const res: IBiDirRule[] = [];
+  if (rules === undefined) {
+    return res;
+  }
+  rules.forEach(rule => {
+    if (['requires', 'recommends', 'provides'].indexOf(rule.type) !== -1) {
+      return;
+    }
+    res.push({
+      source,
+      type: rule.type,
+      reference: rule.reference,
+    });
+    res.push({
+      source: rule.reference,
+      type: inverseRule(rule.type),
+      reference: source,
+    });
+  });
+  return res;
+}
+
+function updateMetaRules(api: types.IExtensionApi,
+                         gameId: string,
+                         mods: { [modId: string]: types.IMod }): Promise<IBiDirRule[]> {
+  let rules: IBiDirRule[] = [];
+  return Promise.map(Object.keys(mods), modId => {
+    const mod = mods[modId];
+    rules = rules.concat(mapRules(makeModReference(mod), mod.rules));
+    return api.lookupModMeta({
+      fileMD5: mod.attributes['fileMD5'],
+      fileSize: mod.attributes['fileSize'],
+      gameId,
+    })
+      .then((meta: ILookupResult[]) => {
+        if (meta.length > 0) {
+          rules = rules.concat(mapRules(makeReference(meta[0].value), meta[0].value.rules));
+        }
+      })
+      .catch((err: Error) => {
+        log('warn', 'failed to look up mod', { err: err.message, stack: err.stack });
+      });
+  })
+  .then(() => rules);
+}
+
+let modRules: IBiDirRule[] = [];
 
 function main(context: types.IExtensionContext) {
   context.registerTableAttribute('mods', {
@@ -23,7 +104,7 @@ function main(context: types.IExtensionContext) {
     description: 'Relations to other mods',
     icon: 'plug',
     placement: 'table',
-    customRenderer: (mod, detailCell, t) => <DependencyIcon mod={mod} t={t} />,
+    customRenderer: (mod, detailCell, t) => <DependencyIcon mod={mod} rules={modRules} t={t} />,
     calc: (mod) => null,
     isToggleable: true,
     edit: {},
@@ -50,15 +131,22 @@ function main(context: types.IExtensionContext) {
         .map(modId => state.persistent.mods[gameId][modId]);
       store.dispatch(actions.startActivity('mods', 'conflicts'));
       determineConflicts(modPath, mods)
-        .then((conflictMap) => {
+        .then(conflictMap => {
           store.dispatch(setConflictInfo(conflictMap));
         })
         .finally(() => {
           store.dispatch(actions.stopActivity('mods', 'conflicts'));
         });
     });
-
     // TODO: conflicts aren't currently updated unless the profile changes
+
+    context.api.events.on('gamemode-activated', (gameMode: string) => {
+      const state: types.IState = store.getState();
+      updateMetaRules(context.api, gameMode, state.persistent.mods[gameMode])
+        .then(rules => {
+          modRules = rules;
+        });
+    });
   });
 
   return true;

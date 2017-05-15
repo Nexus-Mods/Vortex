@@ -1,3 +1,4 @@
+import { IBiDirRule } from '../types/IBiDirRule';
 import { IConflict } from '../types/IConflict';
 import { IModLookupInfo } from '../types/IModLookupInfo';
 
@@ -21,25 +22,38 @@ import { connect } from 'react-redux';
 interface IDescriptionProps {
   t: I18next.TranslationFunction;
   rule: IRule;
-  removeable: boolean;
   key: string;
   onRemoveRule?: (rule: IRule) => void;
+  fulfilled: boolean;
 }
 
 class RuleDescription extends React.Component<IDescriptionProps, {}> {
-
   public render(): JSX.Element {
-    const {rule, removeable} = this.props;
+    const {onRemoveRule, rule} = this.props;
 
     const key = this.key(rule);
     return (
-      <div key={key}>
+      <div
+        key={key}
+        className={this.className()}
+      >
         {this.renderType(rule.type)}
         {' '}
         {this.renderReference(rule.reference)}
-        {removeable ? this.renderRemove() : null}
+        {this.renderRemove()}
       </div>
     );
+  }
+
+  private className() {
+    const {fulfilled} = this.props;
+    if (fulfilled === null) {
+      return undefined;
+    } else if (fulfilled) {
+      return 'rule-fulfilled';
+    } else {
+      return 'rule-unfulfilled';
+    }
   }
 
   private key(rule: IRule) {
@@ -49,7 +63,12 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
   }
 
   private renderRemove = () => {
-    const {t, rule} = this.props;
+    const {t, onRemoveRule, rule} = this.props;
+
+    if (onRemoveRule === undefined) {
+      return null;
+    }
+
     return (
       <tooltip.IconButton
         id={this.key(rule)}
@@ -69,12 +88,12 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
     const {t} = this.props;
     let renderString: string;
     switch (type) {
-      case 'before': renderString = t('loads before'); break;
-      case 'after': renderString = t('loads after'); break;
-      case 'requires': renderString = t('requires'); break;
-      case 'recommends': renderString = t('recommends'); break;
-      case 'conflicts': renderString = t('conflicts with'); break;
-      case 'provides': renderString = t('provides'); break;
+      case 'before': renderString = t('Loads before'); break;
+      case 'after': renderString = t('Loads after'); break;
+      case 'requires': renderString = t('Requires'); break;
+      case 'recommends': renderString = t('Recommends'); break;
+      case 'conflicts': renderString = t('Conflicts with'); break;
+      case 'provides': renderString = t('Provides'); break;
       default: throw new Error('invalid rule type ' + type);
     }
     return <p style={{ display: 'inline' }}>{renderString}</p>;
@@ -96,6 +115,7 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
 export interface IBaseProps {
   t: I18next.TranslationFunction;
   mod: types.IMod;
+  rules: IBiDirRule[];
 }
 
 interface IConnectedProps {
@@ -116,6 +136,7 @@ interface IComponentState {
   reference: IReference;
   modInfo: IModInfo;
   showOverlay: boolean;
+  modRules: IBiDirRule[];
 }
 
 interface IDragProps {
@@ -228,7 +249,13 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
 
-    this.initState({ modInfo: undefined, reference: undefined, showOverlay: false });
+    this.initState({
+      modInfo: undefined,
+      reference: undefined,
+      showOverlay: false,
+      modRules: props.rules.filter(rule => matchReference(rule.source, props.mod)),
+    });
+
     this.mIsMounted = false;
   }
 
@@ -248,6 +275,11 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   public componentWillReceiveProps(nextProps: IProps, nextState: IComponentState) {
     if (this.props.mod !== nextProps.mod) {
       this.updateMod(nextProps.mod);
+    }
+
+    if ((this.props.mod !== nextProps.mod) || (this.props.rules !== nextProps.rules)) {
+      this.nextState.modRules = nextProps.rules.filter(rule =>
+        matchReference(rule.source, nextProps.mod));
     }
 
     const staticRules = util.getSafe(nextState, ['modInfo', 'rules'], undefined);
@@ -278,39 +310,73 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     return connectDropTarget(
       <div style={{ textAlign: 'center', width: '100%' }}>
         {this.renderConnectorIcon(mod)}
-        {this.renderUnfulfilledRules(mod)}
         {this.renderConflictIcon(mod)}
+        {/* this.renderUnfulfilledRules(mod) */}
       </div>);
   }
 
   private renderConnectorIcon(mod: types.IMod) {
-    const {t, connectDragSource} = this.props;
+    const {t, connectDragSource, enabledMods} = this.props;
 
     const staticRules = util.getSafe(this.state, ['modInfo', 'rules'], []);
     const customRules = util.getSafe(mod, ['rules'], []);
 
     const classes = ['btn-dependency'];
 
+    let anyUnfulfilled = false;
+
+    const isFulfilled = (rule: IRule) => {
+      if (rule.type === 'conflicts') {
+        if (this.findReference(rule.reference, enabledMods) !== undefined) {
+          anyUnfulfilled = true;
+          return false;
+        } else {
+          return true;
+        }
+      } else if (rule.type === 'requires') {
+        if (this.findReference(rule.reference, enabledMods) === undefined) {
+          anyUnfulfilled = true;
+          return false;
+        } else {
+          return true;
+        }
+      } else {
+        return null;
+      }
+    };
+
+    let popover: JSX.Element;
+
     if ((staticRules.length > 0) || (customRules.length > 0)) {
-      classes.push('btn-dependency-hasrules');
+      popover = (
+        <Popover id={`popover-${mod.id}`} style={{ maxWidth: 500 }}>
+          {staticRules.map(rule => (
+            <RuleDescription
+              t={t}
+              key={this.key(rule)}
+              rule={rule}
+              fulfilled={isFulfilled(rule)}
+            />
+          ))}
+          {customRules.map(rule => (
+            <RuleDescription
+              t={t}
+              key={this.key(rule)}
+              rule={rule}
+              onRemoveRule={this.removeRule}
+              fulfilled={isFulfilled(rule)}
+            />))}
+        </Popover>
+      );
+      classes.push(anyUnfulfilled ? 'btn-dependency-unfulfilledrule' : 'btn-dependency-hasrules');
     } else {
       classes.push('btn-dependency-norules');
+      popover = (
+        <Popover id={`popover-${mod.id}`}>
+          {t('No rules')}
+        </Popover>
+        );
     }
-
-    const popover = (
-      <Popover id={`popover-${mod.id}`} style={{ maxWidth: 500 }}>
-        {staticRules.map(rule =>
-          <RuleDescription rule={rule} t={t} key={this.key(rule)} removeable={false} />)}
-        {customRules.map(rule => (
-          <RuleDescription
-            rule={rule}
-            t={t}
-            key={this.key(rule)}
-            removeable={true}
-            onRemoveRule={this.removeRule}
-          />))}
-      </Popover>
-    );
 
     return connectDragSource(
         <div style={{ display: 'inline' }}>
@@ -335,19 +401,43 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         </div>);
   }
 
+  private findRule(ref: IModLookupInfo): IBiDirRule {
+    return this.state.modRules.find(rule => {
+      const res = matchReference(rule.reference, ref);
+      return res;
+    });
+  }
+
   private renderConflictIcon(mod: types.IMod) {
     const { t, conflicts } = this.props;
     if (conflicts[mod.id] === undefined) {
       return null;
     }
 
-    const tip = t('Conflicts with: {{conflicts}}', { replace: {
-      conflicts: conflicts[mod.id].map(conflict => conflict.otherMod).join('\n'),
-    } });
+    const classes = ['btn-conflict'];
+
+    const unsolvedConflict = conflicts[mod.id].find(conflict => {
+      const rule = this.findRule(conflict.otherMod);
+      return rule === undefined;
+    });
+
+    if (unsolvedConflict !== undefined) {
+      classes.push('btn-conflict-unsolved');
+    } else {
+      classes.push('btn-conflict-allsolved');
+    }
+
+    const tip = t('Conflicts with: {{conflicts}}', {
+      replace: {
+        conflicts: conflicts[mod.id].map(
+          conflict => this.renderModLookup(conflict.otherMod)).join('\n'),
+      },
+    });
+
     return (
       <tooltip.IconButton
         id={`btn-meta-conflicts-${mod.id}`}
-        className='btn-conflict'
+        className={classes.join(' ')}
         key={`conflicts-${mod.id}`}
         tooltip={tip}
         icon='bolt'
@@ -477,7 +567,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       fileExpression: mod.installationPath,
       logicalFileName: mod.attributes['logicalFileName'],
     };
-
     this.context.api.lookupModMeta({
       fileMD5: mod.attributes['fileMD5'],
       fileSize: mod.attributes['fileSize'],

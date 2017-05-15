@@ -26,6 +26,10 @@
   fill: $link-color;
 }
 
+.btn-dependency-unfulfilledrule svg {
+  fill: $brand-danger;
+}
+
 .btn-dependency-norules svg {
   fill: $gray-light;
 }
@@ -34,7 +38,11 @@
   @extend .btn-embed;
 }
 
-.btn-conflict svg {
+.btn-conflict-unsolved svg {
+  fill: $brand-danger;
+}
+
+.btn-conflict-allsolved svg {
   fill: $link-color;
 }
 
@@ -81,4 +89,12 @@
 
 .conflict-rule-name {
   margin: 0px;
+}
+
+.rule-fulfilled {
+  color: $brand-success;
+}
+
+.rule-unfulfilled {
+  color: $brand-danger;
 }

@@ -17,11 +17,13 @@ function matchReferenceLookup(reference: IReference, mod: IModLookupInfo) {
   }
   if (reference.fileExpression !== undefined) {
     if (mod.fileName === undefined) {
-      return false;
-    }
-    const fileName = path.basename(mod.fileName, path.extname(mod.fileName));
-    if (!minimatch(fileName, reference.fileExpression)) {
-      return false;
+      if (mod.name !== reference.fileExpression) {
+        return false;
+      }
+    } else {
+      if (!minimatch(mod.fileName, reference.fileExpression)) {
+        return false;
+      }
     }
   }
   if ((reference.versionMatch !== undefined) &&
