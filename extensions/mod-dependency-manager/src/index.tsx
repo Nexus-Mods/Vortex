@@ -75,7 +75,7 @@ function updateMetaRules(api: types.IExtensionApi,
                          gameId: string,
                          mods: { [modId: string]: types.IMod }): Promise<IBiDirRule[]> {
   let rules: IBiDirRule[] = [];
-  return Promise.map(Object.keys(mods), modId => {
+  return Promise.map(Object.keys(mods || {}), modId => {
     const mod = mods[modId];
     rules = rules.concat(mapRules(makeModReference(mod), mod.rules));
     return api.lookupModMeta({

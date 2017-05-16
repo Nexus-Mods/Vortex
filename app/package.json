@@ -1,14 +1,14 @@
 {
-  "name": "nmm2",
-  "version": "0.6.2",
-  "productName": "Nexus Mod Manager 2 Retribution",
-  "description": "Nexus Mod Manager 2 Retribution",
+  "name": "vortex",
+  "version": "0.7.0",
+  "productName": "Vortex",
+  "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "main": "main.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Nexus-Mods/NMM2"
+    "url": "https://github.com/Nexus-Mods/Vortex-Private"
   },
   "dependencies": {
     "bluebird": "^3.4.6",
@@ -26,6 +26,7 @@
     "less": "^2.7.1",
     "less-plugin-clean-css": "^1.5.1",
     "level-js": "^2.2.4",
+    "leveldown": "^1.6.0",
     "lodash": "^4.17.4",
     "modmeta-db": "file:../external/modmeta-db",
     "nbind": "^0.3.6",

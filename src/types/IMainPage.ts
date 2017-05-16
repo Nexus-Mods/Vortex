@@ -14,7 +14,7 @@ export interface IMainPage {
   icon: string;
   title: string;
   component: React.ComponentClass<any>;
-  propsFunc: () => void;
+  propsFunc: () => any;
   visible: () => boolean;
   group: 'global' | 'per-game' | 'support';
   badge?: ReduxProp<any>;

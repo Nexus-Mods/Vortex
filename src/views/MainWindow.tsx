@@ -285,34 +285,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     );
   }
 
-  /* private renderModalSettings() {
-    const { t } = this.props;
-    const { showLayer } = this.state;
-    return (
-      <Modal
-        id='modal-settings'
-        show={ showLayer === 'settings' }
-        onHide={ this.hideLayer }
-      >
-        <Modal.Header>
-          <Modal.Title>{ t('Settings') }</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Settings />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            tooltip={ t('Close') }
-            id='close'
-            onClick={ this.hideLayer }
-          >
-          {t('Close') }
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    );
-  } */
-
   private renderPageButton = (page: IMainPage) => {
     const { t } = this.props;
     return !page.visible() ? null : (

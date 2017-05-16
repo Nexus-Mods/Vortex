@@ -21,7 +21,7 @@ let installLib;
 type ProgressDelegate = (perc: number) => void;
 
 function dirname() {
-  return __dirname.replace('app.asar', 'app.asar.unpacked');
+  return __dirname.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
 
 function testSupported(files: string[]): Promise<ISupportedResult> {

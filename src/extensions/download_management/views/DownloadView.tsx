@@ -278,6 +278,13 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     ];
   }
 
+  public shouldComponentUpdate(nextProps: IProps) {
+    return this.props.downloads !== nextProps.downloads
+      || this.props.downloadPath !== nextProps.downloadPath
+      || this.props.gameMode !== nextProps.gameMode
+      || this.props.knownGames !== nextProps.knownGames;
+  }
+
   public render(): JSX.Element {
     let { downloads } = this.props;
     const { gameMode } = this.props;

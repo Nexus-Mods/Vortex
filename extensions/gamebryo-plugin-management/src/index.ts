@@ -407,7 +407,7 @@ function init(context: IExtensionContextExt) {
     });
 
     const currentProfile = selectors.activeProfile(store.getState());
-    if (gameSupported(currentProfile.gameId)) {
+    if ((currentProfile !== undefined) && gameSupported(currentProfile.gameId)) {
       updatePluginList(store, currentProfile.modState)
         .then(() => {
           startSync(context.api);

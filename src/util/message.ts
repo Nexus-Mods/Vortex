@@ -14,7 +14,7 @@ function clamp(min: number, value: number, max: number): number {
  * This is quite crude because the reading speed differs between languages.
  * Japanese and Chinese for example where a single symbol has much more meaning
  * than a latin character the reading speed per symbol will be lower.
- * 
+ *
  * @export
  * @param {number} messageLength
  * @returns
@@ -26,7 +26,7 @@ export function calcDuration(messageLength: number) {
 /**
  * show a notification that some operation succeeded. This message has a timer based on
  * the message length
- * 
+ *
  * @export
  * @template S
  * @param {Redux.Dispatch<S>} dispatch
@@ -46,7 +46,7 @@ export function showSuccess<S>(dispatch: Redux.Dispatch<S>, message: string, id?
 /**
  * show an info notification. Please don't use this for important stuff as the message
  * has a timer based on message length
- * 
+ *
  * @export
  * @template S
  * @param {Redux.Dispatch<S>} dispatch
@@ -66,14 +66,14 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
 /**
  * show an error notification with an optional "more" button that displays further details
  * in a modal dialog.
- * 
+ *
  * @export
  * @template S
  * @param {Redux.Dispatch<S>} dispatch
  * @param {string} message
  * @param {any} [details] further details about the error (stack and such). The api says we only
  *                        want string or Errors but since some node apis return non-Error objects
- *                        where Errors are expected we have to be a bit more flexible here. 
+ *                        where Errors are expected we have to be a bit more flexible here.
  */
 export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
                              details?: string | Error | any,
@@ -99,7 +99,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
     message,
     actions: details !== undefined ? [{
       title: 'More',
-      action: (dismiss: Function) => {
+      action: (dismiss: () => void) => {
         dispatch(showDialog('error', 'Error', content, {
           Report: () => createErrorReport('Error', {
             message,
@@ -113,7 +113,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
 }
 
 function renderNodeError(err: Error): string {
-  let res: string[] = [];
+  const res: string[] = [];
 
   if (Array.isArray(err)) {
     err = err[0];
@@ -134,9 +134,10 @@ function renderCustomError(err: any): string {
   if (err === undefined) {
     return 'Unknown error';
   }
-  return Object.keys(err).map((key: string) => {
-    return key + ':\t' + err[key];
-  }).join('\n');
+  return Object.keys(err)
+      .filter(key => ['fatal'].indexOf(key) === -1)
+      .map(key => key + ':\t' + err[key])
+      .join('\n');
 }
 
 function renderError(err: string | Error | any): string {

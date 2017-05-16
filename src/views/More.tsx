@@ -7,6 +7,7 @@ export interface IProps {
   id: string;
   name: string;
   children?: string;
+  placement?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 /**
@@ -16,22 +17,29 @@ export interface IProps {
  *
  * double-linebreaks can be used in the text to start a new paragraph.
  *
- * @param {IProps} props 
- * @returns 
+ * @param {IProps} props
+ * @returns
  */
 function More(props: IProps) {
-  const { children, id, name } = props;
+  const { children, id, name, placement } = props;
   let pCounter = 0;
-  const popover = (<Popover id={`popover-${id}`} className='more-popover' title={name}>
-    {children.split('\n\n').map((paragraph) => <p key={pCounter++}>{paragraph}</p>)}
-  </Popover>);
+  const popover = (
+    <Popover id={`popover-${id}`} className='more-popover' title={name}>
+      {children.split('\n\n').map((paragraph) => <p key={pCounter++}>{paragraph}</p>)}
+    </Popover>
+  );
   return (
-    <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popover}>
+    <OverlayTrigger
+      trigger='click'
+      rootClose
+      placement={ placement || 'bottom' }
+      overlay={popover}
+    >
       <div style={{ display: 'inline', margin: 2 }}>
         <Icon name='question-circle' className='more-link' />
       </div>
     </OverlayTrigger>
   );
-  }
+}
 
 export default More;

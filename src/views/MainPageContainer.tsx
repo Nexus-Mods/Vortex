@@ -35,6 +35,13 @@ class MainPageContainer extends ComponentEx<IBaseProps, {}> {
     };
   }
 
+  public shouldComponentUpdate(nextProps: IProps): boolean {
+    if (!this.props.active && !nextProps.active) {
+      return false;
+    }
+    return (this.props.page !== nextProps.page) || (this.props.active !== nextProps.active);
+  }
+
   public render(): JSX.Element {
     const { active, page } = this.props;
 

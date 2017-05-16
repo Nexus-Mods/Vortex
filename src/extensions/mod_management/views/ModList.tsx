@@ -149,12 +149,14 @@ class ModList extends ComponentEx<IProps, {}> {
             // direct selection
             if (value === 'uninstalled') {
               // selected "not installed"
-              this.context.api.events.emit('remove-mod', gameMode, modId, (err) => {
-                if (err !== null) {
-                  return this.context.api.showErrorNotification('Failed to remove mod', err);
-                }
-                this.context.api.events.emit('mods-enabled', [modId], value);
-              });
+              if (this.mModsWithState[modId].state !== 'downloaded') {
+                this.context.api.events.emit('remove-mod', gameMode, modId, (err) => {
+                  if (err !== null) {
+                    return this.context.api.showErrorNotification('Failed to remove mod', err);
+                  }
+                  this.context.api.events.emit('mods-enabled', [modId], value);
+                });
+              }
             } else if (this.mModsWithState[modId].state === 'downloaded') {
               // selected "enabled" or "disabled" from "not installed" so first the mod
               // needs to be installed

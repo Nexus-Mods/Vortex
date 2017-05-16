@@ -13,7 +13,7 @@ const modState = createSelector(selectors.activeProfile, (profile) => profile.mo
 export const enabledModKeys = createSelector(currentGameMods, modState, (mods, modStateIn) => {
   const res: IModLookupInfo[] = [];
 
-  Object.keys(mods).forEach(modId => {
+  Object.keys(mods || {}).forEach(modId => {
     const attributes = mods[modId].attributes;
     if (util.getSafe(modStateIn, [modId, 'enabled'], false)
         && (attributes['fileMD5'] || attributes['fileName']

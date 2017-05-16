@@ -89,7 +89,11 @@ function init(context: IExtensionContext): boolean {
         for (const disk of disks.sort()) {
           // 'system' drives are the non-removable ones
           if (disk.system) {
-            store.dispatch(addSearchPath(disk.mountpoint));
+            if (disk.mountpoints) {
+              store.dispatch(addSearchPath(disk.mountpoints[0].path));
+            } else {
+              store.dispatch(addSearchPath(disk.mountpoint));
+            }
           }
         }
       });

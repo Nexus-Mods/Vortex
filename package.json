@@ -5,7 +5,7 @@
   "main": "out/main.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Nexus-Mods/NMM2"
+    "url": "https://github.com/Nexus-Mods/Vortex-Private"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -84,6 +84,7 @@
       "LICENSE.md",
       "bundledPlugins",
       "lib/modinstaller",
+      "node_modules/7z-bin",
       "assets/css/variables.scss"
     ],
     "appId": "com.nexusmods.nmm2",
@@ -117,6 +118,7 @@
       "!**/build/src/Release/obj",
       "!**/node_modules/edge/lib/native",
       "!**/node_modules/edge/src",
+      "!**/node_modules/leveldown/deps",
       "!**/node_modules/node-sass/{build, src, vendor}",
       "!**/node_modules/react-layout-pane/{demo, docs}",
       "!**/node_modules/recharts/{umd}"
