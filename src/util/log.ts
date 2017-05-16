@@ -24,12 +24,12 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
  * application specific logging setup
- * 
+ *
  * @export
  */
 export function setupLogging(basePath: string, useConsole: boolean): void {
   logger.add(logger.transports.File, {
-    filename: path.join(basePath, 'nmm2.log'),
+    filename: path.join(basePath, 'vortex.log'),
     json: false,
     level: 'debug',
     maxsize: 1024 * 1024,
@@ -46,13 +46,13 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
 
 /**
  * log a message
- * 
+ *
  * @export
  * @param {Level} level The log level of the message: 'debug', 'info' or 'error'
  * @param {string} message The text message. Should contain no variable data
  * @param {Object} [metadata] Additional information about the error instance
  */
-export function log(level: LogLevel, message: string, metadata?: Object) {
+export function log(level: LogLevel, message: string, metadata?: {}) {
   if (metadata === undefined) {
     logger.log(level, message);
   } else {

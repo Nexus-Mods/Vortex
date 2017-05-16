@@ -15,7 +15,7 @@ export type PropsCallback = () => any;
 
 /**
  * determines where persisted state is stored and when it gets loaded.
- * global: global NMM2 state, loaded on startup
+ * global: global Vortex state, loaded on startup
  * game: state regarding the managed game. Will be swapped out when the game mode changes
  * profile: state regarding the managed profile. Will be swapped out when the profile changes
  */
@@ -234,7 +234,7 @@ export interface IExtensionApi {
    * folder location returned from this function, especially
    * 'userData' should be used for all settings/state/temporary data
    * if you don't want to/can't use the store.
-   * If NMM2 introduces a way for users to customise storage locations
+   * If Vortex introduces a way for users to customise storage locations
    * then getPath will return the customised path so you don't have to
    * adjust your extension.
    *
@@ -434,7 +434,7 @@ export interface IExtensionContext {
    * like "settings", "state", ...
    * You must not register a hive that is already being persisted or you get data inconsistency.
    * Do not use this on a hive that is registered with "registerPersistor". With this function,
-   * NMM2 takes care of storing/restoring the data, with registerPersistor you can customize the
+   * Vortex takes care of storing/restoring the data, with registerPersistor you can customize the
    * file format.
    *
    * @param {PersistingType} type controls where the state is stored and when it is loaded
@@ -514,7 +514,7 @@ export interface IExtensionContext {
    * similar to once but this callback will be run (only) on the electron "main" process.
    * Use this only if you absolutely must (if you don't know what electron main process means, it's
    * almost certain you don't want this).
-   * While almost all program logic of NMM2 runs in the renderer process, some libraries will not
+   * While almost all program logic of Vortex runs in the renderer process, some libraries will not
    * work correctly on that process so you have to run on the main process.
    */
   onceMain: (callback: () => void) => void;

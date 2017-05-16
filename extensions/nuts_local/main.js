@@ -6,7 +6,7 @@ function init(context) {
 
         var Nuts = require('nuts-serve').Nuts;
         var nuts = Nuts({
-            repository: 'Nexus-Mods/NMM2',
+            repository: 'Nexus-Mods/Vortex-Private',
             token: '008e0c7bfa1a9a2f14df6370dfdac9340ec828a2'
         });
 

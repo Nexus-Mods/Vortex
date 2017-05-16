@@ -1,12 +1,12 @@
 /**
  * This extension is a host for automated tests against the current
- * setup to find problems with NMM2 in general, the setup for the current game,
+ * setup to find problems with Vortex in general, the setup for the current game,
  * ...
- * 
+ *
  * This extension is only responsible to run checks provided by other extensions
  * and to displays the results to the user, it does not contain its own checks.
  * It also allows users to suppress the check.
- * 
+ *
  * New API:
  *   registerTest(id: string, eventType: string, check: function) - registers a test.
  *      _id_ a unique id for this test.
@@ -25,28 +25,31 @@
  * Further event types can be triggered by extensions
  */
 
-import {CheckFunction, IExtensionContext} from '../../types/IExtensionContext';
-import {log} from '../../util/log';
-import {activeProfile} from '../../util/selectors';
-import {deleteOrNop, getSafe, setSafe} from '../../util/storeHelper';
-import {setdefault} from '../../util/util';
+import { CheckFunction, IExtensionContext } from '../../types/IExtensionContext';
+import { log } from '../../util/log';
+import { activeProfile } from '../../util/selectors';
+import { deleteOrNop, getSafe, setSafe } from '../../util/storeHelper';
+import { setdefault } from '../../util/util';
 
-import {ITestResult} from '../../types/ITestResult';
+import { ITestResult } from '../../types/ITestResult';
 
 import ReportDashlet from './views/ReportDashlet';
 
 import * as Promise from 'bluebird';
 
-type CheckEntry = {id: string, check: CheckFunction};
-let checks: { [type: string]: CheckEntry[] } = {};
+interface ICheckEntry {
+  id: string;
+  check: CheckFunction;
+}
+const checks: { [type: string]: ICheckEntry[] } = {};
 
-let triggerDelays: { [type: string]: NodeJS.Timer } = {};
+const triggerDelays: { [type: string]: NodeJS.Timer } = {};
 
 let dashProps = {
   problems: {},
   onResolveProblem: (id: string) => {
     // whenever a "fix"-promise is finished we re-run that check to see if it's actually fixed
-    let entry: CheckEntry;
+    let entry: ICheckEntry;
     Object.keys(checks).forEach((type) => {
       if (entry === undefined) {
         entry = checks[type].find((iter) => iter.id === id);
@@ -56,22 +59,22 @@ let dashProps = {
   },
 };
 
-function runCheck(check: CheckEntry): Promise<void> {
+function runCheck(check: ICheckEntry): Promise<void> {
   return check.check()
-      .then((result: ITestResult) => {
-        if (result !== undefined) {
-          dashProps = setSafe(dashProps, ['problems', check.id], result);
-        } else {
-          dashProps = deleteOrNop(dashProps, ['problems', check.id]);
-        }
-      })
-      .catch((err) => {
-        log('warn', 'check failed to run', {
-          id: check.id,
-          event,
-          err: err.message,
-        });
+    .then((result: ITestResult) => {
+      if (result !== undefined) {
+        dashProps = setSafe(dashProps, ['problems', check.id], result);
+      } else {
+        dashProps = deleteOrNop(dashProps, ['problems', check.id]);
+      }
+    })
+    .catch((err) => {
+      log('warn', 'check failed to run', {
+        id: check.id,
+        event,
+        err: err.message,
       });
+    });
 }
 
 function runChecks(event: string, delay?: number) {
@@ -80,20 +83,20 @@ function runChecks(event: string, delay?: number) {
   }
 
   triggerDelays[event] = setTimeout(() => {
-    let eventChecks = getSafe(checks, [event], []);
+    const eventChecks = getSafe(checks, [event], []);
     log('debug', 'running checks', { event, count: eventChecks.length });
-    Promise.map(eventChecks, (par: CheckEntry) => runCheck(par))
-        .then(() => {
-          log('debug', 'all checks completed',
-              {event, problemCount: Object.keys(dashProps.problems).length});
-        });
+    Promise.map(eventChecks, (par: ICheckEntry) => runCheck(par))
+      .then(() => {
+        log('debug', 'all checks completed',
+          { event, problemCount: Object.keys(dashProps.problems).length });
+      });
   }, delay || 500);
 }
 
 function init(context: IExtensionContext): boolean {
   context.registerTest = (id, eventType, check) => {
-    log('debug', 'register test', {id, eventType});
-    setdefault(checks, eventType, []).push({id, check});
+    log('debug', 'register test', { id, eventType });
+    setdefault(checks, eventType, []).push({ id, check });
   };
 
   context.registerDashlet('Problems', 2, 10, ReportDashlet,

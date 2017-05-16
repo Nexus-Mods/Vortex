@@ -56,7 +56,7 @@ class GlobalNotifications {
     try {
       this.mCurrentNotification = new Notification(notification.title, {
         tag: notification.id,
-        icon: notification.icon || path.resolve(__dirname, '..', 'assets', 'images', 'nmm.ico'),
+        icon: notification.icon || path.resolve(__dirname, '..', 'assets', 'images', 'vortex.ico'),
         body: notification.message,
         requireInteraction: true,
       });

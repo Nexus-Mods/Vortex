@@ -11,7 +11,7 @@
     of more modern js and can apply various code tranformations for optimization
     and such. I'm honestly not 100% clear how it interacts with the typescript
     compiler)
-  - **src/**: nmm2 source code
+  - **src/**: Vortex source code
     - *main.ts*: Entry point of the main process
     - *renderer.tsx*: Entry point of render processes
     - *actions/actions.ts*: contains the actions that can be called to manipulate

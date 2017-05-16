@@ -65,7 +65,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
       })
       .then((currentProfilePath: string) => {
         // if this is the first sync, we assume the files on disk belong
-        // to the profile that was last active in nmm2. This could only be
+        // to the profile that was last active in Vortex. This could only be
         // false if the profile was somehow changed before without a
         // syncFromProfile happening. Of course if the profile was never
         // loaded then it has no copies of the files but that if fine.

@@ -15,7 +15,7 @@ import * as React from 'react';
 import { Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { Interpolate } from 'react-i18next';
 
-export interface IBaseProps {}
+export interface IBaseProps { }
 
 interface IConnectedState {
   gameMode: string;
@@ -49,76 +49,86 @@ class Dashlet extends ComponentEx<IProps, {}> {
       id: 'pick-game',
       condition: (props: IProps) => props.gameMode === undefined,
       render: (props: IProps): JSX.Element => {
-        const {t} = props;
-        const link = <a onClick={this.openGames}><Icon name='gamepad'/>{t('Games')}</a>;
+        const { t } = props;
+        const link = <a onClick={this.openGames}><Icon name='gamepad' />{t('Games')}</a>;
 
-        return (<span>
-          <Interpolate
-            i18nKey='Open {{link}} to select a game to manage'
-            link={link}
-          />
-          </span>);
+        return (
+          <span>
+            <Interpolate
+              i18nKey='Open {{link}} to select a game to manage'
+              link={link}
+            />
+          </span>
+        );
       },
     },
     {
       id: 'paths',
       condition: (props: IProps) => props.gameMode !== undefined,
       render: (props: IProps): JSX.Element => {
-        const {t, basePath} = props;
+        const { t, basePath } = props;
         const path = <strong>{basePath}</strong>;
-        const link = <a onClick={this.openSettings}><Icon name='gear'/>{t('Settings')}</a>;
+        const link = <a onClick={this.openSettings}><Icon name='gear' />{t('Settings')}</a>;
 
-        return (<span>
-          <Interpolate
-            i18nKey='Data for this game will be stored in {{path}}\nOpen {{link}} to change.'
-            path={path}
-            link={link}
-          />
-        </span>);
+        return (
+          <span>
+            <Interpolate
+              i18nKey='Data for this game will be stored in {{path}}\nOpen {{link}} to change.'
+              path={path}
+              link={link}
+            />
+          </span>
+        );
       },
     },
     {
       id: 'nxm-associated',
       condition: (props: IProps) => !props.associatedWithNXM,
       render: (props: IProps): JSX.Element => {
-        const {t} = props;
-        return (<span>
-          {t('Do you want NMM2 to handle download links on Nexus?')}
-          {' '}<Button onClick={this.associateNXM}>{t('Associate')}</Button>
-          </span>);
+        const { t } = props;
+        return (
+          <span>
+            {t('Do you want Vortex to handle download links on Nexus?')}
+            {' '}<Button onClick={this.associateNXM}>{t('Associate')}</Button>
+          </span>
+        );
       },
     },
     {
       id: 'manual-search',
       condition: (props: IProps) => props.searchPaths !== undefined,
       render: (props: IProps): JSX.Element => {
-        const {t, discoveryRunning, searchPaths} = props;
+        const { t, discoveryRunning, searchPaths } = props;
 
         if (discoveryRunning) {
-          return <span>
-          <a onClick={this.openGames}>
-            {t('Discovery running')}<Icon name='spinner' pulse/>
-          </a></span>;
+          return (
+            <span>
+              <a onClick={this.openGames}>
+                {t('Discovery running')}<Icon name='spinner' pulse />
+              </a></span>
+          );
         } else {
           const gameModeLink =
-            <a onClick={this.openGames}><Icon name='gamepad'/>{t('discovered')}</a>;
+            <a onClick={this.openGames}><Icon name='gamepad' />{t('discovered')}</a>;
           const searchLink =
             <a onClick={this.startManualSearch}>{t('search your disks')}</a>;
           const settingsLink =
             <a onClick={this.openSettings}><Icon name='gear' />{searchPaths.sort().join(', ')}</a>;
 
-          const text = 'If games you have installed weren\'t {{discovered}}, NMM2 can {{search}} '
+          const text = 'If games you have installed weren\'t {{discovered}}, Vortex can {{search}} '
             + 'for them. This can take some time. Currenty these directories will be searched: '
             + '{{settings}}.';
 
-          return (<span>
-            <Interpolate
-              i18nKey={text}
-              discovered={gameModeLink}
-              search={searchLink}
-              settings={settingsLink}
-            />
-          </span>);
+          return (
+            <span>
+              <Interpolate
+                i18nKey={text}
+                discovered={gameModeLink}
+                search={searchLink}
+                settings={settingsLink}
+              />
+            </span>
+          );
         }
       },
     },
@@ -126,20 +136,24 @@ class Dashlet extends ComponentEx<IProps, {}> {
       id: 'deploy-automation',
       condition: (props: IProps) => true,
       render: (props: IProps): JSX.Element => {
-        const {t, autoDeploy} = props;
+        const { t, autoDeploy } = props;
         const enabled = autoDeploy ? t('enabled') : t('disabled');
-        const link = <a onClick={this.openSettings}><Icon name='gear'/>{t('Settings')}</a>;
-        const more = (<More id='more-deploy-dash' name={t('Deployment')}>
-          {getTextModManagement('deployment', t)}
-        </More>);
-        return (<span>
-          <Interpolate
-            i18nKey='Automatic deployment{{more}} is {{enabled}}. Open {{link}} to change.'
-            more={more}
-            enabled={enabled}
-            link={link}
-          />
-        </span>);
+        const link = <a onClick={this.openSettings}><Icon name='gear' />{t('Settings')}</a>;
+        const more = (
+          <More id='more-deploy-dash' name={t('Deployment')}>
+            {getTextModManagement('deployment', t)}
+          </More>
+        );
+        return (
+          <span>
+            <Interpolate
+              i18nKey='Automatic deployment{{more}} is {{enabled}}. Open {{link}} to change.'
+              more={more}
+              enabled={enabled}
+              link={link}
+            />
+          </span>
+        );
       },
     },
     {
@@ -147,17 +161,21 @@ class Dashlet extends ComponentEx<IProps, {}> {
       condition: (props: IProps) => !props.profilesVisible,
       render: (props: IProps): JSX.Element => {
         const { t } = props;
-        const link = <a onClick={this.openSettings}><Icon name='gear'/>{t('Settings')}</a>;
-        const more = (<More id='more-profiles-dash' name={t('Profiles')}>
-          {getTextProfiles('profiles', t)}
-        </More>);
-        return (<span>
-          <Interpolate
-            i18nKey='Profile Management{{more}} is disabled. Open {{link}} to enable.'
-            more={more}
-            link={link}
-          />
-        </span>);
+        const link = <a onClick={this.openSettings}><Icon name='gear' />{t('Settings')}</a>;
+        const more = (
+          <More id='more-profiles-dash' name={t('Profiles')}>
+            {getTextProfiles('profiles', t)}
+          </More>
+        );
+        return (
+          <span>
+            <Interpolate
+              i18nKey='Profile Management{{more}} is disabled. Open {{link}} to enable.'
+              more={more}
+              link={link}
+            />
+          </span>
+        );
       },
     },
   ];
@@ -170,23 +188,25 @@ class Dashlet extends ComponentEx<IProps, {}> {
     }
 
     const visibleSteps = this.todos.filter(
-      (step) => !steps[step.id] && step.condition(this.props)
-      );
+      (step) => !steps[step.id] && step.condition(this.props),
+    );
 
-    return (<ListGroup>
-      {visibleSteps.map((step) =>
-        <ListGroupItem key={step.id}>
-          {step.render(this.props)}
-          <IconButton
-            id={`btn-dismiss-${step.id}`}
-            icon='remove'
-            tooltip={t('Dismiss')}
-            className='close-button btn-embed'
-            value={step.id}
-            onClick={this.dismiss}
-          />
-        </ListGroupItem>) }
-    </ListGroup>);
+    return (
+      <ListGroup>
+        {visibleSteps.map((step) => (
+          <ListGroupItem key={step.id}>
+            {step.render(this.props)}
+            <IconButton
+              id={`btn-dismiss-${step.id}`}
+              icon='remove'
+              tooltip={t('Dismiss')}
+              className='close-button btn-embed'
+              value={step.id}
+              onClick={this.dismiss}
+            />
+          </ListGroupItem>))}
+      </ListGroup>
+    );
   }
 
   private openSettings = () => {
@@ -234,5 +254,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default translate(['common'], { wait: true })(
   connect(mapStateToProps, mapDispatchToProps)(
-    Dashlet)
-  ) as React.ComponentClass<IBaseProps>;
+    Dashlet),
+) as React.ComponentClass<IBaseProps>;

@@ -16,7 +16,7 @@
 # Reporting bugs
 
 Please report issues to the issue tracker on github. Please always include at the very least the following information:
-- The exact version of NMM2 you're using
+- The exact version of Vortex you're using
 - Your operating system
 - What you were doing when the bug happened
 - What exactly the bug is (crash? error messages? unexpected behaviour?)
@@ -26,14 +26,14 @@ Please report issues to the issue tracker on github. Please always include at th
 
 All data the client generates (including settings and logs) are stored at
 
-_C:\Users\\<username\>\AppData\Roaming\Nexus Mod Manager 2 Retribution_ (releases)
+_C:\Users\\<username\>\AppData\Roaming\Vortex Retribution_ (releases)
 
 or
 
-_C:\Users\\<username\>\AppData\Roaming\nmm2_ (development build)
+_C:\Users\\<username\>\AppData\Roaming\Vortex_ (development build)
 
 If you need to report a bug, the following files inside that directory may be useful in addition to the error message displayed on screen:
 
-- nmm2.log (logs are rotated at a certain size, this is the latest one)
+- vortex.log (logs are rotated at a certain size, this is the latest one)
 - state\\* except global_account (that one contains keys and passwords so sensitive information)
 - \<game\>\state\* (if the bug pertains to a specific game)

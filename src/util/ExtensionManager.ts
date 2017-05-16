@@ -57,7 +57,7 @@ if (remote !== undefined) {
   dialog = remote.dialog;
 }
 
-// TODO: this inserts the nmm module-path globally so that dynamically loaded
+// TODO: this inserts the Vortex module-path globally so that dynamically loaded
 //   extensions can access them. It would be nicer if we could limit this to
 //   only the extensions and without using the internal function _initPaths
 //   but I didn't find out how (at least not without accessing even more

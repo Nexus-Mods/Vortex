@@ -21,7 +21,7 @@ class ModActivator extends LinkingActivator {
     super(
         'hardlink_activator', 'Hardlink activator',
         'Installs the mods by setting hard links in the destination directory. ' +
-            'This implementation requires the account running NMM2 to have write access ' +
+            'This implementation requires the account running Vortex to have write access ' +
             'to the mod directory.',
         api);
   }
@@ -61,7 +61,7 @@ class ModActivator extends LinkingActivator {
   }
 
   protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
-    let inos = new Set<number>();
+    const inos = new Set<number>();
 
     return walk(installPath, (iterPath: string, stats: fs.Stats) => {
       if (stats.nlink > 1) {
@@ -83,7 +83,7 @@ class ModActivator extends LinkingActivator {
     return fs.ensureDirAsync(path.dirname(linkPath))
         .then(() => fs.linkAsync(sourcePath, linkPath)
                         .catch((err) => {
-                          if (err.code !== 'EEXIST') { throw err; };
+                          if (err.code !== 'EEXIST') { throw err; }
                         }));
   }
 
@@ -97,7 +97,7 @@ class ModActivator extends LinkingActivator {
         return false;
       } else {
         return fs.lstatAsync(sourcePath).then(
-          (sourceStats: fs.Stats) => linkStats.ino === sourceStats.ino
+          (sourceStats: fs.Stats) => linkStats.ino === sourceStats.ino,
         );
       }
     });

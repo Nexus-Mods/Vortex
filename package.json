@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "nmm2_devel",
+  "name": "vortex_devel",
   "version": "0.0.1",
   "main": "out/main.js",
   "repository": {
@@ -87,7 +87,7 @@
       "node_modules/7z-bin",
       "assets/css/variables.scss"
     ],
-    "appId": "com.nexusmods.nmm2",
+    "appId": "com.nexusmods.vortex",
     "win": {
       "target": "nsis",
       "publish": [

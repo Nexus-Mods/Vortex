@@ -63,7 +63,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
 
     const moduleList = Object.keys(modules).map((key) => Object.assign({ key }, modules[key]));
 
-    const imgPath = path.resolve(remote.app.getAppPath(), 'assets', 'images', 'nmm.png');
+    const imgPath = path.resolve(remote.app.getAppPath(), 'assets', 'images', 'vortex.png');
 
     let body = null;
 
@@ -88,7 +88,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
           <Media style={{ marginBottom: 5 }}>
             <Media.Left><Image src={imgPath} /></Media.Left>
             <Media.Body>
-              <Media.Heading>Nexus Mod Manager 2 {remote.app.getVersion()}</Media.Heading>
+              <Media.Heading>Vortex {remote.app.getVersion()}</Media.Heading>
               <p><Icon name='copyright'/> 2017 Black Tree Gaming Ltd.</p>
               <p>{t('Released under')} <a onClick={this.showOwnLicense}>GPL-3</a> {t('License')}</p>
             </Media.Body>
@@ -105,7 +105,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
       <Modal show={shown} onHide={this.props.onHide}>
         <Modal.Header>
           <Modal.Title>
-            Nexus Mod Manager 2
+            Vortex
           </Modal.Title>
         </Modal.Header>
         {body}

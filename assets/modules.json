@@ -2300,11 +2300,11 @@
     "version": "0.0.1",
     "repository": ""
   },
-  "nmm2@0.5.2": {
+  "vortex@0.5.2": {
     "licenses": "GPL-3.0",
-    "repository": "https://github.com/Nexus-Mods/NMM2",
+    "repository": "https://github.com/Nexus-Mods/Vortex-Private",
     "publisher": "Black Tree Gaming Ltd.",
-    "name": "nmm2",
+    "name": "vortex",
     "version": "0.5.2"
   },
   "node-7z@0.4.2": {

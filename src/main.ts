@@ -42,7 +42,7 @@ let moveTimer: NodeJS.Timer;
 
 function createTrayIcon() {
   const imgPath = path.resolve(__dirname, 'assets', 'images',
-                      process.platform === 'win32' ? 'nmm.ico' : 'nmm.png');
+                      process.platform === 'win32' ? 'vortex.ico' : 'vortex.png');
   trayIcon = new Tray(imgPath);
 
   trayIcon.setContextMenu(Menu.buildFromTemplate([
@@ -83,7 +83,7 @@ function createWindow(args: IParameters) {
     y: getSafe(windowMetrics, ['position', 'y'], undefined),
     autoHideMenuBar: true,
     show: false,
-    title: 'NMM2',
+    title: 'Vortex',
   });
 
   mainWindow.loadURL(`file://${__dirname}/index.html`);
@@ -162,8 +162,10 @@ function createLoadingScreen(): Promise<undefined> {
   //       the store...
   loadingScreen = new BrowserWindow({
     frame: false, parent: mainWindow, width: 520, height: 178, transparent: true, show: false,
-    skipTaskbar: true, javascript: false, webgl: false, backgroundThrottling: false, sandbox: false,
-  } as any);
+    skipTaskbar: true,
+    webPreferences: {javascript: false, webgl: false, backgroundThrottling: false, sandbox: false,
+    },
+  });
   loadingScreen.loadURL(`${__dirname}/splash.html`);
   loadingScreen.once('ready-to-show', () => {
     loadingScreen.show();

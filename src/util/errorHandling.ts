@@ -20,7 +20,7 @@ export interface ITermination {
 }
 
 // could be a bit more dynamic but how often is this going to change?
-const repo = 'Nexus-Mods/NMM2';
+const repo = 'Nexus-Mods/Vortex-Private';
 const repoURL = 'https://github.com/' + repo;
 
 function createTitle(type: string, error: ITermination, hash: string) {

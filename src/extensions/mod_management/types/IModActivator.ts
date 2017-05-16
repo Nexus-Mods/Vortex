@@ -89,7 +89,7 @@ export interface IModActivator {
 
   /**
    * activate the specified mod in the specified location
-   * @param {string} installPath nmm2 path where mods are installed from (source)
+   * @param {string} installPath Vortex path where mods are installed from (source)
    * @param {string} dataPath game path where mods are installed to (destination)
    * @param {string} mod the mod to activate
    *
@@ -104,9 +104,9 @@ export interface IModActivator {
 
   /**
    * deactivate all mods at the destination location
-   * @param {string} installPath nmm2 path where mods are installed from (source)
+   * @param {string} installPath Vortex path where mods are installed from (source)
    * @param {string} dataPath game path where mods are installed to (destination)
-   * NMM2 itself does not keep track which files were installed by the
+   * Vortex itself does not keep track which files were installed by the
    * activator so if the activator can not discover those automatically it
    * it has to do its own bookkeeping.
    * The LinkingActivator base-class does implement such bookkeeping however.
@@ -118,7 +118,7 @@ export interface IModActivator {
   /**
    * retrieve list of external changes, that is: files that were installed by this
    * activator but have been changed since then by an external application.
-   * @param {string} installPath nmm2 path where mods are installed from (source)
+   * @param {string} installPath Vortex path where mods are installed from (source)
    * @param {string} dataPath game path where mods are installed to (destination)
    *
    * @memberOf IModActivator

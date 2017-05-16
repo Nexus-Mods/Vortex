@@ -24,7 +24,7 @@ class ModActivator extends LinkingActivator {
     super(
         'symlink_activator', 'Symlink activator',
         'Installs the mods by setting symlinks in the destination directory. ' +
-            'This implementation requires the account running NMM2 to have write access ' +
+            'This implementation requires the account running Vortex to have write access ' +
             'to the mod directory. On Windows the account has to be an administrator.',
             api);
   }

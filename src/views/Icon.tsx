@@ -3,11 +3,15 @@ import * as React from 'react';
 
 import { remote } from 'electron';
 
+interface IAttr {
+  [key: string]: string;
+}
+
 interface IIconDescription {
   icon: {
     paths: string[];
     width: number;
-    attrs: { [key: string]: string }[];
+    attrs: IAttr[];
     tags: string[];
     isMulticolor?: boolean;
   };
@@ -32,7 +36,7 @@ interface IRenderDescription {
   width: number;
 }
 
-let sets: { [setId: string]: IIconFile } = {};
+const sets: { [setId: string]: IIconFile } = {};
 
 // a fallback icon (questionmark from fontawesome)
 const fallback = {
@@ -60,7 +64,7 @@ function getIcon(set: string, name: string): IRenderDescription {
 
   const icon = sets[set].icons.find((ele: IIconDescription) => ele.icon.tags.indexOf(name) !== -1);
   if (icon !== undefined) {
-    let paths: IPath[] = icon.icon.paths.map((path: string, idx: number) => ({
+    const paths: IPath[] = icon.icon.paths.map((path: string, idx: number) => ({
       path,
       attrs: 'attrs' in icon ? icon.icon.attrs[idx] : undefined,
     }));
@@ -94,8 +98,8 @@ function renderPath(path: IPath, idx: number) {
 }
 
 const Icon = (props: IIconProps) => {
-  let set = props.set || 'nmm';
-  let icon = getIcon(set, props.name);
+  const set = props.set || 'vortex';
+  const icon = getIcon(set, props.name);
 
   let classes = [ 'icon', `icon-${props.name}` ];
   if (props.spin) {

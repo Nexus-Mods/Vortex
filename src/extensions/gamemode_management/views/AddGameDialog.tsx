@@ -39,13 +39,13 @@ function getMergeText(t: I18next.TranslationFunction) {
   return t(
     'Some games expect all mods to be merged into a single directory ' +
     '(the data directory in Skyrim for example) while others neatly ' +
-    'place each mod into its own directory. This toggle tells NMM2 which ' +
+    'place each mod into its own directory. This toggle tells Vortex which ' +
     'of the two groups this game falls into.');
 }
 
 /**
  * simple dialog to set userlist rule between two plugins
- * 
+ *
  * @class Editor
  * @extends {ComponentEx<IProps, IComponentState>}
  */
@@ -78,15 +78,16 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    let logoPath = path.join(game.extensionPath, game.logo);
+    const logoPath = path.join(game.extensionPath, game.logo);
 
-    return (<Modal show={visible} onHide={this.close}>
+    return (
+    <Modal show={visible} onHide={this.close}>
       <Modal.Header>
         <h3>{game.name}</h3>
       </Modal.Header>
       <Modal.Body>
         <p>
-          {t('Note: You can add games to NMM2 that aren\'t supported out of the box ' +
+          {t('Note: You can add games to Vortex that aren\'t supported out of the box ' +
             'but please don\'t expect more than the most basic functionality.')}
         </p>
         <Form horizontal>
@@ -136,7 +137,7 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
             t={t}
             controlId='formModPath'
             label={t('Mod Directory')}
-            placeholder={t('Directory where NMM2 should place mods')}
+            placeholder={t('Directory where Vortex should place mods')}
             value={game.modPath}
             stateKey='modPath'
             onChangeValue={this.setValue}
@@ -149,13 +150,15 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
             </Col>
             <Col sm={9}>
               <div style={{ textAlign: 'center' }}>
-                {logoPath !== undefined ? <img
-                  className={'game-thumbnail-img-large'}
-                  src={logoPath + '?' + imgCounter}
-                  onClick={this.setLogo}
-                  id='img-add-game'
-                  alt={t('Click to select the image')}
-                /> : null}
+                {logoPath !== undefined ? (
+                  <img
+                    className={'game-thumbnail-img-large'}
+                    src={logoPath + '?' + imgCounter}
+                    onClick={this.setLogo}
+                    id='img-add-game'
+                    alt={t('Click to select the image')}
+                  />
+                ) : null}
               </div>
             </Col>
           </FormGroup>
@@ -179,13 +182,14 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
         <Button onClick={this.cancel}>{t('Cancel')}</Button>
         <Button onClick={this.save}>{t('Save')}</Button>
       </Modal.Footer>
-    </Modal>);
+    </Modal>
+    );
   }
 
   private setLogo = () => {
     const { extensionPath } = this.state.game;
     remote.dialog.showOpenDialog(null, {
-      properties: [ 'openFile' ],
+      properties: ['openFile'],
       filters: [
         { name: 'Images', extensions: ['png', 'jpg'] },
       ],
@@ -193,14 +197,14 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
       if (fileNames === undefined) {
         return;
       }
-      let ext = path.extname(fileNames[0]);
-      let logoName = `logo${ext}`;
+      const ext = path.extname(fileNames[0]);
+      const logoName = `logo${ext}`;
       this.nextState.game.logo = logoName;
       fs.ensureDirAsync(extensionPath)
-      .then(() => fs.copyAsync(fileNames[0], path.join(extensionPath, logoName)))
-      .then(() => {
-        this.nextState.imgCounter++;
-      });
+        .then(() => fs.copyAsync(fileNames[0], path.join(extensionPath, logoName)))
+        .then(() => {
+          this.nextState.imgCounter++;
+        });
     });
   }
 
@@ -210,7 +214,7 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
       return t('Name is required');
     }
     if ((Object.keys(discovered).find(gameId => discovered[gameId].name === name) !== undefined)
-        || (knownGames.find(game => game.name === name) !== undefined)) {
+      || (knownGames.find(game => game.name === name) !== undefined)) {
       return t('Name has to be unique');
     }
     return null;
@@ -252,7 +256,7 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private save = () => {
-    let result = Object.assign({}, this.state.game);
+    const result = Object.assign({}, this.state.game);
     result.executable = path.relative(result.path, result.executable);
     this.props.onAddDiscoveredGame(result.id, result);
     this.close();
@@ -291,5 +295,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-export default translate([ 'common' ], { wait: false })(
+export default translate(['common'], { wait: false })(
   connect(mapStateToProps, mapDispatchToProps)(AddGameDialog)) as React.ComponentClass<{}>;

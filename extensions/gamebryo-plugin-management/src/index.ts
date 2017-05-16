@@ -263,7 +263,7 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
           description: {
             short: 'plugins.txt is write protected',
             long: 'This file is used to control which plugins the game uses and while it\'s '
-            + 'write protected NMM2 will not be able to enable or disable plugins.\n'
+            + 'write protected Vortex will not be able to enable or disable plugins.\n'
             + 'If you click "fix" the file will be marked writable.',
           },
           severity: 'error',

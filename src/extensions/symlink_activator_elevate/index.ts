@@ -1,5 +1,5 @@
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
-import * as elevatedT from  '../../util/elevated';
+import * as elevatedT from '../../util/elevated';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { activeGameId } from '../../util/selectors';
@@ -32,7 +32,7 @@ class ModActivator extends LinkingActivator {
         'symlink_activator_elevated', 'Symlink activator (Elevated)',
         'Installs the mods by setting symlinks in the destination directory. ' +
             'This implementation will create the symlinks using a separate process ' +
-            'with elevated permissions and therefore works even if NMM2 isn\'t run ' +
+            'with elevated permissions and therefore works even if Vortex isn\'t run ' +
             'as administrator.', api);
     this.mElevatedClient = null;
   }

@@ -4,15 +4,15 @@ import {Cleanliness, PluginTags, SimpleMessage} from 'loot';
 
 /**
  * generic information about a plugin
- * 
+ *
  * @export
  * @interface IPlugin
  */
 export interface IPlugin {
   /**
    * name of the mod that installed this plugin
-   * may be undefined if this plugin was not installed with NMM2
-   * 
+   * may be undefined if this plugin was not installed with Vortex
+   *
    * @type {string}
    * @memberOf IPlugin
    */
@@ -22,18 +22,18 @@ export interface IPlugin {
    * specifies whether this is a "native" plugin, that is: One
    * where the load order is hard-coded into the game engine so
    * we have no influence on if/when it is loaded.
-   * 
+   *
    * @type {boolean}
    * @memberOf IPlugin
    */
   isNative: boolean;
-};
+}
 
-export type IPlugins = { [fileName: string]: IPlugin };
+export interface IPlugins { [fileName: string]: IPlugin; }
 
 /**
  * details retrieved from the content of a plugin through esptk
- * 
+ *
  * @export
  * @interface IPluginParsed
  */
@@ -50,12 +50,12 @@ export interface IPluginLoot {
   tags: PluginTags;
 }
 
-export type IPluginsLoot = { [fileName: string]: IPluginLoot };
+export interface IPluginsLoot { [fileName: string]: IPluginLoot; }
 
 export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed & IPluginLoot & {
   /**
    * file name of the plugin
-   * 
+   *
    * @type {string}
    */
   name: string,
@@ -63,7 +63,7 @@ export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed & IPluginLoot
    * mod index of the plugin as used in form-ids. Please note that this is
    * directly derived from other attributes, namely 'enabled', 'isNative' and
    * 'loadOrder'
-   * 
+   *
    * @type {number}
    */
   modIndex: number,

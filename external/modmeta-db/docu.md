@@ -10,7 +10,7 @@ holds about a file.
 * fileSizeBytes (number) - size of the file in bytes.
 * gameId (string) - unique identifier for the game this file can be used for. These ids
  should be kept the same across all servers and should be the same as used by game-support
- extensions used by NMM2
+ extensions used by Vortex
  Example: 'skyrim'
 * logicalFileName (string, optional) - An abstract name that uniquely identifies all
  versions of the _same_ file.

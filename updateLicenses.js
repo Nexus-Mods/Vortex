@@ -15,6 +15,6 @@ checker.init(
         return console.error('error', err);
       }
       delete json['nmm-api'];
-      delete json.nmm2;
+      delete json.vortex;
       fs.writeFile(path.join('assets', 'modules.json'), JSON.stringify(json, undefined, 2));
     });
