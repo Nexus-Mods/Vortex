@@ -311,7 +311,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       <div style={{ textAlign: 'center', width: '100%' }}>
         {this.renderConnectorIcon(mod)}
         {this.renderConflictIcon(mod)}
-        {/* this.renderUnfulfilledRules(mod) */}
       </div>);
   }
 
@@ -443,69 +442,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         icon='bolt'
         onClick={this.openConflictDialog}
       />
-    );
-  }
-
-  private renderUnfulfilledRules(mod: types.IMod) {
-    const { t, enabledMods } = this.props;
-
-    const staticRules = util.getSafe(this.state, ['modInfo', 'rules'], []);
-
-    if (!mod.rules && !staticRules) {
-      return null;
-    }
-
-    const conflicts: IModLookupInfo[] = [];
-    const missing: IReference[] = [];
-
-    const extractRule = rule => {
-      if (rule.type === 'conflicts') {
-        const ref = this.findReference(rule.reference, enabledMods);
-        if (ref !== undefined) {
-          conflicts.push(ref);
-        }
-      } else if (rule.type === 'requires') {
-        if (this.findReference(rule.reference, enabledMods) === undefined) {
-          missing.push(rule.reference);
-        }
-      }
-    };
-
-    if (mod.rules) {
-      mod.rules.forEach(extractRule);
-    }
-
-    if (staticRules) {
-      staticRules.forEach(extractRule);
-    }
-
-    if ((conflicts.length === 0) && (missing.length === 0)) {
-      return null;
-    }
-
-    const stringifyConflict = conflict => t('Conflicts with {{name}}', { replace: {
-      name: this.renderModLookup(conflict),
-    } });
-
-    const stringifyMissing = miss => t('Requires {{name}}', { replace: {
-      name: this.renderReference(miss),
-    } });
-
-    const unfulfilled = [].concat(
-        conflicts.map(stringifyConflict),
-        missing.map(stringifyMissing),
-        ).join('\n');
-
-    return (
-      <tooltip.ClickPopover
-        id={`btn-meta-unfulfilled-${mod.id}`}
-        className='btn-unfulfilled'
-        key={`unfulfilled-${mod.id}`}
-        icon='exclamation-triangle'
-        tooltip={t('This mod has unsolved dependencies (click for details)')}
-      >
-        { unfulfilled }
-      </tooltip.ClickPopover>
     );
   }
 

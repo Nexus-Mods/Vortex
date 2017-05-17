@@ -33,7 +33,7 @@ export const addDialog = safeCreateAction(
 
 /**
  * dismiss the dialog being displayed
- * 
+ *
  * don't call this directly especially when you used "showDialog" to create the dialog or
  * you leak (a tiny amount of) memory and the action callbacks aren't called.
  * Use closeDialog instead
@@ -41,8 +41,8 @@ export const addDialog = safeCreateAction(
 export const dismissDialog = safeCreateAction('DISMISS_MODAL_DIALOG');
 
 /**
- * 
- * 
+ * show a notification
+ *
  * @export
  * @param {INotification} notification
  * @returns
@@ -56,8 +56,7 @@ export function addNotification(notification: INotification) {
           resolve()
           , notification.displayMS);
       }).then(() =>
-        dispatch(dismissNotification(notification.id))
-      );
+        dispatch(dismissNotification(notification.id)));
     }
   };
 }
@@ -76,7 +75,7 @@ class DialogCallbacks {
 
 /**
  * show a dialog
- * 
+ *
  * @export
  * @param {DialogType} type
  * @param {string} title

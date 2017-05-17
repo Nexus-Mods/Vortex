@@ -23,30 +23,29 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 /**
  * Textarea Notes
- * 
+ *
  * @class TextareaNotes
  */
 class TextareaNotes extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
-    let { mod } = this.props;
-    let notes: string =  mod !== undefined ? getSafe(mod.attributes, ['notes'], '') : '';
+    const { mod } = this.props;
+    const notes: string =  mod !== undefined ? getSafe(mod.attributes, ['notes'], '') : '';
 
     return (
       <textarea
-          value={notes}
-          id={mod !== undefined ? mod.id : ''}
-          style={{ width: '100%', minHeight: 200, resize: 'none' }}
-          onChange={this.handleChange}
+        value={notes}
+        id={mod !== undefined ? mod.id : ''}
+        style={{ width: '100%', minHeight: 200, resize: 'none' }}
+        onChange={this.handleChange}
       />
     );
   }
 
   private handleChange = (event) => {
-    let {gameMode, onSetModAttribute } = this.props;
+    const {gameMode, onSetModAttribute } = this.props;
     onSetModAttribute(gameMode, event.currentTarget.id, 'notes', event.currentTarget.value);
   }
-
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -63,5 +62,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-    TextareaNotes
-  ) as React.ComponentClass<IBaseProps>;
+    TextareaNotes) as React.ComponentClass<IBaseProps>;

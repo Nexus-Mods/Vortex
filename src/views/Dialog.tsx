@@ -108,43 +108,53 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       t = (input: string) => input;
     }
 
-    let controls: JSX.Element[] = [];
+    const controls: JSX.Element[] = [];
 
-    let wrap = (content.options && !content.options.wrap) ? 'off' : 'on';
+    const wrap = (content.options && !content.options.wrap) ? 'off' : 'on';
 
     if (content.message !== undefined) {
-      controls.push(<textarea
-        key='dialog-content-message'
-        wrap={wrap}
-        style={{ width: '100%', minHeight: 300, resize: 'none', border: 'none' }}
-        defaultValue={this.translateParts(content.message, t)}
-        readOnly={true}
-      />);
+      controls.push((
+        <textarea
+          key='dialog-content-message'
+          wrap={wrap}
+          style={{ width: '100%', minHeight: 300, resize: 'none', border: 'none' }}
+          defaultValue={this.translateParts(content.message, t)}
+          readOnly={true}
+        />
+      ));
     }
 
     if (content.htmlFile !== undefined) {
-      controls.push(<div key='dialog-content-html' style={{ overflowY: 'auto' }}>
+      controls.push((
+        <div key='dialog-content-html' style={{ overflowY: 'auto' }}>
         <webview src={`file://${content.htmlFile}`} />
-      </div>);
+      </div>
+      ));
     } else if (content.htmlText !== undefined) {
-      controls.push(<div
-        key='dialog-content-html'
-        dangerouslySetInnerHTML={{ __html: content.htmlText }}
-      />);
+      controls.push((
+        <div
+          key='dialog-content-html'
+          dangerouslySetInnerHTML={{ __html: content.htmlText }}
+        />
+      ));
     } else if (content.checkboxes !== undefined) {
-      controls.push(<div key='dialog-content-choices'>
-        {content.checkboxes.map(this.renderCheckbox)}
-      </div>
-      );
+      controls.push((
+        <div key='dialog-content-choices'>
+          {content.checkboxes.map(this.renderCheckbox)}
+        </div>
+      ));
     } else if (content.choices !== undefined) {
-      controls.push(<div key='dialog-content-choices'>
-        {content.choices.map(this.renderRadiobutton)}
-      </div>);
+      controls.push((
+        <div key='dialog-content-choices'>
+          {content.choices.map(this.renderRadiobutton)}
+        </div>
+      ));
     } else if (content.formcontrol !== undefined) {
-      controls.push(<div key='dialog-form-content'>
-        {content.formcontrol.map(this.renderFormControl)}
-      </div>
-      );
+      controls.push((
+        <div key='dialog-form-content'>
+          {content.formcontrol.map(this.renderFormControl)}
+        </div>
+      ));
     }
 
     return <div style={{ width: '100%' }}>{controls}</div>;
@@ -198,13 +208,12 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private toggleFormControl = (evt) => {
-    let { dialogState } = this.state;
+    const { dialogState } = this.state;
 
-    let idx = dialogState.formcontrol.findIndex((form: IFormControl) => {
-      return form.id === evt.currentTarget.id;
-    });
+    const idx = dialogState.formcontrol.findIndex(
+      form => form.id === evt.currentTarget.id);
 
-    let newFormControl = dialogState.formcontrol.slice(0);
+    const newFormControl = dialogState.formcontrol.slice(0);
     newFormControl[idx].value = evt.currentTarget.value;
 
     this.setState(update(this.state, {
@@ -220,7 +229,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       return box.id === evt.currentTarget.id;
     });
 
-    let newCheckboxes = dialogState.checkboxes.slice(0);
+    const newCheckboxes = dialogState.checkboxes.slice(0);
     newCheckboxes[idx].value = !newCheckboxes[idx].value;
 
     this.setState(update(this.state, {
@@ -236,7 +245,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       return box.id === evt.currentTarget.id;
     });
 
-    let newChoices = dialogState.choices.map((choice: ICheckbox) =>
+    const newChoices = dialogState.choices.map((choice: ICheckbox) =>
       ({ id: choice.id, text: choice.text, value: false }));
     newChoices[idx].value = true;
 
@@ -273,7 +282,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     const { dialogs, onDismiss } = this.props;
     const { dialogState } = this.state;
 
-    let data = {};
+    const data = {};
     if (dialogState.checkboxes !== undefined) {
       dialogState.checkboxes.forEach((box: ICheckbox) => {
         data[box.id] = box.value;
@@ -310,5 +319,5 @@ function mapDispatchToProps<S>(dispatch: Redux.Dispatch<S>): IDialogActionProps 
 }
 
 export default translate(['common'], { wait: false })(
-  connect(mapStateToProps, mapDispatchToProps)(Dialog)
-) as React.ComponentClass<{}>;
+  connect(mapStateToProps, mapDispatchToProps)(
+    Dialog)) as React.ComponentClass<{}>;
