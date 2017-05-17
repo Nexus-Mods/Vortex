@@ -1,4 +1,4 @@
-import { setOverlayOpen } from '../actions/session';
+import { setDialogVisible, setOverlayOpen } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
 
 import { IActionDefinition } from '../types/IActionDefinition';
@@ -112,11 +112,13 @@ export interface IMainWindowState {
 export interface IConnectedProps {
   tabsMinimized: boolean;
   overlayOpen: boolean;
+  visibleDialog: string;
 }
 
 export interface IActionProps {
   onSetTabsMinimized: (minimized: boolean) => void;
   onSetOverlayOpen: (open: boolean) => void;
+  onHideDialog: () => void;
 }
 
 export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps & II18NProps;
@@ -179,6 +181,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public render(): JSX.Element {
+    const { onHideDialog, visibleDialog } = this.props;
     return (
       <div>
         <div id='menu-layer' ref={this.setMenuLayer} />
@@ -189,7 +192,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         </Layout>
         <Dialog />
         {this.renderDeveloperModal()}
-        <DialogContainer />
+        <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
       </div>
     );
   }
@@ -320,7 +323,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       />
     );
   }
-
   private selectHeader = (ref) => {
     const changed = ref !== this.pageHeader;
     this.pageHeader = ref;
@@ -413,6 +415,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   return {
     tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
     overlayOpen: state.session.base.overlayOpen,
+    visibleDialog: state.session.base.visibleDialog,
   };
 }
 
@@ -420,6 +423,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetTabsMinimized: (minimized: boolean) => dispatch(setTabsMinimized(minimized)),
     onSetOverlayOpen: (open: boolean) => dispatch(setOverlayOpen(open)),
+    onHideDialog: () => dispatch(setDialogVisible(undefined)),
   };
 }
 

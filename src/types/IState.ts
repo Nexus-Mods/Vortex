@@ -65,6 +65,8 @@ export interface INotificationState {
 export interface ISession {
   displayGroups: { [id: string]: string };
   overlayOpen: boolean;
+  visibleDialog: string;
+  activity: { [id: string]: string };
 }
 
 export interface IRowState {

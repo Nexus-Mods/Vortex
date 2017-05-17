@@ -1,3 +1,4 @@
+import { setDialogVisible } from '../../../actions/session';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
@@ -8,7 +9,7 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import LoginDialog from './LoginDialog';
 
-import Nexus, { IValidateKeyResponse } from 'nexus-api';
+import Nexus from 'nexus-api';
 import * as React from 'react';
 import { ControlLabel, Form, FormGroup, Image } from 'react-bootstrap';
 import update = require('react-addons-update');
@@ -19,80 +20,22 @@ interface IBaseProps {
 
 interface IConnectedProps {
   APIKey: string;
+  userInfo: IValidateKeyData;
 }
 
 interface IActionProps {
   onSetAPIKey: (APIKey: string) => void;
-}
-
-interface IComponentState {
-  dialogVisible: boolean;
-  APIKey: string;
-  validateKeyData: IValidateKeyData;
+  onShowDialog: () => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-class LoginIcon extends ComponentEx<IProps, IComponentState> {
-  constructor(props) {
-    super(props);
-    this.state = {
-      dialogVisible: false,
-      APIKey: '',
-      validateKeyData: {
-        userId: 0,
-        name: '',
-        isPremium: false,
-        isSupporter: false,
-        email: '',
-        profileUrl: '',
-      },
-    };
-  }
-
-  public componentWillMount() {
-    if (this.props.APIKey !== undefined) {
-      this.loadUserInfo(this.props.APIKey);
-    }
-  }
-
-  public componentWillReceiveProps(newProps: IProps) {
-
-    if ((this.props.APIKey !== newProps.APIKey)) {
-      if (newProps.APIKey !== undefined) {
-        this.loadUserInfo(newProps.APIKey);
-      } else {
-        const keyData: IValidateKeyData = {
-          userId: 0,
-          name: '',
-          isPremium: false,
-          isSupporter: false,
-          email: '',
-          profileUrl: '',
-        };
-
-        this.setState(update(this.state, {
-          validateKeyData: { $set: keyData },
-        }));
-      }
-    }
-  }
-
+class LoginIcon extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, APIKey, nexus } = this.props;
-    const { dialogVisible, validateKeyData } = this.state;
-
     return (
       <span className='pull-right'>
         {this.renderAvatar()}
         {this.renderLoginName()}
-        <LoginDialog
-          APIKey={APIKey}
-          shown={dialogVisible}
-          onHide={this.hideLoginLayer}
-          nexus={nexus}
-          validateKeyData={validateKeyData}
-        />
       </span >
     );
   }
@@ -103,17 +46,16 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderLoginName() {
-    const { validateKeyData } = this.state;
-    const { t } = this.props;
+    const { t, APIKey, userInfo } = this.props;
 
-    if (validateKeyData.name !== '') {
+    if ((APIKey !== undefined) && (userInfo !== undefined)) {
       return (
         <FormGroup
           bsSize={'small'}
           className='pull-right'
         >
           <div style={{marginTop: '10px'}}>
-            {validateKeyData.name}
+            {userInfo.name}
           </div>
           <div >
             <a style={{ color: '#03a9f4' }} onClick={this.logOut}>{t('Log out')}</a>
@@ -126,10 +68,9 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderAvatar() {
-    const { t } = this.props;
-    const { validateKeyData } = this.state;
+    const { t, APIKey, userInfo } = this.props;
 
-    if (validateKeyData.name !== '') {
+    if ((APIKey !== undefined) && (userInfo !== undefined)) {
       return (
         <Button
           id='btn-login'
@@ -138,7 +79,7 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
           className='pull-right'
         >
           <Image
-            src={validateKeyData.profileUrl}
+            src={userInfo.profileUrl}
             circle
             style={{ height: 32, width: 32 }}
           />
@@ -159,28 +100,6 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private loadUserInfo(APIKey: string) {
-    const { nexus } = this.props;
-    const { validateKeyData } = this.state;
-
-    nexus.validateKey(APIKey)
-      .then((data: IValidateKeyResponse) => {
-
-        const keyData: IValidateKeyData = {
-          email: data.email,
-          isPremium: data['is_premium?'],
-          isSupporter: data['is_supporter?'],
-          name: data.name,
-          profileUrl: data.profile_url,
-          userId: data.user_id,
-        };
-
-        this.setState(update(this.state, {
-          validateKeyData: { $set: keyData },
-        }));
-      });
-  }
-
   private showLoginLayer = () => {
     this.setDialogVisible(true);
   }
@@ -190,21 +109,21 @@ class LoginIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   private setDialogVisible(visible: boolean): void {
-    this.setState(update(this.state, {
-      dialogVisible: { $set: visible },
-    }));
+    this.props.onShowDialog();
   }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
+    APIKey: state.confidential.account.nexus.APIKey,
+    userInfo: state.session.nexus.userInfo,
   };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
+    onShowDialog: () => dispatch(setDialogVisible('login-dialog')),
   };
 }
 

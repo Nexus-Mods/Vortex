@@ -7,6 +7,9 @@ import safeCreateAction from './safeCreateAction';
 export const displayGroup = safeCreateAction('DISPLAY_GROUP',
   (groupId: string, itemId?: string) => ({ groupId, itemId }));
 
+export const setDialogVisible = safeCreateAction('SET_DIALOG_VISIBLE',
+  (dialogId: string) => ({ dialogId }));
+
 /**
  * open the overlay for the current page
  */

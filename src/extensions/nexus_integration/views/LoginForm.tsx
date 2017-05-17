@@ -1,5 +1,3 @@
-import Nexus, { IValidateKeyResponse } from 'nexus-api';
-
 import { showDialog } from '../../../actions/notifications';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
@@ -15,8 +13,7 @@ import update = require('react-addons-update');
 
 export interface IProps {
   onClose: () => void;
-  nexus: Nexus;
-  validateKeyData: IValidateKeyData;
+  userInfo: IValidateKeyData;
 }
 
 interface ILoginFormState {
@@ -67,9 +64,13 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
   }
 
   public componentWillMount() {
-    if (this.props.APIKey !== undefined) {
-      this.loadUserInfo();
+    if (this.props.userInfo !== undefined) {
+      this.initUserInfo(this.props);
     }
+  }
+
+  public componentWillReceiveProps(nextProps: IProps) {
+    this.initUserInfo(nextProps);
   }
 
   public render(): JSX.Element {
@@ -95,11 +96,12 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
         validationState={validation.state}
       >
         <ControlLabel>{validation.reason}</ControlLabel>
-        <FormControl
-          type='text'
+        <textarea
           name='APIKey'
+          style={{ resize: 'none', width: '100%' }}
+          rows={4}
           value={APIKey}
-          placeholder={t('User APIKey')}
+          placeholder={t('Create an API key on www.nexusmods.com and paste it here')}
           onChange={this.handleChangeAPIKey}
         />
         <FormFeedbackAwesome pending={validation.pending} />
@@ -187,7 +189,7 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
   }
 
   private authenticateAPIKey() {
-    const { nexus, onSetAPIKey } = this.props;
+    const { onSetAPIKey } = this.props;
     const { APIKey } = this.state;
     const propAPIKey = this.props.APIKey;
 
@@ -200,39 +202,22 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
         statusCode: { $set: null },
         statusCodeMessage: { $set: '' },
       }));
-
-      nexus.validateKey(APIKey)
-        .then((data: IValidateKeyResponse) => {
-          onSetAPIKey(APIKey);
-          this.setState(update(this.state, {
-            userId: { $set: data.user_id },
-            name: { $set: data.name },
-            isPremium: { $set: data['is_premium?'] },
-            isSupporter: { $set: data['is_supporter?'] },
-            email: { $set: data.email },
-            profileUrl: { $set: data.profile_url },
-          }));
-        })
-        .catch((err) => {
-          this.setState(update(this.state, {
-            statusCode: { $set: err.statusCode },
-            statusCodeMessage: { $set: err.message },
-          }));
-        });
+      onSetAPIKey(APIKey);
     }
   }
 
-  private loadUserInfo() {
-
-    const { validateKeyData } = this.props;
-
+  private initUserInfo(props: IProps) {
+    const { userInfo } = props;
+    if (userInfo === undefined) {
+      return;
+    }
     this.setState(update(this.state, {
-      userId: { $set: validateKeyData.userId },
-      name: { $set: validateKeyData.name },
-      isPremium: { $set: validateKeyData.isPremium },
-      isSupporter: { $set: validateKeyData.isSupporter },
-      email: { $set: validateKeyData.email },
-      profileUrl: { $set: validateKeyData.profileUrl },
+      userId: { $set: userInfo.userId },
+      name: { $set: userInfo.name },
+      isPremium: { $set: userInfo.isPremium },
+      isSupporter: { $set: userInfo.isSupporter },
+      email: { $set: userInfo.email },
+      profileUrl: { $set: userInfo.profileUrl },
     }));
   }
 

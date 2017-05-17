@@ -1,10 +1,12 @@
 import { IDialogResult, showDialog } from '../../actions/notifications';
+import { setDialogVisible } from '../../actions/session';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
+import Icon from '../../views/Icon';
 import InputButton from '../../views/InputButton';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
@@ -15,23 +17,31 @@ import { IMod } from '../mod_management/types/IMod';
 import modName from '../mod_management/util/modName';
 import { IProfileMod } from '../profile_management/types/IProfile';
 
-import NXMUrl from './NXMUrl';
+import { setUserInfo } from './actions/session';
+import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
+import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 import { checkModsVersion } from './util/checkModsVersion';
 import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
+import fetchUserInfo from './util/fetchUserInfo';
 import retrieveCategoryList from './util/retrieveCategories';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
+import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
 import NexusModIdDetail from './views/NexusModIdDetail';
 import { } from './views/Settings';
+
+import NXMUrl from './NXMUrl';
 
 import * as Promise from 'bluebird';
 import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
 import * as opn from 'opn';
 import * as React from 'react';
+import { Button } from 'react-bootstrap';
+import { Interpolate } from 'react-i18next';
 import * as util from 'util';
 
 type IModWithState = IMod & IProfileMod;
@@ -262,11 +272,52 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
 }
 
 function init(context: IExtensionContextExt): boolean {
-
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
+  context.registerReducer(['session', 'nexus'], sessionReducer);
+  context.registerDialog('login-dialog', LoginDialog, () => ({ nexus }));
+
+  const logInDialog = () => {
+    context.api.store.dispatch(setDialogVisible('login-dialog'));
+  };
+
+  const associateNXM = () => {
+    context.api.store.dispatch(setAssociatedWithNXMURLs(true));
+  };
+
+  context.registerToDo('nxm-login', () => ({
+    APIKey: context.api.store.getState().confidential.account.nexus.APIKey,
+  }), (props: { APIKey: string }) => props.APIKey === undefined, () => {
+    const t = context.api.translate;
+    const link = (
+      <a onClick={logInDialog}>
+        <Icon name='key' />
+        {t('logged in')}
+      </a>
+    );
+    return (
+      <span><Interpolate
+        i18nKey={'You\'re not {{link}} on Nexus Mods.'}
+        link={link}
+      /></span>
+    );
+  });
+
+  context.registerToDo('nxm-associated', () => ({
+    associated: context.api.store.getState().settings.nexus.associateNXM,
+  }), (props: { associated: boolean }) => !props.associated, () => {
+    const t = context.api.translate;
+    return (
+      <span>
+        {t('Do you want Vortex to handle download links on Nexus?')}
+        {' '}<Button onClick={associateNXM}>{t('Associate')}</Button>
+      </span>
+    );
+  },
+  );
+
 
   context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {
     const nxm: NXMUrl = new NXMUrl(nxmurl);
@@ -382,7 +433,21 @@ function init(context: IExtensionContextExt): boolean {
     context.api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
       (oldValue: string, newValue: string) => {
         nexus.setKey(newValue);
+        if (newValue === undefined) {
+          context.api.store.dispatch(setUserInfo(undefined));
+        } else {
+          fetchUserInfo(nexus, newValue)
+            .then(userInfo => {
+              context.api.store.dispatch(setUserInfo(userInfo));
+            });
+        }
       });
+    if (state.confidential.account.nexus.APIKey !== undefined) {
+      fetchUserInfo(nexus, state.confidential.account.nexus.APIKey)
+        .then(userInfo => {
+          context.api.store.dispatch(setUserInfo(userInfo));
+        });
+    }
 
     context.api.events.on('download-mod-update', (gameId, modId, fileId) => {
       // TODO: Need some way to identify if this request is actually for a nexus mod

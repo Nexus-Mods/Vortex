@@ -1,5 +1,7 @@
-import { ComponentEx, translate } from '../../../util/ComponentEx';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { getSafe } from '../../../util/storeHelper';
 
+import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import LoginForm from './LoginForm';
@@ -8,32 +10,43 @@ import * as React from 'react';
 import { Modal } from 'react-bootstrap';
 
 export interface IBaseProps {
-  shown: boolean;
-  APIKey: string;
-  nexus: any;
-  validateKeyData: IValidateKeyData;
+  visible: boolean;
   onHide: () => void;
 }
 
-type IProps = IBaseProps;
+interface IConnectedProps {
+  APIKey: string;
+  userInfo: IValidateKeyData;
+}
+
+type IProps = IBaseProps & IConnectedProps;
 
 class LoginDialog extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, APIKey, nexus, shown, onHide, validateKeyData } = this.props;
+    const { t, APIKey, visible, onHide, userInfo } = this.props;
     return (
-      <Modal show={shown} onHide={ onHide }>
+      <Modal show={visible} onHide={ onHide }>
         <Modal.Header>
           <Modal.Title>
           { APIKey === '' ? t('API Key Validation') : t('User Info') }
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <LoginForm onClose={ onHide } nexus={ nexus } validateKeyData={validateKeyData} />
+          <LoginForm onClose={ onHide } userInfo={userInfo} />
         </Modal.Body>
       </Modal>
     );
   }
 }
 
+function mapStateToProps(state: any): IConnectedProps {
+  return {
+    APIKey: state.confidential.account.nexus.APIKey,
+    userInfo: state.session.nexus.userInfo,
+  };
+}
+
 export default
-  translate([ 'common' ], { wait: false })(LoginDialog) as React.ComponentClass<IBaseProps>;
+  connect(mapStateToProps)(
+    translate(['common'], { wait: false })(
+      LoginDialog)) as React.ComponentClass<IBaseProps>;

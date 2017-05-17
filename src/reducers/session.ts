@@ -10,6 +10,8 @@ export const sessionReducer: IReducerSpec = {
   reducers: {
     [actions.displayGroup as any]: (state, payload) =>
       setSafe(state, [ 'displayGroups', payload.groupId ], payload.itemId),
+    [actions.setDialogVisible as any]: (state, payload) =>
+      setSafe(state, [ 'visibleDialog' ], payload.dialogId),
     [actions.setOverlayOpen as any]: (state, payload) =>
       setSafe(state, [ 'overlayOpen' ], payload.open),
     [actions.startActivity as any]: (state, payload) =>
@@ -19,6 +21,7 @@ export const sessionReducer: IReducerSpec = {
   },
   defaults: {
     displayGroups: {},
+    visibleDialog: undefined,
     overlayOpen: false,
     activity: {},
   },

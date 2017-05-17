@@ -9,24 +9,37 @@ interface IExtDialog {
   props: PropsCallback;
 }
 
+export interface IBaseProps {
+  visibleDialog: string;
+  onHideDialog: () => void;
+}
+
 export interface IExtendedProps {
   objects: IExtDialog[];
 }
 
-type IProps = IExtendedProps;
+type IProps = IBaseProps & IExtendedProps;
 
 class DialogContainer extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { objects } = this.props;
     return (
       <div>
-        {objects.map(this.renderDialog)}
+        {objects.map(dialog => this.renderDialog(dialog))}
       </div>
     );
   }
   private renderDialog(dialog: IExtDialog): JSX.Element {
+    const { onHideDialog, visibleDialog } = this.props;
     const props = dialog.props !== undefined ? dialog.props() : {};
-    return <dialog.component key={dialog.id} {...props} />;
+    return (
+      <dialog.component
+        key={dialog.id}
+        visible={dialog.id === visibleDialog}
+        onHide={onHideDialog}
+        {...props}
+      />
+    );
   }
 }
 
@@ -36,4 +49,4 @@ function registerDialog(instance, id: string, component: React.ComponentClass<an
 }
 
 export default extend(registerDialog)(
-  DialogContainer) as React.ComponentClass<{}>;
+  DialogContainer) as React.ComponentClass<IBaseProps>;

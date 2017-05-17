@@ -63,6 +63,12 @@ export type RegisterDialog =
    element: React.ComponentClass<any> | React.StatelessComponent<any>,
    props?: PropsCallback) => void;
 
+export type RegisterToDo =
+  (id: string,
+   props: () => any,
+   condition: (props: any) => boolean,
+   render: (props: any) => JSX.Element) => void;
+
 export interface IRegisterProtocol {
   (protocol: string, callback: (url: string) => void);
 }
@@ -394,6 +400,15 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerFooter: RegisterFooter;
+
+  /**
+   * register an todo message that will be shown to new users until they
+   * dismiss it. You can provide a condition under which it will show.
+   * Please don't overuse this as to not intimidate the user. Also keep in mind that the
+   * user can dismiss any todo message without taking action and it will never appear
+   * again.
+   */
+  registerToDo: RegisterToDo;
 
   /**
    * register a reducer to introduce new set-operations on the application
