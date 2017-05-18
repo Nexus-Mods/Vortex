@@ -20,9 +20,9 @@ function init(context: IExtensionContext): boolean {
     description: 'Mod Notes',
     icon: 'sticky-note',
     placement: 'detail',
-    customRenderer: (mod) => {
+    customRenderer: (mod, detailCell, t) => {
       const gameMode = activeGameId(context.api.store.getState());
-      return getTextareaNotes(gameMode, mod);
+      return getTextareaNotes(t, gameMode, mod);
     },
     calc: (mod) => getSafe(mod.attributes, ['notes'], ''),
     isToggleable: false,
@@ -50,9 +50,10 @@ function init(context: IExtensionContext): boolean {
   return true;
 }
 
-function getTextareaNotes(gameMode: string, mod: IMod) {
+function getTextareaNotes(t: I18next.TranslationFunction, gameMode: string, mod: IMod) {
   return (
     <TextareaNotes
+      t={t}
       gameMode={gameMode}
       mod={mod}
     />

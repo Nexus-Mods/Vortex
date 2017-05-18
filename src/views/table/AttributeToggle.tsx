@@ -4,6 +4,7 @@ import { Button } from '../TooltipControls';
 import { IAttributeState } from '../../types/IAttributeState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 
+import * as _ from 'lodash';
 import * as React from 'react';
 
 function getAttr<T>(state: IAttributeState, key: string, def: T): T {
@@ -18,10 +19,16 @@ export interface IAttributeProps {
   attribute: ITableAttribute;
   state: IAttributeState;
   onSetAttributeVisible: (id: string, visible: boolean) => void;
-  t: Function;
+  t: I18next.TranslationFunction;
 }
 
 class AttributeToggle extends React.Component<IAttributeProps, {}> {
+  public shouldComponentUpdate(nextProps: IAttributeProps) {
+    // TODO: compare by content because this is temporary anyway so fixing
+    //   isn't worth it
+    return !_.isEqual(this.props.state, nextProps.state);
+  }
+
   public render(): JSX.Element {
     const { attribute, state, t } = this.props;
 
@@ -42,9 +49,9 @@ class AttributeToggle extends React.Component<IAttributeProps, {}> {
   }
 
   private toggleAttribute = () => {
-    let { attribute, state, onSetAttributeVisible } = this.props;
+    const { attribute, state, onSetAttributeVisible } = this.props;
     onSetAttributeVisible(attribute.id, !getAttr(state, 'enabled', true));
-  };
+  }
 }
 
 export default AttributeToggle;

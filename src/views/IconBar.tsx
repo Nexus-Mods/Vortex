@@ -111,37 +111,48 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         }
       });
 
-      return (
-        <ButtonGroup
-          id={id}
-          className={className + ' btngroup-collapsed'}
-          style={style}
-        >
-          {collapsed.length === 0 ? null : (
-            <div>
-              <IconButton
-                id={`btn-menu-${id}`}
-                className='btn-embed'
-                onClick={this.toggleCollapsed}
-                tooltip={''}
-                icon='ellipsis-v'
-                ref={this.setButtonRef}
-              >
-                {dotdotdot}
-              </IconButton>
-              <PortalMenu
-                layer={this.context.menuLayer}
-                open={this.state.open}
-                target={this.buttonRef}
-                onClose={this.toggleCollapsed}
-              >
-                {collapsed.sort(iconSort).map(this.renderMenuItem)}
-              </PortalMenu>
-            </div>
-          )
-          }
-          {unCollapsed.sort(iconSort).map(this.renderIcon)}
-        </ButtonGroup>);
+      if ((collapsed.length === 0) && (unCollapsed.length === 0)) {
+        return null;
+      }
+
+      const moreButton = (
+        <div>
+          <IconButton
+            id={`btn-menu-${id}`}
+            className='btn-embed'
+            onClick={this.toggleCollapsed}
+            tooltip={''}
+            icon='ellipsis-v'
+            ref={this.setButtonRef}
+          >
+            {dotdotdot}
+          </IconButton>
+          <PortalMenu
+            layer={this.context.menuLayer}
+            open={this.state.open}
+            target={this.buttonRef}
+            onClose={this.toggleCollapsed}
+          >
+            {collapsed.sort(iconSort).map(this.renderMenuItem)}
+          </PortalMenu>
+        </div>
+          );
+
+      if (unCollapsed.length === 0) {
+        // simple case, only the more-button
+        return moreButton;
+      } else {
+        return (
+          <ButtonGroup
+            id={id}
+            className={className + ' btngroup-collapsed'}
+            style={style}
+          >
+            {moreButton}
+            {unCollapsed.sort(iconSort).map(this.renderIcon)}
+          </ButtonGroup>
+      );
+      }
     } else {
       return (
         <ButtonGroup

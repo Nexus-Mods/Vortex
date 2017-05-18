@@ -19,6 +19,11 @@ interface ICellProps {
 }
 
 class DetailCell extends React.Component<ICellProps, {}> {
+  public shouldComponentUpdate(nextProps: ICellProps) {
+    return this.props.language !== nextProps.language
+      || this.props.rowData[this.props.attribute.id] !== nextProps.rowData[nextProps.attribute.id];
+  }
+
   public render(): JSX.Element {
     const { t, attribute, rawData, rowData, rowId } = this.props;
     const value = rowData[attribute.id];
@@ -42,7 +47,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
               id={attribute.id}
               componentClass='select'
               value={key}
-              onChange={this.changeCell}
+              onChange={this.changeCellEvt}
             >
               {choices.map(this.renderChoice)}
             </FormControl>
@@ -54,7 +59,6 @@ class DetailCell extends React.Component<ICellProps, {}> {
             >
               <FormInput
                 id={attribute.id}
-                type='text'
                 label={t(attribute.name)}
                 value={this.renderCell(value)}
                 onChange={this.changeCell}
@@ -66,7 +70,6 @@ class DetailCell extends React.Component<ICellProps, {}> {
           content = (
             <FormInput
               id={attribute.id}
-              type='text'
               label={t(attribute.name)}
               readOnly={false}
               value={this.renderCell(value)}
@@ -105,9 +108,13 @@ class DetailCell extends React.Component<ICellProps, {}> {
     );
   }
 
-  private changeCell = (evt: React.FormEvent<any>) => {
+  private changeCell = (newValue: string) => {
     const { attribute, onChangeData, rowId } = this.props;
-    onChangeData(rowId, attribute.id, evt.currentTarget.value);
+    onChangeData(rowId, attribute.id, newValue);
+  }
+
+  private changeCellEvt = (evt: React.FormEvent<any>) => {
+    this.changeCell(evt.currentTarget.value);
   }
 
   private renderChoice(choice: IEditChoice): JSX.Element {

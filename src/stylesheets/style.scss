@@ -1167,6 +1167,12 @@ a[role=menuitem] svg {
   pointer-events: initial;
 }
 
+.textarea-notes {
+  width: 100%;
+  min-height: 200px;
+  resize: none;
+}
+
 ::-webkit-scrollbar {
   width: 12px;
   height: 12px;

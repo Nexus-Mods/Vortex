@@ -1,56 +1,63 @@
+import Debouncer from '../util/Debouncer';
+
 import * as React from 'react';
 import {FormControlProps} from 'react-bootstrap';
 
-export interface IProps extends FormControlProps {
+export interface IProps {
   value: string;
+  onChange: (newValue: string) => void;
+  id?: string;
+  label?: string;
+  readOnly?: boolean;
 }
 
 export interface IComponentState {
-  cursorPos: number;
+  cachedValue: string;
 }
 
 /**
  * this is a wrapper for the text input-component that is styled like the
  * bootstrap FormControl component.
- * This wrapper fixes a problem where the cursor always jums to the end of
- * the line if the component is controlled and the value is not managed
- * by react itself (through setState).
+ * This wrapper uses a "cache" in the state to reduce the number of (costy)
+ * rerenders caused by changing the redux store every keypress.
+ * As a side effect, this fixes a problem where the cursor always jumps to
+ * the end of the line when using controlled input.
  */
 class FormInput extends React.PureComponent<IProps, IComponentState> {
-  private mInput: HTMLInputElement;
+  private mDebouncer: Debouncer;
 
   constructor(props: IProps) {
     super(props);
     this.state = {
-      cursorPos: props.value.length,
+      cachedValue: props.value,
     };
-  }
-
-  public componentDidUpdate() {
-    this.mInput.setSelectionRange(this.state.cursorPos, this.state.cursorPos);
+    this.mDebouncer = new Debouncer(newValue => {
+      this.props.onChange(newValue);
+      return null;
+    }, 250);
   }
 
   public render(): JSX.Element {
-    const { id, label, value } = this.props;
-    return <input
-      className='form-control'
-      type='text'
-      label={label}
-      value={value}
-      id={id}
-      ref={this.setDOMControl}
-      onChange={this.onChange}
-    />;
-  }
-
-  private setDOMControl = (ctrl: HTMLInputElement) => {
-    this.mInput = ctrl;
+    const { id, label, readOnly } = this.props;
+    const { cachedValue } = this.state;
+    return (
+      <input
+        className='form-control'
+        type='text'
+        label={label}
+        value={cachedValue}
+        id={id}
+        onChange={this.onChange}
+        readOnly={readOnly}
+      />
+    );
   }
 
   private onChange = (evt: React.FormEvent<HTMLInputElement>) => {
     evt.preventDefault();
-    this.setState({ cursorPos: evt.currentTarget.selectionEnd });
-    this.props.onChange(evt as any);
+    const newValue = evt.currentTarget.value;
+    this.setState({ cachedValue: newValue });
+    this.mDebouncer.schedule(undefined, newValue);
   }
 }
 

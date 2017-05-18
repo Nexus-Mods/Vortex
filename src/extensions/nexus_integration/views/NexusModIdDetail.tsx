@@ -1,5 +1,6 @@
 import { ComponentEx } from '../../../util/ComponentEx';
 import FormFeedback from '../../../views/FormFeedbackAwesome';
+import FormInput from '../../../views/FormInput';
 
 import { setModAttribute } from '../../mod_management/actions/mods';
 
@@ -16,22 +17,21 @@ export interface IProps {
 
 /**
  * Nexus Mod Id Detail
- * 
+ *
  * @class NexusModIdDetail
  */
 class NexusModIdDetail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { nexusModId, t } = this.props;
 
-    const isIdValid = (nexusModId !== undefined) && !isNaN(parseInt(nexusModId, 10));
+    const isIdValid = (nexusModId !== undefined) && !isNaN(Number(nexusModId));
 
     return (
       <div>
         <FormGroup
           validationState={isIdValid ? 'success' : 'warning'}
         >
-          <FormControl
-            type='text'
+          <FormInput
             value={nexusModId || ''}
             onChange={this.updateNexusModId}
           />
@@ -45,17 +45,16 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
     );
   }
 
-  private updateNexusModId = (evt) => {
+  private updateNexusModId = (newValue) => {
     const { gameId, modId, store } = this.props;
-    const nexusModId = evt.currentTarget.value;
 
-    store.dispatch(setModAttribute(gameId, modId, 'modId', nexusModId));
-  };
+    store.dispatch(setModAttribute(gameId, modId, 'modId', newValue));
+  }
 
   private openPage = () => {
     const { gameId, nexusModId } = this.props;
     this.context.api.events.emit('open-mod-page', gameId, nexusModId);
-  };
+  }
 }
 
 export default NexusModIdDetail;

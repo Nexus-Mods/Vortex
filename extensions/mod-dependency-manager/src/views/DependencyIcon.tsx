@@ -9,9 +9,9 @@ import { setConflictDialog, setCreateRule, setSource, setTarget } from '../actio
 
 import { enabledModKeys } from '../selectors';
 
-import { actions, ComponentEx, log, selectors, tooltip, types, util } from 'nmm-api';
-
+import * as _ from 'lodash';
 import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
+import { actions, ComponentEx, log, selectors, tooltip, types, util } from 'nmm-api';
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
@@ -298,6 +298,17 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       }
       nextProps.onSetTarget(nextProps.mod.id, pos);
     }
+  }
+
+  public shouldComponentUpdate(nextProps: IProps, nextState: IComponentState) {
+    // enabledMods changes whenever any of the mods changes - even if that change
+    // is not reflected in the reference stored in enabledMods
+    return this.props.conflicts !== nextProps.conflicts
+        || !_.isEqual(this.props.enabledMods, nextProps.enabledMods)
+        || this.props.gameId !== nextProps.gameId
+        || this.props.mod !== nextProps.mod
+        || this.props.rules !== nextProps.rules
+        || this.state !== nextState;
   }
 
   public render(): JSX.Element {

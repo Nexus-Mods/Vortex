@@ -17,6 +17,11 @@ interface ICellProps {
 }
 
 class TableCell extends React.Component<ICellProps, {}> {
+  public shouldComponentUpdate(newProps: ICellProps) {
+    return this.props.rowData !== newProps.rowData
+        || this.props.language !== newProps.language;
+  }
+
   public render(): JSX.Element {
     const { t, attribute, language, rowData, rowId, tableId } = this.props;
 
@@ -124,6 +129,7 @@ export interface IRowProps {
   language: string;
   onClick: React.MouseEventHandler<any>;
   selected: boolean;
+  domRef?: (ref) => void;
 }
 
 class TableRow extends React.Component<IRowProps, {}> {
@@ -157,6 +163,7 @@ class TableRow extends React.Component<IRowProps, {}> {
         key={data.__id}
         className={classes.join(' ')}
         onClick={onClick}
+        ref={this.props.domRef}
       >
         {attributes.map(this.renderAttribute)}
         {

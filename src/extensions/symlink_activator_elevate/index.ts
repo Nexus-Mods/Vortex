@@ -124,7 +124,7 @@ class ModActivator extends LinkingActivator {
         ipc.server.on('log', (data: any) => {
           log(data.level, data.message, data.meta);
         });
-        return elevated.default(ipcPath, remoteCode, { gugu: 42 }, __dirname);
+        return elevated.default(ipcPath, remoteCode, { }, __dirname);
       });
       ipc.server.start();
     });

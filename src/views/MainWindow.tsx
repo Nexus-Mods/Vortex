@@ -180,6 +180,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     });
   }
 
+  public shouldComponentUpdate(nextProps: IProps, nextState: IMainWindowState) {
+    return this.props.visibleDialog !== nextProps.visibleDialog
+      || this.props.overlayOpen !== nextProps.overlayOpen
+      || this.state.showLayer !== nextState.showLayer
+      || this.state.showPage !== nextState.showPage;
+  }
+
   public render(): JSX.Element {
     const { onHideDialog, visibleDialog } = this.props;
     return (
