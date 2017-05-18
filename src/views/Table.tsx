@@ -658,47 +658,48 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     if (!wasSelected) {
       this.setState(update(this.state, {
         lastSelected: { $set: rowId },
-        rowState: { rowId:
+        rowState: { [rowId]:
           wasSelected === undefined
             ? { $set: { selected: true } }
             : { selected: { $set: !wasSelected } },
         }}));
     } else {
       this.setState(update(this.state, {
-        rowState: { rowId: { selected: { $set: !wasSelected } } },
+        rowState: { [rowId]: { selected: { $set: !wasSelected } } },
       }));
     }
   }
 
   private selectTo(rowId: string) {
-    const { attributeState, tableId } = this.props;
-    const { objects, data, language } = this.props;
+    const { attributeState, data, language, objects, tableId } = this.props;
+    const { sortedRows } = this.state;
     const visibleAttributes: ITableAttribute[] =
       this.visibleAttributes(objects, attributeState);
 
     const selection: Set<string> = new Set([rowId, this.state.lastSelected]);
     let selecting = false;
 
-    this.sortedRows(attributeState, visibleAttributes, data, language)
-      .forEach((iterRow: any) => {
-        let isBracket = (iterRow.id === rowId) || (iterRow.id === this.state.lastSelected);
-        if (!selecting && isBracket) {
-          selecting = true;
-          isBracket = false;
+    sortedRows.forEach((iterRow: any) => {
+      let isBracket = (iterRow.id === rowId) || (iterRow.id === this.state.lastSelected);
+      if (!selecting && isBracket) {
+        selecting = true;
+        isBracket = false;
+      }
+      if (selecting) {
+        selection.add(iterRow.id);
+        if (isBracket) {
+          selecting = false;
         }
-
-        if (selecting) {
-          selection.add(iterRow.id);
-          if (isBracket) {
-            selecting = false;
-          }
-        }
-      });
+      }
+    });
 
     const rowState = {};
-    Object.keys(this.state.rowState)
-    .forEach(iterId => {
-      rowState[iterId] = { selected: { $set: selection.has(iterId) } };
+    sortedRows.map(row => row.id).forEach(iterId => {
+      if (this.state.rowState[iterId] === undefined) {
+        rowState[iterId] = { $set: { selected: selection.has(iterId) } };
+      } else {
+        rowState[iterId] = { selected: { $set: selection.has(iterId) } };
+      }
     });
     this.setState(update(this.state, { rowState }));
   }
