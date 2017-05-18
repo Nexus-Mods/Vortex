@@ -193,11 +193,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       name: 'Enabled',
       description: 'Is plugin enabled in current profile',
       icon: 'check-o',
-      calc: (plugin: IPluginCombined) => plugin.enabled,
+      calc: (plugin: IPluginCombined) => plugin.isNative ? undefined : plugin.enabled,
       placement: 'table',
       isToggleable: false,
       edit: {
-        onChangeValue: (pluginId: string, value: any) => props.onSetPluginEnabled(pluginId, value),
+        onChangeValue: (pluginId: string, value: any) => {
+          if (!this.props.plugins[pluginId].isNative) {
+            this.props.onSetPluginEnabled(pluginId, value);
+          }
+        },
       },
       isSortable: false,
     };
@@ -320,9 +324,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private enableSelected = (pluginIds: string[]) => {
-    const { listState, onSetPluginEnabled } = this.props;
+    const { listState, onSetPluginEnabled, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
+      if (plugins[key].isNative) {
+        return;
+      }
       if (!util.getSafe(listState, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, true);
       }
@@ -330,10 +337,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private disableSelected = (pluginIds: string[]) => {
-    const { listState, onSetPluginEnabled } = this.props;
+    const { listState, onSetPluginEnabled, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
-      if (!listState[key].enabled) {
+      if (plugins[key].isNative) {
+        return;
+      }
+      if (util.getSafe<boolean>(listState, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, false);
       }
     });

@@ -6,7 +6,6 @@ import { IPluginCombined } from '../types/IPlugins';
 
 import { ComponentEx, selectors, tooltip } from 'nmm-api';
 
-import { IReference, IRule, RuleType } from 'modmeta-db';
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
@@ -14,79 +13,9 @@ import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
 import { connect } from 'react-redux';
 
-interface IDescriptionProps {
-  t: I18next.TranslationFunction;
-  rule: IRule;
-  removeable: boolean;
-  key: string;
-  onRemoveRule?: (rule: IRule) => void;
-}
-
 function splitOnce(input: string, separator: string): string[] {
   const idx = input.indexOf(separator);
   return [input.slice(0, idx), input.slice(idx + 1)];
-}
-
-class RuleDescription extends React.Component<IDescriptionProps, {}> {
-
-  public render(): JSX.Element {
-    const {rule, removeable} = this.props;
-
-    const key = this.key(rule);
-    return (
-      <div key={key}>
-        {this.renderType(rule.type)}
-        {' '}
-        {this.renderReference(rule.reference)}
-        {removeable ? this.renderRemove() : null}
-      </div>
-    );
-  }
-
-  private key(rule: IRule) {
-    return rule.type + '_' + rule.reference.logicalFileName
-      || rule.reference.fileExpression
-      || rule.reference.fileMD5;
-  }
-
-  private renderRemove = () => {
-    const {t, rule} = this.props;
-    return (
-      <tooltip.IconButton
-        id={this.key(rule)}
-        className='btn-embed'
-        icon='remove'
-        tooltip={t('Remove')}
-        onClick={this.removeThis}
-      />
-    );
-  }
-
-  private removeThis = () => {
-    this.props.onRemoveRule(this.props.rule);
-  }
-
-  private renderType = (type: RuleType): JSX.Element => {
-    const {t} = this.props;
-    let renderString: string;
-    switch (type) {
-      case 'after': renderString = t('loads after'); break;
-      default: throw new Error('invalid rule type ' + type);
-    }
-    return <p style={{ display: 'inline' }}>{renderString}</p>;
-  }
-
-  private renderReference = (ref: IReference): JSX.Element => {
-    const style = { display: 'inline' };
-    if ((ref.logicalFileName === undefined) && (ref.fileExpression === undefined)) {
-      return <p style={style}>{ ref.fileMD5 }</p>;
-    }
-    return (
-      <p style={style}>
-        {ref.logicalFileName || ref.fileExpression} {ref.versionMatch}
-      </p>
-    );
-  }
 }
 
 export interface IBaseProps {
