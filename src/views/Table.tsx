@@ -126,7 +126,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       .then(() => this.refreshSorted(newProps));
       this.updateSelection(newProps);
     } else if ((newProps.attributeState !== this.props.attributeState)
-            || (newProps.language !== this.props.language)) {
+            || (newProps.language !== this.props.language)
+            || (newProps.filter !== this.props.filter)) {
       this.refreshSorted(newProps);
     }
   }
@@ -252,7 +253,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const multiActions = actions.filter(
       (action) => action.multiRowAction === undefined || action.multiRowAction);
 
-    // TODO the styling here is a bit of a hack
+    // TODO: the styling here is a bit of a hack
     return (
       <div>
         <h4 style={{ display: 'inline-block' }}>
@@ -384,7 +385,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   private refreshSorted(props: IProps) {
     const { attributeState, data, language } = props;
-    const filtered: { [key: string]: any } = this.filteredRows(this.mVisibleAttributes, data);
+    const filtered: { [key: string]: any } =
+      this.filteredRows(props, this.mVisibleAttributes, data);
     this.setState(update(this.state, {
       sortedRows: {
         $set: this.sortedRows(attributeState, this.mVisibleAttributes, filtered, language),
@@ -515,9 +517,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       : 1;
   }
 
-  private filteredRows(attributes: ITableAttribute[],
+  private filteredRows(props: IProps,
+                       attributes: ITableAttribute[],
                        data: { [id: string]: any }) {
-    const { filter } = this.props;
+    const { filter } = props;
     const { calculatedValues } = this.state;
 
     if (filter === undefined) {
@@ -531,7 +534,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         return false;
       }
       // return only elements for which we can't find a non-matching filter
-      // (in other work: Keep only those items that match all filters)
+      // (in other words: Keep only those items that match all filters)
       return attributes.find(attribute => {
         if (attribute.filter === undefined) {
           return false;

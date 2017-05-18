@@ -21,12 +21,6 @@ export interface IHeaderProps {
 }
 
 class HeaderCell extends React.Component<IHeaderProps, {}> {
-  public shouldComponentUpdate(nextProps: any) {
-    return !_.isEqual(nextProps.state, this.props.state)
-        || nextProps.doFilter !== this.props.doFilter
-        ;
-  }
-
   public render(): JSX.Element {
     const { t, attribute, className, doFilter } = this.props;
     return (

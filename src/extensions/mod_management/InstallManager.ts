@@ -133,6 +133,7 @@ class InstallManager {
     processDependencies: boolean,
     enable: boolean,
     callback?: (error: Error, id: string) => void) {
+
     if (this.mTask === undefined) {
       const Zip: typeof ZipT = require('node-7z');
       this.mTask = new Zip();
@@ -183,7 +184,7 @@ class InstallManager {
         .then(() => {
           filteredInfo = filterModInfo(fullInfo);
 
-          // TODO this relies entirely on the file id
+          // TODO: this relies entirely on the file id
           const oldMod =
               (filteredInfo.fileId !== undefined) ?
                   this.findPreviousVersionMod(filteredInfo.fileId, api.store,
@@ -248,9 +249,9 @@ class InstallManager {
         .catch(err => {
           const canceled = (err instanceof UserCanceled) || err.message === 'Canceled';
           const prom =
-              destinationPath !== undefined ?
-                  rimrafAsync(destinationPath, {glob: false, maxBusyTries: 1})
-                      .then(() => undefined) :
+            destinationPath !== undefined ?
+              rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
+                .then(() => undefined) :
                   Promise.resolve();
           prom.then(() => installContext.finishInstallCB(canceled ? 'canceled' :
                                                                     'failed'));

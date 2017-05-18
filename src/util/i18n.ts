@@ -32,7 +32,7 @@ export interface IInitResult {
 
 /**
  * initialize the internationalization library
- * 
+ *
  * @export
  * @param {string} language
  * @returns {I18next.I18n}

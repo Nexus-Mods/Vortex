@@ -12,10 +12,15 @@ export function syncToProfile(
   return fs.ensureDirAsync(profilePath)
   .then(() => {
     return Promise.map(sourceFiles, (filePath: string) => {
-      let destPath = path.join(profilePath, path.basename(filePath));
+      const destPath = path.join(profilePath, path.basename(filePath));
       return copyFileAtomic(filePath, destPath)
-      .catch((err) => {
-        onError('failed to sync to profile', err);
+      .catch(err => {
+        log('warn', 'failed to copy to profile', { filePath, destPath });
+        if (err.code !== 'EBADF') {
+          // EBADF would indicate the file doesn't exist, which isn't a problem,
+          // it's as if the file was empty
+          onError('failed to sync to profile: ' + filePath, err);
+        }
       });
     });
   }).then(() => {

@@ -48,7 +48,7 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t } = this.props;
 
-    let classes = [ 'dropzone-url' ];
+    const classes = [ 'dropzone-url' ];
     if (this.state.dropActive === 'invalid') {
       classes.push('hover-invalid');
     } else if (this.state.dropActive !== 'no') {
@@ -79,7 +79,7 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
     this.setState(update(this.state, {
       dropActive: { $set: type },
     }));
-  };
+  }
 
   private onDragOver = (evt: React.DragEvent<any>) => {
     evt.preventDefault();
@@ -100,9 +100,9 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
   }
 
   private onDrop = (evt: React.DragEvent<any>) => {
-    let { downloadPath } = this.props;
+    const { downloadPath } = this.props;
     evt.preventDefault();
-    let url = evt.dataTransfer.getData('Url');
+    const url = evt.dataTransfer.getData('Url');
     if (url !== '') {
       this.context.api.events.emit('start-download', [url], {}, false);
     } else if (evt.dataTransfer.files.length > 0) {
@@ -159,5 +159,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(DownloadDropzone)
-  ) as React.ComponentClass<{}>;
+    connect(mapStateToProps, mapDispatchToProps)(
+      DownloadDropzone)) as React.ComponentClass<{}>;
