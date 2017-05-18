@@ -43,14 +43,16 @@
       "sources": ["**/*.cs", "**/*.csproj", "src/Component.sln"],
       "build": "build",
       "copyTo": "{BUILD_DIR}/lib/modinstaller"
-    },
+    }
+  ], [
     {
       "type": "install-module",
       "name": "exe-version",
       "path": "lib/cpp/exe-version",
       "sources": ["src/*", "binding.gyp", "*.json", "index.*"],
       "module": "exe-version"
-    },
+    }
+  ], [
     {
       "type": "install-module",
       "name": "icon-extract",
@@ -65,7 +67,8 @@
       "removeModules": ["nmm-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-plugin-management"
-    },
+    }
+  ], [
     {
       "type": "build-copy",
       "name": "gamebryo-savegame-management",
@@ -73,7 +76,8 @@
       "removeModules": ["nmm-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-savegame-management"
-    },
+    }
+  ], [
     {
       "type": "build-copy",
       "name": "gamebryo-test-settings",
@@ -81,7 +85,8 @@
       "removeModules": ["nmm-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-test-settings"
-    },
+    }
+  ], [
     {
       "type": "build-copy",
       "name": "gamebryo-bsa-support",
@@ -89,7 +94,8 @@
       "removeModules": ["nmm-api", "nexus-api", "bsatk"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-bsa-support"
-    },
+    }
+  ], [
     {
       "type": "build-copy",
       "name": "gamebryo-ba2-support",
@@ -97,7 +103,8 @@
       "removeModules": ["nmm-api", "nexus-api", "ba2tk"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-ba2-support"
-    },
+    }
+  ], [
     {
       "type": "build-copy",
       "name": "local-gamesettings",
@@ -105,7 +112,8 @@
       "removeModules": ["nmm-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/local-gamesettings"
-    },
+    }
+  ], [
     {
       "type": "build-copy",
       "name": "gamebryo-archive-invalidation",
@@ -113,7 +121,8 @@
       "removeModules": ["nmm-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-archive-invalidation"
-    },
+    }
+  ], [
     {
       "type": "build-copy",
       "name": "mod-dependency-manager",
@@ -121,7 +130,8 @@
       "removeModules": ["nmm-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.scss", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mod-dependency-manager"
-    },
+    }
+  ], [
     {
       "type": "build-copy",
       "name": "meta-editor",
@@ -129,7 +139,8 @@
       "removeModules": ["nmm-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/meta-editor"
-    },
+    }
+  ], [
     {
       "type": "build-copy",
       "name": "documentation",
