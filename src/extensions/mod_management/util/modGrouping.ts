@@ -11,17 +11,13 @@ function byModId(input: IModWithState[]): IModWithState[][] {
 }
 
 function fileId(value: IModWithState): string {
-  let result = getSafe(value.attributes, ['logicalFileName'], undefined);
-  if (result !== undefined) {
-    return 'l' + result;
-  }
-  result = getSafe(value.attributes, ['fileExpression'], undefined);
-  if (result !== undefined) {
-    return 'e' + result;
-  }
-  result = getSafe(value.attributes, ['newestFileId'], 'unknown');
+  let result = getSafe(value.attributes, ['newestFileId'], 'unknown');
   if (result !== 'unknown') {
     return 'n' + result;
+  }
+  result = getSafe(value.attributes, ['logicalFileName'], undefined);
+  if (result !== undefined) {
+    return 'l' + result;
   }
   return 'i' + value.id;
 }
