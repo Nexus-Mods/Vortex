@@ -1,6 +1,11 @@
 /// <reference types="bluebird" />
 import * as types from './types';
 import * as Promise from 'bluebird';
+export declare class NexusError extends Error {
+    private mStatusCode;
+    constructor(message: string, statusCode: number);
+    readonly statusCode: number;
+}
 declare class Nexus {
     private mRestClient;
     private mBaseData;

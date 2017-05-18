@@ -26,7 +26,7 @@ import modUpdateState, { UpdateState } from '../util/modUpdateState';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
-import { INSTALL_TIME } from '../modAttributes';
+import { INSTALL_TIME, PICTURE } from '../modAttributes';
 import { installPath } from '../selectors';
 
 import CheckModVersionsButton from './CheckModVersionsButton';
@@ -277,6 +277,7 @@ class ModList extends ComponentEx<IProps, {}> {
 
             data={this.mPrimaryMods}
             staticElements={[
+              PICTURE,
               this.modEnabledAttribute,
               this.modNameAttribute,
               this.modVersionAttribute,
@@ -320,7 +321,7 @@ class ModList extends ComponentEx<IProps, {}> {
     return (
       <div className={this.updateClass(updateState)}>
         {alternatives.length === 1 ? mod.attributes['version'] : null}
-        <ButtonGroup id={`btngroup-${mod.id}`}>
+        <ButtonGroup id={`btngroup-${mod.id}`} className='btngroup-version'>
           {versionDropdown}
           <VersionIconButton
             t={t}

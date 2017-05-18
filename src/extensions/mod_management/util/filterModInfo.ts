@@ -10,9 +10,11 @@ function transfer(info: any, key: string, source: any, path: string[]) {
 function filterModInfo(input: any): any {
   const result: any = {};
 
-  // TODO these should be extensions
+  // TODO: these should be extensions
   transfer(result, 'modId', input.nexus, ['ids', 'modId']);
   transfer(result, 'fileId', input.nexus, ['ids', 'fileId']);
+  transfer(result, 'pictureUrl', input.nexus, ['modInfo', 'picture_url']);
+  transfer(result, 'description', input.nexus, ['modInfo', 'description']);
   transfer(result, 'fileType', input.nexus, ['fileInfo', 'category_name']);
   transfer(result, 'isPrimary', input.nexus, ['fileInfo', 'is_primary']);
   transfer(result, 'fileName', input.nexus, ['fileInfo', 'name']);

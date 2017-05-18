@@ -6,7 +6,7 @@ import { setModAttribute } from '../../mod_management/actions/mods';
 import { IMod } from '../../mod_management/types/IMod';
 
 import * as Promise from 'bluebird';
-import Nexus, { IFileInfo, IFileUpdate, IModFiles, IModInfo } from 'nexus-api';
+import Nexus, { IFileInfo, IFileUpdate, IModFiles, IModInfo, NexusError } from 'nexus-api';
 
 /**
  * check the mod version by the server call
@@ -64,6 +64,7 @@ function updateModAttributes(dispatch: Redux.Dispatch<any>,
                              modInfo: IModInfo) {
   update(dispatch, gameId, mod, 'endorsed', modInfo.endorsement.endorse_status);
   update(dispatch, gameId, mod, 'description', modInfo.description);
+  update(dispatch, gameId, mod, 'pictureUrl', modInfo.picture_url);
 }
 
 function updateLatestFileAttributes(dispatch: Redux.Dispatch<any>,
@@ -131,8 +132,16 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   }
 }
 
-// TODO we should call this in response to the nexus-id being changed and
-// if the info is currently missing
+function errorFromNexus(err: NexusError): Error {
+  if (err.statusCode >= 500) {
+    return new Error(`Internal server error (${err.statusCode}):` + err.message);
+  } else if (err.statusCode >= 400) {
+    return new Error(`Not found (${err.statusCode}): ` + err.message);
+  } else {
+    return new Error(err.message);
+  }
+}
+
 export function retrieveModInfo(
   nexus: Nexus,
   store: Redux.Store<any>,
@@ -140,14 +149,16 @@ export function retrieveModInfo(
   mod: IMod,
   t: I18next.TranslationFunction): Promise<void> {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
-
+  if ((nexusModId === undefined) || (nexusModId.length === 0)) {
+    return;
+  }
   // if the endorsement state is unknown, request it
   return nexus.getModInfo(parseInt(nexusModId, 10), convertGameId(gameId))
     .then((modInfo: IModInfo) => {
       updateModAttributes(store.dispatch, gameId, mod, modInfo);
     })
-    .catch((err) => {
-      showError(store.dispatch, 'An error occurred looking up the mod', err);
+    .catch((err: NexusError) => {
+      showError(store.dispatch, 'An error occurred looking up the mod', errorFromNexus(err));
       // prevent this error to come up every time the icon is re-rendered
       store.dispatch(setModAttribute(gameId, mod.id, 'endorsed', 'Undecided'));
     });

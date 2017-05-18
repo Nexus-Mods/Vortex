@@ -1169,8 +1169,17 @@ a[role=menuitem] svg {
 
 .textarea-notes {
   width: 100%;
-  min-height: 200px;
+  min-height: 100px;
   resize: none;
+}
+
+.btngroup-version {
+  display: inline-flex;
+}
+
+.img-mod-picture {
+  max-width: 100%;
+  max-height: 192px;
 }
 
 ::-webkit-scrollbar {

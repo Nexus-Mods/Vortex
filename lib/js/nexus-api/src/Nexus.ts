@@ -16,7 +16,7 @@ interface IRequestArgs {
   };
 }
 
-class NexusError extends Error {
+export class NexusError extends Error {
   private mStatusCode: number;
   constructor(message: string, statusCode: number) {
     super(message);
@@ -30,7 +30,7 @@ class NexusError extends Error {
 
 /**
  * implements the Nexus API
- * 
+ *
  * @class Nexus
  */
 class Nexus {
@@ -40,7 +40,7 @@ class Nexus {
   private mBaseURL = 'https://api.nexusmods.com/v1';
 
   constructor(game: string, apiKey: string, timeout?: number) {
-    let { Client } = require('node-rest-client') as typeof restT;
+    const { Client } = require('node-rest-client') as typeof restT;
     this.mRestClient = new Client();
     this.mBaseData = {
       headers: {
@@ -72,7 +72,7 @@ class Nexus {
 
   public validateKey(key?: string): Promise<types.IValidateKeyResponse> {
     return new Promise<types.IValidateKeyResponse>((resolve, reject) => {
-      let req = this.mRestClient.methods.validateKey(
+      const req = this.mRestClient.methods.validateKey(
         this.args({ headers: this.filter({ APIKEY: key }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
       req.on('requestTimeout', () => reject('validate key timeout'));
@@ -95,7 +95,7 @@ class Nexus {
 
   public getGames(): Promise<types.IGameListEntry[]> {
     return new Promise<types.IGameListEntry[]>((resolve, reject) => {
-      let req = this.mRestClient.methods.getGames(this.args({}),
+      const req = this.mRestClient.methods.getGames(this.args({}),
         (data, response) => this.handleResult(data, response, resolve, reject));
       req.on('requestTimeout', () => reject('validate key timeout'));
       req.on('responesTimeout', () => reject('validate key timeout'));
@@ -105,7 +105,7 @@ class Nexus {
 
   public getGameInfo(gameId?: string): Promise<types.IGameInfo> {
     return new Promise<types.IGameInfo>((resolve, reject) => {
-      let req = this.mRestClient.methods.getGameInfo(
+      const req = this.mRestClient.methods.getGameInfo(
         this.args({ path: this.filter({ gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
       req.on('requestTimeout', () => reject('validate key timeout'));
@@ -116,7 +116,7 @@ class Nexus {
 
   public getModInfo(modId: number, gameId?: string): Promise<types.IModInfo> {
     return new Promise<types.IModInfo>((resolve, reject) => {
-      let req = this.mRestClient.methods.getModInfo(
+      const req = this.mRestClient.methods.getModInfo(
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
       req.on('requestTimeout', () => reject('validate key timeout'));
@@ -127,7 +127,7 @@ class Nexus {
 
   public getModFiles(modId: number, gameId?: string): Promise<types.IModFiles> {
     return new Promise<types.IModFiles>((resolve, reject) => {
-      let req = this.mRestClient.methods.getModFiles(
+      const req = this.mRestClient.methods.getModFiles(
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
       req.on('requestTimeout', () => reject('validate key timeout'));
@@ -140,7 +140,7 @@ class Nexus {
                      fileId: number,
                      gameId?: string): Promise<types.IFileInfo> {
     return new Promise<types.IFileInfo>((resolve, reject) => {
-      let req = this.mRestClient.methods.getFileInfo(
+      const req = this.mRestClient.methods.getFileInfo(
         this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
       req.on('requestTimeout', () => reject('validate key timeout'));
@@ -153,7 +153,7 @@ class Nexus {
                          fileId: number,
                          gameId?: string): Promise<types.IDownloadURL[]> {
     return new Promise<types.IDownloadURL[]>((resolve, reject) => {
-      let req = this.mRestClient.methods.getDownloadURLs(
+      const req = this.mRestClient.methods.getDownloadURLs(
         this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
       req.on('requestTimeout', () => reject('validate key timeout'));
@@ -162,8 +162,8 @@ class Nexus {
     });
   }
 
-  private filter(obj: Object): Object {
-    let result = {};
+  private filter(obj: any): any {
+    const result = {};
     Object.keys(obj).forEach((key) => {
       if (obj[key] !== undefined) {
         result[key] = obj[key];
@@ -185,14 +185,15 @@ class Nexus {
   }
 
   private args(customArgs: IRequestArgs) {
-    let result: IRequestArgs = Object.assign({}, this.mBaseData);
-    for (let key of Object.keys(customArgs)) {
+    const result: IRequestArgs = Object.assign({}, this.mBaseData);
+    for (const key of Object.keys(customArgs)) {
       result[key] = Object.assign({}, result[key], customArgs[key]);
     }
     return result;
   }
 
   private initMethods() {
+    // tslint:disable:no-invalid-template-strings
     this.mRestClient.registerMethod(
       'validateKey', this.mBaseURL + '/users/validate', 'GET');
 
@@ -217,6 +218,7 @@ class Nexus {
     this.mRestClient.registerMethod(
       'getDownloadURLs',
       this.mBaseURL + '/games/${gameId}/mods/${modId}/files/${fileId}/download_link', 'GET');
+    // tslint:enable:no-invalid-template-string
   }
 }
 

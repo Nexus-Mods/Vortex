@@ -16,7 +16,6 @@ function init(context: IExtensionContext): boolean {
 
   context.registerTableAttribute('mods', {
     id: 'notes',
-    name: 'Notes',
     description: 'Mod Notes',
     icon: 'sticky-note',
     placement: 'detail',

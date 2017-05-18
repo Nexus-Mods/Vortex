@@ -1,6 +1,7 @@
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { setDialogVisible } from '../../actions/session';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
+import Debouncer from '../../util/Debouncer';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -22,7 +23,7 @@ import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
-import { checkModsVersion } from './util/checkModsVersion';
+import { checkModsVersion, retrieveModInfo } from './util/checkModsVersion';
 import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import fetchUserInfo from './util/fetchUserInfo';
@@ -37,7 +38,7 @@ import { } from './views/Settings';
 import NXMUrl from './NXMUrl';
 
 import * as Promise from 'bluebird';
-import Nexus, { IDownloadURL, IFileInfo } from 'nexus-api';
+import Nexus, { IDownloadURL, IFileInfo, IModInfo } from 'nexus-api';
 import * as opn from 'opn';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -58,11 +59,16 @@ export interface IExtensionContextExt extends IExtensionContext {
 function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boolean) {
   const url: NXMUrl = new NXMUrl(nxmurl);
 
+  let nexusModInfo: IModInfo;
   let nexusFileInfo: IFileInfo;
 
   const gameId = convertGameId(url.gameId);
 
-  nexus.getFileInfo(url.modId, url.fileId, gameId)
+  nexus.getModInfo(url.modId, gameId)
+    .then((modInfo: IModInfo) => {
+      nexusModInfo = modInfo;
+      return nexus.getFileInfo(url.modId, url.fileId, gameId);
+    })
     .then((fileInfo: IFileInfo) => {
       nexusFileInfo = fileInfo;
       api.sendNotification({
@@ -84,6 +90,7 @@ function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boo
         game: url.gameId.toLowerCase(),
         nexus: {
           ids: { gameId, modId: url.modId, fileId: url.fileId },
+          modInfo: nexusModInfo,
           fileInfo: nexusFileInfo,
         },
       }, automaticInstall);
@@ -315,9 +322,7 @@ function init(context: IExtensionContextExt): boolean {
         {' '}<Button onClick={associateNXM}>{t('Associate')}</Button>
       </span>
     );
-  },
-  );
-
+  });
 
   context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {
     const nxm: NXMUrl = new NXMUrl(nxmurl);
@@ -368,24 +373,34 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.once(() => {
-    const state = context.api.store.getState();
-
-    nexus = new Nexus(activeGameId(state),
-      getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''));
-
-    const gameMode = activeGameId(context.api.store.getState());
-    context.api.store.dispatch(setUpdatingMods(gameMode, false));
-
-    endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
-      endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
-
     const registerFunc = () => {
       context.api.registerProtocol('nxm', (url: string) => {
         startDownload(context.api, url, false);
       });
     };
-    if (context.api.store.getState().settings.nexus.associateNXM) {
-      registerFunc();
+
+    { // limit lifetime of state
+      const state = context.api.store.getState();
+
+      nexus = new Nexus(activeGameId(state),
+        getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''));
+
+      const gameMode = activeGameId(state);
+      context.api.store.dispatch(setUpdatingMods(gameMode, false));
+
+      endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
+        endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
+
+      if (state.settings.nexus.associateNXM) {
+        registerFunc();
+      }
+
+      if (state.confidential.account.nexus.APIKey !== undefined) {
+        fetchUserInfo(nexus, state.confidential.account.nexus.APIKey)
+          .then(userInfo => {
+            context.api.store.dispatch(setUserInfo(userInfo));
+          });
+      }
     }
 
     context.api.events.on('retrieve-category-list', (isUpdate: boolean) => {
@@ -416,6 +431,22 @@ function init(context: IExtensionContextExt): boolean {
       endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
     });
 
+    context.api.events.on('gamemode-activated', (gameId: string) => {
+      nexus.setGame(gameId);
+    });
+
+    context.api.events.on('download-mod-update', (gameId, modId, fileId) => {
+      // TODO: Need some way to identify if this request is actually for a nexus mod
+      const url = `nxm://${toNXMId(gameId)}/mods/${modId}/files/${fileId}`;
+      startDownload(context.api, url, true);
+    });
+
+    context.api.events.on('open-mod-page', (gameId, modId) => {
+      opn(['http://www.nexusmods.com',
+        convertGameId(gameId), 'mods', modId,
+      ].join('/'));
+    });
+
     context.api.onStateChange(['settings', 'nexus', 'associateNXM'],
       (oldValue: boolean, newValue: boolean) => {
         log('info', 'associate', { oldValue, newValue });
@@ -425,10 +456,6 @@ function init(context: IExtensionContextExt): boolean {
           context.api.deregisterProtocol('nxm');
         }
       });
-
-    context.api.events.on('gamemode-activated', (gameId: string) => {
-      nexus.setGame(gameId);
-    });
 
     context.api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
       (oldValue: string, newValue: string) => {
@@ -442,24 +469,37 @@ function init(context: IExtensionContextExt): boolean {
             });
         }
       });
-    if (state.confidential.account.nexus.APIKey !== undefined) {
-      fetchUserInfo(nexus, state.confidential.account.nexus.APIKey)
-        .then(userInfo => {
-          context.api.store.dispatch(setUserInfo(userInfo));
-        });
+
+    interface IModTable {
+      [gameId: string]: {
+        [modId: string]: IMod,
+      };
     }
 
-    context.api.events.on('download-mod-update', (gameId, modId, fileId) => {
-      // TODO: Need some way to identify if this request is actually for a nexus mod
-      const url = `nxm://${toNXMId(gameId)}/mods/${modId}/files/${fileId}`;
-      startDownload(context.api, url, true);
-    });
+    let lastModTable = context.api.store.getState().persistent.mods;
+    const updateDebouncer: Debouncer = new Debouncer(newModTable => {
+      const state = context.api.store.getState();
+      const gameMode = activeGameId(state);
+      if (lastModTable[gameMode] !== newModTable[gameMode]) {
+        Object.keys(newModTable[gameMode]).forEach(modId => {
+          if ((lastModTable[gameMode][modId] !== undefined)
+            && (lastModTable[gameMode][modId].attributes['modId']
+              !== newModTable[gameMode][modId].attributes['modId'])) {
+            return retrieveModInfo(nexus, context.api.store,
+              gameMode, newModTable[gameMode][modId], context.api.translate)
+              .then(() => {
+                lastModTable = newModTable;
+              });
+          }
+        });
+      } else {
+        return Promise.resolve();
+      }
+    }, 2000);
 
-    context.api.events.on('open-mod-page', (gameId, modId) => {
-      opn(['http://www.nexusmods.com',
-        convertGameId(gameId), 'mods', modId,
-      ].join('/'));
-    });
+    context.api.onStateChange(['persistent', 'mods'],
+      (oldValue: IModTable, newValue: IModTable) =>
+        updateDebouncer.schedule(undefined, newValue));
   });
 
   return true;

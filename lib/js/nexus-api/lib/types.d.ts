@@ -18,6 +18,7 @@ export interface IModInfo {
     description: string;
     version: string;
     author: string;
+    picture_url: string;
     endorsement: {
         endorse_status: EndorsedStatus;
     };

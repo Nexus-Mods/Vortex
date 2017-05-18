@@ -36,7 +36,7 @@ export interface ITableAttribute {
   /**
    * user readable name for the attribute (appears in the header and potentially in tooltips)
    */
-  name: string;
+  name?: string;
   /**
    * lengthier description of what the attribute represents
    * (currently unused but please provide one anyway)
