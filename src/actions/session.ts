@@ -10,6 +10,9 @@ export const displayGroup = safeCreateAction('DISPLAY_GROUP',
 export const setDialogVisible = safeCreateAction('SET_DIALOG_VISIBLE',
   (dialogId: string) => ({ dialogId }));
 
+export const setSettingsPage = safeCreateAction('SET_SETTINGS_PAGE',
+  (pageId: string) => ({ pageId }));
+
 /**
  * open the overlay for the current page
  */

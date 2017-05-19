@@ -169,11 +169,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       this.setMainPage(this.props.objects[0].title);
     }
 
-    this.props.api.events.on('show-main-page', (title) => {
+    this.props.api.events.on('show-main-page', title => {
       this.setMainPage(title);
     });
 
-    this.props.api.events.on('show-modal', (id) => {
+    this.props.api.events.on('show-modal', id => {
       this.setState(update(this.state, {
         showLayer: { $set: id },
       }));

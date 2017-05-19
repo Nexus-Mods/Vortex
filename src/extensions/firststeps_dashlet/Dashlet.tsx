@@ -1,3 +1,4 @@
+import { setSettingsPage } from '../../actions/session';
 import { II18NProps } from '../../types/II18NProps';
 import { ComponentEx, connect, extend, translate } from '../../util/ComponentEx';
 import { activeGameId, basePath } from '../../util/selectors';
@@ -34,6 +35,7 @@ interface IConnectedState {
 
 interface IActionProps {
   onDismissStep: (step: string) => void;
+  onSetSettingsPage: (pageId: string) => void;
 }
 
 type IProps = IBaseProps & IExtendedProps & IConnectedState & IActionProps & II18NProps;
@@ -75,7 +77,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
         render: (props: IProps): JSX.Element => {
           const { t, basePath } = props;
           const path = <strong>{basePath}</strong>;
-          const link = <a onClick={this.openSettings}><Icon name='gear' />{t('Settings')}</a>;
+          const link = <a onClick={this.openModsSettings}><Icon name='gear' />{t('Settings')}</a>;
 
           return (
             <span>
@@ -108,7 +110,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
             const searchLink =
               <a onClick={this.startManualSearch}>{t('search your disks')}</a>;
             const settingsLink = (
-              <a onClick={this.openSettings}>
+              <a onClick={this.openGameSettings}>
                 <Icon name='gear' />
                 {searchPaths.sort().join(', ')}
               </a>
@@ -137,7 +139,8 @@ class Dashlet extends ComponentEx<IProps, {}> {
         render: (props: IProps): JSX.Element => {
           const { t, autoDeploy } = props;
           const enabled = autoDeploy ? t('enabled') : t('disabled');
-          const link = <a onClick={this.openSettings}><Icon name='gear' />{t('Settings')}</a>;
+          const link =
+            <a onClick={this.openInterfaceSettings}><Icon name='gear' />{t('Settings')}</a>;
           const more = (
             <More id='more-deploy-dash' name={t('Deployment')}>
               {getTextModManagement('deployment', t)}
@@ -160,7 +163,8 @@ class Dashlet extends ComponentEx<IProps, {}> {
         condition: (props: IProps) => !props.profilesVisible,
         render: (props: IProps): JSX.Element => {
           const { t } = props;
-          const link = <a onClick={this.openSettings}><Icon name='gear' />{t('Settings')}</a>;
+          const link =
+            <a onClick={this.openInterfaceSettings}><Icon name='gear' />{t('Settings')}</a>;
           const more = (
             <More id='more-profiles-dash' name={t('Profiles')}>
               {getTextProfiles('profiles', t)}
@@ -222,8 +226,19 @@ class Dashlet extends ComponentEx<IProps, {}> {
     );
   }
 
-  private openSettings = () => {
+  private openGameSettings = () => {
     this.context.api.events.emit('show-main-page', 'Settings');
+    this.props.onSetSettingsPage('Games');
+  }
+
+  private openModsSettings = () => {
+    this.context.api.events.emit('show-main-page', 'Settings');
+    this.props.onSetSettingsPage('Mods');
+  }
+
+  private openInterfaceSettings = () => {
+    this.context.api.events.emit('show-main-page', 'Settings');
+    this.props.onSetSettingsPage('Interface');
   }
 
   private startManualSearch = () => {
@@ -258,6 +273,7 @@ function mapStateToProps(state: any, ownProps: IBaseProps & IExtendedProps): ICo
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onDismissStep: (step: string) => dispatch(dismissStep(step)),
+    onSetSettingsPage: (pageId: string) => dispatch(setSettingsPage(pageId)),
   };
 }
 
