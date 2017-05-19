@@ -190,7 +190,15 @@ function processRebuild(project, buildType, feedback) {
     ? __dirname
     : path.join(__dirname, buildType);
 
-  return rebuild(moduleDir, packageJSON.engines.electron, process.arch, [project.module], true);
+  return rebuild(moduleDir, packageJSON.engines.electron, process.arch, [project.module], true)
+    .then(() => {
+      if (project.name !== undefined) {
+        console.log('electron-rebuild process finished: ' + project.name)
+      }
+    })
+    .catch((err) => {
+        console.error('An error occurred during the electron-rebuild process: ' + err);
+    });
 }
 
 function evalCondition(condition, context) {
