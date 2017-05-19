@@ -13,6 +13,7 @@ function filterModInfo(input: any): any {
   // TODO: these should be extensions
   transfer(result, 'modId', input.nexus, ['ids', 'modId']);
   transfer(result, 'fileId', input.nexus, ['ids', 'fileId']);
+  transfer(result, 'category', input.nexus, ['modInfo', 'category_id']);
   transfer(result, 'pictureUrl', input.nexus, ['modInfo', 'picture_url']);
   transfer(result, 'description', input.nexus, ['modInfo', 'description']);
   transfer(result, 'fileType', input.nexus, ['fileInfo', 'category_name']);

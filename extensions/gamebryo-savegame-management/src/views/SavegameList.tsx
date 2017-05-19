@@ -2,7 +2,7 @@ import { removeSavegame, showTransferDialog } from '../actions/session';
 import { ISavegame } from '../types/ISavegame';
 import { mygamesPath } from '../util/gameSupport';
 import refreshSavegames from '../util/refreshSavegames';
-import restoreSavegamePlugins from '../util/restoreSavegamePlugins';
+import restoreSavegamePlugins, { MissingPluginsError } from '../util/restoreSavegamePlugins';
 import transferSavegames from '../util/transferSavegames';
 
 import {
@@ -54,6 +54,9 @@ interface IActionProps {
     title: string,
     content: types.IDialogContent,
     actions: types.DialogActions) => Promise<types.IDialogResult>;
+  onShowActivity: (message: string, id?: string) => void;
+  onShowError: (message: string, details: any, id?: string) => void;
+  onShowSuccess: (message: string, id?: string) => void;
 }
 
 interface IComponentState {
@@ -261,10 +264,25 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   }
 
   private restore = (instanceId: string) => {
-    const { onShowDialog, saves, savesPath, t } = this.props;
+    const { t, onShowDialog, onShowActivity,
+      onShowError, onShowSuccess, saves } = this.props;
     const { discoveredGames, gameMode } = this.props;
-    restoreSavegamePlugins(discoveredGames, gameMode, saves,
-      savesPath, instanceId, t, onShowDialog, this.context.api);
+
+    const modPath = discoveredGames[gameMode].modPath;
+
+    const notificationId = 'restore-plugins-id';
+    onShowActivity('Restoring plugins', notificationId);
+
+    restoreSavegamePlugins(this.context.api, modPath, saves[instanceId])
+      .then(() => {
+        onShowSuccess('Restoring plugins complete', notificationId);
+      })
+      .catch((err: MissingPluginsError) => {
+        onShowError('Failed to restore plugins', {
+          reason: 'Not all plugins available',
+          missing: err.missingPlugins.join('\n'),
+        }, notificationId);
+      });
   }
 
   private remove = (instanceIds: string[]) => {
@@ -365,6 +383,12 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowDialog: (type, title, content, dialogActions) =>
       dispatch(actions.showDialog(type, title, content, dialogActions)),
     onHideTransfer: () => dispatch(showTransferDialog(false)),
+    onShowActivity: (message: string, id?: string) =>
+      util.showActivity(dispatch, message, id),
+    onShowError: (message: string, details: any, id?: string) =>
+      util.showError(dispatch, message, details, false, id),
+    onShowSuccess: (message: string, id?: string) =>
+      util.showSuccess(dispatch, message, id),
   };
 }
 

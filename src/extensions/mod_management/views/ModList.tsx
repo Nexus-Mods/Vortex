@@ -561,7 +561,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     modState: profile !== undefined ? profile.modState : {},
     downloads: state.persistent.downloads.files || {},
     gameMode,
-    profileId: profile.id,
+    profileId: profile !== undefined ? profile.id : undefined,
     language: state.settings.interface.language,
     installPath: installPath(state),
   };

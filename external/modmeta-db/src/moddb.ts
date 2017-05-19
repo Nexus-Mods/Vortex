@@ -313,7 +313,7 @@ class ModDB {
         gameId,
         sourceURI: urlFragments.join('/'),
         details: {
-          category: nexusObj.mod.category,
+          category: nexusObj.mod.category_id,
           description: nexusObj.mod.description,
           author: nexusObj.mod.author,
           homepage: page,

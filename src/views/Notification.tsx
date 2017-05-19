@@ -27,21 +27,15 @@ export interface IProps {
 
 class Notification extends ComponentEx<IProps, {}> {
 
-  private styleName: string;
-
-  constructor(props) {
-    super(props);
-
-    this.styleName = this.typeToStyle(props.params.type);
-  }
-
   public render(): JSX.Element {
     const { actions, message, type } = this.props.params;
 
     const lines = message.split('\n');
 
+    const styleName = this.typeToStyle(type);
+
     return (
-      <Alert bsStyle={this.styleName} onDismiss={this.dismiss}>
+      <Alert bsStyle={styleName} onDismiss={this.dismiss}>
         { this.typeToIcon(type) }{' '}
         { lines[0] }
         <p className='hover-expand'>

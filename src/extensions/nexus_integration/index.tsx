@@ -477,18 +477,21 @@ function init(context: IExtensionContextExt): boolean {
     }
 
     let lastModTable = context.api.store.getState().persistent.mods;
+    let lastGameMode = activeGameId(context.api.store.getState());
+
     const updateDebouncer: Debouncer = new Debouncer(newModTable => {
       const state = context.api.store.getState();
       const gameMode = activeGameId(state);
-      if (lastModTable[gameMode] !== newModTable[gameMode]) {
+      if (lastModTable[lastGameMode] !== newModTable[gameMode]) {
         Object.keys(newModTable[gameMode]).forEach(modId => {
-          if ((lastModTable[gameMode][modId] !== undefined)
-            && (lastModTable[gameMode][modId].attributes['modId']
+          if ((lastModTable[lastGameMode][modId] !== undefined)
+            && (lastModTable[lastGameMode][modId].attributes['modId']
               !== newModTable[gameMode][modId].attributes['modId'])) {
             return retrieveModInfo(nexus, context.api.store,
               gameMode, newModTable[gameMode][modId], context.api.translate)
               .then(() => {
                 lastModTable = newModTable;
+                lastGameMode = gameMode;
               });
           }
         });

@@ -150,7 +150,7 @@ export function retrieveModInfo(
   t: I18next.TranslationFunction): Promise<void> {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   if ((nexusModId === undefined) || (nexusModId.length === 0)) {
-    return;
+    return Promise.resolve();
   }
   // if the endorsement state is unknown, request it
   return nexus.getModInfo(parseInt(nexusModId, 10), convertGameId(gameId))

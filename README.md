@@ -26,11 +26,11 @@ Please report issues to the issue tracker on github. Please always include at th
 
 All data the client generates (including settings and logs) are stored at
 
-_C:\Users\\<username\>\AppData\Roaming\Vortex Retribution_ (releases)
+_C:\Users\\<username\>\AppData\Roaming\Vortex_ (releases)
 
 or
 
-_C:\Users\\<username\>\AppData\Roaming\Vortex_ (development build)
+_C:\Users\\<username\>\AppData\Roaming\vortex\_devel_ (development build)
 
 If you need to report a bug, the following files inside that directory may be useful in addition to the error message displayed on screen:
 
