@@ -352,9 +352,14 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     }
   }
 
-  private handleKeyDown = (evt) => {
+  private handleKeyDown = (evt: React.KeyboardEvent<any>) => {
     const { lastSelected }  = this.state;
     if (evt.target !== this.mScrollRef) {
+      return;
+    }
+
+    if ((evt.keyCode === 65) && evt.ctrlKey) {
+      this.selectAll();
       return;
     }
 
@@ -671,6 +676,20 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         rowState: { [rowId]: { selected: { $set: !wasSelected } } },
       }));
     }
+  }
+
+  private selectAll() {
+    const { calculatedValues } = this.state;
+
+    const rowState = {};
+    Object.keys(calculatedValues).forEach(key => {
+      if (this.state.rowState[key] === undefined) {
+        rowState[key] = { $set: { selected: true } };
+      } else {
+        rowState[key] = { selected: { $set: true } };
+      }
+    });
+    this.setState(update(this.state, { rowState }));
   }
 
   private selectTo(rowId: string) {
