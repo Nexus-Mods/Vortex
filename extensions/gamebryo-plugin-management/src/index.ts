@@ -256,7 +256,7 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
   const filePath = path.join(pluginPath(gameMode), 'plugins.txt');
   return new Promise<types.ITestResult>((resolve, reject) => {
     access(filePath, constants.W_OK, (err) => {
-      if (err.code === 'EPERM') {
+      if (err && (err.code === 'EPERM')) {
         const res: types.ITestResult = {
           description: {
             short: 'plugins.txt is write protected',

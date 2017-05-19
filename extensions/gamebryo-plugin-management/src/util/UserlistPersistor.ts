@@ -103,7 +103,7 @@ class UserlistPersistor implements types.IPersistor {
         this.mLoaded = true;
       }
     })
-    .catch((err) => {
+    .catch(err => {
       if (err.code === 'ENOENT') {
         this.mUserlist = {
           globals: [],

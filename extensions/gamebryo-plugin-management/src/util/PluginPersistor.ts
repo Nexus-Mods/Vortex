@@ -121,8 +121,7 @@ class PluginPersistor implements types.IPersistor {
 
   private serialize(): Promise<void> {
     if (!this.mLoaded) {
-      // this happens during initialization, when the persistor is initially created, with default
-      // values.
+      // this happens during initialization, when the persistor is initially created
       return Promise.resolve();
     }
     // ensure we don't try to concurrently write the files
@@ -222,17 +221,25 @@ class PluginPersistor implements types.IPersistor {
       const keys: string[] = this.filterFileData(decode(data, 'latin-1'), true);
       this.initFromKeyList(newPlugins, keys, true);
       this.mPlugins = newPlugins;
+      this.mLoaded = true;
       if (this.mResetCallback) {
-        this.mLoaded = true;
         this.mResetCallback();
         this.mRetryCounter = retryCount;
       }
     })
-    .catch((err: Error) => {
-      log('warn', 'failed to read plugin file', this.mPluginPath);
+    .catch((err: any) => {
+      if (err.code && (err.code === 'ENOENT')) {
+        this.mLoaded = true;
+        return;
+      }
+      log('warn', 'failed to read plugin file',
+        { pluginPath: this.mPluginPath, error: require('util').inspect(err) });
       if (this.mRetryCounter > 0) {
         --this.mRetryCounter;
         this.scheduleRefresh(100);
+      } else {
+        // giving up...
+        this.mLoaded = true;
       }
     });
   }

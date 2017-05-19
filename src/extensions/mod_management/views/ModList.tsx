@@ -376,7 +376,7 @@ class ModList extends ComponentEx<IProps, {}> {
     });
 
     Object.keys(newProps.downloads).forEach(archiveId => {
-      if (!installedIds.has(archiveId) && (newProps.downloads[archiveId].game === gameMode)) {
+      if ((newProps.downloads[archiveId].game === gameMode) && !installedIds.has(archiveId)) {
         if ((oldProps.downloads[archiveId] === newProps.downloads[archiveId])
             && (this.mModsWithState[archiveId] !== undefined)) {
           newModsWithState[archiveId] = this.mModsWithState[archiveId];
