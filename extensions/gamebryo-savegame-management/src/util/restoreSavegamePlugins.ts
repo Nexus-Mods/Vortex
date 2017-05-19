@@ -1,4 +1,3 @@
-import { setSaveGameActivity } from '../actions/session';
 import { ISavegame } from '../types/ISavegame';
 
 import * as Promise from 'bluebird';
@@ -6,68 +5,52 @@ import * as fs from 'fs-extra-promise';
 import { types } from 'nmm-api';
 import * as path from 'path';
 
+export class MissingPluginsError extends Error {
+  private mFiles: string[];
+
+  constructor(files: string[]) {
+    super();
+    Error.captureStackTrace(this, this.constructor);
+    this.name = 'MissingPluginsError';
+    this.message = 'Not all plugins are available';
+    this.mFiles = files;
+  }
+
+  public get missingPlugins(): string[] {
+    return this.mFiles;
+  }
+}
+
 /**
  * Apply the plugin list as used when a save game was created.
  *
- * @param {[id: string]: types.IDiscoveryResult} discoveredGames
- * @param {string} gameMode
- * @param {[saveId: string]: ISavegame} saves
- * @param {string} savesPath
- * @param {string} instanceId
- * @param {I18next.TranslationFunction} t
- * @param {(type,title,content,actions) => Promise<types.IDialogResult>} onShowDialog
+ * @param {types.IExtensionApi} api extension api
+ * @param {string} modPath directory where plugins are stored
+ * @param {ISavegame} save the save to restore plugins from
+ * @param {types}
  */
 function restoreSavegamePlugins(
-  discoveredGames: { [id: string]: types.IDiscoveryResult },
-  gameMode: string,
-  saves: { [saveId: string]: ISavegame },
-  savesPath: string,
-  instanceId: string,
-  t: I18next.TranslationFunction,
-  onShowDialog: (
-    type: types.DialogType,
-    title: string,
-    content: types.IDialogContent,
-    actions: types.DialogActions) => Promise<types.IDialogResult>,
   api: types.IExtensionApi,
+  modPath: string,
+  save: ISavegame,
 ) {
-
-  const discovery = discoveredGames[gameMode];
-
-  let plugins: string[] = [];
-  const missingPlugins: string[] = [];
-  api.store.dispatch(setSaveGameActivity('Restoring plugins'));
-  fs.readdirAsync(discovery.modPath)
+  return fs.readdirAsync(modPath)
     .then((files: string[]) => {
-      plugins = files.filter((fileName: string) => {
-        const ext = path.extname(fileName).toLowerCase();
-        return ['.esp', '.esm'].indexOf(ext) !== -1;
-      }).map((fileName) => fileName.toLowerCase());
-    })
-    .then(() => {
-      saves[instanceId].attributes.plugins.forEach(plugin => {
-        if (plugins.indexOf(plugin.toLowerCase()) === -1) {
-          missingPlugins.push(plugin);
-        }
-      });
+      const plugins = new Set(files
+        .map(fileName => fileName.toLowerCase())
+        .filter(fileName => {
+          const ext = path.extname(fileName);
+          return ['.esp', '.esm'].indexOf(ext) !== -1;
+        }));
 
-      if (missingPlugins.length > 0) {
-        api.store.dispatch(setSaveGameActivity(undefined));
-        onShowDialog('error', t('Restore savegame\'s plugins'), {
-          message: t('An error occurred restoring the savegame\'s plugins.\n' +
-            'These files are missing, the restore will be canceled.\n\n{{plugins}}',
-            { replace: { plugins: missingPlugins.join('\n') } }),
-          options: {
-            translated: true,
-          },
-        }, {
-            OK: null,
-          }).then((result: types.IDialogResult) => {
-            return Promise.resolve();
-          });
+      const missing = save.attributes.plugins
+        .filter(plugin => !plugins.has(plugin.toLowerCase()));
+
+      if (missing.length > 0) {
+        return Promise.reject(new MissingPluginsError(missing));
       } else {
-        api.events.emit('restore-savegame-plugins',
-          saves[instanceId].attributes.plugins);
+        api.events.emit('set-plugin-list', save.attributes.plugins);
+        return Promise.resolve();
       }
     });
 }

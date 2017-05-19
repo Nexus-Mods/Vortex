@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { clearSavegames, setSaveGameActivity, setSavegamePath,
+import { clearSavegames, setSavegamePath,
    setSavegames, showTransferDialog } from './actions/session';
 import { sessionReducer } from './reducers/session';
 import { ISavegame } from './types/ISavegame';
@@ -84,10 +84,6 @@ function init(context): boolean {
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
-
-    context.api.events.on('clean-savegame-activity', () => {
-      store.dispatch(setSaveGameActivity(undefined));
-    });
 
     context.api.events.on('profile-activated', (profileId: string) => {
       const profile: types.IProfile =

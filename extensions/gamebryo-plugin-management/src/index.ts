@@ -324,18 +324,16 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
   }
 }
 
-function restoreSavegamePlugins(newPlugins: string[], store: Redux.Store<any>): Promise<void> {
-  const listState = store.getState().settings.plugins.pluginlistState || {};
-  const plugins = store.getState().session.plugins.pluginList;
+function replacePluginList(store: Redux.Store<any>, newPlugins: string[]) {
+  const plugins = util.getSafe(store.getState(), ['session', 'plugins', 'pluginList'], {});
 
-  Object.keys(plugins).map((key) => {
+  Object.keys(plugins).map(key => {
     if (newPlugins.indexOf(key) === -1) {
       store.dispatch(setPluginEnabled(key, false));
     } else {
       store.dispatch(setPluginEnabled(key, true));
     }
   });
-  return Promise.resolve();
 }
 
 function init(context: IExtensionContextExt) {
@@ -377,18 +375,9 @@ function init(context: IExtensionContextExt) {
       context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
     });
 
-    context.api.events.on('restore-savegame-plugins', (newPlugins: string[]) => {
-
-      restoreSavegamePlugins(newPlugins, context.api.store)
-        .then(() => {
-          store.dispatch(setPluginOrder(newPlugins));
-          context.api.events.emit('clean-savegame-activity', undefined);
-          util.showSuccess(store.dispatch, 'Restore savegame\'s plugins complete');
-        })
-        .catch((err: Error) => {
-          context.api.events.emit('clean-savegame-activity', undefined);
-          util.showError(store.dispatch, 'Failed to restore savegame\'s plugins', err);
-        });
+    context.api.events.on('set-plugin-list', (newPlugins: string[]) => {
+      replacePluginList(context.api.store, newPlugins);
+      store.dispatch(setPluginOrder(newPlugins));
     });
 
     context.api.events.on('profile-activated', (newProfileId: string) => {

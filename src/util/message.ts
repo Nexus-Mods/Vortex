@@ -44,6 +44,17 @@ export function showSuccess<S>(dispatch: Redux.Dispatch<S>, message: string, id?
 }
 
 /**
+ * show activity notification
+ */
+export function showActivity<S>(dispatch: Redux.Dispatch<S>, message: string, id?: string) {
+  dispatch(addNotification({
+    id,
+    type: 'activity',
+    message,
+  }));
+}
+
+/**
  * show an info notification. Please don't use this for important stuff as the message
  * has a timer based on message length
  *
@@ -77,7 +88,8 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
  */
 export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
                              details?: string | Error | any,
-                             isHTML: boolean = false) {
+                             isHTML: boolean = false,
+                             id?: string) {
   const finalDetails: string = renderError(details);
 
   log('error', message, finalDetails);
@@ -95,6 +107,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
   };
 
   dispatch(addNotification({
+    id,
     type: 'error',
     message,
     actions: details !== undefined ? [{

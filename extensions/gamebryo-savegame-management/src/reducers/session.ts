@@ -9,12 +9,10 @@ import update = require('react-addons-update');
  */
 export const sessionReducer: types.IReducerSpec = {
   reducers: {
-    [actions.setSavegames as any]: (state, payload) => {
-      return util.setSafe(state, ['saves'], payload);
-    },
-    [actions.removeSavegame as any]: (state, payload) => {
-      return util.deleteOrNop(state, ['saves', payload]);
-    },
+    [actions.setSavegames as any]: (state, payload) =>
+      util.setSafe(state, ['saves'], payload),
+    [actions.removeSavegame as any]: (state, payload) =>
+      util.deleteOrNop(state, ['saves', payload]),
     [actions.setSavegameState as any]: (state, payload) => {
       const { id, savegameState } = payload;
       return update(state, { saves: { [id]: { state: { $set: savegameState } } } });
@@ -23,15 +21,10 @@ export const sessionReducer: types.IReducerSpec = {
       const { id, attribute, value } = payload;
       return update(state, { saves: { [id]: { attributes: { [attribute]: { $set: value } } } } });
     },
-    [actions.showTransferDialog as any]: (state, payload) => {
-      return util.setSafe(state, ['showDialog'], payload);
-    },
-    [actions.clearSavegames as any]: (state, payload) => {
-      return update(state, { saves: { $set: {} } });
-    },
-    [actions.setSaveGameActivity as any]: (state, payload) =>
-      util.setSafe(state, ['saveGameActivity'], payload)
-    ,
+    [actions.showTransferDialog as any]: (state, payload) =>
+      util.setSafe(state, ['showDialog'], payload),
+    [actions.clearSavegames as any]: (state, payload) =>
+      update(state, { saves: { $set: {} } }),
     [actions.setSavegamePath as any]: (state, payload) =>
       util.setSafe(state, ['savegamePath'], payload),
   },
@@ -39,8 +32,6 @@ export const sessionReducer: types.IReducerSpec = {
     saves: {},
     savegamePath: '',
     showDialog: false,
-    selectAllSavegames: false,
     selectedProfile: undefined,
-    saveGameActivity: undefined,
   },
 };
