@@ -129,21 +129,30 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
       return;
     }
 
-    let gameId;
-    currentGame(api.store)
-      .then((game: IGameStored) => {
-        gameId = game.id;
-        log('info', 'retrieve categories for game', gameId);
-        return retrieveCategoryList(convertGameId(gameId), nexus);
-      })
-      .then((categories: ICategoryDictionary) => {
-        api.events.emit('retrieve-categories', gameId, categories, isUpdate);
-      })
-      .catch((err) => {
-        const message = processErrorMessage(err.statusCode, err, gameId);
-        showError(api.store.dispatch,
-          'An error occurred retrieving the Game Info', message);
-      });
+    const APIKEY = getSafe(api.store.getState(),
+      ['confidential', 'account', 'nexus', 'APIKey'], '');
+    if (APIKEY === '') {
+      showError(api.store.dispatch,
+        'An error occurred retrieving categories',
+        'You are not logged in!');
+    } else {
+
+      let gameId;
+      currentGame(api.store)
+        .then((game: IGameStored) => {
+          gameId = game.id;
+          log('info', 'retrieve categories for game', gameId);
+          return retrieveCategoryList(convertGameId(gameId), nexus);
+        })
+        .then((categories: ICategoryDictionary) => {
+          api.events.emit('retrieve-categories', gameId, categories, isUpdate);
+        })
+        .catch((err) => {
+          const message = processErrorMessage(err.statusCode, err, gameId);
+          showError(api.store.dispatch,
+            'An error occurred retrieving categories', message);
+        });
+    }
   });
 }
 
@@ -157,7 +166,11 @@ interface IRequestError {
 function processErrorMessage(
   statusCode: number, errorMessage: string, gameId: string): IRequestError {
   if (statusCode === undefined) {
-    return { error: errorMessage };
+    if (errorMessage.indexOf('APIKEY') > -1) {
+      return { error: 'You are not logged in!' };
+    } else {
+      return { error: errorMessage };
+    }
   } else if ((statusCode >= 400) && (statusCode < 500)) {
     return {
       error: 'Server couldn\'t process this request.\nMaybe the locally stored '
@@ -186,6 +199,15 @@ function endorseModImpl(
 
   if (mod === undefined) {
     log('warn', 'tried to endorse unknown mod', { gameId, modId });
+    return;
+  }
+
+  const APIKEY = getSafe(store.getState(),
+    ['confidential', 'account', 'nexus', 'APIKey'], '');
+  if (APIKEY === '') {
+    showError(store.dispatch,
+      'An error occurred endorsing a mod',
+      'You are not logged in!');
     return;
   }
 
@@ -399,6 +421,11 @@ function init(context: IExtensionContextExt): boolean {
         fetchUserInfo(nexus, state.confidential.account.nexus.APIKey)
           .then(userInfo => {
             context.api.store.dispatch(setUserInfo(userInfo));
+          })
+          .catch((err) => {
+            showError(context.api.store.dispatch,
+              'An error occurred validating the API Key',
+              'Please provide a valid API Key!');
           });
       }
     }
@@ -408,27 +435,43 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('check-mods-version', (gameId, groupedMods, mods) => {
-      context.api.store.dispatch(setUpdatingMods(gameId, true));
-      checkModsVersionImpl(context.api.store, gameId, groupedMods, mods)
-        .then((errorMessages: string[]) => {
-          if (errorMessages.length !== 0) {
+      const APIKEY = getSafe(context.api.store.getState(),
+        ['confidential', 'account', 'nexus', 'APIKey'], '');
+      if (APIKEY === '') {
+        showError(context.api.store.dispatch,
+          'An error occurred checking for mod updates',
+          'You are not logged in!');
+      } else {
+        context.api.store.dispatch(setUpdatingMods(gameId, true));
+        checkModsVersionImpl(context.api.store, gameId, groupedMods, mods)
+          .then((errorMessages: string[]) => {
+            if (errorMessages.length !== 0) {
+              showError(context.api.store.dispatch,
+                'Checking for mod updates succeeded but there were errors',
+                errorMessages.join('\n\n'));
+            }
+          })
+          .catch((err) => {
             showError(context.api.store.dispatch,
-              'checking for updates succeeded but there were errors',
-              errorMessages.join('\n\n'));
-          }
-        })
-        .catch((err) => {
-          showError(context.api.store.dispatch,
-            'checking for updates failed',
-            err.message);
-        })
-        .finally(() => {
-          context.api.store.dispatch(setUpdatingMods(gameId, false));
-        });
+              'An error occurred checking for mod updates',
+              err.message);
+          })
+          .finally(() => {
+            context.api.store.dispatch(setUpdatingMods(gameId, false));
+          });
+      }
     });
 
     context.api.events.on('endorse-mod', (gameId, modId, endorsedStatus) => {
-      endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
+      const APIKEY = getSafe(context.api.store.getState(),
+        ['confidential', 'account', 'nexus', 'APIKey'], '');
+      if (APIKEY === '') {
+        showError(context.api.store.dispatch,
+          'An error occurred endorsing a mod',
+          'You are not logged in!');
+      } else {
+        endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
+      }
     });
 
     context.api.events.on('gamemode-activated', (gameId: string) => {
@@ -466,6 +509,11 @@ function init(context: IExtensionContextExt): boolean {
           fetchUserInfo(nexus, newValue)
             .then(userInfo => {
               context.api.store.dispatch(setUserInfo(userInfo));
+            })
+            .catch((err) => {
+              showError(context.api.store.dispatch,
+                'An error occurred validating the API Key',
+                'Please provide a valid API Key!');
             });
         }
       });

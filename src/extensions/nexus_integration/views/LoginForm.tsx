@@ -202,7 +202,9 @@ class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
         statusCode: { $set: null },
         statusCodeMessage: { $set: '' },
       }));
-      onSetAPIKey(APIKey);
+      if (APIKey !== '') {
+        onSetAPIKey(APIKey);
+      }
     }
   }
 

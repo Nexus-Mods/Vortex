@@ -41,7 +41,7 @@ export function gameSettingsFiles(gameMode: string, customPath: string): string[
   if (customPath === null) {
     return gameSettingsFiles;
   } else {
-    let fileList: string[] = [];
+    const fileList: string[] = [];
     gameSettingsFiles.forEach(file => {
       fileList.push(path.join(customPath, file));
     });
