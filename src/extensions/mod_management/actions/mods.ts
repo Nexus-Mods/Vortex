@@ -7,6 +7,9 @@ import { IRule } from 'modmeta-db';
 export const addMod = safeCreateAction('ADD_MOD',
   (gameId: string, mod: IMod) => ({ gameId, mod }));
 
+export const addMods = safeCreateAction('ADD_MODS',
+  (gameId: string, mods: IMod[]) => ({ gameId, mods }));
+
 export const removeMod = safeCreateAction('REMOVE_MOD',
   (gameId: string, modId: string) => ({ gameId, modId }));
 
