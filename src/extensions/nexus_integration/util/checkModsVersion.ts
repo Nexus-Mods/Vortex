@@ -72,6 +72,7 @@ function updateLatestFileAttributes(dispatch: Redux.Dispatch<any>,
                                     mod: IMod,
                                     file: IFileInfo) {
   update(dispatch, gameId, mod, 'newestVersion', file.version);
+  update(dispatch, gameId, mod, 'newestFileName', file.file_name);
 
   const fileCategories = ['MAIN', 'UPDATE', 'OPTIONAL'];
   if (fileCategories.indexOf(file.category_name) !== -1) {

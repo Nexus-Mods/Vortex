@@ -37,7 +37,7 @@ function copyGameSettings(
 
 function checkGlobalFiles(oldProfile: types.IProfile,
                           newProfile: types.IProfile) {
-  let fileList: string[] = [].concat(
+  const fileList: string[] = [].concat(
     gameSettingsFiles(oldProfile.gameId, mygamesPath(oldProfile.gameId)),
     gameSettingsFiles(newProfile.gameId, mygamesPath(newProfile.gameId)));
 
@@ -96,7 +96,7 @@ function init(context): boolean {
     () => gameSupported(selectors.activeGameId(context.api.store.getState())));
 
   context.once(() => {
-    let store: Redux.Store<types.IState> = context.api.store;
+    const store: Redux.Store<types.IState> = context.api.store;
 
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
       (prev: string, current: string) => {
@@ -115,7 +115,7 @@ function init(context): boolean {
                   'we noticed that files that should have been under our control are ' +
                   'inaccessible.\nWe don\'t like unauthorized intrusions. Put your paws down!');
                 return false;
-              })
+              }),
           )
           .catch((missingFiles: string[]) => {
             const fileList = missingFiles.join('\n');

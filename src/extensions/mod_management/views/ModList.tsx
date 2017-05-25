@@ -23,6 +23,7 @@ import filterModInfo from '../util/filterModInfo';
 import groupMods from '../util/modGrouping';
 import modName from '../util/modName';
 import modUpdateState, { UpdateState } from '../util/modUpdateState';
+import resolvePath from '../util/resolvePath';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
@@ -56,6 +57,7 @@ interface IConnectedProps extends IModProps {
   profileId: string;
   language: string;
   installPath: string;
+  downloadPath: string;
 }
 
 interface IActionProps {
@@ -300,11 +302,11 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   private renderVersion = (mod: IModWithState): JSX.Element => {
-    const { t, gameMode } = this.props;
+    const { downloads, downloadPath, mods, t, gameMode } = this.props;
     const equalMods = this.mGroupedMods[mod.id];
     const alternatives = equalMods.map(iter => iter.id);
 
-    const updateState = modUpdateState(mod);
+    const updateState = modUpdateState(mod, downloadPath, mods);
 
     const versionDropdown = alternatives.length > 1
       ? (
@@ -328,6 +330,9 @@ class ModList extends ComponentEx<IProps, {}> {
             mod={mod}
             gameMode={gameMode}
             state={updateState}
+            downloads={downloads}
+            mods={mods}
+            downloadPath={downloadPath}
           />
           <VersionChangelogButton
             t={t}
@@ -552,9 +557,11 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
+function mapStateToProps(state: any): IConnectedProps {
   const profile = activeProfile(state);
   const gameMode = activeGameId(state);
+  const downloadPath = resolvePath('download',
+      state.settings.mods.paths, gameMode);
 
   return {
     mods: state.persistent.mods[gameMode] || {},
@@ -564,6 +571,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     profileId: profile !== undefined ? profile.id : undefined,
     language: state.settings.interface.language,
     installPath: installPath(state),
+    downloadPath,
   };
 }
 
