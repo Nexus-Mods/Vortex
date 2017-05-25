@@ -16,7 +16,7 @@ export const pathDefaults = {
   };
 
 function resolvePath(key: PathKey, paths: { [gameId: string]: IStatePaths }, gameMode: string) {
-  let formatKeys = {
+  const formatKeys = {
     USERDATA: remote.app.getPath('userData'),
     GAME: gameMode,
     base: undefined,

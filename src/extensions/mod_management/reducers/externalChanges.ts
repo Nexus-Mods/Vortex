@@ -21,7 +21,8 @@ export const externalChangesReducer: IReducerSpec = {
       });
       return current;
     },
-  }, defaults: {
-    changes: [],
+  },
+  defaults: {
+  changes: [],
   },
 };

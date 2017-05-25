@@ -37,25 +37,27 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class DeactivationButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    let { t, buttonType } = this.props;
+    const { t, buttonType } = this.props;
 
-    return <Advanced><ToolbarIcon
-      id='activate-mods'
-      icon='chain-broken'
-      text={ t('Purge Mods') }
-      onClick={ this.activate }
-      buttonType={ buttonType }
-    /></Advanced>;
+    return (
+      <Advanced><ToolbarIcon
+        id='activate-mods'
+        icon='chain-broken'
+        text={t('Purge Mods')}
+        onClick={this.activate}
+        buttonType={buttonType}
+      /></Advanced>
+    );
   }
 
   private activate = () => {
-    let { t, activators, currentActivator, gameDiscovery, installPath, onShowError } = this.props;
+    const { t, activators, currentActivator, gameDiscovery, installPath, onShowError } = this.props;
 
-    let activator: IModActivator = currentActivator !== undefined
+    const activator: IModActivator = currentActivator !== undefined
       ? activators.find((act: IModActivator) => act.id === currentActivator)
       : activators[0];
 
-    let notificationId = shortid();
+    const notificationId = shortid();
     this.context.api.sendNotification({
       id: notificationId,
       type: 'activity',
@@ -68,7 +70,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     }).finally(() => {
       this.context.api.dismissNotification(notificationId);
     });
-  };
+  }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
@@ -92,5 +94,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(DeactivationButton)
+    connect(mapStateToProps, mapDispatchToProps)(DeactivationButton),
   ) as React.ComponentClass<IBaseProps>;

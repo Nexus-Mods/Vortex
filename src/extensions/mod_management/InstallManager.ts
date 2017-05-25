@@ -381,7 +381,7 @@ class InstallManager {
     // write the file list to a temporary file, then use that as the
     // input file for 7zip, to avoid quoting problems
     return new Promise<string>((resolve, reject) => {
-             tmpFile({ keep: true } as any,
+             tmpFile({ keep: true },
                      (err: any, tmpPath: string, fd: number,
                       cleanupCB: () => void) => {
                        if (err !== null) {

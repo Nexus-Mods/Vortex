@@ -11,13 +11,8 @@ import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 
 import * as path from 'path';
 
-interface IOnAddMod {
-  (mod: IMod): void;
-}
-
-interface IOnAddNotification {
-  (notification: INotification): void;
-}
+type IOnAddMod = (mod: IMod) => void;
+type IOnAddNotification = (notification: INotification) => void;
 
 class InstallContext implements IInstallContext {
 

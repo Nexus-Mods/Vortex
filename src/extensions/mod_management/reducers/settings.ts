@@ -10,20 +10,21 @@ export const settingsReducer: IReducerSpec = {
   reducers: {
     [setPath as any]: (state, payload) => {
       const { gameId, key, path } = payload;
-      return setSafe(state, [ 'paths', gameId, key ], path);
+      return setSafe(state, ['paths', gameId, key], path);
     },
     [setActivator as any]: (state, payload) => {
       const { gameId, activatorId } = payload;
-      return setSafe(state, [ 'activator', gameId ], activatorId);
+      return setSafe(state, ['activator', gameId], activatorId);
     },
     [setUpdatingMods as any]: (state, payload) => {
       const { gameId, updatingMods } = payload;
-      return setSafe(state, [ 'updatingMods', gameId ], updatingMods);
+      return setSafe(state, ['updatingMods', gameId], updatingMods);
     },
-  }, defaults: {
-    paths: { },
-    modlistState: { },
-    activator: { },
+  },
+  defaults: {
+    paths: {},
+    modlistState: {},
+    activator: {},
     updatingMods: false,
   },
 };

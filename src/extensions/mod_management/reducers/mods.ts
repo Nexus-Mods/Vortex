@@ -78,6 +78,7 @@ export const modsReducer: IReducerSpec = {
       return removeValueIf(state, [gameId, modId, 'rules'],
         (iterRule: IRule) => _.isEqual(iterRule, rule));
     },
-  }, defaults: {
+  },
+  defaults: {
   },
 };

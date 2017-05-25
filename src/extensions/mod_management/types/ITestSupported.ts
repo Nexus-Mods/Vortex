@@ -5,6 +5,4 @@ export interface ISupportedResult {
   requiredFiles: string[];
 }
 
-export interface ITestSupported {
-  (files: string[]): Promise<ISupportedResult>;
-}
+export type ITestSupported = (files: string[]) => Promise<ISupportedResult>;

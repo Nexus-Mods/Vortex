@@ -10,7 +10,7 @@ import * as Promise from 'bluebird';
 
 /**
  * activate a list of mod
- * 
+ *
  * @export
  * @param {string} destination the game mod path
  * @param {IMod[]} mods list of mods to activate
@@ -42,7 +42,7 @@ export function activateMods(installPath: string,
 
 /**
  * deactivate all mods installed with the specified activator
- * 
+ *
  * @export
  * @param {string} destination
  * @param {IModActivator} activator

@@ -4,7 +4,7 @@ import {ISupportedResult} from '../types/ITestSupported';
 import * as Promise from 'bluebird';
 
 export function testSupported(files: string[]): Promise<ISupportedResult> {
-  let result: ISupportedResult = { supported: true, requiredFiles: [] };
+  const result: ISupportedResult = { supported: true, requiredFiles: [] };
   return Promise.resolve(result);
 }
 

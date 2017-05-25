@@ -1,5 +1,5 @@
-import {showDialog} from '../../../actions/notifications';
-import {DialogActions, DialogType, IDialogContent} from '../../../types/IDialog';
+import { showDialog } from '../../../actions/notifications';
+import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
@@ -10,7 +10,7 @@ import { Button } from '../../../views/TooltipControls';
 import { setActivator, setPath } from '../actions/settings';
 import { IModActivator } from '../types/IModActivator';
 import { IStatePaths } from '../types/IStateSettings';
-import resolvePath, {PathKey, pathDefaults} from '../util/resolvePath';
+import resolvePath, { pathDefaults, PathKey } from '../util/resolvePath';
 import supportedActivators from '../util/supportedActivators';
 
 import getText from '../texts';
@@ -21,8 +21,10 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import update = require('react-addons-update');
-import {Alert, ControlLabel, FormControl, FormGroup,
-        HelpBlock, InputGroup, Jumbotron, Modal, Panel} from 'react-bootstrap';
+import {
+  Alert, ControlLabel, FormControl, FormGroup,
+  HelpBlock, InputGroup, Jumbotron, Modal, Panel,
+} from 'react-bootstrap';
 
 interface IBaseProps {
   activators: IModActivator[];
@@ -38,8 +40,12 @@ interface IConnectedProps {
 interface IActionProps {
   onSetPath: (gameMode: string, key: string, path: string) => void;
   onSetActivator: (gameMode: string, id: string) => void;
-  onShowDialog: (type: DialogType, title: string,
-    content: IDialogContent, actions: DialogActions) => void;
+  onShowDialog: (
+    type: DialogType,
+    title: string,
+    content: IDialogContent,
+    actions: DialogActions,
+  ) => void;
   onShowError: (message: string, details: string | Error) => void;
 }
 
@@ -88,26 +94,26 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return (
       <form>
         <Panel footer={this.renderFooter()}>
-        {this.renderPathCtrl(paths, t('Base Path'), 'base')}
-        {this.renderPathCtrl(paths, t('Download Path'), 'download')}
-        {this.renderPathCtrl(paths, t('Install Path'), 'install')}
-        <Modal show={this.state.busy !== undefined} onHide={nop}>
-          <Modal.Body>
-          <Jumbotron>
-            <p><Icon name='spinner' pulse style={{ height: '32px', width: '32px' }} />
-              {this.state.busy}</p>
-          </Jumbotron>
-          </Modal.Body>
-        </Modal>
+          {this.renderPathCtrl(paths, t('Base Path'), 'base')}
+          {this.renderPathCtrl(paths, t('Download Path'), 'download')}
+          {this.renderPathCtrl(paths, t('Install Path'), 'install')}
+          <Modal show={this.state.busy !== undefined} onHide={nop}>
+            <Modal.Body>
+              <Jumbotron>
+                <p><Icon name='spinner' pulse style={{ height: '32px', width: '32px' }} />
+                  {this.state.busy}</p>
+              </Jumbotron>
+            </Modal.Body>
+          </Modal>
         </Panel>
         <ControlLabel>
-          { t('Deployment Method') }
+          {t('Deployment Method')}
           <More id='more-deploy' name={t('Deployment')} >
             {getText('deployment', t)}
           </More>
         </ControlLabel>
-        <FormGroup validationState={ activators !== undefined ? undefined : 'error' }>
-          { this.renderActivators(supportedActivators, currentActivator) }
+        <FormGroup validationState={activators !== undefined ? undefined : 'error'}>
+          {this.renderActivators(supportedActivators, currentActivator)}
         </FormGroup>
       </form>
     );
@@ -131,13 +137,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private pathsAbsolute() {
     const { gameMode } = this.props;
     return path.isAbsolute(resolvePath('download', this.state.paths, gameMode))
-        && path.isAbsolute(resolvePath('install', this.state.paths, gameMode));
+      && path.isAbsolute(resolvePath('install', this.state.paths, gameMode));
   }
 
   private transferPath(pathKey: PathKey) {
     const { gameMode } = this.props;
-    let oldPath = resolvePath(pathKey, this.props.paths, gameMode);
-    let newPath = resolvePath(pathKey, this.state.paths, gameMode);
+    const oldPath = resolvePath(pathKey, this.props.paths, gameMode);
+    const newPath = resolvePath(pathKey, this.state.paths, gameMode);
 
     return Promise.join(fs.statAsync(oldPath), fs.statAsync(newPath),
       (statOld: fs.Stats, statNew: fs.Stats) => {
@@ -148,17 +154,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           return fs.renameAsync(oldPath, newPath);
         } else {
           return fs.copyAsync(oldPath, newPath)
-          .then(() => {
-            return fs.removeAsync(oldPath);
-          });
+            .then(() => {
+              return fs.removeAsync(oldPath);
+            });
         }
       });
   }
 
   private applyPaths = () => {
     const { t, gameMode, onSetPath, onShowError } = this.props;
-    let newInstallPath: string = resolvePath('install', this.state.paths, gameMode);
-    let newDownloadPath: string = resolvePath('download', this.state.paths, gameMode);
+    const newInstallPath: string = resolvePath('install', this.state.paths, gameMode);
+    const newDownloadPath: string = resolvePath('download', this.state.paths, gameMode);
     this.setState(setSafe(this.state, ['busy'], t('Moving')));
     return Promise.join(
       fs.ensureDirAsync(newInstallPath),
@@ -216,7 +222,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (!this.pathsAbsolute()) {
       return (
         <Alert bsStyle='warning'>
-        {t('Paths have to be absolute')}
+          {t('Paths have to be absolute')}
         </Alert>
       );
     }
@@ -248,30 +254,30 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     return (
       <FormGroup>
-      <ControlLabel>{label}</ControlLabel>
-      <InputGroup>
-        <FormControl
-          value={gamePaths[pathKey]}
-          placeholder={label}
-          onChange={this.mPathChangeCBs[pathKey]}
-        />
-        <InputGroup.Button>
-          <Button
-            id='move-base-path'
-            tooltip={t('Browse')}
-            onClick={this.mBrowseCBs[pathKey]}
-          >
-            <Icon name='folder-open' />
-          </Button>
-        </InputGroup.Button>
-      </InputGroup>
-      <HelpBlock>{ resolvePath(pathKey, paths, gameMode) }</HelpBlock>
+        <ControlLabel>{label}</ControlLabel>
+        <InputGroup>
+          <FormControl
+            value={gamePaths[pathKey]}
+            placeholder={label}
+            onChange={this.mPathChangeCBs[pathKey]}
+          />
+          <InputGroup.Button>
+            <Button
+              id='move-base-path'
+              tooltip={t('Browse')}
+              onClick={this.mBrowseCBs[pathKey]}
+            >
+              <Icon name='folder-open' />
+            </Button>
+          </InputGroup.Button>
+        </InputGroup>
+        <HelpBlock>{resolvePath(pathKey, paths, gameMode)}</HelpBlock>
       </FormGroup>
     );
   }
 
   private changePathEvt = (key: string, evt) => {
-    let target: HTMLInputElement = evt.target as HTMLInputElement;
+    const target: HTMLInputElement = evt.target as HTMLInputElement;
     this.changePath(key, target.value);
   }
 
@@ -282,11 +288,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private browsePath = (key: string) => {
     this.context.api.selectDir({})
-    .then((selectedPath: string) => {
-      if (selectedPath) {
-        this.changePath(key, selectedPath);
-      }
-    });
+      .then((selectedPath: string) => {
+        if (selectedPath) {
+          this.changePath(key, selectedPath);
+        }
+      });
   }
 
   private renderActivators(activators: IModActivator[], currentActivator: string): JSX.Element {
@@ -311,9 +317,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             {activatorIdx !== -1 ? activators[activatorIdx].description : null}
           </HelpBlock>
         </div>
-        );
+      );
     }
-    return <ControlLabel>{ t('No mod activators installed') }</ControlLabel>;
+    return <ControlLabel>{t('No mod activators installed')}</ControlLabel>;
   }
 
   private renderActivatorOption(activator: IModActivator): JSX.Element {
@@ -324,7 +330,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private selectActivator = (evt) => {
     const { gameMode } = this.props;
-    let target: HTMLSelectElement = evt.target as HTMLSelectElement;
+    const target: HTMLSelectElement = evt.target as HTMLSelectElement;
     this.props.onSetActivator(gameMode, target.value);
   }
 }
@@ -360,5 +366,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(Settings)
+    connect(mapStateToProps, mapDispatchToProps)(Settings),
   ) as React.ComponentClass<{}>;

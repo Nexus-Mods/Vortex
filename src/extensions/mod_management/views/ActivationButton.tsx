@@ -39,15 +39,17 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class ActivationButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    let { t, buttonType } = this.props;
+    const { t, buttonType } = this.props;
 
-    return <ToolbarIcon
+    return (
+    <ToolbarIcon
       id='activate-mods'
       icon='chain'
       text={t('Deploy Mods')}
       onClick={this.activate}
       buttonType={buttonType}
-    />;
+    />
+    );
   }
 
   private activate = () => {
@@ -56,7 +58,7 @@ class ActivationButton extends ComponentEx<IProps, {}> {
         this.props.onShowError('Failed to activate mods', err);
       }
     });
-  };
+  }
 }
 
 function activeGameDiscovery(state: IState)  {
@@ -86,5 +88,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(ActivationButton)
+    connect(mapStateToProps, mapDispatchToProps)(ActivationButton),
   ) as React.ComponentClass<IBaseProps>;

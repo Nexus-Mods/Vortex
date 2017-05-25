@@ -18,15 +18,15 @@ type IProps = IBaseProps;
 
 /**
  * VersionChangelog Button
- * 
+ *
  * @class VersionChangelogButton
  */
 class VersionChangelogButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    let { mod, t } = this.props;
+    const { mod, t } = this.props;
 
-    let changelog = getSafe(mod.attributes, ['changelog'], undefined);
-    let newestChangelog = getSafe(mod.attributes, ['newestChangelog'], undefined);
+    const changelog = getSafe(mod.attributes, ['changelog'], undefined);
+    const newestChangelog = getSafe(mod.attributes, ['newestChangelog'], undefined);
 
     if (!truthy(changelog) && !truthy(newestChangelog)) {
       return null;
@@ -69,7 +69,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
       return null;
     }
     if (changelog.format === 'html') {
-      let components = ReactSafeHtml.components.makeElements({});
+      const components = ReactSafeHtml.components.makeElements({});
       components.br = ReactSafeHtml.components.createSimpleElement('br', {});
 
       return <ReactSafeHtml html={changelog.content} components={components} />;
