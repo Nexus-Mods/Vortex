@@ -30,7 +30,7 @@ import * as path from 'path';
 import * as rimraf from 'rimraf';
 import { dir as tmpDir, file as tmpFile } from 'tmp';
 
-// TODO the type declaration for rimraf is actually wrong atm (v0.0.28)
+// TODO: the type declaration for rimraf is actually wrong atm (v0.0.28)
 interface IRimrafOptions {
   glob?: { nosort: boolean, silent: boolean } | false;
   disableGlob?: boolean;
@@ -197,6 +197,9 @@ class InstallManager {
                 .then((action: string) => {
                   if (action === 'Install') {
                     enable = enable || wasEnabled;
+                    if (wasEnabled) {
+                      setModEnabled(currentProfile.id, oldMod.id, false);
+                    }
                     return null;
                   } else if (action === 'Replace') {
                     // we need to remove the old mod before continuing. This ensures
@@ -648,7 +651,7 @@ class InstallManager {
     sourceURI: string,
     api: IExtensionApi): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      if (!api.events.emit('start-download', [sourceURI], {}, false,
+      if (!api.events.emit('start-download', [sourceURI], {},
         (error, id) => {
           if (error === null) {
             resolve(id);
@@ -778,7 +781,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
         copies.map((copy) => copy.source)))
       .then(() => fs.renameAsync(tempPath, destinationPath))
       .then(() => {
-        // TODO hack: the 7z command line doesn't allow files to be renamed
+        // TODO: hack: the 7z command line doesn't allow files to be renamed
         //  during installation so we extract them all and then rename. This
         //  also tries to clean up dirs that are empty
         //  afterwards but ideally we get a proper 7z lib...

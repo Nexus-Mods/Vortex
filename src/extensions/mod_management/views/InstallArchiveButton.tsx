@@ -1,10 +1,9 @@
+import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 
 import { ButtonType } from '../../../views/IconBar';
 import ToolbarIcon from '../../../views/ToolbarIcon';
-
-import { IStatePaths } from '../types/IStateSettings';
 
 import { dialog as dialogIn, remote } from 'electron';
 import * as React from 'react';

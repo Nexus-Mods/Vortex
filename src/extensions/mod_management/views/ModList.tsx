@@ -11,6 +11,7 @@ import IconBar from '../../../views/IconBar';
 import MainPage from '../../../views/MainPage';
 import SuperTable, { ITableRowAction } from '../../../views/Table';
 import TextFilter from '../../../views/table/TextFilter';
+import { IconButton } from '../../../views/TooltipControls';
 
 import { IDownload } from '../../download_management/types/IDownload';
 import { setModEnabled } from '../../profile_management/actions/profiles';
@@ -42,6 +43,36 @@ import { ButtonGroup, DropdownButton, Jumbotron, MenuItem } from 'react-bootstra
 import * as semver from 'semver';
 
 type IModWithState = IMod & IProfileMod;
+
+interface IVersionOptionProps {
+  t: I18next.TranslationFunction;
+  modId: string;
+  altId: string;
+  mod: IModWithState;
+  onRemove: (modId: string) => void;
+}
+
+class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
+  public render(): JSX.Element {
+    const { t, modId, altId, mod } = this.props;
+    return (
+      <div>
+        {mod.attributes['version']}
+        <IconButton
+          id={`btn-remove-${modId}-${altId}`}
+          className='btn-embed'
+          icon='remove'
+          tooltip={t('remove')}
+          onClick={this.remove}
+        />
+      </div>
+    );
+  }
+
+  private remove = () => {
+    this.props.onRemove(this.props.altId);
+  }
+}
 
 interface IBaseProps {
   objects: ITableAttribute[];
@@ -200,7 +231,7 @@ class ModList extends ComponentEx<IProps, {}> {
       name: 'Version',
       description: 'File version (according to the author)',
       icon: 'birthday-cake',
-      calc: (mod: IModWithState) => getSafe(mod.attributes, ['version'], ''),
+      calc: this.calcVersion,
       customRenderer: this.renderVersion,
       placement: 'table',
       isToggleable: true,
@@ -249,6 +280,7 @@ class ModList extends ComponentEx<IProps, {}> {
       || (this.props.modState !== newProps.modState)
       || (this.props.downloads !== newProps.downloads)) {
       this.updateModsWithState(this.props, newProps);
+      this.forceUpdate();
     }
   }
 
@@ -301,10 +333,23 @@ class ModList extends ComponentEx<IProps, {}> {
     );
   }
 
+  private calcVersion = (mod: IModWithState): string => {
+    const { t } = this.props;
+    const version = getSafe(mod.attributes, ['version'], undefined);
+    const equalMods = this.mGroupedMods[mod.id];
+    if ((equalMods !== undefined) && (equalMods.length > 1)) {
+      return version + ' (' + t('{{ count }} more', { count: equalMods.length - 1 }) + ')';
+    } else {
+      return version;
+    }
+  }
+
   private renderVersion = (mod: IModWithState): JSX.Element => {
     const { downloads, downloadPath, mods, t, gameMode } = this.props;
     const equalMods = this.mGroupedMods[mod.id];
-    const alternatives = equalMods.map(iter => iter.id);
+    const alternatives = equalMods !== undefined
+      ? equalMods.map(iter => iter.id)
+      : [mod.id];
 
     const updateState = modUpdateState(mod, downloadPath, mods);
 
@@ -355,9 +400,17 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   private renderVersionOptions(modId: string, altId: string): JSX.Element {
+    const { t } = this.props;
     return (
       <MenuItem eventKey={{ modId, altId }} key={altId}>
-        {this.mModsWithState[altId].attributes['version']}
+        <VersionOption
+          t={t}
+          key={altId}
+          modId={modId}
+          altId={altId}
+          mod={this.mModsWithState[altId]}
+          onRemove={this.removeMod}
+        />
       </MenuItem>
     );
   }
@@ -412,7 +465,7 @@ class ModList extends ComponentEx<IProps, {}> {
     // the above check wouldn't notice that change
     if (!changed
         && ((this.mModsWithState === undefined)
-         || (!_.isEqual(Object.keys(newModsWithState), Object.keys(this.mModsWithState))))) {
+         || !_.isEqual(Object.keys(newModsWithState), Object.keys(this.mModsWithState)))) {
       changed = true;
     }
 
@@ -484,6 +537,10 @@ class ModList extends ComponentEx<IProps, {}> {
     });
   }
 
+  private removeMod = (modId: string) => {
+    this.removeSelected([modId]);
+  }
+
   private removeSelected = (modIds: string[]) => {
     const { t, gameMode, installPath, onRemoveMod, onShowDialog, mods } = this.props;
     this.modAction = 'removing';
@@ -520,7 +577,7 @@ class ModList extends ComponentEx<IProps, {}> {
         disableDependent = result.action === 'Remove' && result.input.dependents;
 
         if (removeMods) {
-          // TODO this could be more efficient by not doing a clean deployment
+          // TODO: this could be more efficient by not doing a clean deployment
           this.disableModsInner(modIds);
           return new Promise<void>((resolve, reject) => {
             this.context.api.events.emit('activate-mods', (err: Error) => {
@@ -557,7 +614,7 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   const profile = activeProfile(state);
   const gameMode = activeGameId(state);
   const downloadPath = resolvePath('download',

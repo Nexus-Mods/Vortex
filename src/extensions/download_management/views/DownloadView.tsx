@@ -60,33 +60,14 @@ type IProps = IConnectedProps & IActionProps;
 
 interface IComponentState {
   dropActive: boolean;
-  showAll: boolean;
 }
 
 interface IAllGamesButtonProps {
   id: string;
   buttonType: 'icon' | 'text' | 'both';
-  showAll: boolean;
   onClick: () => void;
   t: (input: string) => string;
 }
-
-const AllGamesButton = (props) => {
-  const { t, buttonType, id, onClick, showAll } = props;
-  const tooltip =
-    showAll
-    ? t('Hide downloads from other games')
-    : t('Show downloads from other games');
-  return (
-    <ToolbarIcon
-      id={id}
-      text={tooltip}
-      onClick={onClick}
-      icon={showAll ? 'eye' : 'eye-slash'}
-      buttonType={buttonType}
-    />
-  );
-};
 
 interface IFileTimeProps {
   t: I18next.TranslationFunction;
@@ -154,7 +135,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     super(props);
     this.state = {
       dropActive: false,
-      showAll: false,
     };
 
     this.gameColumn = {
@@ -183,7 +163,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       icon: 'calendar-plus-o',
       customRenderer: (attributes: IDownload, detail: boolean, t) => {
         if (attributes.game !== this.props.gameMode) {
-          return undefined;
+          return null;
         }
         return (
           <FileTime
@@ -214,16 +194,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     };
 
     this.staticButtons = [
-      {
-        component: AllGamesButton as any,
-        props: () => ({
-          id: 'btn-show-all-games',
-          key: 'btn-show-all-games',
-          showAll: this.state.showAll,
-          t: props.t,
-          onClick: () => this.setState(setSafe(this.state, ['showAll'], !this.state.showAll)),
-        }),
-      },
       {
         component: InputButton,
         props: () => ({
@@ -286,14 +256,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    let { downloads } = this.props;
-    const { gameMode } = this.props;
-    const { showAll } = this.state;
-
-    if (!showAll) {
-      downloads = objectFilter(downloads,
-        (id: string, download: IDownload) => download.game === gameMode);
-    }
+    const { downloads, gameMode } = this.props;
 
     return (
       <MainPage>
@@ -328,7 +291,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   private startDownload = (url: string) => {
-    this.context.api.events.emit('start-download', [url], {}, false);
+    this.context.api.events.emit('start-download', [url], {});
   }
 
   private pause = (downloadIds: string[]) => {

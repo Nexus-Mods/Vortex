@@ -1,5 +1,6 @@
 import { showDialog } from '../../../actions/notifications';
 import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
+import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
@@ -9,7 +10,6 @@ import More from '../../../views/More';
 import { Button } from '../../../views/TooltipControls';
 import { setActivator, setPath } from '../actions/settings';
 import { IModActivator } from '../types/IModActivator';
-import { IStatePaths } from '../types/IStateSettings';
 import resolvePath, { pathDefaults, PathKey } from '../util/resolvePath';
 import supportedActivators from '../util/supportedActivators';
 

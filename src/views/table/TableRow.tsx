@@ -11,34 +11,36 @@ interface ICellProps {
   language: string;
   attribute: ITableAttribute;
   rowId: string;
-  rowData: any;
+  data: any;
+  rawData: any;
   tableId: string;
   t: I18next.TranslationFunction;
 }
 
 class TableCell extends React.Component<ICellProps, {}> {
   public shouldComponentUpdate(newProps: ICellProps) {
-    return this.props.rowData !== newProps.rowData
+    return this.props.rawData !== newProps.rawData
+        || this.props.data !== newProps.data
         || this.props.language !== newProps.language;
   }
 
   public render(): JSX.Element {
-    const { t, attribute, language, rowData, rowId, tableId } = this.props;
+    const { t, attribute, data, language, rawData, rowId, tableId } = this.props;
 
     // if a custom renderer was set then rowData is the raw object
     // passed to the table by the user.
     // otherwise rowData is the calculated value of this cell
 
     if (attribute.customRenderer !== undefined) {
-      return attribute.customRenderer(rowData, false, t);
+      return attribute.customRenderer(rawData, false, t) || null;
     }
 
-    if ((rowData === undefined) || (rowData === null)) {
+    if ((data === undefined) || (data === null)) {
       return <span>{' '}</span>;
     } else if ((attribute.edit.onChangeValue !== undefined) && attribute.edit.inline) {
       if (attribute.edit.choices !== undefined) {
         const choices = attribute.edit.choices();
-        const currentChoice = choices.find(choice => choice.text === rowData);
+        const currentChoice = choices.find(choice => choice.text === data);
         const key = currentChoice !== undefined ? currentChoice.key : undefined;
         return (
           <Dropdown id={`dropdown-${tableId}-${attribute.id}`}>
@@ -65,28 +67,28 @@ class TableCell extends React.Component<ICellProps, {}> {
         );
       }
     } else {
-      const cellType = typeof(rowData);
+      const cellType = typeof(data);
       if (cellType === 'string') {
-        return <span>{rowData}</span>;
+        return <span>{data}</span>;
       } else if (cellType === 'boolean') {
         return (
           <IconButton
             className='btn-embed'
             id={`toggle-${rowId}-${attribute.id}`}
             tooltip={attribute.name}
-            icon={rowData ? 'check-square-o' : 'square-o'}
+            icon={data ? 'check-square-o' : 'square-o'}
             onClick={this.toggle}
           />
         );
-      } else if ((cellType === 'object') && (rowData instanceof Date)) {
+      } else if ((cellType === 'object') && (data instanceof Date)) {
         return (
           <span>
-            {rowData !== undefined ? rowData.toLocaleString(language) : t('Not installed')}
+            {data !== undefined ? data.toLocaleString(language) : t('Not installed')}
           </span>
         );
       }
     }
-    return <span>{rowData.toString()}</span>;
+    return <span>{data.toString()}</span>;
   }
 
   private cycle = () => {
@@ -113,8 +115,8 @@ class TableCell extends React.Component<ICellProps, {}> {
   }
 
   private toggle = () => {
-    const { attribute, rowData, rowId } = this.props;
-    const value = rowData;
+    const { attribute, data, rowId } = this.props;
+    const value = data;
     attribute.edit.onChangeValue(rowId, !value);
   }
 }
@@ -191,14 +193,15 @@ class TableRow extends React.Component<IRowProps, {}> {
         className={`table-${tableId} cell-${attribute.id}`}
         key={attribute.id}
       >
-        {this.renderCell(attribute, attribute.customRenderer ? rawData : data[attribute.id], t)}
+        {this.renderCell(attribute, rawData, data[attribute.id], t)}
       </td>
     );
   }
 
   private renderCell(
     attribute: ITableAttribute,
-    rowData: any,
+    rawData: any,
+    calculatedData: any,
     t: I18next.TranslationFunction): JSX.Element {
 
     const { data, language, tableId } = this.props;
@@ -207,7 +210,8 @@ class TableRow extends React.Component<IRowProps, {}> {
       <TableCell
         t={t}
         attribute={attribute}
-        rowData={rowData}
+        rawData={rawData}
+        data={calculatedData}
         rowId={data.__id}
         tableId={tableId}
         language={language}

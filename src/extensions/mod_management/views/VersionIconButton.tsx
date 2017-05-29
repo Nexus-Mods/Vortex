@@ -2,6 +2,8 @@ import { ComponentEx } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 import { IconButton } from '../../../views/TooltipControls';
 
+import { IDownload } from '../../download_management/types/IDownload';
+
 import { IModWithState } from '../types/IModProps';
 import { UpdateState } from '../util/modUpdateState';
 
@@ -13,8 +15,8 @@ export interface IBaseProps {
   gameMode: string;
   mod: IModWithState;
   state: UpdateState;
-  downloads: {};
-  mods: {};
+  downloads: { [archiveId: string]: IDownload };
+  mods: { [modId: string]: any };
   downloadPath: string;
 }
 
@@ -42,7 +44,7 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
         id={`btn-version-${mod.id}`}
         tooltip={tooltip}
         icon={icon}
-        onClick={this.downloadSelectedMod}
+        onClick={this.trigger}
       />
     );
   }
@@ -75,36 +77,20 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
       case 'bug-disable': return 'ban';
       case 'update': return 'cloud-download';
       case 'update-site': return 'external-link';
-      case 'install': return 'check';
       default: return undefined;
     }
   }
 
-  private downloadSelectedMod = () => {
+  private trigger = () => {
     const { downloads, downloadPath, gameMode, mod, mods, state } = this.props;
     const newestFileId = getSafe(mod.attributes, ['newestFileId'], undefined);
-    const newestFileName = getSafe(mod.attributes, ['newestFileName'], undefined);
 
     if ((state === 'update') || (state === 'bug-update')) {
-      this.context.api.events.emit('download-mod-update',
+      this.context.api.events.emit('mod-update',
         gameMode, mod.attributes['modId'], newestFileId);
     } else if ((state === 'update-site') || (state === 'bug-update-site')) {
       this.context.api.events.emit('open-mod-page',
         gameMode, mod.attributes['modId']);
-    } else if (state === 'install') {
-      const newModId = Object.keys(downloads).find((key) => {
-        if (downloads[key].localPath === newestFileName) {
-          return Object.keys(mods).find((modKey) =>
-            mods[modKey].attributes['fileName'] === newestFileName) !== undefined;
-        }
-      });
-
-      if (newModId !== undefined) {
-        this.context.api.events.emit('start-install-download', newModId);
-      } else {
-        const newFileName: string = path.join(downloadPath, newestFileName);
-        this.context.api.events.emit('start-install', newFileName);
-      }
     }
   }
 }

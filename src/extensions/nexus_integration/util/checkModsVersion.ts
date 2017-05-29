@@ -72,7 +72,6 @@ function updateLatestFileAttributes(dispatch: Redux.Dispatch<any>,
                                     mod: IMod,
                                     file: IFileInfo) {
   update(dispatch, gameId, mod, 'newestVersion', file.version);
-  update(dispatch, gameId, mod, 'newestFileName', file.file_name);
 
   const fileCategories = ['MAIN', 'UPDATE', 'OPTIONAL'];
   if (fileCategories.indexOf(file.category_name) !== -1) {
@@ -109,7 +108,7 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   }
 
   // collect the changelogs of all the versions > currently installed and <= newest
-  // TODO this is untested currently, first need to find a mod that provides update info
+  // TODO: this is untested currently, first need to find a mod that provides update info
   //   /and/ a changelog
   const changelog = fileUpdate
     .map(update => {

@@ -1,4 +1,5 @@
 import { getSafe, pushSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 import { IModWithState } from '../types/IModProps';
 
 import { compare } from 'semvish';
@@ -10,9 +11,15 @@ function byModId(input: IModWithState[]): IModWithState[][] {
   return Object.keys(byModId).map(modId => byModId[modId]);
 }
 
+interface IFileId {
+  newestFileId?: string;
+  logicalFileName?: string;
+  fileId: string;
+}
+
 function fileId(value: IModWithState): string {
-  let result = getSafe(value.attributes, ['newestFileId'], 'unknown');
-  if (result !== 'unknown') {
+  let result = getSafe(value.attributes, ['newestFileId'], undefined);
+  if (result !== undefined) {
     return 'n' + result;
   }
   result = getSafe(value.attributes, ['logicalFileName'], undefined);
@@ -22,11 +29,27 @@ function fileId(value: IModWithState): string {
   return 'i' + value.id;
 }
 
+function fileMatch(lhs: IModWithState, rhs: IModWithState): boolean {
+  if (truthy(lhs.attributes.newestFileId) && truthy(rhs.attributes.newestFileId)) {
+    return lhs.attributes.newestFileId === rhs.attributes.newestFileId;
+  } else if (truthy(lhs.attributes.logicalFileName) && truthy(rhs.attributes.logicalFileName)) {
+    return lhs.attributes.logicalFileName === rhs.attributes.logicalFileName;
+  }
+  return false;
+}
+
 function byFile(input: IModWithState[]): IModWithState[][] {
-  const result = input.reduce((prev: { [fileId: string]: IModWithState[] }, value) => {
-    return pushSafe(prev, [fileId(value)], value);
-  }, {});
-  return Object.keys(result).map(fileId => result[fileId]);
+  const groups: IModWithState[][] = [];
+  input.forEach((mod: IModWithState) => {
+    // TODO: O(n^2)
+    const group = groups.find(iter => fileMatch(iter[0], mod));
+    if (group === undefined) {
+      groups.push([mod]);
+    } else {
+      group.push(mod);
+    }
+  });
+  return groups;
 }
 
 /**
@@ -53,7 +76,7 @@ function byEnabled(input: IModWithState[]): IModWithState[][] {
 
 function group(input: IModWithState[][],
                groupFunc: (input: IModWithState[]) => IModWithState[][]): IModWithState[][] {
-  return input.reduce((prev: IModWithState[][], value) => {
+  return input.reduce((prev: IModWithState[][], value: IModWithState[]) => {
     return [].concat(prev, groupFunc(value));
   }, []);
 }

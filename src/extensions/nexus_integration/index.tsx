@@ -1,6 +1,7 @@
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { setDialogVisible } from '../../actions/session';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
+import { IState } from '../../types/IState';
 import Debouncer from '../../util/Debouncer';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -56,7 +57,7 @@ export interface IExtensionContextExt extends IExtensionContext {
     handler: (inputUrl: string) => Promise<string[]>) => void;
 }
 
-function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boolean) {
+function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
   const url: NXMUrl = new NXMUrl(nxmurl);
 
   let nexusModInfo: IModInfo;
@@ -64,7 +65,7 @@ function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boo
 
   const gameId = convertGameId(url.gameId);
 
-  nexus.getModInfo(url.modId, gameId)
+  return nexus.getModInfo(url.modId, gameId)
     .then((modInfo: IModInfo) => {
       nexusModInfo = modInfo;
       return nexus.getFileInfo(url.modId, url.fileId, gameId);
@@ -86,14 +87,21 @@ function startDownload(api: IExtensionApi, nxmurl: string, automaticInstall: boo
       }
       const uris: string[] = urls.map((item: IDownloadURL) => item.URI);
       log('debug', 'got download urls', { uris });
-      api.events.emit('start-download', uris, {
-        game: url.gameId.toLowerCase(),
-        nexus: {
-          ids: { gameId, modId: url.modId, fileId: url.fileId },
-          modInfo: nexusModInfo,
-          fileInfo: nexusFileInfo,
-        },
-      }, automaticInstall);
+      return new Promise<string>((resolve, reject) => {
+        api.events.emit('start-download', uris, {
+          game: url.gameId.toLowerCase(),
+          nexus: {
+            ids: { gameId, modId: url.modId, fileId: url.fileId },
+            modInfo: nexusModInfo,
+            fileInfo: nexusFileInfo,
+          },
+        }, (err, downloadId) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(downloadId);
+        });
+      });
     })
     .catch((err) => {
       api.sendNotification({
@@ -166,7 +174,7 @@ interface IRequestError {
 function processErrorMessage(
   statusCode: number, errorMessage: string, gameId: string): IRequestError {
   if (statusCode === undefined) {
-    if (errorMessage.indexOf('APIKEY') > -1) {
+    if (errorMessage && (errorMessage.indexOf('APIKEY') > -1)) {
       return { error: 'You are not logged in!' };
     } else {
       return { error: errorMessage };
@@ -277,7 +285,7 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
 
-  // TODO this is not a reliable way to determine if the mod is from nexus
+  // TODO: this is not a reliable way to determine if the mod is from nexus
   const isNexusMod: boolean = (nexusModId !== undefined)
     && (version !== undefined)
     && !isNaN(parseInt(nexusModId, 10));
@@ -359,7 +367,7 @@ function init(context: IExtensionContextExt): boolean {
       groupId: 'download-buttons',
       icon: 'nexus',
       tooltip: 'Download NXM URL',
-      onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl, false),
+      onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl),
     }));
 
   context.registerAction('categories-icons', 100, 'download', {}, 'Retrieve categories',
@@ -397,7 +405,7 @@ function init(context: IExtensionContextExt): boolean {
   context.once(() => {
     const registerFunc = () => {
       context.api.registerProtocol('nxm', (url: string) => {
-        startDownload(context.api, url, false);
+        startDownload(context.api, url);
       });
     };
 
@@ -451,10 +459,10 @@ function init(context: IExtensionContextExt): boolean {
                 errorMessages.join('\n\n'));
             }
           })
-          .catch((err) => {
+          .catch(err => {
             showError(context.api.store.dispatch,
               'An error occurred checking for mod updates',
-              err.message);
+              err);
           })
           .finally(() => {
             context.api.store.dispatch(setUpdatingMods(gameId, false));
@@ -478,10 +486,24 @@ function init(context: IExtensionContextExt): boolean {
       nexus.setGame(gameId);
     });
 
-    context.api.events.on('download-mod-update', (gameId, modId, fileId) => {
+    context.api.events.on('mod-update', (gameId, modId, fileId) => {
       // TODO: Need some way to identify if this request is actually for a nexus mod
       const url = `nxm://${toNXMId(gameId)}/mods/${modId}/files/${fileId}`;
-      startDownload(context.api, url, true);
+      const state: IState = context.api.store.getState();
+      const downloads = state.persistent.downloads.files;
+
+      // check if the file is already downloaded. If not, download before starting the install
+      const existingId = Object.keys(downloads).find(downloadId =>
+        getSafe(downloads,
+                [downloadId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined) === fileId);
+      if (existingId !== undefined) {
+        context.api.events.emit('start-install-download', existingId);
+      } else {
+        startDownload(context.api, url)
+          .then(downloadId => {
+            context.api.events.emit('start-install-download', downloadId);
+          });
+      }
     });
 
     context.api.events.on('open-mod-page', (gameId, modId) => {
@@ -530,6 +552,9 @@ function init(context: IExtensionContextExt): boolean {
     const updateDebouncer: Debouncer = new Debouncer(newModTable => {
       const state = context.api.store.getState();
       const gameMode = activeGameId(state);
+      if (lastGameMode === undefined) {
+        return;
+      }
       if (lastModTable[lastGameMode] !== newModTable[gameMode]) {
         Object.keys(newModTable[gameMode]).forEach(modId => {
           if ((lastModTable[lastGameMode][modId] !== undefined)

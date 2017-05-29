@@ -1,4 +1,5 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
+import {IStatePaths} from '../../types/IState';
 import {ITableAttribute} from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
 import Debouncer from '../../util/Debouncer';
@@ -26,7 +27,6 @@ import {IFileEntry} from './types/IFileEntry';
 import {IInstall} from './types/IInstall';
 import {IMod} from './types/IMod';
 import {IFileChange, IModActivator} from './types/IModActivator';
-import {IStatePaths} from './types/IStateSettings';
 import {ITestSupported} from './types/ITestSupported';
 import * as basicInstaller from './util/basicInstaller';
 import refreshMods from './util/refreshMods';
