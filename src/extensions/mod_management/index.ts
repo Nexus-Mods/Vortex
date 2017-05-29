@@ -84,10 +84,18 @@ function updateModActivation(context: IExtensionContext): Promise<void> {
   const profile = activeProfile(state);
   const modState = profile !== undefined ? profile.modState : {};
 
-  const activator: IModActivator =
-    activatorId !== undefined
-        ? activators.find((act: IModActivator) => act.id === activatorId)
-        : activators.find((act: IModActivator) => act.isSupported(state) === undefined);
+  let activator: IModActivator;
+  if (activatorId !== undefined) {
+    activator = activators.find((act: IModActivator) => act.id === activatorId);
+  }
+  if (activator === undefined) {
+    activator = activators.find((act: IModActivator) => act.isSupported(state) === undefined);
+  }
+
+  if (activator === undefined) {
+    // this situation (no supported activator) should already be reported
+    return Promise.resolve();
+  }
 
   const mods = state.persistent.mods[gameMode] || {};
   const modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
