@@ -264,8 +264,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   }
 
   private restore = (instanceId: string) => {
-    const { t, onShowDialog, onShowActivity,
-      onShowError, onShowSuccess, saves } = this.props;
+    const { t, onShowDialog, onShowActivity, onShowError, onShowSuccess, saves } = this.props;
     const { discoveredGames, gameMode } = this.props;
 
     const modPath = discoveredGames[gameMode].modPath;
@@ -274,14 +273,36 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     onShowActivity('Restoring plugins', notificationId);
 
     restoreSavegamePlugins(this.context.api, modPath, saves[instanceId])
-      .then(() => {
-        onShowSuccess('Restoring plugins complete', notificationId);
+      .then((result) => {
+        if (result) {
+          onShowSuccess('Restoring plugins complete', notificationId);
+        }
       })
       .catch((err: MissingPluginsError) => {
-        onShowError('Failed to restore plugins', {
-          reason: 'Not all plugins available',
-          missing: err.missingPlugins.join('\n'),
-        }, notificationId);
+        let restorePlugins = true;
+        onShowDialog('question', t('Restore plugins'), {
+          message: t('{{errorMessage}}, do you want to continue?\n\n{{missingPlugins}}',
+            {
+              replace: {
+                missingPlugins: err.missingPlugins.join('\n'),
+                errorMessage: err.message,
+              },
+            }),
+          options: {
+            translated: true,
+          },
+        }, {
+            Restore: null,
+            Cancel: null,
+          }).then((result: types.IDialogResult) => {
+            restorePlugins = result.action === 'Restore';
+            if (restorePlugins) {
+              this.context.api.events.emit('set-plugin-list', saves[instanceId].attributes.plugins);
+              onShowSuccess('Restoring plugins complete', notificationId);
+            } else {
+              onShowError('Failed to restore plugins', 'Restore canceled', notificationId);
+            }
+          });
       });
   }
 

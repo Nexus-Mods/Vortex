@@ -33,7 +33,7 @@ function restoreSavegamePlugins(
   api: types.IExtensionApi,
   modPath: string,
   save: ISavegame,
-) {
+): Promise<boolean> {
   return fs.readdirAsync(modPath)
     .then((files: string[]) => {
       const plugins = new Set(files
@@ -50,7 +50,7 @@ function restoreSavegamePlugins(
         return Promise.reject(new MissingPluginsError(missing));
       } else {
         api.events.emit('set-plugin-list', save.attributes.plugins);
-        return Promise.resolve();
+        return Promise.resolve(true);
       }
     });
 }
