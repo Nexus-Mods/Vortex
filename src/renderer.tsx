@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as ReactDOM from 'react-dom';
 
 if (process.env.NODE_ENV === 'production') {
-  // TODO the following hacks should, supposedly increase react
+  // TODO: the following hacks should, supposedly increase react
   //  performance by avoiding unnecessary "if (process.env.NODE_ENV === )"
   //  calls and speeding up the rest by turning process.env into a static
   //  object.

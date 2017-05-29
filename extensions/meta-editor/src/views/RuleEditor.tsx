@@ -193,7 +193,7 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
         return this.context.api.lookupModMeta({filePath});
       })
       .then((result: ILookupResult[]) => {
-        // TODO always use hash because lookup by meta information is not currently
+        // TODO: always use hash because lookup by meta information is not currently
         //   supported on the web side
         this.setState(update(this.state, { md5: { $set: '...' } }));
         const { genHash } = require('modmeta-db');

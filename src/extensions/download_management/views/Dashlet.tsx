@@ -37,41 +37,43 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
     const {t, files, speeds} = this.props;
     const data = this.convertData(speeds);
 
-    let activeDownloads = Object.keys(files).filter(
+    const activeDownloads = Object.keys(files).filter(
       (key: string) => files[key].state === 'started');
 
     if (recharts === undefined) {
       return null;
     }
 
-    // TODO animation disabled because https://github.com/recharts/recharts/issues/375
-    return (<div>
-      <h5>{t('{{ count }} download', {
-        count: activeDownloads.length,
-        replace: { count: activeDownloads.length },
-      })}</h5>
-      <div style={{ textAlign: '-webkit-center' }} >
-        <recharts.AreaChart width={200} height={200} data={data}>
-          <defs>
-            <linearGradient id='colorUv' x1='0' y1='0' x2='0' y2='1'>
-              <stop offset='5%' stopColor='#cf862a' stopOpacity={0.8} />
-              <stop offset='95%' stopColor='#cf862a' stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <recharts.Area
-            type='monotone'
-            dataKey='speed'
-            stroke='#cf862a'
-            fill='url(#colorUv)'
-            isAnimationActive={false}
-          />
-          <recharts.Tooltip
-            formatter={this.valueFormatter}
-            labelFormatter={this.labelFormatter}
-          />
-        </recharts.AreaChart>
+    // TODO: animation disabled because https://github.com/recharts/recharts/issues/375
+    return (
+      <div>
+        <h5>{t('{{ count }} download', {
+          count: activeDownloads.length,
+          replace: { count: activeDownloads.length },
+        })}</h5>
+        <div style={{ textAlign: '-webkit-center' }} >
+          <recharts.AreaChart width={200} height={200} data={data}>
+            <defs>
+              <linearGradient id='colorUv' x1='0' y1='0' x2='0' y2='1'>
+                <stop offset='5%' stopColor='#cf862a' stopOpacity={0.8} />
+                <stop offset='95%' stopColor='#cf862a' stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <recharts.Area
+              type='monotone'
+              dataKey='speed'
+              stroke='#cf862a'
+              fill='url(#colorUv)'
+              isAnimationActive={false}
+            />
+            <recharts.Tooltip
+              formatter={this.valueFormatter}
+              labelFormatter={this.labelFormatter}
+            />
+          </recharts.AreaChart>
+        </div>
       </div>
-    </div>);
+    );
   }
 
   private valueFormatter = (value: number) => {

@@ -31,7 +31,7 @@ function progress(props) {
     case 'failed': return <span>{t('Failed')}</span>;
     case 'paused': return <span>{t('Paused')}</span>;
     default: {
-      let label = ((received * 100) / size).toFixed(0);
+      const label = ((received * 100) / size).toFixed(0);
       return (
         <ProgressBar now={received} max={size} label={`${label} %`} />
       );

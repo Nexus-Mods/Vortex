@@ -112,12 +112,24 @@ export interface ISettingsDownloads {
     maxParallelDownloads: number;
 }
 
+export interface IStatePaths {
+  base: string;
+  download: string;
+  install: string;
+}
+
+export interface ISettingsMods {
+  paths: { [gameId: string]: IStatePaths };
+  modlistState: { [id: string]: IAttributeState };
+}
+
 export interface ISettings {
   interface: ISettingsInterface;
   gameMode: ISettingsGameMode;
   profiles: ISettingsProfiles;
   window: IWindow;
   downloads: ISettingsDownloads;
+  mods: ISettingsMods;
 }
 
 export interface ISessionGameMode {

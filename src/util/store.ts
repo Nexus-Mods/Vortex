@@ -123,7 +123,7 @@ export function extendStore(store: Redux.Store<IState>,
                     details: innerErr.message,
                   });
                 } else {
-                  // TODO this seems to cause the state to be applied twice.
+                  // TODO: this seems to cause the state to be applied twice.
                   //   not a big deal but curious
                   internalPersistor.rehydrate(innerState);
                 }

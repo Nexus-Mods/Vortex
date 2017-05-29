@@ -52,56 +52,62 @@ class EnvButton extends ComponentEx<IEnvButtonProps, IEnvButtonState> {
     const key = getSafe(varCopy, ['key'], '');
 
     if (open) {
-      return (<InputGroup>
-        <FormControl
-          type='text'
-          value={key}
-          onChange={this.editKey}
-          placeholder={t('Key')}
-          style={{ width: '50%' }}
-        />{' '}
-        <FormControl
-          type='text'
-          value={getSafe(varCopy, ['value'], '')}
-          onChange={this.editValue}
-          placeholder={t('Value')}
-          style={{ width: '50%' }}
-        />
-        <InputGroup.Button>
-          <IconButton
-            id={`btn-apply-${key}`}
-            icon='check'
-            tooltip={t('Apply')}
-            onClick={this.apply}
+      return (
+        <InputGroup>
+          <FormControl
+            type='text'
+            value={key}
+            onChange={this.editKey}
+            placeholder={t('Key')}
+            style={{ width: '50%' }}
+          />{' '}
+          <FormControl
+            type='text'
+            value={getSafe(varCopy, ['value'], '')}
+            onChange={this.editValue}
+            placeholder={t('Value')}
+            style={{ width: '50%' }}
           />
-        </InputGroup.Button>
-      </InputGroup>);
+          <InputGroup.Button>
+            <IconButton
+              id={`btn-apply-${key}`}
+              icon='check'
+              tooltip={t('Apply')}
+              onClick={this.apply}
+            />
+          </InputGroup.Button>
+        </InputGroup>
+      );
     } else {
       if (varCopy.key === undefined) {
-        return <IconButton
-          id='btn-add-env'
-          icon='plus'
-          tooltip={t('Add')}
-          onClick={this.open}
-        />;
+        return (
+          <IconButton
+            id='btn-add-env'
+            icon='plus'
+            tooltip={t('Add')}
+            onClick={this.open}
+          />
+        );
       } else {
-        return (<div>
-          <b>{varCopy.key}</b> = <b>{varCopy.value}</b>{' '}
-          <div className='env-edit-buttons'>
-            <IconButton
-              id={`btn-edit-${varCopy.key}`}
-              icon='edit'
-              tooltip={t('Edit')}
-              onClick={this.open}
-            />
-            <IconButton
-              id={`btn-remove-${varCopy.key}`}
-              icon='remove'
-              tooltip={t('Remove')}
-              onClick={this.remove}
-            />
+        return (
+          <div>
+            <b>{varCopy.key}</b> = <b>{varCopy.value}</b>{' '}
+            <div className='env-edit-buttons'>
+              <IconButton
+                id={`btn-edit-${varCopy.key}`}
+                icon='edit'
+                tooltip={t('Edit')}
+                onClick={this.open}
+              />
+              <IconButton
+                id={`btn-remove-${varCopy.key}`}
+                icon='remove'
+                tooltip={t('Remove')}
+                onClick={this.remove}
+              />
+            </div>
           </div>
-        </div>);
+        );
       }
     }
   }
@@ -202,7 +208,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
               onChangeValue={this.handleChange}
               maxLength={50}
             />
-            {isGame ?
+            {isGame ? (
               <FormTextItem
                 t={t}
                 controlId='target'
@@ -211,17 +217,19 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 stateKey='target'
                 value={this.state.tool.exePath}
                 readOnly
-              /> :
-              <FormPathItem
-                t={t}
-                controlId='target'
-                label={t('Target')}
-                placeholder={t('Target')}
-                stateKey='exePath'
-                value={this.state.tool.exePath}
-                onChangeValue={this.handleChangePath}
-                directory={false}
               />
+            ) : (
+                <FormPathItem
+                  t={t}
+                  controlId='target'
+                  label={t('Target')}
+                  placeholder={t('Target')}
+                  stateKey='exePath'
+                  value={this.state.tool.exePath}
+                  onChangeValue={this.handleChangePath}
+                  directory={false}
+                />
+              )
             }
             <FormTextItem
               t={t}
@@ -303,17 +311,20 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
 
     const editEnv = (itemId: string) => onEditEnv(itemId);
 
-    return (<ListGroup>
-      { envList.map((env) => <ListGroupItem key={env.key}>
-        <EnvButton
-          t={t}
-          variable={env}
-          open={group === env.key}
-          onAdd={this.addEnv}
-          onRemove={this.removeEnv}
-          onOpen={editEnv}
-        />
-        </ListGroupItem>)
+    return (
+    <ListGroup>
+        {envList.map(env => (
+          <ListGroupItem key={env.key}>
+            <EnvButton
+              t={t}
+              variable={env}
+              open={group === env.key}
+              onAdd={this.addEnv}
+              onRemove={this.removeEnv}
+              onOpen={editEnv}
+            />
+          </ListGroupItem>
+        ))
       }
       <ListGroupItem key='__add'>
         <EnvButton
@@ -367,7 +378,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   private handleChangeIcon = () => {
     const { t } = this.props;
 
-    // TODO implement conversion from other file formats to png and resizing
+    // TODO: implement conversion from other file formats to png and resizing
     this.context.api.selectFile({
       defaultPath: this.state.tool.exePath,
       title: t('Select image'),
@@ -463,5 +474,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate([ 'common' ], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(ToolEditDialog)
-  ) as React.ComponentClass<IBaseProps>;
+    connect(mapStateToProps, mapDispatchToProps)(
+      ToolEditDialog)) as React.ComponentClass<IBaseProps>;

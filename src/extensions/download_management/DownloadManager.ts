@@ -169,7 +169,7 @@ class DownloadManager {
    */
   constructor(downloadPath: string, maxWorkers: number, maxChunks: number,
               speedCB: (speed: number) => void, userAgent: string) {
-    // TODO is it worth having this configurable?
+    // TODO: is it worth having this configurable?
     this.mMinChunkSize = 1024 * 1024;
     this.mDownloadPath = downloadPath;
     this.mMaxWorkers = maxWorkers;

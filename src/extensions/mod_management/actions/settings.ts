@@ -10,8 +10,8 @@ export const setPath = safeCreateAction('SET_MOD_PATH',
 /**
  * sets the activator to use for this game
  */
-// TODO we can't just change the activator, we first need to purge an activation made with the
-// previous one
+// TODO: we can't just change the activator, we first need to purge an activation made with
+// the previous one
 export const setActivator = safeCreateAction('SET_ACTIVATOR',
   (gameId: string, activatorId: string) => ({ gameId, activatorId }));
 

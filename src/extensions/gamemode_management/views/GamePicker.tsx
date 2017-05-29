@@ -145,7 +145,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
     const { t, discoveredGames, discovery, knownGames, pickerLayout, profiles } = this.props;
     const { showHidden } = this.state;
 
-    // TODO lots of computation and it doesn't actually change except through discovery
+    // TODO: lots of computation and it doesn't actually change except through discovery
     //   or when adding a profile
     const displayedGames: IGameStored[] = showHidden ? knownGames : knownGames.filter(
       (game: IGameStored) => !getAttr(discoveredGames, game.id, { hidden: false }).hidden);

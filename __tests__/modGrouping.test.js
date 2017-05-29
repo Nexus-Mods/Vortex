@@ -9,7 +9,8 @@ describe('modGrouping', () => {
     ];
     const result = group(input, { groupBy: 'modId', multipleEnabled: true });
     expect(result).toEqual([
-      [{ id: 'a', attributes: { modId: 42 } }, { id: 'c', attributes: { modId: 42 } }],
+      [{ id: 'a', attributes: { modId: 42 } },
+       { id: 'c', attributes: { modId: 42 } }],
       [{ id: 'b', attributes: { modId: 43 } }],
     ]);
   });
@@ -41,21 +42,6 @@ describe('modGrouping', () => {
        { id: 'c', attributes: { modId: 42, logicalFileName: '42' } }],
       [{ id: 'd', attributes: { modId: 42, logicalFileName: '42_2' } }],
       [{ id: 'b', attributes: { modId: 43, logicalFileName: '43' } }],
-    ]);
-  });
-  it('can group by file expression', () => {
-    const input = [
-      { id: 'a', attributes: { modId: 42, fileExpression: '42' } },
-      { id: 'b', attributes: { modId: 43, fileExpression: '43' } },
-      { id: 'c', attributes: { modId: 42, fileExpression: '42' } },
-      { id: 'd', attributes: { modId: 42, fileExpression: '42_2' } },
-    ];
-    const result = group(input, { groupBy: 'file', multipleEnabled: true });
-    expect(result).toEqual([
-      [{ id: 'a', attributes: { modId: 42, fileExpression: '42' } },
-       { id: 'c', attributes: { modId: 42, fileExpression: '42' } }],
-      [{ id: 'd', attributes: { modId: 42, fileExpression: '42_2' } }],
-      [{ id: 'b', attributes: { modId: 43, fileExpression: '43' } }],
     ]);
   });
   it('can group by file id', () => {

@@ -61,7 +61,7 @@ export function addNotification(notification: INotification) {
   };
 }
 
-// TODO I don't like the use of a global, but I don't see how else we can ensure
+// TODO: I don't like the use of a global, but I don't see how else we can ensure
 //  the same object is used between main application and extensions, without adding
 //  another parameter to functions
 class DialogCallbacks {

@@ -24,7 +24,7 @@ export interface IStarterInfo {
 
 /**
  * holds info about an executable to start
- * 
+ *
  * @class StarterInfo
  */
 class StarterInfo implements IStarterInfo {

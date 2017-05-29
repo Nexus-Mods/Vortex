@@ -3,9 +3,9 @@ import * as actions from '../src/extensions/gamemode_management/actions/settings
 
 describe('discoveryProgress', () => {
   it('creates the correct action', () => {
-    expect(discoveryActions.discoveryProgress(0, 'dir', true)).toEqual({
+    expect(discoveryActions.discoveryProgress(0, 42, 'dir')).toEqual({
       type: 'DISCOVERY_PROGRESS',
-      payload: { percent: 0, directory: 'dir' },
+      payload: { idx: 0, percent: 42, directory: 'dir' },
     });
   });
 });

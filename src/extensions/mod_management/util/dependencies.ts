@@ -9,7 +9,7 @@ import * as Promise from 'bluebird';
 import {ILookupResult, IReference, IRule} from 'modmeta-db';
 
 function findModByRef(reference: IReference, state: any): string {
-  // TODO support non-hash references
+  // TODO: support non-hash references
   const gameMode = activeGameId(state);
   const mods = state.persistent.mods[gameMode];
   const existing: string = Object.keys(mods).find((modId: string): boolean => {
@@ -19,7 +19,7 @@ function findModByRef(reference: IReference, state: any): string {
 }
 
 function findDownloadByRef(reference: IReference, state: any): string {
-  // TODO support non-hash references
+  // TODO: support non-hash references
   const downloads = state.persistent.downloads.files;
   const existing: string = Object.keys(downloads).find((dlId: string): boolean => {
     return downloads[dlId].fileMD5 === reference.fileMD5;

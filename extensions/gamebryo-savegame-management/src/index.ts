@@ -21,7 +21,7 @@ function updateSaveSettings(store: Redux.Store<any>,
   return parser.read(iniPath(currentProfile.gameId))
     .then((iniFile: IniFile<any>) => {
       const localPath = path.join('Saves', profileId);
-      // TODO we should provide a way for the user to set his own
+      // TODO: we should provide a way for the user to set his own
       //   save path without overwriting it
       if (util.getSafe(currentProfile, ['features', 'local_saves'], false)) {
         iniFile.data.General.SLocalSavePath = localPath;

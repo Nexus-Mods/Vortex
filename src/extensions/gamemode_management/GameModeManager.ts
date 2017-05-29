@@ -61,10 +61,10 @@ class GameModeManager {
 
     this.mStore = store;
 
-    // TODO handle the case where there are games previously discovered that
-    //      are now no longer known
-    // TODO verify that previously discovered games are still available in
-    //      their existing location
+    // TODO: handle the case where there are games previously discovered that
+    //       are now no longer known
+    // TODO: verify that previously discovered games are still available in
+    //       their existing location
     const gamesStored: IGameStored[] = this.mKnownGames.map(this.storeGame);
     store.dispatch(setKnownGames(gamesStored));
   }

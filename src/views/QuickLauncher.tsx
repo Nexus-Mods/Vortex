@@ -68,7 +68,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       .map(profileId => profiles[profileId].gameId)
       .filter(gameId => !getSafe(discoveredGames, [gameId, 'hidden'], false)));
 
-    // TODO this leaves out manually added games
+    // TODO: this leaves out manually added games
     const managedGames = Array.from(managedGamesIds)
       .map(gameId => knownGames.find(iter => iter.id === gameId))
       .filter(iter => iter !== undefined);

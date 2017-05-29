@@ -1,13 +1,11 @@
-import { IStatePaths } from '../types/IStateSettings';
-
+import { IStatePaths } from '../../../types/IState';
 import { getSafe } from '../../../util/storeHelper';
 
 import { remote } from 'electron';
 import * as path from 'path';
 import format = require('string-template');
 
-export type PathKey =
-  'base' | 'download' | 'install';
+export type PathKey = 'base' | 'download' | 'install';
 
 export const pathDefaults = {
     base: path.join('{USERDATA}', '{GAME}'),

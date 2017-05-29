@@ -34,7 +34,7 @@ class FileAssembler {
 
   public addChunk(offset: number, data: Buffer) {
     this.mWork = this.mWork.then(() => {
-      // TODO does writing at an offset beyond the file size work
+      // TODO: does writing at an offset beyond the file size work
       // on all OSes?
       return fs.writeAsync(this.mFD, Buffer.from(data), 0, data.length, offset);
     });

@@ -413,7 +413,7 @@ class ExtensionManager {
     const currentKey =
         getSafe(this.mApi.store.getState(),
                 ['confidential', 'account', 'nexus', 'APIKey'], '');
-    // TODO this is a hack!
+    // TODO: this is a hack!
     if ((this.mModDB === undefined)
         || (currentGame !== this.mModDBGame)
         || (currentKey !== this.mModDBAPIKey)) {
@@ -447,7 +447,7 @@ class ExtensionManager {
                                // tslint:disable-next-line: no-unused-variable
                                ({cbStore, selector, prevState, currentState,
                                  prevValue, currentValue}) => {
-                                 // TODO redux-watch seems to trigger even if
+                                 // TODO: redux-watch seems to trigger even if
                                  // the value has not changed. This can
                                  //   lead to an endless loop where a state
                                  //   change handler re-sets the same value
