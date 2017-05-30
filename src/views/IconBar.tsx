@@ -7,10 +7,10 @@ import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
 import { IconButton } from './TooltipControls';
 
+import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import update = require('react-addons-update');
 import { ButtonGroup, Dropdown, DropdownButton, MenuItem } from 'react-bootstrap';
 import { Overlay } from 'react-overlays';
 

@@ -2,7 +2,7 @@ import { IReducerSpec } from '../../../types/IExtensionContext';
 
 import { setUserInfo } from '../actions/session';
 
-import update = require('react-addons-update');
+import * as update from 'immutability-helper';
 
 /**
  * reducer for changes to the authentication

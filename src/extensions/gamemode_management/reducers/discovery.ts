@@ -2,7 +2,7 @@ import { IReducerSpec } from '../../../types/IExtensionContext';
 
 import { discoveryFinished, discoveryProgress, setPhaseCount } from '../actions/discovery';
 
-import update = require('react-addons-update');
+import * as update from 'immutability-helper';
 
 /**
  * reducer for changes to the known mods

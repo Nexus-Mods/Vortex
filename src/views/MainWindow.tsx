@@ -25,12 +25,12 @@ import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import { Button, IconButton, NavItem } from './TooltipControls';
 
+import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Badge, ControlLabel, FormGroup, Modal, Nav } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-import update = require('react-addons-update');
 
 interface IPageButtonProps {
   t: I18next.TranslationFunction;

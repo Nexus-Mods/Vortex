@@ -10,13 +10,11 @@ import { setAdvancedMode, setLanguage, setProfilesVisible } from './actions/inte
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
+import { readdir } from 'fs';
+import * as update from 'immutability-helper';
+import * as path from 'path';
 import * as React from 'react';
 import { Checkbox, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
-
-import update = require('react-addons-update');
-
-import { readdir } from 'fs';
-import * as path from 'path';
 
 interface ILanguage {
   key: string;
@@ -62,11 +60,11 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
       }
 
       const locales = files.map((key) => {
-        let language = undefined;
-        let country = undefined;
+        let language;
+        let country;
 
         if (key.includes('-')) {
-          let [languageKey, countryKey] = key.split('-');
+          const [languageKey, countryKey] = key.split('-');
           language = nativeLanguageName(languageKey);
           country = nativeCountryName(countryKey);
         } else {
@@ -92,7 +90,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
             onChange={this.selectLanguage}
             value={currentLanguage}
           >
-            { this.state.languages.map((language) => { return this.renderLanguage(language); }) }
+            { this.state.languages.map((language) => this.renderLanguage(language)) }
           </FormControl>
         </FormGroup>
         <FormGroup controlId='advanced'>
@@ -144,7 +142,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   }
 
   private selectLanguage = (evt) => {
-    let target: HTMLSelectElement = evt.target as HTMLSelectElement;
+    const target: HTMLSelectElement = evt.target as HTMLSelectElement;
     this.props.onSetLanguage(target.value);
   }
 
@@ -187,7 +185,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Function): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetLanguage: (newLanguage: string): void => {
       dispatch(setLanguage(newLanguage));
@@ -206,7 +204,4 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(
-      SettingsInterface
-    )
-  );
+    connect(mapStateToProps, mapDispatchToProps)(SettingsInterface));

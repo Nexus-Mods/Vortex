@@ -1,9 +1,9 @@
 import * as actions from '../actions/notifications';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import update = require('react-addons-update');
-
 import { removeValueIf } from '../util/storeHelper';
+
+import * as update from 'immutability-helper';
 
 let counter = 1;
 

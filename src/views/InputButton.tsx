@@ -7,8 +7,8 @@ import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
 import { Button } from './TooltipControls';
 
+import * as update from 'immutability-helper';
 import * as React from 'react';
-import update = require('react-addons-update');
 import { FormControl } from 'react-bootstrap';
 
 export interface IBaseProps {

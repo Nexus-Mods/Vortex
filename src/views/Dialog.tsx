@@ -7,8 +7,8 @@ import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import Icon from '../views/Icon';
 
+import * as update from 'immutability-helper';
 import * as React from 'react';
-import update = require('react-addons-update');
 import {
   Button, Checkbox, ControlLabel, FormControl, FormGroup,
   Modal, Radio,

@@ -12,8 +12,10 @@ import { DeployResult } from '../../util/startTool';
 import { getSafe } from '../../util/storeHelper';
 import Icon from '../../views/Icon';
 
-import { addDiscoveredTool,
-         setToolVisible } from '../gamemode_management/actions/settings';
+import {
+  addDiscoveredTool,
+  setToolVisible,
+} from '../gamemode_management/actions/settings';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
@@ -26,10 +28,10 @@ import ToolEditDialogT from './ToolEditDialog';
 let ToolEditDialog: typeof ToolEditDialogT = Placeholder;
 
 import * as Promise from 'bluebird';
+import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
 import { Dropdown, Media, MenuItem } from 'react-bootstrap';
-import update = require('react-addons-update');
 import { generate as shortid } from 'shortid';
 
 interface IWelcomeScreenState {
@@ -69,10 +71,10 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
 
   public componentWillMount() {
     asyncRequire('./ToolEditDialog', __dirname)
-    .then(moduleIn => {
-      ToolEditDialog = moduleIn.default;
-      this.forceUpdate();
-    });
+      .then(moduleIn => {
+        ToolEditDialog = moduleIn.default;
+        this.forceUpdate();
+      });
   }
 
   public render(): JSX.Element {
@@ -159,7 +161,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   private renderTool = (starter: StarterInfo, primary: boolean) => {
-    const {t} = this.props;
+    const { t } = this.props;
     if (starter === undefined) {
       return null;
     }
@@ -204,36 +206,36 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     } else {
       return onShowDialog('question', 'Deploy now?', {
         message: 'You should deploy mods now, otherwise the mods in game '
-               + 'will be outdated',
+        + 'will be outdated',
       }, {
-        Cancel: null,
-        Skip: null,
-        Deploy: null,
-      })
-      .then((result) => {
-        switch (result.action) {
-          case 'Skip': return Promise.resolve<DeployResult>('skip');
-          case 'Deploy': return Promise.resolve<DeployResult>('yes');
-          default: return Promise.resolve<DeployResult>('cancel');
-        }
-      });
+          Cancel: null,
+          Skip: null,
+          Deploy: null,
+        })
+        .then((result) => {
+          switch (result.action) {
+            case 'Skip': return Promise.resolve<DeployResult>('skip');
+            case 'Deploy': return Promise.resolve<DeployResult>('yes');
+            default: return Promise.resolve<DeployResult>('cancel');
+          }
+        });
     }
   }
 
   private startTool = (info: StarterInfo) => {
     const startTool = require('../../util/startTool').default;
     startTool(info, this.context.api.events, this.queryElevate,
-              this.queryDeploy, this.props.onShowError)
-    .catch((err: Error) => {
-      if (!(err instanceof UserCanceled)) {
-        this.props.onShowError('Failed to deploy', err);
-      }
-    })
-    ;
+      this.queryDeploy, this.props.onShowError)
+      .catch((err: Error) => {
+        if (!(err instanceof UserCanceled)) {
+          this.props.onShowError('Failed to deploy', err);
+        }
+      })
+      ;
   }
 
   private renderAddButton(hidden: StarterInfo[]) {
-    const {t} = this.props;
+    const { t } = this.props;
     // <IconButton id='add-tool-icon' icon='plus' tooltip={t('Add Tool')} />
     return (
       <Dropdown id='add-tool-button'>
@@ -261,7 +263,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   private unhide = (toolId: any) => {
-    const { gameMode, onSetToolVisible }  = this.props;
+    const { gameMode, onSetToolVisible } = this.props;
     onSetToolVisible(gameMode, toolId, true);
   }
 
@@ -285,8 +287,8 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
 
     return (
       <ToolEditDialog
-        tool={ editTool }
-        onClose={ this.closeEditDialog }
+        tool={editTool}
+        onClose={this.closeEditDialog}
       />
     );
   }
@@ -343,8 +345,8 @@ function mapStateToProps(state: any): IConnectedProps {
     gameMode,
     knownGames: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
-    discoveredTools: getSafe(state, [ 'settings', 'gameMode',
-                                      'discovered', gameMode, 'tools' ], {}),
+    discoveredTools: getSafe(state, ['settings', 'gameMode',
+      'discovered', gameMode, 'tools'], {}),
     autoDeploy: state.settings.automation.deploy,
     primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', gameMode], undefined),
   };

@@ -7,9 +7,9 @@ import { Button } from '../../../views/TooltipControls';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
+import * as update from 'immutability-helper';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, Image } from 'react-bootstrap';
-import update = require('react-addons-update');
 
 export interface IProps {
   onClose: () => void;

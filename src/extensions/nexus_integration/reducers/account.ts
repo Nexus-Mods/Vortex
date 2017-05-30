@@ -2,7 +2,7 @@ import { IReducerSpec } from '../../../types/IExtensionContext';
 
 import { setUserAPIKey } from '../actions/account';
 
-import update = require('react-addons-update');
+import * as update from 'immutability-helper';
 
 /**
  * reducer for changes to the authentication

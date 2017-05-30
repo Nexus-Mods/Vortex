@@ -19,10 +19,10 @@ import ProfileItem from './ProfileItem';
 
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
+import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
-import update = require('react-addons-update');
 import { generate as shortid } from 'shortid';
 
 export interface IBaseProps {

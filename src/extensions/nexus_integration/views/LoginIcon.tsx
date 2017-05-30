@@ -9,10 +9,10 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import LoginDialog from './LoginDialog';
 
+import * as update from 'immutability-helper';
 import Nexus from 'nexus-api';
 import * as React from 'react';
 import { ControlLabel, Form, FormGroup, Image } from 'react-bootstrap';
-import update = require('react-addons-update');
 
 interface IBaseProps {
   nexus: Nexus;

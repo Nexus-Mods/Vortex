@@ -5,8 +5,8 @@ import ToolbarIcon from '../../../views/ToolbarIcon';
 import AboutDialogT from './AboutDialog';
 let AboutDialog: typeof AboutDialogT = Placeholder;
 
+import * as update from 'immutability-helper';
 import * as React from 'react';
-import update = require('react-addons-update');
 
 export interface IBaseProps {
   buttonType: 'icon' | 'text' | 'both';

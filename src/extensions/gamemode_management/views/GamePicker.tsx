@@ -25,12 +25,11 @@ import { IGameStored } from '../types/IGameStored';
 import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
 
+import * as update from 'immutability-helper';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { ListGroup, ProgressBar } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
-
-import update = require('react-addons-update');
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {

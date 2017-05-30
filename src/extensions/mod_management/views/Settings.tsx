@@ -17,10 +17,10 @@ import getText from '../texts';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
-import update = require('react-addons-update');
 import {
   Alert, ControlLabel, FormControl, FormGroup,
   HelpBlock, InputGroup, Jumbotron, Modal, Panel,

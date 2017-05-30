@@ -1,7 +1,7 @@
 import * as actions from '../actions/window';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import update = require('react-addons-update');
+import * as update from 'immutability-helper';
 
 /**
  * reducer for changes to the window state

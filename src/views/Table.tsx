@@ -19,9 +19,9 @@ import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
 
 import * as Promise from 'bluebird';
+import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
-import update = require('react-addons-update');
 import {Table} from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import {Fixed, Flex, Layout} from 'react-layout-pane';

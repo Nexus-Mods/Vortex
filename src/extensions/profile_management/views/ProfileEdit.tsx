@@ -6,9 +6,9 @@ import {Button} from '../../../views/TooltipControls';
 import {IProfile} from '../types/IProfile';
 import {IProfileFeature} from '../types/IProfileFeature';
 
+import * as update from 'immutability-helper';
 import * as React from 'react';
 import {Checkbox, FormControl, ListGroupItem} from 'react-bootstrap';
-import update = require('react-addons-update');
 
 export interface IEditState {
   edit: IProfile;

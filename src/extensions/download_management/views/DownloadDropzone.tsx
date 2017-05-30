@@ -7,10 +7,10 @@ import { finishDownload, initDownload,
          removeDownload, setDownloadFilePath } from '../actions/state';
 
 import * as fs from 'fs-extra-promise';
+import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import update = require('react-addons-update');
 import { generate as shortid } from 'shortid';
 
 interface IConnectedProps {

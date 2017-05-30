@@ -5,10 +5,10 @@ import {IconButton} from '../../../views/TooltipControls';
 import {GroupType, IGroup, IHeaderImage, IInstallerState, IInstallStep,
         IPlugin, OrderType} from '../types/interface';
 
+import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
-import update = require('react-addons-update');
 import { Checkbox, ControlLabel, Form, FormGroup, Modal, Pager,
          ProgressBar, Radio } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
@@ -221,46 +221,36 @@ function Step(props: IStepProps) {
     </Form>
   );
 }
-
 interface IInstallerInfo {
   moduleName: string;
   image: IHeaderImage;
 }
-
 export interface IBaseProps {
 }
-
 interface IConnectedProps {
   dataPath: string;
   installerInfo: IInstallerInfo;
   installerState: IInstallerState;
 }
-
 interface ISize {
   width: number;
   height: number;
 }
-
 interface IDialogState {
   invalidGroups: string[];
   currentImage: string;
   currentDescription: string;
 }
-
 type IProps = IBaseProps & IConnectedProps;
-
 class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
-
   constructor(props: IProps) {
     super(props);
-
     this.state = {
       invalidGroups: [],
       currentImage: undefined,
       currentDescription: undefined,
     };
   }
-
   public componentWillReceiveProps(nextProps: IProps) {
     if ((this.props.installerState !== undefined) &&
       ((this.props.installerInfo !== nextProps.installerInfo)
@@ -272,17 +262,14 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       });
     }
   }
-
   public render(): JSX.Element {
     const { t, installerInfo, installerState } = this.props;
     const { currentDescription } = this.state;
     if ((installerInfo === undefined) || (installerState === undefined)) {
       return null;
     }
-
     const idx = installerState.currentStep;
     const steps = installerState.installSteps;
-
     const nextVisible = steps.find((step: IInstallStep, i: number) => i > idx && step.visible);
     let lastVisible: IInstallStep;
     steps.forEach((step: IInstallStep, i: number) => {
@@ -290,7 +277,6 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
         lastVisible = step;
       }
     });
-
     const nextDisabled = this.state.invalidGroups.length > 0;
     return (
       <Modal
@@ -351,13 +337,10 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       </Modal>
     );
   }
-
   private nop = () => undefined;
-
   private select = (groupId: number, plugins: number[], valid: boolean) => {
     const {events} = this.context.api;
     const {installerState} = this.props;
-
     if (valid) {
       this.setState(removeValue(this.state, ['invalidGroups'], groupId));
       events.emit('fomod-installer-select',
@@ -366,16 +349,13 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       this.setState(pushSafe(this.state, ['invalidGroups'], groupId));
     }
   }
-
   private renderImage = () => {
     const { dataPath } = this.props;
     const { currentImage } = this.state;
-
     if ((currentImage === undefined) || (currentImage === null)
         || (dataPath === undefined) || (dataPath === null)) {
       return null;
     }
-
     return (
       <img
         src={path.join(dataPath, currentImage)}
@@ -383,21 +363,16 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       />
     );
   }
-
   private showDescription = (image: string, description: string) => {
     this.setState(update(this.state, {
       currentDescription: { $set: description },
       currentImage: { $set: image },
     }));
   }
-
   private prev = () => this.context.api.events.emit('fomod-installer-continue', 'back');
-
   private next = () => this.context.api.events.emit('fomod-installer-continue', 'forward');
-
   private cancel = () => this.context.api.events.emit('fomod-installer-cancel');
 }
-
 function mapStateToProps(state: any): IConnectedProps {
   return {
     dataPath: state.session.fomod.installer.dialog.dataPath,
@@ -405,6 +380,5 @@ function mapStateToProps(state: any): IConnectedProps {
     installerState: state.session.fomod.installer.dialog.state,
   };
 }
-
 export default translate(['common'], { wait: false })(connect(mapStateToProps)(
   InstallerDialog)) as React.ComponentClass<IBaseProps>;
