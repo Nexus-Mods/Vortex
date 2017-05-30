@@ -57,6 +57,7 @@ interface IActionProps {
   onShowActivity: (message: string, id?: string) => void;
   onShowError: (message: string, details: any, id?: string) => void;
   onShowSuccess: (message: string, id?: string) => void;
+  onDismissNotification: (id: string) => void;
 }
 
 interface IComponentState {
@@ -264,7 +265,8 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   }
 
   private restore = (instanceId: string) => {
-    const { t, onShowDialog, onShowActivity, onShowError, onShowSuccess, saves } = this.props;
+    const { t, onDismissNotification, onShowDialog, onShowActivity,
+            onShowError, onShowSuccess, saves } = this.props;
     const { discoveredGames, gameMode } = this.props;
 
     const modPath = discoveredGames[gameMode].modPath;
@@ -273,36 +275,36 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     onShowActivity('Restoring plugins', notificationId);
 
     restoreSavegamePlugins(this.context.api, modPath, saves[instanceId])
-      .then((result) => {
-        if (result) {
-          onShowSuccess('Restoring plugins complete', notificationId);
-        }
+      .then(() => {
+        onShowSuccess('Restoring plugins complete', notificationId);
       })
-      .catch((err: MissingPluginsError) => {
+      .catch(MissingPluginsError, (err: MissingPluginsError) => {
         let restorePlugins = true;
         onShowDialog('question', t('Restore plugins'), {
-          message: t('{{errorMessage}}, do you want to continue?\n\n{{missingPlugins}}',
+          message: t('Some plugins are missing and can\'t be enabled.\n\n{{missingPlugins}}',
             {
               replace: {
                 missingPlugins: err.missingPlugins.join('\n'),
-                errorMessage: err.message,
               },
             }),
           options: {
             translated: true,
           },
         }, {
-            Restore: null,
             Cancel: null,
+            Continue: null,
           }).then((result: types.IDialogResult) => {
-            restorePlugins = result.action === 'Restore';
+            restorePlugins = result.action === 'Continue';
             if (restorePlugins) {
               this.context.api.events.emit('set-plugin-list', saves[instanceId].attributes.plugins);
-              onShowSuccess('Restoring plugins complete', notificationId);
+              onShowSuccess('Restored plugins for savegame', notificationId);
             } else {
-              onShowError('Failed to restore plugins', 'Restore canceled', notificationId);
+              onDismissNotification(notificationId);
             }
           });
+      })
+      .catch((err: Error) => {
+        onShowError('Failed to restore plugins', 'Restore canceled', notificationId);
       });
   }
 
@@ -410,6 +412,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       util.showError(dispatch, message, details, false, id),
     onShowSuccess: (message: string, id?: string) =>
       util.showSuccess(dispatch, message, id),
+    onDismissNotification: (id: string) => dispatch(actions.dismissNotification(id)),
   };
 }
 
