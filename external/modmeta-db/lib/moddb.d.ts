@@ -15,6 +15,7 @@ declare class ModDB {
     private mTimeout;
     private mGameId;
     constructor(dbName: string, gameId: string, servers: IServer[], database?: any, timeoutMS?: number);
+    close(): Promise<void>;
     setGameId(gameId: string): void;
     getByKey(key: string): Promise<ILookupResult[]>;
     getByLogicalName(logicalName: string, versionMatch: string): Promise<ILookupResult[]>;

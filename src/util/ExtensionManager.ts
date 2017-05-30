@@ -67,6 +67,7 @@ Module._initPaths();
 
 interface IRegisteredExtension {
   name: string;
+  path: string;
   initFunc: IExtensionInit;
 }
 
@@ -76,6 +77,7 @@ interface IWatcherRegistry {
 
 interface IInitCall {
   extension: string;
+  extensionPath: string;
   key: string;
   arguments: any[];
   optional: boolean;
@@ -91,6 +93,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
   private mInitCalls: IInitCall[];
   private mApiAdditions: IApiAddition[];
   private mCurrentExtension: string;
+  private mCurrentPath: string;
   private mOptional: {};
 
   constructor(context: any) {
@@ -103,6 +106,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
         return (...args) => {
           that.mInitCalls.push({
             extension: that.mCurrentExtension,
+            extensionPath: that.mCurrentPath,
             key: key.toString(),
             arguments: args,
             optional: true,
@@ -115,16 +119,15 @@ class ContextProxyHandler implements ProxyHandler<any> {
   /**
    * returns the parameters of calls to the specified function
    */
-  public getCalls(name: string): any[][] {
+  public getCalls(name: string): IInitCall[] {
     return this.mInitCalls.filter((call: IInitCall) =>
-      call.key === name)
-    .map((call: IInitCall) => call.arguments);
+      call.key === name);
   }
 
   public invokeAdditions() {
     this.mApiAdditions.forEach((addition: IApiAddition) => {
-      this.getCalls(addition.key).forEach((args: any[]) => {
-        addition.callback(...args);
+      this.getCalls(addition.key).forEach(call => {
+        addition.callback(...call.arguments, call.extensionPath);
       });
     });
   }
@@ -159,8 +162,9 @@ class ContextProxyHandler implements ProxyHandler<any> {
   /**
    * change the extension name currently being loaded
    */
-  public setExtension(extension: string) {
+  public setExtension(extension: string, extensionPath: string) {
     this.mCurrentExtension = extension;
+    this.mCurrentPath = extensionPath;
   }
 
   public has(target, key: PropertyKey): boolean {
@@ -179,6 +183,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       : (...args) => {
         this.mInitCalls.push({
           extension: this.mCurrentExtension,
+          extensionPath: this.mCurrentPath,
           key: key.toString(),
           arguments: args,
           optional: false,
@@ -212,6 +217,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerTableAttribute: undefined,
       registerTest: undefined,
       registerArchiveType: undefined,
+      registerGame: undefined,
       api: undefined,
       once: undefined,
       onceMain: undefined,
@@ -220,7 +226,6 @@ class ContextProxyHandler implements ProxyHandler<any> {
 
     return Object.keys(dummy);
   }
-
 }
 
 /**
@@ -245,6 +250,7 @@ class ExtensionManager {
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
   private mArchiveHandlers: { [extension: string]: ArchiveHandlerCreator };
   private mModDB: modmetaT.ModDB;
+  private mModDBPromise: Promise<void>;
   private mModDBGame: string;
   private mModDBAPIKey: string;
   private mPid: number;
@@ -311,12 +317,10 @@ class ExtensionManager {
     this.mApi.onStateChange = this.stateChangeHandler;
 
     const {ipcRenderer} = require('electron');
-    ipcRenderer.on(
-        'send-notification',
-        (event, notification) => this.mApi.sendNotification(notification));
+    ipcRenderer.on('send-notification',
+      (event, notification) => this.mApi.sendNotification(notification));
     ipcRenderer.on('show-error-notification',
-                   (event, message, details) =>
-                       this.mApi.showErrorNotification(message, details));
+      (event, message, details) => this.mApi.showErrorNotification(message, details));
   }
 
   /**
@@ -382,8 +386,8 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public apply(funcName: string, func: (...args: any[]) => void) {
-    this.mContextProxyHandler.getCalls(funcName).forEach((args: any[]) => {
-      func(...args);
+    this.mContextProxyHandler.getCalls(funcName).forEach(call => {
+      func(...call.arguments);
     });
   }
 
@@ -394,9 +398,9 @@ class ExtensionManager {
   public doOnce() {
     this.mContextProxyHandler.getCalls(remote !== undefined ? 'once' :
                                                               'onceMain')
-        .forEach((args: any[]) => {
+        .forEach(call => {
           try {
-            args[0]();
+            call.arguments[0]();
           } catch (err) {
             log('warn', 'failed to call once',
                 {err: err.message, stack: err.stack});
@@ -408,33 +412,62 @@ class ExtensionManager {
     return this.mProtocolHandlers[protocol] || null;
   }
 
-  get modDB(): modmetaT.ModDB {
+  private getModDB = (): Promise<modmetaT.ModDB> => {
     const currentGame = activeGameId(this.mApi.store.getState());
     const currentKey =
-        getSafe(this.mApi.store.getState(),
-                ['confidential', 'account', 'nexus', 'APIKey'], '');
-    // TODO: this is a hack!
-    if ((this.mModDB === undefined)
-        || (currentGame !== this.mModDBGame)
-        || (currentKey !== this.mModDBAPIKey)) {
-      log('info', 'init moddb connection');
-      this.mModDB = new modmeta.ModDB(
-        path.join(app.getPath('userData'), 'metadb'),
-        currentGame, [
-        {
-          protocol: 'nexus',
-          url: 'https://api.nexusmods.com/v1',
-          apiKey: currentKey,
-          cacheDurationSec: 86400,
-        },
-      ]);
-      this.mModDBGame = currentGame;
-      this.mModDBAPIKey = currentKey;
+      getSafe(this.mApi.store.getState(),
+        ['confidential', 'account', 'nexus', 'APIKey'], '');
+
+    let init;
+
+    let onDone: () => void;
+    if (this.mModDBPromise === undefined) {
+      this.mModDBPromise = new Promise<void>((resolve, reject) => {
+        onDone = resolve;
+      });
+      init = Promise.resolve();
+    } else {
+      init = this.mModDBPromise;
     }
-    // TODO: the mod db doesn't depend on the store but it must only be instantiated
-    //   in one process and this is a cheap way of achieving that
-    // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
-    return this.mModDB;
+
+    return init.then(() => {
+      // TODO: this is a hack!
+      if ((this.mModDB === undefined)
+          || (currentGame !== this.mModDBGame)
+          || (currentKey !== this.mModDBAPIKey)) {
+        if (this.mModDB !== undefined) {
+          return this.mModDB.close()
+            .then(() => this.mModDB = undefined);
+        } else {
+          return Promise.resolve();
+        }
+      }
+    })
+      .then(() => {
+        if (this.mModDB === undefined) {
+          this.mModDB = new modmeta.ModDB(
+            path.join(app.getPath('userData'), 'metadb'),
+            currentGame, [
+              {
+                protocol: 'nexus',
+                url: 'https://api.nexusmods.com/v1',
+                apiKey: currentKey,
+                cacheDurationSec: 86400,
+              },
+            ]);
+          this.mModDBGame = currentGame;
+          this.mModDBAPIKey = currentKey;
+          log('debug', 'initialised');
+        }
+        return Promise.resolve(this.mModDB);
+      })
+      .finally(() => {
+        if (onDone !== undefined) {
+          onDone();
+        }
+      })
+      ;
+      // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
   }
 
   private stateChangeHandler = (watchPath: string[],
@@ -487,7 +520,7 @@ class ExtensionManager {
         // log this only once so we don't spam the log file with this
         log('info', 'init extension', {name: ext.name});
       }
-      this.mContextProxyHandler.setExtension(ext.name);
+      this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
         ext.initFunc(contextProxy as IExtensionContext);
       } catch (err) {
@@ -583,7 +616,8 @@ class ExtensionManager {
   }
 
   private lookupModReference = (reference: IReference): Promise<ILookupResult[]> => {
-    return this.modDB.getByKey(reference.fileMD5);
+    return this.getModDB()
+      .then(modDB => modDB.getByKey(reference.fileMD5));
   }
 
   private lookupModMeta = (detail: ILookupDetails): Promise<ILookupResult[]> => {
@@ -606,16 +640,20 @@ class ExtensionManager {
       promise = Promise.resolve();
     }
     return promise
-      .then(() => this.modDB.lookup(detail.filePath, fileMD5,
+      .then(() => this.getModDB())
+      .then(modDB => modDB.lookup(detail.filePath, fileMD5,
           fileSize, detail.gameId))
       .then((result: ILookupResult[]) => Promise.resolve(result));
   }
 
   private saveModMeta = (modInfo: IModInfo): Promise<void> => {
-    return new Promise<void>((resolve, reject) => {
-      this.modDB.insert(modInfo);
-      resolve();
-    });
+    return this.getModDB()
+      .then(modDB => {
+        return new Promise<void>((resolve, reject) => {
+          modDB.insert(modInfo);
+          resolve();
+        });
+      });
   }
 
   private openArchive = (archivePath: string): Promise<Archive> => {
@@ -643,7 +681,11 @@ class ExtensionManager {
       //  here, that mechanism would fail.
       ratypes.clear();
 
-      return { name: path.basename(extensionPath), initFunc: require(indexPath).default };
+      return {
+        name: path.basename(extensionPath),
+        initFunc: require(indexPath).default,
+        path: extensionPath,
+      };
     } else {
       return undefined;
     }
@@ -712,6 +754,7 @@ class ExtensionManager {
     return staticExtensions
       .map((name: string) => ({
           name,
+          path: path.join(bundledPath, name),
           initFunc: require(`../extensions/${name}/index`).default,
         }))
         .concat(this.loadDynamicExtensions(bundledPath),

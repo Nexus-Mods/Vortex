@@ -427,7 +427,7 @@ btn-default {
 }
 
 .table-selected {
-  background-color: $brand-secondary;
+  background-color: $brand-selected;
 }
 
 .game-thumbnail {
@@ -687,6 +687,7 @@ textarea {
   min-height: 48px;
   display: flex;
   flex-direction: row;
+  padding: 0px 4px;
 }
 
 .table-main-pane thead th:first-child {

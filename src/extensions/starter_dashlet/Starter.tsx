@@ -76,7 +76,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   public render(): JSX.Element {
-    let { discoveredGames, gameMode, knownGames } = this.props;
+    const { discoveredGames, gameMode, knownGames } = this.props;
 
     if (gameMode === undefined) {
       return null;
@@ -114,7 +114,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
 
     // add the main game executable
-    let starters: StarterInfo[] = [
+    const starters: StarterInfo[] = [
       new StarterInfo(game, discoveredGame),
     ];
 
@@ -132,31 +132,30 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
         } catch (err) {
           log('error', 'tool configuration invalid', { gameId, toolId });
         }
-      }
-      );
+      });
 
-    let primary = primaryTool || gameId;
+    const primary = primaryTool || gameId;
 
     const hidden = starters.filter(starter =>
       (discoveredTools[starter.id] !== undefined)
-      && (discoveredTools[starter.id].hidden === true)
-    );
+      && (discoveredTools[starter.id].hidden === true));
 
     const visible = starters.filter(starter =>
       starter.isGame
       || (starter.id === primary)
       || (discoveredTools[starter.id] === undefined)
-      || (discoveredTools[starter.id].hidden !== true)
-    );
+      || (discoveredTools[starter.id].hidden !== true));
 
-    return (<div>
-      {this.renderTool(starters.find(starter => starter.id === primary), true)}
-      <div style={{ display: 'inline' }}>
-        {visible.filter(starter => starter.id !== primary)
-          .map(starter => this.renderTool(starter, false))}
-        {this.renderAddButton(hidden)}
+    return (
+      <div>
+        {this.renderTool(starters.find(starter => starter.id === primary), true)}
+        <div style={{ display: 'inline' }}>
+          {visible.filter(starter => starter.id !== primary)
+            .map(starter => this.renderTool(starter, false))}
+          {this.renderAddButton(hidden)}
+        </div>
       </div>
-    </div>);
+    );
   }
 
   private renderTool = (starter: StarterInfo, primary: boolean) => {
@@ -164,16 +163,18 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     if (starter === undefined) {
       return null;
     }
-    return <ToolButton
-      t={t}
-      key={starter.id}
-      starter={starter}
-      primary={primary}
-      onRun={this.startTool}
-      onEdit={this.editTool}
-      onRemove={this.removeTool}
-      onMakePrimary={this.makePrimary}
-    />;
+    return (
+      <ToolButton
+        t={t}
+        key={starter.id}
+        starter={starter}
+        primary={primary}
+        onRun={this.startTool}
+        onEdit={this.editTool}
+        onRemove={this.removeTool}
+        onMakePrimary={this.makePrimary}
+      />
+    );
   }
 
   private queryElevate = (name: string) => {
@@ -220,7 +221,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   private startTool = (info: StarterInfo) => {
-    let startTool = require('../../util/startTool').default;
+    const startTool = require('../../util/startTool').default;
     startTool(info, this.context.api.events, this.queryElevate,
               this.queryDeploy, this.props.onShowError)
     .catch((err: Error) => {
@@ -234,25 +235,29 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   private renderAddButton(hidden: StarterInfo[]) {
     const {t} = this.props;
     // <IconButton id='add-tool-icon' icon='plus' tooltip={t('Add Tool')} />
-    return (<Dropdown id='add-tool-button'>
-      <Dropdown.Toggle>
-        <Icon name='plus' />
-      </Dropdown.Toggle>
-      <Dropdown.Menu>
-        {hidden.map(starter => <MenuItem
-          key={starter.id}
-          eventKey={starter.id}
-          onSelect={this.unhide}
-        >{starter.name}
-        </MenuItem>)}
-        <MenuItem
-          key='__add'
-          onSelect={this.addNewTool}
-        >
-        {t('New...')}
-        </MenuItem>
-      </Dropdown.Menu>
-    </Dropdown>);
+    return (
+      <Dropdown id='add-tool-button'>
+        <Dropdown.Toggle>
+          <Icon name='plus' />
+        </Dropdown.Toggle>
+        <Dropdown.Menu>
+          {hidden.map(starter => (
+            <MenuItem
+              key={starter.id}
+              eventKey={starter.id}
+              onSelect={this.unhide}
+            >{starter.name}
+            </MenuItem>
+          ))}
+          <MenuItem
+            key='__add'
+            onSelect={this.addNewTool}
+          >
+            {t('New...')}
+          </MenuItem>
+        </Dropdown.Menu>
+      </Dropdown>
+    );
   }
 
   private unhide = (toolId: any) => {
@@ -265,10 +270,9 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
       // assumption is that this can only happen during startup
       return <Icon name='spinner' pulse />;
     } else {
-      let logoPath = path.join(
+      const logoPath = path.join(
         getSafe(discoveredGame, ['extensionPath'], getSafe(game, ['extensionPath'], '')),
-        getSafe(discoveredGame, ['logo'], getSafe(game, ['logo'], ''))
-        );
+        getSafe(discoveredGame, ['logo'], getSafe(game, ['logo'], '')));
       return <img className='welcome-game-logo' src={logoPath} />;
     }
   }
@@ -300,8 +304,8 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   private addNewTool = () => {
     const { gameMode, discoveredGames, knownGames } = this.props;
 
-    let game: IGameStored = knownGames.find(ele => ele.id === gameMode);
-    let empty = new StarterInfo(game, discoveredGames[gameMode], undefined, {
+    const game: IGameStored = knownGames.find(ele => ele.id === gameMode);
+    const empty = new StarterInfo(game, discoveredGames[gameMode], undefined, {
       id: shortid(),
       path: '',
       hidden: false,
@@ -325,15 +329,15 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
 
   private removeTool = (starter: StarterInfo) => {
     this.props.onSetToolVisible(starter.gameId, starter.id, false);
-  };
+  }
 
   private makePrimary = (starter: StarterInfo) => {
     this.props.onMakePrimary(starter.gameId, starter.isGame ? undefined : starter.id);
   }
-};
+}
 
 function mapStateToProps(state: any): IConnectedProps {
-  let gameMode: string = activeGameId(state);
+  const gameMode: string = activeGameId(state);
 
   return {
     gameMode,

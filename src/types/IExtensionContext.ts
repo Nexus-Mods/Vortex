@@ -2,6 +2,7 @@ import { Archive } from '../util/archives';
 import ReduxProp from '../util/ReduxProp';
 
 import { IActionOptions } from './IActionDefinition';
+import { IGame } from './IGame';
 import { INotification } from './INotification';
 import {IState} from './IState';
 import { ITableAttribute } from './ITableAttribute';
@@ -509,6 +510,14 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerArchiveType: (extension: string, handler: ArchiveHandlerCreator) => void;
+
+  /**
+   * registers support for a game
+   *
+   * @param {IGame} game
+   * @param {string} extensionPath path to the extension assets
+   */
+  registerGame: (game: IGame, extensionPath: string) => void;
 
   /**
    * called once after the store has been set up and after all extensions have been initialized

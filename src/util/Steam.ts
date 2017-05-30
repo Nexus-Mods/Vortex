@@ -11,7 +11,7 @@ import { app as appIn, remote } from 'electron';
 
 import { parse } from 'simple-vdf';
 
-let app = appIn || remote.app;
+const app = appIn || remote.app;
 
 export interface ISteamEntry {
   name: string;
@@ -20,7 +20,7 @@ export interface ISteamEntry {
 
 /**
  * base class to interact with local steam installation
- * 
+ *
  * @class Steam
  */
 class Steam {
@@ -50,17 +50,17 @@ class Steam {
   }
 
   public allGames(): Promise<ISteamEntry[]> {
-    let steamPaths: string[] = [];
+    const steamPaths: string[] = [];
     return this.mBaseFolder
     .then((basePath: string) => {
       steamPaths.push(basePath);
       return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'));
     })
     .then((data: NodeBuffer) => {
-      let configObj: Object = parse(data.toString());
+      const configObj: any = parse(data.toString());
 
       let counter = 1;
-      let steamObj: Object =
+      const steamObj: any =
         getSafe(configObj, ['InstallConfigStore', 'Software', 'Valve', 'Steam'], {});
       while (steamObj.hasOwnProperty(`BaseInstallFolder_${counter}`)) {
         steamPaths.push(steamObj[`BaseInstallFolder_${counter}`]);
@@ -70,7 +70,7 @@ class Steam {
       log('debug', 'steam base folders', { steamPaths });
 
       return Promise.all(Promise.map(steamPaths, (steamPath) => {
-        let appPath: string = path.join(steamPath, 'steamapps', 'common');
+        const appPath: string = path.join(steamPath, 'steamapps', 'common');
         return fs.readdirAsync(appPath)
         .then((names: string[]) => {
           return names.map((name: string) => {

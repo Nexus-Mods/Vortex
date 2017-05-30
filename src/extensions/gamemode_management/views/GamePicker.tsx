@@ -171,6 +171,9 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
 
     Object.keys(discoveredGames).forEach(gameId => {
       if (knownGames.find(game => game.id === gameId) === undefined) {
+        if (discoveredGames[gameId].extensionPath === undefined) {
+          return;
+        }
         if (profileGames.has(gameId)) {
           managedGameList.push(gameFromDiscovery(gameId, discoveredGames[gameId]));
         } else {

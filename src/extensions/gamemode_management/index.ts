@@ -1,4 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -25,6 +26,8 @@ import {} from './views/Settings';
 
 let gameModeManager: GameModeManager;
 
+const extensionGames: IGame[] = [];
+
 function init(context: IExtensionContext): boolean {
   const activity = new ReduxProp(context.api, [
     ['session', 'discovery'],
@@ -40,6 +43,11 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['session', 'gameMode'], sessionReducer);
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
   context.registerFooter('discovery-progress', ProgressFooter);
+
+  context.registerGame = (game: IGame, extensionPath: string) => {
+    game.pluginPath = extensionPath;
+    extensionGames.push(game);
+  };
 
   context.registerAction('game-icons', 100, 'refresh', {}, 'Quickscan', () => {
     if (gameModeManager !== undefined) {
@@ -68,7 +76,9 @@ function init(context: IExtensionContext): boolean {
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
     gameModeManager = new GameModeManagerImpl(
-      context.api.getPath('userData'), (gameMode: string) => {
+      context.api.getPath('userData'),
+      extensionGames,
+      (gameMode: string) => {
         events.emit('gamemode-activated', gameMode);
       });
     gameModeManager.attachToStore(store);

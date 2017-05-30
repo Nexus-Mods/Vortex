@@ -80,6 +80,20 @@ class ModDB {
   }
 
   /**
+   * close meta database
+   */
+  public close(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.mDB.close((err) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
+    });
+  }
+
+  /**
    * update the gameId which is used as the default for lookups to the nexus
    * api if the game id of the file being looked up isn't available
    *

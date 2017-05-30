@@ -19,6 +19,7 @@ import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
+import Steam, { ISteamEntry } from './Steam';
 import { setdefault } from './util';
 import walk from './walk';
 
@@ -36,6 +37,8 @@ export {
   relativeTime,
   runElevated,
   setdefault,
+  Steam,
+  ISteamEntry,
   terminate,
   UserCanceled,
   walk,

@@ -1,8 +1,5 @@
-import { IGame } from '../../types/IGame';
-import { ITool } from '../../types/ITool';
-
-import * as Promise from 'bluebird';
-import Registry = require('winreg');
+const Promise = require('bluebird');
+const Registry = require('winreg');
 
 function findGame() {
   if (Registry === undefined) {
@@ -15,8 +12,8 @@ function findGame() {
     key: '\\Software\\Wow6432Node\\Bethesda Softworks\\Fallout4',
   });
 
-  return new Promise<string>((resolve, reject) => {
-    regKey.get('Installed Path', (err: Error, result: Registry.RegistryItem) => {
+  return new Promise((resolve, reject) => {
+    regKey.get('Installed Path', (err, result) => {
       if (err !== null) {
         reject(new Error(err.message));
       } else {
@@ -26,7 +23,7 @@ function findGame() {
   });
 }
 
-let tools: ITool[] = [
+let tools = [
   {
     id: 'FO4Edit',
     name: 'FO4Edit',
@@ -59,18 +56,24 @@ let tools: ITool[] = [
   },
 ];
 
-const game: IGame = {
-  id: 'fallout4',
-  name: 'Fallout 4',
-  mergeMods: true,
-  queryPath: findGame,
-  supportedTools: tools,
-  queryModPath: () => './data',
-  logo: 'gameart.png',
-  executable: () => 'Fallout4.exe',
-  requiredFiles: [
-    'Fallout4.exe',
-  ],
-};
+function main(context) {
+  context.registerGame({
+    id: 'fallout4',
+    name: 'Fallout 4',
+    mergeMods: true,
+    queryPath: findGame,
+    supportedTools: tools,
+    queryModPath: () => './data',
+    logo: 'gameart.png',
+    executable: () => 'Fallout4.exe',
+    requiredFiles: [
+      'Fallout4.exe',
+    ],
+  });
 
-export default game;
+  return true;
+}
+
+module.exports = {
+  default: main,
+};

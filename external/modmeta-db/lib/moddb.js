@@ -52,6 +52,16 @@ class ModDB {
         this.mTimeout = timeoutMS;
         this.promisify();
     }
+    close() {
+        return new Promise((resolve, reject) => {
+            this.mDB.close((err) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve();
+            });
+        });
+    }
     setGameId(gameId) {
         this.mGameId = gameId;
     }

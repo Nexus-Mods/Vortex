@@ -37,11 +37,13 @@ class GameModeManager {
   private mActiveSearch: Promise<any[]>;
   private mOnGameModeActivated: (mode: string) => void;
 
-  constructor(basePath: string, onGameModeActivated: (mode: string) => void) {
+  constructor(basePath: string,
+              extensionGames: IGame[],
+              onGameModeActivated: (mode: string) => void) {
     this.mBasePath = basePath;
     this.mError = false;
     this.mStore = null;
-    this.mKnownGames = [];
+    this.mKnownGames = extensionGames;
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
   }
@@ -54,11 +56,6 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public attachToStore(store: Redux.Store<IState>) {
-    let gamesPath: string = path.resolve(__dirname, '..', '..', 'games');
-    const games: IGame[] = this.loadDynamicGames(gamesPath);
-    gamesPath = path.join(remote.app.getPath('userData'), 'games');
-    this.mKnownGames = games.concat(this.loadDynamicGames(gamesPath));
-
     this.mStore = store;
 
     // TODO: handle the case where there are games previously discovered that
@@ -193,42 +190,6 @@ class GameModeManager {
       result.modPath = path.resolve(result.path, result.modPath);
     }
     this.mStore.dispatch(addDiscoveredGame(gameId, result));
-  }
-
-  private loadDynamicGame(extensionPath: string): IGame {
-    log('info', 'loading game support from', extensionPath);
-    const indexPath = path.join(extensionPath, 'index.js');
-    if (fs.existsSync(indexPath)) {
-      const res: IGame = require(indexPath).default;
-      res.pluginPath = extensionPath;
-      return res;
-    } else {
-      return undefined;
-    }
-  }
-
-  private loadDynamicGames(extensionsPath: string): IGame[] {
-    log('info', 'looking for game support plugins', extensionsPath);
-
-    if (!fs.existsSync(extensionsPath)) {
-      log('info', 'no game extensions installed');
-      fs.mkdirSync(extensionsPath);
-      return [];
-    }
-
-    const res = fs.readdirSync(extensionsPath)
-      .filter((name) => fs.statSync(path.join(extensionsPath, name)).isDirectory())
-      .map((name) => {
-        try {
-          return this.loadDynamicGame(path.join(extensionsPath, name));
-        } catch (err) {
-          log('warn', 'failed to load game extension',
-              { error: err.message, stack: err.stack });
-          return undefined;
-        }
-      });
-
-    return res.filter((item) => item !== undefined);
   }
 }
 

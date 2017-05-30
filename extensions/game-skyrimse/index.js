@@ -1,8 +1,5 @@
-import { IGame } from '../../types/IGame';
-import { ITool } from '../../types/ITool';
-
-import * as Promise from 'bluebird';
-import Registry = require('winreg');
+const { types } = require('nmm-api');
+const Registry = require('winreg');
 
 function findGame() {
   if (Registry === undefined) {
@@ -10,13 +7,13 @@ function findGame() {
     return null;
   }
 
-  let regKey = new Registry({
+  const regKey = new Registry({
     hive: Registry.HKLM,
     key: '\\Software\\Wow6432Node\\Bethesda Softworks\\Skyrim Special Edition',
   });
 
-  return new Promise<string>((resolve, reject) => {
-    regKey.get('Installed Path', (err: Error, result: Registry.RegistryItem) => {
+  return new Promise((resolve, reject) => {
+    regKey.get('Installed Path', (err, result) => {
       if (err !== null) {
         reject(new Error(err.message));
       } else {
@@ -26,7 +23,7 @@ function findGame() {
   });
 }
 
-let tools: ITool[] = [
+const tools = [
   {
     id: 'SSEEdit',
     name: 'SSEEdit',
@@ -68,22 +65,29 @@ let tools: ITool[] = [
   },
 ];
 
-const game: IGame = {
-  id: 'skyrimse',
-  name: 'Skyrim Special Edition',
-  shortName: 'SSE',
-  mergeMods: true,
-  queryPath: findGame,
-  supportedTools: tools,
-  queryModPath: () => './data',
-  logo: 'gameart.png',
-  executable: () => 'SkyrimSE.exe',
-  requiredFiles: [
-    'SkyrimSE.exe',
-  ],
-  environment: {
-    SteamAPPId: '489830',
-  },
-};
 
-export default game;
+function main(context) {
+  context.registerGame({
+    id: 'skyrimse',
+    name: 'Skyrim Special Edition',
+    shortName: 'SSE',
+    mergeMods: true,
+    queryPath: findGame,
+    supportedTools: tools,
+    queryModPath: () => './data',
+    logo: 'gameart.png',
+    executable: () => 'SkyrimSE.exe',
+    requiredFiles: [
+      'SkyrimSE.exe',
+    ],
+    environment: {
+      SteamAPPId: '489830',
+    },
+  });
+
+  return true;
+}
+
+module.exports = {
+  default: main,
+};
