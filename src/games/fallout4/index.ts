@@ -66,7 +66,7 @@ const game: IGame = {
   queryPath: findGame,
   supportedTools: tools,
   queryModPath: () => './data',
-  logo: 'logo.png',
+  logo: 'gameart.png',
   executable: () => 'Fallout4.exe',
   requiredFiles: [
     'Fallout4.exe',

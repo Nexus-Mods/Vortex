@@ -77,7 +77,9 @@ class Dashlet extends ComponentEx<IProps, {}> {
         render: (props: IProps): JSX.Element => {
           const { t, basePath } = props;
           const path = <strong>{basePath}</strong>;
-          const link = <a onClick={this.openModsSettings}><Icon name='gear' />{t('Settings')}</a>;
+          const link = (
+            <a onClick={this.openModsSettings}><Icon name='sliders' />{t('Settings')}</a>
+          );
 
           return (
             <span>
@@ -107,11 +109,15 @@ class Dashlet extends ComponentEx<IProps, {}> {
           } else {
             const gameModeLink =
               <a onClick={this.openGames}><Icon name='gamepad' />{t('discovered')}</a>;
-            const searchLink =
-              <a onClick={this.startManualSearch}>{t('search your disks')}</a>;
+            const searchLink = (
+              <a onClick={this.startManualSearch}>
+                <Icon name='search' />
+                {t('search your disks')}
+              </a>
+            );
             const settingsLink = (
               <a onClick={this.openGameSettings}>
-                <Icon name='gear' />
+                <Icon name='sliders' />
                 {searchPaths.sort().join(', ')}
               </a>
             );
@@ -140,7 +146,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
           const { t, autoDeploy } = props;
           const enabled = autoDeploy ? t('enabled') : t('disabled');
           const link =
-            <a onClick={this.openInterfaceSettings}><Icon name='gear' />{t('Settings')}</a>;
+            <a onClick={this.openInterfaceSettings}><Icon name='sliders' />{t('Settings')}</a>;
           const more = (
             <More id='more-deploy-dash' name={t('Deployment')}>
               {getTextModManagement('deployment', t)}
@@ -164,7 +170,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
         render: (props: IProps): JSX.Element => {
           const { t } = props;
           const link =
-            <a onClick={this.openInterfaceSettings}><Icon name='gear' />{t('Settings')}</a>;
+            <a onClick={this.openInterfaceSettings}><Icon name='sliders' />{t('Settings')}</a>;
           const more = (
             <More id='more-profiles-dash' name={t('Profiles')}>
               {getTextProfiles('profiles', t)}

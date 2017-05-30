@@ -434,12 +434,15 @@ class ModList extends ComponentEx<IProps, {}> {
     });
 
     Object.keys(newProps.downloads).forEach(archiveId => {
-      if ((newProps.downloads[archiveId].game === gameMode) && !installedIds.has(archiveId)) {
+      if ((newProps.downloads[archiveId].game === gameMode)
+          && (newProps.downloads[archiveId].state === 'finished')
+          && !installedIds.has(archiveId)) {
         if ((oldProps.downloads[archiveId] === newProps.downloads[archiveId])
             && (this.mModsWithState[archiveId] !== undefined)) {
           newModsWithState[archiveId] = this.mModsWithState[archiveId];
           return;
         }
+
         const filtered = filterModInfo(newProps.downloads[archiveId].modInfo);
 
         const attributes: any = {

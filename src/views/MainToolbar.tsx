@@ -33,7 +33,7 @@ class MainToolbar extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { applicationButtons, t } = this.props;
     return (
-      <div>
+      <div className='toolbar-main'>
         <IconBar
           group='application-icons'
           staticElements={applicationButtons}

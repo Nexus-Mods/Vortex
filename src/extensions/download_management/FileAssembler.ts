@@ -3,7 +3,7 @@ import * as fs from 'fs-extra-promise';
 
 /**
  * assembles a file received in chunks.
- * 
+ *
  * @class FileAssembler
  */
 class FileAssembler {

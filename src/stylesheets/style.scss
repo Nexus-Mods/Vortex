@@ -4,9 +4,9 @@
 
 #notifications {
   position: absolute;
-  bottom: 5px;
-  right: 5px;
-  width: 250px;
+  top: 0px;
+  right: 0px;
+  width: 90%;
   max-height: 90%;
   overflow-y: auto;
   z-index: 1040;
@@ -14,6 +14,24 @@
 
 #notifications::-webkit-scrollbar { 
   display: none; 
+}
+
+.notification {
+  margin-bottom: 1px;
+  padding: 5px;
+  min-height: 32px;
+}
+
+.notification p {
+  display: inline-block;
+}
+
+.notification-buttons {
+  float: right;
+}
+
+.notification-buttons button {
+  padding: 0px 2px;
 }
 
 #main-toolbar {
@@ -26,7 +44,7 @@
   background-color: transparent;
   border-width: 0px;
   color: #cfd8dc;
-  padding: 10px;
+  padding: 8px;
   &:hover {
     background-color: $gray-dark;
   }
@@ -107,12 +125,6 @@
   margin-left: -12px;
   height: 12px;
   transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
-}
-
-#nexus-logo {
-  width: 192px;
-  padding: 4px 8px;
-  float: left;
 }
 
 .nav-pills > li > a {
@@ -397,6 +409,8 @@ btn-default {
 .mainpage-header {
   flex: 1 1 0%;
   display: flex;
+  border: $brand-secondary solid;
+  border-width: 0px 1px;
 }
 
 .flex-fill {
@@ -419,26 +433,32 @@ btn-default {
   @extend .panel;
   float: left;
   position: relative;
+  margin: 16px;
+  box-shadow: 4px 4px 8px black;
+  border-radius: 4px;
+  background-color: $brand-menu;
 }
 
 .game-thumbnail-primary {
-  background-color: lightblue;
+  background-color: $brand-selected;
 }
 
 .game-thumbnail-default {
   @extend .panel-default;
+  border-color: $brand-secondary;
 }
 
 .game-thumbnail-body {
   @extend .panel-body;
   width: 180px;
-  height: 300px;
+  height: 140px;
   text-align: center;
+  padding: 4px;
 }
 
 .game-thumbnail-img {
-  max-width: 150px;
-  max-height: 200px;
+  max-width: 170px;
+  max-height: 100px;
 }
 
 .game-thumbnail-img-list {
@@ -447,27 +467,45 @@ btn-default {
 }
 
 .game-thumbnail-container-list {
-  width: 150px;
+  width: 100px;
   min-width: 50px;
   padding: 0px;
   margin: 0px;
   text-align: center;
 }
 
-.game-thumbnail-img-large {
-  max-width: 200px;
-  max-height: 300px;
+.game-thumbnail-bottom {
+  left: 0px;
+  bottom: 0px;
+  width: 100%;
+  white-space: nowrap;
+  display: flex;
+  position: absolute;
+  padding: 0px 2px;
+
+  &div {
+    margin: auto 0px;
+  }
 }
 
-.game-thumbnail-bottom {
-  position: absolute;
-  left: 0px;
-  bottom: 10px;
-  width: 100%;
+.game-thumbnail-buttons {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.game-thumbnail-buttons * {
+  display: inline-block;
+}
+
+.game-thumbnail-name { 
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 5px;
 }
 
 .game-list-selected {
-  background-color: $brand-secondary;
+  background-color: $brand-selected;
 }
 
 .welcome-game-logo {
@@ -703,6 +741,8 @@ textarea {
 
 .cell-progress .progress {
   height: 16px;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .header-dependencies {
@@ -761,9 +801,10 @@ textarea {
 
 div > .hover-expand {
   white-space: nowrap;
-  max-height: 1.8em;
+  max-height: 2.0em;
   overflow: hidden;
   transition: max-height 0.5s ease;
+  margin-bottom: 0px;
 }
 
 div:hover > .hover-expand {
@@ -880,6 +921,10 @@ div:hover > .hover-expand {
   }
 }
 
+.btn-group>.btn {
+  float: none;
+}
+
 .btn-group-vertical {
   display: flex;
   flex-direction: column;
@@ -960,6 +1005,13 @@ div:hover > .hover-expand {
   text-align: right;
 }
 
+.gamepicker-body {
+  height: 100%;
+  overflow-y: auto;
+  padding: 5px;
+  margin: 5px;
+}
+
 .btn-toggle-on {
   background-color: $gray-dark;
 }
@@ -968,7 +1020,7 @@ div:hover > .hover-expand {
   display: inline-flex;
 }
 
-.btngroup-collapsed .btn {
+.btngroup-collapsed > .btn {
   @extend .btn-embed;
 }
 
@@ -1182,20 +1234,37 @@ a[role=menuitem] svg {
   max-height: 192px;
 }
 
-::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-  border: 1px solid $table-header-border-color;
+.toolbar-main {
+  padding-left: 12px;
 }
 
+.lbl-username {
+  margin-top: 10px;
+}
+
+.div-logout {
+  margin-top: -6px;
+  text-align: right;
+}
+
+.div-logout a {
+  color: $link-color;
+  font-size: 11px;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+/*
 ::-webkit-scrollbar-track {
   background-color: $brand-menu;
-}
+}*/
 
 ::-webkit-scrollbar-thumb {
-  background-color: $table-header-border-color;
-  box-shadow: inset 0 0 1px 1px $brand-bg;
-  -webkit-box-shadow: inset 0 0 1px 1px $brand-bg;
+  background-color: $gray-dark;
+  border-radius: 4px;
+//  box-shadow: inset 0 0 1px 1px $brand-bg;
+//  -webkit-box-shadow: inset 0 0 1px 1px $brand-bg;
 }
 
 ::-webkit-scrollbar-corner {

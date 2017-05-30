@@ -207,7 +207,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
         </MainPage.Header>
         <MainPage.Body>
           <Layout type='column'>
-            <Flex style={{ height: '100%', overflowY: 'auto', padding: '5px' }}>
+            <Flex className='gamepicker-body'>
               <span style={{ display: 'table' }}>
                 <h3>{t('Managed')}</h3>
                 {this.renderGames(managedGameList, 'managed')}

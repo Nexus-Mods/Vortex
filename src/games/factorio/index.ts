@@ -51,7 +51,7 @@ const game: IGame = {
   mergeMods: false,
   queryPath: findGame,
   queryModPath: modPath,
-  logo: 'logo.png',
+  logo: 'gameart.png',
   executable: gameExecutable,
   requiredFiles: [
     'data/core/graphics/factorio.ico',

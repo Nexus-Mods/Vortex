@@ -28,6 +28,7 @@ export interface IProps {
 class Notification extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
+    const { t } = this.props;
     const { actions, message, type } = this.props.params;
 
     const lines = message.split('\n');
@@ -35,16 +36,18 @@ class Notification extends ComponentEx<IProps, {}> {
     const styleName = this.typeToStyle(type);
 
     return (
-      <Alert bsStyle={styleName} onDismiss={this.dismiss}>
+      <div role='alert' className={`notification alert-${styleName}`} >
         { this.typeToIcon(type) }{' '}
-        { lines[0] }
         <p className='hover-expand'>
-          { lines.slice(1).map((line, idx) => <span key={idx}>{line}</span>) }
+          { lines.map((line, idx) => <span key={idx}>{line}</span>) }
         </p>
-        <p>
-          { actions !== undefined ? actions.map(this.renderAction) : null }
-        </p>
-      </Alert>
+        <div className='notification-buttons'>
+          <p>
+            {actions !== undefined ? actions.map(this.renderAction) : null}
+          </p>
+          <Button onClick={this.dismiss}>{t('Dismiss')}</Button>
+        </div>
+      </div>
     );
   }
 

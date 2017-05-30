@@ -54,11 +54,11 @@ class LoginIcon extends ComponentEx<IProps, {}> {
           bsSize={'small'}
           className='pull-right'
         >
-          <div style={{marginTop: '10px'}}>
+          <div className='lbl-username'>
             {userInfo.name}
           </div>
-          <div >
-            <a style={{ color: '#03a9f4' }} onClick={this.logOut}>{t('Log out')}</a>
+          <div className='div-logout'>
+            <a onClick={this.logOut}>{t('Log out')}</a>
           </div>
         </FormGroup>
       );

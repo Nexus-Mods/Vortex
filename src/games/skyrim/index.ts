@@ -75,7 +75,7 @@ const game: IGame = {
   queryPath: findGame,
   supportedTools: tools,
   queryModPath: () => './data',
-  logo: 'logo.png',
+  logo: 'gameart.png',
   executable: () => 'TESV.exe',
   requiredFiles: [
     'TESV.exe',

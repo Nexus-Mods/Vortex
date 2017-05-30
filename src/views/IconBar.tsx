@@ -98,6 +98,13 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       }
     });
 
+    const classes: string[] = [];
+    if (className) {
+      classes.push(className);
+    }
+
+    classes.push('btngroup-collapsed');
+
     if (collapse) {
       const dotdotdot: any = <Icon name='ellipsis-v' />;
       const collapsed: IActionDefinition[] = [];
@@ -116,7 +123,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       }
 
       const moreButton = (
-        <div>
+        <div className={classes.join(' ')}>
           <IconButton
             id={`btn-menu-${id}`}
             className='btn-embed'
@@ -145,7 +152,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         return (
           <ButtonGroup
             id={id}
-            className={className + ' btngroup-collapsed'}
+            className={classes.join(' ')}
             style={style}
           >
             {moreButton}

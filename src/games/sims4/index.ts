@@ -38,7 +38,7 @@ const game: IGame = {
   mergeMods: false,
   queryPath: findGame,
   queryModPath: modPath,
-  logo: 'logo.png',
+  logo: 'gameart.png',
   executable: () => 'game/bin/TS4.exe',
   requiredFiles: [
     'game/bin/TS4.exe',

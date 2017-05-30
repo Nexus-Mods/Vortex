@@ -14,21 +14,22 @@ export class GameFilterComponent extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { filter, games } = this.props;
 
-    const game = new Set(Object.keys(games).map(
-      gameId => (games[gameId] as any).name)
-    );
+    const game = Object.keys(games)
+      .map(gameId => games[gameId].shortName || games[gameId].name);
 
-    const options = Array.from(game).map(name => ({
+    const options = game.map(name => ({
       label: name,
       value: name,
     }));
 
-    return <Select
-      className='select-compact'
-      options={options}
-      value={filter}
-      onChange={this.changeFilter}
-    />;
+    return (
+      <Select
+        className='select-compact'
+        options={options}
+        value={filter}
+        onChange={this.changeFilter}
+      />
+    );
   }
 
   private changeFilter = (value: { value: string, label: string }) => {

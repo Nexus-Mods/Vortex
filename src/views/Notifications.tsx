@@ -47,7 +47,7 @@ class Notifications extends ComponentEx<IProps & IActionProps & IConnectedProps,
   private renderNotification = (notification: INotification) => {
     const { t, onDismiss } = this.props;
 
-    let translated: INotification = Object.assign({}, notification);
+    const translated: INotification = Object.assign({}, notification);
     translated.message = t(translated.message);
     return <Notification t={t} key={notification.id} params={translated} onDismiss={onDismiss} />;
   }

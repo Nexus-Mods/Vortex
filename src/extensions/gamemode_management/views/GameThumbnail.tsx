@@ -16,12 +16,12 @@ export interface IProps {
 
 /**
  * thumbnail + controls for a single game mode within the game picker
- * 
+ *
  * @class GameThumbnail
  */
 class GameThumbnail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    let { t, active, game, large, type } = this.props;
+    const { t, active, game, large, type } = this.props;
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
@@ -34,11 +34,15 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
         />
         </div>
         <div className='game-thumbnail-bottom'>
-          <h3>{ t(game.name) }</h3>
+          <h5 className='game-thumbnail-name'>{ t(game.name) }</h5>
+          <p className='flex-rest'/>
           <IconBar
+            id={`game-thumbnail-${game.id}`}
+            className='game-thumbnail-buttons'
             group={`game-${type}-buttons`}
             instanceId={game.id}
             staticElements={[]}
+            collapse={true}
           />
         </div>
       </Panel>

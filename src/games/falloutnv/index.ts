@@ -44,11 +44,12 @@ let tools: ITool[] = [
 const game: IGame = {
   id: 'falloutnv',
   name: 'Fallout: New Vegas',
+  shortName: 'New Vegas',
   mergeMods: true,
   queryPath: findGame,
   supportedTools: tools,
   queryModPath: () => './data',
-  logo: 'logo.png',
+  logo: 'gameart.png',
   executable: () => 'FalloutNV.exe',
   requiredFiles: [
     'FalloutNV.exe',

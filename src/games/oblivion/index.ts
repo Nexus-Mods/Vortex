@@ -48,7 +48,7 @@ const game: IGame = {
   queryPath: findGame,
   supportedTools: tools,
   queryModPath: () => './data',
-  logo: 'logo.png',
+  logo: 'gameart.png',
   executable: () => 'oblivion.exe',
   requiredFiles: [
     'oblivion.exe',

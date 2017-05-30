@@ -103,6 +103,10 @@ class DateTimeFilter implements ITableFilter {
       return true;
     }
 
+    if (input === undefined) {
+      return false;
+    }
+
     return {
       eq: (lhs, rhs) => lhs.getTime() === rhs.getTime(),
       ge: (lhs, rhs) => lhs >= rhs,

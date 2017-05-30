@@ -144,7 +144,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       icon: 'gamepad',
       calc: (attributes: IDownload) => {
         const game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
-        return game ? this.props.t(game.name) : attributes.game;
+        return game ? this.props.t(game.shortName || game.name) : attributes.game;
       },
       placement: 'both',
       isToggleable: true,

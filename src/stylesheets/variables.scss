@@ -17,11 +17,10 @@ $brand-info:            #3498DB;
 $brand-warning:         #F1AE4E;
 $brand-danger:          #D95450;
 
-$brand-secondary:         #283e51;
-
 $brand-bg:              #192431;
 $brand-menu:            #202c3d;
 $brand-secondary:       #0c5886;
+$brand-selected:        #4c5663;
 
 $table-header-border-width: 2px;
 $table-header-border-color: #145076;
@@ -38,7 +37,7 @@ $body-bg:               $brand-menu;
 $text-color:            #eeeeee;
 
 //** Global textual link color.
-$link-color:            $brand-success;
+$link-color:            $brand-info;
 //** Link hover color set via `darken()` function.
 $link-hover-color:      $link-color;
 //** Link hover decoration.
@@ -677,7 +676,7 @@ $progress-bar-info-bg:        $brand-info;
 //** Background color on `.list-group-item`
 $list-group-bg:                 initial;
 //** `.list-group-item` border color
-$list-group-border:             $gray-lighter;
+$list-group-border:             $brand-secondary;
 //** List group border radius
 $list-group-border-radius:      $border-radius-base;
 
@@ -699,9 +698,9 @@ $list-group-disabled-bg:         $gray-lighter;
 //** Text color for content within disabled list items
 $list-group-disabled-text-color: $list-group-disabled-color;
 
-$list-group-link-color:         #555;
+$list-group-link-color:         $gray;
 $list-group-link-hover-color:   $list-group-link-color;
-$list-group-link-heading-color: #333;
+$list-group-link-heading-color: $gray-dark;
 
 
 //== Panels
