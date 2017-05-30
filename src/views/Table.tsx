@@ -176,7 +176,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
               onKeyDown={this.handleKeyDown}
             >
               <Table condensed hover>
-                <thead style={{ transform: 'translate(0, 0)' }}>
+                <thead
+                  className='table-header'
+                  style={{ transform: 'translate(0, 0)' }}
+                >
                   <tr>
                     {this.mVisibleAttributes.map(this.renderHeaderField)}
                     { actionHeader }

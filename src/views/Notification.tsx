@@ -42,9 +42,7 @@ class Notification extends ComponentEx<IProps, {}> {
           { lines.map((line, idx) => <span key={idx}>{line}</span>) }
         </p>
         <div className='notification-buttons'>
-          <p>
-            {actions !== undefined ? actions.map(this.renderAction) : null}
-          </p>
+          {actions !== undefined ? actions.map(this.renderAction) : null}
           <Button onClick={this.dismiss}>{t('Dismiss')}</Button>
         </div>
       </div>

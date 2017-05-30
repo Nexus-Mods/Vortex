@@ -32,6 +32,7 @@
 
 .notification-buttons button {
   padding: 0px 2px;
+  margin: 0px 2px;
 }
 
 #main-toolbar {
@@ -1252,8 +1253,12 @@ a[role=menuitem] svg {
   font-size: 11px;
 }
 
+.table-header {
+  margin-right: $scrollbar-width;
+}
+
 ::-webkit-scrollbar {
-  width: 4px;
+  width: $scrollbar-width;
 }
 /*
 ::-webkit-scrollbar-track {
