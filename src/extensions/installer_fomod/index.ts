@@ -1,4 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { UserCanceled } from '../../util/CustomErrors';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 
@@ -24,6 +25,20 @@ function dirname() {
   return __dirname.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
 
+function transformError(err: any): Error {
+  if (typeof(err) === 'string') {
+    // I hope these errors aren't localised or something...
+    if (err === 'The operation was cancelled.') {
+      // weeell, we don't actually know if it was the user who cancelled...
+      return new UserCanceled();
+    } else {
+      return new Error(err);
+    }
+  } else {
+    return new Error('unknown error: ' + util.inspect(err));
+  }
+}
+
 function testSupported(files: string[]): Promise<ISupportedResult> {
   if (testSupportedLib === undefined) {
     testSupportedLib = edge.func({
@@ -38,7 +53,7 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
     testSupportedLib({files}, (err: Error, result: ISupportedResult) => {
       if ((err !== null) && (err !== undefined)) {
         log('info', 'got err', util.inspect(err));
-        reject(err);
+        reject(transformError(err));
       } else {
         log('info', 'got result', util.inspect(result));
         resolve(result);
@@ -64,7 +79,7 @@ function install(files: string[], scriptPath: string,
       (err: Error, result: any) => {
         if ((err !== null) && (err !== undefined)) {
           log('info', 'got err', util.inspect(err));
-          reject(err);
+          reject(transformError(err));
         } else {
           log('info', 'result', util.inspect(result));
           resolve(result);

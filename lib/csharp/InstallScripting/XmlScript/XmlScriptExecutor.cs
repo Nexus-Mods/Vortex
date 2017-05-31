@@ -67,6 +67,8 @@ namespace Components.Scripting.XmlScript
 
             ISet<Option> selectedOptions = new HashSet<Option>();
 
+            int stepIdx = findNextIdx(lstSteps, -1);
+
             Action<int, int, int[]> select = (int stepId, int groupId, int[] optionIds) =>
             {
                 ISet<int> selectedIds = new HashSet<int>(optionIds);
@@ -86,9 +88,8 @@ namespace Components.Scripting.XmlScript
                         m_csmState.RemoveFlags(options[i]);
                     }
                 }
+                sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
             };
-
-            int stepIdx = findNextIdx(lstSteps, -1);
 
             Action<bool> cont = (bool forward) => {
                 Task.Run(() =>

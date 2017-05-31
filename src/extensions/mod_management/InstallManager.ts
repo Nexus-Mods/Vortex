@@ -1,6 +1,7 @@
 import { showDialog } from '../../actions/notifications';
 import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi } from '../../types/IExtensionContext';
+import {UserCanceled} from '../../util/CustomErrors';
 import { createErrorReport } from '../../util/errorHandling';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
@@ -67,9 +68,6 @@ interface IInstructionGroups {
   submodule?: IInstruction[];
   unsupported?: IInstruction[];
 }
-
-// tslint:disable-next-line:no-empty
-function UserCanceled() { }
 
 /**
  * central class for the installation process
@@ -145,8 +143,8 @@ class InstallManager {
     const baseName = path.basename(archivePath, path.extname(archivePath));
     const currentProfile = activeProfile(api.store.getState());
     let modId = baseName;
-    let installGameId;
-    let installContext;
+    let installGameId: string;
+    let installContext: InstallContext;
 
     let filteredInfo;
 
@@ -251,32 +249,34 @@ class InstallManager {
         })
         .catch(err => {
           const canceled = (err instanceof UserCanceled) || err.message === 'Canceled';
-          const prom =
+          let prom =
             destinationPath !== undefined ?
               rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
                 .then(() => undefined) :
                   Promise.resolve();
-          prom.then(() => installContext.finishInstallCB(canceled ? 'canceled' :
-                                                                    'failed'));
+
+          prom = prom.then(() =>
+            installContext.finishInstallCB(canceled ? 'canceled' : 'failed'));
 
           if (err === undefined) {
-            return undefined;
+            return prom;
           } else if (canceled) {
-            return undefined;
+            return prom;
           } else {
             const { genHash } = require('modmeta-db');
             const errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;
 
-            return genHash(archivePath)
-                .then((hashResult: IHashResult) => {
-                  const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
-                  installContext.reportError(
-                      'Installation failed',
-                      `The installer ${id} failed: ${errMessage}`);
-                  if (callback !== undefined) {
-                    callback(err, modId);
-                  }
-                });
+            return prom
+              .then(() => genHash(archivePath))
+              .then((hashResult: IHashResult) => {
+                const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
+                installContext.reportError(
+                  'Installation failed',
+                  `The installer ${id} failed: ${errMessage}`);
+                if (callback !== undefined) {
+                  callback(err, modId);
+                }
+              });
           }
         })
         .finally(() => { installContext.stopIndicator(); });

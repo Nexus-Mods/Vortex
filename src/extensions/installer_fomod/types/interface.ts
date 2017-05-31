@@ -44,14 +44,12 @@ export interface IStateParameters {
   plugins: number[];
 }
 
-export interface IStateCallback {
-  (parameters: IStateParameters): void;
-}
+export type StateCallback = (parameters: IStateParameters) => void;
 
 export interface IInstallerInfo {
   moduleName: string;
   image: IHeaderImage;
-  select?: IStateCallback;
+  select?: StateCallback;
   cont?: (direction: Direction) => void;
   cancel?: () => void;
 }

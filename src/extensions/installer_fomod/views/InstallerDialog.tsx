@@ -1,8 +1,8 @@
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
 import {pushSafe, removeValue} from '../../../util/storeHelper';
 import {IconButton} from '../../../views/TooltipControls';
 
-import {GroupType, IGroup, IHeaderImage, IInstallStep, IInstallerState,
+import {GroupType, IGroup, IHeaderImage, IInstallerState, IInstallStep,
         IPlugin, OrderType} from '../types/interface';
 
 import * as _ from 'lodash';
@@ -19,7 +19,7 @@ interface IGroupProps {
   group: IGroup;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
   onShowDescription: (image: string, description: string) => void;
-};
+}
 
 interface IGroupState {
   selectedPlugins: number[];
@@ -33,11 +33,13 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     };
   }
 
-  public componentDidUpdate() {
+  public componentDidUpdate(oldProps: IGroupProps, oldState: IGroupState) {
     const {group, onSelect} = this.props;
     const {selectedPlugins} = this.state;
     const valid = this.validateFunc(group.type)(selectedPlugins);
-    onSelect(group.id, this.state.selectedPlugins, valid);
+    if (selectedPlugins !== oldState.selectedPlugins) {
+      onSelect(group.id, selectedPlugins, valid);
+    }
   }
 
   public componentWillReceiveProps(newProps: IGroupProps) {
@@ -52,13 +54,15 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
 
     const validationState = this.validateFunc(group.type)(selectedPlugins) ? null : 'error';
 
-    return (<FormGroup validationState={validationState}>
-      <ControlLabel>
-        {group.name}
-      </ControlLabel>
-      { this.renderNoneOption() }
-      { group.options.map(this.renderPlugin) }
-    </FormGroup>);
+    return (
+      <FormGroup validationState={validationState}>
+        <ControlLabel>
+          {group.name}
+        </ControlLabel>
+        {this.renderNoneOption()}
+        {group.options.map(this.renderPlugin)}
+      </FormGroup>
+    );
   }
 
   private getSelectedPlugins(props: IGroupProps) {
@@ -85,15 +89,17 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     }
 
     const isSelected = selectedPlugins.length === 0;
-    return <Radio
-      id={`radio-${stepId}-${group.id}-none`}
-      key='none'
-      name={group.id.toString()}
-      value='none'
-      checked={isSelected}
-      onChange={this.select}
-    >{t('None')}
-    </Radio>;
+    return (
+      <Radio
+        id={`radio-${stepId}-${group.id}-none`}
+        key='none'
+        name={group.id.toString()}
+        value='none'
+        checked={isSelected}
+        onChange={this.select}
+      >{t('None')}
+      </Radio>
+    );
   }
 
   private renderPlugin = (plugin: IPlugin): JSX.Element => {
@@ -101,38 +107,45 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     const {selectedPlugins} = this.state;
 
     const isSelected = selectedPlugins.indexOf(plugin.id) !== -1;
-    let id = `${stepId}-${group.id}-${plugin.id}`;
+    const id = `${stepId}-${group.id}-${plugin.id}`;
 
     switch (group.type) {
       case 'SelectExactlyOne':
       case 'SelectAtMostOne':
-        return <Radio
-          id={'radio-' + id}
-          key={plugin.id}
-          value={plugin.id}
-          name={group.id.toString()}
-          checked={isSelected}
-          onChange={this.select}
-        >{plugin.name}
-        </Radio>;
-      case 'SelectAll': return <Checkbox
-        id={'checkbox-' + id}
-        key={plugin.id}
-        checked={true}
-        readOnly={true}
-        value={plugin.id}
-        onClick={this.showDescription}
-      >
-        {plugin.name}
-      </Checkbox>;
-      default: return <Checkbox
-        id={'checkbox-' + id}
-        key={plugin.id}
-        value={plugin.id}
-        checked={isSelected}
-        onChange={this.select}
-      >{plugin.name}
-      </Checkbox>;
+        return (
+          <Radio
+            id={'radio-' + id}
+            key={plugin.id}
+            value={plugin.id}
+            name={group.id.toString()}
+            checked={isSelected}
+            onChange={this.select}
+          >{plugin.name}
+          </Radio>
+        );
+      case 'SelectAll':
+        return (
+          <Checkbox
+            id={'checkbox-' + id}
+            key={plugin.id}
+            checked={true}
+            readOnly={true}
+            value={plugin.id}
+            onClick={this.showDescription}
+          >{plugin.name}
+          </Checkbox>
+        );
+      default:
+        return (
+          <Checkbox
+            id={'checkbox-' + id}
+            key={plugin.id}
+            value={plugin.id}
+            checked={isSelected}
+            onChange={this.select}
+          >{plugin.name}
+          </Checkbox>
+        );
     }
   }
 
@@ -180,7 +193,7 @@ interface IStepProps {
   step: IInstallStep;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
   onShowDescription: (image: string, description: string) => void;
-};
+}
 
 function Step(props: IStepProps) {
   let groupsSorted: IGroup[];
@@ -190,21 +203,23 @@ function Step(props: IStepProps) {
   if (props.step.optionalFileGroups.order === 'Explicit') {
     groupsSorted = props.step.optionalFileGroups.group;
   } else {
-    let sortFunc = getGroupSortFunc(props.step.optionalFileGroups.order);
+    const sortFunc = getGroupSortFunc(props.step.optionalFileGroups.order);
     groupsSorted = props.step.optionalFileGroups.group.sort(sortFunc);
   }
 
-  return <Form id='fomod-installer-form'>
-    {groupsSorted.map((group: IGroup) =>
-      <Group
-        t={props.t}
-        key={`${props.step.id}-${group.id}`}
-        stepId={props.step.id}
-        group={group}
-        onSelect={props.onSelect}
-        onShowDescription={props.onShowDescription}
-      />)}
-  </Form>;
+  return (
+    <Form id='fomod-installer-form'>
+      {groupsSorted.map((group: IGroup) => (
+        <Group
+          t={props.t}
+          key={`${props.step.id}-${group.id}`}
+          stepId={props.step.id}
+          group={group}
+          onSelect={props.onSelect}
+          onShowDescription={props.onShowDescription}
+        />))}
+    </Form>
+  );
 }
 
 interface IInstallerInfo {
@@ -234,7 +249,7 @@ interface IDialogState {
 
 type IProps = IBaseProps & IConnectedProps;
 
-class InstallerDialog extends ComponentEx<IProps, IDialogState> {
+class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
 
   constructor(props: IProps) {
     super(props);
@@ -247,11 +262,15 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
-    this.setState({
-      invalidGroups: [],
-      currentImage: undefined,
-      currentDescription: undefined,
-    });
+    if ((this.props.installerState !== undefined) &&
+      ((this.props.installerInfo !== nextProps.installerInfo)
+        || (this.props.installerState.currentStep !== nextProps.installerState.currentStep))) {
+      this.setState({
+        invalidGroups: [],
+        currentImage: undefined,
+        currentDescription: undefined,
+      });
+    }
   }
 
   public render(): JSX.Element {
@@ -317,12 +336,15 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
             </li>
             {
               nextVisible !== undefined
-                ? <Pager.Item next disabled={nextDisabled} onClick={this.next}>
-                  {nextVisible.name}
-                </Pager.Item>
-                : <Pager.Item next disabled={nextDisabled} onClick={this.next}>
-                  {t('Finish')}
-                </Pager.Item>
+                ? (
+                  <Pager.Item next disabled={nextDisabled} onClick={this.next}>
+                    {nextVisible.name}
+                  </Pager.Item>
+                ) : (
+                  <Pager.Item next disabled={nextDisabled} onClick={this.next}>
+                    {t('Finish')}
+                  </Pager.Item>
+                )
             }
           </Pager>
         </Modal.Footer>
@@ -343,7 +365,7 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
     } else {
       this.setState(pushSafe(this.state, ['invalidGroups'], groupId));
     }
-  };
+  }
 
   private renderImage = () => {
     const { dataPath } = this.props;
@@ -354,10 +376,12 @@ class InstallerDialog extends ComponentEx<IProps, IDialogState> {
       return null;
     }
 
-    return (<img
+    return (
+      <img
         src={path.join(dataPath, currentImage)}
         style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }}
-    />);
+      />
+    );
   }
 
   private showDescription = (image: string, description: string) => {
@@ -383,6 +407,4 @@ function mapStateToProps(state: any): IConnectedProps {
 }
 
 export default translate(['common'], { wait: false })(connect(mapStateToProps)(
-  InstallerDialog
-  )
- ) as React.ComponentClass<IBaseProps>;
+  InstallerDialog)) as React.ComponentClass<IBaseProps>;
