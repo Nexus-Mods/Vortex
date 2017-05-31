@@ -1,5 +1,6 @@
 import {IValidateKeyData} from '../types/IValidateKeyData';
 
+import * as Promise from 'bluebird';
 import Nexus, {IValidateKeyResponse} from 'nexus-api';
 
 function fetchUserInfo(nexus: Nexus, key: string) {

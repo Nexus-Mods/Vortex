@@ -254,7 +254,7 @@ class ModDB {
     const url = `${server.url}/games/${realGameId}/mods/md5_search/${hash}`;
     return new Promise<ILookupResult[]>((resolve, reject) => {
       try {
-        this.mRestClient.get(
+        const request = this.mRestClient.get(
             url, this.nexusBaseData(server), (data, response) => {
               if (response.statusCode === 200) {
                 const result: ILookupResult[] =
@@ -263,9 +263,15 @@ class ModDB {
                 // and return to caller
                 resolve(result);
               } else {
+                console.log('handled rest error', util.inspect(data));
                 reject(new Error(util.inspect(data)));
               }
             });
+        request.on('requestTimeout', () => reject(new Error('request timeout')));
+        request.on('responseTimeout', () => reject(new Error('response timeout')));
+        request.on('error', (err) => {
+          reject(err);
+        });
       } catch (err) {
         reject(err);
       }

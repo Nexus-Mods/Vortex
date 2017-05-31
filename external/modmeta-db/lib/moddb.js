@@ -158,7 +158,7 @@ class ModDB {
         const url = `${server.url}/games/${realGameId}/mods/md5_search/${hash}`;
         return new Promise((resolve, reject) => {
             try {
-                this.mRestClient.get(url, this.nexusBaseData(server), (data, response) => {
+                const request = this.mRestClient.get(url, this.nexusBaseData(server), (data, response) => {
                     if (response.statusCode === 200) {
                         const result = data.map((nexusObj) => this.translateFromNexus(nexusObj, gameId));
                         resolve(result);
@@ -166,6 +166,11 @@ class ModDB {
                     else {
                         reject(new Error(util.inspect(data)));
                     }
+                });
+                request.on('requestTimeout', () => reject(new Error('request timeout')));
+                request.on('responseTimeout', () => reject(new Error('response timeout')));
+                request.on('error', (err) => {
+                    reject(err);
                 });
             }
             catch (err) {

@@ -6,6 +6,9 @@ export declare class NexusError extends Error {
     constructor(message: string, statusCode: number);
     readonly statusCode: number;
 }
+export declare class TimeoutError extends Error {
+    constructor(message: any);
+}
 declare class Nexus {
     private mRestClient;
     private mBaseData;

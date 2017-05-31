@@ -28,6 +28,13 @@ export class NexusError extends Error {
   }
 }
 
+export class TimeoutError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
 /**
  * implements the Nexus API
  *
@@ -75,8 +82,8 @@ class Nexus {
       const req = this.mRestClient.methods.validateKey(
         this.args({ headers: this.filter({ APIKEY: key }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject('validate key timeout'));
-      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('requestTimeout', () => reject(new TimeoutError('validating key')));
+      req.on('responesTimeout', () => reject(new TimeoutError('validateing key')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -97,8 +104,8 @@ class Nexus {
     return new Promise<types.IGameListEntry[]>((resolve, reject) => {
       const req = this.mRestClient.methods.getGames(this.args({}),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject('validate key timeout'));
-      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -108,8 +115,8 @@ class Nexus {
       const req = this.mRestClient.methods.getGameInfo(
         this.args({ path: this.filter({ gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject('validate key timeout'));
-      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -119,8 +126,8 @@ class Nexus {
       const req = this.mRestClient.methods.getModInfo(
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject('validate key timeout'));
-      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -130,8 +137,8 @@ class Nexus {
       const req = this.mRestClient.methods.getModFiles(
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject('validate key timeout'));
-      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -143,8 +150,8 @@ class Nexus {
       const req = this.mRestClient.methods.getFileInfo(
         this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject('validate key timeout'));
-      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -156,8 +163,8 @@ class Nexus {
       const req = this.mRestClient.methods.getDownloadURLs(
         this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject('validate key timeout'));
-      req.on('responesTimeout', () => reject('validate key timeout'));
+      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -177,7 +184,7 @@ class Nexus {
       try {
         resolve(data);
       } catch (err) {
-        reject({ message: 'failed to parse server response: ' + err.message });
+        reject(new Error('failed to parse server response: ' + err.message ));
       }
     } else {
       reject(new NexusError(data.message, response.statusCode));

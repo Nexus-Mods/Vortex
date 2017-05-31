@@ -24,7 +24,7 @@ import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
-import { checkModsVersion, retrieveModInfo } from './util/checkModsVersion';
+import { checkModVersion, retrieveModInfo } from './util/checkModsVersion';
 import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import fetchUserInfo from './util/fetchUserInfo';
@@ -39,7 +39,7 @@ import { } from './views/Settings';
 import NXMUrl from './NXMUrl';
 
 import * as Promise from 'bluebird';
-import Nexus, { IDownloadURL, IFileInfo, IModInfo } from 'nexus-api';
+import Nexus, { IDownloadURL, IFileInfo, IModInfo, TimeoutError } from 'nexus-api';
 import * as opn from 'opn';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -234,7 +234,7 @@ function endorseModImpl(
     });
 }
 
-function checkModsVersionImpl(
+function checkModVersionsImpl(
   store: Redux.Store<any>,
   gameId: string,
   groupedMods: { [id: string]: IModWithState[] },
@@ -243,7 +243,11 @@ function checkModsVersionImpl(
   const modsList = Object.keys(mods).map(modId => mods[modId]);
 
   return Promise.map(modsList, (mod: IMod) =>
-    checkModsVersion(store.dispatch, nexus, gameId, mod)
+    checkModVersion(store.dispatch, nexus, gameId, mod)
+      .catch(TimeoutError, err => {
+        const name = modName(mod, { version: true });
+        return Promise.resolve(`${name}:\nRequest timeout`);
+      })
       .catch(err => {
         const detail = processErrorMessage(err.statusCode, err.message, gameId);
         if (detail.fatal) {
@@ -430,7 +434,13 @@ function init(context: IExtensionContextExt): boolean {
           .then(userInfo => {
             context.api.store.dispatch(setUserInfo(userInfo));
           })
-          .catch((err) => {
+          .catch(TimeoutError, err => {
+            showError(context.api.store.dispatch,
+              'API Key validation timed out',
+              'Server didn\'t respond to validation request, web-based '
+              + 'features will be unavailable');
+          })
+          .catch(err => {
             showError(context.api.store.dispatch,
               'An error occurred validating the API Key',
               'Please provide a valid API Key!');
@@ -451,7 +461,7 @@ function init(context: IExtensionContextExt): boolean {
           'You are not logged in!');
       } else {
         context.api.store.dispatch(setUpdatingMods(gameId, true));
-        checkModsVersionImpl(context.api.store, gameId, groupedMods, mods)
+        checkModVersionsImpl(context.api.store, gameId, groupedMods, mods)
           .then((errorMessages: string[]) => {
             if (errorMessages.length !== 0) {
               showError(context.api.store.dispatch,
@@ -532,7 +542,7 @@ function init(context: IExtensionContextExt): boolean {
             .then(userInfo => {
               context.api.store.dispatch(setUserInfo(userInfo));
             })
-            .catch((err) => {
+            .catch(err => {
               showError(context.api.store.dispatch,
                 'An error occurred validating the API Key',
                 'Please provide a valid API Key!');

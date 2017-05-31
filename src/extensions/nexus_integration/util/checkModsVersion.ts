@@ -9,7 +9,7 @@ import * as Promise from 'bluebird';
 import Nexus, { IFileInfo, IFileUpdate, IModFiles, IModInfo, NexusError } from 'nexus-api';
 
 /**
- * check the mod version by the server call
+ * check if there is a newer mod version on the server
  *
  * @param {Nexus} nexus
  * @param {string} gameId
@@ -20,8 +20,8 @@ import Nexus, { IFileInfo, IFileUpdate, IModFiles, IModInfo, NexusError } from '
  * @return {Promise<IFileInfo>} updatedMod
  *
  */
-export function checkModsVersion(dispatch: Redux.Dispatch<any>, nexus: Nexus,
-                                 gameId: string, mod: IMod): Promise<void> {
+export function checkModVersion(dispatch: Redux.Dispatch<any>, nexus: Nexus,
+                                gameId: string, mod: IMod): Promise<void> {
   const nexusModId: number =
       parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
 
