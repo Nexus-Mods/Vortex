@@ -13,9 +13,8 @@ function findGame() {
     let factorio = games.find((entry) => entry.name === 'Factorio');
     if (factorio !== undefined) {
       return factorio.gamePath;
-    } else {
-      return null;
     }
+    return null;
   })
   .catch((err) => {
     log('debug', 'no steam installed?', { err: err.message });
@@ -26,17 +25,15 @@ function findGame() {
 function modPath() {
   if (process.platform === 'win32') {
     return path.join(remote.app.getPath('appData'), 'Factorio', 'mods');
-  } else {
-    return path.join(remote.app.getPath('home'), '.factorio', 'mods');
   }
+  return path.join(remote.app.getPath('home'), '.factorio', 'mods');
 }
 
 function gameExecutable() {
   if (process.platform === 'win32') {
     return 'bin/x64/Factorio.exe';
-  } else {
-    return 'bin/x64/factorio';
   }
+  return 'bin/x64/factorio';
 }
 
 function prepareForModding() {

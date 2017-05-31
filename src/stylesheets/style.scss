@@ -760,6 +760,21 @@ textarea {
   position: absolute;
   top: 5px;
   right: 5px;
+  color: currentColor;
+  background-color: transparent;
+  border-width: 0px;
+  &:hover {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+  &:active {
+    color: $link-hover-color;
+    background-color: initial;
+  }
+  &:focus {
+    color: $link-hover-color;
+    background-color: initial;
+  }
 }
 
 #fomod-installer-dialog .modal-dialog {
@@ -1258,8 +1273,16 @@ a[role=menuitem] svg {
   margin-right: $scrollbar-width;
 }
 
+.chart-container {
+  text-align: -webkit-center;
+  border: 2px solid $brand-secondary;
+  background-color: $brand-menu;
+  margin: 10px;
+}
+
 ::-webkit-scrollbar {
   width: $scrollbar-width;
+  height: $scrollbar-width;
 }
 /*
 ::-webkit-scrollbar-track {

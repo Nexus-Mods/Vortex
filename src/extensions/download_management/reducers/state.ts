@@ -5,7 +5,7 @@ import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from '../../../util/st
 
 import * as action from '../actions/state';
 
-export const speedDataPoints = 15;
+export const speedDataPoints = 30;
 
 /**
  * reducer for changes to ephemeral session state

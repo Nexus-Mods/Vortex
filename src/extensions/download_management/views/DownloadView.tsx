@@ -26,6 +26,7 @@ import { IDownload } from '../types/IDownload';
 import {FILE_NAME, PROGRESS} from '../downloadAttributes';
 
 import DownloadDropzone from './DownloadDropzone';
+import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -261,6 +262,9 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     return (
       <MainPage>
         <Layout type='column'>
+          <Fixed>
+            <DownloadGraph />
+          </Fixed>
           <Flex style={{ height: '100%', overflowY: 'auto' }} >
             <SuperTable
               tableId='downloads'

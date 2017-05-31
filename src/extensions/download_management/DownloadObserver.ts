@@ -54,7 +54,9 @@ export class DownloadObserver {
     this.mProtocolHandlers = protocolHandlers;
 
     events.on('remove-download',
-              (downloadId) => this.handleRemoveDownload(downloadId));
+              downloadId => this.handleRemoveDownload(downloadId));
+    events.on('pause-download',
+              downloadId => this.handlePauseDownload(downloadId));
     events.on('start-download',
               (urls, modInfo, callback?) =>
                   this.handleStartDownload(urls, modInfo, events, callback));
@@ -160,7 +162,7 @@ export class DownloadObserver {
     }
     if (['init', 'started'].indexOf(download.state) >= 0) {
       // need to cancel the download
-      this.mManager.cancel(downloadId);
+      this.mManager.stop(downloadId);
     }
     if (download.localPath !== undefined) {
       log('debug', 'will delete', {path: download.localPath});
@@ -168,6 +170,19 @@ export class DownloadObserver {
       fs.removeAsync(path.join(downloadPath(this.mStore.getState()), download.localPath));
     } else {
       this.mStore.dispatch(removeDownload(downloadId));
+    }
+  }
+
+  private handlePauseDownload(downloadId: string) {
+    const download =
+        this.mStore.getState().persistent.downloads.files[downloadId];
+    if (download === undefined) {
+      log('warn', 'failed to remove download: unknown', {downloadId});
+      return;
+    }
+    if (['init', 'started'].indexOf(download.state) >= 0) {
+      // need to cancel the download
+      this.mManager.stop(downloadId);
     }
   }
 }

@@ -235,7 +235,7 @@ class DownloadManager {
    *
    * @memberOf DownloadManager
    */
-  public cancel(id: string) {
+  public stop(id: string) {
     const download: IDownload = this.mQueue.find(
       (value: IDownload) => value.id === id);
     if (download === undefined) {
