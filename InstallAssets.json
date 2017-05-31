@@ -124,7 +124,17 @@
     },
     {
       "srcPath": "extensions/*/index.js",
-      "outPath": "",
+      "outPath": "bundledPlugins",
+      "skipPaths": 1,
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
+      "srcPath": "extensions/game-*/*",
+      "outPath": "bundledPlugins",
+      "skipPaths": 1,
       "target": [
         "out",
         "app"
