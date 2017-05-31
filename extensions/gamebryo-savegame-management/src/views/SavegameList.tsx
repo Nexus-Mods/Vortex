@@ -91,6 +91,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         icon: 'copy',
         title: props.t('Restore savegame\'s plugins'),
         action: this.restore,
+        multiRowAction: false,
       },
     ];
   }
@@ -309,7 +310,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   }
 
   private remove = (instanceIds: string[]) => {
-    const { t, savesPath, onRemoveSavegame, onShowDialog } = this.props;
+    const { t, currentProfile, onRemoveSavegame, onShowDialog, savesPath } = this.props;
 
     let removeSavegame = true;
 
@@ -325,12 +326,12 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       }).then((result: types.IDialogResult) => {
         removeSavegame = result.action === 'Delete';
         if (removeSavegame) {
-          return Promise.map(instanceIds, (id: string) => {
-            return fs.removeAsync(path.join(savesPath, id))
+          return Promise.map(instanceIds, (id: string) =>
+            fs.removeAsync(path.join(mygamesPath(currentProfile.gameId), savesPath, id))
               .then(() => {
                 onRemoveSavegame(id);
-              });
-          }).then(() => undefined);
+              }))
+              .then(() => undefined);
         } else {
           return Promise.resolve();
         }
