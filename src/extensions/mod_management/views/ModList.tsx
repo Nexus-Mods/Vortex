@@ -147,7 +147,7 @@ class ModList extends ComponentEx<IProps, {}> {
       icon: 'check-o',
       calc: (mod: IModWithState) => {
         if (mod.state === 'downloaded') {
-          return 'Not Installed';
+          return 'Uninstalled';
         }
         return mod.enabled === true ? 'Enabled' : 'Disabled';
       },
@@ -158,7 +158,7 @@ class ModList extends ComponentEx<IProps, {}> {
         choices: () => [
           { key: 'enabled', text: 'Enabled' },
           { key: 'disabled', text: 'Disabled' },
-          { key: 'uninstalled', text: 'Not Installed' },
+          { key: 'uninstalled', text: 'Uninstalled' },
         ],
         onChangeValue: (modId: string, value: any) => {
           const { onRemoveMod, onSetModEnabled, gameMode, profileId } = this.props;

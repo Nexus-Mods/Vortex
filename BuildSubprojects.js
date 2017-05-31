@@ -220,6 +220,9 @@ function processProject(project, buildType, feedback) {
   } else if (project.type === 'electron-rebuild') {
     return processRebuild(project, buildType, feedback);
   }
+  if (project.type.startsWith('_')) {
+    return Promise.resolve();
+  }
   return Promise.reject(new Error('invalid project descriptor ' + project.toString()));
 }
 

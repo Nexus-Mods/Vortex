@@ -1292,6 +1292,15 @@ a[role=menuitem] svg {
   margin: 10px;
 }
 
+.recharts-default-tooltip {
+  background-color: $brand-menu;
+  border: 1px solid $brand-secondary;
+}
+
+.download-chart .recharts-curve {
+  stroke: $brand-success;
+}
+
 ::-webkit-scrollbar {
   width: $scrollbar-width;
   height: $scrollbar-width;

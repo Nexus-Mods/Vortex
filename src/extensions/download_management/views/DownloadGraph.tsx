@@ -65,19 +65,19 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
 
     // TODO: animation disabled because https://github.com/recharts/recharts/issues/375
     return (
-      <div className='chart-container' ref={this.setRef} >
+      <div className='chart-container download-chart' ref={this.setRef} >
         <recharts.LineChart width={this.state.width} height={200} data={data}>
           <recharts.YAxis tickFormatter={this.valueFormatter} />
           <recharts.CartesianGrid strokeDasharray='3 3' vertical={false}/>
           <recharts.Line
             type='monotone'
             dataKey='speed'
-            stroke='#cf862a'
             isAnimationActive={false}
           />
           <recharts.Tooltip
             formatter={this.valueFormatter}
             labelFormatter={this.labelFormatter}
+            wrapperStyle={{ backgroundColor: '', border: '' }}
           />
         </recharts.LineChart>
       </div>

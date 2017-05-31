@@ -240,7 +240,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     let elements: ITableRowAction[] = [{
       icon: null,
-      title: t('Columns'),
+      title: t('Toggle Columns'),
       position: getPos(),
     }].concat(objects
       .filter(attr => attr.isToggleable)
