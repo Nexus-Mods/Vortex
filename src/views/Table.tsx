@@ -144,59 +144,41 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       hasActions = rowActions.length > 0;
     }
 
-    const actionHeader = hasActions
-      ? (
-        <th className={`table-${tableId} header-action`}>
-          <div>
-            <p className='vcenter'>{t('Actions')}</p>
-          </div>
-        </th>
-      ) : null;
+    const actionHeader = this.renderTableActions();
 
     return (
-      <Layout className='table-layout' type='column'>
-        <Fixed>
-          <div className='pull-right'>
-            {objects.map(this.renderAttributeToggle)}
-          </div>
-        </Fixed>
-        <Flex>
-          <SplitPane
-            split='vertical'
-            maxSize={splitMax}
-            defaultSize={splitPos}
-            onChange={this.changeSplitPos}
-            primary='second'
-            ref={this.setSplitRef}
-          >
-            <div
-              className='table-main-pane'
-              ref={this.mainPaneRef}
-              tabIndex={0}
-              onKeyDown={this.handleKeyDown}
+      <SplitPane
+        split='vertical'
+        maxSize={splitMax}
+        defaultSize={splitPos}
+        onChange={this.changeSplitPos}
+        primary='second'
+        ref={this.setSplitRef}
+        className='table-split'
+      >
+        <div
+          className='table-main-pane'
+          ref={this.mainPaneRef}
+          tabIndex={0}
+          onKeyDown={this.handleKeyDown}
+        >
+          <Table condensed hover>
+            <thead
+              className='table-header'
+              style={{ transform: 'translate(0, 0)' }}
             >
-              <Table condensed hover>
-                <thead
-                  className='table-header'
-                  style={{ transform: 'translate(0, 0)' }}
-                >
-                  <tr>
-                    {this.mVisibleAttributes.map(this.renderHeaderField)}
-                    { actionHeader }
-                  </tr>
-                </thead>
-                {this.renderBody(this.mVisibleAttributes)}
-              </Table>
-            </div>
-            <div className='table-details-pane'>
-              {this.renderDetails(lastSelected)}
-            </div>
-          </SplitPane>
-        </Flex>
-        <Fixed>
-          {this.renderSelectionActions()}
-        </Fixed>
-      </Layout>
+              <tr>
+                {this.mVisibleAttributes.map(this.renderHeaderField)}
+                {actionHeader}
+              </tr>
+            </thead>
+            {this.renderBody(this.mVisibleAttributes)}
+          </Table>
+        </div>
+        <div className='table-details-pane'>
+          {this.renderDetails(lastSelected)}
+        </div>
+      </SplitPane>
       );
   }
 
@@ -242,37 +224,60 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderSelectionActions(): JSX.Element {
-    const {t, actions, tableId} = this.props;
+  private renderTableActions(): JSX.Element {
+    const {t, actions, objects, tableId} = this.props;
     const {rowState} = this.state;
-
-    const selected = Object.keys(rowState).filter((key: string) => rowState[key].selected);
-    const selectedCount = selected.length;
-
-    if (selectedCount === 0) {
-      return null;
-    }
 
     const multiActions = actions.filter(
       (action) => action.multiRowAction === undefined || action.multiRowAction);
 
-    // TODO: the styling here is a bit of a hack
+    const selected = Object.keys(rowState).filter(key => rowState[key].selected);
+
+    let pos = 1;
+    const getPos = () => {
+      return pos++;
+    };
+
+    let elements: ITableRowAction[] = [{
+      icon: null,
+      title: t('Columns'),
+      position: getPos(),
+    }].concat(objects
+      .filter(attr => attr.isToggleable)
+      .map(attr => {
+        const attributeState = this.getAttributeState(attr);
+        return {
+          icon: attributeState.enabled ? 'check-square-o' : 'square-o',
+          title: attr.name,
+          position: getPos(),
+          action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),
+        };
+      }));
+
+    if ((multiActions.length > 0) && (selected.length > 0)) {
+      elements = elements.concat([{
+        icon: null,
+        title: t('{{count}} selected', { count: selected.length }),
+        position: getPos(),
+      }], multiActions.map(action => setSafe(action, ['position'], getPos())));
+    }
+
     return (
-      <div>
-        <h4 style={{ display: 'inline-block' }}>
-          {t('{{count}} selected', { replace: { count: selectedCount } })}
-        </h4>
-        {' '}
-        <IconBar
-          group={`${tableId}-multiaction-icons`}
-          className='table-actions'
-          style={{ marginBottom: 5 }}
-          tooltipPlacement='top'
-          staticElements={multiActions}
-          instanceId={selected}
-        />
-      </div>
-    );
+      <th className={`table-${tableId} header-action`}>
+        {
+          elements.length > 0 ? (
+            <IconBar
+              id={`${tableId}-tableactions`}
+              group={`${tableId}-action-icons-multi`}
+              className='table-actions'
+              staticElements={elements}
+              instanceId={selected}
+              collapse={true}
+            />
+          ) : <div><p className='vcenter'>{t('Actions')}</p></div>
+        }
+      </th>
+      );
   }
 
   private renderAttributeToggle = (attr: ITableAttribute) => {

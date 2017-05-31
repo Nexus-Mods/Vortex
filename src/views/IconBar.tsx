@@ -1,5 +1,6 @@
 import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
 import { extend, IExtensibleProps } from '../util/ExtensionProvider';
+import { truthy } from '../util/util';
 
 import DynamicProps from './DynamicProps';
 import Icon from './Icon';
@@ -179,11 +180,29 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     const { instanceId } = this.props;
 
     const id = `${instanceId || '1'}_${index}`;
-    return <MenuItem key={id} eventKey={id}>{this.renderIconInner(icon, index, 'menu')}</MenuItem>;
+
+    if ((icon.icon === null) && (icon.component === undefined)) {
+      return (
+        <MenuItem key={id} disabled={true}>
+          {icon.title}
+        </MenuItem>
+      );
+    }
+
+    return (
+      <MenuItem key={id} eventKey={id}>
+        {this.renderIconInner(icon, index, 'menu')}
+      </MenuItem>
+    );
   }
 
-  private renderIcon = (icon: IActionDefinition, index: number) =>
-    this.renderIconInner(icon, index)
+  private renderIcon = (icon: IActionDefinition, index: number) => {
+    if ((icon.icon === null) && (icon.component === undefined)) {
+      // skip text-only elements in this mode
+      return null;
+    }
+    return this.renderIconInner(icon, index);
+  }
 
   private renderIconInner = (icon: IActionDefinition, index: number,
                              forceButtonType?: ButtonType) => {
@@ -194,6 +213,11 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     const id = `${instanceId || '1'}_${index}`;
     if (icon.icon !== undefined) {
       // simple case
+
+      if (icon.icon === null) {
+        return <p>{icon.title}</p>;
+      }
+
       return (
         <ToolbarIcon
           key={id}

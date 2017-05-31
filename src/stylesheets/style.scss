@@ -1105,8 +1105,20 @@ div:hover > .hover-expand {
   display: inline;
 }
 
+.table-split {
+  padding: 10px;
+}
+
 .vcenter {
   margin: auto 0 auto 0;
+}
+
+.hcenter {
+  margin: 0 auto 0 auto;
+}
+
+.table-actions > button {
+  @extend .hcenter;
 }
 
 .flex-rest {

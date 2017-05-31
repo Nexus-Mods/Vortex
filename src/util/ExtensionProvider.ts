@@ -10,7 +10,7 @@ export interface IExtensionProps {
 /**
  * provider for ui extensions. This makes extensions available to
  * to extensible components
- * 
+ *
  * @export
  * @class ExtensionProvider
  * @extends {React.Component<IExtensionProps, {}>}
@@ -21,7 +21,7 @@ export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
     extensions: PropTypes.object.isRequired,
   };
 
-  public getChildContext(): Object {
+  public getChildContext(): any {
     const { extensions } = this.props;
     return { extensions };
   }
@@ -39,12 +39,12 @@ export interface IExtensibleProps {
 /**
  * extension function. This function creates a wrapper around a component that
  * binds the extensions of a component to its props
- * 
+ *
  * @export
  * @param {(React.ComponentClass<P & IExtensionProps>)} ComponentToWrap the component to wrap
  * @returns {React.ComponentClass<P>} the wrapper component
  */
-export function extend(registerFunc: Function) {
+export function extend(registerFunc: (...args) => void) {
   const ExtensionManagerImpl: typeof ExtensionManager = require('./ExtensionManager').default;
   ExtensionManagerImpl.registerUIAPI(registerFunc.name);
 
@@ -58,9 +58,7 @@ export function extend(registerFunc: Function) {
       private mExtensions: any[];
 
       public componentWillMount(): void {
-        const { staticElements }: any = this.props;
-        this.mExtensions = staticElements ? staticElements.slice() : [];
-
+        this.mExtensions = [];
         this.context.extensions.apply(registerFunc.name, (...args) => {
           const res = registerFunc(this, ...args);
           if (res !== undefined) {
@@ -70,12 +68,14 @@ export function extend(registerFunc: Function) {
       }
 
       public render(): JSX.Element {
-        const { children } = this.props;
-        let wrapProps: any = Object.assign({}, this.props, { objects: this.mExtensions });
+        const { children, staticElements } = this.props;
+
+        const wrapProps: any = Object.assign({}, this.props, {
+          objects: [].concat(staticElements || [], this.mExtensions || []) });
         delete wrapProps.staticElements;
         delete wrapProps.group;
         return React.createElement(ComponentToWrap, wrapProps, children);
       }
     };
   };
-};
+}
