@@ -1,7 +1,8 @@
 import * as Promise from 'bluebird';
-import { generate as shortid } from 'shortid';
+import { actions as nmmActions, DeriveInstallName, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
+import { generate as shortid } from 'shortid';
 import { IFileEntry as FileEntry, IModEntry as ModEntry } from './nmmEntries';
 
 interface IVortexMod {
@@ -24,6 +25,7 @@ export function addMods(gameID: string, modEntries: ModEntry[], dispatch: Redux.
   Promise.map(modEntries, modEntry => {
     const modName = modEntry.modFilename.substr(0, modEntry.modFilename.lastIndexOf('.'));
     const mod: types.IMod = {
+      id: DeriveInstallName(modName, ''),
       state: 'installed',
       archiveId: shortid(),
       installationPath: modName,
