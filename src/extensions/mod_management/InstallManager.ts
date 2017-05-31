@@ -22,7 +22,7 @@ import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 
 import InstallContext from './InstallContext';
-import deriveModInstallName from './vortexModIdManager';
+import deriveModInstallName from './modIdManager';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';

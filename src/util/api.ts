@@ -6,6 +6,7 @@
 export * from './message';
 export * from './storeHelper';
 
+import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import { Archive } from './archives';
 import AsyncComponent from './AsyncComponent';
 import { NotSupportedError, UserCanceled } from './CustomErrors';
@@ -27,6 +28,7 @@ export {
   Archive,
   AsyncComponent,
   Debouncer,
+  deriveModInstallName as deriveInstallName,
   extend,
   getCurrentLanguage,
   getNormalizeFunc,

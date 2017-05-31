@@ -1,5 +1,5 @@
 import * as Promise from 'bluebird';
-import { actions as nmmActions, DeriveInstallName, types } from 'nmm-api';
+import { actions as nmmActions, deriveInstallName, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import { generate as shortid } from 'shortid';
@@ -25,7 +25,7 @@ export function addMods(gameID: string, modEntries: ModEntry[], dispatch: Redux.
   Promise.map(modEntries, modEntry => {
     const modName = modEntry.modFilename.substr(0, modEntry.modFilename.lastIndexOf('.'));
     const mod: types.IMod = {
-      id: DeriveInstallName(modName, ''),
+      id: deriveInstallName(modName, ''),
       state: 'installed',
       archiveId: shortid(),
       installationPath: modName,
