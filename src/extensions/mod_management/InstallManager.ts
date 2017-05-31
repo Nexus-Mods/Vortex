@@ -22,6 +22,7 @@ import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 
 import InstallContext from './InstallContext';
+import deriveModInstallName from './vortexModIdManager';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -643,7 +644,7 @@ class InstallManager {
    * @returns
    */
   private deriveInstallName(archiveName: string, info: any) {
-    return archiveName;
+    return deriveModInstallName(archiveName, info);
   }
 
   private downloadModAsync(

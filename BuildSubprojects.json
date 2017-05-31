@@ -143,6 +143,15 @@
   ], [
     {
       "type": "build-copy",
+      "name": "nexus-migration-tool",
+      "path": "extensions/nexus-migration-tool",
+      "removeModules": ["nmm-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/nexus-migration-tool"
+    }
+  ], [
+    {
+      "type": "build-copy",
       "name": "documentation",
       "path": "extensions/documentation",
       "removeModules": ["nmm-api"],

@@ -1,5 +1,5 @@
 import * as Promise from 'bluebird';
-import { actions as nmmActions, types } from 'nmm-api';
+import { generate as shortid } from 'shortid';
 import * as path from 'path';
 import * as React from 'react';
 import { IFileEntry as FileEntry, IModEntry as ModEntry } from './nmmEntries';
@@ -24,15 +24,16 @@ export function addMods(gameID: string, modEntries: ModEntry[], dispatch: Redux.
   Promise.map(modEntries, modEntry => {
     const modName = modEntry.modFilename.substr(0, modEntry.modFilename.lastIndexOf('.'));
     const mod: types.IMod = {
-      id: modName,
       state: 'installed',
-      archiveId: modEntry.archiveMD5,
+      archiveId: shortid(),
       installationPath: modName,
       attributes: {
         name: modName,
         installTime: new Date().getTime().toString(),
         version: modEntry.modVersion,
         fileId: modEntry.downloadId,
+        fileMD5: modEntry.archiveMD5,
+        notes: 'Imported using the NMM-Migration-Tool',
       },
     };
 
