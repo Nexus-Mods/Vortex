@@ -129,7 +129,7 @@ interface IActionProps {
   onSetTarget: (id: string, pos: { x: number, y: number }) => void;
   onEditDialog: (gameId: string, modId: string, reference: IReference, defaultType: string) => void;
   onRemoveRule: (gameId: string, modId: string, rule: IRule) => void;
-  onConflictDialog: (gameId: string, modId: string) => void;
+  onConflictDialog: (gameId: string, modId: string, modRules: IBiDirRule[]) => void;
 }
 
 interface IComponentState {
@@ -282,9 +282,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         matchReference(rule.source, nextProps.mod));
     }
 
-    const staticRules = util.getSafe(nextState, ['modInfo', 'rules'], undefined);
-    const customRules = util.getSafe(nextProps.mod, ['rules'], undefined);
-
     if (this.props.isDragging !== nextProps.isDragging) {
       let pos;
       if (nextProps.isDragging) {
@@ -328,9 +325,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private renderConnectorIcon(mod: types.IMod) {
     const {t, connectDragSource, enabledMods} = this.props;
 
-    const staticRules = util.getSafe(this.state, ['modInfo', 'rules'], []);
-    const customRules = util.getSafe(mod, ['rules'], []);
-
     const classes = ['btn-dependency'];
 
     let anyUnfulfilled = false;
@@ -356,6 +350,9 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     };
 
     let popover: JSX.Element;
+
+    const staticRules = util.getSafe(this.state, ['modInfo', 'rules'], []);
+    const customRules = util.getSafe(mod, ['rules'], []);
 
     if ((staticRules.length > 0) || (customRules.length > 0)) {
       popover = (
@@ -466,14 +463,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     return version !== undefined ? id + ' v' + version : id;
   }
 
-  private renderReference(ref: IReference) {
-    if (ref.fileMD5) {
-      return ref.fileMD5;
-    } else {
-      return (ref.logicalFileName || ref.fileExpression) + ' v' + ref.versionMatch;
-    }
-  }
-
   private findReference(reference: IReference, mods: IModLookupInfo[]): IModLookupInfo {
     return mods.find(mod => matchReference(reference, mod));
   }
@@ -492,7 +481,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
   private openConflictDialog = () => {
     const { gameId, mod, onConflictDialog } = this.props;
-    onConflictDialog(gameId, mod.id);
+    const { modRules } = this.state;
+    onConflictDialog(gameId, mod.id, modRules);
   }
 
   private key = (rule: IRule) => {
@@ -554,7 +544,8 @@ function mapDispatchToProps(dispatch): IActionProps {
     onEditDialog: (gameId, modId, reference, defaultType) =>
       dispatch(setCreateRule(gameId, modId, reference, defaultType)),
     onRemoveRule: (gameId, modId, rule) => dispatch(actions.removeModRule(gameId, modId, rule)),
-    onConflictDialog: (gameId, modId) => dispatch(setConflictDialog(gameId, modId)),
+    onConflictDialog: (gameId, modId, modRules) =>
+      dispatch(setConflictDialog(gameId, modId, modRules)),
   };
 }
 

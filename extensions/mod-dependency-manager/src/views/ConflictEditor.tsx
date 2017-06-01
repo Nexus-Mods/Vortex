@@ -1,11 +1,13 @@
+import { IBiDirRule } from '../types/IBiDirRule';
 import { IConflict } from '../types/IConflict';
 import matchReference from '../util/matchReference';
 import renderModName from '../util/renderModName';
+import renderReference from '../util/renderReference';
 
 import { setConflictDialog } from '../actions';
 
 import { IReference, IRule } from 'modmeta-db';
-import { actions as nmmActions, ComponentEx, types } from 'nmm-api';
+import { actions as nmmActions, ComponentEx, tooltip, types } from 'nmm-api';
 import * as React from 'react';
 import { Button, FormControl, ListGroup, ListGroupItem,
          Modal, OverlayTrigger, Popover } from 'react-bootstrap';
@@ -16,6 +18,7 @@ interface IConnectedProps {
   gameId: string;
   modId: string;
   conflicts: IConflict[];
+  modRules: IBiDirRule[];
   mods: { [modId: string]: types.IMod };
 }
 
@@ -46,6 +49,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
+    // find existing rules for these conflicts
     this.nextState.ruleType =
       this.getRuleTypes(nextProps.modId, nextProps.mods, nextProps.conflicts);
   }
@@ -87,7 +91,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderConflict = (conflict: IConflict) => {
-    const {t, mods} = this.props;
+    const {t, modId, modRules, mods} = this.props;
     const {ruleType} = this.state;
     const popover = (
       <Popover
@@ -97,6 +101,14 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
         {conflict.files.sort().map(fileName => <p key={fileName}>{fileName}</p>)}
       </Popover>
     );
+
+    let reverseRule: IBiDirRule;
+
+    if (ruleType[conflict.otherMod.name] === undefined) {
+      reverseRule = modRules
+        .find(rule => matchReference(rule.reference, conflict.otherMod)
+                   && matchReference(rule.source, mods[modId]));
+    }
 
     return (
       <ListGroupItem key={conflict.otherMod.id}>
@@ -123,7 +135,27 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
             }</a>
           </OverlayTrigger>
         </div>
+        { this.renderReverseRule(reverseRule) }
       </ListGroupItem>
+    );
+  }
+
+  private renderReverseRule(rule: IBiDirRule) {
+    const { t } = this.props;
+    if (rule === undefined) {
+      return null;
+    }
+
+    return (
+      <tooltip.Icon
+        id={`conflict-editor-${rule.reference.fileMD5}`}
+        className='pull-right'
+        name='exclamation-circle'
+        tooltip={t('{{ otherMod }} has a rule referencing {{ thisMod }}',
+          { replace: {
+              otherMod: renderReference(rule.reference),
+              thisMod: renderReference(rule.source) } })}
+      />
     );
   }
 
@@ -174,6 +206,7 @@ function mapStateToProps(state): IConnectedProps {
     modId: dialog.modId,
     conflicts: dialog.modId !== undefined ? state.session.dependencies.conflicts[dialog.modId] : [],
     mods: dialog.gameId !== undefined ? state.persistent.mods[dialog.gameId] : {},
+    modRules: dialog.modRules,
   };
 }
 

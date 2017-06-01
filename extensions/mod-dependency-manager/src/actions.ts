@@ -1,3 +1,5 @@
+import {IBiDirRule} from './types/IBiDirRule';
+
 import { IReference } from 'modmeta-db';
 import { safeCreateAction } from 'nmm-api';
 
@@ -18,4 +20,4 @@ export const setType = safeCreateAction('SET_MOD_RULE_TYPE');
 export const setConflictInfo = safeCreateAction('SET_CONFLICT_INFO');
 
 export const setConflictDialog = safeCreateAction('SET_CONFLICT_DIALOG',
-  (gameId?: string, modId?: string) => ({ gameId, modId }));
+  (gameId?: string, modId?: string, modRules?: IBiDirRule[]) => ({ gameId, modId, modRules }));
