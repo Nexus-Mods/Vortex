@@ -1,9 +1,9 @@
 import * as fs from 'fs-extra-promise';
+import * as update from 'immutability-helper';
 import { selectors, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
-import update = require('react-addons-update');
 import { connect } from 'react-redux';
 
 interface IBaseProps {

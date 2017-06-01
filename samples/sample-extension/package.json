@@ -17,8 +17,8 @@
     ]
   },
   "devDependencies": {
+    "@types/immutability-helper": "^2.0.15",
     "@types/react": "^0.14.55",
-    "@types/react-addons-update": "^0.14.14",
     "@types/react-bootstrap": "^0.0.37",
     "@types/react-dom": "^0.14.19",
     "@types/react-i18next": "^1.7.5",
@@ -29,9 +29,9 @@
     "babel-polyfill": "^6.13.0",
     "bluebird": "^3.4.6",
     "i18next": "^3.5.1",
+    "immutability-helper": "^2.2.2",
     "nmm-api": "file:../../api",
     "react": "^15.3.2",
-    "react-addons-update": "^15.3.2",
     "react-bootstrap": "^0.30.6",
     "react-dom": "^15.3.2",
     "react-i18next": "^1.10.1",

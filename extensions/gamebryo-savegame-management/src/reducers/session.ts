@@ -2,7 +2,7 @@ import { types, util } from 'nmm-api';
 
 import * as actions from '../actions/session';
 
-import update = require('react-addons-update');
+import * as update from 'immutability-helper';
 
 /**
  * reducer for changes to ephemeral session state

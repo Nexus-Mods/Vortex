@@ -8,7 +8,6 @@ import * as path from 'path';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
-import update = require('react-addons-update');
 import { connect } from 'react-redux';
 import * as nodeUtil from 'util';
 

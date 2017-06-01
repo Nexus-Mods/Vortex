@@ -5,7 +5,7 @@ import { Button, ControlLabel, FormControl, FormGroup,
          Modal, Nav, NavItem } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 
-import update = require('react-addons-update');
+import * as update from 'immutability-helper';
 
 interface IBaseProps {
   fileName: string;

@@ -1626,6 +1626,15 @@
     "version": "0.5.4",
     "licenseFile": "node_modules\\image-size\\LICENSE"
   },
+  "immutability-helper@2.2.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/kolodny/immutability-helper",
+    "publisher": "kolodny",
+    "url": "http://kolodny.github.io/",
+    "name": "immutability-helper",
+    "version": "2.2.2",
+    "licenseFile": "node_modules\\immutability-helper\\LICENSE"
+  },
   "imurmurhash@0.1.4": {
     "licenses": "MIT",
     "repository": "https://github.com/jensyt/imurmurhash-js",

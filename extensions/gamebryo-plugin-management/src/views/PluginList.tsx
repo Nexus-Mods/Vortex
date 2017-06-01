@@ -15,12 +15,12 @@ import PluginFlagsFilter from './PluginFlagsFilter';
 
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
+import * as update from 'immutability-helper';
 import {SimpleMessage} from 'loot';
 import {ComponentEx, IconBar, ITableRowAction, MainPage,
         selectors, Table, TableTextFilter, ToolbarIcon,
         types, util} from 'nmm-api';
 import * as React from 'react';
-import update = require('react-addons-update');
 import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
 import {translate} from 'react-i18next';
 import {Fixed, Flex, Layout} from 'react-layout-pane';

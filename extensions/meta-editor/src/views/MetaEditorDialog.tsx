@@ -2,11 +2,11 @@ import { setShowMetaEditor } from '../actions';
 
 import RuleEditor from './RuleEditor';
 
+import * as update from 'immutability-helper';
 import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
 import { ComponentEx, FormFeedbackAwesome, Icon, log, selectors, tooltip, util } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
-import update = require('react-addons-update');
 import { ControlLabel, FormControl, FormGroup,
          ListGroup, ListGroupItem, Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
