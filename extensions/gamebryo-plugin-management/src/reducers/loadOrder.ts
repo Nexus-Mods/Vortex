@@ -3,7 +3,9 @@ import {ILoadOrder} from '../types/ILoadOrder';
 
 import {types, util} from 'nmm-api';
 
-type LoadOrderMap = { [name: string]: ILoadOrder };
+interface ILoadOrderMap {
+  [name: string]: ILoadOrder;
+}
 
 /**
  * reducer for changes to the plugin list
@@ -21,7 +23,7 @@ export const loadOrderReducer: types.IReducerSpec = {
         (state, payload) => util.setSafe(state, [payload.pluginName, 'enabled'],
                                          payload.enabled),
     [actions.updateLoadOrder as any]: (state, payload: string[]) => {
-      let copy = Object.assign({}, state);
+      const copy = { ...state };
       Object.keys(state).forEach((name: string) => {
         if (payload.indexOf(name) === -1) {
           delete copy[name];
@@ -39,7 +41,7 @@ export const loadOrderReducer: types.IReducerSpec = {
       return copy;
     },
     [actions.setPluginOrder as any]: (state, payload) => {
-      let copy = Object.assign({}, state);
+      const copy = { ...state };
       Object.keys(copy).forEach((pluginName: string) => {
         copy[pluginName].loadOrder = payload.indexOf(pluginName);
       });

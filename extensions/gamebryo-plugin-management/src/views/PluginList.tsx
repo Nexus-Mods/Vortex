@@ -38,7 +38,6 @@ interface IConnectedProps {
   gameMode: string;
   plugins: IPlugins;
   loadOrder: { [name: string]: ILoadOrder };
-  listState: { [attribute: string]: types.IAttributeState };
   autoSort: boolean;
   lootActivity: string;
 }
@@ -176,13 +175,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     this.actions = [
       {
         icon: 'check-square-o',
-        title: 'Enable selected',
+        title: 'Enable',
         action: this.enableSelected,
         singleRowAction: false,
       },
       {
         icon: 'square-o',
-        title: 'Disable selected',
+        title: 'Disable',
         action: this.disableSelected,
         singleRowAction: false,
       },
@@ -190,16 +189,33 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     this.pluginEnabledAttribute = {
       id: 'enabled',
-      name: 'Enabled',
+      name: 'Status',
       description: 'Is plugin enabled in current profile',
       icon: 'check-o',
-      calc: (plugin: IPluginCombined) => plugin.isNative ? undefined : plugin.enabled,
+      calc: (plugin: IPluginCombined) => {
+        if (plugin.isNative) {
+          return undefined;
+        }
+        return plugin.enabled === true ? 'Enabled' : 'Disabled';
+      },
       placement: 'table',
       isToggleable: false,
       edit: {
+        inline: true,
+        choices: () => [
+          { key: 'enabled', text: 'Enabled' },
+          { key: 'disabled', text: 'Disabled' },
+        ],
         onChangeValue: (pluginId: string, value: any) => {
-          if (!this.props.plugins[pluginId].isNative) {
-            this.props.onSetPluginEnabled(pluginId, value);
+          if (this.props.plugins[pluginId].isNative) {
+            // safeguard so we don't accidentally disable a native plugin
+            return;
+          }
+          if (value === undefined) {
+            // toggle
+            this.props.onSetPluginEnabled(pluginId, !this.state.pluginsCombined[pluginId].enabled);
+          } else {
+            this.props.onSetPluginEnabled(pluginId, value === 'enabled');
           }
         },
       },
@@ -324,26 +340,26 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   private enableSelected = (pluginIds: string[]) => {
-    const { listState, onSetPluginEnabled, plugins } = this.props;
+    const { loadOrder, onSetPluginEnabled, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
       if (plugins[key].isNative) {
         return;
       }
-      if (!util.getSafe(listState, [key, 'enabled'], false)) {
+      if (!util.getSafe(loadOrder, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, true);
       }
     });
   }
 
   private disableSelected = (pluginIds: string[]) => {
-    const { listState, onSetPluginEnabled, plugins } = this.props;
+    const { loadOrder, onSetPluginEnabled, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
       if (plugins[key].isNative) {
         return;
       }
-      if (util.getSafe<boolean>(listState, [key, 'enabled'], false)) {
+      if (util.getSafe<boolean>(loadOrder, [key, 'enabled'], false)) {
         onSetPluginEnabled(key, false);
       }
     });
@@ -375,11 +391,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     let modIndex = 0;
     const res = {};
     byLO.forEach((plugin: IPluginCombined) => {
-      if (plugin.enabled || plugin.isNative) {
-        res[plugin.name] = modIndex++;
-      } else {
-        res[plugin.name] = -1;
-      }
+      res[plugin.name] = (plugin.enabled || plugin.isNative)
+        ? modIndex++
+        : -1;
     });
     return res;
   }
@@ -392,14 +406,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     const pluginNames = Object.keys(plugins);
 
-    const pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) => {
-      return Object.assign({}, {
+    const pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) =>
+      ({
         name: pluginName,
         modIndex: -1,
         enabled: plugins[pluginName].isNative ? undefined : false,
-      }, plugins[pluginName], loadOrder[pluginName],
-        pluginsLoot[pluginName], pluginsParsed[pluginName]);
-    });
+        ...plugins[pluginName],
+        ...loadOrder[pluginName],
+        ...pluginsLoot[pluginName],
+        ...pluginsParsed[pluginName],
+      }));
 
     const modIndices = this.modIndices(pluginObjects);
     const result: { [id: string]: IPluginCombined } = {};
@@ -471,7 +487,6 @@ function mapStateToProps(state: any): IConnectedProps {
     plugins: state.session.plugins.pluginList,
     lootActivity: state.session.plugins.lootActivity,
     loadOrder: state.loadOrder,
-    listState: state.settings.plugins.pluginlistState || {},
     autoSort: state.settings.plugins.autoSort,
   };
 }

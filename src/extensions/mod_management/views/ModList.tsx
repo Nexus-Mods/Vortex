@@ -160,52 +160,7 @@ class ModList extends ComponentEx<IProps, {}> {
           { key: 'disabled', text: 'Disabled' },
           { key: 'uninstalled', text: 'Uninstalled' },
         ],
-        onChangeValue: (modId: string, value: any) => {
-          const { onRemoveMod, onSetModEnabled, gameMode, profileId } = this.props;
-
-          if (value === undefined) {
-            // cycle
-            if (this.mModsWithState[modId].state === 'downloaded') {
-              // cycle from "not installed" -> "disabled"
-              this.context.api.events.emit('start-install-download', modId);
-            } else {
-              // enabled and disabled toggle to each other so the toggle
-              // will never remove the mod
-              if (this.mModsWithState[modId].enabled === true) {
-                onSetModEnabled(profileId, modId, false);
-              } else {
-                onSetModEnabled(profileId, modId, true);
-              }
-              this.context.api.events.emit('mods-enabled', [modId], value);
-            }
-          } else {
-            // direct selection
-            if (value === 'uninstalled') {
-              // selected "not installed"
-              if (this.mModsWithState[modId].state !== 'downloaded') {
-                this.context.api.events.emit('remove-mod', gameMode, modId, (err) => {
-                  if (err !== null) {
-                    return this.context.api.showErrorNotification('Failed to remove mod', err);
-                  }
-                  this.context.api.events.emit('mods-enabled', [modId], value);
-                });
-              }
-            } else if (this.mModsWithState[modId].state === 'downloaded') {
-              // selected "enabled" or "disabled" from "not installed" so first the mod
-              // needs to be installed
-              this.context.api.events.emit('start-install-download', modId, (err, id) => {
-                if (value === 'enabled') {
-                  onSetModEnabled(profileId, id, true);
-                  this.context.api.events.emit('mods-enabled', [modId], value);
-                }
-              });
-            } else {
-              // selected "enabled" or "disabled" from the other one
-              onSetModEnabled(profileId, modId, value === 'enabled');
-              this.context.api.events.emit('mods-enabled', [modId], value);
-            }
-          }
-        },
+        onChangeValue: this.changeModEnabled,
       },
       isSortable: false,
     };
@@ -426,7 +381,10 @@ class ModList extends ComponentEx<IProps, {}> {
       installedIds.add(newProps.mods[modId].archiveId);
       if ((oldProps.mods[modId] !== newProps.mods[modId])
         || (oldProps.modState[modId] !== newProps.modState[modId])) {
-        newModsWithState[modId] = Object.assign({}, newProps.mods[modId], newProps.modState[modId]);
+        newModsWithState[modId] = {
+          ...newProps.mods[modId],
+          ...newProps.modState[modId],
+        };
         changed = true;
       } else {
         newModsWithState[modId] = this.mModsWithState[modId];
@@ -477,6 +435,53 @@ class ModList extends ComponentEx<IProps, {}> {
     }
     // assign only after mod grouping is updated so these don't go out of sync
     this.mModsWithState = newModsWithState;
+  }
+
+  private changeModEnabled = (modId: string, value: any) => {
+    const { onRemoveMod, onSetModEnabled, gameMode, profileId } = this.props;
+
+    if (value === undefined) {
+      // cycle
+      if (this.mModsWithState[modId].state === 'downloaded') {
+        // cycle from "not installed" -> "disabled"
+        this.context.api.events.emit('start-install-download', modId);
+      } else {
+        // enabled and disabled toggle to each other so the toggle
+        // will never remove the mod
+        if (this.mModsWithState[modId].enabled === true) {
+          onSetModEnabled(profileId, modId, false);
+        } else {
+          onSetModEnabled(profileId, modId, true);
+        }
+        this.context.api.events.emit('mods-enabled', [modId], value);
+      }
+    } else {
+      // direct selection
+      if (value === 'uninstalled') {
+        // selected "not installed"
+        if (this.mModsWithState[modId].state !== 'downloaded') {
+          this.context.api.events.emit('remove-mod', gameMode, modId, (err) => {
+            if (err !== null) {
+              return this.context.api.showErrorNotification('Failed to remove mod', err);
+            }
+            this.context.api.events.emit('mods-enabled', [modId], value);
+          });
+        }
+      } else if (this.mModsWithState[modId].state === 'downloaded') {
+        // selected "enabled" or "disabled" from "not installed" so first the mod
+        // needs to be installed
+        this.context.api.events.emit('start-install-download', modId, (err, id) => {
+          if (value === 'enabled') {
+            onSetModEnabled(profileId, id, true);
+            this.context.api.events.emit('mods-enabled', [modId], value);
+          }
+        });
+      } else {
+        // selected "enabled" or "disabled" from the other one
+        onSetModEnabled(profileId, modId, value === 'enabled');
+        this.context.api.events.emit('mods-enabled', [modId], value);
+      }
+    }
   }
 
   private updateModGrouping(modsWithState) {

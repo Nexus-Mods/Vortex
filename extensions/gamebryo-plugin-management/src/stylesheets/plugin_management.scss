@@ -5,3 +5,28 @@
 .cell-modIndex, .header-loadOrder {
   text-align: center;
 }
+
+.table-gamebryo-plugins .dropdown {
+  display: inline-flex;
+}
+
+.table-gamebryo-plugins .dropdown > button {
+  padding: 2px 10px;
+  border: 0px;
+  min-width: 100px;
+}
+
+#dropdown-gamebryo-plugins-enabled {
+  padding: 2px 5px;
+  border: 0px;
+  border-left: 1px solid $gray-light;
+  min-width: 0px;
+}
+
+.btn-gamebryo-plugins-enabled-enabled, .toggle-gamebryo-plugins-enabled-enabled {
+  background-color: $brand-success;
+}
+
+.btn-gamebryo-plugins-enabled-disabled, .toggle-gamebryo-plugins-enabled-disabled {
+  background-color: $gray;
+}
