@@ -11,7 +11,7 @@ import * as update from 'immutability-helper';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, Image } from 'react-bootstrap';
 
-export interface IProps {
+export interface IBaseProps {
   onClose: () => void;
   userInfo: IValidateKeyData;
 }
@@ -44,10 +44,10 @@ interface IValidationState {
   pending?: boolean;
 }
 
-type ILoginFormProps = IProps & IConnectedProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-class LoginForm extends ComponentEx<ILoginFormProps, ILoginFormState> {
-  constructor(props) {
+class LoginForm extends ComponentEx<IProps, ILoginFormState> {
+  constructor(props: IProps) {
     super(props);
     this.state = {
       APIKey: '',
@@ -245,6 +245,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(LoginForm),
-  ) as React.ComponentClass<IProps>;
+  connect(mapStateToProps, mapDispatchToProps)(
+    translate(['common'], { wait: false })(
+      LoginForm)) as React.ComponentClass<IBaseProps>;

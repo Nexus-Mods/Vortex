@@ -58,7 +58,7 @@
     "react-safe-html": "^0.4.0",
     "react-select": "^1.0.0-rc.3",
     "react-sortable-tree": "^0.1.8",
-    "react-split-pane": "^0.1.58",
+    "react-split-pane": "^0.1.63",
     "recharts": "^0.22.3",
     "redux": "^3.5.2",
     "redux-act": "^1.1.1",
