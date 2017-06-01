@@ -183,7 +183,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
     if ((icon.icon === null) && (icon.component === undefined)) {
       return (
-        <MenuItem key={id} disabled={true}>
+        <MenuItem className='menu-separator-line' key={id} disabled={true}>
           {icon.title}
         </MenuItem>
       );

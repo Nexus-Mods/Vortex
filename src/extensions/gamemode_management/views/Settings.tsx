@@ -4,7 +4,7 @@ import { IComponentContext } from '../../../types/IComponentContext';
 import { IState } from '../../../types/IState';
 import { isNullOrWhitespace } from '../../../util/util';
 import Icon from '../../../views/Icon';
-import { Button } from '../../../views/TooltipControls';
+import { IconButton } from '../../../views/TooltipControls';
 
 import { addSearchPath, removeSearchPath } from '../actions/settings';
 
@@ -21,30 +21,29 @@ interface IPathProps {
 
 /**
  * entry of the game search path list
- * 
+ *
  * @class SearchPathEntry
  * @extends {ComponentEx<IPathProps, {}>}
  */
 class SearchPathEntry extends ComponentEx<IPathProps, {}> {
   public render() {
-    let { searchPath, t } = this.props;
+    const { searchPath, t } = this.props;
     return (
       <ListGroupItem>
         {searchPath}
-        <Button
-          className='btn-embed pull-right'
+        <IconButton
+          className='btn-embed btn-line-right'
           id='remove'
           tooltip={ t('Remove') }
           onClick={ this.removePath }
-        >
-          <Icon name='remove' />
-        </Button>
+          icon='remove'
+        />
       </ListGroupItem>
     );
   }
 
   private removePath = () => {
-    let { searchPath, onRemovePath } = this.props;
+    const { searchPath, onRemovePath } = this.props;
     onRemovePath(searchPath);
   }
 }
@@ -61,7 +60,7 @@ interface IActionProps {
 /**
  * settings dialog for game modes
  * Contains the list of paths to search when looking for installed games
- * 
+ *
  * @class Settings
  * @extends {(ComponentEx<IActionProps & IConnectedProps, {}>)}
  */
@@ -78,14 +77,13 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
           <ListGroup>
           { searchPaths.map(this.renderPath) }
           <ListGroupItem>
-            <Button
+            <IconButton
               className='btn-embed'
               id='add'
               tooltip={ t('Add') }
               onClick={ this.addSearchPath }
-            >
-              <Icon name='plus' />
-            </Button>
+              icon='plus'
+            />
           </ListGroupItem>
           </ListGroup>
           <HelpBlock>{ t('Directories to search when looking for games.') }</HelpBlock>
@@ -107,7 +105,7 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
   }
 
   private renderPath = (searchPath: string) => {
-    let { t, onRemovePath } = this.props;
+    const { t, onRemovePath } = this.props;
     return (
       <SearchPathEntry
         key={searchPath}
@@ -126,7 +124,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Function): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onAddPath: (path: string): void => {
       dispatch(addSearchPath(path));
@@ -139,5 +137,5 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(Settings)
-  ) as React.ComponentClass<{}>;
+    connect(mapStateToProps, mapDispatchToProps)(
+      Settings)) as React.ComponentClass<{}>;

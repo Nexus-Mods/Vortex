@@ -242,13 +242,13 @@ class ModList extends ComponentEx<IProps, {}> {
     this.modActions = [
       {
         icon: 'check-square-o',
-        title: 'Enable selected',
+        title: 'Enable',
         action: this.enableSelected,
         singleRowAction: false,
       },
       {
         icon: 'square-o',
-        title: 'Disable selected',
+        title: 'Disable',
         action: this.disableSelected,
         singleRowAction: false,
       },

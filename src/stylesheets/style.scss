@@ -1301,6 +1301,22 @@ a[role=menuitem] svg {
   stroke: $brand-success;
 }
 
+.menu-separator-line > a {
+  border-top: 1px solid $gray;
+  padding-left: 10px !important;
+}
+
+.input-group-btn > .btn {
+  border: 0px;
+  padding-bottom: 4px;
+}
+
+.btn-line-right {
+  position: absolute;
+  right: 10px;
+  top: 5px;
+}
+
 ::-webkit-scrollbar {
   width: $scrollbar-width;
   height: $scrollbar-width;
