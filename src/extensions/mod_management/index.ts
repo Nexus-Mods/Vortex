@@ -5,6 +5,7 @@ import {ITestResult} from '../../types/ITestResult';
 import { UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import LazyComponent from '../../util/LazyComponent';
+import { showError } from '../../util/message';
 import ReduxProp from '../../util/ReduxProp';
 import {
   activeGameId,
@@ -290,7 +291,10 @@ function init(context: IExtensionContextExt): boolean {
       })
         .then(() => {
           context.api.events.emit('mods-refreshed');
-        });
+        })
+         .catch((err: Error) => {
+            showError(store.dispatch, 'Failed to refresh mods', err);
+          });
     });
 
     context.api.onStateChange(
@@ -304,6 +308,9 @@ function init(context: IExtensionContextExt): boolean {
           }, (modNames: string[]) => {
             modNames.forEach((name: string) => {
               context.api.store.dispatch(removeMod(gameMode, name)); });
+          })
+          .catch((err: Error) => {
+            showError(store.dispatch, 'Failed to refresh mods', err);
           });
         }
       });

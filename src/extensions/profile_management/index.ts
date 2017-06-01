@@ -196,7 +196,10 @@ function init(context: IExtensionContextExt): boolean {
           refreshProfile(store, profile, 'export')
               .then(() => {
                 store.dispatch(setCurrentProfile(profile.gameId, current));
-              });
+              })
+              .catch((err: Error) => {
+            showError(store.dispatch, 'Failed to set profile', err);
+          });
         });
 
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
@@ -206,7 +209,10 @@ function init(context: IExtensionContextExt): boolean {
                               });
     const initProfile = activeProfile(store.getState());
     refreshProfile(store, initProfile, 'import')
-        .then(() => context.api.events.emit('profile-activated', initProfile.id));
+        .then(() => context.api.events.emit('profile-activated', initProfile.id))
+         .catch((err: Error) => {
+            showError(store.dispatch, 'Failed to set profile', err);
+          });
   });
 
   return true;

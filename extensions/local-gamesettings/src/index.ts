@@ -60,6 +60,11 @@ function updateLocalGameSettings(featureId: string, oldProfile: types.IProfile,
   if ((oldProfile !== null)
       && (oldProfile.features !== undefined)
       && oldProfile.features[featureId]) {
+
+    if (!gameSupported(oldProfile.gameId)) {
+        return Promise.reject('Unsupported game.');
+    }
+
     // revert game settings for game that was previously active
     const myGames = mygamesPath(oldProfile.gameId);
     const gameSettings = gameSettingsFiles(oldProfile.gameId, null);
@@ -74,6 +79,11 @@ function updateLocalGameSettings(featureId: string, oldProfile: types.IProfile,
   }
 
   if ((newProfile.features !== undefined) && (newProfile.features[featureId])) {
+
+    if (!gameSupported(newProfile.gameId)) {
+        return Promise.reject('Unsupported game.');
+    }
+
     // install game settings for game&profile that will now be active
     const myGames = mygamesPath(newProfile.gameId);
     const gameSettings = gameSettingsFiles(newProfile.gameId, null);
