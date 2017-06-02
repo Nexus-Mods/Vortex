@@ -23,11 +23,11 @@ function updateSaveSettings(store: Redux.Store<any>,
       const localPath = path.join('Saves', profileId);
       // TODO: we should provide a way for the user to set his own
       //   save path without overwriting it
-      if (util.getSafe(currentProfile, ['features', 'local_saves'], false)) {
-        iniFile.data.General.SLocalSavePath = localPath;
-      } else {
-        iniFile.data.General.SLocalSavePath = 'Saves' + path.sep;
-      }
+      iniFile.data.General.SLocalSavePath =
+          util.getSafe(currentProfile, ['features', 'local_saves'], false)
+            ? localPath + path.sep
+            : iniFile.data.General.SLocalSavePath = 'Saves' + path.sep;
+
       parser.write(iniPath(currentProfile.gameId), iniFile);
 
       store.dispatch(setSavegamePath(iniFile.data.General.SLocalSavePath));
