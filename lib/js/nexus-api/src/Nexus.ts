@@ -137,8 +137,13 @@ class Nexus {
       const req = this.mRestClient.methods.getModFiles(
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
-      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('requestTimeout', r => {
+        r.abort();
+        reject(new TimeoutError('contacting api ' + modId));
+      });
+      req.on('responesTimeout', res =>
+        reject(new TimeoutError('contacting api'))
+      );
       req.on('error', (err) => reject(err));
     });
   }
@@ -192,9 +197,12 @@ class Nexus {
   }
 
   private args(customArgs: IRequestArgs) {
-    const result: IRequestArgs = Object.assign({}, this.mBaseData);
+    const result: IRequestArgs = { ...this.mBaseData };
     for (const key of Object.keys(customArgs)) {
-      result[key] = Object.assign({}, result[key], customArgs[key]);
+      result[key] = {
+        ...result[key],
+        ...customArgs[key],
+      };
     }
     return result;
   }

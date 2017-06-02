@@ -4,7 +4,7 @@ import * as minimatch from 'minimatch';
 import { IReference } from 'modmeta-db';
 import { types } from 'nmm-api';
 import * as path from 'path';
-import { satisfies } from 'semvish';
+import { satisfies, valid } from 'semvish';
 
 function matchReferenceLookup(reference: IReference, mod: IModLookupInfo) {
   if ((reference.fileMD5 !== undefined) &&
@@ -26,9 +26,17 @@ function matchReferenceLookup(reference: IReference, mod: IModLookupInfo) {
       }
     }
   }
-  if ((reference.versionMatch !== undefined) &&
-      !satisfies(mod.version, reference.versionMatch, true)) {
-    return false;
+  if ((reference.versionMatch !== undefined) && (mod.version !== undefined)) {
+    if (valid(mod.version)) {
+      if (!satisfies(mod.version, reference.versionMatch, true)) {
+        return false;
+      }
+    } else {
+      // if the version number can't be interpreted then we can only do an exact match
+      if (mod.version !== reference.versionMatch) {
+        return false;
+      }
+    }
   }
   return true;
 }

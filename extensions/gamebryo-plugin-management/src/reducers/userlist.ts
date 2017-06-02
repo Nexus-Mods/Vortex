@@ -29,7 +29,7 @@ const userlistReducer: types.IReducerSpec = {
       if (state.plugins !== undefined) {
         existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
       }
-      let list = listForType(payload.type);
+      const list = listForType(payload.type);
       if (existing !== -1) {
         return util.pushSafe(state, ['plugins', existing, list], payload.reference);
       } else {
@@ -45,7 +45,7 @@ const userlistReducer: types.IReducerSpec = {
       if (state.plugins !== undefined) {
         existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
       }
-      let list = listForType(payload.type);
+      const list = listForType(payload.type);
       if (existing !== -1) {
         return util.removeValue(state, ['plugins', existing, list], payload.reference);
       } else {
