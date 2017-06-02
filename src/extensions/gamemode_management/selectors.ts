@@ -12,12 +12,12 @@ export function knownGames(state): IGameStored[] {
 
 export const currentGame =
   createSelector(knownGames, activeGameId, (knownGames, currentGameMode) =>
-    knownGames.find((game: IGameStored) => game.id === currentGameMode)
+    knownGames.find((game: IGameStored) => game.id === currentGameMode),
     );
 
 /**
  * return the discovery information about a game
- * 
+ *
  * @export
  * @param {*} state
  * @returns {IDiscoveryResult}
