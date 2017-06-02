@@ -1,7 +1,7 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 import { IChunk } from '../types/IChunk';
 
-interface IDictionary {
+export interface IDictionary {
   [key: string]: any;
 }
 
