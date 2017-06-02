@@ -1,9 +1,8 @@
-export interface IDownloadJob {
-  url: string;
-  offset: number;
-  state: 'init' | 'running' | 'finished';
+import { IChunk } from './IChunk';
+
+export interface IDownloadJob extends IChunk {
+  state: 'init' | 'running' | 'paused' | 'finished';
   workerId?: number;
-  size?: number;
   dataCB?: (offset: number, data) => void;
   completionCB?: () => void;
   errorCB?: (err) => void;

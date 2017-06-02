@@ -1,6 +1,9 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
+import { IChunk } from '../types/IChunk';
 
-type IDictionary = { [key: string]: any };
+interface IDictionary {
+  [key: string]: any;
+}
 
 /**
  * initialize a download (it may not be started immediately)
@@ -44,7 +47,7 @@ export const setDownloadHashByFile = safeCreateAction('SET_DOWNLOAD_HASH_BY_FILE
  * mark download paused
  */
 export const pauseDownload = safeCreateAction('PAUSE_DOWNLOAD',
-  (id: string, paused: boolean) => ({ id, paused }));
+  (id: string, paused: boolean, chunks?: IChunk[]) => ({ id, paused, chunks }));
 
 /**
  * remove a download (and associated file if any)

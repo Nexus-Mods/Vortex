@@ -8,10 +8,13 @@ import {
   downloadProgress,
   finishDownload,
   initDownload,
+  pauseDownload,
   removeDownload,
   setDownloadFilePath,
   setDownloadHash,
 } from './actions/state';
+import {IDownload} from './types/IDownload';
+import { IDownloadResult } from './types/IDownloadResult';
 import { ProtocolHandlers } from './types/ProtocolHandlers';
 
 import DownloadManager from './DownloadManager';
@@ -57,6 +60,8 @@ export class DownloadObserver {
               downloadId => this.handleRemoveDownload(downloadId));
     events.on('pause-download',
               downloadId => this.handlePauseDownload(downloadId));
+    events.on('resume-download',
+              (downloadId, callback?) => this.handleResumeDownload(downloadId, callback));
     events.on('start-download',
               (urls, modInfo, callback?) =>
                   this.handleStartDownload(urls, modInfo, events, callback));
@@ -87,60 +92,20 @@ export class DownloadObserver {
     const downloadPath = resolvePath('download',
       this.mStore.getState().settings.mods.paths, gameMode);
 
-    let filePath: string;
+    const processCB = this.genProgressCB(id);
 
     return this.transformURLS(urls)
-        .then((derivedUrls: string[]) => {
-          let lastUpdateTick = 0;
-          let lastUpdatePerc = 0;
-          return this.mManager.enqueue(
-              id, derivedUrls,
-              (received: number, total: number, updatedFilePath?: string) => {
-                // avoid updating too frequently because it causes ui updates
-                const now = new Date().getTime();
-                const newPerc = Math.floor((received * 100) / total);
-                if ((now - lastUpdateTick < 200) || (newPerc === lastUpdatePerc)) {
-                  return;
-                }
-                lastUpdateTick = now;
-                lastUpdatePerc = newPerc;
-                progressUpdate(this.mStore, id, received, total,
-                               updatedFilePath);
-              },
-              downloadPath);
-        })
-        .then((res: {filePath: string, headers: any}) => {
-          filePath = res.filePath;
-          this.mStore.dispatch(setDownloadFilePath(id, path.basename(res.filePath)));
-          if (res.filePath.endsWith('.html')) {
-            this.mStore.dispatch(
-                finishDownload(id, 'failed', {htmlFile: res.filePath}));
-            if (callback !== undefined) {
-              callback(new Error('html result'), id);
-            }
-          } else {
-            const { genHash } = require('modmeta-db');
-            genHash(res.filePath)
-                .then((md5Hash: IHashResult) => {
-                  this.mStore.dispatch(setDownloadHash(id, md5Hash.md5sum));
-                })
-                .finally(() => {
-                  this.mStore.dispatch(finishDownload(id, 'finished'));
-
-                  if (callback !== undefined) {
-                    callback(null, id);
-                  }
-                });
-          }
+        .then(derivedUrls => this.mManager.enqueue(id, derivedUrls, processCB,
+                                                   downloadPath))
+        .then((res: IDownloadResult) => {
+          this.handleDownloadFinished(id, callback, res);
         })
         .catch((err) => {
           let message;
           if (err.http_headers !== undefined) {
-            if (err.http_headers.nexuserror !== undefined) {
-              message = err.http_headers.nexuserrorinfo;
-            } else {
-              message = err.http_headers.status;
-            }
+            message = (err.http_headers.nexuserror !== undefined)
+              ? err.http_headers.nexuserrorinfo
+              : err.http_headers.status;
           } else {
             message = err.message;
           }
@@ -151,6 +116,52 @@ export class DownloadObserver {
             callback(err, id);
           }
         });
+  }
+
+  private handleDownloadFinished(id: string,
+                                 callback: (error: Error, id: string) => void,
+                                 res: IDownloadResult) {
+    const filePath = res.filePath;
+    this.mStore.dispatch(setDownloadFilePath(id, path.basename(res.filePath)));
+    if (res.unfinishedChunks.length > 0) {
+      this.mStore.dispatch(pauseDownload(id, true, res.unfinishedChunks));
+      callback(null, id);
+    } else if (res.filePath.endsWith('.html')) {
+      this.mStore.dispatch(
+          finishDownload(id, 'failed', {htmlFile: res.filePath}));
+      if (callback !== undefined) {
+        callback(new Error('html result'), id);
+      }
+    } else {
+      const {genHash} = require('modmeta-db');
+      genHash(res.filePath)
+          .then((md5Hash: IHashResult) => {
+            this.mStore.dispatch(setDownloadHash(id, md5Hash.md5sum));
+          })
+          .finally(() => {
+            this.mStore.dispatch(finishDownload(id, 'finished'));
+
+            if (callback !== undefined) {
+              callback(null, id);
+            }
+          });
+    }
+  }
+
+  private genProgressCB(id: string) {
+    let lastUpdateTick = 0;
+    let lastUpdatePerc = 0;
+    return (received: number, total: number, updatedFilePath?: string) => {
+      // avoid updating too frequently because it causes ui updates
+      const now = new Date().getTime();
+      const newPerc = Math.floor((received * 100) / total);
+      if ((now - lastUpdateTick < 200) || (newPerc === lastUpdatePerc)) {
+        return;
+      }
+      lastUpdateTick = now;
+      lastUpdatePerc = newPerc;
+      progressUpdate(this.mStore, id, received, total, updatedFilePath);
+    };
   }
 
   private handleRemoveDownload(downloadId: string) {
@@ -177,12 +188,33 @@ export class DownloadObserver {
     const download =
         this.mStore.getState().persistent.downloads.files[downloadId];
     if (download === undefined) {
-      log('warn', 'failed to remove download: unknown', {downloadId});
+      log('warn', 'failed to pause download: unknown', {downloadId});
       return;
     }
     if (['init', 'started'].indexOf(download.state) >= 0) {
-      // need to cancel the download
-      this.mManager.stop(downloadId);
+      this.mManager.pause(downloadId);
+    }
+  }
+
+  private handleResumeDownload(downloadId: string,
+                               callback?: (error: Error, id: string) => void) {
+    const download: IDownload =
+        this.mStore.getState().persistent.downloads.files[downloadId];
+    if (download === undefined) {
+      log('warn', 'failed to resume download: unknown', {downloadId});
+      return;
+    }
+    if (download.state === 'paused') {
+      const gameMode = download.game;
+      const downloadPath = resolvePath('download',
+        this.mStore.getState().settings.mods.paths, gameMode);
+
+      const fullPath = path.join(downloadPath, download.localPath);
+      this.mStore.dispatch(pauseDownload(downloadId, false));
+      this.mManager.resume(downloadId, fullPath, download.urls,
+                           download.received, download.size, download.chunks,
+                           this.genProgressCB(downloadId))
+          .then(res => this.handleDownloadFinished(downloadId, callback, res));
     }
   }
 }

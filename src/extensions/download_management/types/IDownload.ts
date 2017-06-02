@@ -1,3 +1,5 @@
+import { IChunk } from './IChunk';
+
 export type DownloadState = 'init' | 'started' | 'paused' | 'finished' | 'failed';
 
 export interface IDownloadFailCause {
@@ -68,7 +70,7 @@ export interface IDownload {
    * @type {string}
    * @memberOf IDownload
    */
-   fileMD5: string;
+  fileMD5: string;
 
   /**
    * size in bytes
@@ -85,4 +87,9 @@ export interface IDownload {
    * @memberOf IDownload
    */
   received: number;
+
+  /**
+   * for paused downloads, this contains the list segments that are still missing
+   */
+  chunks?: IChunk[];
 }

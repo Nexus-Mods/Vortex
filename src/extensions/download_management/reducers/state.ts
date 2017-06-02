@@ -80,8 +80,11 @@ export const stateReducer: IReducerSpec = {
     [action.pauseDownload as any]: (state, payload) => {
       if (['finished', 'failed'].indexOf(
           getSafe(state, [ 'files', payload.id, 'state' ], undefined)) !== -1) {
+        // only allow pause for downloads that are active
         return state;
       }
+      state = setOrNop(state, ['files', payload.id, 'chunks'],
+                       payload.paused ? payload.chunks : []);
       return setOrNop(state, [ 'files', payload.id, 'state' ],
                       payload.paused ? 'paused' : 'started');
     },

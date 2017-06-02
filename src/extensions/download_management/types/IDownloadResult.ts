@@ -1,4 +1,7 @@
+import { IChunk } from './IChunk';
+
 export interface IDownloadResult {
   filePath: string;
   headers: any;
+  unfinishedChunks: IChunk[];
 }

@@ -1,4 +1,5 @@
 import { countIf } from '../../util/util';
+import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/IProgressCallback';
@@ -16,7 +17,7 @@ import contentType = require('content-type');
 
 import { log } from '../../util/log';
 
-interface IDownload {
+interface IRunningDownload {
   id: string;
   fd?: number;
   urls: string[];
@@ -35,7 +36,7 @@ interface IDownload {
   failedCB: (err) => void;
 }
 
-type FinishCallback = () => void;
+type FinishCallback = (paused: boolean) => void;
 
 /**
  * a download worker. A worker is started to download one chunk of a file,
@@ -84,7 +85,12 @@ class DownloadWorker {
 
   public cancel() {
     this.mRequest.abort();
-    this.mFinishCB();
+    this.mFinishCB(false);
+  }
+
+  public pause() {
+    this.mRequest.abort();
+    this.mFinishCB(true);
   }
 
   private handleError(err) {
@@ -92,14 +98,14 @@ class DownloadWorker {
       this.mJob.errorCB(err);
     }
     this.mRequest.abort();
-    this.mFinishCB();
+    this.mFinishCB(false);
   }
 
   private handleComplete(response: http.IncomingMessage, body) {
     if (this.mJob.completionCB !== undefined) {
       this.mJob.completionCB();
     }
-    this.mFinishCB();
+    this.mFinishCB(false);
   }
 
   private handleResponse(response: http.IncomingMessage) {
@@ -136,6 +142,7 @@ class DownloadWorker {
   private handleData(data) {
     this.mJob.dataCB(this.mJob.offset, data);
     this.mJob.offset += data.length;
+    this.mJob.size -= data.length;
     this.mProgressCB(data.length);
   }
 }
@@ -151,7 +158,8 @@ class DownloadManager {
   private mMaxChunks: number;
   private mDownloadPath: string;
   private mBusyWorkers: { [id: number]: DownloadWorker } = {};
-  private mQueue: IDownload[] = [];
+  private mQueue: IRunningDownload[] = [];
+  private mPaused: IRunningDownload[] = [];
   private mNextId: number = 0;
   private mSpeedCalculator: SpeedCalculator;
   private mUserAgent: string;
@@ -206,7 +214,7 @@ class DownloadManager {
     })
     .then((filePath: string) => {
       return new Promise<IDownloadResult>((resolve, reject) => {
-        const download: IDownload = {
+        const download: IRunningDownload = {
           id,
           origName: nameTemplate,
           tempName: filePath,
@@ -228,6 +236,31 @@ class DownloadManager {
     });
   }
 
+  public resume(id: string, filePath: string, urls: string[], received: number, size: number,
+                chunks: IChunk[], progressCB: ProgressCallback): Promise<IDownloadResult> {
+    return new Promise<IDownloadResult>((resolve, reject) => {
+      const download: IRunningDownload = {
+        id,
+        origName: filePath,
+        tempName: filePath,
+        urls,
+        lastProgressSent: 0,
+        received,
+        size,
+        chunks: [],
+        progressCB,
+        finishCB: resolve,
+        failedCB: (err) => {
+          reject(err);
+        },
+        promises: [],
+      };
+      download.chunks = chunks.map(chunk => this.toJob(download, chunk));
+      this.mQueue.push(download);
+      this.tickQueue();
+    });
+  }
+
   /**
    * cancel a download. This stops the download but doesn't remove the file
    *
@@ -236,12 +269,14 @@ class DownloadManager {
    * @memberOf DownloadManager
    */
   public stop(id: string) {
-    const download: IDownload = this.mQueue.find(
-      (value: IDownload) => value.id === id);
+    const download: IRunningDownload = this.mQueue.find(
+      (value: IRunningDownload) => value.id === id);
     if (download === undefined) {
       log('warn', 'failed to cancel download, not found', { id });
       return;
     }
+    log('info', 'stopping download', { id });
+
     // stop running workers
     download.chunks.forEach((value: IDownloadJob) => {
       if (value.state === 'running') {
@@ -250,10 +285,40 @@ class DownloadManager {
     });
     // remove from queue
     this.mQueue = this.mQueue.filter(
-      (value: IDownload) => value.id !== id);
+      (value: IRunningDownload) => value.id !== id);
   }
 
-  private initChunk(download: IDownload): IDownloadJob {
+  public pause(id: string) {
+    const download: IRunningDownload = this.mQueue.find(
+      (value: IRunningDownload) => value.id === id);
+    if (download === undefined) {
+      log('warn', 'failed to pause download, not found', { id });
+      return;
+    }
+    log('info', 'pause download', { id });
+
+    const unfinishedChunks: IChunk[] = [];
+
+    // stop running workers
+    download.chunks.forEach((value: IDownloadJob) => {
+      if (value.state === 'running') {
+        unfinishedChunks.push({
+          offset: value.offset,
+          size: value.size,
+          url: value.url,
+        });
+        this.mBusyWorkers[value.workerId].pause();
+        this.stopWorker(value.workerId);
+      }
+    });
+    // remove from queue
+    this.mQueue = this.mQueue.filter(
+      (value: IRunningDownload) => value.id !== id);
+
+    return unfinishedChunks;
+  }
+
+  private initChunk(download: IRunningDownload): IDownloadJob {
     return {
       url: download.urls[0],
       offset: 0,
@@ -265,7 +330,7 @@ class DownloadManager {
     };
   }
 
-  private cancelDownload(download: IDownload, err) {
+  private cancelDownload(download: IRunningDownload, err) {
     for (const chunk of download.chunks) {
       if (chunk.state === 'running') {
         this.mBusyWorkers[chunk.workerId].cancel();
@@ -288,7 +353,7 @@ class DownloadManager {
     }
   }
 
-  private startWorker(download: IDownload) {
+  private startWorker(download: IRunningDownload) {
     const workerId: number = this.mNextId++;
     this.mSpeedCalculator.initCounter(workerId);
     const job: IDownloadJob = download.chunks.find((ele) => ele.state === 'init');
@@ -297,6 +362,9 @@ class DownloadManager {
 
     if (download.assembler === undefined) {
       download.assembler = new FileAssembler(download.tempName);
+      if (download.size) {
+        download.assembler.setTotalSize(download.size);
+      }
     }
     job.dataCB = (offset: number, data: Buffer) => {
       download.assembler.addChunk(offset, data);
@@ -307,12 +375,12 @@ class DownloadManager {
 
     this.mBusyWorkers[workerId] = new DownloadWorker(job,
       (bytes) => this.mSpeedCalculator.addMeasure(workerId, bytes),
-      () => this.finishChunk(download, job),
+      (pause) => this.finishChunk(download, job, pause),
       (headers) => download.headers = headers,
       this.mUserAgent);
   }
 
-  private updateDownload(download: IDownload, size: number, fileName?: string) {
+  private updateDownload(download: IRunningDownload, size: number, fileName?: string) {
     if ((fileName !== undefined) && (fileName !== download.origName)) {
       download.finalName = this.unusedName(path.dirname(download.tempName), fileName);
     }
@@ -336,12 +404,32 @@ class DownloadManager {
     }
   }
 
-  private finishChunk(download: IDownload, job: IDownloadJob) {
-    job.state = 'finished';
+  private toStoredChunk = (job: IDownloadJob): IChunk => {
+    return {
+      url: job.url,
+      size: job.size,
+      offset: job.offset,
+    };
+  }
+
+  private toJob = (download: IRunningDownload, chunk: IChunk): IDownloadJob => {
+    return {
+      url: chunk.url,
+      offset: chunk.offset,
+      state: 'init',
+      size: chunk.size,
+    };
+  }
+
+  /**
+   * gets called whenever a chunk runs to the end or is interrupted
+   */
+  private finishChunk(download: IRunningDownload, job: IDownloadJob, interrupted: boolean) {
+    job.state = interrupted ? 'paused' : 'finished';
     this.stopWorker(job.workerId);
-    const unfinished = download.chunks.find(
-      (chunk: IDownloadJob) => chunk.state !== 'finished');
-    if (unfinished === undefined) {
+    const activeChunks = download.chunks.find(
+      (chunk: IDownloadJob) => ['paused', 'finished'].indexOf(chunk.state) === -1);
+    if (activeChunks === undefined) {
       let finalPath = download.tempName;
       download.assembler.close()
         .then(() => {
@@ -358,7 +446,10 @@ class DownloadManager {
           }
         })
         .then(() => {
-          download.finishCB({ filePath: finalPath, headers: download.headers });
+          const unfinishedChunks = download.chunks
+            .filter(chunk => chunk.state === 'paused')
+            .map(this.toStoredChunk);
+          download.finishCB({ filePath: finalPath, headers: download.headers, unfinishedChunks });
         });
     }
     this.tickQueue();
