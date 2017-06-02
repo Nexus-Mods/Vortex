@@ -32,6 +32,7 @@ interface IActivation {
  * (which is probably all of them)
  */
 abstract class LinkingActivator implements IModActivator {
+  public static TAG_NAME = '__delete_if_empty';
 
   public id: string;
   public name: string;
@@ -164,11 +165,16 @@ abstract class LinkingActivator implements IModActivator {
   }
 
   public purge(installPath: string, dataPath: string): Promise<void> {
-    return this.purgeLinks(installPath, dataPath).then(() => {
-      const store = this.mApi.store;
-      const gameId = activeGameId(store.getState());
-      return saveData(gameId, 'activation', {});
-    });
+    // purge
+    return this.purgeLinks(installPath, dataPath)
+        .then(() => {
+          // save (empty) activation
+          const store = this.mApi.store;
+          const gameId = activeGameId(store.getState());
+          return saveData(gameId, 'activation', {});
+        })
+        .then(() => this.removeEmptyDirs(dataPath, false))
+        .then(() => undefined);
   }
 
   public isActive(): boolean {
@@ -257,6 +263,51 @@ abstract class LinkingActivator implements IModActivator {
       sourceChanged: keysBoth.filter((key: string) => before[key].source !== after[key].source),
       contentChanged: keysBoth.filter((key: string) => before[key].time !== after[key].time),
     };
+  }
+
+  private removeEmptyDirs(baseDir: string,
+                          doRemove: boolean): Promise<boolean> {
+    // recursively go through directories and remove empty ones !if! we encountered a
+    // __delete_if_empty file in the hierarchy so far
+    return fs.readdirAsync(baseDir)
+        .then(files => {
+          doRemove = doRemove || (files.indexOf(LinkingActivator.TAG_NAME) !== -1);
+          let empty = true;
+          // stat all files
+          return Promise.map(files,
+                             file => fs.statAsync(path.join(baseDir, file))
+                                         .then(stat => ({file, stat})))
+              .then(stats =>
+                Promise.map(stats, stat => {
+                  // recurse into directories
+                  if (stat.stat.isDirectory()) {
+                    return this.removeEmptyDirs(path.join(baseDir, stat.file),
+                                                doRemove)
+                        .then(removed => {
+                          // if the subdir wasn't removed, this dir isn't empty either
+                          if (!removed) {
+                            empty = false;
+                          }
+                        });
+                  } else if (stat.file !== LinkingActivator.TAG_NAME) {
+                    // if there are any files (other than the tag file), this dir isn't
+                    // empty
+                    empty = false;
+                  }
+                  return Promise.resolve();
+                }))
+              .then(() => empty);
+        })
+        .then(isEmpty => {
+          if (isEmpty && doRemove) {
+            return fs.unlinkAsync(path.join(baseDir, LinkingActivator.TAG_NAME))
+                .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+                .then(() => fs.rmdirAsync(baseDir))
+                .then(() => true);
+          } else {
+            return Promise.resolve(false);
+          }
+        });
   }
 }
 
