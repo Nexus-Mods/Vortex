@@ -1,11 +1,9 @@
 import * as actions from '../actions/notifications';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import { removeValueIf } from '../util/storeHelper';
+import {pushSafe, removeValueIf} from '../util/storeHelper';
 
 import * as update from 'immutability-helper';
-
-let counter = 1;
 
 /**
  * reducer for changes to notifications
@@ -13,21 +11,10 @@ let counter = 1;
 export const notificationsReducer: IReducerSpec = {
   reducers: {
     [actions.startNotification as any]: (state, payload) => {
-      let temp = state;
-      if (payload.id === undefined) {
-        payload.id = `__auto_${counter++}`;
-      } else {
-        if (payload.type === 'global') {
-          temp = removeValueIf(state, ['global_notifications'], (noti) => noti.id === payload.id);
-        } else {
-          temp = removeValueIf(state, ['notifications'], (noti) => noti.id === payload.id);
-        }
-      }
-      if (payload.type === 'global') {
-        return update(temp, { global_notifications: { $push: [payload] } });
-      } else {
-        return update(temp, { notifications: { $push: [payload] } });
-      }
+      const statePath = payload.type === 'global' ? ['global_notifications'] :
+                                                    ['notifications'];
+      const temp = removeValueIf(state, statePath, (noti) => noti.id === payload.id);
+      return pushSafe(temp, statePath, payload);
     },
     [actions.dismissNotification as any]: (state, payload) => {
       return removeValueIf(removeValueIf(state, [ 'notifications' ], (noti) => noti.id === payload),

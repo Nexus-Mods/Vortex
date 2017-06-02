@@ -163,10 +163,12 @@ export interface IExtensionApi {
    * show a notification to the user.
    * This is not available in the call to registerReducer
    *
+   * @return the notification id
+   *
    * @type {INotification}
    * @memberOf IExtensionApi
    */
-  sendNotification?: (notification: INotification) => void;
+  sendNotification?: (notification: INotification) => string;
 
   /**
    * show an error message to the user.

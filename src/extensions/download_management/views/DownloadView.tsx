@@ -132,7 +132,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   private fileTimeColumn: ITableAttribute;
   private actions: ITableRowAction[];
 
-  constructor(props) {
+  constructor(props: IProps) {
     super(props);
     this.state = {
       dropActive: false,

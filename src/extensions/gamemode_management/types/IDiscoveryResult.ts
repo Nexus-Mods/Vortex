@@ -8,7 +8,7 @@ import { IToolStored } from './IToolStored';
  * the other to override defaults as provided by the
  * game extension. This is particularly relevant for
  * games added by the user.
- * 
+ *
  * @export
  * @interface IDiscoveryResult
  */

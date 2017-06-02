@@ -49,14 +49,18 @@ export const dismissDialog = safeCreateAction('DISMISS_MODAL_DIALOG');
  */
 export function addNotification(notification: INotification) {
   return (dispatch) => {
-    dispatch(startNotification(notification));
-    if (notification.displayMS !== undefined) {
+    const noti = { ...notification };
+    if (noti.id === undefined) {
+      noti.id = shortid();
+    }
+    dispatch(startNotification(noti));
+    if (noti.displayMS !== undefined) {
       return new Promise((resolve) => {
         setTimeout(() =>
           resolve()
-          , notification.displayMS);
+          , noti.displayMS);
       }).then(() =>
-        dispatch(dismissNotification(notification.id)));
+        dispatch(dismissNotification(noti.id)));
     }
   };
 }

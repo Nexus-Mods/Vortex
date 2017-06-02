@@ -18,11 +18,11 @@ import * as fs from 'fs';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>('modmeta-db');
+import Module = require('module');
 import * as path from 'path';
 import { types as ratypes } from 'redux-act';
 import ReduxWatcher = require('redux-watcher');
-
-import Module = require('module');
+import { generate as shortid } from 'shortid';
 
 // these imports are only here so that tsc knows there is a dependency
 // on the extensions and re-compiles them properly. They are completely
@@ -303,8 +303,13 @@ class ExtensionManager {
   public setStore<S>(store: Redux.Store<S>) {
     this.mReduxWatcher = new ReduxWatcher(store);
 
-    this.mApi.sendNotification = (notification: INotification) => {
-      store.dispatch(addNotification(notification));
+    this.mApi.sendNotification = (notification: INotification): string => {
+      const noti = { ...notification };
+      if (noti.id === undefined) {
+        noti.id = shortid();
+      }
+      store.dispatch(addNotification(noti));
+      return noti.id;
     };
     this.mApi.showErrorNotification =
       (message: string, details: string | Error | any, isHTML: boolean = false) => {
@@ -333,8 +338,15 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public setupApiMain<S>(store: Redux.Store<S>, ipc: Electron.WebContents) {
-    this.mApi.sendNotification = (notification: INotification) =>
-        ipc.emit('send-notification', notification);
+    this.mApi.sendNotification = (notification: INotification) => {
+      const noti = { ...notification };
+      if (noti.id === undefined) {
+        noti.id = shortid();
+      }
+
+      ipc.emit('send-notification', notification);
+      return noti.id;
+    };
     this.mApi.showErrorNotification =
         (message: string, details: string | Error) => {
           // unfortunately it appears we can't send an error object via ipc
@@ -539,9 +551,10 @@ class ExtensionManager {
 
   private selectFile(options: IOpenOptions) {
     return new Promise<string>((resolve, reject) => {
-      const fullOptions = Object.assign({}, options, {
+      const fullOptions: Electron.OpenDialogOptions = {
+        ...options,
         properties: ['openFile'],
-      });
+      };
       dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
           resolve(fileNames[0]);
@@ -554,7 +567,8 @@ class ExtensionManager {
 
   private selectExecutable(options: IOpenOptions) {
     return new Promise<string>((resolve, reject) => {
-      const fullOptions = Object.assign({}, options, {
+      const fullOptions: Electron.OpenDialogOptions = {
+        ...options,
         properties: ['openFile'],
         filters: [
           { name: 'All Executables', extensions: ['exe', 'cmd', 'bat', 'jar', 'py'] },
@@ -562,7 +576,7 @@ class ExtensionManager {
           { name: 'Java', extensions: ['jar'] },
           { name: 'Python', extensions: ['py'] },
         ],
-      });
+      };
       dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
           resolve(fileNames[0]);
@@ -575,9 +589,10 @@ class ExtensionManager {
 
   private selectDir(options: IOpenOptions) {
     return new Promise<string>((resolve, reject) => {
-      const fullOptions = Object.assign({}, options, {
+      const fullOptions: Electron.OpenDialogOptions = {
+        ...options,
         properties: ['openDirectory'],
-      });
+      };
       dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
           resolve(fileNames[0]);
