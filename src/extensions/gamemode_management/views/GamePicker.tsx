@@ -22,8 +22,10 @@ import { addDiscoveredGame, setGameHidden, setPickerLayout } from '../actions/se
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
+import AddGameButton from './AddGameButton';
 import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
+import ShowHiddenButton from './ShowHiddenButton';
 
 import * as update from 'immutability-helper';
 import * as PropTypes from 'prop-types';
@@ -68,45 +70,6 @@ interface IActionProps {
 
 interface IComponentState {
   showHidden: boolean;
-}
-
-interface IShowHiddenButtonProps {
-  t: I18next.TranslationFunction;
-  showHidden: boolean;
-  toggleHidden: () => void;
-  buttonType: ButtonType;
-}
-
-function ShowHiddenButton(props: IShowHiddenButtonProps) {
-  return (
-    <ToolbarIcon
-      id='show-hidden-games'
-      text={props.t('Show / Hide hidden games')}
-      onClick={props.toggleHidden}
-      icon={props.showHidden ? 'eye-slash' : 'eye'}
-      buttonType={props.buttonType}
-    />
-  );
-}
-
-interface IAddGameButtonProps {
-  t: I18next.TranslationFunction;
-  showAddGameDialog: () => void;
-  buttonType: ButtonType;
-}
-
-function AddGameButton(props: IAddGameButtonProps) {
-  return (
-    <Advanced>
-      <ToolbarIcon
-        id='add-game-manually'
-        text={props.t('Add Game')}
-        onClick={props.showAddGameDialog}
-        icon='plus'
-        buttonType={props.buttonType}
-      />
-    </Advanced>
-  );
 }
 
 /**
