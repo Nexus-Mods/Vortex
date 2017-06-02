@@ -1,4 +1,5 @@
 import {getSafe} from '../../../util/storeHelper';
+import {truthy} from '../../../util/util';
 
 function transfer(info: any, key: string, source: any, path: string[]) {
   const value = getSafe(source, path, undefined);
@@ -20,7 +21,7 @@ function filterModInfo(input: any): any {
   transfer(result, 'isPrimary', input.nexus, ['fileInfo', 'is_primary']);
   transfer(result, 'fileName', input.nexus, ['fileInfo', 'name']);
   const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
-  if (nexusChangelog !== undefined) {
+  if (truthy(nexusChangelog)) {
     result.changelog = { format: 'html', content: nexusChangelog };
   }
   transfer(result, 'uploadedTimestamp', input.nexus, ['fileInfo', 'uploaded_timestamp']);

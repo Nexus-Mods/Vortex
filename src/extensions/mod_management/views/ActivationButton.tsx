@@ -7,31 +7,21 @@ import { activeGameId, activeProfile } from '../../../util/selectors';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
-import { currentActivator, installPath } from '../../mod_management/selectors';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
-import { IMod } from '../types/IMod';
 import { IModActivator } from '../types/IModActivator';
 
 import * as Promise from 'bluebird';
 import * as React from 'react';
 
 interface IConnectedProps {
-  installPath: string;
-  gameDiscovery: IDiscoveryResult;
-  mods: { [id: string]: IMod };
-  modState: { [id: string]: IProfileMod };
-  currentActivator: string;
 }
 
 interface IActionProps {
-  onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
   onShowError: (message: string, details?: string) => void;
 }
 
 export interface IBaseProps {
-  activators: IModActivator[];
   buttonType: 'text' | 'icon' | 'both';
 }
 
@@ -66,22 +56,11 @@ function activeGameDiscovery(state: IState)  {
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
-  const profile = activeProfile(state);
-  const gameMode = activeGameId(state);
-
-  return {
-    installPath: installPath(state),
-    gameDiscovery: activeGameDiscovery(state),
-    mods: state.persistent.mods[gameMode] || {},
-    modState: profile !== undefined ? profile.modState : {},
-    currentActivator: currentActivator(state),
-  };
+  return {};
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
   return {
-    onShowDialog: (type, title, content, actions) =>
-      dispatch(showDialog(type, title, content, actions)),
     onShowError: (message: string, details?: string) => showError(dispatch, message, details),
   };
 }

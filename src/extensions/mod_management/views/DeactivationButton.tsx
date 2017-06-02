@@ -17,11 +17,6 @@ import * as React from 'react';
 import { generate as shortid } from 'shortid';
 
 interface IConnectedProps {
-  installPath: string;
-  gameDiscovery: IDiscoveryResult;
-  mods: { [id: string]: IMod };
-  modState: { [id: string]: IProfileMod };
-  currentActivator: string;
 }
 
 interface IActionProps {
@@ -29,7 +24,6 @@ interface IActionProps {
 }
 
 export interface IBaseProps {
-  activators: IModActivator[];
   buttonType: 'text' | 'icon' | 'both';
 }
 
@@ -51,39 +45,16 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
   }
 
   private activate = () => {
-    const { t, activators, currentActivator, gameDiscovery, installPath, onShowError } = this.props;
-
-    const activator: IModActivator = currentActivator !== undefined
-      ? activators.find((act: IModActivator) => act.id === currentActivator)
-      : activators[0];
-
-    const notificationId = shortid();
-    this.context.api.sendNotification({
-      id: notificationId,
-      type: 'activity',
-      message: t('Purging mods'),
-      title: t('Purging'),
-    });
-
-    deactivateMods(installPath, gameDiscovery.modPath, activator).catch((err) => {
-      onShowError('failed to deactivate mods', err.message);
-    }).finally(() => {
-      this.context.api.dismissNotification(notificationId);
+    this.context.api.events.emit('purge-mods', (err) => {
+      if (err !== null) {
+        this.props.onShowError('Failed to purge mods', err);
+      }
     });
   }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
-  const profile = activeProfile(state);
-  const gameMode = activeGameId(state);
-
-  return {
-    installPath: installPath(state),
-    gameDiscovery: currentGameDiscovery(state),
-    mods: state.persistent.mods[gameMode] || {},
-    modState: profile !== undefined ? profile.modState : {},
-    currentActivator: currentActivator(state),
-  };
+  return {};
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {

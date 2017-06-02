@@ -6,7 +6,6 @@ const fs = require('fs-extra-promise');
 const path = require('path');
 
 function findGame() {
-  console.log('find game', require('nmm-api'));
   let steam = new util.Steam();
   return steam.allGames()
   .then((games) => {

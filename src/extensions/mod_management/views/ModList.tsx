@@ -116,8 +116,6 @@ class ModList extends ComponentEx<IProps, {}> {
   private mPrimaryMods: { [id: string]: IModWithState };
   private staticButtons: IActionDefinition[];
 
-  private modAction: string = '';
-
   constructor(props: IProps) {
     super(props);
 
@@ -437,50 +435,60 @@ class ModList extends ComponentEx<IProps, {}> {
     this.mModsWithState = newModsWithState;
   }
 
+  private cycleModState(profileId: string, modId: string, newValue: string) {
+    const { onSetModEnabled } = this.props;
+
+    if (this.mModsWithState[modId].state === 'downloaded') {
+      // cycle from "not installed" -> "disabled"
+      this.context.api.events.emit('start-install-download', modId);
+    } else {
+      // enabled and disabled toggle to each other so the toggle
+      // will never remove the mod
+      if (this.mModsWithState[modId].enabled === true) {
+        onSetModEnabled(profileId, modId, false);
+      } else {
+        onSetModEnabled(profileId, modId, true);
+      }
+      this.context.api.events.emit('mods-enabled', [modId], newValue);
+    }
+  }
+
+  private setModState(profileId: string, modId: string, value: string) {
+    const { gameMode, onSetModEnabled } = this.props;
+    // direct selection
+    if (value === 'uninstalled') {
+      // selected "not installed"
+      if (this.mModsWithState[modId].state !== 'downloaded') {
+        this.context.api.events.emit('remove-mod', gameMode, modId, (err) => {
+          if (err !== null) {
+            return this.context.api.showErrorNotification('Failed to remove mod', err);
+          }
+          this.context.api.events.emit('mods-enabled', [modId], value);
+        });
+      }
+    } else if (this.mModsWithState[modId].state === 'downloaded') {
+      // selected "enabled" or "disabled" from "not installed" so first the mod
+      // needs to be installed
+      this.context.api.events.emit('start-install-download', modId, (err, id) => {
+        if (value === 'enabled') {
+          onSetModEnabled(profileId, id, true);
+          this.context.api.events.emit('mods-enabled', [modId], value);
+        }
+      });
+    } else {
+      // selected "enabled" or "disabled" from the other one
+      onSetModEnabled(profileId, modId, value === 'enabled');
+      this.context.api.events.emit('mods-enabled', [modId], value);
+    }
+  }
+
   private changeModEnabled = (modId: string, value: any) => {
-    const { onRemoveMod, onSetModEnabled, gameMode, profileId } = this.props;
+    const { profileId } = this.props;
 
     if (value === undefined) {
-      // cycle
-      if (this.mModsWithState[modId].state === 'downloaded') {
-        // cycle from "not installed" -> "disabled"
-        this.context.api.events.emit('start-install-download', modId);
-      } else {
-        // enabled and disabled toggle to each other so the toggle
-        // will never remove the mod
-        if (this.mModsWithState[modId].enabled === true) {
-          onSetModEnabled(profileId, modId, false);
-        } else {
-          onSetModEnabled(profileId, modId, true);
-        }
-        this.context.api.events.emit('mods-enabled', [modId], value);
-      }
+      this.cycleModState(profileId, modId, value);
     } else {
-      // direct selection
-      if (value === 'uninstalled') {
-        // selected "not installed"
-        if (this.mModsWithState[modId].state !== 'downloaded') {
-          this.context.api.events.emit('remove-mod', gameMode, modId, (err) => {
-            if (err !== null) {
-              return this.context.api.showErrorNotification('Failed to remove mod', err);
-            }
-            this.context.api.events.emit('mods-enabled', [modId], value);
-          });
-        }
-      } else if (this.mModsWithState[modId].state === 'downloaded') {
-        // selected "enabled" or "disabled" from "not installed" so first the mod
-        // needs to be installed
-        this.context.api.events.emit('start-install-download', modId, (err, id) => {
-          if (value === 'enabled') {
-            onSetModEnabled(profileId, id, true);
-            this.context.api.events.emit('mods-enabled', [modId], value);
-          }
-        });
-      } else {
-        // selected "enabled" or "disabled" from the other one
-        onSetModEnabled(profileId, modId, value === 'enabled');
-        this.context.api.events.emit('mods-enabled', [modId], value);
-      }
+      this.setModState(profileId, modId, value);
     }
   }
 
@@ -520,7 +528,6 @@ class ModList extends ComponentEx<IProps, {}> {
 
   private enableSelected = (modIds: string[]) => {
     const { profileId, modState, onSetModEnabled } = this.props;
-    this.modAction = 'enabling';
 
     modIds.forEach((key: string) => {
       if (!getSafe(modState, [key, 'enabled'], false)) {
@@ -531,14 +538,13 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   private disableSelected = (modIds: string[]) => {
-    this.modAction = 'enabling';
     this.disableModsInner(modIds);
     this.context.api.events.emit('mods-enabled', modIds, false);
   }
 
   private disableModsInner(modIds: string[]) {
     const { profileId, modState, onSetModEnabled } = this.props;
-    modIds.forEach((key: string) => {
+    modIds.forEach(key => {
       if (getSafe(modState, [key, 'enabled'], false)) {
         onSetModEnabled(profileId, key, false);
       }
@@ -549,9 +555,28 @@ class ModList extends ComponentEx<IProps, {}> {
     this.removeSelected([modId]);
   }
 
+  private removeMods(modIds: string[]): Promise<void> {
+    const { installPath, mods } = this.props;
+
+    this.disableModsInner(modIds);
+    return new Promise<void>((resolve, reject) => {
+      this.context.api.events.emit('activate-mods', (err: Error) => {
+        if (err === null) {
+          resolve();
+        } else {
+          reject(err);
+        }
+      });
+    })
+      .then(() => Promise.map(modIds, key =>
+        mods[key] !== undefined
+          ? fs.removeAsync(path.join(installPath, mods[key].installationPath))
+          : Promise.resolve())
+        .then(() => undefined));
+  }
+
   private removeSelected = (modIds: string[]) => {
     const { t, gameMode, installPath, onRemoveMod, onShowDialog, mods } = this.props;
-    this.modAction = 'removing';
 
     let removeMods: boolean;
     let removeArchive: boolean;
@@ -583,41 +608,18 @@ class ModList extends ComponentEx<IProps, {}> {
         removeMods = result.action === 'Remove' && result.input.mod;
         removeArchive = result.action === 'Remove' && result.input.archive;
         disableDependent = result.action === 'Remove' && result.input.dependents;
+        // TODO: implement disableDependent
 
-        if (removeMods) {
-          // TODO: this could be more efficient by not doing a clean deployment
-          this.disableModsInner(modIds);
-          return new Promise<void>((resolve, reject) => {
-            this.context.api.events.emit('activate-mods', (err: Error) => {
-              if (err === null) {
-                resolve();
-              } else {
-                reject(err);
-              }
-            });
-          })
-            .then(() => Promise.map(modIds, (key: string) => {
-              if (mods[key] === undefined) {
-                return Promise.resolve();
-              }
-              const fullPath = path.join(installPath, mods[key].installationPath);
-              return fs.removeAsync(fullPath);
-            }))
-            .then(() => undefined);
-        } else {
-          return Promise.resolve();
-        }
-      })
-      .then(() => {
-        modIds.forEach(key => {
-          const archiveId = this.mModsWithState[key].archiveId;
-          if (removeMods) {
-            onRemoveMod(gameMode, key);
-          }
-          if (removeArchive) {
-            this.context.api.events.emit('remove-download', archiveId);
-          }
-        });
+        return (removeMods ? this.removeMods(modIds) : Promise.resolve())
+          .then(() => modIds.forEach(key => {
+            const archiveId = this.mModsWithState[key].archiveId;
+            if (removeMods) {
+              onRemoveMod(gameMode, key);
+            }
+            if (removeArchive) {
+              this.context.api.events.emit('remove-download', archiveId);
+            }
+          }));
       });
   }
 }
