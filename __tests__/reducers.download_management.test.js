@@ -87,7 +87,7 @@ describe('pauseDownload', () => {
   it('resumes a paused download', () => {
     const input = { files: { id: { state: 'paused', received: 1, size: 2 } } };
     const result = stateReducer.reducers.PAUSE_DOWNLOAD(input, { id: 'id', paused: false });
-    expect(result).toEqual({ files: { id: { state: 'started', received: 1, size: 2 } } });
+    expect(result).toEqual({ files: { id: { chunks: [], state: 'started', received: 1, size: 2 } } });
   });
   it('does nothing if the id is unknown', () => {
     const input = { files: { id: { state: 'started', received: 1, size: 2 } } };
