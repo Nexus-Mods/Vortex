@@ -1,4 +1,4 @@
-import { DialogActions, DialogType,
+import { DialogType, IDialogActions,
          IDialogContent, showDialog } from '../../../actions/notifications';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
@@ -65,7 +65,7 @@ interface IActionProps {
   onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) => void;
   onSetAddGameDialogVisible: () => void;
   onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: DialogActions) => void;
+                 content: IDialogContent, actions: IDialogActions) => void;
 }
 
 interface IComponentState {

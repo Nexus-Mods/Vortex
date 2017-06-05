@@ -1,5 +1,5 @@
 import { showDialog } from '../../actions/notifications';
-import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
+import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import asyncRequire, { Placeholder } from '../../util/asyncRequire';
 import { ComponentEx, connect } from '../../util/ComponentEx';
@@ -44,7 +44,7 @@ interface IActionProps {
   onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => void;
   onShowError: (message: string, details?: string | Error) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: IDialogActions) => Promise<IDialogResult>;
   onMakePrimary: (gameId: string, toolId: string) => void;
 }
 

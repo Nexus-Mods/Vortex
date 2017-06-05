@@ -1,4 +1,4 @@
-import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
+import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../types/IDialog';
 import { INotification } from '../types/INotification';
 import {log} from '../util/log';
 
@@ -84,11 +84,11 @@ class DialogCallbacks {
  * @param {DialogType} type
  * @param {string} title
  * @param {IDialogContent} content
- * @param {DialogActions} actions
+ * @param {IDialogActions} actions
  * @returns
  */
 export function showDialog(type: DialogType, title: string,
-                           content: IDialogContent, actions: DialogActions) {
+                           content: IDialogContent, actions: IDialogActions) {
   return (dispatch) => {
     return new Promise<IDialogResult>((resolve, reject) => {
       const id = shortid();

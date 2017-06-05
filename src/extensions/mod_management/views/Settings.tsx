@@ -1,5 +1,5 @@
 import { showDialog } from '../../../actions/notifications';
-import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
+import { DialogType, IDialogActions, IDialogContent } from '../../../types/IDialog';
 import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
@@ -44,7 +44,7 @@ interface IActionProps {
     type: DialogType,
     title: string,
     content: IDialogContent,
-    actions: DialogActions,
+    actions: IDialogActions,
   ) => void;
   onShowError: (message: string, details: string | Error) => void;
 }

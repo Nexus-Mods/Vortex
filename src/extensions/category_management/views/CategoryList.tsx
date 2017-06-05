@@ -1,7 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
-import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import lazyRequire from '../../../util/lazyRequire';
 import { showError } from '../../../util/message';
@@ -40,7 +40,7 @@ interface IActionProps {
   onRemoveCategory: (gameId: string, categoryId: string) => void;
   onRenameCategory: (activeGameId: string, categoryId: string, newCategory: {}) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: IDialogActions) => Promise<IDialogResult>;
 }
 
 interface IConnectedProps {
@@ -116,7 +116,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t } = this.props;
     const { expanded, searchString, searchFocusIndex,
-      searchFoundCount, showEmpty, treeData } = this.state;
+            searchFoundCount, showEmpty, treeData } = this.state;
 
     const expandedTreeData =
       this.applyExpand(treeData, showEmpty, new Set(expanded));

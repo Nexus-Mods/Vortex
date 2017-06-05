@@ -1,5 +1,5 @@
 import { showDialog } from '../../../actions/notifications';
-import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
+import { DialogType, IDialogActions, IDialogContent } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { Button } from '../../../views/TooltipControls';
@@ -20,7 +20,7 @@ interface IConnectedProps {
 interface IActionProps {
   onAssociate: (associate: boolean) => void;
   onDialog: (type: DialogType, title: string,
-      content: IDialogContent, actions: DialogActions) => void;
+             content: IDialogContent, actions: IDialogActions) => void;
   onShowError: (message: string, details: string | Error) => void;
 }
 
@@ -104,7 +104,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(setAssociatedWithNXMURLs(associate));
     },
     onDialog: (type: DialogType, title: string,
-      content: IDialogContent, actions: DialogActions) => {
+               content: IDialogContent, actions: IDialogActions) => {
       dispatch(showDialog(type, title, content, actions));
     },
     onShowError: (message: string, details: string | Error) => {
@@ -115,5 +115,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(Settings)
+    connect(mapStateToProps, mapDispatchToProps)(Settings),
   ) as React.ComponentClass<{}>;

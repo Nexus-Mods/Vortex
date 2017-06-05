@@ -1,4 +1,4 @@
-import { DialogActions, DialogType, IDialogContent } from '../../../actions/notifications';
+import { DialogType, IDialogActions, IDialogContent } from '../../../actions/notifications';
 import { ComponentEx } from '../../../util/ComponentEx';
 import Advanced from '../../../views/Advanced';
 import IconBar from '../../../views/IconBar';
@@ -25,7 +25,7 @@ export interface IProps {
   onSetGamePath: (gameId: string, gamePath: string, modsPath: string) => void;
   onSetGameDiscovery: (gameId: string, result: IDiscoveryResult) => void;
   onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: DialogActions) => void;
+                 content: IDialogContent, actions: IDialogActions) => void;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { DialogActions, DialogType, IDialogContent, IDialogResult,
+import { DialogType, IDialogActions, IDialogContent, IDialogResult,
          showDialog } from '../../../actions/notifications';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -44,7 +44,7 @@ interface IActionProps {
   onSetNextProfile: (profileId: string) => void;
   onSetFeature: (profileId: string, featureId: string, value: any) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => void;
+                 actions: IDialogActions) => void;
 }
 
 interface IViewState {

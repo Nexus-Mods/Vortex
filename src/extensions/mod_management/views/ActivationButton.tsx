@@ -1,4 +1,4 @@
-import { DialogActions, DialogType,
+import { DialogType,
          IDialogContent, IDialogResult, showDialog } from '../../../actions/notifications';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';

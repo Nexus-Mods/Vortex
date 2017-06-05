@@ -1,10 +1,8 @@
-export interface INotificationDismiss {
-  (): void;
-}
+export type NotificationDismiss = () => void;
 
 export interface INotificationAction {
   title: string;
-  action: (dismiss: INotificationDismiss) => void;
+  action: (dismiss: NotificationDismiss) => void;
 }
 
 export type NotificationType =
@@ -12,7 +10,7 @@ export type NotificationType =
 
 /**
  * a notification message
- * 
+ *
  * @export
  * @interface INotification
  */
@@ -22,7 +20,7 @@ export interface INotification {
    * the notification system generates its own.
    * Manually set an id if you intend to programatically stop
    * the notification
-   * 
+   *
    * @type {NotificationType}
    * @memberOf INotification
    */
@@ -41,7 +39,7 @@ export interface INotification {
    *                user should be aware of the operation)
    *   - 'info': neutral information notification
    *   - 'error': Error notification (something went wrong)
-   * 
+   *
    * @type {NotificationType}
    * @memberOf INotification
    */
@@ -52,7 +50,7 @@ export interface INotification {
    * 'global' notifications displayed outside the window will always display an
    * icon so the user can tell which application it is from.
    * If no icon is specified this will fall back to the application icon.
-   * 
+   *
    * @type {string}
    * @memberOf INotification
    */
@@ -60,14 +58,14 @@ export interface INotification {
 
   /**
    * optional title. Should only be one or two words
-   * 
+   *
    * @type {string}
    * @memberOf INotification
    */
   title?: string;
   /**
    * the message to display. This shouldn't be long
-   * 
+   *
    * @type {string}
    * @memberOf INotification
    */
@@ -83,9 +81,9 @@ export interface INotification {
    * Also you can't assume the user starts reading the message immediately when
    * it gets displayed, he may be presented with multiple messages at once.
    * The ui may not even be visible at the time the message gets shown.
-   * 
+   *
    * Therefore: Absolutely never display an important message with a timer!
-   * 
+   *
    * @type {number}
    * @memberOf INotification
    */

@@ -1,7 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IAttributeState } from '../../../types/IAttributeState';
-import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
@@ -95,7 +95,7 @@ interface IActionProps {
   onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
   onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: IDialogActions) => Promise<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
 }
 

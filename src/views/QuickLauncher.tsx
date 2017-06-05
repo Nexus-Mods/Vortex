@@ -3,7 +3,7 @@ import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDisco
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
 import ToolIcon from '../extensions/starter_dashlet/ToolIcon';
-import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
+import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { ComponentEx, connect } from '../util/ComponentEx';
 import { showError } from '../util/message';
@@ -37,7 +37,7 @@ interface IConnectedProps {
 interface IActionProps {
   onShowError: (message: string, details?: string | Error) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: DialogActions) => Promise<IDialogResult>;
+                 actions: IDialogActions) => Promise<IDialogResult>;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;

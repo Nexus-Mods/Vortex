@@ -53,7 +53,7 @@ interface IActionProps {
     type: types.DialogType,
     title: string,
     content: types.IDialogContent,
-    actions: types.DialogActions) => Promise<types.IDialogResult>;
+    actions: types.IDialogActions) => Promise<types.IDialogResult>;
   onShowActivity: (message: string, id?: string) => void;
   onShowError: (message: string, details: any, id?: string) => void;
   onShowSuccess: (message: string, id?: string) => void;

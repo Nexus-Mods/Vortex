@@ -1,7 +1,9 @@
 export type DialogType =
   'success' | 'info' | 'error' | 'question';
 
-export type DialogActions = { [label: string]: Function };
+export interface IDialogActions {
+    [label: string]: (label) => void;
+}
 
 export interface IDialog {
   id: string;
@@ -31,7 +33,7 @@ export interface IDialogContent {
    * NOTE: this will be inserted directy
    * into the dom so it must never be html from
    * an external source!
-   * 
+   *
    * @type {string}
    * @memberOf IDialogContent
    */
