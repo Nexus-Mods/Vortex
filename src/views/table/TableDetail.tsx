@@ -1,6 +1,7 @@
 import {IEditChoice, ITableAttribute} from '../../types/ITableAttribute';
 import {PureComponentEx} from '../../util/ComponentEx';
 
+import ExtensionGate from '../ExtensionGate';
 import FormFeedback from '../FormFeedbackAwesome';
 import FormInput from '../FormInput';
 
@@ -33,7 +34,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
     if (attribute.customRenderer !== undefined) {
       content = (
         <FormControl.Static componentClass='div'>
-          { attribute.customRenderer(rawData, true, t) }
+          <ExtensionGate>{ attribute.customRenderer(rawData, true, t) }</ExtensionGate>
         </FormControl.Static>
       );
     } else {

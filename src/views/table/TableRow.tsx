@@ -1,5 +1,6 @@
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 
+import ExtensionGate from '../ExtensionGate';
 import IconBar from '../IconBar';
 import {ITableRowAction} from '../Table';
 import {Button, IconButton} from '../TooltipControls';
@@ -32,7 +33,7 @@ class TableCell extends React.Component<ICellProps, {}> {
     // otherwise rowData is the calculated value of this cell
 
     if (attribute.customRenderer !== undefined) {
-      return attribute.customRenderer(rawData, false, t) || null;
+      return <ExtensionGate>{ attribute.customRenderer(rawData, false, t) || null }</ExtensionGate>;
     }
 
     if ((data === undefined) || (data === null)) {

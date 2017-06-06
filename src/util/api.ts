@@ -18,6 +18,7 @@ import getNormalizeFunc from './getNormalizeFunc';
 import { getCurrentLanguage } from './i18n';
 import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
+import makeReactive from './makeReactive';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import Steam, { ISteamEntry } from './Steam';
@@ -34,6 +35,7 @@ export {
   getNormalizeFunc,
   LazyComponent,
   lazyRequire,
+  makeReactive,
   NotSupportedError,
   ReduxProp,
   relativeTime,
