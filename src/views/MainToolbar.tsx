@@ -26,10 +26,6 @@ type IProps = IBaseProps;
  * @class MainToolbar
  */
 class MainToolbar extends ComponentEx<IProps, {}> {
-  constructor(props) {
-    super(props);
-  }
-
   public render(): JSX.Element {
     const { applicationButtons, t } = this.props;
     return (

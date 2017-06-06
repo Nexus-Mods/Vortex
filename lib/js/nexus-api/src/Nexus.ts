@@ -141,9 +141,7 @@ class Nexus {
         r.abort();
         reject(new TimeoutError('contacting api ' + modId));
       });
-      req.on('responesTimeout', res =>
-        reject(new TimeoutError('contacting api'))
-      );
+      req.on('responesTimeout', res => reject(new TimeoutError('contacting api')));
       req.on('error', (err) => reject(err));
     });
   }

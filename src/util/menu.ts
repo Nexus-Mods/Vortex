@@ -10,12 +10,12 @@ const { Menu, clipboard } = remote;
 
 /**
  * initializes the application menu and with it, hotkeys
- * 
+ *
  * @export
  * @param {ExtensionManager} extensions
  */
 export function initApplicationMenu(extensions: ExtensionManager) {
-  let fileMenu: Electron.MenuItemOptions[] = [
+  const fileMenu: Electron.MenuItemOptions[] = [
     {
       role: 'close',
     },
@@ -23,7 +23,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
 
   let recordTranslation = false;
 
-  let viewMenu: Electron.MenuItemOptions[] = [];
+  const viewMenu: Electron.MenuItemOptions[] = [];
 
   // main pages
   extensions.apply('registerMainPage',
@@ -47,9 +47,19 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     },
   });
 
+  viewMenu.push({ type: 'separator' });
+  viewMenu.push({
+    label: 'Toggle Developer Tools',
+    accelerator: process.platform === 'darwin' ? 'Alt+Command+I' : 'Ctrl+Shift+I',
+    click(item, focusedWindow) {
+      if (focusedWindow) {
+        focusedWindow.webContents.toggleDevTools();
+      }
+    },
+  });
+
   // development stuff
   if (process.env.NODE_ENV === 'development') {
-    viewMenu.push({ type: 'separator' });
     viewMenu.push({
       label: 'Reload',
       accelerator: 'F5',
@@ -60,21 +70,12 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       },
     });
     viewMenu.push({
-      label: 'Toggle Developer Tools',
-      accelerator: process.platform === 'darwin' ? 'Alt+Command+I' : 'Ctrl+Shift+I',
-      click(item, focusedWindow) {
-        if (focusedWindow) {
-          focusedWindow.webContents.toggleDevTools();
-        }
-      },
-    });
-    viewMenu.push({
       label: 'Record missing translations',
       click(item, focusedWindow) {
         recordTranslation = !recordTranslation;
         debugTranslations(recordTranslation);
         log('info', 'toogle', { recordTranslation, label: viewMenu[viewMenu.length - 1].label });
-        let subMenu: Electron.Menu = menu.items[1].submenu as Electron.Menu;
+        const subMenu: Electron.Menu = menu.items[1].submenu as Electron.Menu;
         subMenu.items[viewMenu.length - 1].enabled = recordTranslation;
       },
     });
