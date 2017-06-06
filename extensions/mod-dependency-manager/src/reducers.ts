@@ -30,17 +30,18 @@ const sessionReducer: types.IReducerSpec = {
         return state;
       }
     },
-    [actions.setCreateRule as any]: (state, payload) =>
-      util.setSafe(state, ['dialog'], payload),
-    [actions.closeDialog as any]: (state, payload) =>
-      util.setSafe(state, ['dialog'], undefined),
-    [actions.setType as any]: (state, payload) =>
-      util.setSafe(state, ['dialog', 'type'], payload),
-    [actions.setConflictInfo as any]: (state, payload) =>
-      util.setSafe(state, ['conflicts'], payload),
-    [actions.setConflictDialog as any]: (state, payload) =>
-      util.setSafe(state, ['conflictDialog'], payload),
-  }, defaults: {
+    [actions.setCreateRule as any]:
+        (state, payload) => util.setSafe(state, ['dialog'], payload),
+    [actions.closeDialog as any]:
+        (state, payload) => util.setSafe(state, ['dialog'], undefined),
+    [actions.setType as any]:
+        (state, payload) => util.setSafe(state, ['dialog', 'type'], payload),
+    [actions.setConflictInfo as any]:
+        (state, payload) => util.setSafe(state, ['conflicts'], payload),
+    [actions.setConflictDialog as any]:
+        (state, payload) => util.setSafe(state, ['conflictDialog'], payload),
+  },
+  defaults: {
     connection: undefined,
     dialog: undefined,
     conflicts: {},

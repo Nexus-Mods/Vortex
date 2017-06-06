@@ -112,10 +112,14 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
   }
 }
 
+export interface ILocalState {
+  modRules: IBiDirRule[];
+}
+
 export interface IBaseProps {
   t: I18next.TranslationFunction;
   mod: types.IMod;
-  rules: IBiDirRule[];
+  localState: ILocalState;
 }
 
 interface IConnectedProps {
@@ -253,7 +257,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       modInfo: undefined,
       reference: undefined,
       showOverlay: false,
-      modRules: props.rules.filter(rule => matchReference(rule.source, props.mod)),
+      modRules: props.localState.modRules.filter(rule => matchReference(rule.source, props.mod)),
     });
 
     this.mIsMounted = false;
@@ -272,13 +276,14 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IProps, nextState: IComponentState) {
+  public componentWillReceiveProps(nextProps: IProps) {
     if (this.props.mod !== nextProps.mod) {
       this.updateMod(nextProps.mod);
     }
 
-    if ((this.props.mod !== nextProps.mod) || (this.props.rules !== nextProps.rules)) {
-      this.nextState.modRules = nextProps.rules.filter(rule =>
+    if ((this.props.mod !== nextProps.mod)
+        || (this.props.localState.modRules !== nextProps.localState.modRules)) {
+      this.nextState.modRules = nextProps.localState.modRules.filter(rule =>
         matchReference(rule.source, nextProps.mod));
     }
 
@@ -304,7 +309,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         || !_.isEqual(this.props.enabledMods, nextProps.enabledMods)
         || this.props.gameId !== nextProps.gameId
         || this.props.mod !== nextProps.mod
-        || this.props.rules !== nextProps.rules
+        || this.props.localState.modRules !== nextProps.localState.modRules
         || this.state !== nextState;
   }
 

@@ -25,6 +25,7 @@ interface IConnectedProps {
 interface IActionProps {
   onClose: () => void;
   onAddRule: (gameId: string, modId: string, rule: IRule) => void;
+  onRemoveRule: (gameId: string, modId: string, rule: IRule) => void;
 }
 
 type IProps = IConnectedProps & IActionProps;
@@ -106,7 +107,8 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
 
     if (ruleType[conflict.otherMod.name] === undefined) {
       reverseRule = modRules
-        .find(rule => matchReference(rule.reference, conflict.otherMod)
+        .find(rule => !rule.original
+                   && matchReference(rule.reference, conflict.otherMod)
                    && matchReference(rule.source, mods[modId]));
     }
 
@@ -119,7 +121,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
           onChange={this.setRuleType}
           id={conflict.otherMod.id}
         >
-          <option value={undefined}>{t('No rule')}</option>
+          <option value='norule'>{t('No rule')}</option>
           <option value='before'>{t('Load before')}</option>
           <option value='after'>{t('Load after')}</option>
           <option value='conflicts'>{t('Conflicts with')}</option>
@@ -165,7 +167,9 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private setRuleType = (event) => {
-    this.nextState.ruleType[event.currentTarget.id] = event.currentTarget.value;
+    (event.currentTarget.value === 'norule')
+      ? this.nextState.ruleType[event.currentTarget.id] = undefined
+      : this.nextState.ruleType[event.currentTarget.id] = event.currentTarget.value;
   }
 
   private makeReference = (mod: types.IMod): IReference => {
@@ -184,13 +188,19 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private save = () => {
-    const { gameId, modId, mods, onAddRule } = this.props;
+    const { conflicts, gameId, modId, modRules, mods, onAddRule, onRemoveRule } = this.props;
     const { ruleType } = this.state;
     Object.keys(ruleType).forEach(otherId => {
       if (ruleType[otherId] !== undefined) {
         onAddRule(gameId, modId, {
           reference: this.makeReference(mods[otherId]),
           type: ruleType[otherId],
+        });
+      } else {
+        const origTypes = this.getRuleTypes(modId, mods, conflicts);
+        onRemoveRule(gameId, modId, {
+          reference: this.makeReference(mods[otherId]),
+          type: origTypes[otherId],
         });
       }
     });
@@ -215,6 +225,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onClose: () => dispatch(setConflictDialog()),
     onAddRule: (gameId, modId, rule) =>
       dispatch(nmmActions.addModRule(gameId, modId, rule)),
+    onRemoveRule: (gameId, modId, rule) =>
+      dispatch(nmmActions.removeModRule(gameId, modId, rule)),
   };
 }
 

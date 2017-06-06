@@ -6,7 +6,7 @@ import { IBiDirRule } from './types/IBiDirRule';
 import determineConflicts from './util/conflicts';
 import ConflictEditor from './views/ConflictEditor';
 import Connector from './views/Connector';
-import DependencyIcon from './views/DependencyIcon';
+import DependencyIcon, { ILocalState } from './views/DependencyIcon';
 import Editor from './views/Editor';
 import ProgressFooter from './views/ProgressFooter';
 
@@ -37,8 +37,6 @@ function makeModReference(mod: types.IMod): IReference {
   };
 }
 
-// export declare type RuleType =
-// 'before' | 'after' | 'requires' | 'conflicts' | 'recommends' | 'provides';
 function inverseRule(ruleType: RuleType): RuleType {
   switch (ruleType) {
     case 'before': return 'after';
@@ -61,11 +59,13 @@ function mapRules(source: IReference, rules: IRule[]): IBiDirRule[] {
       source,
       type: rule.type,
       reference: rule.reference,
+      original: true,
     });
     res.push({
       source: rule.reference,
       type: inverseRule(rule.type),
       reference: source,
+      original: false,
     });
   });
   return res;
@@ -95,7 +95,9 @@ function updateMetaRules(api: types.IExtensionApi,
   .then(() => rules);
 }
 
-let modRules: IBiDirRule[] = [];
+const localState = util.makeReactive<ILocalState>({
+  modRules: [],
+});
 
 function main(context: types.IExtensionContext) {
   context.registerTableAttribute('mods', {
@@ -104,7 +106,8 @@ function main(context: types.IExtensionContext) {
     description: 'Relations to other mods',
     icon: 'plug',
     placement: 'table',
-    customRenderer: (mod, detailCell, t) => <DependencyIcon mod={mod} rules={modRules} t={t} />,
+    customRenderer: (mod, detailCell, t) =>
+      <DependencyIcon mod={mod} t={t} localState={localState} />,
     calc: (mod) => null,
     isToggleable: true,
     edit: {},
@@ -144,8 +147,18 @@ function main(context: types.IExtensionContext) {
       const state: types.IState = store.getState();
       updateMetaRules(context.api, gameMode, state.persistent.mods[gameMode])
         .then(rules => {
-          modRules = rules;
+          localState.modRules = rules;
         });
+    });
+
+    context.api.onStateChange(['persistent', 'mods'], (oldState, newState) => {
+      const gameMode = selectors.activeGameId(store.getState());
+      if (oldState[gameMode] !== newState[gameMode]) {
+        updateMetaRules(context.api, gameMode, newState[gameMode])
+          .then(rules => {
+            localState.modRules = rules;
+          });
+      }
     });
   });
 
