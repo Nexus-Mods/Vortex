@@ -49,17 +49,16 @@ export function mutateSafe<T>(state: T, path: Array<(string | number)>, value: a
  * @param {*} value
  * @returns {T}
  */
-export function setSafe<T>(state: T, path: Array<(string | number)>, value: any): T {
+export function setSafe<T extends object>(state: T, path: Array<(string | number)>, value: any): T {
   if (path.length === 0) {
-    return Object.assign({}, value);
+    return { ...value };
   }
   const firstElement = path[0];
-  let copy;
-  if (Array.isArray(state)) {
-    copy = state.slice();
-  } else {
-    copy = Object.assign({}, state);
-  }
+  const copy = Array.isArray(state)
+    ? state.slice()
+    : { ...(state as any) }; // "as any" is a workaround for
+                             // https://github.com/Microsoft/TypeScript/issues/13557
+
   if (path.length === 1) {
     copy[firstElement] = value;
   } else {
@@ -87,13 +86,13 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
   const firstElement: string = path[0];
   let result = state;
   if (path.length === 1) {
-    result = Object.assign({}, state);
+    result = { ...(state as any) };
     result[firstElement] = value;
   } else {
     if (state.hasOwnProperty(firstElement)) {
       const temp = setOrNop(result[firstElement], path.slice(1), value);
       if (temp !== state[firstElement]) {
-        result = Object.assign({}, state);
+        result = { ...(state as any) };
         result[firstElement] = temp;
       }
     }
@@ -117,14 +116,14 @@ export function changeOrNop<T>(state: T, path: Array<(string | number)>, value: 
   let result = state;
   if (path.length === 1) {
     if (state.hasOwnProperty(firstElement)) {
-      result = Object.assign({}, state);
+      result = { ...(state as any) };
       result[firstElement] = value;
     }
   } else {
     if (state.hasOwnProperty(firstElement)) {
       const temp = changeOrNop(result[firstElement], path.slice(1), value);
       if (temp !== state[firstElement]) {
-        result = Object.assign({}, state);
+        result = { ...(state as any) };
         result[firstElement] = temp;
       }
     }
@@ -149,14 +148,14 @@ export function deleteOrNop<T>(state: T, path: Array<(string | number)>): T {
       result = [].concat(state);
       result.splice(firstElement as number, 1);
     } else if (state.hasOwnProperty(firstElement)) {
-      result = Object.assign({}, state);
+      result = { ...(state as any) };
       delete result[firstElement];
     }
   } else {
     if (result.hasOwnProperty(firstElement)) {
       const temp = deleteOrNop(result[firstElement], path.slice(1));
       if (temp !== state[firstElement]) {
-        result = Object.assign({}, state);
+        result = { ...(state as any) };
         result[firstElement] = temp;
       }
     }
@@ -167,18 +166,14 @@ export function deleteOrNop<T>(state: T, path: Array<(string | number)>): T {
 
 function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: any[]): T {
   const firstElement = path[0];
-  let copy;
-  if (Array.isArray(state)) {
-    copy = state.slice();
-  } else {
-    copy = Object.assign({}, state);
-  }
+  const copy = Array.isArray(state)
+    ? state.slice()
+    : { ...(state as any) };
+
   if (path.length === 1) {
-    if (!copy.hasOwnProperty(firstElement) || (copy[firstElement] === undefined)) {
-      copy[firstElement] = fallback;
-    } else {
-      copy[firstElement] = copy[firstElement].slice();
-    }
+    copy[firstElement] = (!copy.hasOwnProperty(firstElement) || (copy[firstElement] === undefined))
+      ? fallback
+      : copy[firstElement].slice();
   } else {
     if (!copy.hasOwnProperty(firstElement)) {
       copy[firstElement] = {};
@@ -235,8 +230,9 @@ export function removeValue<T>(state: T, path: Array<(string | number)>, value: 
  * @param {(element: any) => boolean} predicate
  * @returns {T}
  */
-export function removeValueIf<T>(state: T, path: Array<(string | number)>,
-                                 predicate: (element: any) => boolean): T {
+export function removeValueIf<T extends object>(
+    state: T, path: Array<(string | number)>,
+    predicate: (element: any) => boolean): T {
   return setSafe(state, path, getSafe(state, path, []).filter((ele) => !predicate(ele)));
 }
 
@@ -250,8 +246,8 @@ export function removeValueIf<T>(state: T, path: Array<(string | number)>,
  * @param {Object} value
  * @returns {T}
  */
-export function merge<T>(state: T, path: Array<(string | number)>, value: any): T {
-  const newVal = Object.assign({}, getSafe(state, path, {}), value);
+export function merge<T extends object>(state: T, path: Array<(string | number)>, value: any): T {
+  const newVal = { ...getSafe(state, path, {}), ...value };
   return setSafe(state, path, newVal);
 }
 
