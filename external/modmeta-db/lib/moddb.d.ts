@@ -14,6 +14,7 @@ declare class ModDB {
     private mRestClient;
     private mTimeout;
     private mGameId;
+    private mBlacklist;
     constructor(dbName: string, gameId: string, servers: IServer[], database?: any, timeoutMS?: number);
     close(): Promise<void>;
     setGameId(gameId: string): void;

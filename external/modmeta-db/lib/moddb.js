@@ -1,4 +1,12 @@
 "use strict";
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 const Promise = require("bluebird");
 const levelup = require("levelup");
 const minimatch = require("minimatch");
@@ -7,6 +15,7 @@ const util_1 = require("./util");
 const util = require("util");
 class ModDB {
     constructor(dbName, gameId, servers, database, timeoutMS) {
+        this.mBlacklist = new Set();
         this.translateFromNexus = (nexusObj, gameId) => {
             const urlFragments = [
                 'nxm:/',
@@ -224,6 +233,9 @@ class ModDB {
         });
     }
     getAllByKey(key, gameId) {
+        if (this.mBlacklist.has(JSON.stringify({ key, gameId }))) {
+            return Promise.resolve([]);
+        }
         return this.readRange('hash', key)
             .then((results) => {
             if (results.length > 0) {
@@ -239,14 +251,14 @@ class ModDB {
                     .then((serverResults) => {
                     remoteResults = serverResults;
                     for (const result of remoteResults) {
-                        const temp = Object.assign({}, result.value);
+                        const temp = __assign({}, result.value);
                         temp.expires = new Date().getTime() / 1000 +
                             server.cacheDurationSec;
                         this.insert(result.value);
                     }
                 })
-                    .catch((err) => {
-                    console.log('failed to query server', err);
+                    .catch(err => {
+                    this.mBlacklist.add(JSON.stringify({ key, gameId }));
                 });
             }).then(() => Promise.resolve(remoteResults || []));
         });
@@ -262,6 +274,9 @@ class ModDB {
         }));
     }
     getAllByLogicalName(logicalName, versionMatch) {
+        if (this.mBlacklist.has(JSON.stringify({ logicalName, versionMatch }))) {
+            return Promise.resolve([]);
+        }
         const versionFilter = res => semvish.satisfies(res.key.split(':')[2], versionMatch, false);
         return this.readRange('log', logicalName)
             .then((results) => Promise.map(results.filter(versionFilter), (indexResult) => this.resolveIndex(indexResult.value)))
@@ -278,19 +293,23 @@ class ModDB {
                     .then((serverResults) => {
                     remoteResults = serverResults;
                     for (const result of remoteResults) {
-                        const temp = Object.assign({}, result.value);
+                        const temp = __assign({}, result.value);
                         temp.expires = new Date().getTime() / 1000 +
                             server.cacheDurationSec;
                         this.insert(result.value);
                     }
                 })
-                    .catch((err) => {
+                    .catch(err => {
                     console.log('failed to query server', err);
+                    this.mBlacklist.add(JSON.stringify({ logicalName, versionMatch }));
                 });
             }).then(() => Promise.resolve(remoteResults || []));
         });
     }
     getAllByExpression(expression, versionMatch) {
+        if (this.mBlacklist.has(JSON.stringify({ expression, versionMatch }))) {
+            return Promise.resolve([]);
+        }
         const filter = res => {
             const [type, fileName, version] = res.key.split(':');
             return minimatch(fileName, expression)
@@ -312,14 +331,15 @@ class ModDB {
                     .then((serverResults) => {
                     remoteResults = serverResults;
                     for (const result of remoteResults) {
-                        const temp = Object.assign({}, result.value);
+                        const temp = __assign({}, result.value);
                         temp.expires = new Date().getTime() / 1000 +
                             server.cacheDurationSec;
                         this.insert(result.value);
                     }
                 })
-                    .catch((err) => {
+                    .catch(err => {
                     console.log('failed to query server', err);
+                    this.mBlacklist.add(JSON.stringify({ expression, versionMatch }));
                 });
             }).then(() => Promise.resolve(remoteResults || []));
         });

@@ -34,6 +34,14 @@ export interface IServer {
   cacheDurationSec: number;
 }
 
+interface IBlacklistEntry {
+  key?: string;
+  logicalName?: string;
+  expression?: string;
+  versionMatch?: string;
+  gameId?: string;
+}
+
 /**
  * The primary database interface.
  * This allows queries about meta information regarding a file and
@@ -46,6 +54,7 @@ class ModDB {
   private mRestClient: restT.Client;
   private mTimeout: number;
   private mGameId: string;
+  private mBlacklist: Set<IBlacklistEntry> = new Set();
 
   /**
    * constructor
@@ -263,7 +272,6 @@ class ModDB {
                 // and return to caller
                 resolve(result);
               } else {
-                console.log('handled rest error', util.inspect(data));
                 reject(new Error(util.inspect(data)));
               }
             });
@@ -329,17 +337,17 @@ class ModDB {
             fileName: nexusObj.file_details.file_name,
             fileSizeBytes: nexusObj.file_details.file_size,
             logicalFileName: nexusObj.file_details.name,
-        fileVersion: semvish.clean(nexusObj.file_details.version, true),
-        gameId,
-        sourceURI: urlFragments.join('/'),
-        details: {
-          category: nexusObj.mod.category_id,
-          description: nexusObj.mod.description,
-          author: nexusObj.mod.author,
-          homepage: page,
-        },
-      },
-    };
+            fileVersion: semvish.clean(nexusObj.file_details.version, true),
+            gameId,
+            sourceURI: urlFragments.join('/'),
+            details: {
+              category: nexusObj.mod.category_id,
+              description: nexusObj.mod.description,
+              author: nexusObj.mod.author,
+              homepage: page,
+            },
+          },
+        };
   }
 
   private readRange<T>(type: 'hash' | 'log' | 'name', key: string,
@@ -368,6 +376,11 @@ class ModDB {
   }
 
   private getAllByKey(key: string, gameId: string): Promise<ILookupResult[]> {
+    if (this.mBlacklist.has(JSON.stringify({ key, gameId }))) {
+      // avoid querying the same keys again and again
+      return Promise.resolve([]);
+    }
+
     return this.readRange<ILookupResult>('hash', key)
         .then((results: ILookupResult[]) => {
           if (results.length > 0) {
@@ -386,15 +399,15 @@ class ModDB {
                                 remoteResults = serverResults;
                                 // cache all results in our database
                                 for (const result of remoteResults) {
-                                  const temp = Object.assign({}, result.value);
+                                  const temp = { ...result.value };
                                   temp.expires = new Date().getTime() / 1000 +
                                                  server.cacheDurationSec;
                                   this.insert(result.value);
                                 }
                               })
-                              .catch((err) => {
+                              .catch(err => {
                                 // TODO: need a way to log without rejecting
-                                console.log('failed to query server', err);
+                                this.mBlacklist.add(JSON.stringify({ key, gameId }));
                               });
                         }).then(() => Promise.resolve(remoteResults || []));
         });
@@ -411,7 +424,10 @@ class ModDB {
         }));
   }
 
-  private getAllByLogicalName(logicalName: string, versionMatch: string) {
+  private getAllByLogicalName(logicalName: string, versionMatch: string): Promise<ILookupResult[]> {
+    if (this.mBlacklist.has(JSON.stringify({ logicalName, versionMatch }))) {
+      return Promise.resolve([]);
+    }
     const versionFilter = res =>
         semvish.satisfies(res.key.split(':')[2], versionMatch, false);
     return this.readRange<IIndexResult>('log', logicalName)
@@ -436,21 +452,25 @@ class ModDB {
                                 remoteResults = serverResults;
                                 // cache all results in our database
                                 for (const result of remoteResults) {
-                                  const temp = Object.assign({}, result.value);
+                                  const temp = { ...result.value };
                                   temp.expires = new Date().getTime() / 1000 +
                                                  server.cacheDurationSec;
                                   this.insert(result.value);
                                 }
                               })
-                              .catch((err) => {
+                              .catch(err => {
                                 // TODO: need a way to log without rejecting
                                 console.log('failed to query server', err);
+                                this.mBlacklist.add(JSON.stringify({ logicalName, versionMatch }));
                               });
                         }).then(() => Promise.resolve(remoteResults || []));
         });
   }
 
-  private getAllByExpression(expression: string, versionMatch: string) {
+  private getAllByExpression(expression: string, versionMatch: string): Promise<ILookupResult[]> {
+    if (this.mBlacklist.has(JSON.stringify({ expression, versionMatch }))) {
+      return Promise.resolve([]);
+    }
     const filter = res => {
       const [type, fileName, version] = res.key.split(':');
       return minimatch(fileName, expression)
@@ -481,15 +501,16 @@ class ModDB {
                                 remoteResults = serverResults;
                                 // cache all results in our database
                                 for (const result of remoteResults) {
-                                  const temp = Object.assign({}, result.value);
+                                  const temp = { ...result.value };
                                   temp.expires = new Date().getTime() / 1000 +
                                                  server.cacheDurationSec;
                                   this.insert(result.value);
                                 }
                               })
-                              .catch((err) => {
+                              .catch(err => {
                                 // TODO: need a way to log without rejecting
                                 console.log('failed to query server', err);
+                                this.mBlacklist.add(JSON.stringify({ expression, versionMatch }));
                               });
                         }).then(() => Promise.resolve(remoteResults || []));
         });
