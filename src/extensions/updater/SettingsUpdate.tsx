@@ -37,7 +37,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
   }
 
   private selectChannel = (evt) => {
-    let target: HTMLSelectElement = evt.target as HTMLSelectElement;
+    const target: HTMLSelectElement = evt.target as HTMLSelectElement;
     switch (target.value) {
       case 'stable': this.props.onSetUpdateChannel('stable'); break;
       case 'beta': this.props.onSetUpdateChannel('beta'); break;
@@ -52,7 +52,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Function): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetUpdateChannel: (channel: 'stable' | 'beta'): void => {
         dispatch(setUpdateChannel(channel));
@@ -63,6 +63,4 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
 export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
-      SettingsUpdate
-    )
-  );
+      SettingsUpdate)) as React.ComponentClass<{}>;

@@ -204,4 +204,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(SettingsInterface));
+    connect(mapStateToProps, mapDispatchToProps)(
+      SettingsInterface)) as React.ComponentClass<{}>;

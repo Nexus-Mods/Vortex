@@ -72,4 +72,5 @@ function mapStateToProps(state: any): IConnectedProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps)(CheckVersionsButton));
+    connect(mapStateToProps)(
+      CheckVersionsButton)) as React.ComponentClass<IBaseProps>;

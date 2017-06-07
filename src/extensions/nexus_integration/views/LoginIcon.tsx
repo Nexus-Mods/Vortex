@@ -14,7 +14,7 @@ import Nexus from 'nexus-api';
 import * as React from 'react';
 import { ControlLabel, Form, FormGroup, Image } from 'react-bootstrap';
 
-interface IBaseProps {
+export interface IBaseProps {
   nexus: Nexus;
 }
 
@@ -129,5 +129,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-    translate(['common'], { wait: false })(LoginIcon),
-  );
+    translate(['common'], { wait: false })(
+      LoginIcon)) as React.ComponentClass<IBaseProps>;

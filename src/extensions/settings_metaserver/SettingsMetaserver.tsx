@@ -42,8 +42,8 @@ const serverSource: __ReactDnd.DragSourceSpec<any> = {
     if (monitor.getDropResult() === null) {
       return;
     }
-    let source: string = (monitor.getItem() as { id: string }).id;
-    let dest: string = (monitor.getDropResult() as { id: string }).id;
+    const source: string = (monitor.getItem() as { id: string }).id;
+    const dest: string = (monitor.getDropResult() as { id: string }).id;
     if (source !== dest) {
       props.onDrop();
     } else {
@@ -124,9 +124,7 @@ class ServerRow extends React.Component<RowProps, {}> {
               <Icon name='remove' />
             </Button>
           </ListGroupItem>
-        </div>
-      )
-    );
+        </div>));
   }
   private removeServer = () => {
     const {serverId, onRemoveMetaserver} = this.props;
@@ -178,8 +176,8 @@ class ServerList extends React.Component<IListProps, IListState> {
   public render(): JSX.Element {
     const {t, onAddMetaserver} = this.props;
     const { orderedServers } = this.state;
-    let keys = Object.keys(orderedServers);
-    let sorted = keys.sort(
+    const keys = Object.keys(orderedServers);
+    const sorted = keys.sort(
       (lhs: string, rhs: string) => orderedServers[lhs].priority - orderedServers[rhs].priority);
 
     return (
@@ -204,7 +202,7 @@ class ServerList extends React.Component<IListProps, IListState> {
   private pullServerState() {
     const { metaservers } = this.props;
 
-    let copy = _.cloneDeep(metaservers);
+    const copy = _.cloneDeep(metaservers);
     Object.keys(copy).forEach((key: string) => {
       copy[key].priority *= 2;
     });
@@ -240,7 +238,7 @@ class ServerList extends React.Component<IListProps, IListState> {
   private handleDrop = () => {
     const {onSetMetaserverPriority} = this.props;
     const {orderedServers} = this.state;
-    let sorted = Object.keys(orderedServers).sort((lhs: string, rhs: string) => {
+    const sorted = Object.keys(orderedServers).sort((lhs: string, rhs: string) => {
       return orderedServers[lhs].priority - orderedServers[rhs].priority;
     });
     onSetMetaserverPriority(sorted);
@@ -290,7 +288,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Function): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onAddMetaserver: (url: string): void => {
       dispatch(addMetaserver(shortid(), url));
@@ -307,6 +305,4 @@ function mapDispatchToProps(dispatch: Function): IActionProps {
 export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
-      SettingsMetaserver
-    )
-  );
+      SettingsMetaserver)) as React.ComponentClass<{}>;

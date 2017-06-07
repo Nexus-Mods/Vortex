@@ -3,7 +3,7 @@ import { IExtensionApi } from '../types/IExtensionContext';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 
-interface IComponentContext {
+export interface IComponentContext {
   api: IExtensionApi;
   selectHeader: (overlay: JSX.Element) => void;
 }

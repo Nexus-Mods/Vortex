@@ -368,4 +368,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(Starter);
+export default connect(mapStateToProps, mapDispatchToProps)(
+  Starter) as React.ComponentClass<{}>;
