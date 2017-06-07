@@ -1,4 +1,6 @@
+import { log } from '../util/log';
 import { truthy } from '../util/util';
+import { Icon } from './TooltipControls';
 
 import * as _ from 'lodash';
 import * as React from 'react';
@@ -20,36 +22,60 @@ import * as React from 'react';
  * @class ExtensionGate
  * @extends {React.Component<{}, {}>}
  */
-class ExtensionGate extends React.Component<{}, {}> {
+class ExtensionGate extends React.Component<{ id: string }, {}> {
   private mWrappers: { [key: string]: any } = {};
-  public componentWillMount() {
-    const props = React.Children.only(this.props.children).props;
-    Object.keys(props).forEach(key => {
-      if (truthy(props[key])
-        && (props[key].attach !== undefined)
-        && (props[key].detach !== undefined)) {
+  private mValid: boolean;
 
-        if (typeof (props[key]) === 'object') {
-          this.mWrappers[key] = { ...props[key] };
+  public componentWillMount() {
+    if (React.Children.count(this.props.children) === 0) {
+      return;
+    }
+    try {
+      const props = React.Children.only(this.props.children).props;
+      Object.keys(props).forEach(key => {
+        if (truthy(props[key])
+          && (props[key].attach !== undefined)
+          && (props[key].detach !== undefined)) {
+
+          if (typeof (props[key]) === 'object') {
+            this.mWrappers[key] = { ...props[key] };
+          }
+          props[key].attach(this);
         }
-        props[key].attach(this);
-      }
-    });
+      });
+      this.mValid = true;
+    } catch (err) {
+      log('warn', 'failed to mount extension control', { err });
+      this.mValid = false;
+    }
   }
 
   public componentWillUnmount() {
-    const props = React.Children.only(this.props.children).props;
-    Object.keys(props).forEach(key => {
-      if (truthy(props[key])
-        && (props[key].attach !== undefined)
-        && (props[key].detach !== undefined)) {
-        props[key].detach(this);
-      }
-    });
-    this.mWrappers = {};
+    if (this.mValid) {
+      const props = React.Children.only(this.props.children).props;
+      Object.keys(props).forEach(key => {
+        if (truthy(props[key])
+          && (props[key].attach !== undefined)
+          && (props[key].detach !== undefined)) {
+          props[key].detach(this);
+        }
+      });
+      this.mWrappers = {};
+    }
   }
 
   public render(): JSX.Element {
+    if (React.Children.count(this.props.children) === 0) {
+      return null;
+    }
+    if (!this.mValid) {
+      return (
+        <Icon
+          id={this.props.id}
+          tooltip='Extension failed to render'
+          name='exclamation-triangle'
+        />);
+    }
     this.updateWrappers(React.Children.only(this.props.children).props);
     return React.cloneElement(React.Children.only(this.props.children), this.mWrappers);
   }

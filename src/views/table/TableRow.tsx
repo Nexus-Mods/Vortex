@@ -33,7 +33,11 @@ class TableCell extends React.Component<ICellProps, {}> {
     // otherwise rowData is the calculated value of this cell
 
     if (attribute.customRenderer !== undefined) {
-      return <ExtensionGate>{ attribute.customRenderer(rawData, false, t) || null }</ExtensionGate>;
+      return (
+        <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>
+          {attribute.customRenderer(rawData, false, t) || null}
+        </ExtensionGate>
+      );
     }
 
     if ((data === undefined) || (data === null)) {

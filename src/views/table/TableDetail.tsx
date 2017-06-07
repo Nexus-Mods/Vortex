@@ -34,7 +34,9 @@ class DetailCell extends React.Component<ICellProps, {}> {
     if (attribute.customRenderer !== undefined) {
       content = (
         <FormControl.Static componentClass='div'>
-          <ExtensionGate>{ attribute.customRenderer(rawData, true, t) }</ExtensionGate>
+          <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>
+            { attribute.customRenderer(rawData, true, t) }
+          </ExtensionGate>
         </FormControl.Static>
       );
     } else {
