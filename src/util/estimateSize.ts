@@ -1,10 +1,10 @@
 function estimateSize(object: any) {
-  let visited = new Set<any>();
-  let stack = [object];
+  const visited = new Set<any>();
+  const stack = [object];
   let bytes = 0;
 
   while (stack.length > 0) {
-    let value = stack.pop();
+    const value = stack.pop();
 
     if (typeof value === 'boolean') {
       bytes += 4;

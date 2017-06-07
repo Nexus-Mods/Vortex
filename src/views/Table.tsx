@@ -657,11 +657,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     .forEach(iterId => {
       rowState[iterId] = { selected: { $set: false } };
     });
-    if (this.state.rowState[rowId] === undefined) {
-      rowState[rowId] = { $set: { selected: true } };
-    } else {
-      rowState[rowId] = { selected: { $set: true } };
-    }
+    rowState[rowId] = (this.state.rowState[rowId] === undefined)
+      ? { $set: { selected: true } }
+      : { selected: { $set: true } };
+
     this.setState(update(this.state, {
       lastSelected: { $set: rowId },
       rowState,
@@ -691,11 +690,9 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     const rowState = {};
     Object.keys(calculatedValues).forEach(key => {
-      if (this.state.rowState[key] === undefined) {
-        rowState[key] = { $set: { selected: true } };
-      } else {
-        rowState[key] = { selected: { $set: true } };
-      }
+      rowState[key] = (this.state.rowState[key] === undefined)
+        ? { $set: { selected: true } }
+        : { selected: { $set: true } };
     });
     this.setState(update(this.state, { rowState }));
   }
@@ -725,11 +722,9 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     const rowState = {};
     sortedRows.map(row => row.id).forEach(iterId => {
-      if (this.state.rowState[iterId] === undefined) {
-        rowState[iterId] = { $set: { selected: selection.has(iterId) } };
-      } else {
-        rowState[iterId] = { selected: { $set: selection.has(iterId) } };
-      }
+      rowState[iterId] = (this.state.rowState[iterId] === undefined)
+        ? { $set: { selected: selection.has(iterId) } }
+        : { selected: { $set: selection.has(iterId) } };
     });
     this.setState(update(this.state, { rowState }));
   }
@@ -753,10 +748,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const defaultVisible =
       attribute.isDefaultVisible !== undefined ? attribute.isDefaultVisible : true;
 
-    return Object.assign({
+    return {
       enabled: defaultVisible,
       sortDirection: 'none' as SortDirection,
-    }, attributeStates[attribute.id]);
+      ...attributeStates[attribute.id],
+    };
   }
 
   private setSortDirection = (id: string, direction: SortDirection) => {
@@ -802,8 +798,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
   };
 }
 
-function registerTableAttribute(instance: SuperTable, group: string, attribute: ITableAttribute) {
-  if (instance.props.tableId === group) {
+function registerTableAttribute(
+    instanceProps: IBaseProps, group: string, attribute: ITableAttribute) {
+  if (instanceProps.tableId === group) {
     return attribute;
   } else {
     return undefined;

@@ -436,7 +436,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 }
 
 function registerMainPage(
-  instance: MainWindow,
+  instanceProps: IBaseProps,
   icon: string,
   title: string,
   component: React.ComponentClass<any> | React.StatelessComponent<any>,

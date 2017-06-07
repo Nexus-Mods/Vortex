@@ -25,4 +25,4 @@ class MainPageHeader extends React.Component<{}, {}> {
   }
 }
 
-export default MainPageHeader as React.ComponentClass<{}>;
+export default MainPageHeader;

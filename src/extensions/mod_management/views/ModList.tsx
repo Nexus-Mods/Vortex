@@ -656,7 +656,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-function registerModAttribute(instance: ModList, attribute: ITableAttribute) {
+function registerModAttribute(instanceProps: IBaseProps, attribute: ITableAttribute) {
   return attribute;
 }
 

@@ -238,15 +238,19 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
                            'objects', 'children' ];
       const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
         if (knownProps.indexOf(current) === -1) {
-          return Object.assign({}, prev, { [current]: this.props[current] });
+          return {
+            ...prev,
+            [current]: this.props[current],
+          };
         } else {
           return prev;
         }
       }, {});
-      const staticProps = Object.assign({},
-        unknownProps,
-        { key: id, buttonType: forceButtonType || buttonType },
-      );
+      const staticProps = {
+        ...unknownProps,
+        key: id,
+        buttonType: forceButtonType || buttonType,
+      };
       if (icon.props !== undefined) {
         return (
           <DynamicProps
@@ -287,7 +291,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
  * @param {*} action the action to call on click
  * @returns
  */
-function registerAction(instance: IconBar,
+function registerAction(instanceProps: IBaseProps,
                         group: string,
                         position: number,
                         iconOrComponent: string | React.ComponentClass<any>,
@@ -296,7 +300,7 @@ function registerAction(instance: IconBar,
                         actionOrCondition?: (instanceIds?: string[]) => void | boolean,
                         condition?: () => boolean,
                         ): any {
-  if (instance.props.group === group) {
+  if (instanceProps.group === group) {
     if (typeof(iconOrComponent) === 'string') {
       return { type: 'simple', icon: iconOrComponent, title: titleOrProps,
                position, action: actionOrCondition, options, condition };

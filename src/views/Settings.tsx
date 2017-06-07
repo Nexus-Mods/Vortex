@@ -84,7 +84,7 @@ class Settings extends ComponentEx<IProps, {}> {
   }
 }
 
-function registerSettings(instance: Settings,
+function registerSettings(instanceProps: ISettingsProps,
                           title: string,
                           component: React.ComponentClass<any>,
                           props: PropsCallback): ISettingsPage {

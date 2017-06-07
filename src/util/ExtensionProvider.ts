@@ -49,6 +49,7 @@ export function extend(registerFunc: (...args) => void) {
   ExtensionManagerImpl.registerUIAPI(registerFunc.name);
 
   return <P, S>(ComponentToWrap: React.ComponentClass<P>): any => {
+    // tslint:disable-next-line:class-name
     return class __ExtendedComponent extends React.Component<IExtensibleProps & P, S> {
       public static contextTypes: React.ValidationMap<any> = {
         extensions: PropTypes.object.isRequired,
@@ -60,18 +61,32 @@ export function extend(registerFunc: (...args) => void) {
       public componentWillMount(): void {
         this.mExtensions = [];
         this.context.extensions.apply(registerFunc.name, (...args) => {
-          const res = registerFunc(this, ...args);
+          const res = registerFunc(this.props, ...args);
           if (res !== undefined) {
             this.mExtensions.push(res);
           }
         });
       }
 
+      public componentWillReceiveProps(nextProps: any) {
+        if (this.props.group !== nextProps.group) {
+          this.mExtensions = [];
+          this.context.extensions.apply(registerFunc.name, (...args) => {
+            const res = registerFunc(nextProps, ...args);
+            if (res !== undefined) {
+              this.mExtensions.push(res);
+            }
+          });
+        }
+      }
+
       public render(): JSX.Element {
         const { children, staticElements } = this.props;
 
-        const wrapProps: any = Object.assign({}, this.props, {
-          objects: [].concat(staticElements || [], this.mExtensions || []) });
+        const wrapProps: any = {
+          ...(this.props as any),
+          objects: [].concat(staticElements || [], this.mExtensions || []),
+        };
         delete wrapProps.staticElements;
         delete wrapProps.group;
         return React.createElement(ComponentToWrap, wrapProps, children);

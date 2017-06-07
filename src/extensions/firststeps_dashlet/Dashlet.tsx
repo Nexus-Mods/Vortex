@@ -283,7 +283,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-function registerToDo(instance: any,
+function registerToDo(instanceProps: IBaseProps,
                       id: string,
                       props: () => any,
                       condition: (props: any) => boolean,

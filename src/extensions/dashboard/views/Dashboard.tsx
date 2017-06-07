@@ -89,7 +89,7 @@ class Dashboard extends ComponentEx<IProps, {}> {
   }
 }
 
-function registerDashlet(instance: Dashboard,
+function registerDashlet(instanceProps: IProps,
                          title: string,
                          width: 1 | 2 | 3,
                          position: number,

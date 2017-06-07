@@ -43,7 +43,7 @@ class MainFooter extends ComponentEx<IProps, {}> {
   }
 }
 
-function registerFooter(instance: MainFooter,
+function registerFooter(instanceProps: IBaseProps,
                         id: string,
                         component: React.ComponentClass<any>,
                         props: PropsCallback) {
