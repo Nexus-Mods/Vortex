@@ -15,7 +15,6 @@
     "@types/electron": "^1.4.32",
     "@types/react": "^0.14.55",
     "@types/react-redux": "^4.4.35",
-    "electron-rebuild": "^1.5.7",
     "nmm-api": "file:../../api",
     "webpack": "^1.13.2"
   }

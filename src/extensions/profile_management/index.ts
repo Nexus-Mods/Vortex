@@ -209,7 +209,11 @@ function init(context: IExtensionContextExt): boolean {
                               });
     const initProfile = activeProfile(store.getState());
     refreshProfile(store, initProfile, 'import')
-        .then(() => context.api.events.emit('profile-activated', initProfile.id))
+        .then(() => {
+          if (initProfile !== undefined) {
+            context.api.events.emit('profile-activated', initProfile.id);
+          }
+        })
          .catch((err: Error) => {
             showError(store.dispatch, 'Failed to set profile', err);
           });

@@ -6,7 +6,7 @@ module.exports = {
   node: { __filename: false, __dirname: false },
   output: {
     libraryTarget: 'commonjs2',
-    library: 'sample',
+    library: 'documentation',
     filename: './dist/index.js'
   },
   module: {
