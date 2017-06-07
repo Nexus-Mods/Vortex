@@ -65,7 +65,7 @@ namespace Components.Interface
                 }
             }
 
-            return null;
+            return "";
         }
     }
 }
