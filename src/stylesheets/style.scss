@@ -9,7 +9,7 @@
   width: 90%;
   max-height: 90%;
   overflow-y: auto;
-  z-index: 1040;
+  z-index: 1055; // should be above dialogs
 }
 
 #notifications::-webkit-scrollbar { 
@@ -603,6 +603,11 @@ btn-default {
   border-color: $gray;
 }
 
+.dropzone-url.hover-click {
+  border-style: solid;
+  border-color: $link-color;
+}
+
 .dropzone-url.hover-valid {
   border-style: solid;
   border-color: $brand-success;
@@ -814,6 +819,33 @@ textarea {
 
 #fomod-installer-dialog .pager {
   margin: 5px 0px;
+}
+
+.common-dialog-wide .modal-dialog {
+  width: 80%;
+  height: 80%;
+}
+
+.common-dialog-wide .modal-content {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.common-dialog-wide .modal-body {
+  flex: 1 0%;
+  display: flex;
+  padding: 10px;
+}
+
+.common-dialog-wide .modal-body > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.common-dialog-wide .modal-body webview {
+  height: 100%;
 }
 
 div > .hover-expand {

@@ -53,7 +53,7 @@ import { applyMiddleware, compose, createStore, Store } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 import thunkMiddleware from 'redux-thunk';
 
-log('debug', 'renderer process started');
+log('debug', 'renderer process started', { pid: process.pid });
 
 stopTime();
 

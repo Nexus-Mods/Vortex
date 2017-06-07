@@ -1,11 +1,15 @@
+import { DialogType, IDialogActions, IDialogContent,
+         IDialogResult, showDialog } from '../../../actions/notifications';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { log } from '../../../util/log';
 import { activeGameId, downloadPath } from '../../../util/selectors';
 
+
 import { finishDownload, initDownload,
          removeDownload, setDownloadFilePath } from '../actions/state';
 
+import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as path from 'path';
@@ -22,10 +26,12 @@ interface IActionProps {
   onStartMove: (id: string, filePath: string, game: string) => void;
   onFinishMove: (id: string) => void;
   onMoveFailed: (id: string) => void;
+  onShowDialog: (type: DialogType, title: string, content: IDialogContent,
+                 actions: IDialogActions) => Promise<IDialogResult>;
 }
 
 interface IComponentState {
-  dropActive: 'no' | 'url' | 'file' | 'invalid';
+  dropActive: 'no' | 'url' | 'file' | 'hover' | 'invalid';
 }
 
 type IProps = IConnectedProps & IActionProps;
@@ -51,6 +57,8 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
     const classes = [ 'dropzone-url' ];
     if (this.state.dropActive === 'invalid') {
       classes.push('hover-invalid');
+    } else if (this.state.dropActive === 'hover') {
+      classes.push('hover-click');
     } else if (this.state.dropActive !== 'no') {
       classes.push('hover-valid');
     }
@@ -62,8 +70,11 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
         onDragOver={this.onDragOver}
         onDragLeave={this.onDragLeave}
         onDrop={this.onDrop}
+        onMouseOver={this.onHover}
+        onMouseLeave={this.onHoverLeave}
+        onClick={this.onClick}
       >
-        {t('Drop URL or File')}
+        {this.state.dropActive === 'hover' ? t('Click to enter URL') : t('Drop URL or File')}
       </div>
     );
   }
@@ -115,6 +126,36 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
     }));
   }
 
+  private onHover = (evt) => {
+    this.setState(update(this.state, {
+      dropActive: { $set: 'hover' },
+    }));
+  }
+
+  private onHoverLeave = (evt) => {
+    this.setState(update(this.state, {
+      dropActive: { $set: 'no' },
+    }));
+  }
+
+  private onClick = () => {
+    const { onShowDialog } = this.props;
+    onShowDialog('info', 'Enter URL', {
+      input: [{
+        id: 'url',
+        type: 'url',
+      }],
+    }, {
+      Cancel: null,
+      Download: null,
+    }).then(result => {
+      if (result.action === 'Download') {
+        this.context.api.events.emit(
+          'start-download', [result.input.url], {});
+      }
+    });
+  }
+
   private move(source: string, destination: string) {
     const { gameMode, onStartMove, onFinishMove, onMoveFailed } = this.props;
     const id = shortid();
@@ -154,6 +195,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     },
     onFinishMove: (id: string) => dispatch(finishDownload(id, 'finished')),
     onMoveFailed: (id: string) => dispatch(removeDownload(id)),
+    onShowDialog: (type: DialogType, title: string,
+                   content: IDialogContent, actions: IDialogActions) =>
+      dispatch(showDialog(type, title, content, actions)),
   };
 }
 

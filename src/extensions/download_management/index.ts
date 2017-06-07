@@ -91,6 +91,14 @@ function init(context: IExtensionContextExt): boolean {
 
     const store = context.api.store;
 
+    context.api.registerProtocol('http', url => {
+        context.api.events.emit('start-download', [url], {});
+    });
+
+    context.api.registerProtocol('https', url => {
+        context.api.events.emit('start-download', [url], {});
+    });
+
     context.api.events.on('gamemode-activated', () => {
       const currentDownloadPath = downloadPath(store.getState());
 

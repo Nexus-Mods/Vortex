@@ -440,7 +440,7 @@ class DownloadManager {
               return fs.renameAsync(download.tempName, resolvedPath);
             });
           } else if ((contentType.parse(download.headers['content-type']).type === 'text/html')
-                     && (!download.tempName.endsWith('.html'))) {
+                     && (!download.tempName.toLowerCase().endsWith('.html'))) {
             finalPath = download.tempName + '.html';
             return fs.renameAsync(download.tempName, finalPath);
           }

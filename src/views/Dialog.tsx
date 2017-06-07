@@ -74,9 +74,18 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, dialogs } = this.props;
     const { dialogState } = this.state;
+
     const dialog = dialogs.length > 0 ? dialogs[0] : undefined;
+
+    if (dialog === undefined) {
+      return null;
+    }
+
+    const type = (dialog.content.htmlFile !== undefined) || (dialog.content.htmlText !== undefined)
+      ? 'wide'
+      : 'regular';
     return dialog !== undefined ? (
-      <Modal show={dialog !== undefined} onHide={this.dismiss}>
+      <Modal className={`common-dialog-${type}`} show={dialog !== undefined} onHide={this.dismiss}>
         <Modal.Header>
           <Modal.Title>{this.iconForType(dialog.type)}{' '}{t(dialog.title)}</Modal.Title>
         </Modal.Header>
@@ -117,7 +126,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         <textarea
           key='dialog-content-message'
           wrap={wrap}
-          style={{ width: '100%', minHeight: 300, resize: 'none', border: 'none' }}
+          style={{ width: '100%', resize: 'none', border: 'none' }}
           defaultValue={this.translateParts(content.message, t)}
           readOnly={true}
         />
@@ -126,7 +135,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (content.htmlFile !== undefined) {
       controls.push((
-        <div key='dialog-content-html' style={{ overflowY: 'auto' }}>
+        <div key='dialog-content-html' style={{ height: '100%' }}>
         <webview src={`file://${content.htmlFile}`} />
       </div>
       ));

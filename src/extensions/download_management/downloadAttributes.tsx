@@ -29,6 +29,7 @@ function progress(props) {
     case 'init': return <span>{t('Pending')}</span>;
     case 'finished': return <span>{t('Finished')}</span>;
     case 'failed': return <span>{t('Failed')}</span>;
+    case 'redirect': return <span>{t('Redirected')}</span>;
     case 'paused': return <span>{t('Paused')}</span>;
     default: {
       const label = ((received * 100) / size).toFixed(0);

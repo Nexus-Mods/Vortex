@@ -7,6 +7,7 @@ import 'source-map-support/register';
 import timeRequire from './util/timeRequire';
 const stopTime = timeRequire();
 
+import { addNotification } from './actions/notifications';
 import { setMaximized, setWindowPosition, setWindowSize } from './actions/window';
 import { IState, IWindow } from './types/IState';
 import commandLine, { IParameters } from './util/commandLine';
@@ -101,10 +102,10 @@ function createWindow(args: IParameters) {
       mainWindow.maximize();
     }
 
-    // ensure the splash screen remains visible
-    loadingScreen.setAlwaysOnTop(true);
-
     if (loadingScreen !== undefined) {
+      // ensure the splash screen remains visible
+      loadingScreen.setAlwaysOnTop(true);
+
       // don't fade out immediately, otherwise the it looks odd
       // as the main window appears at the same time
       delayed(200)
@@ -112,7 +113,10 @@ function createWindow(args: IParameters) {
       // wait for the fade out animation to finish before destroying
       // the window
       .then(() => delayed(500))
-      .then(() => loadingScreen.destroy());
+      .then(() => {
+        loadingScreen.close();
+        loadingScreen = undefined;
+      });
     }
 
     applyArguments(args);
@@ -151,10 +155,22 @@ function createWindow(args: IParameters) {
       moveTimer = undefined;
     }, 500);
   });
+
+  mainWindow.webContents.session.on('will-download', (event, item, webContents) => {
+    event.preventDefault();
+    mainWindow.webContents.send('external-url', item.getURL());
+    store.dispatch(addNotification({
+      type: 'info',
+      title: 'Download started',
+      message: item.getFilename(),
+      displayMS: 4000,
+    }));
+  });
+
 }
 
-function createLoadingScreen(): Promise<undefined> {
-  return new Promise<undefined>((resolve, reject) => {
+function createLoadingScreen(): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
   // TODO: we can't use the mainWindow as the parent here because it's not created yet.
   //       this makes the main window hide the splash screen as soon as it shows up.
   //       we can't create it yet because stuff isn't loaded yet. Maybe if we could create
@@ -178,10 +194,8 @@ function setupAppEvents(args: IParameters) {
   app.on('ready', () => {
     createLoadingScreen()
         // TODO: horrible hack! This delays all loading by 200 ms but if we
-        // don't, the splash screen
-        //   doesn't become visible until _after_ most of the initialization
-        //   happened (loading the
-        //   the store and extensions)
+        //   don't, the splash screen doesn't become visible until _after_ most of the
+        //   initialization happened (loading the the store and extensions)
         .then(() => delayed(200))
         .then(() => createStore())
         .then(() => {
@@ -194,7 +208,7 @@ function setupAppEvents(args: IParameters) {
             return Promise.resolve();
           }
         })
-        .then(() => { createWindow(args); })
+        .then(() => createWindow(args))
         .catch((err) => {
           terminate({
             message: 'Startup failed',

@@ -374,7 +374,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   private inspect = (downloadId: string) => {
-    const { onShowDialog } = this.props;
+    const { t, onShowDialog } = this.props;
     const download = this.getDownload(downloadId);
     if (download.state === 'failed') {
       if (download.failCause.htmlFile !== undefined) {
@@ -385,12 +385,20 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             Close: null,
           });
       }
+    } else if (download.state === 'redirect') {
+      onShowDialog('error', 'Received website', {
+        message: t('The url lead to this website, maybe it contains a redirection?'),
+        htmlFile: download.failCause.htmlFile,
+      }, {
+          Delete: () => this.context.api.events.emit('remove-download', downloadId),
+          Close: null,
+        });
     }
   }
 
   private inspectable = (downloadId: string) => {
     const download = this.getDownload(downloadId);
-    return [ 'failed' ].indexOf(download.state) >= 0;
+    return [ 'failed', 'redirect' ].indexOf(download.state) >= 0;
   }
 }
 

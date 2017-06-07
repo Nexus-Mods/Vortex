@@ -126,9 +126,9 @@ export class DownloadObserver {
     if (res.unfinishedChunks.length > 0) {
       this.mStore.dispatch(pauseDownload(id, true, res.unfinishedChunks));
       callback(null, id);
-    } else if (res.filePath.endsWith('.html')) {
+    } else if (res.filePath.toLowerCase().endsWith('.html')) {
       this.mStore.dispatch(
-          finishDownload(id, 'failed', {htmlFile: res.filePath}));
+          finishDownload(id, 'redirect', {htmlFile: res.filePath}));
       if (callback !== undefined) {
         callback(new Error('html result'), id);
       }

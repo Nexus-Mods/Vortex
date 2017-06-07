@@ -35,7 +35,8 @@ export const startDownload = safeCreateAction('START_DOWNLOAD',
  * mark download as finished
  */
 export const finishDownload = safeCreateAction('FINISH_DOWNLOAD',
-  (id: string, state: 'finished' | 'failed', failCause?: any) => ({ id, state, failCause }));
+  (id: string, state: 'finished' | 'failed' | 'redirect', failCause?: any) =>
+    ({ id, state, failCause }));
 
 export const setDownloadHash = safeCreateAction('SET_DOWNLOAD_HASH',
   (id: string, fileMD5: string) => ({ id, fileMD5 }));
