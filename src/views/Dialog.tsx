@@ -1,7 +1,7 @@
 import { closeDialog } from '../actions/notifications';
 import {
   DialogType, ICheckbox, IDialog,
-  IDialogContent, IFormControl,
+  IDialogContent, IInput,
 } from '../types/IDialog';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
@@ -149,33 +149,35 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           {content.choices.map(this.renderRadiobutton)}
         </div>
       ));
-    } else if (content.formcontrol !== undefined) {
+    } else if (content.input !== undefined) {
       controls.push((
-        <div key='dialog-form-content'>
-          {content.formcontrol.map(this.renderFormControl)}
-        </div>
+      <div key='dialog-form-content'>
+        {content.input.map(this.renderInput)}
+      </div>
       ));
     }
 
     return <div style={{ width: '100%' }}>{controls}</div>;
   }
 
-  private renderFormControl = (formcontrol: IFormControl) => {
+  private renderInput = (input: IInput) => {
     const { t } = this.props;
     return (
-      <FormGroup key={formcontrol.id}>
-        <ControlLabel>{t(formcontrol.label)}
-        </ControlLabel>
-        <FormControl
-          id={formcontrol.id}
-          key={formcontrol.id}
-          type={formcontrol.type}
-          value={formcontrol.value}
-          label={formcontrol.label}
-          onChange={this.toggleFormControl}
-        />
+      <FormGroup key={input.id}>
+      { input.label ? (
+        <ControlLabel>{t(input.label)}</ControlLabel>
+      ) : null }
+      <FormControl
+        id={`dialoginput-${input.id}`}
+        type={input.type || 'text'}
+        value={input.value || ''}
+        label={input.label}
+        placeholder={input.placeholder}
+        onChange={this.changeInput}
+      />
       </FormGroup>
     );
+
   }
 
   private renderCheckbox = (checkbox: ICheckbox) => {
@@ -207,21 +209,24 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private toggleFormControl = (evt) => {
+  private changeInput = evt => {
     const { dialogState } = this.state;
 
-    const idx = dialogState.formcontrol.findIndex(
-      form => form.id === evt.currentTarget.id);
+    const id = evt.currentTarget.id.split('-').slice(1).join('-');
 
-    const newFormControl = dialogState.formcontrol.slice(0);
-    newFormControl[idx].value = evt.currentTarget.value;
+    const idx = dialogState.input.findIndex(
+      form => form.id === id);
+
+    const newInput = { ...dialogState.input[idx] };
+    newInput.value = evt.currentTarget.value;
 
     this.setState(update(this.state, {
       dialogState: {
-        formcontrol: { $set: newFormControl },
+        input: { $splice: [[idx, 1, newInput]] },
       },
     }));
   }
+
 
   private toggleCheckbox = (evt: React.MouseEvent<any>) => {
     const { dialogState } = this.state;
@@ -295,9 +300,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       });
     }
 
-    if (dialogState.formcontrol !== undefined) {
-      dialogState.formcontrol.forEach((form: IFormControl) => {
-        data[form.id] = form.value;
+    if (dialogState.input !== undefined) {
+      dialogState.input.forEach(input => {
+        data[input.id] = input.value;
       });
     }
 

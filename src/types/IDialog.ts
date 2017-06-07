@@ -19,11 +19,12 @@ export interface ICheckbox {
   value: boolean;
 }
 
-export interface IFormControl {
+export interface IInput {
   id: string;
-  type: string;
-  value: string;
-  label: string;
+  type?: 'text' | 'password' | 'number' | 'date' | 'time' | 'email' | 'url';
+  value?: string;
+  label?: string;
+  placeholder?: string;
 }
 
 export interface IDialogContent {
@@ -41,7 +42,7 @@ export interface IDialogContent {
   message?: string;
   checkboxes?: ICheckbox[];
   choices?: ICheckbox[];
-  formcontrol?: IFormControl[];
+  input?: IInput[];
   options?: {
     translated?: boolean;
     wrap?: boolean;

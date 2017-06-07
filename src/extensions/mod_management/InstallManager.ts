@@ -416,7 +416,7 @@ class InstallManager {
           .dispatch(showDialog(
               'info', 'Password Protected',
               {
-                formcontrol: [{
+                input: [{
                   id: 'password',
                   type: 'password',
                   value: '',
@@ -547,8 +547,7 @@ class InstallManager {
             message:
             'An older version of this mod is already installed.' +
             'You can replace the existing one or install this one alongside it. ' +
-            'If you have other profiles they will remain with the old version.',
-            formcontrol: [],
+            'If you have other profiles they will continue using the old version.',
           },
           {
             Cancel: null,
@@ -576,9 +575,8 @@ class InstallManager {
             'existing one or install the new one under a different name ' +
             '(this name is used internally, you can still change the display name ' +
             'to anything you want later).',
-            formcontrol: [{
+            input: [{
               id: 'newName',
-              type: 'input',
               value: modId,
               label: 'Name',
             }],
@@ -592,7 +590,7 @@ class InstallManager {
           if (result.action === 'Cancel') {
             reject(new UserCanceled());
           } else if (result.action === 'Rename') {
-            resolve({ name: result.input.newName, enable: false });
+            resolve({ name: result.input, enable: false });
           } else if (result.action === 'Replace') {
             const currentProfile = activeProfile(api.store.getState());
             const wasEnabled = getSafe(currentProfile.modState, [modId, 'enabled'], false);

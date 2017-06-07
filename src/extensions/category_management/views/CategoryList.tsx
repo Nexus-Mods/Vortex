@@ -229,7 +229,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       if (!filtered.has(obj.categoryId)) {
         return undefined;
       }
-      const copy: ICategoriesTree = Object.assign({}, obj);
+      const copy: ICategoriesTree = { ...obj };
       copy.expanded = expanded.has(copy.categoryId);
       copy.children = this.applyExpand(copy.children, showEmpty, expanded);
       return copy;
@@ -263,7 +263,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   private renameCategory = (info: { node: ICategoriesTree, path: string[] }) => {
     const {gameMode, onShowDialog, onRenameCategory} = this.props;
     onShowDialog('info', 'Rename Category', {
-      formcontrol: [{ id: 'newCategory', type: 'text', value: info.node.title, label: 'Category' }],
+      input: [{ id: 'newCategory', value: info.node.title, label: 'Category' }],
     }, {
         Cancel: null,
         Rename: null,
@@ -279,10 +279,10 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const lastIndex = this.searchLastRootId(categories);
 
     onShowDialog('question', 'Add Child Category', {
-      formcontrol: [
-        { id: 'newCategory', type: 'text', value: '', label: 'Category Name' },
+      input: [
+        { id: 'newCategory', value: '', label: 'Category Name' },
         {
-          id: 'newCategoryId', type: 'text', value: lastIndex.toString(),
+          id: 'newCategoryId', value: lastIndex.toString(),
           label: 'Category ID',
         },
       ],
@@ -314,10 +314,10 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const lastIndex = this.searchLastRootId(categories);
 
     onShowDialog('question', 'Add new Root Category', {
-      formcontrol: [
-        { id: 'newCategory', type: 'text', value: '', label: 'Category Name' },
+      input: [
+        { id: 'newCategory', value: '', label: 'Category Name' },
         {
-          id: 'newCategoryId', type: 'text', value: lastIndex.toString(),
+          id: 'newCategoryId', value: lastIndex.toString(),
           label: 'Category ID',
         },
       ],
