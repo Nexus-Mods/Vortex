@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import {IFileEntry as FileEntry, IModEntry as ModEntry} from './nmmEntries';
+import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
 
 /**
  * copy or move a list of mod archives
@@ -51,4 +51,3 @@ export function transferUnpackedMod(mod: ModEntry,
     })
     .then(() => Promise.resolve(failedFiles));
 }
-

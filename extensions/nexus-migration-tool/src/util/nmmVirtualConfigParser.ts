@@ -1,88 +1,93 @@
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { IHashResult } from 'modmeta-db';
+import { genHash, IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
+import { log, util } from 'nmm-api';
 import * as path from 'path';
-import {IFileEntry as FileEntry, IModEntry as ModEntry} from './nmmEntries';
+import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
 
-export class NMMVirtualConfigParser {
-  private sourceFile: string;
+const virtualConfigFilename: string = 'VirtualModConfig.xml';
 
-  constructor(nmmFilePath: string) {
-    this.sourceFile = nmmFilePath;
-  }
+export function parseNMMInstall(nmmFilePath: string): Promise<ModEntry[]> {
+  const nmmModList: ModEntry[] = [];
+  const parser = new DOMParser();
+  const sourceFile = path.join(nmmFilePath, virtualConfigFilename);
 
-  public parseNMMInstall =
-    (callback: (err, res: ModEntry[]) => void) => {
-    const nmmModList: ModEntry[] = [];
-    const parser = new DOMParser();
-    fs.readFileAsync(this.sourceFile, (err, data) => {
-        const xmlDoc = parser.parseFromString(data.toString('utf-8'), 'text/xml');
-        const version = xmlDoc.getElementById('virtualModActivator');
-        if (version === undefined) {
-          // throw invalid file
-        } else if (version.getAttribute('fileVersion') !== '0.3.0.0') {
-          // throw unsupported version
-        }
+  return fs.readFileAsync(sourceFile)
+  .then((data) => {
+    const xmlDoc = parser.parseFromString(data.toString('utf-8'), 'text/xml');
+    const version = xmlDoc.getElementsByTagName('virtualModActivator')[0];
 
-        const modInfoList = xmlDoc.getElementsByTagName('modInfo');
-        if (modInfoList === undefined || modInfoList.length <= 0) {
-          // throw nothing to import
-        }
+    if (version === null) {
+      // throw invalid file
+    } else if (version.getAttribute('fileVersion') !== '0.3.0.0') {
+      // throw unsupported version
+    }
 
-        for (const modInfo of modInfoList) {
-          if (!modInfo.hasChildNodes) {
-            continue;
-          }
+    const modInfoList = xmlDoc.getElementsByTagName('modInfo');
+    if (modInfoList === undefined || modInfoList.length <= 0) {
+      // throw nothing to import
+    }
 
-          const elementModId = modInfo.getAttribute('modId');
-          const elementDownloadId = modInfo.getAttribute('downloadId');
-          const elementModName = modInfo.getAttribute('modName');
-          const elementModFilename = modInfo.getAttribute('modFileName');
-          const elementArchivePath = modInfo.getAttribute('modFilePath');
-          const elementModVersion = modInfo.getAttribute('FileVersion');
+    for (const modInfo of modInfoList) {
+      if (!modInfo.hasChildNodes) {
+        continue;
+      }
 
-          const modFileEntries: FileEntry[] = [];
+      const elementModId = modInfo.getAttribute('modId');
+      const elementDownloadId = modInfo.getAttribute('downloadId');
+      const elementModName = modInfo.getAttribute('modName');
+      const elementModFilename = modInfo.getAttribute('modFileName');
+      const elementArchivePath = modInfo.getAttribute('modFilePath');
+      const elementModVersion = modInfo.getAttribute('FileVersion');
 
-          for (const fileLink of modInfo.childNodes) {
-            const nodeRealPath: string = fileLink.attributes['realPath'];
-            const nodeVirtualPath: string = fileLink.attributes['virtualPath'];
-            const nodeLinkPriority = fileLink.childNodes[0].nodeValue;
-            const nodeIsActive = fileLink.childNodes[1].nodeValue;
+      const modFileEntries: FileEntry[] = [];
 
-            const fileEntry: FileEntry = {
-              fileSource: nodeRealPath,
-              fileDestination: nodeVirtualPath,
-              isActive: (nodeIsActive === 'true'),
-              filePriority: (parseInt(nodeLinkPriority, 10)),
-            };
+      for (const fileLink of modInfo.getElementsByTagName('fileLink')) {
+        const nodeRealPath: string = fileLink.attributes['realPath'];
+        const nodeVirtualPath: string = fileLink.attributes['virtualPath'];
+        const nodeLinkPriority = fileLink.childNodes[0].nodeValue;
+        const nodeIsActive = fileLink.childNodes[1].nodeValue;
 
-            modFileEntries.push(fileEntry);
-          }
+        const fileEntry: FileEntry = {
+          fileSource: nodeRealPath,
+          fileDestination: nodeVirtualPath,
+          isActive: (nodeIsActive === 'true'),
+          filePriority: (parseInt(nodeLinkPriority, 10)),
+        };
 
-          const { genHash } = require('modmeta-db');
-          const modFilePath = path.join(elementArchivePath, elementModFilename);
-          let fileMD5: string;
+        modFileEntries.push(fileEntry);
+      }
 
-          fileMD5 = genHash(modFilePath)
-                .then((hashResult: IHashResult) => {
-                  return hashResult.md5sum;
-                });
+      /* const { genHash } = require('modmeta-db');
+      const modFilePath = path.join(elementArchivePath, elementModFilename);
+      let fileMD5: string;
 
-          const modEntry: ModEntry = {
-            modId: elementModId,
-            downloadId: elementDownloadId,
-            modName: elementModName,
-            modFilename: elementModFilename,
-            archivePath: elementArchivePath,
-            modVersion: elementModVersion,
-            archiveMD5: fileMD5,
-            fileEntries: modFileEntries,
-          };
+      fileMD5 = genHash(modFilePath)
+            .then((hashResult: IHashResult) => {
+              return hashResult.md5sum;
+            }); */
 
-          nmmModList.push(modEntry);
-        }
-    });
+      const fileMD5: string = 'test';
 
-    return Promise.resolve(callback(null, nmmModList));
-  }
+      const modEntry: ModEntry = {
+        nexusId: elementModId,
+        vortexId: util.deriveInstallName(elementModName, ''),
+        downloadId: elementDownloadId,
+        modName: elementModName,
+        modFilename: elementModFilename,
+        archivePath: elementArchivePath,
+        modVersion: elementModVersion,
+        archiveMD5: fileMD5,
+        fileEntries: modFileEntries,
+      };
+
+      nmmModList.push(modEntry);
+    }
+  })
+  .then(() => {
+    log ('info', 'Parsed Mods:' + nmmModList.length);
+    return Promise.resolve(nmmModList);
+  });
 }
+
+export default parseNMMInstall;

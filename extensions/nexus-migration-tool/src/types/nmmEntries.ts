@@ -1,5 +1,6 @@
 export interface IModEntry {
-  modId: string;
+  nexusId: string;
+  vortexId: string;
   downloadId: string;
   modName: string;
   modFilename: string;
