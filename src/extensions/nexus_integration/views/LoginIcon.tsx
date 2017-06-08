@@ -70,34 +70,27 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   private renderAvatar() {
     const { t, APIKey, userInfo } = this.props;
 
-    if ((APIKey !== undefined) && (userInfo !== undefined)) {
-      return (
-        <Button
-          id='btn-login'
-          tooltip={t('Login')}
-          onClick={this.showLoginLayer}
-          className='pull-right'
-        >
+    const loggedIn = (APIKey !== undefined) && (userInfo !== undefined);
+
+    return (
+      <Button
+        id='btn-login'
+        tooltip={loggedIn ? t('Show Details') : t('Log in')}
+        onClick={this.showLoginLayer}
+        className='pull-right'
+      >
+        {loggedIn ? (
           <Image
             src={userInfo.profileUrl}
             circle
             style={{ height: 32, width: 32 }}
           />
-        </Button>
-      );
-    } else {
-      return (
-        <Button
-          id='login-btn'
-          tooltip={t('Login')}
-          placement='top'
-          onClick={this.showLoginLayer}
-          className='pull-right'
-        >
-          <Icon name='user' className='logout-avatar' />
-        </Button>
-      );
-    }
+        ) : (
+            <Icon name='user' className='logout-avatar' />
+          )
+        }
+      </Button>
+    );
   }
 
   private showLoginLayer = () => {
