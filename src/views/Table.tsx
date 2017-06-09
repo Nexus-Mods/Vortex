@@ -13,7 +13,6 @@ import {getSafe, setSafe} from '../util/storeHelper';
 import {truthy} from '../util/util';
 
 import IconBar from './IconBar';
-import AttributeToggle from './table/AttributeToggle';
 import HeaderCell from './table/HeaderCell';
 import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
@@ -278,22 +277,6 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         }
       </th>
       );
-  }
-
-  private renderAttributeToggle = (attr: ITableAttribute) => {
-    const { t } = this.props;
-
-    const attributeState = this.getAttributeState(attr);
-
-    return !attr.isToggleable ? null : (
-      <AttributeToggle
-        key={attr.id}
-        attribute={attr}
-        state={attributeState}
-        t={t}
-        onSetAttributeVisible={this.setAttributeVisible}
-      />
-    );
   }
 
   private renderRow(data: any, visibleAttributes: ITableAttribute[]): JSX.Element {

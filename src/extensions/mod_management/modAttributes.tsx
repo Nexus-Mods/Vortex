@@ -16,7 +16,7 @@ export const PICTURE: ITableAttribute = {
   customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
     const url = getSafe(mod.attributes, ['pictureUrl'], undefined);
     if (url !== undefined) {
-      return <Image className='img-mod-picture' src={url} />;
+      return <Image className='mod-picture' src={url} />;
     } else {
       return <Icon name='image' />;
     }

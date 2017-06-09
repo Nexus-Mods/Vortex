@@ -16,4 +16,4 @@ export default function<T>(moduleId: string, basedir?: string, exportId?: string
     },
   };
   return new Proxy({}, handler);
-};
+}

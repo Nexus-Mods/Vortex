@@ -35,7 +35,6 @@ import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
 import getI18n from './util/i18n';
-import loadExtensionCSS from './util/loadExtensionCSS';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
@@ -164,8 +163,17 @@ getI18n(store.getState().settings.interface.language)
       showError(store.dispatch, 'failed to initialize localization', error);
     }
     extensions.doOnce();
+    extensions.renderStyle()
+    .then(() => {
+      ipcRenderer.send('show-window');
+    })
+    .catch(err => {
+      terminate({
+        message: 'failed to parse UI theme',
+        details: err.formatted,
+      });
+    });
     initApplicationMenu(extensions);
-    loadExtensionCSS(extensions);
     startupFinished();
     // render the page content
     ReactDOM.render(

@@ -1,9 +1,9 @@
 @import "react-select-variables";
-@import "../../node_modules/react-select/scss/default";
-@import "../../node_modules/react-select/scss/menu";
-@import "../../node_modules/react-select/scss/mixins";
-@import "../../node_modules/react-select/scss/multi";
-@import "../../node_modules/react-select/scss/spinner";
+@import "react-select/scss/default";
+@import "react-select/scss/menu";
+@import "react-select/scss/mixins";
+@import "react-select/scss/multi";
+@import "react-select/scss/spinner";
 
 .Select-control {
   display: inline-table;

@@ -11,10 +11,12 @@ import { log } from './log';
 import { showError } from './message';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
+import StyleManagerT from './StyleManager';
 
 import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs';
+import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>('modmeta-db');
@@ -211,7 +213,6 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerFooter: undefined,
       registerToDo: undefined,
       registerReducer: undefined,
-      registerStyle: undefined,
       registerPersistor: undefined,
       registerSettingsHive: undefined,
       registerTableAttribute: undefined,
@@ -245,6 +246,7 @@ class ExtensionManager {
   private mApi: IExtensionApi;
   private mTranslator: I18next.I18n;
   private mEventEmitter: NodeJS.EventEmitter;
+  private mStyleManager: StyleManagerT;
   private mReduxWatcher: any;
   private mWatches: IWatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
@@ -283,6 +285,7 @@ class ExtensionManager {
       lookupModMeta: this.lookupModMeta,
       saveModMeta: this.saveModMeta,
       openArchive: this.openArchive,
+      setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
     };
     this.mExtensions = this.loadExtensions();
     this.initExtensions();
@@ -420,6 +423,10 @@ class ExtensionManager {
         });
   }
 
+  public renderStyle() {
+    return this.mStyleManager.renderNow();
+  }
+
   public getProtocolHandler(protocol: string) {
     return this.mProtocolHandlers[protocol] || null;
   }
@@ -531,6 +538,8 @@ class ExtensionManager {
       if (remote !== undefined) {
         // log this only once so we don't spam the log file with this
         log('info', 'init extension', {name: ext.name});
+        const StyleManager = require('./StyleManager').default;
+        this.mStyleManager = new StyleManager();
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {

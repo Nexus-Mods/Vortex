@@ -23,7 +23,7 @@ export type ButtonProps = ITooltipProps & typeof BootstrapButton.defaultProps;
  */
 export class Button extends React.PureComponent<ButtonProps, {}> {
   public render() {
-    const relayProps: any = Object.assign({}, this.props);
+    const relayProps: any = { ...this.props };
     delete relayProps.tooltip;
     delete relayProps.placement;
 
@@ -114,7 +114,7 @@ export type ToggleButtonProps = ButtonProps & IToggleButtonExtraProps;
 export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
   public render() {
     const {state} = this.props;
-    const relayProps = Object.assign({}, this.props);
+    const relayProps = { ...this.props };
 
     ['buttonType', 'tooltip', 'offTooltip', 'placement',
      'onIcon', 'offIcon', 'state'].forEach((prop) => {
@@ -130,7 +130,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
         <BootstrapButton {...relayProps as any} title={tooltipText}>
           {['icon', 'both'].indexOf(bType) !== -1 ? <SvgIcon name={icon} /> : null}
           {['text', 'both'].indexOf(bType) !== -1
-            ? <p className='btn-toolbar-text'>{tooltipText}</p>
+            ? <p className='button-text'>{tooltipText}</p>
             : null}
           {this.props.children}
         </BootstrapButton>
@@ -151,7 +151,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
           <BootstrapButton {...relayProps as any}>
             { ['icon', 'both'].indexOf(bType) !== -1 ? <SvgIcon name={icon} /> : null }
             { ['text', 'both'].indexOf(bType) !== -1
-              ? <p className='btn-toolbar-text'>{tooltipText}</p>
+              ? <p className='button-text'>{tooltipText}</p>
               : null }
             { this.props.children }
           </BootstrapButton>
@@ -165,7 +165,7 @@ export type NavItemProps = ITooltipProps & typeof BootstrapNavItem.defaultProps;
 
 export class NavItem extends React.Component<NavItemProps, {}> {
   public render() {
-    const relayProps: any = Object.assign({}, this.props);
+    const relayProps: any = { ...this.props };
     delete relayProps.tooltip;
     delete relayProps.placement;
 
@@ -222,7 +222,7 @@ export type IconProps = ITooltipProps & IFontAwesomeProps;
  */
 export class Icon extends React.Component<IconProps, {}> {
   public render() {
-    const relayProps: any = Object.assign({}, this.props);
+    const relayProps: any = { ...this.props };
     delete relayProps.tooltip;
     delete relayProps.placement;
 

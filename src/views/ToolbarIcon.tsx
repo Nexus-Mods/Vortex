@@ -42,7 +42,7 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
           ? <Icon set={iconSet} name={icon} pulse={pulse} />
           : null }
         { ['text', 'both'].indexOf(bType) !== -1
-          ? <p className='btn-toolbar-text'>{text}</p>
+          ? <p className='button-text'>{text}</p>
           : null }
         { this.props.children }
       </Button>

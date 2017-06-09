@@ -55,9 +55,9 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
     return (
       <OverlayTrigger trigger='click' rootClose placement='right' overlay={popoverBottom}>
         <IconButton
-          className='btn-version-column'
+          className='btn-embed'
           icon='file-text'
-          id={mod.id}
+          id={`btn-changelog-${mod.id}`}
           tooltip={t('Changelog')}
         />
       </OverlayTrigger>

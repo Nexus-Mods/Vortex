@@ -41,6 +41,10 @@ a, .btn {
   cursor: default;
 }
 
+.btn.disabled, .btn[disabled], fieldset[disabled] .btn {
+  cursor: initial;
+}
+
 .radio label, .checkbox label {
   cursor: default;
 }

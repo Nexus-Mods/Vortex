@@ -20,7 +20,7 @@ import * as storeT from './util/store';
 import * as storeHelperT from './util/storeHelper';
 
 import * as Promise from 'bluebird';
-import { app, BrowserWindow, Menu, Tray } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, Tray } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
@@ -56,6 +56,35 @@ function applyArguments(args: IParameters) {
     mainWindow.webContents.send('external-url', args.download);
   }
 }
+
+function showMainWindow() {
+  const windowMetrics: IWindow = store.getState().settings.window;
+  const { getSafe } = require('./util/storeHelper') as typeof storeHelperT;
+  mainWindow.show();
+
+  if (getSafe(windowMetrics, ['maximized'], false)) {
+    mainWindow.maximize();
+  }
+
+  if (loadingScreen !== undefined) {
+    // ensure the splash screen remains visible
+    loadingScreen.setAlwaysOnTop(true);
+
+    // don't fade out immediately, otherwise the it looks odd
+    // as the main window appears at the same time
+    delayed(200)
+      .then(() => loadingScreen.webContents.send('fade-out'))
+      // wait for the fade out animation to finish before destroying
+      // the window
+      .then(() => delayed(500))
+      .then(() => {
+        loadingScreen.close();
+        loadingScreen = undefined;
+      });
+  }
+}
+
+ipcMain.on('show-window', showMainWindow);
 
 function createStore(): Promise<void> {
   // TODO: we load all the extensions here including their dependencies
@@ -96,28 +125,6 @@ function createWindow(args: IParameters) {
 
   mainWindow.once('ready-to-show', () => {
     extensions.setupApiMain(store, mainWindow.webContents);
-    mainWindow.show();
-
-    if (getSafe(windowMetrics, ['maximized'], false)) {
-      mainWindow.maximize();
-    }
-
-    if (loadingScreen !== undefined) {
-      // ensure the splash screen remains visible
-      loadingScreen.setAlwaysOnTop(true);
-
-      // don't fade out immediately, otherwise the it looks odd
-      // as the main window appears at the same time
-      delayed(200)
-      .then(() => loadingScreen.webContents.send('fade-out'))
-      // wait for the fade out animation to finish before destroying
-      // the window
-      .then(() => delayed(500))
-      .then(() => {
-        loadingScreen.close();
-        loadingScreen = undefined;
-      });
-    }
 
     applyArguments(args);
   });

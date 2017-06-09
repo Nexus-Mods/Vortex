@@ -41,18 +41,10 @@
       ]
     },
     {
-      "srcPath": "node_modules/font-awesome/css/font-awesome.min.css",
-      "outPath": "assets",
-      "skipPaths": 2,
-      "target": [
-        "out",
-        "app"
-      ]
-    },
-    {
-      "srcPath": "node_modules/font-awesome/fonts/fontawesome-webfont.woff2",
-      "outPath": "assets",
-      "skipPaths": 2,
+      "srcPath": "node_modules/bootstrap-sass/assets/stylesheets/_bootstrap.scss",
+      "outPath": "assets/css",
+      "rename": "bootstrap.scss",
+      "skipPaths": 4,
       "target": [
         "out",
         "app"
@@ -134,15 +126,6 @@
     {
       "srcPath": "extensions/game-*/*",
       "outPath": "bundledPlugins",
-      "skipPaths": 1,
-      "target": [
-        "out",
-        "app"
-      ]
-    },
-    {
-      "srcPath": "src/games/*/*.png",
-      "outPath": "",
       "skipPaths": 1,
       "target": [
         "out",

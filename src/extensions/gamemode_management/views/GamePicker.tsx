@@ -301,7 +301,6 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
           <GameThumbnail
             t={t}
             key={game.id}
-            large={false}
             game={game}
             type={type}
             active={game.id === gameMode}

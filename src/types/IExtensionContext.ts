@@ -9,8 +9,10 @@ import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
 import * as Promise from 'bluebird';
+import * as I18next from 'i18next';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
+import * as Redux from 'redux';
 
 export type PropsCallback = () => any;
 
@@ -308,6 +310,28 @@ export interface IExtensionApi {
    * opens an archive
    */
   openArchive: (archivePath: string) => Promise<Archive>;
+
+  /**
+   * insert or replace a sass-stylesheet. It gets integrated into the existing sheets based
+   * on the key:
+   * By default, the sheets "variables", "details" and "style" are intended to customize the
+   * look of the application.
+   * - "variables" is a set of variables representing colors, sizes and
+   *   margins that will be used throughout the application.
+   * - "details" applies these variables to different generic controls (like tabs, lists, ...)
+   * - "style" is where you should customize individual controls with css rules
+   *
+   * If your extension sets a sheet that didn't exist before then that sheet will be inserted
+   * before the "style" sheet but after everything else. This allows themes to affect extension
+   * styles.
+   *
+   * @param {string} key identify the key to set. If this is an existing sheet, that sheet will be
+   *                     replaced
+   * @param {string} filePath path of the corresponding stylesheet file
+   *
+   * @memberOf IExtensionContext
+   */
+  setStylesheet: (key: string, filePath: string) => void;
 }
 
 /**
@@ -477,16 +501,6 @@ export interface IExtensionContext {
    * @memberOf IExtensionContext
    */
   registerPersistor: (hive: string, persistor: IPersistor, debounce?: number) => void;
-
-  /**
-   * register a stylesheet file to be loaded in the page
-   * This is expected to be a less file and it will be compiled to css at startup
-   * time together will all other extensions and variables.less. This means you can
-   * access all the variables defined there.
-   *
-   * @memberOf IExtensionContext
-   */
-  registerStyle: (filePath: string) => void;
 
   /**
    * add an attribute to a table. An attribute can appear as a column inside the table or as a

@@ -1,0 +1,522 @@
+@font-face {
+  font-family: 'Roboto';
+  src: url('./assets/fonts/roboto.woff2');
+}
+
+//== Tables
+$table-cell-padding:            8px;
+$table-condensed-cell-padding:  2px;
+$table-bg:                      $brand-menu;
+$table-bg-accent:               #e9e9e9;
+$table-bg-hover:                $brand-secondary;
+$table-bg-active:               $table-bg-hover;
+$table-border-color:            $gray-lighter;
+
+
+//== Buttons
+$btn-font-weight:                normal;
+
+$btn-default-color:              $text-color;
+$btn-default-bg:                 $brand-secondary;
+$btn-default-border:             $btn-default-bg;
+
+$btn-primary-color:              $btn-default-color;
+$btn-primary-bg:                 $brand-primary;
+$btn-primary-border:             $btn-primary-bg;
+
+$btn-success-color:              $btn-default-color;
+$btn-success-bg:                 $brand-success;
+$btn-success-border:             $btn-success-bg;
+
+$btn-info-color:                 $btn-default-color;
+$btn-info-bg:                    $brand-info;
+$btn-info-border:                $btn-info-bg;
+
+$btn-warning-color:              $btn-default-color;
+$btn-warning-bg:                 $brand-warning;
+$btn-warning-border:             $btn-warning-bg;
+
+$btn-danger-color:               $btn-default-color;
+$btn-danger-bg:                  $brand-danger;
+$btn-danger-border:              $btn-danger-bg;
+
+$btn-link-disabled-color:        $text-color-disabled;
+
+$btn-border-radius-base:         $border-radius-base;
+$btn-border-radius-large:        $border-radius-large;
+$btn-border-radius-small:        $border-radius-small;
+
+
+//== Forms
+$input-bg:                       $brand-bg;
+$input-bg-disabled:              $brand-secondary;
+
+$input-color:                    $text-color;
+$input-border:                   $gray-darker;
+
+$input-border-radius:            $border-radius-base;
+$input-border-radius-large:      $border-radius-large;
+$input-border-radius-small:      $border-radius-small;
+
+$input-border-focus:             $brand-primary;
+
+$input-color-placeholder:        $gray-light;
+
+$input-height-base:              ($line-height-computed + ($padding-base-vertical * 2) + 4);
+$input-height-large:             (ceil($font-size-large * $line-height-large) + ($padding-large-vertical * 2) + 4);
+$input-height-small:             (floor($font-size-small * $line-height-small) + ($padding-small-vertical * 2) + 4);
+
+$form-group-margin-bottom:       floor(($gutter-width / 2));
+
+$legend-color:                   $text-color;
+$legend-border-color:            transparent;
+
+$input-group-addon-bg:           $brand-bg;
+$input-group-addon-border-color: $input-border;
+
+$cursor-disabled:                not-allowed;
+
+
+//== Dropdowns
+$dropdown-bg:                    $brand-secondary;
+$dropdown-border:                rgba(0,0,0,.15);
+$dropdown-fallback-border:       $gray-light;
+$dropdown-divider-bg:            $gray-lighter;
+
+$dropdown-link-color:            $gray-darker;
+$dropdown-link-hover-color:      $text-color;
+$dropdown-link-hover-bg:         $component-active-bg;
+
+$dropdown-link-active-color:     $text-color;
+$dropdown-link-active-bg:        $component-active-bg;
+$dropdown-link-disabled-color:   $text-color-disabled;
+
+$dropdown-header-color:          $gray-light;
+
+$dropdown-caret-color:           $gray-base;
+
+//== Media queries breakpoints (not actually used since we're not using a grid layout)
+$screen-xs:                  480px;
+$screen-xs-min:              $screen-xs;
+$screen-phone:               $screen-xs-min;
+
+$screen-sm:                  768px;
+$screen-sm-min:              $screen-sm;
+$screen-tablet:              $screen-sm-min;
+
+$screen-md:                  992px;
+$screen-md-min:              $screen-md;
+$screen-desktop:             $screen-md-min;
+
+$screen-lg:                  1200px;
+$screen-lg-min:              $screen-lg;
+$screen-lg-desktop:          $screen-lg-min;
+
+$screen-xs-max:              ($screen-sm-min - 1);
+$screen-sm-max:              ($screen-md-min - 1);
+$screen-md-max:              ($screen-lg-min - 1);
+
+//== z-order (not intended to be changed, may break functionality)
+$zindex-navbar:            1000;
+$zindex-dropdown:          1000;
+$zindex-navbar-fixed:      1030;
+$zindex-menu-layer:        1035;
+$zindex-modal-background:  1040;
+$zindex-modal:             1050;
+$zindex-popover:           1060;
+$zindex-tooltip:           1070;
+
+
+//== Grid system (not used)
+$grid-columns:              12;
+$grid-gutter-width:         $gutter-width;
+$grid-float-breakpoint:     $screen-sm-min;
+$grid-float-breakpoint-max: ($grid-float-breakpoint - 1);
+
+
+//== Container sizes
+$container-tablet:             (720px + $grid-gutter-width);
+$container-sm:                 $container-tablet;
+
+$container-desktop:            (940px + $grid-gutter-width);
+$container-md:                 $container-desktop;
+
+$container-large-desktop:      (1140px + $grid-gutter-width);
+$container-lg:                 $container-large-desktop;
+
+
+//== Navbar (unused)
+
+$navbar-height:                    60px;
+$navbar-margin-bottom:             $line-height-computed;
+$navbar-border-radius:             $border-radius-base;
+$navbar-padding-horizontal:        floor(($grid-gutter-width / 2));
+$navbar-padding-vertical:          (($navbar-height - $line-height-computed) / 2);
+$navbar-collapse-max-height:       340px;
+
+$navbar-default-color:             #fff;
+$navbar-default-bg:                $brand-primary;
+$navbar-default-border:            transparent;
+
+$navbar-default-link-color:                #fff;
+$navbar-default-link-hover-color:          $brand-success;
+$navbar-default-link-hover-bg:             transparent;
+$navbar-default-link-active-color:         #fff;
+$navbar-default-link-active-bg:            darken($navbar-default-bg, 10%);
+$navbar-default-link-disabled-color:       #ccc;
+$navbar-default-link-disabled-bg:          transparent;
+
+$navbar-default-brand-color:               $navbar-default-link-color;
+$navbar-default-brand-hover-color:         $navbar-default-link-hover-color;
+$navbar-default-brand-hover-bg:            transparent;
+
+$navbar-default-toggle-hover-bg:           darken($navbar-default-bg, 10%);
+$navbar-default-toggle-icon-bar-bg:        #fff;
+$navbar-default-toggle-border-color:       darken($navbar-default-bg, 10%);
+
+
+//=== Inverted navbar
+$navbar-inverse-color:                      #fff;
+$navbar-inverse-bg:                         $brand-success;
+$navbar-inverse-border:                     transparent;
+
+$navbar-inverse-link-color:                 #fff;
+$navbar-inverse-link-hover-color:           $brand-primary;
+$navbar-inverse-link-hover-bg:              transparent;
+$navbar-inverse-link-active-color:          #fff;
+$navbar-inverse-link-active-bg:             darken($navbar-inverse-bg, 5%);
+$navbar-inverse-link-disabled-color:        #ccc;
+$navbar-inverse-link-disabled-bg:           transparent;
+
+$navbar-inverse-brand-color:                $navbar-inverse-link-color;
+$navbar-inverse-brand-hover-color:          $navbar-inverse-link-hover-color;
+$navbar-inverse-brand-hover-bg:             transparent;
+
+$navbar-inverse-toggle-hover-bg:            darken($navbar-inverse-bg, 10%);
+$navbar-inverse-toggle-icon-bar-bg:         #fff;
+$navbar-inverse-toggle-border-color:        darken($navbar-inverse-bg, 10%);
+
+
+//== Navs
+$nav-link-padding:                          10px 15px;
+$nav-link-hover-bg:                         $gray-lighter;
+
+$nav-disabled-link-color:                   $gray-light;
+$nav-disabled-link-hover-color:             $gray-light;
+
+$nav-tabs-border-color:                     $gray-darker;
+
+$nav-tabs-link-hover-border-color:          $gray-darker;
+
+$nav-tabs-active-link-hover-bg:             $body-bg;
+$nav-tabs-active-link-hover-color:          $gray-darker;
+$nav-tabs-active-link-hover-border-color:   $gray-darker;
+
+$nav-tabs-justified-link-border-color:            $gray-darker;
+$nav-tabs-justified-active-link-border-color:     $body-bg;
+
+$nav-pills-border-radius:                   $border-radius-base;
+$nav-pills-active-link-hover-bg:            $component-active-bg;
+$nav-pills-active-link-hover-color:         $component-active-color;
+
+//== Pagination
+$pagination-color:                     $text-color;
+$pagination-bg:                        $brand-success;
+$pagination-border:                    transparent;
+
+$pagination-hover-color:               $text-color;
+$pagination-hover-bg:                  darken($brand-success, 15%);
+$pagination-hover-border:              transparent;
+
+$pagination-active-color:              $text-color;
+$pagination-active-bg:                 darken($brand-success, 15%);
+$pagination-active-border:             transparent;
+
+$pagination-disabled-color:            $gray-lighter;
+$pagination-disabled-bg:               lighten($brand-success, 15%);
+$pagination-disabled-border:           transparent;
+
+
+//== Pager
+$pager-bg:                             $pagination-bg;
+$pager-border:                         $pagination-border;
+$pager-border-radius:                  15px;
+
+$pager-hover-bg:                       $pagination-hover-bg;
+
+$pager-active-bg:                      $pagination-active-bg;
+$pager-active-color:                   $pagination-active-color;
+
+$pager-disabled-color:                 $gray-dark;
+
+
+//== Jumbotron (not used)
+$jumbotron-padding:              $gutter-width;
+$jumbotron-color:                inherit;
+$jumbotron-bg:                   $gray-darker;
+$jumbotron-heading-color:        inherit;
+$jumbotron-font-size:            ceil(($font-size-base * 1.5));
+$jumbotron-heading-font-size:    ceil(($font-size-base * 4.5));
+
+//== Form states and alerts
+$state-success-text:             $text-color;
+$state-success-bg:               $brand-success;
+$state-success-border:           $brand-success;
+
+$state-info-text:                $text-color;
+$state-info-bg:                  $brand-info;
+$state-info-border:              $brand-info;
+
+$state-warning-text:             $text-color;
+$state-warning-bg:               $brand-warning;
+$state-warning-border:           $brand-warning;
+
+$state-danger-text:              $text-color;
+$state-danger-bg:                $brand-danger;
+$state-danger-border:            $brand-danger;
+
+
+//== Tooltips
+
+$tooltip-max-width:           200px;
+$tooltip-color:               $text-color;
+$tooltip-bg:                  $brand-menu;
+$tooltip-opacity:             .9;
+
+$tooltip-arrow-width:         5px;
+$tooltip-arrow-color:         $tooltip-bg;
+
+
+//== Popovers
+
+$popover-bg:                          $brand-bg;
+$popover-max-width:                   400px;
+$popover-border-color:                $gray-lighter;
+$popover-fallback-border-color:       $gray-light;
+
+$popover-title-bg:                    darken($popover-bg, 3%);
+
+$popover-arrow-width:                 10px;
+$popover-arrow-color:                 $popover-bg;
+
+$popover-arrow-outer-width:           ($popover-arrow-width + 1);
+$popover-arrow-outer-color:           fadein($popover-border-color, 5%);
+$popover-arrow-outer-fallback-color:  darken($popover-fallback-border-color, 20%);
+
+
+//== Labels
+
+$label-default-bg:            $btn-default-bg;
+$label-primary-bg:            $brand-primary;
+$label-success-bg:            $brand-success;
+$label-info-bg:               $brand-info;
+$label-warning-bg:            $brand-warning;
+$label-danger-bg:             $brand-danger;
+
+$label-color:                 $text-color;
+$label-link-hover-color:      $text-color;
+
+
+//== Modals
+
+$modal-inner-padding:         $gutter-width / 2;
+$modal-title-padding:         $gutter-width / 2;
+$modal-title-line-height:     $line-height-base;
+
+$modal-content-bg:                             $brand-menu;
+$modal-content-border-color:                   rgba($gray-lighter,.2);
+$modal-content-fallback-border-color:          $gray-light;
+
+$modal-backdrop-bg:           #000;
+$modal-backdrop-opacity:      .5;
+$modal-header-border-color:   $gray-darker;
+$modal-footer-border-color:   $modal-header-border-color;
+
+$modal-lg:                    900px;
+$modal-md:                    600px;
+$modal-sm:                    300px;
+
+
+//== Alerts
+
+$alert-padding:               $gutter-width / 3;
+$alert-border-radius:         $border-radius-base;
+$alert-link-font-weight:      bold;
+
+$alert-success-bg:            $state-success-bg;
+$alert-success-text:          $state-success-text;
+$alert-success-border:        $state-success-border;
+
+$alert-info-bg:               $state-info-bg;
+$alert-info-text:             $state-info-text;
+$alert-info-border:           $state-info-border;
+
+$alert-warning-bg:            $state-warning-bg;
+$alert-warning-text:          $state-warning-text;
+$alert-warning-border:        $state-warning-border;
+
+$alert-danger-bg:             $state-danger-bg;
+$alert-danger-text:           $state-danger-text;
+$alert-danger-border:         $state-danger-border;
+
+
+//== Progress bars
+
+$progress-bg:                 $gray-lighter;
+$progress-bar-color:          $text-color;
+$progress-border-radius:      $border-radius-base;
+
+$progress-bar-bg:             $brand-primary;
+$progress-bar-success-bg:     $brand-success;
+$progress-bar-warning-bg:     $brand-warning;
+$progress-bar-danger-bg:      $brand-danger;
+$progress-bar-info-bg:        $brand-info;
+
+
+//== List group
+
+$list-group-bg:                 initial;
+$list-group-border:             $brand-secondary;
+$list-group-border-radius:      $border-radius-base;
+
+$list-group-hover-bg:           $gray-lighter;
+$list-group-active-color:       $component-active-color;
+$list-group-active-bg:          $component-active-bg;
+$list-group-active-border:      $list-group-border;
+$list-group-active-text-color:  lighten($list-group-active-bg, 40%);
+
+$list-group-disabled-color:      $gray-light;
+$list-group-disabled-bg:         $gray-lighter;
+$list-group-disabled-text-color: $list-group-disabled-color;
+
+$list-group-link-color:         $gray;
+$list-group-link-hover-color:   $list-group-link-color;
+$list-group-link-heading-color: $gray-dark;
+
+
+//== Panels
+
+$panel-bg:                    $brand-bg;
+$panel-body-padding:          $gutter-width / 2;
+$panel-heading-padding:       $gutter-width / 3 $gutter-width / 2;
+$panel-footer-padding:        $panel-heading-padding;
+$panel-border-radius:         $border-radius-base;
+
+$panel-inner-border:          $gray-darker;
+$panel-footer-bg:             $gray-darker;
+
+$panel-default-text:          $text-color;
+$panel-default-border:        $gray-darker;
+$panel-default-heading-bg:    $gray-lighter;
+
+$panel-primary-text:          $text-color;
+$panel-primary-border:        $brand-primary;
+$panel-primary-heading-bg:    $brand-primary;
+
+$panel-success-text:          $state-success-text;
+$panel-success-border:        $state-success-border;
+$panel-success-heading-bg:    $state-success-bg;
+
+$panel-info-text:             $state-info-text;
+$panel-info-border:           $state-info-border;
+$panel-info-heading-bg:       $state-info-bg;
+
+$panel-warning-text:          $state-warning-text;
+$panel-warning-border:        $state-warning-border;
+$panel-warning-heading-bg:    $state-warning-bg;
+
+$panel-danger-text:           $state-danger-text;
+$panel-danger-border:         $state-danger-border;
+$panel-danger-heading-bg:     $state-danger-bg;
+
+
+//== Thumbnails
+
+$thumbnail-padding:           4px;
+$thumbnail-bg:                $body-bg;
+$thumbnail-border:            $gray-darker;
+$thumbnail-border-radius:     $border-radius-base;
+
+$thumbnail-caption-color:     $text-color;
+$thumbnail-caption-padding:   9px;
+
+
+//== Badges
+
+$badge-color:                 $text-color;
+$badge-link-hover-color:      $text-color;
+$badge-bg:                    $brand-danger;
+
+$badge-active-color:          $brand-primary;
+$badge-active-bg:             $text-color;
+
+$badge-font-weight:           bold;
+$badge-line-height:           1;
+$badge-border-radius:         10px;
+
+
+//== Wells (not used)
+
+$well-bg:                     $gray-lighter;
+$well-border:                 transparent;
+
+
+//== Breadcrumbs (not used)
+
+$breadcrumb-padding-vertical:   8px;
+$breadcrumb-padding-horizontal: 15px;
+$breadcrumb-bg:                 $gray-lighter;
+$breadcrumb-color:              $text-color;
+$breadcrumb-active-color:       $gray-dark;
+$breadcrumb-separator:          "/";
+
+
+//== Carousel (not used)
+
+$carousel-text-shadow:                        0 1px 2px rgba(0,0,0,.6);
+
+$carousel-control-color:                      $text-color;
+$carousel-control-width:                      15%;
+$carousel-control-opacity:                    .5;
+$carousel-control-font-size:                  $font-size-large;
+
+$carousel-indicator-active-bg:                $text-color;
+$carousel-indicator-border-color:             $gray-darker;
+
+$carousel-caption-color:                      $text-color;
+
+
+//== Close (not used)
+
+$close-font-weight:           bold;
+$close-color:                 #000;
+$close-text-shadow:           none;
+
+
+//== Code highlighting (not used)
+
+$code-color:                  #c7254e;
+$code-bg:                     #f9f2f4;
+
+$kbd-color:                   $text-color;
+$kbd-bg:                      #333;
+
+$pre-bg:                      $gray-lighter;
+$pre-color:                   $gray-dark;
+$pre-border-color:            #ccc;
+$pre-scrollable-max-height:   340px;
+
+
+//== Type (not used)
+
+$component-offset-horizontal: 180px;
+$text-muted:                  $gray-light;
+$headings-small-color:        $gray-light;
+$blockquote-small-color:      $gray-light;
+$blockquote-font-size:        ($font-size-base * 1.25);
+$blockquote-border-color:     $gray-lighter;
+$page-header-border-color:    transparent;
+$dl-horizontal-offset:        $component-offset-horizontal;
+$dl-horizontal-breakpoint:    $grid-float-breakpoint;
+$hr-border:                   $gray-lighter;
+

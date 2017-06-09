@@ -103,27 +103,23 @@ const Icon = (props: IIconProps) => {
 
   let classes = [ 'icon', `icon-${props.name}` ];
   if (props.spin) {
-    classes.push('fa-spin');
+    classes.push('icon-spin');
   }
 
   if (props.pulse) {
-    classes.push('fa-pulse');
+    classes.push('icon-pulse');
   }
 
   if (props.border) {
-    classes.push('fa-border');
-  }
-
-  if (props.inverse) {
-    classes.push('fa-inverse');
+    classes.push('icon-border');
   }
 
   if (props.flip) {
-    classes.push('fa-flip-' + props.flip);
+    classes.push('icon-flip-' + props.flip);
   }
 
   if (props.rotate) {
-    classes.push('fa-rotate-' + props.rotate);
+    classes.push('icon-rotate-' + props.rotate);
   }
 
   if (props.className !== undefined) {

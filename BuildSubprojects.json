@@ -160,6 +160,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "theme-switcher",
+      "path": "extensions/theme-switcher",
+      "removeModules": ["nmm-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/theme-switcher"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "name": "exe-version-rebuild",
       "module": "exe-version",

@@ -147,8 +147,6 @@ function register(context: IExtensionContextExt) {
     context.registerProfileFile(game, path.join(pluginPath(game), 'loadorder.txt'));
   }
 
-  context.registerStyle(path.join(__dirname, 'plugin_management.scss'));
-
   context.registerReducer(['session', 'plugins'], pluginsReducer);
   context.registerReducer(['loadOrder'], loadOrderReducer);
   context.registerReducer(['userlist'], userlistReducer);
@@ -342,6 +340,8 @@ function init(context: IExtensionContextExt) {
 
   context.once(() => {
     const store = context.api.store;
+
+    context.api.setStylesheet('plugin-management', path.join(__dirname, 'plugin_management.scss'));
 
     loot = new LootInterface(context);
 

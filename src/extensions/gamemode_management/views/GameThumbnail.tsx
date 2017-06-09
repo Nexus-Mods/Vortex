@@ -10,7 +10,6 @@ export interface IProps {
   t: I18next.TranslationFunction;
   game: IGameStored;
   active: boolean;
-  large: boolean;
   type: string;
 }
 
@@ -21,24 +20,22 @@ export interface IProps {
  */
 class GameThumbnail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, active, game, large, type } = this.props;
+    const { t, active, game, type } = this.props;
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
     return (
       <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
-        <div style={{ position: 'relative', top: '0px' }}>
         <img
-          className={ large ? 'game-thumbnail-img-large' : 'game-thumbnail-img' }
+          className={ 'thumbnail-img' }
           src={ logoPath }
         />
-        </div>
-        <div className='game-thumbnail-bottom'>
-          <h5 className='game-thumbnail-name'>{ t(game.name) }</h5>
-          <p className='flex-rest'/>
+        <div className='bottom'>
+          <h5 className='name'>{ t(game.name) }</h5>
+          <p className='flex-fill'/>
           <IconBar
             id={`game-thumbnail-${game.id}`}
-            className='game-thumbnail-buttons'
+            className='buttons'
             group={`game-${type}-buttons`}
             instanceId={game.id}
             staticElements={[]}

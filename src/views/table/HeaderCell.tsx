@@ -26,8 +26,8 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     return (
       <th className={`table-header-cell ${className}`} key={attribute.id}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className='flex-rest' style={{ display: 'flex', flexDirection: 'row' }}>
-            <p className='vcenter flex-rest'>{ t(attribute.name) }</p>
+          <div className='flex-fill' style={{ display: 'flex', flexDirection: 'row' }}>
+            <p className='vcenter flex-fill'>{ t(attribute.name) }</p>
             <div style={{ margin: 'auto 5px auto auto', whiteSpace: 'nowrap' }}>
             { attribute.filter !== undefined ? this.renderFilterIndicator() : null }
             { attribute.isSortable ? this.renderSortIndicator() : null }
@@ -54,7 +54,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     return (
       <IconButton
         id={`btn-filter-${attribute.id}`}
-        className='btn-embed btn-table-filter'
+        className='btn-table-filter'
         icon='filter'
         tooltip={t('Filter')}
         onClick={this.toggleFilter}

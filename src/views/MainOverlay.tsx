@@ -39,7 +39,7 @@ class MainOverlay extends ComponentEx<IProps, {}> {
     return (
       <div className={classes.join(' ')}>
         {pageOverlay}
-        <div className='overlay-spacer' />
+        <div className='flex-fill' />
         <div className='global-overlay'>
           <IconBar
             group='help-icons'

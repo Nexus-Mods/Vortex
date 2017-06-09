@@ -17,7 +17,9 @@ function main(context: types.IExtensionContext) {
 
   context.registerReducer(['session', 'metaEditor'], sessionReducer);
 
-  context.registerStyle(path.join(__dirname, 'metaeditor.scss'));
+  context.once(() => {
+    context.api.setStylesheet('meta-editor', path.join(__dirname, 'metaeditor.scss'));
+  });
 
   return true;
 }

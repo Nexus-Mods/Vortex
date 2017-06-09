@@ -33,7 +33,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 class LoginIcon extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     return (
-      <span className='pull-right'>
+      <span id='login-control'>
         {this.renderAvatar()}
         {this.renderLoginName()}
       </span >
@@ -50,14 +50,11 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     if ((APIKey !== undefined) && (userInfo !== undefined)) {
       return (
-        <FormGroup
-          bsSize={'small'}
-          className='pull-right'
-        >
-          <div className='lbl-username'>
+        <FormGroup style={{ float: 'left' }}>
+          <div className='username'>
             {userInfo.name}
           </div>
-          <div className='div-logout'>
+          <div className='logout-button'>
             <a onClick={this.logOut}>{t('Log out')}</a>
           </div>
         </FormGroup>

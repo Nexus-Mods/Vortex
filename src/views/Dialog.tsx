@@ -126,7 +126,6 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         <textarea
           key='dialog-content-message'
           wrap={wrap}
-          style={{ width: '100%', resize: 'none', border: 'none' }}
           defaultValue={this.translateParts(content.message, t)}
           readOnly={true}
         />
@@ -135,9 +134,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (content.htmlFile !== undefined) {
       controls.push((
-        <div key='dialog-content-html' style={{ height: '100%' }}>
-        <webview src={`file://${content.htmlFile}`} />
-      </div>
+        <div key='dialog-content-html'>
+          <webview src={`file://${content.htmlFile}`} />
+        </div>
       ));
     } else if (content.htmlText !== undefined) {
       controls.push((
@@ -166,7 +165,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ));
     }
 
-    return <div style={{ width: '100%' }}>{controls}</div>;
+    return <div className='dialog-container'>{controls}</div>;
   }
 
   private renderInput = (input: IInput) => {

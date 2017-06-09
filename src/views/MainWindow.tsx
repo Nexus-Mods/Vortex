@@ -19,7 +19,6 @@ import IconBar from './IconBar';
 import MainFooter from './MainFooter';
 import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
-import MainToolbar from './MainToolbar';
 import Notifications from './Notifications';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
@@ -211,8 +210,17 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       <Fixed id='main-toolbar'>
         <QuickLauncher t={t} />
         {this.pageHeader || <div className='mainpage-header' />}
-        <MainToolbar
-          applicationButtons={this.applicationButtons}
+        <IconBar
+          className='application-icons'
+          group='application-icons'
+          staticElements={this.applicationButtons}
+        />
+        <IconButton
+          id='btn-open-flyout'
+          icon='ellipsis-v'
+          tooltip={t('Functions')}
+          onClick={this.toggleOverlay}
+          className='pull-right'
         />
       </Fixed>
     );

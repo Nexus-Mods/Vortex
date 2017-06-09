@@ -120,10 +120,12 @@ function main(context: types.IExtensionContext) {
   context.registerDialog('mod-conflict-editor', ConflictEditor);
   context.registerFooter('conflict-progress', ProgressFooter);
 
-  context.registerStyle(path.join(__dirname, 'dependency-manager.scss'));
-
   context.once(() => {
     const store = context.api.store;
+
+    context.api.setStylesheet('dependency-manager',
+                              path.join(__dirname, 'dependency-manager.scss'));
+
     context.api.events.on('profile-activated', () => {
       const state: types.IState = store.getState();
       const modPath = selectors.installPath(state);

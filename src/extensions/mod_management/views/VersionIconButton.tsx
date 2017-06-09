@@ -40,7 +40,7 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
 
     return (
       <IconButton
-        className='btn-version-column'
+        className='btn-embed'
         id={`btn-version-${mod.id}`}
         tooltip={tooltip}
         icon={icon}

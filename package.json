@@ -43,16 +43,7 @@
     "build": "tsc -p . && npm run sassc && npm run build_rest",
     "buildwatch": "npm run build_rest && concurrently -p \"\" --kill-others \"tsc -p . -w\" npm-watch"
   },
-  "watch": {
-    "sassc": {
-      "patterns": [
-        "src\\stylesheets"
-      ],
-      "extensions": "scss",
-      "ignore": "",
-      "quiet": false
-    }
-  },
+  "watch": {},
   "engines": {
     "electron": "1.6.5"
   },

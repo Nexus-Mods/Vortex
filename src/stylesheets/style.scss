@@ -1,182 +1,34 @@
-/**
- * styles for custom controls
- */
+////////////////////////
+// generic control rules
 
-#notifications {
-  position: absolute;
-  top: 0px;
-  right: 0px;
-  width: 90%;
-  max-height: 90%;
-  overflow-y: auto;
-  z-index: 1055; // should be above dialogs
-}
+// button groups
+.btn-group {
+  position: static;
+  // inside tables we can't use "relative" because then the dropdown overlays the header.
+  // This rule makes the dropdown relative only when it's open. This way it will still overlay
+  // the header but only if the user interacts with it. This still looks slightly broken but it's
+  // actually useful.
+  &.dropdown.open {
+    position: relative;
+  }
 
-#notifications::-webkit-scrollbar { 
-  display: none; 
-}
-
-.notification {
-  margin-bottom: 1px;
-  padding: 5px;
-  min-height: 32px;
-}
-
-.notification p {
-  display: inline-block;
-}
-
-.notification-buttons {
-  float: right;
-}
-
-.notification-buttons button {
-  padding: 0px 2px;
-  margin: 0px 2px;
-}
-
-#main-toolbar {
-  background-color: $brand-menu;
-  height: 48px;
-  display: flex;
-}
-
-#main-toolbar button {
-  background-color: transparent;
-  border-width: 0px;
-  color: #cfd8dc;
-  padding: 8px;
-  &:hover {
-    background-color: $gray-dark;
+  >.btn {
+    float: none;
   }
 }
 
-#main-toolbar button > svg {
-  width: 24px;
-  height: 24px;
-}
-
-#main-nav-sidebar {
-  background-color: $brand-menu;
-  transition: max-width $expand-sidebar-delay;
-}
-
-#main-nav-container {
+.btn-group-vertical {
+  display: flex;
   flex-direction: column;
-  height: 100%;
-  display: flex;
-  overflow-y: auto;
-  // padding to accomodate the absolute-positioned minimize-button
-  padding-bottom: 24px;
 }
 
-#main-window-pane {
-  background-color: $brand-bg;
-  color: $text-color;
-}
-
-#main-footer {
-  background-color: $brand-menu;
-}
-
-.sidebar-expanded {
-  max-width: 500px;
-}
-
-.sidebar-compact {
-  min-width: 0px;
-  max-width: 48px;
-}
-
-.menu-label {
-  transition: opacity $expand-sidebar-delay, min-width $expand-sidebar-delay;
-  vertical-align: middle;
-}
-
-.sidebar-expanded .menu-label {
-  opacity: 1;
-}
-
-.sidebar-compact .menu-label {
-  opacity: 0;
-  width: 0;
-  overflow-x: visible;
-  min-width: 0;
+.btn-group > .btn,
+.btn-group-vertical > .btn {
+  position: initial;
   display: inline-block;
 }
 
-.sidebar-expanded .badge {
-  margin-left: 0px;
-  transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
-}
-
-.sidebar-compact .badge {
-  padding: 3px;
-  font-size: $font-size-small;
-  margin-left: -18px !important;
-  transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
-}
-
-.sidebar-expanded .icon-spinner {
-  margin-left: 5px;
-  transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
-}
-
-.sidebar-compact .icon-spinner {
-  margin-left: -12px;
-  height: 12px;
-  transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
-}
-
-.nav-pills > li > a {
-  color: #cfd8dc;
-  overflow: hidden;
-  white-space: nowrap;
-  padding: 10px 25px 10px 10px;
-  -webkit-user-drag: none;
-}
-
-.nav > li > a:hover, .nav > li > a:focus {
-  background-color: $gray-dark;
-}
-
-.nav-pills.nav-stacked > li.active > a,
-  .nav-pills.nav-pills.nav-stacked > li.active > a:hover,
-  .nav-pills.nav-stacked > li.active > a:focus {
-  border-left: 4px solid $brand-warning;
-  // regular padding - border
-  padding-left: 6px;
-}
-
-.nav-pills>li>a>.svg-icon {
-  height: initial;
-}
-
-.about-panel {
-  height: 100%;
-  max-height: 200px;
-  overflow-y: scroll;
-}
-
-.btn-version-column {
-  padding: 1px 1px;
-  border: 0px;
-  color: currentColor;
-  background-color: transparent;
-  &:hover {
-    color: $link-hover-color;
-    background-color: initial;
-  }
-  &:active {
-    color: $link-hover-color;
-    background-color: initial;
-  }
-  &:focus {
-    color: $link-hover-color;
-    background-color: initial;
-  }
-}
-
+// buttons
 .btn-embed {
   padding: 0px;
   border: 0px;
@@ -196,158 +48,180 @@
   }
 }
 
-btn-default {
-  &:hover {
-    background-color: lighten($brand-secondary, 20%);
-  }
-  &:active {
-    background-color: darken($brand-secondary, 20%);
-  }
+// button inside a (input- or list-) line  pulled to the right
+.btn-line-right {
+  position: absolute;
+  right: 10px;
+  top: 5px;
 }
 
-.logout-avatar {
-  color: red;
+// text in a button that combines icon and text
+.button-text {
+  margin-left: 10px;
+  display: inline;
 }
 
-.highlight-base {
-  padding: 1px 5px;
-  border: 0px;
-  color: $gray-darker;
-  &:hover {
-    color: $link-hover-color;
-  }
-  &:active {
-    color: $link-hover-color;
-  }
-  &:focus {
-    color: $link-hover-color;
-  }
+// toggle-button that is active
+.btn-toggle-on {
+  background-color: $gray-dark;
 }
 
-.mod-updating-warning {
-  color: $brand-warning;
-}
-
-.mod-updating-download {
-  color: $brand-warning;
-}
-
-.mod-updating-ban {
-  color: $brand-danger;
-}
-
-.mod-updating-bug {
-  color: $brand-danger;
-}
-
-.highlight-1 {
-  background-color: #ff0000;
-  &:hover {
-    background-color: #ff0000;
-  }
-  &:active {
-    background-color: #ff0000;
-  }
-  &:focus {
-    background-color: #ff0000;
-  }
-}
-
-.highlight-2 {
-  background-color: #03a9f4;
-  &:hover {
-    background-color: #03a9f4;
-  }
-  &:active {
-    background-color: #03a9f4;
-  }
-  &:focus {
-    background-color: #03a9f4;
-  }
-}
-
-.highlight-3 {
-  background-color: #4caf50;
-  &:hover {
-    background-color: #4caf50;
-  }
-  &:active {
-    background-color: #4caf50;
-  }
-  &:focus {
-    background-color: #4caf50;
-  }
-}
-
-.highlight-4 {
-  background-color: #cddc39;
-  &:hover {
-    background-color: #cddc39;
-  }
-  &:active {
-    background-color: #cddc39;
-  }
-  &:focus {
-    background-color: #cddc39;
-  }
-}
-
-.highlight-5 {
-  background-color: #ff9800;
-  &:hover {
-    background-color: #ff9800;
-  }
-  &:active {
-    background-color: #ff9800;
-  }
-  &:focus {
-    background-color: #ff9800;
-  }
-}
-
-.highlight-default {
-  background-color: transparent;
-  &:hover {
-    background-color: transparent;
-  }
-  &:active {
-    background-color: transparent;
-  }
-  &:focus {
-    background-color: transparent;
-  }
-}
-
-
-.progress-embed {
-  // using max-height here is a bit of a hack because with react
-  // bootstrap I apparently can't replace the .progress class,
-  // I can just expand it, so if I set height here it has no effect
-  max-height: 16px;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
-  background: $gray-light;
+// tables
+.table {
   margin-bottom: 0px;
-  border: 1px;
-  border-style: solid;
+
+  >thead>tr>th {
+    vertical-align: top;
+  }
+
+  >tbody>tr>td {
+    vertical-align: middle;
+  }
+
+  >thead>tr>th,
+  >thead>tr>td,
+  >tbody>tr>th,
+  >tbody>tr>td,
+  >tfoot>tr>th,
+  >tfoot>tr>td {
+    border: none;
+  }
 }
 
-// container for progress bars in the footer
-.progress-container {
-  display: inline-block;
-  width: 100px;
-  vertical-align: middle;
+// forms
+.form-control, input {
+  border-width: 2px;
+  @include box-shadow(none);
+
+  &:focus {
+    @include box-shadow(none);
+  }
 }
 
-.download-actions>.btn {
-  @extend .btn-embed;
+.form-horizontal .has-feedback label ~ .form-control-feedback {
+  top: 0px;
 }
 
-.download-actions>.btn:hover {
-  background-color: $gray;
+.form-field-compact {
+  padding: 2px;
+  height: 24px;
 }
 
-.table-actions>.btn {
-  @extend .btn-embed;
+textarea {
+  background-color: $brand-bg;
+}
+
+.has-warning {
+  .help-block,
+  .control-label,
+  .radio,
+  .checkbox,
+  .radio-inline,
+  .checkbox-inline,
+  &.radio label,
+  &.checkbox label,
+  &.radio-inline label,
+  &.checkbox-inline label,
+  .form-control-feedback {
+    color: $brand-warning;
+  }
+
+  .form-control,
+  .form-control:focus {
+    border: 2px solid $brand-warning;
+  }
+
+  .input-group-addon {
+    border-color: $brand-warning;
+  }
+}
+
+.has-error {
+  .help-block,
+  .control-label,
+  .radio,
+  .checkbox,
+  .radio-inline,
+  .checkbox-inline,
+  &.radio label,
+  &.checkbox label,
+  &.radio-inline label,
+  &.checkbox-inline label,
+  .form-control-feedback {
+    color: $brand-danger;
+  }
+
+  .form-control,
+  .form-control:focus {
+    border: 2px solid $brand-danger;
+  }
+
+  .input-group-addon {
+    border-color: $brand-danger;
+  }
+}
+
+.has-success {
+  .help-block,
+  .control-label,
+  .radio,
+  .checkbox,
+  .radio-inline,
+  .checkbox-inline,
+  &.radio label,
+  &.checkbox label,
+  &.radio-inline label,
+  &.checkbox-inline label,
+  .form-control-feedback {
+    color: $brand-success;
+  }
+
+  .form-control,
+  .form-control:focus {
+    border: 2px solid $brand-success;
+  }
+
+  .input-group-addon {
+    border-color: $brand-success;
+  }
+}
+
+.input-group-btn > .btn {
+  border: 0px;
+  padding-bottom: 4px;
+}
+
+// nav bars
+.nav > li > a {
+  color: $text-color;
+}
+
+.nav-pills > li > a {
+  color: $text-color;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 10px 25px 10px 10px;
+  -webkit-user-drag: none;
+}
+
+.nav > li > a:hover,
+.nav > li > a:focus {
+  background-color: $gray-light;
+}
+
+.nav-pills.nav-stacked > li.active > a,
+  .nav-pills.nav-pills.nav-stacked > li.active > a:hover,
+  .nav-pills.nav-stacked > li.active > a:focus {
+  border-left: 4px solid $brand-warning;
+  padding-left: 6px;
+}
+
+.nav-pills>li>a>.svg-icon {
+  height: initial;
+}
+
+.react-context-menu-link.disabled {
+  color: $gray-dark;
 }
 
 .inline-form {
@@ -355,272 +229,25 @@ btn-default {
   flex-grow: 1;
 }
 
-.notification-enter {
-  opacity: 0;
-}
-
-.notification-enter.notification-enter-active {
-  opacity: 1;
-  transition: opacity 500ms ease-in;
-}
-
-.notification-leave {
-  opacity: 1;
-}
-
-.notification-leave.notification-leave-active {
-    opacity: 0;
-    transition: opacity 300ms ease-in;
-}
-
-.input-button-enter {
-  opacity: 0.1;
-}
-
-.input-button-enter.input-button-enter-active {
-  transition: opacity 500ms ease-in;
-}
-
-.notification-leave {
-  opacity: 1;
-}
-
-.input-button-leave.input-button-leave-active {
-  transition: opacity 500ms ease-out;
-}
-
-.mainpage-enter {
-  opacity: 0;
-}
-
-.mainpage-enter.mainpage-enter-active {
-  opacity: 1;
-  transition: opacity 250ms ease-in;
-}
-
-.mainpage-leave {
-  opacity: 1;
-}
-
-.mainpage-leave.mainpage-leave-active {
-  opacity: 0;
-  transition: opacity 150ms ease-out;
-}
-
-.mainpage-header {
-  flex: 1 1 0%;
-  display: flex;
-  border: $brand-secondary solid;
-  border-width: 0px 1px;
-}
-
+// fill the available space inside a flex display
 .flex-fill {
   flex: 1 1 0%;
 }
 
-.mod-installing {
-  background-color: $gray-dark;
+.vcenter {
+  margin: auto 0 auto 0;
 }
 
-.mod-installed {
-  background-color: $table-bg;
+.hcenter {
+  margin: 0 auto 0 auto;
 }
 
-.table-selected {
-  background-color: $brand-selected;
-}
-
-.game-thumbnail {
-  @extend .panel;
-  float: left;
-  position: relative;
-  margin: 16px;
-  box-shadow: 4px 4px 8px black;
-  border-radius: 4px;
-  background-color: $brand-menu;
-}
-
-.game-thumbnail-primary {
-  background-color: $brand-selected;
-}
-
-.game-thumbnail-default {
-  @extend .panel-default;
-  border-color: $brand-secondary;
-}
-
-.game-thumbnail-body {
-  @extend .panel-body;
-  width: 180px;
-  height: 140px;
-  text-align: center;
-  padding: 4px;
-}
-
-.game-thumbnail-img {
-  max-width: 170px;
-  max-height: 100px;
-}
-
-.game-thumbnail-img-list {
-  max-width: 150px;
-  max-height: 50px;
-}
-
-.game-thumbnail-container-list {
-  width: 100px;
-  min-width: 50px;
-  padding: 0px;
-  margin: 0px;
-  text-align: center;
-}
-
-.game-thumbnail-bottom {
-  left: 0px;
-  bottom: 0px;
-  width: 100%;
-  white-space: nowrap;
-  display: flex;
-  position: absolute;
-  padding: 0px 2px;
-
-  &div {
-    margin: auto 0px;
+// uses <a>-tag to get a tooltip but should look like regular text
+.fake-link {
+  color: currentColor;
+  &:hover {
+    color: currentColor;
   }
-}
-
-.game-thumbnail-buttons {
-  margin-top: auto;
-  margin-bottom: auto;
-}
-
-.game-thumbnail-buttons * {
-  display: inline-block;
-}
-
-.game-thumbnail-name { 
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-left: 5px;
-}
-
-.game-list-selected {
-  background-color: $brand-selected;
-}
-
-.welcome-game-logo {
-  max-height: 200px;
-}
-
-.attribute-icon-enabled {
-  color: limegreen;
-}
-
-.attribute-icon-disabled {
-  color: dimgray;
-}
-
-.progress {
-  height: 32px;
-}
-
-.media {
-  overflow: visible;
-}
-
-.icon {
-  fill: currentColor;
-  height: calc(#{$font-size-base} + 3px);
-  width: calc(#{$font-size-base} + 3px);
-  display: inline-block;
-  vertical-align: middle;
-  margin: 4px;
-}
-
-.tool-icon {
-  width: auto;
-  height: auto;
-  max-width: 32px;
-  max-height: 32px;
-}
-
-.tool-button-primary .tool-icon {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.tool-icon.invalid {
-  filter: grayscale(100%);
-  color: $gray-darker;
-}
-
-.tool-icon.valid {
-  color: $brand-info;
-}
-
-.tool-dropdown {
-  margin-right: 10px;
-  margin-bottom: 10px;
-  display: inline-flex;
-  flex-direction: row;
-  float: left;
-}
-
-.tool-dropdown .tool-button-primary {
-  width: 96px;
-  height: 96px;
-}
-
-.tool-dropdown .tool-button {
-  flex: 1;
-  padding: 0px;
-  width: 48px;
-  height: 48px;
-}
-
-.tool-dropdown .dropdown-toggle {
-  flex: 0;
-  padding-left: 2px !important;
-  padding-right: 2px !important;
-  border-left-color: $gray-lighter;
-  border-left-style: solid;
-  border-left-width: 1px;
-}
-
-.react-context-menu-link.disabled {
-  color: $gray-light;
-}
-
-.dropzone-url {
-  width: "calc(100% - 20px)";
-  height: 100px;
-  margin: 10px;
-  padding: 20px;
-  border-radius: 5px;
-  border-width: 2px;
-  border-style: dashed;
-  border-color: $gray;
-}
-
-.dropzone-url.hover-click {
-  border-style: solid;
-  border-color: $link-color;
-}
-
-.dropzone-url.hover-valid {
-  border-style: solid;
-  border-color: $brand-success;
-}
-
-.dropzone-url.hover-invalid {
-  border-style: solid;
-  border-color: $brand-warning;
-}
-
-.game-start-btn {
-  width: 48px;
-  height: 48px;
 }
 
 .radio, .checkbox {
@@ -632,133 +259,8 @@ btn-default {
   text-align: right;
 }
 
-.fake-link {
-  color: currentColor;
-}
-
-.fake-link:hover {
-  color: currentColor;
-}
-
 .feedback-awesome {
   padding: 4px;
-}
-
-.form-horizontal .has-feedback label ~ .form-control-feedback {
-  top: 0px;
-}
-
-textarea {
-  background-color: $brand-bg;
-}
-
-.btn-menu-minimize {
-  bottom: 0px;
-  position: absolute;
-  border: 0px;
-  padding: 0px;
-  width: 100%;
-  background-color: #283e51;
-/*  &:focus {
-    background-color: lighten($brand-secondary, 30%);
-  }*/
-}
-
-.menu-label {
-  margin-left: 10px;
-  min-width: 125px;
-  font-size: 15px;
-}
-
-.table-main-pane {
-  height: 100%;
-  overflow-y: auto;
-}
-
-.table-main-pane thead {
-  color: $gray-lighter;
-  background-image: linear-gradient($brand-menu, $brand-menu), 
-        linear-gradient($table-header-border-color,$table-header-border-color);
-  background-clip: content-box, padding-box;
-}
-
-.table-main-pane thead th {
-  padding: $table-header-border-width 0px $table-header-border-width !important;
-  height: 100%;
-}
-
-.table-main-pane thead th > div {
-  height: 100%;
-  min-height: 48px;
-  display: flex;
-  flex-direction: row;
-  padding: 0px 4px;
-}
-
-.table-main-pane thead th:first-child {
-  padding-left: $table-header-border-width !important;
-}
-
-.table-main-pane thead th:last-child {
-  padding-right: $table-header-border-width !important;
-}
-
-.table-main-pane tbody {
-  background-color: $brand-menu;
-//  color: black;
-}
-
-.table-details-pane {
-  height: 100%;
-  overflow-y: auto;
-  padding: 5px;
-}
-
-.table-layout {
-  margin: 10px;
-}
-
-.table tbody>tr>td {
-  vertical-align: middle;
-}
-
-.btn-table-filter {
-  height: 100%;
-}
-
-.cell-enabled, .header-enabled {
-  text-align: center;
-}
-
-.cell-version, .header-version {
-  text-align: right;
-}
-
-.cell-installTime, .header-installTime {
-  text-align: center;
-}
-
-.cell-filetime, .header-filetime {
-  text-align: center;
-}
-
-.cell-progress, .header-progress {
-  text-align: center;
-}
-
-.cell-progress .progress {
-  height: 16px;
-  margin-top: auto;
-  margin-bottom: auto;
-}
-
-.header-dependencies {
-  text-align: center;
-}
-
-.header-action p {
-  width: 100%;
-  text-align: center;
 }
 
 .close-button {
@@ -768,86 +270,19 @@ textarea {
   color: currentColor;
   background-color: transparent;
   border-width: 0px;
-  &:hover {
-    color: $link-hover-color;
-    background-color: initial;
-  }
-  &:active {
-    color: $link-hover-color;
-    background-color: initial;
-  }
-  &:focus {
+  &:hover, &:active, &:focus {
     color: $link-hover-color;
     background-color: initial;
   }
 }
 
-#fomod-installer-dialog .modal-dialog {
-  width: 80%;
-  height: 80%;
+.menu-separator-line > a {
+  border-top: 1px solid $gray;
+  padding-left: 10px !important;
 }
 
-#fomod-installer-dialog .modal-content {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-#fomod-installer-dialog .modal-body {
-  flex: 1 0%;
-  display: flex;
-  padding: 10px;
-}
-
-#fomod-installer-dialog .modal-header {
-  padding-top: 0px;
-  padding-bottom: 0px;
-}
-
-#fomod-installer-dialog .modal-footer {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-#fomod-installer-dialog .progress {
-  display: inline-block;
-  width: 200px;
-  height: 16px;
-  margin-bottom: 0px;
-}
-
-#fomod-installer-dialog .pager {
-  margin: 5px 0px;
-}
-
-.common-dialog-wide .modal-dialog {
-  width: 80%;
-  height: 80%;
-}
-
-.common-dialog-wide .modal-content {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.common-dialog-wide .modal-body {
-  flex: 1 0%;
-  display: flex;
-  padding: 10px;
-}
-
-.common-dialog-wide .modal-body > div {
-  display: flex;
-  flex-direction: column;
-}
-
-.common-dialog-wide .modal-body webview {
-  height: 100%;
-}
-
+// text label that shows only ~2 lines of text
+// and expands when the mouse is over it
 div > .hover-expand {
   white-space: nowrap;
   max-height: 2.0em;
@@ -863,152 +298,6 @@ div:hover > .hover-expand {
 
 .hover-expand span {
   display: block;
-}
-
-.profile-details {
-  padding: 0px;
-  margin-top: 5px;
-  margin-bottom: 0px;
-}
-
-.profile-details li {
-  display: inline;
-  list-style-type: none;
-  padding-right: 5px;
-}
-
-.profile-actions {
-  position: absolute;
-  top: 10px;
-  right: 5px;
-}
-
-#about-dialog p {
-  margin: 0px;
-}
-
-.license-text {
-  margin-left: 10px;
-  background-color: $brand-selected;
-}
-
-.license-text-own {
-  margin-left: 10px;
-  background-color: $gray-lighter;
-  max-height: 400px;
-  overflow-y: scroll;
-}
-
-
-#ext-change-dialog .modal-dialog {
-  width: 80%;
-  height: 80%;
-}
-
-#ext-change-dialog .modal-content {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-#ext-change-dialog .modal-body {
-  flex: 1 0%;
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-}
-
-.padded-text {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-#ext-change-dialog td {
-  padding: 2px;
-}
-
-#ext-change-dialog select {
-  padding: 2px;
-  height: initial;
-}
-
-.more-link {
-  margin-bottom: 8px;
-  margin-left: 0px;
-  margin-right: 0px;
-  width: 10px;
-  color: $link-color;
-  &:hover {
-    color: $link-hover-color;
-  }
-}
-
-.more-popover .popover-content {
-  white-space: pre-wrap;
-}
-
-.more-popover .popover-content p {
-  margin: 0 0 5px;
-  text-indent: 10px;
-}
-
-.env-edit-buttons {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-}
-
-.btn-group {
-  position: static;
-  // inside tables we can't use "relative" because then the dropdown overlays the header.
-  // This rule makes the dropdown relative only when it's open. This way it will still overlay
-  // the header but only if the user interacts with it. This looks slightly broken but it's
-  // actually useful.
-  &.dropdown.open {
-    position: relative;
-  }
-}
-
-.btn-group>.btn {
-  float: none;
-}
-
-.btn-group-vertical {
-  display: flex;
-  flex-direction: column;
-}
-
-.btn-group > .btn,
-.btn-group-vertical > .btn {
-  position: initial;
-  display: inline-block;
-}
-
-.btn-quicklaunch {
-  //width: 100%;
-  text-align: left;
-  background-color: #192125;
-  border-width: 0px;
-  padding: 8px !important;
-}
-
-.container-quicklaunch {
-  display: 'inline';
-  margin-right: 20px;
-}
-
-.table {
-  margin-bottom: 0px;
-}
-
-.table > thead > tr > th {
-  vertical-align: top;
-}
-
-.form-field-compact {
-  padding: 2px;
-  height: 24px;
 }
 
 .select-compact {
@@ -1050,6 +339,688 @@ div:hover > .hover-expand {
   }
 }
 
+a[role=menuitem] svg {
+  margin-right: 10px;
+}
+
+.media {
+  overflow: visible;
+}
+
+// /generic control rules
+/////////////////////////
+
+///////////////////////////////////
+// icons (based on fontawesome css)
+
+.icon {
+  fill: currentColor;
+  height: calc(#{$font-size-base} + 3px);
+  width: calc(#{$font-size-base} + 3px);
+  display: inline-block;
+  vertical-align: middle;
+  margin: 4px;
+}
+
+.icon-border {
+  padding: .2em .25em .15em;
+  border: solid .08em $gray-light;
+  border-radius: .1em;
+}
+
+.icon-spin {
+  -webkit-animation: icon-spin 2s infinite linear;
+  animation: icon-spin 2s infinite linear;
+}
+
+.icon-pulse {
+  -webkit-animation: icon-spin 1s infinite steps(8);
+  animation: icon-spin 1s infinite steps(8);
+}
+
+@keyframes icon-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(359deg);
+  }
+}
+
+.icon-rotate-90  {
+  transform: rotate(90deg);
+}
+.icon-rotate-180 {
+  transform: rotate(180deg);
+}
+.icon-rotate-270 {
+  transform: rotate(270deg);
+}
+
+.icon-flip-horizontal {
+  transform: scale(-1, 1);
+}
+.icon-flip-vertical   {
+  transform: scale(1, -1);
+}
+
+// /icons
+/////////
+
+///////////////
+// portal menus
+
+// these are menus (i.e. dropdown menus) that are
+// drawn on a separate layer so it's not cut off
+// by containers higher up in the hierarchy
+
+#menu-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: $zindex-menu-layer;
+  pointer-events: none;
+
+  > * {
+    pointer-events: initial;
+  }
+}
+
+// /portal menu
+///////////////
+
+////////////
+// scrollbar
+
+::-webkit-scrollbar {
+  width: $scrollbar-width;
+  height: $scrollbar-width;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: $gray-dark;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-corner {
+  background-color: $brand-secondary;
+}
+
+// /scrollbar
+/////////////
+
+////////////////
+// notifications
+
+// the notification container (invisible)
+#notifications {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  z-index: $zindex-popover; // should be above dialogs
+
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+
+// notification
+.notification {
+  margin-bottom: 1px;
+  padding: 5px;
+  min-height: 32px;
+
+  p {
+    display: inline-block;
+  }
+
+  .notification-buttons {
+    float: right;
+
+    button {
+      padding: 0px 2px;
+      margin: 0px 2px;
+    }
+  }
+}
+
+.notification-enter {
+  opacity: 0;
+
+  .notification-enter-active {
+    opacity: 1;
+    transition: opacity 500ms ease-in;
+  }
+}
+
+.notification-leave {
+  opacity: 1;
+  .notification-leave-active {
+    opacity: 0;
+    transition: opacity 300ms ease-in;
+  }
+}
+
+// /Notifications
+/////////////////
+
+//////////
+// Dialogs
+
+.common-dialog-wide {
+  .modal-dialog {
+    width: 80%;
+    height: 80%;
+  }
+
+  .modal-content {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-body {
+    flex: 1 0%;
+    display: flex;
+    padding: 10px;
+
+    div {
+      display: flex;
+      flex-direction: column;
+    }
+
+    webview {
+      height: 100%;
+    }
+  }
+}
+
+.dialog-container {
+  width: 100%;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+
+  // the flex sizing may not be optimal
+  > textarea {
+   width: 100%;
+   resize: none;
+   border: none;
+   flex: 1 1 0%;
+  }
+
+  > div {
+   flex: 1 1 90%;
+  }
+}
+
+// /Dialogs
+///////////
+
+
+////////////////////
+// Main Window frame
+
+// the topmost button bar
+// (containing the quick launcher, login control, game-specific action buttons)
+#main-toolbar {
+  background-color: $brand-menu;
+  height: 48px;
+  display: flex;
+
+  button {
+    background-color: transparent;
+    border-width: 0px;
+    color: $text-color;
+    padding: 8px;
+    &:hover {
+      background-color: $gray-dark;
+    }
+    >svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .container-quicklaunch {
+    margin-right: 20px;
+  }
+}
+
+.application-icons {
+  padding-left: floor(($gutter-width / 2));
+}
+
+// the naviation buttons on the left
+#main-nav-sidebar {
+  background-color: $brand-menu;
+  transition: max-width $expand-sidebar-delay;
+
+  // inside the main nav sidebar
+  // (contains everything except the minimize/maximize button)
+  #main-nav-container {
+    flex-direction: column;
+    height: 100%;
+    display: flex;
+    overflow-y: auto;
+
+    padding-bottom: 24px; // padding to accomodate the absolute-positioned minimize-button
+  }
+
+  .menu-label {
+    transition: opacity $expand-sidebar-delay, min-width $expand-sidebar-delay;
+    vertical-align: middle;
+    margin-left: 10px;
+    min-width: 125px;
+    font-size: $font-size-large;
+  }
+
+  &.sidebar-expanded {
+    max-width: 500px;
+    .menu-label {
+      opacity: 1;
+    }
+    .badge {
+      margin-left: 0px;
+      transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
+    }
+    .icon-spinner {
+      margin-left: 5px;
+      transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
+    }
+  }
+
+  &.sidebar-compact {
+    min-width: 0px;
+    max-width: 48px;
+    .menu-label {
+      opacity: 0;
+      width: 0;
+      overflow-x: visible;
+      min-width: 0;
+      display: inline-block;
+    }
+    .badge {
+      padding: 3px;
+      font-size: $font-size-small;
+      margin-left: -18px !important;
+      transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
+    }
+    .icon-spinner {
+      margin-left: -12px;
+      height: 12px;
+      transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
+    }
+  }
+}
+
+// main window area
+#main-window-pane {
+  background-color: $brand-bg;
+  color: $text-color;
+
+  .overlay {
+    position: absolute;
+    height: 100%;
+    z-index: $zindex-navbar-fixed;
+    top: 0px;
+    right: 0px;
+    max-width: 0%;
+    background: $brand-menu;
+    border-style: solid;
+    border-color: lighten($brand-menu, 30%);
+    border-width: 0px;
+    transition: max-width 300ms cubic-bezier(0, 1, 1, 1), border-width 0ms 300ms;
+    display: flex;
+    flex-direction: column;
+    &.in {
+      max-width: 30%;
+      border-width: 2px;
+      transition: max-width 300ms cubic-bezier(1, 0, 1, 1), border-width 0ms 0ms;
+    }
+  }
+}
+
+// animation for switching between main pages
+.mainpage-enter {
+  opacity: 0;
+  &.mainpage-enter-active {
+    opacity: 1;
+    transition: opacity 250ms ease-in;
+  }
+}
+
+.mainpage-leave {
+  opacity: 1;
+  &.mainpage-leave-active {
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+  }
+}
+
+.mainpage-header {
+  flex: 1 1 0%;
+  display: flex;
+  border: $brand-secondary solid;
+  border-width: 0px 1px;
+}
+
+// footer
+#main-footer {
+  background-color: $brand-menu;
+}
+
+.main-page {
+  transition: visibility 0s 300ms, opacity 300ms;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+
+  &.current {
+    opacity: 1;
+    z-index: 1000;
+    transition-delay: 0s;
+  }
+
+  &.hidden {
+    opacity: 0;
+    z-index: 0;
+    visibility: hidden;
+  }
+}
+
+#login-control {
+  .username {
+    margin-top: 10px;
+  }
+  .logout-button {
+    margin-top: -6px;
+    text-align: right;
+  }
+  .logout-button a {
+    font-size: 11px;
+  }
+}
+
+.btn-menu-minimize {
+  bottom: 0px;
+  position: absolute;
+  border: 0px;
+  padding: 0px;
+  width: 100%;
+  background-color: #283e51;
+}
+
+// /main window frame
+/////////////////////
+
+/////////
+// tables
+.table-actions {
+  >.btn {
+    @extend .btn-embed;
+  }
+}
+
+.table-selected {
+  background-color: $brand-selected;
+}
+
+.table-main-pane {
+  height: 100%;
+  overflow-y: auto;
+
+  thead {
+    color: $text-color;
+    background-image: linear-gradient($brand-menu, $brand-menu), 
+          linear-gradient($table-header-border-color,$table-header-border-color);
+    background-clip: content-box, padding-box;
+
+    th {
+      padding: $table-header-border-width 0px $table-header-border-width !important;
+      height: 100%;
+
+      &:first-child {
+        padding-left: $table-header-border-width !important;
+      }
+
+      &:last-child {
+        padding-right: $table-header-border-width !important;
+      }
+
+      > div {
+        height: 100%;
+        min-height: 48px;
+        display: flex;
+        flex-direction: row;
+        padding: 0px 4px;
+      }
+    }
+  }
+
+  tbody {
+    background-color: $brand-menu;
+  }
+}
+
+.table-details-pane {
+  height: 100%;
+  overflow-y: auto;
+  padding: 5px;
+}
+
+.table-layout {
+  margin: 10px;
+}
+
+.table-header {
+  margin-right: $scrollbar-width;
+}
+
+.table-actions > button {
+  @extend .hcenter;
+}
+
+.btn-table-filter {
+  @extend .btn-embed;
+  height: 100%;
+}
+
+.group-addon-btn {
+  padding: 0px 3px;
+  width: 26px;
+
+  button {
+    padding: 0px;
+    width: 100%;
+  }
+}
+
+.table-split {
+  padding: $gutter-width / 2;
+}
+
+// /tables
+//////////
+
+//////////
+// iconbar
+
+.btngroup-collapsed > .btn {
+  @extend .btn-embed;
+}
+
+// iconbar
+//////////
+
+////////////////////
+// single components
+
+// about dialog
+.about-panel {
+  height: 100%;
+  max-height: 200px;
+  overflow-y: scroll;
+}
+
+#about-dialog p {
+  margin: 0px;
+}
+
+.license-text {
+  margin-left: 10px;
+  background-color: $brand-selected;
+}
+
+.license-text-own {
+  margin-left: 10px;
+  background-color: $gray-lighter;
+  max-height: 400px;
+  overflow-y: scroll;
+}
+
+// logout control
+.logout-avatar {
+  color: red;
+}
+
+// "embedded" progress bar that shouldn't set itself apart from
+// the surroundings too much
+.progress-embed {
+  // using max-height here is a bit of a hack because with react
+  // bootstrap I apparently can't replace the .progress class,
+  // I can just expand it, so if I set height here it has no effect
+  max-height: 16px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
+  background: $gray-light;
+  margin-bottom: 0px;
+  border: 1px;
+  border-style: solid;
+}
+
+// container around an embedded progress bar
+.progress-container {
+  display: inline-block;
+  width: 100px;
+  vertical-align: middle;
+}
+
+// /single components
+/////////////////////
+
+/////////////////////////
+// specific table columns
+
+.mod-update {
+  &.warning {
+    color: $brand-warning;
+  }
+
+  &.download {
+    color: $brand-warning;
+  }
+
+  &.ban {
+    color: $brand-danger;
+  }
+
+  &.bug {
+    color: $brand-danger;
+  }
+}
+
+.cell-enabled, .header-enabled {
+  text-align: center;
+}
+
+.cell-version, .header-version {
+  text-align: right;
+}
+
+.cell-installTime, .header-installTime {
+  text-align: center;
+}
+
+.cell-filetime, .header-filetime {
+  text-align: center;
+}
+
+.cell-progress, .header-progress {
+  text-align: center;
+}
+
+.cell-progress .progress {
+  height: 16px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.btn-mods-enabled-enabled, .toggle-mods-enabled-enabled {
+  background-color: $brand-success;
+}
+
+.btn-mods-enabled-disabled, .toggle-mods-enabled-disabled {
+  background-color: $gray;
+}
+
+.btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled {
+  background-color: $brand-info;
+}
+
+.option-mods-enabled-uninstalled {
+  background-color: $brand-danger;
+}
+
+.dropdown-version {
+  padding: 0px 10px;
+}
+
+.mod-picture {
+  max-width: 100%;
+  max-height: 192px;
+}
+
+.table-mods .dropdown > button {
+  padding: 2px 10px;
+  border: 0px;
+  min-width: 100px;
+}
+
+.table-mods .dropdown {
+  display: inline-flex;
+}
+
+#dropdown-mods-enabled {
+  padding: 2px 5px;
+  border: 0px;
+  border-left: 1px solid $gray-light;
+  min-width: 0px;
+}
+
+.btngroup-version {
+  display: inline-flex;
+}
+
+.header-dependencies {
+  text-align: center;
+}
+
+.header-action p {
+  width: 100%;
+  text-align: center;
+}
+
+// /specific table columns
+//////////////////////////
+
+///////////////////
+// game picker page
+
 #gamepicker-layout {
   text-align: right;
 }
@@ -1061,20 +1032,258 @@ div:hover > .hover-expand {
   margin: 5px;
 }
 
-.btn-toggle-on {
-  background-color: $gray-dark;
+.game-thumbnail {
+  @extend .panel;
+  float: left;
+  position: relative;
+  margin: 16px;
+  box-shadow: 4px 4px 8px black;
+  border-radius: 4px;
+  background-color: $brand-menu;
+}
+
+.game-thumbnail-primary {
+  background-color: $brand-selected;
+}
+
+.game-thumbnail-default {
+  @extend .panel-default;
+  border-color: $brand-secondary;
+}
+
+.game-thumbnail-body {
+  @extend .panel-body;
+  width: 180px;
+  height: 140px;
+  text-align: center;
+  padding: 4px;
+
+  .bottom {
+    left: 0px;
+    bottom: 0px;
+    width: 100%;
+    white-space: nowrap;
+    display: flex;
+    position: absolute;
+    padding: 0px 2px;
+
+    &div {
+      margin: auto 0px;
+    }
+  }
+
+  .buttons {
+    margin-top: auto;
+    margin-bottom: auto;
+    * {
+      display: inline-block;
+    }
+  }
+
+  .name { 
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-left: 5px;
+  }
+
+  .thumbnail-img {
+    max-width: 170px;
+    max-height: 100px;
+  }
+}
+
+.game-thumbnail-img-list {
+  max-width: 150px;
+  max-height: 50px;
+}
+
+.game-thumbnail-container-list {
+  width: 100px;
+  min-width: 50px;
+  padding: 0px;
+  margin: 0px;
+  text-align: center;
+}
+
+.game-list-selected {
+  background-color: $brand-selected;
+}
+
+.game-list-item .media-right {
+  vertical-align: middle;
 }
 
 .btngroup-game-list {
   display: inline-flex;
 }
 
-.btngroup-collapsed > .btn {
-  @extend .btn-embed;
+.progress {
+  height: 32px;
 }
 
-.game-list-item .media-right {
-  vertical-align: middle;
+.discovery-progress-0 {
+  background-color: $brand-success;
+}
+
+.discovery-progress-1 {
+  background-color: $brand-info;
+}
+
+.discovery-progress-2 {
+  background-color: $brand-warning;
+}
+
+.discovery-progress-3 {
+  background-color: $brand-danger;
+}
+
+#img-add-game {
+  margin-bottom: 10px;
+}
+
+// game picker page
+///////////////////
+
+///////////////
+// profile page
+
+.profile-details {
+  padding: 0px;
+  margin-top: 5px;
+  margin-bottom: 0px;
+  li {
+    display: inline;
+    list-style-type: none;
+    padding-right: 5px;
+  }
+}
+
+.profile-actions {
+  position: absolute;
+  top: 10px;
+  right: 5px;
+}
+
+// /profile page
+////////////////
+
+////////////////
+// mod highlight
+.highlight-base {
+  padding: 1px 5px;
+  border: 0px;
+  &:hover, &:active, &:focus {
+    color: $link-hover-color;
+  }
+}
+
+.highlight-1 {
+  background-color: #ff0000;
+  &:hover, &:active, &:focus {
+    background-color: #ff0000;
+  }
+}
+
+.highlight-2 {
+  background-color: #03a9f4;
+  &:hover, &:active, &:focus {
+    background-color: #03a9f4;
+  }
+}
+
+.highlight-3 {
+  background-color: #4caf50;
+  &:hover, &:active, &:focus {
+    background-color: #4caf50;
+  }
+}
+
+.highlight-4 {
+  background-color: #cddc39;
+  &:hover, &:active, &:focus {
+    background-color: #cddc39;
+  }
+}
+
+.highlight-5 {
+  background-color: #ff9800;
+  &:hover, &:active, &:focus {
+    background-color: #ff9800;
+  }
+}
+
+.highlight-default {
+  background-color: transparent;
+  &:hover, &:active, &:focus {
+    background-color: transparent;
+  }
+}
+
+.textarea-notes {
+  width: 100%;
+  min-height: 100px;
+  resize: none;
+}
+
+// /mod highlight
+/////////////////
+
+///////////////
+// starter page
+
+.welcome-game-logo {
+  max-height: 200px;
+}
+
+.tool-icon {
+  width: auto;
+  height: auto;
+  max-width: 32px;
+  max-height: 32px;
+
+  &.invalid {
+    filter: grayscale(100%);
+    color: $gray-darker;
+  }
+
+  &.valid {
+    color: $brand-info;
+  }
+}
+
+.tool-button-primary .tool-icon {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.tool-dropdown {
+  margin-right: 10px;
+  margin-bottom: 10px;
+  display: inline-flex;
+  flex-direction: row;
+  float: left;
+
+  .tool-button-primary {
+    width: 96px;
+    height: 96px;
+  }
+
+  .tool-button {
+    flex: 1;
+    padding: 0px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .dropdown-toggle {
+    flex: 0;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    border-left-color: $gray-lighter;
+    border-left-style: solid;
+    border-left-width: 1px;
+  }
 }
 
 #starter-dashlet {
@@ -1082,96 +1291,49 @@ div:hover > .hover-expand {
   margin: 5px;
 }
 
-.main-page {
-  transition: visibility 0s 300ms, opacity 300ms;
+.env-edit-buttons {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  padding: 10px;
+  top: 3px;
+  right: 3px;
 }
 
-.main-page-current {
-  opacity: 1;
-  z-index: 1000;
-  transition-delay: 0s;
-}
+// /starter page
+////////////////
 
-.main-page-hidden {
-  opacity: 0;
-  z-index: 0;
-  visibility: hidden;
-}
+////////////////
+// download page
 
-#main-window-pane .overlay {
-  position: absolute;
-  height: 100%;
-  z-index: $zindex-navbar-fixed;
-  top: 0px;
-  right: 0px;
-  max-width: 0%;
-  background: $brand-bg;
-  border-style: solid;
-  border-color: lighten($brand-menu, 30%);
-  border-width: 0px;
-  transition: max-width 300ms cubic-bezier(0, 1, 1, 1), border-width 0ms 300ms;
-  display: flex;
-  flex-direction: column;
-}
-
-#main-window-pane .overlay.in {
-  max-width: 30%;
+.dropzone-url {
+  width: "calc(100% - 20px)";
+  height: 100px;
+  margin: 10px;
+  padding: 20px;
+  border-radius: 5px;
   border-width: 2px;
-  transition: max-width 300ms cubic-bezier(1, 0, 1, 1), border-width 0ms 0ms;
+  border-style: dashed;
+  border-color: $gray;
+
+  &.hover-click {
+    border-style: solid;
+    border-color: $link-color;
+  }
+
+  &.hover-valid {
+    border-style: solid;
+    border-color: $brand-success;
+  }
+
+  &.hover-invalid {
+    border-style: solid;
+    border-color: $brand-warning;
+  }
 }
 
-.overlay-spacer {
-  flex: 1 1 0%;
-}
+// /download page
+/////////////////
 
-#img-add-game {
-  margin-bottom: 10px;
-}
-
-.btn-toolbar-text {
-  margin: 0px 0px 0px 10px;
-  display: inline;
-}
-
-.table-split {
-  padding: 10px;
-}
-
-.vcenter {
-  margin: auto 0 auto 0;
-}
-
-.hcenter {
-  margin: 0 auto 0 auto;
-}
-
-.table-actions > button {
-  @extend .hcenter;
-}
-
-.flex-rest {
-  flex: 1 1 0%;
-}
-
-.dropdown-version {
-  padding: 0px 10px;
-}
-
-.dropdown-menu {
-  margin-top: 0px;
-  border-top-width: 0px;
-  min-width: initial;
-  top: 90%;
-}
-
-// more pronounced popover shadow. just cause
-.popover {
-  box-shadow: 5px 5px 10px rgba(0,0,0,.6);
-}
+////////////////////
+// categories dialog
 
 #btn-search-category-prev, #btn-search-category-next {
   padding: 0px;
@@ -1201,121 +1363,58 @@ div:hover > .hover-expand {
   pointer-events: none;
 }
 
-.btn.disabled, .btn[disabled], fieldset[disabled] .btn {
-  cursor: initial;
+// /categories dialog
+/////////////////////
+
+///////////////
+// fomod dialog
+
+#fomod-installer-dialog {
+  .modal-dialog {
+    width: 80%;
+    height: 80%;
+  }
+
+  .modal-content {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-body {
+    flex: 1 0%;
+    display: flex;
+    padding: 10px;
+  }
+
+  .modal-header {
+    padding-top: 0px;
+    padding-bottom: 0px;
+  }
+
+  .modal-footer {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .progress {
+    display: inline-block;
+    width: 200px;
+    height: 16px;
+    margin-bottom: 0px;
+  }
+
+  .pager {
+    margin: 5px 0px;
+  }
 }
 
-a[role=menuitem] svg {
-  margin-right: 10px;
-}
+// /fomod dialog
+////////////////
 
-.discovery-progress-0 {
-  background-color: $brand-success;
-}
-
-.discovery-progress-1 {
-  background-color: $brand-info;
-}
-
-.discovery-progress-2 {
-  background-color: $brand-warning;
-}
-
-.discovery-progress-3 {
-  background-color: $brand-danger;
-}
-
-.btn-mods-enabled-enabled, .toggle-mods-enabled-enabled {
-  background-color: $brand-success;
-}
-
-.btn-mods-enabled-disabled, .toggle-mods-enabled-disabled {
-  background-color: $gray;
-}
-
-.btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled {
-  background-color: $brand-info;
-}
-
-.option-mods-enabled-uninstalled {
-  background-color: $brand-danger;
-}
-
-.table-mods .dropdown > button {
-  padding: 2px 10px;
-  border: 0px;
-  min-width: 100px;
-}
-
-.table-mods .dropdown {
-  display: inline-flex;
-}
-
-#dropdown-mods-enabled {
-  padding: 2px 5px;
-  border: 0px;
-  border-left: 1px solid $gray-light;
-  min-width: 0px;
-}
-
-.group-addon-btn {
-  padding: 0px 3px;
-  width: 26px;
-}
-
-.group-addon-btn button {
-  padding: 0px;
-  width: 100%;
-}
-
-#menu-layer {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  z-index: 1035;
-  pointer-events: none;
-}
-
-#menu-layer > * {
-  pointer-events: initial;
-}
-
-.textarea-notes {
-  width: 100%;
-  min-height: 100px;
-  resize: none;
-}
-
-.btngroup-version {
-  display: inline-flex;
-}
-
-.img-mod-picture {
-  max-width: 100%;
-  max-height: 192px;
-}
-
-.toolbar-main {
-  padding-left: 12px;
-}
-
-.lbl-username {
-  margin-top: 10px;
-}
-
-.div-logout {
-  margin-top: -6px;
-  text-align: right;
-}
-
-.div-logout a {
-  color: $link-color;
-  font-size: 11px;
-}
-
-.table-header {
-  margin-right: $scrollbar-width;
-}
+/////////
+// charts
 
 .chart-container {
   text-align: -webkit-center;
@@ -1333,38 +1432,88 @@ a[role=menuitem] svg {
   stroke: $brand-success;
 }
 
-.menu-separator-line > a {
-  border-top: 1px solid $gray;
-  padding-left: 10px !important;
+// /charts
+//////////
+
+//////////////
+// more button
+
+// a little question-mark button that reveals a lenghtier explanation
+// to the context
+.more-link {
+  margin-bottom: 8px;
+  margin-left: 0px;
+  margin-right: 0px;
+  width: 10px;
+  color: $link-color;
+  &:hover {
+    color: $link-hover-color;
+  }
 }
 
-.input-group-btn > .btn {
-  border: 0px;
-  padding-bottom: 4px;
+.more-popover .popover-content {
+  white-space: pre-wrap;
 }
 
-.btn-line-right {
-  position: absolute;
-  right: 10px;
-  top: 5px;
+.more-popover .popover-content p {
+  margin: 0 0 5px;
+  text-indent: 10px;
 }
 
-::-webkit-scrollbar {
-  width: $scrollbar-width;
-  height: $scrollbar-width;
-}
-/*
-::-webkit-scrollbar-track {
-  background-color: $brand-menu;
-}*/
+// /more button
+///////////////
 
-::-webkit-scrollbar-thumb {
+/////////////////////////
+// External change dialog
+
+// dialog informing the user about external file changes
+
+#ext-change-dialog {
+  .modal-dialog {
+    width: 80%;
+    height: 80%;
+  }
+
+  .modal-content {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-body {
+    flex: 1 0%;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  td {
+    padding: 2px;
+  }
+
+  select {
+    padding: 2px;
+    height: initial;
+  }
+}
+
+.padded-text {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+// /External change dialog
+//////////////////////////
+
+////////////
+// mods page
+.mod-installing {
   background-color: $gray-dark;
-  border-radius: 4px;
-//  box-shadow: inset 0 0 1px 1px $brand-bg;
-//  -webkit-box-shadow: inset 0 0 1px 1px $brand-bg;
 }
 
-::-webkit-scrollbar-corner {
-  background-color: $brand-secondary;
+.mod-installed {
+  background-color: $table-bg;
 }
+// /mods page
+/////////////

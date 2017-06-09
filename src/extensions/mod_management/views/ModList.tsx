@@ -319,7 +319,7 @@ class ModList extends ComponentEx<IProps, {}> {
       ) : null;
 
     return (
-      <div className={this.updateClass(updateState)}>
+      <div className={'mod-update ' + this.updateClass(updateState)}>
         {alternatives.length === 1 ? mod.attributes['version'] : null}
         <ButtonGroup id={`btngroup-${mod.id}`} className='btngroup-version'>
           {versionDropdown}
@@ -343,12 +343,12 @@ class ModList extends ComponentEx<IProps, {}> {
 
   private updateClass(state: UpdateState) {
     switch (state) {
-      case 'bug-update': return 'mod-updating-bug';
-      case 'bug-update-site': return 'mod-updating-bug';
-      case 'bug-disable': return 'mod-updating-ban';
-      case 'update': return 'mod-updating-download';
-      case 'update-site': return 'mod-updating-warning';
-      default: return 'mod-updating-default';
+      case 'bug-update': return 'bug';
+      case 'bug-update-site': return 'bug';
+      case 'bug-disable': return 'ban';
+      case 'update': return 'download';
+      case 'update-site': return 'warning';
+      default: return 'default';
     }
   }
 
