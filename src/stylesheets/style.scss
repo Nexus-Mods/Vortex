@@ -1506,6 +1506,45 @@ a[role=menuitem] svg {
 // /External change dialog
 //////////////////////////
 
+/////////////////
+// feedback view
+
+.textarea-feedback {
+  width: 100%;
+  min-height: 400px;
+  resize: none;
+}
+
+.dropzone-feedback {
+  width: "40%";
+  height: 100px;
+  display: inline-block;
+  margin: 10px;
+  padding: 20px;
+  border-radius: 5px;
+  border-width: 2px;
+  border-style: dashed;
+  border-color: $gray;
+}
+
+.dropzone-feedback.hover-click {
+  border-style: solid;
+  border-color: $link-color;
+}
+
+.dropzone-feedback.hover-valid {
+  border-style: solid;
+  border-color: $brand-success;
+}
+
+.dropzone-feedback.hover-invalid {
+  border-style: solid;
+  border-color: $brand-warning;
+}
+
+// /feedback view
+/////////////////
+
 ////////////
 // mods page
 .mod-installing {

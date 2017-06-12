@@ -1,0 +1,21 @@
+{
+  "name": "feedback",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./out/index.js",
+  "scripts": {
+    "tsc": "tsc -p .",
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
+    "prebuild": "typings prune && typings install",
+    "build": "npm run tsc && npm run webpack"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/electron": "^1.4.32",
+    "@types/react": "^0.14.55",
+    "@types/react-redux": "^4.4.35",
+    "nmm-api": "file:../../api",
+    "webpack": "^1.13.2"
+  }
+}
