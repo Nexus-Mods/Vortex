@@ -21,7 +21,6 @@
     ]
   },
   "devDependencies": {
-    "@types/electron": "^1.4.32",
     "@types/fs-extra-promise": "^0.0.31",
     "@types/iconv-lite": "^0.0.1",
     "@types/immutability-helper": "^2.0.15",

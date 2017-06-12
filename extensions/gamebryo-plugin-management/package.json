@@ -25,7 +25,6 @@
   "devDependencies": {
     "@types/iconv-lite": "^0.0.1",
     "@types/immutability-helper" : "^2.0.15",
-    "@types/electron": "^1.4.32",
     "@types/react": "^0.14.55",
     "@types/react-bootstrap": "^0.0.37",
     "@types/react-dom": "^0.14.19",

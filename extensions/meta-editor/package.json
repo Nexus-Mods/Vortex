@@ -20,7 +20,6 @@
     ]
   },
   "devDependencies": {
-    "@types/electron": "^1.4.32",
     "@types/immutability-helper": "^2.0.15",
     "@types/react": "^0.14.55",
     "@types/react-bootstrap": "^0.0.37",

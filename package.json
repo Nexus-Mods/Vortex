@@ -126,7 +126,6 @@
     "@types/commander": "^2.9.0",
     "@types/content-type": "^1.0.33",
     "@types/debug": "^0.0.29",
-    "@types/electron": "^1.4.32",
     "@types/enzyme": "^2.5.39",
     "@types/ffi": "^0.0.19",
     "@types/form-data": "^0.0.33",
