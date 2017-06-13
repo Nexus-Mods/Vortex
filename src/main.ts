@@ -20,7 +20,7 @@ import * as storeT from './util/store';
 import * as storeHelperT from './util/storeHelper';
 
 import * as Promise from 'bluebird';
-import { app, BrowserWindow, ipcMain, Menu, Tray } from 'electron';
+import { app, BrowserWindow, Electron, ipcMain, Menu, Tray } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 

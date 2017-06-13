@@ -84,7 +84,7 @@ if (process.env.NODE_ENV === 'development') {
   );
 }
 
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: any) => {
   let details: ITermination;
 
   switch (typeof error) {

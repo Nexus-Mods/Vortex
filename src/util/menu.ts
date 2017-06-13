@@ -4,7 +4,7 @@ import ExtensionManager from './ExtensionManager';
 import { debugTranslations, getMissingTranslations } from './i18n';
 import { log } from './log';
 
-import { remote } from 'electron';
+import { Electron, remote } from 'electron';
 
 const { Menu, clipboard } = remote;
 
@@ -31,7 +31,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       viewMenu.push({
         label: title,
         accelerator: options.hotkey !== undefined ? 'CmdOrCtrl+' + options.hotkey : undefined,
-        click (item, focusedWindow) {
+        click(item, focusedWindow) {
           extensions.getApi().events.emit('show-main-page', title);
         },
       });
@@ -42,7 +42,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
   viewMenu.push({
     label: 'Settings',
     accelerator: 'CmdOrCtrl+Shift+S',
-    click (item, focusedWindow) {
+    click(item, focusedWindow) {
       extensions.getApi().events.emit('show-modal', 'settings');
     },
   });

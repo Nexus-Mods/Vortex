@@ -3,24 +3,25 @@ import {IFilterProps, ITableFilter} from '../../../types/ITableAttribute';
 import * as React from 'react';
 import * as Select from 'react-select';
 
-
 export class EndorsementFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {
     const { filter } = this.props;
 
-    let selectionFilters = [ 'Endorsed', 'Abstained', 'Undecided'];
+    const selectionFilters = [ 'Endorsed', 'Abstained', 'Undecided'];
 
     const currentFilters = selectionFilters.map(current => ({
       label: current,
       value: current,
     }));
 
-    return <Select
-      className='select-compact'
-      options={currentFilters}
-      value={filter || ''}
-      onChange={this.changeFilter}
-    />;
+    return (
+      <Select
+        className='select-compact'
+        options={currentFilters}
+        value={filter || ''}
+        onChange={this.changeFilter}
+      />
+    );
   }
 
   private changeFilter = (value: { value: string, label: string }) => {
@@ -41,6 +42,5 @@ class EndorsementFilter implements ITableFilter {
     }
   }
 }
-
 
 export default EndorsementFilter;

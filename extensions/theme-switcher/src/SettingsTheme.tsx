@@ -73,7 +73,6 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
 
   private selectTheme = (evt) => {
     const theme = evt.currentTarget.value;
-    console.log('select theme', theme);
     this.props.onSelectTheme(theme);
     this.context.api.events.emit('select-theme', theme);
   }

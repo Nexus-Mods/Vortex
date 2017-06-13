@@ -13,7 +13,7 @@ export interface IProps {
  * @extends {React.Component<IProps, {}>}
  */
 class Packery extends React.Component<IProps, {}> {
-  private mPackery: PackeryLib;
+  private mPackery: any;
   private mRefreshTimer: NodeJS.Timer;
 
   constructor(props: IProps) {

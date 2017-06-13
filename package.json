@@ -40,7 +40,7 @@
     "test": "jest --no-cache",
     "doc": "typedoc --out doc src",
 
-    "build": "tsc -p . && npm run sassc && npm run build_rest",
+    "build": "tsc -p . && npm run build_rest",
     "buildwatch": "npm run build_rest && concurrently -p \"\" --kill-others \"tsc -p . -w\" npm-watch"
   },
   "watch": {},
@@ -149,7 +149,7 @@
     "@types/react-dom": "^15.5.0",
     "@types/react-redux": "^4.4.35",
     "@types/react-router": "^4.0.4",
-    "@types/react-select": "^1.0.45",
+    "@types/react-select": "^1.0.47",
     "@types/react-split-pane": "^0.1.6",
     "@types/ref": "^0.0.28",
     "@types/ref-struct": "^0.0.28",

@@ -13,12 +13,14 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/react": "^0.14.55",
+    "@types/react-bootstrap": "^0.0.50",
     "@types/react-redux": "^4.4.35",
     "webpack": "^1.13.2"
   },
   "dependencies": {
     "fs-extra-promise": "^1.0.1",
     "nmm-api": "file:../../api",
+    "react-bootstrap": "^0.31.0",
     "redux": "^3.6.0"
   }
 }
