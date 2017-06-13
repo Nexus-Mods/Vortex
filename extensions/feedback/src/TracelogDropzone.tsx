@@ -1,7 +1,7 @@
 import { IFeedbackFile } from './types/IFeedbackFile';
 
 import * as Promise from 'bluebird';
-import { dialog as dialogIn, remote } from 'electron';
+import { dialog as dialogIn, Electron, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import { actions, ComponentEx, selectors, types } from 'nmm-api';
@@ -99,7 +99,7 @@ class TracelogDropzone extends ComponentEx<IProps, IComponentState> {
     if (evt.dataTransfer.files[0] !== undefined) {
       const feedbackFile: IFeedbackFile = {
         filename: evt.dataTransfer.files[0].name,
-        filePath: evt.dataTransfer.files[0].path,
+        filePath: (evt.dataTransfer.files[0] as any).path,
         size: evt.dataTransfer.files[0].size,
         type: 'tracelog',
         gameId: gameMode,
