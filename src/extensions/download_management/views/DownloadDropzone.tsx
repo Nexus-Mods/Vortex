@@ -119,7 +119,7 @@ class DownloadDropzone extends ComponentEx<IProps, IComponentState> {
     } else if (evt.dataTransfer.files.length > 0) {
       const item = evt.dataTransfer.files.item(0);
       const destination = path.join(downloadPath, item.name);
-      this.move(item.path, destination);
+      this.move((item as any).path, destination);
     }
     this.setState(update(this.state, {
       dropActive: { $set: 'no' },

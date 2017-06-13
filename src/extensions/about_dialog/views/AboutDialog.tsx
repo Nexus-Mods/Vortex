@@ -93,9 +93,9 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
               <p>{t('Released under')} <a onClick={this.showOwnLicense}>GPL-3</a> {t('License')}</p>
             </Media.Body>
           </Media>
-          <p><strong>Electron</strong> {process.versions.electron}</p>
+          <p><strong>Electron</strong> {(process.versions as any).electron}</p>
           <p><strong>Node</strong> {process.versions.node}</p>
-          <p><strong>Chrome</strong> {process.versions.chrome}</p>
+          <p><strong>Chrome</strong> {(process.versions as any).chrome}</p>
           { licenseBox }
         </Modal.Body>
       );

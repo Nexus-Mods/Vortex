@@ -10,7 +10,7 @@ let logger = null;
 // magic: when we're in the main process, this uses the logger from winston
 // (which appears to be a singleton). In the renderer processes we connect
 // to the main-process logger through ipc
-if (process.type === 'renderer') {
+if ((process as any).type === 'renderer') {
   // tslint:disable-next-line:no-var-requires
   const { remote } = require('electron');
   logger = remote.getGlobal('logger');

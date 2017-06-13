@@ -13,11 +13,11 @@ const Module = require('module');
  * synchronous (node is single threaded after all)
  * Use with care: does not add the module to the cache so using it
  * only makes sense if you know the module is required only once.
- * 
+ *
  * @export
- * @param {string} id 
- * @param {string} [basedir] 
- * @returns {Promise<any>} 
+ * @param {string} id
+ * @param {string} [basedir]
+ * @returns {Promise<any>}
  */
 export default function(id: string, basedir?: string): Promise<any> {
   return new Promise((resolve, reject) => {

@@ -19,7 +19,7 @@ export interface IBaseProps {
  * change even though we have no even to react to when that happens.
  * TODO: This is ugly polling, can we find a better way without
  *   uglifying the api for the user?
- * 
+ *
  * @class DynamicProps
  * @extends {React.Component<any, {}>}
  */
@@ -56,14 +56,15 @@ class DynamicProps extends React.Component<IBaseProps, {}> {
   }
 
   public render(): JSX.Element {
-    return <this.props.component {...this.props.staticProps} {...this.mLastProps}>
+    return (
+      <this.props.component {...this.props.staticProps} {...this.mLastProps}>
         {this.props.children}
       </this.props.component>
-    ;
+    );
   }
 }
 
-let listeners: DynamicProps[] = [];
+const listeners: DynamicProps[] = [];
 
 function refreshListeners() {
   listeners.forEach(listener => listener.refreshProps());

@@ -118,10 +118,10 @@ class DownloadWorker {
     this.mHeadersCB(response.headers);
 
     if (this.mJob.responseCB !== undefined) {
-      let size = response.headers['content-length'];
+      let size: number = parseInt(response.headers['content-length'] as string, 10);
       if ('content-range' in response.headers) {
         const rangeExp: RegExp = /bytes (\d)*-(\d*)\/(\d*)/i;
-        const sizeMatch: string[] = response.headers['content-range'].match(rangeExp);
+        const sizeMatch: string[] = (response.headers['content-range'] as string).match(rangeExp);
         if (sizeMatch.length > 1) {
           size = parseInt(sizeMatch[3], 10);
         }
@@ -130,7 +130,8 @@ class DownloadWorker {
       let fileName;
       if ('content-disposition' in response.headers) {
         const fileNameExp: RegExp = /filename=(.*)/i;
-        const nameMatch: string[] = response.headers['content-disposition'].match(fileNameExp);
+        const nameMatch: string[] =
+            (response.headers['content-disposition'] as string).match(fileNameExp);
         if (nameMatch.length > 1) {
           fileName = nameMatch[1];
         }

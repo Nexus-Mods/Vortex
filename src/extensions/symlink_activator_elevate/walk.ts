@@ -10,19 +10,19 @@ function walk(target: string,
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
       return Promise.mapSeries(fileNames, (statPath: string) => {
-        let fullPath: string = path.join(target, statPath);
+        const fullPath: string = path.join(target, statPath);
         return fs.lstatAsync(fullPath).reflect();
       });
-    }).then((res: Promise.Inspection<fs.Stats>[]) => {
+    }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
-      let subDirs: string[] = [];
-      let cbPromises: Promise<any>[] = [];
+      const subDirs: string[] = [];
+      const cbPromises: Array<Promise<any>> = [];
       res.forEach((stat, idx) => {
         if (!stat.isFulfilled()) {
           return;
         }
-        let fullPath: string = path.join(target, allFileNames[idx]);
+        const fullPath: string = path.join(target, allFileNames[idx]);
         cbPromises.push(callback(fullPath, stat.value()));
         if (stat.value().isDirectory()) {
           subDirs.push(fullPath);

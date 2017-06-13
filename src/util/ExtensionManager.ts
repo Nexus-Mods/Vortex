@@ -14,7 +14,7 @@ import { getSafe } from './storeHelper';
 import StyleManagerT from './StyleManager';
 
 import * as Promise from 'bluebird';
-import { app as appIn, dialog as dialogIn, remote } from 'electron';
+import { app as appIn, dialog as dialogIn, Electron, remote } from 'electron';
 import * as fs from 'fs';
 import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';

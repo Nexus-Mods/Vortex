@@ -47,7 +47,7 @@ class Notifications extends ComponentEx<IProps & IActionProps & IConnectedProps,
   private renderNotification = (notification: INotification) => {
     const { t, onDismiss } = this.props;
 
-    const translated: INotification = Object.assign({}, notification);
+    const translated: INotification = { ...notification };
     translated.message = t(translated.message);
     return <Notification t={t} key={notification.id} params={translated} onDismiss={onDismiss} />;
   }
@@ -68,5 +68,4 @@ function mapDispatchToProps(dispatch): IActionProps {
 export default
   translate(['common'], { wait: true })(
     connect(mapStateToProps, mapDispatchToProps)(
-      Notifications)
-   ) as React.ComponentClass<IProps>;
+      Notifications)) as React.ComponentClass<IProps>;

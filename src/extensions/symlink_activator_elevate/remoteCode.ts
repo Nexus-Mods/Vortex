@@ -1,10 +1,10 @@
 export function remoteCode(ipcClient) {
-  let walk = require('./walk').default;
-  let fs = require('fs-extra-promise');
-  let path = require('path');
+  const walk = require('./walk').default;
+  const fs = require('fs-extra-promise');
+  const path = require('path');
 
   ipcClient.on('link-file', (payload) => {
-    let {source, destination} = payload;
+    const {source, destination} = payload;
     fs.ensureDirAsync(path.dirname(destination))
         .then(() => fs.symlinkAsync(source, destination))
         .then(() => {
@@ -25,7 +25,7 @@ export function remoteCode(ipcClient) {
   });
 
   ipcClient.on('remove-link', (payload) => {
-    let { destination } = payload;
+    const { destination } = payload;
     fs.lstatAsync(destination)
     .then(stats => {
       if (stats.isSymbolicLink()) {
@@ -33,15 +33,14 @@ export function remoteCode(ipcClient) {
       }
     })
     .finally(() => { ipcClient.emit('finished', {destination}); });
-    ;
   });
 
   ipcClient.on('create-link', (payload) => {
-    let {source, destination} = payload;
+    const {source, destination} = payload;
     try {
       walk(source, (iterPath: string, stat) => {
-        let relPath: string = path.relative(source, iterPath);
-        let destFile: string = path.join(destination, relPath);
+        const relPath: string = path.relative(source, iterPath);
+        const destFile: string = path.join(destination, relPath);
         if (stat.isDirectory()) {
           return fs.mkdirAsync(destFile);
         } else {

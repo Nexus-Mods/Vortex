@@ -272,7 +272,7 @@ function main() {
   fs.ensureDirSync(basePath);
   log('info', `using ${basePath} as the storage directory`);
 
-  process.on('uncaughtException', (error) => {
+  process.on('uncaughtException', (error: any) => {
     let details: ITermination;
 
     switch (typeof error) {
@@ -280,7 +280,7 @@ function main() {
         details = {message: error.message, details: error.stack};
       }              break;
       case 'string': {
-        details = {message: error};
+        details = {message: error as string};
       }              break;
       default: { details = {message: error}; } break;
     }

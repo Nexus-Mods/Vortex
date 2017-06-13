@@ -16,29 +16,28 @@ const actionCreators = {};
  * all exported actions in a action-module.
  * This assumes the action is created with redux-act
  */
-function addCreators(mod: Object) {
+function addCreators(mod: any) {
   // get name of all exports from the module, we assume the module
   // exports only actions!
-  for (let exp in mod) {
+  for (const exp in mod) {
     if (!mod.hasOwnProperty(exp)) {
       continue;
     }
 
     // create a dummy action we can inspect. redux-act turns parameters into a
-    // dictionary. pass numbered values so we can restore parameter order later 
-    let dummy = mod[exp](1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+    // dictionary. pass numbered values so we can restore parameter order later
+    const dummy = mod[exp](1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     if (typeof(dummy.payload) === 'object') {
       // this is a fairly awkward mechanism to restore the function parameter names from
-      // payload object created by the payload reducer in createAction 
+      // payload object created by the payload reducer in createAction
 
       // take the payload object and turn the keys (which should correspond to action
       // parameters) into an array, sorted by value (1 to 10, see above)
-      let parameterNames = Object.keys(dummy.payload).sort(
-        (lhs, rhs) => dummy.payload[lhs] - dummy.payload[rhs]
-      );
+      const parameterNames = Object.keys(dummy.payload).sort(
+        (lhs, rhs) => dummy.payload[lhs] - dummy.payload[rhs]);
 
       // synthesize and store a function that creates an action message the same way redux-act would
-      let funcBody = `return { type: "${dummy.type}", payload: {${parameterNames}} };`;
+      const funcBody = `return { type: "${dummy.type}", payload: {${parameterNames}} };`;
       actionCreators[exp] = new Function(...parameterNames, funcBody);
     } else {
       // if there is only one parameter there is no way to restore its name
@@ -60,7 +59,7 @@ class Developer extends Component<{}, {}> {
   }
 
   public render() {
-    let DispatcherTool = this.DispatcherTool;
+    const DispatcherTool = this.DispatcherTool;
     return (
       <Layout type='column' style={{ minHeight: '600px' }}>
         <Fixed>

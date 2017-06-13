@@ -8,7 +8,7 @@ export interface IProps {
 
 /**
  * wrapper for packery
- * 
+ *
  * @class Packery
  * @extends {React.Component<IProps, {}>}
  */
@@ -52,18 +52,20 @@ class Packery extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
     const {children, totalWidth} = this.props;
-    return (<div ref={this.refContainer}>
-      {React.Children.map(children,
-        (child: React.ReactElement<any>) => React.cloneElement(child, {
-          totalWidth,
-        }))}
-    </div>);
+    return (
+      <div ref={this.refContainer}>
+        {React.Children.map(children,
+          (child: React.ReactElement<any>) => React.cloneElement(child, {
+            totalWidth,
+          }))}
+      </div>
+    );
   }
 
   private refContainer = (ele: Element) => {
     const options = {};
     if (ele !== null) {
-      let PackeryLibImpl = require('packery');
+      const PackeryLibImpl = require('packery');
       this.mPackery = new PackeryLibImpl(ele, options);
     } else {
       this.mPackery = undefined;
