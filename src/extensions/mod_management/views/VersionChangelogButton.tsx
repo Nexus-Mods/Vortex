@@ -34,7 +34,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
 
     const popoverBottom = (
       <Popover
-        id='popover-positioned-scrolling-bottom'
+        id='popover-changelog'
         title={t('Changelogs')}
       >
         <FormGroup>

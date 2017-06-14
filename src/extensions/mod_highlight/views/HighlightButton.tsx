@@ -57,7 +57,7 @@ class HighlightButton extends ComponentEx<IProps, {}> {
 
     const popoverBottom = (
       <Popover
-        id='popover-positioned-scrolling-bottom'
+        id='popover-highlight-settings'
         title={t('Highlight Settings')}
       >
         <FormGroup key={mod.id}>

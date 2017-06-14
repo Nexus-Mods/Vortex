@@ -272,7 +272,6 @@
     "packery": "^2.1.1",
     "parse-ini": "file:./lib/js/parse-ini",
     "react": "^15.3.0",
-    "react-color": "^2.11.1",
     "react-contextmenu": "^2.5.0",
     "react-dom": "^15.3.0",
     "react-layout-pane": "Nexus-Mods/react-layout-pane",

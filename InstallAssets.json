@@ -1,16 +1,6 @@
 {
   "spawn": [
     {
-      "executable": "node-sass",
-      "arguments": [
-        "src/stylesheets/index.scss",
-        "app/assets/css/base.css"
-      ],
-      "target": [
-        "app"
-      ]
-    },
-    {
       "executable": "tsc",
       "arguments": [
         "-p",
@@ -129,15 +119,6 @@
       "skipPaths": 1,
       "target": [
         "out",
-        "app"
-      ]
-    },
-    {
-      "srcPath": "node_modules/7zip-bin-win/x64/7za.exe",
-      "outPath": "",
-      "rename": "7z.exe",
-      "skipPaths": 3,
-      "target": [
         "app"
       ]
     }

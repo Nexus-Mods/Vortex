@@ -88,7 +88,7 @@ class StyleManager {
         outFile: path.join(assetsPath, 'theme.css'),
         includePaths: [assetsPath, modulesPath],
         data: sassIndex,
-        // outputStyle: 'compressed',
+        outputStyle: 'compressed',
       },
         (err, output) => {
           if (err !== null) {

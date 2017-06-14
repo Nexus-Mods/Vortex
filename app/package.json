@@ -45,7 +45,6 @@
     "react-addons-css-transition-group": "^15.3.1",
     "react-addons-shallow-compare": "^15.4.1",
     "react-bootstrap": "^0.30.2",
-    "react-color": "^2.11.1",
     "react-contextmenu": "^2.5.0",
     "react-dom": "^15.3.0",
     "react-dnd": "^2.1.4",

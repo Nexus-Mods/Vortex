@@ -49,10 +49,10 @@ $component-active-color:    $text-color;
 $component-active-bg:       $brand-primary;
 
 //== Base fonts
-$font-family-sans-serif:  "Roboto", Helvetica, Arial, sans-serif;
+$font-family-sans-serif:  "Roboto", sans-serif;
 $font-family-serif:       Georgia, "Times New Roman", Times, serif;
 $font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace;
-$font-family-base:        $font-family-sans-serif;
+$font-family-base:        "Roboto";
 
 $font-size-base:          13px;
 $font-size-large:         ceil(($font-size-base * 1.25));

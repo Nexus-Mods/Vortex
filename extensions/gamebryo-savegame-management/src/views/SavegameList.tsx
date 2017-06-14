@@ -133,11 +133,9 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         />
       );
     } else {
-      if (profileId === undefined) {
-        content = <h4>{t('Please select a profile to import from')}</h4>;
-      } else {
-        content = <Icon name='spinner' pulse />;
-      }
+      content = (profileId === undefined)
+        ? <h4>{t('Please select a profile to import from')}</h4>
+        : <Icon name='spinner' pulse />;
     }
 
     return (
