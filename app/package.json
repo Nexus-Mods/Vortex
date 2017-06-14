@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "bluebird": "^3.4.6",
+    "bootstrap-sass": "^3.3.7",
     "content-type": "^1.0.2",
     "drivelist": "^5.0.19",
     "edge": "^6.5.1",

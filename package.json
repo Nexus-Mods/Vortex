@@ -76,7 +76,9 @@
       "bundledPlugins",
       "lib/modinstaller",
       "node_modules/7z-bin",
-      "assets/css/variables.scss"
+      "node_modules/bootstrap-sass/assets/stylesheets",
+      "node_modules/react-select/scss",
+      "assets/css/*.scss"
     ],
     "appId": "com.nexusmods.vortex",
     "win": {

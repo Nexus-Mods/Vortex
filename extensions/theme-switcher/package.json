@@ -17,7 +17,7 @@
     "@types/react": "^0.14.55",
     "@types/react-bootstrap": "^0.0.50",
     "@types/react-color": "^2.11.2",
-    "@types/react-redux": "^4.4.35",
+    "@types/react-redux": "4.4.35",
     "@types/redux": "^3.6.0",
     "@types/redux-thunk": "^2.1.0",
     "copyfiles": "^1.2.0",

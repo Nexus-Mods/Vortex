@@ -71,7 +71,9 @@ class StyleManager {
   private render() {
     const stylesheets: string[] = this.mPartials
       .filter(partial => partial.file !== undefined)
-      .map(partial => partial.file);
+      .map(partial => path.isAbsolute(partial.file)
+        ? asarUnpacked(partial.file)
+        : partial.file);
 
     const sassIndex: string =
       stylesheets.map(name => `@import "${name.replace(/\\/g, '\\\\')}";\n`).join('\n');
