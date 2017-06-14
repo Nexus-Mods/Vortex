@@ -5,11 +5,7 @@ import FSBackend = require('i18next-node-fs-backend');
 
 import * as path from 'path';
 
-let dirName = path.dirname(__dirname);
-if (dirName.endsWith('.asar')) {
-  // locales are not packed so users can update/change them
-  dirName = path.dirname(dirName);
-}
+const dirName = path.dirname(path.dirname(__dirname));
 
 const basePath = path.normalize(path.join(dirName, 'locales'));
 log('info', 'reading localizations', basePath);

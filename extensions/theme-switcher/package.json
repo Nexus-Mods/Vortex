@@ -8,7 +8,7 @@
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "postinstall": "electron-rebuild -w font-manager",
     "prebuild": "typings prune && typings install",
-    "build": "npm run tsc && copy \".\\node_modules\\font-manager\\build\\Release\\fontmanager.node\" \".\\dist\\font-manager.node\" && npm run webpack"
+    "build": "npm run tsc && npm run webpack && copy \".\\node_modules\\font-manager\\build\\Release\\fontmanager.node\" \".\\dist\\font-manager.node\""
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

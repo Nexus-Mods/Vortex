@@ -69,7 +69,7 @@
     "collectCoverage": true
   },
   "build": {
-    "asar": true,
+    "asar": false,
     "asarUnpack": [
       "7z.exe",
       "LICENSE.md",
@@ -88,7 +88,7 @@
           "provider": "github",
           "token": "008e0c7bfa1a9a2f14df6370dfdac9340ec828a",
           "private": true
-    }
+        }
       ]
     },
     "extraResources": [
