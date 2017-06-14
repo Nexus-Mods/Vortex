@@ -67,6 +67,10 @@ if (remote !== undefined) {
 process.env.NODE_PATH = path.resolve(__dirname, '..', '..', 'node_modules');
 Module._initPaths();
 
+function asarUnpacked(input: string): string {
+  return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
+}
+
 interface IRegisteredExtension {
   name: string;
   path: string;
@@ -772,7 +776,7 @@ class ExtensionManager {
       'test_runner',
     ];
 
-    const bundledPath = path.resolve(__dirname, '..', 'bundledPlugins');
+    const bundledPath = asarUnpacked(path.resolve(__dirname, '..', 'bundledPlugins'));
     log('info', 'bundle at', bundledPath);
     const extensionsPath = path.join(app.getPath('userData'), 'plugins');
     return staticExtensions

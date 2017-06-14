@@ -56,31 +56,29 @@ for (let file of data.copy) {
     continue;
   }
 
-  fs.ensureDirAsync(path.join(tgt, file.outPath))
-    .then(() => {
       glob(file.srcPath, globOptions, (globErr, files) => {
-        copies = copies === -1 ? files.length : copies += files.length;
-        if (globErr !== null) {
-          console.err('glob failed', globErr);
+      copies = copies === -1 ? files.length : copies += files.length;
+      if (globErr !== null) {
+        console.err('glob failed', globErr);
+      }
+      return Promise.map(files, (globResult) => {
+        let globTarget = path.join(...globResult.split(/[\/\\]/).slice(file.skipPaths));
+        if (file.rename) {
+          globTarget = path.join(path.dirname(globTarget), file.rename);
         }
-        return Promise.map(files, (globResult) => {
-          let globTarget = path.join(...globResult.split(/[\/\\]/).slice(file.skipPaths));
-          if (file.rename) {
-            globTarget = path.join(path.dirname(globTarget), file.rename);
-          }
-          const targetFile = path.join(tgt, file.outPath, globTarget);
+        const targetFile = path.join(tgt, file.outPath, globTarget);
 
-          return fs.copyAsync(globResult, targetFile)
-            .then(() => {
-              console.log('copied', globResult, targetFile);
-            })
-            .catch((copyErr) => {
-              console.log('failed to copy', globResult, targetFile, copyErr);
-            })
-            .finally(() => {
-              --copies;
-            });
-        });
+        return fs.ensureDirAsync(path.dirname(targetFile))
+          .then(() => fs.copyAsync(globResult, targetFile))
+          .then(() => {
+            console.log('copied', globResult, targetFile);
+          })
+          .catch((copyErr) => {
+            console.log('failed to copy', globResult, targetFile, copyErr);
+          })
+          .finally(() => {
+            --copies;
+          });
       });
     });
 }
