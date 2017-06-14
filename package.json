@@ -147,7 +147,7 @@
     "@types/react-dnd": "^2.0.31",
     "@types/react-dnd-html5-backend": "^2.1.6",
     "@types/react-dom": "^15.5.0",
-    "@types/react-redux": "^4.4.35",
+    "@types/react-redux": "4.4.35",
     "@types/react-router": "^4.0.4",
     "@types/react-select": "^1.0.47",
     "@types/react-split-pane": "^0.1.6",
