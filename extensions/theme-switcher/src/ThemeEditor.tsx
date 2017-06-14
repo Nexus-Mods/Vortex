@@ -1,9 +1,8 @@
 import { TranslationFunction } from 'i18next';
 import { ComponentEx } from 'nmm-api';
 import * as React from 'react';
-import { Button, Col, ControlLabel, FormControl, FormGroup, Grid, OverlayTrigger,
-  Popover, Row, Form
-} from 'react-bootstrap';
+import { Button, Col, ControlLabel, Form, FormControl, FormGroup,
+  Grid, OverlayTrigger, Popover, Row } from 'react-bootstrap';
 import { ChromePicker, Color } from 'react-color';
 
 interface IColor {
@@ -180,7 +179,6 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
               />
             </Col>
           </FormGroup>
-
           <FormGroup>
             <Col sm={4}>
               <ControlLabel>{t('Font Family:')}</ControlLabel>

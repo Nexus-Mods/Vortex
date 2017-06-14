@@ -9,7 +9,7 @@ import * as fs from 'fs-extra-promise';
 import { actions, ComponentEx, log, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
+import { Button, ControlLabel, FormControl, FormGroup, InputGroup } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
@@ -86,16 +86,20 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
       <div>
       <form>
         <FormGroup controlId='themeSelect'>
-          <ControlLabel>{t('Theme')}</ControlLabel>
-          <FormControl
-            componentClass='select'
-            onChange={this.selectTheme}
-            value={currentTheme}
-          >
-            { this.renderTheme(null, t('default')) }
-            { this.state.themes.map(theme => this.renderTheme(theme, theme)) }
-          </FormControl>
-          <Button onClick={this.clone} >{ t('Clone') }</Button>
+            <ControlLabel>{t('Theme')}</ControlLabel>
+          <InputGroup style={{ width: 300 }}>
+            <FormControl
+              componentClass='select'
+              onChange={this.selectTheme}
+              value={currentTheme}
+            >
+              { this.renderTheme(null, t('default')) }
+              { this.state.themes.map(theme => this.renderTheme(theme, theme)) }
+            </FormControl>
+            <InputGroup.Button>
+              <Button onClick={this.clone} >{ t('Clone') }</Button>
+            </InputGroup.Button>
+          </InputGroup>
         </FormGroup>
       </form>
       { editable
