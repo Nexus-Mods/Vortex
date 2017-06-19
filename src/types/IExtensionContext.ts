@@ -155,6 +155,8 @@ export interface IArchiveHandler {
 export type ArchiveHandlerCreator =
   (fileName: string, options: IArchiveOptions) => Promise<IArchiveHandler>;
 
+export type AttributeExtractor = (modInfo: any, modPath: string) => Promise<{ [key: string]: any }>;
+
 /**
  * interface for convenience functions made available to extensions
  *
@@ -535,6 +537,19 @@ export interface IExtensionContext {
    * @param {string} extensionPath path to the extension assets
    */
   registerGame: (game: IGame, extensionPath: string) => void;
+
+  /**
+   * register an extractor that can access all information known about a downloaded archive and
+   * tranfer them into the modInfo data structure so it can be accessed when rendering/managing
+   * the mod
+   *
+   * @param {number} priority determins the order in which the attributes are combined.
+   *                          if two extractors produce the same attribute, the one with the higher
+   *                          priority wins. The default attributes retrieved from the meta database
+   *                          have priority 100.
+   * @param {AttributeExtractor} extractor the function producing mod attributes
+   */
+  registerAttributeExtractor: (priority: number, extractor: AttributeExtractor) => void;
 
   /**
    * called once after the store has been set up and after all extensions have been initialized

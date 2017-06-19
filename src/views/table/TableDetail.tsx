@@ -1,5 +1,6 @@
 import {IEditChoice, ITableAttribute} from '../../types/ITableAttribute';
 import {PureComponentEx} from '../../util/ComponentEx';
+import { getSafe } from '../../util/storeHelper';
 
 import ExtensionGate from '../ExtensionGate';
 import FormFeedback from '../FormFeedbackAwesome';
@@ -40,21 +41,30 @@ class DetailCell extends React.Component<ICellProps, {}> {
         </FormControl.Static>
       );
     } else {
+      const readOnly = getSafe(attribute, ['edit', 'readOnly'], (val: any) => false)(rawData);
       if (attribute.edit.onChangeValue !== undefined) {
         if (attribute.edit.choices !== undefined) {
           const choices = attribute.edit.choices();
-          const currentChoice = choices.find((choice) => choice.text === value);
+          const currentChoice = choices.find(choice => choice.text === value);
           const key = currentChoice !== undefined ? currentChoice.key : undefined;
-          content = (
-            <FormControl
-              id={attribute.id}
-              componentClass='select'
-              value={key}
-              onChange={this.changeCellEvt}
-            >
-              {choices.map(this.renderChoice)}
-            </FormControl>
-          );
+          if (readOnly) {
+            content = (
+              <ControlLabel>
+                {currentChoice !== undefined ? currentChoice.text : null}
+              </ControlLabel>
+            );
+          } else {
+            content = (
+              <FormControl
+                id={attribute.id}
+                componentClass='select'
+                value={key}
+                onChange={this.changeCellEvt}
+              >
+                {choices.map(this.renderChoice)}
+              </FormControl>
+            );
+          }
         } else if (attribute.edit.validate !== undefined) {
           content = (
             <FormGroup
@@ -65,8 +75,9 @@ class DetailCell extends React.Component<ICellProps, {}> {
                 label={t(attribute.name)}
                 value={this.renderCell(value)}
                 onChange={this.changeCell}
+                readOnly={readOnly}
               />
-              <FormFeedback />
+              { readOnly ? null : <FormFeedback /> }
             </FormGroup>
           );
         } else {
@@ -74,7 +85,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
             <FormInput
               id={attribute.id}
               label={t(attribute.name)}
-              readOnly={false}
+              readOnly={readOnly}
               value={this.renderCell(value)}
               onChange={this.changeCell}
             />

@@ -18,6 +18,10 @@ import CategoryFilter from './util/CategoryFilter';
 import { retrieveCategory, retrieveCategoryDetail } from './util/retrieveCategoryPath';
 import CategoryDialog from './views/CategoryDialog';
 
+function getModCategory(mod: IModWithState) {
+  return mod.attributes['category'];
+}
+
 function init(context: IExtensionContext): boolean {
   context.registerDialog('categories', CategoryDialog);
   context.registerAction('mod-icons', 100, 'sitemap', {}, 'Categories', () => {
@@ -33,8 +37,7 @@ function init(context: IExtensionContext): boolean {
     description: 'Mod Category',
     icon: 'sitemap',
     placement: 'table',
-    calc: (mod: IModWithState) => mod.attributes['category'] !== undefined ?
-        retrieveCategory(mod.attributes['category'], context.api.store) : null,
+    calc: (mod: IModWithState) => retrieveCategory(getModCategory(mod), context.api.store),
     isToggleable: true,
     edit: {},
     isSortable: true,
@@ -46,9 +49,9 @@ function init(context: IExtensionContext): boolean {
     name: 'Category',
     description: 'Mod Category',
     icon: 'angle-double-right',
-    calc: (mod: IModWithState) => mod.attributes['category'] !== undefined ?
-      retrieveCategoryDetail(mod.attributes['category'], context.api.store) : null,
+    calc: (mod: IModWithState) => retrieveCategoryDetail(getModCategory(mod), context.api.store),
     edit: {
+      readOnly: (mod: IModWithState) => mod.state === 'downloaded',
       choices: () => {
         const store = context.api.store;
         const categories: ICategoryDictionary = allCategories(store.getState());

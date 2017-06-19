@@ -75,7 +75,6 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
 }
 
 interface IBaseProps {
-  objects: ITableAttribute[];
   globalOverlay: JSX.Element;
 }
 
@@ -128,6 +127,7 @@ class ModList extends ComponentEx<IProps, {}> {
       placement: 'both',
       isToggleable: false,
       edit: {
+        readOnly: (mod: IModWithState) => mod.state === 'downloaded',
         onChangeValue: (modId: string, value: any) =>
           props.onSetModAttribute(this.props.gameMode, modId, 'customFileName', value),
       },
@@ -172,6 +172,7 @@ class ModList extends ComponentEx<IProps, {}> {
       placement: 'detail',
       isToggleable: false,
       edit: {
+        readOnly: (mod: IModWithState) => mod.state === 'downloaded',
         validate: (input: string) => semver.valid(input) ? 'success' : 'warning',
         onChangeValue: (modId: string, value: any) =>
           props.onSetModAttribute(this.props.gameMode, modId, 'version', value),
@@ -225,15 +226,16 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   public componentWillMount() {
-    this.updateModsWithState({ mods: {}, modState: {}, downloads: {} }, this.props);
+    this.updateModsWithState({ mods: {}, modState: {}, downloads: {} }, this.props)
+    .then(() => this.forceUpdate());
   }
 
   public componentWillReceiveProps(newProps: IProps) {
     if ((this.props.mods !== newProps.mods)
       || (this.props.modState !== newProps.modState)
       || (this.props.downloads !== newProps.downloads)) {
-      this.updateModsWithState(this.props, newProps);
-      this.forceUpdate();
+      this.updateModsWithState(this.props, newProps)
+      .then(() => this.forceUpdate());
     }
   }
 
@@ -368,17 +370,18 @@ class ModList extends ComponentEx<IProps, {}> {
     );
   }
 
-  private updateModsWithState(oldProps: IModProps, newProps: IModProps) {
+  private updateModsWithState(oldProps: IModProps, newProps: IModProps): Promise<void> {
     const { gameMode } = this.props;
     let changed = false;
     const newModsWithState = {};
 
     const installedIds = new Set<string>();
 
+    // update mods as necessary
     Object.keys(newProps.mods).forEach(modId => {
       installedIds.add(newProps.mods[modId].archiveId);
       if ((oldProps.mods[modId] !== newProps.mods[modId])
-        || (oldProps.modState[modId] !== newProps.modState[modId])) {
+          || (oldProps.modState[modId] !== newProps.modState[modId])) {
         newModsWithState[modId] = {
           ...newProps.mods[modId],
           ...newProps.modState[modId],
@@ -389,50 +392,55 @@ class ModList extends ComponentEx<IProps, {}> {
       }
     });
 
-    Object.keys(newProps.downloads).forEach(archiveId => {
+    // insert downloads. Since this requires deriving mod attributes from
+    // the source-specific data we need to do this asynchronously although
+    // we expect all attributes to be available instantaneous.
+    return Promise.map(Object.keys(newProps.downloads), archiveId => {
       if ((newProps.downloads[archiveId].game === gameMode)
-          && (newProps.downloads[archiveId].state === 'finished')
-          && !installedIds.has(archiveId)) {
+        && (newProps.downloads[archiveId].state === 'finished')
+        && !installedIds.has(archiveId)) {
         if ((oldProps.downloads[archiveId] === newProps.downloads[archiveId])
-            && (this.mModsWithState[archiveId] !== undefined)) {
+          && (this.mModsWithState[archiveId] !== undefined)) {
           newModsWithState[archiveId] = this.mModsWithState[archiveId];
           return;
         }
+        return filterModInfo(newProps.downloads[archiveId].modInfo, undefined)
+        .then(info => ({ archiveId, info }));
+      } else {
+        return undefined;
+      }
+    })
+      .then((modAttributes: Array<{ archiveId: string, info: any }>) => {
+        modAttributes.filter(attribute => attribute !== undefined).forEach(mod => {
+          // complete attributes that we don't otherwise find for downloads
+          newModsWithState[mod.archiveId] = {
+            ...mod.info,
+            id: mod.archiveId,
+            state: 'downloaded',
+            archiveId: mod.archiveId,
+            attributes: {
+              ...mod.info,
+              customFileName: mod.info.fileName || newProps.downloads[mod.archiveId].localPath,
+            },
+          };
+          changed = true;
+        });
 
-        const filtered = filterModInfo(newProps.downloads[archiveId].modInfo);
-
-        const attributes: any = {
-          customFileName: filtered.fileName || newProps.downloads[archiveId].localPath,
-        };
-
-        const version = getSafe(filtered, ['version'], undefined);
-        if (filtered.version !== undefined) {
-          attributes.version = filtered.version;
+        // if the new mod list is a subset of the old one (including the empty set)
+        // the above check wouldn't notice that change
+        if (!changed
+          && ((this.mModsWithState === undefined)
+            || !_.isEqual(Object.keys(newModsWithState), Object.keys(this.mModsWithState)))) {
+          changed = true;
         }
 
-        newModsWithState[archiveId] = {
-            id: archiveId,
-            state: 'downloaded',
-            archiveId,
-            attributes,
-        };
-        changed = true;
-      }
-    });
+        if (changed || (this.mGroupedMods === undefined)) {
+          this.updateModGrouping(newModsWithState);
+        }
 
-    // if the new mod list is a subset of the old one (including the empty set)
-    // the above check wouldn't notice that change
-    if (!changed
-        && ((this.mModsWithState === undefined)
-         || !_.isEqual(Object.keys(newModsWithState), Object.keys(this.mModsWithState)))) {
-      changed = true;
-    }
-
-    if (changed || (this.mGroupedMods === undefined)) {
-      this.updateModGrouping(newModsWithState);
-    }
-    // assign only after mod grouping is updated so these don't go out of sync
-    this.mModsWithState = newModsWithState;
+        // assign only after mod grouping is updated so these don't go out of sync
+        this.mModsWithState = newModsWithState;
+      });
   }
 
   private cycleModState(profileId: string, modId: string, newValue: string) {
@@ -599,7 +607,7 @@ class ModList extends ComponentEx<IProps, {}> {
       checkboxes: [
         { id: 'mod', text: t('Remove Mod'), value: true },
         { id: 'archive', text: t('Remove Archive'), value: false },
-        { id: 'dependents', text: t('Disable Dependent'), value: false },
+        { id: 'dependents', text: t('Disable Dependent') + ' (not implemented)', value: false },
       ],
     }, {
         Cancel: null,
@@ -656,12 +664,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-function registerModAttribute(instanceProps: IBaseProps, attribute: ITableAttribute) {
-  return attribute;
-}
-
 export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
-      extend(registerModAttribute)(
-        ModList))) as React.ComponentClass<{}>;
+        ModList)) as React.ComponentClass<{}>;

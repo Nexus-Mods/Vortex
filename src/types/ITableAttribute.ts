@@ -106,6 +106,13 @@ export interface ITableAttribute {
    */
   edit: {
     /**
+     * if set, this function determins if the attribute is editable. If "edit" is an empty
+     * object, the attribute is readonly. If "edit" is non-empty and "readonly" is
+     * undefined, the attribute is editable.
+     */
+    readOnly?: (object: any) => boolean;
+
+    /**
      * allow inline editing of this cell
      */
     inline?: boolean,

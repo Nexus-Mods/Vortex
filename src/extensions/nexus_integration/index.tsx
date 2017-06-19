@@ -8,6 +8,7 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 import Icon from '../../views/Icon';
 import InputButton from '../../views/InputButton';
 
@@ -270,7 +271,7 @@ function checkModVersionsImpl(
 
 function renderNexusModIdDetail(
   store: Redux.Store<any>,
-  mod: IMod,
+  mod: IModWithState,
   t: I18next.TranslationFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const gameMode = activeGameId(store.getState());
@@ -279,6 +280,7 @@ function renderNexusModIdDetail(
       modId={mod.id}
       nexusModId={nexusModId}
       gameId={gameMode}
+      readOnly={mod.state === 'downloaded'}
       t={t}
       store={store}
     />
@@ -397,13 +399,31 @@ function init(context: IExtensionContextExt): boolean {
     name: 'Nexus Mod ID',
     description: 'Internal ID used by www.nexusmods.com',
     icon: 'external-link',
-    customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
+    customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) =>
       renderNexusModIdDetail(context.api.store, mod, t),
     calc: (mod: IMod) => getSafe(mod.attributes, ['modId'], undefined),
     placement: 'detail',
     isToggleable: false,
     edit: {},
     isSortable: false,
+  });
+
+  context.registerAttributeExtractor(50, (input: any) => {
+    const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
+
+    return Promise.resolve({
+      modId: getSafe(input.nexus, ['ids', 'modId'], undefined),
+      fileId: getSafe(input.nexus, ['ids', 'fileId'], undefined),
+      category: getSafe(input.nexus, ['modInfo', 'category_id'], undefined),
+      pictureUrl: getSafe(input.nexus, ['modInfo', 'picture_url'], undefined),
+      description: getSafe(input.nexus, ['modInfo', 'description'], undefined),
+      fileType: getSafe(input.nexus, ['fileInfo', 'category_name'], undefined),
+      isPrimary: getSafe(input.nexus, ['fileInfo', 'is_primary'], undefined),
+      fileName: getSafe(input.nexus, ['fileInfo', 'name'], undefined),
+      changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
+      uploadedTimestamp: getSafe(input.nexus, ['fileInfo', 'uploaded_timestamp'], undefined),
+      version: getSafe(input.nexus, ['fileInfo', 'version'], undefined),
+    });
   });
 
   context.once(() => {

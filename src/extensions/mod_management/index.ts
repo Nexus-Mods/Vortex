@@ -31,6 +31,7 @@ import {IMod} from './types/IMod';
 import {IFileChange, IModActivator} from './types/IModActivator';
 import {ITestSupported} from './types/ITestSupported';
 import * as basicInstaller from './util/basicInstaller';
+import { registerAttributeExtractor } from './util/filterModInfo';
 import refreshMods from './util/refreshMods';
 import resolvePath from './util/resolvePath';
 import sortMods from './util/sort';
@@ -62,7 +63,6 @@ interface IInstaller {
 const installers: IInstaller[] = [];
 
 export interface IExtensionContextExt extends IExtensionContext {
-  registerModAttribute: (attribute: ITableAttribute) => void;
   registerModActivator: (activator: IModActivator) => void;
   registerInstaller: (priority: number, testSupported: ITestSupported, install: IInstall) => void;
 }
@@ -256,6 +256,22 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerModActivator = registerModActivator;
   context.registerInstaller = registerInstaller;
+  context.registerAttributeExtractor = registerAttributeExtractor;
+
+  registerAttributeExtractor(100, (input: any) => {
+    return Promise.resolve({
+        fileName: getSafe(input.meta, ['fileName'], undefined),
+        fileMD5: getSafe(input.meta, ['fileMD5'], undefined),
+        fileSize: getSafe(input.meta, ['fileSize'], undefined),
+        version: getSafe(input.meta, ['fileVersion'], undefined),
+        logicalFileName: getSafe(input.meta, ['logicalFileName'], undefined),
+        rules: getSafe(input.meta, ['rules'], undefined),
+        category: getSafe(input.meta, ['details', 'category'], undefined),
+        description: getSafe(input.meta, ['details', 'description'], undefined),
+        author: getSafe(input.meta, ['details', 'author'], undefined),
+        homepage: getSafe(input.meta, ['details', 'homepage'], undefined),
+      });
+  });
 
   registerInstaller(1000, basicInstaller.testSupported, basicInstaller.install);
 

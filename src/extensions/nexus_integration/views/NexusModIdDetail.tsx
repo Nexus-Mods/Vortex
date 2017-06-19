@@ -10,6 +10,7 @@ import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 export interface IProps {
   gameId: string;
   modId: string;
+  readOnly: boolean;
   nexusModId: string;
   t: I18next.TranslationFunction;
   store: Redux.Store<any>;
@@ -22,7 +23,7 @@ export interface IProps {
  */
 class NexusModIdDetail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { nexusModId, t } = this.props;
+    const { t, nexusModId, readOnly } = this.props;
 
     const isIdValid = (nexusModId !== undefined) && !isNaN(Number(nexusModId));
 
@@ -34,8 +35,9 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
           <FormInput
             value={nexusModId || ''}
             onChange={this.updateNexusModId}
+            readOnly={readOnly}
           />
-          <FormFeedback />
+          { readOnly ? null : <FormFeedback /> }
           <ControlLabel>
             {isIdValid ? <p><a onClick={this.openPage}>{t('Visit on www.nexusmods.com')}</a></p>
                        : <p>{t('Nexus Mod Ids are numbers')}</p>}

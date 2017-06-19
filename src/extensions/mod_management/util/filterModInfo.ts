@@ -1,5 +1,9 @@
+import { AttributeExtractor } from '../../../types/IExtensionContext';
 import {getSafe} from '../../../util/storeHelper';
 import {truthy} from '../../../util/util';
+
+import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 
 function transfer(info: any, key: string, source: any, path: string[]) {
   const value = getSafe(source, path, undefined);
@@ -8,37 +12,21 @@ function transfer(info: any, key: string, source: any, path: string[]) {
   }
 }
 
-function filterModInfo(input: any): any {
-  const result: any = {};
+const attributeExtractors: Array<{ priority: number, extractor: AttributeExtractor}> = [];
 
-  // TODO: these should be extensions
-  transfer(result, 'modId', input.nexus, ['ids', 'modId']);
-  transfer(result, 'fileId', input.nexus, ['ids', 'fileId']);
-  transfer(result, 'category', input.nexus, ['modInfo', 'category_id']);
-  transfer(result, 'pictureUrl', input.nexus, ['modInfo', 'picture_url']);
-  transfer(result, 'description', input.nexus, ['modInfo', 'description']);
-  transfer(result, 'fileType', input.nexus, ['fileInfo', 'category_name']);
-  transfer(result, 'isPrimary', input.nexus, ['fileInfo', 'is_primary']);
-  transfer(result, 'fileName', input.nexus, ['fileInfo', 'name']);
-  const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
-  if (truthy(nexusChangelog)) {
-    result.changelog = { format: 'html', content: nexusChangelog };
-  }
-  transfer(result, 'uploadedTimestamp', input.nexus, ['fileInfo', 'uploaded_timestamp']);
-  transfer(result, 'version', input.nexus, ['fileInfo', 'version']);
+export function registerAttributeExtractor(priority: number, extractor: AttributeExtractor) {
+  attributeExtractors.push({ priority, extractor });
+}
 
-  transfer(result, 'fileName', input.meta, ['fileName']);
-  transfer(result, 'fileMD5', input.meta, ['fileMD5']);
-  transfer(result, 'fileSize', input.meta, ['fileSize']);
-  transfer(result, 'version', input.meta, ['fileVersion']);
-  transfer(result, 'logicalFileName', input.meta, ['logicalFileName']);
-  transfer(result, 'rules', input.meta, ['rules']);
-  transfer(result, 'category', input.meta, ['details', 'category']);
-  transfer(result, 'description', input.meta, ['details', 'description']);
-  transfer(result, 'author', input.meta, ['details', 'author']);
-  transfer(result, 'homepage', input.meta, ['details', 'homepage']);
+function filterUndefined(input: { [key: string]: any }) {
+  return _.omitBy(input, val => val === undefined);
+}
 
-  return result;
+function filterModInfo(input: any, modPath: string): Promise<any> {
+  return Promise.map(attributeExtractors.sort(), extractor => extractor.extractor(input, modPath))
+  .then(infoBlobs => {
+    return Object.assign({}, ...infoBlobs.map(filterUndefined));
+  });
 }
 
 export default filterModInfo;

@@ -138,7 +138,7 @@ class InstallManager {
       this.mTask = new Zip();
     }
 
-    const fullInfo = Object.assign({}, info);
+    const fullInfo = { ...info };
     let destinationPath: string;
 
     const baseName = path.basename(archivePath, path.extname(archivePath));
@@ -146,8 +146,6 @@ class InstallManager {
     let modId = baseName;
     let installGameId: string;
     let installContext: InstallContext;
-
-    let filteredInfo;
 
     this.queryGameId(api.store, downloadGameId)
         .then(gameId => {
@@ -180,13 +178,13 @@ class InstallManager {
 
           return checkNameLoop();
         })
-        .then(() => {
-          filteredInfo = filterModInfo(fullInfo);
-
-          // TODO: this relies entirely on the file id
+        // TODO: this is only necessary to get at the fileId and the fileId isn't
+        //   even a particularly good way to discover conflicts
+        .then(() => filterModInfo(fullInfo, undefined))
+        .then(modInfo => {
           const oldMod =
-              (filteredInfo.fileId !== undefined) ?
-                  this.findPreviousVersionMod(filteredInfo.fileId, api.store,
+              (modInfo.fileId !== undefined) ?
+                  this.findPreviousVersionMod(modInfo.fileId, api.store,
                                               installGameId) :
                   undefined;
 
@@ -235,13 +233,14 @@ class InstallManager {
           return this.processInstructions(api, archivePath, destinationPath,
                                           installGameId, result);
         })
-        .then(() => {
-          installContext.finishInstallCB('success', filteredInfo);
+        .then(() => filterModInfo(fullInfo, destinationPath))
+        .then(modInfo => {
+          installContext.finishInstallCB('success', modInfo);
           if (enable) {
             api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
           }
           if (processDependencies) {
-            this.installDependencies(filteredInfo.rules, this.mGetInstallPath(),
+            this.installDependencies(modInfo.rules, this.mGetInstallPath(),
                                      installContext, api);
           }
           if (callback !== undefined) {
