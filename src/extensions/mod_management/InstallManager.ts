@@ -8,6 +8,7 @@ import { log } from '../../util/log';
 import { activeGameId, activeProfile, downloadPath, gameName } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
+import walk from '../../util/walk';
 
 import { IDownload } from '../download_management/types/IDownload';
 import modName from '../mod_management/util/modName';
@@ -226,7 +227,7 @@ class InstallManager {
           installContext.startInstallCB(modId, archiveId);
 
           destinationPath = path.join(this.mGetInstallPath(), modId);
-          return this.installInner(api.store, archivePath, installGameId);
+          return this.installInner(api.store, archivePath, destinationPath, installGameId);
         })
         .then((result) => {
           installContext.setInstallPathCB(modId, destinationPath);
@@ -285,53 +286,31 @@ class InstallManager {
   /**
    * find the right installer for the specified archive, then install
    */
-  private installInner(store: Redux.Store<any>, archivePath: string, gameId: string) {
-    const fileList: IZipEntry[] = [];
-    // get list of files in the archive
-    return this.mTask.list(archivePath, {},
-                           (files: any[]) => {
-                             fileList.push(...files.filter(
-                                 (spec) => spec.attr[0] !== 'D'));
-                           })
-        .then(() => this.getInstaller(
-                  fileList.map((entry: IZipEntry) => entry.name)))
-        .then((supportedInstaller: ISupportedInstaller) => {
+  private installInner(store: Redux.Store<any>, archivePath: string,
+                       destinationPath: string, gameId: string) {
+    const fileList: string[] = [];
+    const tempPath = destinationPath + '.installing';
+
+    return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
+                                  () => undefined,
+                                  () => this.queryPassword(store))
+        .then(() => walk(tempPath,
+                         (iterPath, stats) => {
+                           if (stats.isFile()) {
+                             fileList.push(path.relative(tempPath, iterPath));
+                           }
+                           return Promise.resolve();
+                         }))
+        .then(() => this.getInstaller(fileList))
+        .then(supportedInstaller => {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
           }
+
           const {installer, requiredFiles} = supportedInstaller;
-          let cleanup: () => void;
-          let reqFilesPath: string;
-          // extract the requested files, then initiate the actual install
-          return new Promise<string>((resolve, reject) => {
-                   tmpDir({unsafeCleanup: true},
-                          (err: any, tmpPath: string,
-                           cleanupCallback: () => void) => {
-                            if (err !== null) {
-                              reject(err);
-                            }
-                            cleanup = cleanupCallback;
-                            resolve(tmpPath);
-                          });
-                 })
-              .then((tmpPath: string) => {
-                reqFilesPath = tmpPath;
-                if (requiredFiles.length > 0) {
-                  return this.extractFileList(store, archivePath,
-                                              tmpPath, requiredFiles);
-                } else {
-                  return undefined;
-                }
-              })
-              .then(() => installer.install(
-                        fileList.map((entry: IZipEntry) => entry.name),
-                        reqFilesPath, gameId,
-                        (perc: number) => log('info', 'progress', perc)))
-              .finally(() => {
-                if (cleanup !== undefined) {
-                  cleanup();
-                }
-              });
+          return installer.install(
+              fileList, tempPath, gameId,
+              (perc: number) => log('info', 'progress', perc));
         });
   }
 
@@ -373,40 +352,6 @@ class InstallManager {
         resolve(downloadGameId);
       }
     });
-  }
-
-  private extractFileList(
-    store: Redux.Store<any>,
-    archivePath: string,
-    outputPath: string,
-    files: string[]): Promise<void> {
-    let extractFilePath: string;
-    // write the file list to a temporary file, then use that as the
-    // input file for 7zip, to avoid quoting problems
-    return new Promise<string>((resolve, reject) => {
-             tmpFile({ keep: true },
-                     (err: any, tmpPath: string, fd: number,
-                      cleanupCB: () => void) => {
-                       if (err !== null) {
-                         reject(err);
-                       } else {
-                         fs.closeAsync(fd).then(() => resolve(tmpPath));
-                       }
-                     });
-           })
-        .then((tmpPath: string) => {
-          extractFilePath = tmpPath;
-          const extractList: string[] =
-              files.map((filePath: string) => '"' + filePath + '"');
-          return fs.writeFileAsync(tmpPath, extractList.join('\n'));
-        })
-        .then(() => this.mTask.extractFull(
-                  archivePath, outputPath,
-                  {raw: [`-ir@${extractFilePath}`], ssc: false},
-                  () => undefined,
-                  () => this.queryPassword(store)))
-        .finally(() => fs.unlinkAsync(extractFilePath))
-        .then(() => undefined);
   }
 
   private queryPassword(store: Redux.Store<any>): Promise<string> {
@@ -513,7 +458,7 @@ class InstallManager {
         // process 'submodule' instructions
         .then(() => Promise.each(
           subModule,
-          (mod) => this.installInner(api.store, mod.path, gameId)
+          (mod) => this.installInner(api.store, mod.path, destinationPath, gameId)
             .then((resultInner) => this.processInstructions(
               api, mod.path, destinationPath, gameId,
               resultInner)))));
@@ -768,58 +713,36 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
 
     const tempPath = destinationPath + '.installing';
 
-    return fs.ensureDirAsync(tempPath)
-      .then(() => getNormalizeFunc(tempPath))
-      .then((normalizeFunc: Normalize) => {
-        normalize = normalizeFunc;
-        return;
-      })
-      .then(() => this.extractFileList(store, archivePath,
-        tempPath,
-        copies.map((copy) => copy.source)))
-      .then(() => fs.renameAsync(tempPath, destinationPath))
-      .then(() => {
-        // TODO: hack: the 7z command line doesn't allow files to be renamed
-        //  during installation so we extract them all and then rename. This
-        //  also tries to clean up dirs that are empty
-        //  afterwards but ideally we get a proper 7z lib...
-        const renames =
-          copies.filter((inst) => inst.source !== inst.destination)
-            .reduce((groups, inst) => {
-              setdefault(groups, normalize(inst.source), []).push(inst.destination);
-              return groups;
-            }, {});
-        const affectedDirs = new Set<string>();
-        return Promise
-          .map(Object.keys(renames),
-          (source: string) => {
-            return Promise.each(renames[source],
-              (destination: string, index: number, len: number) => {
-                const fullSource = path.join(destinationPath, source);
-                const dest = path.join(destinationPath, destination);
-                let affDir = path.dirname(fullSource);
-                while (affDir.length > destinationPath.length) {
-                  affectedDirs.add(affDir);
-                  affDir = path.dirname(affDir);
+    return fs.ensureDirAsync(destinationPath)
+        .then(() => getNormalizeFunc(destinationPath))
+        .then((normalizeFunc: Normalize) => {
+          normalize = normalizeFunc;
+          return;
+        })
+        .then(() => {
+          const sourceMap: {[src: string]: string[]} =
+              copies.reduce((prev, copy) => {
+                if (prev[copy.source] === undefined) {
+                  prev[copy.source] = [copy.destination];
+                } else {
+                  prev[copy.source].push(copy.destination);
                 }
-                // if this is the last or only destination for the source
-                // file, use a rename because it's quicker. otherwise
-                // copy so that further destinations can be processed
-                return fs.ensureDirAsync(path.dirname(dest))
-                  .then(() => (index !== len - 1) ?
-                    fs.copyAsync(fullSource, dest) :
-                    fs.renameAsync(fullSource, dest));
+                return prev;
+              }, {});
+          // for each source, copy or rename to destination(s)
+          return Promise.map(Object.keys(sourceMap), srcRel => {
+            const sourcePath = path.join(tempPath, srcRel);
+            return Promise.map(sourceMap[srcRel], (destRel, idx, len) => {
+              const destPath = path.join(destinationPath, destRel);
+              return fs.ensureDirAsync(path.dirname(destPath))
+                  .then(() => idx === len - 1 ?
+                                  fs.renameAsync(sourcePath, destPath) :
+                                  fs.copyAsync(sourcePath, destPath));
             });
-          })
-          .then(() => Promise.each(Array.from(affectedDirs)
-            .sort((lhs: string, rhs: string) =>
-              rhs.length - lhs.length),
-            (affectedPath: string) => {
-              return fs.rmdirAsync(affectedPath)
-                .catch(() => undefined);
-            }));
-      })
-      .then(() => undefined);
+          });
+        })
+        .then(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }))
+        .then(() => undefined);
   }
 }
 
