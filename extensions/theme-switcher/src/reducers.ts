@@ -13,4 +13,3 @@ const settingsReducer: types.IReducerSpec = {
 };
 
 export default settingsReducer;
-

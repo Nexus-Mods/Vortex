@@ -54,6 +54,7 @@ export const INSTALL_TIME: ITableAttribute = {
   calc: (mod: IModWithState) => new Date(getSafe(mod.attributes, ['installTime'], '')),
   placement: 'both',
   isToggleable: true,
+  isDefaultVisible: false,
   edit: {},
   isSortable: true,
   filter: new DateTimeFilter(),

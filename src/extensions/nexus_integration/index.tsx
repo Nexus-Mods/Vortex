@@ -176,7 +176,6 @@ interface IRequestError {
 function processErrorMessage(
   statusCode: number, errorMessage: string, gameId: string): IRequestError {
   if (statusCode === undefined) {
-    console.log('process error message', statusCode, errorMessage, gameId);
     if (errorMessage && (errorMessage.indexOf('APIKEY') > -1)) {
       return { error: 'You are not logged in!' };
     } else {
