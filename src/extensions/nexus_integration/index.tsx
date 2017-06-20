@@ -291,14 +291,18 @@ function renderNexusModIdDetail(
 function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.TranslationFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
+  const state: string = getSafe(mod, ['state'], undefined);
 
   // TODO: this is not a reliable way to determine if the mod is from nexus
   const isNexusMod: boolean = (nexusModId !== undefined)
     && (version !== undefined)
     && !isNaN(parseInt(nexusModId, 10));
 
-  const endorsed: string = getSafe(mod.attributes, ['endorsed'],
-    isNexusMod ? 'Undecided' : undefined);
+  let endorsed: string = getSafe(mod.attributes, ['endorsed'], undefined);
+  if ((endorsed === undefined && state === 'installing')
+   || (endorsed === undefined && isNexusMod)) {
+    endorsed = 'Undecided';
+  }
   const gameMode = activeGameId(store.getState());
   if (endorsed !== undefined) {
     return (
