@@ -128,7 +128,7 @@ export interface IExtensionContextExt extends IExtensionContext {
 }
 
 function init(context: IExtensionContextExt): boolean {
-  context.registerMainPage('clone', 'Profiles', ProfileView, {
+  context.registerMainPage('profiles', 'Profiles', ProfileView, {
     hotkey: 'P',
     group: 'global',
     visible: () => (activeGameId(context.api.store.getState()) !== undefined)
@@ -139,7 +139,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['persistent', 'profiles'], profilesReducer);
   context.registerReducer(['settings', 'profiles'], settingsReducer);
 
-  context.registerAction('game-discovered-buttons', 100, 'asterisk', {
+  context.registerAction('game-discovered-buttons', 100, 'favorite', {
     noCollapse: true,
   }, 'Manage',
     (instanceIds: string[]) => {

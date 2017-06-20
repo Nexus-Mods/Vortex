@@ -14,7 +14,7 @@ function init(context): boolean {
       context.api.store.dispatch(selectImportFolder(true));
   });
 
-  context.registerMainPage('outdent', 'NMM Migration Tool', ModMigrationPanel, {
+  context.registerMainPage('import', 'NMM Migration Tool', ModMigrationPanel, {
     hotkey: 'M',
     group: 'per-game',
     visible: () => true,

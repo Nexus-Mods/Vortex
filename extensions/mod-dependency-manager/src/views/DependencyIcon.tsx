@@ -452,7 +452,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         className={classes.join(' ')}
         key={`conflicts-${mod.id}`}
         tooltip={tip}
-        icon='bolt'
+        icon='flash'
         onClick={this.openConflictDialog}
       />
     );

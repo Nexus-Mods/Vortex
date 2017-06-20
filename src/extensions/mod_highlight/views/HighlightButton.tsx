@@ -53,7 +53,7 @@ class HighlightButton extends ComponentEx<IProps, {}> {
     const icon = getSafe(mod.attributes, ['icon'], '');
 
     const modIcon: string[] = ['bomb', 'map', 'shield', 'flask',
-      'flag', 'hotel', 'bolt', 'home', 'eye'];
+      'flag', 'hotel', 'flash', 'home', 'eye'];
 
     const popoverBottom = (
       <Popover

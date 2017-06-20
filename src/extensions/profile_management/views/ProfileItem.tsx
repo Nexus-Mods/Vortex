@@ -49,7 +49,7 @@ class ProfileItem extends ComponentEx<IProps, {}> {
             <li>
               <TooltipIcon
                 id={profile.id}
-                name='cubes'
+                name='wrench'
                 tooltip={t('Number of Mods enabled')}
               />
               {enabledMods}

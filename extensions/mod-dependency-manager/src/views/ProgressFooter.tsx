@@ -18,7 +18,11 @@ const ProgressFooter = (props: IProps) => {
 
   return working ? (
     <div style={{ display: 'inline', marginLeft: 5, marginRight: 5 }}>
-      <tooltip.Icon id='update-file-conflicts' name='bolt' tooltip={t('Updating file conflicts')} />
+      <tooltip.Icon
+        id='update-file-conflicts'
+        name='flash'
+        tooltip={t('Updating file conflicts')}
+      />
       <Icon name='spinner' pulse />
     </div>
   ) : null;

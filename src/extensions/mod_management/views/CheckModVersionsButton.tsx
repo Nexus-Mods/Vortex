@@ -43,7 +43,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
       return (
         <ToolbarIcon
           id='check-mods-version'
-          icon='calendar-check-o'
+          icon='calendar-add'
           text={t('Check mods version')}
           onClick={this.checkModsVersion}
           buttonType={buttonType}

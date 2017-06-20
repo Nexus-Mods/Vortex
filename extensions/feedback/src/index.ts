@@ -8,7 +8,7 @@ import { types } from 'nmm-api';
 
 function init(context: types.IExtensionContext) {
 
-  context.registerMainPage('commenting-o', 'Give Feedback', FeedbackView, {
+  context.registerMainPage('message', 'Give Feedback', FeedbackView, {
     hotkey: 'F',
     group: 'support',
   });

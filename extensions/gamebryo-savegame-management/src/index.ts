@@ -71,7 +71,7 @@ function init(context): boolean {
     context.api.store.dispatch(showTransferDialog(true));
   });
 
-  context.registerMainPage('hdd-o', 'Save Games', SavegameList, {
+  context.registerMainPage('save', 'Save Games', SavegameList, {
     hotkey: 'S',
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),

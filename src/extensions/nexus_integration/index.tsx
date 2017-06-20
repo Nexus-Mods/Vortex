@@ -244,7 +244,7 @@ function checkModVersionsImpl(
 
   const modsList = Object.keys(mods).map(modId => mods[modId]);
 
-  return Promise.map(modsList, (mod: IMod) =>
+  return Promise.mapSeries(modsList, (mod: IMod) =>
     checkModVersion(store.dispatch, nexus, gameId, mod)
       .catch(TimeoutError, err => {
         const name = modName(mod, { version: true });

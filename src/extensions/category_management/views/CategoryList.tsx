@@ -93,11 +93,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
         action: this.collapseAll,
       }, {
         title: t('Add Root Category'),
-        icon: 'indent',
+        icon: 'folder-add',
         action: this.addRootCategory,
       }, {
         title: t('Show/Hide empty categories'),
-        icon: 'low-vision',
+        icon: 'eye-slash',
         action: this.toggleShowEmpty,
       },
     ];
@@ -191,7 +191,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             tooltip={t('Add Root Category')}
             onClick={this.addRootCategory}
           >
-            <Icon name='indent' />
+            <Icon name='folder-add' />
           </Button>
           <IconBar
             group='categories-icons'
@@ -432,7 +432,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             tooltip={t('Add Child Category')}
             onClick={this.addCategory.bind(this, rowInfo)}
           >
-            <Icon name='indent' />
+            <Icon name='folder-add' />
           </Button>
         ),
         (

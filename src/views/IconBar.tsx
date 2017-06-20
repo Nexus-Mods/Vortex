@@ -107,7 +107,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     classes.push('btngroup-collapsed');
 
     if (collapse) {
-      const dotdotdot: any = <Icon name='ellipsis-v' />;
+      const dotdotdot: any = <Icon name='menu-dots' rotate='90' />;
       const collapsed: IActionDefinition[] = [];
       const unCollapsed: IActionDefinition[] = [];
 
@@ -130,7 +130,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             className='btn-embed'
             onClick={this.toggleCollapsed}
             tooltip={''}
-            icon='ellipsis-v'
+            icon='menu-dots'
+            rotate='90'
             ref={this.setButtonRef}
           >
             {dotdotdot}
