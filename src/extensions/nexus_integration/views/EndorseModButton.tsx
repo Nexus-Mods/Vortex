@@ -23,34 +23,19 @@ class EndorseModButton extends ComponentEx<IProps, {}> {
 
     if (endorsedStatus === 'pending') {
       return (
-<<<<<<< HEAD
-      <div style={{ textAlign: 'center' }}>
-        <Icon
-          name='spinner'
-          pulse
-        />
-      </div>
-=======
         <div style={{ textAlign: 'center' }}>
           <Icon
             name='spinner'
             pulse
           />
         </div>
->>>>>>> switched to nucleo icons
       );
     }
 
     const { icon, tooltip } = {
-<<<<<<< HEAD
-      Undecided: { icon: 'star-half-o', tooltip: t('Undecided') },
-      Abstained: { icon: 'star-o', tooltip: t('Abstained') },
-      Endorsed: { icon: 'star', tooltip: t('Endorsed') },
-=======
       Undecided: { icon: 'like-maybe', tooltip: t('Undecided') },
       Abstained: { icon: 'like-no', tooltip: t('Abstained') },
       Endorsed: { icon: 'like', tooltip: t('Endorsed') },
->>>>>>> switched to nucleo icons
     }[endorsedStatus] || { icon: 'star-half-o', tooltip: t('Undecided') };
 
     return (
