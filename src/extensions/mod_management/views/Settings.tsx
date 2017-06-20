@@ -88,10 +88,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, activators, currentActivator } = this.props;
+    const { t, activators, currentActivator, gameMode } = this.props;
     const { paths, supportedActivators } = this.state;
 
-    return (
+    return gameMode !== undefined ? (
       <form>
         <Panel footer={this.renderFooter()}>
           {this.renderPathCtrl(paths, t('Base Path'), 'base')}
@@ -116,7 +116,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           {this.renderActivators(supportedActivators, currentActivator)}
         </FormGroup>
       </form>
-    );
+    ) : null;
   }
 
   /**
@@ -165,11 +165,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, gameMode, onSetPath, onShowError } = this.props;
     const newInstallPath: string = resolvePath('install', this.state.paths, gameMode);
     const newDownloadPath: string = resolvePath('download', this.state.paths, gameMode);
-
-    if (gameMode === undefined) {
-      onShowError('Failed to move directories', 'Please select a game to manage first');
-      return null;
-    }
 
     this.setState(setSafe(this.state, ['busy'], t('Moving')));
     return Promise.join(
