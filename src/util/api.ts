@@ -22,7 +22,7 @@ import makeReactive from './makeReactive';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import Steam, { ISteamEntry } from './Steam';
-import { setdefault } from './util';
+import { isNullOrWhitespace, setdefault } from './util';
 import walk from './walk';
 
 export {
@@ -33,6 +33,7 @@ export {
   extend,
   getCurrentLanguage,
   getNormalizeFunc,
+  isNullOrWhitespace,
   LazyComponent,
   lazyRequire,
   makeReactive,
