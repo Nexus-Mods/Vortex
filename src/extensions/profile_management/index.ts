@@ -139,7 +139,9 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['persistent', 'profiles'], profilesReducer);
   context.registerReducer(['settings', 'profiles'], settingsReducer);
 
-  context.registerAction('game-discovered-buttons', 100, 'asterisk', {}, 'Manage',
+  context.registerAction('game-discovered-buttons', 100, 'asterisk', {
+    noCollapse: true,
+  }, 'Manage',
     (instanceIds: string[]) => {
       const profileId = shortid();
       const gameId = instanceIds[0];

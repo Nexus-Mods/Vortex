@@ -110,6 +110,7 @@ function main(context: types.IExtensionContext) {
       <DependencyIcon mod={mod} t={t} localState={localState} />,
     calc: (mod) => null,
     isToggleable: true,
+    isDefaultVisible: false,
     edit: {},
     isSortable: false,
   });
