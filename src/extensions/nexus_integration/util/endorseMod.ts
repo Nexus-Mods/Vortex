@@ -3,13 +3,13 @@ import Nexus from 'nexus-api';
 
 /**
  * endorse the mod by the server call
- * 
+ *
  * @param {string} activeGameId
  * @param {Nexus} nexus
  * @param {string} endorseStatus
  * @param {string} modId,
  * @return {boolean} isEndorsed
- * 
+ *
  */
 
 function endorseMod(nexus: Nexus, gameId: string, nexusModId: number,

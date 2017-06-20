@@ -14,7 +14,7 @@ export interface IProps {
 
 /**
  * Endorse Button
- * 
+ *
  * @class EndorseModButton
  */
 class EndorseModButton extends ComponentEx<IProps, {}> {
@@ -22,15 +22,17 @@ class EndorseModButton extends ComponentEx<IProps, {}> {
     const {endorsedStatus, modId, t } = this.props;
 
     if (endorsedStatus === 'pending') {
-      return <div style={{ textAlign: 'center' }}>
+      return (
+      <div style={{ textAlign: 'center' }}>
         <Icon
           name='spinner'
           pulse
         />
-      </div>;
+      </div>
+      );
     }
 
-    let { icon, tooltip } = {
+    const { icon, tooltip } = {
       Undecided: { icon: 'star-half-o', tooltip: t('Undecided') },
       Abstained: { icon: 'star-o', tooltip: t('Abstained') },
       Endorsed: { icon: 'star', tooltip: t('Endorsed') },
@@ -50,9 +52,9 @@ class EndorseModButton extends ComponentEx<IProps, {}> {
   }
 
   private endorseMod = () => {
-    let { endorsedStatus, gameId, modId, onEndorseMod } = this.props;
+    const { endorsedStatus, gameId, modId, onEndorseMod } = this.props;
     onEndorseMod(gameId, modId, endorsedStatus);
-  };
+  }
 }
 
 export default EndorseModButton;
