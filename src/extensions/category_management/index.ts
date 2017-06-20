@@ -98,9 +98,11 @@ function init(context: IExtensionContext): boolean {
       context.api.events.on('gamemode-activated', (gameMode: string) => {
         const categories: ICategoriesTree[] = getSafe(store.getState(),
           ['persistent', 'categories', gameMode], undefined);
-        if (categories === undefined) {
+        const APIKEY = getSafe(store.getState(),
+          ['confidential', 'account', 'nexus', 'APIKey'], undefined);
+        if (categories === undefined && APIKEY !== undefined) {
           context.api.events.emit('retrieve-category-list', false, {});
-        } else if (categories.length === 0) {
+        } else if (categories !== undefined && categories.length === 0) {
           context.api.store.dispatch(updateCategories(gameMode, {}));
         }
       });
