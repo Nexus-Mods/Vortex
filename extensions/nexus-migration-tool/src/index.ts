@@ -9,11 +9,6 @@ import * as path from 'path';
 
 function init(context): boolean {
 
-  context.registerAction('mod-import-icons', 200, 'download', {}, 'Import NMM Virtual Install',
-    () => {
-      context.api.store.dispatch(selectImportFolder(true));
-  });
-
   context.registerMainPage('import', 'NMM Migration Tool', ModMigrationPanel, {
     hotkey: 'M',
     group: 'per-game',

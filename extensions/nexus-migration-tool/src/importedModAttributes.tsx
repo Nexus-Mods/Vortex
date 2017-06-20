@@ -77,3 +77,16 @@ export const FILES: types.ITableAttribute = {
   },
   edit: {},
 };
+
+export const STATUS: types.ITableAttribute = {
+  id: 'status',
+  name: 'Import',
+  description: 'The import status of the mod',
+  icon: 'level-up',
+  calc: (mod: IModEntry) => mod.importFlag ? 'To import' : 'Do not import',
+  placement: 'both',
+  isToggleable: true,
+  isSortable: true,
+  filter: new TableTextFilter(true),
+  edit: {},
+};

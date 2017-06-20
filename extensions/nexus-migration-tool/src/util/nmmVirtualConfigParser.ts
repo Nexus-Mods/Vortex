@@ -78,6 +78,7 @@ export function parseNMMInstall(nmmFilePath: string): Promise<ModEntry[]> {
         archivePath: elementArchivePath,
         modVersion: elementModVersion,
         archiveMD5: fileMD5,
+        importFlag: true,
         fileEntries: modFileEntries,
       };
 

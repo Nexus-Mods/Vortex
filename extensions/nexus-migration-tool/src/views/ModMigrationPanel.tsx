@@ -3,7 +3,7 @@ import { IFileEntry, IModEntry } from '../types/nmmEntries';
 import parseNMMInstall from '../util/nmmVirtualConfigParser';
 
 import {
-  FILENAME, FILES, MOD_ID, MOD_NAME, MOD_VERSION,
+  FILENAME, FILES, MOD_ID, MOD_NAME, MOD_VERSION, STATUS,
 } from '../importedModAttributes';
 
 import * as Promise from 'bluebird';
@@ -23,7 +23,6 @@ interface IConnectedProps {
   currentProfile: types.IProfile;
   profiles: { [id: string]: types.IProfile };
   importedMods: IModEntry[];
-  selectFolder: boolean;
   gameMode: string;
   discoveredGames: { [id: string]: types.IDiscoveryResult };
   importedModsActivity: string;
@@ -50,6 +49,7 @@ type Props = IConnectedProps & IActionProps;
  */
 class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   private modActions: ITableRowAction[];
+  private importList: IModEntry[];
 
   constructor(props) {
     super(props);
@@ -74,27 +74,14 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, importedMods, selectFolder } = this.props;
+    const { t, importedMods } = this.props;
     const { importedMod, profileId } = this.state;
     let actions = this.modActions;
+    const selectFolder = true;
 
     let header: JSX.Element;
-    if (selectFolder) {
-      header = this.renderTransfer();
-      actions = [].concat([{
-        icon: 'sign-in',
-        title: t('Import'),
-        action: this.testParse,
-      }], this.modActions);
-    } else {
-      header = (
-        <IconBar
-          group='mod-import-icons'
-          buttonType='icon'
-          orientation='vertical'
-        />
-      );
-    }
+    header = this.renderTransfer();
+    actions = [].concat(this.modActions);
 
     let content = null;
     if (!selectFolder || ((importedMod !== undefined) && (importedMod !== null))) {
@@ -104,7 +91,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
           data={selectFolder ? importedMod : importedMods}
           actions={actions}
           staticElements={[
-            MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, FILES]}
+            MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, FILES, STATUS]}
         />
       );
     }
@@ -150,12 +137,12 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
 
     return (
       <div style={{ whiteSpace: 'nowrap' }}>
-        {t('Import from') + ' '}
+        {t('Select import folder') + ' '}
         <tooltip.IconButton
           id='btn-test-import'
           tooltip={t('Parse the hardcoded NMM config file')}
           icon='download'
-          onClick={this.testParse}
+          onClick={this.addSearchPath}
         />
       </div>
     );
@@ -165,14 +152,26 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
     this.props.onHideTransfer();
   }
 
-  private testParse = (evt) => {
-    const virtualPath = 'E:\\Games\\Nexus Mod Manager\\SkyrimSE\\Mods\\VirtualInstall';
+  private testParse = (evt, selectedDir: string) => {
+    const virtualPath = selectedDir;
 
     this.nextState.importedMod = undefined;
 
     parseNMMInstall(virtualPath)
     .then((modEntries) => {
       this.nextState.importedMod = modEntries;
+    });
+  }
+
+  private addSearchPath = (evt) => {
+    this.context.api.selectDir({})
+    .then((dirName: string) => {
+      if (!util.isNullOrWhitespace(dirName)) {
+        this.testParse(evt, dirName);
+      }
+    })
+    .catch((err) => {
+      log('info', 'search path selection cancelled', { err });
     });
   }
 
@@ -191,7 +190,6 @@ function mapStateToProps(state: any): IConnectedProps {
     currentProfile,
     profiles: state.persistent.profiles,
     importedMods: state.session.modmigration.importedMods,
-    selectFolder: state.session.modmigration.selectFolder,
     gameMode: selectors.activeGameId(state),
     discoveredGames: state.settings.gameMode.discovered,
     importedModsActivity: state.session.modmigration.importedModsActivity,

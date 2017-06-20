@@ -7,6 +7,7 @@ export interface IModEntry {
   archivePath: string;
   modVersion: string;
   archiveMD5: string;
+  importFlag: boolean;
   fileEntries: IFileEntry[];
 }
 
