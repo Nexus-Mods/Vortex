@@ -270,12 +270,16 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   }
 
   private setFontSize(theme: { [name: string]: string }) {
-    this.nextState.fontSize = parseInt(theme['font-size-base'], 10);
+    if (theme['font-size-base'] !== undefined) {
+      this.nextState.fontSize = parseInt(theme['font-size-base'], 10);
+    }
   }
 
   private setFontFamily(theme: { [name: string]: string }) {
-    const fontFamily = theme['font-family-base'] || '';
-    this.nextState.fontFamily = fontFamily.replace(/^"|"$/g, '');
+    if (theme['font-family-base'] !== undefined) {
+      const fontFamily = theme['font-family-base'] || '';
+      this.nextState.fontFamily = fontFamily.replace(/^"|"$/g, '');
+    }
   }
 
   private setColors(theme: { [name: string]: string }) {

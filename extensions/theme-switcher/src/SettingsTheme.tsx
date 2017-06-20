@@ -45,7 +45,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
       themes: [],
       availableFonts: [],
       variables: {},
-      editable: props.currentTheme !== 'default',
+      editable: [undefined, 'default'].indexOf(props.currentTheme) === -1,
     });
   }
 
@@ -134,6 +134,10 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
   }
 
   private updateVariables(currentTheme: string) {
+    if (currentTheme === undefined) {
+      return;
+    }
+
     const baseDir = themeDir();
     fs.readFileAsync(path.join(baseDir, currentTheme, 'variables.scss'))
     .then(data => {
