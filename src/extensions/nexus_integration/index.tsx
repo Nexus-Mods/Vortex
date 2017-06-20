@@ -157,7 +157,8 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
           api.events.emit('retrieve-categories', gameId, categories, isUpdate);
         })
         .catch((err) => {
-          const message = processErrorMessage(err.statusCode, err, gameId);
+          const errMessage = typeof(err) === 'string' ? err : err.message;
+          const message = processErrorMessage(err.statusCode, errMessage, gameId);
           showError(api.store.dispatch,
             'An error occurred retrieving categories', message);
         });
@@ -175,6 +176,7 @@ interface IRequestError {
 function processErrorMessage(
   statusCode: number, errorMessage: string, gameId: string): IRequestError {
   if (statusCode === undefined) {
+    console.log('process error message', statusCode, errorMessage, gameId);
     if (errorMessage && (errorMessage.indexOf('APIKEY') > -1)) {
       return { error: 'You are not logged in!' };
     } else {
@@ -585,7 +587,9 @@ function init(context: IExtensionContextExt): boolean {
       if (lastGameMode === undefined) {
         return;
       }
-      if (lastModTable[lastGameMode] !== newModTable[gameMode]) {
+      if ((lastModTable[lastGameMode] !== newModTable[gameMode])
+          && (lastModTable[lastGameMode] !== undefined)
+          && (newModTable[gameMode] !== undefined)) {
         Object.keys(newModTable[gameMode]).forEach(modId => {
           if ((lastModTable[lastGameMode][modId] !== undefined)
             && (lastModTable[lastGameMode][modId].attributes['modId']
