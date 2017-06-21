@@ -52,9 +52,13 @@ import { applyMiddleware, compose, createStore, Store } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 import thunkMiddleware from 'redux-thunk';
 
+import extensionRequire from './util/extensionRequire';
+
 log('debug', 'renderer process started', { pid: process.pid });
 
 stopTime();
+
+extensionRequire();
 
 // allow promises to be cancelled.
 Promise.config({ cancellation: true });

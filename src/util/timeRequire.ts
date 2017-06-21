@@ -33,7 +33,7 @@ function timedRequire(orig) {
     }
     return res;
   };
-};
+}
 
 export default function() {
   let start = new Date().getTime();

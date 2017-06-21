@@ -24,7 +24,11 @@ import { app, BrowserWindow, Electron, ipcMain, Menu, Tray } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
+import extensionRequire from './util/extensionRequire';
+
 stopTime();
+
+extensionRequire();
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
