@@ -219,6 +219,30 @@ function init(context: IExtensionContextExt): boolean {
          .catch((err: Error) => {
             showError(store.dispatch, 'Failed to set profile', err);
           });
+
+    context.api.onStateChange(
+        ['persistent', 'profiles'], (prev: string, current: string) => {
+          Object.keys(current).forEach(profileId => {
+            if (prev[profileId] === current[profileId]) {
+              return;
+            }
+
+            if (prev[profileId].modState !== current[profileId].modState) {
+              Object.keys(current[profileId].modState)
+                  .forEach(modId => {
+                    const isEnabled = getSafe(
+                        current, [profileId, 'modState', modId, 'enabled'], false);
+                    const wasEnabled = getSafe(
+                        prev, [profileId, 'modState', modId, 'enabled'], false);
+
+                    if (isEnabled !== wasEnabled) {
+                      context.api.events.emit(
+                          isEnabled ? 'mod-enabled' : 'mod-disabled', profileId, modId);
+                    }
+                  });
+            }
+          });
+        });
   });
 
   return true;

@@ -28,7 +28,7 @@ import { remote } from 'electron';
 import ESPFile from 'esptk';
 import { access, constants } from 'fs';
 import * as fs from 'fs-extra-promise';
-import { log, selectors, types, util } from 'nmm-api';
+import { actions, log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 import * as nodeUtil from 'util';
 
@@ -393,6 +393,36 @@ function init(context: IExtensionContextExt) {
           startSync(context.api);
           context.api.events.emit('autosort-plugins');
         });
+    });
+
+    context.api.events.on('mod-enabled', (profileId: string, modId: string) => {
+      const state = context.api.store.getState();
+      const currentProfile = selectors.activeProfile(state);
+      if ((profileId === currentProfile.id) && gameSupported(currentProfile.gameId)) {
+        fs.readdirAsync(path.join(selectors.installPath(state), modId))
+        .then(files => {
+          const plugins = files.filter(
+            fileName => ['.esp', '.esm'].indexOf(path.extname(fileName).toLowerCase()) !== -1);
+          if (plugins.length === 1) {
+            context.api.store.dispatch(setPluginEnabled(plugins[0], true));
+          } else if (plugins.length > 1) {
+            context.api.sendNotification({
+              type: 'info',
+              message: 'You enabled a mod that contains multiple plugins',
+              actions: [
+                {
+                  title: 'Enable all',
+                  action: dismiss => {
+                    plugins.forEach(plugin =>
+                    context.api.store.dispatch(setPluginEnabled(plugin, true)));
+                    dismiss();
+                  },
+                },
+              ],
+            });
+          }
+        });
+      }
     });
 
     const currentProfile = selectors.activeProfile(store.getState());
