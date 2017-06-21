@@ -90,7 +90,7 @@ export interface IIconProps {
   border?: boolean;
   inverse?: boolean;
   flip?: 'horizontal' | 'vertical';
-  rotate?: '90' | '180' | '270';
+  rotate?: number;
 }
 
 function renderPath(path: IPath, idx: number) {
@@ -102,6 +102,10 @@ const Icon = (props: IIconProps) => {
   const icon = getIcon(set, props.name);
 
   let classes = [ 'icon', `icon-${props.name}` ];
+  // avoid using css for transforms. For one thing this is more flexible but more importantly
+  // it has no interactions with other css. For example css transforms tend to break z ordering
+  const transforms = [];
+
   if (props.spin) {
     classes.push('icon-spin');
   }
@@ -115,16 +119,20 @@ const Icon = (props: IIconProps) => {
   }
 
   if (props.flip) {
-    classes.push('icon-flip-' + props.flip);
+    transforms.push(props.flip === 'horizontal'
+      ? `scale(-1, 1)`
+      : `scale(1, -1)`);
   }
 
   if (props.rotate) {
-    classes.push('icon-rotate-' + props.rotate);
+    transforms.push(`rotate(${props.rotate}, ${icon.width / 2}, ${icon.height / 2})`);
   }
 
   if (props.className !== undefined) {
     classes = classes.concat(props.className.split(' '));
   }
+
+  const id = `icon-${props.name}`;
 
   return (
     <svg
@@ -133,7 +141,12 @@ const Icon = (props: IIconProps) => {
       viewBox={ `0 0 ${ icon.width } ${ icon.height }` }
       style={ props.style }
     >
-      { icon.paths.map(renderPath) }
+      <defs>
+        <symbol id={id} width={icon.width} height={icon.height}>
+          { icon.paths.map(renderPath) }
+        </symbol>
+      </defs>
+      <use xlinkHref={'#' + id} transform={ transforms.join(' ') } />
     </svg>
   );
 };

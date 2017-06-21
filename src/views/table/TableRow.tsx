@@ -178,6 +178,7 @@ class TableRow extends React.Component<IRowProps, {}> {
             ? (
               <td style={{ textAlign: 'center' }}>
                 <IconBar
+                  id={`${tableId}-action-icons`}
                   group={`${tableId}-action-icons`}
                   instanceId={data.__id}
                   className='table-actions'

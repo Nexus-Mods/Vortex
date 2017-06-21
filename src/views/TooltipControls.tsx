@@ -56,7 +56,7 @@ export interface IIconButtonExtraProps {
   border?: boolean;
   inverse?: boolean;
   flip?: 'horizontal' | 'vertical';
-  rotate?: '90' | '180' | '270';
+  rotate?: number;
 }
 
 const iconPropNames = new Set(['spin', 'pulse', 'border', 'inverse', 'flip', 'rotate']);

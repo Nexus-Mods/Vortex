@@ -3,6 +3,21 @@
   src: url(assets/fonts/roboto.woff2);
 }
 
+$font-size-large:         ceil(($font-size-base * 1.25));
+$font-size-small:         ceil(($font-size-base * 0.85));
+
+$font-size-h1:            floor(($font-size-base * 2.6));
+$font-size-h2:            floor(($font-size-base * 2.15));
+$font-size-h3:            ceil(($font-size-base * 1.7));
+$font-size-h4:            ceil(($font-size-base * 1.25));
+$font-size-h5:            $font-size-base;
+$font-size-h6:            ceil(($font-size-base * 0.85));
+
+$line-height-base:        20 / strip-unit($font-size-base);
+$line-height-computed:    floor(($font-size-base * $line-height-base));
+
+$headings-font-family:    $font-family-base;
+
 //== Tables
 $table-cell-padding:            8px;
 $table-condensed-cell-padding:  2px;
@@ -11,7 +26,6 @@ $table-bg-accent:               #e9e9e9;
 $table-bg-hover:                $brand-secondary;
 $table-bg-active:               $table-bg-hover;
 $table-border-color:            $gray-lighter;
-
 
 //== Buttons
 $btn-font-weight:                normal;

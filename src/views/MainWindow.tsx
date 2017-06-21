@@ -218,7 +218,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <IconButton
           id='btn-open-flyout'
           icon='menu-dots'
-          rotate='90'
+          rotate={90}
           tooltip={t('Functions')}
           onClick={this.toggleOverlay}
           className='pull-right'

@@ -37,6 +37,9 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
         id='popover-changelog'
         title={t('Changelogs')}
       >
+        <div
+          style={{ maxHeight: 500, overflowY: 'auto' }}
+        >
         <FormGroup>
           <ControlLabel>{t('Current Version')}</ControlLabel>
           <div key='dialog-form-changelog'>
@@ -49,6 +52,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
             {this.renderChangelog(newestChangelog)}
           </div>
         </FormGroup>
+        </div>
       </Popover>
     );
 

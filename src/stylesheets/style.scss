@@ -387,16 +387,6 @@ a[role=menuitem] svg {
   }
 }
 
-.icon-rotate-90  {
-  transform: rotate(90deg);
-}
-.icon-rotate-180 {
-  transform: rotate(180deg);
-}
-.icon-rotate-270 {
-  transform: rotate(270deg);
-}
-
 .icon-flip-horizontal {
   transform: scale(-1, 1);
 }
@@ -820,6 +810,7 @@ a[role=menuitem] svg {
 
 .table-header {
   margin-right: $scrollbar-width;
+  transform-style: preserve-3d;
 }
 
 .table-actions > button {
