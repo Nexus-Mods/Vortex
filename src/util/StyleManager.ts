@@ -97,6 +97,7 @@ class StyleManager {
           if (err !== null) {
             reject(err);
           } else {
+            // remove utf8-bom if it's there
             const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])
                ? output.css.slice(3)
                : output.css;

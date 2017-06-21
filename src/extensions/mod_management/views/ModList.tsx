@@ -231,11 +231,12 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   public componentWillReceiveProps(newProps: IProps) {
-    if ((this.props.mods !== newProps.mods)
-      || (this.props.modState !== newProps.modState)
-      || (this.props.downloads !== newProps.downloads)) {
+    if ((this.props.gameMode !== newProps.gameMode)
+        || (this.props.mods !== newProps.mods)
+        || (this.props.modState !== newProps.modState)
+        || (this.props.downloads !== newProps.downloads)) {
       this.updateModsWithState(this.props, newProps)
-      .then(() => this.forceUpdate());
+        .then(() => this.forceUpdate());
     }
   }
 
@@ -370,8 +371,8 @@ class ModList extends ComponentEx<IProps, {}> {
     );
   }
 
-  private updateModsWithState(oldProps: IModProps, newProps: IModProps): Promise<void> {
-    const { gameMode } = this.props;
+  private updateModsWithState(oldProps: IModProps, newProps: IProps): Promise<void> {
+    const { gameMode } = newProps;
     let changed = false;
     const newModsWithState = {};
 

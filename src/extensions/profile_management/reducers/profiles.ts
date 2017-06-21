@@ -9,7 +9,10 @@ import * as actions from '../actions/profiles';
 export const profilesReducer: IReducerSpec = {
   reducers: {
     [actions.setProfile as any]: (state, payload) =>
-      setSafe(state, [payload.id], Object.assign({}, getSafe(state, [payload.id], {}), payload)),
+      setSafe(state, [payload.id], {
+        ...getSafe(state, [payload.id], {}),
+        ...payload,
+      }),
     [actions.removeProfile as any]: (state, payload) =>
       deleteOrNop(state, [ payload ]),
     [actions.setModEnabled as any]: (state, payload) => {
