@@ -1,13 +1,7 @@
-import { IState } from '../../../types/IState';
-import { ComponentEx, connect } from '../../../util/ComponentEx';
-import { getSafe } from '../../../util/storeHelper';
-import Icon from '../../../views/Icon';
-import { IconButton } from '../../../views/TooltipControls';
-
-import { setModAttribute } from '../../mod_management/actions/mods';
-import { IMod } from '../../mod_management/types/IMod';
-
+import { actions, ComponentEx, Icon, selectors, tooltip, types, util } from 'nmm-api';
 import * as React from 'react';
+import { translate } from 'react-i18next';
+import { connect } from 'react-redux';
 
 import { Button, ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
 
@@ -21,9 +15,8 @@ const cssHighlightList: string[] = [
 ];
 
 export interface IBaseProps {
-  mod: IMod;
+  mod: types.IMod;
   gameMode: string;
-  t: I18next.TranslationFunction;
 }
 
 interface IActionProps {
@@ -49,8 +42,8 @@ class HighlightButton extends ComponentEx<IProps, {}> {
       return null;
     }
 
-    const color = getSafe(mod.attributes, ['color'], '');
-    const icon = getSafe(mod.attributes, ['icon'], '');
+    const color = util.getSafe(mod.attributes, ['color'], '');
+    const icon = util.getSafe(mod.attributes, ['icon'], '');
 
     const modIcon: string[] = ['bomb', 'map', 'shield', 'flask',
       'flag', 'hotel', 'flash', 'home', 'eye'];
@@ -80,7 +73,7 @@ class HighlightButton extends ComponentEx<IProps, {}> {
     return (
       <div style={{ textAlign: 'center' }}>
         <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popoverBottom}>
-          <IconButton
+          <tooltip.IconButton
             className={'highlight-base ' + (color !== '' ? color : 'highlight-default')}
             icon={icon !== '' ? icon : 'eye'}
             id={mod.id}
@@ -133,18 +126,19 @@ class HighlightButton extends ComponentEx<IProps, {}> {
 
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
+function mapStateToProps(state: types.IState): IConnectedProps {
   return {};
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
-      dispatch(setModAttribute(gameMode, modId, attributeId, value));
+      dispatch(actions.setModAttribute(gameMode, modId, attributeId, value));
     },
   };
 }
 
 export default
+translate(['common'], { wait: false })(
   connect(mapStateToProps, mapDispatchToProps)(
-    HighlightButton) as React.ComponentClass<IBaseProps>;
+    HighlightButton)) as React.ComponentClass<IBaseProps>;

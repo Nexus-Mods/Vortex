@@ -158,6 +158,15 @@
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/feedback"
     }
+  ],[
+    {
+      "type": "build-copy",
+      "name": "mod-highlight",
+      "path": "extensions/mod-highlight",
+      "removeModules": ["nmm-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/mod-highlight"
+    }
   ], [
     {
       "type": "build-copy",

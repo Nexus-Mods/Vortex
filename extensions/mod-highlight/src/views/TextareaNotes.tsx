@@ -1,16 +1,10 @@
-import { IState } from '../../../types/IState';
-import { ComponentEx, connect } from '../../../util/ComponentEx';
-import Debouncer from '../../../util/Debouncer';
-import { getSafe } from '../../../util/storeHelper';
-
-import { setModAttribute } from '../../mod_management/actions/mods';
-import { IMod } from '../../mod_management/types/IMod';
-
+import { actions, ComponentEx, Icon, selectors, tooltip, types, util } from 'nmm-api';
 import * as React from 'react';
+import { translate } from 'react-i18next';
+import { connect } from 'react-redux';
 
 export interface IBaseProps {
-  t: I18next.TranslationFunction;
-  mod: IMod;
+  mod: types.IMod;
   gameMode: string;
 }
 
@@ -33,15 +27,15 @@ interface IComponentState {
  * @class TextareaNotes
  */
 class TextareaNotes extends ComponentEx<IProps, IComponentState> {
-  private mDebouncer: Debouncer;
+  private mDebouncer: util.Debouncer;
   constructor(props: IProps) {
     super(props);
 
     this.initState({
-      valueCache: getSafe(props.mod.attributes, ['notes'], ''),
+      valueCache: util.getSafe(props.mod.attributes, ['notes'], ''),
     });
 
-    this.mDebouncer = new Debouncer((newNote: string) => {
+    this.mDebouncer = new util.Debouncer((newNote: string) => {
       const { gameMode, mod, onSetModAttribute } = this.props;
       this.props.onSetModAttribute(gameMode, mod.id, 'notes', newNote);
       return null;
@@ -79,18 +73,19 @@ class TextareaNotes extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-function mapStateToProps(state: IState): IConnectedProps {
+function mapStateToProps(state: types.IState): IConnectedProps {
   return {};
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
-      dispatch(setModAttribute(gameMode, modId, attributeId, value));
+      dispatch(actions.setModAttribute(gameMode, modId, attributeId, value));
     },
   };
 }
 
 export default
+translate(['common'], { wait: false })(
   connect(mapStateToProps, mapDispatchToProps)(
-    TextareaNotes) as React.ComponentClass<IBaseProps>;
+    TextareaNotes)) as React.ComponentClass<IBaseProps>;
