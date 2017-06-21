@@ -1,6 +1,7 @@
 import Debouncer from './Debouncer';
 
 import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 import * as sass from 'node-sass';
 import * as path from 'path';
 
@@ -96,10 +97,13 @@ class StyleManager {
           if (err !== null) {
             reject(err);
           } else {
+            const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])
+               ? output.css.slice(3)
+               : output.css;
             const style = document.createElement('style');
             style.id = 'theme';
             style.type = 'text/css';
-            style.innerHTML = output.css;
+            style.innerHTML = css.toString();
             const head = document.getElementsByTagName('head')[0];
             let found = false;
             for (let i = 0; i < head.children.length && !found; ++i) {
