@@ -64,7 +64,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 id='btn-swap-rule-plugins'
                 icon='exchange'
                 tooltip={t('Swap plugins')}
-                rotate='90'
+                rotate={90}
                 onClick={this.swapPlugins}
               />
               <FormControl

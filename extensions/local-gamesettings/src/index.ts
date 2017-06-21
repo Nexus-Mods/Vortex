@@ -37,9 +37,17 @@ function copyGameSettings(
 
 function checkGlobalFiles(oldProfile: types.IProfile,
                           newProfile: types.IProfile) {
-  const fileList: string[] = [].concat(
-    gameSettingsFiles(oldProfile.gameId, mygamesPath(oldProfile.gameId)),
-    gameSettingsFiles(newProfile.gameId, mygamesPath(newProfile.gameId)));
+  let fileList: string[] = [];
+
+  if (gameSupported(oldProfile.gameId)) {
+    fileList = fileList.concat(gameSettingsFiles(oldProfile.gameId,
+                                                 mygamesPath(oldProfile.gameId)));
+  }
+
+  if (gameSupported(newProfile.gameId)) {
+    fileList = fileList.concat(gameSettingsFiles(newProfile.gameId,
+                                                 mygamesPath(newProfile.gameId)));
+  }
 
   return Promise.map(fileList,
                      file =>
@@ -115,23 +123,28 @@ function init(context): boolean {
         const oldProfile = util.getSafe(state, ['persistent', 'profiles', prev], null);
         const newProfile = state.persistent.profiles[current];
 
+        log('info', 'change profile', {
+          old: require('util').inspect(oldProfile),
+          new: require('util').inspect(newProfile)});
+
         checkGlobalFiles(oldProfile, newProfile)
           .then(() =>
             updateLocalGameSettings('local_game_settings', oldProfile, newProfile)
               .catch((err) => {
                 util.showError(store.dispatch,
-                  'An error occured during the profile activation.', err + '\n\n' +
-                  'An error occurred copying the profile game settings.\nDuring the copy ' +
-                  'we noticed that files that should have been under our control are ' +
-                  'inaccessible.\nWe don\'t like unauthorized intrusions. Put your paws down!');
+                  'An error occurred applying game settings',
+                  err + '\n\n' +
+                  'Files that should have been under Vortex control are inaccessible. ' +
+                  'Please refrain from locking files that belong to Vortex state, otherwise ' +
+                  'unpredictable errors may happen.');
                 return false;
               }),
           )
           .catch((missingFiles: string[]) => {
             const fileList = missingFiles.join('\n');
-            util.showError(store.dispatch, 'An error occured during the profile activation',
-              'These files are missing or not writeable:\n' + fileList + '\n\n' +
-              'We suggest you to run the game at least once.');
+            util.showError(store.dispatch, 'An error occurred activating profile',
+              'Files are missing or not writeable:\n' + fileList + '\n\n' +
+              'Some games need to be run at least once before they can be modded.');
             return false;
           });
       });
