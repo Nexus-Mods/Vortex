@@ -20,7 +20,7 @@ import * as storeT from './util/store';
 import * as storeHelperT from './util/storeHelper';
 
 import * as Promise from 'bluebird';
-import { app, BrowserWindow, Electron, ipcMain, Menu, Tray } from 'electron';
+import { app, BrowserWindow, crashReporter, Electron, ipcMain, Menu, Tray } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
@@ -29,6 +29,14 @@ import extensionRequire from './util/extensionRequire';
 stopTime();
 
 extensionRequire();
+
+app.setPath('temp', path.join(app.getPath('userData'), 'temp'));
+crashReporter.start({
+  productName: 'Vortex',
+  companyName: 'Black Tree Gaming Ltd.',
+  submitURL: 'https://localhost',
+  uploadToServer: false,
+});
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 

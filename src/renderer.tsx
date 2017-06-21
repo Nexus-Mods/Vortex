@@ -42,7 +42,7 @@ import {extendStore} from './util/store';
 import MainWindow from './views/MainWindow';
 
 import * as Promise from 'bluebird';
-import { ipcRenderer } from 'electron';
+import { crashReporter, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
 import { changeLanguage } from 'i18next';
 import * as React from 'react';
@@ -59,6 +59,14 @@ log('debug', 'renderer process started', { pid: process.pid });
 stopTime();
 
 extensionRequire();
+
+remote.app.setPath('temp', path.join(remote.app.getPath('userData'), 'temp'));
+crashReporter.start({
+  productName: 'Vortex',
+  companyName: 'Black Tree Gaming Ltd.',
+  submitURL: 'https://localhost',
+  uploadToServer: false,
+});
 
 // allow promises to be cancelled.
 Promise.config({ cancellation: true });
