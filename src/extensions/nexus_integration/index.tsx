@@ -91,6 +91,7 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
       return new Promise<string>((resolve, reject) => {
         api.events.emit('start-download', uris, {
           game: url.gameId.toLowerCase(),
+          source: 'nexus',
           nexus: {
             ids: { gameId, modId: url.modId, fileId: url.fileId },
             modInfo: nexusModInfo,
@@ -335,6 +336,8 @@ function init(context: IExtensionContextExt): boolean {
     context.api.store.dispatch(setAssociatedWithNXMURLs(true));
   };
 
+  context.registerModSource('nexus', 'Nexus Mods');
+
   context.registerToDo('nxm-login', () => ({
     APIKey: context.api.store.getState().confidential.account.nexus.APIKey,
   }), (props: { APIKey: string }) => props.APIKey === undefined, () => {
@@ -390,8 +393,13 @@ function init(context: IExtensionContextExt): boolean {
     description: 'Endorsement state on Nexus',
     icon: 'star',
     customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
-      createEndorsedIcon(context.api.store, mod, t),
-    calc: (mod: IMod) => getSafe(mod.attributes, ['endorsed'], undefined),
+      mod.attributes['source'] === 'nexus'
+        ? createEndorsedIcon(context.api.store, mod, t)
+        : null,
+    calc: (mod: IMod) =>
+      mod.attributes['source'] === 'nexus'
+        ? getSafe(mod.attributes, ['endorsed'], null)
+        : undefined,
     placement: 'table',
     isToggleable: true,
     edit: {},
@@ -404,9 +412,16 @@ function init(context: IExtensionContextExt): boolean {
     name: 'Nexus Mod ID',
     description: 'Internal ID used by www.nexusmods.com',
     icon: 'external-link',
-    customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) =>
-      renderNexusModIdDetail(context.api.store, mod, t),
-    calc: (mod: IMod) => getSafe(mod.attributes, ['modId'], undefined),
+    customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
+      const res = mod.attributes['source'] === 'nexus'
+        ? renderNexusModIdDetail(context.api.store, mod, t)
+        : null;
+      return res;
+    },
+    calc: (mod: IMod) =>
+      mod.attributes['source'] === 'nexus'
+        ? getSafe(mod.attributes, ['modId'], null)
+        : undefined,
     placement: 'detail',
     isToggleable: false,
     edit: {},

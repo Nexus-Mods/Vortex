@@ -1,7 +1,9 @@
+import {IState} from '../../../types/IState';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
-function createCategoryDetailPath(categories: any, category: string, categoryPath: string) {
+function createCategoryDetailPath(categories: any, category: string,
+                                  categoryPath: string) {
   categoryPath = (categoryPath === '')
     ? categories[category].name
     : categories[category].name + ' --> ' + categoryPath;
@@ -20,15 +22,14 @@ function createCategoryDetailPath(categories: any, category: string, categoryPat
  * @param {number} category
  * @param {Redux.Store<any>} store
  */
-export function retrieveCategoryDetail(category: string, store: any) {
+export function retrieveCategoryDetail(category: string, state: IState) {
   if (category === undefined) {
     return null;
   }
   let completePath: string = '';
-  const gameId: string = activeGameId(store.getState());
+  const gameId: string = activeGameId(state);
 
-  const categories: any = getSafe(store.getState(), ['persistent', 'categories',
-    gameId], '');
+  const categories: any = getSafe(state, ['persistent', 'categories', gameId], '');
   if (categories[category] !== undefined) {
     completePath = createCategoryDetailPath(categories, category, '');
   }

@@ -1,5 +1,6 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
-import { log } from '../../util/log';
+import {IExtensionContext} from '../../types/IExtensionContext';
+import {IState} from '../../types/IState';
+import {log} from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -20,6 +21,17 @@ import CategoryDialog from './views/CategoryDialog';
 
 function getModCategory(mod: IModWithState) {
   return mod.attributes['category'];
+}
+
+function getCategoryChoices(state: IState) {
+  const categories: ICategoryDictionary = allCategories(state);
+
+  const language: string = state.settings.interface.language;
+
+  return [ {key: '', text: ''} ].concat(
+    Object.keys(categories)
+      .map(id => ({ key: id, text: retrieveCategoryDetail(id, state) }))
+      .sort((lhs, rhs) => categories[lhs.key].order - categories[rhs.key].order));
 }
 
 function init(context: IExtensionContext): boolean {
@@ -48,31 +60,12 @@ function init(context: IExtensionContext): boolean {
     id: 'category_detail',
     name: 'Category',
     description: 'Mod Category',
-    icon: 'angle-double-right',
-    calc: (mod: IModWithState) => retrieveCategoryDetail(getModCategory(mod), context.api.store),
+    icon: 'sitemap',
+    calc: (mod: IModWithState) =>
+      retrieveCategoryDetail(getModCategory(mod), context.api.store.getState()),
     edit: {
       readOnly: (mod: IModWithState) => mod.state === 'downloaded',
-      choices: () => {
-        const store = context.api.store;
-        const categories: ICategoryDictionary = allCategories(store.getState());
-        const treeDataOrder: string[] = Object.keys(categories)
-          .map((id: string) => {
-            return (categories[id].order || 0).toString();
-          });
-
-        const language: string = store.getState().settings.interface.language;
-        if (treeDataOrder === undefined) {
-          return [{ key: '', text: '' }].concat(Object.keys(categories)
-            .map((id: string) => ({ key: id, text: retrieveCategoryDetail(id, context.api.store) }))
-            .sort((lhs, rhs) => {
-              return lhs.text.localeCompare(rhs.text, language);
-            }));
-        } else {
-          return [{ key: '', text: '' }].concat(Object.keys(categories)
-            .map((id: string) => ({ key: id, text: retrieveCategoryDetail(id, context.api.store) }))
-            .sort((lhs, rhs) => (categories[lhs.key].order - categories[rhs.key].order )));
-        }
-      },
+      choices: () => getCategoryChoices(context.api.store.getState()),
       onChangeValue: (rowId: string, newValue: any) => {
         const gameMode = activeGameId(context.api.store.getState());
         context.api.store.dispatch(setModAttribute(gameMode, rowId, 'category', newValue));

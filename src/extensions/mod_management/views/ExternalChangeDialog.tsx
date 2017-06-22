@@ -31,7 +31,7 @@ const nop = () => undefined;
 const possibleActions: { [type: string]: IPossibleAction[] } = {
   refchange: [
     { key: 'import', text: 'Save modified' },
-    { key: 'drop', text: 'Restore original' },
+    { key: 'drop', text: 'Restore from mod' },
   ],
   valchange: [
     { key: 'keep', text: 'Keep modified' },

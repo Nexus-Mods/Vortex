@@ -441,6 +441,15 @@ export interface IExtensionContext {
   registerToDo: RegisterToDo;
 
   /**
+   * register a source (usually a website) that the mod was retrieved from and that will
+   * be used as the reference for features like checking for updates and such.
+   * Please note that registering this source has no other effect than adding an option
+   * to the selection of mod sources, the corresponding extension has to implement
+   * actual features
+   */
+  registerModSource: (id: string, name: string) => void;
+
+  /**
    * register a reducer to introduce new set-operations on the application
    * state.
    * Note: For obvious reasons this is executed before the store is set up so

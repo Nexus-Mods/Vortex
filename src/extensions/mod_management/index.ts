@@ -20,7 +20,7 @@ import {IDownload} from '../download_management/types/IDownload';
 import {setModEnabled} from '../profile_management/actions/profiles';
 
 import {showExternalChanges} from './actions/externalChanges';
-import {addMod, removeMod} from './actions/mods';
+import {addMod, removeMod, setModAttribute} from './actions/mods';
 import {setActivator} from './actions/settings';
 import {externalChangesReducer} from './reducers/externalChanges';
 import {modsReducer} from './reducers/mods';
@@ -62,6 +62,13 @@ interface IInstaller {
 
 const installers: IInstaller[] = [];
 
+interface IModSource {
+  id: string;
+  name: string;
+}
+
+const modSources: IModSource[] = [];
+
 export interface IExtensionContextExt extends IExtensionContext {
   registerModActivator: (activator: IModActivator) => void;
   registerInstaller: (priority: number, testSupported: ITestSupported, install: IInstall) => void;
@@ -73,6 +80,10 @@ function registerModActivator(activator: IModActivator) {
 
 function registerInstaller(priority: number, testSupported: ITestSupported, install: IInstall) {
   installers.push({ priority, testSupported, install });
+}
+
+function registerModSource(id: string, name: string) {
+  modSources.push({ id, name });
 }
 
 function getActivator(state: IState): IModActivator {
@@ -254,9 +265,32 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['settings', 'mods'], settingsReducer);
   context.registerReducer(['persistent', 'mods'], modsReducer);
 
+  context.registerTableAttribute('mods', {
+    id: 'mod-source',
+    name: 'Source',
+    description: 'Source the mod was downloaded from',
+    icon: 'database',
+    placement: 'detail',
+    calc: (mod: IMod) => {
+      const source = modSources.find(iter => iter.id === mod.attributes['source']);
+      return source !== undefined ? source.name : 'None';
+    },
+    edit: {
+      choices: () => [].concat(
+        [ { key: undefined, text: 'None' } ],
+        modSources.map(source => ({ key: source.id, text: source.name }))),
+      onChangeValue: (rowId: string, newValue: string) => {
+        const store = context.api.store;
+        const gameMode = activeGameId(store.getState());
+        store.dispatch(setModAttribute(gameMode, rowId, 'source', newValue));
+      },
+    },
+  });
+
   context.registerModActivator = registerModActivator;
   context.registerInstaller = registerInstaller;
   context.registerAttributeExtractor = registerAttributeExtractor;
+  context.registerModSource = registerModSource;
 
   registerAttributeExtractor(100, (input: any) => {
     return Promise.resolve({

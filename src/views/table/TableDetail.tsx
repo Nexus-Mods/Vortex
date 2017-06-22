@@ -33,11 +33,16 @@ class DetailCell extends React.Component<ICellProps, {}> {
     let content: JSX.Element = null;
 
     if (attribute.customRenderer !== undefined) {
+      const attrControl = attribute.customRenderer(rawData, true, t);
       content = (
         <FormControl.Static componentClass='div'>
-          <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>
-            { attribute.customRenderer(rawData, true, t) }
-          </ExtensionGate>
+          {
+            attrControl !== null ? (
+              <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>
+                {attrControl}
+              </ExtensionGate>
+            ) : null
+          }
         </FormControl.Static>
       );
     } else {
@@ -132,7 +137,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
   }
 
   private renderChoice(choice: IEditChoice): JSX.Element {
-    return <option key={choice.key} value={choice.key}>{choice.text}</option>;
+    return <option key={choice.key || 'undefined'} value={choice.key}>{choice.text}</option>;
   }
 
   private renderCell(value: any): string {
@@ -173,10 +178,12 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { attributes } = this.props;
+    const { attributes, rowData } = this.props;
     return (
       <form>
-      {attributes.map((obj) => this.renderDetail(obj))}
+      {attributes
+        .filter(obj => rowData[obj.id] !== undefined)
+        .map(obj => this.renderDetail(obj))}
       </form>
     );
   }

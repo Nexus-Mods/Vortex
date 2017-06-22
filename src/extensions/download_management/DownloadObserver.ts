@@ -82,7 +82,8 @@ export class DownloadObserver {
         }, []);
   }
 
-  private handleStartDownload(urls: string[], modInfo: any,
+  private handleStartDownload(urls: string[],
+                              modInfo: any,
                               events: NodeJS.EventEmitter,
                               callback?: (error: Error, id: string) => void) {
     const id = shortid();
