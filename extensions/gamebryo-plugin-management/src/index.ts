@@ -315,7 +315,7 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
         short: 'Missing Masters',
         long:
         'Some of the enabled plugins depend on others that are not enabled: \n' +
-        broken.map((plugin) => plugin.name).join(', '),
+        broken.map(plugin => plugin.name).join(', '),
       },
       severity: 'warning' as types.ProblemSeverity,
     });
@@ -385,6 +385,7 @@ function init(context: IExtensionContextExt) {
         util.getSafe(store.getState(),
           ['persistent', 'profiles', newProfileId], undefined);
       if ((newProfile === undefined) || !gameSupported(newProfile.gameId)) {
+        pluginPersistor.disable();
         return;
       }
 

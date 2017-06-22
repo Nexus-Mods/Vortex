@@ -40,6 +40,15 @@ class PluginPersistor implements types.IPersistor {
     this.mPlugins = {};
   }
 
+  public disable() {
+    this.mPlugins = {};
+    this.mLoaded = true;
+    if (this.mResetCallback) {
+      this.mResetCallback();
+      this.mRetryCounter = retryCount;
+    }
+  }
+
   public loadFiles(gameMode: string) {
     this.mPluginPath = pluginPath(gameMode);
     this.mPluginFormat = pluginFormat(gameMode);
