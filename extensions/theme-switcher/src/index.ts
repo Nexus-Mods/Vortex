@@ -1,6 +1,6 @@
 import settingsReducer from './reducers';
 import SettingsTheme from './SettingsTheme';
-import { themeDir } from './util';
+import { themePath } from './util';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -14,18 +14,20 @@ function applyTheme(api: types.IExtensionApi, theme: string) {
     api.setStylesheet('style', undefined);
   }
 
-  const themePath = path.join(themeDir(), theme);
+  const fullThemePath: string = theme.startsWith('__')
+    ? path.join(__dirname, 'themes', theme.slice(2))
+    : path.join(themePath(), theme);
 
-  fs.statAsync(path.join(themePath, 'variables.scss'))
-    .then(() => api.setStylesheet('variables', path.join(themePath, 'variables')))
+  fs.statAsync(path.join(fullThemePath, 'variables.scss'))
+    .then(() => api.setStylesheet('variables', path.join(fullThemePath, 'variables')))
     .catch(() => api.setStylesheet('variables', undefined));
 
-  fs.statAsync(path.join(themePath, 'fonts.scss'))
-    .then(() => api.setStylesheet('fonts', path.join(themePath, 'fonts')))
+  fs.statAsync(path.join(fullThemePath, 'fonts.scss'))
+    .then(() => api.setStylesheet('fonts', path.join(fullThemePath, 'fonts')))
     .catch(() => api.setStylesheet('fonts', undefined));
 
-  fs.statAsync(path.join(themePath, 'style.scss'))
-    .then(() => api.setStylesheet('style', path.join(themePath, 'style')))
+  fs.statAsync(path.join(fullThemePath, 'style.scss'))
+    .then(() => api.setStylesheet('style', path.join(fullThemePath, 'style')))
     .catch(() => api.setStylesheet('style', undefined));
 }
 

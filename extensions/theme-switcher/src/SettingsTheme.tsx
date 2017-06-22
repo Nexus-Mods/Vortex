@@ -1,10 +1,10 @@
 import { selectTheme } from './actions';
-import * as fontManager from './fontmanager';
 import ThemeEditor from './ThemeEditor';
-import { themeDir } from './util';
+import { themePath } from './util';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
+import * as fontManager from 'font-manager';
 import * as fs from 'fs-extra-promise';
 import { actions, ComponentEx, log, types } from 'nmm-api';
 import * as path from 'path';
@@ -45,20 +45,23 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
       themes: [],
       availableFonts: [],
       variables: {},
-      editable: [undefined, 'default'].indexOf(props.currentTheme) === -1,
+      editable: !props.currentTheme.startsWith('__'),
     });
   }
 
   public componentWillMount() {
-    const baseDir = themeDir();
-    // consider all directories in the theme directory as themes
-    fs.readdirAsync(baseDir)
-      .filter<string>(fileName =>
-        fs.statAsync(path.join(baseDir, fileName))
-          .then(stat => stat.isDirectory()))
-      .then(directories => {
-        this.nextState.themes = directories
+    let bundled: string[];
+    this.readThemes(path.join(__dirname, 'themes'))
+      .then(bundledThemes => {
+        bundled = bundledThemes
+        .map(name => '__' + name);
+        return this.readThemes(themePath());
+      })
+      .then(customThemes => {
+        this.nextState.themes = [].concat(customThemes, bundled)
           .map(name => path.basename(name));
+      })
+      .then(() => {
         this.updateVariables(this.props.currentTheme);
 
         return new Promise<string[]>((resolve, reject) => {
@@ -75,7 +78,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
   public componentWillReceiveProps(newProps: IProps) {
     if (this.props.currentTheme !== newProps.currentTheme) {
       this.updateVariables(newProps.currentTheme);
-      this.nextState.editable = newProps.currentTheme !== 'default';
+      this.nextState.editable = !newProps.currentTheme.startsWith('__');
     }
   }
 
@@ -93,7 +96,6 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
               onChange={this.selectTheme}
               value={currentTheme}
             >
-              { this.renderTheme(null, t('default')) }
               { this.state.themes.map(theme => this.renderTheme(theme, theme)) }
             </FormControl>
             <InputGroup.Button>
@@ -116,7 +118,18 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
   }
 
   public renderTheme(key: string, name: string) {
-    return <option key={key} value={key}>{name}</option>;
+    const renderName = name.startsWith('__')
+      ? name.substr(2)
+      : name;
+    return <option key={key} value={key}>{renderName}</option>;
+  }
+
+  private readThemes(baseDir: string): Promise<string[]> {
+    // consider all directories in the theme directory as themes
+    return fs.readdirAsync(baseDir)
+      .filter<string>(fileName =>
+        fs.statAsync(path.join(baseDir, fileName))
+          .then(stat => stat.isDirectory()));
   }
 
   private saveTheme = (variables: { [name: string]: string }) => {
@@ -127,19 +140,18 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
   }
 
   private saveThemeInternal(themeName: string, variables: { [name: string]: string }) {
-    const baseDir = themeDir();
+    const baseDir = themePath();
     const theme = Object.keys(variables)
       .map(name => `\$${name}: ${variables[name]};`);
     return fs.writeFileAsync(path.join(baseDir, themeName, 'variables.scss'), theme.join('\r\n'));
   }
 
   private updateVariables(currentTheme: string) {
-    if (currentTheme === undefined) {
-      return;
-    }
+    const currentThemePath = currentTheme.startsWith('__')
+      ? path.join(__dirname, 'themes', currentTheme.slice(2))
+      : path.join(themePath(), currentTheme);
 
-    const baseDir = themeDir();
-    fs.readFileAsync(path.join(baseDir, currentTheme, 'variables.scss'))
+    fs.readFileAsync(path.join(currentThemePath, 'variables.scss'))
     .then(data => {
       const variables = {};
       data.toString('utf-8').split('\r\n').forEach(line => {
@@ -150,9 +162,8 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
       });
       this.nextState.variables = variables;
     })
-    .catch(err => {
-      log('warn', 'failed to read variables', err);
-    });
+    // an exception indicates no variables set. that's fine, defaults are used
+    .catch(() => undefined);
   }
 
   private clone = () => {
@@ -170,7 +181,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
     }).then(res => {
       if (res.action === 'Clone') {
         if (res.input.name && (themes.indexOf(res.input.name) === -1)) {
-          const targetDir = path.join(themeDir(), res.input.name);
+          const targetDir = path.join(themePath(), res.input.name);
           fs.ensureDirAsync(targetDir)
           .then(() => this.saveThemeInternal(res.input.name, this.state.variables))
           .then(() => {

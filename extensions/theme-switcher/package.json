@@ -8,7 +8,9 @@
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "postinstall": "electron-rebuild -w font-manager",
     "prebuild": "typings prune && typings install",
-    "build": "npm run tsc && npm run webpack && copy \".\\node_modules\\font-manager\\build\\Release\\fontmanager.node\" \".\\dist\\font-manager.node\""
+    "copy_lib": "copyfiles -u 4 node_modules/font-manager/build/Release/fontmanager.node dist",
+    "copy_themes": "copyfiles themes/**/* dist",
+    "build": "npm run tsc && npm run webpack && npm run copy_lib && npm run copy_themes"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
@@ -20,7 +22,7 @@
     "@types/react-redux": "4.4.35",
     "@types/redux": "^3.6.0",
     "@types/redux-thunk": "^2.1.0",
-    "copy": "^0.3.0",
+    "copyfiles": "^1.2.0",
     "electron-rebuild": "^1.5.11",
     "webpack": "^1.13.2"
   },

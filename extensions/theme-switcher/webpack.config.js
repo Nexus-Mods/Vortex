@@ -20,26 +20,25 @@ module.exports = {
         { compress: { warnings: false }, comments: false, sourceMap: false })
   ],
   devtool: 'source-map',
-  externals: [
-    'bluebird',
-    'ffi',
-    'font-manager',
-    './font-manager',
-    'fs',
-    'fs-extra-promise',
-    'immutability-helper',
-    'path',
-    'net',
-    'nmm-api',
-    'node',
-    'nbind',
-    'react',
-    'react-act',
-    'react-bootstrap',
-    'react-i18next',
-    'react-layout-pane',
-    'react-redux',
-    'ref',
-    'util'
-  ]
+  externals: {
+    bluebird: 'bluebird',
+    ffi: 'ffi',
+    'font-manager': './fontmanager',
+    fs: 'fs',
+    'fs-extra-promise': 'fs-extra-promise',
+    'immutability-helper': 'immutability-helper',
+    path: 'path',
+    net: 'net',
+    'nmm-api': 'nmm-api',
+    node: 'node',
+    nbind: 'nbind',
+    react: 'react',
+    'react-act': 'react-act',
+    'react-bootstrap': 'react-bootstrap',
+    'react-i18next': 'react-i18next',
+    'react-layout-pane': 'react-layout-pane',
+    'react-redux': 'react-redux',
+    ref: 'ref',
+    util: 'util'
+  }
 };

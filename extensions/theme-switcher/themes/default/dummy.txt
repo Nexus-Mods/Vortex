@@ -1,0 +1,1 @@
+This directory exists only to make the "default" option available without hard-coding an exception for it.
