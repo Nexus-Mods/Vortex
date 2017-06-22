@@ -12,7 +12,7 @@ import { Button, IconButton } from '../../../views/TooltipControls';
 
 import { IMod } from '../../mod_management/types/IMod';
 
-import { removeCategory, renameCategory, setCategory } from '../actions/category';
+import { removeCategory, renameCategory, setCategory, setCategoryOrder } from '../actions/category';
 import { ICategory } from '../types/ICategoryDictionary';
 import { ICategoriesTree } from '../types/ITrees';
 import createTreeDataObject from '../util/createTreeDataObject';
@@ -38,6 +38,7 @@ interface IActionProps {
   onShowError: (message: string, details: string | Error) => void;
   onSetCategory: (gameId: string, categoryId: string, category: ICategory) => void;
   onRemoveCategory: (gameId: string, categoryId: string) => void;
+  onSetCategoryOrder: (gameId: string, categoryIds: string[]) => void;
   onRenameCategory: (activeGameId: string, categoryId: string, newCategory: {}) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: IDialogActions) => Promise<IDialogResult>;
@@ -167,7 +168,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
               disabled={!searchFoundCount}
               onClick={this.selectNextMatch}
             />
-            </div>
+          </div>
           <Tree
             treeData={expandedTreeData}
             onChange={nop}
@@ -405,9 +406,9 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private removeCategory = (categoryId: string) => {
+  private removeCategory = (category: any) => {
     const {gameMode, onRemoveCategory} = this.props;
-    onRemoveCategory(gameMode, categoryId);
+    onRemoveCategory(gameMode, category.node.categoryId);
   }
 
   private generateNodeProps = (rowInfo) => {
@@ -465,12 +466,20 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   private moveNode =
     (args: { treeData: ICategoriesTree[], node: ICategoriesTree,
              treeIndex: number, path: string[] }): void => {
-    const { gameMode, onSetCategory } = this.props;
-    onSetCategory(gameMode, args.node.categoryId, {
-      name: args.node.title,
-      order: args.node.order,
-      parentCategory: args.path[args.path.length - 2],
-    });
+    const { gameMode, onSetCategory, onSetCategoryOrder } = this.props;
+    if (args.path[args.path.length - 2] !== args.node.parentId) {
+      onSetCategory(gameMode, args.node.categoryId, {
+        name: args.node.title,
+        order: args.node.order,
+        parentCategory: args.path[args.path.length - 2],
+      });
+    } else {
+      const newOrder = (base: ICategoriesTree[]): string[] => {
+        return [].concat(...base.map(node =>
+          [node.categoryId, ...newOrder(node.children)]));
+      };
+      onSetCategoryOrder(gameMode, newOrder(args.treeData));
+    }
   }
 }
 
@@ -492,6 +501,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(setCategory(gameId, categoryId, category)),
     onRemoveCategory: (gameId: string, categoryId: string) =>
       dispatch(removeCategory(gameId, categoryId)),
+    onSetCategoryOrder: (gameId: string, categoryIds: string[]) =>
+      dispatch(setCategoryOrder(gameId, categoryIds)),
     onShowError: (message: string, details: string | Error) =>
       showError(dispatch, message, details),
     onShowDialog: (type, title, content, actions) =>

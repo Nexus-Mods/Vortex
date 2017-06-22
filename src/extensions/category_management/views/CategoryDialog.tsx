@@ -5,7 +5,7 @@ import { showCategoriesDialog } from '../actions/session';
 
 import CategoryList from './CategoryList';
 
-import *  as React from 'react';
+import * as React from 'react';
 import { Modal } from 'react-bootstrap';
 
 interface IConnectedProps {
@@ -41,7 +41,6 @@ class CategoryDialog extends ComponentEx<IProps, {}> {
   }
 }
 
-
 function mapStateToProps(state: any): IConnectedProps {
   return {
     showDialog: state.session.categories.showDialog,
@@ -57,5 +56,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(CategoryDialog)
-  ) as React.ComponentClass<{}>;
+    connect(mapStateToProps, mapDispatchToProps)(
+      CategoryDialog)) as React.ComponentClass<{}>;

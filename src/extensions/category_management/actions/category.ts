@@ -11,6 +11,9 @@ export const setCategory = safeCreateAction('SET_CATEGORY',
 export const removeCategory = safeCreateAction('REMOVE_CATEGORY',
   (gameId: string, id: string) => ({ gameId, id }));
 
+export const setCategoryOrder = safeCreateAction('SET_CATEGORY_ORDER',
+  (gameId: string, categoryIds: string[]) => ({ gameId, categoryIds }));
+
 export const updateCategories = safeCreateAction('UPDATE_CATEGORIES',
   (gameId: string, gameCategories: ICategoryDictionary) =>
     ({ gameId, gameCategories }));
