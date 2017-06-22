@@ -25,9 +25,13 @@ interface IIconFile {
   height: number;
 }
 
+interface IAttrMap {
+  [key: string]: string;
+}
+
 interface IPath {
   path: string;
-  attrs?: { [key: string]: string };
+  attrs?: IAttrMap;
 }
 
 interface IRenderDescription {
@@ -57,6 +61,19 @@ const fallback = {
   height: 1024,
 };
 
+function convertAttrKey(key: string): string {
+  return key.replace(/-([a-z])/g, (m, $1: string) => {
+    return $1.toUpperCase();
+  });
+}
+
+function convertAttrs(attrs: IAttrMap): IAttrMap {
+  return Object.keys(attrs).reduce((prev: IAttrMap, key: string) => {
+    prev[convertAttrKey(key)] = attrs[key];
+    return prev;
+  }, {});
+}
+
 function getIcon(set: string, name: string): IRenderDescription {
   if (!(set in sets)) {
     sets[set] = require(path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.json'));
@@ -66,7 +83,7 @@ function getIcon(set: string, name: string): IRenderDescription {
   if (icon !== undefined) {
     const paths: IPath[] = icon.icon.paths.map((path: string, idx: number) => ({
       path,
-      attrs: 'attrs' in icon ? icon.icon.attrs[idx] : undefined,
+      attrs: 'attrs' in icon.icon ? convertAttrs(icon.icon.attrs[idx]) : undefined,
     }));
 
     return {
