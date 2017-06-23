@@ -1,6 +1,6 @@
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { genHash, IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
+import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import { log, util } from 'nmm-api';
 import * as path from 'path';
 import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
@@ -16,6 +16,7 @@ export function parseNMMInstall(nmmFilePath: string): Promise<ModEntry[]> {
   .then((data) => {
     const xmlDoc = parser.parseFromString(data.toString('utf-8'), 'text/xml');
     const version = xmlDoc.getElementsByTagName('virtualModActivator')[0];
+    // let limiter = 0;
 
     if (version === null) {
       // throw invalid file
@@ -43,8 +44,8 @@ export function parseNMMInstall(nmmFilePath: string): Promise<ModEntry[]> {
       const modFileEntries: FileEntry[] = [];
 
       for (const fileLink of modInfo.getElementsByTagName('fileLink')) {
-        const nodeRealPath: string = fileLink.attributes['realPath'];
-        const nodeVirtualPath: string = fileLink.attributes['virtualPath'];
+        const nodeRealPath = fileLink.getAttribute('realPath');
+        const nodeVirtualPath = fileLink.getAttribute('virtualPath');
         const nodeLinkPriority = fileLink.childNodes[0].nodeValue;
         const nodeIsActive = fileLink.childNodes[1].nodeValue;
 
@@ -58,16 +59,14 @@ export function parseNMMInstall(nmmFilePath: string): Promise<ModEntry[]> {
         modFileEntries.push(fileEntry);
       }
 
-      /* const { genHash } = require('modmeta-db');
       const modFilePath = path.join(elementArchivePath, elementModFilename);
-      let fileMD5: string;
+      let fileMD5: string = '';
 
-      fileMD5 = genHash(modFilePath)
-            .then((hashResult: IHashResult) => {
-              return hashResult.md5sum;
-            }); */
-
-      const fileMD5: string = 'test';
+      const { genHash } = require('modmeta-db');
+      genHash(modFilePath)
+        .then((hashResult: IHashResult) => {
+           fileMD5 = hashResult.md5sum;
+        });
 
       const modEntry: ModEntry = {
         nexusId: elementModId,
@@ -83,6 +82,11 @@ export function parseNMMInstall(nmmFilePath: string): Promise<ModEntry[]> {
       };
 
       nmmModList.push(modEntry);
+      /*limiter++;
+
+      if (limiter >= 10) {
+        break;
+      }*/
     }
   })
   .then(() => {

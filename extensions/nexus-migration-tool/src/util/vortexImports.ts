@@ -1,5 +1,5 @@
 import * as Promise from 'bluebird';
-import { actions as nmmActions, types } from 'nmm-api';
+import { actions as nmmActions, log, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import { generate as shortid } from 'shortid';
@@ -40,9 +40,10 @@ export function addMods(gameID: string, modEntries: ModEntry[], dispatch: Redux.
     };
 
     mods.push(mod);
+  })
+  .then(() => {
+    dispatch(nmmActions.addMods(gameID, mods));
   });
-
-  dispatch(nmmActions.addMods(gameID, mods));
 }
 
 function enableMod(mod: types.IMod, profile: types.IProfile, dispatch: Redux.Dispatch<any>) {

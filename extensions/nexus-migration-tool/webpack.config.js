@@ -26,6 +26,7 @@ module.exports = {
     'fs-extra-promise',
     'immutability-helper',
     'lodash',
+	'modmeta-db',
     'net',
     'nmm-api',
     'node',

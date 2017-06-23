@@ -1,5 +1,6 @@
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import { log } from 'nmm-api';
 import * as path from 'path';
 import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
 
@@ -39,15 +40,18 @@ export function transferUnpackedMod(mod: ModEntry,
 
   const operation = keepSource ? fs.copyAsync : fs.renameAsync;
 
-  return Promise.map(mod.fileEntries, file => {
-      const destPath: string = path.join(currentModPath, file.fileDestination);
-      fs.mkdirsAsync(path.dirname)
+  mod.fileEntries.map((file) => {
+    if ((file !== null) && (file !== undefined)) {
+      const destPath: string = path.join(currentModPath, mod.vortexId, file.fileDestination);
+      fs.mkdirsAsync(path.dirname(destPath))
       .then (() => {
         operation(path.join(nmmVirtualPath, file.fileSource), destPath)
         .catch(err => {
           failedFiles.push(file.fileSource + ' - ' + err.message);
         });
       });
-    })
-    .then(() => Promise.resolve(failedFiles));
+    }
+  });
+
+  return Promise.resolve(failedFiles);
 }

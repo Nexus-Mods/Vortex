@@ -1,6 +1,8 @@
 import { selectImportFolder } from '../actions/session';
 import { IFileEntry, IModEntry } from '../types/nmmEntries';
+import { transferArchives, transferUnpackedMod} from '../util/modFileMigration';
 import parseNMMInstall from '../util/nmmVirtualConfigParser';
+import { addMods, createProfile } from '../util/vortexImports';
 
 import {
   FILENAME, FILES, MOD_ID, MOD_NAME, MOD_VERSION, STATUS,
@@ -50,6 +52,7 @@ type Props = IConnectedProps & IActionProps;
 class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   private modActions: ITableRowAction[];
   private importList: IModEntry[];
+  private selectedVirtualPath: string;
 
   constructor(props) {
     super(props);
@@ -135,17 +138,42 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   private renderTransfer() {
     const { t, currentProfile, profiles } = this.props;
 
-    return (
+    let buttons;
+
+    if ((this.importList !== null) && (this.importList !== undefined)
+      && (this.importList.length > 0)) {
+      buttons = (
       <div style={{ whiteSpace: 'nowrap' }}>
         {t('Select import folder') + ' '}
         <tooltip.IconButton
-          id='btn-test-import'
-          tooltip={t('Parse the hardcoded NMM config file')}
-          icon='download'
+          id='btn-test-parse'
+          tooltip={t('Select a NMM Virtual folder to parse')}
+          icon='export'
           onClick={this.addSearchPath}
         />
+        <tooltip.IconButton
+          id='btn-test-import'
+          tooltip={t('Imports the parsed mods')}
+          icon='download'
+          onClick={this.startImport}
+        />
       </div>
-    );
+      );
+    } else {
+      buttons = (
+        <div style={{ whiteSpace: 'nowrap' }}>
+          {t('Select import folder') + ' '}
+          <tooltip.IconButton
+            id='btn-test-parse'
+            tooltip={t('Select a NMM Virtual folder to parse')}
+            icon='export'
+            onClick={this.addSearchPath}
+          />
+        </div>
+      );
+    }
+
+    return buttons;
   }
 
   private cancelTransfer = () => {
@@ -159,6 +187,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
 
     parseNMMInstall(virtualPath)
     .then((modEntries) => {
+      this.importList = modEntries;
       this.nextState.importedMod = modEntries;
     });
   }
@@ -167,11 +196,34 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
     this.context.api.selectDir({})
     .then((dirName: string) => {
       if (!util.isNullOrWhitespace(dirName)) {
+        this.selectedVirtualPath = dirName;
         this.testParse(evt, dirName);
       }
     })
     .catch((err) => {
       log('info', 'search path selection cancelled', { err });
+    });
+  }
+
+  private startImport = (evt) => {
+    this.importMods(evt);
+  }
+
+  private importMods = (evt) => {
+    const { gameMode } = this.props;
+    Promise.map(this.importList, modEntry => {
+      transferUnpackedMod(modEntry, this.selectedVirtualPath,
+      .then((files) => {
+        if (files.length > 0) {
+          log('info', 'Error: ', {files});
+        }
+      });
+    })
+    .then(() => {
+      addMods(gameMode, this.importList, this.context.api.store.dispatch);
+    })
+    .catch((err) => {
+      log('info', 'import failed', { err });
     });
   }
 
