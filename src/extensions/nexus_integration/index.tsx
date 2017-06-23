@@ -243,9 +243,11 @@ function checkModVersionsImpl(
   groupedMods: { [id: string]: IModWithState[] },
   mods: { [modId: string]: IMod }): Promise<string[]> {
 
-  const modsList = Object.keys(mods).map(modId => mods[modId]);
+  const modsList = Object.keys(mods)
+    .map(modId => mods[modId])
+    .filter(mod => mod.attributes.source === 'nexus');
 
-  return Promise.mapSeries(modsList, (mod: IMod) =>
+  return Promise.mapSeries(modsList, mod =>
     checkModVersion(store.dispatch, nexus, gameId, mod)
       .catch(TimeoutError, err => {
         const name = modName(mod, { version: true });

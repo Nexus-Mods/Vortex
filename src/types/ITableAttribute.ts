@@ -43,6 +43,12 @@ export interface ITableAttribute {
    */
   description?: string;
   /**
+   * optional help text regarding this field. This will only show up in the details pane, if there
+   * is no custom renderer and only if a name is set (as otherwise the space for the help icon
+   * doesn't exist)
+   */
+  help?: string;
+  /**
    * icon for the attribute. This is currently only used for the toggle button if the column is
    * toggleable
    */

@@ -44,6 +44,7 @@ import {} from './views/Settings';
 
 import InstallManager from './InstallManager';
 import { activateMods } from './modActivation';
+import getText from './texts';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -268,6 +269,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', {
     id: 'mod-source',
     name: 'Source',
+    help: getText('source', context.api.translate),
     description: 'Source the mod was downloaded from',
     icon: 'database',
     placement: 'detail',
@@ -294,6 +296,7 @@ function init(context: IExtensionContextExt): boolean {
 
   registerAttributeExtractor(100, (input: any) => {
     return Promise.resolve({
+        source: getSafe(input, ['source'], undefined),
         fileName: getSafe(input.meta, ['fileName'], undefined),
         fileMD5: getSafe(input.meta, ['fileMD5'], undefined),
         fileSize: getSafe(input.meta, ['fileSize'], undefined),

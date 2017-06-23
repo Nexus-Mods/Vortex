@@ -5,6 +5,7 @@ import { getSafe } from '../../util/storeHelper';
 import ExtensionGate from '../ExtensionGate';
 import FormFeedback from '../FormFeedbackAwesome';
 import FormInput from '../FormInput';
+import More from '../More';
 
 import * as _ from 'lodash';
 import * as React from 'react';
@@ -119,9 +120,18 @@ class DetailCell extends React.Component<ICellProps, {}> {
 
     const key = `${rowId}-${attribute.id}`;
 
+    const helpIcon = attribute.help !== undefined
+      ? (
+        <More id={`more-tableattribute-${attribute.id}`} name={attribute.name}>
+          { attribute.help }
+        </More>
+      ) : null;
+
     return (
       <FormGroup key={key}>
-        { attribute.name !== undefined ? <ControlLabel>{attribute.name}</ControlLabel> : null }
+        { attribute.name !== undefined ? (
+          <ControlLabel>{attribute.name} {helpIcon}</ControlLabel>
+         ) : null }
         {content}
       </FormGroup>
     );

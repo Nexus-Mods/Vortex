@@ -33,6 +33,27 @@ function getText(id: string, t: I18next.TranslationFunction) {
         'character. So if your file name is "SkyUI_5_1-3863-5-1" you can change that to ' +
         '"SkyUI_*-3863-*" and it should match any version of SkyUI (The 3863 part is the mod ' +
         'id on Nexus so it should always be the same).');
+    case 'version':
+      return t(
+        'Version of the mod. Certain features are only available if the mod follows a ' +
+        'standardized scheme called "semantic versioning" (see http://semver.org/) where a ' +
+        'version consists of three numbers separated by dots like this: "1.2.0".\n' +
+        'A warning here means that the version doesn\'t comply.\n\n' +
+        'In semantic versioning the first number is the "major" version that gets incremented ' +
+        'only on a big update that isn\'t compatible with previous versions so updating may ' +
+        'break things (dependencies, save games).\n' +
+        'Second number is called "minor" and incremented when new features were introduced.\n' +
+        'Third number is called "patch" and gets increased if there were only bugfixes.\n' +
+        'Thus "1.2.5" should definitively be more stable than "1.2.4". "1.3.0" should have all ' +
+        'the bugfixes of "1.2.5" but it also adds features so there could be new bugs.\n' +
+        'These dots are NOT decimal marks, version 1.10.0 is (much) newer than 1.3.0.');
+    case 'source':
+      return t(
+        'The "Source" specifies where you got the mod. That source will be consulted for certain ' +
+        'features, i.e. to find updates.\n\n' +
+        'Only sources that are supported by Vortex can be selected.\n' +
+        'If the mod was removed from the source it may make sense to select no source here to ' +
+        'quiet error messages.');
     default:
       return undefined;
   }

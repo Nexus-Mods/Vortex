@@ -30,6 +30,7 @@ import VersionIconButton from '../views/VersionIconButton';
 
 import { INSTALL_TIME, PICTURE } from '../modAttributes';
 import { installPath } from '../selectors';
+import getText from '../texts';
 
 import CheckModVersionsButton from './CheckModVersionsButton';
 import InstallArchiveButton from './InstallArchiveButton';
@@ -167,6 +168,7 @@ class ModList extends ComponentEx<IProps, {}> {
       id: 'versionDetail',
       name: 'Version',
       description: 'File version (according to the author)',
+      help: getText('version', this.props.t),
       icon: 'cake',
       calc: (mod: IModWithState) => getSafe(mod.attributes, ['version'], ''),
       placement: 'detail',
