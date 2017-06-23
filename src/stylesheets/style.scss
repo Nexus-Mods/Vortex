@@ -699,6 +699,14 @@ a[role=menuitem] svg {
   border-width: 0px 1px;
 }
 
+.mainpage-header-container {
+  flex: 1 1 0%;
+}
+
+.mainpage-header-container > div {
+  width: 100%;
+}
+
 // footer
 #main-footer {
   background-color: $brand-menu;

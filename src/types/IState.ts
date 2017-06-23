@@ -66,6 +66,7 @@ export interface ISession {
   displayGroups: { [id: string]: string };
   overlayOpen: boolean;
   visibleDialog: string;
+  mainPage: string;
   activity: { [id: string]: string };
   settingsPage: string;
 }

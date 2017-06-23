@@ -19,6 +19,9 @@ export const setSettingsPage = safeCreateAction('SET_SETTINGS_PAGE',
 export const setOverlayOpen = safeCreateAction('SET_OVERLAY_OPEN',
   (open: boolean) => ({ open }));
 
+export const setOpenMainPage = safeCreateAction('SET_OPEN_MAINPAGE',
+  (page: string) => ({ page }));
+
 export const startActivity = safeCreateAction('START_ACTIVITY',
   (group: string, activityId: string) => ({ group, activityId }));
 

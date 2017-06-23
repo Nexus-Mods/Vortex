@@ -1,28 +1,50 @@
 import { IExtensionApi } from '../types/IExtensionContext';
+import { IState } from '../types/IState';
+import { connect } from '../util/ComponentEx';
 
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
+import { Portal } from 'react-overlays';
 
 interface IComponentContext {
   api: IExtensionApi;
-  selectOverlay: (overlay: JSX.Element) => void;
+  overlayPortal: HTMLElement;
+  page: string;
 }
 
-class MainPageOverlay extends React.Component<{}, {}> {
+interface IConnectedProps {
+  mainPage: string;
+}
+
+type IProps = IConnectedProps;
+
+class MainPageOverlay extends React.Component<IProps, {}> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
-    selectOverlay: PropTypes.func.isRequired,
+    overlayPortal: PropTypes.object,
+    page: PropTypes.string,
   };
 
   public context: IComponentContext;
 
   public render(): JSX.Element {
-    this.context.selectOverlay(
-      <div>
-        {this.props.children}
-      </div>);
-    return null;
+    return (this.context.page === this.props.mainPage) ? (
+      <Portal container={this.overlayPortal}>
+        <div>
+          {this.props.children}
+        </div>
+      </Portal>
+    ) : null;
   }
+
+  private overlayPortal = () => this.context.overlayPortal;
 }
 
-export default MainPageOverlay as React.ComponentClass<{}>;
+function mapStateToProps(state: IState): IConnectedProps {
+  return {
+    mainPage: state.session.base.mainPage,
+  };
+}
+
+export default connect(mapStateToProps)(
+  MainPageOverlay) as React.ComponentClass<{}>;

@@ -6,8 +6,8 @@ import IconBar from './IconBar';
 import * as React from 'react';
 
 export interface IBaseProps {
-  pageOverlay: JSX.Element;
   open: boolean;
+  overlayRef: (ref: HTMLElement) => void;
 }
 
 type IProps = IBaseProps;
@@ -31,14 +31,14 @@ class MainOverlay extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { open, pageOverlay } = this.props;
+    const { open, overlayRef } = this.props;
     const classes = [ 'overlay' ];
     if (open) {
       classes.push('in');
     }
     return (
       <div className={classes.join(' ')}>
-        {pageOverlay}
+        <div ref={overlayRef} />
         <div className='flex-fill' />
         <div className='global-overlay'>
           <IconBar

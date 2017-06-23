@@ -273,6 +273,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <MainPage>
+        <MainPage.Header>
+          <IconBar
+            group='gamebryo-plugin-icons'
+            staticElements={this.staticButtons}
+            buttonType='icon'
+            orientation='vertical'
+          />
+        </MainPage.Header>
         <MainPage.Body>
           <Layout type='column'>
             <Fixed>

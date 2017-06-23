@@ -20,11 +20,14 @@ export const sessionReducer: IReducerSpec = {
       pushSafe(state, [ 'activity', payload.group ], payload.activityId),
     [actions.stopActivity as any]: (state, payload) =>
       removeValue(state, [ 'activity', payload.group ], payload.activityId),
+    [actions.setOpenMainPage as any]: (state, payload) =>
+      setSafe(state, [ 'mainPage' ], payload.page),
   },
   defaults: {
     displayGroups: {},
     visibleDialog: undefined,
     overlayOpen: false,
+    mainPage: '',
     activity: {},
     settingsPage: undefined,
   },
