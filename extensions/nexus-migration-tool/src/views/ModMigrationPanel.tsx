@@ -213,6 +213,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
     const { gameMode } = this.props;
     Promise.map(this.importList, modEntry => {
       transferUnpackedMod(modEntry, this.selectedVirtualPath,
+       selectors.installPath(this.state) , true)
       .then((files) => {
         if (files.length > 0) {
           log('info', 'Error: ', {files});
