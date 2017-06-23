@@ -2,7 +2,7 @@ import { addFeedbackFile, clearFeedbackFiles, removeFeedbackFile } from './actio
 import { sessionReducer } from './reducers/session';
 import { IFeedbackFile } from './types/IFeedbackFile';
 
-import FeedbackView from './FeedbackView';
+import FeedbackView from './views/FeedbackView';
 
 import { types } from 'nmm-api';
 

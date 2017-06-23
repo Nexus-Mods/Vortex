@@ -1,4 +1,4 @@
-import { IFeedbackFile } from './types/IFeedbackFile';
+import { IFeedbackFile } from '../types/IFeedbackFile';
 
 import * as Promise from 'bluebird';
 import { dialog as dialogIn, Electron, remote } from 'electron';

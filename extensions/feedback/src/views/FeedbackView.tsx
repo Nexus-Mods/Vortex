@@ -1,6 +1,6 @@
-import { IFeedbackFile } from './types/IFeedbackFile';
+import { IFeedbackFile } from '../types/IFeedbackFile';
 
-import { FILE_NAME, SIZE, TYPE } from './feedbackAttributes';
+import { FILE_NAME, SIZE, TYPE } from '../feedbackAttributes';
 import ScreenshotDropzone from './ScreenshotDropzone';
 import TracelogDropzone from './TracelogDropzone';
 
