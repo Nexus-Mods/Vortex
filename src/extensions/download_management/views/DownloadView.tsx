@@ -79,14 +79,21 @@ interface IFileTimeProps {
 }
 
 class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
+  private mIsMounted: boolean = false;
+
   constructor(props: IFileTimeProps) {
     super(props);
 
     this.initState({ mtime: undefined });
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
+    this.mIsMounted = true;
     this.updateTime();
+  }
+
+  public componentWillUnmount() {
+    this.mIsMounted = false;
   }
 
   public componentWillReceiveProps(nextProps: IFileTimeProps) {
@@ -116,7 +123,11 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
         return null;
     } else {
       return fs.statAsync(path.join(downloadPath, download.localPath))
-        .then((stat: fs.Stats) => this.nextState.mtime = stat.mtime);
+        .then((stat: fs.Stats) => {
+          if (this.mIsMounted) {
+            this.nextState.mtime = stat.mtime;
+          }
+        });
     }
   }
 }
