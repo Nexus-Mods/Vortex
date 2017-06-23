@@ -4,7 +4,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import StarterInfo from './StarterInfo';
 
 import * as Promise from 'bluebird';
-import { execFile } from 'child_process';
+import { spawn } from 'child_process';
 import ipc = require('node-ipc');
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
@@ -13,9 +13,9 @@ export type DeployResult = 'auto' | 'yes' | 'skip' | 'cancel';
 
 function runToolElevated(starter: StarterInfo,
                          onError: (message: string, details: string) => void) {
-  let toolCWD = starter.workingDirectory !== undefined ?
+  const toolCWD = starter.workingDirectory !== undefined ?
     starter.workingDirectory : path.dirname(starter.exePath);
-  let elevatedTool = {
+  const elevatedTool = {
     id: starter.id,
     toolPath: starter.exePath.replace(/\\/g, '\\\\'),
     parameters: starter.commandLine,
@@ -83,22 +83,21 @@ function startTool(starter: StarterInfo,
                    events: NodeJS.EventEmitter,
                    queryElevate: (name: string) => Promise<boolean>,
                    queryDeploy: () => Promise<DeployResult>,
-                   onShowError: (message: string, details?: string | Error) => void
+                   onShowError: (message: string, details?: string | Error) => void,
                    ): Promise<void> {
   return startDeploy(queryDeploy, events)
     .then((doStart: boolean) => {
       if (doStart) {
-        try {
-          execFile(starter.exePath,
-                   {
-                     cwd: starter.workingDirectory,
-                     env: Object.assign({}, process.env, starter.environment),
-                   },
-                   (err: Error, stdout: string, stderr: string) => {
-                     if (err !== null) {
-                       onShowError('Failed to run executable', err);
-                     }
-                   });
+       try {
+            const defaults = {
+             cwd: starter.workingDirectory,
+             env: { ...[process.env, starter.environment]},
+            };
+            const child = spawn(starter.exePath, [], defaults);
+
+            child.on('error', (err) => {
+              onShowError('Failed to run executable', err);
+            });
       } catch (err) {
         // TODO: as of the current electron version (1.4.14) the error isn't precise
         //   enough to determine if the error was actually lack of elevation but among
