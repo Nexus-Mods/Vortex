@@ -8,6 +8,7 @@
 import { IExtensionReducer } from '../types/Extension';
 import { IReducerSpec } from '../types/IExtensionContext';
 
+import { appReducer } from './app';
 import { notificationsReducer } from './notifications';
 import { sessionReducer } from './session';
 import { tableReducer } from './tables';
@@ -54,13 +55,11 @@ function deepMerge(lhs: any, rhs: any): any {
       result[key] = lhs[key] || rhs[key];
     }
 
-    if ((typeof(lhs[key]) === 'object') && (typeof(lhs[key]) === 'object')) {
-      result[key] = deepMerge(lhs[key], rhs[key]);
-    } else if (Array.isArray(lhs[key]) && Array.isArray(rhs[key])) {
-      result[key] = lhs[key].concat(rhs[key]);
-    } else {
-      result[key] = rhs[key] || lhs[key];
-    }
+    result[key] = ((typeof(lhs[key]) === 'object') && (typeof(lhs[key]) === 'object'))
+      ? result[key] = deepMerge(lhs[key], rhs[key])
+      : (Array.isArray(lhs[key]) && Array.isArray(rhs[key]))
+        ? result[key] = lhs[key].concat(rhs[key])
+        : result[key] = rhs[key] || lhs[key];
   }
   return result;
 }
@@ -116,6 +115,7 @@ export default function(extensionReducers: IExtensionReducer[]) {
       window: windowReducer,
     },
     persistent: {
+      app: appReducer,
       tables: tableReducer,
     },
   };

@@ -18,6 +18,7 @@ import ExtensionManagerT from './util/ExtensionManager';
 import { log, setupLogging } from './util/log';
 import * as storeT from './util/store';
 import * as storeHelperT from './util/storeHelper';
+import updateStore from './util/updateStore';
 
 import * as Promise from 'bluebird';
 import { app, BrowserWindow, crashReporter, Electron, ipcMain, Menu, Tray } from 'electron';
@@ -102,11 +103,13 @@ function createStore(): Promise<void> {
   const { setupStore } = require('./util/store');
   const ExtensionManager = require('./util/ExtensionManager').default;
   extensions = new ExtensionManager();
-  return setupStore(basePath, extensions).then((newStore) => {
-    store = newStore;
-    extensions.doOnce();
-    return Promise.resolve();
-  });
+  return setupStore(basePath, extensions)
+      .then((newStore: Redux.Store<any>) => updateStore(newStore))
+      .then((newStore: Redux.Store<any>) => {
+        store = newStore;
+        extensions.doOnce();
+        return Promise.resolve();
+      });
 }
 
 // main window setup

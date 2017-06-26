@@ -1,3 +1,4 @@
+export * from './app';
 export * from './notifications';
 export * from './session';
 export * from './tables';

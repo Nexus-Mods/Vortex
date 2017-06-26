@@ -58,8 +58,7 @@ export function setupStore(
     const result = createStore<IState>(reducer(extReducers), enhancer);
     persistStore(result,
                  {
-                   storage: new LevelStorage('state')
-                       /* new AsyncNodeStorage(path.join(basePath, 'state')) */,
+                   storage: new LevelStorage('state'),
                    whitelist,
                    debounce: 200,
                    keyPrefix: 'global_',
