@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 function serveREST(db, portIn) {
     const express = require('express');
     const bodyParser = require('body-parser');

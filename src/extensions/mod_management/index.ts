@@ -349,19 +349,46 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('gamemode-activated', (newGame: string) => {
-      const configuredActivator = currentActivator(store.getState());
-      const supported = supportedActivators(activators, store.getState());
-      if (supported.find((activator: IModActivator) =>
-        activator.id === configuredActivator) === undefined) {
+      const state = store.getState();
+      const configuredActivatorId = currentActivator(state);
+      const supported = supportedActivators(activators, state);
+      const configuredActivator =
+        supported.find(activator => activator.id === configuredActivatorId);
+      const gameDiscovery = currentGameDiscovery(state);
+
+      const instPath = installPath(state);
+
+      if (configuredActivator === undefined) {
         // current activator is not valid for this game. This should only occur
         // if compatibility of the activator has changed
-        if (supported.length > 0) {
-          context.api.store.dispatch(setActivator(newGame, supported[0].id));
+
+        const oldActivator = activators.find(iter => iter.id === configuredActivatorId);
+
+        if ((configuredActivatorId !== undefined) && (oldActivator === undefined)) {
+          context.api.showErrorNotification(
+              'Deployment method "' + configuredActivatorId + '" no longer available',
+              'The deployment method used with this game is no longer available. ' +
+              'This probably means you removed the corresponding extension or ' +
+              'it can no longer be loaded due to a bug.\n' +
+              'Vortex can\'t clean up files deployed with an unsupported method. ' +
+              'You should try to restore it, purge deployment and then switch ' +
+              'to a different method.');
+        } else {
+          const purgePromise = oldActivator !== undefined
+            ? oldActivator.purge(instPath, gameDiscovery.modPath)
+            : Promise.resolve();
+
+          purgePromise.then(() => {
+                if (supported.length > 0) {
+                  context.api.store.dispatch(
+                      setActivator(newGame, supported[0].id));
+                }
+              });
         }
       }
 
-      const knownMods = Object.keys(getSafe(store.getState(), ['persistent', 'mods', newGame], {}));
-      refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
+      const knownMods = Object.keys(getSafe(state, ['persistent', 'mods', newGame], {}));
+      refreshMods(instPath, knownMods, (mod: IMod) => {
         context.api.store.dispatch(addMod(newGame, mod));
       }, (modNames: string[]) => {
         modNames.forEach((name: string) => {
@@ -379,10 +406,11 @@ function init(context: IExtensionContextExt): boolean {
     context.api.onStateChange(
       ['settings', 'mods', 'paths'],
       (previous: { [gameId: string]: IStatePaths }, current: { [gameId: string]: IStatePaths }) => {
-        const gameMode = activeGameId(store.getState());
+        const state = store.getState();
+        const gameMode = activeGameId(state);
         if (previous[gameMode] !== current[gameMode]) {
-          const knownMods = Object.keys(store.getState().persistent.mods[gameMode]);
-          refreshMods(installPath(store.getState()), knownMods, (mod: IMod) => {
+          const knownMods = Object.keys(state.persistent.mods[gameMode]);
+          refreshMods(installPath(state), knownMods, (mod: IMod) => {
             context.api.store.dispatch(addMod(gameMode, mod));
           }, (modNames: string[]) => {
             modNames.forEach((name: string) => {

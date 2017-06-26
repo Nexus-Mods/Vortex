@@ -7,6 +7,8 @@ export interface IServer {
     apiKey?: string;
     cacheDurationSec: number;
 }
+export declare type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export declare type LogFunc = (level: LogLevel, message: string, extra?: any) => void;
 declare class ModDB {
     private mDB;
     private mServers;
@@ -15,7 +17,8 @@ declare class ModDB {
     private mTimeout;
     private mGameId;
     private mBlacklist;
-    constructor(dbName: string, gameId: string, servers: IServer[], database?: any, timeoutMS?: number);
+    private mLog;
+    constructor(dbName: string, gameId: string, servers: IServer[], log?: LogFunc, database?: any, timeoutMS?: number);
     close(): Promise<void>;
     setGameId(gameId: string): void;
     getByKey(key: string): Promise<ILookupResult[]>;

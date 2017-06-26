@@ -50,9 +50,9 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
  * @export
  * @param {Level} level The log level of the message: 'debug', 'info' or 'error'
  * @param {string} message The text message. Should contain no variable data
- * @param {Object} [metadata] Additional information about the error instance
+ * @param {any} [metadata] Additional information about the error instance
  */
-export function log(level: LogLevel, message: string, metadata?: {}) {
+export function log(level: LogLevel, message: string, metadata?: any) {
   if (metadata === undefined) {
     logger.log(level, message);
   } else {

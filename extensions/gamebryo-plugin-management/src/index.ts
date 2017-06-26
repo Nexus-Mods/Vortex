@@ -166,13 +166,16 @@ function register(context: IExtensionContextExt) {
  * the store
  */
 function initPersistor(context: IExtensionContextExt) {
+  const onError = (message: string, detail: Error) => {
+    context.api.showErrorNotification(message, detail);
+  };
   // TODO: Currently need to stop this from being called in the main process.
   //   This is mega-ugly and needs to go
   if ((pluginPersistor === undefined) && (remote !== undefined)) {
-    pluginPersistor = new PluginPersistor();
+    pluginPersistor = new PluginPersistor(onError);
   }
   if ((userlistPersistor === undefined) && (remote !== undefined)) {
-    userlistPersistor = new UserlistPersistor();
+    userlistPersistor = new UserlistPersistor(onError);
   }
   if (pluginPersistor !== undefined) {
     context.registerPersistor('loadOrder', pluginPersistor);

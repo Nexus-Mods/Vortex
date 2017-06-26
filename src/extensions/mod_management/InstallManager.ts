@@ -120,9 +120,6 @@ class InstallManager {
    *                                      of others and tries to install those too
    * @param {boolean} enable if true, enable the mod after installation
    * @param {Function} callback callback once this is finished
-   *
-   * TODO: return a promise instead of callback
-   * TODO: the callback isn't called if the installation is canceled by the user
    */
   public install(
     archiveId: string,
@@ -260,9 +257,15 @@ class InstallManager {
             installContext.finishInstallCB(canceled ? 'canceled' : 'failed'));
 
           if (err === undefined) {
-            return prom;
+            return prom
+              .then(() => {
+                callback(new Error('unknown error'), null);
+              });
           } else if (canceled) {
-            return prom;
+            return prom
+              .then(() => {
+                callback(err, null);
+              });
           } else {
             const { genHash } = require('modmeta-db');
             const errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;

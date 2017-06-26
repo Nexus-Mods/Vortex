@@ -33,11 +33,10 @@ class FileAssembler {
   }
 
   public addChunk(offset: number, data: Buffer) {
-    this.mWork = this.mWork.then(() => {
-      // TODO: does writing at an offset beyond the file size work
-      // on all OSes?
-      return fs.writeAsync(this.mFD, Buffer.from(data), 0, data.length, offset);
-    });
+    this.mWork = this.mWork.then(() =>
+      // writing at an offset beyond the file limit works on windows and linux.
+      // I'll assume it means it will work on MacOS too...
+      fs.writeAsync(this.mFD, Buffer.from(data), 0, data.length, offset));
   }
 
   public close(): Promise<void> {

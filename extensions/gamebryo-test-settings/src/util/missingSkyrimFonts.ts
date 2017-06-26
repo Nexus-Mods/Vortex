@@ -12,13 +12,13 @@ function missingSkyrimFonts(state: types.IState, skyrimDefaultFonts: Set<string>
   return fs.readFileAsync(fontconfigTxt)
     .then((fontconfig: NodeBuffer) => {
       // extract fonts from fontlib lines
-      let rows = fontconfig.toString().split('\n');
+      const rows = fontconfig.toString().split('\n');
       const fonts: string[] =
         rows.filter(row => row.startsWith('fontlib '))
             .map(row => row.trim().replace(/^fontlib +["'](.*)["'].*/, '$1').toLowerCase());
 
       // filter the known fonts shipped with the game
-      let removedFonts = fonts
+      const removedFonts = fonts
         .filter((font: string) => !skyrimDefaultFonts.has(font));
 
       // test the remaining files for existence
@@ -31,8 +31,7 @@ function missingSkyrimFonts(state: types.IState, skyrimDefaultFonts: Set<string>
       });
     })
     .then((missingFonts: string[]) =>
-      Promise.resolve(missingFonts.filter(font => font !== null))
-    )
+      Promise.resolve(missingFonts.filter(font => font !== null)))
     // assume any error reading/parsing the file is an error on our end not in the file
     .catch(() => Promise.resolve([]));
 }

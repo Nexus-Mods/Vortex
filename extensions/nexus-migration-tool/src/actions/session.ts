@@ -1,5 +1,5 @@
-import { safeCreateAction } from 'nmm-api';
+import { createAction } from 'redux-act';
 
-export const setMods = safeCreateAction('SET_MODS');
+export const setMods = createAction('SET_MODS');
 
-export const selectImportFolder = safeCreateAction('SELECT_IMPORT_FOLDER');
+export const selectImportFolder = createAction('SELECT_IMPORT_FOLDER');

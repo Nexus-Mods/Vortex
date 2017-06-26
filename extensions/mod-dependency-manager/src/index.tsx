@@ -144,7 +144,6 @@ function main(context: types.IExtensionContext) {
           store.dispatch(actions.stopActivity('mods', 'conflicts'));
         });
     });
-    // TODO: conflicts aren't currently updated unless the profile changes
 
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       const state: types.IState = store.getState();

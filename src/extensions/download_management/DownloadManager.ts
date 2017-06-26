@@ -109,7 +109,11 @@ class DownloadWorker {
   }
 
   private handleResponse(response: http.IncomingMessage) {
-    // TODO: should we handle redirections?
+    // we're not handling redirections here. For one thing it may be undesired by the user
+    // plus there might be a javascript redirect which we can't handle here anyway.
+    // Instead we display the website as a download with a button where the user can open the
+    // it. If it contains any redirect, the browser window will follow it and initiate a
+    // download.
     if (response.statusCode >= 300) {
       this.handleError({ message: response.statusMessage, http_headers: response.headers });
       return;
@@ -178,7 +182,7 @@ class DownloadManager {
    */
   constructor(downloadPath: string, maxWorkers: number, maxChunks: number,
               speedCB: (speed: number) => void, userAgent: string) {
-    // TODO: is it worth having this configurable?
+    // hard coded chunk size but I doubt this needs to be customized by the user
     this.mMinChunkSize = 1024 * 1024;
     this.mDownloadPath = downloadPath;
     this.mMaxWorkers = maxWorkers;

@@ -45,6 +45,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidMount() {
+    this.updateDimensions();
     window.addEventListener('resize', this.updateDimensions);
   }
 

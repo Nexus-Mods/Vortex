@@ -1,4 +1,3 @@
-import { safeCreateAction } from 'nmm-api';
+import { createAction } from 'redux-act';
 
-export const selectTheme = safeCreateAction('SELECT_UI_THEME');
-
+export const selectTheme = createAction('SELECT_UI_THEME');

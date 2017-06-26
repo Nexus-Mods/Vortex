@@ -10,7 +10,6 @@ export const tableReducer: IReducerSpec = {
   reducers: {
     [actions.selectRows as any]: (state, payload) => {
       const { tableId, rowIds, selected } = payload;
-      // TODO: this is a bit wasteful, copying the state for each row being changed
       let copy = state;
       if (!selected) {
         rowIds.forEach((id: string) => {

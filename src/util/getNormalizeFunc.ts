@@ -6,26 +6,22 @@ import * as path from 'path';
 
 export type Normalize = (input: string) => string;
 
-// TODO: these aren't correct as we should apply unicode normalization
-//   in either case and the normalization algorithm may differ between
-//   file systems. 
-
 function CaseSensitiveNormalize(input: string) {
   if (path.sep === '\\') {
-    return path.normalize(input).replace('/', path.sep);
+    return path.normalize(input).replace('/', path.sep).normalize();
   } else {
-    return path.normalize(input);
+    return path.normalize(input).normalize();
   }
 }
 
 function CaseInsensitiveNormalize(input: string) {
-  return CaseSensitiveNormalize(input).toUpperCase();
+  return CaseSensitiveNormalize(input).toUpperCase().normalize();
 }
 
 /**
  * determine the function to normalize file names for the
  * file system in the specified path
- * 
+ *
  * @param {string} path
  * @returns {Promise<Normalize>}
  */

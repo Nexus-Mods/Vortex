@@ -21,14 +21,16 @@ class UserlistPersistor implements types.IPersistor {
   private mUserlist: ILOOTList;
   private mSerializing: boolean = false;
   private mSerializeQueue: Promise<void> = Promise.resolve();
-
   private mLoaded: boolean = false;
+  private mFailed: boolean = false;
+  private mOnError: (message: string, details: Error) =>  void;
 
-  constructor() {
+  constructor(onError: (message: string, details: Error) => void) {
     this.mUserlist = {
       globals: [],
       plugins: [],
     };
+    this.mOnError = onError;
   }
 
   public loadFiles(gameMode: string) {
@@ -59,6 +61,13 @@ class UserlistPersistor implements types.IPersistor {
     cb(null, ['userlist']);
   }
 
+  private reportError(message: string, detail: Error) {
+    if (!this.mFailed) {
+      this.mOnError(message, detail);
+      this.mFailed = true;
+    }
+  }
+
   private serialize(): Promise<void> {
     if (!this.mLoaded) {
       // this happens during initialization, when the persistor is initially created, with default
@@ -80,10 +89,9 @@ class UserlistPersistor implements types.IPersistor {
     this.mSerializing = true;
     return fs.writeFileAsync(this.mUserlistPath + '.tmp', safeDump(this.mUserlist))
       .then(() => fs.renameAsync(this.mUserlistPath + '.tmp', this.mUserlistPath))
-      .catch((err) => {
-        // TODO: report to the user? The problem is that this might occur repeatedly so we
-        //   need to be careful to not spam the user
-        log('error', 'failed to write userlist', { err });
+      .then(() => { this.mFailed = false; })
+      .catch(err => {
+        this.reportError('failed to write userlist', err);
       })
       .finally(() => {
         this.mSerializing = false;

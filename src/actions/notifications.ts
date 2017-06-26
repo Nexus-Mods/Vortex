@@ -65,9 +65,9 @@ export function addNotification(notification: INotification) {
   };
 }
 
-// TODO: I don't like the use of a global, but I don't see how else we can ensure
-//  the same object is used between main application and extensions, without adding
-//  another parameter to functions
+// singleton holding callbacks for active dialogs. The
+// actual storage is the "global" object so it gets shared between
+// all instances of this module.
 class DialogCallbacks {
   public static instance(): any {
     if ((global as any).__dialogCallbacks === undefined) {

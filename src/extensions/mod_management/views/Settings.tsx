@@ -8,6 +8,9 @@ import { getSafe, setSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
 import More from '../../../views/More';
 import { Button } from '../../../views/TooltipControls';
+import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
+import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
+import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { setActivator, setPath } from '../actions/settings';
 import { IModActivator } from '../types/IModActivator';
 import resolvePath, { pathDefaults, PathKey } from '../util/resolvePath';
@@ -22,7 +25,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import {
-  Alert, ControlLabel, FormControl, FormGroup,
+  Alert, Button as BSButton, ControlLabel, FormControl, FormGroup,
   HelpBlock, InputGroup, Jumbotron, Modal, Panel,
 } from 'react-bootstrap';
 
@@ -31,6 +34,8 @@ interface IBaseProps {
 }
 
 interface IConnectedProps {
+  game: IGameStored;
+  discovery: IDiscoveryResult;
   gameMode: string;
   paths: { [gameId: string]: IStatePaths };
   currentActivator: string;
@@ -53,6 +58,7 @@ interface IComponentState {
   paths: { [gameId: string]: IStatePaths };
   busy: string;
   supportedActivators: IModActivator[];
+  currentActivator: string;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
@@ -66,9 +72,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   constructor(props) {
     super(props);
     this.state = {
-      paths: Object.assign(this.props.paths),
+      paths: { ...this.props.paths },
       busy: undefined,
       supportedActivators: [],
+      currentActivator: props.currentActivator,
     };
   }
 
@@ -80,19 +87,25 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   public componentDidUpdate(prevProps: IProps, prevState: IComponentState) {
     if ((this.props.gameMode !== prevProps.gameMode)
-      || !_.isEqual(this.props.paths, prevProps.paths)) {
+        || !_.isEqual(this.props.paths, prevProps.paths)) {
       this.setState(update(this.state, {
         supportedActivators: { $set: this.supportedActivators() },
+        currentActivator: { $set: this.props.currentActivator },
       }));
     }
   }
 
   public render(): JSX.Element {
-    const { t, activators, currentActivator, gameMode } = this.props;
-    const { paths, supportedActivators } = this.state;
+    const { t, activators, discovery, game, gameMode } = this.props;
+    const { currentActivator, paths, supportedActivators } = this.state;
+
+    const gameName = discovery.name || game.name;
 
     return gameMode !== undefined ? (
       <form>
+        <FormControl.Static componentClass='h4'>{ t('Settings for {{name}}', { replace: {
+          name: game.name,
+          }}) }</FormControl.Static>
         <Panel footer={this.renderFooter()}>
           {this.renderPathCtrl(paths, t('Base Path'), 'base')}
           {this.renderPathCtrl(paths, t('Download Path'), 'download')}
@@ -112,9 +125,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             {getText('deployment', t)}
           </More>
         </ControlLabel>
-        <FormGroup validationState={activators !== undefined ? undefined : 'error'}>
-          {this.renderActivators(supportedActivators, currentActivator)}
-        </FormGroup>
+        {this.renderActivators(supportedActivators, currentActivator)}
       </form>
     ) : null;
   }
@@ -137,7 +148,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private pathsAbsolute() {
     const { gameMode } = this.props;
     return path.isAbsolute(resolvePath('download', this.state.paths, gameMode))
-      && path.isAbsolute(resolvePath('install', this.state.paths, gameMode));
+        && path.isAbsolute(resolvePath('install', this.state.paths, gameMode));
   }
 
   private transferPath(pathKey: PathKey) {
@@ -166,11 +177,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const newInstallPath: string = resolvePath('install', this.state.paths, gameMode);
     const newDownloadPath: string = resolvePath('download', this.state.paths, gameMode);
 
+    const oldInstallPath = resolvePath('install', this.props.paths, gameMode);
+
+    const purgePromise = oldInstallPath !== newInstallPath
+      ? this.purgeActivation()
+      : Promise.resolve();
+
     this.setState(setSafe(this.state, ['busy'], t('Moving')));
-    return Promise.join(
-      fs.ensureDirAsync(newInstallPath),
-      fs.ensureDirAsync(newDownloadPath),
-    )
+    return purgePromise
+      .then(() => Promise.join(fs.ensureDirAsync(newInstallPath),
+                               fs.ensureDirAsync(newDownloadPath)))
       .then(() => {
         // ensure the destination files are empty
         return Promise.join(fs.readdirAsync(newInstallPath), fs.readdirAsync(newDownloadPath),
@@ -209,8 +225,27 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         if (err !== null) {
           onShowError('Failed to move directories', err);
         }
-      })
-      ;
+      });
+  }
+
+  private purgeActivation(): Promise<void> {
+    const { activators, currentActivator, discovery, gameMode, paths } = this.props;
+
+    const oldActivator = activators.find(iter => iter.id === currentActivator);
+    const installPath = resolvePath('install', paths, gameMode);
+
+    return oldActivator !== undefined
+      ? oldActivator.purge(installPath, discovery.modPath)
+      : Promise.resolve();
+  }
+
+  private applyActivator = () => {
+    const { gameMode, onSetActivator } = this.props;
+    const { currentActivator } = this.state;
+
+    this.purgeActivation().then(() => {
+      onSetActivator(gameMode, currentActivator);
+    });
   }
 
   private renderFooter() {
@@ -299,13 +334,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private renderActivators(activators: IModActivator[], currentActivator: string): JSX.Element {
     const { t } = this.props;
 
+    let content: JSX.Element;
+    let activatorIdx: number = -1;
+
+    const changed = currentActivator !== this.props.currentActivator;
+
     if ((activators !== undefined) && (activators.length > 0)) {
-      let activatorIdx: number = 0;
       if (currentActivator !== undefined) {
         activatorIdx = activators.findIndex((activator) => activator.id === currentActivator);
       }
 
-      return (
+      content = (
         <div>
           <FormControl
             componentClass='select'
@@ -314,13 +353,25 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           >
             {activators.map(this.renderActivatorOption)}
           </FormControl>
-          <HelpBlock>
-            {activatorIdx !== -1 ? activators[activatorIdx].description : null}
-          </HelpBlock>
         </div>
       );
+    } else {
+      content = <ControlLabel>{t('No mod activators installed')}</ControlLabel>;
     }
-    return <ControlLabel>{t('No mod activators installed')}</ControlLabel>;
+
+    return (
+      <FormGroup validationState={activators !== undefined ? undefined : 'error'}>
+        <InputGroup>
+          {content}
+          <InputGroup.Button>
+            <BSButton disabled={!changed} onClick={this.applyActivator}>{t('Set')}</BSButton>
+          </InputGroup.Button>
+        </InputGroup>
+        <HelpBlock>
+          {activatorIdx !== -1 ? activators[activatorIdx].description : null}
+        </HelpBlock>
+      </FormGroup>
+    );
   }
 
   private renderActivatorOption(activator: IModActivator): JSX.Element {
@@ -330,15 +381,20 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectActivator = (evt) => {
-    const { gameMode } = this.props;
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    this.props.onSetActivator(gameMode, target.value);
+    this.setState(setSafe(this.state, ['currentActivator'], target.value));
   }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
-  const gameMode = activeGameId(state);
+  const discovery = currentGameDiscovery(state);
+  const game = currentGame(state);
+
+  const gameMode = discovery.id || game.id;
+
   return {
+    discovery,
+    game,
     gameMode,
     paths: state.settings.mods.paths,
     currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),

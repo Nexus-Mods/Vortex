@@ -1,3 +1,3 @@
-import { safeCreateAction } from 'nmm-api';
+import { createAction } from 'redux-act';
 
-export const setShowMetaEditor = safeCreateAction('SET_SHOW_METAEDITOR');
+export const setShowMetaEditor = createAction('SET_SHOW_METAEDITOR');

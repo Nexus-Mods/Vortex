@@ -108,8 +108,6 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   }
 
   // collect the changelogs of all the versions > currently installed and <= newest
-  // TODO: this is untested currently, first need to find a mod that provides update info
-  //   /and/ a changelog
   const changelog = fileUpdate
     .map(update => {
       const file = files.files.find(iter => iter.file_id === update.new_file_id);

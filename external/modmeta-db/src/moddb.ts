@@ -42,6 +42,9 @@ interface IBlacklistEntry {
   gameId?: string;
 }
 
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogFunc = (level: LogLevel, message: string, extra?: any) => void;
+
 /**
  * The primary database interface.
  * This allows queries about meta information regarding a file and
@@ -55,6 +58,7 @@ class ModDB {
   private mTimeout: number;
   private mGameId: string;
   private mBlacklist: Set<IBlacklistEntry> = new Set();
+  private mLog: LogFunc;
 
   /**
    * constructor
@@ -62,13 +66,17 @@ class ModDB {
    * @param {string} dbName name for the new databaes
    * @param {string} gameId default game id for lookups to the nexus api
    * @param {IServer} servers list of servers we synchronize with
+   * @param {LogFunc} log function called for logging messages
    * @param {any} database the database backend to use. if not set, tries to use leveldb
    * @param {number} timeoutMS timeout in milliseconds for outgoing network requests.
    *                           defaults to 5 seconds
    */
   constructor(dbName: string,
-              gameId: string, servers: IServer[],
-              database?: any, timeoutMS?: number) {
+              gameId: string,
+              servers: IServer[],
+              log?: LogFunc,
+              database?: any,
+              timeoutMS?: number) {
     this.mDB = levelup(dbName, {valueEncoding: 'json', db: database});
     this.mModKeys = [
       'fileName',
@@ -84,6 +92,7 @@ class ModDB {
     this.mRestClient = new Client();
     this.mServers = servers;
     this.mTimeout = timeoutMS;
+    this.mLog = log || (() => undefined);
 
     this.promisify();
   }
@@ -406,7 +415,9 @@ class ModDB {
                                 }
                               })
                               .catch(err => {
-                                // TODO: need a way to log without rejecting
+                                this.mLog('warn', 'failed to query', {
+                                  server: server.url, key, gameId, error: err.message,
+                                });
                                 this.mBlacklist.add(JSON.stringify({ key, gameId }));
                               });
                         }).then(() => Promise.resolve(remoteResults || []));
@@ -459,8 +470,9 @@ class ModDB {
                                 }
                               })
                               .catch(err => {
-                                // TODO: need a way to log without rejecting
-                                console.log('failed to query server', err);
+                                this.mLog('warn', 'failed to query', {
+                                  server: server.url, logicalName, versionMatch, error: err.message,
+                                });
                                 this.mBlacklist.add(JSON.stringify({ logicalName, versionMatch }));
                               });
                         }).then(() => Promise.resolve(remoteResults || []));
@@ -508,8 +520,9 @@ class ModDB {
                                 }
                               })
                               .catch(err => {
-                                // TODO: need a way to log without rejecting
-                                console.log('failed to query server', err);
+                                this.mLog('warn', 'failed to query', {
+                                  server: server.url, expression, versionMatch, error: err.message,
+                                });
                                 this.mBlacklist.add(JSON.stringify({ expression, versionMatch }));
                               });
                         }).then(() => Promise.resolve(remoteResults || []));

@@ -31,13 +31,14 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
     const toolPath = tool.queryPath();
     if (typeof(toolPath) === 'string') {
       if (toolPath) {
-        onDiscoveredTool(tool.id, Object.assign({}, tool, {
+        onDiscoveredTool(tool.id, {
+          ...tool,
           path: toolPath,
           hidden: false,
           parameters: [],
           custom: false,
           workingDirectory: toolPath,
-        }));
+        });
       } else {
         log('debug', 'tool not found', tool.id);
       }
@@ -45,13 +46,14 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
       (toolPath as Promise<string>)
           .then((resolvedPath) => {
             if (resolvedPath) {
-              onDiscoveredTool(tool.id, Object.assign({}, tool, {
+              onDiscoveredTool(tool.id, {
+                ...tool,
                 path: resolvedPath,
                 hidden: false,
                 parameters: [],
                 custom: false,
                 workingDirectory: resolvedPath,
-              }));
+              });
             }
             return null;
           })
@@ -72,7 +74,7 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
 export function quickDiscovery(knownGames: IGame[],
                                onDiscoveredGame: DiscoveredCB,
                                onDiscoveredTool: DiscoveredToolCB): Promise<string[]> {
-  return Promise.map(knownGames, (game) => new Promise<string>((resolve, reject) => {
+  return Promise.map(knownGames, game => new Promise<string>((resolve, reject) => {
     quickDiscoveryTools(game.supportedTools, onDiscoveredTool);
     if (game.queryPath === undefined) {
       return resolve();
@@ -234,12 +236,13 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
             modPath: game.queryModPath(),
           });
         } else {
-          onDiscoveredTool(gameId, Object.assign({}, application, {
+          onDiscoveredTool(gameId, {
+            ...application,
             path: path.join(testPath, application.executable()),
             hidden: false,
             custom: false,
             workingDirectory: testPath,
-          }));
+          });
         }
       })
       .catch(() => {

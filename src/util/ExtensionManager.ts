@@ -58,14 +58,6 @@ if (remote !== undefined) {
   dialog = remote.dialog;
 }
 
-// TODO: this inserts the Vortex module-path globally so that dynamically loaded
-//   extensions can access them. It would be nicer if we could limit this to
-//   only the extensions and without using the internal function _initPaths
-//   but I didn't find out how (at least not without accessing even more
-//   internals)
-process.env.NODE_PATH = path.resolve(__dirname, '..', '..', 'node_modules');
-Module._initPaths();
-
 function asarUnpacked(input: string): string {
   return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
@@ -455,7 +447,7 @@ class ExtensionManager {
     }
 
     return init.then(() => {
-      // TODO: this is a hack!
+      // reset the moddb if necessary so new settings get used
       if ((this.mModDB === undefined)
           || (currentGame !== this.mModDBGame)
           || (currentKey !== this.mModDBAPIKey)) {
@@ -478,7 +470,7 @@ class ExtensionManager {
                 apiKey: currentKey,
                 cacheDurationSec: 86400,
               },
-            ]);
+            ], log);
           this.mModDBGame = currentGame;
           this.mModDBAPIKey = currentKey;
           log('debug', 'initialised');
@@ -497,34 +489,32 @@ class ExtensionManager {
   private stateChangeHandler = (watchPath: string[],
                                 callback: StateChangeCallback) => {
     let lastValue;
+
+    const changeHandler = ({cbStore, selector, prevState, currentState,
+                            prevValue, currentValue}) => {
+      // redux-watch may trigger even if no change occurred so we have to
+      // do our own change, otherwise we could end up in an endless loop
+      // if the callback causes redux-watch to trigger again without change
+      if (currentValue === lastValue) {
+        return;
+      }
+      lastValue = currentValue;
+      this.mWatches[key].forEach(cb => {
+        try {
+          cb(prevValue, currentValue);
+        } catch (err) {
+          log('error', 'state change handler failed', {
+            message: err.message,
+            stack: err.stack,
+          });
+        }
+      });
+    };
+
     const key = watchPath.join('.');
     if (this.mWatches[key] === undefined) {
       this.mWatches[key] = [];
-      this.mReduxWatcher.watch(watchPath,
-                               // tslint:disable-next-line: no-unused-variable
-                               ({cbStore, selector, prevState, currentState,
-                                 prevValue, currentValue}) => {
-                                 // TODO: redux-watch seems to trigger even if
-                                 // the value has not changed. This can
-                                 //   lead to an endless loop where a state
-                                 //   change handler re-sets the same value
-                                 //   causing an infinite loop
-                                 if (currentValue === lastValue) {
-                                   return;
-                                 }
-                                 lastValue = currentValue;
-                                 for (const cb of this.mWatches[key]) {
-                                   try {
-                                     cb(prevValue, currentValue);
-                                   } catch (err) {
-                                     log('error', 'state change handler failed',
-                                         {
-                                           message: err.message,
-                                           stack: err.stack,
-                                         });
-                                   }
-                                 }
-                               });
+      this.mReduxWatcher.watch(watchPath, changeHandler);
     }
     this.mWatches[key].push(callback);
   }
@@ -705,11 +695,6 @@ class ExtensionManager {
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {
     const indexPath = path.join(extensionPath, 'index.js');
     if (fs.existsSync(indexPath)) {
-      // TODO: workaround. redux-act stores a global set of action creator ids and throws if
-      //  there would be a duplicate. Since extensions might import actions we already have loaded
-      //  here, that mechanism would fail.
-      ratypes.clear();
-
       return {
         name: path.basename(extensionPath),
         initFunc: require(indexPath).default,

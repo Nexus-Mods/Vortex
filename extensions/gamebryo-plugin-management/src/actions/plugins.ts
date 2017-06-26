@@ -1,6 +1,8 @@
-import { safeCreateAction } from 'nmm-api';
+import {IPlugins} from '../types/IPlugins';
 
-export const setPluginList = safeCreateAction('SET_PLUGIN_LIST',
-    (plugins) => ({ plugins }));
+import { createAction } from 'redux-act';
 
-export const setLootActivity = safeCreateAction('SET_LOOT_ACTIVITY');
+export const setPluginList =
+    createAction('SET_PLUGIN_LIST', (plugins: IPlugins) => ({plugins}));
+
+export const setLootActivity = createAction('SET_LOOT_ACTIVITY');

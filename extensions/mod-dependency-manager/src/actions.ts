@@ -1,23 +1,23 @@
 import {IBiDirRule} from './types/IBiDirRule';
 
 import { IReference } from 'modmeta-db';
-import { safeCreateAction } from 'nmm-api';
+import { createAction } from 'redux-act';
 
-export const setSource = safeCreateAction('SET_MOD_CONNECTION_SOURCE',
+export const setSource = createAction('SET_MOD_CONNECTION_SOURCE',
   (id: string, pos: { x: number, y: number }) => ({ id, pos }));
 
-export const setTarget = safeCreateAction('SET_MOD_CONNECTION_TARGET',
+export const setTarget = createAction('SET_MOD_CONNECTION_TARGET',
   (id: string, pos: { x: number, y: number }) => ({ id, pos }));
 
-export const setCreateRule = safeCreateAction('SET_MOD_CREATE_RULE',
+export const setCreateRule = createAction('SET_MOD_CREATE_RULE',
   (gameId: string, modId: string, reference: IReference, defaultType: string) =>
     ({ gameId, modId, reference, type: defaultType }));
 
-export const closeDialog = safeCreateAction('CLOSE_MOD_DEPENDENCY_DIALOG');
+export const closeDialog = createAction('CLOSE_MOD_DEPENDENCY_DIALOG');
 
-export const setType = safeCreateAction('SET_MOD_RULE_TYPE');
+export const setType = createAction('SET_MOD_RULE_TYPE');
 
-export const setConflictInfo = safeCreateAction('SET_CONFLICT_INFO');
+export const setConflictInfo = createAction('SET_CONFLICT_INFO');
 
-export const setConflictDialog = safeCreateAction('SET_CONFLICT_DIALOG',
+export const setConflictDialog = createAction('SET_CONFLICT_DIALOG',
   (gameId?: string, modId?: string, modRules?: IBiDirRule[]) => ({ gameId, modId, modRules }));

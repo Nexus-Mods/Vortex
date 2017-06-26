@@ -99,10 +99,6 @@ function showMainWindow() {
 ipcMain.on('show-window', showMainWindow);
 
 function createStore(): Promise<void> {
-  // TODO: we load all the extensions here including their dependencies
-  //    like ui components despite the fact we only care about the reducers.
-  //    If we could fix this that would probably reduce startup time by a
-  //    second or more
   const { setupStore } = require('./util/store');
   const ExtensionManager = require('./util/ExtensionManager').default;
   extensions = new ExtensionManager();
@@ -190,32 +186,32 @@ function createWindow(args: IParameters) {
 
 function createLoadingScreen(): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-  // TODO: we can't use the mainWindow as the parent here because it's not created yet.
-  //       this makes the main window hide the splash screen as soon as it shows up.
-  //       we can't create it yet because stuff isn't loaded yet. Maybe if we could create
-  //       the main window in an "empty" mode where it doesn't try to load extensions&access
-  //       the store...
-  loadingScreen = new BrowserWindow({
-    frame: false, parent: mainWindow, width: 520, height: 178, transparent: true, show: false,
-    skipTaskbar: true,
-    webPreferences: {javascript: false, webgl: false, backgroundThrottling: false, sandbox: false,
-    },
-  });
-  loadingScreen.loadURL(`${__dirname}/splash.html`);
-  loadingScreen.once('ready-to-show', () => {
-    loadingScreen.show();
-    resolve();
-  });
+    loadingScreen = new BrowserWindow({
+      frame: false,
+      parent: mainWindow,
+      width: 520,
+      height: 178,
+      transparent: true,
+      show: false,
+      skipTaskbar: true,
+      webPreferences: {
+        javascript: false,
+        webgl: false,
+        backgroundThrottling: false,
+        sandbox: false,
+      },
+    });
+    loadingScreen.loadURL(`${__dirname}/splash.html`);
+    loadingScreen.once('ready-to-show', () => {
+      loadingScreen.show();
+      resolve();
+    });
   });
 }
 
 function setupAppEvents(args: IParameters) {
   app.on('ready', () => {
     createLoadingScreen()
-        // TODO: horrible hack! This delays all loading by 200 ms but if we
-        //   don't, the splash screen doesn't become visible until _after_ most of the
-        //   initialization happened (loading the the store and extensions)
-        .then(() => delayed(200))
         .then(() => createStore())
         .then(() => {
           createTrayIcon();

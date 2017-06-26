@@ -1,11 +1,11 @@
 import { IFeedbackFile } from '../types/IFeedbackFile';
 
-import { safeCreateAction } from 'nmm-api';
+import { createAction } from 'redux-act';
 
-export const addFeedbackFile = safeCreateAction('ADD_FEEDBACK_FILE',
+export const addFeedbackFile = createAction('ADD_FEEDBACK_FILE',
   (feedbackFile: IFeedbackFile) => ({ feedbackFile }));
 
-export const removeFeedbackFile = safeCreateAction('REMOVE_FEEDBACK_FILE',
+export const removeFeedbackFile = createAction('REMOVE_FEEDBACK_FILE',
   (feedbackFileId: string) => ({ feedbackFileId }));
 
-export const clearFeedbackFiles = safeCreateAction('CLEAR_FEEDBACK_FILES');
+export const clearFeedbackFiles = createAction('CLEAR_FEEDBACK_FILES');

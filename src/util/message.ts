@@ -90,19 +90,19 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
                              details?: string | Error | any,
                              isHTML: boolean = false,
                              id?: string) {
-  const finalDetails: string = renderError(details);
+  const err = renderError(details);
 
-  log('error', message, finalDetails);
+  log('error', message, err.message);
 
   const content = isHTML ? {
-    htmlText: finalDetails,
+    htmlText: err.message,
     options: {
       wrap: false,
     },
   } : {
-    message: finalDetails,
+    message: err.message,
     options: {
-      wrap: false,
+      wrap: err.wrap,
     },
   };
 
@@ -116,7 +116,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
         dispatch(showDialog('error', 'Error', content, {
           Report: () => createErrorReport('Error', {
             message,
-            details: finalDetails,
+            details: err.message,
           }, ['bug']),
           Close: null,
         }));
@@ -153,12 +153,12 @@ function renderCustomError(err: any): string {
       .join('\n');
 }
 
-function renderError(err: string | Error | any): string {
+function renderError(err: string | Error | any): { message: string, wrap: boolean } {
   if (typeof(err) === 'string') {
-    return err;
+    return { message: err, wrap: true };
   } else if (err instanceof Error) {
-    return renderNodeError(err);
+    return { message: renderNodeError(err), wrap: false };
   } else {
-    return renderCustomError(err);
+    return { message: renderCustomError(err), wrap: false };
   }
 }

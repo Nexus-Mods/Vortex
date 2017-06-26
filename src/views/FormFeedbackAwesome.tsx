@@ -27,9 +27,9 @@ class FormFeedbackAwesome extends React.Component<IFormFeedbackProps, {}> {
 
     const { pending } = this.props;
 
-    let elementProps = _.omit(this.props, [ 'pending', 'bsRole' ]);
+    const elementProps = _.omit(this.props, [ 'pending', 'bsRole' ]);
 
-    let icon: JSX.Element = this.icon(formGroup && formGroup.validationState, pending);
+    const icon: JSX.Element = this.icon(formGroup && formGroup.validationState, pending);
     if (icon === undefined) {
       return null;
     } else {

@@ -1,12 +1,5 @@
 "use strict";
-var __assign = (this && this.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
+Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const levelup = require("levelup");
 const minimatch = require("minimatch");
@@ -14,7 +7,7 @@ const semvish = require("semvish");
 const util_1 = require("./util");
 const util = require("util");
 class ModDB {
-    constructor(dbName, gameId, servers, database, timeoutMS) {
+    constructor(dbName, gameId, servers, log, database, timeoutMS) {
         this.mBlacklist = new Set();
         this.translateFromNexus = (nexusObj, gameId) => {
             const urlFragments = [
@@ -59,6 +52,7 @@ class ModDB {
         this.mRestClient = new Client();
         this.mServers = servers;
         this.mTimeout = timeoutMS;
+        this.mLog = log || (() => undefined);
         this.promisify();
     }
     close() {
@@ -251,13 +245,16 @@ class ModDB {
                     .then((serverResults) => {
                     remoteResults = serverResults;
                     for (const result of remoteResults) {
-                        const temp = __assign({}, result.value);
+                        const temp = Object.assign({}, result.value);
                         temp.expires = new Date().getTime() / 1000 +
                             server.cacheDurationSec;
                         this.insert(result.value);
                     }
                 })
                     .catch(err => {
+                    this.mLog('warn', 'failed to query', {
+                        server: server.url, key, gameId, error: err.message,
+                    });
                     this.mBlacklist.add(JSON.stringify({ key, gameId }));
                 });
             }).then(() => Promise.resolve(remoteResults || []));
@@ -293,14 +290,16 @@ class ModDB {
                     .then((serverResults) => {
                     remoteResults = serverResults;
                     for (const result of remoteResults) {
-                        const temp = __assign({}, result.value);
+                        const temp = Object.assign({}, result.value);
                         temp.expires = new Date().getTime() / 1000 +
                             server.cacheDurationSec;
                         this.insert(result.value);
                     }
                 })
                     .catch(err => {
-                    console.log('failed to query server', err);
+                    this.mLog('warn', 'failed to query', {
+                        server: server.url, logicalName, versionMatch, error: err.message,
+                    });
                     this.mBlacklist.add(JSON.stringify({ logicalName, versionMatch }));
                 });
             }).then(() => Promise.resolve(remoteResults || []));
@@ -331,14 +330,16 @@ class ModDB {
                     .then((serverResults) => {
                     remoteResults = serverResults;
                     for (const result of remoteResults) {
-                        const temp = __assign({}, result.value);
+                        const temp = Object.assign({}, result.value);
                         temp.expires = new Date().getTime() / 1000 +
                             server.cacheDurationSec;
                         this.insert(result.value);
                     }
                 })
                     .catch(err => {
-                    console.log('failed to query server', err);
+                    this.mLog('warn', 'failed to query', {
+                        server: server.url, expression, versionMatch, error: err.message,
+                    });
                     this.mBlacklist.add(JSON.stringify({ expression, versionMatch }));
                 });
             }).then(() => Promise.resolve(remoteResults || []));
@@ -362,5 +363,4 @@ class ModDB {
         this.mDB.putAsync = Promise.promisify(this.mDB.put);
     }
 }
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = ModDB;

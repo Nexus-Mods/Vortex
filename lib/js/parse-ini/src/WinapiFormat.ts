@@ -27,7 +27,7 @@ class WinapiFormat implements IIniFormat {
   }
 
   public read(filePath: string): Promise<any> {
-    let output = {};
+    const output = {};
     return this.readSectionList(filePath)
         .then((sections) => Promise.map(
                   sections, (section) => this.readSection(filePath, section)
@@ -56,7 +56,7 @@ class WinapiFormat implements IIniFormat {
   private readSectionList(filePath: string,
                           bufferLength: number = 1024): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
-      let buf = new Buffer(bufferLength);
+      const buf = new Buffer(bufferLength);
       this.kernel32.GetPrivateProfileSectionNamesA.async(
           buf, bufferLength, TEXT(filePath), (err, size) => {
             if (err !== null) {
@@ -68,10 +68,10 @@ class WinapiFormat implements IIniFormat {
                   .then((result) => resolve(result));
             }
 
-            let result: string[] = [];
+            const result: string[] = [];
             let offset = 0;
             while ((buf.readInt8(offset) !== 0) && (offset < buf.length)) {
-              let section = ref.readCString(buf, offset);
+              const section = ref.readCString(buf, offset);
               result.push(section);
               offset += section.length + 1;
             }
@@ -84,7 +84,7 @@ class WinapiFormat implements IIniFormat {
   private readSection(filePath: string, section: string,
                       bufferLength: number = 1024): Promise<{[key: string]: string}> {
     return new Promise<{[key: string]: string}>((resolve, reject) => {
-      let buf = new Buffer(bufferLength);
+      const buf = new Buffer(bufferLength);
       this.kernel32.GetPrivateProfileSectionA.async(
           TEXT(section), buf, bufferLength, TEXT(filePath), (err, size) => {
             if (size === bufferLength - 2) {
@@ -93,11 +93,11 @@ class WinapiFormat implements IIniFormat {
                   .then((res) => resolve(res));
             }
 
-            let result: {[key: string]: string} = {};
+            const result: {[key: string]: string} = {};
             let offset = 0;
             while ((buf.readInt8(offset) !== 0) && (offset < buf.length)) {
-              let kvPair = ref.readCString(buf, offset);
-              let[key, value] = kvPair.split('=').map((s) => s.trim());
+              const kvPair = ref.readCString(buf, offset);
+              const [key, value] = kvPair.split('=').map((s) => s.trim());
               result[key] = value;
               offset += kvPair.length + 1;
             }

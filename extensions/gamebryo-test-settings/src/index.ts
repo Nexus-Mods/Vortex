@@ -7,7 +7,7 @@ import { selectors, types, util } from 'nmm-api';
 import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
 import * as path from 'path';
 
-let parser = new IniParser(new WinapiFormat());
+const parser = new IniParser(new WinapiFormat());
 
 function fixOblivionFonts(iniFile: IniFile, missingFonts: string[], gameId: string): Promise<void> {
   return new Promise<void>((fixResolve, fixReject) => {
@@ -30,7 +30,7 @@ function fixOblivionFonts(iniFile: IniFile, missingFonts: string[], gameId: stri
 }
 
 function testOblivionFontsImpl(store: Redux.Store<types.IState>) {
-  let gameId = selectors.activeGameId(store.getState());
+  const gameId = selectors.activeGameId(store.getState());
 
   if (gameId !== 'oblivion') {
     return Promise.resolve(undefined);
@@ -69,15 +69,14 @@ function testOblivionFontsImpl(store: Redux.Store<types.IState>) {
         long: err.toString(),
       },
       severity: 'error' as types.ProblemSeverity,
-    })
-  );
+    }));
 }
 
-let defaultFonts: { [gameId: string]: Set<string> } = {};
+const defaultFonts: { [gameId: string]: Set<string> } = {};
 
 function testSkyrimFontsImpl(context: types.IExtensionContext) {
   const store = context.api.store;
-  let gameId = selectors.activeGameId(store.getState());
+  const gameId = selectors.activeGameId(store.getState());
 
   const gameDiscovery: types.IDiscoveryResult = util.getSafe(store.getState(),
     ['settings', 'gameMode', 'discovered', gameId], undefined);
@@ -86,7 +85,7 @@ function testSkyrimFontsImpl(context: types.IExtensionContext) {
     return Promise.resolve(undefined);
   }
 
-  let prom = defaultFonts[gameId] !== undefined
+  const prom = defaultFonts[gameId] !== undefined
     ? Promise.resolve(undefined)
     : context.api.openArchive(path.join(gameDiscovery.modPath, 'Skyrim - Interface.bsa'))
     .then((archive: util.Archive) => archive.readDir('interface'))
@@ -132,7 +131,6 @@ function testSkyrimFontsImpl(context: types.IExtensionContext) {
 }
 
 function init(context: types.IExtensionContext): boolean {
-
   const testOblivionFonts = (): Promise<types.ITestResult> =>
     testOblivionFontsImpl(context.api.store);
 
