@@ -29,7 +29,7 @@ class Notification extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
     const { t } = this.props;
-    const { actions, message, type } = this.props.params;
+    const { actions, message, noDismiss, type } = this.props.params;
 
     const lines = message.split('\n');
 
@@ -43,7 +43,7 @@ class Notification extends ComponentEx<IProps, {}> {
         </p>
         <div className='notification-buttons'>
           {actions !== undefined ? actions.map(this.renderAction) : null}
-          <Button onClick={this.dismiss}>{t('Dismiss')}</Button>
+          {!noDismiss ? <Button onClick={this.dismiss}>{t('Dismiss')}</Button> : null}
         </div>
       </div>
     );

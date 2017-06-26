@@ -68,6 +68,14 @@ export interface IModActivator {
   isSupported: (state: any) => string;
 
   /**
+   * if mod deployment in some way requires user interaction we should give the user control
+   * over the process, even if he has auto-deploy active
+   *
+   * @memberof IModActivator
+   */
+  userGate: () => Promise<void>;
+
+  /**
    * called before any calls to activate/deactivate, in case the
    * activator needs to do pre-processing
    * @param {string} dataPath the path where files will be deployed to

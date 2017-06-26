@@ -24,17 +24,15 @@ export function activateMods(installPath: string,
                              modState: { [id: string]: IProfileMod },
                              activator: IModActivator): Promise<void> {
   return activator.prepare(destination, true)
-    .then(() => {
-      return Promise.each(mods, (mod: IMod) => {
-        if (getSafe(modState, [mod.id, 'enabled'], false)) {
-          try {
-            return activator.activate(installPath, destination, mod);
-          } catch (err) {
-            log('error', 'failed to deploy mod', { err: err.message, id: mod.id });
-          }
+    .then(() => Promise.each(mods, mod => {
+      if (getSafe(modState, [mod.id, 'enabled'], false)) {
+        try {
+          return activator.activate(installPath, destination, mod);
+        } catch (err) {
+          log('error', 'failed to deploy mod', { err: err.message, id: mod.id });
         }
-      });
-    })
+      }
+    }))
     .then(() => {
       return activator.finalize(destination);
     });

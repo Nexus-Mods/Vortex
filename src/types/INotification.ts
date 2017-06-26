@@ -89,6 +89,10 @@ export interface INotification {
    */
   displayMS?: number;
   /**
+   * if set, no Dismiss button is provided automatically
+   */
+  noDismiss?: boolean;
+  /**
    * actions to offer with the notification. These will be presented as buttons.
    * Due to limited space you should not have more than one or two actions and
    * usually combining actions with displayMS is probably a bad idea as it would

@@ -17,7 +17,9 @@ import {
 import {getSafe} from '../../util/storeHelper';
 
 import {IDownload} from '../download_management/types/IDownload';
+import {IDiscoveryResult} from '../gamemode_management/types/IDiscoveryResult';
 import {setModEnabled} from '../profile_management/actions/profiles';
+import {IProfileMod} from '../profile_management/types/IProfile';
 
 import {showExternalChanges} from './actions/externalChanges';
 import {addMod, removeMod, setModAttribute} from './actions/mods';
@@ -118,86 +120,114 @@ function purgeMods(api: IExtensionApi): Promise<void> {
       .finally(() => api.dismissNotification(notificationId));
 }
 
-function updateModActivation(api: IExtensionApi): Promise<void> {
-  const state = api.store.getState();
-  const gameMode = activeGameId(state);
-  const instPath = installPath(state);
-  const gameDiscovery = currentGameDiscovery(state);
-  const t = api.translate;
-  const profile = activeProfile(state);
-  const modState = profile !== undefined ? profile.modState : {};
-  const activator = getActivator(state);
+function genUpdateModActivation() {
+  let lastActivatedState: {[modId: string]: IProfileMod};
+  let lastGameDiscovery: IDiscoveryResult;
 
-  if (activator === undefined) {
-    // this situation (no supported activator) should already be reported elsewhere
-    return Promise.resolve();
-  }
+  return (api: IExtensionApi, manual: boolean): Promise<void> => {
+    const state = api.store.getState();
+    const gameMode = activeGameId(state);
+    const instPath = installPath(state);
+    const gameDiscovery = currentGameDiscovery(state);
+    const t = api.translate;
+    let profile = activeProfile(state);
+    let modState = profile !== undefined ? profile.modState : {};
+    const activator = getActivator(state);
 
-  const mods = state.persistent.mods[gameMode] || {};
-  const modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
+    if (activator === undefined) {
+      // this situation (no supported activator) should already be reported
+      // elsewhere
+      return Promise.resolve();
+    }
 
-  const notificationId = api.sendNotification({
-    type: 'activity',
-    message: t('Deploying mods'),
-    title: t('Deploying'),
-  });
+    if ((modState === lastActivatedState) &&
+        (gameDiscovery === lastGameDiscovery)) {
+      // early out if nothing relevant to the deployment has changed
+      return Promise.resolve();
+    }
 
-  // test if anything was changed by an external application
-  return activator.externalChanges(instPath, gameDiscovery.modPath)
-      .then((changes: IFileChange[]) =>
-                (changes.length === 0) ?
-                    Promise.resolve([]) :
-                    api.store.dispatch(showExternalChanges(changes)))
-      .then((fileActions: IFileEntry[]) => {
-        if (fileActions === undefined) {
-          return Promise.resolve();
-        }
+    lastGameDiscovery = gameDiscovery;
 
-        const actionGroups: {[type: string]: IFileEntry[]} = {};
-        fileActions.forEach((action: IFileEntry) => {
-          if (actionGroups[action.action] === undefined) {
-            actionGroups[action.action] = [];
+    const mods = state.persistent.mods[gameMode] || {};
+    const modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
+
+    let notificationId: string;
+
+    const gate = manual ? Promise.resolve() : activator.userGate();
+
+    // test if anything was changed by an external application
+    return gate.then(() => {
+                 // update mod state again because if the user did have to
+                 // confirm, it's more intuitive
+                 // if we deploy the state at the time he confirmed, not when
+                 // the deployment was triggered
+                 profile = activeProfile(api.store.getState());
+                 lastActivatedState = modState =
+                     profile !== undefined ? profile.modState : {};
+                 notificationId = api.sendNotification({
+                   type: 'activity',
+                   message: t('Deploying mods'),
+                   title: t('Deploying'),
+                 });
+
+                 return activator.externalChanges(instPath,
+                                                  gameDiscovery.modPath);
+               })
+        .then((changes: IFileChange[]) =>
+                  (changes.length === 0) ?
+                      Promise.resolve([]) :
+                      api.store.dispatch(showExternalChanges(changes)))
+        .then((fileActions: IFileEntry[]) => {
+          if (fileActions === undefined) {
+            return Promise.resolve();
           }
-          actionGroups[action.action].push(action);
-        });
 
-        // process the actions that the user selected in the dialog
-        return Promise.map(actionGroups['drop'] || [],
-                           // delete the files the user wants to drop
-                           (entry) => fs.removeAsync(path.join(
-                               gameDiscovery.modPath, entry.filePath)))
-            .then(() => Promise.map(
-                      actionGroups['import'] || [],
-                      // copy the files the user wants to import
-                      (entry) => fs.copyAsync(
-                          path.join(gameDiscovery.modPath, entry.filePath),
-                          path.join(instPath, entry.source, entry.filePath))))
-            .then(() => {
-              // remove files that the user wants to restore from
-              // the activation list because then they get reinstalled
-              if (actionGroups['restore'] !== undefined) {
-                return activator.forgetFiles(
-                    actionGroups['restore'].map((entry) => entry.filePath));
-              } else {
-                return Promise.resolve();
-              }
-            })
-            .then(() => undefined);
-      })
-      // sort (all) mods based on their dependencies so the right files get
-      // activated
-      .then(() => sortMods(gameMode, modList, api))
-      .then((sortedMods: string[]) => {
-        const sortedModList =
-            modList.sort((lhs: IMod, rhs: IMod) => sortedMods.indexOf(lhs.id) -
-                                                   sortedMods.indexOf(rhs.id));
+          const actionGroups: {[type: string]: IFileEntry[]} = {};
+          fileActions.forEach((action: IFileEntry) => {
+            if (actionGroups[action.action] === undefined) {
+              actionGroups[action.action] = [];
+            }
+            actionGroups[action.action].push(action);
+          });
 
-        return activateMods(instPath, gameDiscovery.modPath, sortedModList,
-                            modState, activator);
-      })
-      .catch(UserCanceled, () => undefined)
-      .catch(err => api.showErrorNotification('failed to deploy mods', err))
-      .finally(() => api.dismissNotification(notificationId));
+          // process the actions that the user selected in the dialog
+          return Promise.map(actionGroups['drop'] || [],
+                             // delete the files the user wants to drop
+                             (entry) => fs.removeAsync(path.join(
+                                 gameDiscovery.modPath, entry.filePath)))
+              .then(() => Promise.map(
+                        actionGroups['import'] || [],
+                        // copy the files the user wants to import
+                        (entry) => fs.copyAsync(
+                            path.join(gameDiscovery.modPath, entry.filePath),
+                            path.join(instPath, entry.source, entry.filePath))))
+              .then(() => {
+                // remove files that the user wants to restore from
+                // the activation list because then they get reinstalled
+                if (actionGroups['restore'] !== undefined) {
+                  return activator.forgetFiles(
+                      actionGroups['restore'].map((entry) => entry.filePath));
+                } else {
+                  return Promise.resolve();
+                }
+              })
+              .then(() => undefined);
+        })
+        // sort (all) mods based on their dependencies so the right files get
+        // activated
+        .then(() => sortMods(gameMode, modList, api))
+        .then((sortedMods: string[]) => {
+          const sortedModList = modList.sort((lhs: IMod, rhs: IMod) =>
+                                                 sortedMods.indexOf(lhs.id) -
+                                                 sortedMods.indexOf(rhs.id));
+
+          return activateMods(instPath, gameDiscovery.modPath, sortedModList,
+                              modState, activator);
+        })
+        .catch(UserCanceled, () => undefined)
+        .catch(err => api.showErrorNotification('failed to deploy mods', err))
+        .finally(() => api.dismissNotification(notificationId));
+  };
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -322,16 +352,17 @@ function init(context: IExtensionContextExt): boolean {
       });
     }
 
-    const activationTimer = new Debouncer(() => {
-      return updateModActivation(context.api);
+    const updateModActivation = genUpdateModActivation();
+    const activationTimer = new Debouncer((manual: boolean) => {
+      return updateModActivation(context.api, manual);
     }, 2000);
 
     context.api.events.on('activate-mods', (callback: (err: Error) => void) => {
-      activationTimer.runNow(callback);
+      activationTimer.runNow(callback, true);
     });
 
     context.api.events.on('schedule-activate-mods', (callback: (err: Error) => void) => {
-      activationTimer.schedule(callback);
+      activationTimer.schedule(callback, false);
     });
 
     context.api.events.on('purge-mods', (callback: (err: Error) => void) => {
@@ -344,7 +375,7 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
       if (store.getState().settings.automation.deploy) {
-        activationTimer.schedule(undefined);
+        activationTimer.schedule(undefined, false);
       }
     });
 

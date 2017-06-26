@@ -51,9 +51,22 @@ abstract class LinkingActivator implements IModActivator {
 
   public abstract isSupported(state: any): string;
 
+  /**
+   * if necessary, get user confirmation we should deploy now. Right now this
+   * is used for activators that require elevation, since this will prompt an OS dialog
+   * and we don't want auto-deployment to pop up a dialog that takes the focus away
+   * from the application without having the user initiate it
+   *
+   * @returns {Promise<void>}
+   * @memberof LinkingActivator
+   */
+  public userGate(): Promise<void> {
+    return Promise.resolve();
+  }
+
   public prepare(dataPath: string, clean: boolean): Promise<void> {
     return getNormalizeFunc(dataPath)
-      .then((func: Normalize) => {
+      .then(func => {
         this.mNormalize = func;
         if (clean) {
           this.mNewActivation = {};
@@ -61,8 +74,8 @@ abstract class LinkingActivator implements IModActivator {
           const state = this.mApi.store.getState();
           const gameId = activeGameId(state);
           return loadData(gameId, 'activation', {})
-          .then((activation) => {
-            return this.mNewActivation = activation;
+          .then(activation => {
+            this.mNewActivation = activation;
           });
         }
       });
