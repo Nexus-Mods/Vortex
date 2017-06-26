@@ -211,12 +211,12 @@ function walk(searchPath: string,
          subProgress, normalize);
       });
     }).catch(err => {
-      if ([ 'EPERM' ].indexOf(err.code) === -1) {
-        log('warn', 'walk failed', { msg: err.message });
-      } else {
+      if ([ 'EPERM' ].indexOf(err.code) !== -1) {
         // TODO: this can happen if the recursion hits a junction point and I
         // couldn't figure out how to recognize a junction point in node.js
         log('info', 'walk failed', { msg: err.message });
+      } else {
+        log('warn', 'walk failed', { msg: err.message });
       }
     });
 }
