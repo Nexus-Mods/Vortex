@@ -17,6 +17,6 @@
     ],
   "files": [
     "typings/index.d.ts",
-    "src/index.ts"
+    "src/index.tsx"
   ]
 }
