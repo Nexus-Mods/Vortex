@@ -65,7 +65,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
             />
           </Flex>
           <Fixed>
-            <div>
+            <div style={{display: 'table', width: '100%'}}>
               <ScreenshotDropzone />
               <TracelogDropzone />
               <span>

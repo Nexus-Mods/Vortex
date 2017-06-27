@@ -1515,9 +1515,8 @@ a[role=menuitem] svg {
 }
 
 .dropzone-feedback {
-  width: "40%";
   height: 100px;
-  display: inline-block;
+  display: table-cell;
   margin: 10px;
   padding: 20px;
   border-radius: 5px;
