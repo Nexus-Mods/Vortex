@@ -43,9 +43,14 @@ export function addMods(gameID: string, modEntries: ModEntry[], dispatch: Redux.
   })
   .then(() => {
     dispatch(nmmActions.addMods(gameID, mods));
+  })
+  .then(() => {
+    Promise.map(mods, mod => {
+      enableMod(mod.id, 'nmm-profile', dispatch);
+    });
   });
 }
 
-function enableMod(mod: types.IMod, profile: types.IProfile, dispatch: Redux.Dispatch<any>) {
-  dispatch(nmmActions.setModEnabled(profile.id, mod.id, true));
+function enableMod(modId: string, profileId: string, dispatch: Redux.Dispatch<any>) {
+  dispatch(nmmActions.setModEnabled(profileId, modId, true));
 }

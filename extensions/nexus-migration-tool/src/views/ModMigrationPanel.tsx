@@ -53,6 +53,8 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   private modActions: ITableRowAction[];
   private importList: IModEntry[];
   private selectedVirtualPath: string;
+  private selectionId: string = 'path-selection-id';
+  private importId: string = 'vortex-import-id';
 
   constructor(props) {
     super(props);
@@ -149,7 +151,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
           id='btn-test-parse'
           tooltip={t('Select a NMM Virtual folder to parse')}
           icon='export'
-          onClick={this.addSearchPath}
+          onClick={this.selectVirtualPath}
         />
         <tooltip.IconButton
           id='btn-test-import'
@@ -167,7 +169,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
             id='btn-test-parse'
             tooltip={t('Select a NMM Virtual folder to parse')}
             icon='export'
-            onClick={this.addSearchPath}
+            onClick={this.selectVirtualPath}
           />
         </div>
       );
@@ -181,27 +183,36 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   }
 
   private testParse = (evt, selectedDir: string) => {
+    const { onShowActivity, onShowError} = this.props;
     const virtualPath = selectedDir;
 
     this.nextState.importedMod = undefined;
+
+    onShowActivity('Parsing NMM virtual config file...', this.importId);
 
     parseNMMInstall(virtualPath)
     .then((modEntries) => {
       this.importList = modEntries;
       this.nextState.importedMod = modEntries;
+    })
+    .catch((err) => {
+      onShowError('Virtual config parse issue:', {err}, this.importId);
     });
   }
 
-  private addSearchPath = (evt) => {
+  private selectVirtualPath = (evt) => {
+    const { onShowError, onShowSuccess} = this.props;
     this.context.api.selectDir({})
     .then((dirName: string) => {
       if (!util.isNullOrWhitespace(dirName)) {
         this.selectedVirtualPath = dirName;
         this.testParse(evt, dirName);
+      } else {
+        onShowSuccess('Virtual path selection cancelled by the user.', this.selectionId);
       }
     })
     .catch((err) => {
-      log('info', 'search path selection cancelled', { err });
+      onShowError('Virtual path issue:', {err}, this.selectionId);
     });
   }
 
@@ -210,21 +221,35 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   }
 
   private importMods = (evt) => {
-    const { gameMode } = this.props;
+    const { gameMode, onShowActivity, onShowError, onShowSuccess } = this.props;
+
+    onShowActivity('Copying mod files: ' + this.importList.length + ' mods...', this.importId);
+    let index: number = 0;
+
     Promise.map(this.importList, modEntry => {
+      onShowActivity('Copying mod files: ' + (++index) +
+        ' of ' + this.importList.length + ' mods...', this.importId);
       transferUnpackedMod(modEntry, this.selectedVirtualPath,
        selectors.installPath(this.state) , true)
       .then((files) => {
         if (files.length > 0) {
           log('info', 'Error: ', {files});
+          onShowError('Mod files copy error:', {files}, this.importId);
         }
       });
     })
     .then(() => {
+      onShowActivity('Importing mods into Vortex...', this.selectionId);
+      createProfile(gameMode, 'nmm-profile',
+        'Imported NMM Profile', this.context.api.store.dispatch);
       addMods(gameMode, this.importList, this.context.api.store.dispatch);
     })
+    .then(() => {
+      onShowSuccess('Mod import successfully completed.', this.selectionId);
+    })
     .catch((err) => {
-      log('info', 'import failed', { err });
+      log('info', 'import failed', {err});
+      onShowError('Mod import error:', {err}, this.importId);
     });
   }
 
