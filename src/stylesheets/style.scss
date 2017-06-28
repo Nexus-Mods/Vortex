@@ -1315,7 +1315,7 @@ a[role=menuitem] svg {
 // download page
 
 .dropzone-url {
-  width: "calc(100% - 20px)";
+  width: calc(100% - 20px);
   height: 100px;
   margin: 10px;
   padding: 20px;

@@ -6,26 +6,28 @@ import { IDialogResult } from '../../../types/IDialog';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getCurrentLanguage } from '../../../util/i18n';
+import { log } from '../../../util/log';
 import relativeTime from '../../../util/relativeTime';
 import { activeGameId } from '../../../util/selectors';
 import { setSafe } from '../../../util/storeHelper';
+import Dropzone, { ControlMode } from '../../../views/Dropzone';
 import IconBar from '../../../views/IconBar';
 import InputButton from '../../../views/InputButton';
 import MainPage from '../../../views/MainPage';
 import SuperTable, {ITableRowAction} from '../../../views/Table';
-import ToolbarIcon from '../../../views/ToolbarIcon';
-
 import DateTimeFilter from '../../../views/table/DateTimeFilter';
 import GameFilter from '../../../views/table/GameFilter';
+import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { downloadPath } from '../../mod_management/selectors';
 
+import { finishDownload, initDownload,
+         removeDownload, setDownloadFilePath } from '../actions/state';
 import { IDownload } from '../types/IDownload';
 
 import {FILE_NAME, PROGRESS} from '../downloadAttributes';
 
-import DownloadDropzone from './DownloadDropzone';
 import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
@@ -34,6 +36,7 @@ import * as path from 'path';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
+import { generate as shortid } from 'shortid';
 
 function objectFilter(obj: any, filter: (key: string, value: any) => boolean) {
   const result = {};
@@ -55,6 +58,9 @@ interface IConnectedProps {
 interface IActionProps {
   onShowDialog: (type, title, content, actions) => Promise<IDialogResult>;
   onDeselect: (downloadId: string) => void;
+  onStartMove: (id: string, filePath: string, game: string) => void;
+  onFinishMove: (id: string) => void;
+  onMoveFailed: (id: string) => void;
 }
 
 type IProps = IConnectedProps & IActionProps;
@@ -268,7 +274,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { downloads, gameMode } = this.props;
+    const { t, downloads, gameMode } = this.props;
 
     return (
       <MainPage>
@@ -285,7 +291,16 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             />
           </Flex>
           <Fixed>
-            <DownloadDropzone />
+            {
+              gameMode !== undefined
+                ? (
+                  <Dropzone
+                    accept={['urls', 'files']}
+                    drop={this.dropDownload}
+                    dialogHint={t('Enter download URL')}
+                  />
+                ) : null
+            }
           </Fixed>
         </Layout>
         <MainPage.Overlay>
@@ -411,6 +426,39 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     const download = this.getDownload(downloadId);
     return [ 'failed', 'redirect' ].indexOf(download.state) >= 0;
   }
+
+  private move(source: string, destination: string) {
+    const { gameMode, onStartMove, onFinishMove, onMoveFailed } = this.props;
+    const id = shortid();
+    onStartMove(id, destination, gameMode);
+    fs.renameAsync(source, destination)
+      .catch(err => {
+        if (err.code === 'EXDEV') {
+          // can't rename cross devices, copy&unlink it is
+          return fs.copyAsync(source, destination)
+            .then(() => fs.unlinkAsync(source));
+        } else {
+          throw err;
+        }
+      })
+      .then(() => onFinishMove(id))
+      .catch(err => {
+        log('info', 'failed to move', { err });
+        onMoveFailed(id);
+      });
+  }
+
+  private dropDownload = (type: ControlMode, dlPaths: string[]) => {
+    if (type === 'urls') {
+      dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}));
+    } else {
+      const { downloadPath, gameMode } = this.props;
+      dlPaths.forEach(dlPath => {
+        const destination = path.join(downloadPath, path.basename(dlPath));
+        this.move(dlPath, destination);
+      });
+    }
+  }
 }
 
 function mapStateToProps(state: any): IConnectedProps {
@@ -428,6 +476,12 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(showDialog(type, title, content, actions)),
     onDeselect: (downloadId: string) =>
       dispatch(selectRows('downloads', [downloadId], false)),
+    onStartMove: (id: string, filePath: string, game: string) => {
+      dispatch(initDownload(id, [], {}, game));
+      dispatch(setDownloadFilePath(id, path.basename(filePath)));
+    },
+    onFinishMove: (id: string) => dispatch(finishDownload(id, 'finished')),
+    onMoveFailed: (id: string) => dispatch(removeDownload(id)),
   };
 }
 

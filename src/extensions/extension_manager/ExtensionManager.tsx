@@ -4,9 +4,14 @@ import { ITableAttribute } from '../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import { spawnSelf } from '../../util/util';
+import Dropzone, { ControlMode } from '../../views/Dropzone';
 import MainPage from '../../views/MainPage';
 import Table, { ITableRowAction } from '../../views/Table';
 
+import { IDownload } from '../download_management/types/IDownload';
+import { downloadPath } from '../mod_management/selectors';
+
+import installExtension from './installExtension';
 import getTableAttributes from './tableAttributes';
 import { IExtension, IExtensionWithState } from './types';
 
@@ -17,10 +22,13 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
+import { Fixed, Flex, Layout } from 'react-layout-pane';
 import * as Redux from 'redux';
 
 interface IConnectedProps {
   extensionConfig: { [extId: string]: IExtensionState };
+  downloads: { [dlId: string]: IDownload };
+  downloadPath: string;
 }
 
 interface IActionProps {
@@ -32,6 +40,7 @@ type IProps = IConnectedProps & IActionProps;
 interface IComponentState {
   extensions: { [extId: string]: IExtension };
   oldExtensionConfig: { [extId: string]: IExtensionState };
+  installed: boolean;
 }
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
@@ -72,6 +81,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     this.initState({
       extensions: {},
       oldExtensionConfig: props.extensionConfig,
+      installed: false,
     });
 
     this.actions = [
@@ -101,24 +111,69 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const {t, extensionConfig} = this.props;
-    const {extensions, oldExtensionConfig} = this.state;
+    const {extensions, installed, oldExtensionConfig} = this.state;
 
     const extensionsWithState = this.mergeExt(extensions, extensionConfig);
 
     return (
       <MainPage>
         <MainPage.Body>
-          {!_.isEqual(extensionConfig, oldExtensionConfig) ? this.renderReload() : null}
-          <Table
-            tableId='extensions'
-            data={extensionsWithState}
-            actions={this.actions}
-            staticElements={this.staticColumns}
-            multiSelect={false}
-          />
+          <Layout type='column'>
+            <Fixed>
+              {
+                installed || !_.isEqual(extensionConfig, oldExtensionConfig)
+                  ? this.renderReload()
+                  : null
+              }
+            </Fixed>
+            <Flex>
+              <Table
+                tableId='extensions'
+                data={extensionsWithState}
+                actions={this.actions}
+                staticElements={this.staticColumns}
+                multiSelect={false}
+              />
+            </Flex>
+            <Fixed>
+              <Dropzone
+                accept={['files', 'urls']}
+                drop={this.dropExtension}
+                dialogHint={t('Select extension file')}
+              />
+            </Fixed>
+          </Layout>
         </MainPage.Body>
       </MainPage>
     );
+  }
+
+  private dropExtension = (type: ControlMode, extPaths: string[]) => {
+    if (type === 'files') {
+      Promise.map(extPaths, extPath => installExtension(extPath).catch(err => {
+        this.context.api.showErrorNotification('Failed to install extension', err);
+      }))
+      .then(() => {
+        this.nextState.installed = true;
+        this.readExtensions();
+      });
+    } else {
+      const { downloads } = this.props;
+      Promise.map(extPaths, url => new Promise((resolve, reject) => {
+        this.context.api.events.emit('start-download', {}, (error: Error, id: string) => {
+          const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
+          installExtension(dlPath)
+          .catch(err => {
+            this.context.api.showErrorNotification('Failed to install extension', err);
+          })
+          .then(() => resolve());
+        });
+      }))
+      .then(() => {
+        this.nextState.installed = true;
+        this.readExtensions();
+      });
+    }
   }
 
   private renderReload(): JSX.Element {
@@ -186,6 +241,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     extensionConfig: state.app.extensions || {},
+    downloads: state.persistent.downloads.files,
+    downloadPath: downloadPath(state),
   };
 }
 
