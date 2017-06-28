@@ -118,7 +118,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   }
 
   private submitFeedback = (event) => {
-    const { onShowActivity } = this.props;
+    const { feedbackFiles, onShowActivity } = this.props;
     const { feedbackMessage } = this.state;
 
     const notificationId = 'submit-feedback';
@@ -128,7 +128,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       feedbackMessage: { $set: '' },
     }));
 
-    this.context.api.events.emit('clear-feedback-files', notificationId);
+    this.context.api.events.emit('clear-feedback-files', notificationId, feedbackFiles);
   }
 
   private handleChange = (event) => {

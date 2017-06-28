@@ -6,7 +6,7 @@ import FeedbackView from './views/FeedbackView';
 
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
-import { Icon, selectors, types, util } from 'nmm-api';
+import { selectors, tooltip, types, util } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Interpolate } from 'react-i18next';
@@ -24,20 +24,17 @@ function init(context: types.IExtensionContext) {
     const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
 
     return fs.readdirAsync(nativeCrashesPath)
-      .then((nativeCrashFile) => {
-        if (nativeCrashFile[0] !== undefined) {
-          return Promise.resolve(true);
-        } else {
-          return Promise.resolve(false);
-        }
+      .then((nativeCrashFiles) => {
+        const nativeCrashFile = nativeCrashFiles.find((file) => path.extname(file) === '.dmp');
+        return Promise.resolve(nativeCrashFile);
       });
   };
 
-  const openFeedback = () => {
+  const openFeedback = (evt) => {
     const gameMode = selectors.activeGameId(context.api.store.getState());
 
     const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
-    const nativeCrashFile = path.join(nativeCrashesPath, 'operation_log.txt');
+    const nativeCrashFile = path.join(nativeCrashesPath, evt.currentTarget.value);
 
     fs.statAsync(nativeCrashFile)
       .then((stats) => {
@@ -56,26 +53,32 @@ function init(context: types.IExtensionContext) {
   };
 
   checkNativeCrash()
-    .then((result) => {
-      context.registerToDo('native-crash',
-        () => ({ isCrashed: result }),
-        (props: { isCrashed: boolean }) => props.isCrashed,
-        () => {
-          const t = context.api.translate;
-          const link = (
-            <a onClick={openFeedback}>
-              <Icon name='sliders' />{t('Feedback')}</a>
-          );
-          return (
-            <span>
-              <Interpolate
-                i18nKey='A native crash occurred. Open {{link}} to report the problem.'
-                link={link}
+    .then((nativeCrashFile: string) => {
+      if (nativeCrashFile !== undefined) {
+        context.registerToDo('native-crash',
+          () => ({ isCrashed: true }),
+          (props: { isCrashed: boolean }) => props.isCrashed,
+          () => {
+            const t = context.api.translate;
+            const link = (
+              <tooltip.IconButton
+                id='btn-report-native-crash'
+                icon='bug'
+                tooltip={t('Feedback')}
+                onClick={openFeedback}
+                value={nativeCrashFile}
               />
-            </span>
-          );
-        });
-
+            );
+            return (
+              <span>
+                <Interpolate
+                  i18nKey='A native crash occurred. Click here to report the problem. {{link}}'
+                  link={link}
+                />
+              </span>
+            );
+          });
+      }
     });
 
   context.once(() => {
@@ -90,21 +93,29 @@ function init(context: types.IExtensionContext) {
 
     });
 
-    context.api.events.on('clear-feedback-files', (notificationId: string) => {
+    context.api.events.on('clear-feedback-files', (
+      notificationId: string,
+      feedbackFiles: { [fileId: string]: IFeedbackFile }) => {
+
+      // TO DO - call nexus integration for the server call
 
       const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
-      const nativeCrashFile = path.join(nativeCrashesPath, 'operation_log.txt');
+      let nativeCrashFile;
 
-      fs.unlinkAsync(nativeCrashesPath)
-        .then(() => {
-          context.api.store.dispatch(clearFeedbackFiles());
-          // TO DO - call nexus integration for the server call
-          // - wrong clearFeedbackFiles here.
-        })
-        .catch((err) => {
-          util.showError(context.api.store.dispatch,
-           'An error occurred removing the log: ', err, false, notificationId);
-        });
+      if (feedbackFiles !== undefined) {
+        nativeCrashFile = Object.keys(feedbackFiles).find((file) => path.extname(file) === '.dmp');
+      }
+
+      if (nativeCrashFile !== undefined) {
+        fs.removeAsync(path.join(nativeCrashesPath, nativeCrashFile))
+          .then(() => {
+            context.api.store.dispatch(clearFeedbackFiles());
+          })
+          .catch((err) => {
+            util.showError(context.api.store.dispatch,
+              'An error occurred removing the dump file: ', err, false, notificationId);
+          });
+      }
     });
   });
 
