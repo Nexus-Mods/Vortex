@@ -19,10 +19,9 @@ auto-top.gypi
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
-api/
+api/lib/
 build/
 bld/
-[Bb]in/
 [Oo]bj/
 lib/cpp/loot/loot/
 BuildState*.json
