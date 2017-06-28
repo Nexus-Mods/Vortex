@@ -99,7 +99,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, activators, discovery, game, gameMode } = this.props;
     const { currentActivator, paths, supportedActivators } = this.state;
 
-    const gameName = discovery.name || game.name;
+    const gameName = getSafe(discovery, ['name'], getSafe(game, ['name'], undefined));
 
     return gameMode !== undefined ? (
       <form>
@@ -390,7 +390,7 @@ function mapStateToProps(state: any): IConnectedProps {
   const discovery = currentGameDiscovery(state);
   const game = currentGame(state);
 
-  const gameMode = discovery.id || game.id;
+  const gameMode = getSafe(discovery, ['id'], getSafe(game, ['id'], undefined));
 
   return {
     discovery,
