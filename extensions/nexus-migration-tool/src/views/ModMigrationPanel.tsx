@@ -192,6 +192,10 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
 
     parseNMMInstall(virtualPath)
     .then((modEntries) => {
+      if ((modEntries === null) || (modEntries === undefined) || (modEntries.length === 0)) {
+        onShowError('Virtual config parse issue:',
+        'The selected folder contained no VirtualModConfig.xml file.', this.importId);
+      }
       this.importList = modEntries;
       this.nextState.importedMod = modEntries;
     })

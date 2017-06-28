@@ -19,14 +19,15 @@ export function parseNMMInstall(nmmFilePath: string): Promise<ModEntry[]> {
     // let limiter = 0;
 
     if (version === null) {
-      // throw invalid file
+      throw new Error('The selected folder does not contain a valid VirtualModConfig.xml file.');
     } else if (version.getAttribute('fileVersion') !== '0.3.0.0') {
-      // throw unsupported version
+      throw new Error('The selected folder contains an older VirtualModConfig.xml file,'
+        + 'you need to upgrade your NMM before proceeding with the mod import.');
     }
 
     const modInfoList = xmlDoc.getElementsByTagName('modInfo');
     if (modInfoList === undefined || modInfoList.length <= 0) {
-      // throw nothing to import
+      throw new Error('The selected folder contains an empty VirtualModConfig.xml file.');
     }
 
     for (const modInfo of modInfoList) {
