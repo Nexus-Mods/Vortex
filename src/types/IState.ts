@@ -82,6 +82,7 @@ export interface ITableState {
 
 export interface IExtensionState {
   enabled: boolean;
+  remove: boolean;
 }
 
 export interface IApp {

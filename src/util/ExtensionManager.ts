@@ -1,3 +1,4 @@
+import {forgetExtension} from '../actions/app';
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import { IExtensionInit } from '../types/Extension';
@@ -25,6 +26,7 @@ import Module = require('module');
 import * as path from 'path';
 import { types as ratypes } from 'redux-act';
 import ReduxWatcher = require('redux-watcher');
+import * as rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
 
 let app = appIn;
@@ -264,6 +266,13 @@ class ExtensionManager {
     };
     if (initStore !== undefined) {
       this.mExtensionState = initStore.getState().app.extensions;
+      const extensionsPath = path.join(app.getPath('userData'), 'plugins');
+      const extensionsToRemove = Object.keys(this.mExtensionState)
+        .filter(extId => this.mExtensionState[extId].remove)
+        .forEach(extId => {
+          rimraf.sync(path.join(extensionsPath, extId));
+          initStore.dispatch(forgetExtension(extId));
+        });
     }
     this.mExtensions = this.loadExtensions();
     this.initExtensions();

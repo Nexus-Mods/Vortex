@@ -14,7 +14,7 @@ import Dropzone, { ControlMode } from '../../../views/Dropzone';
 import IconBar from '../../../views/IconBar';
 import InputButton from '../../../views/InputButton';
 import MainPage from '../../../views/MainPage';
-import SuperTable, {ITableRowAction} from '../../../views/Table';
+import SuperTable, { ITableRowAction } from '../../../views/Table';
 import DateTimeFilter from '../../../views/table/DateTimeFilter';
 import GameFilter from '../../../views/table/GameFilter';
 import ToolbarIcon from '../../../views/ToolbarIcon';
@@ -26,7 +26,7 @@ import { finishDownload, initDownload,
          removeDownload, setDownloadFilePath } from '../actions/state';
 import { IDownload } from '../types/IDownload';
 
-import {FILE_NAME, PROGRESS} from '../downloadAttributes';
+import { FILE_NAME, PROGRESS } from '../downloadAttributes';
 
 import DownloadGraph from './DownloadGraph';
 
@@ -139,10 +139,6 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
 }
 
 class DownloadView extends ComponentEx<IProps, IComponentState> {
-  public static contextTypes: React.ValidationMap<any> = {
-    api: PropTypes.object.isRequired,
-  };
-
   public context: IComponentContext;
   private staticButtons: IActionDefinition[];
   private gameColumn: ITableAttribute;

@@ -1,4 +1,4 @@
-import { setExtensionEnabled } from '../../actions/app';
+import { removeExtension, setExtensionEnabled } from '../../actions/app';
 import { IExtensionState, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
@@ -33,6 +33,7 @@ interface IConnectedProps {
 
 interface IActionProps {
   onSetExtensionEnabled: (extId: string, enabled: boolean) => void;
+  onRemoveExtension: (extId: string) => void;
 }
 
 type IProps = IConnectedProps & IActionProps;
@@ -40,7 +41,7 @@ type IProps = IConnectedProps & IActionProps;
 interface IComponentState {
   extensions: { [extId: string]: IExtension };
   oldExtensionConfig: { [extId: string]: IExtensionState };
-  installed: boolean;
+  reloadNecessary: boolean;
 }
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
@@ -81,7 +82,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     this.initState({
       extensions: {},
       oldExtensionConfig: props.extensionConfig,
-      installed: false,
+      reloadNecessary: false,
     });
 
     this.actions = [
@@ -111,7 +112,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const {t, extensionConfig} = this.props;
-    const {extensions, installed, oldExtensionConfig} = this.state;
+    const {extensions, reloadNecessary, oldExtensionConfig} = this.state;
 
     const extensionsWithState = this.mergeExt(extensions, extensionConfig);
 
@@ -121,7 +122,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
           <Layout type='column'>
             <Fixed>
               {
-                installed || !_.isEqual(extensionConfig, oldExtensionConfig)
+                reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
                   ? this.renderReload()
                   : null
               }
@@ -154,7 +155,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
         this.context.api.showErrorNotification('Failed to install extension', err);
       }))
       .then(() => {
-        this.nextState.installed = true;
+        this.nextState.reloadNecessary = true;
         this.readExtensions();
       });
     } else {
@@ -170,7 +171,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
         });
       }))
       .then(() => {
-        this.nextState.installed = true;
+        this.nextState.reloadNecessary = true;
         this.readExtensions();
       });
     }
@@ -195,17 +196,19 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                    extensionConfig: { [id: string]: IExtensionState })
                    : { [id: string]: IExtensionWithState } {
     return Object.keys(extensions).reduce((prev, id) => {
-      prev[id] = {
-        ...extensions[id],
-        enabled: getSafe(extensionConfig, [id, 'enabled'], true),
-      };
+      if (!getSafe(extensionConfig, [id, 'remove'], false)) {
+        prev[id] = {
+          ...extensions[id],
+          enabled: getSafe(extensionConfig, [id, 'enabled'], true),
+        };
+      }
       return prev;
     }, {});
   }
 
   private removeExtension = (extId: string) => {
-    // TODO: placeholder
-    console.log('remove extension\n', extId);
+    this.props.onRemoveExtension(extId);
+    this.nextState.reloadNecessary = true;
   }
 
   private readExtensions() {
@@ -250,6 +253,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetExtensionEnabled: (extId: string, enabled: boolean) =>
       dispatch(setExtensionEnabled(extId, enabled)),
+    onRemoveExtension: (extId: string) => dispatch(removeExtension(extId)),
   };
 }
 
