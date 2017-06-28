@@ -1,5 +1,5 @@
 {
-  "name": "meta_editor",
+  "name": "meta-editor",
   "version": "0.0.1",
   "description": "Editor for Mod Meta Data",
   "main": "./out/index.js",
@@ -9,10 +9,10 @@
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/meta-editor",
     "prebuild": "typings prune && typings install",
-    "build": "npm run tsc && npm run webpack && copyfiles -f src/stylesheets/metaeditor.scss dist",
+    "build": "npm run tsc && npm run webpack && copyfiles -f src/stylesheets/metaeditor.scss dist && extractInfo",
     "buildDev": "npm run build && npm run installDev"
   },
-  "author": "",
+  "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "babel": {
     "presets": [

@@ -13,7 +13,7 @@ import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
-import { autoRehydrate, getStoredState, persistStore } from 'redux-persist';
+import { autoRehydrate, createPersistor, getStoredState, persistStore } from 'redux-persist';
 import { AsyncNodeStorage } from 'redux-persist-node-storage';
 import thunkMiddleware from 'redux-thunk';
 
@@ -26,39 +26,24 @@ const logMiddleware = (store) => (next) => (action) => {
   return res;
 };*/
 
-/**
- * initialize redux store
- *
- * @export
- * @param {string} basePath
- * @param {ExtensionManager} extensions
- * @returns {Redux.Store<IState>}
- */
-export function setupStore(
-    basePath: string,
-    extensions: ExtensionManager): Promise<Redux.Store<IState>> {
+let storage: LevelStorage;
+
+export function baseStore(basePath: string): Promise<Redux.Store<IState>> {
   const middleware = [
     thunkMiddleware,
   ];
 
   return new Promise<Redux.Store<IState>>((resolve, reject) => {
-    const enhancer: Redux.StoreEnhancer<IState> =
-        compose(applyMiddleware(...middleware), electronEnhancer(),
-                autoRehydrate()) as Redux.StoreEnhancer<IState>;
+    const whitelist = ['app'];
 
-    const extReducers = extensions.getReducers();
+    if (storage === undefined) {
+      storage = new LevelStorage('state');
+    }
 
-    const whitelist = ['settings', 'persistent', 'confidential'];
-    extensions.apply('registerSettingsHive', (hive: string, type: PersistingType) => {
-      if (type === 'global') {
-        whitelist.push(hive);
-      }
-    });
-
-    const result = createStore<IState>(reducer(extReducers), enhancer);
+    const result = createStore<IState>(reducer([]));
     persistStore(result,
                  {
-                   storage: new LevelStorage('state'),
+                   storage,
                    whitelist,
                    debounce: 200,
                    keyPrefix: 'global_',
@@ -78,6 +63,67 @@ export function setupStore(
                      resolve(result);
                    }
                  });
+  });
+}
+
+/**
+ * initialize redux store
+ *
+ * @export
+ * @param {string} basePath
+ * @param {ExtensionManager} extensions
+ * @returns {Redux.Store<IState>}
+ */
+export function setupStore(
+    basePath: string,
+    extensions: ExtensionManager): Promise<Redux.Store<IState>> {
+  const middleware = [
+    thunkMiddleware,
+  ];
+
+  return new Promise<Redux.Store<IState>>((resolve, reject) => {
+    const enhancer: Redux.StoreEnhancer<IState> =
+        compose(applyMiddleware(...middleware),
+                electronEnhancer(),
+                autoRehydrate()) as Redux.StoreEnhancer<IState>;
+
+    const extReducers = extensions.getReducers();
+
+    const whitelist = ['app', 'settings', 'persistent', 'confidential'];
+    extensions.apply('registerSettingsHive', (hive: string, type: PersistingType) => {
+      if (type === 'global') {
+        whitelist.push(hive);
+      }
+    });
+
+    if (storage === undefined) {
+      storage = new LevelStorage('state');
+    }
+
+    const settings = {
+      storage,
+      whitelist,
+      debounce: 200,
+      keyPrefix: 'global_',
+    };
+
+    getStoredState(settings, (err, state) => {
+      if (err !== null) {
+        const app = appIn || remote.app;
+        terminate({
+          message: 'Failed to load application state.',
+          details: 'One of the state files is corrupted. If you manually '
+          + 'edited one, use the following error to repair it. Otherwise '
+          + 'please report a bug and include the files at \''
+          + app.getPath('userData') + '\'',
+          stack: err.stack,
+        });
+      } else {
+        const store = createStore<IState>(reducer(extReducers), state, enhancer);
+        createPersistor(store, settings);
+        resolve(store);
+      }
+    });
   });
 }
 

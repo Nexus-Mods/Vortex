@@ -1,7 +1,7 @@
 {
   "name": "gamebryo-bsa-support",
   "version": "0.0.1",
-  "description": "",
+  "description": "Support for (old) gamebryo data archives",
   "main": "./out/index.js",
   "scripts": {
     "tsc": "tsc -p .",
@@ -10,7 +10,7 @@
     "postinstall": "electron-rebuild -w bsatk",
     "copy_bsatk": "copyfiles -f ./node_modules/bsatk/build/Release/nbind.node ./dist/bsatk",
     "prebuild": "typings prune && typings install",
-    "build": "npm run tsc && npm run webpack && npm run copy_bsatk",
+    "build": "npm run tsc && npm run webpack && npm run copy_bsatk && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-bsa-support",
     "buildDev": "npm run build && npm run installDev"
   },

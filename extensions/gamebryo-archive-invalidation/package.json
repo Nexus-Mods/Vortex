@@ -9,11 +9,11 @@
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "clear": "rm-local-modules",
     "prebuild": "typings prune && typings install",
-    "build": "npm run tsc && npm run webpack",
+    "build": "npm run tsc && npm run webpack && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-archive-invalidation",
     "buildDev": "npm run build && npm run installDev"
   },
-  "author": "",
+  "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "babel": {
     "presets": [

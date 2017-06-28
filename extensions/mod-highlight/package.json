@@ -1,13 +1,13 @@
 {
   "name": "mod-highlight",
   "version": "0.0.1",
-  "description": "",
+  "description": "Custom highlighting (and notes) for mods",
   "main": "./out/index.js",
   "scripts": {
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "prebuild": "typings prune && typings install",
-    "build": "npm run tsc && npm run webpack"
+    "build": "npm run tsc && npm run webpack && extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

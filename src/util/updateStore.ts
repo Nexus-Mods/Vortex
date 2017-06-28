@@ -13,7 +13,7 @@ interface IMigrator {
 const settingsMigrator: { [oldVersion: string]: IMigrator } = {};
 
 function updateStore(store: Redux.Store<IState>): Redux.Store<IState> {
-  const oldVersion = getSafe(store.getState(), ['persistent', 'app', 'version'], '');
+  const oldVersion = getSafe(store.getState(), ['app', 'version'], '');
   const newVersion = app.getVersion();
   if (oldVersion !== newVersion) {
     const migrator = settingsMigrator[newVersion];

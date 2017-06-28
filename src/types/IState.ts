@@ -80,8 +80,13 @@ export interface ITableState {
   rows: { [id: string]: IRowState };
 }
 
+export interface IExtensionState {
+  enabled: boolean;
+}
+
 export interface IApp {
   version: string;
+  extensions: { [id: string]: IExtensionState };
 }
 
 export interface ITableStates {
@@ -150,6 +155,7 @@ export interface ISessionGameMode {
  * @interface IState
  */
 export interface IState {
+  app: IApp;
   confidential: {
     account: { },
   };
@@ -161,7 +167,6 @@ export interface IState {
   };
   settings: ISettings;
   persistent: {
-    app: IApp,
     tables: ITableStates,
     profiles: { [profileId: string]: IProfile },
     mods: { [gameId: string]: { [modId: string]: IMod } },

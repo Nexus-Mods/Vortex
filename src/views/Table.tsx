@@ -38,6 +38,7 @@ export interface IBaseProps {
   tableId: string;
   data: { [rowId: string]: any };
   actions: ITableRowAction[];
+  multiSelect?: boolean;
 }
 
 interface IConnectedProps {
@@ -344,12 +345,13 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 
   private handleKeyDown = (evt: React.KeyboardEvent<any>) => {
+    const { multiSelect } = this.props;
     const { lastSelected }  = this.state;
     if (evt.target !== this.mScrollRef) {
       return;
     }
 
-    if ((evt.keyCode === 65) && evt.ctrlKey) {
+    if (this.useMultiSelect() && (evt.keyCode === 65) && evt.ctrlKey) {
       this.selectAll();
       return;
     }
@@ -619,10 +621,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const {attributeState, tableId} = this.props;
     const {rowState} = this.state;
 
-    if (evt.ctrlKey) {
+    if (this.useMultiSelect() && evt.ctrlKey) {
       // ctrl-click -> toggle the selected row, leave remaining selection intact
       this.selectToggle(row.id);
-    } else if (evt.shiftKey) {
+    } else if (this.useMultiSelect() && evt.shiftKey) {
       // shift-click -> select everything between this row and the last one clicked,
       //                deselect everything else
       this.selectTo(row.id);
@@ -757,6 +759,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private setFilter = (attributeId?: string, filter?: any) => {
     const { onSetAttributeFilter, tableId } = this.props;
     onSetAttributeFilter(tableId, attributeId, filter);
+  }
+
+  private useMultiSelect() {
+    // default to true
+    return this.props.multiSelect !== false;
   }
 }
 

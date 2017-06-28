@@ -14,10 +14,28 @@ import { sessionReducer } from './session';
 import { tableReducer } from './tables';
 import { windowReducer } from './window';
 
+import * as _ from 'lodash';
 import { combineReducers } from 'redux';
 import { createReducer } from 'redux-act';
 
-function deriveReducer(path, ele): Redux.Reducer<any> {
+/**
+ * wrapper for combineReducers that doesn't drop unexpected keys
+ */
+function safeCombineReducers(reducer: Redux.ReducersMapObject) {
+  const redKeys = Object.keys(reducer);
+  const combined = combineReducers(reducer);
+  return (state, action) => {
+    const red = state !== undefined
+      ? _.pick(state, redKeys)
+      : undefined;
+    return {
+      ...state,
+      ...combined(red, action),
+    };
+  };
+}
+
+function deriveReducer(path: string, ele: any): Redux.Reducer<any> {
   const attributes: string[] = Object.keys(ele);
 
   if ((attributes.indexOf('reducers') !== -1)
@@ -29,10 +47,10 @@ function deriveReducer(path, ele): Redux.Reducer<any> {
   } else {
     const reducers: Redux.ReducersMapObject = {};
 
-    attributes.forEach((attribute) => {
+    attributes.forEach(attribute => {
       reducers[attribute] = deriveReducer(path + '.' + attribute, ele[attribute]);
     });
-    return combineReducers(reducers);
+    return safeCombineReducers(reducers);
   }
 }
 
@@ -101,12 +119,9 @@ function recursiveObjectKeys(tree: any, prefix: string = '') {
  * @param {IExtensionReducer[]} extensionReducers
  * @returns
  */
-export default function(extensionReducers: IExtensionReducer[]) {
+function reducers(extensionReducers: IExtensionReducer[]) {
   const tree = {
-    confidential: {
-      account: {
-      },
-    },
+    app: appReducer,
     session: {
       base: sessionReducer,
       notifications: notificationsReducer,
@@ -115,14 +130,15 @@ export default function(extensionReducers: IExtensionReducer[]) {
       window: windowReducer,
     },
     persistent: {
-      app: appReducer,
       tables: tableReducer,
     },
   };
 
-  extensionReducers.forEach((extensionReducer) => {
+  extensionReducers.forEach(extensionReducer => {
     addToTree(tree, extensionReducer.path, extensionReducer.reducer);
   });
 
   return deriveReducer('', tree);
 }
+
+export default reducers;

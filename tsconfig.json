@@ -19,6 +19,7 @@
         "src/main.ts",
         "src/index.ts",
         "src/renderer.tsx",
-        "src/splash.ts"
+        "src/splash.ts",
+        "src/extensions/index.ts"
     ]
 }

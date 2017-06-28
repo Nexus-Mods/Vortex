@@ -12,6 +12,7 @@ import * as restT from 'node-rest-client';
 import * as path from 'path';
 
 import {log} from './log';
+import { spawnSelf } from './util';
 
 export interface ITermination {
   message: string;
@@ -54,17 +55,6 @@ function genHash(error: ITermination) {
   } else {
     return hash.update(error.message).digest('hex');
   }
-}
-
-function spawnSelf(args: string[]) {
-  const app = appIn || remote.app;
-  if (process.execPath.endsWith('electron.exe')) {
-    // development version
-    args = [path.resolve(__dirname, '..', '..')].concat(args);
-  }
-  spawn(process.execPath, args, {
-    detached: true,
-  });
 }
 
 export function createErrorReport(type: string, error: ITermination, labels: string[] = []) {

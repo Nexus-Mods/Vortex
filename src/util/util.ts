@@ -1,9 +1,12 @@
 import delayed from './delayed';
-import {log} from './log';
+import { log } from './log';
 
 import * as Promise from 'bluebird';
+import { spawn } from 'child_process';
+import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
-import {file} from 'tmp';
+import * as path from 'path';
+import { file } from 'tmp';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -134,4 +137,19 @@ export function isNullOrWhitespace(check: string): boolean {
  */
 export function truthy(val: any): boolean {
   return !!val;
+}
+
+/**
+ * spawn this application itself
+ * @param args
+ */
+export function spawnSelf(args: string[]) {
+  const app = appIn || remote.app;
+  if (process.execPath.endsWith('electron.exe')) {
+    // development version
+    args = [path.resolve(__dirname, '..', '..')].concat(args);
+  }
+  spawn(process.execPath, args, {
+    detached: true,
+  });
 }

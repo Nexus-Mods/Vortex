@@ -100,12 +100,18 @@ function showMainWindow() {
 ipcMain.on('show-window', showMainWindow);
 
 function createStore(): Promise<void> {
-  const { setupStore } = require('./util/store');
-  const ExtensionManager = require('./util/ExtensionManager').default;
-  extensions = new ExtensionManager();
-  return setupStore(basePath, extensions)
-      .then((newStore: Redux.Store<any>) => updateStore(newStore))
-      .then((newStore: Redux.Store<any>) => {
+  const { baseStore, setupStore } = require('./util/store');
+
+  return baseStore(basePath)
+    .then(initStore => {
+      const ExtensionManager = require('./util/ExtensionManager').default;
+      extensions = new ExtensionManager(initStore);
+      return setupStore(basePath, extensions);
+    })
+      .then(newStore => {
+        return updateStore(newStore);
+      })
+      .then(newStore => {
         store = newStore;
         extensions.doOnce();
         return Promise.resolve();
@@ -212,9 +218,35 @@ function createLoadingScreen(): Promise<void> {
   });
 }
 
+function testShouldQuit(retries: number): Promise<void> {
+  // different modes: if retries were set, the caller wants to start a
+  // "primary" instance and is willing to wait. In that case we don't act as
+  // a secondary instance that sends off it's arguments to the first
+  const remoteCallback = (retries === -1)
+    ? (secondaryArgv, workingDirectory) => {
+      // this is called inside the primary process with the parameters of
+      // the secondary one whenever an additional instance is started
+      applyArguments(commandLine(secondaryArgv));
+    }
+    : () => undefined;
+
+  const shouldQuit: boolean = app.makeSingleInstance(remoteCallback);
+
+  if (shouldQuit) {
+    if (retries > 0) {
+      return delayed(100).then(() => testShouldQuit(retries - 1));
+    }
+    app.quit();
+    process.exit();
+  }
+
+  return Promise.resolve();
+}
+
 function setupAppEvents(args: IParameters) {
   app.on('ready', () => {
-    createLoadingScreen()
+    testShouldQuit(args.wait ? 10 : -1)
+        .then(() => createLoadingScreen())
         .then(() => createStore())
         .then(() => {
           createTrayIcon();
@@ -255,18 +287,6 @@ function main() {
   if (mainArgs.report) {
     return sendReport(mainArgs.report)
     .then(() => app.quit());
-  }
-
-  const shouldQuit: boolean =
-      app.makeSingleInstance((secondaryArgv, workingDirectory) => {
-        // this is called inside the primary process with the parameters of
-        // the secondary one whenever an additional instance is started
-        applyArguments(commandLine(secondaryArgv));
-      });
-
-  if (shouldQuit) {
-    app.quit();
-    process.exit();
   }
 
   // set up some "global" components

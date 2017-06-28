@@ -3,12 +3,14 @@
   "version": "0.0.1",
   "description": "Library exporting nmm components extensions may use",
   "main": "lib/index.js",
+  "bin": { "extractInfo": "./bin/extractInfo.js" },
   "scripts": {
     "build": "tsc -p ."
   },
   "typings": "lib/index",
   "files": [
-    "lib/"
+    "lib/",
+    "bin/"
   ],
   "author": "Black Tree Gaming Ltd",
   "license": "GPL-3.0",

@@ -10,8 +10,11 @@ import {app} from 'electron';
 export const appReducer: IReducerSpec = {
   reducers: {
     [actions.setStateVersion as any]: (state, payload) => setSafe(state, ['version'], payload),
+    [actions.setExtensionEnabled as any]: (state, payload) =>
+      setSafe(state, ['extensions', payload.extensionId, 'enabled'], payload.enabled),
   },
   defaults: {
     version: '',
+    extensions: {},
   },
 };

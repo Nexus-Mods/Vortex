@@ -1,7 +1,7 @@
 {
   "name": "gamebryo-ba2-support",
   "version": "0.0.1",
-  "description": "",
+  "description": "Support for new gamebryo data archives",
   "main": "./out/index.js",
   "scripts": {
     "tsc": "tsc -p .",
@@ -10,7 +10,7 @@
     "postinstall": "electron-rebuild -w ba2tk",
     "copy_ba2tk": "copyfiles -f ./node_modules/ba2tk/build/Release/nbind.node ./dist/ba2tk",
     "prebuild": "typings prune && typings install",
-    "build": "npm run tsc && npm run webpack && npm run copy_ba2tk",
+    "build": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-ba2-support",
     "buildDev": "npm run build && npm run installDev"
   },

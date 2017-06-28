@@ -28,7 +28,7 @@ export interface ITableFilter {
  * @export
  * @interface IModAttribute
  */
-export interface ITableAttribute {
+export interface ITableAttribute<T = any> {
   /**
    * internal id of the attribute
    */
@@ -81,7 +81,7 @@ export interface ITableAttribute {
    * renderer. Please note that if you want caching or asynchronous calculation for this cell you'll
    * have to implement it yourself.
    */
-  customRenderer?: (object: any, detailCell: boolean,
+  customRenderer?: (object: T, detailCell: boolean,
                     t: I18next.TranslationFunction) => JSX.Element;
   /**
    * determine the display value for this attribute. This is used for display if customRenderer is
@@ -96,7 +96,7 @@ export interface ITableAttribute {
    *        This means that if you bind a variable to your calc function which is not part of
    *        the Table props the Table may appear glitchy as it won't update as necessary.
    */
-  calc?: (object: any, t: I18next.TranslationFunction) => any | Promise<any>;
+  calc?: (object: T, t: I18next.TranslationFunction) => any | Promise<any>;
   /**
    * custom function for sorting by this attribute. The parameters passed in (lhs and rhs) are
    * by calc (cached). Return <0 if lhs is smaller than rhs, >0 if it's bigger and =0 if they are

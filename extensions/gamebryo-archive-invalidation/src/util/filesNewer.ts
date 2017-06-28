@@ -5,11 +5,11 @@ import * as path from 'path';
 /**
  * find all files in a directory that match a certain name filter and are newer
  * than the specified age
- * 
- * @param {string} gamePath 
- * @param {(name: string) => boolean} nameFilter 
- * @param {Date} minAge 
- * @returns {Promise<string[]>} 
+ *
+ * @param {string} gamePath
+ * @param {(name: string) => boolean} nameFilter
+ * @param {Date} minAge
+ * @returns {Promise<string[]>}
  */
 function filesNewer(
     searchPath: string,
@@ -19,7 +19,7 @@ function filesNewer(
   return fs.readdirAsync(searchPath)
       .then((files: string[]) => {
         // stat all files that match the name filter
-        let matches = files.filter(nameFilter);
+        const matches = files.filter(nameFilter);
         return Promise.map(
             matches, file => fs.statAsync(path.join(searchPath, file))
                                  .then((stats: fs.Stats) => Promise.resolve({
@@ -27,7 +27,7 @@ function filesNewer(
                                    stats,
                                  })));
       })
-      .then((fileStats: { name: string, stats: fs.Stats }[]) =>
+      .then((fileStats: Array<{ name: string, stats: fs.Stats }>) =>
                 fileStats.filter(file => file.stats.mtime > minAge)
                          .map(file => file.name));
 }

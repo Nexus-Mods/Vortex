@@ -117,10 +117,13 @@ process.on('uncaughtException', (error: any) => {
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 stopTime = timeRequire();
-const extensions: ExtensionManager = new ExtensionManager(eventEmitter);
+
+const store: Store<any> = createStore(reducer([]), enhancer);
+
+const extensions: ExtensionManager = new ExtensionManager(store, eventEmitter);
 const extReducers = extensions.getReducers();
 
-const store: Store<any> = createStore(reducer(extReducers), enhancer);
+store.replaceReducer(reducer(extReducers));
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
 stopTime();

@@ -4,6 +4,7 @@ import { IExtensionInit } from '../types/Extension';
 import { ArchiveHandlerCreator, IArchiveHandler, IExtensionApi, IExtensionContext,
          ILookupDetails, IOpenOptions, StateChangeCallback } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
+import { IExtensionState } from '../types/IState';
 import lazyRequire from '../util/lazyRequire';
 
 import { Archive } from './archives';
@@ -25,30 +26,6 @@ import * as path from 'path';
 import { types as ratypes } from 'redux-act';
 import ReduxWatcher = require('redux-watcher');
 import { generate as shortid } from 'shortid';
-
-// these imports are only here so that tsc knows there is a dependency
-// on the extensions and re-compiles them properly. They are completely
-// removed during compilation
-import {} from '../extensions/about_dialog';
-import {} from '../extensions/category_management';
-import {} from '../extensions/dashboard';
-import {} from '../extensions/diagnostics_files';
-import {} from '../extensions/download_management';
-import {} from '../extensions/firststeps_dashlet';
-import {} from '../extensions/gamemode_management';
-import {} from '../extensions/hardlink_activator';
-import {} from '../extensions/installer_fomod';
-import {} from '../extensions/installer_nested_fomod';
-import {} from '../extensions/mod_management';
-import {} from '../extensions/nexus_integration';
-import {} from '../extensions/profile_management';
-import {} from '../extensions/settings_interface';
-import {} from '../extensions/settings_metaserver';
-import {} from '../extensions/starter_dashlet';
-import {} from '../extensions/symlink_activator';
-import {} from '../extensions/symlink_activator_elevate';
-import {} from '../extensions/test_runner';
-import {} from '../extensions/updater';
 
 let app = appIn;
 let dialog = dialogIn;
@@ -254,8 +231,9 @@ class ExtensionManager {
   private mModDBAPIKey: string;
   private mPid: number;
   private mContextProxyHandler: ContextProxyHandler;
+  private mExtensionState: { [extId: string]: IExtensionState };
 
-  constructor(eventEmitter?: NodeJS.EventEmitter) {
+  constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mPid = process.pid;
     this.mEventEmitter = eventEmitter;
     this.mApi = {
@@ -284,6 +262,9 @@ class ExtensionManager {
       openArchive: this.openArchive,
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
     };
+    if (initStore !== undefined) {
+      this.mExtensionState = initStore.getState().app.extensions;
+    }
     this.mExtensions = this.loadExtensions();
     this.initExtensions();
   }
@@ -302,6 +283,8 @@ class ExtensionManager {
    */
   public setStore<S>(store: Redux.Store<S>) {
     this.mReduxWatcher = new ReduxWatcher(store);
+
+    this.mExtensionState = getSafe(store.getState(), ['app', 'extensions'], {});
 
     this.mApi.sendNotification = (notification: INotification): string => {
       const noti = { ...notification };
@@ -713,6 +696,7 @@ class ExtensionManager {
     }
 
     const res = fs.readdirSync(extensionsPath)
+      .filter(name => getSafe(this.mExtensionState, [name, 'enabled'], true))
       .filter(name => fs.statSync(path.join(extensionsPath, name)).isDirectory())
       .map(name => {
         try {
@@ -759,12 +743,14 @@ class ExtensionManager {
       'installer_nested_fomod',
       'settings_metaserver',
       'test_runner',
+      'extension_manager',
     ];
 
     const bundledPath = asarUnpacked(path.resolve(__dirname, '..', 'bundledPlugins'));
     log('info', 'bundle at', bundledPath);
     const extensionsPath = path.join(app.getPath('userData'), 'plugins');
     return staticExtensions
+      .filter(ext => getSafe(this.mExtensionState, [ext, 'enabled'], true))
       .map((name: string) => ({
           name,
           path: path.join(bundledPath, name),

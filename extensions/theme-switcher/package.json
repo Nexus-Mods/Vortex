@@ -1,7 +1,7 @@
 {
   "name": "theme-switcher",
   "version": "0.0.1",
-  "description": "",
+  "description": "Settings section to switch and customize UI themes",
   "main": "./out/index.js",
   "scripts": {
     "tsc": "tsc -p .",
@@ -10,7 +10,7 @@
     "prebuild": "typings prune && typings install",
     "copy_lib": "copyfiles -u 4 node_modules/font-manager/build/Release/fontmanager.node dist",
     "copy_themes": "copyfiles themes/**/* dist",
-    "build": "npm run tsc && npm run webpack && npm run copy_lib && npm run copy_themes"
+    "build": "npm run tsc && npm run webpack && npm run copy_lib && npm run copy_themes && extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

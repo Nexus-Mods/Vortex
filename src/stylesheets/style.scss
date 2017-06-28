@@ -844,6 +844,12 @@ a[role=menuitem] svg {
   padding: $gutter-width / 2;
 }
 
+.textarea-details {
+  width: 100%;
+  resize: none;
+  min-height: 100px;
+}
+
 // /tables
 //////////
 
@@ -959,15 +965,18 @@ a[role=menuitem] svg {
   margin-bottom: auto;
 }
 
-.btn-mods-enabled-enabled, .toggle-mods-enabled-enabled {
+.btn-mods-enabled-enabled, .toggle-mods-enabled-enabled,
+.btn-extensions-enabled-enabled, .toggle-extensions-enabled-enabled {
   background-color: $brand-success;
 }
 
-.btn-mods-enabled-disabled, .toggle-mods-enabled-disabled {
+.btn-mods-enabled-disabled, .toggle-mods-enabled-disabled,
+.btn-extensions-enabled-disabled, .toggle-extensions-enabled-disabled {
   background-color: $gray;
 }
 
-.btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled {
+.btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled,
+.btn-extensions-enabled-uninstalled, .toggle-extensions-enabled-uninstalled {
   background-color: $brand-info;
 }
 
@@ -984,7 +993,9 @@ a[role=menuitem] svg {
   max-height: 192px;
 }
 
-.table-mods .dropdown > button {
+.table-mods .dropdown > button,
+.table-extensions .dropdown > button,
+ {
   padding: 2px 10px;
   border: 0px;
   min-width: 100px;
@@ -994,7 +1005,8 @@ a[role=menuitem] svg {
   display: inline-flex;
 }
 
-#dropdown-mods-enabled {
+#dropdown-mods-enabled,
+#dropdown-extensions-enabled {
   padding: 2px 5px;
   border: 0px;
   border-left: 1px solid $gray-light;

@@ -11,11 +11,11 @@
     "copy_esptk": "copyfiles -f ./node_modules/esptk/build/Release/nbind.node ./dist/esptk",
     "copy_loot": "copyfiles -f ./node_modules/loot/build/Release/nbind.node ./dist/loot && copyfiles -f ./node_modules/loot/loot_api/loot_api.dll ./dist/loot",
     "prebuild": "typings prune && typings install",
-    "build": "npm run tsc && npm run webpack && npm run copy_esptk && npm run copy_loot && copyfiles -f src/stylesheets/plugin_management.scss dist",
+    "build": "npm run tsc && npm run webpack && npm run copy_esptk && npm run copy_loot && copyfiles -f src/stylesheets/plugin_management.scss dist && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-plugin-management",
     "buildDev": "npm run build && npm run installDev"
   },
-  "author": "",
+  "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "babel": {
     "presets": [
