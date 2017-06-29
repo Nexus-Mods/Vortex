@@ -28,6 +28,7 @@ process.env.SASS_BINARY_PATH = path.resolve(
   path.dirname(path.dirname(require.resolve('node-sass'))), 'bin',
   `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
 
+import { addNotification } from './actions/notifications';
 import reducer from './reducers/index';
 import DevToolsType from './util/DevTools';
 import { ITermination, terminate } from './util/errorHandling';
@@ -145,7 +146,12 @@ ipcRenderer.on('external-url', (event, url) => {
         log('info', 'handling url', { url });
         handler(url);
       } else {
-        log('warn', 'not handling url, unknown protocol', { url });
+        store.dispatch(addNotification({
+          type: 'info',
+          message: tFunc('Vortex isn\'t set up to handle this protocol: {{url}}', {
+            replace: { url },
+          }),
+        }));
       }
     });
 });
@@ -164,7 +170,7 @@ store.subscribe(() => {
 });
 
 let i18n;
-let tFunc;
+let tFunc = (input, options) => input;
 let error;
 
 getI18n(store.getState().settings.interface.language)

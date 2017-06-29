@@ -26,46 +26,44 @@ class Ini extends DelegateBase {
   }
 
   public getIniString =
-    (params: string[],
-      callback: (err, res: string) => void) => {
-    log('info', 'GetIniString called', '');
+      (params: string[], callback: (err, res: string) => void) => {
+        log('info', 'GetIniString called', '');
 
-    let iniValue: string;
-    let selectedFile = params[0];
-    let iniSection = params[1];
-    let iniKey = params[2];
-    let baseIniFile = getIniFilePath(this.gameInfo.id);
+        let iniValue: string;
+        const selectedFile = params[0];
+        const iniSection = params[1];
+        const iniKey = params[2];
+        let baseIniFile = getIniFilePath(this.gameInfo.id);
 
-    if (!isNullOrWhitespace(selectedFile)) {
-      baseIniFile = path.join(path.dirname(baseIniFile), selectedFile);
-    }
+        if (!isNullOrWhitespace(selectedFile)) {
+          baseIniFile = path.join(path.dirname(baseIniFile), selectedFile);
+        }
 
-    this.parser.read(baseIniFile)
-      .then((iniFile: IniFile<any>) => {
-        Object.keys(iniFile.data).forEach((key: string) => {
-          if (iniSection === key) {
-            Object.keys(iniFile.data[key]).forEach((subkey: string) => {
-              if (iniKey === subkey) {
-                iniValue = iniFile.data[key][subkey];
-              }
-            });
-          }
-        });
-      })
-      .then(() => {
-        return Promise.resolve(callback(null, iniValue));
-      });
-  }
+        this.parser.read(baseIniFile)
+            .then((iniFile: IniFile<any>) => {
+              Object.keys(iniFile.data)
+                  .forEach((key: string) => {
+                    if (iniSection === key) {
+                      Object.keys(iniFile.data[key])
+                          .forEach((subkey: string) => {
+                            if (iniKey === subkey) {
+                              iniValue = iniFile.data[key][subkey];
+                            }
+                          });
+                    }
+                  });
+            })
+            .then(() => Promise.resolve(callback(null, iniValue)));
+      }
 
-  public getIniInt =
-    (params: string[],
-      callback: (err, res: number) => void) => {
+  public getIniInt = (params: string[],
+                      callback: (err, res: number) => void) => {
     log('info', 'GetIniString called', '');
 
     let iniValue: number;
-    let selectedFile = params[0];
-    let iniSection = params[1];
-    let iniKey = params[2];
+    const selectedFile = params[0];
+    const iniSection = params[1];
+    const iniKey = params[2];
     let baseIniFile = getIniFilePath(this.gameInfo.id);
 
     if (!isNullOrWhitespace(selectedFile)) {

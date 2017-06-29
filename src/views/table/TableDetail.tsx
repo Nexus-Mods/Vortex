@@ -55,9 +55,9 @@ class DetailCell extends React.Component<ICellProps, {}> {
           const key = currentChoice !== undefined ? currentChoice.key : undefined;
           if (readOnly) {
             content = (
-              <ControlLabel>
+              <FormControl.Static>
                 {currentChoice !== undefined ? currentChoice.text : null}
-              </ControlLabel>
+              </FormControl.Static>
             );
           } else {
             content = (

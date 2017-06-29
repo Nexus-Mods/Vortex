@@ -14,19 +14,19 @@ describe('currentGameDiscovery', () => {
     let gameMode1 = {
       path: 'path',
       modPath: 'modPath'
-    }
+    };
 
     let activeProfileId1 = {
       gameId: 'gameId',
       id: 'id'
-    }
+    };
 
     let input = {
       settings: {
-        gameMode: { discovered: {gameId: 'gameMode1'} },
+        gameMode: { discovered: { gameId: 'gameMode1' } },
         profiles: { activeProfileId: 'activeProfileId1' }
       },
-      persistent: { profiles: {activeProfileId1} }
+      persistent: { profiles: { activeProfileId1 } }
     };
     let result = currentGameDiscovery(input);
     expect(result).toEqual('gameMode1');
@@ -39,12 +39,12 @@ describe('gameName', () => {
     let firstGameStored = {
       id: 'id1',
       name: 'name1'
-    }
+    };
 
     let secondGameStored = {
       id: 'id2',
       name: 'name2'
-    }
+    };
 
     let input = { session: { gameMode: { known: [firstGameStored, secondGameStored] } } };
     let result = gameName(input, 'id1');
@@ -56,10 +56,4 @@ describe('gameName', () => {
     let result = gameName(input, 'gameId1');
     expect(result).toEqual('name');
   });
-
 });
-
-
-
-
-

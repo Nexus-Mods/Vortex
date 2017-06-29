@@ -93,23 +93,19 @@ export interface IExtensionContextExt extends IExtensionContext {
 }
 
 function init(context: IExtensionContextExt): boolean {
-  if (context.registerInstaller) {
-    context.registerInstaller(100, testSupported,
-    (files, scriptPath, gameId, progressDelegate) => {
-      context.api.store.dispatch(setInstallerDataPath(scriptPath));
-      const coreDelegates = new Core(context.api, gameId);
-      return install(files, scriptPath, progressDelegate, coreDelegates)
-      .catch((err) => {
-        context.api.store.dispatch(endDialog());
-        return Promise.reject(err);
-      })
-      .finally(() => coreDelegates.detach())
-      ;
-    });
-  }
+  context.registerInstaller(
+      100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
+        context.api.store.dispatch(setInstallerDataPath(scriptPath));
+        const coreDelegates = new Core(context.api, gameId);
+        return install(files, scriptPath, progressDelegate, coreDelegates)
+            .catch((err) => {
+              context.api.store.dispatch(endDialog());
+              return Promise.reject(err);
+            })
+            .finally(() => coreDelegates.detach());
+      });
 
   context.registerDialog('fomod-installer', InstallerDialog);
-
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
 
   return true;

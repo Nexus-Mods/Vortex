@@ -356,7 +356,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </div>
       );
     } else {
-      content = <ControlLabel>{t('No mod activators installed')}</ControlLabel>;
+      content = (
+        <ControlLabel>
+          <Alert bsStyle='danger'>
+            {t('No deployment method available')}
+          </Alert>
+        </ControlLabel>
+      );
     }
 
     return (

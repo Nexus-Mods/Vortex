@@ -123,10 +123,6 @@ function init(context): boolean {
         const oldProfile = util.getSafe(state, ['persistent', 'profiles', prev], null);
         const newProfile = state.persistent.profiles[current];
 
-        log('info', 'change profile', {
-          old: require('util').inspect(oldProfile),
-          new: require('util').inspect(newProfile)});
-
         checkGlobalFiles(oldProfile, newProfile)
           .then(() =>
             updateLocalGameSettings('local_game_settings', oldProfile, newProfile)

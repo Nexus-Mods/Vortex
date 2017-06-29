@@ -65,7 +65,6 @@ const tools = [
   },
 ];
 
-
 function main(context) {
   context.registerGame({
     id: 'skyrimse',

@@ -11,15 +11,15 @@ const gameSupport = {
   },
   skyrimse: {
     mygamesPath: 'Skyrim Special Edition',
-    gameSettingsFiles: ['Skyrim.ini'],
+    gameSettingsFiles: ['Skyrim.ini', 'SkyrimPrefs.ini'],
   },
   fallout4: {
     mygamesPath: 'Fallout4',
-    gameSettingsFiles: ['Fallout4.ini'],
+    gameSettingsFiles: ['Fallout4.ini', 'Fallout4Prefs.ini'],
   },
   falloutnv: {
     mygamesPath: 'FalloutNV',
-    gameSettingsFiles: ['Fallout.ini'],
+    gameSettingsFiles: ['Fallout.ini', 'FalloutPrefs.ini'],
   },
   oblivion: {
     mygamesPath: 'Oblivion',

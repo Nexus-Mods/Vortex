@@ -4,6 +4,9 @@ import { getSafe } from '../../../util/storeHelper';
 
 function createCategoryDetailPath(categories: any, category: string,
                                   categoryPath: string) {
+  if (categories[category] === undefined) {
+    return 'unknown';
+  }
   categoryPath = (categoryPath === '')
     ? categories[category].name
     : categories[category].name + ' --> ' + categoryPath;

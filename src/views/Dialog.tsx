@@ -235,7 +235,6 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }));
   }
 
-
   private toggleCheckbox = (evt: React.MouseEvent<any>) => {
     const { dialogState } = this.state;
     const idx = dialogState.checkboxes.findIndex((box: ICheckbox) => {
