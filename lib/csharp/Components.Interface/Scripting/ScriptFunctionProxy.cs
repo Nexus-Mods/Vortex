@@ -694,15 +694,15 @@ namespace Components.Interface
         /// <summary>
         /// Sets the specified value in the specified Ini file to the given value.
         /// </summary>
-        /// <param name="p_strSettingsFileName">The name of the settings file to edit.</param>
-        /// <param name="p_strSection">The section in the Ini file to edit.</param>
-        /// <param name="p_strKey">The key in the Ini file to edit.</param>
-        /// <param name="p_strValue">The value to which to set the key.</param>
+        /// <param name="fileName">The name of the settings file to edit.</param>
+        /// <param name="section">The section in the Ini file to edit.</param>
+        /// <param name="key">The key in the Ini file to edit.</param>
+        /// <param name="value">The value to which to set the key.</param>
         /// <returns><c>true</c> if the value was set; <c>false</c>
         /// if the user chose not to overwrite the existing value.</returns>
-        public bool EditIni(string p_strSettingsFileName, string iniSection, string iniKey, string iniValue)
+        public bool EditIni(string fileName, string section, string key, string value)
         {
-            modInstallInstructions.Add(Instruction.CreateIniEdit(string.Format(";section={0};key={1};value={2}", iniSection, iniKey, iniValue)));
+            modInstallInstructions.Add(Instruction.CreateIniEdit(fileName, section, key, value));
             return true;
         }
 

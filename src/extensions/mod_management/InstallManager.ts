@@ -29,6 +29,7 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import ZipT = require('node-7z');
+import * as os from 'os';
 import * as path from 'path';
 import * as rimraf from 'rimraf';
 import { dir as tmpDir, file as tmpFile } from 'tmp';
@@ -55,21 +56,28 @@ interface ISupportedInstaller {
   requiredFiles: string[];
 }
 
-type InstructionType = 'copy' | 'submodule' | 'generatefile' | 'unsupported';
+type InstructionType = 'copy' | 'submodule' | 'generatefile' | 'iniedit' | 'unsupported';
 
 interface IInstruction {
   type: InstructionType;
 
-  path: string;
-  source: string;
-  destination: string;
+  path?: string;
+  source?: string;
+  destination?: string;
+  section?: string;
+  key?: string;
+  value?: string;
 }
 
-interface IInstructionGroups {
-  copies?: IInstruction[];
-  submodule?: IInstruction[];
-  unsupported?: IInstruction[];
+class InstructionGroups {
+  public copy: IInstruction[] = [];
+  public submodule: IInstruction[] = [];
+  public generatefile: IInstruction[] = [];
+  public iniedit: IInstruction[] = [];
+  public unsupported: IInstruction[] = [];
 }
+
+export const INI_TWEAKS_PATH = 'Ini Tweaks';
 
 /**
  * central class for the installation process
@@ -384,87 +392,135 @@ class InstallManager {
     });
   }
 
-  private processInstructions(
-    api: IExtensionApi,
-    archivePath: string,
-    destinationPath: string,
-    gameId: string,
-    result: { instructions: IInstruction[] }) {
-    if (result.instructions === null) {
-      // this is the signal that the installer has already reported what went wrong
-      return Promise.reject(null);
+  private transformInstructions(input: IInstruction[]): InstructionGroups {
+    return input.reduce((prev, value) => {
+      if (prev[value.type] !== undefined) {
+        prev[value.type].push(value);
+      }
+      return prev;
+    }, new InstructionGroups());
+  }
+
+  private reportUnsupported(api: IExtensionApi, unsupported: IInstruction[], archivePath: string) {
+    if (unsupported.length === 0) {
+      return;
     }
-    if ((result.instructions === undefined) ||
-      (result.instructions.length === 0)) {
-      return Promise.reject('installer returned no instructions');
-    }
-
-    const instructionGroups: IInstructionGroups = {};
-
-    result.instructions.forEach((instruction) => {
-      setdefault(instructionGroups, instruction.type, []).push(instruction);
-    });
-
-    const copies = result.instructions.filter(
-      (instruction) => instruction.type === 'copy');
-
-    const genfiles = result.instructions.filter(
-      (instruction) => instruction.type === 'generatefile');
-
-    const subModule = result.instructions.filter(
-      (instruction) => instruction.type === 'submodule');
-
-    if (instructionGroups.unsupported !== undefined) {
-      const missing = instructionGroups.unsupported.map((instruction) => instruction.source);
-      const { genHash } = require('modmeta-db');
-      const makeReport = () =>
+    const missing = unsupported.map(instruction => instruction.source);
+    const {genHash} = require('modmeta-db');
+    const makeReport = () =>
         genHash(archivePath)
-          .then(
-          (hashResult: IHashResult) => createErrorReport(
-            'Installer failed',
-            {
-              message: 'The installer uses unimplemented functions',
-              details:
-              `Missing instructions: ${missing.join(', ')}\n` +
-              `Installer name: ${path.basename(archivePath)}\n` +
-              `MD5 checksum: ${hashResult.md5sum}\n`,
-            },
-            ['installer']));
-      const showUnsupportedDialog = () => api.store.dispatch(showDialog(
+            .then(
+                (hashResult: IHashResult) => createErrorReport(
+                    'Installer failed',
+                    {
+                      message: 'The installer uses unimplemented functions',
+                      details:
+                          `Missing instructions: ${missing.join(', ')}\n` +
+                              `Installer name: ${path.basename(archivePath)}\n` +
+                              `MD5 checksum: ${hashResult.md5sum}\n`,
+                    },
+                    ['installer']));
+    const showUnsupportedDialog = () => api.store.dispatch(showDialog(
         'info', 'Installer unsupported',
         {
           message:
-          'This installer is (partially) unsupported as it\'s ' +
-          'using functionality that hasn\'t been implemented yet. ' +
-          'Please help us fix this by submitting an error report with a link to this mod.',
+              'This installer is (partially) unsupported as it\'s ' +
+                  'using functionality that hasn\'t been implemented yet. ' +
+                  'Please help us fix this by submitting an error report with a link to this mod.',
         },
         {
           Report: makeReport,
           Close: null,
         }));
 
-      api.sendNotification({
-        type: 'info',
-        message: 'Installer unsupported',
-        actions: [{ title: 'More', action: showUnsupportedDialog }],
-      });
+    api.sendNotification({
+      type: 'info',
+      message: 'Installer unsupported',
+      actions: [{title: 'More', action: showUnsupportedDialog}],
+    });
+  }
+
+  private processGenerateFiles(generatefile: IInstruction[],
+                               destinationPath: string): Promise<void> {
+    return Promise.each(generatefile, gen => {
+                    const outputPath =
+                        path.join(destinationPath, gen.destination);
+                    return fs.ensureDirAsync(path.dirname(outputPath))
+                        .then(() => fs.writeFileAsync(outputPath, gen.source));
+                  }).then(() => undefined);
+  }
+
+  private processSubmodule(api: IExtensionApi, submodule: IInstruction[],
+                           destinationPath: string,
+                           gameId: string): Promise<void> {
+    return Promise.each(submodule,
+                        mod =>
+                            this.installInner(api.store, mod.path,
+                                              destinationPath, gameId)
+                                .then((resultInner) => this.processInstructions(
+                                          api, mod.path, destinationPath,
+                                          gameId, resultInner)))
+        .then(() => undefined);
+  }
+
+  private processIniEdits(iniEdits: IInstruction[], destinationPath: string): Promise<void> {
+    if (iniEdits.length === 0) {
+      return Promise.resolve();
     }
 
-    // process 'copy' instructions during extraction
-    return this.extractArchive(api.store, archivePath, destinationPath, copies)
-      .then(() => Promise.each(genfiles,
-        gen => {
-          const outputPath = path.join(destinationPath, gen.destination);
-          return fs.ensureDirAsync(path.dirname(outputPath))
-            .then(() => fs.writeFileAsync(outputPath, gen.source));
-        })
-        // process 'submodule' instructions
-        .then(() => Promise.each(
-          subModule,
-          (mod) => this.installInner(api.store, mod.path, destinationPath, gameId)
-            .then((resultInner) => this.processInstructions(
-              api, mod.path, destinationPath, gameId,
-              resultInner)))));
+    const byDest: { [dest: string]: IInstruction[] } = iniEdits.reduce((prev, value) => {
+      setdefault(prev, value.destination, []).push(value);
+      return prev;
+    }, {});
+
+    return fs.ensureDirAsync(path.join(destinationPath, INI_TWEAKS_PATH)),
+       Promise.map(Object.keys(byDest), destination => {
+      const bySection: {[section: string]: IInstruction[]} =
+          byDest[destination].reduce((prev, value) => {
+            setdefault(prev, value.section, []).push(value);
+            return prev;
+          }, {});
+
+      const renderKV = (instruction: IInstruction): string =>
+          `${instruction.key} = ${instruction.value}`;
+
+      const renderSection = (section: string) => [
+        `[${section}]`,
+      ].concat(bySection[section].map(renderKV)).join(os.EOL);
+
+      const content = Object.keys(bySection).map(renderSection).join(os.EOL);
+
+      return fs.writeFileAsync(path.join(destinationPath, INI_TWEAKS_PATH, destination), content);
+    })
+    .then(() => undefined);
+  }
+
+  private processInstructions(api: IExtensionApi, archivePath: string,
+                              destinationPath: string, gameId: string,
+                              result: {instructions: IInstruction[]}) {
+    if (result.instructions === null) {
+      // this is the signal that the installer has already reported what went
+      // wrong
+      return Promise.reject(null);
+    }
+
+    if ((result.instructions === undefined) ||
+        (result.instructions.length === 0)) {
+      return Promise.reject('installer returned no instructions');
+    }
+
+    const instructionGroups = this.transformInstructions(result.instructions);
+
+    this.reportUnsupported(api, instructionGroups.unsupported, archivePath);
+
+    return this.extractArchive(api.store, archivePath, destinationPath,
+                               instructionGroups.copy)
+        .then(() => this.processGenerateFiles(instructionGroups.generatefile,
+                                              destinationPath))
+        .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))
+        .then(() => this.processSubmodule(api, instructionGroups.submodule,
+                                          destinationPath, gameId))
+        ;
   }
 
   private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {
@@ -708,10 +764,6 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
     archivePath: string,
     destinationPath: string,
     copies: IInstruction[]): Promise<void> {
-    if (copies.length === 0) {
-      return Promise.resolve();
-    }
-
     let normalize: Normalize;
 
     const tempPath = destinationPath + '.installing';
@@ -720,7 +772,6 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
         .then(() => getNormalizeFunc(destinationPath))
         .then((normalizeFunc: Normalize) => {
           normalize = normalizeFunc;
-          return;
         })
         .then(() => {
           const sourceMap: {[src: string]: string[]} =

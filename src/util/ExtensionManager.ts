@@ -753,6 +753,7 @@ class ExtensionManager {
       'settings_metaserver',
       'test_runner',
       'extension_manager',
+      'ini_prep',
     ];
 
     const bundledPath = asarUnpacked(path.resolve(__dirname, '..', 'bundledPlugins'));

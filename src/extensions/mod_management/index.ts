@@ -222,7 +222,17 @@ function genUpdateModActivation() {
                                                  sortedMods.indexOf(rhs.id));
 
           return activateMods(instPath, gameDiscovery.modPath, sortedModList,
-                              modState, activator);
+                              modState, activator)
+              .then(() => new Promise((resolve, reject) => {
+                      api.events.emit('bake-settings', gameMode, sortedModList,
+                                      err => {
+                                        if (err !== null) {
+                                          reject(err);
+                                        } else {
+                                          resolve();
+                                        }
+                                      });
+                    }));
         })
         .catch(UserCanceled, () => undefined)
         .catch(err => api.showErrorNotification('failed to deploy mods', err))

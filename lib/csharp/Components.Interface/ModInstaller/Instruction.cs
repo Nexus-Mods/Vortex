@@ -22,12 +22,15 @@
             };
         }
 
-        public static Instruction CreateIniEdit(string edit)
+        public static Instruction CreateIniEdit(string fileName, string section, string key, string value)
         {
             return new Instruction()
             {
                 type = "iniedit",
-                source = edit,
+                destination = fileName,
+                section = section,
+                key = key,
+                value = value,
             };
         }
 
@@ -69,5 +72,8 @@
         public string type;
         public string source;
         public string destination;
+        public string section;
+        public string key;
+        public string value;
     }
 }

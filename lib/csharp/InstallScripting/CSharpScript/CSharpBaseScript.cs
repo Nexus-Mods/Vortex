@@ -675,7 +675,7 @@ namespace Components.Scripting.CSharpScript
         /// if the user chose not to overwrite the existing value.</returns>
         public static bool EditFalloutINI(string p_strSection, string p_strKey, string p_strValue, bool p_booSaveOld)
         {
-            return ExecuteMethod(() => (Functions.EditIni(null, p_strSection, p_strKey, p_strValue)));
+            return ExecuteMethod(() => (Functions.EditIni("fallout.ini", p_strSection, p_strKey, p_strValue)));
         }
 
         #endregion
