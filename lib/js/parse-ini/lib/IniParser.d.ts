@@ -5,7 +5,7 @@ import * as Promise from 'bluebird';
 declare class IniParser {
     private mFormat;
     constructor(format: IIniFormat);
-    read<T>(filePath: string): Promise<IniFile<T>>;
-    write<T>(filePath: string, file: IniFile<T>): Promise<void>;
+    read<T extends object>(filePath: string): Promise<IniFile<T>>;
+    write<T extends object>(filePath: string, file: IniFile<T>): Promise<void>;
 }
 export default IniParser;

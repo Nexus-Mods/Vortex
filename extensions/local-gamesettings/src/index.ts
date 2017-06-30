@@ -8,19 +8,22 @@ import * as fs from 'fs-extra-promise';
 import { log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 
-function copyGameSettings(
-  sourcePath: string,
-  destinationPath: string,
-  gameSettingsFiles: string[],
-  copyType: string): Promise<void> {
+function copyGameSettings(sourcePath: string, destinationPath: string,
+                          gameSettingsFiles: string[],
+                          copyType: string): Promise<void> {
+  return Promise.map(gameSettingsFiles, gameSetting => {
+    let source = path.join(sourcePath, gameSetting);
+    let destination = path.join(destinationPath, path.basename(gameSetting));
 
-  return Promise.map(gameSettingsFiles, (gameSetting: string) => {
-    const source = path.join(sourcePath, gameSetting);
-    const destination = path.join(destinationPath, path.basename(gameSetting));
+    if (copyType.startsWith('Glo')) {
+      source += '.base';
+    } else if (copyType.endsWith('Glo')) {
+      destination += '.base';
+    }
 
     log('debug', 'copying profile inis', {source, destination});
 
-    return fs.copyAsync(path.join(sourcePath, gameSetting), destination)
+    return fs.copyAsync(source, destination)
       .catch((err) => {
         switch (copyType) {
           // backup missing, create it now from global file

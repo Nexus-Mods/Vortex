@@ -1,4 +1,5 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
+import {objDiff} from '../../util/util';
 
 import {activeGameId} from '../profile_management/selectors';
 
@@ -30,6 +31,51 @@ function genIniFormat(format: string) {
   }
 }
 
+function applyDelta(data: any, delta: any) {
+  if (typeof(delta) !== 'object') {
+    return;
+  }
+
+  Object.keys(delta).forEach(key => {
+    if (key[0] === '-') {
+      delete data[key.slice(1)];
+    } else if (key[0] === '+') {
+      data[key.slice(1)] = delta[key];
+    } else {
+      applyDelta(data[key], delta[key]);
+    }
+  });
+}
+
+function discoverSettingsChanges(gameMode: string): Promise<void> {
+  const format = iniFormat(gameMode);
+  if (format === undefined) {
+    return Promise.resolve();
+  }
+
+  const parser = new IniParser(genIniFormat(format));
+
+  return Promise.map(iniFiles(gameMode), iniFileName => {
+    let newContent: any;
+    let oldContent: any;
+    return parser.read(iniFileName)
+      .then(ini => {
+        newContent = ini.data;
+        return parser.read(iniFileName + '.baked');
+      })
+      .then(ini => {
+        oldContent = ini.data;
+        return parser.read(iniFileName + '.base');
+      })
+      .then(ini => {
+        const delta = objDiff(oldContent, newContent);
+        applyDelta(ini.data, delta);
+        return parser.write(iniFileName + '.base', ini);
+      });
+  })
+  .then(() => undefined);
+}
+
 function bakeSettings(gameMode: string, mods: IMod[], paths: any): Promise<void> {
   const modsPath = resolvePath('install', paths, gameMode);
   const format = iniFormat(gameMode);
@@ -39,13 +85,10 @@ function bakeSettings(gameMode: string, mods: IMod[], paths: any): Promise<void>
 
   const parser = new IniParser(genIniFormat(format));
 
-  return Promise.map(iniFiles(gameMode), iniFileName => {
-    let iniFile: IniFile<any>;
-    return parser.read(iniFileName + '.base')
-      .then(ini => {
-        iniFile = ini;
-
-        return Promise.each(mods, mod => {
+  return Promise.map(iniFiles(gameMode), iniFileName =>
+    fs.copyAsync(iniFileName + '.base', iniFileName + '.baked')
+      .then(() => parser.read(iniFileName + '.baked'))
+      .then(ini => Promise.each(mods, mod => {
           const tweaksPath =
               path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
           return fs.readdirAsync(tweaksPath)
@@ -53,15 +96,21 @@ function bakeSettings(gameMode: string, mods: IMod[], paths: any): Promise<void>
                 Promise.each(files, editName =>
                   parser.read(path.join(tweaksPath, editName))
                       .then(editIni => {
-                        Object.assign(iniFile.data, editIni.data);
+                        Object.assign(ini.data, editIni.data);
                       })))
               .catch(err => undefined);
-        });
-      })
-      .then(() => parser.write(iniFileName + '.baked', iniFile))
-      .then(() => fs.copyAsync(iniFileName + '.baked', iniFileName));
-  })
+        })
+        .then(() => parser.write(iniFileName + '.baked', ini)))
+      .then(() => fs.copyAsync(iniFileName + '.baked', iniFileName)))
   .then(() => undefined);
+}
+
+function purgeChanges(gameMode: string) {
+  return Promise.map(
+      iniFiles(gameMode),
+      iniFileName =>
+          fs.copyAsync(iniFileName + '.base', iniFileName + '.baked')
+              .then(() => fs.copyAsync(iniFileName + '.base', iniFileName)));
 }
 
 function main(context: IExtensionContext) {
@@ -73,9 +122,16 @@ function main(context: IExtensionContext) {
     context.api.events.on('bake-settings', (gameId: string, mods: IMod[],
                                             callback: (err: Error) => void) => {
       const paths = context.api.store.getState().settings.mods.paths;
-      bakeSettings(gameId, mods, paths)
-          .then(() => callback(null))
-          .catch(err => callback(err));
+      discoverSettingsChanges(gameId)
+        .then(() => bakeSettings(gameId, mods, paths))
+        .then(() => callback(null))
+        .catch(err => callback(err));
+    });
+
+    context.api.events.on('purge-mods', () => {
+      const gameMode = activeGameId(context.api.store.getState());
+      discoverSettingsChanges(gameMode)
+        .then(() => purgeChanges(gameMode));
     });
   });
 }

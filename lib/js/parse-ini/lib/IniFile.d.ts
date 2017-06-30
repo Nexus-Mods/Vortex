@@ -1,5 +1,5 @@
 import { IChanges } from './IChanges';
-declare class IniFile<T> {
+declare class IniFile<T extends object> {
     private mStoredData;
     private mMutableData;
     constructor(data: T);

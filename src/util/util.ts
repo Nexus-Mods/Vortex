@@ -5,6 +5,7 @@ import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
+import * as _ from 'lodash';
 import * as path from 'path';
 import { file } from 'tmp';
 
@@ -137,6 +138,40 @@ export function isNullOrWhitespace(check: string): boolean {
  */
 export function truthy(val: any): boolean {
   return !!val;
+}
+
+/**
+ * return the delta between two objects
+ * @param lhs the left, "before", object
+ * @param rhs the right, "after", object
+ */
+export function objDiff(lhs: any, rhs: any): any {
+  const res = {};
+
+  if ((typeof(lhs) === 'object') && (typeof(rhs) === 'object')) {
+    Object.keys(lhs).forEach(key => {
+      if ((rhs[key] === undefined)) {
+        res['-' + key] = lhs[key];
+      } else {
+        const sub = objDiff(lhs[key], rhs[key]);
+        if (sub === null) {
+          res['-' + key] = lhs[key];
+          res['+' + key] = rhs[key];
+        } else if (Object.keys(sub).length !== 0) {
+          res[key] = sub;
+        }
+      }
+    });
+    Object.keys(rhs).forEach(key => {
+      if ((lhs[key] === undefined)) {
+        res['+' + key] = rhs[key];
+      }
+    });
+  } else if (lhs !== rhs) {
+    return null;
+  }
+
+  return res;
 }
 
 /**
