@@ -16470,7 +16470,8 @@
       "icon": {
         "width": 64, 
         "tags": [
-          "folder-15"
+          "folder-15", 
+          "folder"
         ], 
         "attrs": [
           {}
