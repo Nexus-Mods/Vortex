@@ -45,3 +45,8 @@ export const addModRule = safeCreateAction('ADD_MOD_RULE',
  */
 export const removeModRule = safeCreateAction('REMOVE_MOD_RULE',
   (gameId: string, modId: string, rule: IRule) => ({ gameId, modId, rule }));
+
+export const setINITweakEnabled = safeCreateAction(
+    'SET_TWEAK_ENABLED',
+    (gameId: string, modId: string, tweak: string, enabled: boolean) =>
+        ({gameId, modId, tweak, enabled}));

@@ -1,4 +1,5 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
+import {removeValue} from '../../../util/storeHelper';
 import { deleteOrNop, getSafe,
   merge, pushSafe, removeValueIf, setSafe } from '../../../util/storeHelper';
 
@@ -77,6 +78,12 @@ export const modsReducer: IReducerSpec = {
       const { gameId, modId, rule } = payload;
       return removeValueIf(state, [gameId, modId, 'rules'],
         (iterRule: IRule) => _.isEqual(iterRule, rule));
+    },
+    [actions.setINITweakEnabled as any]: (state, payload) => {
+      const { gameId, modId, tweak, enabled } = payload;
+      return (enabled)
+        ? pushSafe(state, [gameId, modId, 'enabledINITweaks'], tweak)
+        : removeValue(state, [gameId, modId, 'enabledINITweaks'], tweak);
     },
   },
   defaults: {

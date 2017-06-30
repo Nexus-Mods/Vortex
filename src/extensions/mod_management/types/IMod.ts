@@ -21,4 +21,6 @@ export interface IMod {
   attributes: { [id: string]: any };
   // list of custom rules for this mod instance
   rules?: IRule[];
+  // list of enabled ini tweaks
+  enabledINITweaks?: string[];
 }

@@ -347,6 +347,17 @@ a[role=menuitem] svg {
   overflow: visible;
 }
 
+.button-toggle {
+  width: 32px !important;
+  height: 24px !important;
+  &.on {
+    fill: $brand-success;
+  }
+  &.off {
+    fill: $gray;
+  }
+}
+
 // /generic control rules
 /////////////////////////
 
@@ -913,6 +924,10 @@ a[role=menuitem] svg {
   display: inline-block;
   width: 100px;
   vertical-align: middle;
+}
+
+.listitem-tweak {
+  padding: 0;
 }
 
 // /single components

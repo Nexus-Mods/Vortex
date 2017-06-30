@@ -1,13 +1,16 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
-import {objDiff} from '../../util/util';
+import {getSafe} from '../../util/storeHelper';
+import {objDiff, setdefault} from '../../util/util';
 
 import {activeGameId} from '../profile_management/selectors';
 
 import {INI_TWEAKS_PATH} from '../mod_management/InstallManager';
 import {IMod} from '../mod_management/types/IMod';
+import {IModWithState} from '../mod_management/types/IModProps';
 import resolvePath from '../mod_management/util/resolvePath';
 
 import {iniFiles, iniFormat} from './gameSupport';
+import renderINITweaks from './TweakList';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -76,6 +79,15 @@ function discoverSettingsChanges(gameMode: string): Promise<void> {
   .then(() => undefined);
 }
 
+function getBaseFile(input: string): string {
+  const match = input.match(/.*\[([^\]]*)\]\.ini/);
+  if ((match !== undefined) && (match.length >= 2)) {
+    return match[1] + '.ini';
+  } else {
+    return input;
+  }
+}
+
 function bakeSettings(gameMode: string, mods: IMod[], paths: any): Promise<void> {
   const modsPath = resolvePath('install', paths, gameMode);
   const format = iniFormat(gameMode);
@@ -83,25 +95,42 @@ function bakeSettings(gameMode: string, mods: IMod[], paths: any): Promise<void>
     return Promise.resolve();
   }
 
+  const enabledTweaks: { [baseFile: string]: string[] } = {};
+
+  const baseFiles = iniFiles(gameMode);
+  const baseFileNames = baseFiles.map(name => path.basename(name).toLowerCase());
   const parser = new IniParser(genIniFormat(format));
 
-  return Promise.map(iniFiles(gameMode), iniFileName =>
-    fs.copyAsync(iniFileName + '.base', iniFileName + '.baked')
-      .then(() => parser.read(iniFileName + '.baked'))
-      .then(ini => Promise.each(mods, mod => {
-          const tweaksPath =
-              path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
-          return fs.readdirAsync(tweaksPath)
-              .then(files =>
-                Promise.each(files, editName =>
-                  parser.read(path.join(tweaksPath, editName))
-                      .then(editIni => {
-                        Object.assign(ini.data, editIni.data);
-                      })))
-              .catch(err => undefined);
+  // get a list of all tweaks we need to apply
+  return Promise.each(mods, mod => {
+    const tweaksPath =
+        path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
+    const modTweaks = getSafe(mod, ['enabledINITweaks'], []);
+    return fs.readdirAsync(tweaksPath)
+        .then(files => {
+          files.map(file => file.toLowerCase())
+              .filter(file => baseFileNames.indexOf(file) !== -1 ||
+                              modTweaks.indexOf(file) !== -1)
+              .forEach(file => {
+                setdefault(enabledTweaks, getBaseFile(file), [])
+                    .push(path.join(tweaksPath, file));
+              });
         })
-        .then(() => parser.write(iniFileName + '.baked', ini)))
-      .then(() => fs.copyAsync(iniFileName + '.baked', iniFileName)))
+        .catch(err => undefined);
+  }).then(() => Promise.map(baseFiles, iniFileName => {
+    // starting with the .base file for each ini, re-bake the file by applying
+    // the ini tweaks
+    const baseName = path.basename(iniFileName).toLowerCase();
+    return fs.copyAsync(iniFileName + '.base', iniFileName + '.baked')
+        .then(() => parser.read(iniFileName + '.baked'))
+        .then(ini => Promise.each(enabledTweaks[baseName] || [],
+                                  tweak => parser.read(tweak).then(patchIni => {
+                                    Object.assign(ini.data, patchIni.data);
+                                  }))
+                         .then(() => parser.write(iniFileName + '.baked', ini))
+                         .then(() => fs.copyAsync(iniFileName + '.baked',
+                                                  iniFileName)));
+  }))
   .then(() => undefined);
 }
 
@@ -114,6 +143,16 @@ function purgeChanges(gameMode: string) {
 }
 
 function main(context: IExtensionContext) {
+  context.registerTableAttribute('mods', {
+    id: 'ini-edits',
+    name: 'INI Tweaks',
+    description: 'Optional ini modifications',
+    calc: () => 'Dummy',
+    customRenderer: (mod: IModWithState) => renderINITweaks(mod),
+    placement: 'detail',
+    edit: {},
+  });
+
   context.once(() => {
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       ensureIniBackups(gameMode);
