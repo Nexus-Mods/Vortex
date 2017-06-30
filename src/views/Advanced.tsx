@@ -16,7 +16,7 @@ type IProps = IConnectedProps;
  * will be rendered in advanced mode.
  * If there are two, the first will be rendered in advanced mode, the second
  * otherwise.
- * 
+ *
  * @class Advanced
  * @extends {ComponentEx<IProps, {}>}
  */
@@ -28,11 +28,9 @@ class Advanced extends ComponentEx<IProps, {}> {
         control = React.Children.only(this.props.children);
       }
     } else if (React.Children.count(this.props.children) === 2) {
-      if (this.props.advancedMode) {
-        control = React.Children.toArray(this.props.children)[0];
-      } else {
-        control = React.Children.toArray(this.props.children)[1];
-      }
+      control = (this.props.advancedMode)
+        ? React.Children.toArray(this.props.children)[0]
+        : React.Children.toArray(this.props.children)[1];
     } else {
       throw new Error('Advanced component should always have exactly 2 children');
     }

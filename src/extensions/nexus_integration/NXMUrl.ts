@@ -7,7 +7,7 @@ class NXMUrl {
   private mFileId: number;
 
   constructor(input: string) {
-    let matches = input.match(sUrlExpression);
+    const matches = input.match(sUrlExpression);
     if ((matches === null) || (matches.length !== 4)) {
       throw new Error('invalid nxm url "' + input + '"');
     }

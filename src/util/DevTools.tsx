@@ -8,7 +8,7 @@ import { createDevTools } from 'redux-devtools';
 import LogMonitor from 'redux-devtools-log-monitor';
 
 /**
- * development ui element that displays a list of actions sent to change the store 
+ * development ui element that displays a list of actions sent to change the store
  */
 const DevTools = createDevTools(
   <LogMonitor />);

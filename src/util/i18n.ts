@@ -84,11 +84,9 @@ export function getCurrentLanguage() {
 }
 
 export function debugTranslations(enable?: boolean) {
-  if (enable !== undefined) {
-    debugging = enable;
-  } else {
-    debugging = !debugging;
-  }
+  debugging = (enable !== undefined)
+    ? enable
+    : !debugging;
   missingKeys = { common: {} };
   init(i18n.language);
 }

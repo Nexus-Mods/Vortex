@@ -15,7 +15,7 @@ import {
 } from './actions/state';
 import {IDownload} from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
-import { ProtocolHandlers } from './types/ProtocolHandlers';
+import { IProtocolHandlers } from './types/ProtocolHandlers';
 
 import DownloadManager from './DownloadManager';
 
@@ -48,10 +48,10 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
 export class DownloadObserver {
   private mStore: Redux.Store<any>;
   private mManager: DownloadManager;
-  private mProtocolHandlers: ProtocolHandlers;
+  private mProtocolHandlers: IProtocolHandlers;
 
   constructor(events: NodeJS.EventEmitter, store: Redux.Store<any>,
-              manager: DownloadManager, protocolHandlers: ProtocolHandlers) {
+              manager: DownloadManager, protocolHandlers: IProtocolHandlers) {
     this.mStore = store;
     this.mManager = manager;
     this.mProtocolHandlers = protocolHandlers;
@@ -225,7 +225,7 @@ export class DownloadObserver {
  *
  */
 function observe(events: NodeJS.EventEmitter, store: Redux.Store<any>,
-                 manager: DownloadManager, protocolHandlers: ProtocolHandlers) {
+                 manager: DownloadManager, protocolHandlers: IProtocolHandlers) {
   return new DownloadObserver(events, store, manager, protocolHandlers);
 }
 

@@ -61,7 +61,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
     const { t, shown } = this.props;
     const { ownLicense } = this.state;
 
-    const moduleList = Object.keys(modules).map((key) => Object.assign({ key }, modules[key]));
+    const moduleList = Object.keys(modules).map(key => ({ key, ...modules[key] }));
 
     const imgPath = path.resolve(remote.app.getAppPath(), 'assets', 'images', 'vortex.png');
 

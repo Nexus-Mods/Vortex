@@ -62,11 +62,9 @@ let dashProps = {
 function runCheck(check: ICheckEntry): Promise<void> {
   return check.check()
     .then((result: ITestResult) => {
-      if (result !== undefined) {
-        dashProps = setSafe(dashProps, ['problems', check.id], result);
-      } else {
-        dashProps = deleteOrNop(dashProps, ['problems', check.id]);
-      }
+      dashProps = (result !== undefined)
+        ? setSafe(dashProps, ['problems', check.id], result)
+        : deleteOrNop(dashProps, ['problems', check.id]);
     })
     .catch((err) => {
       log('warn', 'check failed to run', {

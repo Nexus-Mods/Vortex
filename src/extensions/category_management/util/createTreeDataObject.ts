@@ -9,16 +9,16 @@ function searchChildren(t: I18next.TranslationFunction,
                         categories: { [categoryId: string]: ICategory },
                         rootId: string,
                         mods: { [categoryId: string]: IMod[] }) {
-  let children = Object.keys(categories)
+  const children = Object.keys(categories)
   .filter(id => rootId === categories[id].parentCategory)
   .sort((lhs: string, rhs: string) => (categories[lhs].order - categories[rhs].order));
 
-  let childrenList = [];
+  const childrenList = [];
 
   children.forEach(childId => {
     const modCount = getSafe(mods, [childId], []).length;
     const subt: string = mods !== undefined ? generateSubtitle(t, childId, mods) : '';
-    let child: ICategoriesTree = {
+    const child: ICategoriesTree = {
       categoryId: childId,
       title: categories[childId].name,
       subtitle: subt,
@@ -36,17 +36,17 @@ function searchChildren(t: I18next.TranslationFunction,
 
 /**
  * create the treeDataObject from the categories inside the store
- * 
+ *
  * @param {Object} categories
  * @param {any} mods
  * @return {[]} categoryList
- * 
+ *
  */
 
 function createTreeDataObject(t: I18next.TranslationFunction,
                               categories: { [categoryId: string]: ICategory },
                               mods: {[modId: string]: IMod}): ICategoriesTree[] {
-  let categoryList: ICategoriesTree[] = [];
+  const categoryList: ICategoriesTree[] = [];
 
   const modsByCategory = Object.keys(mods || {}).reduce(
       (prev: {[categoryId: string]: IMod[]}, current: string) => {
@@ -67,12 +67,12 @@ function createTreeDataObject(t: I18next.TranslationFunction,
     .filter((id: string) => (rootElement === categories[id].parentCategory))
     .sort((lhs, rhs) => (categories[lhs].order - categories[rhs].order));
 
-    let childrenList = [];
+    const childrenList = [];
 
     children.forEach(element => {
       const subtitle: string = generateSubtitle(t, element, modsByCategory);
       const modCount = getSafe(modsByCategory, [element], []).length;
-      let child: ICategoriesTree = {
+      const child: ICategoriesTree = {
         categoryId: element,
         title: categories[element].name,
         subtitle,

@@ -5,6 +5,4 @@ export interface IExtensionReducer {
   reducer: IReducerSpec;
 }
 
-export interface IExtensionInit {
-  (context: IExtensionContext): boolean;
-}
+export type ExtensionInit = (context: IExtensionContext) => boolean;

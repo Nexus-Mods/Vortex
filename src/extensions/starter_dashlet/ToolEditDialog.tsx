@@ -38,11 +38,11 @@ class EnvButton extends ComponentEx<IEnvButtonProps, IEnvButtonState> {
 
   constructor(props: IEnvButtonProps) {
     super(props);
-    this.initState({ varCopy: Object.assign({}, props.variable) });
+    this.initState({ varCopy: { ...props.variable } });
   }
 
   public componentWillReceiveProps(newProps: IEnvButtonProps) {
-    this.nextState.varCopy = Object.assign({}, newProps.variable);
+    this.nextState.varCopy = { ...newProps.variable };
   }
 
   public render(): JSX.Element {
@@ -175,7 +175,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   constructor(props: IProps) {
     super(props);
     this.initState({
-      tool: Object.assign({}, props.tool),
+      tool: { ...props.tool },
       imageId: new Date().getTime(),
     });
   }

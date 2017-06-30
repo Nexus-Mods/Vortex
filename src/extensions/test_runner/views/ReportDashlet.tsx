@@ -24,8 +24,9 @@ class ReporterDashlet extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const {problems} = this.props;
 
-    return (<ListGroup>
-      {Object.keys(problems).map(this.renderProblem)}
+    return (
+      <ListGroup>
+        {Object.keys(problems).map(this.renderProblem)}
       </ListGroup>);
   }
 
@@ -34,13 +35,14 @@ class ReporterDashlet extends ComponentEx<IProps, {}> {
 
     const problem = problems[problemId];
 
-    return <ProblemMessage
-      t={t}
-      key={problemId}
-      problemId={problemId}
-      problem={problem}
-      onResolveProblem={this.resolveProblem}
-    />;
+    return (
+      <ProblemMessage
+        t={t}
+        key={problemId}
+        problemId={problemId}
+        problem={problem}
+        onResolveProblem={this.resolveProblem}
+      />);
   }
 
   private resolveProblem = (problemId: string) => {
@@ -49,5 +51,4 @@ class ReporterDashlet extends ComponentEx<IProps, {}> {
 }
 
 export default translate(['common', 'problems'], { wait: false })(
-  ReporterDashlet
-) as React.ComponentClass<IBaseProps>;
+  ReporterDashlet) as React.ComponentClass<IBaseProps>;

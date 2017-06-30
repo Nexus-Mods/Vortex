@@ -191,7 +191,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
   private onCloneProfile = (profileId: string) => {
     const { onAddProfile, profiles } = this.props;
-    const newProfile = Object.assign({}, profiles[profileId]);
+    const newProfile = { ...profiles[profileId] };
     newProfile.id = shortid();
     fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile))
     .then(() => {

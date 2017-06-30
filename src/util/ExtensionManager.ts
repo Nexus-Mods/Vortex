@@ -1,7 +1,7 @@
 import {forgetExtension} from '../actions/app';
 import { addNotification, dismissNotification } from '../actions/notifications';
 
-import { IExtensionInit } from '../types/Extension';
+import { ExtensionInit } from '../types/Extension';
 import { ArchiveHandlerCreator, IArchiveHandler, IExtensionApi, IExtensionContext,
          ILookupDetails, IOpenOptions, StateChangeCallback } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
@@ -44,7 +44,7 @@ function asarUnpacked(input: string): string {
 interface IRegisteredExtension {
   name: string;
   path: string;
-  initFunc: IExtensionInit;
+  initFunc: ExtensionInit;
 }
 
 interface IWatcherRegistry {
@@ -728,7 +728,7 @@ class ExtensionManager {
    * and external ones.
    * This loads external extensions from disc synchronously
    *
-   * @returns {IExtensionInit[]}
+   * @returns {ExtensionInit[]}
    */
   private loadExtensions(): IRegisteredExtension[] {
     const staticExtensions = [

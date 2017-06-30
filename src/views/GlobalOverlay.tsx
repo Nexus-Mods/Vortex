@@ -29,14 +29,15 @@ class GlobalOverlay extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    return <div className='global-overlay'>
-      <IconBar
-        group='help-icons'
-        staticElements={this.buttons}
-        buttonType='both'
-        orientation='vertical'
-      />
-    </div>;
+    return (
+      <div className='global-overlay'>
+        <IconBar
+          group='help-icons'
+          staticElements={this.buttons}
+          buttonType='both'
+          orientation='vertical'
+        />
+      </div>);
   }
 }
 

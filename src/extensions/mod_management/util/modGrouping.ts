@@ -89,12 +89,9 @@ export interface IGroupingOptions {
 function groupMods(mods: IModWithState[], options: IGroupingOptions): IModWithState[][] {
   const modList: IModWithState[][] = [ Object.keys(mods).map(key => mods[key]) ];
 
-  let temp: IModWithState[][];
-  if (options.groupBy === 'modId') {
-    temp = group(modList, byModId);
-  } else {
-    temp = group(group(modList, byModId), byFile);
-  }
+  let temp: IModWithState[][] = (options.groupBy === 'modId')
+    ? group(modList, byModId)
+    : group(group(modList, byModId), byFile);
 
   if (!options.multipleEnabled) {
     temp = group(temp, byEnabled);

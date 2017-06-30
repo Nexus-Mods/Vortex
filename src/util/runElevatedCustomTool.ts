@@ -1,6 +1,8 @@
 // dummy declarations
 let toolPath: string;
+// tslint:disable-next-line:prefer-const
 let toolCWD: string;
+// tslint:disable-next-line:prefer-const
 let parameters: string[];
 
 function runElevatedCustomTool(ipcClient) {
@@ -11,7 +13,7 @@ function runElevatedCustomTool(ipcClient) {
       params = parameters;
     }
 
-    let execOptions = {
+    const execOptions = {
         cwd: toolCWD,
       };
 

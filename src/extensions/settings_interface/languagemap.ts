@@ -1739,19 +1739,19 @@ const countryMap = {
 };
 
 export function nativeLanguageName(code: string): string {
-  let language = languageMap[code];
+  const language = languageMap[code];
   if (language === undefined) {
     return code;
   } else {
     return languageMap[code].nativeName;
   }
-};
+}
 
 export function nativeCountryName(code: string): string {
-  let country = countryMap[code];
+  const country = countryMap[code];
   if (country === undefined) {
     return code;
   } else {
     return country.nativeName;
   }
-};
+}

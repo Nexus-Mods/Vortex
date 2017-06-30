@@ -4,7 +4,7 @@ import * as Promise from 'bluebird';
 
 /**
  * wrapper around an format-specific archive handler
- * 
+ *
  * @export
  * @class Archive
  */

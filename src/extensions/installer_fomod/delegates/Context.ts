@@ -16,7 +16,7 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as util from 'util';
 
-let app = appIn || remote.app;
+const app = appIn || remote.app;
 
 function extenderForGame(gameId: string) {
   return {
@@ -85,33 +85,33 @@ export class Context extends DelegateBase {
   public checkIfFileExists =
       (fileName: string, callback: (err, res: boolean) => void) => {
         log('info', 'checkIfFileExists called', util.inspect(fileName));
-        let state = this.api.store.getState();
-        let currentGameInfo = currentGameDiscovery(state);
-        let fullFilePath = path.join(currentGameInfo.modPath, fileName);
+        const state = this.api.store.getState();
+        const currentGameInfo = currentGameDiscovery(state);
+        const fullFilePath = path.join(currentGameInfo.modPath, fileName);
 
         fs.statAsync(fullFilePath)
             .reflect()
             .then((stat) => callback(null, stat.isFulfilled()));
       }
 
-    public getExistingDataFile =
-      (fileName: string, callback: (err, res: any ) => void) => {
+  public getExistingDataFile =
+      (fileName: string, callback: (err, res: any) => void) => {
         log('info', 'getExistingDataFile called', util.inspect(fileName));
-        let state = this.api.store.getState();
-        let currentGameInfo = currentGameDiscovery(state);
-        let fullFilePath = path.join(currentGameInfo.modPath, fileName);
+        const state = this.api.store.getState();
+        const currentGameInfo = currentGameDiscovery(state);
+        const fullFilePath = path.join(currentGameInfo.modPath, fileName);
 
         fs.readFileAsync(fullFilePath)
-        .then((readBytes) => callback(null, readBytes))
-        .catch(() => callback(null, null));
+            .then((readBytes) => callback(null, readBytes))
+            .catch(() => callback(null, null));
       }
 
-    public getExistingDataFileList =
-      (searchOptions: any[], callback: (err, res: string[] ) => void) => {
+  public getExistingDataFileList =
+      (searchOptions: any[], callback: (err, res: string[]) => void) => {
         log('info', 'getExistingDataFileList called', util.inspect(searchOptions[0]));
-        let state = this.api.store.getState();
-        let currentGameInfo = currentGameDiscovery(state);
-        let fullFilePath = path.join(currentGameInfo.modPath, searchOptions[0]);
+        const state = this.api.store.getState();
+        const currentGameInfo = currentGameDiscovery(state);
+        const fullFilePath = path.join(currentGameInfo.modPath, searchOptions[0]);
 
         if (searchOptions[2] === true) {
           this.readDirRecursive(fullFilePath, searchOptions[1])
@@ -124,32 +124,30 @@ export class Context extends DelegateBase {
         }
       }
 
-    private readDirRecursive =
-     (rootFolder: string, filter: string): Promise<string[]> => {
-      let fileList: string[] = [];
-      fs.readdirAsync(rootFolder)
-      .then((folderContent) =>
-        folderContent.forEach((fileName) => {
-            let subFolder = path.join(rootFolder, fileName);
-            fs.statAsync(subFolder)
-            .then((stats) => {
-              if (stats.isDirectory()) {
-                this.readDirRecursive(subFolder, filter)
+  private readDirRecursive = (rootFolder: string,
+                              filter: string): Promise<string[]> => {
+    const fileList: string[] = [];
+    fs.readdirAsync(rootFolder)
+        .then((folderContent) => folderContent.forEach((fileName) => {
+          const subFolder = path.join(rootFolder, fileName);
+          fs.statAsync(subFolder).then((stats) => {
+            if (stats.isDirectory()) {
+              this.readDirRecursive(subFolder, filter)
                   .then((subList) => fileList.push.apply(fileList, subList));
-              } else {
-                if (!isNullOrWhitespace(filter)) {
-                  let currentFileName = path.basename(fileName);
-                  if (currentFileName.indexOf(filter) > -1) {
-                    fileList.push(fileName);
-                  }
-                } else {
+            } else {
+              if (!isNullOrWhitespace(filter)) {
+                const currentFileName = path.basename(fileName);
+                if (currentFileName.indexOf(filter) > -1) {
                   fileList.push(fileName);
                 }
+              } else {
+                fileList.push(fileName);
               }
-            });
+            }
+          });
         }));
-      return Promise.resolve(fileList);
-    }
+    return Promise.resolve(fileList);
+  }
 }
 
 export default Context;

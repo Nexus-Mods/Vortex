@@ -7,9 +7,7 @@ import ToolIcon from './ToolIcon';
 import * as React from 'react';
 import { Dropdown, MenuItem } from 'react-bootstrap';
 
-export interface IRemoveTool {
-  (gameId: string, toolId: string): void;
-}
+export type RemoveTool = (gameId: string, toolId: string) => void;
 
 export interface IProps {
   t: I18next.TranslationFunction;
@@ -42,7 +40,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
     const { primary, starter } = this.props;
     const valid = (starter.exePath !== undefined) && (starter.exePath !== '');
 
-    let icon = <ToolIcon imageUrl={starter.iconPath} imageId={this.mImageId} valid={valid} />;
+    const icon = <ToolIcon imageUrl={starter.iconPath} imageId={this.mImageId} valid={valid} />;
 
     const buttonClass = primary ? 'tool-button-primary' : 'tool-button';
 
@@ -68,31 +66,35 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
 
   private renderMenu(): JSX.Element {
     const { t, primary, starter } = this.props;
-    let items = [];
+    const items = [];
 
     if (!primary && (starter.exePath !== '')) {
-      items.push(<MenuItem key='set-item' onSelect={this.makePrimary}>
-        {t('Set as primary tool')}
-      </MenuItem>);
+      items.push(
+        <MenuItem key='set-item' onSelect={this.makePrimary}>
+          {t('Set as primary tool')}
+        </MenuItem>);
     }
 
     if (!primary && !starter.isGame) {
-      items.push(<MenuItem key='remove' onSelect={this.remove}>
-        {t('Remove')}
-      </MenuItem>);
+      items.push(
+        <MenuItem key='remove' onSelect={this.remove}>
+          {t('Remove')}
+        </MenuItem>);
     }
 
     if (items.length > 0) {
       items.push(<MenuItem key='divider' divider />);
     }
 
-    items.push(<MenuItem key='properties' onClick={this.edit}>
-      {t('Properties')}
-    </MenuItem>);
+    items.push(
+      <MenuItem key='properties' onClick={this.edit}>
+        {t('Properties')}
+      </MenuItem>);
 
-    return (<Dropdown.Menu>
-      {items}
-    </Dropdown.Menu>);
+    return (
+      <Dropdown.Menu>
+        {items}
+      </Dropdown.Menu>);
   }
 
   private remove = () => {
@@ -108,7 +110,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   private run = () => {
     const { onRun, starter } = this.props;
     onRun(starter);
-  };
+  }
 
   private makePrimary = () => {
     const { onMakePrimary, starter } = this.props;

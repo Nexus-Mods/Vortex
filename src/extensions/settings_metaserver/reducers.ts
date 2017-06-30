@@ -18,7 +18,7 @@ const settingsReducer: IReducerSpec = {
         (state, payload) => deleteOrNop(state, ['servers', payload.id]),
     [actions.setPriorities as any]:
         (state, payload) => {
-          let copy = Object.assign({}, state);
+          const copy = { ...state };
           payload.ids.forEach((id, idx) => {
             copy.servers[id].priority = idx;
           });

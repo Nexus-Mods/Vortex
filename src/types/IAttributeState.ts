@@ -2,7 +2,7 @@ import { SortDirection } from './SortDirection';
 
 /**
  * user-configuration for mod attributes
- * 
+ *
  * @export
  * @interface IAttributeState
  */

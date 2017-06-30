@@ -6,4 +6,4 @@ export interface ICategory {
 
 export interface ICategoryDictionary {
   [id: string]: ICategory;
-};
+}

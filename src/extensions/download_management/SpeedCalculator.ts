@@ -8,7 +8,7 @@ interface ISpeedEntry {
 /**
  * calculates a moving average of the download speed (total and
  * per counter)
- * 
+ *
  * @class SpeedCalculator
  */
 class SpeedCalculator {
@@ -33,8 +33,8 @@ class SpeedCalculator {
   public addMeasure(id: number, count: number) {
     const now: number = this.now();
 
-    let secondsPassed = now - this.mCounters[id].lastMeasure;
-    let perSec = count / (secondsPassed + 1);
+    const secondsPassed = now - this.mCounters[id].lastMeasure;
+    const perSec = count / (secondsPassed + 1);
     for (let i = this.mHorizon - secondsPassed - 1; i < this.mHorizon; ++i) {
       if (this.mTimeSlices[i] === undefined) {
         this.mTimeSlices[i] = 0;
@@ -53,7 +53,7 @@ class SpeedCalculator {
   }
 
   private moveHorizon() {
-    let time = this.now();
+    const time = this.now();
     for (let i = 0; i < time - this.mMeasureTime; ++i) {
       this.mTimeSlices.shift();
     }

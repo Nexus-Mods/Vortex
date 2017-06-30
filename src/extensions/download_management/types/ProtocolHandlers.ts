@@ -1,3 +1,5 @@
 import * as Promise from 'bluebird';
 
-export type ProtocolHandlers = { [schema: string]: (inputUrl: string) => Promise<string[]> };
+export interface IProtocolHandlers {
+  [schema: string]: (inputUrl: string) => Promise<string[]>;
+}

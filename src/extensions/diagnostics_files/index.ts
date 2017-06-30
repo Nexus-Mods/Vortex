@@ -12,7 +12,7 @@ function init(context: IExtensionContext): boolean {
 }
 
 function logPath(store: Redux.Store<any>): string {
-  let app = appIn || remote.app;
+  const app = appIn || remote.app;
   return app.getPath('userData');
 }
 

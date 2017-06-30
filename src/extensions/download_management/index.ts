@@ -8,7 +8,7 @@ import { addLocalDownload, removeDownload, setDownloadHashByFile,
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
 import { IDownload } from './types/IDownload';
-import { ProtocolHandlers } from './types/ProtocolHandlers';
+import { IProtocolHandlers } from './types/ProtocolHandlers';
 import Dashlet from './views/Dashlet';
 import {} from './views/DownloadView';
 import {} from './views/Settings';
@@ -27,7 +27,7 @@ import {generate as shortid} from 'shortid';
 const app = remote !== undefined ? remote.app : appIn;
 
 let observer;
-const protocolHandlers: ProtocolHandlers = {};
+const protocolHandlers: IProtocolHandlers = {};
 
 function refreshDownloads(downloadPath: string, knownDLs: string[],
                           onAddDownload: (name: string) => void,

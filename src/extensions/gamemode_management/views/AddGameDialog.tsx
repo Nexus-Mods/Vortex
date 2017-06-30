@@ -256,7 +256,7 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private save = () => {
-    const result = Object.assign({}, this.state.game);
+    const result = { ...this.state.game };
     result.executable = path.relative(result.path, result.executable);
     this.props.onAddDiscoveredGame(result.id, result);
     this.close();

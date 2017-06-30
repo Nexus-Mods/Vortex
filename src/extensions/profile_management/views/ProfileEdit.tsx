@@ -33,7 +33,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
   constructor(props: IEditProps) {
     super(props);
     this.state = props.profile !== undefined
-      ? { edit: Object.assign({}, props.profile) }
+      ? { edit: { ...props.profile } }
       : { edit: {
           id: props.profileId,
           gameId: props.gameId,
@@ -63,7 +63,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           <Icon name='check' />
         </Button>
         <Button id='__cancel' tooltip={ t('Cancel') } onClick={ onCancelEdit }>
-          <Icon name='times' />
+          <Icon name='remove' />
         </Button>
         </div>
         <div>

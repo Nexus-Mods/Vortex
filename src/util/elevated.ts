@@ -39,7 +39,7 @@ let shell32;
 function execInfo(scriptPath: string, parameters?: string[]) {
   const instApp = ref.alloc(voidPtr);
 
-  let paramStr = parameters !== undefined ? ' ' + parameters.join(' ') : '';
+  const paramStr = parameters !== undefined ? ' ' + parameters.join(' ') : '';
 
   return new SHELLEXECUTEINFO({
     cbSize: SHELLEXECUTEINFO.size,
@@ -64,10 +64,10 @@ function execInfo(scriptPath: string, parameters?: string[]) {
   });
 }
 
-function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string, main: Function) {
-  let path = require('path');
-  let requireOrig = require;
-  let newRequire: any = (id: string): any => {
+function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string, main: (ipc) => void) {
+  const path = require('path');
+  const requireOrig = require;
+  const newRequire: any = (id: string): any => {
     if (id.startsWith('.')) {
       return requireOrig(path.join(baseDir, id));
     } else {
@@ -77,7 +77,7 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string, main
   newRequire.requireActual = newRequire;
   require = newRequire;
   module.paths.push(moduleRoot);
-  let ipc = require('node-ipc');
+  const ipc = require('node-ipc');
   ipc.connectTo(ipcPath, ipcPath, () => {
     ipc.of[ipcPath].on('quit', () => {
       process.exit(0);
@@ -92,22 +92,22 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string, main
  * running process so instead we have to store the function code into a file and start a
  * new node process elevated to execute that script.
  * Through some hackery the base path for relative requires can be set.
- * 
+ *
  * IMPORTANT As a consequence the function can not bind any parameters
- * 
+ *
  * @param {string} ipcPath a unique identifier for a local ipc channel that can be used to
  *                 communicate with the elevated process (as stdin/stdout can not be)
  *                 redirected
  * @param {Function} func The closure to run in the elevated process. Try to avoid
- *                        'fancy' code.  
+ *                        'fancy' code.
  * @param {Object} args arguments to be passed into the elevated process
  * @param {string} moduleBase base directory for all relative require call. If undefined,
  *                 the directory of this very file (elevated.js) will be used.
  * @returns {Promise<any>} a promise that will be resolved as soon as the process is started
  *                         (which happens after the user confirmed elevation)
  */
-function runElevated(ipcPath: string, func: Function,
-                     args?: Object, moduleBase?: string): Promise<any> {
+function runElevated(ipcPath: string, func: (ipc: any) => void,
+                     args?: any, moduleBase?: string): Promise<any> {
   if (shell32 === undefined) {
     if (process.platform === 'win32') {
       shell32 = new ffi.Library('Shell32', {
@@ -121,7 +121,7 @@ function runElevated(ipcPath: string, func: Function,
         return reject(err);
       }
 
-      let projectRoot = path.resolve(__dirname, '../../node_modules').split('\\').join('/');
+      const projectRoot = path.resolve(__dirname, '../../node_modules').split('\\').join('/');
       if (moduleBase === undefined) {
         moduleBase = __dirname;
       }
@@ -137,7 +137,7 @@ function runElevated(ipcPath: string, func: Function,
       `;
 
       if (args !== undefined) {
-        for (let argKey of Object.keys(args)) {
+        for (const argKey of Object.keys(args)) {
           if (args.hasOwnProperty(argKey)) {
             prog += `let ${argKey} = ${JSON.stringify(args[argKey])};\n`;
           }
@@ -155,7 +155,7 @@ function runElevated(ipcPath: string, func: Function,
           return reject(writeErr);
         }
 
-        let runInfo = execInfo(tmpPath);
+        const runInfo = execInfo(tmpPath);
 
         shell32.ShellExecuteExA.async(runInfo.ref(), (execErr: any, res: any) => {
           // this is reached after the user confirmed the UAC dialog but before node
