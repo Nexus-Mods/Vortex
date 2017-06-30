@@ -105,7 +105,7 @@
       "!**/._*",
       "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,thumbs.db,.gitignore,.gitattributes,.editorconfig,.flowconfig,.yarn-metadata.json,.idea,appveyor.yml,.travis.yml,circle.yml,npm-debug.log,.nyc_output,yarn.lock,.yarn-integrity}",
       "!**/*.{pdb,lib,VC.db,exp,gypi,d.ts}",
-      "!**/build/Debug/${/*}",
+      "!**/build/Debug${/*}",
       "!**/build/Release/obj${/*}",
       "!**/build/.vs${/*}",
       "!**/autogypi.json",
@@ -115,9 +115,9 @@
       "!**/node_modules/edge/lib/native${/*}",
       "!**/node_modules/edge/src${/*}",
       "!**/node_modules/leveldown/deps${/*}",
-      "!**/node_modules/node-sass/{build, src, vendor}${/*}",
-      "!**/node_modules/react-layout-pane/{demo, docs}${/*}",
-      "!**/node_modules/recharts/{umd}${/*}"
+      "!**/node_modules/node-sass/{build,src,vendor}${/*}",
+      "!**/node_modules/react-layout-pane/{demo,docs}${/*}",
+      "!**/node_modules/recharts/umd${/*}"
     ]
   },
   "parserOptions": {

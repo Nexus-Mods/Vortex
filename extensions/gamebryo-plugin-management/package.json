@@ -31,7 +31,7 @@
     "@types/react-i18next": "^1.7.5",
     "@types/react-redux": "4.4.35",
     "@types/react-router": "^2.0.41",
-    "@types/react-select": "^1.0.47",
+    "@types/react-select": "1.0.47",
     "@types/js-yaml": "^3.5.29",
     "babel-core": "^6.14.0",
     "babel-loader": "^6.2.5",
