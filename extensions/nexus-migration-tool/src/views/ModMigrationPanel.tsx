@@ -40,7 +40,7 @@ interface IActionProps {
 
 interface IComponentState {
   profileId: string;
-  importedMod: IModEntry[];
+  importedModList: IModEntry[];
 }
 
 type Props = IConnectedProps & IActionProps;
@@ -51,7 +51,7 @@ type Props = IConnectedProps & IActionProps;
  */
 class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   private modActions: ITableRowAction[];
-  private importList: IModEntry[];
+  private toImportList: IModEntry[];
   private selectedVirtualPath: string;
   private selectionId: string = 'path-selection-id';
   private importId: string = 'vortex-import-id';
@@ -60,7 +60,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
     super(props);
     this.initState({
       profileId: undefined,
-      importedMod: undefined,
+      importedModList: undefined,
     });
 
     this.modActions = [
@@ -80,7 +80,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
 
   public render(): JSX.Element {
     const { t, importedMods } = this.props;
-    const { importedMod, profileId } = this.state;
+    const { importedModList, profileId } = this.state;
     let actions = this.modActions;
     const selectFolder = true;
 
@@ -89,11 +89,11 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
     actions = [].concat(this.modActions);
 
     let content = null;
-    if (!selectFolder || ((importedMod !== undefined) && (importedMod !== null))) {
+    if (!selectFolder || ((importedModList !== undefined) && (importedModList !== null))) {
       content = (
         <Table
           tableId='importedmods'
-          data={selectFolder ? importedMod : importedMods}
+          data={selectFolder ? importedModList : importedMods}
           actions={actions}
           staticElements={[
             MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, FILES, STATUS]}
@@ -142,8 +142,8 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
 
     let buttons;
 
-    if ((this.importList !== null) && (this.importList !== undefined)
-      && (this.importList.length > 0)) {
+    if ((this.toImportList !== null) && (this.toImportList !== undefined)
+      && (this.toImportList.length > 0)) {
       buttons = (
       <div style={{ whiteSpace: 'nowrap' }}>
         {t('Select import folder') + ' '}
@@ -183,10 +183,10 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   }
 
   private testParse = (evt, selectedDir: string) => {
-    const { onShowActivity, onShowError} = this.props;
+    const { onShowActivity, onShowError, onShowSuccess} = this.props;
     const virtualPath = selectedDir;
 
-    this.nextState.importedMod = undefined;
+    this.nextState.importedModList = undefined;
 
     onShowActivity('Parsing NMM virtual config file...', this.importId);
 
@@ -196,8 +196,9 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
         onShowError('Virtual config parse issue:',
         'The selected folder contained no VirtualModConfig.xml file.', this.importId);
       }
-      this.importList = modEntries;
-      this.nextState.importedMod = modEntries;
+      this.toImportList = modEntries;
+      this.nextState.importedModList = modEntries;
+      onShowSuccess('NMM virtual config file parsed successfully.', this.importId);
     })
     .catch((err) => {
       onShowError('Virtual config parse issue:', {err}, this.importId);
@@ -227,12 +228,12 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   private importMods = (evt) => {
     const { gameMode, onShowActivity, onShowError, onShowSuccess } = this.props;
 
-    onShowActivity('Copying mod files: ' + this.importList.length + ' mods...', this.importId);
+    onShowActivity('Copying mod files: ' + this.toImportList.length + ' mods...', this.importId);
     let index: number = 0;
 
-    Promise.map(this.importList, modEntry => {
+    Promise.map(this.toImportList, modEntry => {
       onShowActivity('Copying mod files: ' + (++index) +
-        ' of ' + this.importList.length + ' mods...', this.importId);
+        ' of ' + this.toImportList.length + ' mods...', this.importId);
       transferUnpackedMod(modEntry, this.selectedVirtualPath,
        selectors.installPath(this.state) , true)
       .then((files) => {
@@ -246,7 +247,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
       onShowActivity('Importing mods into Vortex...', this.selectionId);
       createProfile(gameMode, 'nmm-profile',
         'Imported NMM Profile', this.context.api.store.dispatch);
-      addMods(gameMode, this.importList, this.context.api.store.dispatch);
+      addMods(gameMode, this.toImportList, this.context.api.store.dispatch);
     })
     .then(() => {
       onShowSuccess('Mod import successfully completed.', this.selectionId);
@@ -258,11 +259,24 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   }
 
   private restore = (instanceId: string) => {
-    // restores a mod flagged as "do not import" into the import list
+    const { importedModList } = this.state;
+    const mod: IModEntry = importedModList[instanceId];
+    log('info', 'RESTORE: ' + mod.modName + ' ' + instanceId);
+
+    mod.importFlag = true;
+    this.toImportList[instanceId] = mod;
+    this.nextState.importedModList = this.toImportList;
   }
 
-  private remove = (instanceIds: string[]) => {
+  private remove = (instanceId: string) => {
     // removes a mod from the import list
+    const { importedModList } = this.state;
+    const mod: IModEntry = importedModList[instanceId];
+    log('info', 'REMOVE: ' + mod.modName + ' ' + instanceId);
+
+    mod.importFlag = false;
+    this.toImportList[instanceId] = mod;
+    this.nextState.importedModList = this.toImportList;
   }
 }
 
