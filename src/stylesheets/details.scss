@@ -3,18 +3,17 @@
   src: url(assets/fonts/roboto.woff2);
 }
 
-$font-size-large:         ceil(($font-size-base * 1.25));
-$font-size-small:         ceil(($font-size-base * 0.85));
+$font-size-large:         1.25em;
+$font-size-small:         0.85em;
 
-$font-size-h1:            floor(($font-size-base * 2.6));
-$font-size-h2:            floor(($font-size-base * 2.15));
-$font-size-h3:            ceil(($font-size-base * 1.7));
-$font-size-h4:            ceil(($font-size-base * 1.25));
-$font-size-h5:            $font-size-base;
-$font-size-h6:            ceil(($font-size-base * 0.85));
+$font-size-h1:            2.6em;
+$font-size-h2:            2.15em;
+$font-size-h3:            1.7em;
+$font-size-h4:            1.25em;
+$font-size-h5:            1em;
+$font-size-h6:            0.85em;
 
-$line-height-base:        20 / strip-unit($font-size-base);
-$line-height-computed:    floor(($font-size-base * $line-height-base));
+$line-height-computed:    1.5em;
 
 $headings-font-family:    $font-family-base;
 
@@ -76,9 +75,9 @@ $input-border-focus:             $brand-primary;
 
 $input-color-placeholder:        $gray-light;
 
-$input-height-base:              ($line-height-computed + ($padding-base-vertical * 2) + 4);
-$input-height-large:             (ceil($font-size-large * $line-height-large) + ($padding-large-vertical * 2) + 4);
-$input-height-small:             (floor($font-size-small * $line-height-small) + ($padding-small-vertical * 2) + 4);
+$input-height-base:              ($line-height-computed + ($padding-base-vertical * 2) + 0.3);
+$input-height-large:             (ceil($font-size-large * $line-height-large) + ($padding-large-vertical * 2) + 0.3);
+$input-height-small:             (floor($font-size-small * $line-height-small) + ($padding-small-vertical * 2) + 0.3);
 
 $form-group-margin-bottom:       floor(($gutter-width / 2));
 
@@ -161,7 +160,7 @@ $container-lg:                 $container-large-desktop;
 
 //== Navbar (unused)
 
-$navbar-height:                    60px;
+$navbar-height:                    4.5em;
 $navbar-margin-bottom:             $line-height-computed;
 $navbar-border-radius:             $border-radius-base;
 $navbar-padding-horizontal:        floor(($grid-gutter-width / 2));
@@ -269,8 +268,8 @@ $jumbotron-padding:              $gutter-width;
 $jumbotron-color:                inherit;
 $jumbotron-bg:                   $gray-darker;
 $jumbotron-heading-color:        inherit;
-$jumbotron-font-size:            ceil(($font-size-base * 1.5));
-$jumbotron-heading-font-size:    ceil(($font-size-base * 4.5));
+$jumbotron-font-size:            1.5em;
+$jumbotron-heading-font-size:    4.5em;
 
 //== Form states and alerts
 $state-success-text:             $text-color;
@@ -335,7 +334,7 @@ $label-link-hover-color:      $text-color;
 
 $modal-inner-padding:         $gutter-width / 2;
 $modal-title-padding:         $gutter-width / 2;
-$modal-title-line-height:     $line-height-base;
+$modal-title-line-height:     1.4em;
 
 $modal-content-bg:                             $brand-menu;
 $modal-content-border-color:                   rgba($gray-lighter,.2);
@@ -527,7 +526,7 @@ $component-offset-horizontal: 180px;
 $text-muted:                  $gray-light;
 $headings-small-color:        $gray-light;
 $blockquote-small-color:      $gray-light;
-$blockquote-font-size:        ($font-size-base * 1.25);
+$blockquote-font-size:        1.25em;
 $blockquote-border-color:     $gray-lighter;
 $page-header-border-color:    transparent;
 $dl-horizontal-offset:        $component-offset-horizontal;

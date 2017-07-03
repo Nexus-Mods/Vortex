@@ -64,17 +64,17 @@ $headings-color:          inherit;
 //== Base Spacing
 $gutter-width:              30px;
 
-$padding-base-vertical:     5px;
-$padding-base-horizontal:   10px;
+$padding-base-vertical:     0.4em;
+$padding-base-horizontal:   0.8em;
 
-$padding-large-vertical:    13px;
-$padding-large-horizontal:  22px;
+$padding-large-vertical:    1em;
+$padding-large-horizontal:  1.8em;
 
-$padding-small-vertical:    3px;
-$padding-small-horizontal:  6px;
+$padding-small-vertical:    0.25em;
+$padding-small-horizontal:  0.5em;
 
-$padding-xs-vertical:       1px;
-$padding-xs-horizontal:     5px;
+$padding-xs-vertical:       0.1em;
+$padding-xs-horizontal:     0.4em;
 
 $line-height-large:         1.3333333;
 $line-height-small:         1.5;
@@ -90,4 +90,4 @@ $caret-width-large:         5px;
 $expand-sidebar-delay: 300ms;
 
 //== Scrollbar
-$scrollbar-width:        8px;
+$scrollbar-width:        0.75em;

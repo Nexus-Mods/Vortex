@@ -366,8 +366,8 @@ a[role=menuitem] svg {
 
 .icon {
   fill: currentColor;
-  height: calc(#{$font-size-base} + 3px);
-  width: calc(#{$font-size-base} + 3px);
+  height: 1.1em;
+  width: 1.1em;
   display: inline-block;
   vertical-align: middle;
   margin: 4px;
@@ -748,7 +748,7 @@ a[role=menuitem] svg {
     margin-top: 10px;
   }
   .logout-button {
-    margin-top: -6px;
+    margin-top: -0.5em;
     text-align: right;
   }
   .logout-button a {
@@ -1581,3 +1581,13 @@ a[role=menuitem] svg {
 }
 // /mods page
 /////////////
+
+////////
+// HIDPI
+
+.hidpi {
+  font-size: 1.5em;
+}
+
+// /HIDPI
+/////////

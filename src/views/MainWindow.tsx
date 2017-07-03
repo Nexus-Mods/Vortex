@@ -105,6 +105,7 @@ export interface IExtendedProps {
 export interface IMainWindowState {
   showLayer: string;
   loadedPages: string[];
+  hidpi: boolean;
 }
 
 export interface IConnectedProps {
@@ -147,6 +148,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.state = {
       showLayer: '',
       loadedPages: [],
+      hidpi: false,
     };
 
     this.settingsPage = {
@@ -180,6 +182,16 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         showLayer: { $set: id },
       }));
     });
+
+    this.updateSize();
+  }
+
+  public componentDidMount() {
+    window.addEventListener('resize', this.updateSize);
+  }
+
+  public componentWillUnmount() {
+    window.removeEventListener('resize', this.updateSize);
   }
 
   public shouldComponentUpdate(nextProps: IProps, nextState: IMainWindowState) {
@@ -188,13 +200,15 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.props.tabsMinimized !== nextProps.tabsMinimized
       || this.props.mainPage !== nextProps.mainPage
       || this.state.showLayer !== nextState.showLayer
+      || this.state.hidpi !== nextState.hidpi
       ;
   }
 
   public render(): JSX.Element {
     const { onHideDialog, visibleDialog } = this.props;
+    const { hidpi } = this.state;
     return (
-      <div>
+      <div className={hidpi ? 'hidpi' : 'lodpi'}>
         <div id='menu-layer' ref={this.setMenuLayer} />
         <Layout type='column'>
           {this.renderToolbar()}
@@ -229,6 +243,12 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         />
       </Fixed>
     );
+  }
+
+  private updateSize = () => {
+    this.setState(update(this.state, {
+      hidpi: { $set: screen.width > 1920 },
+    }));
   }
 
   private renderBody() {
