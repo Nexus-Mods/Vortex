@@ -121,6 +121,7 @@ const colorDefaults: IColorEntry[] = [
 interface IComponentState {
   fontFamily: string;
   fontSize: number;
+  hidpiScale: number;
   colors: { [key: string]: string };
 }
 
@@ -134,6 +135,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
       colors: {},
       fontSize: 13,
       fontFamily: 'Arial',
+      hidpiScale: 150,
     });
 
   }
@@ -141,6 +143,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.setColors(this.props.theme);
     this.setFontSize(this.props.theme);
+    this.setHiDPIScale(this.props.theme);
     this.setFontFamily(this.props.theme);
   }
 
@@ -148,13 +151,14 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     if (newProps.theme !== this.props.theme) {
       this.setColors(newProps.theme);
       this.setFontSize(newProps.theme);
+      this.setHiDPIScale(newProps.theme);
       this.setFontFamily(newProps.theme);
     }
   }
 
   public render(): JSX.Element {
     const { t, availableFonts } = this.props;
-    const { colors, fontFamily, fontSize } = this.state;
+    const { colors, fontFamily, fontSize, hidpiScale } = this.state;
     const buckets: IColorEntry[][] = colorDefaults.reduce((prev, value, idx) => {
       if (idx < ThemeEditor.BUCKETS) {
         prev[idx % ThemeEditor.BUCKETS] = [];
@@ -176,6 +180,20 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
                 min={8}
                 max={24}
                 onChange={this.onChangeFontSize}
+              />
+            </Col>
+          </FormGroup>
+          <FormGroup>
+            <Col sm={4}>
+              <ControlLabel>{t('HiDPI Scale:')} {hidpiScale}%</ControlLabel>
+            </Col>
+            <Col sm={8}>
+              <FormControl
+                type='range'
+                value={hidpiScale}
+                min={50}
+                max={300}
+                onChange={this.onChangeHiDPIScale}
               />
             </Col>
           </FormGroup>
@@ -251,6 +269,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     const theme: { [key: string]: string } = {
       ...this.state.colors,
       'font-size-base': this.state.fontSize.toString() + 'px',
+      'hidpi-scale-factor': this.state.hidpiScale.toString() + '%',
       'font-family-base': '"' + this.state.fontFamily + '"',
     };
 
@@ -265,6 +284,10 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     this.nextState.fontSize = evt.currentTarget.value;
   }
 
+  private onChangeHiDPIScale = (evt) => {
+    this.nextState.hidpiScale = evt.currentTarget.value;
+  }
+
   private onChangeFontFamily = (evt) => {
     this.nextState.fontFamily = evt.currentTarget.value;
   }
@@ -272,6 +295,12 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   private setFontSize(theme: { [name: string]: string }) {
     if (theme['font-size-base'] !== undefined) {
       this.nextState.fontSize = parseInt(theme['font-size-base'], 10);
+    }
+  }
+
+  private setHiDPIScale(theme: { [name: string]: string }) {
+    if (theme['hidpi-scale-factor'] !== undefined) {
+      this.nextState.hidpiScale = parseInt(theme['hidpi-scale-factor'], 10);
     }
   }
 

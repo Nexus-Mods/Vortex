@@ -1586,7 +1586,7 @@ a[role=menuitem] svg {
 // HIDPI
 
 .hidpi {
-  font-size: 1.5em;
+  font-size: $hidpi-scale-factor;
 }
 
 // /HIDPI

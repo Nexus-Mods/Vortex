@@ -169,11 +169,16 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
   private clone = () => {
     const { currentTheme, onShowDialog } = this.props;
     const { themes } = this.state;
+
+    const theme = currentTheme.startsWith('__')
+      ? currentTheme.slice(2)
+      : currentTheme;
+
     onShowDialog('question', 'Enter a name', {
       input: [ {
           id: 'name',
           placeholder: 'Theme Name',
-          value: currentTheme,
+          value: theme,
         } ],
     }, {
       Cancel: null,
