@@ -128,8 +128,6 @@ function reducers(extensionReducers: IExtensionReducer[]) {
     },
     settings: {
       window: windowReducer,
-    },
-    persistent: {
       tables: tableReducer,
     },
   };

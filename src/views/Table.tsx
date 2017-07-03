@@ -770,9 +770,9 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedProps {
   return {
     language: state.settings.interface.language,
-    attributeState: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'attributes'], {}),
-    splitPos: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'splitPos'], 200),
-    filter: getSafe(state, ['persistent', 'tables', ownProps.tableId, 'filter'], undefined),
+    attributeState: getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], {}),
+    splitPos: getSafe(state, ['settings', 'tables', ownProps.tableId, 'splitPos'], 200),
+    filter: getSafe(state, ['settings', 'tables', ownProps.tableId, 'filter'], undefined),
   };
 }
 
@@ -798,7 +798,7 @@ function registerTableAttribute(
 }
 
 function getTableState(state: IState, tableId: string) {
-  return state.persistent.tables[tableId];
+  return state.settings.tables[tableId];
 }
 
 export function makeGetSelection(tableId: string) {

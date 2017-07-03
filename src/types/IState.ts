@@ -141,6 +141,7 @@ export interface ISettings {
   window: IWindow;
   downloads: ISettingsDownloads;
   mods: ISettingsMods;
+  tables: ITableStates;
 }
 
 export interface ISessionGameMode {
@@ -168,7 +169,6 @@ export interface IState {
   };
   settings: ISettings;
   persistent: {
-    tables: ITableStates,
     profiles: { [profileId: string]: IProfile },
     mods: { [gameId: string]: { [modId: string]: IMod } },
     downloads: IStateDownloads,
