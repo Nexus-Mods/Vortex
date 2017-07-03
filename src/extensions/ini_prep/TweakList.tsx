@@ -74,11 +74,13 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
   public componentWillMount() {
     const { mod, modsPath } = this.props;
 
-    fs.readdirAsync(path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH))
-      .then((files: string[]) => {
-        this.nextState.tweaks = files;
-      })
-      .catch(() => undefined);
+    if (mod !== undefined) {
+      fs.readdirAsync(path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH))
+        .then((files: string[]) => {
+          this.nextState.tweaks = files;
+        })
+        .catch(() => undefined);
+    }
   }
 
   public render(): JSX.Element {
