@@ -134,6 +134,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private applicationButtons: IActionDefinition[];
 
   private settingsPage: IMainPage;
+  private nextState: IMainWindowState;
 
   private pageHeader: JSX.Element = null;
   private pageOverlay: JSX.Element = null;
@@ -145,7 +146,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   constructor(props: IProps) {
     super(props);
 
-    this.state = {
+    this.state = this.nextState = {
       showLayer: '',
       loadedPages: [],
       hidpi: false,
@@ -178,9 +179,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     });
 
     this.props.api.events.on('show-modal', id => {
-      this.setState(update(this.state, {
+      this.updateState({
         showLayer: { $set: id },
-      }));
+      });
     });
 
     this.updateSize();
@@ -222,6 +223,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     );
   }
 
+  private updateState(spec: any) {
+    this.nextState = update(this.nextState, spec);
+    this.setState(this.nextState);
+  }
+
   private renderToolbar() {
     const { t } = this.props;
     return (
@@ -246,9 +252,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private updateSize = () => {
-    this.setState(update(this.state, {
+    this.updateState({
       hidpi: { $set: screen.width > 1920 },
-    }));
+    });
   }
 
   private renderBody() {
@@ -395,7 +401,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     if (this.state.showLayer !== '') {
       this.props.api.events.emit('hide-modal', this.state.showLayer);
     }
-    this.setState(update(this.state, { showLayer: { $set: layer } }));
+    this.updateState({ showLayer: { $set: layer } });
   }
 
   private setMainPage = (title: string) => {
@@ -405,9 +411,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     // set the page as "loaded", set it as the shown page next frame.
     // this way it gets rendered as hidden once and can then "transition"
     // to visible
-    this.setState(update(this.state, {
+    this.updateState({
       loadedPages: { $push: [title] },
-    }));
+    });
     setImmediate(() => {
       this.props.onSetOpenMainPage(title);
     });
