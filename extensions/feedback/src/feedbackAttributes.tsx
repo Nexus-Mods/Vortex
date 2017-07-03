@@ -21,9 +21,9 @@ export const SIZE: types.ITableAttribute = {
   description: 'Size of the feedback file',
   icon: 'id-badge',
   calc: (feedbackFile: IFeedbackFile) => feedbackFile.size,
-  placement: 'table',
-  isToggleable: true,
-  isSortable: true,
+  placement: 'detail',
+  isToggleable: false,
+  isSortable: false,
   isDefaultVisible: true,
   edit: {},
 };
@@ -34,9 +34,22 @@ export const TYPE: types.ITableAttribute = {
   description: 'Type of the feedback file',
   icon: 'id-badge',
   calc: (feedbackFile: IFeedbackFile) => feedbackFile.type,
-  placement: 'table',
-  isToggleable: true,
-  isSortable: true,
+  placement: 'detail',
+  isToggleable: false,
+  isSortable: false,
+  isDefaultVisible: true,
+  edit: {},
+};
+
+export const GAME: types.ITableAttribute = {
+  id: 'game',
+  name: 'game',
+  description: 'Game related to the feedback file',
+  icon: 'id-badge',
+  calc: (feedbackFile: IFeedbackFile) => feedbackFile.gameId,
+  placement: 'detail',
+  isToggleable: false,
+  isSortable: false,
   isDefaultVisible: true,
   edit: {},
 };

@@ -1,3 +1,4 @@
+import { addFeedbackFile, removeFeedbackFile } from '../actions/session';
 import { IFeedbackFile } from '../types/IFeedbackFile';
 
 import * as Promise from 'bluebird';
@@ -13,6 +14,10 @@ import { connect } from 'react-redux';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
+export interface IBaseProps {
+  feedbackType: string;
+}
+
 interface IConnectedProps {
   gameMode: string;
 }
@@ -24,15 +29,16 @@ interface IActionProps {
     content: types.IDialogContent,
     actions: types.IDialogActions,
   ) => Promise<types.IDialogResult>;
+  onAddFeedbackFile: (feedbackFile: IFeedbackFile) => void;
 }
 
 interface IComponentState {
   dropActive: 'no' | 'file' | 'hover' | 'invalid';
 }
 
-type IProps = IConnectedProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-class TracelogDropzone extends ComponentEx<IProps, IComponentState> {
+class FeedbackDropzone extends ComponentEx<IProps, IComponentState> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
   };
@@ -46,7 +52,7 @@ class TracelogDropzone extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t } = this.props;
+    const { feedbackType, t } = this.props;
 
     const classes = ['dropzone-feedback'];
     if (this.state.dropActive === 'invalid') {
@@ -67,8 +73,8 @@ class TracelogDropzone extends ComponentEx<IProps, IComponentState> {
         onMouseLeave={this.onHoverLeave}
         onClick={this.onClick}
       >
-        {this.state.dropActive === 'hover' ? t('Click to select the tracelog')
-          : t('Drag any tracelog here')}
+        {this.state.dropActive === 'hover' ? t('Click to select the ' + feedbackType)
+          : t('Drag the ' + feedbackType + ' here')}
       </div>
     );
   }
@@ -94,18 +100,18 @@ class TracelogDropzone extends ComponentEx<IProps, IComponentState> {
 
   private onDrop = (evt: React.DragEvent<any>) => {
 
-    const { gameMode } = this.props;
+    const { feedbackType, gameMode, onAddFeedbackFile } = this.props;
 
     if (evt.dataTransfer.files[0] !== undefined) {
       const feedbackFile: IFeedbackFile = {
         filename: evt.dataTransfer.files[0].name,
         filePath: (evt.dataTransfer.files[0] as any).path,
         size: evt.dataTransfer.files[0].size,
-        type: 'tracelog',
+        type: feedbackType,
         gameId: gameMode,
       };
 
-      this.context.api.events.emit('add-feedback-file', feedbackFile);
+      onAddFeedbackFile(feedbackFile);
     }
 
     this.setState(update(this.state, {
@@ -126,7 +132,7 @@ class TracelogDropzone extends ComponentEx<IProps, IComponentState> {
   }
 
   private onClick = () => {
-    const { gameMode } = this.props;
+    const { feedbackType, gameMode, onAddFeedbackFile } = this.props;
 
     const options: Electron.OpenDialogOptions = {
       properties: ['openFile'],
@@ -141,11 +147,11 @@ class TracelogDropzone extends ComponentEx<IProps, IComponentState> {
               filename: path.basename(fileNames[0]),
               filePath: fileNames[0],
               size: stats.size,
-              type: 'tracelog',
+              type: feedbackType,
               gameId: gameMode,
             };
 
-            this.context.api.events.emit('add-feedback-file', feedbackFile);
+            onAddFeedbackFile(feedbackFile);
           });
       }
     });
@@ -162,10 +168,11 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onShowDialog: (type, title, content, dialogActions) =>
       dispatch(actions.showDialog(type, title, content, dialogActions)),
+    onAddFeedbackFile: (feedbackFile) => dispatch(addFeedbackFile(feedbackFile)),
   };
 }
 
 export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
-      TracelogDropzone)) as React.ComponentClass<{}>;
+      FeedbackDropzone)) as React.ComponentClass<IBaseProps>;

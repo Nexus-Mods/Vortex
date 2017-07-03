@@ -1,14 +1,18 @@
+import { clearFeedbackFiles, removeFeedbackFile } from '../actions/session';
 import { IFeedbackFile } from '../types/IFeedbackFile';
 
-import { FILE_NAME, SIZE, TYPE } from '../feedbackAttributes';
-import ScreenshotDropzone from './ScreenshotDropzone';
-import TracelogDropzone from './TracelogDropzone';
+import { FILE_NAME, GAME, SIZE, TYPE } from '../feedbackAttributes';
 
+import FeedbackDropzone from './FeedbackDropzone';
+
+import { remote } from 'electron';
+import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import {
   ComponentEx, IconBar, ITableRowAction, MainPage, Table,
   tooltip, types, util,
 } from 'nmm-api';
+import * as path from 'path';
 import * as React from 'react';
 import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
@@ -20,6 +24,9 @@ interface IConnectedProps {
 
 interface IActionProps {
   onShowActivity: (message: string, id?: string) => void;
+  onRemoveFeedbackFile: (feedbackFileId: string) => void;
+  onShowError: (message: string, details?: string | Error, notificationId?: string) => void;
+  onClearFeedbackFiles: () => void;
 }
 
 type Props = IConnectedProps & IActionProps;
@@ -29,7 +36,7 @@ interface IComponentState {
 }
 
 class FeedbackPage extends ComponentEx<Props, IComponentState> {
-  private savegameActions: ITableRowAction[];
+  private feedbackActions: ITableRowAction[];
 
   constructor(props) {
     super(props);
@@ -38,7 +45,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       feedbackMessage: '',
     });
 
-    this.savegameActions = [
+    this.feedbackActions = [
       {
         icon: 'remove',
         title: props.t('Delete'),
@@ -50,7 +57,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   public render(): JSX.Element {
 
     const { feedbackFiles, t } = this.props;
-    const actions = this.savegameActions;
+    const actions = this.feedbackActions;
 
     return (
       <MainPage>
@@ -60,14 +67,18 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
             <Table
               tableId='feedbackFiles'
               data={feedbackFiles}
-              staticElements={[FILE_NAME, SIZE, TYPE]}
+              staticElements={[FILE_NAME, GAME, SIZE, TYPE]}
               actions={actions}
             />
           </Flex>
           <Fixed>
-            <div style={{display: 'table', width: '100%'}}>
-              <ScreenshotDropzone />
-              <TracelogDropzone />
+            <div style={{ display: 'table', width: '100%' }}>
+              <FeedbackDropzone
+                feedbackType='screenshot'
+              />
+              <FeedbackDropzone
+                feedbackType='tracelog'
+              />
               <span>
                 <tooltip.Button
                   className='btn.embed'
@@ -86,7 +97,8 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   }
 
   private remove = (instanceIds: string[]) => {
-    this.context.api.events.emit('remove-feedback-file', instanceIds[0]);
+    const { onRemoveFeedbackFile } = this.props;
+    onRemoveFeedbackFile(instanceIds[0]);
   }
 
   private renderHeader(t: I18next.TranslationFunction) {
@@ -118,7 +130,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   }
 
   private submitFeedback = (event) => {
-    const { feedbackFiles, onShowActivity } = this.props;
+    const { feedbackFiles, onClearFeedbackFiles, onShowActivity, onShowError } = this.props;
     const { feedbackMessage } = this.state;
 
     const notificationId = 'submit-feedback';
@@ -128,7 +140,24 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       feedbackMessage: { $set: '' },
     }));
 
-    this.context.api.events.emit('clear-feedback-files', notificationId, feedbackFiles);
+    // TODO: - call nexus integration for the server call
+
+    const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
+    let nativeCrashFile;
+
+    if (feedbackFiles !== undefined) {
+      nativeCrashFile = Object.keys(feedbackFiles).find((file) => path.extname(file) === '.dmp');
+    }
+
+    if (nativeCrashFile !== undefined) {
+      fs.removeAsync(path.join(nativeCrashesPath, nativeCrashFile))
+        .then(() => {
+          onClearFeedbackFiles();
+        })
+        .catch((err) => {
+          onShowError('An error occurred removing the dump file: ', err, notificationId);
+        });
+    }
   }
 
   private handleChange = (event) => {
@@ -143,6 +172,11 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onShowActivity: (message: string, id?: string) =>
       util.showActivity(dispatch, message, id),
+    onRemoveFeedbackFile: (feedbackFileId: string) =>
+      dispatch(removeFeedbackFile(feedbackFileId)),
+    onShowError: (message: string, details?: string | Error, notificationId?: string) =>
+      util.showError(dispatch, message, details, false, notificationId),
+    onClearFeedbackFiles: () => dispatch(clearFeedbackFiles()),
   };
 }
 

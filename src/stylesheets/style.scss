@@ -1543,27 +1543,31 @@ a[role=menuitem] svg {
 
 .dropzone-feedback {
   height: 100px;
+  width: 30%;
   display: table-cell;
   margin: 10px;
   padding: 20px;
   border-radius: 5px;
-  border-width: 2px;
   border-style: dashed;
+  border-width: 2px;
   border-color: $gray;
 }
 
 .dropzone-feedback.hover-click {
   border-style: solid;
+  border-width: 2px;
   border-color: $link-color;
 }
 
 .dropzone-feedback.hover-valid {
   border-style: solid;
+  border-width: 2px;
   border-color: $brand-success;
 }
 
 .dropzone-feedback.hover-invalid {
   border-style: solid;
+  border-width: 2px;
   border-color: $brand-warning;
 }
 
