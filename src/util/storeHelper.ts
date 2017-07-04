@@ -251,6 +251,13 @@ export function merge<T extends object>(state: T, path: Array<(string | number)>
   return setSafe(state, path, newVal);
 }
 
+export function rehydrate<T extends object>(state: T, inbound: any, path: string[]): T {
+  const inState = getSafe(inbound, path, undefined);
+  return inState !== undefined
+    ? merge(state, [], inState)
+    : state;
+}
+
 function waitUntil(predicate: () => boolean, interval: number = 100): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     setTimeout(() => {

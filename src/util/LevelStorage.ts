@@ -8,8 +8,19 @@ const app = appIn || remote.app;
 class LevelStorage {
   private mDB: LevelUp;
 
-  constructor(name: string) {
-    this.mDB = levelup(path.join(app.getPath('userData'), name));
+  constructor(basePath: string, name: string) {
+    this.mDB = levelup(path.join(basePath, name));
+  }
+
+  public close(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.mDB.close(err => {
+        if (err) {
+          reject(err);
+        }
+        resolve();
+      });
+    });
   }
 
   public getItem(key: string, callback?: (error?: Error, result?: string) => void): Promise<any> {

@@ -2,9 +2,17 @@ import {forgetExtension} from '../actions/app';
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import { ExtensionInit } from '../types/Extension';
-import { ArchiveHandlerCreator, IArchiveHandler, IExtensionApi, IExtensionContext,
-         ILookupDetails, IOpenOptions, StateChangeCallback } from '../types/IExtensionContext';
-import { INotification } from '../types/INotification';
+import {
+  ArchiveHandlerCreator,
+  IArchiveHandler,
+  IExtensionApi,
+  IExtensionContext,
+  ILookupDetails,
+  IOpenOptions,
+  IReducerSpec,
+  StateChangeCallback,
+} from '../types/IExtensionContext';
+import {INotification} from '../types/INotification';
 import { IExtensionState } from '../types/IState';
 import lazyRequire from '../util/lazyRequire';
 
@@ -12,7 +20,7 @@ import { Archive } from './archives';
 import { log } from './log';
 import { showError } from './message';
 import { activeGameId } from './selectors';
-import { getSafe } from './storeHelper';
+import {getSafe} from './storeHelper';
 import StyleManagerT from './StyleManager';
 
 import * as Promise from 'bluebird';
@@ -365,7 +373,7 @@ class ExtensionManager {
    */
   public getReducers() {
     const reducers = [];
-    this.apply('registerReducer', (path: string[], reducer: any) => {
+    this.apply('registerReducer', (path: string[], reducer: IReducerSpec) => {
       reducers.push({ path, reducer });
     });
     return reducers;

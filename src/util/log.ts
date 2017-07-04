@@ -4,8 +4,9 @@
 
 /** dummy */
 import * as path from 'path';
+import winstonT = require('winston');
 
-let logger = null;
+let logger: winstonT.LoggerInstance = null;
 
 // magic: when we're in the main process, this uses the logger from winston
 // (which appears to be a singleton). In the renderer processes we connect
@@ -22,13 +23,27 @@ if ((process as any).type === 'renderer') {
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
+export function setLogPath(basePath: string) {
+  logger.remove(logger.transports['File']);
+
+  logger.add(logger.transports['File'], {
+    filename: path.join(basePath, 'vortex.log'),
+    json: false,
+    level: 'debug',
+    maxsize: 1024 * 1024,
+    maxFiles: 5,
+    tailable: true,
+    timestamp: () => new Date().toUTCString(),
+  });
+}
+
 /**
  * application specific logging setup
  *
  * @export
  */
 export function setupLogging(basePath: string, useConsole: boolean): void {
-  logger.add(logger.transports.File, {
+  logger.add(logger.transports['File'], {
     filename: path.join(basePath, 'vortex.log'),
     json: false,
     level: 'debug',
@@ -39,7 +54,7 @@ export function setupLogging(basePath: string, useConsole: boolean): void {
   });
 
   if (!useConsole) {
-    logger.remove(logger.transports.Console);
+    logger.remove(logger.transports['Console']);
   }
   logger.log('info', '--------------------------');
 }

@@ -1,4 +1,5 @@
 import reducer from '../reducers/index';
+import {IExtensionReducer} from '../types/Extension';
 import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 
@@ -13,8 +14,13 @@ import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
-import { autoRehydrate, createPersistor, getStoredState, persistStore } from 'redux-persist';
-import { AsyncNodeStorage } from 'redux-persist-node-storage';
+import {
+  createPersistor,
+  getStoredState,
+  Persistor,
+  persistStore,
+} from 'redux-persist';
+import {AsyncNodeStorage} from 'redux-persist-node-storage';
 import thunkMiddleware from 'redux-thunk';
 
 /*
@@ -26,105 +32,70 @@ const logMiddleware = (store) => (next) => (action) => {
   return res;
 };*/
 
-let storage: LevelStorage;
+const storage: { [path: string]: LevelStorage } = {};
 
-export function baseStore(basePath: string): Promise<Redux.Store<IState>> {
+export function createVortexStore([]): Redux.Store<IState> {
   const middleware = [
     thunkMiddleware,
   ];
 
-  return new Promise<Redux.Store<IState>>((resolve, reject) => {
-    const whitelist = ['app'];
+  const enhancer: Redux.StoreEnhancer<IState> =
+      compose(applyMiddleware(...middleware), electronEnhancer()) as Redux.StoreEnhancer<IState>;
 
-    if (storage === undefined) {
-      storage = new LevelStorage('state');
-    }
-
-    const result = createStore<IState>(reducer([]));
-    persistStore(result,
-                 {
-                   storage,
-                   whitelist,
-                   debounce: 200,
-                   keyPrefix: 'global_',
-                 },
-                 (err, state) => {
-                   if (err !== null) {
-                     const app = appIn || remote.app;
-                     terminate({
-                       message: 'Failed to load application state.',
-                       details: 'One of the state files is corrupted. If you manually '
-                         + 'edited one, use the following error to repair it. Otherwise '
-                         + 'please report a bug and include the files at \''
-                         + app.getPath('userData') + '\'',
-                       stack: err.stack,
-                     });
-                   } else {
-                     resolve(result);
-                   }
-                 });
-  });
+  return createStore<IState>(reducer([]), enhancer);
 }
 
-/**
- * initialize redux store
- *
- * @export
- * @param {string} basePath
- * @param {ExtensionManager} extensions
- * @returns {Redux.Store<IState>}
- */
-export function setupStore(
-    basePath: string,
-    extensions: ExtensionManager): Promise<Redux.Store<IState>> {
-  const middleware = [
-    thunkMiddleware,
-  ];
+function initStorage(basePath: string): Promise<LevelStorage> {
+  if (storage[basePath] === undefined) {
+    storage[basePath] = new LevelStorage(basePath, 'state');
+  }
+  return Promise.resolve(storage[basePath]);
+}
 
-  return new Promise<Redux.Store<IState>>((resolve, reject) => {
-    const enhancer: Redux.StoreEnhancer<IState> =
-        compose(applyMiddleware(...middleware),
-                electronEnhancer(),
-                autoRehydrate()) as Redux.StoreEnhancer<IState>;
+function persist(store: Redux.Store<IState>, levelStorage: LevelStorage,
+                 whitelist: string[]): Promise<Persistor> {
+  const settings = {
+    storage: levelStorage,
+    whitelist,
+    debounce: 200,
+    keyPrefix: 'global_',
+  };
 
-    const extReducers = extensions.getReducers();
-
-    const whitelist = ['app', 'settings', 'persistent', 'confidential'];
-    extensions.apply('registerSettingsHive', (hive: string, type: PersistingType) => {
-      if (type === 'global') {
-        whitelist.push(hive);
-      }
-    });
-
-    if (storage === undefined) {
-      storage = new LevelStorage('state');
-    }
-
-    const settings = {
-      storage,
-      whitelist,
-      debounce: 200,
-      keyPrefix: 'global_',
-    };
-
+  return new Promise<Persistor>((resolve, reject) => {
+    const persistor = createPersistor(store, settings);
     getStoredState(settings, (err, state) => {
       if (err !== null) {
         const app = appIn || remote.app;
+        // TODO: useless error message but why should the leveldb be
+        //   broken?
         terminate({
           message: 'Failed to load application state.',
-          details: 'One of the state files is corrupted. If you manually '
-          + 'edited one, use the following error to repair it. Otherwise '
-          + 'please report a bug and include the files at \''
-          + app.getPath('userData') + '\'',
+          details: 'The application state file is damaged.',
           stack: err.stack,
         });
-      } else {
-        const store = createStore<IState>(reducer(extReducers), state, enhancer);
-        createPersistor(store, settings);
-        resolve(store);
       }
+      persistor.rehydrate(state);
+      resolve(persistor);
     });
   });
+}
+
+export function syncStore(
+    store: Redux.Store<IState>,
+    basePath: string, whitelist: string[]): Promise<Persistor> {
+  return initStorage(basePath)
+      .then(levelStorage => persist(store, levelStorage, whitelist));
+}
+
+export function allHives(extensions: ExtensionManager): string[] {
+  const whitelist = ['app', 'settings', 'persistent', 'confidential'];
+  extensions.apply('registerSettingsHive',
+                   (hive: string, type: PersistingType) => {
+                     if (type === 'global') {
+                       whitelist.push(hive);
+                     }
+                   });
+  return whitelist;
 }
 
 /**

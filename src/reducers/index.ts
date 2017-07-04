@@ -7,16 +7,19 @@
  */
 import { IExtensionReducer } from '../types/Extension';
 import { IReducerSpec } from '../types/IExtensionContext';
+import {rehydrate} from '../util/storeHelper';
 
 import { appReducer } from './app';
 import { notificationsReducer } from './notifications';
 import { sessionReducer } from './session';
 import { tableReducer } from './tables';
+import { userReducer } from './user';
 import { windowReducer } from './window';
 
 import * as _ from 'lodash';
 import { combineReducers } from 'redux';
 import { createReducer } from 'redux-act';
+import { REHYDRATE } from 'redux-persist/constants';
 
 /**
  * wrapper for combineReducers that doesn't drop unexpected keys
@@ -43,7 +46,17 @@ function deriveReducer(path: string, ele: any): Redux.Reducer<any> {
     if (attributes.length !== 2) {
       throw new Error(`invalid settings structure at ${path}`);
     }
-    return createReducer(ele.reducers, ele.defaults);
+    let red = ele.reducers;
+    const pathArray = path.split('.').slice(1);
+    if (red[REHYDRATE] === undefined) {
+      red = {
+        ...ele.reducers,
+        [REHYDRATE]: (state, payload) => {
+          return rehydrate(state, payload, pathArray);
+        },
+      };
+    }
+    return createReducer(red, ele.defaults);
   } else {
     const reducers: Redux.ReducersMapObject = {};
 
@@ -121,6 +134,7 @@ function recursiveObjectKeys(tree: any, prefix: string = '') {
  */
 function reducers(extensionReducers: IExtensionReducer[]) {
   const tree = {
+    user: userReducer,
     app: appReducer,
     session: {
       base: sessionReducer,
