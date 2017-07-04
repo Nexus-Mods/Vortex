@@ -42,7 +42,7 @@ export interface IBaseProps {
 }
 
 interface IConnectedProps {
-  attributeState: { [id: string]: IAttributeState };
+  attributeState?: { [id: string]: IAttributeState };
   splitPos: number;
   language: string;
   filter: { [id: string]: any };
@@ -387,7 +387,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       this.filteredRows(props, this.mVisibleAttributes, data);
     this.setState(update(this.state, {
       sortedRows: {
-        $set: this.sortedRows(attributeState, this.mVisibleAttributes, filtered, language),
+        $set: this.sortedRows(attributeState || {}, this.mVisibleAttributes, filtered, language),
       },
     }));
   }
@@ -618,9 +618,6 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     const row = (evt.currentTarget as HTMLTableRowElement);
 
-    const {attributeState, tableId} = this.props;
-    const {rowState} = this.state;
-
     if (this.useMultiSelect() && evt.ctrlKey) {
       // ctrl-click -> toggle the selected row, leave remaining selection intact
       this.selectToggle(row.id);
@@ -728,7 +725,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   private getAttributeState(attribute: ITableAttribute,
                             attributeStatesIn?: { [id: string]: IAttributeState }) {
-    const attributeStates = attributeStatesIn || this.props.attributeState;
+    const attributeStates = attributeStatesIn || this.props.attributeState || {};
 
     const defaultVisible =
       attribute.isDefaultVisible !== undefined ? attribute.isDefaultVisible : true;
@@ -770,7 +767,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedProps {
   return {
     language: state.settings.interface.language,
-    attributeState: getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], {}),
+    attributeState:
+      getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], undefined),
     splitPos: getSafe(state, ['settings', 'tables', ownProps.tableId, 'splitPos'], 200),
     filter: getSafe(state, ['settings', 'tables', ownProps.tableId, 'filter'], undefined),
   };

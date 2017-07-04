@@ -42,12 +42,12 @@ function checkGlobalFiles(oldProfile: types.IProfile,
                           newProfile: types.IProfile) {
   let fileList: string[] = [];
 
-  if (gameSupported(oldProfile.gameId)) {
+  if ((oldProfile !== undefined) && gameSupported(oldProfile.gameId)) {
     fileList = fileList.concat(gameSettingsFiles(oldProfile.gameId,
                                                  mygamesPath(oldProfile.gameId)));
   }
 
-  if (gameSupported(newProfile.gameId)) {
+  if ((newProfile !== undefined) && gameSupported(newProfile.gameId)) {
     fileList = fileList.concat(gameSettingsFiles(newProfile.gameId,
                                                  mygamesPath(newProfile.gameId)));
   }

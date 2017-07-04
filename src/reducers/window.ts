@@ -1,20 +1,20 @@
 import * as actions from '../actions/window';
 import { IReducerSpec } from '../types/IExtensionContext';
-
-import * as update from 'immutability-helper';
+import {setSafe} from '../util/storeHelper';
 
 /**
  * reducer for changes to the window state
  */
 export const windowReducer: IReducerSpec = {
   reducers: {
-    [actions.setWindowSize as any]: (state, payload) => update(state, { size: { $set: payload } }),
+    [actions.setWindowSize as any]: (state, payload) =>
+      setSafe(state, ['size'], payload),
     [actions.setWindowPosition as any]: (state, payload) =>
-     update(state, { position: { $set: payload } }),
+      setSafe(state, ['position'], payload),
     [actions.setMaximized as any]: (state, payload) =>
-     update(state, { maximized: { $set: payload } }),
+      setSafe(state, ['maximized'], payload),
     [actions.setTabsMinimized as any]: (state, payload) =>
-      update(state, { tabsMinimized: { $set: payload } }),
+      setSafe(state, ['tabsMinimized'], payload),
   },
   defaults: {
     maximized: false,

@@ -7,6 +7,7 @@ export * from './message';
 export * from './storeHelper';
 
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
+import renderModName from '../extensions/mod_management/util/modName';
 import { Archive } from './archives';
 import AsyncComponent from './AsyncComponent';
 import { NotSupportedError, UserCanceled } from './CustomErrors';
@@ -40,6 +41,7 @@ export {
   NotSupportedError,
   ReduxProp,
   relativeTime,
+  renderModName,
   runElevated,
   setdefault,
   Steam,

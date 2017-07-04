@@ -400,19 +400,25 @@ function init(context: IExtensionContextExt) {
     });
 
     context.api.events.on('mod-enabled', (profileId: string, modId: string) => {
-      const state = context.api.store.getState();
+      const state: types.IState = context.api.store.getState();
       const currentProfile = selectors.activeProfile(state);
       if ((profileId === currentProfile.id) && gameSupported(currentProfile.gameId)) {
-        fs.readdirAsync(path.join(selectors.installPath(state), modId))
+        const mod: types.IMod = state.persistent.mods[currentProfile.gameId][modId];
+        fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
         .then(files => {
           const plugins = files.filter(
             fileName => ['.esp', '.esm'].indexOf(path.extname(fileName).toLowerCase()) !== -1);
           if (plugins.length === 1) {
             context.api.store.dispatch(setPluginEnabled(plugins[0], true));
           } else if (plugins.length > 1) {
+            const t = context.api.translate;
             context.api.sendNotification({
               type: 'info',
-              message: 'You enabled a mod that contains multiple plugins',
+              message: t('The mod {{ modName }} contains multiple plugins', {
+                replace: {
+                  modName: util.renderModName(mod),
+                },
+              }),
               actions: [
                 {
                   title: 'Enable all',

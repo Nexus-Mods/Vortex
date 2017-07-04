@@ -4,7 +4,7 @@ type Callback = (err: Error) => void;
 
 /**
  * management function. Prevents a function from being called too often
- * and, for function returning a promise it ensures that it's not run
+ * and, for function returning a promise, it ensures that it's not run
  * again (through this Debouncer) before the promise is resolved.
  *
  * @class Debouncer
@@ -32,7 +32,7 @@ class Debouncer {
    *             and the function actually gets invoked, only the last set of
    *             parameters will be used
    */
-  public schedule(callback: (err: Error) => void, ...args: any[]) {
+  public schedule(callback?: (err: Error) => void, ...args: any[]) {
     if (this.mTimer !== undefined) {
       clearTimeout(this.mTimer);
     }

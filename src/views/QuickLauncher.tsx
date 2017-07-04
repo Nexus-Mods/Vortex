@@ -184,7 +184,8 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
   private makeStarter(props: IProps): StarterInfo {
     const { discoveredTools, game, gameDiscovery, primaryTool } = props;
-    if (gameDiscovery === undefined) {
+    if ((gameDiscovery === undefined)
+        || ((game === undefined) && (gameDiscovery.id === undefined))) {
       return undefined;
     }
 

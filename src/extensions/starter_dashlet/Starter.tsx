@@ -107,7 +107,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   private renderToolIcons(game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element {
     const { discoveredTools, primaryTool } = this.props;
 
-    if ((game === undefined) && (discoveredGame === undefined)) {
+    if ((game === undefined) && (getSafe(discoveredGame, ['id'], undefined) === undefined)) {
       return null;
     }
 

@@ -27,14 +27,7 @@ class Packery extends React.Component<IProps, {}> {
   }
 
   public componentWillReceiveProps() {
-    if (this.mRefreshTimer !== undefined) {
-      clearTimeout(this.mRefreshTimer);
-    }
-    this.mRefreshTimer = setTimeout(() => {
-      this.mPackery.reloadItems();
-      this.forceUpdate();
-      this.mRefreshTimer = undefined;
-    }, 50);
+    this.scheduleRefresh();
   }
 
   public componentDidMount() {
@@ -70,6 +63,21 @@ class Packery extends React.Component<IProps, {}> {
     } else {
       this.mPackery = undefined;
     }
+  }
+
+  private scheduleRefresh() {
+    if (this.mRefreshTimer !== undefined) {
+      clearTimeout(this.mRefreshTimer);
+    }
+    this.mRefreshTimer = setTimeout(() => {
+      this.mRefreshTimer = undefined;
+      if (this.mPackery !== undefined) {
+        this.mPackery.reloadItems();
+        this.forceUpdate();
+      } else {
+        this.scheduleRefresh();
+      }
+    }, 50);
   }
 }
 

@@ -2,9 +2,6 @@ import { types, util } from 'nmm-api';
 
 import * as actions from '../actions/userlistEdit';
 
-/**
- * reducer for changes to settings regarding mods
- */
 const userlistReducer: types.IReducerSpec = {
   reducers: {
     [actions.setSource as any]: (state, payload) => {

@@ -227,17 +227,21 @@ function init(context: IExtensionContextExt): boolean {
               return;
             }
 
-            if (prev[profileId].modState !== current[profileId].modState) {
-              Object.keys(current[profileId].modState)
+            const prevState = getSafe(prev, [profileId, 'modState'], {});
+            const currentState = getSafe(current, [profileId, 'modState'], {});
+
+            if (prevState !== currentState) {
+              Object.keys(currentState)
                   .forEach(modId => {
-                    const isEnabled = getSafe(
-                        current, [profileId, 'modState', modId, 'enabled'], false);
-                    const wasEnabled = getSafe(
-                        prev, [profileId, 'modState', modId, 'enabled'], false);
+                    const isEnabled =
+                        getSafe(currentState, [modId, 'enabled'], false);
+                    const wasEnabled =
+                        getSafe(prevState, [modId, 'enabled'], false);
 
                     if (isEnabled !== wasEnabled) {
                       context.api.events.emit(
-                          isEnabled ? 'mod-enabled' : 'mod-disabled', profileId, modId);
+                          isEnabled ? 'mod-enabled' : 'mod-disabled', profileId,
+                          modId);
                     }
                   });
             }
