@@ -358,6 +358,46 @@ a[role=menuitem] svg {
   }
 }
 
+// the original css to create a tab header that is open on the bottom
+// has a border around the <a>-tag that is colored on three sides and transparent
+// on the bottom. This leaves one pixels in the corners that is 50% transparent.
+//
+// This solution has the border on the <li>-tag (colored on all four sides)
+// and the <a> has only the transparent border on the bottom. It also has a negative
+// margin on the bottom so that this border overlaps the border of the <li>.
+// This way the transparent overlap is one pixel narrower than the border so the
+// pixels in the corner are colored.
+.nav-tabs>li.active {
+  border: 1px solid $nav-tabs-active-link-hover-border-color;
+  margin-right: 2px;
+}
+
+.nav-tabs>li.active>a {
+  &,
+  &:hover,
+  &:focus {
+    border-top-width: 0px;
+    border-left-width: 0px;
+    border-right-width: 0px;
+    border-bottom: 1px solid transparent;
+    margin-right: 0px;
+    margin-bottom: -1px;
+  }
+}
+
+.tab-pane>div {
+  border: 1px solid $nav-tabs-border-color;
+  border-top-width: 0px;
+}
+
+.tab-pane>div>.panel {
+  border-width: 0px;
+  background-color: $brand-menu;
+  &:last-child {
+    margin-bottom: 0px;
+  }
+}
+
 // /generic control rules
 /////////////////////////
 
@@ -1585,6 +1625,23 @@ a[role=menuitem] svg {
 }
 // /mods page
 /////////////
+
+////////////////
+// settings page
+
+#settings-tab {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#settings-tab > .tab-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+// /settings page
+/////////////////
 
 ////////
 // HIDPI

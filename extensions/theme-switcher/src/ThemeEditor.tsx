@@ -73,7 +73,7 @@ class ColorPreview extends React.Component<IColorProps, {}> {
     );
 
     return (
-      <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popover}>
+      <OverlayTrigger trigger='click' rootClose placement='top' overlay={popover}>
         <div>
           {colorToHex(color)}
           {renderColorBox(color)}
