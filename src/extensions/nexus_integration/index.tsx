@@ -356,7 +356,7 @@ function init(context: IExtensionContextExt): boolean {
         link={link}
       /></span>
     );
-  });
+  }, 50);
 
   context.registerToDo('nxm-associated', () => ({
     associated: context.api.store.getState().settings.nexus.associateNXM,

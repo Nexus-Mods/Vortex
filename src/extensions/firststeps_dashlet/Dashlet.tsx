@@ -30,6 +30,7 @@ interface IConnectedState {
   steps: { [stepId: string]: boolean };
   searchPaths: string[];
   discoveryRunning: boolean;
+  multiUser: boolean;
   __extensionProps?: any[];
 }
 
@@ -45,6 +46,7 @@ interface IToDo {
   props?: () => any;
   condition: (props: any) => boolean;
   render: (props: any) => JSX.Element;
+  priority?: number;
 }
 
 class Dashlet extends ComponentEx<IProps, {}> {
@@ -54,6 +56,28 @@ class Dashlet extends ComponentEx<IProps, {}> {
     super(inProps);
 
     this.mTodos = [
+      {
+        id: 'multi-user',
+        condition: props => true,
+        priority: 10,
+        render: (props: IProps): JSX.Element => {
+          const { t, multiUser } = props;
+          const link =
+            <a onClick={this.openVortexSettings}><Icon name='sliders' />{t('Settings')}</a>;
+
+          const mode = multiUser ? t('Shared') : t('Per-user');
+
+          return (
+            <span>
+              <Interpolate
+                i18nKey='You are currently in {{mode}} mode. Open {{link}} to change.'
+                link={link}
+                mode={mode}
+              />
+            </span>
+          );
+        },
+      },
       {
         id: 'pick-game',
         condition: (props: IProps) => props.gameMode === undefined,
@@ -207,6 +231,8 @@ class Dashlet extends ComponentEx<IProps, {}> {
         return step.condition(props);
       });
 
+    visibleSteps.sort((lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100));
+
     return (
       <ListGroup>
         {
@@ -247,6 +273,11 @@ class Dashlet extends ComponentEx<IProps, {}> {
     this.props.onSetSettingsPage('Interface');
   }
 
+  private openVortexSettings = () => {
+    this.context.api.events.emit('show-main-page', 'Settings');
+    this.props.onSetSettingsPage('Vortex');
+  }
+
   private startManualSearch = () => {
     this.context.api.events.emit('start-discovery');
   }
@@ -266,6 +297,7 @@ function mapStateToProps(state: any, ownProps: IBaseProps & IExtendedProps): ICo
   return {
     gameMode: activeGameId(state),
     basePath: basePath(state),
+    multiUser: state.user.multiUser,
     autoDeploy: state.settings.automation.deploy,
     profilesVisible: state.settings.interface.profilesVisible,
     dismissAll: state.settings.firststeps.dismissAll,
@@ -287,8 +319,9 @@ function registerToDo(instanceProps: IBaseProps,
                       id: string,
                       props: () => any,
                       condition: (props: any) => boolean,
-                      render: (props: any) => JSX.Element): IToDo {
-  return { id, props, condition, render };
+                      render: (props: any) => JSX.Element,
+                      priority?: number): IToDo {
+  return { id, props, condition, render, priority };
 }
 
 export default translate(['common'], { wait: true })(

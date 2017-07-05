@@ -68,10 +68,8 @@ export type RegisterDialog =
    props?: PropsCallback) => void;
 
 export type RegisterToDo =
-  (id: string,
-   props: () => any,
-   condition: (props: any) => boolean,
-   render: (props: any) => JSX.Element) => void;
+    (id: string, props: () => any, condition: (props: any) => boolean,
+     render: (props: any) => JSX.Element, priority?: number) => void;
 
 export interface IRegisterProtocol {
   (protocol: string, callback: (url: string) => void);
