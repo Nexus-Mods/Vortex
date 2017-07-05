@@ -227,18 +227,18 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
 
   private importMods = (evt) => {
     const { gameMode, onShowActivity, onShowError, onShowSuccess } = this.props;
-
+    const state: types.IState = this.context.api.store.getState();
     onShowActivity('Copying mod files: ' + this.toImportList.length + ' mods...', this.importId);
     let index: number = 0;
 
     Promise.map(this.toImportList, modEntry => {
       onShowActivity('Copying mod files: ' + (++index) +
         ' of ' + this.toImportList.length + ' mods...', this.importId);
+      const installPath = selectors.installPath(state);
       transferUnpackedMod(modEntry, this.selectedVirtualPath,
-       selectors.installPath(this.state) , true)
+        installPath, true)
       .then((files) => {
         if (files.length > 0) {
-          log('info', 'Error: ', {files});
           onShowError('Mod files copy error:', {files}, this.importId);
         }
       });
@@ -253,7 +253,6 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
       onShowSuccess('Mod import successfully completed.', this.selectionId);
     })
     .catch((err) => {
-      log('info', 'import failed', {err});
       onShowError('Mod import error:', {err}, this.importId);
     });
   }
@@ -261,7 +260,6 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   private restore = (instanceId: string) => {
     const { importedModList } = this.state;
     const mod: IModEntry = importedModList[instanceId];
-    log('info', 'RESTORE: ' + mod.modName + ' ' + instanceId);
 
     mod.importFlag = true;
     this.toImportList[instanceId] = mod;
@@ -272,7 +270,6 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
     // removes a mod from the import list
     const { importedModList } = this.state;
     const mod: IModEntry = importedModList[instanceId];
-    log('info', 'REMOVE: ' + mod.modName + ' ' + instanceId);
 
     mod.importFlag = false;
     this.toImportList[instanceId] = mod;
