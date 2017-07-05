@@ -12,13 +12,6 @@ interface ILoadOrderMap {
  */
 export const loadOrderReducer: types.IReducerSpec = {
   reducers: {
-    ['persist/REHYDRATE']: (state, payload) => {
-      if (payload.hasOwnProperty('loadOrder')) {
-        return util.setSafe(state, [], payload.loadOrder);
-      } else {
-        return state;
-      }
-    },
     [actions.setPluginEnabled as any]:
         (state, payload) => util.setSafe(state, [payload.pluginName, 'enabled'],
                                          payload.enabled),

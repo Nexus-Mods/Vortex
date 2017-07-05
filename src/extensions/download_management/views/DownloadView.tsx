@@ -278,7 +278,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
           <Fixed>
             <DownloadGraph />
           </Fixed>
-          <Flex style={{ height: '100%', overflowY: 'auto' }} >
+          <Flex>
             <SuperTable
               tableId='downloads'
               data={downloads}
