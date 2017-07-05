@@ -127,7 +127,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </ControlLabel>
         {this.renderActivators(supportedActivators, currentActivator)}
       </form>
-    ) : null;
+    ) : (
+      <Jumbotron>
+        <div style={{ fontSize: 'x-large', margin: '0 1em' }}>
+          {t('Settings on this page are game-specific ' +
+             'so you have to select a game to manage first.')}
+        </div>
+      </Jumbotron>
+    );
   }
 
   /**

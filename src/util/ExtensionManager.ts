@@ -741,6 +741,7 @@ class ExtensionManager {
   private loadExtensions(): IRegisteredExtension[] {
     const staticExtensions = [
       'settings_interface',
+      'settings_application',
       'about_dialog',
       'diagnostics_files',
       'dashboard',

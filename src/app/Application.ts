@@ -122,8 +122,16 @@ class Application {
     // 3. load extensions, then load all settings, including extensions
     return syncStore(newStore, this.mBasePath, ['user'])
       .then(userPersistor => {
-        const dataPath = app.getPath('userData');
+        const multiUser = newStore.getState().user.multiUser;
+        const dataPath = multiUser
+          ? this.multiUserPath()
+          : app.getPath('userData');
+        app.setPath('userData', dataPath);
+
         log('info', `using ${dataPath} as the storage directory`);
+        if (multiUser) {
+          setLogPath(dataPath);
+        }
         return syncStore(newStore, dataPath, ['app']);
       })
       .then(appPersistor => {

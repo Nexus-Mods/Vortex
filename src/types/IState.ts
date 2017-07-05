@@ -85,9 +85,23 @@ export interface IExtensionState {
   remove: boolean;
 }
 
+/**
+ * settings relating to the vortex application itself
+ */
 export interface IApp {
   version: string;
   extensions: { [id: string]: IExtensionState };
+}
+
+/**
+ * settings relating to the user (os account) personally
+ * even in a multi-user environment
+ *
+ * @export
+ * @interface IUser
+ */
+export interface IUser {
+  multiUser: boolean;
 }
 
 export interface ITableStates {
@@ -158,6 +172,7 @@ export interface ISessionGameMode {
  */
 export interface IState {
   app: IApp;
+  user: IUser;
   confidential: {
     account: { },
   };

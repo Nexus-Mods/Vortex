@@ -7,7 +7,7 @@ import setupAutoUpdater from './autoupdater';
 import {ipcRenderer} from 'electron';
 
 function init(context: IExtensionContext): boolean {
-  context.registerSettings('Update', SettingsUpdate);
+  context.registerSettings('Vortex', SettingsUpdate);
   context.registerReducer(['settings', 'update'], settingsReducer);
 
   context.onceMain(() => {

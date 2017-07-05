@@ -21,7 +21,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
 
     return (
       <form>
-        <FormGroup controlId='languageSelect'>
+        <FormGroup controlId='updateChannel'>
           <ControlLabel>{t('Update') }</ControlLabel>
           <FormControl
             componentClass='select'

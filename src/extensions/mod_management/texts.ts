@@ -5,14 +5,14 @@ function getText(id: string, t: I18next.TranslationFunction) {
           'When you install a mod through Vortex it is stored in a separate directory and has ' +
           'no immediate effect on the game. We call the process of actually placing the ' +
           'files into the game directory "deployment".\n\n' +
-          'By default, deployment happens the moment you enable/disable a mod.\n' +
-          'If you want more control you can disable this automation and you will then have ' +
+          'By default, deployment happens automatically after you enable/disable a mod.\n' +
+          'If you want more control you can disable this automation and will then have ' +
           'to manually click a button to start the deployment.\n\n' +
-          'Please note that parts of Vortex will reflect the "deployed" state so they will ' +
-          'not be up-to-date until you deploy.');
+          'Please note that parts of Vortex (i.e. the list of plugins for TES games) will only ' +
+          'reflect the "deployed" state.');
     case 'versionmatch':
       return t(
-        'A dependency rule can reference multipe versions of the same mod. In that case any ' +
+        'A dependency rule can accept multiple versions of the same mod. In that case any ' +
         'of the matching versions is enough to satisfy the dependency. This can be useful ' +
         'for example if two mods have the same dependency but one of them doesn\'t work with ' +
         'the most current one. In that case we can install an older version of the dependency ' +

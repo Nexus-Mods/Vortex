@@ -124,12 +124,21 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
     return <option key={key} value={key}>{renderName}</option>;
   }
 
-  private readThemes(baseDir: string): Promise<string[]> {
+  private readThemes(basePath: string): Promise<string[]> {
+    const { t } = this.props;
     // consider all directories in the theme directory as themes
-    return fs.readdirAsync(baseDir)
+    return fs.readdirAsync(basePath)
       .filter<string>(fileName =>
-        fs.statAsync(path.join(baseDir, fileName))
-          .then(stat => stat.isDirectory()));
+        fs.statAsync(path.join(basePath, fileName))
+          .then(stat => stat.isDirectory()))
+      .catch(err => {
+        if (err.code === 'ENOENT') {
+          log('warn', 'Failed to read theme dir', { path: basePath, err: err.message });
+        } else {
+          this.context.api.showErrorNotification(t('Failed to read theme directory'), err);
+        }
+        return [];
+      });
   }
 
   private saveTheme = (variables: { [name: string]: string }) => {

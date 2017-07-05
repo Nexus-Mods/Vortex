@@ -16,6 +16,7 @@ import {} from './installer_nested_fomod';
 import {} from './mod_management';
 import {} from './nexus_integration';
 import {} from './profile_management';
+import {} from './settings_application';
 import {} from './settings_interface';
 import {} from './settings_metaserver';
 import {} from './starter_dashlet';
