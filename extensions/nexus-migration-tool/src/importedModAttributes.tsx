@@ -1,6 +1,7 @@
 import { IFileEntry, IModEntry } from './types/nmmEntries';
 
-import { TableDateTimeFilter, TableNumericFilter, TableTextFilter, types, util } from 'nmm-api';
+import { TableDateTimeFilter, TableNumericFilter,
+  TableTextFilter, types, util } from 'nmm-api';
 import * as React from 'react';
 
 export const MOD_ID: types.ITableAttribute = {
@@ -78,12 +79,26 @@ export const FILES: types.ITableAttribute = {
   edit: {},
 };
 
+export const LOCAL: types.ITableAttribute = {
+  id: 'local',
+  name: 'Managed',
+  description: 'Whether the mod is already managed by Vortex',
+  icon: 'level-up',
+  calc: (mod: IModEntry) => mod.isAlreadyManaged ? 'Yes' : '',
+  placement: 'both',
+  isToggleable: true,
+  isSortable: true,
+  filter: new TableTextFilter(true),
+  edit: {},
+};
+
 export const STATUS: types.ITableAttribute = {
   id: 'status',
   name: 'Import',
   description: 'The import status of the mod',
   icon: 'level-up',
-  calc: (mod: IModEntry) => mod.importFlag ? 'To import' : 'Do not import',
+  calc: (mod: IModEntry) => mod.importFlag ?
+    (mod.isAlreadyManaged ? 'Import anyway' : 'To import') : 'Do not import',
   placement: 'both',
   isToggleable: true,
   isSortable: true,

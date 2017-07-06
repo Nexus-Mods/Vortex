@@ -1,22 +1,22 @@
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
-import { log, util } from 'nmm-api';
+import { log, types, util } from 'nmm-api';
 import * as path from 'path';
 import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
 
 const virtualConfigFilename: string = 'VirtualModConfig.xml';
 
-export function parseNMMInstall(nmmFilePath: string): Promise<ModEntry[]> {
+export function parseNMMInstall(nmmFilePath: string, mods: any): Promise<ModEntry[]> {
   const nmmModList: ModEntry[] = [];
   const parser = new DOMParser();
   const sourceFile = path.join(nmmFilePath, virtualConfigFilename);
+  const modListSet = new Set(Object.keys(mods).map((key: string) => mods[key].id));
 
   return fs.readFileAsync(sourceFile)
   .then((data) => {
     const xmlDoc = parser.parseFromString(data.toString('utf-8'), 'text/xml');
     const version = xmlDoc.getElementsByTagName('virtualModActivator')[0];
-    // let limiter = 0;
 
     if (version === null) {
       throw new Error('The selected folder does not contain a valid VirtualModConfig.xml file.');
@@ -69,9 +69,11 @@ export function parseNMMInstall(nmmFilePath: string): Promise<ModEntry[]> {
            fileMD5 = hashResult.md5sum;
         });
 
+      const derivedId: string = util.deriveInstallName(elementModName, '');
+
       const modEntry: ModEntry = {
         nexusId: elementModId,
-        vortexId: util.deriveInstallName(elementModName, ''),
+        vortexId: derivedId,
         downloadId: elementDownloadId,
         modName: elementModName,
         modFilename: elementModFilename,
@@ -79,19 +81,14 @@ export function parseNMMInstall(nmmFilePath: string): Promise<ModEntry[]> {
         modVersion: elementModVersion,
         archiveMD5: fileMD5,
         importFlag: true,
+        isAlreadyManaged: modListSet.has(derivedId),
         fileEntries: modFileEntries,
       };
 
       nmmModList.push(modEntry);
-      /*limiter++;
-
-      if (limiter >= 10) {
-        break;
-      }*/
     }
   })
   .then(() => {
-    log ('info', 'Parsed Mods:' + nmmModList.length);
     return Promise.resolve(nmmModList);
   });
 }

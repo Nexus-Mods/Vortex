@@ -5,7 +5,7 @@ import parseNMMInstall from '../util/nmmVirtualConfigParser';
 import { addMods, createProfile } from '../util/vortexImports';
 
 import {
-  FILENAME, FILES, MOD_ID, MOD_NAME, MOD_VERSION, STATUS,
+  FILENAME, FILES, LOCAL, MOD_ID, MOD_NAME, MOD_VERSION, STATUS,
 } from '../importedModAttributes';
 
 import * as Promise from 'bluebird';
@@ -96,7 +96,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
           data={selectFolder ? importedModList : importedMods}
           actions={actions}
           staticElements={[
-            MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, FILES, STATUS]}
+            MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, FILES, LOCAL, STATUS]}
         />
       );
     }
@@ -183,14 +183,16 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   }
 
   private testParse = (evt, selectedDir: string) => {
-    const { onShowActivity, onShowError, onShowSuccess} = this.props;
+    const { gameMode, onShowActivity, onShowError, onShowSuccess} = this.props;
     const virtualPath = selectedDir;
+    const state: types.IState = this.context.api.store.getState();
+    const mods = state.persistent.mods[gameMode] || {};
 
     this.nextState.importedModList = undefined;
 
     onShowActivity('Parsing NMM virtual config file...', this.importId);
 
-    parseNMMInstall(virtualPath)
+    parseNMMInstall(virtualPath, mods)
     .then((modEntries) => {
       if ((modEntries === null) || (modEntries === undefined) || (modEntries.length === 0)) {
         onShowError('Virtual config parse issue:',
@@ -244,6 +246,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
       });
     })
     .then(() => {
+      onShowActivity('Mod files copy: successfully transferred to Vortex.', this.importId);
       onShowActivity('Importing mods into Vortex...', this.selectionId);
       createProfile(gameMode, 'nmm-profile',
         'Imported NMM Profile', this.context.api.store.dispatch);
