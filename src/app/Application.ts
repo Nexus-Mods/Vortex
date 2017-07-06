@@ -1,3 +1,4 @@
+import {setInstanceId} from '../actions/app';
 import reducer from '../reducers/index';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
@@ -18,6 +19,7 @@ import {app, BrowserWindow, Electron, ipcMain} from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
+import * as uuid from 'uuid';
 
 class Application {
   private mBasePath: string;
@@ -135,6 +137,9 @@ class Application {
         return syncStore(newStore, dataPath, ['app']);
       })
       .then(appPersistor => {
+        if (newStore.getState().app.instanceId === undefined) {
+          newStore.dispatch(setInstanceId(uuid.v4()));
+        }
         const ExtensionManager = require('../util/ExtensionManager').default;
         this.mExtensions = new ExtensionManager(newStore);
         newStore.replaceReducer(reducer(this.mExtensions.getReducers()));

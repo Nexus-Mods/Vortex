@@ -13,8 +13,11 @@ export const appReducer: IReducerSpec = {
       setSafe(state, ['extensions', payload, 'remove'], true),
     [actions.forgetExtension as any]: (state, payload) =>
       deleteOrNop(state, ['extensions', payload]),
+    [actions.setInstanceId as any]: (state, payload) =>
+      setSafe(state, ['instanceId'], payload),
   },
   defaults: {
+    instanceId: undefined,
     version: '',
     extensions: {},
   },

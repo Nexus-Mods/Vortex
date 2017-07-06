@@ -38,6 +38,7 @@
     "node-ipc": "^9.0.1",
     "node-rest-client": "^3.1.0",
     "node-sass": "^4.3.0",
+    "node-uuid": "1.4.7",
     "opn": "4.0.2",
     "packery": "^2.1.1",
     "parse-ini": "file:../lib/js/parse-ini",

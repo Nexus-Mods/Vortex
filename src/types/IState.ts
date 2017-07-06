@@ -89,6 +89,7 @@ export interface IExtensionState {
  * settings relating to the vortex application itself
  */
 export interface IApp {
+  instanceId: string;
   version: string;
   extensions: { [id: string]: IExtensionState };
 }
