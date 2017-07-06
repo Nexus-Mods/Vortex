@@ -1,3 +1,4 @@
+import {showDialog} from '../../actions/notifications';
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {IState, IStatePaths} from '../../types/IState';
 import {ITableAttribute} from '../../types/ITableAttribute';
@@ -30,7 +31,11 @@ import {settingsReducer} from './reducers/settings';
 import {IFileEntry} from './types/IFileEntry';
 import {IInstall} from './types/IInstall';
 import {IMod} from './types/IMod';
-import {IFileChange, IModActivator} from './types/IModActivator';
+import {
+  IDeployedFile,
+  IFileChange,
+  IModActivator,
+} from './types/IModActivator';
 import {ITestSupported} from './types/ITestSupported';
 import * as basicInstaller from './util/basicInstaller';
 import { registerAttributeExtractor } from './util/filterModInfo';
@@ -114,10 +119,88 @@ function purgeMods(api: IExtensionApi): Promise<void> {
     title: t('Purging'),
   });
 
-  return activator.purge(instPath, gameDiscovery.modPath)
+  return loadActivation(api, gameDiscovery.modPath)
+      .then(() => activator.purge(instPath, gameDiscovery.modPath))
+      .then(() => saveActivation(state.app.instanceId, gameDiscovery.modPath, []))
       .catch(UserCanceled, () => undefined)
       .catch(err => api.showErrorNotification('failed to purge mods', err))
       .finally(() => api.dismissNotification(notificationId));
+}
+
+function fallbackPurge(basePath: string,
+                       files: IDeployedFile[]): Promise<void> {
+  return Promise.map(files, file => {
+    const fullPath = path.join(basePath, file.relPath);
+    return fs.statAsync(fullPath).then(stats => {
+      if (stats.mtime.getTime() === file.time) {
+        return fs.unlinkAsync(fullPath);
+      } else {
+        return Promise.resolve();
+      }
+    })
+    .catch(err => {
+      if (err.code !== 'ENOENT') {
+        return Promise.reject(err);
+      } // otherwise ignore
+    });
+  })
+  .then(() => undefined);
+}
+
+function queryPurge(api: IExtensionApi, basePath: string,
+                    files: IDeployedFile[]): Promise<void> {
+  const t = api.translate;
+  return api.store.dispatch(showDialog('info', t('Purge files from different instance?'), {
+    message: t('IMPORTANT: This game was modded by another instance of Vortex.\n\n' +
+               'If you switch between different instances (or between shared and ' +
+               'single-user mode) it\'s better if you purge mods before switching.\n\n' +
+               'Vortex can try to clean up now but this is less reliable (*) than doing it ' +
+               'from the instance that deployed the files in the first place.\n\n' +
+               'If you modified any files in the game directory you should back them up ' +
+               'before continuing.\n\n' +
+               '(*) This purge relies on a manifest of deployed files, created by that other ' +
+               'instance. Files that have been changed since that manifest was created ' +
+               'won\'t be removed to prevent data loss. If the manifest is damaged or ' +
+               'outdated the purge may be incomplete. When purging from the "right" instance ' +
+               'the manifest isn\'t required, it can reliably deduce which files need to ' +
+               'be removed.'),
+  }, {
+    Cancel: null,
+    Purge: null,
+  }))
+  .then(result => {
+    if (result.action === 'Purge') {
+      return fallbackPurge(basePath, files);
+    } else {
+      return Promise.reject(new UserCanceled());
+    }
+  });
+}
+
+function loadActivation(api: IExtensionApi, gamePath: string): Promise<IDeployedFile[]> {
+  const tagFile = path.join(gamePath, 'vortex.deployment.json');
+  return fs.readFileAsync(tagFile).then(tagData => {
+    const state = api.store.getState();
+    const tagObject = JSON.parse(tagData.toString());
+    if (tagObject.instance !== state.app.instanceId) {
+      return queryPurge(api, gamePath, tagObject.files)
+          .then(() => saveActivation(state.app.instanceId, gamePath, []))
+          .then(() => Promise.resolve([]));
+    } else {
+      return Promise.resolve(tagObject.files);
+    }
+  });
+}
+
+function saveActivation(instance: string, gamePath: string, activation: IDeployedFile[]) {
+  const tagFile = path.join(gamePath, 'vortex.deployment.json');
+
+  return fs.writeFileAsync(tagFile, JSON.stringify(
+                                        {
+                                          instance,
+                                          files: activation,
+                                        },
+                                        undefined, 2));
 }
 
 function genUpdateModActivation() {
@@ -155,6 +238,8 @@ function genUpdateModActivation() {
 
     const gate = manual ? Promise.resolve() : activator.userGate();
 
+    let lastActivation: IDeployedFile[] = [];
+
     // test if anything was changed by an external application
     return gate.then(() => {
                  // update mod state again because if the user did have to
@@ -170,9 +255,12 @@ function genUpdateModActivation() {
                    title: t('Deploying'),
                  });
 
-                 return activator.externalChanges(instPath,
-                                                  gameDiscovery.modPath);
+                 return loadActivation(api, gameDiscovery.modPath);
                })
+        .then(currentActivation => {
+          lastActivation = currentActivation;
+          return activator.externalChanges(instPath, gameDiscovery.modPath, currentActivation);
+        })
         .then((changes: IFileChange[]) =>
                   (changes.length === 0) ?
                       Promise.resolve([]) :
@@ -222,7 +310,10 @@ function genUpdateModActivation() {
                                                  sortedMods.indexOf(rhs.id));
 
           return activateMods(instPath, gameDiscovery.modPath, sortedModList,
-                              modState, activator)
+                              modState, activator, lastActivation)
+              .then(newActivation =>
+                        saveActivation(state.app.instanceId,
+                                       gameDiscovery.modPath, newActivation))
               .then(() => new Promise((resolve, reject) => {
                       api.events.emit('bake-settings', gameMode, sortedModList,
                                       err => {
@@ -510,9 +601,13 @@ function init(context: IExtensionContextExt): boolean {
                                       act.isSupported(state) === undefined);
 
           const dataPath = currentGameDiscovery(state).modPath;
-          activator.prepare(dataPath, false)
-              .then(() => activator.deactivate(installPath(state), dataPath, mod))
+          loadActivation(context.api, dataPath)
+              .then(lastActivation => activator.prepare(
+                        dataPath, false, JSON.parse(lastActivation.toString())))
+              .then(() =>
+                        activator.deactivate(installPath(state), dataPath, mod))
               .then(() => activator.finalize(dataPath))
+              .then(newActivation => saveActivation(state.app.instanceId, dataPath, newActivation))
               .then(() => fs.removeAsync(fullPath))
               .then(() => {
                 store.dispatch(removeMod(gameMode, modId));

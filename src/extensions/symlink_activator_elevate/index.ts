@@ -6,7 +6,10 @@ import { log } from '../../util/log';
 import { activeGameId } from '../../util/selectors';
 
 import LinkingActivator from '../mod_management/LinkingActivator';
-import { IModActivator } from '../mod_management/types/IModActivator';
+import {
+  IDeployedFile,
+  IModActivator,
+} from '../mod_management/types/IModActivator';
 
 import walk from './walk';
 
@@ -57,13 +60,16 @@ class ModActivator extends LinkingActivator {
     return this.mWaitForUser();
   }
 
-  public prepare(dataPath: string, clean: boolean): Promise<void> {
+  public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[]): Promise<void> {
     return this.startElevated()
-      .then(() => super.prepare(dataPath, clean));
+      .then(() => super.prepare(dataPath, clean, lastActivation));
   }
 
-  public finalize(dataPath: string): Promise<void> {
-    return super.finalize(dataPath).then(() => this.stopElevated());
+  public finalize(dataPath: string): Promise<IDeployedFile[]> {
+    return super.finalize(dataPath).then(result => {
+      this.stopElevated();
+      return result;
+    });
   }
 
   public isSupported(state: any): string {

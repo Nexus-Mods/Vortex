@@ -11,8 +11,6 @@ import { IProfileMod } from '../../profile_management/types/IProfile';
 import { IMod } from '../types/IMod';
 import { IModActivator } from '../types/IModActivator';
 
-import { deactivateMods } from '../modActivation';
-
 import * as React from 'react';
 import { generate as shortid } from 'shortid';
 

@@ -30,6 +30,24 @@ export interface IFileChange {
   changeType: 'refchange' | 'valchange' | 'deleted';
 }
 
+export interface IDeployedFile {
+  /**
+   * the relative path to the file
+   */
+  relPath: string;
+  /**
+   * the source of the file, which should be the name of the mod
+   */
+  source: string;
+  /**
+   * the last-modified time of the file. This can be used to determine if the file
+   * was changed after deployment
+   */
+  time: number;
+  // TODO: implement md5-hash in case file time is found to be an insufficient
+  //   criterium
+}
+
 export interface IModActivator {
 
   /**
@@ -85,15 +103,24 @@ export interface IModActivator {
    *
    * @memberOf IModActivator
    */
-  prepare: (dataPath: string, clean: boolean) => Promise<void>;
+  prepare: (dataPath: string, clean: boolean, lastActivation: IDeployedFile[]) => Promise<void>;
 
   /**
    * called after an activate call was made for all active mods,
    * in case this activator needs to do postprocessing
    *
+   * @return {} a promise of activation results. These results will be used for a "purge"
+   *            in case the activator isn't available for the regular purge op.
+   *            If a purge isn't necessary, i.e. because the links are transient anyway, please
+   *            just return an empty list.
+   *            Please note that this purge will happen with a regular file deletion call,
+   *            if this could lead to data loss do NOT return anything here. In that case you
+   *            should provide another way for the user to clean up the game directory even when
+   *            your activator is not available for some reason.
+   *
    * @memberOf IModActivator
    */
-  finalize: (dataPath: string) => Promise<void>;
+  finalize: (dataPath: string) => Promise<IDeployedFile[]>;
 
   /**
    * activate the specified mod in the specified location
@@ -131,7 +158,8 @@ export interface IModActivator {
    *
    * @memberOf IModActivator
    */
-  externalChanges: (installPath: string, dataPath: string) => Promise<IFileChange[]>;
+  externalChanges: (installPath: string, dataPath: string,
+                    activation: IDeployedFile[]) => Promise<IFileChange[]>;
 
   /**
    * forget a set of files, that is: if the this activator keeps track of activation.
