@@ -216,9 +216,11 @@ textarea {
   padding-left: 6px;
 }
 
-.nav-pills>li>a>.svg-icon {
-  height: initial;
+.nav-pills>li>a svg {
+  height: 1.4em;
+  width: 1.4em;
 }
+
 
 .react-context-menu-link.disabled {
   color: $gray-dark;
