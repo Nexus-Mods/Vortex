@@ -209,13 +209,18 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
   }
 }
 
+const emptyObj = {};
+const emptyArr = [];
+
 function mapStateToProps(state): IConnectedProps {
   const dialog = state.session.dependencies.conflictDialog || {};
   return {
     gameId: dialog.gameId,
     modId: dialog.modId,
-    conflicts: dialog.modId !== undefined ? state.session.dependencies.conflicts[dialog.modId] : [],
-    mods: dialog.gameId !== undefined ? state.persistent.mods[dialog.gameId] : {},
+    conflicts: dialog.modId !== undefined
+      ? state.session.dependencies.conflicts[dialog.modId]
+      : emptyArr,
+    mods: dialog.gameId !== undefined ? state.persistent.mods[dialog.gameId] : emptyObj,
     modRules: dialog.modRules,
   };
 }

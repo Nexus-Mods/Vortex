@@ -112,7 +112,7 @@ function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   return {
     gameMode,
     modsPath: installPath(state),
-    mod: state.persistent.mods[gameMode][ownProps.modId],
+    mod: getSafe(state, ['persistent', 'mods', gameMode, ownProps.modId], undefined),
   };
 }
 

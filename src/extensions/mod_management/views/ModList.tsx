@@ -635,6 +635,8 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 }
 
+const empty = {};
+
 function mapStateToProps(state: IState): IConnectedProps {
   const profile = activeProfile(state);
   const gameMode = activeGameId(state);
@@ -642,9 +644,9 @@ function mapStateToProps(state: IState): IConnectedProps {
       state.settings.mods.paths, gameMode);
 
   return {
-    mods: state.persistent.mods[gameMode] || {},
-    modState: profile !== undefined ? profile.modState : {},
-    downloads: state.persistent.downloads.files || {},
+    mods: state.persistent.mods[gameMode] || empty,
+    modState: profile !== undefined ? profile.modState : empty,
+    downloads: state.persistent.downloads.files || empty,
     gameMode,
     profileId: profile !== undefined ? profile.id : undefined,
     language: state.settings.interface.language,

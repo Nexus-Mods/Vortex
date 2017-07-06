@@ -221,7 +221,6 @@ textarea {
   width: 1.4em;
 }
 
-
 .react-context-menu-link.disabled {
   color: $gray-dark;
 }
@@ -503,7 +502,7 @@ a[role=menuitem] svg {
   width: 90%;
   max-height: 90%;
   overflow-y: auto;
-  z-index: $zindex-popover; // should be above dialogs
+  z-index: $zindex-notifications;
 
   -webkit-scrollbar {
     display: none;

@@ -189,7 +189,8 @@ function loadActivation(api: IExtensionApi, gamePath: string): Promise<IDeployed
     } else {
       return Promise.resolve(tagObject.files);
     }
-  });
+  })
+  .catch(() => []);
 }
 
 function saveActivation(instance: string, gamePath: string, activation: IDeployedFile[]) {
