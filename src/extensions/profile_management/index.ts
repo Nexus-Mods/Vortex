@@ -190,34 +190,74 @@ function init(context: IExtensionContextExt): boolean {
       activateGame(store, gameId);
     });
 
+    // promise used to ensure a new profile switch can't be started before the last one
+    // is complete
+    let finishProfileSwitch: () => void;
+    let finishProfileSwitchPromise: Promise<void> = Promise.resolve();
+
     context.api.onStateChange(
         ['settings', 'profiles', 'nextProfileId'],
         (prev: string, current: string) => {
-          const state: IState = store.getState();
-          const profile = state.persistent.profiles[current];
-          refreshProfile(store, profile, 'export')
-              .then(() => {
-                store.dispatch(setCurrentProfile(profile.gameId, current));
-              })
-              .catch((err: Error) => {
-            showError(store.dispatch, 'Failed to set profile', err);
+          finishProfileSwitchPromise.then(() => {
+            const state: IState = store.getState();
+            if (state.settings.profiles.nextProfileId !== current) {
+              // cancel if there was another profile switch while we waited
+              return;
+            }
+
+            if (state.settings.profiles.activeProfileId === current) {
+              // also do nothing if we're actually resetting the nextprofile
+              return;
+            }
+
+            finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
+              finishProfileSwitch = resolve;
+            });
+
+            const profile = state.persistent.profiles[current];
+
+            let queue: Promise<void> = Promise.resolve();
+            // emit an event notifying about the impending profile change.
+            // every listener can return a cb returning a promise which will be
+            // awaited
+            // before continuing.
+            // It would be fun if we could cancel the profile change if one of
+            // these promises
+            // is rejected but that would only work if we could roll back
+            // changes that happened.
+            const enqueue = (cb: () => Promise<void>) => {
+              queue = queue.then(cb).catch(err => {
+                Promise.resolve();
+              });
+            };
+            context.api.events.emit('profile-will-change', current, enqueue);
+
+            queue.then(() => refreshProfile(store, profile, 'export'))
+                .then(() => {
+                  store.dispatch(setCurrentProfile(profile.gameId, current));
+                })
+                .catch((err: Error) => {
+                  showError(store.dispatch, 'Failed to set profile', err);
+                });
           });
         });
 
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
                               (prev: string, current: string) => {
-                                context.api.events.emit('profile-activated',
+                                context.api.events.emit('profile-did-change',
                                                         current);
+                                finishProfileSwitch();
                               });
     const initProfile = activeProfile(store.getState());
     refreshProfile(store, initProfile, 'import')
         .then(() => {
           if (initProfile !== undefined) {
-            context.api.events.emit('profile-activated', initProfile.id);
+            context.api.events.emit('profile-did-change', initProfile.id);
           }
         })
          .catch((err: Error) => {
             showError(store.dispatch, 'Failed to set profile', err);
+            finishProfileSwitch();
           });
 
     context.api.onStateChange(
@@ -247,6 +287,10 @@ function init(context: IExtensionContextExt): boolean {
             }
           });
         });
+    const state: IState = store.getState();
+    if (state.settings.profiles.nextProfileId !== state.settings.profiles.activeProfileId) {
+      store.dispatch(setNextProfile(state.settings.profiles.activeProfileId));
+    }
   });
 
   return true;

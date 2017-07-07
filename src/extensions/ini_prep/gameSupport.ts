@@ -37,7 +37,7 @@ const gameSupport = {
   },
   oblivion: {
     iniFiles: [
-      '{mygames}/Oblivion/Oblvion.ini',
+      '{mygames}/Oblivion/Oblivion.ini',
     ],
     iniFormat: 'winapi',
   },

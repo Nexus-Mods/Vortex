@@ -127,7 +127,7 @@ function main(context: types.IExtensionContext) {
     context.api.setStylesheet('dependency-manager',
                               path.join(__dirname, 'dependency-manager.scss'));
 
-    context.api.events.on('profile-activated', () => {
+    context.api.events.on('profile-did-change', () => {
       const state: types.IState = store.getState();
       const modPath = selectors.installPath(state);
       const gameId = selectors.activeGameId(state);

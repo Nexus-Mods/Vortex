@@ -1,6 +1,10 @@
 ////////////////////////
 // generic control rules
 
+#content {
+  background-color: $brand-bg;
+}
+
 // button groups
 .btn-group {
   position: static;

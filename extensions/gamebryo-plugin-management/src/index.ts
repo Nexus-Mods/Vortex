@@ -206,46 +206,52 @@ function updateCurrentProfile(store: Redux.Store<any>): Promise<void> {
 
 let watcher: fs.FSWatcher;
 
-function stopSync() {
+function stopSync(): Promise<void> {
   if (watcher !== undefined) {
     watcher.close();
     watcher = undefined;
   }
 
-  pluginPersistor.stopSync();
+  return pluginPersistor.disable();
 }
 
-function startSync(api: types.IExtensionApi) {
+function startSync(api: types.IExtensionApi): Promise<void> {
   const store = api.store;
 
   const gameId = selectors.activeGameId(store.getState());
 
+  let prom: Promise<void> = Promise.resolve();
+
   if (pluginPersistor !== undefined) {
-    pluginPersistor.loadFiles(gameId);
+    prom = pluginPersistor.loadFiles(gameId);
   }
 
   if (userlistPersistor !== undefined) {
-    userlistPersistor.loadFiles(gameId);
+    prom = prom.then(() => userlistPersistor.loadFiles(gameId));
   }
 
-  const modPath = selectors.currentGameDiscovery(store.getState()).modPath;
-  if (modPath === undefined) {
-    // can this even happen?
-    log('error', 'mod path unknown',
-      { discovery: nodeUtil.inspect(selectors.currentGameDiscovery(store.getState())) });
-    return;
-  }
-  // watch the mod directory. if files change, that may mean our plugin list
-  // changed, so refresh
-  watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
-    if (refreshTimer !== undefined) {
-      clearTimeout(refreshTimer);
+  return prom.then(() => {
+    const modPath = selectors.currentGameDiscovery(store.getState()).modPath;
+    if (modPath === undefined) {
+      // can this even happen?
+      log('error', 'mod path unknown', {
+        discovery:
+            nodeUtil.inspect(selectors.currentGameDiscovery(store.getState())),
+      });
+      return;
     }
-    refreshTimer = setTimeout(() => {
-      updateCurrentProfile(store)
-          .then(() => api.events.emit('autosort-plugins'));
-      refreshTimer = undefined;
-    }, 500);
+    // watch the mod directory. if files change, that may mean our plugin list
+    // changed, so refresh
+    watcher = fs.watch(modPath, {}, (evt: string, fileName: string) => {
+      if (refreshTimer !== undefined) {
+        clearTimeout(refreshTimer);
+      }
+      refreshTimer = setTimeout(() => {
+        updateCurrentProfile(store)
+            .then(() => api.events.emit('autosort-plugins'));
+        refreshTimer = undefined;
+      }, 500);
+    });
   });
 }
 
@@ -369,11 +375,6 @@ function init(context: IExtensionContextExt) {
           });
       });
 
-    context.api.onStateChange(['settings', 'profiles', 'nextProfileId'],
-      (oldProfileId: string, newProfileId: string) => {
-        stopSync();
-      });
-
     context.api.onStateChange(['loadOrder'], () => {
       context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
     });
@@ -383,20 +384,26 @@ function init(context: IExtensionContextExt) {
       store.dispatch(setPluginOrder(newPlugins));
     });
 
-    context.api.events.on('profile-activated', (newProfileId: string) => {
-      const newProfile =
-        util.getSafe(store.getState(),
-          ['persistent', 'profiles', newProfileId], undefined);
-      if ((newProfile === undefined) || !gameSupported(newProfile.gameId)) {
-        pluginPersistor.disable();
-        return;
-      }
-
-      updatePluginList(store, newProfile.modState)
-        .then(() => {
-          startSync(context.api);
-          context.api.events.emit('autosort-plugins');
+    context.api.events.on(
+        'profile-will-change',
+        (nextProfileId: string, enqueue: (cb: () => Promise<void>) => void) => {
+          enqueue(() => {
+            return stopSync()
+                            .then(() => userlistPersistor.disable())
+                            .then(() => loot.wait());
+          });
         });
+
+    context.api.events.on('profile-did-change', (newProfileId: string) => {
+      const newProfile =
+          util.getSafe(store.getState(),
+                       ['persistent', 'profiles', newProfileId], undefined);
+
+      if ((newProfile !== undefined) && gameSupported(newProfile.gameId)) {
+        updatePluginList(store, newProfile.modState)
+            .then(() => startSync(context.api))
+            .then(() => context.api.events.emit('autosort-plugins'));
+      }
     });
 
     context.api.events.on('mod-enabled', (profileId: string, modId: string) => {
@@ -434,15 +441,6 @@ function init(context: IExtensionContextExt) {
         });
       }
     });
-
-    const currentProfile = selectors.activeProfile(store.getState());
-    if ((currentProfile !== undefined) && gameSupported(currentProfile.gameId)) {
-      updatePluginList(store, currentProfile.modState)
-        .then(() => {
-          startSync(context.api);
-          context.api.events.emit('autosort-plugins');
-        });
-    }
   });
 
   return true;

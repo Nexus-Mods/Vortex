@@ -20,7 +20,7 @@
  *      not necessarily be called on every single settings change, multiple changes may be
  *      aggregated.
  *   gamemode-activated: called on startup and whenever the active game changes.
- *   profile-activated: called on startup and whenever the active profile changes.
+ *   profile-did-change: called on startup and whenever the active profile changes.
  *   mod-activated: called whenever one or more mods were activated or deactivated
  * Further event types can be triggered by extensions
  */
@@ -110,8 +110,8 @@ function init(context: IExtensionContext): boolean {
       runChecks('gamemode-activated');
     });
 
-    context.api.events.on('profile-activated', () => {
-      runChecks('profile-activated');
+    context.api.events.on('profile-did-change', () => {
+      runChecks('profile-did-change');
     });
 
     context.api.onStateChange(['settings'], () => {

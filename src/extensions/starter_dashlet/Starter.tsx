@@ -60,6 +60,7 @@ interface IConnectedProps {
 type IWelcomeScreenProps = IConnectedProps & IActionProps;
 
 class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
+  private mIsMounted: boolean = false;
   constructor(props) {
     super(props);
 
@@ -70,11 +71,18 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   public componentWillMount() {
+    this.mIsMounted = true;
     asyncRequire('./ToolEditDialog', __dirname)
       .then(moduleIn => {
         ToolEditDialog = moduleIn.default;
-        this.forceUpdate();
+        if (this.mIsMounted) {
+          this.forceUpdate();
+        }
       });
+  }
+
+  public componentWillUnmount() {
+    this.mIsMounted = false;
   }
 
   public render(): JSX.Element {

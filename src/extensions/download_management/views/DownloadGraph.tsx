@@ -1,6 +1,7 @@
 import {IState} from '../../../types/IState';
 import asyncRequire from '../../../util/asyncRequire';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
+import { truthy } from '../../../util/util';
 
 import {speedDataPoints} from '../reducers/state';
 import {IDownload} from '../types/IDownload';
@@ -86,7 +87,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   }
 
   private updateDimensions = () => {
-    if (this.mRef !== undefined) {
+    if (truthy(this.mRef)) {
       this.nextState.width = this.mRef.clientWidth;
     }
   }

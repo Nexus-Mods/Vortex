@@ -85,7 +85,7 @@ function init(context): boolean {
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
 
-    context.api.events.on('profile-activated', (profileId: string) => {
+    context.api.events.on('profile-did-change', (profileId: string) => {
       const profile: types.IProfile =
           util.getSafe(store.getState(),
                        ['persistent', 'profiles', profileId], undefined);

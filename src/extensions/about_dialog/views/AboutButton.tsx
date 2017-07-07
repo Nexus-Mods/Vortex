@@ -19,6 +19,7 @@ interface IComponentState {
 type IProps = IBaseProps;
 
 class AboutButton extends ComponentEx<IProps, IComponentState> {
+  private mIsMounted: boolean = false;
   constructor(props) {
     super(props);
     this.state = {
@@ -27,11 +28,18 @@ class AboutButton extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
+    this.mIsMounted = true;
     asyncRequire('./AboutDialog', __dirname)
     .then(AboutDialogIn => {
       AboutDialog = AboutDialogIn.default;
-      this.forceUpdate();
+      if (this.mIsMounted) {
+        this.forceUpdate();
+      }
     });
+  }
+
+  public componentWillUnmount() {
+    this.mIsMounted = false;
   }
 
   public render(): JSX.Element {

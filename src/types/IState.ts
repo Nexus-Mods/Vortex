@@ -123,6 +123,7 @@ export interface ISettingsInterface {
 
 export interface ISettingsProfiles {
   activeProfileId: string;
+  nextProfileId: string;
 }
 
 export interface ISettingsGameMode {

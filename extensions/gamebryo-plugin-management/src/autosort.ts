@@ -12,6 +12,7 @@ import * as path from 'path';
 
 class LootInterface {
   private mLoot: LootDatabase;
+  private mLootGame: string;
   private mLootQueue: Promise<void>;
   private mOnSetLootActivity: (activity: string) => void;
   private mExtensionApi: types.IExtensionApi;
@@ -27,7 +28,11 @@ class LootInterface {
   constructor(context: types.IExtensionContext) {
     const store = context.api.store;
 
-    this.mLootQueue = new Promise<void>((resolve, reject) => this.mOnFirstInit = resolve);
+    this.mLootQueue = new Promise<void>((resolve, reject) => {
+      this.mOnFirstInit = () => {
+        resolve();
+      };
+    });
 
     this.mExtensionApi = context.api;
 
@@ -53,12 +58,16 @@ class LootInterface {
         const state = store.getState();
         const gameMode = selectors.activeGameId(state);
         this.readLists(gameMode as GameId);
+        const id = require('shortid').generate();
         this.enqueue(t('Sorting plugins'), () => {
+          if (gameMode !== this.mLootGame) {
+            // game mode has been switched
+            return Promise.resolve();
+          }
           let pluginNames: string[] = Object.keys(state.loadOrder);
           pluginNames = pluginNames.filter((name: string) =>
             state.session.plugins.pluginList[name] !== undefined,
           );
-
           return this.sortAsync(pluginNames)
             .then((sorted: string[]) => {
               store.dispatch(setPluginOrder(sorted));
@@ -71,6 +80,19 @@ class LootInterface {
     context.api.events.on('plugin-details', this.pluginDetails);
 
     this.mOnSetLootActivity = (activity: string) => store.dispatch(setLootActivity(activity));
+  }
+
+  public wait(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (this.mOnFirstInit !== null) {
+        // if the first initialisation hasn't happened yet there is no queue to wait on
+        return resolve();
+      }
+      this.enqueue('', () => {
+        resolve();
+        return Promise.resolve();
+      });
+    });
   }
 
   private pluginDetails =
@@ -124,6 +146,7 @@ class LootInterface {
   private init(gameMode: GameId, gamePath: string) {
     const t = this.mExtensionApi.translate;
     this.mLoot = new LootDatabase(gameMode, gamePath, pluginPath(gameMode));
+    this.mLootGame = gameMode;
     this.promisify();
 
     // little bit of hackery: If tasks are queued before the game mode is activated

@@ -53,7 +53,7 @@ class PageButton extends React.Component<IPageButtonProps, {}> {
       page.badge.detach(this);
     }
     if (page.activity) {
-      page.activity.attach(this);
+      page.activity.detach(this);
     }
   }
 
@@ -113,6 +113,8 @@ export interface IConnectedProps {
   overlayOpen: boolean;
   visibleDialog: string;
   mainPage: string;
+  activeProfileId: string;
+  nextProfileId: string;
 }
 
 export interface IActionProps {
@@ -200,14 +202,21 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.props.overlayOpen !== nextProps.overlayOpen
       || this.props.tabsMinimized !== nextProps.tabsMinimized
       || this.props.mainPage !== nextProps.mainPage
+      || this.props.activeProfileId !== nextProps.activeProfileId
+      || this.props.nextProfileId !== nextProps.nextProfileId
       || this.state.showLayer !== nextState.showLayer
       || this.state.hidpi !== nextState.hidpi
       ;
   }
 
   public render(): JSX.Element {
-    const { onHideDialog, visibleDialog } = this.props;
+    const { activeProfileId, onHideDialog, nextProfileId, visibleDialog } = this.props;
     const { hidpi } = this.state;
+
+    if (activeProfileId !== nextProfileId) {
+      return this.renderWait();
+    }
+
     return (
       <div className={hidpi ? 'hidpi' : 'lodpi'}>
         <div id='menu-layer' ref={this.setMenuLayer} />
@@ -221,6 +230,16 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
       </div>
     );
+  }
+
+  private renderWait() {
+    const style = {
+      margin: 'auto',
+      width: '64px',
+      height: '100%',
+      display: 'block',
+    };
+    return <Icon name='spinner' pulse style={style} />;
   }
 
   private updateState(spec: any) {
@@ -459,6 +478,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     overlayOpen: state.session.base.overlayOpen,
     visibleDialog: state.session.base.visibleDialog,
     mainPage: state.session.base.mainPage,
+    activeProfileId: state.settings.profiles.activeProfileId,
+    nextProfileId: state.settings.profiles.nextProfileId,
   };
 }
 
