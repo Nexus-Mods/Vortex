@@ -100,6 +100,10 @@ function init(context: IExtensionContext): boolean {
   context.registerDashlet('Problems', 2, 10, ReportDashlet,
     (state) => Object.keys(dashProps.problems).length > 0, () => dashProps);
 
+  context.api.events.on('check-native-crash', () => {
+      runChecks('check-native-crash');
+    });
+
   context.once(() => {
     context.api.events.on('trigger-test-run', (eventType: string, delay?: number) => {
       log('debug', 'triggering test run', eventType);

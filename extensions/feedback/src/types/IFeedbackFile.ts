@@ -3,5 +3,4 @@ export interface IFeedbackFile {
   filePath: string;
   type: string;
   size: number;
-  gameId: string;
 }

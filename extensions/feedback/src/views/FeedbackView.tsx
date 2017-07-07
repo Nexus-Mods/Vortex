@@ -1,22 +1,21 @@
-import { clearFeedbackFiles, removeFeedbackFile } from '../actions/session';
+import { addFeedbackFile, clearFeedbackFiles, removeFeedbackFile } from '../actions/session';
 import { IFeedbackFile } from '../types/IFeedbackFile';
 
-import { FILE_NAME, GAME, SIZE, TYPE } from '../feedbackAttributes';
-
-import FeedbackDropzone from './FeedbackDropzone';
-
-import { remote } from 'electron';
+import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import {
-  ComponentEx, IconBar, ITableRowAction, MainPage, Table,
+  ComponentEx, Dropzone, Icon, IconBar, ITableRowAction, MainPage, More, Table,
   tooltip, types, util,
 } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
+import { ControlLabel, FormGroup, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 import { connect } from 'react-redux';
+
+type ControlMode = 'urls' | 'files';
 
 interface IConnectedProps {
   feedbackFiles: { [fileId: string]: IFeedbackFile };
@@ -27,6 +26,7 @@ interface IActionProps {
   onRemoveFeedbackFile: (feedbackFileId: string) => void;
   onShowError: (message: string, details?: string | Error, notificationId?: string) => void;
   onClearFeedbackFiles: () => void;
+  onAddFeedbackFile: (feedbackFile: IFeedbackFile) => void;
 }
 
 type Props = IConnectedProps & IActionProps;
@@ -63,32 +63,42 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       <MainPage>
         <Layout type='column'>
           {this.renderHeader(t)}
-          <Flex style={{ height: '100%', overflowY: 'auto' }} >
-            <Table
-              tableId='feedbackFiles'
-              data={feedbackFiles}
-              staticElements={[FILE_NAME, GAME, SIZE, TYPE]}
-              actions={actions}
-            />
+          <Flex className='table-layout' >
+            <FormGroup>
+              <ControlLabel>{t('Feedback Files')}</ControlLabel>
+              <ListGroup style={{ maxHeight: 160, overflowY: 'scroll' }} >
+                {Object.keys(feedbackFiles).map(this.renderFeedbackFile)}
+              </ListGroup>
+            </FormGroup>
           </Flex>
           <Fixed>
-            <div style={{ display: 'table', width: '100%' }}>
-              <FeedbackDropzone
-                feedbackType='screenshot'
+            <div style={{ width: '90%', display: 'inline-block' }}>
+              <Dropzone
+                accept={['files']}
+                drop={this.dropFeedback}
+                dialogHint={t('Drop the feedback file here')}
               />
-              <FeedbackDropzone
-                feedbackType='tracelog'
-              />
-              <span>
+            </div>
+            <div className={'btn-line-right'}>
+              <div>
                 <tooltip.Button
                   className='btn.embed'
                   id='btn-submit-feedback'
-                  tooltip={t('Cancel')}
+                  tooltip={t('Submit Feedback')}
                   onClick={this.submitFeedback}
                 >
                   {t('Submit Feedback')}
                 </tooltip.Button>
-              </span>
+              </div><div>
+                <tooltip.Button
+                  className='btn.embed'
+                  id='btn-attach-log'
+                  tooltip={t('Attach Vortex log')}
+                  onClick={this.attachLog}
+                >
+                  {t('Attach Vortex log')}
+                </tooltip.Button>
+              </div>
             </div>
           </Fixed>
         </Layout>
@@ -96,12 +106,56 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     );
   }
 
-  private remove = (instanceIds: string[]) => {
-    const { onRemoveFeedbackFile } = this.props;
-    onRemoveFeedbackFile(instanceIds[0]);
+  private renderFeedbackFile = (feedbackFile: string) => {
+    const { feedbackFiles, onRemoveFeedbackFile, t } = this.props;
+    return (
+      <ListGroupItem
+        key={feedbackFiles[feedbackFile].filename}
+      >
+        {feedbackFiles[feedbackFile].filename}
+        <More id={feedbackFiles[feedbackFile].filename} name={t('File Info')}>
+          {'\n' + t('Filename: ') + feedbackFiles[feedbackFile].filename + '\n' +
+            t('Size: ') + feedbackFiles[feedbackFile].size + '\n' +
+            t('Type: ') + feedbackFiles[feedbackFile].type + '\n'}
+        </More>
+        <tooltip.IconButton
+          className='btn-embed btn-line-right'
+          id={feedbackFiles[feedbackFile].filename}
+          key={feedbackFiles[feedbackFile].filename}
+          tooltip={t('Remove')}
+          onClick={this.remove}
+          icon='remove'
+        />
+      </ListGroupItem>
+    );
   }
 
-  private renderHeader(t: I18next.TranslationFunction) {
+  private dropFeedback = (type: ControlMode, feedbackFilePaths: string[]) => {
+    const { onAddFeedbackFile } = this.props;
+
+    if (type === 'files') {
+
+      fs.statAsync(feedbackFilePaths[0])
+        .then((stats) => {
+          const feedbackFile: IFeedbackFile = {
+            filename: path.basename(feedbackFilePaths[0]),
+            filePath: feedbackFilePaths[0],
+            size: stats.size,
+            type: path.extname(feedbackFilePaths[0]),
+          };
+
+          onAddFeedbackFile(feedbackFile);
+        });
+    }
+  }
+
+  private remove = (evt) => {
+    const { onRemoveFeedbackFile } = this.props;
+    const feedbackFileId = evt.currentTarget.id;
+    onRemoveFeedbackFile(feedbackFileId);
+  }
+
+  private renderHeader = (t: I18next.TranslationFunction) => {
     const { feedbackMessage } = this.state;
     return (
       <Fixed className='table-layout'>
@@ -109,7 +163,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
           <h3>{t('Provide Feedback\n')}</h3>
         </div>
         <div>
-          {t('Please note: no personal information will be sent whrn providing feedback')}
+          {t('Please note: no personal information will be sent when providing feedback')}
         </div>
         <div>
           <h3>
@@ -122,16 +176,57 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
             id='textarea-feedback'
             className='textarea-feedback'
             onChange={this.handleChange}
-            placeholder={t('When I began to use Vortex')}
+            placeholder={t(
+              'E.g. \nSubject: Install problem. \nSummary: The mod downloads properly but ' +
+              'when I try to install it nothing happens.\n' +
+              'Steps to reproduce: Download a mod, then click Install inside the Actions menu. \n' +
+              'Expected Results: The mod is installed. \n' +
+              'Actual Results: Nothing happens. \n' +
+              'Optional: ' )}
           />
         </div>
       </Fixed>
     );
   }
 
+  private attachLog = () => {
+    const { onAddFeedbackFile } = this.props;
+
+    const logFile = path.join(remote.app.getPath('userData'), 'vortex.log');
+
+    fs.statAsync(logFile)
+      .then((stats) => {
+        const feedbackFile: IFeedbackFile = {
+          filename: path.basename(logFile),
+          filePath: logFile,
+          size: stats.size,
+          type: 'log',
+        };
+
+        onAddFeedbackFile(feedbackFile);
+      });
+  }
+
+  private createFeedbackReport(type, message, version) {
+
+    return `### Application ${type}
+      #### System
+      | | |
+      |------------ | -------------|
+      |Platform | ${process.platform} |
+      |Architecture | ${process.arch} |
+      |Application Version | ${version} |
+      #### Message
+      ${message}
+      `;
+  }
+
   private submitFeedback = (event) => {
     const { feedbackFiles, onClearFeedbackFiles, onShowActivity, onShowError } = this.props;
     const { feedbackMessage } = this.state;
+    const app = appIn || remote.app;
+
+    const feedbackReport = this.createFeedbackReport('feedback', feedbackMessage, app.getVersion());
 
     const notificationId = 'submit-feedback';
     onShowActivity('Submitting feedback', notificationId);
@@ -177,6 +272,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowError: (message: string, details?: string | Error, notificationId?: string) =>
       util.showError(dispatch, message, details, false, notificationId),
     onClearFeedbackFiles: () => dispatch(clearFeedbackFiles()),
+    onAddFeedbackFile: (feedbackFile) => dispatch(addFeedbackFile(feedbackFile)),
   };
 }
 
