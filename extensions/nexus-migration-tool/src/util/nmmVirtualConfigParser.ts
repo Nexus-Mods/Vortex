@@ -14,6 +14,9 @@ export function parseNMMInstall(nmmFilePath: string, mods: any): Promise<ModEntr
   const modListSet = new Set(Object.keys(mods).map((key: string) => mods[key].id));
 
   return fs.readFileAsync(sourceFile)
+  .catch((err) => {
+    throw new Error('The selected folder does not contain a VirtualModConfig.xml file.');
+  })
   .then((data) => {
     const xmlDoc = parser.parseFromString(data.toString('utf-8'), 'text/xml');
     const version = xmlDoc.getElementsByTagName('virtualModActivator')[0];

@@ -153,6 +153,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
           icon='export'
           onClick={this.selectVirtualPath}
         />
+        {t('Start import') + ' '}
         <tooltip.IconButton
           id='btn-test-import'
           tooltip={t('Imports the parsed mods')}
