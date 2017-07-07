@@ -5,11 +5,13 @@ import { getSafe } from '../../util/storeHelper';
 import ExtensionGate from '../ExtensionGate';
 import FormFeedback from '../FormFeedbackAwesome';
 import FormInput from '../FormInput';
+import Icon from '../Icon';
 import More from '../More';
 
 import * as _ from 'lodash';
 import * as React from 'react';
-import {ControlLabel, FormControl, FormGroup, ListGroup, ListGroupItem} from 'react-bootstrap';
+import { Button, ControlLabel, FormControl, FormGroup,
+         ListGroup, ListGroupItem } from 'react-bootstrap';
 
 interface ICellProps {
   language: string;
@@ -172,6 +174,8 @@ export interface IDetailProps {
   rawData: any;
   attributes: ITableAttribute[];
   t: I18next.TranslationFunction;
+  show: boolean;
+  onToggleShow: () => void;
 }
 
 class DetailBox extends PureComponentEx<IDetailProps, {}> {
@@ -184,17 +188,55 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
       || (this.props.language !== nextProps.language)
       || (this.props.rawData !== nextProps.rawData)
       || (this.props.rowData !== nextProps.rowData)
+      || (this.props.show !== nextProps.show)
       || !_.isEqual(this.props.attributes, nextProps.attributes);
   }
 
   public render(): JSX.Element {
-    const { attributes, rowData } = this.props;
+    const { attributes, onToggleShow, show, rowData } = this.props;
     return (
-      <form>
-      {attributes
-        .filter(obj => rowData[obj.id] !== undefined)
-        .map(obj => this.renderDetail(obj))}
-      </form>
+      <div style={{ height: '100%', position: 'relative', display: 'flex', overflowX: 'hidden' }}>
+        {show ? null : this.renderHandle() }
+        <div style={{ display: 'flex' }} >
+          <form style={{ flex: '1 1 0%', overflowY: show ? 'auto' : 'hidden' }}>
+            {attributes
+              .filter(obj => rowData[obj.id] !== undefined)
+              .map(obj => this.renderDetail(obj))}
+          </form>
+          <Button
+            id='btn-minimize-menu'
+            onClick={onToggleShow}
+            className='btn-menu-minimize'
+          >
+            <Icon name={show ? 'angle-double-right' : 'angle-double-left'} />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  private renderHandle(): JSX.Element {
+    const { t, onToggleShow } = this.props;
+    const style = {
+      border: '1px solid #0c5886',
+      height: '100%',
+      position: 'relative' as 'relative',
+    };
+    const textStyle = {
+      transform: 'rotate(-90deg)',
+      transformOrigin: 'left',
+      position: 'absolute' as 'absolute',
+      whiteSpace: 'nowrap',
+      top: '50%',
+      left: '50%',
+    };
+
+    return (
+      <Button style={style}
+        onClick={onToggleShow}
+      >
+        <div style={textStyle}><Icon name='bold-up' />{t('Mod Attributes')}</div>
+      </Button>
     );
   }
 

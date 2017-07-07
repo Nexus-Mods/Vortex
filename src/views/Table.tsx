@@ -12,6 +12,7 @@ import smoothScroll from '../util/smoothScroll';
 import {getSafe, setSafe} from '../util/storeHelper';
 import {truthy} from '../util/util';
 
+import Icon from './Icon';
 import IconBar from './IconBar';
 import HeaderCell from './table/HeaderCell';
 import TableDetail from './table/TableDetail';
@@ -21,7 +22,7 @@ import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
-import {Table} from 'react-bootstrap';
+import { Table } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 import * as SplitPane from 'react-split-pane';
@@ -69,6 +70,7 @@ interface IComponentState {
   splitMax: number;
   rowState: { [id: string]: IRowState };
   sortedRows: any[];
+  detailsOpen: boolean;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps;
@@ -100,6 +102,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       splitMax: 9999,
       rowState: {},
       sortedRows: [],
+      detailsOpen: false,
     };
     this.mVisibleAttributes = this.visibleAttributes(props.objects, props.attributeState);
     this.updateCalculatedValues(props)
@@ -134,8 +137,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, actions, objects, splitPos, tableId } = this.props;
-    const { splitMax } = this.state;
-    const { lastSelected } = this.state;
+    const { detailsOpen, lastSelected, splitMax } = this.state;
 
     let hasActions = false;
     if (actions !== undefined) {
@@ -145,17 +147,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     }
 
     const actionHeader = this.renderTableActions();
+    const openClass = detailsOpen ? 'open' : 'closed';
 
     return (
-      <SplitPane
-        split='vertical'
-        maxSize={splitMax}
-        defaultSize={splitPos}
-        onChange={this.changeSplitPos}
-        primary='second'
-        ref={this.setSplitRef}
-        className='table-split'
-      >
+      <div className='table-container'>
         <div
           className='table-main-pane'
           ref={this.mainPaneRef}
@@ -175,11 +170,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
             {this.renderBody(this.mVisibleAttributes)}
           </Table>
         </div>
-        <div className='table-details-pane'>
+        <div className={`table-details-pane ${openClass}`}>
           {this.renderDetails(lastSelected)}
         </div>
-      </SplitPane>
-      );
+      </div>
+    );
   }
 
   private renderBody = (visibleAttributes: ITableAttribute[]) => {
@@ -196,7 +191,14 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     );
   }
 
+  private toggleDetails = () => {
+    const { detailsOpen } = this.state;
+    this.setState(update(this.state, { detailsOpen: { $set: !detailsOpen } }));
+  }
+
   private renderDetails = (rowId: string) => {
+    const {detailsOpen} = this.state;
+
     if ((rowId === undefined) || (this.state.calculatedValues === undefined)) {
       return null;
     }
@@ -220,6 +222,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         rawData={data[rowId]}
         attributes={detailAttributes}
         language={language}
+        show={detailsOpen}
+        onToggleShow={this.toggleDetails}
       />
     );
   }

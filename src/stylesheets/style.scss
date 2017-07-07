@@ -828,6 +828,7 @@ a[role=menuitem] svg {
 .table-main-pane {
   height: 100%;
   overflow-y: auto;
+  flex: 1 1 0%;
 
   thead {
     color: $text-color;
@@ -866,6 +867,15 @@ a[role=menuitem] svg {
   height: 100%;
   overflow-y: auto;
   padding: 5px;
+  min-width: 32px;
+  transition: max-width 300ms;
+  &.open {
+    max-width: 30%;
+  }
+  &.closed {
+    // overruled by min-width
+    max-width: 0%;
+  }
 }
 
 .table-layout {
@@ -898,6 +908,18 @@ a[role=menuitem] svg {
 
 .table-split {
   padding: $gutter-width / 2;
+}
+
+.table-container {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: row;
+  position: absolute;
+  overflow: hidden;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
 }
 
 .textarea-details {
