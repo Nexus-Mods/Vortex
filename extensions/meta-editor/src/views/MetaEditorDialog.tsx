@@ -209,12 +209,12 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
      })
       .then((info: ILookupResult[]) => {
         if (info.length > 0) {
-          this.nextState.info = Object.assign({
+          this.nextState.info = {
             filePath,
             fileMD5: downloads[downloadId].fileMD5,
             fileSize: downloads[downloadId].size,
             gameId: downloads[downloadId].game,
-          }, info[0].value);
+            ...info[0].value };
         } else {
           this.nextState.info = this.getEmptyData(filePath, downloads[downloadId]);
         }

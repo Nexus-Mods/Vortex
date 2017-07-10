@@ -19,7 +19,7 @@ class CategoryFilterComponent extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { filter, categories } = this.props;
 
-    const options = Object.keys(categories).map(id => ({
+    const options = Object.keys(categories || {}).map(id => ({
       value: id,
       label: categories[id].name,
     })).sort((lhs, rhs) => lhs.label.localeCompare(rhs.label));

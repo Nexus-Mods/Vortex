@@ -286,7 +286,7 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  lookupModReference: (ref: IReference) => Promise<ILookupDetails[]>;
+  lookupModReference: (ref: IReference) => Promise<ILookupResult[]>;
 
   /**
    * find meta information about a mod
