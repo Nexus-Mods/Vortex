@@ -27,8 +27,8 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
       <th className={`table-header-cell ${className}`} key={attribute.id}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div className='flex-fill' style={{ display: 'flex', flexDirection: 'row' }}>
-            <p className='vcenter flex-fill'>{ t(attribute.name) }</p>
-            <div style={{ margin: 'auto 5px auto auto', whiteSpace: 'nowrap' }}>
+            <p className='flex-fill' style={{ margin: 0 }}>{ t(attribute.name) }</p>
+            <div>
             { attribute.filter !== undefined ? this.renderFilterIndicator() : null }
             { attribute.isSortable ? this.renderSortIndicator() : null }
             </div>

@@ -93,6 +93,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private mSplitContainer: any;
   private mScrollRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
+  private mLastSelectOnly: number = 0;
 
   constructor(props: IProps) {
     super(props);
@@ -278,7 +279,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
               instanceId={selected}
               collapse={true}
             />
-          ) : <div><p className='vcenter'>{t('Actions')}</p></div>
+          ) : <div><p>{t('Actions')}</p></div>
         }
       </th>
       );
@@ -647,10 +648,19 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       ? { $set: { selected: true } }
       : { selected: { $set: true } };
 
-    this.setState(update(this.state, {
-      lastSelected: { $set: rowId },
-      rowState,
-    }));
+    const now = new Date().getTime();
+    if ((this.state.lastSelected === rowId) && ((now - this.mLastSelectOnly) < 500)) {
+      this.setState(update(this.state, {
+        detailsOpen: { $set: !this.state.detailsOpen },
+        rowState,
+      }));
+    } else {
+      this.mLastSelectOnly = now;
+      this.setState(update(this.state, {
+        lastSelected: { $set: rowId },
+        rowState,
+      }));
+    }
   }
 
   private selectToggle(rowId: string) {

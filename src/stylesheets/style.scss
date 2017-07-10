@@ -853,7 +853,10 @@ a[role=menuitem] svg {
         min-height: 48px;
         display: flex;
         flex-direction: row;
-        padding: 0px 4px;
+        padding: 16px 4px;
+        > :not(first-child) {
+          margin-top: 5px;
+        }
       }
     }
   }
@@ -875,6 +878,9 @@ a[role=menuitem] svg {
   &.closed {
     // overruled by min-width
     max-width: 0%;
+    // offset the right offset to align the button
+    // with the right border
+    margin-right: -5px;
   }
 }
 
