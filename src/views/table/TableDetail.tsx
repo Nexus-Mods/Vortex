@@ -12,6 +12,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup,
          ListGroup, ListGroupItem } from 'react-bootstrap';
+import * as Select from 'react-select';
 
 interface ICellProps {
   language: string;
@@ -21,6 +22,18 @@ interface ICellProps {
   rawData: any;
   t: I18next.TranslationFunction;
   onChangeData: (rowId: string, attributeId: string, value: any) => void;
+}
+
+class ValueComponent extends React.Component<any, {}> {
+  public render() {
+    return (
+      <div className='Select-value' title={this.props.value.text}>
+        <span className='Select-value-label' role='option'>
+          {this.props.value.text}
+        </span>
+      </div>
+    );
+  }
 }
 
 class DetailCell extends React.Component<ICellProps, {}> {
@@ -63,14 +76,14 @@ class DetailCell extends React.Component<ICellProps, {}> {
             );
           } else {
             content = (
-              <FormControl
-                id={attribute.id}
-                componentClass='select'
+              <Select
+                options={choices}
                 value={key}
-                onChange={this.changeCellEvt}
-              >
-                {choices.map(this.renderChoice)}
-              </FormControl>
+                onChange={this.changeCellSelect}
+                valueKey='key'
+                labelKey='text'
+                valueComponent={ValueComponent}
+              />
             );
           }
         } else if (attribute.edit.validate !== undefined) {
@@ -148,8 +161,12 @@ class DetailCell extends React.Component<ICellProps, {}> {
     this.changeCell(evt.currentTarget.value);
   }
 
-  private renderChoice(choice: IEditChoice): JSX.Element {
-    return <option key={choice.key || 'undefined'} value={choice.key}>{choice.text}</option>;
+  private changeCellSelect = (value: { key: string, text: string }) => {
+    if (value !== null) {
+      this.changeCell(value.key);
+    } else {
+      this.changeCell(undefined);
+    }
   }
 
   private renderCell(value: any): string {

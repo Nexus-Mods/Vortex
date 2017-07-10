@@ -326,12 +326,14 @@ div:hover > .hover-expand {
   }
   .Select-input {
     height: 20px;
+    margin-top: 0.2em;
     input {
       height: 100%;
     }
   }
   .Select-placeholder {
     font-weight: normal;
+    padding-top: 0.2em;
   }
   .Select--multi {
     padding: 0px 5px;
@@ -469,6 +471,8 @@ a[role=menuitem] svg {
 
   > * {
     pointer-events: initial;
+    width: 100%;
+    height: 100%;
   }
 }
 
@@ -822,7 +826,7 @@ a[role=menuitem] svg {
 }
 
 .table-selected {
-  background-color: $brand-selected;
+  background-color: $brand-secondary;
 }
 
 .table-main-pane {
@@ -1076,9 +1080,20 @@ a[role=menuitem] svg {
   padding: 0px 10px;
 }
 
+.mod-picture-container {
+  max-width: 256px;
+}
+
 .mod-picture {
   max-width: 100%;
   max-height: 192px;
+}
+
+.mod-picture-large {
+  margin-left: 5%;
+  margin-top: 5%;
+  max-width: 90%;
+  max-height: 90%;
 }
 
 .table-mods .dropdown > button,

@@ -8,3 +8,14 @@
 .Select-control {
   display: inline-table;
 }
+
+.Select-placeholder,
+.Select--single>.Select-control .Select-value {
+  // leave room for clear and arrow symbol
+  margin-right: 3em;
+  padding-top: 0.4em;
+}
+
+.Select-input {
+  margin-top: 0.4em;
+}

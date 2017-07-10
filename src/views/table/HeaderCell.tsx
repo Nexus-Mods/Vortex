@@ -28,7 +28,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div className='flex-fill' style={{ display: 'flex', flexDirection: 'row' }}>
             <p className='flex-fill' style={{ margin: 0 }}>{ t(attribute.name) }</p>
-            <div>
+            <div style={{ whiteSpace: 'nowrap' }}>
             { attribute.filter !== undefined ? this.renderFilterIndicator() : null }
             { attribute.isSortable ? this.renderSortIndicator() : null }
             </div>

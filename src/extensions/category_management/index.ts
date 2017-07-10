@@ -49,7 +49,8 @@ function init(context: IExtensionContext): boolean {
     description: 'Mod Category',
     icon: 'sitemap',
     placement: 'table',
-    calc: (mod: IModWithState) => retrieveCategory(getModCategory(mod), context.api.store),
+    calc: (mod: IModWithState) =>
+      retrieveCategory(getModCategory(mod), context.api.store.getState()),
     isToggleable: true,
     edit: {},
     isSortable: true,
@@ -57,7 +58,7 @@ function init(context: IExtensionContext): boolean {
   });
 
   context.registerTableAttribute('mods', {
-    id: 'category_detail',
+    id: 'category-detail',
     name: 'Category',
     description: 'Mod Category',
     icon: 'sitemap',

@@ -410,9 +410,7 @@ function init(context: IExtensionContextExt): boolean {
       return source !== undefined ? source.name : 'None';
     },
     edit: {
-      choices: () => [].concat(
-        [ { key: undefined, text: 'None' } ],
-        modSources.map(source => ({ key: source.id, text: source.name }))),
+      choices: () => modSources.map(source => ({ key: source.id, text: source.name })),
       onChangeValue: (rowId: string, newValue: string) => {
         const store = context.api.store;
         const gameMode = activeGameId(store.getState());
