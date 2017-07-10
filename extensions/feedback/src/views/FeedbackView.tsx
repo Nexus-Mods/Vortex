@@ -1,16 +1,18 @@
 import { addFeedbackFile, clearFeedbackFiles, removeFeedbackFile } from '../actions/session';
 import { IFeedbackFile } from '../types/IFeedbackFile';
+import { createFeedbackReport } from '../util/createFeedbackReport';
+import { retrieveFeedbackFileType } from '../util/retrieveFeedbackFileType';
 
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import {
-  ComponentEx, Dropzone, Icon, IconBar, ITableRowAction, MainPage, More, Table,
+  ComponentEx, Dropzone, Icon, IconBar, ITableRowAction, MainPage, Table,
   tooltip, types, util,
 } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
-import { ControlLabel, FormGroup, ListGroup, ListGroupItem } from 'react-bootstrap';
+import { Col, ControlLabel, FormGroup, Grid, ListGroup, ListGroupItem, Row } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 import { connect } from 'react-redux';
@@ -63,12 +65,30 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       <MainPage>
         <Layout type='column'>
           {this.renderHeader(t)}
-          <Flex className='table-layout' >
+          <Flex className='table-layout' style={{ overflowY: 'auto' }}>
             <FormGroup>
               <ControlLabel>{t('Feedback Files')}</ControlLabel>
-              <ListGroup style={{ maxHeight: 160, overflowY: 'scroll' }} >
+              <Grid style={{ width: '100%' }}>
+                <Row key='header' style={{ width: '100%', border: 'solid 1px' }}>
+                  <Col key='filename'
+                    sm={4} md={4} lg={4} style={{ width: '25%' }}>
+                    <span>{t('FileName')}</span>
+                  </Col>
+                  <Col key='type' style={{ width: '25%' }}
+                    sm={4} md={4} lg={4}>
+                    <span>{t('Type')}</span>
+                  </Col>
+                  <Col key='size' style={{ width: '25%' }}
+                    sm={4} md={4} lg={4}>
+                    <span>{t('Size (Kb)')}</span>
+                  </Col>
+                  <Col key='remove' style={{ width: '25%' }}
+                    sm={4} md={4} lg={4}>
+                    <span />
+                  </Col>
+                </Row >
                 {Object.keys(feedbackFiles).map(this.renderFeedbackFile)}
-              </ListGroup>
+              </Grid>
             </FormGroup>
           </Flex>
           <Fixed>
@@ -109,24 +129,30 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   private renderFeedbackFile = (feedbackFile: string) => {
     const { feedbackFiles, onRemoveFeedbackFile, t } = this.props;
     return (
-      <ListGroupItem
-        key={feedbackFiles[feedbackFile].filename}
-      >
-        {feedbackFiles[feedbackFile].filename}
-        <More id={feedbackFiles[feedbackFile].filename} name={t('File Info')}>
-          {'\n' + t('Filename: ') + feedbackFiles[feedbackFile].filename + '\n' +
-            t('Size: ') + feedbackFiles[feedbackFile].size + '\n' +
-            t('Type: ') + feedbackFiles[feedbackFile].type + '\n'}
-        </More>
-        <tooltip.IconButton
-          className='btn-embed btn-line-right'
-          id={feedbackFiles[feedbackFile].filename}
-          key={feedbackFiles[feedbackFile].filename}
-          tooltip={t('Remove')}
-          onClick={this.remove}
-          icon='remove'
-        />
-      </ListGroupItem>
+      <Row key={feedbackFile} style={{ maxHeight: 32 }}>
+        <Col key={feedbackFiles[feedbackFile].filename}
+          sm={4} md={4} lg={4} style={{ width: '25%' }}>
+          <span>{feedbackFiles[feedbackFile].filename}</span>
+        </Col>
+        <Col key={feedbackFiles[feedbackFile].type}
+          sm={4} md={4} lg={4} style={{ width: '25%' }}>
+          <span>{retrieveFeedbackFileType(feedbackFiles[feedbackFile].type, t)}</span>
+        </Col>
+        <Col key={feedbackFiles[feedbackFile].size}
+          sm={4} md={4} lg={4} style={{ width: '25%' }}>
+          <span>{feedbackFiles[feedbackFile].size.toFixed(0)}</span>
+        </Col>
+        <Col key={'btn-remove'} sm={4} md={4} lg={4} style={{ width: '25%' }}>
+          <tooltip.IconButton
+            className='btn-embed btn-line-right'
+            id={feedbackFiles[feedbackFile].filename}
+            key={feedbackFiles[feedbackFile].filename}
+            tooltip={t('Remove')}
+            onClick={this.remove}
+            icon='remove'
+          />
+        </Col>
+      </Row >
     );
   }
 
@@ -137,10 +163,11 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
 
       fs.statAsync(feedbackFilePaths[0])
         .then((stats) => {
+          const fileSize = stats.size / 1024 !== 0 ? (stats.size / 1024) : 1;
           const feedbackFile: IFeedbackFile = {
             filename: path.basename(feedbackFilePaths[0]),
             filePath: feedbackFilePaths[0],
-            size: stats.size,
+            size: fileSize,
             type: path.extname(feedbackFilePaths[0]),
           };
 
@@ -182,7 +209,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
               'Steps to reproduce: Download a mod, then click Install inside the Actions menu. \n' +
               'Expected Results: The mod is installed. \n' +
               'Actual Results: Nothing happens. \n' +
-              'Optional: ' )}
+              'Optional: ')}
           />
         </div>
       </Fixed>
@@ -196,29 +223,16 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
 
     fs.statAsync(logFile)
       .then((stats) => {
+        const fileSize = stats.size / 1024 !== 0 ? (stats.size / 1024) : 1;
         const feedbackFile: IFeedbackFile = {
           filename: path.basename(logFile),
           filePath: logFile,
-          size: stats.size,
-          type: 'log',
+          size: fileSize,
+          type: 'Log',
         };
 
         onAddFeedbackFile(feedbackFile);
       });
-  }
-
-  private createFeedbackReport(type, message, version) {
-
-    return `### Application ${type}
-      #### System
-      | | |
-      |------------ | -------------|
-      |Platform | ${process.platform} |
-      |Architecture | ${process.arch} |
-      |Application Version | ${version} |
-      #### Message
-      ${message}
-      `;
   }
 
   private submitFeedback = (event) => {
@@ -226,7 +240,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     const { feedbackMessage } = this.state;
     const app = appIn || remote.app;
 
-    const feedbackReport = this.createFeedbackReport('feedback', feedbackMessage, app.getVersion());
+    const feedbackReport = createFeedbackReport('feedback', feedbackMessage, app.getVersion());
 
     const notificationId = 'submit-feedback';
     onShowActivity('Submitting feedback', notificationId);
