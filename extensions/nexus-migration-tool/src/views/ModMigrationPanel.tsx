@@ -79,7 +79,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, importedMods } = this.props;
+    const { gameMode, importedMods, t } = this.props;
     const { importedModList, profileId } = this.state;
     let actions = this.modActions;
     const selectFolder = true;
@@ -98,6 +98,14 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
           staticElements={[
             MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, FILES, LOCAL, STATUS]}
         />
+      );
+    } else {
+      content = (
+        <div style={{ whiteSpace: 'nowrap' }}>
+          {t('To start the import, click the button to select the NMM VirtualInstall folder' +
+           ' where the VirtualModConfig.xml file to import is located.' +
+           ' (i.e. E:\\Games\\Nexus Mod Manager\\' + gameMode + '\\Mods\\VirtualInstall)')}
+        </div>
       );
     }
 
@@ -215,8 +223,6 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
       if (!util.isNullOrWhitespace(dirName)) {
         this.selectedVirtualPath = dirName;
         this.testParse(evt, dirName);
-      } else {
-        onShowSuccess('Virtual path selection cancelled by the user.', this.selectionId);
       }
     })
     .catch((err) => {
@@ -271,7 +277,6 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   }
 
   private remove = (instanceId: string) => {
-    // removes a mod from the import list
     const { importedModList } = this.state;
     const mod: IModEntry = importedModList[instanceId];
 

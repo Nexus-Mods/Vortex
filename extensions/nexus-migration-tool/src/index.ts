@@ -10,7 +10,7 @@ import * as path from 'path';
 function init(context): boolean {
 
   context.registerMainPage('import', 'NMM Migration Tool', ModMigrationPanel, {
-    hotkey: 'M',
+    hotkey: 'N',
     group: 'per-game',
     visible: () => true,
   });
