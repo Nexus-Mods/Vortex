@@ -53,3 +53,26 @@ describe('setSavegameAttribute', () => {
     expect(result).toEqual({ saves: { savegame1: { 'attributes': { attribute1: 'new value' } }, savegame2: { 'attributes': { attribute1: 'value' } } } });
   });
 });
+
+describe('clearSavegames', () => {
+  it('clears the savegames', () => {
+    let input = { saves: { savegame1: { id: '', savegameBind: null, attributes: {} }, savegame2: { id: '', savegameBind: null, attributes: {} } } };
+    let result = sessionReducer.reducers.CLEAR_SAVEGAMES(input);
+    expect(result).toEqual({ saves: {} });
+  });
+});
+
+describe('setSavegamePath', () => {
+  it('sets the savegame path', () => {
+    let input = { savegamePath: 'value' };
+    let result = sessionReducer.reducers.SET_SAVEGAME_PATH(input, {value: 'new value'});
+    expect(result).toEqual({savegamePath: { value: 'new value'}});
+  });
+});
+
+
+
+
+
+
+
