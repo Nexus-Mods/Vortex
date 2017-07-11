@@ -1,7 +1,6 @@
 import { addFeedbackFile, clearFeedbackFiles, removeFeedbackFile } from '../actions/session';
 import { IFeedbackFile } from '../types/IFeedbackFile';
 import { createFeedbackReport } from '../util/createFeedbackReport';
-import { retrieveFeedbackFileType } from '../util/retrieveFeedbackFileType';
 
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
@@ -65,30 +64,12 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       <MainPage>
         <Layout type='column'>
           {this.renderHeader(t)}
-          <Flex className='table-layout' style={{ overflowY: 'auto' }}>
+          <Flex className='table-layout'>
             <FormGroup>
               <ControlLabel>{t('Feedback Files')}</ControlLabel>
-              <Grid style={{ width: '100%' }}>
-                <Row key='header' style={{ width: '100%', border: 'solid 1px' }}>
-                  <Col key='filename'
-                    sm={4} md={4} lg={4} style={{ width: '25%' }}>
-                    <span>{t('FileName')}</span>
-                  </Col>
-                  <Col key='type' style={{ width: '25%' }}
-                    sm={4} md={4} lg={4}>
-                    <span>{t('Type')}</span>
-                  </Col>
-                  <Col key='size' style={{ width: '25%' }}
-                    sm={4} md={4} lg={4}>
-                    <span>{t('Size (Kb)')}</span>
-                  </Col>
-                  <Col key='remove' style={{ width: '25%' }}
-                    sm={4} md={4} lg={4}>
-                    <span />
-                  </Col>
-                </Row >
+              <ListGroup style={{ maxHeight: 160, overflowY: 'scroll' }} >
                 {Object.keys(feedbackFiles).map(this.renderFeedbackFile)}
-              </Grid>
+              </ListGroup>
             </FormGroup>
           </Flex>
           <Fixed>
@@ -129,30 +110,19 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   private renderFeedbackFile = (feedbackFile: string) => {
     const { feedbackFiles, onRemoveFeedbackFile, t } = this.props;
     return (
-      <Row key={feedbackFile} style={{ maxHeight: 32 }}>
-        <Col key={feedbackFiles[feedbackFile].filename}
-          sm={4} md={4} lg={4} style={{ width: '25%' }}>
-          <span>{feedbackFiles[feedbackFile].filename}</span>
-        </Col>
-        <Col key={feedbackFiles[feedbackFile].type}
-          sm={4} md={4} lg={4} style={{ width: '25%' }}>
-          <span>{retrieveFeedbackFileType(feedbackFiles[feedbackFile].type, t)}</span>
-        </Col>
-        <Col key={feedbackFiles[feedbackFile].size}
-          sm={4} md={4} lg={4} style={{ width: '25%' }}>
-          <span>{feedbackFiles[feedbackFile].size.toFixed(0)}</span>
-        </Col>
-        <Col key={'btn-remove'} sm={4} md={4} lg={4} style={{ width: '25%' }}>
-          <tooltip.IconButton
-            className='btn-embed btn-line-right'
-            id={feedbackFiles[feedbackFile].filename}
-            key={feedbackFiles[feedbackFile].filename}
-            tooltip={t('Remove')}
-            onClick={this.remove}
-            icon='remove'
-          />
-        </Col>
-      </Row >
+      <ListGroupItem
+        key={feedbackFiles[feedbackFile].filename}
+      >
+        {feedbackFiles[feedbackFile].filename + ' (' + feedbackFiles[feedbackFile].size + ' Kb)'}
+        <tooltip.IconButton
+          className='btn-embed btn-line-right'
+          id={feedbackFiles[feedbackFile].filename}
+          key={feedbackFiles[feedbackFile].filename}
+          tooltip={t('Remove')}
+          onClick={this.remove}
+          icon='remove'
+        />
+      </ListGroupItem>
     );
   }
 
@@ -163,7 +133,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
 
       fs.statAsync(feedbackFilePaths[0])
         .then((stats) => {
-          const fileSize = stats.size / 1024 !== 0 ? (stats.size / 1024) : 1;
+          const fileSize = stats.size / 1024 !== 0 ? Math.round(stats.size / 1024) : 1;
           const feedbackFile: IFeedbackFile = {
             filename: path.basename(feedbackFilePaths[0]),
             filePath: feedbackFilePaths[0],
@@ -223,7 +193,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
 
     fs.statAsync(logFile)
       .then((stats) => {
-        const fileSize = stats.size / 1024 !== 0 ? (stats.size / 1024) : 1;
+        const fileSize = stats.size / 1024 !== 0 ? Math.round(stats.size / 1024) : 1;
         const feedbackFile: IFeedbackFile = {
           filename: path.basename(logFile),
           filePath: logFile,

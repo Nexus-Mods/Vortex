@@ -39,7 +39,7 @@ function nativeCrashCheck(context: types.IExtensionContext): Promise<types.ITest
           automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
             fs.statAsync(nativeCrashFile)
               .then((stats) => {
-                const fileSize = stats.size / 1024 !== 0 ? (stats.size / 1024) : 1;
+                const fileSize = stats.size / 1024 !== 0 ? Math.round(stats.size / 1024) : 1;
                 const feedbackFile: IFeedbackFile = {
                   filename: path.basename(nativeCrashFile),
                   filePath: nativeCrashFile,
