@@ -65,6 +65,8 @@ function findLocalInfo(
           } else {
             return Promise.reject(new NotFound());
           }
+        } else {
+          return Promise.resolve(steamGame);
         }
       });
 }
@@ -78,11 +80,13 @@ function queryGameSteam(api: types.IExtensionApi, game: IGameCombo):
           foundSteamGame = localInfo;
           const url =
               `http://store.steampowered.com/api/appdetails?appids=${foundSteamGame.appid}`;
+          log('debug', 'requesting game info from steam store', { url });
           return sendRequest(url);
         })
         .then(response => {
           let dat = JSON.parse(response)[foundSteamGame.appid];
           if (dat['success'] !== true) {
+            log('warn', 'steam store request was unsuccessful', { response });
             return {};
           }
           dat = dat['data'];

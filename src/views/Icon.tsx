@@ -156,19 +156,24 @@ const Icon = (props: IIconProps) => {
 
   const id = `icon-${props.name}`;
 
+  // when an outline is set we need to offset the symbol viewbox a bit so that the outline doesn't
+  // get cut off. There is probably a nicer way to do this
+  const offset = props.stroke === true
+    ? icon.width / 16 : 0;
+  const viewbox =
+    `${ offset * -1 } ${ offset * -1 } ${ icon.width + offset * 2 } ${ icon.height + offset * 2}`;
+
   return (
     <svg
       preserveAspectRatio='xMidYMid meet'
       className={ classes.join(' ') }
-      viewBox={ `0 0 ${ icon.width } ${ icon.height }` }
       style={ props.style }
+      viewBox={ `0 0 ${icon.width} ${icon.height}` }
     >
-      <defs>
-        <symbol id={id} width={icon.width} height={icon.height}>
-          { icon.paths.map(renderPath) }
-        </symbol>
-      </defs>
-      <use xlinkHref={'#' + id} transform={ transforms.join(' ') } />
+      <symbol id={id} width={icon.width} height={icon.height} viewBox={viewbox}>
+        { icon.paths.map(renderPath) }
+      </symbol>
+      <use xlinkHref={'#' + id} transform={ transforms.join(' ') }/>
     </svg>
   );
 };
