@@ -27,6 +27,7 @@ import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
 import ShowHiddenButton from './ShowHiddenButton';
 
+import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
@@ -279,7 +280,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGamesList(games: IGameStored[], type: string, gameMode: string) {
-    const { t, discoveredGames } = this.props;
+    const { t, discoveredGames, onRefreshGameInfo } = this.props;
     return (
       <ListGroup>
         {games.map(game => (
@@ -290,6 +291,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             discovery={discoveredGames[game.id]}
             type={type}
             active={game.id === gameMode}
+            onRefreshGameInfo={onRefreshGameInfo}
             onSetGamePath={this.setGamePath}
             onSetGameDiscovery={this.addDiscoveredGame}
             onShowDialog={this.props.onShowDialog}

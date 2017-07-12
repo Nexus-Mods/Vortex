@@ -53,13 +53,14 @@ export interface IIconButtonExtraProps {
   icon: string;
   spin?: boolean;
   pulse?: boolean;
+  stroke?: boolean;
   border?: boolean;
   inverse?: boolean;
   flip?: 'horizontal' | 'vertical';
   rotate?: number;
 }
 
-const iconPropNames = new Set(['spin', 'pulse', 'border', 'inverse', 'flip', 'rotate']);
+const iconPropNames = new Set(['spin', 'pulse', 'stroke', 'border', 'inverse', 'flip', 'rotate']);
 
 export type IconButtonProps = ButtonProps & IIconButtonExtraProps;
 

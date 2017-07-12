@@ -81,8 +81,8 @@ function getIcon(set: string, name: string): IRenderDescription {
 
   const icon = sets[set].icons.find((ele: IIconDescription) => ele.icon.tags.indexOf(name) !== -1);
   if (icon !== undefined) {
-    const paths: IPath[] = icon.icon.paths.map((path: string, idx: number) => ({
-      path,
+    const paths: IPath[] = icon.icon.paths.map((iconPath: string, idx: number) => ({
+      path: iconPath,
       attrs: 'attrs' in icon.icon ? convertAttrs(icon.icon.attrs[idx]) : undefined,
     }));
 
@@ -104,14 +104,15 @@ export interface IIconProps {
   name: string;
   spin?: boolean;
   pulse?: boolean;
+  stroke?: boolean;
   border?: boolean;
   inverse?: boolean;
   flip?: 'horizontal' | 'vertical';
   rotate?: number;
 }
 
-function renderPath(path: IPath, idx: number) {
-  return <path key={idx} d={path.path} style={path.attrs} />;
+function renderPath(pathComp: IPath, idx: number) {
+  return <path key={idx} d={pathComp.path} style={pathComp.attrs} />;
 }
 
 const Icon = (props: IIconProps) => {
@@ -133,6 +134,10 @@ const Icon = (props: IIconProps) => {
 
   if (props.border) {
     classes.push('icon-border');
+  }
+
+  if (props.stroke) {
+    classes.push('icon-stroke');
   }
 
   if (props.flip) {

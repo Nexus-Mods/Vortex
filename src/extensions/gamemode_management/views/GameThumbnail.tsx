@@ -7,6 +7,7 @@ import { IGameStored } from '../types/IGameStored';
 
 import GameInfoPopover from './GameInfoPopover';
 
+import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
@@ -32,7 +33,7 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
     const gameInfoPopover = (
-      <Popover id={`popover-info-${game.id}`} >
+      <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
         <GameInfoPopover t={t} game={game} onRefreshGameInfo={onRefreshGameInfo} />
       </Popover>
     );
@@ -66,6 +67,7 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
             icon='alert-circle-i'
             className='game-thumbnail-info btn-embed'
             tooltip={t('Show Details')}
+            stroke
           />
         </OverlayTrigger>
       </Panel>

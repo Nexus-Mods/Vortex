@@ -5,6 +5,7 @@ import Icon from '../../../views/Icon';
 
 import { IGameStored } from '../types/IGameStored';
 
+import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as opn from 'opn';
 import * as React from 'react';

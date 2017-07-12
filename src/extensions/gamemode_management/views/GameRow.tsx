@@ -2,11 +2,14 @@ import { DialogType, IDialogActions, IDialogContent } from '../../../actions/not
 import { ComponentEx } from '../../../util/ComponentEx';
 import Advanced from '../../../views/Advanced';
 import IconBar from '../../../views/IconBar';
+import { IconButton } from '../../../views/TooltipControls';
 
 import { IMod } from '../../mod_management/types/IMod';
 
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
+
+import GameInfoPopover from './GameInfoPopover';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
@@ -14,7 +17,7 @@ import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
-import { ListGroupItem, Media } from 'react-bootstrap';
+import { ListGroupItem, Media, OverlayTrigger, Popover } from 'react-bootstrap';
 
 export interface IProps {
   t: I18next.TranslationFunction;
@@ -23,6 +26,7 @@ export interface IProps {
   mods?: { [modId: string]: IMod };
   active: boolean;
   type: string;
+  onRefreshGameInfo: (gameId: string) => Promise<void>;
   onSetGamePath: (gameId: string, gamePath: string, modsPath: string) => void;
   onSetGameDiscovery: (gameId: string, result: IDiscoveryResult) => void;
   onShowDialog: (type: DialogType, title: string,
@@ -36,7 +40,7 @@ export interface IProps {
  */
 class GameRow extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, active, discovery, game, type } = this.props;
+    const { t, active, discovery, game, onRefreshGameInfo, type } = this.props;
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
@@ -48,10 +52,16 @@ class GameRow extends ComponentEx<IProps, {}> {
         </Advanced>
       ) : <a onClick={this.openLocation}>{t('Browse...')}</a>;
 
-    const classes = [ 'game-list-ite' ];
+    const classes = [ 'game-list-item' ];
     if (active) {
       classes.push('game-list-selected');
     }
+
+    const gameInfoPopover = (
+      <Popover id={`popover-info-${game.id}`} >
+        <GameInfoPopover t={t} game={game} onRefreshGameInfo={onRefreshGameInfo} />
+      </Popover>
+    );
 
     return (
       <ListGroupItem className={ classes.join(' ') }>
@@ -66,6 +76,20 @@ class GameRow extends ComponentEx<IProps, {}> {
             <p>Location: {location}</p>
           </Media.Body>
           <Media.Right>
+            <OverlayTrigger
+              overlay={gameInfoPopover}
+              trigger='click'
+              placement='bottom'
+              rootClose={true}
+            >
+              <IconButton
+                id={`btn-info-${game.id}`}
+                icon='alert-circle-i'
+                className='btn-embed'
+                tooltip={t('Show Details')}
+                stroke
+              />
+            </OverlayTrigger>
             <IconBar
               className='btngroup-game-list'
               group={`game-${type}-buttons`}

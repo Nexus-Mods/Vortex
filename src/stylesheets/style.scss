@@ -436,6 +436,11 @@ a[role=menuitem] svg {
   animation: icon-spin 1s infinite steps(8);
 }
 
+.icon-stroke {
+  stroke: $brand-bg;
+  stroke-width: 0.25em;
+}
+
 @keyframes icon-spin {
   0% {
     transform: rotate(0deg);
@@ -1232,6 +1237,7 @@ a[role=menuitem] svg {
 
 .game-list-item .media-right {
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .btngroup-game-list {
@@ -1667,6 +1673,15 @@ a[role=menuitem] svg {
 
 // /feedback view
 /////////////////
+
+////////////
+// game page
+.popover-game-info {
+  max-width: 500px;
+}
+
+// /game page
+/////////////
 
 ////////////
 // mods page
