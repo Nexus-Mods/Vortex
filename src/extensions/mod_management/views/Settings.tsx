@@ -28,6 +28,7 @@ import {
   Alert, Button as BSButton, ControlLabel, FormControl, FormGroup,
   HelpBlock, InputGroup, Jumbotron, Modal, Panel,
 } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 interface IBaseProps {
   activators: IModActivator[];

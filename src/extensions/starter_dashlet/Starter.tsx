@@ -32,6 +32,7 @@ import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
 import { Dropdown, Media, MenuItem } from 'react-bootstrap';
+import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
 interface IWelcomeScreenState {

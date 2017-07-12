@@ -9,6 +9,7 @@ import chromeAllowScheme from '../util/chromeAllowScheme';
 
 import * as React from 'react';
 import { Checkbox, FormGroup, HelpBlock } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 interface IBaseProps {
 }

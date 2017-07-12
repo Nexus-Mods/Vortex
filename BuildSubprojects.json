@@ -187,6 +187,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "gameinfo-steam",
+      "path": "extensions/gameinfo-steam",
+      "removeModules": ["nmm-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gameinfo-steam"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "name": "exe-version-rebuild",
       "module": "exe-version",

@@ -10,6 +10,7 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 import * as update from 'immutability-helper';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, Image, Modal } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 export interface IBaseProps {
   visible: boolean;

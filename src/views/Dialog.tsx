@@ -14,6 +14,7 @@ import {
   Button, Checkbox, ControlLabel, FormControl, FormGroup,
   Modal, Radio,
 } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 interface IActionProps {
   t: (input: string) => string;

@@ -6,8 +6,7 @@ import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import Notification from './Notification';
 
 import * as React from 'react';
-
-import CSSTransitionGroup = require('react-addons-css-transition-group');
+import { CSSTransitionGroup } from 'react-transition-group';
 
 export interface IProps {
   id: string;

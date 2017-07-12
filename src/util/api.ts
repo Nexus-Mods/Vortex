@@ -55,6 +55,8 @@ export {
 export type TextGroup = 'mod';
 import getTextModManagement from '../extensions/mod_management/texts';
 
+import * as I18next from 'i18next';
+
 export function getText(group: TextGroup, textId: string, t: I18next.TranslationFunction) {
   if (group === 'mod') {
     return getTextModManagement(textId, t);

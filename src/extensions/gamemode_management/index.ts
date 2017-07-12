@@ -68,15 +68,11 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
 
   const now = new Date().getTime();
 
-  console.log('all keys', expectedKeys);
-
   // find keys we need to update and which providers we have to query for that
   const missingKeys = Object.keys(expectedKeys).filter(key =>
     (gameInfo[key] === undefined) || (gameInfo[key].expires < now));
   const providersToQuery = Array.from(new Set(missingKeys.map(key =>
     gameInfoProviders.find(prov => prov.id === expectedKeys[key].provider))));
-
-  console.log('missing', missingKeys, providersToQuery);
 
   // do the queries
   const game: IGameStored =

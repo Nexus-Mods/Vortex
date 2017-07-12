@@ -17,6 +17,7 @@ import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;

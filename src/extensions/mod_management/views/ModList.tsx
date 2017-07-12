@@ -42,6 +42,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import { ButtonGroup, DropdownButton, Jumbotron, MenuItem } from 'react-bootstrap';
+import * as Redux from 'redux';
 import * as semver from 'semver';
 
 type IModWithState = IMod & IProfileMod;

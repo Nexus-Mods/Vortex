@@ -12,7 +12,7 @@ class SplashScreen {
 
       // don't fade out immediately, otherwise the it looks odd
       // as the main window appears at the same time
-      delayed(200)
+      return delayed(200)
           .then(() => this.mWindow.webContents.send('fade-out'))
           // wait for the fade out animation to finish before destroying
           // the window
@@ -21,6 +21,8 @@ class SplashScreen {
             this.mWindow.close();
             this.mWindow = null;
           });
+    } else {
+      return Promise.resolve();
     }
   }
 

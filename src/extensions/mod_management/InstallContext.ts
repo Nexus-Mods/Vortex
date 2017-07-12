@@ -10,6 +10,7 @@ import { IMod, ModState } from './types/IMod';
 import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 
 import * as path from 'path';
+import * as Redux from 'redux';
 
 type IOnAddMod = (mod: IMod) => void;
 type IOnAddNotification = (notification: INotification) => void;

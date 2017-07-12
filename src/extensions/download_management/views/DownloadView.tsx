@@ -37,6 +37,7 @@ import * as path from 'path';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
+import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
 function objectFilter(obj: any, filter: (key: string, value: any) => boolean) {
