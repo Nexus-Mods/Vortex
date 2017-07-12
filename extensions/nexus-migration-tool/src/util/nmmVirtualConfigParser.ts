@@ -5,12 +5,10 @@ import { log, types, util } from 'nmm-api';
 import * as path from 'path';
 import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
 
-const virtualConfigFilename: string = 'VirtualModConfig.xml';
-
 export function parseNMMInstall(nmmFilePath: string, mods: any): Promise<ModEntry[]> {
   const nmmModList: ModEntry[] = [];
   const parser = new DOMParser();
-  const sourceFile = path.join(nmmFilePath, virtualConfigFilename);
+  const sourceFile = nmmFilePath;
   const modListSet = new Set(Object.keys(mods).map((key: string) => mods[key].id));
 
   return fs.readFileAsync(sourceFile)

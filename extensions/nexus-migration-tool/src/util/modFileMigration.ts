@@ -43,6 +43,7 @@ export function transferUnpackedMod(mod: ModEntry,
   mod.fileEntries.map((file) => {
     if ((file !== null) && (file !== undefined)) {
       const destPath: string = path.join(currentModPath, mod.vortexId, file.fileDestination);
+      log ('info', 'Unpacked mod file transfer: ', destPath);
       fs.mkdirsAsync(path.dirname(destPath))
       .then (() => {
         operation(path.join(nmmVirtualPath, file.fileSource), destPath)

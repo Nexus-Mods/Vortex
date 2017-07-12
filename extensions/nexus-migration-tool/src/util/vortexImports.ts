@@ -11,6 +11,7 @@ interface IVortexMod {
 
 export function createProfile(gameId: string, profileId: string,
                               profileName: string, dispatch: Redux.Dispatch<any>) {
+  log ('info', 'Create profile: ', {gameId, profileId});
   dispatch(nmmActions.setProfile({
     id: profileId,
     gameId,
@@ -39,6 +40,7 @@ export function addMods(gameID: string, modEntries: ModEntry[], dispatch: Redux.
       },
     };
 
+    log ('info', 'Mod addition: ', mod.id);
     mods.push(mod);
   })
   .then(() => {
@@ -46,6 +48,7 @@ export function addMods(gameID: string, modEntries: ModEntry[], dispatch: Redux.
   })
   .then(() => {
     Promise.map(mods, mod => {
+      log ('info', 'Mod enable: ', mod.id);
       enableMod(mod.id, 'nmm-profile', dispatch);
     });
   });

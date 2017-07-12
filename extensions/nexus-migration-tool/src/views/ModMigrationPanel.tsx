@@ -9,6 +9,7 @@ import {
 } from '../importedModAttributes';
 
 import * as Promise from 'bluebird';
+import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import {
   actions, ComponentEx, Icon, IconBar, ITableRowAction, log,
@@ -31,7 +32,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onHideTransfer: () => void;
+  onHideMigration: () => void;
   onShowActivity: (message: string, id?: string) => void;
   onShowError: (message: string, details: any, id?: string) => void;
   onShowSuccess: (message: string, id?: string) => void;
@@ -53,6 +54,10 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   private modActions: ITableRowAction[];
   private toImportList: IModEntry[];
   private selectedVirtualPath: string;
+  private virtualConfigFilename: string = 'VirtualModConfig.xml';
+  private currentLogFolder: string;
+  private parsedModsLogFile: string = 'parsedModsLog.json';
+  private activityLog: string[];
   private selectionId: string = 'path-selection-id';
   private importId: string = 'vortex-import-id';
 
@@ -85,7 +90,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
     const selectFolder = true;
 
     let header: JSX.Element;
-    header = this.renderTransfer();
+    header = this.renderMigration();
     actions = [].concat(this.modActions);
 
     let content = null;
@@ -145,7 +150,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
     }
   }
 
-  private renderTransfer() {
+  private renderMigration() {
     const { t, currentProfile, profiles } = this.props;
 
     let buttons;
@@ -187,11 +192,11 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
     return buttons;
   }
 
-  private cancelTransfer = () => {
-    this.props.onHideTransfer();
+  private cancelMigration = () => {
+    this.props.onHideMigration();
   }
 
-  private testParse = (evt, selectedDir: string) => {
+  private doParse = (evt, selectedDir: string) => {
     const { gameMode, onShowActivity, onShowError, onShowSuccess} = this.props;
     const virtualPath = selectedDir;
     const state: types.IState = this.context.api.store.getState();
@@ -221,8 +226,8 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
     this.context.api.selectDir({})
     .then((dirName: string) => {
       if (!util.isNullOrWhitespace(dirName)) {
-        this.selectedVirtualPath = dirName;
-        this.testParse(evt, dirName);
+        this.selectedVirtualPath = path.join(dirName, this.virtualConfigFilename);
+        this.doParse(evt, this.selectedVirtualPath);
       }
     })
     .catch((err) => {
@@ -231,39 +236,58 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   }
 
   private startImport = (evt) => {
-    this.importMods(evt);
+    const date = new Date();
+    this.currentLogFolder = path.join(remote.app.getPath('userData'), 'migration-',
+      date.getDate.toString() + date.getTime.toString());
+    fs.mkdirAsync(this.currentLogFolder)
+    .then(() => {
+      fs.copyAsync(this.selectedVirtualPath,
+        path.join(this.currentLogFolder, this.virtualConfigFilename))
+      .then(() => {
+        this.importMods(evt);
+      });
+    });
   }
 
   private importMods = (evt) => {
     const { gameMode, onShowActivity, onShowError, onShowSuccess } = this.props;
     const state: types.IState = this.context.api.store.getState();
+    log ('info', 'Start Import: ', this.toImportList.length);
     onShowActivity('Copying mod files: ' + this.toImportList.length + ' mods...', this.importId);
     let index: number = 0;
 
-    Promise.map(this.toImportList, modEntry => {
-      onShowActivity('Copying mod files: ' + (++index) +
-        ' of ' + this.toImportList.length + ' mods...', this.importId);
+    fs.writeFileAsync(path.join(this.currentLogFolder, this.parsedModsLogFile),
+      JSON.stringify(this.toImportList))
+    .then(() => {
+      log ('info', 'Transfer unpacked mods files...');
       const installPath = selectors.installPath(state);
-      transferUnpackedMod(modEntry, this.selectedVirtualPath,
-        installPath, true)
-      .then((files) => {
-        if (files.length > 0) {
-          onShowError('Mod files copy error:', {files}, this.importId);
-        }
+      Promise.map(this.toImportList, modEntry => {
+        onShowActivity('Copying mod files: ' + (++index) +
+          ' of ' + this.toImportList.length + ' mods...', this.importId);
+        transferUnpackedMod(modEntry, this.selectedVirtualPath,
+          installPath, true)
+        .then((files) => {
+          if (files.length > 0) {
+            onShowError('Mod files copy error:', {files}, this.importId);
+          }
+        });
+      })
+      .then(() => {
+        log ('info', 'Unpacked mod files transfer: successfull.');
+        onShowActivity('Mod files copy: successfully transferred to Vortex.', this.importId);
+        onShowActivity('Importing mods into Vortex...', this.selectionId);
+        createProfile(gameMode, 'nmm-profile',
+          'Imported NMM Profile', this.context.api.store.dispatch);
+        addMods(gameMode, this.toImportList, this.context.api.store.dispatch);
+      })
+      .then(() => {
+        log ('info', 'Mod import: successfull.');
+        onShowSuccess('Mod import successfully completed.', this.selectionId);
+      })
+      .catch((err) => {
+        log ('error', 'Mod import error:', {err});
+        onShowError('Mod import error:', {err}, this.importId);
       });
-    })
-    .then(() => {
-      onShowActivity('Mod files copy: successfully transferred to Vortex.', this.importId);
-      onShowActivity('Importing mods into Vortex...', this.selectionId);
-      createProfile(gameMode, 'nmm-profile',
-        'Imported NMM Profile', this.context.api.store.dispatch);
-      addMods(gameMode, this.toImportList, this.context.api.store.dispatch);
-    })
-    .then(() => {
-      onShowSuccess('Mod import successfully completed.', this.selectionId);
-    })
-    .catch((err) => {
-      onShowError('Mod import error:', {err}, this.importId);
     });
   }
 
@@ -300,7 +324,7 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
-    onHideTransfer: () => dispatch(selectImportFolder(false)),
+    onHideMigration: () => dispatch(selectImportFolder(false)),
     onShowActivity: (message: string, id?: string) =>
       util.showActivity(dispatch, message, id),
     onShowError: (message: string, details: any, id?: string) =>
