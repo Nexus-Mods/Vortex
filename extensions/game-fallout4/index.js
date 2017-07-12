@@ -69,6 +69,9 @@ function main(context) {
     requiredFiles: [
       'Fallout4.exe',
     ],
+    details: {
+      steamAppId: 377160,
+    }
   });
 
   return true;

@@ -30,8 +30,8 @@ import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>('modmeta-db');
-import Module = require('module');
 import * as path from 'path';
+import * as Redux from 'redux';
 import { types as ratypes } from 'redux-act';
 import ReduxWatcher = require('redux-watcher');
 import * as rimraf from 'rimraf';
@@ -202,6 +202,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerTest: undefined,
       registerArchiveType: undefined,
       registerGame: undefined,
+      registerGameInfoProvider: undefined,
       registerAttributeExtractor: undefined,
       api: undefined,
       once: undefined,
@@ -263,7 +264,7 @@ class ExtensionManager {
         return this.mTranslator !== undefined ? this.mTranslator.t(input, options) : input;
       },
       getPath: this.getPath,
-      onStateChange: (path: string[], callback: StateChangeCallback) => undefined,
+      onStateChange: (statePath: string[], callback: StateChangeCallback) => undefined,
       registerProtocol: this.registerProtocol,
       deregisterProtocol: this.deregisterProtocol,
       lookupModReference: this.lookupModReference,
@@ -373,8 +374,8 @@ class ExtensionManager {
    */
   public getReducers() {
     const reducers = [];
-    this.apply('registerReducer', (path: string[], reducer: IReducerSpec) => {
-      reducers.push({ path, reducer });
+    this.apply('registerReducer', (statePath: string[], reducer: IReducerSpec) => {
+      reducers.push({ path: statePath, reducer });
     });
     return reducers;
   }

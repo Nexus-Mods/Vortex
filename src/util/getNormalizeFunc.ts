@@ -7,10 +7,10 @@ import * as path from 'path';
 export type Normalize = (input: string) => string;
 
 function CaseSensitiveNormalize(input: string) {
-  if (path.sep === '\\') {
-    return path.normalize(input).replace('/', path.sep).normalize();
+  if (path.sep !== '/') {
+    return path.normalize(input).replace('/', path.sep).normalize().replace(/\\$/, '');
   } else {
-    return path.normalize(input).normalize();
+    return path.normalize(input).normalize().replace(/\/$/, '');
   }
 }
 

@@ -11,6 +11,9 @@ function main(context) {
       'XComGame/CookedPCConsole/3DUIBP.upk',
     ],
     supportedTools: null,
+    details: {
+      steamAppId: 268500,
+    },
   });
 
   return true;

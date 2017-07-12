@@ -165,6 +165,22 @@ export interface ISessionGameMode {
   addDialogVisible: boolean;
 }
 
+export interface IGameInfoEntry {
+  provider: string;
+  expires: number;
+  title: string;
+  value: any;
+  type?: string;
+}
+
+export interface IStateGameMode {
+  gameInfo: {
+    [gameId: string]: {
+      [key: string]: IGameInfoEntry,
+    },
+  };
+}
+
 /**
  * interface for the top-level state object
  * this should precisely mirror the reducer structure
@@ -190,6 +206,7 @@ export interface IState {
     mods: { [gameId: string]: { [modId: string]: IMod } },
     downloads: IStateDownloads,
     categories: { [gameId: string]: ICategoryDictionary },
+    gameMode: IStateGameMode,
   };
 }
 

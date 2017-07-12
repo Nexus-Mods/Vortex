@@ -155,6 +155,22 @@ export type ArchiveHandlerCreator =
 
 export type AttributeExtractor = (modInfo: any, modPath: string) => Promise<{ [key: string]: any }>;
 
+export interface IGameDetail {
+  title: string;
+  value: any;
+  type?: string;
+}
+
+/**
+ * a query function that will be called to retrieve information about a game.
+ * The game object passed in in a union of the IGameStored and IDiscoveryResult data
+ * structures for the game but keep in mind that the game may not be discovered or
+ * it may be a custom-added game so either structure may be empty. When accessing any
+ * field that doesn't exist in both IGameStored and IDiscoveryResult, please assume
+ * it may be undefined.
+ */
+export type GameInfoQuery = (game: any) => Promise<{ [key: string]: IGameDetail }>;
+
 /**
  * interface for convenience functions made available to extensions
  *
@@ -544,6 +560,24 @@ export interface IExtensionContext {
    * @param {string} extensionPath path to the extension assets
    */
   registerGame: (game: IGame, extensionPath: string) => void;
+
+  /**
+   * registers a provider for general information about a game
+   * @param {string} id unique id identifying the provider
+   * @param {number} priority if two providers provide the same info (same key) the one with the
+   *                          higher priority ends up providing that piece of info
+   * @param {number} expireMS the time (in milliseconds) before the info "expires". After expiry it
+   *                          will be re-requested. You usually want this to be several days, not
+   *                          seconds or milliseconds
+   * @param {string[]} keys the keys this provider will provide. If the query function doesn't
+   *                        return a value for one of these keys, a null is stored. If the query
+   *                        returns keys that aren't listed here they will still be stored, but
+   *                        the query will only be run if a listed key is missing or the expiry time
+   *                        runs out
+   * @param {Function} query the query function
+   */
+  registerGameInfoProvider:
+    (id: string, priority: number, expireMS: number, keys: string[], query: GameInfoQuery) => void;
 
   /**
    * register an extractor that can access all information known about a downloaded archive and

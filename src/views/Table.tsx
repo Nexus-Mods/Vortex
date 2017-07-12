@@ -26,6 +26,7 @@ import { Table } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import {Fixed, Flex, Layout} from 'react-layout-pane';
 import * as SplitPane from 'react-split-pane';
+import * as Redux from 'redux';
 import { createSelector } from 'reselect';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
@@ -39,6 +40,7 @@ export interface IBaseProps {
   tableId: string;
   data: { [rowId: string]: any };
   actions: ITableRowAction[];
+  detailsTitle?: string;
   multiSelect?: boolean;
 }
 
@@ -204,7 +206,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    const {t, data, language, objects} = this.props;
+    const {t, data, detailsTitle, language, objects} = this.props;
 
     const detailAttributes = objects.filter((attribute: ITableAttribute) =>
       attribute.placement !== 'table');
@@ -224,6 +226,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         attributes={detailAttributes}
         language={language}
         show={detailsOpen}
+        title={detailsTitle}
         onToggleShow={this.toggleDetails}
       />
     );

@@ -48,6 +48,10 @@ function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStore
   };
 }
 
+interface IBaseProps {
+  onRefreshGameInfo: (gameId: string) => Promise<void>;
+}
+
 interface IConnectedProps {
   lastActiveProfile: { [gameId: string]: string };
   discoveredGames: { [id: string]: IDiscoveryResult };
@@ -68,6 +72,8 @@ interface IActionProps {
                  content: IDialogContent, actions: IDialogActions) => void;
 }
 
+type IProps = IBaseProps & IConnectedProps & IActionProps;
+
 interface IComponentState {
   showHidden: boolean;
 }
@@ -77,7 +83,7 @@ interface IComponentState {
  *
  * @class GamePicker
  */
-class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentState> {
+class GamePicker extends ComponentEx<IProps, IComponentState> {
   public context: IComponentContext;
 
   private buttons: IActionDefinition[];
@@ -294,7 +300,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
   }
 
   private renderGamesSmall(games: IGameStored[], type: string, gameMode: string) {
-    const { t } = this.props;
+    const { t, onRefreshGameInfo } = this.props;
     return (
       <div>
         {games.map(game => (
@@ -304,6 +310,7 @@ class GamePicker extends ComponentEx<IConnectedProps & IActionProps, IComponentS
             game={game}
             type={type}
             active={game.id === gameMode}
+            onRefreshGameInfo={onRefreshGameInfo}
           />))
         }
       </div>

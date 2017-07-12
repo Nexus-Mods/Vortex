@@ -1,15 +1,22 @@
 import { ComponentEx } from '../../../util/ComponentEx';
+import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
+import { IconButton } from '../../../views/TooltipControls';
+
 import { IGameStored } from '../types/IGameStored';
 
+import GameInfoPopover from './GameInfoPopover';
+
+import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
-import { Panel } from 'react-bootstrap';
+import { OverlayTrigger, Panel, Popover } from 'react-bootstrap';
 
 export interface IProps {
   t: I18next.TranslationFunction;
   game: IGameStored;
   active: boolean;
+  onRefreshGameInfo: (gameId: string) => Promise<void>;
   type: string;
 }
 
@@ -20,9 +27,15 @@ export interface IProps {
  */
 class GameThumbnail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, active, game, type } = this.props;
+    const { t, active, game, onRefreshGameInfo, type } = this.props;
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
+
+    const gameInfoPopover = (
+      <Popover id={`popover-info-${game.id}`} >
+        <GameInfoPopover t={t} game={game} onRefreshGameInfo={onRefreshGameInfo} />
+      </Popover>
+    );
 
     return (
       <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
@@ -42,6 +55,19 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
             collapse={true}
           />
         </div>
+        <OverlayTrigger
+          overlay={gameInfoPopover}
+          trigger='click'
+          placement='bottom'
+          rootClose={true}
+        >
+          <IconButton
+            id={`btn-info-${game.id}`}
+            icon='alert-circle-i'
+            className='game-thumbnail-info btn-embed'
+            tooltip={t('Show Details')}
+          />
+        </OverlayTrigger>
       </Panel>
     );
   }

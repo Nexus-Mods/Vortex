@@ -53,6 +53,9 @@ function main(context) {
     ],
     setup: prepareForModding,
     supportedTools: null,
+    details: {
+      steamAppId: 427520,
+    },
   });
 
   return true;

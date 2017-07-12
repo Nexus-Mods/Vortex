@@ -52,6 +52,9 @@ function main(context) {
     requiredFiles: [
       'FalloutNV.exe',
     ],
+    details: {
+      steamAppId: 22380,
+    }
   });
   return true;
 }

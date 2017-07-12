@@ -82,6 +82,9 @@ function main(context) {
     environment: {
       SteamAPPId: '489830',
     },
+    details: {
+      steamAppId: 489830,
+    }
   });
 
   return true;

@@ -1220,6 +1220,12 @@ a[role=menuitem] svg {
   text-align: center;
 }
 
+.game-thumbnail-info {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+
 .game-list-selected {
   background-color: $brand-selected;
 }

@@ -55,6 +55,9 @@ function main(context) {
       'game/bin/TS3.exe',
     ],
     supportedTools: tools,
+    details: {
+      steamAppId: 47890,
+    },
   });
   return true;
 }

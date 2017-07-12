@@ -55,4 +55,12 @@ export interface IGame extends ITool {
    * every time before the game mode is activated.
    */
   setup?: () => Promise<void>;
+
+  /**
+   * additional details about the game that may be used by extensions. Some extensions may work
+   * better/offer more features if certain details are provided but they are all optional.
+   * Extensions should do their best to work without these details, even if it takes more work
+   * (during development and potentially at runtime)
+   */
+  details?: { [key: string]: any };
 }

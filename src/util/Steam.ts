@@ -14,8 +14,10 @@ import { parse } from 'simple-vdf';
 const app = appIn || remote.app;
 
 export interface ISteamEntry {
+  appid: string;
   name: string;
   gamePath: string;
+  lastUpdated: Date;
 }
 
 /**
@@ -24,7 +26,6 @@ export interface ISteamEntry {
  * @class Steam
  */
 class Steam {
-
   private mBaseFolder: Promise<string>;
 
   constructor() {
@@ -52,38 +53,46 @@ class Steam {
   public allGames(): Promise<ISteamEntry[]> {
     const steamPaths: string[] = [];
     return this.mBaseFolder
-    .then((basePath: string) => {
-      steamPaths.push(basePath);
-      return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'));
-    })
-    .then((data: NodeBuffer) => {
-      const configObj: any = parse(data.toString());
+      .then((basePath: string) => {
+        steamPaths.push(basePath);
+        return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'));
+      })
+      .then((data: NodeBuffer) => {
+        const configObj: any = parse(data.toString());
 
-      let counter = 1;
-      const steamObj: any =
-        getSafe(configObj, ['InstallConfigStore', 'Software', 'Valve', 'Steam'], {});
-      while (steamObj.hasOwnProperty(`BaseInstallFolder_${counter}`)) {
-        steamPaths.push(steamObj[`BaseInstallFolder_${counter}`]);
-        ++counter;
-      }
+        let counter = 1;
+        const steamObj: any =
+          getSafe(configObj, ['InstallConfigStore', 'Software', 'Valve', 'Steam'], {});
+        while (steamObj.hasOwnProperty(`BaseInstallFolder_${counter}`)) {
+          steamPaths.push(steamObj[`BaseInstallFolder_${counter}`]);
+          ++counter;
+        }
 
-      log('debug', 'steam base folders', { steamPaths });
+        log('debug', 'steam base folders', { steamPaths });
 
-      return Promise.all(Promise.map(steamPaths, (steamPath) => {
-        const appPath: string = path.join(steamPath, 'steamapps', 'common');
-        return fs.readdirAsync(appPath)
-        .then((names: string[]) => {
-          return names.map((name: string) => {
-            return { name, gamePath: path.join(appPath, name) };
-          });
-        });
-      }));
-    })
-    .then((games: ISteamEntry[][]) => {
-      return games.reduce((prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] => {
-        return prev.concat(current);
-      });
-    });
+        return Promise.all(Promise.map(steamPaths, steamPath => {
+          const steamAppsPath = path.join(steamPath, 'steamapps');
+          return fs.readdirAsync(steamAppsPath)
+            .then(names => {
+              const filtered = names.filter(name =>
+                name.startsWith('appmanifest_') && (path.extname(name) === '.acf'));
+              return Promise.map(filtered, (name: string) =>
+                fs.readFileAsync(path.join(steamAppsPath, name)));
+            })
+            .then((appsData: NodeBuffer[]) => {
+              return appsData.map(appData => parse(appData.toString())).map(obj =>
+                ({
+                  appid: obj['AppState']['appid'],
+                  name: obj['AppState']['name'],
+                  gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
+                  lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
+                }));
+            });
+        }));
+      })
+      .then((games: ISteamEntry[][]) =>
+        games.reduce((prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
+          prev.concat(current)));
   }
 }
 

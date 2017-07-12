@@ -8,6 +8,7 @@ import FormInput from '../FormInput';
 import Icon from '../Icon';
 import More from '../More';
 
+import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup,
@@ -67,7 +68,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
         if (attribute.edit.choices !== undefined) {
           const choices = attribute.edit.choices();
           const currentChoice = choices.find(choice => choice.text === value);
-          const key = currentChoice !== undefined ? currentChoice.key : undefined;
+          const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
           if (readOnly) {
             content = (
               <FormControl.Static>
@@ -78,7 +79,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
             content = (
               <Select
                 options={choices}
-                value={key}
+                value={choiceKey}
                 onChange={this.changeCellSelect}
                 valueKey='key'
                 labelKey='text'
@@ -192,6 +193,7 @@ export interface IDetailProps {
   attributes: ITableAttribute[];
   t: I18next.TranslationFunction;
   show: boolean;
+  title: string;
   onToggleShow: () => void;
 }
 
@@ -233,7 +235,7 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
   }
 
   private renderHandle(): JSX.Element {
-    const { t, onToggleShow } = this.props;
+    const { t, title, onToggleShow } = this.props;
     const style = {
       border: '1px solid #0c5886',
       height: '100%',
@@ -252,7 +254,7 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
       <Button style={style}
         onClick={onToggleShow}
       >
-        <div style={textStyle}><Icon name='bold-up' />{t('Mod Attributes')}</div>
+        <div style={textStyle}><Icon name='bold-up' />{title || t('Details')}</div>
       </Button>
     );
   }
