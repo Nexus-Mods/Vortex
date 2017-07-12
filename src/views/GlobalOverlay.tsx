@@ -3,6 +3,7 @@ import { ComponentEx } from '../util/ComponentEx';
 
 import IconBar from './IconBar';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 
 export interface IBaseProps {

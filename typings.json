@@ -9,8 +9,6 @@
     "classnames": "registry:dt/classnames#0.0.0+20160316155526",
     "electron-builder": "registry:dt/electron-builder#2.0.2+20160316155526",
     "fs-extra-promise": "registry:dt/fs-extra-promise#0.0.0+20160919071823",
-    "i18next": "registry:dt/i18next#2.3.4+20160803175212",
-    "i18next-node-fs-backend": "registry:dt/i18next-node-fs-backend#0.0.0+20160319103745",
     "jest": "registry:dt/jest#15.1.1+20160919141445",
     "less": "registry:dt/less#0.0.0+20160608105036",
     "node-uuid": "registry:dt/node-uuid#0.0.0+20160316155526",
@@ -18,7 +16,6 @@
     "react-fontawesome": "registry:dt/react-fontawesome#1.1.0+20160829152611",
     "redux-devtools": "registry:dt/redux-devtools#3.0.0+20160703120921",
     "redux-devtools-log-monitor": "registry:dt/redux-devtools-log-monitor#1.0.11+20160902130643",
-    "redux-thunk": "registry:dt/redux-thunk#2.1.0+20160703120921",
     "ref-union": "registry:dt/ref-union#0.0.0+20160316155526",
     "request": "registry:dt/request#0.0.0+20160726020908",
     "reselect": "registry:dt/reselect#2.0.2+20160319031821",
@@ -28,7 +25,6 @@
   },
   "globalDependencies": {
     "base16": "registry:dt/base16#1.0.0+20160902130643",
-    "redux": "registry:dt/redux#3.5.2+20160703092728",
     "source-map-support": "registry:dt/source-map-support#0.2.10+20160316155526",
     "typescript": "registry:dt/typescript#0.4.0+20160317120654"
   },

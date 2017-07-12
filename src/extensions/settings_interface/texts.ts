@@ -1,3 +1,5 @@
+import * as I18next from 'i18next';
+
 function getText(id: string, t: I18next.TranslationFunction) {
   switch (id) {
     case 'advanced':

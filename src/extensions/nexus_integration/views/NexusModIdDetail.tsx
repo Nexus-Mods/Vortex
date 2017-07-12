@@ -4,8 +4,10 @@ import FormInput from '../../../views/FormInput';
 
 import { setModAttribute } from '../../mod_management/actions/mods';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 export interface IProps {
   gameId: string;

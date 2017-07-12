@@ -19,7 +19,7 @@ import {app, BrowserWindow, Electron, ipcMain} from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
-import * as uuid from 'uuid';
+import * as uuidT from 'uuid';
 
 class Application {
   private mBasePath: string;
@@ -138,6 +138,7 @@ class Application {
       })
       .then(appPersistor => {
         if (newStore.getState().app.instanceId === undefined) {
+          const uuid: uuidT = require('uuid');
           newStore.dispatch(setInstanceId(uuid.v4()));
         }
         const ExtensionManager = require('../util/ExtensionManager').default;

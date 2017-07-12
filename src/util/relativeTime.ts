@@ -1,3 +1,5 @@
+import * as I18next from 'i18next';
+
 const SEC_PER_MIN = 60;
 const SEC_PER_HOUR = SEC_PER_MIN * 60;
 const SEC_PER_DAY = SEC_PER_HOUR * 24;

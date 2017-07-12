@@ -29,7 +29,7 @@ import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
 import { INSTALL_TIME, PICTURE } from '../modAttributes';
-import { installPath } from '../selectors';
+import { installPath as installPathSelector } from '../selectors';
 import getText from '../texts';
 
 import CheckModVersionsButton from './CheckModVersionsButton';
@@ -37,6 +37,7 @@ import InstallArchiveButton from './InstallArchiveButton';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
@@ -266,6 +267,7 @@ class ModList extends ComponentEx<IProps, {}> {
         <MainPage.Body>
           <SuperTable
             tableId='mods'
+            detailsTitle={t('Mod Attributes')}
 
             data={this.mPrimaryMods}
             staticElements={[
@@ -650,7 +652,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode,
     profileId: profile !== undefined ? profile.id : undefined,
     language: state.settings.interface.language,
-    installPath: installPath(state),
+    installPath: installPathSelector(state),
     downloadPath,
   };
 }

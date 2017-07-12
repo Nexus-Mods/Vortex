@@ -15,8 +15,6 @@
         "skipLibCheck": true
     },
     "files": [
-        "../typings/index.d.ts",
-        "../typings.custom/index.d.ts",
         "../src/index.ts"
     ]
 }

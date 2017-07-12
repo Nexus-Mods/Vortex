@@ -11,6 +11,7 @@ import { IGameStored } from '../types/IGameStored';
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroupItem, Media } from 'react-bootstrap';

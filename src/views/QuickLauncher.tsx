@@ -14,6 +14,7 @@ import { getSafe } from '../util/storeHelper';
 import { IconButton } from '../views/TooltipControls';
 
 import * as Promise from 'bluebird';
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 

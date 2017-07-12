@@ -5,6 +5,7 @@ import { IconButton } from '../../../views/TooltipControls';
 
 import { IMod } from '../../mod_management/types/IMod';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
 import * as ReactSafeHtml from 'react-safe-html';

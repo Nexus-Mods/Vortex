@@ -5,6 +5,7 @@ import {IconButton} from '../../../views/TooltipControls';
 import {GroupType, IGroup, IHeaderImage, IInstallerState, IInstallStep,
         IPlugin, OrderType} from '../types/interface';
 
+import * as I18next from 'i18next';
 import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as path from 'path';

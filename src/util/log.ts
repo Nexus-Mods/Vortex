@@ -18,7 +18,7 @@ if ((process as any).type === 'renderer') {
 } else {
   // tslint:disable-next-line:no-var-requires
   logger = require('winston');
-  global.logger = logger;
+  (global as any).logger = logger;
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';

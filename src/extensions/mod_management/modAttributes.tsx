@@ -8,6 +8,7 @@ import DateTimeFilter from '../../views/table/DateTimeFilter';
 
 import { IModWithState } from './types/IModProps';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { Image, Overlay } from 'react-bootstrap';
 

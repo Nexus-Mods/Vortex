@@ -3,6 +3,8 @@ import { truthy } from '../../../util/util';
 
 import { IMod } from '../../mod_management/types/IMod';
 
+import * as I18next from 'i18next';
+
 /**
  * generate the category's subtitle
  *

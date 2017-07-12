@@ -5,6 +5,8 @@ import { ICategory } from '../types/ICategoryDictionary';
 import { ICategoriesTree } from '../types/ITrees';
 import generateSubtitle from './generateSubtitle';
 
+import * as I18next from 'i18next';
+
 function searchChildren(t: I18next.TranslationFunction,
                         categories: { [categoryId: string]: ICategory },
                         rootId: string,

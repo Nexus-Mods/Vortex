@@ -56,6 +56,7 @@ import getText from './texts';
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
 const activators: IModActivator[] = [];

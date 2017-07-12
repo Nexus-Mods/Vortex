@@ -1,6 +1,6 @@
 import { log } from './log';
 
-import i18n = require('i18next');
+import * as I18next from 'i18next';
 import FSBackend = require('i18next-node-fs-backend');
 
 import * as path from 'path';
@@ -36,7 +36,7 @@ export interface IInitResult {
 function init(language: string): Promise<IInitResult> {
   currentLanguage = language;
   return new Promise<IInitResult>((resolve, reject) => {
-    const res: I18next.I18n = i18n.use(FSBackend).init(
+    const res: I18next.I18n = I18next.use(FSBackend).init(
         {
           lng: language,
           fallbackLng: 'en',
@@ -88,7 +88,7 @@ export function debugTranslations(enable?: boolean) {
     ? enable
     : !debugging;
   missingKeys = { common: {} };
-  init(i18n.language);
+  init(I18next.language);
 }
 
 export function getMissingTranslations() {

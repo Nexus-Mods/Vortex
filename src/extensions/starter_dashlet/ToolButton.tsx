@@ -4,6 +4,7 @@ import { Button } from '../../views/TooltipControls';
 
 import ToolIcon from './ToolIcon';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { Dropdown, MenuItem } from 'react-bootstrap';
 

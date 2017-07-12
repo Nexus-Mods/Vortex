@@ -3,6 +3,7 @@ import { IGameStored } from '../extensions/gamemode_management/types/IGameStored
 import { activeGameId } from './selectors';
 
 import * as Promise from 'bluebird';
+import * as Redux from 'redux';
 
 /**
  * return an item from state or the fallback if the path doesn't lead

@@ -40,11 +40,13 @@ import { } from './views/Settings';
 import NXMUrl from './NXMUrl';
 
 import * as Promise from 'bluebird';
+import * as I18next from 'i18next';
 import Nexus, { IDownloadURL, IFileInfo, IModInfo, TimeoutError } from 'nexus-api';
 import * as opn from 'opn';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { Interpolate } from 'react-i18next';
+import * as Redux from 'redux';
 import * as util from 'util';
 
 type IModWithState = IMod & IProfileMod;

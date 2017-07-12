@@ -4,6 +4,7 @@ import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { setAddGameDialogVisible } from '../actions/session';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 
 export interface IBaseProps {

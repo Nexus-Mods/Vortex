@@ -12,6 +12,7 @@ import StorageLogger from './StorageLogger';
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
+import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 import {
@@ -40,7 +41,8 @@ export function createVortexStore([]): Redux.Store<IState> {
   ];
 
   const enhancer: Redux.StoreEnhancer<IState> =
-      compose(applyMiddleware(...middleware), electronEnhancer()) as Redux.StoreEnhancer<IState>;
+      compose(applyMiddleware(...middleware),
+              electronEnhancer()) as Redux.StoreEnhancer<any>;
 
   return createStore<IState>(reducer([]), enhancer);
 }

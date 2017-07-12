@@ -2,6 +2,7 @@ import FormFeedbackAwesome from './FormFeedbackAwesome';
 import { IconButton } from './TooltipControls';
 
 import { remote } from 'electron';
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { Checkbox, Col, ControlLabel,
          FormControl, FormGroup,

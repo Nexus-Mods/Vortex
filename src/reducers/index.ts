@@ -17,14 +17,14 @@ import { userReducer } from './user';
 import { windowReducer } from './window';
 
 import * as _ from 'lodash';
-import { combineReducers } from 'redux';
+import { combineReducers, Reducer, ReducersMapObject } from 'redux';
 import { createReducer } from 'redux-act';
 import { REHYDRATE } from 'redux-persist/constants';
 
 /**
  * wrapper for combineReducers that doesn't drop unexpected keys
  */
-function safeCombineReducers(reducer: Redux.ReducersMapObject) {
+function safeCombineReducers(reducer: ReducersMapObject) {
   const redKeys = Object.keys(reducer);
   const combined = combineReducers(reducer);
   return (state, action) => {
@@ -38,7 +38,7 @@ function safeCombineReducers(reducer: Redux.ReducersMapObject) {
   };
 }
 
-function deriveReducer(path: string, ele: any): Redux.Reducer<any> {
+function deriveReducer(path: string, ele: any): Reducer<any> {
   const attributes: string[] = Object.keys(ele);
 
   if ((attributes.indexOf('reducers') !== -1)
@@ -58,12 +58,12 @@ function deriveReducer(path: string, ele: any): Redux.Reducer<any> {
     }
     return createReducer(red, ele.defaults);
   } else {
-    const reducers: Redux.ReducersMapObject = {};
+    const combinedReducers: ReducersMapObject = {};
 
     attributes.forEach(attribute => {
-      reducers[attribute] = deriveReducer(path + '.' + attribute, ele[attribute]);
+      combinedReducers[attribute] = deriveReducer(path + '.' + attribute, ele[attribute]);
     });
-    return safeCombineReducers(reducers);
+    return safeCombineReducers(combinedReducers);
   }
 }
 

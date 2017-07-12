@@ -20,7 +20,7 @@ import GameFilter from '../../../views/table/GameFilter';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
-import { downloadPath } from '../../mod_management/selectors';
+import { downloadPath as downloadPathSelector } from '../../mod_management/selectors';
 
 import { finishDownload, initDownload,
          removeDownload, setDownloadFilePath } from '../actions/state';
@@ -32,6 +32,7 @@ import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
@@ -462,7 +463,7 @@ function mapStateToProps(state: any): IConnectedProps {
     gameMode: activeGameId(state),
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
-    downloadPath: downloadPath(state),
+    downloadPath: downloadPathSelector(state),
   };
 }
 

@@ -6,6 +6,7 @@ import { confirmExternalChanges, setExternalChangeAction } from '../actions/exte
 
 import { FileAction, IFileEntry } from '../types/IFileEntry';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { Modal, Table } from 'react-bootstrap';
 

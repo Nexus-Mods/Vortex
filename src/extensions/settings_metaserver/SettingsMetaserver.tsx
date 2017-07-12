@@ -6,6 +6,7 @@ import InputButton from '../../views/InputButton';
 import { Button } from '../../views/TooltipControls';
 import { addMetaserver, removeMetaserver, setPriorities } from './actions';
 
+import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock,
@@ -66,18 +67,18 @@ const serverTarget: __ReactDnd.DropTargetSpec<any> = {
   },
 };
 
-function collectDrag(connect: __ReactDnd.DragSourceConnector,
+function collectDrag(connector: __ReactDnd.DragSourceConnector,
                      monitor: __ReactDnd.DragSourceMonitor) {
   return {
-    connectDragSource: connect.dragSource(),
+    connectDragSource: connector.dragSource(),
     isDragging: monitor.isDragging(),
   };
 }
 
-function collectDrop(connect: __ReactDnd.DropTargetConnector,
+function collectDrop(connector: __ReactDnd.DropTargetConnector,
                      monitor: __ReactDnd.DropTargetMonitor) {
   return {
-    connectDropTarget: connect.dropTarget(),
+    connectDropTarget: connector.dropTarget(),
     isOver: monitor.isOver(),
   };
 }

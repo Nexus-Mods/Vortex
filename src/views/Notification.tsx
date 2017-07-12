@@ -2,6 +2,7 @@ import { INotification, INotificationAction, NotificationType } from '../types/I
 import { ComponentEx } from '../util/ComponentEx';
 import Icon from '../views/Icon';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
 

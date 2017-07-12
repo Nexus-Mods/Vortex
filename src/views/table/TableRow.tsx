@@ -5,6 +5,7 @@ import IconBar from '../IconBar';
 import {ITableRowAction} from '../Table';
 import {Button, IconButton} from '../TooltipControls';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { Dropdown, FormControl, MenuItem, SplitButton } from 'react-bootstrap';
 

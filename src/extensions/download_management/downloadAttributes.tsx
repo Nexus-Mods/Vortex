@@ -5,6 +5,7 @@ import DownloadProgressFilter from './views/DownloadProgressFilter';
 
 import { IDownload } from './types/IDownload';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import {ProgressBar} from 'react-bootstrap';
 

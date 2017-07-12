@@ -76,7 +76,7 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string, main
   };
   newRequire.requireActual = newRequire;
   require = newRequire;
-  module.paths.push(moduleRoot);
+  (module as any).paths.push(moduleRoot);
   const ipc = require('node-ipc');
   ipc.connectTo(ipcPath, ipcPath, () => {
     ipc.of[ipcPath].on('quit', () => {

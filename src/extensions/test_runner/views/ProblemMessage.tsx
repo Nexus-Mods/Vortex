@@ -3,6 +3,7 @@ import {ComponentEx} from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';
 
 import * as Promise from 'bluebird';
+import * as I18next from 'i18next';
 import * as React from 'react';
 import {Alert, Button} from 'react-bootstrap';
 

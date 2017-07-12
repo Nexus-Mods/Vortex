@@ -21,6 +21,7 @@ import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import * as Redux from 'redux';
 
 type EmptyCB = () => void;
 

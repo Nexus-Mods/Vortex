@@ -19,6 +19,8 @@ import CategoryFilter from './util/CategoryFilter';
 import { retrieveCategory, retrieveCategoryDetail } from './util/retrieveCategoryPath';
 import CategoryDialog from './views/CategoryDialog';
 
+import * as Redux from 'redux';
+
 function getModCategory(mod: IModWithState) {
   return mod.attributes['category'];
 }

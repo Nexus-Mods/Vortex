@@ -6,7 +6,9 @@ import { setModAttribute } from '../../mod_management/actions/mods';
 import { IMod } from '../../mod_management/types/IMod';
 
 import * as Promise from 'bluebird';
+import * as I18next from 'i18next';
 import Nexus, { IFileInfo, IFileUpdate, IModFiles, IModInfo, NexusError } from 'nexus-api';
+import * as Redux from 'redux';
 
 /**
  * check if there is a newer mod version on the server
@@ -90,13 +92,13 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
                               files: IModFiles) {
   const fileId = getSafe(mod.attributes, ['fileId'], undefined);
   const latestFileId = fileId;
-  let fileUpdate: IFileUpdate[] = findLatestUpdate(files.file_updates, [], latestFileId);
-  if (fileUpdate.length === 0) {
+  let fileUpdates: IFileUpdate[] = findLatestUpdate(files.file_updates, [], latestFileId);
+  if (fileUpdates.length === 0) {
     // update not found through update-chain. If there is only a single file that
     // isn't marked as old we assume that is the right update.
     const notOld = files.files.filter(file => file.category_id !== 4);
     if ((notOld.length === 1) && (notOld[0].file_id !== fileId)) {
-      fileUpdate = [{
+      fileUpdates = [{
         old_file_id: fileId,
         old_file_name: mod.attributes['fileName'],
         new_file_id: notOld[0].file_id,
@@ -108,9 +110,9 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   }
 
   // collect the changelogs of all the versions > currently installed and <= newest
-  const changelog = fileUpdate
-    .map(update => {
-      const file = files.files.find(iter => iter.file_id === update.new_file_id);
+  const changelog = fileUpdates
+    .map(fileUpdate => {
+      const file = files.files.find(iter => iter.file_id === fileUpdate.new_file_id);
       return file !== undefined ? file.changelog_html : undefined;
     })
     .filter(change => change !== undefined)
@@ -122,8 +124,8 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
     update(dispatch, gameId, mod, 'newestChangelog', undefined);
   }
 
-  const updatedFile = fileUpdate.length > 0
-    ? files.files.find(file => file.file_id === fileUpdate[fileUpdate.length - 1].new_file_id)
+  const updatedFile = fileUpdates.length > 0
+    ? files.files.find(file => file.file_id === fileUpdates[fileUpdates.length - 1].new_file_id)
     : files.files.find(file => file.file_id === fileId);
   if (updatedFile !== undefined) {
     updateLatestFileAttributes(dispatch, gameId, mod, updatedFile);

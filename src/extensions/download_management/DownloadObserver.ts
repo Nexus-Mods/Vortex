@@ -1,6 +1,6 @@
 import {log} from '../../util/log';
 import {showError} from '../../util/message';
-import {activeGameId, downloadPath} from '../../util/selectors';
+import * as selectors from '../../util/selectors';
 
 import resolvePath from '../mod_management/util/resolvePath';
 
@@ -23,6 +23,7 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import {IHashResult} from 'modmeta-db';
 import * as path from 'path';
+import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
 
 import * as nodeURL from 'url';
@@ -87,7 +88,7 @@ export class DownloadObserver {
                               events: NodeJS.EventEmitter,
                               callback?: (error: Error, id: string) => void) {
     const id = shortid();
-    const gameMode = modInfo.game || activeGameId(this.mStore.getState());
+    const gameMode = modInfo.game || selectors.activeGameId(this.mStore.getState());
     this.mStore.dispatch(initDownload(id, urls, modInfo, gameMode));
 
     const downloadPath = resolvePath('download',
@@ -179,7 +180,7 @@ export class DownloadObserver {
     if (download.localPath !== undefined) {
       log('debug', 'will delete', {path: download.localPath});
       this.mStore.dispatch(removeDownload(downloadId));
-      fs.removeAsync(path.join(downloadPath(this.mStore.getState()), download.localPath));
+      fs.removeAsync(path.join(selectors.downloadPath(this.mStore.getState()), download.localPath));
     } else {
       this.mStore.dispatch(removeDownload(downloadId));
     }

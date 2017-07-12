@@ -1,11 +1,12 @@
 import {IState} from '../../../types/IState';
 import asyncRequire from '../../../util/asyncRequire';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
+import { bytesToString } from '../../../util/util';
 
 import {speedDataPoints} from '../reducers/state';
 import {IDownload} from '../types/IDownload';
-import bytesToString from '../util/bytesToString';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import * as rechartsT from 'recharts';
 let recharts: typeof rechartsT;

@@ -1,3 +1,5 @@
+import * as I18next from 'i18next';
+
 export type AttributeRenderer = 'progress';
 
 export type Placement = 'table' | 'detail' | 'both';

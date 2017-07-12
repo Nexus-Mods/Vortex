@@ -31,6 +31,7 @@ import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import ZipT = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
+import * as Redux from 'redux';
 import * as rimraf from 'rimraf';
 import { dir as tmpDir, file as tmpFile } from 'tmp';
 

@@ -6,6 +6,7 @@ import { Icon as TooltipIcon, IconButton } from '../../../views/TooltipControls'
 import { IProfile } from '../types/IProfile';
 import { IProfileFeature } from '../types/IProfileFeature';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 
 export interface IProps {

@@ -38,6 +38,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
 const profileFiles: { [gameId: string]: string[] } = {};
@@ -287,9 +288,12 @@ function init(context: IExtensionContextExt): boolean {
             }
           });
         });
-    const state: IState = store.getState();
-    if (state.settings.profiles.nextProfileId !== state.settings.profiles.activeProfileId) {
-      store.dispatch(setNextProfile(state.settings.profiles.activeProfileId));
+    {
+      const state: IState = store.getState();
+      if (state.settings.profiles.nextProfileId !==
+          state.settings.profiles.activeProfileId) {
+        store.dispatch(setNextProfile(state.settings.profiles.activeProfileId));
+      }
     }
   });
 

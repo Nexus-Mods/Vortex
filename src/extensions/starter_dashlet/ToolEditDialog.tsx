@@ -14,6 +14,7 @@ import ToolIcon from './ToolIcon';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import { extractIconToFile } from 'icon-extract';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
