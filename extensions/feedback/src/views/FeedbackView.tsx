@@ -64,16 +64,16 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       <MainPage>
         <Layout type='column'>
           {this.renderHeader(t)}
-          <Flex className='table-layout'>
+          <Flex className='table-layout' style={{ overflowY: 'auto' }}>
             <FormGroup>
               <ControlLabel>{t('Feedback Files')}</ControlLabel>
-              <ListGroup style={{ maxHeight: 160, overflowY: 'scroll' }} >
+              <ListGroup>
                 {Object.keys(feedbackFiles).map(this.renderFeedbackFile)}
               </ListGroup>
             </FormGroup>
           </Flex>
           <Fixed>
-            <div style={{ width: '90%', display: 'inline-block' }}>
+            <div style={{ width: '80%', display: 'inline-block' }}>
               <Dropzone
                 accept={['files']}
                 drop={this.dropFeedback}

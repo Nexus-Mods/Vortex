@@ -5,6 +5,7 @@
       "name": "Launch",
       "type": "node",
       "request": "launch",
+      "protocol": "legacy",
       "program": "${workspaceRoot}/out/main.js",
       "stopOnEntry": false,
       "args": [],
