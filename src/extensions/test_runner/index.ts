@@ -100,10 +100,6 @@ function init(context: IExtensionContext): boolean {
   context.registerDashlet('Problems', 2, 10, ReportDashlet,
     (state) => Object.keys(dashProps.problems).length > 0, () => dashProps);
 
-  context.api.events.on('check-native-crash', () => {
-      runChecks('check-native-crash');
-    });
-
   context.once(() => {
     context.api.events.on('trigger-test-run', (eventType: string, delay?: number) => {
       log('debug', 'triggering test run', eventType);
@@ -116,6 +112,10 @@ function init(context: IExtensionContext): boolean {
 
     context.api.events.on('profile-did-change', () => {
       runChecks('profile-did-change');
+    });
+
+    context.api.events.on('startup', () => {
+      runChecks('startup');
     });
 
     context.api.onStateChange(['settings'], () => {

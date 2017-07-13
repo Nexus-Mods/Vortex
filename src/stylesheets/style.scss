@@ -1632,48 +1632,6 @@ a[role=menuitem] svg {
 // /External change dialog
 //////////////////////////
 
-/////////////////
-// feedback view
-
-.textarea-feedback {
-  width: 100%;
-  min-height: 400px;
-  resize: none;
-}
-
-.dropzone-feedback {
-  height: 100px;
-  width: 30%;
-  display: table-cell;
-  margin: 10px;
-  padding: 20px;
-  border-radius: 5px;
-  border-style: dashed;
-  border-width: 2px;
-  border-color: $gray;
-}
-
-.dropzone-feedback.hover-click {
-  border-style: solid;
-  border-width: 2px;
-  border-color: $link-color;
-}
-
-.dropzone-feedback.hover-valid {
-  border-style: solid;
-  border-width: 2px;
-  border-color: $brand-success;
-}
-
-.dropzone-feedback.hover-invalid {
-  border-style: solid;
-  border-width: 2px;
-  border-color: $brand-warning;
-}
-
-// /feedback view
-/////////////////
-
 ////////////
 // game page
 .popover-game-info {

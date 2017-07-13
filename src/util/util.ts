@@ -189,7 +189,7 @@ export function spawnSelf(args: string[]) {
   });
 }
 
-const labels = [ 'B', 'K', 'M', 'G', 'T' ];
+const labels = [ 'B', 'KB', 'MB', 'GB', 'TB' ];
 
 export function bytesToString(bytes: number): string {
   let labelIdx = 0;

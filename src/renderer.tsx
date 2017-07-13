@@ -123,6 +123,7 @@ const store: Store<any> = createStore(reducer([]), enhancer);
 
 const extensions: ExtensionManager = new ExtensionManager(store, eventEmitter);
 const extReducers = extensions.getReducers();
+let tFunc = (input, options) => input;
 
 store.replaceReducer(reducer(extReducers));
 extensions.setStore(store);
@@ -169,47 +170,51 @@ store.subscribe(() => {
   }
 });
 
-let i18n;
-let tFunc = (input, options) => input;
-let error;
+function renderer() {
+  let i18n;
+  let error;
 
-getI18n(store.getState().settings.interface.language)
-  .then(res => {
-    ({ i18n, tFunc, error } = res);
-    extensions.setTranslation(i18n);
-    return extendStore(store, extensions);
-  })
-  .then(() => {
-    if (error !== undefined) {
-      showError(store.dispatch, 'failed to initialize localization', error);
-    }
-    extensions.doOnce();
-    extensions.renderStyle()
-    .then(() => {
-      ipcRenderer.send('show-window');
+  getI18n(store.getState().settings.interface.language)
+    .then(res => {
+      ({ i18n, tFunc, error } = res);
+      extensions.setTranslation(i18n);
+      return extendStore(store, extensions);
     })
-    .catch(err => {
-      terminate({
-        message: 'failed to parse UI theme',
-        details: err.formatted,
-      });
+    .then(() => {
+      if (error !== undefined) {
+        showError(store.dispatch, 'failed to initialize localization', error);
+      }
+      extensions.doOnce();
+      extensions.renderStyle()
+        .then(() => {
+          ipcRenderer.send('show-window');
+        })
+        .catch(err => {
+          terminate({
+            message: 'failed to parse UI theme',
+            details: err.formatted,
+          });
+        });
+      initApplicationMenu(extensions);
+      startupFinished();
+      eventEmitter.emit('startup');
+      // render the page content
+      ReactDOM.render(
+        <Provider store={store}>
+          <I18nextProvider i18n={i18n}>
+            <ExtensionProvider extensions={extensions}>
+              <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
+            </ExtensionProvider>
+          </I18nextProvider>
+        </Provider>,
+        document.getElementById('content'),
+      );
     });
-    initApplicationMenu(extensions);
-    startupFinished();
-    // render the page content
-    ReactDOM.render(
-      <Provider store={store}>
-        <I18nextProvider i18n={i18n}>
-          <ExtensionProvider extensions={extensions}>
-            <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
-          </ExtensionProvider>
-        </I18nextProvider>
-      </Provider>,
-      document.getElementById('content'),
-    );
-  });
 
-// prevent the page from being changed through drag&drop
-document.ondragover = document.ondrop = (ev) => {
-  ev.preventDefault();
-};
+  // prevent the page from being changed through drag&drop
+  document.ondragover = document.ondrop = (ev) => {
+    ev.preventDefault();
+  };
+}
+
+renderer();

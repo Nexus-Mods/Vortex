@@ -9,7 +9,6 @@ import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import { selectors, tooltip, types, util } from 'nmm-api';
 import * as path from 'path';
-import { Interpolate } from 'react-i18next';
 
 function checkNativeCrashFile() {
   const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
@@ -69,9 +68,11 @@ function init(context: types.IExtensionContext) {
 
   context.registerReducer(['session', 'feedback'], sessionReducer);
 
-  context.registerTest('native-crash', 'check-native-crash', () => nativeCrashCheck(context));
+  context.registerTest('native-crash', 'startup', () => nativeCrashCheck(context));
 
-  context.api.events.emit('check-native-crash');
+  context.once(() => {
+    context.api.setStylesheet('feedback', path.join(__dirname, 'feedback.scss'));
+  });
 
   return true;
 }
