@@ -13,6 +13,7 @@ import * as update from 'immutability-helper';
 import Nexus from 'nexus-api';
 import * as React from 'react';
 import { ControlLabel, Form, FormGroup, Image } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 export interface IBaseProps {
   nexus: Nexus;

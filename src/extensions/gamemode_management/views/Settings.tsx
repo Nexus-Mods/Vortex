@@ -10,6 +10,7 @@ import { addSearchPath, removeSearchPath } from '../actions/settings';
 
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock, ListGroup, ListGroupItem } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 import { log } from '../../../util/log';
 

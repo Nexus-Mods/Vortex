@@ -13,6 +13,7 @@ import { IModActivator } from '../types/IModActivator';
 
 import * as Promise from 'bluebird';
 import * as React from 'react';
+import * as Redux from 'redux';
 
 interface IConnectedProps {
 }

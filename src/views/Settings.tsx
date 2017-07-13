@@ -5,6 +5,7 @@ import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
 
 import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 interface ISettingsPage {
   title: string;

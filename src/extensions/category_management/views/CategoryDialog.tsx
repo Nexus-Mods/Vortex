@@ -7,6 +7,7 @@ import CategoryList from './CategoryList';
 
 import * as React from 'react';
 import { Modal } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 interface IConnectedProps {
   showDialog: boolean;

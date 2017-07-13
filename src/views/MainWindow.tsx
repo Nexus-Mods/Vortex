@@ -31,6 +31,7 @@ import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Badge, ControlLabel, FormGroup, Modal, Nav } from 'react-bootstrap';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
+import * as Redux from 'redux';
 
 interface IPageButtonProps {
   t: I18next.TranslationFunction;

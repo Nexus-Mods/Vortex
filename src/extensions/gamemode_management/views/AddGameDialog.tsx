@@ -15,6 +15,7 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Col, ControlLabel, Form, FormGroup, Modal } from 'react-bootstrap';
+import * as Redux from 'redux';
 import * as rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
 

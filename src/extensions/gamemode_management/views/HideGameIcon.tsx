@@ -8,6 +8,7 @@ import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResu
 import { setGameHidden } from '../actions/settings';
 
 import * as React from 'react';
+import * as Redux from 'redux';
 
 export interface IBaseProps {
   instanceId: string;

@@ -4,6 +4,7 @@ import { setUpdateChannel } from './actions';
 
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 interface IConnectedProps {
   updateChannel: 'stable' | 'beta';

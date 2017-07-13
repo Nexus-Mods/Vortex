@@ -12,6 +12,7 @@ import { IMod } from '../types/IMod';
 import { IModActivator } from '../types/IModActivator';
 
 import * as React from 'react';
+import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
 interface IConnectedProps {

@@ -10,6 +10,7 @@ import { Button } from './TooltipControls';
 import * as update from 'immutability-helper';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 export interface IBaseProps {
   id: string;

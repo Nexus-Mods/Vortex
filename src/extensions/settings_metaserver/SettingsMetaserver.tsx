@@ -13,6 +13,7 @@ import { ControlLabel, FormGroup, HelpBlock,
          ListGroup, ListGroupItem } from 'react-bootstrap';
 import {DragSource, DropTarget} from 'react-dnd';
 import {findDOMNode} from 'react-dom';
+import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
 interface IServerEntry {

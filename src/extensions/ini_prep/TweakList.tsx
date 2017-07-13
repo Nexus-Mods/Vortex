@@ -14,6 +14,7 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 interface IBaseProps {
   modId: string;

@@ -21,6 +21,7 @@ import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 interface IEnvButtonProps {
   t: I18next.TranslationFunction;

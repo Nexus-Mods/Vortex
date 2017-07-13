@@ -14,6 +14,7 @@ import { dismissStep } from './actions';
 import * as React from 'react';
 import { Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { Interpolate } from 'react-i18next';
+import * as Redux from 'redux';
 
 export interface IBaseProps { }
 
