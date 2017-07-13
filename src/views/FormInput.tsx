@@ -44,7 +44,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       <input
         className='form-control'
         type='text'
-        label={label}
+        title={label}
         value={cachedValue}
         id={id}
         onChange={this.onChange}
