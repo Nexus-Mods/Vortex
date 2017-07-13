@@ -89,7 +89,9 @@
           "token": "008e0c7bfa1a9a2f14df6370dfdac9340ec828a",
           "private": true
         }
-      ],
+      ]
+    },
+    "nsis": {
       "perMachine": true,
       "runAfterFinish": true,
       "menuCategory": true
@@ -147,7 +149,6 @@
     "@types/react-addons-perf": "^0.14.17",
     "@types/react-addons-shallow-compare": "^0.14.19",
     "@types/react-addons-test-utils": "^0.14.15",
-    "@types/react-addons-transition-group": "^0.14.17",
     "@types/react-bootstrap": "^0.0.47",
     "@types/react-dnd": "^2.0.31",
     "@types/react-dnd-html5-backend": "^2.1.6",

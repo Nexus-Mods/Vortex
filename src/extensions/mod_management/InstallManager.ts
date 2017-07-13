@@ -33,7 +33,6 @@ import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as rimraf from 'rimraf';
-import { dir as tmpDir, file as tmpFile } from 'tmp';
 
 // TODO: the type declaration for rimraf is actually wrong atm (v0.0.28)
 interface IRimrafOptions {

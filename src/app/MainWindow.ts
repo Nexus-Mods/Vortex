@@ -83,6 +83,8 @@ class MainWindow {
     return {
       height: getSafe(windowMetrics, ['size', 'height'], undefined),
       width: getSafe(windowMetrics, ['size', 'width'], undefined),
+      minWidth: 1024,
+      minHeight: 768,
       x: getSafe(windowMetrics, ['position', 'x'], undefined),
       y: getSafe(windowMetrics, ['position', 'y'], undefined),
       autoHideMenuBar: true,
