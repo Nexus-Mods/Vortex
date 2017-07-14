@@ -140,7 +140,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, actions, objects, splitPos, tableId } = this.props;
-    const { detailsOpen, lastSelected, splitMax } = this.state;
+    const { detailsOpen, rowState, splitMax } = this.state;
 
     let hasActions = false;
     if (actions !== undefined) {
@@ -151,6 +151,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     const actionHeader = this.renderTableActions();
     const openClass = detailsOpen ? 'open' : 'closed';
+
+    const rowIds = Object.keys(rowState).filter(rowId => rowState[rowId].selected);
 
     return (
       <div className='table-container'>
@@ -174,7 +176,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           </Table>
         </div>
         <div className={`table-details-pane ${openClass}`}>
-          {this.renderDetails(lastSelected)}
+          {this.renderDetails(rowIds)}
         </div>
       </div>
     );
@@ -199,10 +201,12 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     this.setState(update(this.state, { detailsOpen: { $set: !detailsOpen } }));
   }
 
-  private renderDetails = (rowId: string) => {
+  private renderDetails = (rowIds: string[]) => {
     const {detailsOpen} = this.state;
 
-    if ((rowId === undefined) || (this.state.calculatedValues === undefined)) {
+    if ((rowIds === undefined)
+        || (rowIds.length === 0)
+        || (this.state.calculatedValues === undefined)) {
       return null;
     }
 
@@ -211,18 +215,19 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const detailAttributes = objects.filter((attribute: ITableAttribute) =>
       attribute.placement !== 'table');
 
-    const rowData = this.state.calculatedValues[rowId];
+    const filteredRowIds = rowIds.filter(id =>
+      (this.state.calculatedValues[id] !== undefined) && (data[id] !== undefined));
 
-    if ((rowData === undefined) || (data[rowId] === undefined)) {
+    if (filteredRowIds.length === 0) {
       return null;
     }
 
     return (
       <TableDetail
         t={t}
-        rowId={rowId}
-        rowData={rowData}
-        rawData={data[rowId]}
+        rowIds={filteredRowIds}
+        rowData={this.state.calculatedValues}
+        rawData={data}
         attributes={detailAttributes}
         language={language}
         show={detailsOpen}
@@ -442,8 +447,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 
   private translateHeader(event) {
-    const translate = `translate(0, ${event.target.scrollTop}px)`;
-    event.target.querySelector('thead').style.transform = translate;
+    const transform = `translate(0, ${event.target.scrollTop}px)`;
+    event.target.querySelector('thead').style.transform = transform;
   }
 
   private mainPaneRef = (ref) => {

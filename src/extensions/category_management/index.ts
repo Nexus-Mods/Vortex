@@ -64,14 +64,18 @@ function init(context: IExtensionContext): boolean {
     name: 'Category',
     description: 'Mod Category',
     icon: 'sitemap',
+    supportsMultiple: true,
     calc: (mod: IModWithState) =>
       retrieveCategoryDetail(getModCategory(mod), context.api.store.getState()),
     edit: {
       readOnly: (mod: IModWithState) => mod.state === 'downloaded',
       choices: () => getCategoryChoices(context.api.store.getState()),
-      onChangeValue: (rowId: string, newValue: any) => {
+      onChangeValue: (rowIds: string[], newValue: any) => {
         const gameMode = activeGameId(context.api.store.getState());
-        context.api.store.dispatch(setModAttribute(gameMode, rowId, 'category', newValue));
+        rowIds.forEach(rowId => {
+          context.api.store.dispatch(
+              setModAttribute(gameMode, rowId, 'category', newValue));
+        });
       },
     },
     placement: 'detail',

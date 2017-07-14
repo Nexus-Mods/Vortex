@@ -18,11 +18,11 @@ import * as Select from 'react-select';
 interface ICellProps {
   language: string;
   attribute: ITableAttribute;
-  rowId: string;
-  rowData: any;
-  rawData: any;
+  rowIds: string[];
+  rowData: { [rowId: string]: any };
+  rawData: { [rowId: string]: any };
   t: I18next.TranslationFunction;
-  onChangeData: (rowId: string, attributeId: string, value: any) => void;
+  onChangeData: (rowIds: string[], attributeId: string, value: any) => void;
 }
 
 class ValueComponent extends React.Component<any, {}> {
@@ -39,23 +39,36 @@ class ValueComponent extends React.Component<any, {}> {
 
 class DetailCell extends React.Component<ICellProps, {}> {
   public shouldComponentUpdate(nextProps: ICellProps) {
-    return this.props.language !== nextProps.language
-      || this.props.rowData[this.props.attribute.id] !== nextProps.rowData[nextProps.attribute.id];
+    if (this.props.language !== nextProps.language) {
+      return true;
+    }
+
+    if (this.props.rowIds !== nextProps.rowIds) {
+      return true;
+    }
+
+    nextProps.rowIds.forEach(rowId => {
+      if (this.props.rowData[rowId] !== nextProps.rowData[rowId]) {
+        return true;
+      }
+    });
+    return false;
   }
 
   public render(): JSX.Element {
-    const { t, attribute, rawData, rowData, rowId } = this.props;
-    const value = rowData[attribute.id];
+    const { t, attribute, rawData, rowData, rowIds } = this.props;
 
     let content: JSX.Element = null;
 
     if (attribute.customRenderer !== undefined) {
-      const attrControl = attribute.customRenderer(rawData, true, t);
+      const values = rowIds.map(id => rawData[id]);
+      const attrControl = attribute.customRenderer(
+        attribute.supportsMultiple ? values : values[0], true, t);
       content = (
         <FormControl.Static componentClass='div'>
           {
             attrControl !== null ? (
-              <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>
+              <ExtensionGate id={`extension-${rowIds[0]}-${attribute.id}`}>
                 {attrControl}
               </ExtensionGate>
             ) : null
@@ -63,78 +76,21 @@ class DetailCell extends React.Component<ICellProps, {}> {
         </FormControl.Static>
       );
     } else {
+      const values = rowIds.map(id => rowData[id][attribute.id]);
       const readOnly = getSafe(attribute, ['edit', 'readOnly'], (val: any) => false)(rawData);
+
       if (attribute.edit.onChangeValue !== undefined) {
-        if (attribute.edit.choices !== undefined) {
-          const choices = attribute.edit.choices();
-          const currentChoice = choices.find(choice => choice.text === value);
-          const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
-          if (readOnly) {
-            content = (
-              <FormControl.Static>
-                {currentChoice !== undefined ? currentChoice.text : null}
-              </FormControl.Static>
-            );
-          } else {
-            content = (
-              <Select
-                options={choices}
-                value={choiceKey}
-                onChange={this.changeCellSelect}
-                valueKey='key'
-                labelKey='text'
-                valueComponent={ValueComponent}
-              />
-            );
-          }
-        } else if (attribute.edit.validate !== undefined) {
-          content = (
-            <FormGroup
-              validationState={attribute.edit.validate(value)}
-            >
-              <FormInput
-                id={attribute.id}
-                label={t(attribute.name)}
-                value={this.renderCell(value)}
-                onChange={this.changeCell}
-                readOnly={readOnly}
-              />
-              { readOnly ? null : <FormFeedback /> }
-            </FormGroup>
-          );
-        } else {
-          content = (
-            <FormInput
-              id={attribute.id}
-              label={t(attribute.name)}
-              readOnly={readOnly}
-              value={this.renderCell(value)}
-              onChange={this.changeCell}
-            />
-          );
-        }
-      } else if (Array.isArray(value)) {
-        let idx = 0;
-        content = (
-          <ListGroup>
-            {value.map((val: any) =>
-                <ListGroupItem key={`${attribute.id}-${idx++}`}>{val}</ListGroupItem>)}
-          </ListGroup>
-        );
+        content = (attribute.edit.choices !== undefined)
+          ? this.renderSelect(values, readOnly)
+          : (attribute.edit.validate !== undefined)
+            ? this.renderValidation(values, readOnly)
+            : this.renderInput(values, readOnly);
       } else {
-        content = (
-          <FormControl
-            id={attribute.id}
-            type='text'
-            label={t(attribute.name)}
-            readOnly={true}
-            value={this.renderCell(value)}
-          />
-        );
+        content = this.renderRO(values);
       }
     }
 
-    const key = `${rowId}-${attribute.id}`;
+    const key = `${rowIds[0]}-${attribute.id}`;
 
     const helpIcon = attribute.help !== undefined
       ? (
@@ -153,9 +109,109 @@ class DetailCell extends React.Component<ICellProps, {}> {
     );
   }
 
+  private renderSelect(values: any[], readOnly: boolean): JSX.Element {
+    const { t, attribute, rowIds } = this.props;
+
+    const various = values.find(iter => iter !== values[0]) !== undefined;
+
+    const choices = attribute.edit.choices();
+    let currentChoice: IEditChoice;
+    if (!various) {
+      currentChoice = choices.find(choice => choice.text === values[0]);
+    }
+    if (readOnly) {
+      return (
+        <FormControl.Static>
+          {currentChoice !== undefined ? currentChoice.text : null}
+        </FormControl.Static>
+      );
+    } else {
+      const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
+      return (
+        <Select
+          options={choices}
+          value={choiceKey}
+          onChange={this.changeCellSelect}
+          valueKey='key'
+          labelKey='text'
+          valueComponent={ValueComponent}
+        />
+      );
+    }
+  }
+
+  private renderValidation(values: any[], readOnly: boolean): JSX.Element {
+    const { t, attribute } = this.props;
+
+    const various = values.find(iter => iter !== values[0]) !== undefined;
+
+    const validationState = various
+      ? 'warning'
+      : attribute.edit.validate(values[0]);
+
+    return (
+      <FormGroup
+        validationState={validationState}
+      >
+        <FormInput
+          id={attribute.id}
+          label={t(attribute.name)}
+          value={various ? t('Various') : this.renderCell(values[0])}
+          onChange={this.changeCell}
+          readOnly={readOnly}
+        />
+        {readOnly ? null : <FormFeedback />}
+      </FormGroup>
+    );
+  }
+
+  private renderInput(values: any[], readOnly: boolean): JSX.Element {
+    const { t, attribute } = this.props;
+
+    const various = values.find(iter => iter !== values[0]) !== undefined;
+
+    return (
+      <FormInput
+        id={attribute.id}
+        label={t(attribute.name)}
+        readOnly={readOnly}
+        value={various ? '' : this.renderCell(values[0])}
+        onChange={this.changeCell}
+        placeholder={various ? t('Various') : ''}
+      />
+    );
+  }
+
+  private renderRO(values: any[]): JSX.Element {
+    const { t, attribute } = this.props;
+
+    const various = values.find(iter => iter !== values[0]) !== undefined;
+    const value = various ? t('Various') : values[0];
+
+    if (Array.isArray(value)) {
+      let idx = 0;
+      return (
+        <ListGroup>
+          {value.map((val: any) =>
+            <ListGroupItem key={`${attribute.id}-${idx++}`}>{val}</ListGroupItem>)}
+        </ListGroup>
+      );
+    } else {
+      return (
+        <FormControl
+          id={attribute.id}
+          type='text'
+          label={t(attribute.name)}
+          readOnly={true}
+          value={this.renderCell(value)}
+        />
+      );
+    }
+  }
+
   private changeCell = (newValue: string) => {
-    const { attribute, onChangeData, rowId } = this.props;
-    onChangeData(rowId, attribute.id, newValue);
+    const { attribute, onChangeData, rowIds } = this.props;
+    onChangeData(rowIds, attribute.id, newValue);
   }
 
   private changeCellEvt = (evt: React.FormEvent<any>) => {
@@ -187,9 +243,9 @@ class DetailCell extends React.Component<ICellProps, {}> {
 
 export interface IDetailProps {
   language: string;
-  rowId: string;
-  rowData: any;
-  rawData: any;
+  rowIds: string[];
+  rowData: { [rowId: string]: any };
+  rawData: { [rowId: string]: any };
   attributes: ITableAttribute[];
   t: I18next.TranslationFunction;
   show: boolean;
@@ -203,7 +259,7 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
   }
 
   public shouldComponentUpdate(nextProps: IDetailProps) {
-    return (this.props.rowId !== nextProps.rowId)
+    return (this.props.rowIds !== nextProps.rowIds)
       || (this.props.language !== nextProps.language)
       || (this.props.rawData !== nextProps.rawData)
       || (this.props.rowData !== nextProps.rowData)
@@ -212,16 +268,26 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { attributes, onToggleShow, show, rowData } = this.props;
+    const { t, attributes, onToggleShow, rowData, rowIds, show } = this.props;
+    const detailList = attributes
+      .filter(obj =>
+        (rowData[rowIds[0]][obj.id] !== undefined)
+        && ((rowIds.length === 1)
+          || obj.supportsMultiple));
     return (
       <div style={{ height: '100%', position: 'relative', display: 'flex', overflowX: 'hidden' }}>
         {show ? null : this.renderHandle() }
         <div style={{ display: 'flex' }} >
-          <form style={{ flex: '1 1 0%', overflowY: show ? 'auto' : 'hidden' }}>
-            {attributes
-              .filter(obj => rowData[obj.id] !== undefined)
-              .map(obj => this.renderDetail(obj))}
-          </form>
+          {detailList.length > 0 ? (
+            <form className={'table-form-details ' + (show ? 'show' : 'hide')}>
+              {detailList.map(obj => this.renderDetail(obj))}
+            </form>
+          ) : (
+            <h4 style={{ marginTop: 'auto', marginBottom: 'auto', padding: 5 }}>
+              { t('Multiple items selected') }
+            </h4>
+          )
+          }
           <Button
             id='btn-minimize-menu'
             onClick={onToggleShow}
@@ -260,26 +326,30 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
   }
 
   private renderDetail = (attribute: ITableAttribute) => {
-    const { t, language, rawData, rowData } = this.props;
+    const { t, language, rawData, rowData, rowIds } = this.props;
 
     return (
       <DetailCell
         t={t}
-        key={`detail-${rowData.__id}-${attribute.id}`}
+        key={`detail-${rowIds[0]}-${attribute.id}`}
         attribute={attribute}
         language={language}
         rowData={rowData}
         rawData={rawData}
-        rowId={rowData.__id}
+        rowIds={rowIds}
         onChangeData={this.onChangeData}
       />
     );
   }
 
-  private onChangeData = (rowId: string, attributeId: string, value: any) => {
-    this.props.attributes
-    .find((attr: ITableAttribute) => attr.id === attributeId)
-    .edit.onChangeValue(rowId, value);
+  private onChangeData = (rowIds: string[], attributeId: string, value: any) => {
+    const attribute = this.props.attributes
+    .find((attr: ITableAttribute) => attr.id === attributeId);
+    if (attribute.supportsMultiple === true) {
+      attribute.edit.onChangeValue(rowIds, value);
+    } else if (rowIds.length === 1) {
+      attribute.edit.onChangeValue(rowIds[0], value);
+    }
   }
 }
 

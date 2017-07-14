@@ -5,6 +5,7 @@ import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../..
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+import Debouncer from '../../../util/Debouncer';
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
 import IconBar from '../../../views/IconBar';
@@ -116,6 +117,9 @@ class ModList extends ComponentEx<IProps, {}> {
   private mModsWithState: { [id: string]: IModWithState };
   private mGroupedMods: { [id: string]: IModWithState[] };
   private mPrimaryMods: { [id: string]: IModWithState };
+  private mUpdateDebouncer: Debouncer;
+  private mLastUpdateProps: IModProps = { mods: {}, modState: {}, downloads: {} };
+  private mIsMounted: boolean = false;
   private staticButtons: IActionDefinition[];
 
   constructor(props: IProps) {
@@ -227,11 +231,20 @@ class ModList extends ComponentEx<IProps, {}> {
         props: () => ({groupedMods: this.mGroupedMods}),
       },
     ];
+
+    this.mUpdateDebouncer = new Debouncer((newProps) => {
+      return this.updateModsWithState(newProps);
+    }, 100);
   }
 
   public componentWillMount() {
-    this.updateModsWithState({ mods: {}, modState: {}, downloads: {} }, this.props)
+    this.mIsMounted = true;
+    this.updateModsWithState(this.props)
     .then(() => this.forceUpdate());
+  }
+
+  public componentWillUnmount() {
+    this.mIsMounted = false;
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -239,8 +252,11 @@ class ModList extends ComponentEx<IProps, {}> {
         || (this.props.mods !== newProps.mods)
         || (this.props.modState !== newProps.modState)
         || (this.props.downloads !== newProps.downloads)) {
-      this.updateModsWithState(this.props, newProps)
-        .then(() => this.forceUpdate());
+      this.mUpdateDebouncer.schedule(() => {
+        if (this.mIsMounted) {
+          this.forceUpdate();
+        }
+      }, newProps);
     }
   }
 
@@ -376,12 +392,13 @@ class ModList extends ComponentEx<IProps, {}> {
     );
   }
 
-  private updateModsWithState(oldProps: IModProps, newProps: IProps): Promise<void> {
+  private updateModsWithState(newProps: IProps): Promise<void> {
     const { gameMode } = newProps;
     let changed = false;
     const newModsWithState = {};
 
     const installedIds = new Set<string>();
+    const oldProps = this.mLastUpdateProps;
 
     // update mods as necessary
     Object.keys(newProps.mods).forEach(modId => {
@@ -446,6 +463,7 @@ class ModList extends ComponentEx<IProps, {}> {
 
         // assign only after mod grouping is updated so these don't go out of sync
         this.mModsWithState = newModsWithState;
+        this.mLastUpdateProps = newProps;
       });
   }
 

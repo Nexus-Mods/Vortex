@@ -4,7 +4,7 @@ import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 
 export interface IBaseProps {
-  mod: types.IMod;
+  mods: types.IMod[];
   gameMode: string;
 }
 
@@ -32,35 +32,54 @@ class TextareaNotes extends ComponentEx<IProps, IComponentState> {
     super(props);
 
     this.initState({
-      valueCache: util.getSafe(props.mod.attributes, ['notes'], ''),
+      valueCache: this.getValue(props),
     });
 
     this.mDebouncer = new util.Debouncer((newNote: string) => {
-      const { gameMode, mod, onSetModAttribute } = this.props;
-      this.props.onSetModAttribute(gameMode, mod.id, 'notes', newNote);
+      const { gameMode, mods, onSetModAttribute } = this.props;
+      mods.forEach(mod => {
+        this.props.onSetModAttribute(gameMode, mod.id, 'notes', newNote);
+      });
       return null;
-    }, 250);
+    }, 500);
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    const newValue = this.getValue(newProps);
+    if (newValue !== this.state.valueCache) {
+      this.nextState.valueCache = newValue;
+    }
   }
 
   public shouldComponentUpdate(nextProps: IProps, nextState: IComponentState) {
-    return this.props.mod.id !== nextProps.mod.id
+    return this.props.mods !== nextProps.mods
         || this.props.gameMode !== nextProps.gameMode
         || this.state !== nextState;
   }
 
   public render(): JSX.Element {
-    const { t, mod } = this.props;
+    const { t, mods } = this.props;
     const { valueCache } = this.state;
 
     return (
       <textarea
-        value={valueCache}
-        id={mod.id}
+        value={valueCache !== null ? valueCache : ''}
+        id={mods[0].id}
         className='textarea-notes'
         onChange={this.handleChange}
-        placeholder={t('Write your own notes on this mod')}
+        placeholder={valueCache !== null
+          ? t('Write your own notes on this mod')
+          : t('Multiple values')}
       />
     );
+  }
+
+  private getValue(props: IProps) {
+    const value = util.getSafe(props.mods[0].attributes, ['notes'], '');
+    const different = props.mods.find(iter =>
+        util.getSafe(iter.attributes, ['notes'], '') !== value) !== undefined;
+
+    return different ? null : value;
   }
 
   private handleChange = (event) => {

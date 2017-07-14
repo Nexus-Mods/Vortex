@@ -11,9 +11,10 @@ function init(context: types.IExtensionContext) {
     description: 'Mod Notes',
     icon: 'sticky-note',
     placement: 'detail',
-    customRenderer: (mod, detailCell, t) => {
+    supportsMultiple: true,
+    customRenderer: (mods, detailCell, t) => {
       const gameMode = selectors.activeGameId(context.api.store.getState());
-      return (<TextareaNotes gameMode={gameMode} mod={mod} />);
+      return (<TextareaNotes gameMode={gameMode} mods={mods} />);
     },
     calc: (mod) => util.getSafe(mod.attributes, ['notes'], ''),
     isToggleable: false,

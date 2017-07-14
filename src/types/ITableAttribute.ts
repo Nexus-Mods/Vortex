@@ -83,7 +83,7 @@ export interface ITableAttribute<T = any> {
    * renderer. Please note that if you want caching or asynchronous calculation for this cell you'll
    * have to implement it yourself.
    */
-  customRenderer?: (object: T, detailCell: boolean,
+  customRenderer?: (object: T | T[], detailCell: boolean,
                     t: I18next.TranslationFunction) => JSX.Element;
   /**
    * determine the display value for this attribute. This is used for display if customRenderer is
@@ -105,6 +105,16 @@ export interface ITableAttribute<T = any> {
    * equal.
    */
   sortFunc?: (lhs: any, rhs: any, locale: string) => number;
+  /**
+   * does this attribute support displaying and editing multiple values? defaults to false.
+   * If this is false the attribute is not displayed with multiple items selected. If this is true,
+   * customRenderer receives an array of objects to display and onChangeValue receive an array of
+   * rowIds to set the new value on
+   *
+   * @type {boolean}
+   * @memberof ITableAttribute
+   */
+  supportsMultiple?: boolean;
   /**
    * describes how editing for this field should work. Only one out of "choices", "validate"
    * should be used
@@ -145,6 +155,6 @@ export interface ITableAttribute<T = any> {
      *
      * If this attribute is undefined, the field is readonly
      */
-    onChangeValue?: (rowId: string, newValue: any) => void,
+    onChangeValue?: (rowId: string | string[], newValue: any) => void,
   };
 }
