@@ -894,6 +894,12 @@ a[role=menuitem] svg {
     // with the right border
     margin-right: -10px;
   }
+
+  .form-control-static {
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: 0;
+  }
 }
 
 .table-layout {

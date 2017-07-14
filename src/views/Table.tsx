@@ -96,6 +96,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private mScrollRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
   private mLastSelectOnly: number = 0;
+  private mPlaceholder: JSX.Element;
 
   constructor(props: IProps) {
     super(props);
@@ -115,6 +116,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       props.onSetSplitPos(props.tableId, args[0]);
       return null;
     }, 100);
+
+    this.mPlaceholder = <tr><td>{this.props.t('Loading')}</td></tr>;
   }
 
   public componentWillMount() {
@@ -317,6 +320,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         onClick={this.selectRow}
         selected={getSafe(rowState, [data.id, 'selected'], false)}
         domRef={this.setRowRef}
+        container={this.mScrollRef}
+        placeholder={this.mPlaceholder}
       />
     );
   }

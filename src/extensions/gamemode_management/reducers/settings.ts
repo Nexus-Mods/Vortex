@@ -57,6 +57,6 @@ export const settingsReducer: IReducerSpec = {
   defaults: {
     searchPaths: undefined,
     discovered: {},
-    pickerLayout: 'list',
+    pickerLayout: 'small',
   },
 };

@@ -64,17 +64,17 @@ class DetailCell extends React.Component<ICellProps, {}> {
       const values = rowIds.map(id => rawData[id]);
       const attrControl = attribute.customRenderer(
         attribute.supportsMultiple ? values : values[0], true, t);
-      content = (
+      content = attrControl !== null ? (
         <FormControl.Static componentClass='div'>
           {
-            attrControl !== null ? (
+            (
               <ExtensionGate id={`extension-${rowIds[0]}-${attribute.id}`}>
                 {attrControl}
               </ExtensionGate>
-            ) : null
+            )
           }
         </FormControl.Static>
-      );
+      ) : null;
     } else {
       const values = rowIds.map(id => rowData[id][attribute.id]);
       const readOnly = getSafe(attribute, ['edit', 'readOnly'], (val: any) => false)(rawData);
@@ -99,14 +99,14 @@ class DetailCell extends React.Component<ICellProps, {}> {
         </More>
       ) : null;
 
-    return (
+    return content !== null ? (
       <FormGroup key={key}>
         { attribute.name !== undefined ? (
           <ControlLabel>{attribute.name} {helpIcon}</ControlLabel>
          ) : null }
         {content}
       </FormGroup>
-    );
+    ) : null;
   }
 
   private renderSelect(values: any[], readOnly: boolean): JSX.Element {

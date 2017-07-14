@@ -145,7 +145,6 @@ function purgeChanges(gameMode: string) {
 function main(context: IExtensionContext) {
   context.registerTableAttribute('mods', {
     id: 'ini-edits',
-    name: 'INI Tweaks',
     description: 'Optional ini modifications',
     calc: () => 'Dummy',
     customRenderer: (mod: IModWithState) => renderINITweaks(mod),

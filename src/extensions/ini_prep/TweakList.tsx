@@ -1,5 +1,5 @@
 import { IState } from '../../types/IState';
-import { ComponentEx, connect, PureComponentEx } from '../../util/ComponentEx';
+import { ComponentEx, connect, PureComponentEx, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 import Toggle from '../../views/OnOffToggle';
@@ -11,6 +11,7 @@ import { IMod } from '../mod_management/types/IMod';
 import { activeGameId } from '../profile_management/selectors';
 
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
@@ -85,11 +86,21 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
+    const { t } = this.props;
     const { tweaks } = this.state;
+
+    if (tweaks.length === 0) {
+      return null;
+    }
+
     return (
-      <ListGroup>
-        {tweaks.map(this.renderTweak)}
-      </ListGroup>);
+      <div>
+        <label className='control-label'>{t('Ini Tweaks')}</label>
+        <ListGroup>
+          {tweaks.map(this.renderTweak)}
+        </ListGroup>
+      </div>
+    );
   }
 
   private renderTweak = (fileName: string): JSX.Element => {
@@ -126,11 +137,12 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
   };
 }
 
-const TweakListConnected = connect(mapStateToProps, mapDispatchToProps)(
-  TweakList) as React.ComponentClass<IBaseProps>;
+const TweakListConnected = translate(['common'], { wait: true })(
+  connect(mapStateToProps, mapDispatchToProps)(
+    TweakList)) as React.ComponentClass<IBaseProps>;
 
 function renderINITweaks(mod: IMod): JSX.Element {
-  return <TweakListConnected modId={mod.id}/>;
+  return <TweakListConnected modId={mod.id} />;
 }
 
 export default renderINITweaks;

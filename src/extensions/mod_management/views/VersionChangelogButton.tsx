@@ -1,4 +1,5 @@
 import { ComponentEx } from '../../../util/ComponentEx';
+import lazyRequire from '../../../util/lazyRequire';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { IconButton } from '../../../views/TooltipControls';
@@ -8,7 +9,8 @@ import { IMod } from '../../mod_management/types/IMod';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
-import * as ReactSafeHtml from 'react-safe-html';
+import * as ReactSafeHtmlT from 'react-safe-html';
+const ReactSafeHtml = lazyRequire<ReactSafeHtmlT>('react-safe-html');
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;

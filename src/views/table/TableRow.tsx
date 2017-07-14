@@ -4,6 +4,7 @@ import ExtensionGate from '../ExtensionGate';
 import IconBar from '../IconBar';
 import {ITableRowAction} from '../Table';
 import {Button, IconButton} from '../TooltipControls';
+import VisibilityProxy from '../VisibilityProxy';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
@@ -139,6 +140,8 @@ export interface IRowProps {
   onClick: React.MouseEventHandler<any>;
   selected: boolean;
   domRef?: (ref) => void;
+  container: HTMLElement;
+  placeholder: JSX.Element;
 }
 
 class TableRow extends React.Component<IRowProps, {}> {
@@ -151,6 +154,17 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   public render(): JSX.Element {
+    return (
+      <VisibilityProxy
+        container={this.props.container}
+        placeholder={this.props.placeholder}
+      >
+        { this.renderRow() }
+      </VisibilityProxy>
+    );
+  }
+
+  private renderRow(): JSX.Element {
     const { attributes, data, onClick, selected, tableId, actions } = this.props;
 
     const classes = [];
