@@ -835,9 +835,9 @@ a[role=menuitem] svg {
 }
 
 .table-main-pane {
-  height: 100%;
   overflow-y: auto;
   flex: 1 1 0%;
+  margin: $gutter-width / 2;
 
   thead {
     color: $text-color;
@@ -878,9 +878,12 @@ a[role=menuitem] svg {
 .table-details-pane {
   height: 100%;
   overflow-y: auto;
-  padding: 5px;
+  padding: 0px;
   min-width: 32px;
+  background-color: $brand-menu;
   transition: max-width 300ms;
+  border: 1px solid $brand-secondary;
+  border-right-width: 0px;
   &.open {
     max-width: 30%;
   }
@@ -889,12 +892,24 @@ a[role=menuitem] svg {
     max-width: 0%;
     // offset the right offset to align the button
     // with the right border
-    margin-right: -5px;
+    margin-right: -10px;
   }
 }
 
 .table-layout {
   margin: 10px;
+}
+
+.table-form-details {
+  flex: 1 1 0%;
+  padding: 5px;
+  min-width: 250px;
+  &.show {
+    overflow-y: auto;
+  }
+  &.hide {
+    overflow-y: hidden;
+  }
 }
 
 .table-header {
@@ -919,10 +934,6 @@ a[role=menuitem] svg {
     padding: 0px;
     width: 100%;
   }
-}
-
-.table-split {
-  padding: $gutter-width / 2;
 }
 
 .table-container {

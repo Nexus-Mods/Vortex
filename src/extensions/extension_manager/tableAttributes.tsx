@@ -56,7 +56,7 @@ function getTableAttributes(context: IAttributesContext):
       name: 'Description',
       description: 'Extension Description',
       placement: 'detail',
-      customRenderer: extension => (
+      customRenderer: (extension: IExtensionWithState) => (
         <textarea
           className='textarea-details'
           value={extension.description}

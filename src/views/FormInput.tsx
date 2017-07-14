@@ -9,6 +9,7 @@ export interface IProps {
   id?: string;
   label?: string;
   readOnly?: boolean;
+  placeholder?: string;
 }
 
 export interface IComponentState {
@@ -38,7 +39,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { id, label, readOnly } = this.props;
+    const { id, label, placeholder, readOnly } = this.props;
     const { cachedValue } = this.state;
     return (
       <input
@@ -49,6 +50,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
         id={id}
         onChange={this.onChange}
         readOnly={readOnly}
+        placeholder={placeholder}
       />
     );
   }
