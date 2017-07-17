@@ -1,3 +1,4 @@
+/// <reference path="bbcode-to-react.d.ts" />
 /// <reference path="drivelist.d.ts" />
 /// <reference path="electron-edge.d.ts" />
 /// <reference path="node-ipc.d.ts" />

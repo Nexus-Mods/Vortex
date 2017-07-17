@@ -405,6 +405,10 @@ a[role=menuitem] svg {
   }
 }
 
+.p-link {
+  color: $link-color;
+}
+
 // /generic control rules
 /////////////////////////
 
@@ -1555,6 +1559,19 @@ a[role=menuitem] svg {
 
 // /fomod dialog
 ////////////////
+
+/////////////
+// mod dialog
+
+#popover-mod-description {
+  max-width: 700px;
+  img {
+    max-width: 100%;
+  }
+}
+
+// /mod dialog
+//////////////
 
 /////////
 // charts

@@ -7,12 +7,20 @@ import Icon from '../../views/Icon';
 import DateTimeFilter from '../../views/table/DateTimeFilter';
 
 import { IModWithState } from './types/IModProps';
+import Description from './views/Description';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { Image, Overlay } from 'react-bootstrap';
 
-class ImageComponent extends ComponentEx<{ url: string }, { showOverlay: boolean }> {
+interface IImageProps {
+  t: I18next.TranslationFunction;
+  url: string;
+  shortDescription: string;
+  longDescription: string;
+}
+
+class ImageComponent extends ComponentEx<IImageProps, { showOverlay: boolean }> {
   private mRef: HTMLElement;
 
   constructor(props) {
@@ -23,7 +31,7 @@ class ImageComponent extends ComponentEx<{ url: string }, { showOverlay: boolean
   }
 
   public render(): JSX.Element {
-    const { url } = this.props;
+    const { t, longDescription, shortDescription, url } = this.props;
     const { showOverlay } = this.state;
 
     return (
@@ -42,6 +50,11 @@ class ImageComponent extends ComponentEx<{ url: string }, { showOverlay: boolean
         >
           <Image src={url} className='mod-picture-large' onClick={this.toggleOverlay} />
         </Overlay>
+        <Description
+          t={t}
+          long={longDescription}
+          short={shortDescription}
+        />
       </div>
     );
   }
@@ -59,8 +72,11 @@ export const PICTURE: ITableAttribute = {
   id: 'picture',
   description: 'A picture provided by the author',
   customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
+    const long = getSafe(mod.attributes, ['description'], '');
+    const short = getSafe(mod.attributes, ['shortDescription'], '');
+
     const url = getSafe(mod.attributes, ['pictureUrl'], undefined);
-    return <ImageComponent url={url}/>;
+    return <ImageComponent t={t} longDescription={long} shortDescription={short} url={url}/>;
   },
   calc: (mod: IModWithState) => getSafe(mod.attributes, ['pictureUrl'], ''),
   placement: 'detail',
