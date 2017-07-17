@@ -1130,7 +1130,8 @@ a[role=menuitem] svg {
   min-width: 100px;
 }
 
-.table-mods .dropdown {
+.table-mods .dropdown,
+.table-extensions .dropdown {
   display: inline-flex;
 }
 
