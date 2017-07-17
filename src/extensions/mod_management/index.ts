@@ -602,18 +602,18 @@ function init(context: IExtensionContextExt): boolean {
 
           const dataPath = currentGameDiscovery(state).modPath;
           loadActivation(context.api, dataPath)
-              .then(lastActivation => activator.prepare(
-                        dataPath, false, JSON.parse(lastActivation.toString())))
-              .then(() =>
-                        activator.deactivate(installPath(state), dataPath, mod))
-              .then(() => activator.finalize(dataPath))
-              .then(newActivation => saveActivation(state.app.instanceId, dataPath, newActivation))
-              .then(() => fs.removeAsync(fullPath))
-              .then(() => {
-                store.dispatch(removeMod(gameMode, modId));
-                callback(null);
-              })
-              .catch((err) => { callback(err); });
+            .then(lastActivation => activator.prepare(
+              dataPath, false, lastActivation))
+            .then(() =>
+              activator.deactivate(installPath(state), dataPath, mod))
+            .then(() => activator.finalize(dataPath))
+            .then(newActivation => saveActivation(state.app.instanceId, dataPath, newActivation))
+            .then(() => fs.removeAsync(fullPath))
+            .then(() => {
+              store.dispatch(removeMod(gameMode, modId));
+              callback(null);
+            })
+            .catch((err) => { callback(err); });
         });
   });
 

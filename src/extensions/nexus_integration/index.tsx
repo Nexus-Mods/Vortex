@@ -438,9 +438,11 @@ function init(context: IExtensionContextExt): boolean {
     return Promise.resolve({
       modId: getSafe(input.nexus, ['ids', 'modId'], undefined),
       fileId: getSafe(input.nexus, ['ids', 'fileId'], undefined),
+      author: getSafe(input.nexus, ['modInfo', 'author'], undefined),
       category: getSafe(input.nexus, ['modInfo', 'category_id'], undefined),
       pictureUrl: getSafe(input.nexus, ['modInfo', 'picture_url'], undefined),
       description: getSafe(input.nexus, ['modInfo', 'description'], undefined),
+      shortDescription: getSafe(input.nexus, ['modInfo', 'summary'], undefined),
       fileType: getSafe(input.nexus, ['fileInfo', 'category_name'], undefined),
       isPrimary: getSafe(input.nexus, ['fileInfo', 'is_primary'], undefined),
       fileName: getSafe(input.nexus, ['fileInfo', 'name'], undefined),
