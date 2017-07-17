@@ -10,7 +10,6 @@ import * as I18next from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
 import * as ReactSafeHtmlT from 'react-safe-html';
-const ReactSafeHtml = lazyRequire<ReactSafeHtmlT>('react-safe-html');
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -76,6 +75,7 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
       return null;
     }
     if (changelog.format === 'html') {
+      const ReactSafeHtml: ReactSafeHtmlT = require('react-safe-html');
       const components = ReactSafeHtml.components.makeElements({});
       components.br = ReactSafeHtml.components.createSimpleElement('br', {});
 

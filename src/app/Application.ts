@@ -197,8 +197,8 @@ class Application {
   }
 
   private applyArguments(args: IParameters) {
-    if (this.mArgs.download) {
-      this.mMainWindow.sendExternalURL(this.mArgs.download);
+    if (args.download) {
+      this.mMainWindow.sendExternalURL(args.download);
     }
   }
 }

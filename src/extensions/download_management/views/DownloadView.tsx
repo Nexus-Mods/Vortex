@@ -238,7 +238,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         condition: this.installable,
       },
       {
-        icon: 'pause',
+        icon: 'button-pause',
         title: 'Pause',
         action: this.pause,
         condition: this.pausable,
