@@ -30,6 +30,7 @@ import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import fetchUserInfo from './util/fetchUserInfo';
 import retrieveCategoryList from './util/retrieveCategories';
+import { submitFeedback } from './util/submitFeedback';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import LoginDialog from './views/LoginDialog';
@@ -40,9 +41,12 @@ import { } from './views/Settings';
 import NXMUrl from './NXMUrl';
 
 import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
+import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import Nexus, { IDownloadURL, IFileInfo, IModInfo, TimeoutError } from 'nexus-api';
 import * as opn from 'opn';
+import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { Interpolate } from 'react-i18next';
@@ -236,6 +240,37 @@ function endorseModImpl(
       store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'Undecided'));
       const detail = processErrorMessage(err.statusCode, err.message, gameId);
       showError(store.dispatch, 'An error occurred endorsing a mod', detail);
+    });
+}
+
+function submitFeedbackImpl(
+  store: Redux.Store<any>,
+  APIKEY: string,
+  userId: number,
+  feedbackFiles: string[],
+  notificationId: string) {
+
+  submitFeedback(APIKEY, userId, feedbackFiles)
+    .then((result: any) => {
+
+      const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
+      let nativeCrashFile;
+
+      if (feedbackFiles !== undefined) {
+        nativeCrashFile = Object.keys(feedbackFiles).find((file) => path.extname(file) === '.dmp');
+      }
+
+      if (nativeCrashFile !== undefined) {
+        fs.removeAsync(path.join(nativeCrashesPath, nativeCrashFile))
+          .catch((err) => {
+            showError(store.dispatch, 'An error occurred removing the dump file: ', err,
+              false, notificationId);
+          });
+      }
+    })
+    .catch((err: Error) => {
+      showError(store.dispatch, 'An error occurred submitting the feedback files: ', err,
+        false, notificationId);
     });
 }
 
@@ -535,6 +570,18 @@ function init(context: IExtensionContextExt): boolean {
           'You are not logged in!');
       } else {
         endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
+      }
+    });
+
+    context.api.events.on('submit-feedback', (userId, feedbackFiles, notificationId) => {
+      const APIKEY = getSafe(context.api.store.getState(),
+        ['confidential', 'account', 'nexus', 'APIKey'], '');
+      if (APIKEY === '') {
+        showError(context.api.store.dispatch,
+          'An error occurred endorsing a mod',
+          'You are not logged in!', false, notificationId);
+      } else {
+        submitFeedbackImpl(context.api.store, APIKEY, userId, feedbackFiles, notificationId);
       }
     });
 

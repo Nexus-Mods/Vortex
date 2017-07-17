@@ -24,6 +24,7 @@ type ControlMode = 'urls' | 'files';
 
 interface IConnectedProps {
   feedbackFiles: { [fileId: string]: IFeedbackFile };
+  userInfo: types.IValidateKeyData;
 }
 
 interface IActionProps {
@@ -289,7 +290,8 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   }
 
   private submitFeedback = (event) => {
-    const { feedbackFiles, onClearFeedbackFiles, onShowActivity, onShowError } = this.props;
+    const { feedbackFiles, onClearFeedbackFiles, onShowActivity,
+            onShowError, userInfo } = this.props;
     const { feedbackMessage } = this.state;
     const app = appIn || remote.app;
 
@@ -302,28 +304,13 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       feedbackMessage: { $set: '' },
     }));
 
-    // TODO: - call nexus integration for the server call
+    const files: string[] = [];
+    Object.keys(feedbackFiles).forEach (key => {
+      files.push(feedbackFiles[key].filePath);
+    });
 
-    const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
-
-    let removeFiles: string[];
-
-    if (feedbackFiles !== undefined) {
-      removeFiles = Object.keys(feedbackFiles)
-        .filter(fileId =>
-          ['State', 'Dump'].indexOf(feedbackFiles[fileId].type) !== -1)
-        .map(fileId => feedbackFiles[fileId].filePath);
-    }
-
-    if (removeFiles !== undefined) {
-      Promise.map(removeFiles, removeFile => fs.removeAsync(removeFile))
-        .then(() => {
-          onClearFeedbackFiles();
-        })
-        .catch(err => {
-          onShowError('An error occurred removing a file', err, notificationId);
-        });
-    }
+    this.context.api.events.emit('submit-feedback', userInfo.userId, files, notificationId);
+    onClearFeedbackFiles();
   }
 
   private handleChange = (event) => {
@@ -352,6 +339,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     feedbackFiles: state.session.feedback.feedbackFiles,
+    userInfo: state.session.nexus.userInfo,
   };
 }
 

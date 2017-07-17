@@ -17,3 +17,4 @@ export { IGameStored } from '../extensions/gamemode_management/types/IGameStored
 export { IMod } from '../extensions/mod_management/types/IMod';
 export { IToolStored } from '../extensions/gamemode_management/types/IToolStored';
 export { IProfile } from '../extensions/profile_management/types/IProfile';
+export { IValidateKeyData } from '../extensions/nexus_integration/types/IValidateKeyData';
