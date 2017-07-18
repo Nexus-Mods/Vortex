@@ -1169,8 +1169,12 @@ a[role=menuitem] svg {
 .gamepicker-body {
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 5px;
   margin: 5px;
+  .popover {
+    max-width: 600px;
+  }
 }
 
 .game-thumbnail {

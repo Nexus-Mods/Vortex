@@ -2,6 +2,7 @@ import { DialogType, IDialogActions, IDialogContent } from '../../../actions/not
 import { ComponentEx } from '../../../util/ComponentEx';
 import Advanced from '../../../views/Advanced';
 import IconBar from '../../../views/IconBar';
+import OverlayTrigger from '../../../views/OverlayTrigger';
 import { IconButton } from '../../../views/TooltipControls';
 
 import { IMod } from '../../mod_management/types/IMod';
@@ -17,7 +18,7 @@ import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
-import { ListGroupItem, Media, OverlayTrigger, Popover } from 'react-bootstrap';
+import { ListGroupItem, Media, Popover } from 'react-bootstrap';
 
 export interface IProps {
   t: I18next.TranslationFunction;
@@ -26,6 +27,8 @@ export interface IProps {
   mods?: { [modId: string]: IMod };
   active: boolean;
   type: string;
+  getBounds: () => ClientRect;
+  container: HTMLElement;
   onRefreshGameInfo: (gameId: string) => Promise<void>;
   onSetGamePath: (gameId: string, gamePath: string, modsPath: string) => void;
   onSetGameDiscovery: (gameId: string, result: IDiscoveryResult) => void;
@@ -39,9 +42,11 @@ export interface IProps {
  * @class GameThumbnail
  */
 class GameRow extends ComponentEx<IProps, {}> {
-  public render(): JSX.Element {
-    const { t, active, discovery, game, onRefreshGameInfo, type } = this.props;
+  private mRef = null;
 
+  public render(): JSX.Element {
+    const { t, active, container, discovery,
+            game, getBounds, onRefreshGameInfo, type } = this.props;
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
     const location = (discovery !== undefined) && (discovery.path !== undefined)
@@ -58,8 +63,13 @@ class GameRow extends ComponentEx<IProps, {}> {
     }
 
     const gameInfoPopover = (
-      <Popover id={`popover-info-${game.id}`} >
-        <GameInfoPopover t={t} game={game} onRefreshGameInfo={onRefreshGameInfo} />
+      <Popover id={`popover-info-${game.id}`}>
+        <GameInfoPopover
+          t={t}
+          game={game}
+          onChange={this.redraw}
+          onRefreshGameInfo={onRefreshGameInfo}
+        />
       </Popover>
     );
 
@@ -77,9 +87,13 @@ class GameRow extends ComponentEx<IProps, {}> {
           </Media.Body>
           <Media.Right>
             <OverlayTrigger
+              triggerRef={this.setRef}
+              getBounds={getBounds}
+              container={container}
               overlay={gameInfoPopover}
+              orientation='horizontal'
+              shouldUpdatePosition={true}
               trigger='click'
-              placement='bottom'
               rootClose={true}
             >
               <IconButton
@@ -101,6 +115,17 @@ class GameRow extends ComponentEx<IProps, {}> {
         </Media>
       </ListGroupItem>
     );
+  }
+
+  private setRef = ref => {
+    this.mRef = ref;
+  }
+
+  private redraw = () => {
+    if (this.mRef !== null) {
+      this.mRef.hide();
+      setTimeout(() => this.mRef.show(), 100);
+    }
   }
 
   private verifyGamePath(game: IGameStored, gamePath: string): Promise<void> {

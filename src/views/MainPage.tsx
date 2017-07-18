@@ -7,6 +7,7 @@ import Overlay from './MainPageOverlay';
 import * as React from 'react';
 
 export interface IBaseProps {
+  domRef?: (ref: HTMLElement) => void;
 }
 
 type IProps = IBaseProps;
@@ -17,16 +18,16 @@ class MainPage extends ComponentEx<IProps, {}> {
   public static Overlay = Overlay;
 
   public render(): JSX.Element {
-    const { children } = this.props;
+    const { children, domRef } = this.props;
     return (
-      <div>
+      <div ref={domRef} style={{ height: '100%' }}>
         {children}
       </div>
     );
   }
 }
 
-export interface IMainPage extends React.ComponentClass<{}> {
+export interface IMainPage extends React.ComponentClass<IBaseProps> {
   Body: typeof Body;
   Overlay: typeof Overlay;
   Header: typeof Header;

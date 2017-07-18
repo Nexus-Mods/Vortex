@@ -117,7 +117,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       return null;
     }, 100);
 
-    this.mPlaceholder = <tr><td>{this.props.t('Loading')}</td></tr>;
+    this.mPlaceholder = <tr><td><Icon name='spinner' pulse /></td></tr>;
   }
 
   public componentWillMount() {

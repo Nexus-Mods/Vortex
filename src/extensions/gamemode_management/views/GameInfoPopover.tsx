@@ -15,6 +15,7 @@ export interface IBaseProps {
   t: I18next.TranslationFunction;
   game: IGameStored;
   onRefreshGameInfo: (gameId: string) => Promise<void>;
+  onChange: () => void;
 }
 
 interface IConnectedProps {
@@ -26,18 +27,38 @@ interface IConnectedProps {
 
 type IProps = IBaseProps & IConnectedProps;
 
-class GameInfoPopover extends ComponentEx<IProps, {}> {
+class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
+  private mMounted: boolean = false;
   constructor(props: IProps) {
     super(props);
+    this.state = { loading: false };
   }
 
   public componentWillMount() {
     const { game, onRefreshGameInfo } = this.props;
-    onRefreshGameInfo(game.id);
+    this.mMounted = true;
+    this.setState({ loading: true });
+    onRefreshGameInfo(game.id)
+    .then(() => {
+      if (this.mMounted) {
+        this.setState({ loading: false });
+      }
+    });
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = false;
+  }
+
+  public componentWillReceiveProps(nextProps: IProps) {
+    if (this.props.gameInfo !== nextProps.gameInfo) {
+      nextProps.onChange();
+    }
   }
 
   public render(): JSX.Element {
     const { t, game } = this.props;
+    const { loading } = this.state;
     const gameInfo = this.props.gameInfo || {};
 
     const keysToRender = Object.keys(gameInfo).filter(key => gameInfo[key].value !== null);
@@ -46,6 +67,7 @@ class GameInfoPopover extends ComponentEx<IProps, {}> {
       <Table>
         <tbody>
           { keysToRender.map(this.renderGameInfo) }
+          { loading ? <tr><td><Icon name='spinner' pulse /></td></tr> : null }
         </tbody>
       </Table>
     );

@@ -32,6 +32,7 @@ import * as update from 'immutability-helper';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { ListGroup, ProgressBar } from 'react-bootstrap';
+import * as ReactDOM from 'react-dom';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
@@ -88,8 +89,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   public context: IComponentContext;
 
   private buttons: IActionDefinition[];
+  private mRef: HTMLElement;
+  private mScrollRef: HTMLElement;
 
-  constructor(props) {
+  constructor(props: IProps) {
     super(props);
 
     this.state = {
@@ -152,7 +155,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     });
 
     return (
-      <MainPage>
+      <MainPage domRef={this.setRef}>
         <MainPage.Header>
           <IconBar
             className='flex-fill'
@@ -180,20 +183,22 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         <MainPage.Body>
           <Layout type='column'>
             <Flex className='gamepicker-body'>
-              <span style={{ display: 'table' }}>
-                <h3>{t('Managed')}</h3>
-                {this.renderGames(managedGameList, 'managed')}
-              </span>
-              <span style={{ display: 'table' }}>
-                <h3>{t('Discovered')}</h3>
-                {this.renderGames(discoveredGameList, 'discovered')}
-              </span>
-              <span style={{ display: 'table' }}>
-                <h3>{t('Supported')}</h3>
-                {this.renderGames(supportedGameList, 'undiscovered')}
-              </span>
+              <div ref={this.setScrollRef}>
+                <span style={{ display: 'table' }}>
+                  <h3>{t('Managed')}</h3>
+                  {this.renderGames(managedGameList, 'managed')}
+                </span>
+                <span style={{ display: 'table' }}>
+                  <h3>{t('Discovered')}</h3>
+                  {this.renderGames(discoveredGameList, 'discovered')}
+                </span>
+                <span style={{ display: 'table' }}>
+                  <h3>{t('Supported')}</h3>
+                  {this.renderGames(supportedGameList, 'undiscovered')}
+                </span>
+              </div>
             </Flex>
-            <Fixed style={{ height: '40px' }} >
+            <Fixed style={{ height: 40 }} >
               <Layout type='row'>
                 <Flex>
                   <ProgressBar>
@@ -246,6 +251,19 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private setRef = ref => {
+    this.mRef = ref;
+  }
+
+  private setScrollRef = ref => {
+    this.mScrollRef = ref;
+    this.forceUpdate();
+  }
+
+  private getBounds = () => this.mRef.getBoundingClientRect();
+
+  private getScrollContainer = () => this.mScrollRef;
+
   private showAddGameDialog = () => {
     this.props.onSetAddGameDialogVisible();
   }
@@ -286,6 +304,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         {games.map(game => (
           <GameRow
             t={t}
+            getBounds={this.getBounds}
+            container={this.mScrollRef}
             key={game.id}
             game={game}
             discovery={discoveredGames[game.id]}
@@ -313,6 +333,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             type={type}
             active={game.id === gameMode}
             onRefreshGameInfo={onRefreshGameInfo}
+            getBounds={this.getBounds}
+            container={this.mScrollRef}
           />))
         }
       </div>

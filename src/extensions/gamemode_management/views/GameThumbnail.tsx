@@ -1,6 +1,7 @@
 import { ComponentEx } from '../../../util/ComponentEx';
 import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
+import OverlayTrigger from '../../../views/OverlayTrigger';
 import { IconButton } from '../../../views/TooltipControls';
 
 import { IGameStored } from '../types/IGameStored';
@@ -11,7 +12,7 @@ import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
-import { OverlayTrigger, Panel, Popover } from 'react-bootstrap';
+import { Panel, Popover } from 'react-bootstrap';
 
 export interface IProps {
   t: I18next.TranslationFunction;
@@ -19,6 +20,8 @@ export interface IProps {
   active: boolean;
   onRefreshGameInfo: (gameId: string) => Promise<void>;
   type: string;
+  getBounds: () => ClientRect;
+  container: HTMLElement;
 }
 
 /**
@@ -27,14 +30,20 @@ export interface IProps {
  * @class GameThumbnail
  */
 class GameThumbnail extends ComponentEx<IProps, {}> {
+  private mRef = null;
   public render(): JSX.Element {
-    const { t, active, game, onRefreshGameInfo, type } = this.props;
+    const { t, active, container, game, getBounds, onRefreshGameInfo, type } = this.props;
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
-        <GameInfoPopover t={t} game={game} onRefreshGameInfo={onRefreshGameInfo} />
+        <GameInfoPopover
+          t={t}
+          game={game}
+          onRefreshGameInfo={onRefreshGameInfo}
+          onChange={this.redraw}
+        />
       </Popover>
     );
 
@@ -58,8 +67,12 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
         </div>
         <OverlayTrigger
           overlay={gameInfoPopover}
+          triggerRef={this.setRef}
+          getBounds={getBounds}
+          container={container}
+          orientation='vertical'
+          shouldUpdatePosition={true}
           trigger='click'
-          placement='bottom'
           rootClose={true}
         >
           <IconButton
@@ -72,6 +85,17 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
         </OverlayTrigger>
       </Panel>
     );
+  }
+
+  private setRef = ref => {
+    this.mRef = ref;
+  }
+
+  private redraw = () => {
+    if (this.mRef !== null) {
+      this.mRef.hide();
+      setTimeout(() => this.mRef.show(), 100);
+    }
   }
 }
 
