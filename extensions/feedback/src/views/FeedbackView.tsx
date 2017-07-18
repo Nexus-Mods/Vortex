@@ -1,6 +1,5 @@
 import { addFeedbackFile, clearFeedbackFiles, removeFeedbackFile } from '../actions/session';
 import { IFeedbackFile } from '../types/IFeedbackFile';
-import { createFeedbackReport } from '../util/createFeedbackReport';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
