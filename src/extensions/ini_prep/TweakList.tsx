@@ -2,7 +2,7 @@ import { IState } from '../../types/IState';
 import { ComponentEx, connect, PureComponentEx, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
-import Toggle from '../../views/OnOffToggle';
+import Toggle from '../../views/BinaryToggle';
 
 import { setINITweakEnabled } from '../mod_management/actions/mods';
 import { INI_TWEAKS_PATH } from '../mod_management/InstallManager';

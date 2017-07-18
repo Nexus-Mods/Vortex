@@ -2,14 +2,12 @@ import Icon from './Icon';
 
 import * as React from 'react';
 
-export interface IBaseProps {
+export interface IProps {
   value: boolean;
   onToggle: (newValue: boolean) => void;
 }
 
-type IProps = IBaseProps;
-
-class OnOffToggle extends React.Component<IProps, {}> {
+class BinaryToggle extends React.Component<IProps, {}> {
   constructor(props: IProps) {
     super(props);
   }
@@ -22,6 +20,7 @@ class OnOffToggle extends React.Component<IProps, {}> {
           className={`button-toggle ${value ? 'on' : 'off'}`}
           name={`toggle-${value ? 'on' : 'off'}`}
         />
+        {this.props.children}
       </div>
     );
   }
@@ -31,4 +30,4 @@ class OnOffToggle extends React.Component<IProps, {}> {
   }
 }
 
-export default OnOffToggle;
+export default BinaryToggle;

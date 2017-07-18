@@ -30,7 +30,7 @@ import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import fetchUserInfo from './util/fetchUserInfo';
 import retrieveCategoryList from './util/retrieveCategories';
-import { submitFeedback } from './util/submitFeedback';
+import submitFeedback from './util/submitFeedback';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import LoginDialog from './views/LoginDialog';
@@ -240,37 +240,6 @@ function endorseModImpl(
       store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'Undecided'));
       const detail = processErrorMessage(err.statusCode, err.message, gameId);
       showError(store.dispatch, 'An error occurred endorsing a mod', detail);
-    });
-}
-
-function submitFeedbackImpl(
-  store: Redux.Store<any>,
-  APIKEY: string,
-  userId: number,
-  feedbackFiles: string[],
-  notificationId: string) {
-
-  submitFeedback(APIKEY, userId, feedbackFiles)
-    .then((result: any) => {
-
-      const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
-      let nativeCrashFile;
-
-      if (feedbackFiles !== undefined) {
-        nativeCrashFile = Object.keys(feedbackFiles).find((file) => path.extname(file) === '.dmp');
-      }
-
-      if (nativeCrashFile !== undefined) {
-        fs.removeAsync(path.join(nativeCrashesPath, nativeCrashFile))
-          .catch((err) => {
-            showError(store.dispatch, 'An error occurred removing the dump file: ', err,
-              false, notificationId);
-          });
-      }
-    })
-    .catch((err: Error) => {
-      showError(store.dispatch, 'An error occurred submitting the feedback files: ', err,
-        false, notificationId);
     });
 }
 
@@ -573,15 +542,19 @@ function init(context: IExtensionContextExt): boolean {
       }
     });
 
-    context.api.events.on('submit-feedback', (userId, feedbackFiles, notificationId) => {
-      const APIKEY = getSafe(context.api.store.getState(),
-        ['confidential', 'account', 'nexus', 'APIKey'], '');
-      if (APIKEY === '') {
-        showError(context.api.store.dispatch,
-          'An error occurred endorsing a mod',
-          'You are not logged in!', false, notificationId);
+    context.api.events.on('submit-feedback',
+          (message: string, feedbackFiles: string[],
+           anonymous: boolean, callback: (err: Error) => void) => {
+      const APIKey: string = anonymous
+        ? null
+        : getSafe(context.api.store.getState(),
+                  ['confidential', 'account', 'nexus', 'APIKey'], undefined);
+      if (APIKey === undefined) {
+        callback(new Error('You need to be logged in to send (non-anonymous) feedback'));
       } else {
-        submitFeedbackImpl(context.api.store, APIKEY, userId, feedbackFiles, notificationId);
+        submitFeedback(APIKey, message, feedbackFiles)
+          .then(() => callback(null))
+          .catch(err => callback(err));
       }
     });
 

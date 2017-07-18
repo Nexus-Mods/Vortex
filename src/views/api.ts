@@ -1,4 +1,5 @@
 import Advanced from './Advanced';
+import BinaryToggle from './BinaryToggle';
 import DNDContainer from './DNDContainer';
 import Dropzone from './Dropzone';
 import FormFeedbackAwesome from './FormFeedbackAwesome';
@@ -17,4 +18,4 @@ import * as tooltip from './TooltipControls';
 export {Advanced, DNDContainer, Dropzone, FormFeedbackAwesome, FormInput, ChangeDataHandler,
         Icon, IconBar, ITableRowAction, MainPage, More, Table,
         DateTimeFilter as TableDateTimeFilter, NumericFilter as TableNumericFilter,
-        TextFilter as TableTextFilter, makeGetSelection, ToolbarIcon, tooltip};
+        BinaryToggle, TextFilter as TableTextFilter, makeGetSelection, ToolbarIcon, tooltip};

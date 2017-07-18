@@ -7,14 +7,15 @@ import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import {
-  actions, ComponentEx, Dropzone, Icon, IconBar, ITableRowAction, log, MainPage, Table,
-  tooltip, types, util,
+  actions, BinaryToggle, ComponentEx, Dropzone, Icon, IconBar, ITableRowAction, log, MainPage,
+  Table, tooltip, types, util,
 } from 'nmm-api';
 import * as os from 'os';
 import * as path from 'path';
 import * as React from 'react';
 import { Col, ControlLabel, DropdownButton, FormGroup, Grid,
-         ListGroup, ListGroupItem, MenuItem, Row } from 'react-bootstrap';
+  ListGroup, ListGroupItem, MenuItem, Row,
+} from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { Fixed, Flex, Layout } from 'react-layout-pane';
 import { connect } from 'react-redux';
@@ -24,11 +25,11 @@ type ControlMode = 'urls' | 'files';
 
 interface IConnectedProps {
   feedbackFiles: { [fileId: string]: IFeedbackFile };
-  userInfo: types.IValidateKeyData;
 }
 
 interface IActionProps {
   onShowActivity: (message: string, id?: string) => void;
+  onDismissNotification: (id: string) => void;
   onRemoveFeedbackFile: (feedbackFileId: string) => void;
   onShowDialog: (type: types.DialogType, title: string, content: types.IDialogContent,
                  actions: types.IDialogActions) => void;
@@ -41,6 +42,8 @@ type Props = IConnectedProps & IActionProps;
 
 interface IComponentState {
   feedbackMessage: string;
+  anonymous: boolean;
+  sending: boolean;
 }
 
 const SAMPLE_REPORT = 'E.g. \n' +
@@ -57,6 +60,8 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
 
     this.initState({
       feedbackMessage: '',
+      anonymous: false,
+      sending: false,
     });
 
     this.feedbackActions = [
@@ -73,14 +78,11 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
 
     return (
       <MainPage>
-        <Layout type='column'>
+        <Layout type='column' className='feedback-page'>
           <Fixed>
             <div>
               <h3>{t('Provide Feedback\n')}</h3>
             </div>
-            <p>
-              {t('Please note: no personal information will be sent when providing feedback')}
-            </p>
             <h4>
               {t('Describe in detail what you were doing and the feedback ' +
                  'you would like to submit')}
@@ -99,7 +101,9 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       <ListGroupItem
         key={feedbackFiles[feedbackFile].filename}
       >
-        <p style={{ display: 'inline' }}>{feedbackFiles[feedbackFile].filename}</p>
+        <p style={{ display: 'inline' }}>
+          {feedbackFiles[feedbackFile].filename}
+        </p>
         <p style={{ display: 'inline' }}>
           {' '}({ util.bytesToString(feedbackFiles[feedbackFile].size) })
         </p>
@@ -117,6 +121,10 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
 
   private dropFeedback = (type: ControlMode, feedbackFilePaths: string[]) => {
     const { onAddFeedbackFile } = this.props;
+
+    if (feedbackFilePaths.length === 0) {
+      return;
+    }
 
     if (type === 'files') {
       fs.statAsync(feedbackFilePaths[0])
@@ -163,16 +171,17 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
         title={t('Attach')}
         onSelect={this.attach}
       >
-        <MenuItem eventKey='sysinfo'>{t('System Information')}</MenuItem>
-        <MenuItem eventKey='log'>{t('Vortex Log')}</MenuItem>
-        <MenuItem eventKey='settings'>{t('Application Settings')}</MenuItem>
-        <MenuItem eventKey='state'>{t('Application State')}</MenuItem>
+        <MenuItem draggable={false} eventKey='sysinfo'>{t('System Information')}</MenuItem>
+        <MenuItem draggable={false} eventKey='log'>{t('Vortex Log')}</MenuItem>
+        <MenuItem draggable={false} eventKey='settings'>{t('Application Settings')}</MenuItem>
+        <MenuItem draggable={false} eventKey='state'>{t('Application State')}</MenuItem>
       </DropdownButton>
     );
   }
 
   private renderFilesArea(): JSX.Element {
     const { t, feedbackFiles } = this.props;
+    const { anonymous, sending } = this.state;
     return (
       <Fixed>
         <Layout type='row' style={{ position: 'static' }}>
@@ -192,17 +201,28 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
           </Flex>
           <Fixed>
             <tooltip.Button
-              className='btn.embed'
+              style={{ display: 'block', marginLeft: 'auto', marginRight: 0 }}
               id='btn-submit-feedback'
               tooltip={t('Submit Feedback')}
               onClick={this.submitFeedback}
+              disabled={sending}
             >
               {t('Submit Feedback')}
             </tooltip.Button>
+            <BinaryToggle
+              value={anonymous}
+              onToggle={this.setAnonymous}
+            >
+              {t('Send anonymously')}
+            </BinaryToggle>
           </Fixed>
         </Layout>
       </Fixed>
     );
+  }
+
+  private setAnonymous = (value: boolean) => {
+    this.nextState.anonymous = value;
   }
 
   private attach = (eventKey: any) => {
@@ -248,9 +268,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       'Memory: ' + util.bytesToString((process as any).getSystemMemoryInfo().total * 1024),
       'System: ' + `${os.platform()} (${os.release()})`,
     ];
-    this.setState(update(this.state, {
-      feedbackMessage: { $set: sysInfo.join('\n') + '\n' + this.state.feedbackMessage },
-    }));
+    this.nextState.feedbackMessage = sysInfo.join('\n') + '\n' + this.state.feedbackMessage;
   }
 
   private attachState(stateKey: string, name: string) {
@@ -290,34 +308,54 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   }
 
   private submitFeedback = (event) => {
-    const { feedbackFiles, onClearFeedbackFiles, onShowActivity,
-            onShowError, userInfo } = this.props;
-    const { feedbackMessage } = this.state;
+    const { feedbackFiles, onClearFeedbackFiles, onDismissNotification,
+            onShowActivity, onShowError } = this.props;
+    const { anonymous, feedbackMessage } = this.state;
     const app = appIn || remote.app;
-
-    const feedbackReport = createFeedbackReport('feedback', feedbackMessage, app.getVersion());
 
     const notificationId = 'submit-feedback';
     onShowActivity('Submitting feedback', notificationId);
 
-    this.setState(update(this.state, {
-      feedbackMessage: { $set: '' },
-    }));
+    this.nextState.sending = true;
 
     const files: string[] = [];
     Object.keys(feedbackFiles).forEach (key => {
       files.push(feedbackFiles[key].filePath);
     });
 
-    this.context.api.events.emit('submit-feedback', userInfo.userId, files, notificationId);
-    onClearFeedbackFiles();
+    this.context.api.events.emit('submit-feedback',
+                                 feedbackMessage, files, anonymous, (err: Error) => {
+      this.nextState.sending = false;
+      if (err !== null) {
+        onShowError('Failed to send feedback', err, notificationId);
+        return;
+      }
+
+      this.nextState.feedbackMessage = '';
+
+      let removeFiles: string[];
+
+      if (feedbackFiles !== undefined) {
+        removeFiles = Object.keys(feedbackFiles)
+          .filter(fileId => ['State', 'Dump', 'LogCopy'].indexOf(feedbackFiles[fileId].type) !== -1)
+          .map(fileId => feedbackFiles[fileId].filePath);
+      }
+
+      if (removeFiles !== undefined) {
+        Promise.map(removeFiles, removeFile => fs.removeAsync(removeFile))
+          .then(() => {
+            onClearFeedbackFiles();
+            onDismissNotification(notificationId);
+          })
+          .catch(innerErr => {
+            onShowError('An error occurred removing a file', innerErr, notificationId);
+        });
+      }
+    });
   }
 
   private handleChange = (event) => {
-    this.setState(update(this.state, {
-      feedbackMessage: { $set: event.currentTarget.value },
-    }));
-
+    this.nextState.feedbackMessage = event.currentTarget.value;
   }
 }
 
@@ -331,6 +369,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(actions.showDialog(type, title, content, dialogActions)),
     onShowError: (message: string, details?: string | Error, notificationId?: string) =>
       util.showError(dispatch, message, details, false, notificationId),
+    onDismissNotification: (id: string) => dispatch(actions.dismissNotification(id)),
     onClearFeedbackFiles: () => dispatch(clearFeedbackFiles()),
     onAddFeedbackFile: (feedbackFile) => dispatch(addFeedbackFile(feedbackFile)),
   };
@@ -339,7 +378,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     feedbackFiles: state.session.feedback.feedbackFiles,
-    userInfo: state.session.nexus.userInfo,
   };
 }
 
