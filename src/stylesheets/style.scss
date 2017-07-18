@@ -12,7 +12,8 @@
   // This rule makes the dropdown relative only when it's open. This way it will still overlay
   // the header but only if the user interacts with it. This still looks slightly broken but it's
   // actually useful.
-  &.dropdown.open {
+  &.dropdown.open,
+  &.dropup.open {
     position: relative;
   }
 
@@ -457,8 +458,13 @@ a[role=menuitem] svg {
 .icon-flip-horizontal {
   transform: scale(-1, 1);
 }
+
 .icon-flip-vertical   {
   transform: scale(1, -1);
+}
+
+.icon-nexus {
+  color: black;
 }
 
 // /icons

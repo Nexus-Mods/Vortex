@@ -447,7 +447,7 @@ export interface IExtensionContext {
 
   /**
    * register an todo message that will be shown to new users until they
-   * dismiss it. You can provide a condition under which it will show.
+   * dismiss it. You can provide a condition under which it will appear.
    * Please don't overuse this as to not intimidate the user. Also keep in mind that the
    * user can dismiss any todo message without taking action and it will never appear
    * again.
@@ -460,8 +460,9 @@ export interface IExtensionContext {
    * Please note that registering this source has no other effect than adding an option
    * to the selection of mod sources, the corresponding extension has to implement
    * actual features
+   * The source can also be used to browse for further mods
    */
-  registerModSource: (id: string, name: string) => void;
+  registerModSource: (id: string, name: string, onBrowse: () => void) => void;
 
   /**
    * register a reducer to introduce new set-operations on the application

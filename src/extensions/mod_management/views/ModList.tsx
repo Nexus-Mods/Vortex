@@ -8,6 +8,7 @@ import { ComponentEx, connect, extend, translate } from '../../../util/Component
 import Debouncer from '../../../util/Debouncer';
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
+import DropdownButton from '../../../views/DropdownButton';
 import IconBar from '../../../views/IconBar';
 import MainPage from '../../../views/MainPage';
 import SuperTable, { ITableRowAction } from '../../../views/Table';
@@ -21,6 +22,7 @@ import { IProfileMod } from '../../profile_management/types/IProfile';
 import { removeMod, setModAttribute } from '../actions/mods';
 import { IMod } from '../types/IMod';
 import { IModProps } from '../types/IModProps';
+import { IModSource } from '../types/IModSource';
 import filterModInfo from '../util/filterModInfo';
 import groupMods from '../util/modGrouping';
 import modName from '../util/modName';
@@ -42,7 +44,8 @@ import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
-import { ButtonGroup, DropdownButton, Jumbotron, MenuItem } from 'react-bootstrap';
+import { Button, ButtonGroup, Jumbotron, MenuItem } from 'react-bootstrap';
+import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 
@@ -80,6 +83,7 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
 
 interface IBaseProps {
   globalOverlay: JSX.Element;
+  modSources: IModSource[];
 }
 
 interface IAttributeStateMap {
@@ -104,11 +108,15 @@ interface IActionProps {
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
+interface IComponentState {
+  bounds: ClientRect;
+}
+
 /**
  * displays the list of mods installed for the current game.
  *
  */
-class ModList extends ComponentEx<IProps, {}> {
+class ModList extends ComponentEx<IProps, IComponentState> {
   private modActions: ITableRowAction[];
   private modEnabledAttribute: ITableAttribute;
   private modNameAttribute: ITableAttribute;
@@ -125,81 +133,7 @@ class ModList extends ComponentEx<IProps, {}> {
   constructor(props: IProps) {
     super(props);
 
-    this.modNameAttribute = {
-      id: 'name',
-      name: 'Mod Name',
-      description: 'Name of the mod',
-      icon: 'quote-left',
-      calc: (mod) => modName(mod),
-      placement: 'both',
-      isToggleable: false,
-      edit: {
-        readOnly: (mod: IModWithState) => mod.state === 'downloaded',
-        onChangeValue: (modId: string, value: any) =>
-          props.onSetModAttribute(this.props.gameMode, modId, 'customFileName', value),
-      },
-      isSortable: true,
-      filter: new TextFilter(true),
-      sortFunc: (lhs: string, rhs: string, locale: string): number => {
-        return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
-      },
-    };
-
-    this.modEnabledAttribute = {
-      id: 'enabled',
-      name: 'Status',
-      description: 'Is mod enabled in current profile',
-      icon: 'check-o',
-      calc: (mod: IModWithState) => {
-        if (mod.state === 'downloaded') {
-          return 'Uninstalled';
-        }
-        return mod.enabled === true ? 'Enabled' : 'Disabled';
-      },
-      placement: 'table',
-      isToggleable: false,
-      edit: {
-        inline: true,
-        choices: () => [
-          { key: 'enabled', text: 'Enabled' },
-          { key: 'disabled', text: 'Disabled' },
-          { key: 'uninstalled', text: 'Uninstalled' },
-        ],
-        onChangeValue: this.changeModEnabled,
-      },
-      isSortable: false,
-    };
-
-    this.modVersionDetailAttribute = {
-      id: 'versionDetail',
-      name: 'Version',
-      description: 'File version (according to the author)',
-      help: getText('version', this.props.t),
-      icon: 'cake',
-      calc: (mod: IModWithState) => getSafe(mod.attributes, ['version'], ''),
-      placement: 'detail',
-      isToggleable: false,
-      edit: {
-        readOnly: (mod: IModWithState) => mod.state === 'downloaded',
-        validate: (input: string) => semver.valid(input) ? 'success' : 'warning',
-        onChangeValue: (modId: string, value: any) =>
-          props.onSetModAttribute(this.props.gameMode, modId, 'version', value),
-      },
-      isSortable: false,
-    };
-
-    this.modVersionAttribute = {
-      id: 'version',
-      name: 'Version',
-      description: 'File version (according to the author)',
-      icon: 'cake',
-      calc: this.calcVersion,
-      customRenderer: this.renderVersion,
-      placement: 'table',
-      isToggleable: true,
-      edit: {},
-      isSortable: false,
-    };
+    this.initAttributes();
 
     this.modActions = [
       {
@@ -235,12 +169,25 @@ class ModList extends ComponentEx<IProps, {}> {
     this.mUpdateDebouncer = new Debouncer((newProps) => {
       return this.updateModsWithState(newProps);
     }, 100);
+
+    this.state = {
+      bounds: { top: 0, bottom: 0, height: 0, width: 0, left: 0, right: 0 },
+    };
   }
 
   public componentWillMount() {
     this.mIsMounted = true;
     this.updateModsWithState(this.props)
     .then(() => this.forceUpdate());
+  }
+
+  public setBoundsRef = ref => {
+    if (ref !== null) {
+      const node = ReactDOM.findDOMNode(ref);
+      this.setState({
+        bounds: node.getBoundingClientRect(),
+      });
+    }
   }
 
   public componentWillUnmount() {
@@ -261,7 +208,7 @@ class ModList extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { t, gameMode } = this.props;
+    const { t, gameMode, modSources } = this.props;
 
     if (gameMode === undefined) {
       // shouldn't happen
@@ -273,7 +220,7 @@ class ModList extends ComponentEx<IProps, {}> {
     }
 
     return (
-      <MainPage>
+      <MainPage ref={this.setBoundsRef}>
         <MainPage.Header>
           <IconBar
             group='mod-icons'
@@ -296,7 +243,9 @@ class ModList extends ComponentEx<IProps, {}> {
               INSTALL_TIME,
             ]}
             actions={this.modActions}
-          />
+          >
+          {this.renderMoreMods(modSources)}
+          </SuperTable>
         </MainPage.Body>
         <MainPage.Overlay>
           <IconBar
@@ -308,6 +257,31 @@ class ModList extends ComponentEx<IProps, {}> {
         </MainPage.Overlay>
       </MainPage>
     );
+  }
+
+  private renderMoreMods(sources: IModSource[]): JSX.Element {
+    const { t } = this.props;
+    if (sources.length === 1) {
+      return (
+        <Button onClick={sources[0].onBrowse}>
+          {t('Get more mods')}
+        </Button>
+      );
+    }
+
+    return (
+      <DropdownButton
+        id='btn-more-mods'
+        title={t('Get more mods')}
+        bounds={this.state.bounds}
+      >
+        {sources.map(this.renderModSource)}
+      </DropdownButton>
+    );
+  }
+
+  private renderModSource = (source: IModSource) => {
+    return <MenuItem key={source.id} onSelect={source.onBrowse}>{source.name}</MenuItem>;
   }
 
   private calcVersion = (mod: IModWithState): string => {
@@ -337,6 +311,7 @@ class ModList extends ComponentEx<IProps, {}> {
           title={mod.attributes['version'] || ''}
           id={`version-dropdown-${mod.id}`}
           onSelect={this.selectVersion}
+          bounds={this.state.bounds}
         >
           {alternatives.map(altId => this.renderVersionOptions(mod.id, altId))}
         </DropdownButton>
@@ -390,6 +365,85 @@ class ModList extends ComponentEx<IProps, {}> {
         />
       </MenuItem>
     );
+  }
+
+  private initAttributes() {
+    this.modNameAttribute = {
+      id: 'name',
+      name: 'Mod Name',
+      description: 'Name of the mod',
+      icon: 'quote-left',
+      calc: (mod) => modName(mod),
+      placement: 'both',
+      isToggleable: false,
+      edit: {
+        readOnly: (mod: IModWithState) => mod.state === 'downloaded',
+        onChangeValue: (modId: string, value: any) =>
+          this.props.onSetModAttribute(this.props.gameMode, modId, 'customFileName', value),
+      },
+      isSortable: true,
+      filter: new TextFilter(true),
+      sortFunc: (lhs: string, rhs: string, locale: string): number => {
+        return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
+      },
+    };
+
+    this.modEnabledAttribute = {
+      id: 'enabled',
+      name: 'Status',
+      description: 'Is mod enabled in current profile',
+      icon: 'check-o',
+      calc: (mod: IModWithState) => {
+        if (mod.state === 'downloaded') {
+          return 'Uninstalled';
+        }
+        return mod.enabled === true ? 'Enabled' : 'Disabled';
+      },
+      placement: 'table',
+      isToggleable: false,
+      edit: {
+        inline: true,
+        choices: () => [
+          { key: 'enabled', text: 'Enabled' },
+          { key: 'disabled', text: 'Disabled' },
+          { key: 'uninstalled', text: 'Uninstalled' },
+        ],
+        onChangeValue: this.changeModEnabled,
+      },
+      isSortable: false,
+    };
+
+    this.modVersionDetailAttribute = {
+      id: 'versionDetail',
+      name: 'Version',
+      description: 'File version (according to the author)',
+      help: getText('version', this.props.t),
+      icon: 'cake',
+      calc: (mod: IModWithState) => getSafe(mod.attributes, ['version'], ''),
+      placement: 'detail',
+      isToggleable: false,
+      edit: {
+        readOnly: (mod: IModWithState) => mod.state === 'downloaded',
+        validate: (input: string) => semver.valid(input) ? 'success' : 'warning',
+        onChangeValue: (modId: string, value: any) =>
+          this.props.onSetModAttribute(this.props.gameMode, modId, 'version', value),
+      },
+      isSortable: false,
+    };
+
+    this.modVersionAttribute = {
+      id: 'version',
+      name: 'Version',
+      description: 'File version (according to the author)',
+      icon: 'cake',
+      calc: this.calcVersion,
+      customRenderer: this.renderVersion,
+      placement: 'table',
+      isToggleable: true,
+      edit: {},
+      isSortable: false,
+    };
+
   }
 
   private updateModsWithState(newProps: IProps): Promise<void> {
@@ -693,4 +747,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 export default
   translate(['common'], { wait: false })(
     connect(mapStateToProps, mapDispatchToProps)(
-        ModList)) as React.ComponentClass<{}>;
+      ModList)) as React.ComponentClass<{}>;

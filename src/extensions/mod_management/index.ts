@@ -36,6 +36,7 @@ import {
   IFileChange,
   IModActivator,
 } from './types/IModActivator';
+import {IModSource} from './types/IModSource';
 import {ITestSupported} from './types/ITestSupported';
 import * as basicInstaller from './util/basicInstaller';
 import { registerAttributeExtractor } from './util/filterModInfo';
@@ -71,11 +72,6 @@ interface IInstaller {
 
 const installers: IInstaller[] = [];
 
-interface IModSource {
-  id: string;
-  name: string;
-}
-
 const modSources: IModSource[] = [];
 
 export interface IExtensionContextExt extends IExtensionContext {
@@ -91,8 +87,8 @@ function registerInstaller(priority: number, testSupported: ITestSupported, inst
   installers.push({ priority, testSupported, install });
 }
 
-function registerModSource(id: string, name: string) {
-  modSources.push({ id, name });
+function registerModSource(id: string, name: string, onBrowse: () => void) {
+  modSources.push({ id, name, onBrowse });
 }
 
 function getActivator(state: IState): IModActivator {
@@ -344,6 +340,7 @@ function init(context: IExtensionContextExt): boolean {
     group: 'per-game',
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
     activity: modsActivity,
+    props: () => ({ modSources }),
   });
 
   context.registerAction('mod-icons', 105, ActivationButton, () => {

@@ -177,6 +177,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
             </thead>
             {this.renderBody(this.mVisibleAttributes)}
           </Table>
+          { this.props.children }
         </div>
         <div className={`table-details-pane ${openClass}`}>
           {this.renderDetails(rowIds)}

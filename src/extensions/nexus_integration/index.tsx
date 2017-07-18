@@ -328,6 +328,10 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
   return null;
 }
 
+function openNexusPage(games: string[]) {
+  opn(`http://www.nexusmods.com/${convertGameId(games[0])}`);
+}
+
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
@@ -344,7 +348,10 @@ function init(context: IExtensionContextExt): boolean {
     context.api.store.dispatch(setAssociatedWithNXMURLs(true));
   };
 
-  context.registerModSource('nexus', 'Nexus Mods');
+  context.registerModSource('nexus', 'Nexus Mods', () => {
+    const gameMode = activeGameId(context.api.store.getState());
+    opn(`http://www.nexusmods.com/${convertGameId(gameMode)}`);
+  });
 
   context.registerToDo('nxm-login', () => ({
     APIKey: context.api.store.getState().confidential.account.nexus.APIKey,
@@ -455,6 +462,18 @@ function init(context: IExtensionContextExt): boolean {
       version: getSafe(input.nexus, ['fileInfo', 'version'], undefined),
     });
   });
+
+  context.registerAction('game-discovered-buttons', 120, 'nexus', {},
+                         context.api.translate('Open Nexus Page'),
+                         openNexusPage);
+
+  context.registerAction('game-managed-buttons', 120, 'nexus', {},
+                         context.api.translate('Open Nexus Page'),
+                         openNexusPage);
+
+  context.registerAction('game-undiscovered-buttons', 120, 'nexus', {},
+                         context.api.translate('Open Nexus Page'),
+                         openNexusPage);
 
   context.once(() => {
     const registerFunc = () => {
