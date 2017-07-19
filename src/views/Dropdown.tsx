@@ -1,15 +1,17 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { DropdownButton } from 'react-bootstrap';
+import { Dropdown } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
 interface IBaseProps {
   container?: Element;
 }
 
-type IProps = IBaseProps & ReactBootstrap.DropdownButtonProps;
+type IProps = IBaseProps & ReactBootstrap.DropdownProps;
 
-class MyDropdownButton extends React.Component<IProps, { up: boolean }> {
+class MyDropdown extends React.Component<IProps, { up: boolean }> {
+  public static Menu = Dropdown.Menu;
+  public static Toggle = Dropdown.Toggle;
   private mNode: Element;
 
   constructor(props: IProps) {
@@ -26,7 +28,11 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean }> {
 
   public render(): JSX.Element {
     const relayProps: any = _.omit(this.props, ['container', 'dropup', 'onToggle']);
-    return <DropdownButton dropup={this.state.up} onToggle={this.onToggle} {...relayProps} />;
+    return (
+      <Dropdown dropup={this.state.up} onToggle={this.onToggle} {...relayProps}>
+        {this.props.children}
+      </Dropdown>
+      );
   }
 
   private get bounds(): ClientRect {
@@ -57,4 +63,4 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean }> {
   }
 }
 
-export default MyDropdownButton;
+export default MyDropdown;

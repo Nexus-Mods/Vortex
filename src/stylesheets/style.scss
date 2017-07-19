@@ -210,7 +210,7 @@ textarea {
   color: $text-color;
   overflow: hidden;
   white-space: nowrap;
-  padding: 10px 25px 10px 10px;
+  padding: 10px 25px 10px 14px;
   -webkit-user-drag: none;
 }
 
@@ -220,10 +220,10 @@ textarea {
 }
 
 .nav-pills.nav-stacked > li.active > a,
-  .nav-pills.nav-pills.nav-stacked > li.active > a:hover,
-  .nav-pills.nav-stacked > li.active > a:focus {
+.nav-pills.nav-pills.nav-stacked > li.active > a:hover,
+.nav-pills.nav-stacked > li.active > a:focus {
   border-left: 4px solid $brand-warning;
-  padding-left: 6px;
+  padding-left: 10px;
 }
 
 .nav-pills>li>a svg {
@@ -427,7 +427,6 @@ a[role=menuitem] svg {
   width: 1.1em;
   display: inline-block;
   vertical-align: middle;
-  margin: 4px;
 }
 
 .icon-border {
@@ -777,14 +776,19 @@ a[role=menuitem] svg {
   display: flex;
   border: $brand-secondary solid;
   border-width: 0px 1px;
+  height: 100%;
+  >div {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
 }
 
 .mainpage-header-container {
   flex: 1 1 0%;
-}
-
-.mainpage-header-container > div {
-  width: 100%;
+  >div {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 // footer
@@ -925,10 +929,10 @@ a[role=menuitem] svg {
   flex: 1 1 0%;
   padding: 5px;
   min-width: 250px;
-  &.show {
+  &.table-form-details-show {
     overflow-y: auto;
   }
-  &.hide {
+  &.table-form-details-hide {
     overflow-y: hidden;
   }
 }
@@ -1134,15 +1138,18 @@ a[role=menuitem] svg {
 }
 
 .table-mods .dropdown > button,
+.table-mods .dropup > button,
 .table-extensions .dropdown > button,
- {
+.table-extensions .dropup > button {
   padding: 2px 10px;
   border: 0px;
   min-width: 100px;
 }
 
 .table-mods .dropdown,
-.table-extensions .dropdown {
+.table-mods .dropup,
+.table-extensions .dropdown,
+.table-extensions .dropup {
   display: inline-flex;
 }
 
@@ -1581,6 +1588,9 @@ a[role=menuitem] svg {
 
 #popover-mod-description {
   max-width: 700px;
+  // this popover tends to align with the top of the screen so the border isn't visible.
+  // This is irritating because the user has to look twice to see that nothing was cut off
+  margin-top: 5px;
   img {
     max-width: 100%;
   }

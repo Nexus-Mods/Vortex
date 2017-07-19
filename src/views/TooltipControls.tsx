@@ -83,6 +83,7 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
       return (
         <BootstrapButton {...buttonProps} title={this.props.tooltip}>
           <SvgIcon name={this.props.icon} {...iconProps} />
+          {this.props.children}
         </BootstrapButton>
       );
     } else {
@@ -96,6 +97,7 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
         >
           <BootstrapButton {...buttonProps}>
             <SvgIcon name={this.props.icon} {...iconProps} />
+            {this.props.children}
           </BootstrapButton>
         </OverlayTrigger>
       );

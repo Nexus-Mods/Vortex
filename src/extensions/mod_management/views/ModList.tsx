@@ -9,6 +9,7 @@ import Debouncer from '../../../util/Debouncer';
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
 import DropdownButton from '../../../views/DropdownButton';
+import Icon from '../../../views/Icon';
 import IconBar from '../../../views/IconBar';
 import MainPage from '../../../views/MainPage';
 import SuperTable, { ITableRowAction } from '../../../views/Table';
@@ -129,6 +130,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private mLastUpdateProps: IModProps = { mods: {}, modState: {}, downloads: {} };
   private mIsMounted: boolean = false;
   private staticButtons: IActionDefinition[];
+  private mRef: Element;
 
   constructor(props: IProps) {
     super(props);
@@ -182,12 +184,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   public setBoundsRef = ref => {
-    if (ref !== null) {
-      const node = ReactDOM.findDOMNode(ref);
-      this.setState({
-        bounds: node.getBoundingClientRect(),
-      });
-    }
+    this.mRef = ReactDOM.findDOMNode(ref);
+    this.forceUpdate();
   }
 
   public componentWillUnmount() {
@@ -263,17 +261,29 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     if (sources.length === 1) {
       return (
-        <Button onClick={sources[0].onBrowse}>
+        <IconButton
+          id='btn-more-mods'
+          tooltip={t('Browse for more mods')}
+          onClick={sources[0].onBrowse}
+          icon='plus'
+        >
           {t('Get more mods')}
-        </Button>
+        </IconButton>
       );
     }
+
+    const title = (
+      <div style={{ display: 'inline' }}>
+        <Icon name='plus' />
+        {t('Get more mods')}
+      </div>
+    );
 
     return (
       <DropdownButton
         id='btn-more-mods'
-        title={t('Get more mods')}
-        bounds={this.state.bounds}
+        title={title as any}
+        container={this.mRef}
       >
         {sources.map(this.renderModSource)}
       </DropdownButton>
@@ -311,7 +321,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           title={mod.attributes['version'] || ''}
           id={`version-dropdown-${mod.id}`}
           onSelect={this.selectVersion}
-          bounds={this.state.bounds}
+          container={this.mRef}
         >
           {alternatives.map(altId => this.renderVersionOptions(mod.id, altId))}
         </DropdownButton>
@@ -666,7 +676,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     let removeMods: boolean;
     let removeArchive: boolean;
-    let disableDependent: boolean;
 
     const modNames = modIds.map(modId => {
       let name = modName(this.mModsWithState[modId], {
@@ -685,7 +694,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       checkboxes: [
         { id: 'mod', text: t('Remove Mod'), value: true },
         { id: 'archive', text: t('Remove Archive'), value: false },
-        { id: 'dependents', text: t('Disable Dependent') + ' (not implemented)', value: false },
       ],
     }, {
         Cancel: null,
@@ -693,8 +701,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       }).then((result: IDialogResult) => {
         removeMods = result.action === 'Remove' && result.input.mod;
         removeArchive = result.action === 'Remove' && result.input.archive;
-        disableDependent = result.action === 'Remove' && result.input.dependents;
-        // TODO: implement disableDependent
 
         return (removeMods ? this.removeMods(modIds) : Promise.resolve())
           .then(() => modIds.forEach(key => {

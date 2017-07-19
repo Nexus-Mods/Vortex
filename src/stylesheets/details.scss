@@ -307,7 +307,7 @@ $tooltip-arrow-color:         $tooltip-bg;
 
 $popover-bg:                          $brand-bg;
 $popover-max-width:                   400px;
-$popover-border-color:                $gray-lighter;
+$popover-border-color:                $brand-secondary;
 $popover-fallback-border-color:       $gray-light;
 
 $popover-title-bg:                    darken($popover-bg, 3%);
@@ -316,7 +316,7 @@ $popover-arrow-width:                 10px;
 $popover-arrow-color:                 $popover-bg;
 
 $popover-arrow-outer-width:           ($popover-arrow-width + 1);
-$popover-arrow-outer-color:           fadein($popover-border-color, 5%);
+$popover-arrow-outer-color:           $popover-border-color;
 $popover-arrow-outer-fallback-color:  darken($popover-fallback-border-color, 20%);
 
 

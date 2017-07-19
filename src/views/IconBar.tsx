@@ -133,9 +133,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             icon='menu-dots'
             rotate={90}
             ref={this.setButtonRef}
-          >
-            {dotdotdot}
-          </IconButton>
+          />
           <PortalMenu
             layer={this.context.menuLayer}
             open={this.state.open}

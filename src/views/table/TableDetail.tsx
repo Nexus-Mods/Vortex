@@ -274,12 +274,13 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
         (rowData[rowIds[0]][obj.id] !== undefined)
         && ((rowIds.length === 1)
           || obj.supportsMultiple));
+    const visClass = (show ? 'table-form-details-show' : 'table-form-details-hide');
     return (
       <div style={{ height: '100%', position: 'relative', display: 'flex', overflowX: 'hidden' }}>
         {show ? null : this.renderHandle() }
         <div style={{ display: 'flex' }} >
           {detailList.length > 0 ? (
-            <form className={'table-form-details ' + (show ? 'show' : 'hide')}>
+            <form className={'table-form-details ' + visClass}>
               {detailList.map(obj => this.renderDetail(obj))}
             </form>
           ) : (
@@ -320,7 +321,7 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
       <Button style={style}
         onClick={onToggleShow}
       >
-        <div style={textStyle}><Icon name='bold-up' />{title || t('Details')}</div>
+        <div style={textStyle}><Icon name='bold-up' />{' '}{title || t('Details')}</div>
       </Button>
     );
   }

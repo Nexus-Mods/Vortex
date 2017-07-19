@@ -1,5 +1,6 @@
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 
+import Dropdown from '../Dropdown';
 import ExtensionGate from '../ExtensionGate';
 import IconBar from '../IconBar';
 import {ITableRowAction} from '../Table';
@@ -8,7 +9,7 @@ import VisibilityProxy from '../VisibilityProxy';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { Dropdown, FormControl, MenuItem, SplitButton } from 'react-bootstrap';
+import { FormControl, MenuItem, SplitButton } from 'react-bootstrap';
 
 interface ICellProps {
   language: string;
@@ -18,6 +19,7 @@ interface ICellProps {
   rawData: any;
   tableId: string;
   t: I18next.TranslationFunction;
+  container: HTMLElement;
 }
 
 class TableCell extends React.Component<ICellProps, {}> {
@@ -28,7 +30,7 @@ class TableCell extends React.Component<ICellProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { t, attribute, data, language, rawData, rowId, tableId } = this.props;
+    const { t, attribute, container, data, language, rawData, rowId, tableId } = this.props;
 
     // if a custom renderer was set then rowData is the raw object
     // passed to the table by the user.
@@ -51,7 +53,7 @@ class TableCell extends React.Component<ICellProps, {}> {
         const currentChoice = choices.find(choice => choice.text === data);
         const key = currentChoice !== undefined ? currentChoice.key : undefined;
         return (
-          <Dropdown id={`dropdown-${tableId}-${attribute.id}`}>
+          <Dropdown id={`dropdown-${tableId}-${attribute.id}`} container={container}>
             <Button
               id={`btn-${tableId}-${attribute.id}`}
               className={`btn-${tableId}-${attribute.id}-${key}`}
@@ -226,7 +228,7 @@ class TableRow extends React.Component<IRowProps, {}> {
     calculatedData: any,
     t: I18next.TranslationFunction): JSX.Element {
 
-    const { data, language, tableId } = this.props;
+    const { container, data, language, tableId } = this.props;
 
     return (
       <TableCell
@@ -237,6 +239,7 @@ class TableRow extends React.Component<IRowProps, {}> {
         rowId={data.__id}
         tableId={tableId}
         language={language}
+        container={container}
       />
     );
   }
