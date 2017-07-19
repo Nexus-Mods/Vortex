@@ -325,7 +325,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
               nextVisible !== undefined
                 ? (
                   <Pager.Item next disabled={nextDisabled} onClick={this.next}>
-                    {nextVisible.name}
+                    {nextVisible.name || t('Next')}
                   </Pager.Item>
                 ) : (
                   <Pager.Item next disabled={nextDisabled} onClick={this.next}>

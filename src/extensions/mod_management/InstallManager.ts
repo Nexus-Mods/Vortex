@@ -786,12 +786,14 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
           // for each source, copy or rename to destination(s)
           return Promise.map(Object.keys(sourceMap), srcRel => {
             const sourcePath = path.join(tempPath, srcRel);
-            return Promise.map(sourceMap[srcRel], (destRel, idx, len) => {
+            // need to do this sequentially, otherwise we can't use the idx to
+            // decide between rename and copy
+            return Promise.mapSeries(sourceMap[srcRel], (destRel, idx, len) => {
               const destPath = path.join(destinationPath, destRel);
               return fs.ensureDirAsync(path.dirname(destPath))
-                  .then(() => idx === len - 1 ?
-                                  fs.renameAsync(sourcePath, destPath) :
-                                  fs.copyAsync(sourcePath, destPath));
+                .then(() => idx === len - 1
+                  ? fs.renameAsync(sourcePath, destPath)
+                  : fs.copyAsync(sourcePath, destPath));
             });
           });
         })

@@ -62,6 +62,8 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
   });
 }
 
+let currentInstallPromise: Promise<any> = Promise.resolve();
+
 function install(files: string[], scriptPath: string,
                  progressDelegate: ProgressDelegate,
                  coreDelegates: Core): Promise<any> {
@@ -74,7 +76,7 @@ function install(files: string[], scriptPath: string,
     });
   }
 
-  return new Promise((resolve, reject) => {
+  currentInstallPromise = new Promise((resolve, reject) => {
     installLib({ files, scriptPath, progressDelegate, coreDelegates },
       (err: Error, result: any) => {
         if ((err !== null) && (err !== undefined)) {
@@ -86,6 +88,7 @@ function install(files: string[], scriptPath: string,
         }
       });
   });
+  return currentInstallPromise;
 }
 
 export interface IExtensionContextExt extends IExtensionContext {
@@ -94,15 +97,18 @@ export interface IExtensionContextExt extends IExtensionContext {
 
 function init(context: IExtensionContextExt): boolean {
   context.registerInstaller(
-      100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
-        context.api.store.dispatch(setInstallerDataPath(scriptPath));
-        const coreDelegates = new Core(context.api, gameId);
-        return install(files, scriptPath, progressDelegate, coreDelegates)
-            .catch((err) => {
-              context.api.store.dispatch(endDialog());
-              return Promise.reject(err);
-            })
-            .finally(() => coreDelegates.detach());
+    100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
+      const coreDelegates = new Core(context.api, gameId);
+      return currentInstallPromise
+        .then(() => {
+          context.api.store.dispatch(setInstallerDataPath(scriptPath));
+          return install(files, scriptPath, progressDelegate, coreDelegates);
+        })
+        .catch((err) => {
+          context.api.store.dispatch(endDialog());
+          return Promise.reject(err);
+        })
+        .finally(() => coreDelegates.detach());
       });
 
   context.registerDialog('fomod-installer', InstallerDialog);

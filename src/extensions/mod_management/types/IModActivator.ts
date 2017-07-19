@@ -162,14 +162,6 @@ export interface IModActivator {
                     activation: IDeployedFile[]) => Promise<IFileChange[]>;
 
   /**
-   * forget a set of files, that is: if the this activator keeps track of activation.
-   * This is used to correct the record if "externalChanges()" indicates a file was
-   * activated but is no longer there.
-   * Therefore if externalChanges is implemented, so should forgetFiles
-   */
-  forgetFiles: (filePaths: string[]) => Promise<void>;
-
-  /**
    * returns whether this mod activator currently has mods activated in the
    * game directory
    *

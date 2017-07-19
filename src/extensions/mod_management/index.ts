@@ -224,6 +224,11 @@ function genUpdateModActivation() {
     if ((modState === lastActivatedState) &&
         (gameDiscovery === lastGameDiscovery)) {
       // early out if nothing relevant to the deployment has changed
+      api.sendNotification({
+        type: 'info',
+        message: t('No changes to deploy'),
+        displayMS: 3000,
+      });
       return Promise.resolve();
     }
 
@@ -291,8 +296,10 @@ function genUpdateModActivation() {
                 // remove files that the user wants to restore from
                 // the activation list because then they get reinstalled
                 if (actionGroups['restore'] !== undefined) {
-                  return activator.forgetFiles(
-                      actionGroups['restore'].map((entry) => entry.filePath));
+                  const restoreSet = new Set(actionGroups['restore'].map(entry => entry.filePath));
+                  const newActivation = lastActivation.filter(entry =>
+                    !restoreSet.has(entry.relPath));
+                  lastActivation = newActivation;
                 } else {
                   return Promise.resolve();
                 }
@@ -451,9 +458,9 @@ function init(context: IExtensionContextExt): boolean {
     }
 
     const updateModActivation = genUpdateModActivation();
-    const activationTimer = new Debouncer((manual: boolean) => {
-      return updateModActivation(context.api, manual);
-    }, 2000);
+    const activationTimer = new Debouncer(
+      (manual: boolean) => updateModActivation(context.api, manual)
+    , 2000);
 
     context.api.events.on('activate-mods', (callback: (err: Error) => void) => {
       activationTimer.runNow(callback, true);

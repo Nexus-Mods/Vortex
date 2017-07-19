@@ -2,8 +2,7 @@ import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
-import {activeGameId, installPath} from '../../util/selectors';
-import {loadData, saveData} from '../../util/storage';
+import * as selectors from '../../util/selectors';
 import walk from '../../util/walk';
 
 import {IMod} from './types/IMod';
@@ -76,7 +75,7 @@ abstract class LinkingActivator implements IModActivator {
 
   public finalize(dataPath: string): Promise<IDeployedFile[]> {
     const state = this.mApi.store.getState();
-    const gameId = activeGameId(state);
+    const gameId = selectors.activeGameId(state);
 
     let added: string[];
     let removed: string[];
@@ -85,7 +84,7 @@ abstract class LinkingActivator implements IModActivator {
 
     let errorCount: number = 0;
 
-    const installPathStr = installPath(state);
+    const installPathStr = selectors.installPath(state);
 
     // unlink all files that were removed or changed
     ({added, removed, sourceChanged, contentChanged} =
@@ -187,60 +186,46 @@ abstract class LinkingActivator implements IModActivator {
   public externalChanges(installPath: string, dataPath: string,
                          activation: IDeployedFile[]): Promise<IFileChange[]> {
     const state = this.mApi.store.getState();
-    const gameId = activeGameId(state);
+    const gameId = selectors.activeGameId(state);
 
     const nonLinks: IFileChange[] = [];
 
     return Promise.map(activation, fileEntry => {
-                    const fileDataPath = path.join(dataPath, fileEntry.relPath);
-                    const fileModPath = path.join(installPath, fileEntry.source,
-                                                  fileEntry.relPath);
-                    return fs.statAsync(fileDataPath)
-                        .then((stat: fs.Stats):
-                                  Promise<boolean> => {
-                                    if (stat.mtime.getTime() !==
-                                        fileEntry.time) {
-                                      nonLinks.push({
-                                        filePath: fileEntry.relPath,
-                                        source: fileEntry.source,
-                                        changeType: 'valchange',
-                                      });
-                                      return Promise.resolve(undefined);
-                                    } else {
-                                      return this.isLink(fileDataPath,
-                                                         fileModPath);
-                                    }
-                                  })
-                        .then((isLink?: boolean) => {
-                          if ((isLink !== undefined) && !isLink) {
-                            nonLinks.push({
-                              filePath: fileEntry.relPath,
-                              source: fileEntry.source,
-                              changeType: 'refchange',
-                            });
-                          }
-                        })
-                        .catch((err) => {
-                          // can't stat, probably the file was deleted
-                          nonLinks.push({
-                            filePath: fileEntry.relPath,
-                            source: fileEntry.source,
-                            changeType: 'deleted',
-                          });
-                        });
-                  }).then(() => Promise.resolve(nonLinks));
-  }
-
-  public forgetFiles(filePaths: string[]): Promise<void> {
-    const state = this.mApi.store.getState();
-    const gameId = activeGameId(state);
-    return loadData(gameId, 'activation', {})
-      .then((activation: any) => {
-        filePaths.forEach((path: string) => {
-          delete activation[path.toUpperCase()];
+      const fileDataPath = path.join(dataPath, fileEntry.relPath);
+      const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
+      return fs.statAsync(fileDataPath)
+        .then((stat: fs.Stats):
+          Promise<boolean> => {
+          if (stat.mtime.getTime() !== fileEntry.time) {
+            nonLinks.push({
+              filePath: fileEntry.relPath,
+              source: fileEntry.source,
+              changeType: 'valchange',
+            });
+            return Promise.resolve(undefined);
+          } else {
+            return this.isLink(fileDataPath, fileModPath);
+          }
+        })
+        .then((isLink?: boolean) => {
+          // treat isLink === undefined as true!
+          if (isLink === false) {
+            nonLinks.push({
+              filePath: fileEntry.relPath,
+              source: fileEntry.source,
+              changeType: 'refchange',
+            });
+          }
+        })
+        .catch(err => {
+          // can't stat, probably the file was deleted
+          nonLinks.push({
+            filePath: fileEntry.relPath,
+            source: fileEntry.source,
+            changeType: 'deleted',
+          });
         });
-        return saveData(gameId, 'activation', activation);
-      });
+      }).then(() => Promise.resolve(nonLinks));
   }
 
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;

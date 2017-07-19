@@ -84,17 +84,17 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
     this.props.onRemoveRule(this.props.rule);
   }
 
-  private renderType = (type: RuleType): JSX.Element => {
+  private renderType = (ruleType: RuleType): JSX.Element => {
     const {t} = this.props;
     let renderString: string;
-    switch (type) {
+    switch (ruleType) {
       case 'before': renderString = t('Loads before'); break;
       case 'after': renderString = t('Loads after'); break;
       case 'requires': renderString = t('Requires'); break;
       case 'recommends': renderString = t('Recommends'); break;
       case 'conflicts': renderString = t('Conflicts with'); break;
       case 'provides': renderString = t('Provides'); break;
-      default: throw new Error('invalid rule type ' + type);
+      default: throw new Error('invalid rule type ' + ruleType);
     }
     return <p style={{ display: 'inline' }}>{renderString}</p>;
   }
@@ -228,19 +228,19 @@ const dependencyTarget: __ReactDnd.DropTargetSpec<IProps> = {
   },
 };
 
-function collectDrag(connect: __ReactDnd.DragSourceConnector,
+function collectDrag(conn: __ReactDnd.DragSourceConnector,
                      monitor: __ReactDnd.DragSourceMonitor): IDragProps {
   return {
-    connectDragSource: connect.dragSource(),
-    connectDragPreview: connect.dragPreview(),
+    connectDragSource: conn.dragSource(),
+    connectDragPreview: conn.dragPreview(),
     isDragging: monitor.isDragging(),
   };
 }
 
-function collectDrop(connect: __ReactDnd.DropTargetConnector,
+function collectDrop(conn: __ReactDnd.DropTargetConnector,
                      monitor: __ReactDnd.DropTargetMonitor): IDropProps {
   return {
-    connectDropTarget: connect.dropTarget(),
+    connectDropTarget: conn.dropTarget(),
     isOver: monitor.isOver(),
     canDrop: monitor.canDrop(),
   };
