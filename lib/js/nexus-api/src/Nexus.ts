@@ -1,7 +1,9 @@
 import * as types from './types';
 
 import * as Promise from 'bluebird';
+import * as fs from 'fs';
 import * as restT from 'node-rest-client';
+import request = require('request');
 
 interface IRequestArgs {
   headers?: any;
@@ -169,6 +171,41 @@ class Nexus {
       req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
       req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
       req.on('error', (err) => reject(err));
+    });
+  }
+
+  public sendFeedback(message: string,
+                      fileBundle: string,
+                      anonymous: boolean) {
+    return new Promise<void>((resolve, reject) => {
+      const formData = {
+        feedback_text: message,
+      };
+      if (fileBundle !== undefined) {
+        formData['feedback_file'] = fs.createReadStream(fileBundle);
+      }
+      const headers = {};
+
+      if (!anonymous) {
+        headers['APIKEY'] = this.mBaseData.headers['APIKEY'];
+      }
+
+      const url = anonymous
+        ? 'https://api.nexusmods.com/v1/feedbacks/anonymous'
+        : 'https://api.nexusmods.com/v1/feedbacks';
+
+      request.post({
+        headers,
+        url,
+        formData,
+        timeout: this.mBaseData.requestConfig.timeout,
+      }, (error, response, body) => {
+        if (error !== null) {
+          return reject(error);
+        } else {
+          return resolve();
+        }
+      });
     });
   }
 

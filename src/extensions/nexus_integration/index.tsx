@@ -564,17 +564,9 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on('submit-feedback',
           (message: string, feedbackFiles: string[],
            anonymous: boolean, callback: (err: Error) => void) => {
-      const APIKey: string = anonymous
-        ? null
-        : getSafe(context.api.store.getState(),
-                  ['confidential', 'account', 'nexus', 'APIKey'], undefined);
-      if (APIKey === undefined) {
-        callback(new Error('You need to be logged in to send (non-anonymous) feedback'));
-      } else {
-        submitFeedback(APIKey, message, feedbackFiles)
-          .then(() => callback(null))
-          .catch(err => callback(err));
-      }
+      submitFeedback(nexus, message, feedbackFiles, anonymous)
+        .then(() => callback(null))
+        .catch(err => callback(err));
     });
 
     context.api.events.on('gamemode-activated', (gameId: string) => {

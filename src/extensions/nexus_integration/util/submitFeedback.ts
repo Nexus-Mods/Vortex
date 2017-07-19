@@ -1,8 +1,9 @@
 import { log } from '../../../util/log';
 
+import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import Nexus from 'nexus-api';
 import ZipT = require('node-7z');
-import request = require('request');
 import { tmpName } from 'tmp';
 
 export class TimeoutError extends Error {
@@ -32,48 +33,15 @@ function zipFiles(files: string[]): Promise<string> {
       .then(() => tmpPath));
 }
 
-function submitFeedback(APIKey: string, message: string, feedbackFiles: string[]): Promise<void> {
+function submitFeedback(nexus: Nexus, message: string, feedbackFiles: string[],
+                        anonymous: boolean): Promise<void> {
+  let archive: string;
   return zipFiles(feedbackFiles)
-    .then(tmpPath => new Promise<any>((resolve, reject) => {
-      const formData = {
-        feedback_text: message,
-      };
-      if (tmpPath !== undefined) {
-        formData['feedback_file'] = fs.createReadStream(tmpPath);
-      }
-      const headers = {};
-
-      if (APIKey) {
-        headers['APIKEY'] = APIKey;
-      }
-
-      const url = APIKey === null
-        ? 'https://api.nexusmods.com/v1/feedbacks/anonymous'
-        : 'https://api.nexusmods.com/v1/feedbacks';
-      request.post({
-        headers,
-        url,
-        formData,
-        timeout: 15000,
-      }, (error, response, body) => {
-        // TODO: write out only the response once the api is done
-        log('debug', 'got response for feedback', { error, response, body });
-        if (tmpPath) {
-          fs.removeAsync(tmpPath)
-            .then(() => {
-              if (error !== null) {
-                return reject(error);
-              }
-              resolve();
-            });
-        } else {
-          if (error !== null) {
-            return reject(error);
-          }
-          resolve();
-        }
-      });
-    }));
+    .then(tmpPath => {
+      archive = tmpPath;
+      return nexus.sendFeedback(message, tmpPath, anonymous);
+    })
+    .then(() => fs.removeAsync(archive));
 }
 
 export default submitFeedback;

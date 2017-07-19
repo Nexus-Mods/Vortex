@@ -24,6 +24,7 @@ declare class Nexus {
     getModFiles(modId: number, gameId?: string): Promise<types.IModFiles>;
     getFileInfo(modId: number, fileId: number, gameId?: string): Promise<types.IFileInfo>;
     getDownloadURLs(modId: number, fileId: number, gameId?: string): Promise<types.IDownloadURL[]>;
+    sendFeedback(message: string, fileBundle: string, anonymous: boolean): Promise<void>;
     private filter(obj);
     private handleResult(data, response, resolve, reject);
     private args(customArgs);
