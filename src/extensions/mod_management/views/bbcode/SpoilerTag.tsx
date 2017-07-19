@@ -19,7 +19,7 @@ class Spoiler extends React.Component<ISpoilerProps, { display: boolean }> {
   public render(): JSX.Element {
     const { t } = this.props;
     return (
-      <div>
+      <div className='bbcode-spoiler-tag'>
         <Button onClick={this.toggle}>
           { t('Spoiler') }
         </Button>

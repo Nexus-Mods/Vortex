@@ -7,7 +7,7 @@ class BrTag extends Tag {
   }
 
   public toReact() {
-    return <div />;
+    return <br />;
   }
 }
 

@@ -1,6 +1,11 @@
 ////////////////////////
 // generic control rules
 
+html {
+  // for rem
+  font-size: $font-size-base;
+}
+
 #content {
   background-color: $brand-bg;
 }
@@ -1724,3 +1729,15 @@ a[role=menuitem] svg {
 
 // /HIDPI
 /////////
+
+/////////
+// bbcode
+
+.bbcode-spoiler-tag {
+  button {
+    display: block;
+  }
+}
+
+// /bbcode
+//////////

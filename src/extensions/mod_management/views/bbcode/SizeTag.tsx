@@ -8,7 +8,8 @@ class SizeTag extends Tag {
     if (isNaN(size)) {
       return [this.getContent()];
     }
-    return [`<span style="font-size:${this.calc(size)}%">`, this.getContent(), '</span>'];
+
+    return [`<span style="font-size:${this.calc(size)}">`, this.getContent(), '</span>'];
   }
 
   public toReact() {
@@ -23,8 +24,8 @@ class SizeTag extends Tag {
     );
   }
 
-  private calc(size: number): string {
-    return `${size * 10 + 100}%`;
+  private calc(sizeFactor: number): string {
+    return `${1 + sizeFactor * 0.1}rem`;
   }
 }
 
