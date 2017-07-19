@@ -382,5 +382,5 @@ function mapStateToProps(state: any): IConnectedProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(FeedbackPage),
- ) as React.ComponentClass<{}>;
+    connect(mapStateToProps, mapDispatchToProps)(
+      FeedbackPage)) as React.ComponentClass<{}>;

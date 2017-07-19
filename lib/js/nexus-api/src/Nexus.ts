@@ -37,6 +37,13 @@ export class TimeoutError extends Error {
   }
 }
 
+export class HTTPError extends Error {
+  constructor(statusCode: number, message: string) {
+    super(`HTTP (${statusCode}) - ${message}`);
+    this.name = this.constructor.name;
+  }
+}
+
 /**
  * implements the Nexus API
  *
@@ -198,10 +205,12 @@ class Nexus {
         headers,
         url,
         formData,
-        timeout: this.mBaseData.requestConfig.timeout,
+        timeout: 30000,
       }, (error, response, body) => {
         if (error !== null) {
           return reject(error);
+        } else if (response.statusCode >= 400) {
+          return reject(new HTTPError(response.statusCode, response.statusMessage));
         } else {
           return resolve();
         }
