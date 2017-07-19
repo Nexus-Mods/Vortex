@@ -27,6 +27,7 @@ import ProgressFooter from './views/ProgressFooter';
 import {} from './views/Settings';
 
 import GameModeManager from './GameModeManager';
+import { currentGame, currentGameDiscovery } from './selectors';
 
 import * as Promise from 'bluebird';
 import { shell } from 'electron';
@@ -268,6 +269,19 @@ function init(context: IExtensionContext): boolean {
         if (oldGameId !== newGameId) {
           changeGameMode(oldGameId, newGameId, prev);
         }
+        const game = {
+          ...currentGame(state),
+          ...currentGameDiscovery(state),
+        };
+
+        const t = context.api.translate;
+        context.api.sendNotification({
+          type: 'info',
+          message: t('Switched game mode: {{mode}}', { replace: {
+            mode: game.name,
+          } }),
+          displayMS: 4000,
+        });
       });
 
     changeGameMode(undefined, activeGameId(store.getState()), undefined);

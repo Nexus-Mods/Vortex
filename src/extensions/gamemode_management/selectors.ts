@@ -11,8 +11,8 @@ export function knownGames(state): IGameStored[] {
 }
 
 export const currentGame =
-  createSelector(knownGames, activeGameId, (knownGames, currentGameMode) =>
-    knownGames.find((game: IGameStored) => game.id === currentGameMode),
+  createSelector(knownGames, activeGameId, (games, currentGameMode) =>
+    games.find(game => game.id === currentGameMode),
     );
 
 /**
