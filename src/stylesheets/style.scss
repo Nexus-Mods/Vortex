@@ -76,6 +76,12 @@ html {
   background-color: $gray-dark;
 }
 
+// for some reason the badge-color is overwritten with ugly in buttons
+.btn-default .badge {
+  color: $badge-color;
+  background-color: $badge-bg;
+}
+
 // tables
 .table {
   margin-bottom: 0px;
@@ -541,14 +547,22 @@ a[role=menuitem] svg {
   margin-bottom: 1px;
   padding: 5px;
   min-height: 32px;
+  display: flex;
+  flex-direction: row;
 
   p {
     display: inline-block;
+    flex: 1 1 0;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  p, svg, .notification-buttons {
+    margin-top: auto;
+    margin-bottom: auto;
   }
 
   .notification-buttons {
-    float: right;
-
     button {
       padding: 0px 2px;
       margin: 0px 2px;
@@ -570,6 +584,23 @@ a[role=menuitem] svg {
   .notification-leave-active {
     opacity: 0;
     transition: opacity 300ms ease-in;
+  }
+}
+
+#notifications-popover {
+  min-width: 200px;
+  max-width: 50%;
+  z-index: $zindex-notifications;
+}
+
+#notifications-button {
+  margin-top: auto;
+  margin-bottom: auto;
+  .badge {
+    padding: 1px 3px;
+    font-size: $font-size-small;
+    margin-left: -8px;
+    margin-bottom: 8px;
   }
 }
 
@@ -653,10 +684,6 @@ a[role=menuitem] svg {
       width: 24px;
       height: 24px;
     }
-  }
-
-  .container-quicklaunch {
-    margin-right: 20px;
   }
 }
 
@@ -789,6 +816,7 @@ a[role=menuitem] svg {
     width: 100%;
     height: 100%;
   }
+  margin-left: 20px;
 }
 
 // footer
@@ -1272,7 +1300,7 @@ a[role=menuitem] svg {
 .game-thumbnail-info {
   position: absolute;
   top: 5px;
-  right: 5px;
+  right: 8px;
 }
 
 .game-list-selected {

@@ -27,7 +27,6 @@ export interface IProps {
 }
 
 class Notification extends ComponentEx<IProps, {}> {
-
   public render(): JSX.Element {
     const { t } = this.props;
     const { actions, message, noDismiss, type } = this.props.params;
@@ -67,6 +66,7 @@ class Notification extends ComponentEx<IProps, {}> {
       case 'success': return 'success';
       case 'activity': return 'info';
       case 'info': return 'info';
+      case 'warning': return 'warning';
       case 'error': return 'danger';
       default: return 'warning';
     }
@@ -75,6 +75,10 @@ class Notification extends ComponentEx<IProps, {}> {
   private typeToIcon(type: NotificationType): JSX.Element {
     switch (type) {
       case 'activity': return <Icon name='spinner' pulse />;
+      case 'success': return <Icon name='check-square-inside' />;
+      case 'info': return <Icon name='info-square' />;
+      case 'warning': return <Icon name='exclamation-square' />;
+      case 'error': return <Icon name='exclamation-triangle' />;
       default: return null;
     }
   }

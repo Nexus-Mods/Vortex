@@ -19,7 +19,7 @@ import IconBar from './IconBar';
 import MainFooter from './MainFooter';
 import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
-import Notifications from './Notifications';
+import NotificationButton from './NotificationButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import { Button, IconButton, NavItem } from './TooltipControls';
@@ -254,6 +254,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <Fixed id='main-toolbar'>
         <QuickLauncher t={t} />
+        <NotificationButton id='notification-button' />
         <div className='mainpage-header-container' ref={this.setHeaderRef} />
         <IconBar
           className='application-icons'
@@ -345,7 +346,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             />
           </Flex>
         </Layout>
-        <Notifications id='notifications' />
       </Flex>
     );
   }

@@ -6,7 +6,7 @@ export interface INotificationAction {
 }
 
 export type NotificationType =
-  'activity' | 'global' | 'success' | 'info' | 'error';
+  'activity' | 'global' | 'success' | 'info' | 'warning' | 'error';
 
 /**
  * a notification message
