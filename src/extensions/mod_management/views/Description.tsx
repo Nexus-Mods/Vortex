@@ -1,5 +1,6 @@
 import BrTag from './bbcode/BrTag';
 import FontTag from './bbcode/FontTag';
+import HeadingTag from './bbcode/HeadingTag';
 import LineTag from './bbcode/LineTag';
 import LinkTag from './bbcode/LinkTag';
 import SizeTag from './bbcode/SizeTag';
@@ -20,6 +21,7 @@ bbcode.registerTag('spoiler', SpoilerTag);
 bbcode.registerTag('font', FontTag);
 bbcode.registerTag('youtube', YoutubeTag);
 bbcode.registerTag('line', LineTag);
+bbcode.registerTag('heading', HeadingTag);
 
 interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -39,6 +41,10 @@ class Description extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const {t, long, short} = this.props;
 
+    const shortDecoded = short
+      .replace(/<br *\/?>/g, '[br][/br]')
+      .replace(/(&[^;]+;)/g, transformSymbol);
+
     const longDecoded = bbcode.toReact(long
       .replace(/<br *\/?>/g, '[br][/br]')
       .replace(/(&[^;]+;)/g, transformSymbol));
@@ -51,7 +57,7 @@ class Description extends React.Component<IProps, {}> {
 
     return (
       <OverlayTrigger trigger='click' overlay={popover} rootClose placement='left'>
-        <p className='p-link'>{short || t('Description')}</p>
+        <p className='p-link'>{shortDecoded || t('Description')}</p>
       </OverlayTrigger>
     );
   }
