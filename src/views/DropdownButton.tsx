@@ -3,12 +3,20 @@ import * as React from 'react';
 import { DropdownButton } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
-interface IBaseProps {
+export interface IBaseProps {
   container?: Element;
 }
 
-type IProps = IBaseProps & ReactBootstrap.DropdownButtonProps;
+export type IProps = IBaseProps & ReactBootstrap.DropdownButtonProps;
 
+/**
+ * An enhanced dropdown button that adjusts placement of the popover based on the
+ * position within the container, so it doesn't get cut off (as long as the
+ * popover isn't larger than half of the container)
+ *
+ * @class MyDropdownButton
+ * @extends {React.Component<IProps, { up: boolean }>}
+ */
 class MyDropdownButton extends React.Component<IProps, { up: boolean }> {
   private mNode: Element;
 

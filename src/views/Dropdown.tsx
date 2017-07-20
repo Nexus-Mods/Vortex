@@ -3,12 +3,20 @@ import * as React from 'react';
 import { Dropdown } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
-interface IBaseProps {
+export interface IBaseProps {
   container?: Element;
 }
 
-type IProps = IBaseProps & ReactBootstrap.DropdownProps;
+export type IProps = IBaseProps & ReactBootstrap.DropdownProps;
 
+/**
+ * An enhanced dropdown that adjusts placement of the popover based on the
+ * position within the container, so it doesn't get cut off (as long as the
+ * popover isn't larger than half of the container)
+ *
+ * @class MyDropdown
+ * @extends {React.Component<IProps, { up: boolean }>}
+ */
 class MyDropdown extends React.Component<IProps, { up: boolean }> {
   public static Menu = Dropdown.Menu;
   public static Toggle = Dropdown.Toggle;

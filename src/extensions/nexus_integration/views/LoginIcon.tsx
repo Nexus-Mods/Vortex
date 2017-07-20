@@ -79,7 +79,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
       >
         {loggedIn ? (
           <Image
-            src={userInfo.profileUrl}
+            src={userInfo.profileUrl  || 'assets/images/noavatar.png'}
             circle
             style={{ height: 32, width: 32 }}
           />

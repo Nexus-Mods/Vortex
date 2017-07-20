@@ -152,7 +152,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
         controlId='formUserInfo'
       >
         <div>
-          <Image src={profileUrl} width='90' height='90' rounded />
+          <Image src={profileUrl || 'assets/images/noavatar.png'} width='90' height='90' rounded />
         </div>
         <div>
           <ControlLabel>{t('User ID: {{userId}}', { replace: { userId } })}</ControlLabel>
