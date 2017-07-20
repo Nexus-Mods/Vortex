@@ -1,4 +1,5 @@
 import { ITableAttribute } from '../../types/ITableAttribute';
+import { bytesToString } from '../../util/util';
 import TextFilter from '../../views/table/TextFilter';
 
 import DownloadProgressFilter from './views/DownloadProgressFilter';
@@ -65,4 +66,18 @@ export const PROGRESS: ITableAttribute = {
   edit: {},
   isSortable: true,
   filter: new DownloadProgressFilter(),
+};
+
+export const FILE_SIZE: ITableAttribute = {
+  id: 'filesize',
+  name: 'File Size',
+  description: 'Total size of the file',
+  icon: 'chart-bars',
+  customRenderer: (download: IDownload, detailCell: boolean, t: I18next.TranslationFunction) =>
+    <p>{ bytesToString(download.size) }</p>,
+  calc: (download: IDownload) => download.size,
+  placement: 'table',
+  isToggleable: true,
+  edit: {},
+  isSortable: true,
 };

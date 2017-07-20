@@ -26,7 +26,7 @@ import { finishDownload, initDownload,
          removeDownload, setDownloadFilePath } from '../actions/state';
 import { IDownload } from '../types/IDownload';
 
-import { FILE_NAME, PROGRESS } from '../downloadAttributes';
+import { FILE_NAME, FILE_SIZE, PROGRESS } from '../downloadAttributes';
 
 import DownloadGraph from './DownloadGraph';
 
@@ -284,7 +284,13 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             <SuperTable
               tableId='downloads'
               data={downloads}
-              staticElements={[FILE_NAME, this.fileTimeColumn, this.gameColumn, PROGRESS]}
+              staticElements={[
+                FILE_NAME,
+                this.fileTimeColumn,
+                this.gameColumn,
+                FILE_SIZE,
+                PROGRESS,
+              ]}
               actions={this.actions}
             />
           </Flex>
