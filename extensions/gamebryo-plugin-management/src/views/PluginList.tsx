@@ -57,19 +57,19 @@ interface IComponentState {
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-function toHex(num: number) {
-  if (num === undefined) {
+function toHex(input: number) {
+  if (input === undefined) {
     return 'FF';
   }
-  let res = num.toString(16).toUpperCase();
+  let res = input.toString(16).toUpperCase();
   if (res.length < 2) {
     res = '0' + res;
   }
   return res;
 }
 
-function num(num: number) {
-  return num !== undefined && num !== null ? num : -1;
+function num(input: number) {
+  return input !== undefined && input !== null ? input : -1;
 }
 
 class PluginList extends ComponentEx<IProps, IComponentState> {
@@ -180,7 +180,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         singleRowAction: false,
       },
       {
-        icon: 'square-o',
+        icon: 'square',
         title: 'Disable',
         action: this.disableSelected,
         singleRowAction: false,

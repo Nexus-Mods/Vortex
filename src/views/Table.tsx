@@ -264,7 +264,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       .map(attr => {
         const attributeState = this.getAttributeState(attr);
         return {
-          icon: attributeState.enabled ? 'check-square-o' : 'square-o',
+          icon: attributeState.enabled ? 'check-square-o' : 'square',
           title: attr.name,
           position: getPos(),
           action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),

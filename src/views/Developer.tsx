@@ -47,7 +47,6 @@ function addCreators(mod: any) {
 }
 
 class Developer extends Component<{}, {}> {
-
   private DispatcherTool;
 
   constructor() {
@@ -61,7 +60,7 @@ class Developer extends Component<{}, {}> {
   public render() {
     const DispatcherTool = this.DispatcherTool;
     return (
-      <Layout type='column' style={{ minHeight: '600px' }}>
+      <Layout type='column' style={{ minHeight: '600px', color: 'black' }}>
         <Fixed>
           <DispatcherTool />
         </Fixed>

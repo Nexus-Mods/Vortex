@@ -1,7 +1,7 @@
 import { setSettingsPage } from '../../actions/session';
 import { II18NProps } from '../../types/II18NProps';
 import { ComponentEx, connect, extend, translate } from '../../util/ComponentEx';
-import { activeGameId, basePath } from '../../util/selectors';
+import * as selectors from '../../util/selectors';
 import Icon from '../../views/Icon';
 import More from '../../views/More';
 import { IconButton } from '../../views/TooltipControls';
@@ -64,7 +64,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
         render: (props: IProps): JSX.Element => {
           const { t, multiUser } = props;
           const link =
-            <a onClick={this.openVortexSettings}><Icon name='sliders' />{t('Settings')}</a>;
+            <a onClick={this.openVortexSettings}><Icon name='sliders' />{' '}{t('Settings')}</a>;
 
           const mode = multiUser ? t('Shared') : t('Per-user');
 
@@ -84,7 +84,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
         condition: (props: IProps) => props.gameMode === undefined,
         render: (props: IProps): JSX.Element => {
           const { t } = props;
-          const link = <a onClick={this.openGames}><Icon name='gamepad' />{t('Games')}</a>;
+          const link = <a onClick={this.openGames}><Icon name='gamepad' />{' '}{t('Games')}</a>;
 
           return (
             <span>
@@ -103,7 +103,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
           const { t, basePath } = props;
           const path = <strong>{basePath}</strong>;
           const link = (
-            <a onClick={this.openModsSettings}><Icon name='sliders' />{t('Settings')}</a>
+            <a onClick={this.openModsSettings}><Icon name='sliders' />{' '}{t('Settings')}</a>
           );
 
           return (
@@ -133,7 +133,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
             );
           } else {
             const gameModeLink =
-              <a onClick={this.openGames}><Icon name='gamepad' />{t('discovered')}</a>;
+              <a onClick={this.openGames}><Icon name='gamepad' />{' '}{t('discovered')}</a>;
             const searchLink = (
               <a onClick={this.startManualSearch}>
                 <Icon name='search' />
@@ -171,7 +171,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
           const { t, autoDeploy } = props;
           const enabled = autoDeploy ? t('enabled') : t('disabled');
           const link =
-            <a onClick={this.openInterfaceSettings}><Icon name='sliders' />{t('Settings')}</a>;
+            <a onClick={this.openInterfaceSettings}><Icon name='sliders' />{' '}{t('Settings')}</a>;
           const more = (
             <More id='more-deploy-dash' name={t('Deployment')}>
               {getTextModManagement('deployment', t)}
@@ -195,7 +195,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
         render: (props: IProps): JSX.Element => {
           const { t } = props;
           const link =
-            <a onClick={this.openInterfaceSettings}><Icon name='sliders' />{t('Settings')}</a>;
+            <a onClick={this.openInterfaceSettings}><Icon name='sliders' />{' '}{t('Settings')}</a>;
           const more = (
             <More id='more-profiles-dash' name={t('Profiles')}>
               {getTextProfiles('profiles', t)}
@@ -296,8 +296,8 @@ class Dashlet extends ComponentEx<IProps, {}> {
 function mapStateToProps(state: any, ownProps: IBaseProps & IExtendedProps): IConnectedState {
   const objects = ownProps.objects || [];
   return {
-    gameMode: activeGameId(state),
-    basePath: basePath(state),
+    gameMode: selectors.activeGameId(state),
+    basePath: selectors.basePath(state),
     multiUser: state.user.multiUser,
     autoDeploy: state.settings.automation.deploy,
     profilesVisible: state.settings.interface.profilesVisible,

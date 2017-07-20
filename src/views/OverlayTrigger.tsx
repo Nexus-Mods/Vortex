@@ -3,6 +3,15 @@ import * as React from 'react';
 import {OverlayTrigger} from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
+export interface IBaseProps {
+  triggerRef: (ref: HTMLElement) => void;
+  getBounds: () => ClientRect;
+  orientation: 'vertical' | 'horizontal';
+  shouldUpdatePosition: boolean;
+}
+
+export type IProps = IBaseProps & ReactBootstrap.OverlayTriggerProps;
+
 /**
  * custom variant of the overlay trigger that automatically chooses the placement
  * of the popover based on the position on the screen.
@@ -20,7 +29,7 @@ import * as ReactDOM from 'react-dom';
  * @class MyOverlayTrigger
  * @extends {React.Component<any, { placement: string }>}
  */
-class MyOverlayTrigger extends React.Component<any, { placement: string }> {
+class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
   private mNode: Element;
 
   constructor(props) {
@@ -36,14 +45,12 @@ class MyOverlayTrigger extends React.Component<any, { placement: string }> {
   }
 
   public render() {
-    const { container } = this.props;
     const { placement } = this.state;
     const relayProps: any =
-      _.omit(this.props, ['container', 'getBounds', 'placement', 'onEnter', 'triggerRef']);
+      _.omit(this.props, ['getBounds', 'placement', 'onEnter', 'triggerRef']);
     return (
       <OverlayTrigger
         placement={placement}
-        container={container}
         onEnter={this.onEnter}
         ref={this.props.triggerRef}
         {...relayProps}

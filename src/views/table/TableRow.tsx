@@ -86,7 +86,7 @@ class TableCell extends React.Component<ICellProps, {}> {
             className='btn-embed'
             id={`toggle-${rowId}-${attribute.id}`}
             tooltip={attribute.name}
-            icon={data ? 'check-square-o' : 'square-o'}
+            icon={data ? 'check-square-o' : 'square'}
             onClick={this.toggle}
           />
         );

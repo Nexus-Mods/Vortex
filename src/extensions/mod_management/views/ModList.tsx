@@ -145,7 +145,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         singleRowAction: false,
       },
       {
-        icon: 'square-o',
+        icon: 'square',
         title: 'Disable',
         action: this.disableSelected,
         singleRowAction: false,
