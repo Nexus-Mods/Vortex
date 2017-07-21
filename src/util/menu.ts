@@ -37,13 +37,11 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       });
   });
 
-  // other dialogs
-  viewMenu.push({ type: 'separator' });
   viewMenu.push({
     label: 'Settings',
-    accelerator: 'CmdOrCtrl+Shift+S',
+    accelerator: 'CmdOrCtrl+S',
     click(item, focusedWindow) {
-      extensions.getApi().events.emit('show-modal', 'settings');
+      extensions.getApi().events.emit('show-main-page', 'Settings');
     },
   });
 

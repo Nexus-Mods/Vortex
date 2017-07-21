@@ -72,7 +72,7 @@ function init(context): boolean {
   });
 
   context.registerMainPage('save', 'Save Games', SavegameList, {
-    hotkey: 'S',
+    hotkey: 'A',
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
   });
