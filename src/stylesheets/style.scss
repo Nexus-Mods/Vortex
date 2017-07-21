@@ -1437,8 +1437,8 @@ a[role=menuitem] svg {
 .tool-icon {
   width: auto;
   height: auto;
-  max-width: 32px;
-  max-height: 32px;
+  max-width: 24px;
+  max-height: 24px;
 
   &.invalid {
     filter: grayscale(100%);
@@ -1450,9 +1450,48 @@ a[role=menuitem] svg {
   }
 }
 
+.tool-button {
+  border: 1px solid $brand-secondary;
+  background-color: $brand-menu;
+  display: flex;
+  flex-direction: row;
+  padding: $gutter-width / 2;
+
+  span {
+    flex: 1 1 0;
+    margin: auto 1em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+  }
+}
+
 .tool-button-primary .tool-icon {
   max-width: 100%;
   max-height: 100%;
+}
+
+.btn-add-tool {
+  width: 100%;
+  button {
+    width: 100%;
+
+    padding: $gutter-width / 2;
+    background-color: $brand-menu;
+    display: flex !important;
+
+    span {
+      margin-top: auto;
+      margin-bottom: auto;
+    }
+    .btn-add-tool-text {
+      flex: 1 1 0;
+    }
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
 }
 
 .tool-dropdown {
@@ -1487,6 +1526,11 @@ a[role=menuitem] svg {
 #starter-dashlet {
   overflow: visible;
   margin: 5px;
+
+  .col-md-3 {
+    padding-top: $gutter-width / 2;
+    padding-bottom: $gutter-width / 2;
+  }
 }
 
 .env-edit-buttons {
@@ -1497,6 +1541,46 @@ a[role=menuitem] svg {
 
 // /starter page
 ////////////////
+
+///////////
+// dashlets
+
+.dashlet-first-steps {
+  border: 1px solid $brand-secondary;
+  background-color: $brand-menu;
+  padding: floor(($gutter-width / 2));
+  h4 {
+    margin-top: 0;
+  }
+  li {
+    border: 0px;
+    background-color: lighten($brand-menu, 5%);
+    margin-bottom: 2px;
+    display: flex;
+    .icon-todo-type {
+      margin-top: auto;
+      margin-bottom: auto;
+      margin-right: floor(($gutter-width / 2));
+      background-color: $brand-info;
+      padding: 0.5em;
+      width: 2.2em;
+      height: 2.2em;
+    }
+    span {
+      flex: 1 1 0;
+      margin-top: auto;
+      margin-bottom: auto;
+    }
+    button {
+      margin-top: auto;
+      margin-bottom: auto;
+      margin-left: 10px;
+    }
+  }
+}
+
+// /dashlets
+////////////
 
 ////////////////
 // download page

@@ -37,13 +37,15 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
   public componentWillMount() {
     const { game, onRefreshGameInfo } = this.props;
     this.mMounted = true;
-    this.setState({ loading: true });
-    onRefreshGameInfo(game.id)
-    .then(() => {
-      if (this.mMounted) {
-        this.setState({ loading: false });
-      }
-    });
+    if (onRefreshGameInfo !== undefined) {
+      this.setState({ loading: true });
+      onRefreshGameInfo(game.id)
+        .then(() => {
+          if (this.mMounted) {
+            this.setState({ loading: false });
+          }
+        });
+    }
   }
 
   public componentWillUnmount() {

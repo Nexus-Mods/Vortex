@@ -20,6 +20,8 @@ import {
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IToolStored } from '../gamemode_management/types/IToolStored';
+// TODO: this import is not ok because it breaks the encapsulation of the module
+import GameThumbnail from '../gamemode_management/views/GameThumbnail';
 
 import { setPrimaryTool } from './actions';
 
@@ -31,7 +33,7 @@ import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { Dropdown, Media, MenuItem } from 'react-bootstrap';
+import { Col, Dropdown, Grid, Media, MenuItem, Row } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
@@ -103,12 +105,9 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
           {this.renderGameIcon(game, discoveredGame)}
           {this.renderEditToolDialog()}
         </Media.Left>
-        <Media.Right>
-          <Media.Heading>
-            {gameName}
-          </Media.Heading>
+        <Media.Body>
           {this.renderToolIcons(game, discoveredGame)}
-        </Media.Right>
+        </Media.Body>
       </Media>
     );
   }
@@ -145,31 +144,44 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
         }
       });
 
-    const primary = primaryTool || gameId;
-
     const hidden = starters.filter(starter =>
       (discoveredTools[starter.id] !== undefined)
       && (discoveredTools[starter.id].hidden === true));
 
     const visible = starters.filter(starter =>
       starter.isGame
-      || (starter.id === primary)
       || (discoveredTools[starter.id] === undefined)
       || (discoveredTools[starter.id].hidden !== true));
 
+    visible.push(null);
+
+    const split: StarterInfo[][] = visible.reduce((prev, value, idx) => {
+      if ((idx % 4) === 0) {
+        prev.push([]);
+      }
+      prev[Math.floor(idx / 4)].push(value);
+      return prev;
+    }, []);
+
     return (
       <div>
-        {this.renderTool(starters.find(starter => starter.id === primary), true)}
-        <div style={{ display: 'inline' }}>
-          {visible.filter(starter => starter.id !== primary)
-            .map(starter => this.renderTool(starter, false))}
-          {this.renderAddButton(hidden)}
-        </div>
+        <Grid style={{ width: '100%' }}>
+          {split
+            .map((row, idx) => (
+              <Row key={idx}>{
+                row.map((col, colIdx) => (
+                  <Col key={colIdx} md={3}>
+                    { col !== null ? this.renderTool(col) : this.renderAddButton(hidden) }
+                  </Col>
+                ))
+              }</Row>))
+          }
+        </Grid>
       </div>
     );
   }
 
-  private renderTool = (starter: StarterInfo, primary: boolean) => {
+  private renderTool = (starter: StarterInfo) => {
     const { t } = this.props;
     if (starter === undefined) {
       return null;
@@ -179,7 +191,6 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
         t={t}
         key={starter.id}
         starter={starter}
-        primary={primary}
         onRun={this.startTool}
         onEdit={this.editTool}
         onRemove={this.removeTool}
@@ -247,9 +258,10 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     const { t } = this.props;
     // <IconButton id='add-tool-icon' icon='plus' tooltip={t('Add Tool')} />
     return (
-      <Dropdown id='add-tool-button'>
+      <Dropdown id='add-tool-button' className='btn-add-tool'>
         <Dropdown.Toggle>
           <Icon name='plus' />
+          <span className='btn-add-tool-text'>{t('Add Tool')}</span>
         </Dropdown.Toggle>
         <Dropdown.Menu>
           {hidden.map(starter => (
@@ -281,11 +293,29 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
       // assumption is that this can only happen during startup
       return <Icon name='spinner' pulse />;
     } else {
-      const logoPath = path.join(
-        getSafe(discoveredGame, ['extensionPath'], getSafe(game, ['extensionPath'], '')),
-        getSafe(discoveredGame, ['logo'], getSafe(game, ['logo'], '')));
-      return <img className='welcome-game-logo' src={logoPath} />;
+      const { t } = this.props;
+      return (
+        <GameThumbnail
+          t={t}
+          game={game}
+          active={true}
+          type='managed'
+          onRefreshGameInfo={this.onRefreshGameInfo}
+        />
+      );
     }
+  }
+
+  private onRefreshGameInfo = (gameId: string) => {
+    return new Promise<void>((resolve, reject) => {
+      this.context.api.events.emit('refresh-game-info', gameId, (err: Error) => {
+        if (err !== null) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
   }
 
   private renderEditToolDialog() {

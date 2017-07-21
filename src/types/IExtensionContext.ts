@@ -67,9 +67,17 @@ export type RegisterDialog =
    element: React.ComponentClass<any> | React.StatelessComponent<any>,
    props?: PropsCallback) => void;
 
+export type ToDoType = 'settings' | 'search' | 'automation';
+
+export interface IToDoButton {
+  text: string;
+  icon: string;
+  onClick: () => void;
+}
+
 export type RegisterToDo =
-    (id: string, props: () => any, condition: (props: any) => boolean,
-     render: (props: any) => JSX.Element, priority?: number) => void;
+    (id: string, type: ToDoType, props: () => any, condition: (props: any) => boolean,
+     render: (props: any) => JSX.Element, button: () => IToDoButton, priority?: number) => void;
 
 export interface IRegisterProtocol {
   (protocol: string, callback: (url: string) => void);

@@ -1,19 +1,21 @@
+import { IActionDefinition } from '../../types/IActionDefinition';
 import { ComponentEx } from '../../util/ComponentEx';
 import StarterInfo from '../../util/StarterInfo';
+import Icon from '../../views/Icon';
+import IconBar from '../../views/IconBar';
 import { Button } from '../../views/TooltipControls';
 
 import ToolIcon from './ToolIcon';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { Dropdown, MenuItem } from 'react-bootstrap';
+import { Dropdown, Image, MenuItem } from 'react-bootstrap';
 
 export type RemoveTool = (gameId: string, toolId: string) => void;
 
 export interface IProps {
   t: I18next.TranslationFunction;
   starter: StarterInfo;
-  primary: boolean;
   onRun: (starter: StarterInfo) => void;
   onMakePrimary: (starter: StarterInfo) => void;
   onRemove: (starter: StarterInfo) => void;
@@ -26,11 +28,20 @@ export interface IToolButtonState {
 
 class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   private mImageId: number;
+  private mStaticElements: IActionDefinition[];
 
   constructor(props: IProps) {
     super(props);
 
     this.initState({ imageUrl: undefined });
+
+    this.mStaticElements = [
+      {
+        title: props.t('Run'),
+        icon: 'button-play',
+        action: () => props.onRun(props.starter),
+      },
+    ];
   }
 
   public componentDidMount() {
@@ -38,45 +49,37 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   }
 
   public render() {
-    const { primary, starter } = this.props;
+    const { starter } = this.props;
     const valid = (starter.exePath !== undefined) && (starter.exePath !== '');
 
-    const icon = <ToolIcon imageUrl={starter.iconPath} imageId={this.mImageId} valid={valid} />;
-
-    const buttonClass = primary ? 'tool-button-primary' : 'tool-button';
-
     return (
-      <Dropdown
-        key={starter.id}
-        id={`tool-dropdown-${starter.id}`}
-        className='tool-dropdown'
-      >
-        <Button
-          id={`tool-button-${starter.id}`}
-          className={buttonClass}
-          tooltip={starter.name}
-          onClick={valid ? this.run : this.edit}
-        >
-          {icon}
-        </Button>
-        <Dropdown.Toggle />
-        {this.renderMenu()}
-      </Dropdown>
+      <div className='tool-button'>
+        <ToolIcon imageUrl={starter.iconPath} imageId={this.mImageId} valid={valid} />
+        <span>{starter.name}</span>
+        <IconBar
+          id={`tool-starter-${starter.id}`}
+          className='buttons'
+          group='tool-starter'
+          instanceId={starter.id}
+          staticElements={this.mStaticElements}
+          collapse={true}
+        />
+      </div>
     );
   }
 
   private renderMenu(): JSX.Element {
-    const { t, primary, starter } = this.props;
+    const { t, starter } = this.props;
     const items = [];
 
-    if (!primary && (starter.exePath !== '')) {
+    if (starter.exePath !== '') {
       items.push(
         <MenuItem key='set-item' onSelect={this.makePrimary}>
           {t('Set as primary tool')}
         </MenuItem>);
     }
 
-    if (!primary && !starter.isGame) {
+    if (!starter.isGame) {
       items.push(
         <MenuItem key='remove' onSelect={this.remove}>
           {t('Remove')}

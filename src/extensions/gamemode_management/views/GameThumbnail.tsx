@@ -18,10 +18,10 @@ export interface IProps {
   t: I18next.TranslationFunction;
   game: IGameStored;
   active: boolean;
-  onRefreshGameInfo: (gameId: string) => Promise<void>;
+  onRefreshGameInfo?: (gameId: string) => Promise<void>;
   type: string;
-  getBounds: () => ClientRect;
-  container: HTMLElement;
+  getBounds?: () => ClientRect;
+  container?: HTMLElement;
 }
 
 /**
@@ -68,7 +68,7 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
         <OverlayTrigger
           overlay={gameInfoPopover}
           triggerRef={this.setRef}
-          getBounds={getBounds}
+          getBounds={getBounds || this.getWindowBounds}
           container={container}
           orientation='vertical'
           shouldUpdatePosition={true}
@@ -85,6 +85,17 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
         </OverlayTrigger>
       </Panel>
     );
+  }
+
+  private getWindowBounds = (): ClientRect => {
+    return {
+      top: 0,
+      left: 0,
+      height: window.innerHeight,
+      width: window.innerWidth,
+      bottom: window.innerHeight,
+      right: window.innerWidth,
+    };
   }
 
   private setRef = ref => {

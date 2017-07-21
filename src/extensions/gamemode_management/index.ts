@@ -226,6 +226,12 @@ function init(context: IExtensionContext): boolean {
       gameModeManager.stopSearchDiscovery();
     });
 
+    events.on('refresh-game-info', (gameId: string, callback: (err: Error) => void) => {
+      refreshGameInfo(store, gameId)
+      .then(() => callback(null))
+      .catch(err => callback(err));
+    });
+
     if (store.getState().settings.gameMode.searchPaths === undefined) {
       const {list} = require('drivelist');
       list((error, disks) => {
