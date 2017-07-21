@@ -91,55 +91,54 @@ abstract class LinkingActivator implements IModActivator {
          this.diffActivation(this.mPreviousActivation, this.mNewActivation));
 
     return Promise.map([].concat(removed, sourceChanged, contentChanged),
-                       key =>
-                           this.unlinkFile(
-                                   path.join(
-                                       dataPath,
-                                       this.mPreviousActivation[key].relPath))
-                               .then(() => delete this.mPreviousActivation[key])
-                               .catch(err => {
-                                 log('warn', 'failed to unlink', {
-                                   path: this.mPreviousActivation[key],
-                                   error: err.message,
-                                 });
-                                 ++errorCount;
-                               }))
-        // then, (re-)link all files that were added or changed
-        .then(() => Promise.map(
-                  [].concat(added, sourceChanged, contentChanged),
-                  (key: string) => {
-                    const fullPath = path.join(
-                        installPathStr, this.mNewActivation[key].source,
-                        this.mNewActivation[key].relPath);
-                    return this.linkFile(
-                                   path.join(dataPath,
-                                             this.mNewActivation[key].relPath),
-                                   fullPath)
-                        .then(() => this.mPreviousActivation[key] =
-                                  this.mNewActivation[key])
-                        .catch(err => {
-                          log('warn', 'failed to link', {
-                            link: this.mNewActivation[key].relPath,
-                            source: this.mNewActivation[key].source,
-                            error: err.message,
-                          });
-                          ++errorCount;
-                        });
-                  }))
-        .then(() => {
-          if (errorCount > 0) {
-            addNotification({
-              type: 'error',
-              title: this.mApi.translate('Activation failed'),
-              message: this.mApi.translate(
-                  '{{count}} files were not correctly activated (see log for details)',
-                  {replace: {count: errorCount}}),
+      key => {
+        console.log('changed', key, this.mPreviousActivation[key]);
+        return this.unlinkFile(path.join(dataPath, this.mPreviousActivation[key].relPath))
+          .then(() => delete this.mPreviousActivation[key])
+          .catch(err => {
+            log('warn', 'failed to unlink', {
+              path: this.mPreviousActivation[key].relPath,
+              error: err.message,
             });
-          }
+            ++errorCount;
+          });
+      })
+      // then, (re-)link all files that were added or changed
+      .then(() => Promise.map(
+        [].concat(added, sourceChanged, contentChanged),
+        (key: string) => {
+          const fullPath = path.join(
+            installPathStr, this.mNewActivation[key].source,
+            this.mNewActivation[key].relPath);
+          return this.linkFile(
+            path.join(dataPath,
+              this.mNewActivation[key].relPath),
+            fullPath)
+            .then(() => this.mPreviousActivation[key] =
+              this.mNewActivation[key])
+            .catch(err => {
+              log('warn', 'failed to link', {
+                link: this.mNewActivation[key].relPath,
+                source: this.mNewActivation[key].source,
+                error: err.message,
+              });
+              ++errorCount;
+            });
+        }))
+      .then(() => {
+        if (errorCount > 0) {
+          addNotification({
+            type: 'error',
+            title: this.mApi.translate('Activation failed'),
+            message: this.mApi.translate(
+              '{{count}} files were not correctly activated (see log for details)',
+              { replace: { count: errorCount } }),
+          });
+        }
 
-          return Object.keys(this.mPreviousActivation)
-              .map(key => this.mPreviousActivation[key]);
-        });
+        return Object.keys(this.mPreviousActivation)
+          .map(key => this.mPreviousActivation[key]);
+      });
   }
 
   public activate(installPath: string, dataPath: string,
