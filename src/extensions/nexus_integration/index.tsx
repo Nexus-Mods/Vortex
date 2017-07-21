@@ -353,35 +353,32 @@ function init(context: IExtensionContextExt): boolean {
     opn(`http://www.nexusmods.com/${convertGameId(gameMode)}`);
   });
 
-  context.registerToDo('nxm-login', () => ({
+  context.registerToDo('nxm-login', 'settings', () => ({
     APIKey: context.api.store.getState().confidential.account.nexus.APIKey,
   }), (props: { APIKey: string }) => props.APIKey === undefined, () => {
     const t = context.api.translate;
-    const link = (
-      <a onClick={logInDialog}>
-        <Icon name='key' />
-        {t('logged in')}
-      </a>
-    );
-    return (
-      <span><Interpolate
-        i18nKey={'You\'re not {{link}} on Nexus Mods.'}
-        link={link}
-      /></span>
-    );
-  }, 50);
 
-  context.registerToDo('nxm-associated', () => ({
+    return (<span>{ t('You\'re not {{link}} on Nexus Mods.') }</span>);
+  }, () => ({
+    icon: 'key',
+    text: context.api.translate('Log in'),
+    onClick: logInDialog,
+  }), 50);
+
+  context.registerToDo('nxm-associated', 'settings', () => ({
     associated: context.api.store.getState().settings.nexus.associateNXM,
   }), (props: { associated: boolean }) => !props.associated, () => {
     const t = context.api.translate;
     return (
       <span>
         {t('Do you want Vortex to handle download links on Nexus?')}
-        {' '}<Button onClick={associateNXM}>{t('Associate')}</Button>
       </span>
     );
-  });
+  }, () => ({
+    icon: 'link',
+    text: context.api.translate('Associate'),
+    onClick: associateNXM,
+  }));
 
   context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {
     const nxm: NXMUrl = new NXMUrl(nxmurl);

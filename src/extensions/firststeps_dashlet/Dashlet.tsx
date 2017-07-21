@@ -1,4 +1,5 @@
 import { setSettingsPage } from '../../actions/session';
+import { IToDoButton, ToDoType } from '../../types/IExtensionContext';
 import { II18NProps } from '../../types/II18NProps';
 import { ComponentEx, connect, extend, translate } from '../../util/ComponentEx';
 import * as selectors from '../../util/selectors';
@@ -44,9 +45,11 @@ type IProps = IBaseProps & IExtendedProps & IConnectedState & IActionProps & II1
 
 interface IToDo {
   id: string;
+  type: ToDoType;
   props?: () => any;
   condition: (props: any) => boolean;
-  render: (props: any) => JSX.Element;
+  render?: (props: any) => JSX.Element;
+  button?: () => IToDoButton;
   priority?: number;
 }
 
@@ -56,69 +59,69 @@ class Dashlet extends ComponentEx<IProps, {}> {
   constructor(inProps: IProps) {
     super(inProps);
 
-    this.mTodos = [
+    this.mTodos = ([
       {
         id: 'multi-user',
+        type: 'settings' as ToDoType,
         condition: props => true,
         priority: 10,
         render: (props: IProps): JSX.Element => {
-          const { t, multiUser } = props;
-          const link =
-            <a onClick={this.openVortexSettings}><Icon name='sliders' />{' '}{t('Settings')}</a>;
+          const { t, multiUser } = this.props;
 
           const mode = multiUser ? t('Shared') : t('Per-user');
 
           return (
             <span>
-              <Interpolate
-                i18nKey='You are currently in {{mode}} mode. Open {{link}} to change.'
-                link={link}
-                mode={mode}
-              />
+              { t('You are currently in {{mode}} mode.', {replace: {mode}}) }
             </span>
           );
         },
+        button: () => ({
+          icon: 'sliders',
+          text: this.props.t('Settings'),
+          onClick: this.openVortexSettings,
+        }),
       },
       {
         id: 'pick-game',
+        type: 'search' as ToDoType,
         condition: (props: IProps) => props.gameMode === undefined,
         render: (props: IProps): JSX.Element => {
           const { t } = props;
-          const link = <a onClick={this.openGames}><Icon name='gamepad' />{' '}{t('Games')}</a>;
-
-          return (
-            <span>
-              <Interpolate
-                i18nKey='Open {{link}} to select a game to manage'
-                link={link}
-              />
-            </span>
-          );
+          return (<span>{t('Select a game to manage')}</span>);
         },
+        button: () => ({
+          icon: 'gamepad',
+          text: this.props.t('Games'),
+          onClick: this.openGames,
+        }),
       },
       {
         id: 'paths',
+        type: 'settings' as ToDoType,
         condition: (props: IProps) => props.gameMode !== undefined,
         render: (props: IProps): JSX.Element => {
           const { t, basePath } = props;
           const path = <strong>{basePath}</strong>;
-          const link = (
-            <a onClick={this.openModsSettings}><Icon name='sliders' />{' '}{t('Settings')}</a>
-          );
 
           return (
             <span>
               <Interpolate
-                i18nKey='Data for this game will be stored in {{path}}\nOpen {{link}} to change.'
+                i18nKey='Data for this game will be stored in {{path}}.'
                 path={path}
-                link={link}
               />
             </span>
           );
         },
+        button: () => ({
+          icon: 'sliders',
+          text: this.props.t('Settings'),
+          onClick: this.openModsSettings,
+        }),
       },
       {
         id: 'manual-search',
+        type: 'search' as ToDoType,
         condition: (props: IProps) => props.searchPaths !== undefined,
         render: (props: IProps): JSX.Element => {
           const { t, discoveryRunning, searchPaths } = props;
@@ -134,12 +137,6 @@ class Dashlet extends ComponentEx<IProps, {}> {
           } else {
             const gameModeLink =
               <a onClick={this.openGames}><Icon name='gamepad' />{' '}{t('discovered')}</a>;
-            const searchLink = (
-              <a onClick={this.startManualSearch}>
-                <Icon name='search' />
-                {t('search your disks')}
-              </a>
-            );
             const settingsLink = (
               <a onClick={this.openGameSettings}>
                 <Icon name='sliders' />
@@ -148,7 +145,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
             );
 
             const text = 'If games you have installed weren\'t {{discovered}}, '
-              + 'Vortex can {{search}} for them. This can take some time. '
+              + 'Vortex can search for them. This can take some time. '
               + 'Currenty these directories will be searched: {{settings}}.';
 
             return (
@@ -156,22 +153,25 @@ class Dashlet extends ComponentEx<IProps, {}> {
                 <Interpolate
                   i18nKey={text}
                   discovered={gameModeLink}
-                  search={searchLink}
                   settings={settingsLink}
                 />
               </span>
             );
           }
         },
+        button: () => this.props.discoveryRunning ? undefined : ({
+          icon: 'gamepad',
+          text: this.props.t('Search'),
+          onClick: this.startManualSearch,
+        }),
       },
       {
         id: 'deploy-automation',
+        type: 'automation' as ToDoType,
         condition: (props: IProps) => true,
         render: (props: IProps): JSX.Element => {
           const { t, autoDeploy } = props;
           const enabled = autoDeploy ? t('enabled') : t('disabled');
-          const link =
-            <a onClick={this.openInterfaceSettings}><Icon name='sliders' />{' '}{t('Settings')}</a>;
           const more = (
             <More id='more-deploy-dash' name={t('Deployment')}>
               {getTextModManagement('deployment', t)}
@@ -180,17 +180,22 @@ class Dashlet extends ComponentEx<IProps, {}> {
           return (
             <span>
               <Interpolate
-                i18nKey='Automatic deployment{{more}} is {{enabled}}. Open {{link}} to change.'
+                i18nKey='Automatic deployment{{more}} is {{enabled}}.'
                 more={more}
                 enabled={enabled}
-                link={link}
               />
             </span>
           );
         },
+        button: () => ({
+          icon: 'sliders',
+          text: this.props.t('Settings'),
+          onClick: this.openInterfaceSettings,
+        }),
       },
       {
         id: 'profile-visibility',
+        type: 'settings' as ToDoType,
         condition: (props: IProps) => !props.profilesVisible,
         render: (props: IProps): JSX.Element => {
           const { t } = props;
@@ -211,8 +216,13 @@ class Dashlet extends ComponentEx<IProps, {}> {
             </span>
           );
         },
+        button: () => ({
+          icon: 'sliders',
+          text: this.props.t('Settings'),
+          onClick: this.openInterfaceSettings,
+        }),
       },
-    ].concat(this.props.objects);
+    ] as IToDo[]).concat(this.props.objects);
   }
 
   public render(): JSX.Element {
@@ -235,28 +245,61 @@ class Dashlet extends ComponentEx<IProps, {}> {
     visibleSteps.sort((lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100));
 
     return (
-      <ListGroup>
-        {
-          visibleSteps.map((step) => {
-            const props = step.props ? step.props() : this.props;
+      <div className='dashlet-first-steps'>
+        <h4>{t('Tasks / Suggestions')}</h4>
+        <ListGroup>
+          {
+            visibleSteps.map(step => {
+              const props = step.props ? step.props() : this.props;
 
-            return (
-              <ListGroupItem key={step.id}>
-                {step.render(props)}
-                <IconButton
-                  id={`btn-dismiss-${step.id}`}
-                  icon='remove'
-                  tooltip={t('Dismiss')}
-                  className='close-button btn-embed'
-                  value={step.id}
-                  onClick={this.dismiss}
-                />
-              </ListGroupItem>
-            );
-          })
-        }
-      </ListGroup>
+              return (
+                <ListGroupItem key={step.id}>
+                  <Icon className='icon-todo-type' name={this.typeToIcon(step.type)}/>
+                  {step.render(props)}
+                  {this.renderButton(step.button)}
+                  <IconButton
+                    id={`btn-dismiss-${step.id}`}
+                    icon='remove'
+                    tooltip={t('Dismiss')}
+                    className='btn-embed'
+                    value={step.id}
+                    onClick={this.dismiss}
+                  />
+                </ListGroupItem>
+              );
+            })
+          }
+        </ListGroup>
+      </div>
     );
+  }
+
+  private renderButton(buttonGen: () => IToDoButton): JSX.Element {
+    if (buttonGen === undefined) {
+      return null;
+    }
+    const button = buttonGen();
+    if (button === undefined) {
+      return null;
+    }
+    return (
+      <IconButton
+        id={button.text}
+        icon={button.icon}
+        onClick={button.onClick}
+        tooltip={button.text}
+      >
+        {button.text}
+      </IconButton>
+    );
+  }
+
+  private typeToIcon(type: ToDoType): string {
+    return {
+      settings: 'sliders',
+      automation: 'wand',
+      search: 'zoom',
+    }[type];
   }
 
   private openGameSettings = () => {
@@ -318,11 +361,17 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 function registerToDo(instanceProps: IBaseProps,
                       id: string,
+                      type: ToDoType,
                       props: () => any,
                       condition: (props: any) => boolean,
                       render: (props: any) => JSX.Element,
+                      button?: () => {
+                        text: string,
+                        icon: string,
+                        onClick: () => void,
+                      },
                       priority?: number): IToDo {
-  return { id, props, condition, render, priority };
+  return { id, type, props, condition, render, button, priority };
 }
 
 export default translate(['common'], { wait: true })(
