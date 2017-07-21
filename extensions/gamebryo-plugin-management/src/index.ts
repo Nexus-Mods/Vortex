@@ -156,7 +156,7 @@ function register(context: IExtensionContextExt) {
   context.registerTest('plugins-locked', 'gamemode-activated',
     () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
   context.registerTest('master-missing', 'plugins-changed',
-    () => testMissingMasters(context.api.store.getState()));
+    () => testMissingMasters(context.api.translate, context.api.store.getState()));
   context.registerDialog('plugin-dependencies-connector', Connector);
   context.registerDialog('userlist-editor', UserlistEditor);
 }
@@ -284,7 +284,8 @@ function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
   });
 }
 
-function testMissingMasters(state: any): Promise<types.ITestResult> {
+function testMissingMasters(t: I18next.TranslationFunction,
+                            state: any): Promise<types.ITestResult> {
   const gameMode = selectors.activeGameId(state);
   if (!gameSupported(gameMode)) {
     return Promise.resolve(undefined);
@@ -307,16 +308,17 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
     pluginDetails.map(plugin => plugin.name),
     nativePlugins(gameMode)).map(name => name.toLowerCase()));
 
-  const broken = pluginDetails.filter((plugin) => {
+  const broken = pluginDetails.reduce((prev, plugin) => {
     const missing = plugin.detail.masterList.filter(
       (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
     if (missing.length > 0) {
       log('info', 'missing masters', { plugin: plugin.name, missing: missing.join(', ') });
+      prev[plugin.name] = missing;
     }
-    return missing.length > 0;
-  });
+    return prev;
+  }, {});
 
-  if (broken.length === 0) {
+  if (Object.keys(broken).length === 0) {
     return Promise.resolve(undefined);
   } else {
     return Promise.resolve({
@@ -324,7 +326,12 @@ function testMissingMasters(state: any): Promise<types.ITestResult> {
         short: 'Missing Masters',
         long:
         'Some of the enabled plugins depend on others that are not enabled: \n' +
-        broken.map(plugin => plugin.name).join(', '),
+        Object.keys(broken).map(plugin => {
+          return t('{{plugin}} depends on {{missing}}', {replace: {
+            plugin,
+            missing: broken[plugin].join(', '),
+          }});
+        }).join('\n'),
       },
       severity: 'warning' as types.ProblemSeverity,
     });
@@ -389,8 +396,8 @@ function init(context: IExtensionContextExt) {
         (nextProfileId: string, enqueue: (cb: () => Promise<void>) => void) => {
           enqueue(() => {
             return stopSync()
-                            .then(() => userlistPersistor.disable())
-                            .then(() => loot.wait());
+              .then(() => userlistPersistor.disable())
+              .then(() => loot.wait());
           });
         });
 

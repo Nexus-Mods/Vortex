@@ -98,3 +98,8 @@
 .rule-unfulfilled {
   color: $brand-danger;
 }
+
+.rule-fulfilled button,
+.rule-unfulfilled button {
+  margin-left: 0.75em;
+}

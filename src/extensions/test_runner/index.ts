@@ -25,15 +25,15 @@
  * Further event types can be triggered by extensions
  */
 
-import { CheckFunction, IExtensionContext } from '../../types/IExtensionContext';
+import {showDialog} from '../../actions/notifications';
+import {CheckFunction, IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
+import {INotificationAction} from '../../types/INotification';
 import { log } from '../../util/log';
 import { activeProfile } from '../../util/selectors';
 import { deleteOrNop, getSafe, setSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
 
 import { ITestResult } from '../../types/ITestResult';
-
-import ReportDashlet from './views/ReportDashlet';
 
 import * as Promise from 'bluebird';
 
@@ -45,26 +45,35 @@ const checks: { [type: string]: ICheckEntry[] } = {};
 
 const triggerDelays: { [type: string]: NodeJS.Timer } = {};
 
-let dashProps = {
-  problems: {},
-  onResolveProblem: (id: string) => {
-    // whenever a "fix"-promise is finished we re-run that check to see if it's actually fixed
-    let entry: ICheckEntry;
-    Object.keys(checks).forEach((type) => {
-      if (entry === undefined) {
-        entry = checks[type].find((iter) => iter.id === id);
-      }
-    });
-    runCheck(entry);
-  },
-};
-
-function runCheck(check: ICheckEntry): Promise<void> {
+function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
   return check.check()
-    .then((result: ITestResult) => {
-      dashProps = (result !== undefined)
-        ? setSafe(dashProps, ['problems', check.id], result)
-        : deleteOrNop(dashProps, ['problems', check.id]);
+    .then(result => {
+      const id: string = `test-${check.id}`;
+      if (result === undefined) {
+        api.dismissNotification(id);
+      } else {
+        const actions: INotificationAction[] = [{
+          title: 'More',
+          action: () => api.store.dispatch(showDialog('info', 'Check failed', {
+            message: result.description.long,
+          }, {
+            Close: null,
+          })),
+        }];
+        if (result.automaticFix !== undefined) {
+          actions.push({
+            title: 'Fix',
+            action: () => result.automaticFix().then(() => runCheck(api, check)),
+          });
+        }
+        api.sendNotification({
+          id,
+          type: 'warning',
+          message: result.description.short,
+          actions,
+          noDismiss: true,
+        });
+      }
     })
     .catch((err) => {
       log('warn', 'check failed to run', {
@@ -75,7 +84,7 @@ function runCheck(check: ICheckEntry): Promise<void> {
     });
 }
 
-function runChecks(event: string, delay?: number) {
+function runChecks(api: IExtensionApi, event: string, delay?: number) {
   if (triggerDelays[event] !== undefined) {
     clearTimeout(triggerDelays[event]);
   }
@@ -83,10 +92,9 @@ function runChecks(event: string, delay?: number) {
   triggerDelays[event] = setTimeout(() => {
     const eventChecks = getSafe(checks, [event], []);
     log('debug', 'running checks', { event, count: eventChecks.length });
-    Promise.map(eventChecks, (par: ICheckEntry) => runCheck(par))
+    Promise.map(eventChecks, (par: ICheckEntry) => runCheck(api, par))
       .then(() => {
-        log('debug', 'all checks completed',
-          { event, problemCount: Object.keys(dashProps.problems).length });
+        log('debug', 'all checks completed', { event });
       });
   }, delay || 500);
 }
@@ -97,29 +105,26 @@ function init(context: IExtensionContext): boolean {
     setdefault(checks, eventType, []).push({ id, check });
   };
 
-  context.registerDashlet('Problems', 2, 10, ReportDashlet,
-    (state) => Object.keys(dashProps.problems).length > 0, () => dashProps);
-
   context.once(() => {
     context.api.events.on('trigger-test-run', (eventType: string, delay?: number) => {
       log('debug', 'triggering test run', eventType);
-      runChecks(eventType, delay);
+      runChecks(context.api, eventType, delay);
     });
 
     context.api.events.on('gamemode-activated', () => {
-      runChecks('gamemode-activated');
+      runChecks(context.api, 'gamemode-activated');
     });
 
     context.api.events.on('profile-did-change', () => {
-      runChecks('profile-did-change');
+      runChecks(context.api, 'profile-did-change');
     });
 
     context.api.events.on('startup', () => {
-      runChecks('startup');
+      runChecks(context.api, 'startup');
     });
 
     context.api.onStateChange(['settings'], () => {
-      runChecks('settings-changed');
+      runChecks(context.api, 'settings-changed');
     });
 
     context.api.onStateChange(['persistent', 'profiles'], (prevProfiles, newProfiles) => {
@@ -129,7 +134,7 @@ function init(context: IExtensionContext): boolean {
         return;
       }
       if (prevProfiles[currentProfile.id].modState !== newProfiles[currentProfile.id].modState) {
-        runChecks('mod-activated', 5000);
+        runChecks(context.api, 'mod-activated', 5000);
       }
     });
   });

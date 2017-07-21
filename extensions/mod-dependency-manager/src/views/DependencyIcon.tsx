@@ -4,6 +4,7 @@ import { IModLookupInfo } from '../types/IModLookupInfo';
 
 import matchReference from '../util/matchReference';
 import renderModName from '../util/renderModName';
+import ruleFulfilled from '../util/ruleFulfilled';
 
 import { setConflictDialog, setCreateRule, setSource, setTarget } from '../actions';
 
@@ -332,26 +333,23 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
     const classes = ['btn-dependency'];
 
-    let anyUnfulfilled = false;
+    let anyUnfulfilled: boolean = false;
 
-    const isFulfilled = (rule: IRule) => {
-      if (rule.type === 'conflicts') {
-        if (this.findReference(rule.reference, enabledMods) !== undefined) {
-          anyUnfulfilled = true;
-          return false;
-        } else {
-          return true;
-        }
-      } else if (rule.type === 'requires') {
-        if (this.findReference(rule.reference, enabledMods) === undefined) {
-          anyUnfulfilled = true;
-          return false;
-        } else {
-          return true;
-        }
-      } else {
-        return null;
+    const renderRule = (rule: IRule, onRemove: (rule: IRule) => void) => {
+      const isFulfilled = ruleFulfilled(enabledMods, rule);
+      // isFulfilled could be null
+      if (isFulfilled === false) {
+        anyUnfulfilled = true;
       }
+      return (
+        <RuleDescription
+          t={t}
+          key={this.key(rule)}
+          rule={rule}
+          onRemoveRule={onRemove}
+          fulfilled={isFulfilled}
+        />
+      );
     };
 
     let popover: JSX.Element;
@@ -362,22 +360,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     if ((staticRules.length > 0) || (customRules.length > 0)) {
       popover = (
         <Popover id={`popover-${mod.id}`} style={{ maxWidth: 500 }}>
-          {staticRules.map(rule => (
-            <RuleDescription
-              t={t}
-              key={this.key(rule)}
-              rule={rule}
-              fulfilled={isFulfilled(rule)}
-            />
-          ))}
-          {customRules.map(rule => (
-            <RuleDescription
-              t={t}
-              key={this.key(rule)}
-              rule={rule}
-              onRemoveRule={this.removeRule}
-              fulfilled={isFulfilled(rule)}
-            />))}
+          {staticRules.map(rule => renderRule(rule, undefined))}
+          {customRules.map(rule => renderRule(rule, this.removeRule))}
         </Popover>
       );
       classes.push(anyUnfulfilled ? 'btn-dependency-unfulfilledrule' : 'btn-dependency-hasrules');
@@ -397,7 +381,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
             className={classes.join(' ')}
             key={`rules-${mod.id}`}
             tooltip={t('Drag to another mod to define dependency')}
-            icon='plug'
+            icon='connect'
             ref={this.setRef}
             onClick={this.toggleOverlay}
           />
@@ -466,10 +450,6 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     const version = lookupInfo.version;
 
     return version !== undefined ? id + ' v' + version : id;
-  }
-
-  private findReference(reference: IReference, mods: IModLookupInfo[]): IModLookupInfo {
-    return mods.find(mod => matchReference(reference, mod));
   }
 
   private setRef = (ref) => {

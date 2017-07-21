@@ -26,7 +26,8 @@ function testRef(mod: IMod, ref: IReference): boolean {
   // right file?
   if (((ref.logicalFileName !== undefined) &&
        (ref.logicalFileName !== attr.logicalFileName)) ||
-      (!minimatch(mod.installationPath, ref.fileExpression))) {
+      ((ref.fileExpression !== undefined) &&
+       !minimatch(mod.installationPath, ref.fileExpression))) {
     return false;
   }
 
