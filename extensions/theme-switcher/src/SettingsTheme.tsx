@@ -100,6 +100,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
             </FormControl>
             <InputGroup.Button>
               <Button onClick={this.clone} >{ t('Clone') }</Button>
+              { editable ? <Button onClick={this.remove}>{ t('Remove') }</Button> : null }
             </InputGroup.Button>
           </InputGroup>
         </FormGroup>
@@ -202,16 +203,41 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
           .then(() => this.saveThemeInternal(res.input.name, this.state.variables))
           .then(() => {
             this.nextState.themes.push(res.input.name);
-            this.props.onSelectTheme(res.input.name);
-            this.context.api.events.emit('select-theme', res.input.name);
+            this.selectThemeImpl(res.input.name);
           });
         }
       }
     });
   }
 
+  private remove = () => {
+    const { t, currentTheme, onShowDialog } = this.props;
+    onShowDialog('question', t('Confirm removal'), {
+      message: t('Are you sure you want to remove the theme {{theme}}', {
+        replace: { theme: currentTheme },
+      }),
+    }, {
+        Cancel: null,
+        Confirm: () => {
+          const targetDir = path.join(themePath(), currentTheme);
+          this.selectThemeImpl('__default');
+          this.nextState.themes = this.state.themes.filter(theme => theme !== currentTheme);
+          fs.removeAsync(targetDir)
+            .then(() => {
+              log('info', 'removed theme', targetDir);
+            })
+            .catch(err => {
+              log('error', 'failed to remove theme', { err });
+            });
+        },
+      });
+  }
+
   private selectTheme = (evt) => {
-    const theme = evt.currentTarget.value;
+    this.selectThemeImpl(evt.currentTarget.value);
+  }
+
+  private selectThemeImpl(theme: string) {
     this.props.onSelectTheme(theme);
     this.context.api.events.emit('select-theme', theme);
   }
