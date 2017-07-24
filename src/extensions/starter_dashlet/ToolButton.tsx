@@ -40,6 +40,21 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
         title: props.t('Run'),
         icon: 'button-play',
         action: () => props.onRun(props.starter),
+        condition: () => this.props.starter.exePath !== '',
+        options: {
+          noCollapse: true,
+        },
+      },
+      {
+        title: props.t('Remove'),
+        icon: 'remove',
+        action: this.remove,
+        condition: () => !this.props.starter.isGame,
+      },
+      {
+        title: props.t('Edit'),
+        icon: 'edit',
+        action: this.edit,
       },
     ];
   }
@@ -68,39 +83,6 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
     );
   }
 
-  private renderMenu(): JSX.Element {
-    const { t, starter } = this.props;
-    const items = [];
-
-    if (starter.exePath !== '') {
-      items.push(
-        <MenuItem key='set-item' onSelect={this.makePrimary}>
-          {t('Set as primary tool')}
-        </MenuItem>);
-    }
-
-    if (!starter.isGame) {
-      items.push(
-        <MenuItem key='remove' onSelect={this.remove}>
-          {t('Remove')}
-        </MenuItem>);
-    }
-
-    if (items.length > 0) {
-      items.push(<MenuItem key='divider' divider />);
-    }
-
-    items.push(
-      <MenuItem key='properties' onClick={this.edit}>
-        {t('Properties')}
-      </MenuItem>);
-
-    return (
-      <Dropdown.Menu>
-        {items}
-      </Dropdown.Menu>);
-  }
-
   private remove = () => {
     const { onRemove, starter } = this.props;
     onRemove(starter);
@@ -114,11 +96,6 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   private run = () => {
     const { onRun, starter } = this.props;
     onRun(starter);
-  }
-
-  private makePrimary = () => {
-    const { onMakePrimary, starter } = this.props;
-    onMakePrimary(starter);
   }
 }
 
