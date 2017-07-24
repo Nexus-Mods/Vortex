@@ -229,7 +229,7 @@ class ExtensionManager {
 
   private mExtensions: IRegisteredExtension[];
   private mApi: IExtensionApi;
-  private mTranslator: I18next.I18n;
+  private mTranslator: I18next.i18n;
   private mEventEmitter: NodeJS.EventEmitter;
   private mStyleManager: StyleManagerT;
   private mReduxWatcher: any;
@@ -287,7 +287,7 @@ class ExtensionManager {
     this.initExtensions();
   }
 
-  public setTranslation(translator: I18next.I18n) {
+  public setTranslation(translator: I18next.i18n) {
     this.mTranslator = translator;
   }
 

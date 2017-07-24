@@ -10,6 +10,7 @@ import { activeGameId } from '../../util/selectors';
 import StarterInfo from '../../util/StarterInfo';
 import { DeployResult } from '../../util/startTool';
 import { getSafe } from '../../util/storeHelper';
+import Dropdown from '../../views/Dropdown';
 import Icon from '../../views/Icon';
 
 import {
@@ -33,7 +34,7 @@ import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { Col, Dropdown, Grid, Media, MenuItem, Row } from 'react-bootstrap';
+import { Col, Grid, Media, MenuItem, Row } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 

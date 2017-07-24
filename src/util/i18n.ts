@@ -21,7 +21,7 @@ interface ITranslationEntry {
 let missingKeys = { common: {} };
 
 export interface IInitResult {
-  i18n: I18next.I18n;
+  i18n: I18next.i18n;
   tFunc: I18next.TranslationFunction;
   error?: Error;
 }
@@ -36,7 +36,7 @@ export interface IInitResult {
 function init(language: string): Promise<IInitResult> {
   currentLanguage = language;
   return new Promise<IInitResult>((resolve, reject) => {
-    const res: I18next.I18n = I18next.use(FSBackend).init(
+    const res: I18next.i18n = I18next.use(FSBackend).init(
         {
           lng: language,
           fallbackLng: 'en',

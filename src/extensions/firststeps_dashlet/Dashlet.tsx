@@ -245,7 +245,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
     visibleSteps.sort((lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100));
 
     return (
-      <div className='dashlet-first-steps'>
+      <div className='dashlet'>
         <h4>{t('Tasks / Suggestions')}</h4>
         <ListGroup>
           {

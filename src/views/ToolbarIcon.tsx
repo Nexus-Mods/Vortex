@@ -15,11 +15,12 @@ export interface IToolbarIconProps {
   onClick?: (ids: string[]) => void;
   pulse?: boolean;
   disabled?: boolean;
+  className?: string;
 }
 
 class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
   public render(): JSX.Element {
-    const { buttonType, id, text, icon, iconSet, pulse, disabled} = this.props;
+    const { buttonType, className, id, text, icon, iconSet, pulse, disabled} = this.props;
     if (buttonType === 'menu') {
       return (
         <div onClick={this.invokeAction}>
@@ -37,6 +38,7 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
         placement={placement}
         onClick={this.invokeAction}
         disabled={disabled}
+        className={className}
       >
         { ['icon', 'both'].indexOf(bType) !== -1
           ? <Icon set={iconSet} name={icon} pulse={pulse} />

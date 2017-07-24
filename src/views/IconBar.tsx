@@ -119,11 +119,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         }
       });
 
-      if ((collapsed.length === 0) && (unCollapsed.length === 0)) {
-        return null;
-      }
-
-      const moreButton = (
+      const moreButton = (collapsed.length === 0) ? null : (
         <div className={classes.join(' ')}>
           <IconButton
             id={`btn-menu-${id}`}
@@ -156,7 +152,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             style={style}
           >
             {moreButton}
-            {unCollapsed.sort(iconSort).map(this.renderIcon)}
+            {unCollapsed.sort(iconSort).map((icon, idx) => (
+              <div key={idx}>{this.renderIcon(icon, idx)}</div>))}
           </ButtonGroup>
       );
       }

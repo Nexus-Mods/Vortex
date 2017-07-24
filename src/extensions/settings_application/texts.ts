@@ -10,10 +10,10 @@ function getText(id: string, t: I18next.TranslationFunction) {
       '"Shared" mode. In this mode all data will be stored in a global location ' +
       'and available to all users on this system.' +
       '\n\n' +
-      'Please note that this includes login credentials for NexusMods and ' +
+      'Please note that this includes login credentials for Nexus Mods and ' +
       'other, potentially confidential, pieces of information you enter in Vortex.' +
       '\n\n' +
-      'This switch is not destructive.The data stored with your user account is ' +
+      'This switch is not destructive. The data stored with your user account is ' +
       'not touched while you\'re in shared mode, so you can toggle back and forth.');
   }
 }

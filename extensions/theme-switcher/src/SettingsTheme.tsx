@@ -172,7 +172,9 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
       this.nextState.variables = variables;
     })
     // an exception indicates no variables set. that's fine, defaults are used
-    .catch(() => undefined);
+    .catch(() => {
+      this.nextState.variables = {};
+    });
   }
 
   private clone = () => {
@@ -200,6 +202,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
           .then(() => this.saveThemeInternal(res.input.name, this.state.variables))
           .then(() => {
             this.nextState.themes.push(res.input.name);
+            this.props.onSelectTheme(res.input.name);
             this.context.api.events.emit('select-theme', res.input.name);
           });
         }
