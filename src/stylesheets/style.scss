@@ -82,6 +82,10 @@ html {
   background-color: $badge-bg;
 }
 
+.btn:not(.btn-embed) svg {
+  margin-right: 0.5em;
+}
+
 // tables
 .table {
   margin-bottom: 0px;
@@ -505,7 +509,7 @@ a[role=menuitem] svg {
 ///////////////
 
 ////////////
-// scrollbar
+// globals
 
 ::-webkit-scrollbar {
   width: $scrollbar-width;
@@ -521,7 +525,12 @@ a[role=menuitem] svg {
   background-color: $brand-secondary;
 }
 
-// /scrollbar
+::placeholder,
+::-webkit-input-placeholder {
+  color: lighten($text-color, 20%);
+}
+
+// /globals
 /////////////
 
 ////////////////
@@ -635,6 +644,7 @@ a[role=menuitem] svg {
 
     webview {
       height: 100%;
+      background-color: white;
     }
   }
 }
@@ -1159,10 +1169,10 @@ a[role=menuitem] svg {
 }
 
 .mod-picture-large {
-  margin-left: 5%;
   margin-top: 5%;
   max-width: 90%;
   max-height: 90%;
+  position: absolute;
 }
 
 .table-mods .dropdown > button,
@@ -1244,8 +1254,6 @@ a[role=menuitem] svg {
 
 .game-thumbnail-body {
   @extend .panel-body;
-  width: 180px;
-  height: 140px;
   text-align: center;
   padding: 4px;
 
@@ -1255,7 +1263,6 @@ a[role=menuitem] svg {
     width: 100%;
     white-space: nowrap;
     display: flex;
-    position: absolute;
     padding: 0px 2px;
 
     &div {
@@ -1269,6 +1276,9 @@ a[role=menuitem] svg {
     * {
       display: inline-block;
     }
+    button {
+      @extend .btn-embed;
+    }
   }
 
   .name { 
@@ -1281,6 +1291,17 @@ a[role=menuitem] svg {
   .thumbnail-img {
     max-width: 170px;
     max-height: 100px;
+  }
+}
+
+.hidpi .game-thumbnail-body {
+  .name { 
+    max-width: 300px;
+  }
+
+  .thumbnail-img {
+    max-width: 340px;
+    max-height: 200px;
   }
 }
 
@@ -1342,6 +1363,17 @@ a[role=menuitem] svg {
 
 // game picker page
 ///////////////////
+
+//////////////
+// quicklaunch
+
+.container-quicklaunch {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+// /quicklaunch
+///////////////
 
 ///////////////
 // profile page
@@ -1457,12 +1489,18 @@ a[role=menuitem] svg {
   flex-direction: row;
   padding: $gutter-width / 2;
 
+  button {
+    @extend .btn-embed;
+  }
   span {
     flex: 1 1 0;
     margin: auto 1em;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow-x: hidden;
+  }
+  .btn-group {
+    display: inline-flex;
   }
 }
 
@@ -1531,6 +1569,10 @@ a[role=menuitem] svg {
     padding-top: $gutter-width / 2;
     padding-bottom: $gutter-width / 2;
   }
+
+  .media-body {
+    overflow: visible;
+  }
 }
 
 .env-edit-buttons {
@@ -1545,7 +1587,7 @@ a[role=menuitem] svg {
 ///////////
 // dashlets
 
-.dashlet-first-steps {
+.dashlet {
   border: 1px solid $brand-secondary;
   background-color: $brand-menu;
   padding: floor(($gutter-width / 2));
@@ -1730,6 +1772,10 @@ a[role=menuitem] svg {
   stroke: $brand-success;
 }
 
+.dashlet-download .recharts-sector {
+  fill: $brand-success;
+}
+
 // /charts
 //////////
 
@@ -1806,9 +1852,12 @@ a[role=menuitem] svg {
 
 ////////////
 // game page
+
 .popover-game-info {
   max-width: 500px;
 }
+
+
 
 // /game page
 /////////////
@@ -1863,3 +1912,31 @@ a[role=menuitem] svg {
 
 // /bbcode
 //////////
+
+/////////
+// other
+
+.packery-container {
+  margin: floor(($gutter-width / 2));
+}
+
+// /other
+/////////
+
+//////////////////
+// radial progress
+
+.radial-progress-running {
+  fill: $brand-secondary;
+}
+
+.radial-progress-paused {
+  fill: $brand-bg;
+}
+
+.radial-rest {
+  fill: $gray-light;
+}
+
+// /radial progress
+///////////////////

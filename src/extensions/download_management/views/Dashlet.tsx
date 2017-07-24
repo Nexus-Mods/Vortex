@@ -6,6 +6,8 @@ import { bytesToString } from '../../../util/util';
 import {speedDataPoints} from '../reducers/state';
 import {IDownload} from '../types/IDownload';
 
+import RadialProgress from './RadialProgress';
+
 import * as I18next from 'i18next';
 import * as React from 'react';
 import * as rechartsT from 'recharts';
@@ -47,34 +49,44 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
 
     // TODO: animation disabled because https://github.com/recharts/recharts/issues/375
     return (
-      <div>
-        <h5>{t('{{ count }} download', {
-          count: activeDownloads.length,
-          replace: { count: activeDownloads.length },
-        })}</h5>
-        <div style={{ textAlign: '-webkit-center' }} >
-          <recharts.AreaChart width={200} height={200} data={data}>
-            <defs>
-              <linearGradient id='colorUv' x1='0' y1='0' x2='0' y2='1'>
-                <stop offset='5%' stopColor='#cf862a' stopOpacity={0.8} />
-                <stop offset='95%' stopColor='#cf862a' stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <recharts.Area
-              type='monotone'
-              dataKey='speed'
-              stroke='#cf862a'
-              fill='url(#colorUv)'
-              isAnimationActive={false}
+      <div className='dashlet dashlet-download'>
+        <h4>{t('Download Progress')}</h4>
+        <div style={{ textAlign: '-webkit-center', position: 'relative' }} >
+            <RadialProgress
+              totalRadius={100}
+              data={this.downloadProgress()}
+              gap={2}
             />
-            <recharts.Tooltip
-              formatter={this.valueFormatter}
-              labelFormatter={this.labelFormatter}
-            />
-          </recharts.AreaChart>
+            <div style={{
+              position: 'absolute',
+              top: 0, left: 0,
+              width: '100%', height: '100%',
+              display: 'inline-flex',
+            }}>
+              <div style={{
+                marginTop: 'auto',
+                marginBottom: 'auto',
+                width: '100%',
+              }} >
+                {bytesToString(speeds[speeds.length - 1])}/s
+              </div>
+            </div>
         </div>
       </div>
     );
+  }
+
+  private downloadProgress = () => {
+    const { files } = this.props;
+
+    return Object.keys(files)
+      .filter(file => ['paused', 'started'].indexOf(files[file].state) !== -1)
+      .map(file => ({
+        min: 0,
+        max: files[file].size || files[file].received || 0,
+        value: files[file].received || 0,
+        class: files[file].state === 'paused' ? 'paused' : 'running',
+      }));
   }
 
   private valueFormatter = (value: number) => {
