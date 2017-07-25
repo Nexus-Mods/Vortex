@@ -51,13 +51,14 @@ export function parseNMMInstall(nmmFilePath: string, mods: any): Promise<any> {
       for (const fileLink of modInfo.getElementsByTagName('fileLink')) {
         const nodeRealPath = fileLink.getAttribute('realPath');
         const nodeVirtualPath = fileLink.getAttribute('virtualPath');
-        const nodeLinkPriority = fileLink.childNodes[0].nodeValue;
-        const nodeIsActive = fileLink.childNodes[1].nodeValue.toLocaleLowerCase();
+        const nodeLinkPriority =
+          fileLink.getElementsByTagName('linkPriority')[0].childNodes[0].nodeValue;
+        const nodeIsActive = fileLink.getElementsByTagName('isActive')[0].childNodes[0].nodeValue;
 
         const fileEntry: FileEntry = {
           fileSource: nodeRealPath,
           fileDestination: nodeVirtualPath,
-          isActive: (nodeIsActive === 'true'),
+          isActive: (nodeIsActive.toLocaleLowerCase() === 'true'),
           filePriority: (parseInt(nodeLinkPriority, 10)),
         };
 
@@ -85,7 +86,7 @@ export function parseNMMInstall(nmmFilePath: string, mods: any): Promise<any> {
         modVersion: elementModVersion,
         archiveMD5: fileMD5,
         importFlag: true,
-        isAlreadyManaged: ((modListSet !== null) && (modListSet !== undefined) 
+        isAlreadyManaged: ((modListSet !== null) && (modListSet !== undefined)
           && (modListSet.entries.length > 0)) ? modListSet.has(derivedId) : false,
         fileEntries: modFileEntries,
       };
