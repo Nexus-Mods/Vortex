@@ -1,3 +1,5 @@
+import { IStorage } from '../types/IStorage';
+
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import levelup = require('levelup');
@@ -5,7 +7,7 @@ import * as path from 'path';
 
 const app = appIn || remote.app;
 
-class LevelStorage {
+class LevelStorage implements IStorage {
   private mDB: LevelUp;
 
   constructor(basePath: string, name: string) {

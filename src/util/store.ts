@@ -2,6 +2,7 @@ import reducer from '../reducers/index';
 import {IExtensionReducer} from '../types/Extension';
 import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
+import { IStorage } from '../types/IStorage';
 
 import {terminate} from './errorHandling';
 import ExtensionManager from './ExtensionManager';
@@ -33,7 +34,7 @@ const logMiddleware = (store) => (next) => (action) => {
   return res;
 };*/
 
-const storage: { [path: string]: LevelStorage } = {};
+const storage: { [path: string]: IStorage } = {};
 
 export function createVortexStore([]): Redux.Store<IState> {
   const middleware = [
@@ -47,14 +48,15 @@ export function createVortexStore([]): Redux.Store<IState> {
   return createStore<IState>(reducer([]), enhancer);
 }
 
-function initStorage(basePath: string): Promise<LevelStorage> {
+function initStorage(basePath: string): Promise<IStorage> {
   if (storage[basePath] === undefined) {
+    // storage[basePath] = new StorageLogger(new LevelStorage(basePath, 'state'));
     storage[basePath] = new LevelStorage(basePath, 'state');
   }
   return Promise.resolve(storage[basePath]);
 }
 
-function persist(store: Redux.Store<IState>, levelStorage: LevelStorage,
+function persist(store: Redux.Store<IState>, levelStorage: IStorage,
                  whitelist: string[]): Promise<Persistor> {
   const settings = {
     storage: levelStorage,

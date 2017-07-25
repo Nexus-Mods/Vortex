@@ -3110,15 +3110,6 @@
     "version": "2.12.0",
     "licenseFile": "node_modules\\react-color\\LICENSE"
   },
-  "react-contextmenu@2.6.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/vkbansal/react-contextmenu",
-    "publisher": "Vivek Kumar Bansal",
-    "email": "contact@vkbansal.me",
-    "name": "react-contextmenu",
-    "version": "2.6.1",
-    "licenseFile": "node_modules\\react-contextmenu\\LICENSE.md"
-  },
   "react-display-name@0.2.0": {
     "licenses": "MIT",
     "repository": "https://github.com/jurassix/react-display-name",

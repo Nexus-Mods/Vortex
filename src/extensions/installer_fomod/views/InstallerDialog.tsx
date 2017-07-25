@@ -315,8 +315,11 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
           <Pager>
             {
               lastVisible !== undefined
-                ? <Pager.Item previous onClick={this.prev}>{lastVisible.name}</Pager.Item>
-                : null
+                ? (
+                  <Pager.Item draggable={false} previous onClick={this.prev}>
+                    {lastVisible.name || t('Previous')}
+                  </Pager.Item>
+                ) : null
             }
             <li>
               <ProgressBar now={idx} max={steps.length} />
@@ -324,7 +327,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
             {
               nextVisible !== undefined
                 ? (
-                  <Pager.Item next disabled={nextDisabled} onClick={this.next}>
+                  <Pager.Item draggable={false} next disabled={nextDisabled} onClick={this.next}>
                     {nextVisible.name || t('Next')}
                   </Pager.Item>
                 ) : (

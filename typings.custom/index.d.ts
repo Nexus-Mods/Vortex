@@ -3,7 +3,6 @@
 /// <reference path="electron-edge.d.ts" />
 /// <reference path="node-ipc.d.ts" />
 /// <reference path="node-rest-client.d.ts" />
-/// <reference path="react-contextmenu.d.ts" />
 /// <reference path="react-i18next.d.ts" />
 /// <reference path="react-sortable-tree.d.ts" />
 /// <reference path="redux-electron-store.d.ts" />

@@ -1335,6 +1335,9 @@ a[role=menuitem] svg {
 
 .btngroup-game-list {
   display: inline-flex;
+  button {
+    @extend .btn-embed;
+  }
 }
 
 .progress {
