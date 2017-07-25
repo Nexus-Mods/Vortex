@@ -86,12 +86,12 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
   public render(): JSX.Element {
     const { gameMode, importedMods, t } = this.props;
     const { importedModList, profileId } = this.state;
-    let actions = this.modActions;
+    let importActions = this.modActions;
     const selectFolder = true;
 
     let header: JSX.Element;
     header = this.renderMigration();
-    actions = [].concat(this.modActions);
+    importActions = [].concat(this.modActions);
 
     let content = null;
     if (!selectFolder || ((importedModList !== undefined) && (importedModList !== null))) {
@@ -99,7 +99,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
         <Table
           tableId='importedmods'
           data={selectFolder ? importedModList : importedMods}
-          actions={actions}
+          actions={importActions}
           staticElements={[
             MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, FILES, LOCAL, STATUS]}
         />
@@ -208,12 +208,17 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
 
     parseNMMInstall(virtualPath, mods)
     .then((modEntries) => {
-      if ((modEntries === null) || (modEntries === undefined) || (modEntries.length === 0)) {
+      if (typeof modEntries === 'string') {
+        throw Error(modEntries);
+      }
+      const parsedModEntries: IModEntry[] = modEntries;
+      if ((parsedModEntries === null) || (parsedModEntries === undefined)
+        || (parsedModEntries.length === 0)) {
         onShowError('Virtual config parse issue:',
         'The selected folder contained no VirtualModConfig.xml file.', this.importId);
       }
-      this.toImportList = modEntries;
-      this.nextState.importedModList = modEntries;
+      this.toImportList = parsedModEntries;
+      this.nextState.importedModList = parsedModEntries;
       onShowSuccess('NMM virtual config file parsed successfully.', this.importId);
     })
     .catch((err) => {

@@ -5,30 +5,33 @@ import { log, types, util } from 'nmm-api';
 import * as path from 'path';
 import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
 
-export function parseNMMInstall(nmmFilePath: string, mods: any): Promise<ModEntry[]> {
+export function parseNMMInstall(nmmFilePath: string, mods: any): Promise<any> {
   const nmmModList: ModEntry[] = [];
   const parser = new DOMParser();
   const sourceFile = nmmFilePath;
-  const modListSet = new Set(Object.keys(mods).map((key: string) => mods[key].id));
+
+  const modListSet = ((mods !== null) && (mods !== undefined)) ?
+    new Set(Object.keys(mods).map((key: string) => mods[key].id)) : new Set();
 
   return fs.readFileAsync(sourceFile)
   .catch((err) => {
-    throw new Error('The selected folder does not contain a VirtualModConfig.xml file.');
+    return Promise.resolve('The selected folder does not contain a VirtualModConfig.xml file.');
   })
   .then((data) => {
     const xmlDoc = parser.parseFromString(data.toString('utf-8'), 'text/xml');
     const version = xmlDoc.getElementsByTagName('virtualModActivator')[0];
 
     if (version === null) {
-      throw new Error('The selected folder does not contain a valid VirtualModConfig.xml file.');
+      return Promise.resolve(
+        'The selected folder does not contain a valid VirtualModConfig.xml file.');
     } else if (version.getAttribute('fileVersion') !== '0.3.0.0') {
-      throw new Error('The selected folder contains an older VirtualModConfig.xml file,'
+      return Promise.resolve('The selected folder contains an older VirtualModConfig.xml file,'
         + 'you need to upgrade your NMM before proceeding with the mod import.');
     }
 
     const modInfoList = xmlDoc.getElementsByTagName('modInfo');
     if (modInfoList === undefined || modInfoList.length <= 0) {
-      throw new Error('The selected folder contains an empty VirtualModConfig.xml file.');
+      return Promise.resolve('The selected folder contains an empty VirtualModConfig.xml file.');
     }
 
     for (const modInfo of modInfoList) {
@@ -49,7 +52,7 @@ export function parseNMMInstall(nmmFilePath: string, mods: any): Promise<ModEntr
         const nodeRealPath = fileLink.getAttribute('realPath');
         const nodeVirtualPath = fileLink.getAttribute('virtualPath');
         const nodeLinkPriority = fileLink.childNodes[0].nodeValue;
-        const nodeIsActive = fileLink.childNodes[1].nodeValue;
+        const nodeIsActive = fileLink.childNodes[1].nodeValue.toLocaleLowerCase();
 
         const fileEntry: FileEntry = {
           fileSource: nodeRealPath,
@@ -82,7 +85,8 @@ export function parseNMMInstall(nmmFilePath: string, mods: any): Promise<ModEntr
         modVersion: elementModVersion,
         archiveMD5: fileMD5,
         importFlag: true,
-        isAlreadyManaged: modListSet.has(derivedId),
+        isAlreadyManaged: ((modListSet !== null) && (modListSet !== undefined) 
+          && (modListSet.entries.length > 0)) ? modListSet.has(derivedId) : false,
         fileEntries: modFileEntries,
       };
 

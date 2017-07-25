@@ -7,10 +7,10 @@ import * as actions from '../actions/session';
  */
 export const sessionReducer: types.IReducerSpec = {
   reducers: {
-    [actions.setMods as any]: (state, payload) =>
-      util.setSafe(state, ['importedMods'], payload),
-    [actions.selectImportFolder as any]: (state, payload) =>
-      util.setSafe(state, ['selectFolder'], payload),
+    [actions.selectImportFolder as any]: (state, payload) => {
+      const importFolder = payload;
+      util.setSafe(state, ['selectFolder'], importFolder);
+    },
   },
   defaults: {
     importedMods: {},
