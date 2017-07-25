@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<virtualModActivator fileVersion="0.3.0.0">
+  <modList>
+    <modInfo modId="1" downloadId="1" updatedDownloadId="" modName="TestMod" modFileName="TestMod" modNewFileName="" modFilePath="" FileVersion="1.0.0">
+      <fileLink realPath="TestPath" virtualPath="TestPath">
+        <linkPriority>0</linkPriority>
+        <isActive>True</isActive>
+      </fileLink>
+    </modInfo>
+  </modlist>
+</virtualModActivator>
