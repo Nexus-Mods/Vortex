@@ -26,6 +26,7 @@ import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db
 import { actions, log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
+import thunkMiddleware from 'redux-thunk';
 
 function makeReference(mod: IModInfo): IReference {
   return {

@@ -50,6 +50,8 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
             <RadialProgress
               style={{ height: '100%' }}
               totalRadius={100}
+              maxWidth={20}
+              offset={50}
               data={progress}
               gap={2}
             />

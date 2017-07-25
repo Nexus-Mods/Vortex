@@ -65,7 +65,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
         id: 'multi-user',
         type: 'settings-review' as ToDoType,
         condition: props => true,
-        priority: 10,
+        priority: 60,
         render: (props: IProps): JSX.Element => {
           const { t, multiUser } = this.props;
 
@@ -255,34 +255,39 @@ class Dashlet extends ComponentEx<IProps, {}> {
     visibleSteps.sort((lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100));
 
     return (
-      <div className='dashlet'>
+      <div
+        className='dashlet'
+        style={{ display: 'flex', flexDirection: 'column' }}
+      >
         <h4>{t('Tasks / Suggestions')}</h4>
-        <ListGroup>
-          {
-            visibleSteps.map(step => {
-              const props = step.props ? step.props() : this.props;
+        <div style={{ overflowY: 'auto' }}>
+          <ListGroup>
+            {
+              visibleSteps.map(step => {
+                const props = step.props ? step.props() : this.props;
 
-              return (
-                <ListGroupItem key={step.id} className={`todo-${step.type}`}>
-                  <Icon
-                    className={`icon-todo-type icon-todo-${step.type}`}
-                    name={this.typeToIcon(step.type)}
-                  />
-                  {step.render(props)}
-                  {this.renderButton(step.button)}
-                  <IconButton
-                    id={`btn-dismiss-${step.id}`}
-                    icon='remove'
-                    tooltip={t('Dismiss')}
-                    className='btn-embed'
-                    value={step.id}
-                    onClick={this.dismiss}
-                  />
-                </ListGroupItem>
-              );
-            })
-          }
-        </ListGroup>
+                return (
+                  <ListGroupItem key={step.id} className={`todo-${step.type}`}>
+                    <Icon
+                      className={`icon-todo-type icon-todo-${step.type}`}
+                      name={this.typeToIcon(step.type)}
+                    />
+                    {step.render(props)}
+                    {this.renderButton(step.button)}
+                    <IconButton
+                      id={`btn-dismiss-${step.id}`}
+                      icon='remove'
+                      tooltip={t('Dismiss')}
+                      className='btn-embed'
+                      value={step.id}
+                      onClick={this.dismiss}
+                    />
+                  </ListGroupItem>
+                );
+              })
+            }
+          </ListGroup>
+        </div>
       </div>
     );
   }

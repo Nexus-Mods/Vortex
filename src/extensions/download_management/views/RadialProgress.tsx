@@ -12,6 +12,8 @@ export interface IBaseProps {
   data: IBar[];
   gap: number;
   totalRadius: number;
+  offset?: number;
+  maxWidth?: number;
   style?: React.CSSProperties;
 }
 
@@ -20,7 +22,7 @@ type IProps = IBaseProps;
 class RadialProgress extends React.Component<IProps, {}> {
   private mArcGen: d3.Arc<any, IBar>;
   private mRestArcGen: d3.Arc<any, IBar>;
-  private mRadiusPerArc: number;
+  private mWidthPerArc: number;
 
   constructor(props) {
     super(props);
@@ -33,9 +35,10 @@ class RadialProgress extends React.Component<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { data, style, totalRadius } = this.props;
+    const { data, offset, style, totalRadius } = this.props;
+    const sideLength = (totalRadius + offset) * 2;
     return (
-      <svg viewBox='0 0 200 200' style={style}>
+      <svg viewBox={`0 0 ${sideLength} ${sideLength}`} style={style}>
         {data.map(this.renderArc)}
       </svg>
     );
@@ -44,9 +47,9 @@ class RadialProgress extends React.Component<IProps, {}> {
   private perc = (bar: IBar) => bar.value / (bar.max - bar.min);
 
   private renderArc = (bar: IBar, idx: number, arr: IBar[]): JSX.Element => {
-    const { totalRadius } = this.props;
+    const { offset, totalRadius } = this.props;
     return (
-      <g key={idx} transform={`translate(${totalRadius}, ${totalRadius})`}>
+      <g key={idx} transform={`translate(${totalRadius + offset}, ${totalRadius + offset})`}>
         <path
           className={`radial-progress radial-progress-${bar.class}`}
           d={this.mArcGen(bar, idx, arr.length)}
@@ -61,23 +64,29 @@ class RadialProgress extends React.Component<IProps, {}> {
   }
 
   private updateArcGen(props: IProps) {
-    const { data, gap, totalRadius } = props;
-    this.mRadiusPerArc = totalRadius / (data.length + 1);
+    const { data, gap, maxWidth, totalRadius } = props;
+    this.mWidthPerArc = totalRadius / (data.length + 1);
+    if (maxWidth !== undefined) {
+      this.mWidthPerArc = Math.min(this.mWidthPerArc, maxWidth);
+    }
+
+    const offset = this.props.offset || 0;
 
     this.mArcGen = d3.arc<any, IBar>()
       .startAngle(0)
       .endAngle((item: IBar) => this.perc(item) * 2 * Math.PI)
-      .innerRadius((item: IBar, idx: number, count: number) => this.mRadiusPerArc * (idx + 1))
+      .innerRadius((item: IBar, idx: number, count: number) =>
+        offset + this.mWidthPerArc * (idx + 1))
       .outerRadius((item: IBar, idx: number, count: number) =>
-        this.mRadiusPerArc * (idx + 2) - gap);
+        offset + this.mWidthPerArc * (idx + 2) - gap);
 
     this.mRestArcGen = d3.arc<any, IBar>()
       .startAngle((item: IBar) => this.perc(item) * 2 * Math.PI)
       .endAngle(2 * Math.PI)
       .innerRadius((item: IBar, idx: number, count: number) =>
-        this.mRadiusPerArc * (idx + 1) + (this.mRadiusPerArc - gap) / 4)
+        offset + this.mWidthPerArc * (idx + 1) + (this.mWidthPerArc - gap) / 4)
       .outerRadius((item: IBar, idx: number, count: number) =>
-        this.mRadiusPerArc * (idx + 2) - gap - (this.mRadiusPerArc - gap) / 4);
+        offset + this.mWidthPerArc * (idx + 2) - gap - (this.mWidthPerArc - gap) / 4);
    }
 }
 

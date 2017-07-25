@@ -193,6 +193,10 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
     }
 
     const { downloads, downloadPath } = this.props;
+    if (downloads[downloadId].localPath === undefined) {
+      return;
+    }
+
     const filePath = path.join(downloadPath, downloads[downloadId].localPath);
 
     this.context.api.sendNotification({
