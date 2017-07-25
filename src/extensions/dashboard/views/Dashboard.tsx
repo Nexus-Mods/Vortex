@@ -1,5 +1,6 @@
 import {PropsCallback} from '../../../types/IExtensionContext';
 import { ComponentEx, extend, translate } from '../../../util/ComponentEx';
+import MainPage from '../../../views/MainPage';
 
 import PackeryGrid from './PackeryGrid';
 import PackeryItem from './PackeryItem';
@@ -66,9 +67,13 @@ class Dashboard extends ComponentEx<IProps, {}> {
       ;
 
     return (
-      <PackeryGrid totalWidth={3}>
-        {sorted.map(this.renderItem)}
-      </PackeryGrid>
+      <MainPage>
+        <MainPage.Body style={{ height: '100%', overflowY: 'auto' }}>
+          <PackeryGrid totalWidth={3}>
+            {sorted.map(this.renderItem)}
+          </PackeryGrid>
+        </MainPage.Body>
+      </MainPage>
     );
   }
 

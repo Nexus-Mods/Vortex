@@ -1631,6 +1631,10 @@ a[role=menuitem] svg {
   }
 }
 
+.packery-item {
+  padding: floor(($gutter-width / 2));
+}
+
 .lodpi {
   .packery-height-1 {
     height: 200px;
@@ -1950,17 +1954,6 @@ a[role=menuitem] svg {
 // /bbcode
 //////////
 
-/////////
-// other
-
-.packery-container {
-  margin: floor(($gutter-width / 2));
-  height: 100%;
-}
-
-// /other
-/////////
-
 //////////////////
 // radial progress
 
@@ -1978,3 +1971,9 @@ a[role=menuitem] svg {
 
 // /radial progress
 ///////////////////
+
+/////////
+// other
+
+// /other
+/////////

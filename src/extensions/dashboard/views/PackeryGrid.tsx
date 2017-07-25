@@ -56,7 +56,14 @@ class Packery extends React.Component<IProps, {}> {
   }
 
   private refContainer = (ele: Element) => {
-    const options = {};
+    // gutter is manually implemented in css as a padding, that way it
+    // can access variables
+    const options = {
+      itemSelector: '.packery-item',
+      gutter: 0,
+      percentPosition: true,
+    };
+
     if (ele !== null) {
       const PackeryLibImpl = require('packery');
       this.mPackery = new PackeryLibImpl(ele, options);

@@ -14,10 +14,8 @@ class PackeryItem extends React.Component<IProps, {}> {
     // the item and it can't have a margin, otherwise the layout
     // would break.
     return (
-      <div style={{ width: `${widthPerc}%` }} className={`packery-height-${height}`}>
-        <div className='packery-container'>
+      <div style={{ width: `${widthPerc}%` }} className={`packery-item packery-height-${height}`}>
         {this.props.children}
-        </div>
       </div>);
   }
 }
