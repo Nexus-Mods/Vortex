@@ -1,10 +1,12 @@
 import { IActionDefinition } from '../../types/IActionDefinition';
 import { ComponentEx } from '../../util/ComponentEx';
 import StarterInfo from '../../util/StarterInfo';
+import { truthy } from '../../util/util';
 import Icon from '../../views/Icon';
 import IconBar from '../../views/IconBar';
 import { Button } from '../../views/TooltipControls';
 
+import { setPrimaryTool } from './actions';
 import ToolIcon from './ToolIcon';
 
 import * as I18next from 'i18next';
@@ -16,6 +18,7 @@ export type RemoveTool = (gameId: string, toolId: string) => void;
 export interface IProps {
   t: I18next.TranslationFunction;
   starter: StarterInfo;
+  primary: boolean;
   onRun: (starter: StarterInfo) => void;
   onMakePrimary: (starter: StarterInfo) => void;
   onRemove: (starter: StarterInfo) => void;
@@ -40,21 +43,27 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
         title: props.t('Run'),
         icon: 'button-play',
         action: () => props.onRun(props.starter),
-        condition: () => this.props.starter.exePath !== '',
+        condition: () => truthy(this.props.starter.exePath),
         options: {
           noCollapse: true,
         },
+      },
+      {
+        title: props.t('Make primary'),
+        icon: 'bookmark',
+        action: this.setPrimaryTool,
+        condition: () => truthy(this.props.starter.exePath),
+      },
+      {
+        title: props.t('Edit'),
+        icon: 'edit',
+        action: this.edit,
       },
       {
         title: props.t('Remove'),
         icon: 'remove',
         action: this.remove,
         condition: () => !this.props.starter.isGame,
-      },
-      {
-        title: props.t('Edit'),
-        icon: 'edit',
-        action: this.edit,
       },
     ];
   }
@@ -64,13 +73,21 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   }
 
   public render() {
-    const { starter } = this.props;
+    const { primary, starter } = this.props;
     const valid = (starter.exePath !== undefined) && (starter.exePath !== '');
 
+    const classes = [
+      'tool-button',
+    ];
+    if (primary) {
+      classes.push('tool-button-primary');
+    }
+
     return (
-      <div className='tool-button'>
+      <div className={ classes.join(' ') }>
         <ToolIcon imageUrl={starter.iconPath} imageId={this.mImageId} valid={valid} />
         <span>{starter.name}</span>
+        { primary ? <Icon className='tool-bookmark' name='bookmark'/> : null }
         <IconBar
           id={`tool-starter-${starter.id}`}
           className='buttons'
@@ -86,6 +103,11 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
   private remove = () => {
     const { onRemove, starter } = this.props;
     onRemove(starter);
+  }
+
+  private setPrimaryTool = () => {
+    const { onMakePrimary, starter } = this.props;
+    onMakePrimary(starter);
   }
 
   private edit = () => {

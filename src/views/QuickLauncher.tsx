@@ -6,6 +6,7 @@ import ToolIcon from '../extensions/starter_dashlet/ToolIcon';
 import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { ComponentEx, connect } from '../util/ComponentEx';
+import { log } from '../util/log';
 import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
 import StarterInfo from '../util/StarterInfo';
@@ -191,12 +192,19 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       return undefined;
     }
 
-    if (primaryTool === undefined) {
+    if ((primaryTool === undefined)
+        || ((game.supportedTools[primaryTool] === undefined)
+            && (discoveredTools[primaryTool] === undefined))) {
       return new StarterInfo(game, gameDiscovery);
     } else {
+      try {
       return new StarterInfo(game, gameDiscovery,
                              game !== undefined ? game.supportedTools[primaryTool] : undefined,
                              discoveredTools[primaryTool]);
+      } catch (err) {
+        log('warn', 'invalid primary tool', { err });
+        return new StarterInfo(game, gameDiscovery);
+      }
     }
   }
 }

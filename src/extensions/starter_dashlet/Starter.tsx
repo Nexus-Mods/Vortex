@@ -187,14 +187,19 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   }
 
   private renderTool = (starter: StarterInfo) => {
-    const { t } = this.props;
+    const { t, primaryTool } = this.props;
     if (starter === undefined) {
       return null;
     }
+
+    const isPrimary = (starter.id === primaryTool)
+      || ((primaryTool === undefined) && starter.isGame);
+
     return (
       <ToolButton
         t={t}
         key={starter.id}
+        primary={starter.id === primaryTool}
         starter={starter}
         onRun={this.startTool}
         onEdit={this.editTool}
