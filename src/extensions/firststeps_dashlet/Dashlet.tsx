@@ -63,7 +63,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
     this.mTodos = ([
       {
         id: 'multi-user',
-        type: 'settings' as ToDoType,
+        type: 'settings-review' as ToDoType,
         condition: props => true,
         priority: 10,
         render: (props: IProps): JSX.Element => {
@@ -263,8 +263,11 @@ class Dashlet extends ComponentEx<IProps, {}> {
               const props = step.props ? step.props() : this.props;
 
               return (
-                <ListGroupItem key={step.id}>
-                  <Icon className='icon-todo-type' name={this.typeToIcon(step.type)}/>
+                <ListGroupItem key={step.id} className={`todo-${step.type}`}>
+                  <Icon
+                    className={`icon-todo-type icon-todo-${step.type}`}
+                    name={this.typeToIcon(step.type)}
+                  />
                   {step.render(props)}
                   {this.renderButton(step.button)}
                   <IconButton
@@ -306,6 +309,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
 
   private typeToIcon(type: ToDoType): string {
     return {
+      'settings-review': 'sliders',
       settings: 'sliders',
       automation: 'wand',
       search: 'zoom',

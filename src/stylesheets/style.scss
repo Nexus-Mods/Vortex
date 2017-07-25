@@ -1502,11 +1502,15 @@ a[role=menuitem] svg {
   .btn-group {
     display: inline-flex;
   }
+
+  &.tool-button-primary {
+    background-color: $brand-secondary;
+  }
 }
 
-.tool-button-primary .tool-icon {
-  max-width: 100%;
-  max-height: 100%;
+.tool-bookmark {
+  // balance the padding of the tool button
+  margin-top: floor(($gutter-width / -2));
 }
 
 .btn-add-tool {
@@ -1529,35 +1533,6 @@ a[role=menuitem] svg {
       width: 24px;
       height: 24px;
     }
-  }
-}
-
-.tool-dropdown {
-  margin-right: 10px;
-  margin-bottom: 10px;
-  display: inline-flex;
-  flex-direction: row;
-  float: left;
-
-  .tool-button-primary {
-    width: 96px;
-    height: 96px;
-  }
-
-  .tool-button {
-    flex: 1;
-    padding: 0px;
-    width: 48px;
-    height: 48px;
-  }
-
-  .dropdown-toggle {
-    flex: 0;
-    padding-left: 2px !important;
-    padding-right: 2px !important;
-    border-left-color: $gray-lighter;
-    border-left-style: solid;
-    border-left-width: 1px;
   }
 }
 
@@ -1971,6 +1946,22 @@ a[role=menuitem] svg {
 
 // /radial progress
 ///////////////////
+
+///////
+// todo
+
+.icon-todo-settings-review,
+.icon-todo-automation {
+  background-color: $brand-success !important;
+}
+
+.icon-todo-settings,
+.icon-todo-search {
+  background-color: $brand-info !important;
+}
+
+// /todo
+////////
 
 /////////
 // other
