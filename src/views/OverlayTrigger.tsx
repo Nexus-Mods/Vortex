@@ -4,10 +4,10 @@ import {OverlayTrigger} from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
 export interface IBaseProps {
-  triggerRef: (ref: HTMLElement) => void;
+  triggerRef?: (ref: HTMLElement) => void;
   getBounds: () => ClientRect;
   orientation: 'vertical' | 'horizontal';
-  shouldUpdatePosition: boolean;
+  shouldUpdatePosition?: boolean;
 }
 
 export type IProps = IBaseProps & ReactBootstrap.OverlayTriggerProps;
@@ -36,7 +36,7 @@ class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
     super(props);
 
     this.state = {
-      placement: props.orientation === 'vertical' ? 'bottom' : 'right',
+      placement: props.orientation === 'horizontal' ? 'right' : 'bottom',
     };
   }
 
@@ -63,17 +63,17 @@ class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
   private onEnter = () => {
     if (this.mNode) {
       const bounds: ClientRect = this.props.getBounds();
-      if (this.props.orientation === 'vertical') {
-        const belowMid =
-          this.mNode.getBoundingClientRect().top > bounds.top + bounds.height / 2;
-        this.setState({
-          placement: belowMid ? 'top' : 'bottom',
-        });
-      } else {
+      if (this.props.orientation === 'horizontal') {
         const rightOfMid =
           this.mNode.getBoundingClientRect().left > bounds.left + bounds.width / 2;
         this.setState({
           placement: rightOfMid ? 'left' : 'right',
+        });
+      } else {
+        const belowMid =
+          this.mNode.getBoundingClientRect().top > bounds.top + bounds.height / 2;
+        this.setState({
+          placement: belowMid ? 'top' : 'bottom',
         });
       }
     }

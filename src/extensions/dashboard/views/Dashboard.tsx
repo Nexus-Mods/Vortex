@@ -5,12 +5,14 @@ import PackeryGrid from './PackeryGrid';
 import PackeryItem from './PackeryItem';
 
 import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 
 const UPDATE_FREQUENCY_MS = 1000;
 
 interface IDashletProps {
   title: string;
   width: 1 | 2 | 3;
+  height: 1 | 2 | 3;
   position: number;
   component: React.ComponentClass<any>;
   props?: PropsCallback;
@@ -82,7 +84,7 @@ class Dashboard extends ComponentEx<IProps, {}> {
   private renderItem = (dash: IDashletProps) => {
     const componentProps = dash.props !== undefined ? dash.props() : {};
     return (
-      <PackeryItem key={dash.title} width={dash.width}>
+      <PackeryItem key={dash.title} width={dash.width} height={dash.height}>
         <dash.component t={this.props.t} {...componentProps} />
       </PackeryItem>
     );
@@ -92,11 +94,12 @@ class Dashboard extends ComponentEx<IProps, {}> {
 function registerDashlet(instanceProps: IProps,
                          title: string,
                          width: 1 | 2 | 3,
+                         height: 1 | 2 | 3,
                          position: number,
                          component: React.ComponentClass<any>,
                          isVisible?: (state) => boolean,
                          props?: PropsCallback): IDashletProps {
-  return { title, position, width, component, isVisible, props };
+  return { title, position, width, height, component, isVisible, props };
 }
 
 export default translate([ 'common' ], { wait: true })(

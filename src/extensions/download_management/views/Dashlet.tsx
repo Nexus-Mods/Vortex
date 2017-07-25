@@ -10,8 +10,6 @@ import RadialProgress from './RadialProgress';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import * as rechartsT from 'recharts';
-let recharts: typeof rechartsT;
 
 interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -28,14 +26,6 @@ type IProps = IBaseProps & IConnectedProps;
  * download speed dashlet
  */
 class DownloadsDashlet extends ComponentEx<IProps, {}> {
-  public componentWillMount() {
-    asyncRequire('recharts')
-    .then((rechartsIn) => {
-      recharts = rechartsIn;
-      this.forceUpdate();
-    });
-  }
-
   public render(): JSX.Element {
     const {t, files, speeds} = this.props;
     const data = this.convertData(speeds);
@@ -43,18 +33,24 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
     const activeDownloads = Object.keys(files).filter(
       (key: string) => files[key].state === 'started');
 
-    if (recharts === undefined) {
-      return null;
-    }
+    const progress = this.downloadProgress();
 
-    // TODO: animation disabled because https://github.com/recharts/recharts/issues/375
-    return (
-      <div className='dashlet dashlet-download'>
-        <h4>{t('Download Progress')}</h4>
-        <div style={{ textAlign: '-webkit-center', position: 'relative' }} >
+    let content: JSX.Element = null;
+    if (progress.length === 0) {
+      content = (
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }} >
+          <div style={{ flex: '1 1 0' }} />
+          <h5 style={{ textAlign: 'center' }}>{t('No downloads active')}</h5>
+          <div style={{ flex: '1 1 0' }} />
+        </div>
+      );
+    } else {
+      content = (
+        <div style={{ textAlign: '-webkit-center', position: 'relative', height: '100%' }} >
             <RadialProgress
+              style={{ height: '100%' }}
               totalRadius={100}
-              data={this.downloadProgress()}
+              data={progress}
               gap={2}
             />
             <div style={{
@@ -72,6 +68,13 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
               </div>
             </div>
         </div>
+      );
+    }
+
+    return (
+      <div className='dashlet dashlet-download'>
+        <h4 style={{ position: 'absolute' }}>{t('Download Progress')}</h4>
+          { content }
       </div>
     );
   }

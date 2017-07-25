@@ -35,6 +35,7 @@ import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
 import { Col, Grid, Media, MenuItem, Row } from 'react-bootstrap';
+import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
@@ -65,6 +66,7 @@ type IWelcomeScreenProps = IConnectedProps & IActionProps;
 
 class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
   private mIsMounted: boolean = false;
+  private mRef: Element = null;
   constructor(props) {
     super(props);
 
@@ -83,6 +85,11 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
           this.forceUpdate();
         }
       });
+  }
+
+  public componentDidMount() {
+    this.mRef = ReactDOM.findDOMNode(this);
+    this.forceUpdate();
   }
 
   public componentWillUnmount() {
@@ -166,17 +173,14 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
 
     return (
       <div>
-        <Grid style={{ width: '100%' }}>
-          {split
-            .map((row, idx) => (
-              <Row key={idx}>{
-                row.map((col, colIdx) => (
-                  <Col key={colIdx} md={3}>
-                    { col !== null ? this.renderTool(col) : this.renderAddButton(hidden) }
-                  </Col>
-                ))
-              }</Row>))
-          }
+        <Grid fluid>
+          <Row>{
+            visible.map((col, colIdx) => (
+              <Col key={colIdx} md={6} lg={4} >
+                {col !== null ? this.renderTool(col) : this.renderAddButton(hidden)}
+              </Col>
+            ))
+          }</Row>
         </Grid>
       </div>
     );
@@ -259,7 +263,10 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     const { t } = this.props;
     // <IconButton id='add-tool-icon' icon='plus' tooltip={t('Add Tool')} />
     return (
-      <Dropdown id='add-tool-button' className='btn-add-tool'>
+      <Dropdown
+        id='add-tool-button'
+        className='btn-add-tool'
+        container={this.mRef}>
         <Dropdown.Toggle>
           <Icon name='plus' />
           <span className='btn-add-tool-text'>{t('Add Tool')}</span>

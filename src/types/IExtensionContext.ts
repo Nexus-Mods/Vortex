@@ -58,7 +58,7 @@ export type RegisterMainPage =
    options: IMainPageOptions) => void;
 
 export type RegisterDashlet =
-  (title: string, width: 1 | 2 | 3, position: number,
+  (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3, position: number,
    component: React.ComponentClass<any>, isVisible?: (state) => boolean,
    props?: PropsCallback) => void;
 

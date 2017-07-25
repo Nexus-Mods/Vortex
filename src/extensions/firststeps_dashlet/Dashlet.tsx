@@ -9,6 +9,7 @@ import { IconButton } from '../../views/TooltipControls';
 
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
+import getTextSettingsApplication from '../settings_application/texts';
 
 import { dismissStep } from './actions';
 
@@ -69,10 +70,19 @@ class Dashlet extends ComponentEx<IProps, {}> {
           const { t, multiUser } = this.props;
 
           const mode = multiUser ? t('Shared') : t('Per-user');
+          const more = (
+            <More id='more-multi-user-dash' name={t('Multi-User Mode')}>
+              {getTextSettingsApplication('multi-user', t)}
+            </More>
+          );
 
           return (
             <span>
-              { t('You are currently in {{mode}} mode.', {replace: {mode}}) }
+              <Interpolate
+                i18nKey='You are currently in {{mode}} {{more}} mode.'
+                mode={mode}
+                more={more}
+              />
             </span>
           );
         },
@@ -105,7 +115,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
           const path = <strong>{basePath}</strong>;
 
           return (
-            <span>
+            <span style={{ overflowX: 'hidden', textOverflow: 'ellipsis' }}>
               <Interpolate
                 i18nKey='Data for this game will be stored in {{path}}.'
                 path={path}

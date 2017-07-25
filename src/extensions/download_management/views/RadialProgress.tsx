@@ -12,6 +12,7 @@ export interface IBaseProps {
   data: IBar[];
   gap: number;
   totalRadius: number;
+  style?: React.CSSProperties;
 }
 
 type IProps = IBaseProps;
@@ -32,13 +33,11 @@ class RadialProgress extends React.Component<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { data, totalRadius } = this.props;
+    const { data, style, totalRadius } = this.props;
     return (
-      <div>
-        <svg style={{ height: 200, width: 200 }}>
-          {data.map(this.renderArc)}
-        </svg>
-      </div>
+      <svg viewBox='0 0 200 200' style={style}>
+        {data.map(this.renderArc)}
+      </svg>
     );
   }
 

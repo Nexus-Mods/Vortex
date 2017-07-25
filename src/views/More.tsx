@@ -1,13 +1,15 @@
 import Icon from './Icon';
+import OverlayTrigger from './OverlayTrigger';
 
 import * as React from 'react';
-import {OverlayTrigger, Popover} from 'react-bootstrap';
+import {Popover} from 'react-bootstrap';
 
 export interface IProps {
   id: string;
   name: string;
   children?: string;
-  placement?: 'top' | 'bottom' | 'left' | 'right';
+  container?: Element;
+  orientation?: 'vertical' | 'horizontal';
 }
 
 /**
@@ -20,26 +22,42 @@ export interface IProps {
  * @param {IProps} props
  * @returns
  */
-function More(props: IProps) {
-  const { children, id, name, placement } = props;
-  let pCounter = 0;
-  const popover = (
-    <Popover id={`popover-${id}`} className='more-popover' title={name}>
-      {children.split('\n\n').map((paragraph) => <p key={pCounter++}>{paragraph}</p>)}
-    </Popover>
-  );
-  return (
-    <OverlayTrigger
-      trigger='click'
-      rootClose
-      placement={ placement || 'bottom' }
-      overlay={popover}
-    >
-      <div style={{ display: 'inline', margin: 2 }}>
-        <Icon name='question-circle' className='more-link' />
-      </div>
-    </OverlayTrigger>
-  );
+class More extends React.Component<IProps, {}> {
+  public render(): JSX.Element {
+    const { children, id, name, orientation } = this.props;
+    let pCounter = 0;
+    const popover = (
+      <Popover id={`popover-${id}`} className='more-popover' title={name}>
+        {children.split('\n\n').map((paragraph) => <p key={pCounter++}>{paragraph}</p>)}
+      </Popover>
+    );
+    return (
+      <OverlayTrigger
+        trigger='click'
+        rootClose
+        overlay={popover}
+        getBounds={this.getBounds}
+        orientation={orientation}
+      >
+        <sup className='more-link'>
+          ?
+        </sup>
+      </OverlayTrigger>
+    );
+  }
+
+  private getBounds = (): ClientRect => {
+    const { container } = this.props;
+
+    return container !== undefined ? container.getBoundingClientRect() : {
+      left: 0,
+      top: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      right: window.innerWidth,
+      bottom: window.innerHeight,
+    };
+  }
 }
 
 export default More;

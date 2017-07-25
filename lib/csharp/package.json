@@ -12,6 +12,6 @@
   "devDependencies": {},
   "dependencies": {
     "copyfiles": "^1.0.0",
-    "msbuild": "^0.3.11"
+    "msbuild": "^1.0.1"
   }
 }

@@ -1487,7 +1487,7 @@ a[role=menuitem] svg {
   background-color: $brand-menu;
   display: flex;
   flex-direction: row;
-  padding: $gutter-width / 2;
+  padding: floor(($gutter-width / 2));
 
   button {
     @extend .btn-embed;
@@ -1514,7 +1514,7 @@ a[role=menuitem] svg {
   button {
     width: 100%;
 
-    padding: $gutter-width / 2;
+    padding: floor(($gutter-width / 2));
     background-color: $brand-menu;
     display: flex !important;
 
@@ -1565,14 +1565,23 @@ a[role=menuitem] svg {
   overflow: visible;
   margin: 5px;
 
-  .col-md-3 {
-    padding-top: $gutter-width / 2;
-    padding-bottom: $gutter-width / 2;
+  .row>div {
+    padding-top: floor(($gutter-width / 2));
+    padding-bottom: floor(($gutter-width / 2));
+  }
+
+  .container-fluid {
+    overflow-y: auto;
+    height: 175px;
   }
 
   .media-body {
     overflow: visible;
   }
+}
+
+.hidpi #starter-dashlet .container-fluid {
+  height: 275px;
 }
 
 .env-edit-buttons {
@@ -1591,6 +1600,7 @@ a[role=menuitem] svg {
   border: 1px solid $brand-secondary;
   background-color: $brand-menu;
   padding: floor(($gutter-width / 2));
+  height: 100%;
   h4 {
     margin-top: 0;
   }
@@ -1618,6 +1628,30 @@ a[role=menuitem] svg {
       margin-bottom: auto;
       margin-left: 10px;
     }
+  }
+}
+
+.lodpi {
+  .packery-height-1 {
+    height: 200px;
+  }
+  .packery-height-2 {
+    height: 400px;
+  }
+  .packery-height-3 {
+    height: 600px;
+  }
+}
+
+.hidpi {
+  .packery-height-1 {
+    height: 300px;
+  }
+  .packery-height-2 {
+    height: 600px;
+  }
+  .packery-height-3 {
+    height: 900px;
   }
 }
 
@@ -1760,7 +1794,7 @@ a[role=menuitem] svg {
   text-align: -webkit-center;
   border: 2px solid $brand-secondary;
   background-color: $brand-menu;
-  margin: 10px;
+  margin: floor(($gutter-width / 2));
 }
 
 .recharts-default-tooltip {
@@ -1770,6 +1804,13 @@ a[role=menuitem] svg {
 
 .download-chart .recharts-curve {
   stroke: $brand-success;
+}
+
+// without padding the labels on the y-axis are faded out.
+// Note that the chart maintains aspect ratio so adding a padding
+// on the horizontal actually also causes a small padding on the vertical
+.download-chart .recharts-surface {
+  padding-left: 15px;
 }
 
 .dashlet-download .recharts-sector {
@@ -1785,10 +1826,6 @@ a[role=menuitem] svg {
 // a little question-mark button that reveals a lenghtier explanation
 // to the context
 .more-link {
-  margin-bottom: 8px;
-  margin-left: 0px;
-  margin-right: 0px;
-  width: 10px;
   color: $link-color;
   &:hover {
     color: $link-hover-color;
@@ -1918,6 +1955,7 @@ a[role=menuitem] svg {
 
 .packery-container {
   margin: floor(($gutter-width / 2));
+  height: 100%;
 }
 
 // /other

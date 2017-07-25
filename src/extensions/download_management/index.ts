@@ -1,7 +1,7 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import LazyComponent from '../../util/LazyComponent';
 import ReduxProp from '../../util/ReduxProp';
-import { activeGameId, downloadPath } from '../../util/selectors';
+import * as selectors from '../../util/selectors';
 
 import { addLocalDownload, removeDownload, setDownloadHashByFile,
          setDownloadSpeed } from './actions/state';
@@ -78,7 +78,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['persistent', 'downloads'], stateReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
-  context.registerDashlet('downloads', 1, 300, Dashlet,
+  context.registerDashlet('downloads', 1, 1, 300, Dashlet,
     (state: any) => state.persistent.downloads.speedHistory.length > 1);
 
   context.registerDownloadProtocol = (schema: string, handler: ProtocolHandler) => {
@@ -100,10 +100,10 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('gamemode-activated', () => {
-      const currentDownloadPath = downloadPath(store.getState());
+      const currentDownloadPath = selectors.downloadPath(store.getState());
 
       const downloads: { [id: string]: IDownload } = store.getState().persistent.downloads.files;
-      const gameId: string = activeGameId(store.getState());
+      const gameId: string = selectors.activeGameId(store.getState());
       const knownDLs = Object.keys(downloads)
         .filter((dlId: string) => downloads[dlId].game === gameId)
         .map((dlId: string) => downloads[dlId].localPath);
@@ -133,7 +133,7 @@ function init(context: IExtensionContextExt): boolean {
       });
 
     const manager = new DownloadManagerImpl(
-      downloadPath(store.getState()),
+      selectors.downloadPath(store.getState()),
       store.getState().settings.downloads.maxParallelDownloads,
       store.getState().settings.downloads.maxChunks,
       (speed: number) => {
