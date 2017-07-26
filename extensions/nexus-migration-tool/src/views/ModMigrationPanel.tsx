@@ -1,7 +1,7 @@
 import { selectImportFolder } from '../actions/session';
 import { IFileEntry, IModEntry } from '../types/nmmEntries';
 import { transferArchives, transferUnpackedMod} from '../util/modFileMigration';
-import parseNMMInstall from '../util/nmmVirtualConfigParser';
+import parseNMMConfigFile from '../util/nmmVirtualConfigParser';
 import { addMods, createProfile } from '../util/vortexImports';
 
 import {
@@ -206,7 +206,7 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
 
     onShowActivity('Parsing NMM virtual config file...', this.importId);
 
-    parseNMMInstall(virtualPath, mods)
+    parseNMMConfigFile(virtualPath, mods)
     .then((modEntries) => {
       if (typeof modEntries === 'string') {
         throw Error(modEntries);
