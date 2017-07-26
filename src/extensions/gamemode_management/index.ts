@@ -21,6 +21,7 @@ import {IDiscoveryResult} from './types/IDiscoveryResult';
 import {IGameStored} from './types/IGameStored';
 import queryGameInfo from './util/queryGameInfo';
 import AddGameDialog from './views/AddGameDialog';
+import Dashlet from './views/Dashlet';
 import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
 import ProgressFooter from './views/ProgressFooter';
@@ -153,6 +154,22 @@ function init(context: IExtensionContext): boolean {
   context.registerGameInfoProvider('main', 0, 86400000,
     ['path', 'size', 'size_nolinks'], queryGameInfo);
 
+  const openGameFolder = (instanceIds: string[]) => {
+    const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
+    const gamePath = getSafe(discoveredGames, [instanceIds[0], 'path'], undefined);
+    if (gamePath !== undefined) {
+      shell.openItem(gamePath);
+    }
+  };
+
+  const openModFolder = (instanceIds: string[]) => {
+    const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
+    const modPath = getSafe(discoveredGames, [instanceIds[0], 'modPath'], undefined);
+    if (modPath !== undefined) {
+      shell.openItem(modPath);
+    }
+  };
+
   context.registerAction('game-icons', 100, 'refresh', {}, 'Quickscan', () => {
     if (gameModeManager !== undefined) {
       gameModeManager.startQuickDiscovery()
@@ -171,40 +188,22 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-managed-buttons', 100, HideGameIcon, {});
   context.registerAction('game-discovered-buttons', 100, HideGameIcon, {});
   context.registerAction('game-undiscovered-buttons', 100, HideGameIcon, {});
-
-  const openGameFolder = (instanceIds: string[]) => {
-    const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
-    const gamePath = getSafe(discoveredGames, [instanceIds[0], 'path'], undefined);
-    if (gamePath !== undefined) {
-      shell.openItem(gamePath);
-    }
-  };
-
-  const openModFolder = (instanceIds: string[]) => {
-    const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
-    const modPath = getSafe(discoveredGames, [instanceIds[0], 'modPath'], undefined);
-    if (modPath !== undefined) {
-      shell.openItem(modPath);
-    }
-  };
-
   context.registerAction('game-managed-buttons', 105, 'folder', {},
                          context.api.translate('Open Game Folder'),
                          openGameFolder);
-
   context.registerAction('game-discovered-buttons', 105, 'folder', {},
                          context.api.translate('Open Game Folder'),
                          openGameFolder);
-
   context.registerAction('game-managed-buttons', 110, 'folder-gallery', {},
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
-
   context.registerAction('game-discovered-buttons', 110, 'folder-gallery', {},
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
 
   context.registerDialog('add-game', AddGameDialog);
+  context.registerDashlet('game-picker', 3, 2, 0, Dashlet, () =>
+    activeGameId(context.api.store.getState()) === undefined);
 
   context.once(() => {
     const store: Redux.Store<IState> = context.api.store;

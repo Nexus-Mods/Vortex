@@ -78,8 +78,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['persistent', 'downloads'], stateReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
-  context.registerDashlet('downloads', 1, 2, 300, Dashlet,
-    (state: any) => state.persistent.downloads.speedHistory.length > 1);
+  context.registerDashlet('downloads', 1, 2, 300, Dashlet);
 
   context.registerDownloadProtocol = (schema: string, handler: ProtocolHandler) => {
     protocolHandlers[schema] = handler;
