@@ -26,16 +26,10 @@ class Packery extends React.Component<IProps, {}> {
     }
   }
 
-  public componentWillReceiveProps() {
-    this.scheduleRefresh();
-  }
-
-  public componentDidMount() {
-    setImmediate(() => {
-      if (this.mPackery !== undefined) {
-        this.mPackery.layout();
-      }
-    });
+  public componentWillReceiveProps(nextProps: IProps) {
+    if (nextProps.totalWidth !== this.props.totalWidth) {
+      this.scheduleRefresh();
+    }
   }
 
   public componentWillUnmount() {
@@ -61,12 +55,13 @@ class Packery extends React.Component<IProps, {}> {
     const options = {
       itemSelector: '.packery-item',
       gutter: 0,
-      percentPosition: true,
+      percentPosition: false,
     };
 
     if (ele !== null) {
       const PackeryLibImpl = require('packery');
       this.mPackery = new PackeryLibImpl(ele, options);
+      this.scheduleRefresh();
     } else {
       this.mPackery = undefined;
     }

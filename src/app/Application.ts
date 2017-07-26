@@ -57,8 +57,7 @@ class Application {
     const SplashScreen = require('./SplashScreen').default;
     const splash = new SplashScreen();
     return splash.create()
-    .then(() => splash);
-
+      .then(() => splash);
   }
 
   private setupAppEvents(args: IParameters) {

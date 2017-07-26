@@ -5,7 +5,7 @@ import Debouncer from '../util/Debouncer';
 import * as storeHelperT from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
-import { Electron } from 'electron';
+import { Electron, screen } from 'electron';
 import * as Redux from 'redux';
 
 class MainWindow {
@@ -80,9 +80,10 @@ class MainWindow {
 
   private getWindowSettings(windowMetrics: IWindow) {
     const {getSafe} = require('../util/storeHelper') as typeof storeHelperT;
+    const screenArea = screen.getPrimaryDisplay().workAreaSize;
     return {
-      height: getSafe(windowMetrics, ['size', 'height'], undefined),
-      width: getSafe(windowMetrics, ['size', 'width'], undefined),
+      height: getSafe(windowMetrics, ['size', 'height'], Math.floor(screen.height * 0.8)),
+      width: getSafe(windowMetrics, ['size', 'width'], Math.floor(screen.width * 0.8)),
       minWidth: 1024,
       minHeight: 768,
       x: getSafe(windowMetrics, ['position', 'x'], undefined),
