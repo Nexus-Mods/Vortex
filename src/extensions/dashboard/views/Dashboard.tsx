@@ -12,6 +12,7 @@ import PackeryItem from './PackeryItem';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import * as Redux from 'redux';
 
 const UPDATE_FREQUENCY_MS = 1000;
 
