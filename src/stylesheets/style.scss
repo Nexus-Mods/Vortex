@@ -237,8 +237,8 @@ textarea {
 }
 
 .nav-pills>li>a svg {
-  height: 1.4em;
-  width: 1.4em;
+  height: 1.2em;
+  width: 1.2em;
 }
 
 .react-context-menu-link.disabled {
@@ -724,7 +724,7 @@ a[role=menuitem] svg {
     vertical-align: middle;
     margin-left: 10px;
     min-width: 125px;
-    font-size: $font-size-large;
+    font-size: $font-size-base;
   }
 
   &.sidebar-expanded {

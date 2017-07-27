@@ -235,7 +235,11 @@ function init(context: IExtensionContext): boolean {
       const {list} = require('drivelist');
       list((error, disks) => {
         if (error) {
-          throw error;
+          context.api.showErrorNotification('Failed to determine list of disk drives. ' +
+            'Please review the settings before scanning for games.',
+            error);
+          store.dispatch(addSearchPath(['C:']));
+          return;
         }
         for (const disk of disks.sort()) {
           // 'system' drives are the non-removable ones

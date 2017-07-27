@@ -20,6 +20,7 @@
     "edge": "^6.5.1",
     "electron-updater": "^1.9.0",
     "exe-version": "file:../lib/cpp/exe-version",
+    "feedparser": "^2.2.1",
     "ffi": "^2.1.0",
     "fs-extra-promise": "^1.0.1",
     "graphlib": "^2.1.1",
