@@ -3,19 +3,20 @@ import * as fs from 'fs-extra-promise';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import { log, types, util } from 'nmm-api';
 import * as path from 'path';
-import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
+import {IFileEntry as FileEntry, IModEntry as ModEntry, ParseError} from '../types/nmmEntries';
 
 export function parseNMMConfigFile(nmmFilePath: string, mods: any): Promise<any> {
   return fs.readFileAsync(nmmFilePath)
   .catch((err) => {
-    return Promise.resolve('The selected folder does not contain a VirtualModConfig.xml file.');
+    return Promise.reject(
+      new ParseError('The selected folder does not contain a VirtualModConfig.xml file.'));
   })
   .then((data) => {
     return parseModEntries(data.toString('utf-8'), mods);
   });
 }
 
-export function parseModEntries(xmlData: string, mods: any): Promise<any> {
+export function parseModEntries(xmlData: string, mods: any): Promise<ModEntry[]> {
   const nmmModList: ModEntry[] = [];
   const parser = new DOMParser();
 
@@ -26,16 +27,18 @@ export function parseModEntries(xmlData: string, mods: any): Promise<any> {
   const version = xmlDoc.getElementsByTagName('virtualModActivator')[0];
 
   if ((version === null) || (version === undefined)) {
-    return Promise.resolve(
-      'The selected folder does not contain a valid VirtualModConfig.xml file.');
+    return Promise.reject(new ParseError(
+      'The selected folder does not contain a valid VirtualModConfig.xml file.'));
   } else if (version.getAttribute('fileVersion') !== '0.3.0.0') {
-    return Promise.resolve('The selected folder contains an older VirtualModConfig.xml file,'
-      + 'you need to upgrade your NMM before proceeding with the mod import.');
+    return Promise.reject(
+      new ParseError('The selected folder contains an older VirtualModConfig.xml file,'
+      + 'you need to upgrade your NMM before proceeding with the mod import.'));
   }
 
   const modInfoList = xmlDoc.getElementsByTagName('modInfo');
   if (modInfoList === undefined || modInfoList.length <= 0) {
-    return Promise.resolve('The selected folder contains an empty VirtualModConfig.xml file.');
+    return Promise.reject(
+      new ParseError('The selected folder contains an empty VirtualModConfig.xml file.'));
   }
 
   for (const modInfo of modInfoList) {

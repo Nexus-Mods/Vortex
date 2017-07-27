@@ -208,9 +208,6 @@ class ModMigrationPanel extends ComponentEx<Props, IComponentState> {
 
     parseNMMConfigFile(virtualPath, mods)
     .then((modEntries) => {
-      if (typeof modEntries === 'string') {
-        throw Error(modEntries);
-      }
       const parsedModEntries: IModEntry[] = modEntries;
       if ((parsedModEntries === null) || (parsedModEntries === undefined)
         || (parsedModEntries.length === 0)) {

@@ -1,3 +1,5 @@
+import * as util from 'util';
+
 export interface IModEntry {
   nexusId: string;
   vortexId: string;
@@ -18,3 +20,12 @@ export interface IFileEntry {
   isActive: boolean;
   filePriority: number;
 }
+
+export function ParseError(message) {
+  this.message = message;
+  Error.captureStackTrace(this, ParseError);
+}
+
+util.inherits(ParseError, Error);
+
+ParseError.prototype.name = 'ParseError';
