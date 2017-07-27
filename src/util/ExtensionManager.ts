@@ -764,6 +764,7 @@ class ExtensionManager {
       'test_runner',
       'extension_manager',
       'ini_prep',
+      'news_dashlet',
     ];
 
     const bundledPath = asarUnpacked(path.resolve(__dirname, '..', 'bundledPlugins'));

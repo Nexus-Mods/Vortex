@@ -202,7 +202,7 @@ function init(context: IExtensionContext): boolean {
                          openModFolder);
 
   context.registerDialog('add-game', AddGameDialog);
-  context.registerDashlet('game-picker', 3, 2, 0, Dashlet, () =>
+  context.registerDashlet('game-picker', 2, 2, 0, Dashlet, () =>
     activeGameId(context.api.store.getState()) === undefined);
 
   context.once(() => {

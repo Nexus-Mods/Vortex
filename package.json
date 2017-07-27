@@ -205,6 +205,7 @@
     "electron-rebuild": "^1.5.7",
     "electron-updater": "^1.9.0",
     "enzyme": "^2.6.0",
+    "feedparser": "^2.2.1",
     "ffi": "^2.1.0",
     "fs-extra-promise": "^1.0.1",
     "i18next": "^8.0.0",

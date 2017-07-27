@@ -11,7 +11,6 @@ import * as Promise from 'bluebird';
 import * as React from 'react';
 
 export interface IBaseProps {
-  onRefreshGameInfo: (gameId: string) => Promise<void>;
 }
 
 interface IConnectedProps {
@@ -45,7 +44,7 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, discoveredGames, knownGames, onRefreshGameInfo } = this.props;
+    const { t, discoveredGames, knownGames } = this.props;
     const { more } = this.state;
 
     const games: IGameStored[] = knownGames.filter(game =>
@@ -54,8 +53,8 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
     return (
       <div>
         <h3 className='dashlet-game-title'>{t('Welcome to Vortex')}</h3>
-        { t('Please pick a game to manage first. ' +
-            'Afterwards please check the ToDo List below.') }
+        <h4>{ t('Please pick a game to manage first. ' +
+                'Afterwards please check the ToDo List below.') }</h4>
         <div style={{ display: 'flex' }} ref={this.setRef}>
           <div style={{ overflowX: 'hidden' }}>
             <div style={{ display: 'inline-flex' }} ref={this.setInnerRef}>
@@ -66,7 +65,7 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
                   game={game}
                   type='discovered'
                   active={false}
-                  onRefreshGameInfo={onRefreshGameInfo}
+                  onRefreshGameInfo={this.refreshGameInfo}
                 />))
               }
             </div>
@@ -97,7 +96,7 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
   }
 
   private refreshGameInfo = gameId => {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this.context.api.events.emit('refresh-game-info', gameId, err => {
         if (err !== null) {
           reject(err);

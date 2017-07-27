@@ -14,6 +14,7 @@ import {} from './ini_prep';
 import {} from './installer_fomod';
 import {} from './installer_nested_fomod';
 import {} from './mod_management';
+import {} from './news_dashlet';
 import {} from './nexus_integration';
 import {} from './profile_management';
 import {} from './settings_application';

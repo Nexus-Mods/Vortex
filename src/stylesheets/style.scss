@@ -699,6 +699,8 @@ a[role=menuitem] svg {
 
 .application-icons {
   padding-left: floor(($gutter-width / 2));
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 // the naviation buttons on the left
@@ -1556,6 +1558,7 @@ a[role=menuitem] svg {
   .container-fluid {
     overflow-y: auto;
     height: 175px;
+    padding: 0;
   }
 
   .media-body {
@@ -1591,7 +1594,6 @@ a[role=menuitem] svg {
     border: 0px;
     background-color: lighten($brand-menu, 5%);
     margin-bottom: 2px;
-    display: flex;
     .icon-todo-type {
       margin-top: auto;
       margin-bottom: auto;
@@ -1614,31 +1616,45 @@ a[role=menuitem] svg {
   }
 }
 
+.dashlet-todo {
+  li {
+    display: flex;
+  }
+}
+
+.dashlet-news {
+  display: flex;
+  flex-direction: column;
+  ul {
+    margin-bottom: 0;
+  }
+}
+
 .packery-item {
   padding: floor(($gutter-width / 2));
 }
 
 .lodpi {
   .packery-height-1 {
-    height: 200px;
+    height: 180px;
   }
   .packery-height-2 {
-    height: 400px;
+    height: 360px;
   }
   .packery-height-3 {
-    height: 600px;
+    height: 540px;
   }
 }
 
 .hidpi {
   .packery-height-1 {
-    height: 300px;
+    height: 270px;
   }
   .packery-height-2 {
-    height: 600px;
+    height: 540px;
   }
   .packery-height-3 {
-    height: 900px;
+    height: 810px;
   }
 }
 
@@ -1654,6 +1670,15 @@ a[role=menuitem] svg {
   text-align: center;
   margin-top: auto;
   margin-bottom: auto;
+}
+
+.list-news {
+  overflow-y: auto;
+  img {
+    max-width: 50%;
+    float: left;
+    margin: 5px;
+  }
 }
 
 // /dashlets

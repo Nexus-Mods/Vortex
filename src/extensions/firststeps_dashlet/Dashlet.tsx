@@ -256,12 +256,12 @@ class Dashlet extends ComponentEx<IProps, {}> {
 
     return (
       <div
-        className='dashlet'
+        className='dashlet dashlet-todo'
         style={{ display: 'flex', flexDirection: 'column' }}
       >
         <h4>{t('Tasks / Suggestions')}</h4>
         <div style={{ overflowY: 'auto' }}>
-          <ListGroup>
+          <ListGroup style={{ marginBottom: 0 }}>
             {
               visibleSteps.map(step => {
                 const props = step.props ? step.props() : this.props;

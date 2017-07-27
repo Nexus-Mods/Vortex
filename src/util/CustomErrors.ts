@@ -13,3 +13,10 @@ export class UserCanceled extends Error {
     this.name = this.constructor.name;
   }
 }
+
+export class HTTPError extends Error {
+  constructor(statusCode: number, message: string) {
+    super(`HTTP (${statusCode}) - ${message}`);
+    this.name = this.constructor.name;
+  }
+}
