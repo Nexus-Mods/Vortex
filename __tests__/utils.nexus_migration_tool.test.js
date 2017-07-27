@@ -1,4 +1,5 @@
 import { parseModEntries } from '../extensions/nexus-migration-tool/src/util/nmmVirtualConfigParser';
+import { ParseError } from '../extensions/nexus-migration-tool/src/types/nmmEntries';
 
 describe('parseModEntries', () => {
   it('parse the NMM virtual config file', () => {
@@ -10,15 +11,15 @@ describe('parseModEntries', () => {
                       <isActive>True</isActive>
                       </fileLink>
                       </modInfo>
-                      </modlist>
+                      </modList>
                       </virtualModActivator>`;
-    const fileEntry = {
+    const fileEntry = new Array({
           fileSource: 'TestPath',
           fileDestination: 'TestPath',
           isActive: true,
-          filePriority: '0',
-      };
-    const modEntry = {
+          filePriority: 0,
+      });
+    const modEntry = new Array({
       nexusId: '1',
       vortexId: 'TestMod',
       downloadId: '1',
@@ -30,7 +31,7 @@ describe('parseModEntries', () => {
       importFlag: true,
       isAlreadyManaged: false,
       fileEntries: fileEntry,
-    };
+    });
     let result;
     parseModEntries(inputXML, undefined)
     .then((ModEntries) => {
@@ -40,41 +41,59 @@ describe('parseModEntries', () => {
       expect(result).toEqual(modEntry);
     });
   });
-  /*it('parse a mismatched NMM config file', () => {
-    const fileInput = '../../../../__tests__/nexus_migration_tool/Mismatched.xml';
-    const expectedError = 'The selected folder contains an older VirtualModConfig.xml file,'
-        + 'you need to upgrade your NMM before proceeding with the mod import.';
+  it('parse a mismatched NMM config file', () => {
+    const inputXML = `<?xml version="1.0" encoding="utf-8"?>
+                      <virtualModActivator fileVersion="0.2.0.0">
+                        <modList />
+                      </virtualModActivator>`;
+    const expectedError = new ParseError('The selected folder contains an older VirtualModConfig.xml file,'
+        + 'you need to upgrade your NMM before proceeding with the mod import.');
     let result;
-    parseModEntries(fileInput, undefined)
+    parseModEntries(inputXML, undefined)
     .then((ModEntries) => {
       result = ModEntries;
     })
     .then(() => {
       expect(result).toEqual(expectedError);
+    })
+    .catch((err) => {
+      expect(err).toEqual(expectedError);
     });
   });
   it('parse an invalid NMM config file', () => {
-    const fileInput = '../../../../__tests__/nexus_migration_tool/Invalid.xml';
-    const expectedError = 'The selected folder does not contain a valid VirtualModConfig.xml file.';
+    const inputXML = `<?xml version="1.0" encoding="utf-8"?>
+                      <invalidModActivator>
+                        <modList />
+                      </invalidModActivator>`;
+    const expectedError = new ParseError('The selected folder does not contain a valid VirtualModConfig.xml file.');
     let result;
-    parseModEntries(fileInput, undefined)
+    parseModEntries(inputXML, undefined)
     .then((ModEntries) => {
       result = ModEntries;
     })
     .then(() => {
       expect(result).toEqual(expectedError);
+    })
+    .catch((err) => {
+      expect(err).toEqual(expectedError);
     });
   });
   it('parse an empty NMM config file', () => {
-    const fileInput = '../../../../__tests__/nexus_migration_tool/EmptyList.xml';
-    const expectedError = 'The selected folder contains an empty VirtualModConfig.xml file.';
+    const inputXML = `<?xml version="1.0" encoding="utf-8"?>
+                      <virtualModActivator fileVersion="0.3.0.0">
+                        <modList />
+                      </virtualModActivator>`;
+    const expectedError = new ParseError('The selected folder contains an empty VirtualModConfig.xml file.');
     let result;
-    parseModEntries(fileInput, undefined)
+    parseModEntries(inputXML, undefined)
     .then((ModEntries) => {
       result = ModEntries;
     })
     .then(() => {
       expect(result).toEqual(expectedError);
+    })
+    .catch((err) => {
+      expect(err).toEqual(expectedError);
     });
-  });*/
+  });
 });
