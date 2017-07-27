@@ -1,40 +1,28 @@
 import { setSettingsPage } from '../../actions/session';
 import { IToDoButton, ToDoType } from '../../types/IExtensionContext';
 import { II18NProps } from '../../types/II18NProps';
-import { ComponentEx, connect, extend, translate } from '../../util/ComponentEx';
+import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import * as selectors from '../../util/selectors';
 import Icon from '../../views/Icon';
 import More from '../../views/More';
 import { IconButton } from '../../views/TooltipControls';
 
-import getTextModManagement from '../mod_management/texts';
-import getTextProfiles from '../profile_management/texts';
-import getTextSettingsApplication from '../settings_application/texts';
-
 import { dismissStep } from './actions';
+import { IToDo } from './IToDo';
 
 import * as React from 'react';
 import { Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { Interpolate } from 'react-i18next';
 import * as Redux from 'redux';
 
-export interface IBaseProps { }
-
-interface IExtendedProps {
-  objects: IToDo[];
+export interface IBaseProps {
+  todos: IToDo[];
 }
 
 interface IConnectedState {
-  gameMode: string;
-  basePath: string;
-  autoDeploy: boolean;
-  profilesVisible: boolean;
   dismissAll: boolean;
   steps: { [stepId: string]: boolean };
-  searchPaths: string[];
-  discoveryRunning: boolean;
-  multiUser: boolean;
-  __extensionProps?: any[];
+  extensionProps?: { [id: string]: any };
 }
 
 interface IActionProps {
@@ -42,219 +30,29 @@ interface IActionProps {
   onSetSettingsPage: (pageId: string) => void;
 }
 
-type IProps = IBaseProps & IExtendedProps & IConnectedState & IActionProps & II18NProps;
-
-interface IToDo {
-  id: string;
-  type: ToDoType;
-  props?: () => any;
-  condition: (props: any) => boolean;
-  render?: (props: any) => JSX.Element;
-  button?: () => IToDoButton;
-  priority?: number;
-}
+type IProps = IBaseProps & IConnectedState & IActionProps & II18NProps;
 
 class Dashlet extends ComponentEx<IProps, {}> {
-  private mTodos: IToDo[];
-
   constructor(inProps: IProps) {
     super(inProps);
-
-    this.mTodos = ([
-      {
-        id: 'multi-user',
-        type: 'settings-review' as ToDoType,
-        condition: props => true,
-        priority: 60,
-        render: (props: IProps): JSX.Element => {
-          const { t, multiUser } = this.props;
-
-          const mode = multiUser ? t('Shared') : t('Per-user');
-          const more = (
-            <More id='more-multi-user-dash' name={t('Multi-User Mode')}>
-              {getTextSettingsApplication('multi-user', t)}
-            </More>
-          );
-
-          return (
-            <span>
-              <Interpolate
-                i18nKey='You are currently in {{mode}} {{more}} mode.'
-                mode={mode}
-                more={more}
-              />
-            </span>
-          );
-        },
-        button: () => ({
-          icon: 'sliders',
-          text: this.props.t('Settings'),
-          onClick: this.openVortexSettings,
-        }),
-      },
-      {
-        id: 'pick-game',
-        type: 'search' as ToDoType,
-        condition: (props: IProps) => props.gameMode === undefined,
-        render: (props: IProps): JSX.Element => {
-          const { t } = props;
-          return (<span>{t('Select a game to manage')}</span>);
-        },
-        button: () => ({
-          icon: 'gamepad',
-          text: this.props.t('Games'),
-          onClick: this.openGames,
-        }),
-      },
-      {
-        id: 'paths',
-        type: 'settings' as ToDoType,
-        condition: (props: IProps) => props.gameMode !== undefined,
-        render: (props: IProps): JSX.Element => {
-          const { t, basePath } = props;
-          const path = <strong>{basePath}</strong>;
-
-          return (
-            <span style={{ overflowX: 'hidden', textOverflow: 'ellipsis' }}>
-              <Interpolate
-                i18nKey='Data for this game will be stored in {{path}}.'
-                path={path}
-              />
-            </span>
-          );
-        },
-        button: () => ({
-          icon: 'sliders',
-          text: this.props.t('Settings'),
-          onClick: this.openModsSettings,
-        }),
-      },
-      {
-        id: 'manual-search',
-        type: 'search' as ToDoType,
-        condition: (props: IProps) => props.searchPaths !== undefined,
-        render: (props: IProps): JSX.Element => {
-          const { t, discoveryRunning, searchPaths } = props;
-
-          if (discoveryRunning) {
-            return (
-              <span>
-                <a onClick={this.openGames}>
-                  {t('Discovery running')}<Icon name='spinner' pulse />
-                </a>
-              </span>
-            );
-          } else {
-            const gameModeLink =
-              <a onClick={this.openGames}><Icon name='gamepad' />{' '}{t('discovered')}</a>;
-            const settingsLink = (
-              <a onClick={this.openGameSettings}>
-                <Icon name='sliders' />
-                {searchPaths.sort().join(', ')}
-              </a>
-            );
-
-            const text = 'If games you have installed weren\'t {{discovered}}, '
-              + 'Vortex can search for them. This can take some time. '
-              + 'Currenty these directories will be searched: {{settings}}.';
-
-            return (
-              <span>
-                <Interpolate
-                  i18nKey={text}
-                  discovered={gameModeLink}
-                  settings={settingsLink}
-                />
-              </span>
-            );
-          }
-        },
-        button: () => this.props.discoveryRunning ? undefined : ({
-          icon: 'gamepad',
-          text: this.props.t('Search'),
-          onClick: this.startManualSearch,
-        }),
-      },
-      {
-        id: 'deploy-automation',
-        type: 'automation' as ToDoType,
-        condition: (props: IProps) => true,
-        render: (props: IProps): JSX.Element => {
-          const { t, autoDeploy } = props;
-          const enabled = autoDeploy ? t('enabled') : t('disabled');
-          const more = (
-            <More id='more-deploy-dash' name={t('Deployment')}>
-              {getTextModManagement('deployment', t)}
-            </More>
-          );
-          return (
-            <span>
-              <Interpolate
-                i18nKey='Automatic deployment{{more}} is {{enabled}}.'
-                more={more}
-                enabled={enabled}
-              />
-            </span>
-          );
-        },
-        button: () => ({
-          icon: 'sliders',
-          text: this.props.t('Settings'),
-          onClick: this.openInterfaceSettings,
-        }),
-      },
-      {
-        id: 'profile-visibility',
-        type: 'settings' as ToDoType,
-        condition: (props: IProps) => !props.profilesVisible,
-        render: (props: IProps): JSX.Element => {
-          const { t } = props;
-          const link =
-            <a onClick={this.openInterfaceSettings}><Icon name='sliders' />{' '}{t('Settings')}</a>;
-          const more = (
-            <More id='more-profiles-dash' name={t('Profiles')}>
-              {getTextProfiles('profiles', t)}
-            </More>
-          );
-          return (
-            <span>
-              <Interpolate
-                i18nKey='Profile Management{{more}} is disabled. Open {{link}} to enable.'
-                more={more}
-                link={link}
-              />
-            </span>
-          );
-        },
-        button: () => ({
-          icon: 'sliders',
-          text: this.props.t('Settings'),
-          onClick: this.openInterfaceSettings,
-        }),
-      },
-    ] as IToDo[]).concat(this.props.objects);
   }
 
   public render(): JSX.Element {
-    const { t, dismissAll, steps } = this.props;
+    const { t, dismissAll, extensionProps, steps, todos } = this.props;
 
     if (dismissAll) {
       return null;
     }
 
-    const visibleSteps = this.mTodos.filter(
+    const visibleSteps = todos.filter(
       (step) => {
         if (steps[step.id]) {
           return false;
         }
 
-        const props = step.props ? step.props() : this.props;
+        const props = step.props ? step.props(extensionProps[step.id]) : this.props;
         return step.condition(props);
       });
-
-    if (visibleSteps.length === 0) {
-      return null;
-    }
 
     visibleSteps.sort((lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100));
 
@@ -268,7 +66,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
           <ListGroup style={{ marginBottom: 0 }}>
             {
               visibleSteps.map(step => {
-                const props = step.props ? step.props() : this.props;
+                const props = step.props ? step.props(extensionProps[step.id]) : this.props;
 
                 return (
                   <ListGroupItem key={step.id} className={`todo-${step.type}`}>
@@ -276,7 +74,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
                       className={`icon-todo-type icon-todo-${step.type}`}
                       name={this.typeToIcon(step.type)}
                     />
-                    {step.render(props)}
+                    {step.render(t, props)}
                     {this.renderButton(step.button)}
                     <IconButton
                       id={`btn-dismiss-${step.id}`}
@@ -359,19 +157,16 @@ class Dashlet extends ComponentEx<IProps, {}> {
   }
 }
 
-function mapStateToProps(state: any, ownProps: IBaseProps & IExtendedProps): IConnectedState {
-  const objects = ownProps.objects || [];
+function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedState {
+  const extensionProps: any = {};
+  ownProps.todos.forEach(todo => {
+    extensionProps[todo.id] = todo.props !== undefined ? todo.props(state) : {};
+  });
+
   return {
-    gameMode: selectors.activeGameId(state),
-    basePath: selectors.basePath(state),
-    multiUser: state.user.multiUser,
-    autoDeploy: state.settings.automation.deploy,
-    profilesVisible: state.settings.interface.profilesVisible,
     dismissAll: state.settings.firststeps.dismissAll,
     steps: state.settings.firststeps.steps,
-    searchPaths: state.settings.gameMode.searchPaths,
-    discoveryRunning: state.session.discovery.running,
-    __extensionProps: objects.map(ext => ext.props()),
+    extensionProps,
   };
 }
 
@@ -382,22 +177,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-function registerToDo(instanceProps: IBaseProps,
-                      id: string,
-                      type: ToDoType,
-                      props: () => any,
-                      condition: (props: any) => boolean,
-                      render: (props: any) => JSX.Element,
-                      button?: () => {
-                        text: string,
-                        icon: string,
-                        onClick: () => void,
-                      },
-                      priority?: number): IToDo {
-  return { id, type, props, condition, render, button, priority };
-}
-
 export default translate(['common'], { wait: true })(
-  extend(registerToDo)(
-    connect(mapStateToProps, mapDispatchToProps)(
-      Dashlet))) as React.ComponentClass<IBaseProps>;
+  connect(mapStateToProps, mapDispatchToProps)(
+    Dashlet)) as React.ComponentClass<IBaseProps>;
