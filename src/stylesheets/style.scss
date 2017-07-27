@@ -1548,7 +1548,7 @@ a[role=menuitem] svg {
 
 #starter-dashlet {
   overflow: visible;
-  margin: 5px;
+  margin: 0;
 
   .row>div {
     padding-top: floor(($gutter-width / 2));
@@ -1631,7 +1631,7 @@ a[role=menuitem] svg {
 }
 
 .packery-item {
-  padding: floor(($gutter-width / 2));
+  padding: 5px;
 }
 
 .lodpi {

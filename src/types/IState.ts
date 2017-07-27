@@ -119,6 +119,7 @@ export interface ISettingsInterface {
   language: string;
   advanced: boolean;
   profilesVisible: boolean;
+  dashboardLayout: string[];
 }
 
 export interface ISettingsProfiles {

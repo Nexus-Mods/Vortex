@@ -7,7 +7,7 @@
   "scripts": {
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
-    "build": "npm run tsc && npm run webpack"
+    "build": "npm run tsc && npm run webpack && extractInfo"
   },
   "author": "Black TreeGaming Ltd.",
   "license": "GPL-3.0",

@@ -13,7 +13,7 @@ function init(context: IExtensionContext): boolean {
   }));
 
   context.registerDashlet('New Files', 1, 2, 360, Dashlet,
-    () => activeGameId(context.api.store.getState()) !== undefined,
+    state => activeGameId(state) !== undefined,
     () => {
       const gameId = convertGameId(activeGameId(context.api.store.getState()));
       return {

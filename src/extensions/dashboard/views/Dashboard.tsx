@@ -1,10 +1,15 @@
 import {PropsCallback} from '../../../types/IExtensionContext';
-import { ComponentEx, extend, translate } from '../../../util/ComponentEx';
+import { IState } from '../../../types/IState';
+import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+import Debouncer from '../../../util/Debouncer';
 import MainPage from '../../../views/MainPage';
+
+import { setLayout } from '../actions';
 
 import PackeryGrid from './PackeryGrid';
 import PackeryItem from './PackeryItem';
 
+import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
@@ -20,11 +25,19 @@ interface IDashletProps {
   isVisible?: (state: any) => boolean;
 }
 
+interface IConnectedProps {
+  layout: string[];
+}
+
+interface IActionProps {
+  onSetLayout: (items: string[]) => void;
+}
+
 interface IExtensionProps {
   objects: IDashletProps[];
 }
 
-type IProps = { active: boolean } & IExtensionProps;
+type IProps = { active: boolean } & IConnectedProps & IActionProps & IExtensionProps;
 
 interface IRenderedDash {
   props: IDashletProps;
@@ -35,8 +48,8 @@ interface IRenderedDash {
  * base layouter for the dashboard. No own content, just layouting
  */
 class Dashboard extends ComponentEx<IProps, { counter: number }> {
-
   private mUpdateTimer: NodeJS.Timer;
+  private mLayoutDebouncer: Debouncer;
 
   constructor(props: IProps) {
     super(props);
@@ -44,6 +57,13 @@ class Dashboard extends ComponentEx<IProps, { counter: number }> {
     this.initState({
       counter: 0,
     });
+
+    this.mLayoutDebouncer = new Debouncer((layout: string[]) => {
+      if (!_.isEqual(layout, this.props.layout)) {
+        this.props.onSetLayout(layout);
+      }
+      return null;
+    }, 500);
   }
 
   public componentDidMount() {
@@ -66,23 +86,33 @@ class Dashboard extends ComponentEx<IProps, { counter: number }> {
   }
 
   public render(): JSX.Element {
-    const { objects } = this.props;
+    const { objects, layout } = this.props;
     const state = this.context.api.store.getState();
 
+    const layoutMap: { [key: string]: number } = {};
+    if (layout !== undefined) {
+      layout.map((item: string, idx: number) => layoutMap[item] = idx - 1000);
+    }
+
     const sorted = objects
-      .sort((lhs: IDashletProps, rhs: IDashletProps) => lhs.position - rhs.position)
+      .sort((lhs: IDashletProps, rhs: IDashletProps) =>
+        (layoutMap[lhs.title] || lhs.position) - (layoutMap[rhs.title] || rhs.position))
       .filter((dash: IDashletProps) => (dash.isVisible === undefined) || dash.isVisible(state))
       ;
 
     return (
       <MainPage>
         <MainPage.Body style={{ height: '100%', overflowY: 'auto' }}>
-          <PackeryGrid totalWidth={3}>
+          <PackeryGrid totalWidth={3} onChangeLayout={this.onChangeLayout}>
             {sorted.map(this.renderItem)}
           </PackeryGrid>
         </MainPage.Body>
       </MainPage>
     );
+  }
+
+  private onChangeLayout = (layout: string[]) => {
+    this.mLayoutDebouncer.schedule(undefined, layout);
   }
 
   private startUpdateCycle = () => {
@@ -98,7 +128,7 @@ class Dashboard extends ComponentEx<IProps, { counter: number }> {
     const { counter } = this.state;
     const componentProps = dash.props !== undefined ? dash.props() : {};
     return (
-      <PackeryItem key={dash.title} width={dash.width} height={dash.height}>
+      <PackeryItem id={dash.title} key={dash.title} width={dash.width} height={dash.height}>
         <dash.component t={this.props.t} {...componentProps} counter={counter} />
       </PackeryItem>
     );
@@ -116,6 +146,19 @@ function registerDashlet(instanceProps: IProps,
   return { title, position, width, height, component, isVisible, props };
 }
 
+function mapStateToProps(state: IState): IConnectedProps {
+  return {
+    layout: state.settings.interface.dashboardLayout,
+  };
+}
+
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+  return {
+    onSetLayout: (items: string[]) => dispatch(setLayout(items)),
+  };
+}
+
 export default translate([ 'common' ], { wait: true })(
   extend(registerDashlet)(
-    Dashboard)) as React.ComponentClass<{}>;
+    connect(mapStateToProps, mapDispatchToProps)(
+      Dashboard))) as React.ComponentClass<{}>;

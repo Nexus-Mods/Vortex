@@ -252,6 +252,10 @@ class Dashlet extends ComponentEx<IProps, {}> {
         return step.condition(props);
       });
 
+    if (visibleSteps.length === 0) {
+      return null;
+    }
+
     visibleSteps.sort((lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100));
 
     return (
