@@ -19,10 +19,7 @@ export const windowReducer: IReducerSpec = {
   defaults: {
     maximized: false,
     position: { x: 0, y: 0 },
-    size: {
-      height: 768,
-      width: 1024,
-    },
+    size: {},
     tabsMinimized: false,
   },
 };

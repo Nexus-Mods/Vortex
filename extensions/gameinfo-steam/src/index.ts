@@ -3,7 +3,7 @@ import { log, types, util } from 'nmm-api';
 import * as Redux from 'redux';
 import * as request from 'request';
 
-const steam = new util.Steam();
+let steam: util.Steam;
 
 export class NotFound extends Error {
   constructor() {
@@ -50,6 +50,9 @@ function findLocalInfo(
   return util.getNormalizeFunc(game.path)
       .then(normalizeFunc => {
         normalize = normalizeFunc;
+        if (steam === undefined) {
+          steam = new util.Steam();
+        }
         return steam.allGames();
       })
       .then(entries => {

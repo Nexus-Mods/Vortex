@@ -135,7 +135,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
       colors: {},
       fontSize: 13,
       fontFamily: 'Arial',
-      hidpiScale: 150,
+      hidpiScale: 100,
     });
 
   }

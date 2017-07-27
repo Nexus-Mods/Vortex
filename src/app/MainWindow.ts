@@ -81,9 +81,13 @@ class MainWindow {
   private getWindowSettings(windowMetrics: IWindow) {
     const {getSafe} = require('../util/storeHelper') as typeof storeHelperT;
     const screenArea = screen.getPrimaryDisplay().workAreaSize;
+    const width = Math.max(1024, getSafe(windowMetrics, ['size', 'width'],
+                                         Math.floor(screenArea.width * 0.8)));
+    const height = Math.max(768, getSafe(windowMetrics, ['size', 'height'],
+                                         Math.floor(screenArea.height * 0.8)));
     return {
-      height: getSafe(windowMetrics, ['size', 'height'], Math.floor(screen.height * 0.8)),
-      width: getSafe(windowMetrics, ['size', 'width'], Math.floor(screen.width * 0.8)),
+      width,
+      height,
       minWidth: 1024,
       minHeight: 768,
       x: getSafe(windowMetrics, ['position', 'x'], undefined),

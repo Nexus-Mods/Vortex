@@ -34,9 +34,17 @@ interface IRenderedDash {
 /**
  * base layouter for the dashboard. No own content, just layouting
  */
-class Dashboard extends ComponentEx<IProps, {}> {
+class Dashboard extends ComponentEx<IProps, { counter: number }> {
 
   private mUpdateTimer: NodeJS.Timer;
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.initState({
+      counter: 0,
+    });
+  }
 
   public componentDidMount() {
     this.startUpdateCycle();
@@ -79,18 +87,19 @@ class Dashboard extends ComponentEx<IProps, {}> {
 
   private startUpdateCycle = () => {
     // TODO: this is a hack needed so dashlets get updated even if they get props passed in
-    //   in a way that doesn't properly signal for an update
+    //   in a way that doesn't properly signal for an update.
     this.mUpdateTimer = setTimeout(() => {
-      this.forceUpdate();
+      this.nextState.counter++;
       this.startUpdateCycle();
     }, UPDATE_FREQUENCY_MS);
   }
 
   private renderItem = (dash: IDashletProps) => {
+    const { counter } = this.state;
     const componentProps = dash.props !== undefined ? dash.props() : {};
     return (
       <PackeryItem key={dash.title} width={dash.width} height={dash.height}>
-        <dash.component t={this.props.t} {...componentProps} />
+        <dash.component t={this.props.t} {...componentProps} counter={counter} />
       </PackeryItem>
     );
   }
