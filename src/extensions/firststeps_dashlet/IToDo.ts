@@ -6,8 +6,8 @@ export interface IToDo {
   id: string;
   type: ToDoType;
   props?: (state: any) => any;
-  condition: (props: any) => boolean;
-  render?: (t: TranslationFunction, props: any) => JSX.Element;
-  button?: () => IToDoButton;
+  condition?: (props: any) => boolean;
+  render: (t: TranslationFunction, props: any) => JSX.Element;
+  button?: (t: TranslationFunction, props: any) => IToDoButton;
   priority?: number;
 }

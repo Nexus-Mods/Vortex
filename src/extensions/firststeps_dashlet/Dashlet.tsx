@@ -1,4 +1,3 @@
-import { setSettingsPage } from '../../actions/session';
 import { IToDoButton, ToDoType } from '../../types/IExtensionContext';
 import { II18NProps } from '../../types/II18NProps';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
@@ -10,6 +9,7 @@ import { IconButton } from '../../views/TooltipControls';
 import { dismissStep } from './actions';
 import { IToDo } from './IToDo';
 
+import { TranslationFunction } from 'i18next';
 import * as React from 'react';
 import { Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { Interpolate } from 'react-i18next';
@@ -27,7 +27,6 @@ interface IConnectedState {
 
 interface IActionProps {
   onDismissStep: (step: string) => void;
-  onSetSettingsPage: (pageId: string) => void;
 }
 
 type IProps = IBaseProps & IConnectedState & IActionProps & II18NProps;
@@ -44,14 +43,20 @@ class Dashlet extends ComponentEx<IProps, {}> {
       return null;
     }
 
+    const state = this.context.api.store.getState();
+
     const visibleSteps = todos.filter(
       (step) => {
         if (steps[step.id]) {
           return false;
         }
 
-        const props = step.props ? step.props(extensionProps[step.id]) : this.props;
-        return step.condition(props);
+        if (step.condition !== undefined) {
+          const props = extensionProps[step.id];
+          return step.condition(props);
+        } else {
+          return true;
+        }
       });
 
     visibleSteps.sort((lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100));
@@ -66,7 +71,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
           <ListGroup style={{ marginBottom: 0 }}>
             {
               visibleSteps.map(step => {
-                const props = step.props ? step.props(extensionProps[step.id]) : this.props;
+                const props = extensionProps[step.id];
 
                 return (
                   <ListGroupItem key={step.id} className={`todo-${step.type}`}>
@@ -75,7 +80,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
                       name={this.typeToIcon(step.type)}
                     />
                     {step.render(t, props)}
-                    {this.renderButton(step.button)}
+                    {this.renderButton(step.id, step.button)}
                     <IconButton
                       id={`btn-dismiss-${step.id}`}
                       icon='remove'
@@ -94,11 +99,14 @@ class Dashlet extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderButton(buttonGen: () => IToDoButton): JSX.Element {
+  private renderButton(id: string,
+                       buttonGen: (t: TranslationFunction, props: any) => IToDoButton)
+                       : JSX.Element {
     if (buttonGen === undefined) {
       return null;
     }
-    const button = buttonGen();
+    const { t, extensionProps } = this.props;
+    const button = buttonGen(t, extensionProps[id]);
     if (button === undefined) {
       return null;
     }
@@ -123,34 +131,6 @@ class Dashlet extends ComponentEx<IProps, {}> {
     }[type];
   }
 
-  private openGameSettings = () => {
-    this.context.api.events.emit('show-main-page', 'Settings');
-    this.props.onSetSettingsPage('Games');
-  }
-
-  private openModsSettings = () => {
-    this.context.api.events.emit('show-main-page', 'Settings');
-    this.props.onSetSettingsPage('Mods');
-  }
-
-  private openInterfaceSettings = () => {
-    this.context.api.events.emit('show-main-page', 'Settings');
-    this.props.onSetSettingsPage('Interface');
-  }
-
-  private openVortexSettings = () => {
-    this.context.api.events.emit('show-main-page', 'Settings');
-    this.props.onSetSettingsPage('Vortex');
-  }
-
-  private startManualSearch = () => {
-    this.context.api.events.emit('start-discovery');
-  }
-
-  private openGames = () => {
-    this.context.api.events.emit('show-main-page', 'Games');
-  }
-
   private dismiss = (evt: React.MouseEvent<any>) => {
     const stepId = evt.currentTarget.value;
     this.props.onDismissStep(stepId);
@@ -173,7 +153,6 @@ function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedState {
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onDismissStep: (step: string) => dispatch(dismissStep(step)),
-    onSetSettingsPage: (pageId: string) => dispatch(setSettingsPage(pageId)),
   };
 }
 

@@ -23,7 +23,7 @@ function init(context: IExtensionContext): boolean {
   };
 
   context.registerDashlet('ToDo', 2, 2, 200, Dashlet, state => {
-    const allTodos = [].concat(todos, extTodos);
+    const allTodos = [].concat(todos(context.api), extTodos);
     const steps = state.settings.firststeps.steps;
 
     const visibleSteps = allTodos.filter(item => {
@@ -31,12 +31,16 @@ function init(context: IExtensionContext): boolean {
           return false;
         }
 
-        const props = item.props ? item.props(state) : {};
-        return item.condition(props);
+        if (item.condition) {
+          const props = item.props ? item.props(state) : {};
+          return item.condition(props);
+        } else {
+          return true;
+        }
       });
     return visibleSteps.length > 0;
   }, () => ({
-    todos: [].concat(todos, extTodos),
+    todos: [].concat(todos(context.api), extTodos),
   }));
 
   context.registerReducer(['settings', 'firststeps'], settingsReducer);
