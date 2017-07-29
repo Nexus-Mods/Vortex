@@ -7,6 +7,7 @@
  */
 import { IExtensionReducer } from '../types/Extension';
 import { IReducerSpec } from '../types/IExtensionContext';
+import deepMerge from '../util/deepMerge';
 import {rehydrate} from '../util/storeHelper';
 
 import { appReducer } from './app';
@@ -67,34 +68,6 @@ function deriveReducer(path: string, ele: any): Reducer<any> {
   }
 }
 
-/**
- * very simplistic deep merge.
- *
- * @param {*} lhs
- * @param {*} rhs
- * @returns {*}
- */
-function deepMerge(lhs: any, rhs: any): any {
-  if ((lhs === undefined) || (rhs === undefined) ||
-      (lhs === null) || (rhs === null)) {
-    return lhs || rhs;
-  }
-
-  const result = {};
-  for (const key of Object.keys(lhs).concat(Object.keys(rhs))) {
-    if ((lhs[key] === undefined) || (rhs[key] === undefined)) {
-      result[key] = lhs[key] || rhs[key];
-    }
-
-    result[key] = ((typeof(lhs[key]) === 'object') && (typeof(lhs[key]) === 'object'))
-      ? result[key] = deepMerge(lhs[key], rhs[key])
-      : (Array.isArray(lhs[key]) && Array.isArray(rhs[key]))
-        ? result[key] = lhs[key].concat(rhs[key])
-        : result[key] = rhs[key] || lhs[key];
-  }
-  return result;
-}
-
 function addToTree(tree: any, path: string[], spec: IReducerSpec) {
   if (path.length === 0) {
     if (tree.reducers === undefined) {
@@ -149,7 +122,6 @@ function reducers(extensionReducers: IExtensionReducer[]) {
   extensionReducers.forEach(extensionReducer => {
     addToTree(tree, extensionReducer.path, extensionReducer.reducer);
   });
-
   return deriveReducer('', tree);
 }
 

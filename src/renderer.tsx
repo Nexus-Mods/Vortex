@@ -119,13 +119,17 @@ const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 stopTime = timeRequire();
 
-const store: Store<any> = createStore(reducer([]), enhancer);
+let store: Store<any> = createStore(reducer([]), enhancer);
 
 const extensions: ExtensionManager = new ExtensionManager(store, eventEmitter);
 const extReducers = extensions.getReducers();
 let tFunc = (input, options) => input;
 
-store.replaceReducer(reducer(extReducers));
+// I only want to add reducers, but redux-electron-store seems to break
+// when calling replaceReducer in the renderer
+// (https://github.com/samiskin/redux-electron-store/issues/48)
+// store.replaceReducer(reducer(extReducers));
+store = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
 stopTime();

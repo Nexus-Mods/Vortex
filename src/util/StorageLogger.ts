@@ -2,6 +2,8 @@ import { IStorage } from '../types/IStorage';
 
 import { log, LogLevel } from './log';
 
+import * as _ from 'lodash';
+
 /**
  * logs all write-operations to the redux-persist storage backend
  *
@@ -12,6 +14,7 @@ class StorageLogger implements IStorage {
 
   private mNested: IStorage;
   private mLogLevel: LogLevel;
+  private mCache: any = {};
 
   constructor(nestedStorage: IStorage, logLevel: LogLevel = 'info') {
     this.mNested = nestedStorage;
@@ -24,10 +27,15 @@ class StorageLogger implements IStorage {
   }
 
   public setItem(key: string, value: string | number, cb: (error: Error) => void) {
-    if (typeof(value) === 'string') {
-      log(this.mLogLevel, 'set item', { key, value: value.substring(0, 30) });
+    if (!_.isEqual(this.mCache[key], value)) {
+      if (typeof(value) === 'string') {
+        log(this.mLogLevel, 'set item', {key, value});
+      } else {
+        log(this.mLogLevel, 'set item', {key, value});
+      }
+      this.mCache[key] = value;
     } else {
-      log(this.mLogLevel, 'set item', { key, value });
+      log(this.mLogLevel, 'set item (unchanged)', {key});
     }
     this.mNested.setItem(key, value, cb);
   }

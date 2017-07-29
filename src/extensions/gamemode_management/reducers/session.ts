@@ -15,7 +15,7 @@ export const sessionReducer: IReducerSpec = {
       (state, payload) => setSafe(state, ['addDialogVisible'], payload.visible),
   },
   defaults: {
-    known: null,
+    known: [],
     addDialogVisible: false,
   },
 };

@@ -9,9 +9,9 @@ import { log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 
 function copyGameSettings(sourcePath: string, destinationPath: string,
-                          gameSettingsFiles: string[],
+                          files: string[],
                           copyType: string): Promise<void> {
-  return Promise.map(gameSettingsFiles, gameSetting => {
+  return Promise.map(files, gameSetting => {
     let source = path.join(sourcePath, gameSetting);
     let destination = path.join(destinationPath, path.basename(gameSetting));
 
@@ -123,7 +123,7 @@ function init(context): boolean {
       (prev: string, current: string) => {
         const state = store.getState();
 
-        const oldProfile = util.getSafe(state, ['persistent', 'profiles', prev], null);
+        const oldProfile = util.getSafe(state, ['persistent', 'profiles', prev], undefined);
         const newProfile = state.persistent.profiles[current];
 
         checkGlobalFiles(oldProfile, newProfile)
