@@ -43,51 +43,53 @@ class ProfileItem extends ComponentEx<IProps, {}> {
     const className = active ? 'list-group-item active' : 'list-group-item';
 
     return (
-      <span className={className}>
-        <h4 className='list-group-item-heading'>{ `${gameName} - ${profile.name}` }</h4>
-        <div className='list-group-item-text'>
-          <ul className='profile-details'>
-            <li>
-              <TooltipIcon
-                id={profile.id}
-                name='wrench'
-                tooltip={t('Number of Mods enabled')}
-              />
-              {enabledMods}
-            </li>
-          {features.map(this.renderFeature)}
-          </ul>
-          <div className='profile-actions'>
-            <IconButton
-              className='btn-embed'
-              id={`btn-profile-select-${profile.id}`}
-              disabled={ active }
-              tooltip={ t('Enable') }
-              onClick={ this.activate }
-              icon='play'
-            />
-            <IconButton
-              className='btn-embed'
-              id={`btn-profile-clone-${profile.id}`}
-              tooltip={ t('Clone') }
-              onClick={ this.cloneProfile }
-              icon='clone'
-            />
-            <IconButton
-              className='btn-embed'
-              id={`btn-profile-edit-${profile.id}`}
-              tooltip={ t('Edit') }
-              onClick={ this.startEditing }
-              icon='edit'
-            />
-            <IconButton
-              className='btn-embed'
-              id={`btn-profile-remove-${profile.id}`}
-              tooltip={ t('Remove') }
-              onClick={ this.removeProfile }
-              icon='remove'
-            />
+      <span className={className} style={{ display: 'flex' }}>
+        <div style={{ flex: '1 1 0' }}>
+          <h4 className='list-group-item-heading'>{`${gameName} - ${profile.name}`}</h4>
+          <div className='list-group-item-text'>
+            <ul className='profile-details'>
+              <li>
+                <TooltipIcon
+                  id={profile.id}
+                  name='wrench'
+                  tooltip={t('Number of Mods enabled')}
+                />
+                {enabledMods}
+              </li>
+              {features.map(this.renderFeature)}
+            </ul>
           </div>
+        </div>
+        <div className='profile-actions'>
+          <IconButton
+            className='btn-embed'
+            id={`btn-profile-select-${profile.id}`}
+            disabled={active}
+            tooltip={t('Enable')}
+            onClick={this.activate}
+            icon='play'
+          />
+          <IconButton
+            className='btn-embed'
+            id={`btn-profile-clone-${profile.id}`}
+            tooltip={t('Clone')}
+            onClick={this.cloneProfile}
+            icon='clone'
+          />
+          <IconButton
+            className='btn-embed'
+            id={`btn-profile-edit-${profile.id}`}
+            tooltip={t('Edit')}
+            onClick={this.startEditing}
+            icon='edit'
+          />
+          <IconButton
+            className='btn-embed'
+            id={`btn-profile-remove-${profile.id}`}
+            tooltip={t('Remove')}
+            onClick={this.removeProfile}
+            icon='remove'
+          />
         </div>
       </span>
     );
@@ -100,6 +102,7 @@ class ProfileItem extends ComponentEx<IProps, {}> {
       <li key={id}>
         <TooltipIcon
           id={id}
+          className='icon-profile-feature'
           tooltip={t(feature.description)}
           name={feature.icon}
         />

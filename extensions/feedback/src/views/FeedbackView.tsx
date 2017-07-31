@@ -170,10 +170,10 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
         title={t('Attach')}
         onSelect={this.attach}
       >
-        <MenuItem draggable={false} eventKey='sysinfo'>{t('System Information')}</MenuItem>
-        <MenuItem draggable={false} eventKey='log'>{t('Vortex Log')}</MenuItem>
-        <MenuItem draggable={false} eventKey='settings'>{t('Application Settings')}</MenuItem>
-        <MenuItem draggable={false} eventKey='state'>{t('Application State')}</MenuItem>
+        <MenuItem eventKey='sysinfo'>{t('System Information')}</MenuItem>
+        <MenuItem eventKey='log'>{t('Vortex Log')}</MenuItem>
+        <MenuItem eventKey='settings'>{t('Application Settings')}</MenuItem>
+        <MenuItem eventKey='state'>{t('Application State')}</MenuItem>
       </DropdownButton>
     );
   }

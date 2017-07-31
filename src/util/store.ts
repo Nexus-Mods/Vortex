@@ -50,8 +50,8 @@ export function createVortexStore([]): Redux.Store<IState> {
 
 function initStorage(basePath: string): Promise<IStorage> {
   if (storage[basePath] === undefined) {
-    // storage[basePath] = new StorageLogger(new LevelStorage(basePath, 'state'));
-    storage[basePath] = new LevelStorage(basePath, 'state');
+    storage[basePath] = new StorageLogger(new LevelStorage(basePath, 'state'));
+    // storage[basePath] = new LevelStorage(basePath, 'state');
   }
   return Promise.resolve(storage[basePath]);
 }

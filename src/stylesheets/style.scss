@@ -22,8 +22,8 @@ html {
     position: relative;
   }
 
-  >.btn {
-    float: none;
+  .btn {
+    vertical-align: text-bottom;
   }
 }
 
@@ -436,7 +436,7 @@ a[role=menuitem] svg {
   height: 1.1em;
   width: 1.1em;
   display: inline-block;
-  vertical-align: middle;
+  vertical-align: text-bottom;
 }
 
 .icon-border {
@@ -1203,6 +1203,7 @@ a[role=menuitem] svg {
 
 .btngroup-version {
   display: inline-flex;
+  vertical-align: text-bottom;
 }
 
 .header-dependencies {
@@ -1400,9 +1401,16 @@ a[role=menuitem] svg {
 }
 
 .profile-actions {
-  position: absolute;
-  top: 10px;
-  right: 5px;
+  margin-top: auto;
+  margin-bottom: auto;
+  .btn {
+    padding: 4px;
+    vertical-align: text-bottom;
+  }
+}
+
+.icon-profile-feature {
+  margin-right: 3px;
 }
 
 // /profile page

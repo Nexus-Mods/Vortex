@@ -73,7 +73,7 @@ export const PICTURE: ITableAttribute = {
   description: 'A picture provided by the author',
   customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
     const long = getSafe(mod.attributes, ['description'], '');
-    const short = getSafe(mod.attributes, ['shortDescription'], '');
+    const short = getSafe(mod.attributes, ['shortDescription'], t('Description'));
 
     const url = getSafe(mod.attributes, ['pictureUrl'], undefined);
     return <ImageComponent t={t} longDescription={long} shortDescription={short} url={url}/>;

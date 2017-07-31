@@ -24,7 +24,7 @@ class Description extends React.Component<IProps, {}> {
 
     return (
       <OverlayTrigger trigger='click' overlay={popover} rootClose placement='left'>
-        <p className='p-link'>{short !== undefined ? bbcode(short) : t('Description')}</p>
+        <p className='p-link'>{bbcode(short)}</p>
       </OverlayTrigger>
     );
   }

@@ -79,6 +79,12 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
       }
     });
 
+    if (buttonProps['className'] !== undefined) {
+      buttonProps['className'] += ' icon-button';
+    } else {
+      buttonProps['className'] = 'icon-button';
+    }
+
     if (typeof (this.props.tooltip) === 'string') {
       return (
         <BootstrapButton {...buttonProps} title={this.props.tooltip}>
