@@ -26,6 +26,7 @@ export interface IState {
  */
 class VisibilityProxy extends React.Component<IProps, IState> {
   private mNode: Element;
+  private mDebounceTimer: NodeJS.Timer;
   private mTimer: NodeJS.Timer;
 
   constructor(props: IProps) {
@@ -79,6 +80,7 @@ class VisibilityProxy extends React.Component<IProps, IState> {
   }
 
   private watch() {
+    this.startTimer();
     this.container.addEventListener('scroll', this.testVisibleTimer);
     this.container.addEventListener('resize', this.testVisibleTimer);
   }
@@ -86,15 +88,23 @@ class VisibilityProxy extends React.Component<IProps, IState> {
   private unwatch() {
     this.container.removeEventListener('scroll', this.testVisibleTimer);
     this.container.removeEventListener('resize', this.testVisibleTimer);
+    clearTimeout(this.mTimer);
+  }
+
+  private startTimer() {
+    this.mTimer = setTimeout(() => {
+      this.testVisibleTimer();
+      this.startTimer();
+    }, 1000);
   }
 
   private testVisibleTimer = () => {
-    if (this.mTimer !== undefined) {
+    if (this.mDebounceTimer !== undefined) {
       // update already scheduled
       return;
     }
-    this.mTimer = setTimeout(() => {
-      this.mTimer = undefined;
+    this.mDebounceTimer = setTimeout(() => {
+      this.mDebounceTimer = undefined;
       this.testVisible();
     }, 100);
   }
