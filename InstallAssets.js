@@ -50,6 +50,23 @@ for (let spawn of data.spawn) {
   });
 }
 
+function waitForProcesses() {
+  let resolve;
+
+  const cb = () => {
+    if ((childProcesses.length > 0) || (copies !== 0)) {
+      setTimeout(cb, 100);
+    } else {
+      resolve();
+    }
+  }
+
+  return new Promise((resolveIn, reject) => {
+    resolve = resolveIn;
+    setTimeout(cb, 100);
+  });
+}
+
 // copy files
 Promise.mapSeries(data.copy, file => {
   if (file.target.indexOf(tgt) === -1) {
@@ -82,16 +99,7 @@ Promise.mapSeries(data.copy, file => {
         })
         .finally(() => {
           --copies;
-        })
-    }))
-});
-
-function waitForProcesses() {
-  if ((childProcesses.length > 0) || (copies !== 0)) {
-    setTimeout(waitForProcesses, 100);
-  } else {
-    process.exit(status);
-  }
-}
-
-waitForProcesses();
+        });
+    }));
+})
+  .then(() => waitForProcesses());
