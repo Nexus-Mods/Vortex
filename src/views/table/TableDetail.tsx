@@ -52,6 +52,10 @@ class DetailCell extends React.Component<ICellProps, {}> {
         return true;
       }
     });
+    if ((this.props.rowData !== nextProps.rowData)
+        || (this.props.rawData !== nextProps.rawData)) {
+      return true;
+    }
     return false;
   }
 
@@ -259,6 +263,9 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
   }
 
   public shouldComponentUpdate(nextProps: IDetailProps) {
+    // TODO: when data changes it will almost always cause an update in rawData and
+    //   then a delayed update to rowData, so this component gets updated twice for
+    //   one change in row data
     return (this.props.rowIds !== nextProps.rowIds)
       || (this.props.language !== nextProps.language)
       || (this.props.rawData !== nextProps.rawData)

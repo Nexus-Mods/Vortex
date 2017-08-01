@@ -44,7 +44,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, {}> {
 
     return (
       <div className={`main-page ${active ? 'active' : 'hidden'}`}>
-        <page.component {...props} />
+        <page.component active={active} {...props} />
       </div>
     );
   }

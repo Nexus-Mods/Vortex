@@ -2,6 +2,7 @@ import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 
 import Dropdown from '../Dropdown';
 import ExtensionGate from '../ExtensionGate';
+import Icon from '../Icon';
 import IconBar from '../IconBar';
 import {ITableRowAction} from '../Table';
 import {Button, IconButton} from '../TooltipControls';
@@ -143,7 +144,6 @@ export interface IRowProps {
   selected: boolean;
   domRef?: (ref) => void;
   container: HTMLElement;
-  placeholder: JSX.Element;
 }
 
 class TableRow extends React.Component<IRowProps, {}> {
@@ -159,10 +159,22 @@ class TableRow extends React.Component<IRowProps, {}> {
     return (
       <VisibilityProxy
         container={this.props.container}
-        placeholder={this.props.placeholder}
+        placeholder={this.renderPlaceholder()}
       >
         { this.renderRow() }
       </VisibilityProxy>
+    );
+  }
+
+  private renderPlaceholder(): JSX.Element {
+    const { data, domRef } = this.props;
+    return (
+      <tr
+        id={data.__id}
+        ref={domRef}
+      >
+        <td><Icon name='spinner' pulse /></td>
+      </tr>
     );
   }
 

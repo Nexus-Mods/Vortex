@@ -11,6 +11,8 @@ function step(startTime: number, endTime: number, time: number) {
   return x * x * (3 - 2 * x);
 }
 
+const scrollJobs: { [elementId: string]: () => void } = {};
+
 function smoothScroll(element: HTMLElement, targetPos: number, duration: number) {
   targetPos = Math.round(targetPos);
   duration = Math.max(Math.round(duration), 0);
@@ -21,7 +23,17 @@ function smoothScroll(element: HTMLElement, targetPos: number, duration: number)
   const startPos = element.scrollTop;
   const distance = targetPos - startPos;
 
+  if (scrollJobs[element.id] !== undefined) {
+    scrollJobs[element.id]();
+  }
+
+  let timer: NodeJS.Timer;
+
   return new Promise<void>((resolve, reject) => {
+    scrollJobs[element.id] = () => {
+      clearTimeout(timer);
+      resolve();
+    };
     const tick = () => {
       const now = Date.now();
       const percent = step(startTime, endTime, now);
@@ -34,7 +46,7 @@ function smoothScroll(element: HTMLElement, targetPos: number, duration: number)
         return resolve();
       }
 
-      setTimeout(tick, 16);
+      timer = setTimeout(tick, 16);
     };
 
     setImmediate(tick);

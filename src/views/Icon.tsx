@@ -115,67 +115,84 @@ function renderPath(pathComp: IPath, idx: number) {
   return <path key={idx} d={pathComp.path} style={pathComp.attrs} />;
 }
 
-const Icon = (props: IIconProps) => {
-  const set = props.set || 'vortex';
-  const icon = getIcon(set, props.name);
+class Icon extends React.Component<IIconProps, {}> {
+  private mIcon: IRenderDescription;
 
-  let classes = [ 'icon', `icon-${props.name}` ];
-  // avoid using css for transforms. For one thing this is more flexible but more importantly
-  // it has no interactions with other css. For example css transforms tend to break z ordering
-  const transforms = [];
-
-  if (props.spin) {
-    classes.push('icon-spin');
+  public componentWillMount() {
+    this.setIcon(this.props);
   }
 
-  if (props.pulse) {
-    classes.push('icon-pulse');
+  public componentWillReceiveProps(newProps: IIconProps) {
+    this.setIcon(newProps);
   }
 
-  if (props.border) {
-    classes.push('icon-border');
+  public render(): JSX.Element {
+    const { name, style } = this.props;
+    const set = this.props.set || 'vortex';
+    const icon = this.mIcon;
+
+    let classes = ['icon', `icon-${name}`];
+    // avoid using css for transforms. For one thing this is more flexible but more importantly
+    // it has no interactions with other css. For example css transforms tend to break z ordering
+    const transforms = [];
+
+    if (this.props.spin) {
+      classes.push('icon-spin');
+    }
+
+    if (this.props.pulse) {
+      classes.push('icon-pulse');
+    }
+
+    if (this.props.border) {
+      classes.push('icon-border');
+    }
+
+    if (this.props.stroke) {
+      classes.push('icon-stroke');
+    }
+
+    if (this.props.flip) {
+      transforms.push(this.props.flip === 'horizontal'
+        ? `scale(-1, 1)`
+        : `scale(1, -1)`);
+    }
+
+    if (this.props.rotate) {
+      transforms.push(`rotate(${this.props.rotate}, ${icon.width / 2}, ${icon.height / 2})`);
+    }
+
+    if (this.props.className !== undefined) {
+      classes = classes.concat(this.props.className.split(' '));
+    }
+
+    const id = `icon-${name}`;
+
+    // when an outline is set we need to offset the symbol viewbox a bit so that the outline doesn't
+    // get cut off. There is probably a nicer way to do this
+    const offset = this.props.stroke === true
+      ? icon.width / 16 : 0;
+    const viewbox =
+      `${offset * -1} ${offset * -1} ${icon.width + offset * 2} ${icon.height + offset * 2}`;
+
+    return (
+      <svg
+        preserveAspectRatio='xMidYMid meet'
+        className={classes.join(' ')}
+        style={style}
+        viewBox={`0 0 ${icon.width} ${icon.height}`}
+      >
+        <symbol id={id} width={icon.width} height={icon.height} viewBox={viewbox}>
+          {icon.paths.map(renderPath)}
+        </symbol>
+        <use xlinkHref={'#' + id} transform={transforms.join(' ')} />
+      </svg>
+    );
   }
 
-  if (props.stroke) {
-    classes.push('icon-stroke');
+  private setIcon(props: IIconProps) {
+    this.mIcon = getIcon(props.set || 'vortex', props.name);
   }
-
-  if (props.flip) {
-    transforms.push(props.flip === 'horizontal'
-      ? `scale(-1, 1)`
-      : `scale(1, -1)`);
-  }
-
-  if (props.rotate) {
-    transforms.push(`rotate(${props.rotate}, ${icon.width / 2}, ${icon.height / 2})`);
-  }
-
-  if (props.className !== undefined) {
-    classes = classes.concat(props.className.split(' '));
-  }
-
-  const id = `icon-${props.name}`;
-
-  // when an outline is set we need to offset the symbol viewbox a bit so that the outline doesn't
-  // get cut off. There is probably a nicer way to do this
-  const offset = props.stroke === true
-    ? icon.width / 16 : 0;
-  const viewbox =
-    `${ offset * -1 } ${ offset * -1 } ${ icon.width + offset * 2 } ${ icon.height + offset * 2}`;
-
-  return (
-    <svg
-      preserveAspectRatio='xMidYMid meet'
-      className={ classes.join(' ') }
-      style={ props.style }
-      viewBox={ `0 0 ${icon.width} ${icon.height}` }
-    >
-      <symbol id={id} width={icon.width} height={icon.height} viewBox={viewbox}>
-        { icon.paths.map(renderPath) }
-      </symbol>
-      <use xlinkHref={'#' + id} transform={ transforms.join(' ') }/>
-    </svg>
-  );
-};
+}
 
 export default Icon;

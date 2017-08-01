@@ -136,7 +136,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             target={this.buttonRef}
             onClose={this.toggleCollapsed}
           >
-            {collapsed.sort(iconSort).map(this.renderMenuItem)}
+            {this.state.open ? collapsed.sort(iconSort).map(this.renderMenuItem) : null}
           </PortalMenu>
         </div>
           );
