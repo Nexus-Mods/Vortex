@@ -126,19 +126,19 @@ const dependencyTarget: __ReactDnd.DropTargetSpec<IProps> = {
   },
 };
 
-function collectDrag(connect: __ReactDnd.DragSourceConnector,
+function collectDrag(dragConnect: __ReactDnd.DragSourceConnector,
                      monitor: __ReactDnd.DragSourceMonitor): IDragProps {
   return {
-    connectDragSource: connect.dragSource(),
-    connectDragPreview: connect.dragPreview(),
+    connectDragSource: dragConnect.dragSource(),
+    connectDragPreview: dragConnect.dragPreview(),
     isDragging: monitor.isDragging(),
   };
 }
 
-function collectDrop(connect: __ReactDnd.DropTargetConnector,
+function collectDrop(dropConnect: __ReactDnd.DropTargetConnector,
                      monitor: __ReactDnd.DropTargetMonitor): IDropProps {
   return {
-    connectDropTarget: connect.dropTarget(),
+    connectDropTarget: dropConnect.dropTarget(),
     isOver: monitor.isOver(),
     canDrop: monitor.canDrop(),
   };
@@ -242,7 +242,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
             className={classes.join(' ')}
             key={`rules-${plugin.name}`}
             tooltip={t('Drag to another plugin to set userlist rule')}
-            icon='plug'
+            icon='connect'
             ref={this.setRef}
             onClick={this.toggleOverlay}
           />
@@ -275,13 +275,13 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     this.nextState.showOverlay = false;
   }
 
-  private renderRule = (name: string, type: string) => {
+  private renderRule = (name: string, ruleType: string) => {
     const { t } = this.props;
     return (
       <li key={name}>{name}
         <tooltip.IconButton
           id={`btn-rule-remove-${name}`}
-          value={`${type}:${name}`}
+          value={`${ruleType}:${name}`}
           className='btn-embed'
           icon='remove'
           tooltip={t('Remove')}
@@ -298,8 +298,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
   private onRemove = (evt) => {
     const { gameId, plugin, onRemoveRule } = this.props;
-    const [ type, pluginId ] = splitOnce(evt.currentTarget.value, ':');
-    onRemoveRule(gameId, plugin.name, pluginId, type);
+    const [ ruleType, pluginId ] = splitOnce(evt.currentTarget.value, ':');
+    onRemoveRule(gameId, plugin.name, pluginId, ruleType);
   }
 }
 

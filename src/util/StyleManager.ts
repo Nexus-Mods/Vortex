@@ -9,6 +9,8 @@ function asarUnpacked(input: string): string {
   return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
 
+const isDevel: boolean = process.env.NODE_ENV === 'development';
+
 class StyleManager {
   private static RENDER_DELAY = 200;
   private mPartials: Array<{ key: string, file: string }>;
@@ -81,7 +83,6 @@ class StyleManager {
 
     const basePath = asarUnpacked(__dirname);
     const assetsPath = path.resolve(basePath, '..', 'assets', 'css');
-    const isDevel = __dirname.indexOf('out') !== -1;
     const modulesPath = isDevel
       ? path.resolve(basePath, '..', '..', 'node_modules')
       : path.resolve(basePath, '..', 'node_modules');
@@ -91,7 +92,7 @@ class StyleManager {
         outFile: path.join(assetsPath, 'theme.css'),
         includePaths: [assetsPath, modulesPath],
         data: sassIndex,
-        outputStyle: 'compressed',
+        outputStyle: isDevel ? 'expanded' : 'compressed',
       },
         (err, output) => {
           if (err !== null) {

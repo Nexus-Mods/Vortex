@@ -239,6 +239,7 @@ textarea {
 .nav-pills>li>a svg {
   height: 1.2em;
   width: 1.2em;
+  vertical-align: middle;
 }
 
 .react-context-menu-link.disabled {
@@ -1292,7 +1293,6 @@ a[role=menuitem] svg {
   }
 
   .thumbnail-img {
-    max-width: 170px;
     max-height: 100px;
   }
 }
@@ -1303,7 +1303,6 @@ a[role=menuitem] svg {
   }
 
   .thumbnail-img {
-    max-width: 340px;
     max-height: 200px;
   }
 }
@@ -1349,7 +1348,12 @@ a[role=menuitem] svg {
 }
 
 .progress {
-  height: 32px;
+  margin: 6px;
+}
+
+.discovery-progress-container {
+  display: flex;
+  padding: floor(($gutter-width / 2));
 }
 
 .discovery-progress-0 {
@@ -1640,6 +1644,7 @@ a[role=menuitem] svg {
 
 .packery-item {
   padding: 5px;
+  overflow: hidden;
 }
 
 .lodpi {
@@ -1868,6 +1873,12 @@ a[role=menuitem] svg {
 
 .more-popover .popover-content {
   white-space: pre-wrap;
+  // minimal pixel height of the screen is 768 and in the worst case a
+  // vertically placed popover has a reference point almost in the middle
+  // of the screen so the max height shouldn't be bigger than
+  // (768 / 2) - <height of the arrow> - <height of the header>
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .more-popover .popover-content p {

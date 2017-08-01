@@ -198,8 +198,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                 </span>
               </div>
             </Flex>
-            <Fixed style={{ height: 40 }} >
-              <Layout type='row'>
+            <Fixed>
+              <div className='discovery-progress-container'>
                 <Flex>
                   <ProgressBar>
                   {Object.keys(discovery.phases)
@@ -216,7 +216,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                     <Icon name={discovery.running ? 'stop' : 'search'} />
                   </Button>
                 </Fixed>
-              </Layout>
+              </div>
             </Fixed>
           </Layout>
         </MainPage.Body>

@@ -138,10 +138,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       placement: 'table',
       customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
         <DependencyIcon plugin={plugin} t={t} />,
-      calc: (mod) => null,
+      calc: plugin => null,
       isToggleable: true,
       edit: {},
       isSortable: false,
+    },
+    {
+      id: 'author',
+      name: 'Author',
+      description: 'Author of the plugin',
+      placement: 'detail',
+      calc: (plugin: IPluginCombined) => plugin.author,
+      edit: {},
     },
     {
       id: 'masters',

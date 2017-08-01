@@ -30,7 +30,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     (icon: string, title: string, element: any, options: IMainPageOptions) => {
       viewMenu.push({
         label: title,
-        accelerator: options.hotkey !== undefined ? 'CmdOrCtrl+' + options.hotkey : undefined,
+        accelerator: options.hotkey !== undefined ? 'CmdOrCtrl+Shift+' + options.hotkey : undefined,
         click(item, focusedWindow) {
           extensions.getApi().events.emit('show-main-page', title);
         },
@@ -39,7 +39,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
 
   viewMenu.push({
     label: 'Settings',
-    accelerator: 'CmdOrCtrl+S',
+    accelerator: 'CmdOrCtrl+Shift+S',
     click(item, focusedWindow) {
       extensions.getApi().events.emit('show-main-page', 'Settings');
     },
