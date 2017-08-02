@@ -276,7 +276,10 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute {
     help: getText('source', api.translate),
     description: 'Source the mod was downloaded from',
     icon: 'database',
-    placement: 'detail',
+    placement: 'both',
+    isSortable: true,
+    isToggleable: true,
+    isDefaultVisible: false,
     calc: (mod: IMod) => {
       const source = modSources.find(iter => iter.id === mod.attributes['source']);
       return source !== undefined ? source.name : 'None';
@@ -336,6 +339,67 @@ function attributeExtractor(input: any) {
   });
 }
 
+function once(api: IExtensionApi) {
+    const store: Redux.Store<any> = api.store;
+
+    if (installManager === undefined) {
+      installManager = new InstallManager(() => installPath(store.getState()));
+      installers.forEach((installer: IInstaller) => {
+        installManager.addInstaller(installer.priority, installer.testSupported, installer.install);
+      });
+    }
+
+    const updateModActivation = genUpdateModActivation();
+    const activationTimer = new Debouncer(
+      (manual: boolean) => updateModActivation(api, manual)
+    , 2000);
+
+    api.events.on('activate-mods', (callback: (err: Error) => void) => {
+      activationTimer.runNow(callback, true);
+    });
+
+    api.events.on('schedule-activate-mods', (callback: (err: Error) => void) => {
+      activationTimer.schedule(callback, false);
+    });
+
+    api.events.on('purge-mods', (callback: (err: Error) => void) => {
+      purgeMods(api);
+    });
+
+    api.events.on('await-activation', (callback: (err: Error) => void) => {
+      activationTimer.wait(callback);
+    });
+
+    api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
+      if (store.getState().settings.automation.deploy) {
+        activationTimer.schedule(undefined, false);
+      }
+    });
+
+    api.events.on('gamemode-activated',
+      (newMode: string) => onGameModeActivated(api, activators, newMode));
+
+    api.onStateChange(
+      ['settings', 'mods', 'paths'],
+      (previous, current) => onPathsChanged(api, previous, current));
+
+    api.events.on(
+        'start-install',
+        (archivePath: string, callback?: (error, id: string) => void) => {
+          installManager.install(null, archivePath,
+                                 activeGameId(store.getState()), api,
+                                 {}, true, false, callback);
+        });
+
+    api.events.on('start-install-download',
+        (downloadId: string, callback?: (error, id: string) => void) =>
+          onStartInstallDownload(api, installManager, downloadId, callback));
+
+    api.events.on('remove-mod',
+      (gameMode: string, modId: string, callback?: (error: Error) => void) =>
+        onRemoveMod(api, activators, gameMode, modId, callback));
+}
+
 function init(context: IExtensionContextExt): boolean {
   const modsActivity = new ReduxProp(context.api, [
     ['session', 'base', 'activity', 'mods'],
@@ -390,66 +454,7 @@ function init(context: IExtensionContextExt): boolean {
 
   registerInstaller(1000, basicInstaller.testSupported, basicInstaller.install);
 
-  context.once(() => {
-    const store: Redux.Store<any> = context.api.store;
-
-    if (installManager === undefined) {
-      installManager = new InstallManager(() => installPath(store.getState()));
-      installers.forEach((installer: IInstaller) => {
-        installManager.addInstaller(installer.priority, installer.testSupported, installer.install);
-      });
-    }
-
-    const updateModActivation = genUpdateModActivation();
-    const activationTimer = new Debouncer(
-      (manual: boolean) => updateModActivation(context.api, manual)
-    , 2000);
-
-    context.api.events.on('activate-mods', (callback: (err: Error) => void) => {
-      activationTimer.runNow(callback, true);
-    });
-
-    context.api.events.on('schedule-activate-mods', (callback: (err: Error) => void) => {
-      activationTimer.schedule(callback, false);
-    });
-
-    context.api.events.on('purge-mods', (callback: (err: Error) => void) => {
-      purgeMods(context.api);
-    });
-
-    context.api.events.on('await-activation', (callback: (err: Error) => void) => {
-      activationTimer.wait(callback);
-    });
-
-    context.api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
-      if (store.getState().settings.automation.deploy) {
-        activationTimer.schedule(undefined, false);
-      }
-    });
-
-    context.api.events.on('gamemode-activated',
-      (newMode: string) => onGameModeActivated(context.api, activators, newMode));
-
-    context.api.onStateChange(
-      ['settings', 'mods', 'paths'],
-      (previous, current) => onPathsChanged(context.api, previous, current));
-
-    context.api.events.on(
-        'start-install',
-        (archivePath: string, callback?: (error, id: string) => void) => {
-          installManager.install(null, archivePath,
-                                 activeGameId(store.getState()), context.api,
-                                 {}, true, false, callback);
-        });
-
-    context.api.events.on('start-install-download',
-        (downloadId: string, callback?: (error, id: string) => void) =>
-          onStartInstallDownload(context.api, installManager, downloadId, callback));
-
-    context.api.events.on('remove-mod',
-      (gameMode: string, modId: string, callback?: (error: Error) => void) =>
-        onRemoveMod(context.api, activators, gameMode, modId, callback));
-  });
+  context.once(() => once(context.api));
 
   return true;
 }

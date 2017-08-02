@@ -2,6 +2,7 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import { setDialogVisible } from '../../actions/session';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { ITableAttribute } from '../../types/ITableAttribute';
 import Debouncer from '../../util/Debouncer';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -332,6 +333,263 @@ function openNexusPage(games: string[]) {
   opn(`http://www.nexusmods.com/${convertGameId(games[0])}`);
 }
 
+function processAttributes(input: any) {
+  const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
+
+  return ({
+    modId: getSafe(input.nexus, ['ids', 'modId'], undefined),
+    fileId: getSafe(input.nexus, ['ids', 'fileId'], undefined),
+    author: getSafe(input.nexus, ['modInfo', 'author'], undefined),
+    category: getSafe(input.nexus, ['modInfo', 'category_id'], undefined),
+    pictureUrl: getSafe(input.nexus, ['modInfo', 'picture_url'], undefined),
+    description: getSafe(input.nexus, ['modInfo', 'description'], undefined),
+    shortDescription: getSafe(input.nexus, ['modInfo', 'summary'], undefined),
+    fileType: getSafe(input.nexus, ['fileInfo', 'category_name'], undefined),
+    isPrimary: getSafe(input.nexus, ['fileInfo', 'is_primary'], undefined),
+    fileName: getSafe(input.nexus, ['fileInfo', 'name'], undefined),
+    changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
+    uploadedTimestamp: getSafe(input.nexus, ['fileInfo', 'uploaded_timestamp'], undefined),
+    version: getSafe(input.nexus, ['fileInfo', 'version'], undefined),
+  });
+}
+
+function genEndorsedAttribute(api: IExtensionApi): ITableAttribute {
+  return {
+    id: 'endorsed',
+    name: 'Endorsed',
+    description: 'Endorsement state on Nexus',
+    icon: 'star',
+    customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
+      mod.attributes['source'] === 'nexus'
+        ? createEndorsedIcon(api.store, mod, t)
+        : null,
+    calc: (mod: IMod) =>
+      mod.attributes['source'] === 'nexus'
+        ? getSafe(mod.attributes, ['endorsed'], null)
+        : undefined,
+    placement: 'table',
+    isToggleable: true,
+    edit: {},
+    isSortable: true,
+    filter: new EndorsementFilter(),
+  };
+}
+
+function genModIdAttribute(api: IExtensionApi): ITableAttribute {
+  return {
+    id: 'nexusModId',
+    name: 'Nexus Mod ID',
+    description: 'Internal ID used by www.nexusmods.com',
+    icon: 'external-link',
+    customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
+      const res = mod.attributes['source'] === 'nexus'
+        ? renderNexusModIdDetail(api.store, mod, t)
+        : null;
+      return res;
+    },
+    calc: (mod: IMod) =>
+      mod.attributes['source'] === 'nexus'
+        ? getSafe(mod.attributes, ['modId'], null)
+        : undefined,
+    placement: 'detail',
+    isToggleable: false,
+    edit: {},
+    isSortable: false,
+  };
+}
+
+function once(api: IExtensionApi) {
+  const registerFunc = () => {
+    api.registerProtocol('nxm', (url: string) => {
+      startDownload(api, url);
+    });
+  };
+
+  { // limit lifetime of state
+    const state = api.store.getState();
+
+    nexus = new Nexus(activeGameId(state),
+      getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''));
+
+    const gameMode = activeGameId(state);
+    api.store.dispatch(setUpdatingMods(gameMode, false));
+
+    endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
+      endorseModImpl(api.store, gameId, modId, endorsedStatus);
+
+    if (state.settings.nexus.associateNXM) {
+      registerFunc();
+    }
+
+    if (state.confidential.account.nexus.APIKey !== undefined) {
+      fetchUserInfo(nexus, state.confidential.account.nexus.APIKey)
+        .then(userInfo => {
+          api.store.dispatch(setUserInfo(userInfo));
+        })
+        .catch(TimeoutError, err => {
+          showError(api.store.dispatch,
+            'API Key validation timed out',
+            'Server didn\'t respond to validation request, web-based '
+            + 'features will be unavailable');
+        })
+        .catch(err => {
+          showError(api.store.dispatch,
+            'An error occurred validating the API Key',
+            'Please provide a valid API Key!');
+        });
+    }
+  }
+
+  api.events.on('retrieve-category-list', (isUpdate: boolean) => {
+    retrieveCategories(api, isUpdate);
+  });
+
+  api.events.on('check-mods-version', (gameId, groupedMods, mods) => {
+    const APIKEY = getSafe(api.store.getState(),
+      ['confidential', 'account', 'nexus', 'APIKey'], '');
+    if (APIKEY === '') {
+      showError(api.store.dispatch,
+        'An error occurred checking for mod updates',
+        'You are not logged in!');
+    } else {
+      api.store.dispatch(setUpdatingMods(gameId, true));
+      checkModVersionsImpl(api.store, gameId, groupedMods, mods)
+        .then((errorMessages: string[]) => {
+          if (errorMessages.length !== 0) {
+            showError(api.store.dispatch,
+              'Checking for mod updates succeeded but there were errors',
+              errorMessages.join('\n\n'));
+          }
+        })
+        .catch(err => {
+          showError(api.store.dispatch,
+            'An error occurred checking for mod updates',
+            err);
+        })
+        .finally(() => {
+          api.store.dispatch(setUpdatingMods(gameId, false));
+        });
+    }
+  });
+
+  api.events.on('endorse-mod', (gameId, modId, endorsedStatus) => {
+    const APIKEY = getSafe(api.store.getState(),
+      ['confidential', 'account', 'nexus', 'APIKey'], '');
+    if (APIKEY === '') {
+      showError(api.store.dispatch,
+        'An error occurred endorsing a mod',
+        'You are not logged in!');
+    } else {
+      endorseModImpl(api.store, gameId, modId, endorsedStatus);
+    }
+  });
+
+  api.events.on('submit-feedback',
+    (message: string, feedbackFiles: string[],
+     anonymous: boolean, callback: (err: Error) => void) => {
+      submitFeedback(nexus, message, feedbackFiles, anonymous)
+        .then(() => callback(null))
+        .catch(err => callback(err));
+    });
+
+  api.events.on('gamemode-activated', (gameId: string) => {
+    nexus.setGame(gameId);
+  });
+
+  api.events.on('mod-update', (gameId, modId, fileId) => {
+    // TODO: Need some way to identify if this request is actually for a nexus mod
+    const url = `nxm://${toNXMId(gameId)}/mods/${modId}/files/${fileId}`;
+    const state: IState = api.store.getState();
+    const downloads = state.persistent.downloads.files;
+
+    // check if the file is already downloaded. If not, download before starting the install
+    const existingId = Object.keys(downloads).find(downloadId =>
+      getSafe(downloads,
+        [downloadId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined) === fileId);
+    if (existingId !== undefined) {
+      api.events.emit('start-install-download', existingId);
+    } else {
+      startDownload(api, url)
+        .then(downloadId => {
+          api.events.emit('start-install-download', downloadId);
+        });
+    }
+  });
+
+  api.events.on('open-mod-page', (gameId, modId) => {
+    opn(['http://www.nexusmods.com',
+      convertGameId(gameId), 'mods', modId,
+    ].join('/'));
+  });
+
+  api.onStateChange(['settings', 'nexus', 'associateNXM'],
+    (oldValue: boolean, newValue: boolean) => {
+      log('info', 'associate', { oldValue, newValue });
+      if (newValue === true) {
+        registerFunc();
+      } else {
+        api.deregisterProtocol('nxm');
+      }
+    });
+
+  api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
+    (oldValue: string, newValue: string) => {
+      nexus.setKey(newValue);
+      if (newValue === undefined) {
+        api.store.dispatch(setUserInfo(undefined));
+      } else {
+        fetchUserInfo(nexus, newValue)
+          .then(userInfo => {
+            api.store.dispatch(setUserInfo(userInfo));
+          })
+          .catch(err => {
+            showError(api.store.dispatch,
+              'An error occurred validating the API Key',
+              'Please provide a valid API Key!');
+          });
+      }
+    });
+
+  interface IModTable {
+    [gameId: string]: {
+      [modId: string]: IMod,
+    };
+  }
+
+  let lastModTable = api.store.getState().persistent.mods;
+  let lastGameMode = activeGameId(api.store.getState());
+
+  const updateDebouncer: Debouncer = new Debouncer(newModTable => {
+    const state = api.store.getState();
+    const gameMode = activeGameId(state);
+    if (lastGameMode === undefined) {
+      return;
+    }
+    if ((lastModTable[lastGameMode] !== newModTable[gameMode])
+      && (lastModTable[lastGameMode] !== undefined)
+      && (newModTable[gameMode] !== undefined)) {
+      Object.keys(newModTable[gameMode]).forEach(modId => {
+        if ((lastModTable[lastGameMode][modId] !== undefined)
+          && (lastModTable[lastGameMode][modId].attributes['modId']
+            !== newModTable[gameMode][modId].attributes['modId'])) {
+          return retrieveModInfo(nexus, api.store,
+            gameMode, newModTable[gameMode][modId], api.translate)
+            .then(() => {
+              lastModTable = newModTable;
+              lastGameMode = gameMode;
+            });
+        }
+      });
+    } else {
+      return Promise.resolve();
+    }
+  }, 2000);
+
+  api.onStateChange(['persistent', 'mods'],
+    (oldValue: IModTable, newValue: IModTable) =>
+      updateDebouncer.schedule(undefined, newValue));
+}
+
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
@@ -399,65 +657,11 @@ function init(context: IExtensionContextExt): boolean {
   context.registerAction('categories-icons', 100, 'download', {}, 'Retrieve categories',
     () => retrieveCategories(context.api, true));
 
-  context.registerTableAttribute('mods', {
-    id: 'endorsed',
-    name: 'Endorsed',
-    description: 'Endorsement state on Nexus',
-    icon: 'star',
-    customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
-      mod.attributes['source'] === 'nexus'
-        ? createEndorsedIcon(context.api.store, mod, t)
-        : null,
-    calc: (mod: IMod) =>
-      mod.attributes['source'] === 'nexus'
-        ? getSafe(mod.attributes, ['endorsed'], null)
-        : undefined,
-    placement: 'table',
-    isToggleable: true,
-    edit: {},
-    isSortable: true,
-    filter: new EndorsementFilter(),
-  });
-
-  context.registerTableAttribute('mods', {
-    id: 'nexusModId',
-    name: 'Nexus Mod ID',
-    description: 'Internal ID used by www.nexusmods.com',
-    icon: 'external-link',
-    customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
-      const res = mod.attributes['source'] === 'nexus'
-        ? renderNexusModIdDetail(context.api.store, mod, t)
-        : null;
-      return res;
-    },
-    calc: (mod: IMod) =>
-      mod.attributes['source'] === 'nexus'
-        ? getSafe(mod.attributes, ['modId'], null)
-        : undefined,
-    placement: 'detail',
-    isToggleable: false,
-    edit: {},
-    isSortable: false,
-  });
+  context.registerTableAttribute('mods', genEndorsedAttribute(context.api));
+  context.registerTableAttribute('mods', genModIdAttribute(context.api));
 
   context.registerAttributeExtractor(50, (input: any) => {
-    const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
-
-    return Promise.resolve({
-      modId: getSafe(input.nexus, ['ids', 'modId'], undefined),
-      fileId: getSafe(input.nexus, ['ids', 'fileId'], undefined),
-      author: getSafe(input.nexus, ['modInfo', 'author'], undefined),
-      category: getSafe(input.nexus, ['modInfo', 'category_id'], undefined),
-      pictureUrl: getSafe(input.nexus, ['modInfo', 'picture_url'], undefined),
-      description: getSafe(input.nexus, ['modInfo', 'description'], undefined),
-      shortDescription: getSafe(input.nexus, ['modInfo', 'summary'], undefined),
-      fileType: getSafe(input.nexus, ['fileInfo', 'category_name'], undefined),
-      isPrimary: getSafe(input.nexus, ['fileInfo', 'is_primary'], undefined),
-      fileName: getSafe(input.nexus, ['fileInfo', 'name'], undefined),
-      changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
-      uploadedTimestamp: getSafe(input.nexus, ['fileInfo', 'uploaded_timestamp'], undefined),
-      version: getSafe(input.nexus, ['fileInfo', 'version'], undefined),
-    });
+    return Promise.resolve(processAttributes(input));
   });
 
   context.registerAction('game-discovered-buttons', 120, 'nexus', {},
@@ -472,197 +676,7 @@ function init(context: IExtensionContextExt): boolean {
                          context.api.translate('Open Nexus Page'),
                          openNexusPage);
 
-  context.once(() => {
-    const registerFunc = () => {
-      context.api.registerProtocol('nxm', (url: string) => {
-        startDownload(context.api, url);
-      });
-    };
-
-    { // limit lifetime of state
-      const state = context.api.store.getState();
-
-      nexus = new Nexus(activeGameId(state),
-        getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''));
-
-      const gameMode = activeGameId(state);
-      context.api.store.dispatch(setUpdatingMods(gameMode, false));
-
-      endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
-        endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
-
-      if (state.settings.nexus.associateNXM) {
-        registerFunc();
-      }
-
-      if (state.confidential.account.nexus.APIKey !== undefined) {
-        fetchUserInfo(nexus, state.confidential.account.nexus.APIKey)
-          .then(userInfo => {
-            context.api.store.dispatch(setUserInfo(userInfo));
-          })
-          .catch(TimeoutError, err => {
-            showError(context.api.store.dispatch,
-              'API Key validation timed out',
-              'Server didn\'t respond to validation request, web-based '
-              + 'features will be unavailable');
-          })
-          .catch(err => {
-            showError(context.api.store.dispatch,
-              'An error occurred validating the API Key',
-              'Please provide a valid API Key!');
-          });
-      }
-    }
-
-    context.api.events.on('retrieve-category-list', (isUpdate: boolean) => {
-      retrieveCategories(context.api, isUpdate);
-    });
-
-    context.api.events.on('check-mods-version', (gameId, groupedMods, mods) => {
-      const APIKEY = getSafe(context.api.store.getState(),
-        ['confidential', 'account', 'nexus', 'APIKey'], '');
-      if (APIKEY === '') {
-        showError(context.api.store.dispatch,
-          'An error occurred checking for mod updates',
-          'You are not logged in!');
-      } else {
-        context.api.store.dispatch(setUpdatingMods(gameId, true));
-        checkModVersionsImpl(context.api.store, gameId, groupedMods, mods)
-          .then((errorMessages: string[]) => {
-            if (errorMessages.length !== 0) {
-              showError(context.api.store.dispatch,
-                'Checking for mod updates succeeded but there were errors',
-                errorMessages.join('\n\n'));
-            }
-          })
-          .catch(err => {
-            showError(context.api.store.dispatch,
-              'An error occurred checking for mod updates',
-              err);
-          })
-          .finally(() => {
-            context.api.store.dispatch(setUpdatingMods(gameId, false));
-          });
-      }
-    });
-
-    context.api.events.on('endorse-mod', (gameId, modId, endorsedStatus) => {
-      const APIKEY = getSafe(context.api.store.getState(),
-        ['confidential', 'account', 'nexus', 'APIKey'], '');
-      if (APIKEY === '') {
-        showError(context.api.store.dispatch,
-          'An error occurred endorsing a mod',
-          'You are not logged in!');
-      } else {
-        endorseModImpl(context.api.store, gameId, modId, endorsedStatus);
-      }
-    });
-
-    context.api.events.on('submit-feedback',
-          (message: string, feedbackFiles: string[],
-           anonymous: boolean, callback: (err: Error) => void) => {
-      submitFeedback(nexus, message, feedbackFiles, anonymous)
-        .then(() => callback(null))
-        .catch(err => callback(err));
-    });
-
-    context.api.events.on('gamemode-activated', (gameId: string) => {
-      nexus.setGame(gameId);
-    });
-
-    context.api.events.on('mod-update', (gameId, modId, fileId) => {
-      // TODO: Need some way to identify if this request is actually for a nexus mod
-      const url = `nxm://${toNXMId(gameId)}/mods/${modId}/files/${fileId}`;
-      const state: IState = context.api.store.getState();
-      const downloads = state.persistent.downloads.files;
-
-      // check if the file is already downloaded. If not, download before starting the install
-      const existingId = Object.keys(downloads).find(downloadId =>
-        getSafe(downloads,
-                [downloadId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined) === fileId);
-      if (existingId !== undefined) {
-        context.api.events.emit('start-install-download', existingId);
-      } else {
-        startDownload(context.api, url)
-          .then(downloadId => {
-            context.api.events.emit('start-install-download', downloadId);
-          });
-      }
-    });
-
-    context.api.events.on('open-mod-page', (gameId, modId) => {
-      opn(['http://www.nexusmods.com',
-        convertGameId(gameId), 'mods', modId,
-      ].join('/'));
-    });
-
-    context.api.onStateChange(['settings', 'nexus', 'associateNXM'],
-      (oldValue: boolean, newValue: boolean) => {
-        log('info', 'associate', { oldValue, newValue });
-        if (newValue === true) {
-          registerFunc();
-        } else {
-          context.api.deregisterProtocol('nxm');
-        }
-      });
-
-    context.api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
-      (oldValue: string, newValue: string) => {
-        nexus.setKey(newValue);
-        if (newValue === undefined) {
-          context.api.store.dispatch(setUserInfo(undefined));
-        } else {
-          fetchUserInfo(nexus, newValue)
-            .then(userInfo => {
-              context.api.store.dispatch(setUserInfo(userInfo));
-            })
-            .catch(err => {
-              showError(context.api.store.dispatch,
-                'An error occurred validating the API Key',
-                'Please provide a valid API Key!');
-            });
-        }
-      });
-
-    interface IModTable {
-      [gameId: string]: {
-        [modId: string]: IMod,
-      };
-    }
-
-    let lastModTable = context.api.store.getState().persistent.mods;
-    let lastGameMode = activeGameId(context.api.store.getState());
-
-    const updateDebouncer: Debouncer = new Debouncer(newModTable => {
-      const state = context.api.store.getState();
-      const gameMode = activeGameId(state);
-      if (lastGameMode === undefined) {
-        return;
-      }
-      if ((lastModTable[lastGameMode] !== newModTable[gameMode])
-          && (lastModTable[lastGameMode] !== undefined)
-          && (newModTable[gameMode] !== undefined)) {
-        Object.keys(newModTable[gameMode]).forEach(modId => {
-          if ((lastModTable[lastGameMode][modId] !== undefined)
-            && (lastModTable[lastGameMode][modId].attributes['modId']
-              !== newModTable[gameMode][modId].attributes['modId'])) {
-            return retrieveModInfo(nexus, context.api.store,
-              gameMode, newModTable[gameMode][modId], context.api.translate)
-              .then(() => {
-                lastModTable = newModTable;
-                lastGameMode = gameMode;
-              });
-          }
-        });
-      } else {
-        return Promise.resolve();
-      }
-    }, 2000);
-
-    context.api.onStateChange(['persistent', 'mods'],
-      (oldValue: IModTable, newValue: IModTable) =>
-        updateDebouncer.schedule(undefined, newValue));
-  });
+  context.once(() => once(context.api));
 
   return true;
 }

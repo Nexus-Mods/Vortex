@@ -91,9 +91,7 @@ abstract class LinkingActivator implements IModActivator {
          this.diffActivation(this.mPreviousActivation, this.mNewActivation));
 
     return Promise.map([].concat(removed, sourceChanged, contentChanged),
-      key => {
-        console.log('changed', key, this.mPreviousActivation[key]);
-        return this.unlinkFile(path.join(dataPath, this.mPreviousActivation[key].relPath))
+      key => this.unlinkFile(path.join(dataPath, this.mPreviousActivation[key].relPath))
           .then(() => delete this.mPreviousActivation[key])
           .catch(err => {
             log('warn', 'failed to unlink', {
@@ -101,8 +99,7 @@ abstract class LinkingActivator implements IModActivator {
               error: err.message,
             });
             ++errorCount;
-          });
-      })
+          }))
       // then, (re-)link all files that were added or changed
       .then(() => Promise.map(
         [].concat(added, sourceChanged, contentChanged),
