@@ -42,7 +42,8 @@ interface IRimrafOptions {
   maxBusyTries?: number;
 }
 type rimrafType = (path: string, options: IRimrafOptions, callback: (err?) => void) => void;
-const rimrafAsync = Promise.promisify(rimraf as rimrafType);
+const rimrafAsync: (path: string, options: IRimrafOptions) => Promise<void> =
+  Promise.promisify(rimraf as rimrafType) as any;
 
 interface IZipEntry {
   date: Date;
@@ -254,26 +255,28 @@ class InstallManager {
           }
         })
         .catch(err => {
-          const canceled = (err instanceof UserCanceled) || err.message === 'Canceled';
-          let prom =
-            destinationPath !== undefined ?
-              rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
-                .then(() => undefined) :
-                  Promise.resolve();
+          const canceled =
+            (err instanceof UserCanceled) || err === null || err.message === 'Canceled';
+          let prom = destinationPath !== undefined
+              ? rimrafAsync(destinationPath + '.installing', { glob: false, maxBusyTries: 1 })
+                  .then(() => rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 }))
+              : Promise.resolve();
 
           prom = prom.then(() =>
             installContext.finishInstallCB(canceled ? 'canceled' : 'failed'));
 
           if (err === undefined) {
-            return prom
-              .then(() => {
+            return prom.then(() => {
+              if (callback !== undefined) {
                 callback(new Error('unknown error'), null);
-              });
+              }
+            });
           } else if (canceled) {
-            return prom
-              .then(() => {
+            return prom.then(() => {
+              if (callback !== undefined) {
                 callback(err, null);
-              });
+              }
+            });
           } else {
             const { genHash } = require('modmeta-db');
             const errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;
@@ -500,8 +503,9 @@ class InstallManager {
                               result: {instructions: IInstruction[]}) {
     if (result.instructions === null) {
       // this is the signal that the installer has already reported what went
-      // wrong
-      return Promise.reject(null);
+      // wrong. Not necessarily a "user canceled" but the error handling happened
+      // in the installer so we don't know what happened.
+      return Promise.reject(new UserCanceled());
     }
 
     if ((result.instructions === undefined) ||
@@ -797,8 +801,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
             });
           });
         })
-        .then(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }))
-        .then(() => undefined);
+        .then(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }));
   }
 }
 

@@ -64,6 +64,9 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
   private renderMessage = (message: IFeedMessage): JSX.Element => {
     const { t, maxLength } = this.props;
     let shortened = message.description;
+    if (shortened === null) {
+      return;
+    }
     if (shortened.length > maxLength) {
       shortened = shortened.substr(0, maxLength) + '...';
     }
@@ -81,5 +84,4 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-export default translate([ 'common' ], { wait: true })(
-  Dashlet);
+export default translate([ 'common' ], { wait: true })(Dashlet);

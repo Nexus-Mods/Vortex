@@ -32,7 +32,12 @@ function testRef(mod: IMod, ref: IReference): boolean {
   }
 
   // right version?
-  return semver.satisfies(attr.version, ref.versionMatch);
+  if ((ref.versionMatch !== undefined)
+      && !semver.satisfies(attr.version, ref.versionMatch)) {
+    return false;
+  }
+
+  return true;
 }
 
 function findByRef(mods: IMod[], reference: IReference): IMod {
@@ -66,7 +71,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<str
         });
   };
 
-  mods.forEach((mod: IMod) => { dependencies.setNode(mod.id); });
+  mods.forEach(mod => { dependencies.setNode(mod.id); });
 
   return Promise.map(mods, modMapper)
       .catch((err: Error) => {

@@ -609,7 +609,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
                      locale: string): any[] {
     const { calculatedValues } = this.state;
 
-    const sortAttribute: ITableAttribute = attributes.find((attribute: ITableAttribute) => {
+    const sortAttribute: ITableAttribute = attributes.find(attribute => {
       return (attributeState[attribute.id] !== undefined)
           && (attributeState[attribute.id].sortDirection !== 'none');
     });
@@ -809,7 +809,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const { objects, onSetAttributeSort, tableId } = this.props;
 
     // reset all other columns because we can't really support multisort with this ui
-    for (const testId of objects.map((attribute) => attribute.id)) {
+    for (const testId of objects.map(attribute => attribute.id)) {
       const attrState = this.getAttributeState(
         objects.find((attribute: ITableAttribute) => attribute.id === testId));
 

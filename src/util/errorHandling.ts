@@ -170,5 +170,6 @@ export function terminate(error: ITermination) {
       error.message + '\n' + error.details +
       '\nIf you think this is a bug, please report it to the ' +
       'issue tracker (github)');
+    app.exit(1);
   }
 }

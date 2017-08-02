@@ -271,7 +271,7 @@ function genUpdateModActivation() {
 
 function genModsSourceAttribute(api: IExtensionApi): ITableAttribute {
   return {
-    id: 'mod-source',
+    id: 'modSource',
     name: 'Source',
     help: getText('source', api.translate),
     description: 'Source the mod was downloaded from',
