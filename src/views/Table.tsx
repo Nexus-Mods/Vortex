@@ -400,6 +400,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     let offset = 0;
     switch (evt.keyCode) {
+      case 32: {
+        evt.preventDefault();
+        this.toggleDetails();
+        break;
+      }
       case 33: offset = Math.round(visibleLineCount * -0.5); break;
       case 34: offset = Math.round(visibleLineCount * 0.5); break;
       case 38: offset = -1; break;
@@ -435,7 +440,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     idx = Math.min(Math.max(idx + delta, 0), sortedRows.length - 1);
 
     const newSelection = sortedRows[idx].id;
-    this.selectOnly(newSelection);
+    this.selectOnly(newSelection, false);
     return newSelection;
   }
 
@@ -674,11 +679,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       this.selectTo(row.id);
     } else {
       // regular click -> select only the clicked row, everything else get deselected
-      this.selectOnly(row.id);
+      this.selectOnly(row.id, true);
     }
   }
 
-  private selectOnly(rowId: string) {
+  private selectOnly(rowId: string, click: boolean) {
     const { tableId } = this.props;
 
     const rowState = {};
@@ -691,13 +696,15 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       : { selected: { $set: true } };
 
     const now = new Date().getTime();
-    if ((this.state.lastSelected === rowId) && ((now - this.mLastSelectOnly) < 500)) {
+    if (click && (this.state.lastSelected === rowId) && ((now - this.mLastSelectOnly) < 500)) {
       this.setState(update(this.state, {
         detailsOpen: { $set: !this.state.detailsOpen },
         rowState,
       }), this.onRowStateChanged);
     } else {
-      this.mLastSelectOnly = now;
+      if (click) {
+        this.mLastSelectOnly = now;
+      }
       this.setState(update(this.state, {
         lastSelected: { $set: rowId },
         rowState,
