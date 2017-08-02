@@ -67,6 +67,7 @@ export interface ISession {
   overlayOpen: boolean;
   visibleDialog: string;
   mainPage: string;
+  secondaryPage: string;
   activity: { [id: string]: string };
   settingsPage: string;
 }

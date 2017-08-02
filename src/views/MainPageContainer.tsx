@@ -7,6 +7,7 @@ import * as React from 'react';
 export interface IBaseProps {
   page: IMainPage;
   active: boolean;
+  secondary: boolean;
   overlayPortal: any;
   headerPortal: any;
 }
@@ -38,13 +39,19 @@ class MainPageContainer extends ComponentEx<IBaseProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { active, page } = this.props;
+    const { active, page, secondary } = this.props;
 
     const props = page.propsFunc();
 
+    const classes = ['main-page'];
+    classes.push(active ? 'active' : 'hidden');
+    if (secondary) {
+      classes.push('secondary');
+    }
+
     return (
-      <div className={`main-page ${active ? 'active' : 'hidden'}`}>
-        <page.component active={active} {...props} />
+      <div className={classes.join(' ')}>
+        <page.component active={active} secondary={secondary} {...props} />
       </div>
     );
   }

@@ -50,6 +50,11 @@ function objectFilter(obj: any, filter: (key: string, value: any) => boolean) {
   return result;
 }
 
+export interface IBaseProps {
+  active: boolean;
+  secondary: boolean;
+}
+
 interface IConnectedProps {
   downloads: { [downloadId: string]: IDownload };
   gameMode: string;
@@ -65,7 +70,7 @@ interface IActionProps {
   onMoveFailed: (id: string) => void;
 }
 
-type IProps = IConnectedProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
   dropActive: boolean;
@@ -272,13 +277,13 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, downloads, gameMode } = this.props;
+    const { t, downloads, gameMode, secondary } = this.props;
 
     return (
       <MainPage>
         <Layout type='column'>
           <Fixed>
-            <DownloadGraph />
+            { secondary ? null : <DownloadGraph /> }
           </Fixed>
           <Flex>
             <SuperTable
@@ -296,7 +301,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
           </Flex>
           <Fixed>
             {
-              gameMode !== undefined
+              ((gameMode !== undefined) && !secondary)
                 ? (
                   <Dropzone
                     accept={['urls', 'files']}

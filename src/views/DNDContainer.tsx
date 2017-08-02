@@ -12,7 +12,7 @@ function getContext(): DragDropManager {
   return globalDNDManager;
 }
 
-class DNDContainer extends React.Component<{}, {}> {
+class DNDContainer extends React.Component<{ style?: React.CSSProperties }, {}> {
   public static childContextTypes: React.ValidationMap<any> = {
     dragDropManager: PropTypes.object.isRequired,
   };
@@ -24,7 +24,7 @@ class DNDContainer extends React.Component<{}, {}> {
   }
 
   public render(): JSX.Element {
-    const {children} = this.props;
+    const {children, style} = this.props;
 
     const childCount = React.Children.count(children);
     if (childCount === 0) {
@@ -33,7 +33,7 @@ class DNDContainer extends React.Component<{}, {}> {
       return null;
     }
 
-    return <div style={{ display: 'initial' }}>{children}</div>;
+    return <div style={style}>{children}</div>;
   }
 }
 

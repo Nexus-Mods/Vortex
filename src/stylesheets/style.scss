@@ -236,6 +236,14 @@ textarea {
   padding-left: 10px;
 }
 
+.nav-pills.nav-stacked > li.secondary > a,
+.nav-pills.nav-pills.nav-stacked > li.secondary > a:hover,
+.nav-pills.nav-stacked > li.secondary > a:focus {
+  border-left: 4px solid $brand-info;
+  padding-left: 10px;
+  background-color: $brand-primary;
+}
+
 .nav-pills>li>a svg {
   height: 1.2em;
   width: 1.2em;
@@ -839,10 +847,9 @@ a[role=menuitem] svg {
 
 .main-page {
   transition: visibility 0s 300ms, opacity 300ms;
-  position: absolute;
-  width: 100%;
-  height: 100%;
   padding: 10px;
+  flex: 1 1 0;
+  position: relative;
 
   &.current {
     opacity: 1;
@@ -854,6 +861,11 @@ a[role=menuitem] svg {
     opacity: 0;
     z-index: 0;
     visibility: hidden;
+  }
+
+  &.secondary {
+    // make secondary page always show at the bottom
+    order: 1;
   }
 }
 

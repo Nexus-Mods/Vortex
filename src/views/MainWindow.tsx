@@ -115,6 +115,7 @@ export interface IConnectedProps {
   overlayOpen: boolean;
   visibleDialog: string;
   mainPage: string;
+  secondaryPage: string;
   activeProfileId: string;
   nextProfileId: string;
 }
@@ -122,7 +123,7 @@ export interface IConnectedProps {
 export interface IActionProps {
   onSetTabsMinimized: (minimized: boolean) => void;
   onSetOverlayOpen: (open: boolean) => void;
-  onSetOpenMainPage: (page: string) => void;
+  onSetOpenMainPage: (page: string, secondary: boolean) => void;
   onHideDialog: () => void;
 }
 
@@ -175,11 +176,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public componentWillMount() {
     if (this.props.objects.length > 0) {
-      this.setMainPage(this.props.objects[0].title);
+      this.setMainPage(this.props.objects[0].title, false);
     }
 
     this.props.api.events.on('show-main-page', title => {
-      this.setMainPage(title);
+      this.setMainPage(title, false);
     });
 
     this.props.api.events.on('show-modal', id => {
@@ -204,6 +205,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.props.overlayOpen !== nextProps.overlayOpen
       || this.props.tabsMinimized !== nextProps.tabsMinimized
       || this.props.mainPage !== nextProps.mainPage
+      || this.props.secondaryPage !== nextProps.secondaryPage
       || this.props.activeProfileId !== nextProps.activeProfileId
       || this.props.nextProfileId !== nextProps.nextProfileId
       || this.state.showLayer !== nextState.showLayer
@@ -302,7 +304,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
                 bsStyle='pills'
                 stacked
                 activeKey={mainPage}
-                onSelect={this.handleSetPage}
                 style={{ flexGrow: 1 }}
               >
                 {globalPages.map(this.renderPageButton)}
@@ -312,7 +313,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
                 bsStyle='pills'
                 stacked
                 activeKey={mainPage}
-                onSelect={this.handleSetPage}
                 style={{ flexGrow: 1 }}
               >
                 {perGamePages.map(this.renderPageButton)}
@@ -321,7 +321,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
                 bsStyle='pills'
                 stacked
                 activeKey={mainPage}
-                onSelect={this.handleSetPage}
                 style={{ flexGrow: 1 }}
               >
                 {supportPages.map(this.renderPageButton)}
@@ -337,7 +336,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             </Button>
           </Fixed>
           <Flex id='main-window-pane'>
-            <DNDContainer>
+            <DNDContainer style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               {pages}
             </DNDContainer>
             <MainOverlay
@@ -367,14 +366,16 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderPageButton = (page: IMainPage) => {
-    const { t } = this.props;
+    const { t, secondaryPage } = this.props;
     return !page.visible() ? null : (
       <NavItem
         id={page.title}
+        className={secondaryPage === page.title ? 'secondary' : undefined}
         key={page.title}
         eventKey={page.title}
         tooltip={t(page.title)}
         placement='right'
+        onClick={this.handleClickPage}
       >
         <PageButton
           t={this.props.t}
@@ -385,7 +386,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderPage(page: IMainPage, globalOverlay: JSX.Element) {
-    const { mainPage } = this.props;
+    const { mainPage, secondaryPage } = this.props;
     const { loadedPages } = this.state;
 
     if (loadedPages.indexOf(page.title) === -1) {
@@ -393,11 +394,14 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       return null;
     }
 
+    const active = [mainPage, secondaryPage].indexOf(page.title) !== -1;
+
     return (
       <MainPageContainer
         key={page.title}
         page={page}
-        active={mainPage === page.title}
+        active={active}
+        secondary={secondaryPage === page.title}
         overlayPortal={this.overlayRef}
         headerPortal={this.headerRef}
       />
@@ -412,8 +416,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.props.onSetOverlayOpen(!this.props.overlayOpen);
   }
 
-  private handleSetPage = (key) => {
-    this.setMainPage(key);
+  private handleClickPage = (evt: React.MouseEvent<any>) => {
+    this.setMainPage(evt.currentTarget.id, evt.ctrlKey);
   }
 
   private hideLayer = () => this.showLayerImpl('');
@@ -425,7 +429,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.updateState({ showLayer: { $set: layer } });
   }
 
-  private setMainPage = (title: string) => {
+  private setMainPage = (title: string, secondary: boolean) => {
     if (this.props.mainPage !== title) {
       this.props.onSetOverlayOpen(false);
     }
@@ -436,7 +440,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       loadedPages: { $push: [title] },
     });
     setImmediate(() => {
-      this.props.onSetOpenMainPage(title);
+      if (secondary && (title === this.props.secondaryPage)) {
+        this.props.onSetOpenMainPage('', secondary);
+      } else {
+        this.props.onSetOpenMainPage(title, secondary);
+      }
     });
   }
 
@@ -480,6 +488,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     overlayOpen: state.session.base.overlayOpen,
     visibleDialog: state.session.base.visibleDialog,
     mainPage: state.session.base.mainPage,
+    secondaryPage: state.session.base.secondaryPage,
     activeProfileId: state.settings.profiles.activeProfileId,
     nextProfileId: state.settings.profiles.nextProfileId,
   };
@@ -489,7 +498,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetTabsMinimized: (minimized: boolean) => dispatch(setTabsMinimized(minimized)),
     onSetOverlayOpen: (open: boolean) => dispatch(setOverlayOpen(open)),
-    onSetOpenMainPage: (page: string) => dispatch(setOpenMainPage(page)),
+    onSetOpenMainPage:
+      (page: string, secondary: boolean) => dispatch(setOpenMainPage(page, secondary)),
     onHideDialog: () => dispatch(setDialogVisible(undefined)),
   };
 }

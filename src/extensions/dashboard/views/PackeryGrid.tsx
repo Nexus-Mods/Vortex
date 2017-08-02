@@ -1,4 +1,4 @@
-import {} from 'packery';
+import { PackeryOptions } from 'packery';
 import * as React from 'react';
 
 export interface IProps {
@@ -55,13 +55,14 @@ class Packery extends React.Component<IProps, {}> {
     this.mRef = ref;
     // gutter is manually implemented in css as a padding, that way it
     // can access variables
-    const options = {
+    const options: PackeryOptions = {
       itemSelector: '.packery-item',
       gutter: 0,
       percentPosition: false,
     };
 
     if (ref !== null) {
+      // there are no typings for current packery version
       const PackeryLib = require('packery');
       this.mPackery = new PackeryLib(ref, options);
       this.mPackery.on('layoutComplete', this.saveLayout);
