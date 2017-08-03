@@ -8,6 +8,7 @@ export * from './storeHelper';
 
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import renderModName from '../extensions/mod_management/util/modName';
+import sortMods from '../extensions/mod_management/util/sort';
 import { Archive } from './archives';
 import AsyncComponent from './AsyncComponent';
 import { NotSupportedError, UserCanceled } from './CustomErrors';
@@ -45,6 +46,7 @@ export {
   renderModName,
   runElevated,
   setdefault,
+  sortMods,
   Steam,
   ISteamEntry,
   terminate,

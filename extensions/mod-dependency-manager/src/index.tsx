@@ -23,7 +23,7 @@ import { enabledModKeys } from './selectors';
 
 import * as Promise from 'bluebird';
 import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
-import { actions, log, selectors, types, util } from 'nmm-api';
+import { actions, ComponentEx, log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import thunkMiddleware from 'redux-thunk';
@@ -104,12 +104,18 @@ function updateMetaRules(api: types.IExtensionApi,
   .then(() => rules);
 }
 
-const localState = util.makeReactive<ILocalState>({
+const dependencyState = util.makeReactive<ILocalState>({
   modRules: [],
 });
 
+interface ILoadOrderState {
+  [id: string]: number;
+}
+
+let loadOrder: ILoadOrderState = {};
+
 function findRule(ref: IModLookupInfo): IBiDirRule {
-  return localState.modRules.find(rule => {
+  return dependencyState.modRules.find(rule => {
     const res = matchReference(rule.reference, ref);
     return res;
   });
@@ -274,10 +280,39 @@ function checkConflictsAndRules(api: types.IExtensionApi): Promise<void> {
     .finally(() => {
       store.dispatch(actions.stopActivity('mods', 'conflicts'));
     });
+}
 
+function generateLoadOrder(api: types.IExtensionApi) {
+  const store = api.store;
+  const gameMode = selectors.activeGameId(store.getState());
+  const state: types.IState = store.getState();
+  const gameMods = state.persistent.mods[gameMode];
+  const mods = Object.keys(gameMods).map(key => gameMods[key]);
+  util.sortMods(gameMode, mods, api)
+  .then(sortedMods => {
+    loadOrder = sortedMods.reduce(
+      (prev: { [id: string]: number }, modId: string, idx: number) => {
+        prev[modId] = idx;
+        return prev;
+      }, {});
+  });
 }
 
 function main(context: types.IExtensionContext) {
+  context.registerTableAttribute('mods', {
+    id: 'loadOrder',
+    name: 'Load Order',
+    description: 'Load order derived from mod dependencies',
+    icon: 'order',
+    placement: 'table',
+    isToggleable: true,
+    isSortable: true,
+    isDefaultVisible: false,
+    calc: (mod: types.IMod) => loadOrder[mod.id],
+    edit: {},
+    isVolatile: true,
+  });
+
   context.registerTableAttribute('mods', {
     id: 'dependencies',
     name: 'Dependencies',
@@ -285,12 +320,14 @@ function main(context: types.IExtensionContext) {
     icon: 'plug',
     placement: 'table',
     customRenderer: (mod, detailCell, t) =>
-      <DependencyIcon mod={mod} t={t} localState={localState} />,
-    calc: (mod) => null,
+      <DependencyIcon mod={mod} t={t} localState={dependencyState} />,
+    calc: (mod: types.IMod) =>
+      dependencyState.modRules.filter(rule => matchReference(rule.source, mod)),
     isToggleable: true,
     isDefaultVisible: false,
     edit: {},
     isSortable: false,
+    isVolatile: true,
   });
 
   context.registerReducer(['session', 'dependencies'], connectionReducer);
@@ -311,18 +348,20 @@ function main(context: types.IExtensionContext) {
 
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       const state: types.IState = store.getState();
+      generateLoadOrder(context.api);
       updateMetaRules(context.api, gameMode, state.persistent.mods[gameMode])
         .then(rules => {
-          localState.modRules = rules;
+          dependencyState.modRules = rules;
         });
     });
 
     context.api.onStateChange(['persistent', 'mods'], (oldState, newState) => {
       const gameMode = selectors.activeGameId(store.getState());
       if (oldState[gameMode] !== newState[gameMode]) {
+        generateLoadOrder(context.api);
         updateMetaRules(context.api, gameMode, newState[gameMode])
           .then(rules => {
-            localState.modRules = rules;
+            dependencyState.modRules = rules;
             updateConflictTimer.schedule(undefined);
           });
       }

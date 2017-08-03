@@ -73,6 +73,16 @@ export interface ITableAttribute<T = any> {
    */
   isDefaultVisible?: boolean;
   /**
+   * if true, the calc-function for this attribute is called from time to time to see if it changed.
+   * Otherwise (default) the values for this attribute are only updated when the input data to the
+   * table changes. This means you need this flag, if the value of the attribute may change without
+   * the table data changing.
+   * This is the case for example when your extension generates data in a separete object and then
+   * only uses the row id to look up data from that object.
+   * You should make extra sure the calc-function is quick.
+   */
+  isVolatile?: boolean;
+  /**
    * specifies whether the attribute appears in the table, the details pane or both.
    * \note that "isToggleable" and "isSortable" have no effect on attributes that don't appear
    * in the table

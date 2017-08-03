@@ -521,7 +521,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         });
       }
       return Promise.map(objects, (attribute: ITableAttribute) => {
-        if (oldData[rowId] !== data[rowId]) {
+        if ((attribute.isVolatile === true) || (oldData[rowId] !== data[rowId])) {
           return Promise.resolve(attribute.calc(data[rowId], t))
             .then((newValue) => {
               if (!_.isEqual(newValue, newValues[rowId][attribute.id])) {
