@@ -6,7 +6,8 @@ class SplashScreen {
   private mWindow: Electron.BrowserWindow = null;
 
   public fadeOut() {
-    if (this.mWindow !== null) {
+    // apparently we can't prevent the user from closing the splash with alt-f4...
+    if ((this.mWindow !== null) || this.mWindow.isDestroyed()) {
       // ensure the splash screen remains visible
       this.mWindow.setAlwaysOnTop(true);
 
@@ -37,10 +38,16 @@ class SplashScreen {
 
       this.mWindow = new BrowserWindow({
         frame: false,
-        width: 520,
-        height: 178,
+        width: 700,
+        height: 232,
         transparent: true,
         show: false,
+        resizable: false,
+        movable: false,
+        minimizable: false,
+        maximizable: false,
+        fullscreenable: false,
+
         skipTaskbar: true,
         webPreferences: {
           javascript: false,
