@@ -1,5 +1,6 @@
 const { log, util } = require('nmm-api');
 
+const { remote } = require('electron');
 const path = require('path');
 const Registry = require('winreg');
 
@@ -28,7 +29,7 @@ function findGame() {
 function modPath() {
   return findGame()
   .then((result) => {
-    if (path.basename(path.dirname(filename)) === 'The Elder Scrolls Online EU') {
+    if (path.basename(path.dirname(result)) === 'The Elder Scrolls Online EU') {
       return path.join(remote.app.getPath('documents'), 'Elder Scrolls Online', 'live', 'Addons');
     } else {
       return path.join(remote.app.getPath('documents'), 'Elder Scrolls Online', 'liveeu', 'Addons');

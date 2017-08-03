@@ -20,7 +20,7 @@ function findGame() {
 }
 
 function modPath() {
-  return path.join(remote.app.getPath('documents'), 'Almost Human\Legend of Grimrock\Dungeons');
+  return path.join(remote.app.getPath('documents'), 'Almost Human\\Legend of Grimrock\\Dungeons');
 }
 
 function prepareForModding() {
