@@ -1,0 +1,44 @@
+const { log, util } = require('nmm-api');
+
+const path = require('path');
+
+function findGame() {
+  let steam = new util.Steam();
+  return steam.allGames()
+  .then((games) => {
+    let warthunder = games.find((entry) => entry.name === 'War Thunder');
+    if (warthunder !== undefined) {
+      return warthunder.gamePath;
+    }
+    return null;
+  })
+  .catch((err) => {
+    log('debug', 'no steam installed?', { err: err.message });
+    return null;
+  });
+}
+
+function main(context) {
+  context.registerGame({
+    id: 'warthunder',
+    name: 'War Thunder',
+    mergeMods: false,
+    queryPath: findGame,
+    queryModPath: () => 'UserSkins/',
+    logo: 'gameart.png',
+    executable: () => 'aces.exe',
+    requiredFiles: [
+      'aces.exe',
+    ],
+    supportedTools: null,
+    details: {
+      steamAppId: 236390,
+    },
+  });
+
+  return true;
+}
+
+module.exports = {
+  default: main,
+};
