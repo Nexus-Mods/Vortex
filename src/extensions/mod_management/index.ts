@@ -41,6 +41,7 @@ import {ITestSupported} from './types/ITestSupported';
 import { loadActivation, saveActivation } from './util/activationStore';
 import * as basicInstaller from './util/basicInstaller';
 import { registerAttributeExtractor } from './util/filterModInfo';
+import resolvePath from './util/resolvePath';
 import sortMods from './util/sort';
 import supportedActivators from './util/supportedActivators';
 import ActivationButton from './views/ActivationButton';
@@ -343,7 +344,8 @@ function once(api: IExtensionApi) {
     const store: Redux.Store<any> = api.store;
 
     if (installManager === undefined) {
-      installManager = new InstallManager(() => installPath(store.getState()));
+      installManager = new InstallManager((gameId: string) =>
+        resolvePath('install', store.getState().settings.mods.paths, gameId));
       installers.forEach((installer: IInstaller) => {
         installManager.addInstaller(installer.priority, installer.testSupported, installer.install);
       });

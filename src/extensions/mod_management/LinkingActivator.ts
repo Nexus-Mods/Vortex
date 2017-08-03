@@ -165,7 +165,8 @@ abstract class LinkingActivator implements IModActivator {
                delete this.mNewActivation[this.mNormalize(relPath)];
              }
              return Promise.resolve();
-           }).then(() => undefined);
+           }).then(() => undefined)
+            .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
   }
 
   public purge(installPath: string, dataPath: string): Promise<void> {

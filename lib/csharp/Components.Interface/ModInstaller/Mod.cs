@@ -27,7 +27,6 @@ namespace Components.Interface
         private IList<string> ModFiles;
         private string ScreenshotFilesPath = string.Empty;
         private string InstallScriptPath = null;
-        private string TempPath = null;
         private string PathPrefix = null;
         private IScriptType InstallScriptType = null;
         private IScript ModInstallScript = null;
@@ -57,6 +56,12 @@ namespace Components.Interface
             {
                 return ModFiles;
             }
+        }
+
+        public string TempPath
+        {
+            private set;
+            get;
         }
 
         /// <summary>

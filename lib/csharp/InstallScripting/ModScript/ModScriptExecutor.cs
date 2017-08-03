@@ -39,11 +39,12 @@ namespace Components.Scripting.ModScript
 		/// Executes the script.
 		/// </summary>
 		/// <param name="p_scpScript">The Mod Script to execute.</param>
+		/// <param name="p_strDataPath">path where script data is stored.</param>
 		/// <returns><c>true</c> if the script completes successfully;
 		/// <c>false</c> otherwise.</returns>
 		/// <exception cref="ArgumentException">Thrown if <paramref name="p_scpScript"/> is not a
 		/// <see cref="ModScript"/>.</exception>
-		public override Task<IList<Instruction>> DoExecute(IScript p_scpScript)
+		public override Task<IList<Instruction>> DoExecute(IScript p_scpScript, string p_strDataPath)
 		{
 			if (!(p_scpScript is ModScript))
 				throw new ArgumentException("The given script must be of type ModScript.", "p_scpScript");
@@ -53,7 +54,7 @@ namespace Components.Scripting.ModScript
 			if (string.IsNullOrEmpty(mscScript.Code))
 				return null;
 
-			AppDomain admScript = CreateSandbox(p_scpScript);
+			AppDomain admScript = CreateSandbox(p_scpScript, p_strDataPath);
 			try
 			{
 				object[] args = { m_msfFunctions };
@@ -108,8 +109,9 @@ namespace Components.Scripting.ModScript
 		/// the folder containing the script's script type class in the sandboxes PrivateBinPath.
 		/// We need to do this so that any helper classes and libraries used by the script
 		/// can be found.</param>
+		/// <param name="p_strDataPath">path where script data is stored. unused?</param>
 		/// <returns>A sandboxed domain.</returns>
-		protected AppDomain CreateSandbox(IScript p_scpScript)
+		protected AppDomain CreateSandbox(IScript p_scpScript, string p_strDataPath)
 		{
 			Trace.TraceInformation("Creating Mod Script Sandbox...");
 			Trace.Indent();

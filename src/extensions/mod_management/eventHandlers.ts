@@ -112,34 +112,42 @@ export function onRemoveMod(api: IExtensionApi,
   const store = api.store;
   const state = store.getState();
   let mod: IMod;
-  let fullPath: string;
+
   try {
     const mods = state.persistent.mods[gameMode];
     mod = mods[modId];
-    fullPath = path.join(installPath(state), mod.installationPath);
   } catch (err) {
     callback(err);
   }
 
   // we need to remove the mod from activation, otherwise me might leave orphaned
   // links in the mod directory
-  const currentProfile = activeProfile(state);
-  store.dispatch(setModEnabled(currentProfile.id, modId, false));
+  const profileId =
+    getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameMode], undefined);
+  const profile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
 
-  const activatorId = currentActivator(state);
+  store.dispatch(setModEnabled(profile.id, modId, false));
+
+  const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
   const activator: IModActivator = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
     : activators.find(act => act.isSupported(state) === undefined);
+
+  const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
 
   const dataPath = currentGameDiscovery(state).modPath;
   loadActivation(api, dataPath)
     .then(lastActivation => activator.prepare(
       dataPath, false, lastActivation))
-    .then(() =>
-      activator.deactivate(installPath(state), dataPath, mod))
+    .then(() => mod !== undefined
+      ? activator.deactivate(installationPath, dataPath, mod)
+      : Promise.resolve())
     .then(() => activator.finalize(dataPath))
     .then(newActivation => saveActivation(state.app.instanceId, dataPath, newActivation))
-    .then(() => fs.removeAsync(fullPath))
+    .then(() => mod !== undefined
+      ? fs.removeAsync(path.join(installationPath, mod.installationPath))
+          .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+      : Promise.resolve())
     .then(() => {
       store.dispatch(removeMod(gameMode, modId));
       callback(null);

@@ -87,10 +87,10 @@ export const INI_TWEAKS_PATH = 'Ini Tweaks';
  */
 class InstallManager {
   private mInstallers: IModInstaller[] = [];
-  private mGetInstallPath: () => string;
+  private mGetInstallPath: (gameId: string) => string;
   private mTask: ZipT;
 
-  constructor(installPath: () => string) {
+  constructor(installPath: (gameId: string) => string) {
     this.mGetInstallPath = installPath;
   }
 
@@ -147,6 +147,7 @@ class InstallManager {
 
     const fullInfo = { ...info };
     let destinationPath: string;
+    let tempPath: string;
 
     const baseName = path.basename(archivePath, path.extname(archivePath));
     const currentProfile = activeProfile(api.store.getState());
@@ -170,9 +171,8 @@ class InstallManager {
           // if the name is already taken, consult the user,
           // repeat until user canceled, decided to replace the existing
           // mod or provided a new, unused name
-          const checkNameLoop = () => {
-            return this.checkModExists(modId, api, installGameId) ?
-                       this.queryUserReplace(modId, api)
+          const checkNameLoop = () => this.checkModExists(modId, api, installGameId) ?
+                       this.queryUserReplace(modId, installGameId, api)
                            .then((choice: { name: string, enable: boolean }) => {
                              modId = choice.name;
                              if (choice.enable) {
@@ -181,7 +181,6 @@ class InstallManager {
                              return checkNameLoop();
                            }) :
                        Promise.resolve(modId);
-          };
 
           return checkNameLoop();
         })
@@ -232,12 +231,14 @@ class InstallManager {
         .then(() => {
           installContext.startInstallCB(modId, archiveId);
 
-          destinationPath = path.join(this.mGetInstallPath(), modId);
-          return this.installInner(api.store, archivePath, destinationPath, installGameId);
+          destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
+          tempPath = destinationPath + '.installing';
+          return this.installInner(api.store, archivePath,
+                                   tempPath, destinationPath, installGameId);
         })
         .then((result) => {
           installContext.setInstallPathCB(modId, destinationPath);
-          return this.processInstructions(api, archivePath, destinationPath,
+          return this.processInstructions(api, archivePath, tempPath, destinationPath,
                                           installGameId, result);
         })
         .then(() => filterModInfo(fullInfo, destinationPath))
@@ -247,7 +248,7 @@ class InstallManager {
             api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
           }
           if (processDependencies) {
-            this.installDependencies(modInfo.rules, this.mGetInstallPath(),
+            this.installDependencies(modInfo.rules, this.mGetInstallPath(installGameId),
                                      installContext, api);
           }
           if (callback !== undefined) {
@@ -258,8 +259,7 @@ class InstallManager {
           const canceled =
             (err instanceof UserCanceled) || err === null || err.message === 'Canceled';
           let prom = destinationPath !== undefined
-              ? rimrafAsync(destinationPath + '.installing', { glob: false, maxBusyTries: 1 })
-                  .then(() => rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 }))
+              ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
               : Promise.resolve();
 
           prom = prom.then(() =>
@@ -301,10 +301,8 @@ class InstallManager {
    * find the right installer for the specified archive, then install
    */
   private installInner(store: Redux.Store<any>, archivePath: string,
-                       destinationPath: string, gameId: string) {
+                       tempPath: string, destinationPath: string, gameId: string) {
     const fileList: string[] = [];
-    const tempPath = destinationPath + '.installing';
-
     return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
                                   () => undefined,
                                   () => this.queryPassword(store))
@@ -457,12 +455,14 @@ class InstallManager {
                            destinationPath: string,
                            gameId: string): Promise<void> {
     return Promise.each(submodule,
-                        mod =>
-                            this.installInner(api.store, mod.path,
-                                              destinationPath, gameId)
-                                .then((resultInner) => this.processInstructions(
-                                          api, mod.path, destinationPath,
-                                          gameId, resultInner)))
+      mod => {
+        const tempPath = destinationPath + '.' + mod.key + '.installing';
+        return this.installInner(api.store, mod.path, tempPath, destinationPath, gameId)
+          .then((resultInner) => this.processInstructions(
+            api, mod.path, tempPath, destinationPath,
+            gameId, resultInner))
+          .then(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }));
+      })
         .then(() => undefined);
   }
 
@@ -499,8 +499,9 @@ class InstallManager {
   }
 
   private processInstructions(api: IExtensionApi, archivePath: string,
-                              destinationPath: string, gameId: string,
-                              result: {instructions: IInstruction[]}) {
+                              tempPath: string, destinationPath: string,
+                              gameId: string,
+                              result: { instructions: IInstruction[] }) {
     if (result.instructions === null) {
       // this is the signal that the installer has already reported what went
       // wrong. Not necessarily a "user canceled" but the error handling happened
@@ -509,23 +510,24 @@ class InstallManager {
     }
 
     if ((result.instructions === undefined) ||
-        (result.instructions.length === 0)) {
+      (result.instructions.length === 0)) {
       return Promise.reject('installer returned no instructions');
     }
 
     const instructionGroups = this.transformInstructions(result.instructions);
-
     this.reportUnsupported(api, instructionGroups.unsupported, archivePath);
 
-    return this.extractArchive(api.store, archivePath, destinationPath,
+    return this.extractArchive(api.store, archivePath, tempPath, destinationPath,
                                instructionGroups.copy)
-        .then(() => this.processGenerateFiles(instructionGroups.generatefile,
-                                              destinationPath))
-        .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))
-        .then(() => this.processSubmodule(api, instructionGroups.submodule,
-                                          destinationPath, gameId))
-        ;
-  }
+      .then(() => this.processGenerateFiles(instructionGroups.generatefile,
+                                            destinationPath))
+      .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))
+      .then(() => this.processSubmodule(api, instructionGroups.submodule,
+                                        destinationPath, gameId))
+      .finally(() =>
+        rimrafAsync(path.join(destinationPath + '.installing'),
+          { glob: false, maxBusyTries: 1 }));
+    }
 
   private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {
     return installName in (api.store.getState().persistent.mods[gameMode] || {});
@@ -571,7 +573,7 @@ class InstallManager {
     });
   }
 
-  private queryUserReplace(modId: string, api: IExtensionApi) {
+  private queryUserReplace(modId: string, gameId: string, api: IExtensionApi) {
     return new Promise<{ name: string, enable: boolean }>((resolve, reject) => {
       api.store
         .dispatch(showDialog(
@@ -601,7 +603,7 @@ class InstallManager {
           } else if (result.action === 'Replace') {
             const currentProfile = activeProfile(api.store.getState());
             const wasEnabled = getSafe(currentProfile.modState, [modId, 'enabled'], false);
-            api.events.emit('remove-mod', currentProfile.gameId, modId, (err) => {
+            api.events.emit('remove-mod', gameId, modId, (err) => {
               if (err !== null) {
                 reject(err);
               } else {
@@ -766,11 +768,10 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
   private extractArchive(
     store: Redux.Store<any>,
     archivePath: string,
+    tempPath: string,
     destinationPath: string,
     copies: IInstruction[]): Promise<void> {
     let normalize: Normalize;
-
-    const tempPath = destinationPath + '.installing';
 
     return fs.ensureDirAsync(destinationPath)
         .then(() => getNormalizeFunc(destinationPath))
@@ -801,7 +802,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
             });
           });
         })
-        .then(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }));
+        .then(() => undefined);
   }
 }
 

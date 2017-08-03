@@ -180,7 +180,7 @@ namespace Components.ModInstaller
         protected async Task<IList<Instruction>> ScriptedModInstall(Mod modArchive, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
             IScriptExecutor sexScript = modArchive.InstallScript.Type.CreateExecutor(modArchive, coreDelegate);
-            return await sexScript.Execute(modArchive.InstallScript);
+            return await sexScript.Execute(modArchive.InstallScript, modArchive.TempPath);
         }
 
         #endregion

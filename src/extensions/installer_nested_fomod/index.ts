@@ -29,7 +29,7 @@ function install(files: string[], destinationPath: string,
     const fomod = files.find((file) => path.extname(file) === '.fomod');
     const filePath = path.join(destinationPath, fomod);
     log('debug', 'install nested', filePath);
-    resolve({ instructions: [ { type: 'submodule', path: filePath } ] });
+    resolve({ instructions: [ { type: 'submodule', key: fomod, path: filePath } ] });
   });
 }
 
