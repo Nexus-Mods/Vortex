@@ -27,8 +27,10 @@ import { setProfile } from './actions/profiles';
 import { setCurrentProfile, setNextProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
 import { settingsReducer } from './reducers/settings';
+import transferSetupReducer from './reducers/transferSetup';
 import { IProfile } from './types/IProfile';
 import { IProfileFeature } from './types/IProfileFeature';
+import Connector from './views/Connector';
 import ProfileView from './views/ProfileView';
 
 import { activeGameId, activeProfile } from './selectors';
@@ -139,6 +141,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerReducer(['persistent', 'profiles'], profilesReducer);
   context.registerReducer(['settings', 'profiles'], settingsReducer);
+  context.registerReducer(['session', 'profileTransfer'], transferSetupReducer);
 
   context.registerAction('game-discovered-buttons', 100, 'favorite', {
     noCollapse: true,
@@ -296,6 +299,8 @@ function init(context: IExtensionContextExt): boolean {
       }
     }
   });
+
+  context.registerDialog('profile-transfer-connector', Connector);
 
   return true;
 }
