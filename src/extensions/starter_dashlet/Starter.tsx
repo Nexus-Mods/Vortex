@@ -133,12 +133,21 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
 
     // add the main game executable
     const starters: StarterInfo[] = [
-      new StarterInfo(game, discoveredGame),
     ];
+
+    try {
+      starters.push(new StarterInfo(game, discoveredGame));
+    } catch (err) {
+      log('error', 'invalid game', { err });
+    }
 
     // add the tools provided by the game extension (whether they are found or not)
     knownTools.forEach((tool: IToolStored) => {
-      starters.push(new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]));
+      try {
+        starters.push(new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]));
+      } catch (err) {
+        log('warn', 'invalid tool', { err });
+      }
     });
 
     // finally, add those tools that were added manually

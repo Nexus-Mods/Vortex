@@ -7,17 +7,17 @@ import { selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 
 function testArchivesAge(store: Redux.Store<types.IState>) {
-  let gameId = selectors.activeGameId(store.getState());
+  const gameId = selectors.activeGameId(store.getState());
 
   if (!isSupported(gameId)) {
     return Promise.resolve(undefined);
   }
 
-  let gamePath: string = util.getSafe(
+  const gamePath: string = util.getSafe(
       store.getState(),
       ['settings', 'gameMode', 'discovered', gameId, 'modPath'], undefined);
 
-  let age = targetAge(gameId);
+  const age = targetAge(gameId);
 
   return filesNewer(gamePath, fileFilter(gameId), age)
       .then((files: string[]) => {

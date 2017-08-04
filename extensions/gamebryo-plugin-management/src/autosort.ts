@@ -162,12 +162,14 @@ class LootInterface {
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
     this.enqueue(t('Update Masterlist'), () => {
       return fs.ensureDirAsync(path.dirname(masterlistPath))
-          .then(() => {
-            return this.updateAsync(masterlistPath,
-                                   `https://github.com/loot/${gameMode}.git`,
-                                   'v0.10')
-                .then(() => undefined);
-          });
+          .then(() =>
+                    this.updateAsync(masterlistPath,
+                                     `https://github.com/loot/${gameMode}.git`,
+                                     'v0.10')
+                        .catch(err => {
+                          this.mExtensionApi.showErrorNotification(
+                              'failed to update masterlist', err);
+                        }));
     });
     this.readLists(gameMode);
     if (preInitQueue) {

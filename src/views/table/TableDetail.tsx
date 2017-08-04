@@ -66,6 +66,9 @@ class DetailCell extends React.Component<ICellProps, {}> {
 
     if (attribute.customRenderer !== undefined) {
       const values = rowIds.map(id => rawData[id]);
+      if ((values.length === 0) || (values[0] === undefined)) {
+        return null;
+      }
       const attrControl = attribute.customRenderer(
         attribute.supportsMultiple ? values : values[0], true, t);
       content = attrControl !== null ? (
@@ -276,11 +279,13 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
 
   public render(): JSX.Element {
     const { t, attributes, onToggleShow, rowData, rowIds, show } = this.props;
+
     const detailList = attributes
       .filter(obj =>
         (rowData[rowIds[0]][obj.id] !== undefined)
         && ((rowIds.length === 1)
           || obj.supportsMultiple));
+
     const visClass = (show ? 'table-form-details-show' : 'table-form-details-hide');
     return (
       <div style={{ height: '100%', position: 'relative', display: 'flex', overflowX: 'hidden' }}>

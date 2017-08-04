@@ -192,19 +192,24 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       return undefined;
     }
 
-    if ((primaryTool === undefined)
+    try {
+      if ((primaryTool === undefined)
         || ((game.supportedTools[primaryTool] === undefined)
-            && (discoveredTools[primaryTool] === undefined))) {
-      return new StarterInfo(game, gameDiscovery);
-    } else {
-      try {
-      return new StarterInfo(game, gameDiscovery,
-                             game !== undefined ? game.supportedTools[primaryTool] : undefined,
-                             discoveredTools[primaryTool]);
-      } catch (err) {
-        log('warn', 'invalid primary tool', { err });
+          && (discoveredTools[primaryTool] === undefined))) {
         return new StarterInfo(game, gameDiscovery);
+      } else {
+        try {
+          return new StarterInfo(game, gameDiscovery,
+            game !== undefined ? game.supportedTools[primaryTool] : undefined,
+            discoveredTools[primaryTool]);
+        } catch (err) {
+          log('warn', 'invalid primary tool', { err });
+          return new StarterInfo(game, gameDiscovery);
+        }
       }
+    } catch (err) {
+      log('error', 'invalid game', { err });
+      return undefined;
     }
   }
 }

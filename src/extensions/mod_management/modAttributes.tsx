@@ -72,10 +72,10 @@ export const PICTURE: ITableAttribute = {
   id: 'picture',
   description: 'A picture provided by the author',
   customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
-    const long = getSafe(mod.attributes, ['description'], '');
-    const short = getSafe(mod.attributes, ['shortDescription'], t('Description'));
+    const long = getSafe(mod, ['attributes', 'description'], '');
+    const short = getSafe(mod, ['attributes', 'shortDescription'], t('Description'));
 
-    const url = getSafe(mod.attributes, ['pictureUrl'], undefined);
+    const url = getSafe(mod, ['attributes', 'pictureUrl'], undefined);
     return <ImageComponent t={t} longDescription={long} shortDescription={short} url={url}/>;
   },
   calc: (mod: IModWithState) => getSafe(mod.attributes, ['pictureUrl'], ''),
@@ -89,7 +89,7 @@ export const INSTALL_TIME: ITableAttribute = {
   description: 'Time when this mod was installed',
   icon: 'calendar-plus-o',
   customRenderer: (mod: IModWithState, detail: boolean, t) => {
-    const timeString = getSafe(mod.attributes, ['installTime'], undefined);
+    const timeString = getSafe(mod, ['attributes', 'installTime'], undefined);
     if (detail) {
       const lang = getCurrentLanguage();
       return (
