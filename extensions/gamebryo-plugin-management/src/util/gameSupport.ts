@@ -25,6 +25,18 @@ const gameSupport = {
       'dragonborn.esm',
     ],
   },
+  fallout3: {
+    appDataPath: 'Fallout3',
+    pluginTXTFormat: 'original',
+    nativePlugins: [
+      'fallout3.esm',
+      'anchorage.esm',
+      'thepitt.esm',
+      'brokensteel.esm',
+      'pointlookout.esm',
+      'zeta.esm',
+    ],
+  },
   fallout4: {
     appDataPath: 'Fallout4',
     pluginTXTFormat: 'fallout4',

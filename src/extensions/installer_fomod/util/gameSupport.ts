@@ -11,6 +11,9 @@ const gameSupport = {
   fallout4: {
     iniPath: () => bethIni('Fallout4', 'Fallout4'),
   },
+  fallout3: {
+    iniPath: () => bethIni('Fallout3', 'Fallout3'),
+  },
   falloutnv: {
     iniPath: () => bethIni('FalloutNV', 'Fallout'),
   },

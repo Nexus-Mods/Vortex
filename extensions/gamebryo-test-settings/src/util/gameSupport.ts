@@ -12,6 +12,10 @@ const gameSupport = {
     mygamesPath: 'Skyrim Special Edition',
     iniName: 'Skyrim.ini',
   },
+  fallout3: {
+    mygamesPath: 'Fallout3',
+    iniName: 'Fallout3.ini',
+  },
   fallout4: {
     mygamesPath: 'Fallout4',
     iniName: 'Fallout4.ini',
