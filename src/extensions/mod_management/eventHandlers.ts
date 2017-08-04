@@ -131,7 +131,7 @@ export function onRemoveMod(api: IExtensionApi,
   const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
   const activator: IModActivator = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
-    : activators.find(act => act.isSupported(state) === undefined);
+    : activators.find(act => act.isSupported(state, gameMode) === undefined);
 
   const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
 

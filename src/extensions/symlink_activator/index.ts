@@ -29,16 +29,18 @@ class ModActivator extends LinkingActivator {
             api);
   }
 
-  public isSupported(state: any): string {
-    const gameMode = activeGameId(state);
-    if (this.isGamebryoGame(gameMode)) {
+  public isSupported(state: any, gameId?: string): string {
+    if (gameId === undefined) {
+      gameId = activeGameId(state);
+    }
+    if (this.isGamebryoGame(gameId)) {
       // gamebryo engine seems to have some check on FindFirstFile/FindNextFile results that
       // makes it ignore symbolic links
       return 'Doesn\'t work with the gamebryo engine.';
     }
 
     const activeGameDiscovery: IDiscoveryResult =
-      state.settings.gameMode.discovered[gameMode];
+      state.settings.gameMode.discovered[gameId];
 
     try {
       fsOrig.accessSync(activeGameDiscovery.modPath, fsOrig.constants.W_OK);

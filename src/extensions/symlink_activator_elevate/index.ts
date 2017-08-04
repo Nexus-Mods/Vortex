@@ -72,11 +72,13 @@ class ModActivator extends LinkingActivator {
     });
   }
 
-  public isSupported(state: any): string {
+  public isSupported(state: any, gameId?: string): string {
     if (process.platform !== 'win32') {
       return 'Not required on non-windows systems';
     }
-    const gameId = activeGameId(state);
+    if (gameId === undefined) {
+      gameId = activeGameId(state);
+    }
     if (this.isGamebryoGame(gameId)) {
       return 'Doesn\'t work wtih the gamebryo engine.';
     }

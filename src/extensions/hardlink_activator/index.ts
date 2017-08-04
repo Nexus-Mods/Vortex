@@ -33,8 +33,11 @@ class ModActivator extends LinkingActivator {
         api);
   }
 
-  public isSupported(state: any): string {
-    const gameId = activeGameId(state);
+  public isSupported(state: any, gameId?: string): string {
+    if (gameId === undefined) {
+      gameId = activeGameId(state);
+    }
+
     const activeGameDiscovery: IDiscoveryResult =
       state.settings.gameMode.discovered[gameId];
     if (activeGameDiscovery === undefined) {
@@ -67,12 +70,12 @@ class ModActivator extends LinkingActivator {
     return undefined;
   }
 
-  protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
+  protected purgeLinks(installationPath: string, dataPath: string): Promise<void> {
     const inos = new Set<number>();
     const deleteIfEmpty: string[] = [];
 
     // find ids of all files in our mods directory
-    return walk(installPath,
+    return walk(installationPath,
                 (iterPath: string, stats: fs.Stats) => {
                   if (stats.nlink > 1) {
                     inos.add(stats.ino);

@@ -27,6 +27,7 @@ interface IActivation {
  */
 abstract class LinkingActivator implements IModActivator {
   public static TAG_NAME = '__delete_if_empty';
+  public static BACKUP_TAG = '.vortex_backup';
 
   public id: string;
   public name: string;
@@ -44,7 +45,7 @@ abstract class LinkingActivator implements IModActivator {
     this.mApi = api;
   }
 
-  public abstract isSupported(state: any): string;
+  public abstract isSupported(state: any, gameId?: string): string;
 
   /**
    * if necessary, get user confirmation we should deploy now. Right now this
@@ -91,7 +92,11 @@ abstract class LinkingActivator implements IModActivator {
          this.diffActivation(this.mPreviousActivation, this.mNewActivation));
 
     return Promise.map([].concat(removed, sourceChanged, contentChanged),
-      key => this.unlinkFile(path.join(dataPath, this.mPreviousActivation[key].relPath))
+      key => {
+        const outputPath = path.join(dataPath, this.mPreviousActivation[key].relPath);
+        return this.unlinkFile(outputPath)
+          .then(() => fs.renameAsync(outputPath + LinkingActivator.BACKUP_TAG, outputPath)
+                              .catch(() => undefined))
           .then(() => delete this.mPreviousActivation[key])
           .catch(err => {
             log('warn', 'failed to unlink', {
@@ -99,7 +104,8 @@ abstract class LinkingActivator implements IModActivator {
               error: err.message,
             });
             ++errorCount;
-          }))
+          });
+      })
       // then, (re-)link all files that were added or changed
       .then(() => Promise.map(
         [].concat(added, sourceChanged, contentChanged),
@@ -107,10 +113,13 @@ abstract class LinkingActivator implements IModActivator {
           const fullPath = path.join(
             installPathStr, this.mNewActivation[key].source,
             this.mNewActivation[key].relPath);
-          return this.linkFile(
-            path.join(dataPath,
-              this.mNewActivation[key].relPath),
-            fullPath)
+          const fullOutputPath = path.join(dataPath, this.mNewActivation[key].relPath);
+          return fs.statAsync(fullOutputPath)
+          // file exists
+          .then(stat => fs.renameAsync(fullOutputPath,
+                                       fullOutputPath + LinkingActivator.BACKUP_TAG))
+          .catch(err => undefined)
+          .then(() => this.linkFile(fullOutputPath, fullPath)
             .then(() => this.mPreviousActivation[key] =
               this.mNewActivation[key])
             .catch(err => {
@@ -120,7 +129,7 @@ abstract class LinkingActivator implements IModActivator {
                 error: err.message,
               });
               ++errorCount;
-            });
+            }));
         }))
       .then(() => {
         if (errorCount > 0) {
@@ -172,8 +181,8 @@ abstract class LinkingActivator implements IModActivator {
   public purge(installPath: string, dataPath: string): Promise<void> {
     // purge
     return this.purgeLinks(installPath, dataPath)
-        .then(() => this.removeEmptyDirs(dataPath, false))
-        .then(() => undefined);
+      .then(() => this.postPurge(dataPath, false))
+      .then(() => undefined);
   }
 
   public isActive(): boolean {
@@ -242,8 +251,7 @@ abstract class LinkingActivator implements IModActivator {
     };
   }
 
-  private removeEmptyDirs(baseDir: string,
-                          doRemove: boolean): Promise<boolean> {
+  private postPurge(baseDir: string, doRemove: boolean): Promise<boolean> {
     // recursively go through directories and remove empty ones !if! we encountered a
     // __delete_if_empty file in the hierarchy so far
     return fs.readdirAsync(baseDir)
@@ -258,7 +266,7 @@ abstract class LinkingActivator implements IModActivator {
                 Promise.map(stats, stat => {
                   // recurse into directories
                   if (stat.stat.isDirectory()) {
-                    return this.removeEmptyDirs(path.join(baseDir, stat.file),
+                    return this.postPurge(path.join(baseDir, stat.file),
                                                 doRemove)
                         .then(removed => {
                           // if the subdir wasn't removed, this dir isn't empty either
@@ -270,6 +278,12 @@ abstract class LinkingActivator implements IModActivator {
                     // if there are any files (other than the tag file), this dir isn't
                     // empty
                     empty = false;
+
+                    if (stat.file.endsWith(LinkingActivator.BACKUP_TAG)) {
+                      const fullPath = path.join(baseDir, stat.file);
+                      return fs.renameAsync(fullPath,
+                        fullPath.substr(0, fullPath.length - LinkingActivator.BACKUP_TAG.length));
+                    }
                   }
                   return Promise.resolve();
                 }))

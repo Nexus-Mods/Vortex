@@ -83,7 +83,7 @@ export interface IModActivator {
    *
    * @memberOf IModActivator
    */
-  isSupported: (state: any) => string;
+  isSupported: (state: any, gameId?: string) => string;
 
   /**
    * if mod deployment in some way requires user interaction we should give the user control
