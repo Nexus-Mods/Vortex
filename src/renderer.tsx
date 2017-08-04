@@ -30,8 +30,9 @@ process.env.SASS_BINARY_PATH = path.resolve(
 
 import { addNotification } from './actions/notifications';
 import reducer from './reducers/index';
+import { IError } from './types/IError';
 import DevToolsType from './util/DevTools';
-import { ITermination, terminate } from './util/errorHandling';
+import { terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
@@ -98,11 +99,11 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 process.on('uncaughtException', (error: any) => {
-  let details: ITermination;
+  let details: IError;
 
   switch (typeof error) {
     case 'object': {
-      details = { message: error.message, details: error.stack };
+      details = { message: error.message, stack: error.stack };
     }              break;
     case 'string': {
       details = { message: error };

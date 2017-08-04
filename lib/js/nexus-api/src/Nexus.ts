@@ -183,13 +183,21 @@ class Nexus {
 
   public sendFeedback(message: string,
                       fileBundle: string,
-                      anonymous: boolean) {
+                      anonymous: boolean,
+                      groupingKey?: string,
+                      id?: string) {
     return new Promise<void>((resolve, reject) => {
       const formData = {
         feedback_text: message,
       };
       if (fileBundle !== undefined) {
         formData['feedback_file'] = fs.createReadStream(fileBundle);
+      }
+      if (groupingKey !== undefined) {
+        formData['grouping_key'] = groupingKey;
+      }
+      if (id !== undefined) {
+        formData['reference'] = id;
       }
       const headers = {};
 

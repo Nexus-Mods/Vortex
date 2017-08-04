@@ -9,8 +9,9 @@ const stopTime = timeRequire();
 
 import Application from './app/Application';
 
+import { IError } from './types/IError';
 import commandLine from './util/commandLine';
-import { ITermination, sendReport, terminate } from './util/errorHandling';
+import { sendReport, terminate } from './util/errorHandling';
 import { log, setupLogging } from './util/log';
 
 import { app, crashReporter } from 'electron';
@@ -53,7 +54,7 @@ function main() {
   }
 
   process.on('uncaughtException', (error: any) => {
-    let details: ITermination;
+    let details: IError;
 
     switch (typeof error) {
       case 'object': {

@@ -4,7 +4,6 @@ import ReduxProp from '../util/ReduxProp';
 import { IActionOptions } from './IActionDefinition';
 import { IGame } from './IGame';
 import { INotification } from './INotification';
-import {IState} from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
@@ -585,8 +584,8 @@ export interface IExtensionContext {
    *                        runs out
    * @param {Function} query the query function
    */
-  registerGameInfoProvider:
-    (id: string, priority: number, expireMS: number, keys: string[], query: GameInfoQuery) => void;
+  registerGameInfoProvider: (id: string, priority: number, expireMS: number,
+                             keys: string[], query: GameInfoQuery) => void;
 
   /**
    * register an extractor that can access all information known about a downloaded archive and

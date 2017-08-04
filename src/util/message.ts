@@ -117,10 +117,15 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
       title: 'More',
       action: (dismiss: () => void) => {
         dispatch(showDialog('error', 'Error', content, {
-          Report: () => createErrorReport('Error', {
-            message,
-            details: err.message,
-          }, ['bug']),
+          Report: () => {
+            const stack = details instanceof Error ? details.stack : undefined;
+            const repDetails = details instanceof Error ? undefined : err.message;
+            return createErrorReport('Error', {
+              message,
+              stack,
+              details: repDetails,
+            }, ['bug']);
+          },
           Close: null,
         }));
       },
