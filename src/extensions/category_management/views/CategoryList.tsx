@@ -120,11 +120,12 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const { expanded, searchString, searchFocusIndex,
             searchFoundCount, showEmpty, treeData } = this.state;
 
-    const expandedTreeData =
-      this.applyExpand(treeData, showEmpty, new Set(expanded));
-
     const Tree = tree.SortableTreeWithoutDndContext;
-    if (treeData !== undefined) {
+    if (treeData !== undefined && treeData.length > 0) {
+
+      const expandedTreeData =
+        this.applyExpand(treeData, showEmpty, new Set(expanded));
+
       return (
         <div style={{ height: 500 }}>
           <IconBar
