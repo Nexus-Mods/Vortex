@@ -15,7 +15,7 @@ const gameSupport = {
   },
   fallout3: {
     mygamesPath: 'Fallout3',
-    gameSettingsFiles: ['Fallout3.ini'],
+    gameSettingsFiles: ['Fallout.ini'],
   },
   fallout4: {
     mygamesPath: 'Fallout4',

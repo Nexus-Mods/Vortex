@@ -23,7 +23,8 @@ const gameSupport = {
   },
   fallout3: {
     iniFiles: [
-      '{mygames}/Fallout3/Fallout4.ini',
+      '{mygames}/Fallout3/Fallout.ini',
+      '{mygames}/Fallout3/FalloutPrefs.ini',
     ],
     iniFormat: 'winapi',
   },
