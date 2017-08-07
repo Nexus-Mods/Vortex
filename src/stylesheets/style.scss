@@ -707,9 +707,7 @@ a[role=menuitem] svg {
 }
 
 .application-icons {
-  padding-left: floor(($gutter-width / 2));
-  margin-top: auto;
-  margin-bottom: auto;
+  height: 100%;
 }
 
 // the naviation buttons on the left
@@ -870,6 +868,9 @@ a[role=menuitem] svg {
 }
 
 #login-control {
+  height: 100%;
+  display: inline-flex;
+
   .username {
     margin-top: 10px;
   }
@@ -1270,8 +1271,7 @@ a[role=menuitem] svg {
 
 .game-thumbnail-body {
   @extend .panel-body;
-  text-align: center;
-  padding: 4px;
+  padding: 4px 4px 0px;
 
   .bottom {
     left: 0px;
@@ -1280,6 +1280,7 @@ a[role=menuitem] svg {
     white-space: nowrap;
     display: flex;
     padding: 0px 2px;
+    margin: 8px 0px;
 
     &div {
       margin: auto 0px;
@@ -1298,24 +1299,15 @@ a[role=menuitem] svg {
   }
 
   .name { 
-    max-width: 150px;
+    max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     padding-left: 5px;
+    flex: 1 1 0;
   }
 
   .thumbnail-img {
-    max-height: 100px;
-  }
-}
-
-.hidpi .game-thumbnail-body {
-  .name { 
-    max-width: 300px;
-  }
-
-  .thumbnail-img {
-    max-height: 200px;
+    max-width: 200px;
   }
 }
 
@@ -1395,8 +1387,43 @@ a[role=menuitem] svg {
 // quicklaunch
 
 .container-quicklaunch {
+  margin-right: floor(($gutter-width / 2));
   margin-top: auto;
   margin-bottom: auto;
+
+  >.btn-group {
+    >.btn-quicklaunch {
+      padding: 2px !important;
+      display: inline-flex;
+      >div {
+        display: flex;
+        img {
+          width: auto;
+          height: auto;
+        }
+      }
+      >.caret {
+        margin: auto 0;
+      }
+    }
+  }
+  .menu-label {
+    flex: 1 1 0;
+    margin: auto 0.25em;
+  }
+
+  .tool-icon-container {
+    width: 64px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+
+    .tool-icon {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+    }
+  }
 }
 
 // /quicklaunch
@@ -1502,9 +1529,7 @@ a[role=menuitem] svg {
 
 .tool-icon {
   width: auto;
-  height: auto;
-  max-width: 24px;
-  max-height: 24px;
+  height: 40px;
 
   &.invalid {
     filter: grayscale(100%);
@@ -1521,7 +1546,7 @@ a[role=menuitem] svg {
   background-color: $brand-menu;
   display: flex;
   flex-direction: row;
-  padding: floor(($gutter-width / 2));
+  padding: 7px;
 
   button {
     @extend .btn-embed;
@@ -1535,6 +1560,7 @@ a[role=menuitem] svg {
   }
   .btn-group {
     display: inline-flex;
+    margin: auto 0;
   }
 
   &.tool-button-primary {
@@ -1587,11 +1613,8 @@ a[role=menuitem] svg {
 
   .media-body {
     overflow: visible;
+    vertical-align: middle;
   }
-}
-
-.hidpi #starter-dashlet .container-fluid {
-  height: 275px;
 }
 
 .env-edit-buttons {
@@ -1659,42 +1682,40 @@ a[role=menuitem] svg {
   overflow: hidden;
 }
 
-.lodpi {
+.lodpi, .hidpi {
   .packery-height-1 {
-    height: 180px;
+    height: 190px;
   }
   .packery-height-2 {
-    height: 360px;
+    height: 380px;
   }
   .packery-height-3 {
-    height: 540px;
-  }
-}
-
-.hidpi {
-  .packery-height-1 {
-    height: 270px;
-  }
-  .packery-height-2 {
-    height: 540px;
-  }
-  .packery-height-3 {
-    height: 810px;
+    height: 570px;
   }
 }
 
 .dashlet-game-title {
   white-space: nowrap;
-  margin-top: auto;
-  margin-bottom: auto;
   text-align: center;
+  margin: 0px;
+  height: 120px;
+  line-height: 100px;
 }
 
 .dashlet-game-more {
-  width: 150px;
-  text-align: center;
-  margin-top: auto;
-  margin-bottom: auto;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 130px;
+  background: linear-gradient(to right,rgba(25, 36, 49, 0), rgba(25, 36, 49, 0.75), rgb(25, 36, 49));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  a {
+    text-align: right;
+    margin-right: 20px;
+  }
 }
 
 .list-news {

@@ -109,18 +109,16 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     const discovered = discoveredGames[managedGame.id];
 
-    const iconPath = starter !== undefined
-      ? starter.iconPath
-      : StarterInfo.getGameIcon(managedGame, discovered);
+    const iconPath = StarterInfo.getGameIcon(managedGame, discovered);
 
     const displayName =
       getSafe(discovered, ['shortName'], getSafe(managedGame, ['shortName'], undefined))
       || getSafe(discovered, ['name'], getSafe(managedGame, ['name'], undefined));
 
     return (
-      <div style={{ display: 'inline-block' }}>
-        <div style={{ minWidth: 32, display: 'inline-block', textAlign: 'center' }} >
-        <ToolIcon imageId={42} imageUrl={iconPath} valid={true} />
+      <div style={{ display: 'flex' }}>
+        <div className='tool-icon-container'>
+          <ToolIcon imageId={42} imageUrl={iconPath} valid={true} />
         </div>
         <span className='menu-label'>{displayName}</span>
       </div>

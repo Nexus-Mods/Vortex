@@ -85,7 +85,9 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
 
     return (
       <div className={ classes.join(' ') }>
-        <ToolIcon imageUrl={starter.iconPath} imageId={this.mImageId} valid={valid} />
+        <div className='tool-icon-container'>
+          <ToolIcon imageUrl={starter.iconPath} imageId={this.mImageId} valid={valid} />
+        </div>
         <span>{starter.name}</span>
         { primary ? <Icon className='tool-bookmark' name='bookmark'/> : null }
         <IconBar

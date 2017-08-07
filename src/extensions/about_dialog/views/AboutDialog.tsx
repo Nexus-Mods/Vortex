@@ -89,7 +89,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
             <Media.Left><Image src={imgPath} /></Media.Left>
             <Media.Body>
               <Media.Heading>Vortex {remote.app.getVersion()}</Media.Heading>
-              <p><Icon name='copyright'/> 2017 Black Tree Gaming Ltd.</p>
+              <p>&#169;2017 Black Tree Gaming Ltd.</p>
               <p>{t('Released under')} <a onClick={this.showOwnLicense}>GPL-3</a> {t('License')}</p>
             </Media.Body>
           </Media>

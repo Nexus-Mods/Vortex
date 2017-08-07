@@ -143,7 +143,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['settings', 'profiles'], settingsReducer);
   context.registerReducer(['session', 'profileTransfer'], transferSetupReducer);
 
-  context.registerAction('game-discovered-buttons', 100, 'favorite', {
+  context.registerAction('game-discovered-buttons', 100, 'play', {
     noCollapse: true,
   }, 'Manage',
     (instanceIds: string[]) => {

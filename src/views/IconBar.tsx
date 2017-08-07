@@ -120,7 +120,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       });
 
       const moreButton = (collapsed.length === 0) ? null : (
-        <div className={classes.join(' ')}>
+        <div>
           <IconButton
             id={`btn-menu-${id}`}
             className='btn-embed'

@@ -54,8 +54,7 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
           src={ logoPath }
         />
         <div className='bottom'>
-          <h5 className='name'>{ t(game.name) }</h5>
-          <p className='flex-fill'/>
+          <span className='name'>{ t(game.name) }</span>
           <IconBar
             id={`game-thumbnail-${game.id}`}
             className='buttons'

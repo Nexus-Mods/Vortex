@@ -53,10 +53,10 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
     return (
       <div>
         <h3 className='dashlet-game-title'>{t('Welcome to Vortex')}</h3>
-        <h4>{ t('Please pick a game to manage first. ' +
-                'Afterwards please check the ToDo List below.') }</h4>
+        <span>{ t('As this is the first time you start Vortex, please pick a game to manage. ' +
+                  'Afterwards please check the ToDo List below.') }</span>
         <div style={{ display: 'flex' }} ref={this.setRef}>
-          <div style={{ overflowX: 'hidden' }}>
+          <div style={{ overflowX: 'hidden', position: 'relative' }}>
             <div style={{ display: 'inline-flex' }} ref={this.setInnerRef}>
               {games.map(game => (
                 <GameThumbnail
@@ -69,10 +69,12 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
                 />))
               }
             </div>
+            {more ? (
+              <div className='dashlet-game-more'>
+                <a onClick={this.openGames}>{t('More...')}</a>
+              </div>
+            ) : null}
           </div>
-          {more ? (
-            <a className='dashlet-game-more' onClick={this.openGames}>{t('More...')}</a>
-          ) : null}
         </div>
       </div>
     );

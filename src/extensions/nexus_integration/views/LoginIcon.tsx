@@ -35,8 +35,8 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     return (
       <span id='login-control'>
-        {this.renderAvatar()}
         {this.renderLoginName()}
+        {this.renderAvatar()}
       </span >
     );
   }
@@ -51,7 +51,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     if ((APIKey !== undefined) && (userInfo !== undefined)) {
       return (
-        <FormGroup style={{ float: 'left' }}>
+        <FormGroup>
           <div className='username'>
             {userInfo.name}
           </div>
