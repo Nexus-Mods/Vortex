@@ -107,7 +107,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     classes.push('btngroup-collapsed');
 
     if (collapse) {
-      const dotdotdot: any = <Icon name='menu-dots' rotate={90} />;
+      const dotdotdot: any = <Icon name='dots' rotate={90} />;
       const collapsed: IActionDefinition[] = [];
       const unCollapsed: IActionDefinition[] = [];
 
@@ -126,7 +126,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             className='btn-embed'
             onClick={this.toggleCollapsed}
             tooltip={''}
-            icon='menu-dots'
+            icon='dots'
             rotate={90}
             ref={this.setButtonRef}
           />
@@ -141,22 +141,17 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         </div>
           );
 
-      if (unCollapsed.length === 0) {
-        // simple case, only the more-button
-        return moreButton;
-      } else {
-        return (
-          <ButtonGroup
-            id={id}
-            className={classes.join(' ')}
-            style={style}
-          >
-            {moreButton}
-            {unCollapsed.sort(iconSort).map((icon, idx) => (
-              <div key={idx}>{this.renderIcon(icon, idx)}</div>))}
-          </ButtonGroup>
+      return (
+        <ButtonGroup
+          id={id}
+          className={classes.join(' ')}
+          style={style}
+        >
+          {moreButton}
+          {unCollapsed.sort(iconSort).map((icon, idx) => (
+            <div key={idx}>{this.renderIcon(icon, idx)}</div>))}
+        </ButtonGroup>
       );
-      }
     } else {
       return (
         <ButtonGroup

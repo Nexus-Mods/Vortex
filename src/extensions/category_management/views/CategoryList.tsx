@@ -154,7 +154,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             <IconButton
               id='btn-search-category-prev'
               className='btn-embed'
-              icon='angle-up'
+              icon='up'
               tooltip={t('Prev')}
               type='button'
               disabled={!searchFoundCount}
@@ -163,7 +163,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             <IconButton
               id='btn-search-category-next'
               className='btn-embed'
-              icon='angle-down'
+              icon='down'
               tooltip={t('Next')}
               type='button'
               disabled={!searchFoundCount}

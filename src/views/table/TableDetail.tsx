@@ -306,7 +306,7 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
             onClick={onToggleShow}
             className='btn-menu-minimize'
           >
-            <Icon name={show ? 'angle-double-right' : 'angle-double-left'} />
+            <Icon name={show ? 'right' : 'left'} />
           </Button>
         </div>
       </div>

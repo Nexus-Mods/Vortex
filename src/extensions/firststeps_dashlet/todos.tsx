@@ -89,7 +89,7 @@ function todos(api: IExtensionApi): IToDo[] {
         return (<span>{t('Select a game to manage')} </span>);
       },
       button: (t: TranslationFunction) => ({
-        icon: 'gamepad',
+        icon: 'controller',
         text: t('Games'),
         onClick: openGames,
       }),
@@ -140,7 +140,7 @@ function todos(api: IExtensionApi): IToDo[] {
           );
         } else {
           const gameModeLink =
-            <a onClick={openGames}><Icon name='gamepad' />{' '}{t('discovered')} </a>;
+            <a onClick={openGames}><Icon name='controller' />{' '}{t('discovered')} </a>;
           const settingsLink = (
             <a onClick={openGameSettings} >
               <Icon name='sliders' />
@@ -164,7 +164,7 @@ function todos(api: IExtensionApi): IToDo[] {
         }
       },
       button: (t: TranslationFunction, props: any) => props.discoveryRunning ? undefined : ({
-        icon: 'gamepad',
+        icon: 'controller',
         text: t('Search'),
         onClick: startManualSearch,
       }),

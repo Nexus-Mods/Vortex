@@ -35,9 +35,9 @@ class SortIndicator extends React.Component<IProps, {}> {
 
   private icon(direction: SortDirection): string {
     switch (direction) {
-      case 'none': return 'sort';
-      case 'asc': return 'sort-asc';
-      case 'desc': return 'sort-desc';
+      case 'none': return 'arrow-updown';
+      case 'asc': return 'triangle-down';
+      case 'desc': return 'triangle-up';
       default: return 'question';
     }
   }

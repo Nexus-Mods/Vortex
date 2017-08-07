@@ -126,7 +126,7 @@ function init(context: IExtensionContext): boolean {
     ['session', 'discovery'],
     ], (discovery: any) => discovery.running);
 
-  context.registerMainPage('gamepad', 'Games', LazyComponent('./views/GamePicker', __dirname), {
+  context.registerMainPage('controller', 'Games', LazyComponent('./views/GamePicker', __dirname), {
     hotkey: 'G',
     group: 'global',
     props: () => ({

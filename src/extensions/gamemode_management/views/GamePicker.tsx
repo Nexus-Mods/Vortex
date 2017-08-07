@@ -175,7 +175,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
               id='gamepicker-layout-grid'
               className={pickerLayout === 'small' ? 'btn-toggle-on' : 'btn-toggle-off'}
               onClick={this.setLayoutSmall}
-              icon='th'
+              icon='grid'
               tooltip={t('Small Icons')}
             />
           </div>

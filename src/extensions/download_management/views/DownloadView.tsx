@@ -162,7 +162,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       id: 'gameid',
       name: 'Game',
       description: 'The game this download is associated with',
-      icon: 'gamepad',
+      icon: 'controller',
       calc: (attributes: IDownload) => {
         const game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
         return game ? this.props.t(game.shortName || game.name) : attributes.game;
@@ -237,7 +237,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         multiRowAction: false,
       },
       {
-        icon: 'archive',
+        icon: 'file-add',
         title: 'Install',
         action: this.install,
         condition: this.installable,

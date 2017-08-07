@@ -132,7 +132,7 @@ function register(context: IExtensionContextExt) {
   const lootActivity = new util.ReduxProp(context.api, [
     ['session', 'plugins', 'lootActivity'],
   ], (activity: string) => (activity !== undefined) && (activity !== ''));
-  context.registerMainPage('puzzle-piece', 'Plugins', PluginList, {
+  context.registerMainPage('puzzle', 'Plugins', PluginList, {
     hotkey: 'E',
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),

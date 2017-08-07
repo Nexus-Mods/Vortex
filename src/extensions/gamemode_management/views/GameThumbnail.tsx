@@ -79,7 +79,6 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
             icon='alert-circle-i'
             className='game-thumbnail-info btn-embed'
             tooltip={t('Show Details')}
-            stroke
           />
         </OverlayTrigger>
       </Panel>

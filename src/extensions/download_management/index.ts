@@ -64,7 +64,7 @@ function init(context: IExtensionContextExt): boolean {
       return count > 0 ? count : undefined;
     });
 
-  context.registerMainPage('square-download', 'Download',
+  context.registerMainPage('download', 'Download',
                            LazyComponent('./views/DownloadView', __dirname), {
                              hotkey: 'D',
                              group: 'global',

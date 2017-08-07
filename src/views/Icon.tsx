@@ -1,7 +1,7 @@
+import { remote } from 'electron';
+import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
-
-import { remote } from 'electron';
 
 interface IAttr {
   [key: string]: string;
@@ -40,7 +40,7 @@ interface IRenderDescription {
   width: number;
 }
 
-const sets: { [setId: string]: IIconFile } = {};
+const sets: { [setId: string]: Set<string> } = {};
 
 // a fallback icon (questionmark from fontawesome)
 const fallback = {
@@ -74,28 +74,6 @@ function convertAttrs(attrs: IAttrMap): IAttrMap {
   }, {});
 }
 
-function getIcon(set: string, name: string): IRenderDescription {
-  if (!(set in sets)) {
-    sets[set] = require(path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.json'));
-  }
-
-  const icon = sets[set].icons.find((ele: IIconDescription) => ele.icon.tags.indexOf(name) !== -1);
-  if (icon !== undefined) {
-    const paths: IPath[] = icon.icon.paths.map((iconPath: string, idx: number) => ({
-      path: iconPath,
-      attrs: 'attrs' in icon.icon ? convertAttrs(icon.icon.attrs[idx]) : undefined,
-    }));
-
-    return {
-      paths,
-      height: sets[set].height,
-      width: icon.icon.width,
-    };
-  } else {
-    return fallback;
-  }
-}
-
 export interface IIconProps {
   className?: string;
   style?: { [key: string]: string };
@@ -116,7 +94,7 @@ function renderPath(pathComp: IPath, idx: number) {
 }
 
 class Icon extends React.Component<IIconProps, {}> {
-  private mIcon: IRenderDescription;
+  private mRef: Element;
 
   public componentWillMount() {
     this.setIcon(this.props);
@@ -129,7 +107,6 @@ class Icon extends React.Component<IIconProps, {}> {
   public render(): JSX.Element {
     const { name, style } = this.props;
     const set = this.props.set || 'vortex';
-    const icon = this.mIcon;
 
     let classes = ['icon', `icon-${name}`];
     // avoid using css for transforms. For one thing this is more flexible but more importantly
@@ -159,7 +136,15 @@ class Icon extends React.Component<IIconProps, {}> {
     }
 
     if (this.props.rotate) {
-      transforms.push(`rotate(${this.props.rotate}, ${icon.width / 2}, ${icon.height / 2})`);
+      // narf... I can't use css transform for the rotation because that somehow
+      // messes up the z-ordering of items.
+      // with svg transforms we have to provide the center of rotation ourselves
+      // and we can't use relative units.
+      if (this.mRef !== undefined) {
+        const { width, height } = this.mRef.getBoundingClientRect();
+        transforms.push(
+          `rotate(${this.props.rotate}, ${Math.floor(width / 2)}, ${Math.floor(height / 2)})`);
+      }
     }
 
     if (this.props.className !== undefined) {
@@ -168,30 +153,55 @@ class Icon extends React.Component<IIconProps, {}> {
 
     const id = `icon-${name}`;
 
-    // when an outline is set we need to offset the symbol viewbox a bit so that the outline doesn't
-    // get cut off. There is probably a nicer way to do this
-    const offset = this.props.stroke === true
-      ? icon.width / 16 : 0;
-    const viewbox =
-      `${offset * -1} ${offset * -1} ${icon.width + offset * 2} ${icon.height + offset * 2}`;
-
     return (
       <svg
         preserveAspectRatio='xMidYMid meet'
         className={classes.join(' ')}
         style={style}
-        viewBox={`0 0 ${icon.width} ${icon.height}`}
+        ref={this.setRef}
       >
-        <symbol id={id} width={icon.width} height={icon.height} viewBox={viewbox}>
-          {icon.paths.map(renderPath)}
-        </symbol>
         <use xlinkHref={'#' + id} transform={transforms.join(' ')} />
       </svg>
     );
   }
 
+  private setRef = (ref: Element) => {
+    this.mRef = ref;
+    if (this.props.rotate !== undefined) {
+      this.forceUpdate();
+    }
+  }
+
   private setIcon(props: IIconProps) {
-    this.mIcon = getIcon(props.set || 'vortex', props.name);
+    const set = props.set || 'vortex';
+
+    if (sets[set] === undefined) {
+      // different extensions don't share the sets global so check in the dom
+      // to see if the iconset is already loaded after all
+      const existing = document.getElementById('iconset-' + set);
+      if (existing !== null) {
+        sets[set] = null;
+        return;
+      }
+
+      // make sure that no other icon instance tries to render this icon
+      const newset = document.createElement('div');
+      newset.id = 'iconset-' + set;
+      document.getElementById('icon-sets').appendChild(newset);
+
+      // TODO: this does not support adding icons from extensions yet
+      fs.readFileAsync(
+        path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg'))
+        .then(data => {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(data.toString(), 'text/xml');
+          const ids = Array.from(xmlDoc.getElementsByTagName('symbol'))
+            .map(ele => ele.getAttribute('id'));
+
+          newset.innerHTML = data.toString();
+          sets[set] = new Set<string>(ids);
+        });
+    }
   }
 }
 

@@ -245,8 +245,6 @@ textarea {
 }
 
 .nav-pills>li>a svg {
-  height: 1.2em;
-  width: 1.2em;
   vertical-align: middle;
 }
 
@@ -442,8 +440,8 @@ a[role=menuitem] svg {
 
 .icon {
   fill: currentColor;
-  height: 1.1em;
-  width: 1.1em;
+  height: 1.2em;
+  width: 1.2em;
   display: inline-block;
   vertical-align: text-bottom;
 }
@@ -708,6 +706,7 @@ a[role=menuitem] svg {
 
 .application-icons {
   height: 100%;
+  margin-left: floor(($gutter-width / 2));
 }
 
 // the naviation buttons on the left
@@ -1424,6 +1423,10 @@ a[role=menuitem] svg {
       display: block;
     }
   }
+  .item-more-games {
+    width: 100%;
+    line-height: 40px;
+  }
 }
 
 // /quicklaunch
@@ -2001,6 +2004,15 @@ a[role=menuitem] svg {
 #settings-tab > .tab-content {
   flex: 1;
   overflow-y: auto;
+}
+
+.list-game-search {
+  .list-group-item {
+    display: flex;
+    >span {
+      flex: 1 1 0;
+    }
+  }
 }
 
 // /settings page

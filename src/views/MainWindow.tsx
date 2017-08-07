@@ -265,7 +265,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         />
         <IconButton
           id='btn-open-flyout'
-          icon='menu-dots'
+          icon='dots'
           rotate={90}
           tooltip={t('Functions')}
           onClick={this.toggleOverlay}
@@ -332,7 +332,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               onClick={this.toggleMenu}
               className='btn-menu-minimize'
             >
-              <Icon name={tabsMinimized ? 'angle-double-right' : 'angle-double-left'} />
+              <Icon name={tabsMinimized ? 'right' : 'left'} />
             </Button>
           </Fixed>
           <Flex id='main-window-pane'>

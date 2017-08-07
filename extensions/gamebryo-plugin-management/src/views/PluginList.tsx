@@ -182,7 +182,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     this.actions = [
       {
-        icon: 'check-square-o',
+        icon: 'square-check',
         title: 'Enable',
         action: this.enableSelected,
         singleRowAction: false,

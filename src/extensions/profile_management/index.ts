@@ -131,7 +131,7 @@ export interface IExtensionContextExt extends IExtensionContext {
 }
 
 function init(context: IExtensionContextExt): boolean {
-  context.registerMainPage('profiles', 'Profiles', ProfileView, {
+  context.registerMainPage('layers', 'Profiles', ProfileView, {
     hotkey: 'P',
     group: 'global',
     visible: () => (activeGameId(context.api.store.getState()) !== undefined)

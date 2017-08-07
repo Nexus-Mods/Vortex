@@ -31,9 +31,9 @@ class SearchPathEntry extends ComponentEx<IPathProps, {}> {
     const { searchPath, t } = this.props;
     return (
       <ListGroupItem>
-        {searchPath}
+        <span>{searchPath}</span>
         <IconButton
-          className='btn-embed btn-line-right'
+          className='btn-embed'
           id='remove'
           tooltip={ t('Remove') }
           onClick={ this.removePath }
@@ -75,17 +75,17 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
       <form>
         <FormGroup>
           <ControlLabel>{ t('Search Paths') }</ControlLabel>
-          <ListGroup>
-          { searchPaths.map(this.renderPath) }
-          <ListGroupItem>
-            <IconButton
-              className='btn-embed'
-              id='add'
-              tooltip={ t('Add') }
-              onClick={ this.addSearchPath }
-              icon='plus'
-            />
-          </ListGroupItem>
+          <ListGroup className='list-game-search'>
+            { searchPaths.map(this.renderPath) }
+            <ListGroupItem>
+              <IconButton
+                className='btn-embed'
+                id='add'
+                tooltip={ t('Add') }
+                onClick={ this.addSearchPath }
+                icon='plus'
+              />
+            </ListGroupItem>
           </ListGroup>
           <HelpBlock>{ t('Directories to search when looking for games.') }</HelpBlock>
         </FormGroup>

@@ -92,11 +92,13 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
               </MenuItem>
               ))
           }
-          <MenuItem key='__more' eventKey='__more'>{t('More...')}</MenuItem>
+          <MenuItem key='__more' eventKey='__more' className='item-more-games'>
+            {t('More...')}
+          </MenuItem>
         </DropdownButton>
         <IconButton
           id='btn-quicklaunch-play'
-          icon='square-right'
+          icon='circle-play'
           tooltip={t('Launch')}
           onClick={this.start}
         />

@@ -14,6 +14,9 @@ app/bundledPlugins
 auto.gypi
 auto-top.gypi
 
+# temporary fonts directory used during font-svg generation
+fonts/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

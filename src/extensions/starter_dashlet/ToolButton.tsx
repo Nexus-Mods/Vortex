@@ -41,7 +41,7 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
     this.mStaticElements = [
       {
         title: props.t('Run'),
-        icon: 'button-play',
+        icon: 'play',
         action: () => props.onRun(props.starter),
         condition: () => truthy(this.props.starter.exePath),
         options: {
