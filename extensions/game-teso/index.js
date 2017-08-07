@@ -10,9 +10,17 @@ function findGame() {
     return null;
   }
 
+  let regkey;
+
+  if (process.arch === 'x32') {
+    regkey = '\\Software\\Zenimax_Online\\Launcher';
+  } else {
+    regkey = '\\Software\\Wow6432Node\\Zenimax_Online\\Launcher';
+  }
+
   const regKey = new Registry({
     hive: Registry.HKLM,
-    key: '\\Software\\Wow6432Node\\Zenimax_Online\\Launcher',
+    key: regkey,
   });
 
   return new Promise((resolve, reject) => {
@@ -20,21 +28,14 @@ function findGame() {
       if (err !== null) {
         reject(new Error(err.message));
       } else {
-        resolve(result.value);
+        resolve(path.join(result.value, 'Launcher'));
       }
     });
   });
 }
 
 function modPath() {
-  return findGame()
-  .then((result) => {
-    if (path.basename(path.dirname(result)) === 'The Elder Scrolls Online EU') {
-      return path.join(remote.app.getPath('documents'), 'Elder Scrolls Online', 'live', 'Addons');
-    } else {
-      return path.join(remote.app.getPath('documents'), 'Elder Scrolls Online', 'liveeu', 'Addons');
-    }
-  });
+  return path.join(remote.app.getPath('documents'), 'Elder Scrolls Online', 'live', 'Addons');
 }
 
 function main(context) {
@@ -45,9 +46,9 @@ function main(context) {
     queryPath: findGame,
     queryModPath: modPath,
     logo: 'gameart.png',
-    executable: () => 'eso.exe',
+    executable: () => 'Bethesda.net_Launcher.exe',
     requiredFiles: [
-      'eso.exe',
+      'Bethesda.net_Launcher.exe',
     ],
     supportedTools: null,
     details: {
