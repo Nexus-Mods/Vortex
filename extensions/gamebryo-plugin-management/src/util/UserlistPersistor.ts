@@ -1,5 +1,7 @@
 import { ILOOTList } from '../types/ILOOTList';
 
+import {gameSupported} from './gameSupport';
+
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
@@ -49,6 +51,9 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   public loadFiles(gameMode: string) {
+    if (!gameSupported(gameMode)) {
+      return;
+    }
     this.mUserlistPath = path.join(app.getPath('userData'), gameMode, 'userlist.yaml');
     // read the files now and update the store
     this.deserialize();

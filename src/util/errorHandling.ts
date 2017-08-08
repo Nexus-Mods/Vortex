@@ -167,17 +167,18 @@ export function terminate(error: IError) {
   try {
     let action = dialog.showMessageBox(null, {
       type: 'error',
-      buttons: ['Report', 'Ignore', 'Quit'],
+      buttons: ['Ignore', 'Quit', 'Report and Quit'],
+      defaultId: 2,
       title: 'An unrecoverable error occured',
       message: error.message,
       detail: error.details + '\n' + (error.stack || 'No stack'),
       noLink: true,
     });
 
-    if (action === 0) {
+    if (action === 2) {
       // Report
       createErrorReport('Crash', error, ['bug', 'crash']);
-    } else if (action === 1) {
+    } else if (action === 0) {
       // Ignore
       action = dialog.showMessageBox(null, {
         type: 'error',

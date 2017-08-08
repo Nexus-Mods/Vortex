@@ -238,10 +238,16 @@ function init(context: IExtensionContextExt): boolean {
 
             queue.then(() => refreshProfile(store, profile, 'export'))
                 .then(() => {
-                  store.dispatch(setCurrentProfile(profile.gameId, current));
+                  const gameId = profile !== undefined ? profile.gameId : undefined;
+                  store.dispatch(setCurrentProfile(gameId, current));
                 })
                 .catch((err: Error) => {
                   showError(store.dispatch, 'Failed to set profile', err);
+                  // this is very bad. If we're not able to update to the new profile
+                  // we'd leave the client in an unusable state here. instead, reset
+                  // the profile to unset
+                  store.dispatch(setCurrentProfile(undefined, undefined));
+                  store.dispatch(setNextProfile(undefined));
                 });
           });
         });

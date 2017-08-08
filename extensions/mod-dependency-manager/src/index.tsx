@@ -266,6 +266,9 @@ function checkConflictsAndRules(api: types.IExtensionApi): Promise<void> {
   const state = store.getState();
   const modPath = selectors.installPath(state);
   const gameId = selectors.activeGameId(state);
+  if (gameId === undefined) {
+    return Promise.resolve();
+  }
   const modState = selectors.activeProfile(state).modState;
   const mods = Object.keys(state.persistent.mods[gameId] || {})
     .filter(modId => util.getSafe(modState, [modId, 'enabled'], false))
@@ -286,7 +289,7 @@ function generateLoadOrder(api: types.IExtensionApi) {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
   const state: types.IState = store.getState();
-  const gameMods = state.persistent.mods[gameMode];
+  const gameMods = state.persistent.mods[gameMode] || [];
   const mods = Object.keys(gameMods).map(key => gameMods[key]);
   util.sortMods(gameMode, mods, api)
   .then(sortedMods => {

@@ -100,18 +100,22 @@ if (process.env.NODE_ENV === 'development') {
 
 function findExtensionName(stack: string): string {
   const stackSplit = stack.split('\n').filter(line => line.match(/^[ ]*at /));
-  const stackLine = stackSplit[0];
   const extPaths = ExtensionManager.getExtensionPaths();
-  // regular expression to parse the extension name from the path in the last
-  // line of the stack trace. if there is one.
   const expression = `(${extPaths.join('|').replace(/\\/g, '\\\\')})[\\\\/]([^\\\\/]*)`;
   const re = new RegExp(expression);
-  const match = stackLine.match(re);
-  if (match !== null) {
-    return match[2];
-  } else {
-    return undefined;
-  }
+
+  let extension: string;
+  stackSplit.find((line: string) => {
+    // regular expression to parse the extension name from the path in the last
+    // line of the stack trace. if there is one.
+    const match = line.match(re);
+    if (match !== null) {
+      extension = match[2];
+      return true;
+    }
+    return false;
+  });
+  return extension;
 }
 
 const terminateFromError = (error: any) => {
@@ -161,8 +165,8 @@ process.on('uncaughtException', error => {
   terminateFromError(error);
 });
 
-window.addEventListener('unhandledrejection', (evt: PromiseRejectionEvent) => {
-  terminateFromError(evt.reason);
+window.addEventListener('unhandledrejection', (evt: any) => {
+  terminateFromError(evt.reason || evt.detail.reason);
 });
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();

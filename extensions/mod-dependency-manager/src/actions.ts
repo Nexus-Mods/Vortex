@@ -13,7 +13,7 @@ export const setCreateRule = createAction('SET_MOD_CREATE_RULE',
   (gameId: string, modId: string, reference: IReference, defaultType: string) =>
     ({ gameId, modId, reference, type: defaultType }));
 
-export const closeDialog = createAction('CLOSE_MOD_DEPENDENCY_DIALOG');
+export const closeDialog = createAction('CLOSE_MOD_DEPENDENCY_DIALOG', () => ({}));
 
 export const setType = createAction('SET_MOD_RULE_TYPE');
 

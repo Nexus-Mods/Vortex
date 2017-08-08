@@ -41,12 +41,12 @@ export function mygamesPath(gameMode: string): string {
 }
 
 export function gameSettingsFiles(gameMode: string, customPath: string): string[] {
-  const { gameSettingsFiles } = gameSupport[gameMode];
+  const fileNames = gameSupport[gameMode].gameSettingsFiles;
   if (customPath === null) {
-    return gameSettingsFiles;
+    return fileNames;
   } else {
     const fileList: string[] = [];
-    gameSettingsFiles.forEach(file => {
+    fileNames.forEach(file => {
       fileList.push(path.join(customPath, file));
     });
     return fileList;

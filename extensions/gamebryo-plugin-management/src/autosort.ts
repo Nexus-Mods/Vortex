@@ -57,6 +57,9 @@ class LootInterface {
         const t = this.mExtensionApi.translate;
         const state = store.getState();
         const gameMode = selectors.activeGameId(state);
+        if (!gameSupported(gameMode)) {
+          return;
+        }
         this.readLists(gameMode as GameId);
         const id = require('shortid').generate();
         this.enqueue(t('Sorting plugins'), () => {

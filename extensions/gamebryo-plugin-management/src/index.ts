@@ -231,7 +231,11 @@ function startSync(api: types.IExtensionApi): Promise<void> {
   }
 
   return prom.then(() => {
-    const modPath = selectors.currentGameDiscovery(store.getState()).modPath;
+    const gameDiscovery = selectors.currentGameDiscovery(store.getState());
+    if (gameDiscovery === undefined) {
+      return;
+    }
+    const modPath = gameDiscovery.modPath;
     if (modPath === undefined) {
       // can this even happen?
       log('error', 'mod path unknown', {

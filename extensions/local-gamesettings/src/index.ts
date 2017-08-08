@@ -58,7 +58,7 @@ function checkGlobalFiles(oldProfile: types.IProfile,
       .then((missingFiles: string[]) => {
         missingFiles = missingFiles.filter(file => file !== null);
         if (missingFiles.length > 0) {
-          return Promise.reject(missingFiles);
+          return Promise.resolve(missingFiles);
         } else {
           return Promise.resolve(null);
         }
@@ -68,7 +68,7 @@ function checkGlobalFiles(oldProfile: types.IProfile,
 function updateLocalGameSettings(featureId: string, oldProfile: types.IProfile,
                                  newProfile: types.IProfile) {
   let copyFiles: Promise<void> = Promise.resolve();
-  if ((oldProfile !== null)
+  if (((oldProfile !== null) && (oldProfile !== undefined))
       && (oldProfile.features !== undefined)
       && oldProfile.features[featureId]) {
 
@@ -89,7 +89,9 @@ function updateLocalGameSettings(featureId: string, oldProfile: types.IProfile,
                                  gameSettings, 'BacGlo'));
   }
 
-  if ((newProfile.features !== undefined) && (newProfile.features[featureId])) {
+  if ((newProfile !== null) && (newProfile !== undefined)
+      && (newProfile.features !== undefined)
+      && (newProfile.features[featureId])) {
 
     if (!gameSupported(newProfile.gameId)) {
         return Promise.reject('Unsupported game.');
@@ -127,8 +129,16 @@ function init(context): boolean {
         const newProfile = state.persistent.profiles[current];
 
         checkGlobalFiles(oldProfile, newProfile)
-          .then(() =>
-            updateLocalGameSettings('local_game_settings', oldProfile, newProfile)
+          .then(missingFiles => {
+            if ((missingFiles !== undefined) && (missingFiles !== null)) {
+              const fileList = missingFiles.join('\n');
+              util.showError(store.dispatch, 'An error occurred activating profile',
+                'Files are missing or not writeable:\n' + fileList + '\n\n' +
+                'Some games need to be run at least once before they can be modded.');
+              return false;
+            }
+
+            return updateLocalGameSettings('local_game_settings', oldProfile, newProfile)
               .catch((err) => {
                 util.showError(store.dispatch,
                   'An error occurred applying game settings',
@@ -137,14 +147,7 @@ function init(context): boolean {
                   'Please refrain from locking files that belong to Vortex state, otherwise ' +
                   'unpredictable errors may happen.');
                 return false;
-              }),
-          )
-          .catch((missingFiles: string[]) => {
-            const fileList = missingFiles.join('\n');
-            util.showError(store.dispatch, 'An error occurred activating profile',
-              'Files are missing or not writeable:\n' + fileList + '\n\n' +
-              'Some games need to be run at least once before they can be modded.');
-            return false;
+              });
           });
       });
 

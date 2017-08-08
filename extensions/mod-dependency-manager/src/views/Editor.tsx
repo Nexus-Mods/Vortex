@@ -52,9 +52,10 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     if (this.props.dialog !== nextProps.dialog) {
       if (nextProps.dialog !== undefined) {
         this.nextState.type = nextProps.dialog.type;
-        this.nextState.reference = Object.assign({}, nextProps.dialog.reference, {
+        this.nextState.reference = {
+          ...nextProps.dialog.reference,
           versionMatch: '^' + nextProps.dialog.reference.versionMatch,
-        });
+        };
       } else {
         this.nextState.type = undefined;
         this.nextState.reference = undefined;
