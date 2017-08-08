@@ -1,4 +1,4 @@
-import {forgetExtension} from '../actions/app';
+import { forgetExtension, setExtensionEnabled } from '../actions/app';
 import { addNotification, dismissNotification } from '../actions/notifications';
 
 import { ExtensionInit } from '../types/Extension';
@@ -84,6 +84,8 @@ class ContextProxyHandler implements ProxyHandler<any> {
     this.mContext = context;
     this.mInitCalls = [];
     this.mApiAdditions = [];
+    // TODO: check if this is necessary. Ususally the arrow lambda should
+    //   bind this automatically
     const that = this;
     this.mOptional = new Proxy({}, {
       get(target, key: PropertyKey): any {
@@ -225,6 +227,13 @@ class ExtensionManager {
     ExtensionManager.sUIAPIs.add(name);
   }
 
+  public static getExtensionPaths(): string[] {
+    return [
+      asarUnpacked(path.resolve(__dirname, '..', 'bundledPlugins')),
+      path.join(app.getPath('userData'), 'plugins'),
+    ];
+  }
+
   private static sUIAPIs: Set<string> = new Set<string>();
 
   private mExtensions: IRegisteredExtension[];
@@ -274,6 +283,15 @@ class ExtensionManager {
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
     };
     if (initStore !== undefined) {
+      // apologies for the sync operation but this needs to happen before extensions are loaded
+      // and everything in this phase of startup is synchronous anyway
+      const disableExtensions = fs.readdirSync(app.getPath('temp'))
+        .filter(name => name.startsWith('__disable_'));
+      disableExtensions.forEach(ext => {
+        initStore.dispatch(setExtensionEnabled(ext.substr(10), false));
+        fs.unlinkSync(path.join(app.getPath('temp'), ext));
+      });
+
       this.mExtensionState = initStore.getState().app.extensions;
       const extensionsPath = path.join(app.getPath('userData'), 'plugins');
       const extensionsToRemove = Object.keys(this.mExtensionState)
@@ -767,18 +785,15 @@ class ExtensionManager {
       'news_dashlet',
     ];
 
-    const bundledPath = asarUnpacked(path.resolve(__dirname, '..', 'bundledPlugins'));
-    log('info', 'bundle at', bundledPath);
-    const extensionsPath = path.join(app.getPath('userData'), 'plugins');
+    const extensionPaths = ExtensionManager.getExtensionPaths();
     return staticExtensions
       .filter(ext => getSafe(this.mExtensionState, [ext, 'enabled'], true))
       .map((name: string) => ({
           name,
-          path: path.join(bundledPath, name),
+          path: path.join(extensionPaths[0], name),
           initFunc: require(`../extensions/${name}/index`).default,
         }))
-        .concat(this.loadDynamicExtensions(bundledPath),
-                this.loadDynamicExtensions(extensionsPath));
+      .concat(...extensionPaths.map(ext => this.loadDynamicExtensions(ext)));
   }
 }
 

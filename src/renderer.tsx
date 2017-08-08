@@ -98,22 +98,71 @@ if (process.env.NODE_ENV === 'development') {
   );
 }
 
-process.on('uncaughtException', (error: any) => {
+function findExtensionName(stack: string): string {
+  const stackSplit = stack.split('\n').filter(line => line.match(/^[ ]*at /));
+  const stackLine = stackSplit[0];
+  const extPaths = ExtensionManager.getExtensionPaths();
+  // regular expression to parse the extension name from the path in the last
+  // line of the stack trace. if there is one.
+  const expression = `(${extPaths.join('|').replace(/\\/g, '\\\\')})[\\\\/]([^\\\\/]*)`;
+  const re = new RegExp(expression);
+  const match = stackLine.match(re);
+  if (match !== null) {
+    return match[2];
+  } else {
+    return undefined;
+  }
+}
+
+const terminateFromError = (error: any) => {
   let details: IError;
 
   switch (typeof error) {
     case 'object': {
-      details = { message: error.message, stack: error.stack };
-    }              break;
+      const extension = findExtensionName(error.stack);
+      details = { message: error.message, stack: error.stack, extension };
+      break;
+    }
     case 'string': {
       details = { message: error };
-    }              break;
+      break;
+    }
     default: {
       details = { message: error };
-    }        break;
+      break;
+    }
   }
 
   terminate(details);
+};
+
+function getMessageString(error: any): string {
+  switch (typeof error) {
+    case 'object': return error.message;
+    case 'string': return error;
+    default: error.toString();
+  }
+}
+
+// this are error messages that are known to only appear as subsequent faults
+// to an actual bug, so we ignore these as there should be a "proper" error reported.
+// Since these are ui errors it should be fine to ignore them.
+// If you add to this list, make sure you abso-fucking-lutely know ignoring the error
+// is safe and that you don't suppress more than you intended!
+const ignoredExceptions = new RegExp('(' + [
+  'Cannot read property \'_currentElement\' of null',
+  'Cannot read property \'__reactInternalInstance.*\' of null',
+].join('|') + ')');
+
+process.on('uncaughtException', error => {
+  if (getMessageString(error).match(ignoredExceptions)) {
+    return;
+  }
+  terminateFromError(error);
+});
+
+window.addEventListener('unhandledrejection', (evt: PromiseRejectionEvent) => {
+  terminateFromError(evt.reason);
 });
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();

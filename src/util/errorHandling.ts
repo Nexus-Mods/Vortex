@@ -177,7 +177,6 @@ export function terminate(error: IError) {
     if (action === 0) {
       // Report
       createErrorReport('Crash', error, ['bug', 'crash']);
-      app.exit(1);
     } else if (action === 1) {
       // Ignore
       action = dialog.showMessageBox(null, {
@@ -191,12 +190,24 @@ export function terminate(error: IError) {
                  'that happen from here on out in this session.',
         noLink: true,
       });
-      if (action === 0) {
-        app.exit(1);
+      if (action === 1) {
+        return;
       }
-    } else {
-      // Quit
-      app.exit(1);
+    }
+    if (error.extension !== undefined) {
+      action = dialog.showMessageBox(null, {
+        type: 'error',
+        buttons: ['Disable', 'Keep'],
+        title: 'Extension crashed',
+        message: `This crash was caused by an extension (${error.extension}). ` +
+                 'Do you want to disable this extension?',
+        noLink: true,
+      });
+      if (action === 0) {
+        // can't access the store at this point because we won't be waiting for the store
+        // to be persisted
+        fs.writeFileSync(path.join(app.getPath('temp'), '__disable_' + error.extension), '');
+      }
     }
   } catch (err) {
     // if the crash occurs before the application is ready, the dialog module can't be
@@ -205,6 +216,7 @@ export function terminate(error: IError) {
       error.message + '\n' + error.details +
       '\nIf you think this is a bug, please report it to the ' +
       'issue tracker (github)');
-    app.exit(1);
   }
+
+  app.exit(1);
 }
