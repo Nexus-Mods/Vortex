@@ -280,13 +280,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   private iconForType(type: DialogType) {
     switch (type) {
       case 'info': return (
-        <Icon name='info-circle' style={{ height: '32px', width: '32px', color: 'blue' }} />
+        <Icon name='circle-info' style={{ height: '32px', width: '32px', color: 'blue' }} />
       );
       case 'error': return (
-        <Icon name='exclamation-circle' style={{ height: '32px', width: '32px', color: 'red' }} />
+        <Icon name='circle-exclamation' style={{ height: '32px', width: '32px', color: 'red' }} />
       );
       case 'question': return (
-        <Icon name='question-circle' style={{ height: '32px', width: '32px', color: 'blue' }} />
+        <Icon name='circle-question' style={{ height: '32px', width: '32px', color: 'blue' }} />
       );
       default: return null;
     }

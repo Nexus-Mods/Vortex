@@ -25,7 +25,7 @@ const ToolIcon = (props: IToolIconProps) => {
   } else {
     return (
       <Icon
-        name='question-circle'
+        name='circle-question'
         className={'tool-icon ' + validClass}
       />
     );

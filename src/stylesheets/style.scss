@@ -1,9 +1,12 @@
+$half-gutter: floor($gutter-width / 2);
+
 ////////////////////////
 // generic control rules
 
 html {
   // for rem
   font-size: $font-size-base;
+  letter-spacing: 0.03em;
 }
 
 #content {
@@ -515,7 +518,7 @@ a[role=menuitem] svg {
 // /portal menu
 ///////////////
 
-////////////
+//////////
 // globals
 
 ::-webkit-scrollbar {
@@ -538,7 +541,7 @@ a[role=menuitem] svg {
 }
 
 // /globals
-/////////////
+///////////
 
 ////////////////
 // notifications
@@ -626,9 +629,15 @@ a[role=menuitem] svg {
 //////////
 // Dialogs
 
+.modal-dialog {
+  max-width: 80%;
+  min-width: 400px;
+
+  width: auto;
+}
+
 .common-dialog-wide {
   .modal-dialog {
-    width: 80%;
     height: 80%;
   }
 
@@ -706,7 +715,7 @@ a[role=menuitem] svg {
 
 .application-icons {
   height: 100%;
-  margin-left: floor(($gutter-width / 2));
+  margin-left: $half-gutter;
 }
 
 // the naviation buttons on the left
@@ -844,7 +853,8 @@ a[role=menuitem] svg {
 
 .main-page {
   transition: visibility 0s 300ms, opacity 300ms;
-  padding: 10px;
+  // asymmetric padding. We allow pages to extend all the way to the right edge
+  padding: $half-gutter 0 $half-gutter $half-gutter;
   flex: 1 1 0;
   position: relative;
 
@@ -864,6 +874,11 @@ a[role=menuitem] svg {
     // make secondary page always show at the bottom
     order: 1;
   }
+}
+
+.main-page-body {
+  width: 100%;
+  height: 100%;
 }
 
 #login-control {
@@ -886,9 +901,11 @@ a[role=menuitem] svg {
   bottom: 0px;
   position: absolute;
   border: 0px;
-  padding: 0px;
+  padding: 1px;
   width: 100%;
   background-color: $brand-secondary;
+  display: flex;
+  justify-content: center;
 }
 
 // /main window frame
@@ -909,7 +926,6 @@ a[role=menuitem] svg {
 .table-main-pane {
   overflow-y: auto;
   flex: 1 1 0%;
-  margin: $gutter-width / 2;
 
   thead {
     color: $text-color;
@@ -933,6 +949,7 @@ a[role=menuitem] svg {
         height: 100%;
         min-height: 48px;
         display: flex;
+        justify-content: center;
         flex-direction: row;
         padding: 16px 4px;
         > :not(first-child) {
@@ -1016,14 +1033,9 @@ a[role=menuitem] svg {
 
 .table-container {
   display: flex;
-  flex: 1 1 0%;
   flex-direction: row;
-  position: absolute;
   overflow: hidden;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
+  height: 100%;
 }
 
 .textarea-details {
@@ -1356,7 +1368,7 @@ a[role=menuitem] svg {
 
 .discovery-progress-container {
   display: flex;
-  padding: floor(($gutter-width / 2));
+  padding: $half-gutter;
 }
 
 .discovery-progress-0 {
@@ -1386,7 +1398,7 @@ a[role=menuitem] svg {
 // quicklaunch
 
 .container-quicklaunch {
-  margin-right: floor(($gutter-width / 2));
+  margin-right: $half-gutter;
   margin-top: auto;
   margin-bottom: auto;
 
@@ -1442,7 +1454,7 @@ a[role=menuitem] svg {
   li {
     display: inline;
     list-style-type: none;
-    padding-right: 5px;
+    padding-right: 15px;
   }
 }
 
@@ -1581,7 +1593,7 @@ a[role=menuitem] svg {
   button {
     width: 100%;
 
-    padding: floor(($gutter-width / 2));
+    padding: $half-gutter;
     background-color: $brand-menu;
     display: flex !important;
 
@@ -1604,8 +1616,8 @@ a[role=menuitem] svg {
   margin: 0;
 
   .row>div {
-    padding-top: floor(($gutter-width / 2));
-    padding-bottom: floor(($gutter-width / 2));
+    padding-top: $half-gutter;
+    padding-bottom: $half-gutter;
   }
 
   .container-fluid {
@@ -1635,7 +1647,7 @@ a[role=menuitem] svg {
 .dashlet {
   border: 1px solid $brand-secondary;
   background-color: $brand-menu;
-  padding: floor(($gutter-width / 2));
+  padding: $half-gutter;
   height: 100%;
   h4 {
     margin-top: 0;
@@ -1647,7 +1659,7 @@ a[role=menuitem] svg {
     .icon-todo-type {
       margin-top: auto;
       margin-bottom: auto;
-      margin-right: floor(($gutter-width / 2));
+      margin-right: $half-gutter;
       background-color: $brand-info;
       padding: 0.5em;
       width: 2.2em;
@@ -1869,7 +1881,7 @@ a[role=menuitem] svg {
   text-align: -webkit-center;
   border: 2px solid $brand-secondary;
   background-color: $brand-menu;
-  margin: floor(($gutter-width / 2));
+  margin: $half-gutter;
 }
 
 .recharts-default-tooltip {
@@ -1989,6 +2001,10 @@ a[role=menuitem] svg {
 .mod-installed {
   background-color: $table-bg;
 }
+
+#btn-more-mods {
+  margin-top: $half-gutter;
+}
 // /mods page
 /////////////
 
@@ -2020,6 +2036,11 @@ a[role=menuitem] svg {
 
 ////////
 // HIDPI
+
+.lodpi, .hidpi {
+  width: 100%;
+  height: 100%;
+}
 
 .hidpi {
   font-size: $hidpi-scale-factor;
@@ -2073,6 +2094,71 @@ a[role=menuitem] svg {
 
 // /todo
 ////////
+
+///////
+// step
+
+.steps {
+  display: flex;
+  flex-direction: row;
+  hr {
+    height: 1px;
+    flex: 1 1 0;
+    margin: 10px 5px;
+    background-color: $gray;
+  }
+  .steps-step {
+    display: flex;
+    align-items: flex-start;
+  }
+  .steps-step-number {
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 1em;
+    width: 24px;
+    line-height: 22px;
+    text-align: center;
+    margin-right: 5px;
+  }
+  .steps-step-title {
+    font-size: 1.2em;
+  }
+
+  .steps-step-description {
+    font-size: 0.9em;
+  }
+
+  .steps-step.future {
+    color: $text-color-disabled;
+  }
+}
+
+// /step
+////////
+
+/////////////
+// FlexLayout
+
+.layout-container {
+  display: flex;
+  &.layout-fill {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.layout-flex {
+  flex: 1 1 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.layout-fixed {
+  position: relative;
+}
+
+// /FlexLayout
+//////////////
 
 /////////
 // other

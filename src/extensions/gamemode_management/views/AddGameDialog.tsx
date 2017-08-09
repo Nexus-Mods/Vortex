@@ -85,7 +85,7 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
     return (
     <Modal show={visible} onHide={this.close}>
       <Modal.Header>
-        <h3>{game.name}</h3>
+        <Modal.Title>{game.name}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <p>

@@ -6,8 +6,8 @@ import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import {
-  actions, BinaryToggle, ComponentEx, Dropzone, Icon, IconBar, ITableRowAction, log, MainPage,
-  Table, tooltip, types, util,
+  actions, BinaryToggle, ComponentEx, Dropzone, FlexLayout, Icon, IconBar, ITableRowAction,
+  log, MainPage, Table, tooltip, types, util,
 } from 'nmm-api';
 import * as os from 'os';
 import * as path from 'path';
@@ -16,7 +16,6 @@ import { Col, ControlLabel, DropdownButton, FormGroup, Grid,
   ListGroup, ListGroupItem, MenuItem, Row,
 } from 'react-bootstrap';
 import { translate } from 'react-i18next';
-import { Fixed, Flex, Layout } from 'react-layout-pane';
 import { connect } from 'react-redux';
 import { dir as tmpDir, file as tmpFile } from 'tmp';
 
@@ -77,8 +76,8 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
 
     return (
       <MainPage>
-        <Layout type='column' className='feedback-page'>
-          <Fixed>
+        <FlexLayout type='column' className='feedback-page'>
+          <FlexLayout.Fixed>
             <div>
               <h3>{t('Provide Feedback\n')}</h3>
             </div>
@@ -86,10 +85,10 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
               {t('Describe in detail what you were doing and the feedback ' +
                  'you would like to submit')}
             </h4>
-          </Fixed>
+          </FlexLayout.Fixed>
           {this.renderMessageArea()}
           {this.renderFilesArea()}
-        </Layout>
+        </FlexLayout>
       </MainPage>
     );
   }
@@ -150,7 +149,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     const { t } = this.props;
     const { feedbackMessage } = this.state;
     return (
-      <Flex>
+      <FlexLayout.Flex>
         <textarea
           value={feedbackMessage}
           id='textarea-feedback'
@@ -158,7 +157,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
           onChange={this.handleChange}
           placeholder={t(SAMPLE_REPORT)}
         />
-      </Flex>
+      </FlexLayout.Flex>
     );
   }
 
@@ -182,9 +181,9 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     const { t, feedbackFiles } = this.props;
     const { anonymous, sending } = this.state;
     return (
-      <Fixed>
-        <Layout type='row' style={{ position: 'static' }}>
-          <Flex>
+      <FlexLayout.Fixed>
+        <FlexLayout type='row' style={{ position: 'static' }}>
+          <FlexLayout.Flex>
             <FormGroup>
               <ControlLabel>{t('Attached Files')}</ControlLabel>
               <ListGroup>
@@ -197,8 +196,8 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
               drop={this.dropFeedback}
               dialogHint={t('Drop the feedback file here')}
             />
-          </Flex>
-          <Fixed>
+          </FlexLayout.Flex>
+          <FlexLayout.Fixed>
             <tooltip.Button
               style={{ display: 'block', marginLeft: 'auto', marginRight: 0 }}
               id='btn-submit-feedback'
@@ -214,9 +213,9 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
             >
               {t('Send anonymously')}
             </BinaryToggle>
-          </Fixed>
-        </Layout>
-      </Fixed>
+          </FlexLayout.Fixed>
+        </FlexLayout>
+      </FlexLayout.Fixed>
     );
   }
 

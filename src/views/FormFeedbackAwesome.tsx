@@ -42,7 +42,7 @@ class FormFeedbackAwesome extends React.Component<IFormFeedbackProps, {}> {
   }
 
   private icon(state: string, pending: boolean): JSX.Element {
-    const style = { height: 'initial', verticalAlign: 'baseline' };
+    const style = { verticalAlign: 'baseline' };
     if (pending) {
       return <Icon name='spinner' pulse style={ style } />;
     }

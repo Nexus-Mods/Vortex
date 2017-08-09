@@ -26,7 +26,7 @@ class CategoryDialog extends ComponentEx<IProps, {}> {
     return (
       <Modal show={showDialog} onHide={this.hide}>
         <Modal.Header>
-          <h4>{ t('Categories') }</h4>
+          <Modal.Title>{ t('Categories') }</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <DNDContainer>

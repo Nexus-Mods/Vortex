@@ -13,6 +13,7 @@ import DeveloperType from './Developer';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
+import FlexLayout from './FlexLayout';
 import GlobalOverlay from './GlobalOverlay';
 import Icon from './Icon';
 import IconBar from './IconBar';
@@ -30,7 +31,6 @@ import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Badge, ControlLabel, FormGroup, Modal, Nav } from 'react-bootstrap';
-import { Fixed, Flex, Layout } from 'react-layout-pane';
 import * as Redux from 'redux';
 
 interface IPageButtonProps {
@@ -224,11 +224,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <div className={hidpi ? 'hidpi' : 'lodpi'}>
         <div id='menu-layer' ref={this.setMenuLayer} />
-        <Layout type='column'>
+        <FlexLayout type='column'>
           {this.renderToolbar()}
           {this.renderBody()}
           {this.renderFooter()}
-        </Layout>
+        </FlexLayout>
         <Dialog />
         {this.renderDeveloperModal()}
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
@@ -254,7 +254,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private renderToolbar() {
     const { t } = this.props;
     return (
-      <Fixed id='main-toolbar'>
+      <FlexLayout.Fixed id='main-toolbar'>
         <QuickLauncher t={t} />
         <NotificationButton id='notification-button' />
         <div className='mainpage-header-container' ref={this.setHeaderRef} />
@@ -271,7 +271,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           onClick={this.toggleOverlay}
           className='pull-right'
         />
-      </Fixed>
+      </FlexLayout.Fixed>
     );
   }
 
@@ -296,9 +296,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     pages.push(this.renderPage(this.settingsPage, globalOverlay));
 
     return (
-      <Flex>
-        <Layout type='row' style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
-          <Fixed id='main-nav-sidebar' className={sbClass}>
+      <FlexLayout.Flex>
+        <FlexLayout type='row' style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
+          <FlexLayout.Fixed id='main-nav-sidebar' className={sbClass}>
             <div id='main-nav-container'>
               <Nav
                 bsStyle='pills'
@@ -334,8 +334,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             >
               <Icon name={tabsMinimized ? 'right' : 'left'} />
             </Button>
-          </Fixed>
-          <Flex id='main-window-pane'>
+          </FlexLayout.Fixed>
+          <FlexLayout.Flex id='main-window-pane'>
             <DNDContainer style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               {pages}
             </DNDContainer>
@@ -343,9 +343,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               open={overlayOpen}
               overlayRef={this.setOverlayRef}
             />
-          </Flex>
-        </Layout>
-      </Flex>
+          </FlexLayout.Flex>
+        </FlexLayout>
+      </FlexLayout.Flex>
     );
   }
 
@@ -359,9 +359,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderFooter() {
     return (
-      <Fixed>
+      <FlexLayout.Fixed>
         <MainFooter />
-      </Fixed>
+      </FlexLayout.Fixed>
     );
   }
 

@@ -17,13 +17,12 @@ import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import * as update from 'immutability-helper';
 import {SimpleMessage} from 'loot';
-import {ComponentEx, IconBar, ITableRowAction, MainPage,
+import {ComponentEx, FlexLayout, IconBar, ITableRowAction, MainPage,
         selectors, Table, TableTextFilter, ToolbarIcon,
         types, util} from 'nmm-api';
 import * as React from 'react';
 import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
 import {translate} from 'react-i18next';
-import {Fixed, Flex, Layout} from 'react-layout-pane';
 import {connect} from 'react-redux';
 
 interface IAttributeStateMap {
@@ -200,12 +199,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       name: 'Status',
       description: 'Is plugin enabled in current profile',
       icon: 'check-o',
-      calc: (plugin: IPluginCombined) => {
-        if (plugin.isNative) {
-          return undefined;
-        }
-        return plugin.enabled === true ? 'Enabled' : 'Disabled';
-      },
+      calc: (plugin: IPluginCombined) => plugin.isNative
+          ? undefined
+          : plugin.enabled === true ? 'Enabled' : 'Disabled',
       placement: 'table',
       isToggleable: false,
       edit: {
@@ -289,19 +285,19 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           />
         </MainPage.Header>
         <MainPage.Body>
-          <Layout type='column'>
-            <Fixed>
+          <FlexLayout type='column'>
+            <FlexLayout.Fixed>
               { lootActivity ? <h4>{lootActivity}</h4> : null }
-            </Fixed>
-            <Flex>
+            </FlexLayout.Fixed>
+            <FlexLayout.Flex>
               <Table
                 tableId='gamebryo-plugins'
                 actions={this.actions}
                 staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
                 data={pluginsCombined}
               />
-            </Flex>
-          </Layout>
+            </FlexLayout.Flex>
+          </FlexLayout>
         </MainPage.Body>
         <MainPage.Overlay>
           <IconBar

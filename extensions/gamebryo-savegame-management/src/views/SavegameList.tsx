@@ -13,14 +13,13 @@ import {
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import {
-  actions, ComponentEx, Icon, IconBar, ITableRowAction,
+  actions, ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
   MainPage, selectors, Table, tooltip, types, util,
 } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 import { translate } from 'react-i18next';
-import { Fixed } from 'react-layout-pane';
 import { connect } from 'react-redux';
 
 // current typings know neither the function nor the return value
@@ -100,12 +99,12 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     const { t, saves, saveGameActivity, showTransfer } = this.props;
     const { importSaves, profileId } = this.state;
 
-    let actions = this.savegameActions;
+    let saveActions = this.savegameActions;
 
     let header: JSX.Element;
     if (showTransfer) {
       header = this.renderTransfer();
-      actions = [].concat([{
+      saveActions = [].concat([{
         icon: 'sign-in',
         title: t('Import'),
         action: this.importSaves,
@@ -126,7 +125,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         <Table
           tableId='savegames'
           data={showTransfer ? importSaves : saves}
-          actions={actions}
+          actions={saveActions}
           staticElements={[
             SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
             LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
@@ -162,12 +161,12 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     const { t, saveGameActivity } = this.props;
     if (saveGameActivity !== undefined) {
       return (
-        <Fixed>
+        <FlexLayout.Fixed>
           <div>
             <Icon name='spinner' pulse />
             {t(saveGameActivity)}
           </div>
-        </Fixed>
+        </FlexLayout.Fixed>
       );
     } else {
       return null;
@@ -310,7 +309,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   private remove = (instanceIds: string[]) => {
     const { t, currentProfile, onRemoveSavegame, onShowDialog, savesPath } = this.props;
 
-    let removeSavegame = true;
+    let doRemoveSavegame = true;
 
     onShowDialog('question', t('Confirm Deletion'), {
       message: t('Do you really want to remove these files?\n{{saveIds}}',
@@ -322,8 +321,8 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         Cancel: null,
         Delete: null,
       }).then((result: types.IDialogResult) => {
-        removeSavegame = result.action === 'Delete';
-        if (removeSavegame) {
+        doRemoveSavegame = result.action === 'Delete';
+        if (doRemoveSavegame) {
           return Promise.map(instanceIds, (id: string) =>
             fs.removeAsync(path.join(mygamesPath(currentProfile.gameId), savesPath, id))
               .then(() => {

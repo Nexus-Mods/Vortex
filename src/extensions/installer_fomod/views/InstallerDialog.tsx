@@ -1,5 +1,6 @@
 import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
 import {pushSafe, removeValue} from '../../../util/storeHelper';
+import FlexLayout from '../../../views/FlexLayout';
 import {IconButton} from '../../../views/TooltipControls';
 
 import {GroupType, IGroup, IHeaderImage, IInstallerState, IInstallStep,
@@ -12,7 +13,6 @@ import * as path from 'path';
 import * as React from 'react';
 import { Checkbox, ControlLabel, Form, FormGroup, Modal, Pager,
          ProgressBar, Radio } from 'react-bootstrap';
-import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 interface IGroupProps {
   t: I18next.TranslationFunction;
@@ -286,7 +286,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
         onHide={this.nop}
       >
         <Modal.Header>
-          <h3>{installerInfo.moduleName}</h3>
+          <Modal.Title>{installerInfo.moduleName}</Modal.Title>
           <IconButton
             id='fomod-cancel'
             className='close-button'
@@ -296,20 +296,20 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
           />
         </Modal.Header>
         <Modal.Body>
-          <Layout type='row' style={{ position: 'relative' }}>
-            <Flex style={{ overflowY: 'auto' }}>
+          <FlexLayout type='row' style={{ position: 'relative' }}>
+            <FlexLayout.Flex style={{ overflowY: 'auto' }}>
               <Step
                 t={t}
                 step={steps[idx]}
                 onSelect={this.select}
                 onShowDescription={this.showDescription}
               />
-            </Flex>
-            <Fixed style={{ maxWidth: '60%', overflowY: 'auto' }}>
+            </FlexLayout.Flex>
+            <FlexLayout.Fixed style={{ maxWidth: '60%', overflowY: 'auto' }}>
               { this.renderImage() }
               <ControlLabel readOnly={true}>{currentDescription}</ControlLabel>
-            </Fixed>
-          </Layout>
+            </FlexLayout.Fixed>
+          </FlexLayout>
         </Modal.Body>
         <Modal.Footer>
           <Pager>

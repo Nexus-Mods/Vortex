@@ -11,6 +11,7 @@ import {IExtensibleProps} from '../util/ExtensionProvider';
 import smoothScroll from '../util/smoothScroll';
 import {getSafe, setSafe} from '../util/storeHelper';
 import {truthy} from '../util/util';
+import FlexLayout from '../views/FlexLayout';
 
 import Icon from './Icon';
 import IconBar from './IconBar';
@@ -24,7 +25,6 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { Table } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
-import {Fixed, Flex, Layout} from 'react-layout-pane';
 import * as SplitPane from 'react-split-pane';
 import * as Redux from 'redux';
 import { createSelector } from 'reselect';
@@ -39,6 +39,9 @@ export interface ITableRowAction extends IActionDefinition {
 export interface IBaseProps {
   tableId: string;
   data: { [rowId: string]: any };
+  // cheapass way to force the table to refresh its data cache. This will only affect
+  // 'volatile' fields as normal data fields would prompt a table refresh anyway
+  dataId?: number;
   actions: ITableRowAction[];
   detailsTitle?: string;
   multiSelect?: boolean;
@@ -132,7 +135,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       this.mVisibleAttributes = this.visibleAttributes(objects, attributeState);
     }
 
-    if (newProps.data !== this.props.data) {
+    if ((newProps.data !== this.props.data) || (newProps.dataId !== this.props.dataId)) {
       this.updateCalculatedValues(this.props.data, newProps)
       .then(() => this.refreshSorted(newProps));
       this.updateSelection(newProps);

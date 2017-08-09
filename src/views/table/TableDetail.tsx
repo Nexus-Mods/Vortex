@@ -317,7 +317,6 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
     const { t, title, onToggleShow } = this.props;
     const style = {
       border: '1px solid #0c5886',
-      height: '100%',
       position: 'relative' as 'relative',
     };
     const textStyle = {
@@ -333,7 +332,7 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
       <Button style={style}
         onClick={onToggleShow}
       >
-        <div style={textStyle}><Icon name='bold-up' />{' '}{title || t('Details')}</div>
+        <div style={textStyle}><Icon name='up' />{' '}{title || t('Details')}</div>
       </Button>
     );
   }

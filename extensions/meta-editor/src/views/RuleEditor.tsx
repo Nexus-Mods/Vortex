@@ -52,7 +52,7 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
 
     return (
       <Modal show={show} onHide={this.nop}>
-        <Modal.Header><h3>{fileName}</h3></Modal.Header>
+        <Modal.Header><Modal.Title>{fileName}</Modal.Title></Modal.Header>
         <Modal.Body>
           <form>
             <FormGroup>

@@ -39,7 +39,7 @@ $table-header-border-color: #145076;
 
 $body-bg:               $brand-menu;
 $text-color:            #eeeeee;
-$text-color-disabled:   lighten(#eeeeee, 15%);
+$text-color-disabled:   darken(#eeeeee, 15%);
 
 $link-color:            $brand-info;
 $link-hover-color:      $link-color;

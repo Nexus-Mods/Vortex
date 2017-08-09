@@ -95,9 +95,20 @@ function renderPath(pathComp: IPath, idx: number) {
 
 class Icon extends React.Component<IIconProps, {}> {
   private mRef: Element;
+  private mCurrentSize: { width: number, height: number };
+  private mTicks: number = 0;
 
   public componentWillMount() {
     this.setIcon(this.props);
+  }
+
+  public componentDidMount() {
+    // TODO: this is a hack. rotation works correctly only when we know the center of the control.
+    // on startup I have the case that the control isn't it's final size yet so the rotation
+    // is broken. This here is a somewhat performant way of checking for resize for one second
+    if (this.props.rotate) {
+      window.requestAnimationFrame(this.updateRotate);
+    }
   }
 
   public componentWillReceiveProps(newProps: IIconProps) {
@@ -166,9 +177,27 @@ class Icon extends React.Component<IIconProps, {}> {
   }
 
   private setRef = (ref: Element) => {
-    this.mRef = ref;
-    if (this.props.rotate !== undefined) {
+    if (ref !== null) {
+      this.mRef = ref;
+      const { width, height } = ref.getBoundingClientRect();
+      this.mCurrentSize = { width, height };
       this.forceUpdate();
+    }
+  }
+
+  private updateRotate = () => {
+    if (this.mRef !== undefined) {
+      ++this.mTicks;
+      const { width, height } = this.mRef.getBoundingClientRect();
+      if ((width !== this.mCurrentSize.width)
+          || (height !== this.mCurrentSize.height)) {
+        this.mCurrentSize = { width, height };
+        this.forceUpdate();
+        this.mTicks = 0;
+      }
+      if (this.mTicks < 60) {
+        window.requestAnimationFrame(this.updateRotate);
+      }
     }
   }
 

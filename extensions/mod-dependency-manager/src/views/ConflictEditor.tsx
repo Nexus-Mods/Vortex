@@ -60,7 +60,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Modal show={modId !== undefined} onHide={this.close}>
-        <Modal.Header>{renderModName(mods[modId])}</Modal.Header>
+        <Modal.Header><Modal.Title>{renderModName(mods[modId])}</Modal.Title></Modal.Header>
         <Modal.Body>
           <ListGroup>
             {conflicts.map(this.renderConflict)}

@@ -8,6 +8,7 @@ import getAttr from '../../../util/getAttr';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import Advanced from '../../../views/Advanced';
+import FlexLayout from '../../../views/FlexLayout';
 import Icon from '../../../views/Icon';
 import IconBar, { ButtonType } from '../../../views/IconBar';
 import MainPage from '../../../views/MainPage';
@@ -33,7 +34,6 @@ import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { ListGroup, ProgressBar } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
-import { Fixed, Flex, Layout } from 'react-layout-pane';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {
@@ -181,8 +181,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           </div>
         </MainPage.Header>
         <MainPage.Body>
-          <Layout type='column'>
-            <Flex className='gamepicker-body'>
+          <FlexLayout type='column'>
+            <FlexLayout.Flex className='gamepicker-body'>
               <div ref={this.setScrollRef}>
                 <span style={{ display: 'table' }}>
                   <h3>{t('Managed')}</h3>
@@ -197,16 +197,16 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                   {this.renderGames(supportedGameList, 'undiscovered')}
                 </span>
               </div>
-            </Flex>
-            <Fixed>
+            </FlexLayout.Flex>
+            <FlexLayout.Fixed>
               <div className='discovery-progress-container'>
-                <Flex>
+                <FlexLayout.Flex>
                   <ProgressBar>
                   {Object.keys(discovery.phases)
                     .map(idx => discovery.phases[idx]).map(this.renderProgress)}
                   </ProgressBar>
-                </Flex>
-                <Fixed>
+                </FlexLayout.Flex>
+                <FlexLayout.Fixed>
                   <Button
                     id='start-discovery'
                     tooltip={discovery.running ? t('Stop search') : t('Search for games')}
@@ -215,10 +215,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                   >
                     <Icon name={discovery.running ? 'stop' : 'search'} />
                   </Button>
-                </Fixed>
+                </FlexLayout.Fixed>
               </div>
-            </Fixed>
-          </Layout>
+            </FlexLayout.Fixed>
+          </FlexLayout>
         </MainPage.Body>
         <MainPage.Overlay>
           <IconBar

@@ -190,7 +190,13 @@ function processRebuild(project, buildType, feedback) {
     ? __dirname
     : path.join(__dirname, buildType);
 
-  return rebuild(moduleDir, packageJSON.engines.electron, process.arch, [project.module], true)
+  return rebuild({
+    buildPath: moduleDir,
+    electronVersion: packageJSON.engines.electron,
+    arch: process.arch,
+    onlyModules: [project.module],
+    force: true,
+  })
     .then(() => {
       if (project.name !== undefined) {
         console.log('electron-rebuild process finished: ' + project.name)

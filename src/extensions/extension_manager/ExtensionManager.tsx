@@ -5,6 +5,7 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import { spawnSelf } from '../../util/util';
 import Dropzone, { ControlMode } from '../../views/Dropzone';
+import FlexLayout from '../../views/FlexLayout';
 import MainPage from '../../views/MainPage';
 import Table, { ITableRowAction } from '../../views/Table';
 
@@ -22,7 +23,6 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
-import { Fixed, Flex, Layout } from 'react-layout-pane';
 import * as Redux from 'redux';
 
 interface IConnectedProps {
@@ -119,15 +119,15 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     return (
       <MainPage>
         <MainPage.Body>
-          <Layout type='column'>
-            <Fixed>
+          <FlexLayout type='column'>
+            <FlexLayout.Fixed>
               {
                 reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
                   ? this.renderReload()
                   : null
               }
-            </Fixed>
-            <Flex>
+            </FlexLayout.Fixed>
+            <FlexLayout.Flex>
               <Table
                 tableId='extensions'
                 data={extensionsWithState}
@@ -135,15 +135,15 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                 staticElements={this.staticColumns}
                 multiSelect={false}
               />
-            </Flex>
-            <Fixed>
+            </FlexLayout.Flex>
+            <FlexLayout.Fixed>
               <Dropzone
                 accept={['files', 'urls']}
                 drop={this.dropExtension}
                 dialogHint={t('Select extension file')}
               />
-            </Fixed>
-          </Layout>
+            </FlexLayout.Fixed>
+          </FlexLayout>
         </MainPage.Body>
       </MainPage>
     );

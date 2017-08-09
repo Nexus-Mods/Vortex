@@ -1,10 +1,10 @@
 import * as CoreActions from '../actions/index';
 
 import LogMonTool from '../util/DevTools';
+import FlexLayout from '../views/FlexLayout';
 
 import * as React from 'react';
 import { Component } from 'react';
-import { Fixed, Flex, Layout } from 'react-layout-pane';
 import { createDevTools } from 'redux-devtools';
 
 import Dispatcher from 'redux-devtools-dispatch';
@@ -60,14 +60,14 @@ class Developer extends Component<{}, {}> {
   public render() {
     const DispatcherTool = this.DispatcherTool;
     return (
-      <Layout type='column' style={{ minHeight: '600px', color: 'black' }}>
-        <Fixed>
+      <FlexLayout type='column' style={{ minHeight: '600px', color: 'black' }}>
+        <FlexLayout.Fixed>
           <DispatcherTool />
-        </Fixed>
-        <Flex>
+        </FlexLayout.Fixed>
+        <FlexLayout.Flex>
           <LogMonTool />
-        </Flex>
-      </Layout>
+        </FlexLayout.Flex>
+      </FlexLayout>
     );
   }
 }

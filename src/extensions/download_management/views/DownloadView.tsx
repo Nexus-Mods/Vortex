@@ -11,6 +11,7 @@ import relativeTime from '../../../util/relativeTime';
 import { activeGameId } from '../../../util/selectors';
 import { setSafe } from '../../../util/storeHelper';
 import Dropzone, { ControlMode } from '../../../views/Dropzone';
+import FlexLayout from '../../../views/FlexLayout';
 import IconBar from '../../../views/IconBar';
 import InputButton from '../../../views/InputButton';
 import MainPage from '../../../views/MainPage';
@@ -36,7 +37,6 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Fixed, Flex, Layout } from 'react-layout-pane';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
@@ -281,11 +281,11 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
     return (
       <MainPage>
-        <Layout type='column'>
-          <Fixed>
+        <FlexLayout type='column'>
+          <FlexLayout.Fixed>
             { secondary ? null : <DownloadGraph /> }
-          </Fixed>
-          <Flex>
+          </FlexLayout.Fixed>
+          <FlexLayout.Flex>
             <SuperTable
               tableId='downloads'
               data={downloads}
@@ -298,8 +298,8 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
               ]}
               actions={this.actions}
             />
-          </Flex>
-          <Fixed>
+          </FlexLayout.Flex>
+          <FlexLayout.Fixed>
             {
               ((gameMode !== undefined) && !secondary)
                 ? (
@@ -310,8 +310,8 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                   />
                 ) : null
             }
-          </Fixed>
-        </Layout>
+          </FlexLayout.Fixed>
+        </FlexLayout>
         <MainPage.Overlay>
           <IconBar
             group='download-icons'

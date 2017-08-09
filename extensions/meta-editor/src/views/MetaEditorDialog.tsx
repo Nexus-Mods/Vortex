@@ -61,7 +61,7 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
 
     return (
       <Modal show={info !== undefined} onHide={this.close}>
-        <Modal.Header><h3>{info.logicalFileName}</h3></Modal.Header>
+        <Modal.Header><Modal.Title>{info.logicalFileName}</Modal.Title></Modal.Header>
         <Modal.Body>
           <form>
             <FormGroup>

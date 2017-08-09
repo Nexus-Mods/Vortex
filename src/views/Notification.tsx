@@ -78,7 +78,7 @@ class Notification extends ComponentEx<IProps, {}> {
       case 'success': return <Icon name='square-check' />;
       case 'info': return <Icon name='square-info' />;
       case 'warning': return <Icon name='square-exclamation' />;
-      case 'error': return <Icon name='warning' />;
+      case 'error': return <Icon name='triangle-alert' />;
       default: return null;
     }
   }

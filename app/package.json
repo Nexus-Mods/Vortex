@@ -17,7 +17,7 @@
     "content-type": "^1.0.2",
     "d3": "4.10.0",
     "draggabilly": "^2.1.1",
-    "drivelist": "=5.0.22",
+    "drivelist": "^5.1.4",
     "edge": "^6.5.1",
     "electron-updater": "^1.9.0",
     "exe-version": "file:../lib/cpp/exe-version",
