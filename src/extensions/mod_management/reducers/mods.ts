@@ -4,6 +4,7 @@ import { deleteOrNop, getSafe,
   merge, pushSafe, removeValueIf, setSafe } from '../../../util/storeHelper';
 
 import * as actions from '../actions/mods';
+import {IMod} from '../types/IMod';
 
 import * as _ from 'lodash';
 import { IRule } from 'modmeta-db';
@@ -19,7 +20,11 @@ export const modsReducer: IReducerSpec = {
     },
     [actions.addMods as any]: (state, payload) => {
       const { gameId, mods } = payload;
-      return merge(state, [gameId], mods);
+      const modDict = mods.reduce((prev: { [key: string]: IMod }, value: IMod) => {
+        prev[value.id] = value;
+        return prev;
+      }, {});
+      return merge(state, [gameId], modDict);
     },
     [actions.removeMod as any]: (state, payload) => {
       const { gameId, modId } = payload;

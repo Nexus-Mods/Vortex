@@ -43,6 +43,7 @@ const nameMap = {
   'alert-circle-i': 'circle-question',
   'alert-square-exc': 'square-exclamation',
   'alert-square-i': 'square-info',
+  'bold-remove': 'cross',
   logo: 'nexus',
   world: 'globe',
   centralize: 'compress',

@@ -1,9 +1,8 @@
 import * as Promise from 'bluebird';
-import { actions as nmmActions, log, types } from 'nmm-api';
+import { actions, log, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
-import { generate as shortid } from 'shortid';
-import { IFileEntry as FileEntry, IModEntry as ModEntry } from '../types/nmmEntries';
+import { IFileEntry, IModEntry } from '../types/nmmEntries';
 
 interface IVortexMod {
   [modId: string]: types.IMod;
@@ -12,7 +11,7 @@ interface IVortexMod {
 export function createProfile(gameId: string, profileId: string,
                               profileName: string, dispatch: Redux.Dispatch<any>) {
   log ('info', 'Create profile: ', {gameId, profileId});
-  dispatch(nmmActions.setProfile({
+  dispatch(actions.setProfile({
     id: profileId,
     gameId,
     name: profileName,
@@ -20,15 +19,15 @@ export function createProfile(gameId: string, profileId: string,
   }));
 }
 
-export function addMods(gameID: string, modEntries: ModEntry[], dispatch: Redux.Dispatch<any>) {
+export function addMods(gameID: string, profileId: string,
+                        modEntries: IModEntry[], dispatch: Redux.Dispatch<any>) {
   const mods: types.IMod[] = [];
 
   Promise.map(modEntries, modEntry => {
     const modName = modEntry.modFilename.substr(0, modEntry.modFilename.lastIndexOf('.'));
     const mod: types.IMod = {
-      id: modEntry.vortexId,
+      id: modName,
       state: 'installed',
-      archiveId: shortid(),
       installationPath: modName,
       attributes: {
         name: modName,
@@ -39,21 +38,23 @@ export function addMods(gameID: string, modEntries: ModEntry[], dispatch: Redux.
         notes: 'Imported using the NMM-Migration-Tool',
       },
     };
+    if (modEntry.nexusId) {
+      mod.attributes.source = 'nexus';
+      mod.attributes.modId = modEntry.nexusId;
+    }
 
-    log ('info', 'Mod addition: ', mod.id);
     mods.push(mod);
   })
   .then(() => {
-    dispatch(nmmActions.addMods(gameID, mods));
+    dispatch(actions.addMods(gameID, mods));
   })
   .then(() => {
     Promise.map(mods, mod => {
-      log ('info', 'Mod enable: ', mod.id);
-      enableMod(mod.id, 'nmm-profile', dispatch);
+      enableMod(mod.id, profileId, dispatch);
     });
   });
 }
 
 function enableMod(modId: string, profileId: string, dispatch: Redux.Dispatch<any>) {
-  dispatch(nmmActions.setModEnabled(profileId, modId, true));
+  dispatch(actions.setModEnabled(profileId, modId, true));
 }

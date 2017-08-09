@@ -1,7 +1,7 @@
 import { IFileEntry, IModEntry } from './types/nmmEntries';
 
 import { TableDateTimeFilter, TableNumericFilter,
-  TableTextFilter, types, util } from 'nmm-api';
+  TableTextFilter, tooltip, types, util } from 'nmm-api';
 import * as React from 'react';
 
 export const MOD_ID: types.ITableAttribute = {
@@ -69,7 +69,7 @@ export const FILES: types.ITableAttribute = {
   description: 'The number of files installed by this mod',
   icon: 'level-up',
   calc: (mod: IModEntry) => mod.fileEntries.length,
-  placement: 'both',
+  placement: 'detail',
   isToggleable: true,
   isSortable: true,
   filter: new TableNumericFilter(),
@@ -79,27 +79,22 @@ export const FILES: types.ITableAttribute = {
   edit: {},
 };
 
-export const LOCAL: types.ITableAttribute = {
+export const LOCAL: types.ITableAttribute<IModEntry> = {
   id: 'local',
-  name: 'Managed',
+  name: 'Duplicate',
   description: 'Whether the mod is already managed by Vortex',
   icon: 'level-up',
-  calc: (mod: IModEntry) => mod.isAlreadyManaged ? 'Yes' : '',
-  placement: 'both',
-  isToggleable: true,
-  isSortable: true,
-  filter: new TableTextFilter(true),
-  edit: {},
-};
-
-export const STATUS: types.ITableAttribute = {
-  id: 'status',
-  name: 'Import',
-  description: 'The import status of the mod',
-  icon: 'level-up',
-  calc: (mod: IModEntry) => mod.importFlag ?
-    (mod.isAlreadyManaged ? 'Import anyway' : 'To import') : 'Do not import',
-  placement: 'both',
+  customRenderer: (mod: IModEntry, detail: boolean, t: I18next.TranslationFunction) => {
+    return mod.isAlreadyManaged ? (
+      <tooltip.Icon
+        id={ `import-duplicate-${mod.nexusId}` }
+        tooltip={t('This mod is already managed by vortex')}
+        name='triangle-alert'
+      />
+   ) : null;
+  },
+  calc: mod => mod.isAlreadyManaged,
+  placement: 'table',
   isToggleable: true,
   isSortable: true,
   filter: new TableTextFilter(true),

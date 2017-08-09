@@ -117,7 +117,9 @@ class ExternalChangeDialog extends ComponentEx<IProps, {}> {
 
     return (
       <Modal id='ext-change-dialog' show={visible} onHide={nop}>
-        <Modal.Header><h4>{t('External Changes')}</h4></Modal.Header>
+        <Modal.Header>
+          <Modal.Title>{t('External Changes')}</Modal.Title>
+        </Modal.Header>
         <Modal.Body>
           <div className='padded-text' style={{ flex: 0 }} >
             {t('One or more files have been modified on disk since Vortex last deployed. '
