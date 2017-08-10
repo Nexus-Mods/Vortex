@@ -4,7 +4,6 @@ import RuleEditor from './RuleEditor';
 
 import * as update from 'immutability-helper';
 import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
-import { ComponentEx, FormFeedbackAwesome, Icon, log, selectors, tooltip, util } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup,
@@ -14,6 +13,7 @@ import { connect } from 'react-redux';
 import semver = require('semver');
 import * as url from 'url';
 import * as nodeUtil from 'util';
+import { ComponentEx, FormFeedbackAwesome, Icon, log, selectors, tooltip, util } from 'vortex-api';
 
 interface IConnectedProps {
   downloads: { [id: string]: any };

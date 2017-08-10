@@ -1,8 +1,8 @@
 import Line from './Line';
 
-import { ComponentEx, util } from 'nmm-api';
 import * as React from 'react';
 import { connect } from 'react-redux';
+import { ComponentEx, util } from 'vortex-api';
 
 interface ICoord {
   x: number;

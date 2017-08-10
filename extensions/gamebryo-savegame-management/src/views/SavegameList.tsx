@@ -12,15 +12,15 @@ import {
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import {
-  actions, ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
-  MainPage, selectors, Table, tooltip, types, util,
-} from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import {
+  actions, ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
+  MainPage, selectors, Table, tooltip, types, util,
+} from 'vortex-api';
 
 // current typings know neither the function nor the return value
 declare const createImageBitmap: (imgData: ImageData) => Promise<any>;

@@ -1,4 +1,4 @@
-import { types } from 'nmm-api';
+import { types } from 'vortex-api';
 
 function renderModName(mod: types.IMod) {
   if (mod === undefined) {

@@ -1,10 +1,10 @@
 import { gameSupported, nativePlugins } from '../util/gameSupport';
 
-import { selectors } from 'nmm-api';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import { createSelector } from 'reselect';
+import { selectors } from 'vortex-api';
 
 interface IBaseProps {
   masters: string[];

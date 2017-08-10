@@ -1,8 +1,8 @@
 import HighlightButton from './views/HighlightButton';
 import TextareaNotes from './views/TextareaNotes';
 
-import { selectors, types, util } from 'nmm-api';
 import * as React from 'react';
+import { selectors, types, util } from 'vortex-api';
 
 function init(context: types.IExtensionContext) {
 

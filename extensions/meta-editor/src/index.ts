@@ -4,8 +4,8 @@ import MetaEditorIcon from './views/MetaEditorIcon';
 
 import sessionReducer from './reducers';
 
-import { types } from 'nmm-api';
 import * as path from 'path';
+import { types } from 'vortex-api';
 
 function main(context: types.IExtensionContext) {
   context.registerDialog('meta-editor-dialog', MetaEditorDialog);

@@ -1,11 +1,10 @@
+import * as update from 'immutability-helper';
 import { IHashResult, ILookupResult, IReference, RuleType } from 'modmeta-db';
-import { ComponentEx, FormFeedbackAwesome } from 'nmm-api';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup,
          Modal, Nav, NavItem } from 'react-bootstrap';
 import { translate } from 'react-i18next';
-
-import * as update from 'immutability-helper';
+import { ComponentEx, FormFeedbackAwesome } from 'vortex-api';
 
 interface IBaseProps {
   fileName: string;

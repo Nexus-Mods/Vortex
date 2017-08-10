@@ -12,13 +12,13 @@ import { enabledModKeys } from '../selectors';
 
 import * as _ from 'lodash';
 import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
-import { actions, ComponentEx, log, selectors, tooltip, types, util } from 'nmm-api';
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
 import { connect } from 'react-redux';
+import { actions, ComponentEx, log, selectors, tooltip, types, util } from 'vortex-api';
 
 interface IDescriptionProps {
   t: I18next.TranslationFunction;

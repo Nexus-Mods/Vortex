@@ -29,7 +29,7 @@ module.exports = {
     'minimatch',
     'modmeta-db',
     'net',
-    'nmm-api',
+    'vortex-api',
     'node',
     'nbind',
     'path',

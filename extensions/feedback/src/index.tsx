@@ -7,8 +7,8 @@ import FeedbackView from './views/FeedbackView';
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
-import { selectors, tooltip, types, util } from 'nmm-api';
 import * as path from 'path';
+import { selectors, tooltip, types, util } from 'vortex-api';
 
 function checkNativeCrashFile() {
   const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');

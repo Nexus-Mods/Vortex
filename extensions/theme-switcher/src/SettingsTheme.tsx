@@ -6,13 +6,13 @@ import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fontManager from 'font-manager';
 import * as fs from 'fs-extra-promise';
-import { actions, ComponentEx, log, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup, InputGroup } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
+import { actions, ComponentEx, log, types } from 'vortex-api';
 
 interface IConnectedProps {
   currentTheme: string;

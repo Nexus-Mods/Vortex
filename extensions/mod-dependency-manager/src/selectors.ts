@@ -1,7 +1,7 @@
 import { IModLookupInfo } from './types/IModLookupInfo';
 
-import { selectors, types, util } from 'nmm-api';
 import { createSelector } from 'reselect';
+import { selectors, types, util } from 'vortex-api';
 
 const allMods = (state: types.IState) => state.persistent.mods;
 

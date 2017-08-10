@@ -23,7 +23,7 @@
     "@types/rimraf": "^0.0.28",
     "bsatk": "file:../../lib/cpp/bsatk",
     "electron-rebuild": "^1.5.7",
-    "nmm-api": "file:../../api",
+    "vortex-api": "file:../../api",
     "rimraf": "^2.6.1",
     "rm-local-modules": "^0.0.2",
     "webpack": "^1.13.2"

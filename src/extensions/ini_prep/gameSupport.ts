@@ -9,42 +9,42 @@ const app = appIn || remote.app;
 const gameSupport = {
   skyrim: {
     iniFiles: [
-      '{mygames}/Skyrim/Skyrim.ini',
-      '{mygames}/Skyrim/SkyrimPrefs.ini',
+      path.join('{mygames}', 'Skyrim', 'Skyrim.ini'),
+      path.join('{mygames}', 'Skyrim', 'SkyrimPrefs.ini'),
     ],
     iniFormat: 'winapi',
   },
   skyrimse: {
     iniFiles: [
-      '{mygames}/Skyrim Special Edition/Skyrim.ini',
-      '{mygames}/Skyrim Special Edition/SkyrimPrefs.ini',
+      path.join('{mygames}', 'Skyrim Special Edition', 'Skyrim.ini'),
+      path.join('{mygames}', 'Skyrim Special Edition', 'SkyrimPrefs.ini'),
     ],
     iniFormat: 'winapi',
   },
   fallout3: {
     iniFiles: [
-      '{mygames}/Fallout3/Fallout.ini',
-      '{mygames}/Fallout3/FalloutPrefs.ini',
+      path.join('{mygames}', 'Fallout3', 'Fallout.ini'),
+      path.join('{mygames}', 'Fallout3', 'FalloutPrefs.ini'),
     ],
     iniFormat: 'winapi',
   },
   fallout4: {
     iniFiles: [
-      '{mygames}/Fallout4/Fallout4.ini',
-      '{mygames}/Fallout4/Fallout4Prefs.ini',
+      path.join('{mygames}', 'Fallout4', 'Fallout4.ini'),
+      path.join('{mygames}', 'Fallout4', 'Fallout4Prefs.ini'),
     ],
     iniFormat: 'winapi',
   },
   falloutnv: {
     iniFiles: [
-      '{mygames}/FalloutNV/Fallout.ini',
-      '{mygames}/FalloutNV/FalloutPrefs.ini',
+      path.join('{mygames}', 'FalloutNV', 'Fallout.ini'),
+      path.join('{mygames}', 'FalloutNV', 'FalloutPrefs.ini'),
     ],
     iniFormat: 'winapi',
   },
   oblivion: {
     iniFiles: [
-      '{mygames}/Oblivion/Oblivion.ini',
+      path.join('{mygames}', 'Oblivion', 'Oblivion.ini'),
     ],
     iniFormat: 'winapi',
   },

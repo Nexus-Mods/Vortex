@@ -1,11 +1,11 @@
 import { addRule } from '../actions/userlist';
 import * as actions from '../actions/userlistEdit';
 
-import { ComponentEx, tooltip } from 'nmm-api';
 import * as React from 'react';
 import { Button, FormControl, Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import { ComponentEx, tooltip } from 'vortex-api';
 
 type RuleType = 'after' | 'requires' | 'incompatible';
 

@@ -1,9 +1,10 @@
+import {IFileEntry as FileEntry, IModEntry as ModEntry, ParseError} from '../types/nmmEntries';
+
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
-import { log, types, util } from 'nmm-api';
 import * as path from 'path';
-import {IFileEntry as FileEntry, IModEntry as ModEntry, ParseError} from '../types/nmmEntries';
+import { log, types, util } from 'vortex-api';
 
 export function parseNMMConfigFile(nmmFilePath: string, mods: any): Promise<any> {
   return fs.readFileAsync(nmmFilePath)

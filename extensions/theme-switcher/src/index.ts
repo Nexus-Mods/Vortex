@@ -4,8 +4,8 @@ import { themePath } from './util';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { types, util } from 'nmm-api';
 import * as path from 'path';
+import { types, util } from 'vortex-api';
 
 function applyTheme(api: types.IExtensionApi, theme: string) {
   if (theme === null) {

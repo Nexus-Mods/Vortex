@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
-import { log, types, util } from 'nmm-api';
 import * as Redux from 'redux';
 import * as request from 'request';
+import { log, types, util } from 'vortex-api';
 
 let steam: util.Steam;
 

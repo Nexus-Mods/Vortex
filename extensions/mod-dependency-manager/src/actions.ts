@@ -1,6 +1,6 @@
 import {IBiDirRule} from './types/IBiDirRule';
 
-import { IReference } from 'modmeta-db';
+import { IReference, RuleType } from 'modmeta-db';
 import { createAction } from 'redux-act';
 
 export const setSource = createAction('SET_MOD_CONNECTION_SOURCE',
@@ -15,9 +15,9 @@ export const setCreateRule = createAction('SET_MOD_CREATE_RULE',
 
 export const closeDialog = createAction('CLOSE_MOD_DEPENDENCY_DIALOG', () => ({}));
 
-export const setType = createAction('SET_MOD_RULE_TYPE');
+export const setType = createAction<RuleType, {}>('SET_MOD_RULE_TYPE');
 
-export const setConflictInfo = createAction('SET_CONFLICT_INFO');
+export const setConflictInfo = createAction<any, {}>('SET_CONFLICT_INFO');
 
 export const setConflictDialog = createAction('SET_CONFLICT_DIALOG',
   (gameId?: string, modId?: string, modRules?: IBiDirRule[]) => ({ gameId, modId, modRules }));

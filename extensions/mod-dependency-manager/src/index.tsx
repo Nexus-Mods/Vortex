@@ -23,10 +23,10 @@ import { enabledModKeys } from './selectors';
 
 import * as Promise from 'bluebird';
 import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
-import { actions, ComponentEx, log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
 import thunkMiddleware from 'redux-thunk';
+import { actions, ComponentEx, log, selectors, types, util } from 'vortex-api';
 
 function makeReference(mod: IModInfo): IReference {
   return {

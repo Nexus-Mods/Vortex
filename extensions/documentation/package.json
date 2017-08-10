@@ -14,7 +14,7 @@
   "devDependencies": {
     "@types/react": "^0.14.55",
     "@types/react-redux": "4.4.35",
-    "nmm-api": "file:../../api",
+    "vortex-api": "file:../../api",
     "webpack": "^1.13.2"
   }
 }

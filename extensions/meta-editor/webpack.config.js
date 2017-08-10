@@ -30,7 +30,7 @@ module.exports = {
         'immutability-helper',
         'modmeta-db',
         'net',
-        'nmm-api',
+        'vortex-api',
         'node',
         'path',
         'react',

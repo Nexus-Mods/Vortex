@@ -1,7 +1,7 @@
-import { actions, ComponentEx, Icon, selectors, tooltip, types, util } from 'nmm-api';
 import * as React from 'react';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import { actions, ComponentEx, Icon, selectors, tooltip, types, util } from 'vortex-api';
 
 export interface IBaseProps {
   mods: types.IMod[];

@@ -1,4 +1,4 @@
-import { types } from 'nmm-api';
+import { types } from 'vortex-api';
 
 import * as React from 'react';
 import * as Select from 'react-select';

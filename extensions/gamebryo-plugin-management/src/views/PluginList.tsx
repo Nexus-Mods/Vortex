@@ -17,13 +17,13 @@ import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import * as update from 'immutability-helper';
 import {SimpleMessage} from 'loot';
-import {ComponentEx, FlexLayout, IconBar, ITableRowAction, MainPage,
-        selectors, Table, TableTextFilter, ToolbarIcon,
-        types, util} from 'nmm-api';
 import * as React from 'react';
 import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
 import {translate} from 'react-i18next';
 import {connect} from 'react-redux';
+import {ComponentEx, FlexLayout, IconBar, ITableRowAction, MainPage,
+        selectors, Table, TableTextFilter, ToolbarIcon,
+        types, util} from 'vortex-api';
 
 interface IAttributeStateMap {
   [ attributeId: string ]: types.IAttributeState;

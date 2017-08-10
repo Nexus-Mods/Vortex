@@ -5,8 +5,8 @@ import TraceImport from './TraceImport';
 import { addMods, createProfile } from './vortexImports';
 
 import * as Promise from 'bluebird';
-import { actions, selectors, types } from 'nmm-api';
 import { generate as shortid } from 'shortid';
+import { actions, selectors, types } from 'vortex-api';
 
 function importMods(api: types.IExtensionApi,
                     trace: TraceImport,

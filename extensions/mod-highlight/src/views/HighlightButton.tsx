@@ -1,9 +1,8 @@
-import { actions, ComponentEx, Icon, selectors, tooltip, types, util } from 'nmm-api';
 import * as React from 'react';
+import { Button, ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
-
-import { Button, ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
+import { actions, ComponentEx, Icon, selectors, tooltip, types, util } from 'vortex-api';
 
 const cssHighlightList: string[] = [
   'highlight-1',

@@ -34,7 +34,7 @@ module.exports = {
     'lodash',
     'nbind',
     'net',
-    'nmm-api',
+    'vortex-api',
     'node',
     'path',
     'react',

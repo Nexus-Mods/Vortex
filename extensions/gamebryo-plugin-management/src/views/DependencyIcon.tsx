@@ -4,7 +4,7 @@ import { setCreateRule, setSource, setTarget } from '../actions/userlistEdit';
 import { ILOOTPlugin } from '../types/ILOOTList';
 import { IPluginCombined } from '../types/IPlugins';
 
-import { ComponentEx, selectors, tooltip } from 'nmm-api';
+import { ComponentEx, selectors, tooltip } from 'vortex-api';
 
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';

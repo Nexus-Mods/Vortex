@@ -1,9 +1,9 @@
 import { TranslationFunction } from 'i18next';
-import { ComponentEx } from 'nmm-api';
 import * as React from 'react';
 import { Button, Col, ControlLabel, Form, FormControl, FormGroup,
   Grid, OverlayTrigger, Popover, Row } from 'react-bootstrap';
 import { ChromePicker, Color } from 'react-color';
+import { ComponentEx } from 'vortex-api';
 
 interface IColor {
   r: number;

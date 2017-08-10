@@ -9,8 +9,8 @@ import SavegameList from './views/SavegameList';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { selectors, types, util } from 'nmm-api';
 import IniParser, {IniFile, WinapiFormat} from 'parse-ini';
+import { selectors, types, util } from 'vortex-api';
 
 const parser = new IniParser(new WinapiFormat());
 let fsWatcher: fs.FSWatcher;

@@ -1,6 +1,6 @@
 import { IPluginCombined } from '../types/IPlugins';
 
-import { tooltip } from 'nmm-api';
+import { tooltip } from 'vortex-api';
 
 import * as React from 'react';
 

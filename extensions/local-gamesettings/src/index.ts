@@ -5,8 +5,8 @@ import {
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { log, selectors, types, util } from 'nmm-api';
 import * as path from 'path';
+import { log, selectors, types, util } from 'vortex-api';
 
 function copyGameSettings(sourcePath: string, destinationPath: string,
                           files: string[],

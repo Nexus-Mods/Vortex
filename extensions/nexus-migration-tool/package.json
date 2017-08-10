@@ -38,7 +38,7 @@
     "immutability-helper": "^2.2.2",
     "json-loader": "^0.5.4",
     "modmeta-db": "file:../../external/modmeta-db",
-    "nmm-api": "file:../../api",
+    "vortex-api": "file:../../api",
     "opn": "^5.1.0",
     "react": "^15.3.2",
     "react-bootstrap": "^0.30.6",

@@ -7,8 +7,8 @@ import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import {GameId, LootDatabase} from 'loot';
-import {log, selectors, types} from 'nmm-api';
 import * as path from 'path';
+import {log, selectors, types} from 'vortex-api';
 
 class LootInterface {
   private mLoot: LootDatabase;

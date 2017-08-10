@@ -1,4 +1,4 @@
-import { types, util } from 'nmm-api';
+import { types, util } from 'vortex-api';
 
 import * as actions from '../actions/userlist';
 

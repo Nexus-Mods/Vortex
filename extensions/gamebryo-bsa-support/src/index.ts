@@ -1,11 +1,11 @@
 import * as Promise from 'bluebird';
 import loadBSA, {BSAFile, BSAFolder, BSArchive} from 'bsatk';
 import * as fs from 'fs';
-import { types } from 'nmm-api';
 import * as path from 'path';
 import * as rimraf from 'rimraf';
 import { PassThrough } from 'stream';
 import {dir as tmpDir} from 'tmp';
+import { types } from 'vortex-api';
 
 const loadBSAasync = Promise.promisify(loadBSA);
 
@@ -88,8 +88,7 @@ class BSAHandler implements types.IArchiveHandler {
     }
 
     const res = this.findSubFolders(folder, filePath[offset]).map(
-      (subFolder: BSAFolder) => this.getFileImpl(subFolder, filePath, offset + 1)
-    );
+      (subFolder: BSAFolder) => this.getFileImpl(subFolder, filePath, offset + 1));
     return res.find(item => item !== undefined);
   }
 
@@ -99,17 +98,16 @@ class BSAHandler implements types.IArchiveHandler {
     }
 
     const res = this.findSubFolders(folder, archPath[offset]).map(
-      (subFolder: BSAFolder) => this.readDirImpl(subFolder, archPath, offset + 1)
-    );
+      (subFolder: BSAFolder) => this.readDirImpl(subFolder, archPath, offset + 1));
     return [].concat.apply([], res);
   }
 
   // find subfolders with the specified name (bsa seems to support multiple
   // occurences of the same folder name)
   private findSubFolders(folder: BSAFolder, name: string): BSAFolder[] {
-    let res: BSAFolder[] = [];
+    const res: BSAFolder[] = [];
     for (let idx = 0; idx < folder.numSubFolders; ++idx) {
-      let iter = folder.getSubFolder(idx);
+      const iter = folder.getSubFolder(idx);
       if (iter.name === name) {
         res.push(iter);
       }
@@ -125,7 +123,7 @@ class BSAHandler implements types.IArchiveHandler {
   }
 
   private getFolders(parent: BSAFolder): BSAFolder[] {
-    let res: BSAFolder[] = [];
+    const res: BSAFolder[] = [];
     for (let idx = 0; idx < parent.numSubFolders; ++idx) {
       res.push(parent.getSubFolder(idx));
     }
@@ -133,7 +131,7 @@ class BSAHandler implements types.IArchiveHandler {
   }
 
   private getFiles(parent: BSAFolder): BSAFile[] {
-    let res: BSAFile[] = [];
+    const res: BSAFile[] = [];
     for (let idx = 0; idx < parent.numFiles; ++idx) {
       res.push(parent.getFile(idx));
     }

@@ -28,7 +28,7 @@ module.exports = {
     'lodash',
 	'modmeta-db',
     'net',
-    'nmm-api',
+    'vortex-api',
     'node',
     'nbind',
     'path',

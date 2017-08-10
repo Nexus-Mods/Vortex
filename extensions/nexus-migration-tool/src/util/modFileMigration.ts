@@ -1,8 +1,9 @@
+import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
+
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { log } from 'nmm-api';
 import * as path from 'path';
-import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
+import { log } from 'vortex-api';
 
 /**
  * copy or move a list of mod archives

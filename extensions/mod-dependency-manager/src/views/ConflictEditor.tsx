@@ -7,12 +7,12 @@ import renderReference from '../util/renderReference';
 import { setConflictDialog } from '../actions';
 
 import { IReference, IRule } from 'modmeta-db';
-import { actions as nmmActions, ComponentEx, tooltip, types } from 'nmm-api';
 import * as React from 'react';
 import { Button, FormControl, ListGroup, ListGroupItem,
          Modal, OverlayTrigger, Popover } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import { actions as nmmActions, ComponentEx, tooltip, types } from 'vortex-api';
 
 interface IConnectedProps {
   gameId: string;

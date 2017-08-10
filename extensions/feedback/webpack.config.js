@@ -28,7 +28,7 @@ module.exports = {
     'immutability-helper',
     'path',
     'net',
-    'nmm-api',
+    'vortex-api',
     'node',
     'nbind',
     'react',

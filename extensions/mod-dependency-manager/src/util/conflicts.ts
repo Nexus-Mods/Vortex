@@ -5,8 +5,8 @@ import isBlacklisted from './blacklist';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { types, util } from 'nmm-api';
 import * as path from 'path';
+import { types, util } from 'vortex-api';
 
 interface IFileMap {
   [filePath: string]: types.IMod[];

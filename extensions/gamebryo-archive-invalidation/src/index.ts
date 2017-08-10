@@ -3,8 +3,8 @@ import { fileFilter, isSupported, targetAge } from './util/gameSupport';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { selectors, types, util } from 'nmm-api';
 import * as path from 'path';
+import { selectors, types, util } from 'vortex-api';
 
 function testArchivesAge(store: Redux.Store<types.IState>) {
   const gameId = selectors.activeGameId(store.getState());

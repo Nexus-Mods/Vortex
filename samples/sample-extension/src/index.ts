@@ -1,4 +1,4 @@
-import { log, types } from 'nmm-api';
+import { log, types } from 'vortex-api';
 
 function main(context: types.IExtensionContext) {
   context.registerAction('application-icons', 100, 'hand-peace-o', {}, 'Sample', () => {

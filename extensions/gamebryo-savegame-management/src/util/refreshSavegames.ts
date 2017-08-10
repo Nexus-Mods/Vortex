@@ -1,6 +1,6 @@
 import { ISavegame } from '../types/ISavegame';
 
-import { log } from 'nmm-api';
+import { log } from 'vortex-api';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';

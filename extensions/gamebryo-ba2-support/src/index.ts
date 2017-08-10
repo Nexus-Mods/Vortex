@@ -1,6 +1,6 @@
 import loadBA2, {BA2Archive} from 'ba2tk';
 import * as Promise from 'bluebird';
-import { types, util } from 'nmm-api';
+import { types, util } from 'vortex-api';
 
 const loadBA2async = Promise.promisify(loadBA2);
 
@@ -19,14 +19,14 @@ class BA2Handler implements types.IArchiveHandler {
       if (!query.endsWith('\\')) {
         query = query + '\\';
       }
-      let files: string[] = [];
-      let subDirs = new Set<string>();
+      const files: string[] = [];
+      const subDirs = new Set<string>();
       this.mBA2.fileList.forEach(fileName => {
           if (!fileName.toLowerCase().startsWith(query)) {
             return;
           }
 
-          let nextBS = fileName.indexOf('\\', query.length);
+          const nextBS = fileName.indexOf('\\', query.length);
           if (nextBS === -1) {
             files.push(fileName.substr(query.length));
           } else {

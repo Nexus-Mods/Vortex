@@ -2,7 +2,7 @@ import { setShowMetaEditor } from '../actions';
 
 import { ComponentEx, FormFeedbackAwesome, Icon,
          log, selectors, ToolbarIcon, tooltip,
-         util } from 'nmm-api';
+         util } from 'vortex-api';
 
 import * as path from 'path';
 import * as React from 'react';

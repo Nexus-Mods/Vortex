@@ -2,9 +2,9 @@ import { IModLookupInfo } from '../types/IModLookupInfo';
 
 import * as minimatch from 'minimatch';
 import { IReference } from 'modmeta-db';
-import { types } from 'nmm-api';
 import * as path from 'path';
 import { satisfies, valid } from 'semvish';
+import { types } from 'vortex-api';
 
 function matchReferenceLookup(reference: IReference, mod: IModLookupInfo) {
   if ((reference.fileMD5 !== undefined) &&

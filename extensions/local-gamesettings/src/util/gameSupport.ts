@@ -1,6 +1,6 @@
 import { app as appIn, remote } from 'electron';
-import { types } from 'nmm-api';
 import * as path from 'path';
+import { types } from 'vortex-api';
 
 const app = appIn || remote.app;
 

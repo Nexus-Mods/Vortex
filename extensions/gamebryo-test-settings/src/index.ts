@@ -3,9 +3,9 @@ import missingOblivionFont, { oblivionDefaultFonts } from './util/missingOblivio
 import missingSkyrimFonts from './util/missingSkyrimFonts';
 
 import * as Promise from 'bluebird';
-import { selectors, types, util } from 'nmm-api';
 import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
 import * as path from 'path';
+import { selectors, types, util } from 'vortex-api';
 
 const parser = new IniParser(new WinapiFormat());
 

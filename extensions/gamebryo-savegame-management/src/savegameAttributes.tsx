@@ -3,8 +3,8 @@ import CharacterFilter from './util/CharacterFilter';
 import PluginList from './views/PluginList';
 import ScreenshotCanvas from './views/ScreenshotCanvas';
 
-import { TableDateTimeFilter, TableNumericFilter, TableTextFilter, types, util } from 'nmm-api';
 import * as React from 'react';
+import { TableDateTimeFilter, TableNumericFilter, TableTextFilter, types, util } from 'vortex-api';
 
 export const SAVEGAME_ID: types.ITableAttribute = {
   id: 'id',

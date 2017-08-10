@@ -1,7 +1,7 @@
 import * as actions from '../actions/session';
 
 import * as update from 'immutability-helper';
-import { types, util } from 'nmm-api';
+import { types, util } from 'vortex-api';
 
 /**
  * reducer for changes to the feedback files

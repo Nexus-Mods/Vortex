@@ -4,12 +4,12 @@ import { closeDialog, setType } from '../actions';
 
 import * as minimatch from 'minimatch';
 import { IReference, IRule, RuleType } from 'modmeta-db';
-import { actions, ComponentEx, FormFeedbackAwesome, More, types, util } from 'nmm-api';
 import * as React from 'react';
 import { Button, Col, ControlLabel, Form, FormControl, FormGroup, Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as semver from 'semver';
+import { actions, ComponentEx, FormFeedbackAwesome, More, types, util } from 'vortex-api';
 
 interface IDialog {
   gameId: string;

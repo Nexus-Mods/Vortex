@@ -1,9 +1,9 @@
 import Line from './Line';
 
 import * as _ from 'lodash';
-import { PureComponentEx, util } from 'nmm-api';
 import * as React from 'react';
 import { connect } from 'react-redux';
+import { PureComponentEx, util } from 'vortex-api';
 
 interface ICoord {
   x: number;

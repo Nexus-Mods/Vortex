@@ -29,7 +29,7 @@
   "dependencies": {
     "font-manager": "^0.2.2",
     "fs-extra-promise": "^1.0.1",
-    "nmm-api": "file:../../api",
+    "vortex-api": "file:../../api",
     "react-bootstrap": "^0.31.0",
     "react-color": "^2.12.1",
     "redux": "^3.6.0"

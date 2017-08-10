@@ -1,8 +1,9 @@
+import { IFileEntry, IModEntry } from '../types/nmmEntries';
+
 import * as Promise from 'bluebird';
-import { actions, log, types } from 'nmm-api';
 import * as path from 'path';
 import * as React from 'react';
-import { IFileEntry, IModEntry } from '../types/nmmEntries';
+import { actions, log, types } from 'vortex-api';
 
 interface IVortexMod {
   [modId: string]: types.IMod;

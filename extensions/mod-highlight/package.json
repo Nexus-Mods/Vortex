@@ -15,7 +15,7 @@
     "@types/react": "^0.14.55",
     "@types/react-bootstrap": "^0.0.37",
     "@types/react-redux": "4.4.35",
-    "nmm-api": "file:../../api",
+    "vortex-api": "file:../../api",
     "react-bootstrap": "^0.30.6",
     "webpack": "^1.13.2"
   }

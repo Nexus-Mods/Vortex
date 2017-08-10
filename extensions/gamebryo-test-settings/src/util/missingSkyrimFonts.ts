@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { types, util } from 'nmm-api';
 import * as path from 'path';
+import { types, util } from 'vortex-api';
 
 function missingSkyrimFonts(state: types.IState, skyrimDefaultFonts: Set<string>,
                             gameId: string): Promise<string[]> {

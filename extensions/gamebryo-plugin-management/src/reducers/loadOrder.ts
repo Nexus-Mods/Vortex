@@ -1,7 +1,7 @@
 import * as actions from '../actions/loadOrder';
 import {ILoadOrder} from '../types/ILoadOrder';
 
-import {types, util} from 'nmm-api';
+import {types, util} from 'vortex-api';
 
 interface ILoadOrderMap {
   [name: string]: ILoadOrder;

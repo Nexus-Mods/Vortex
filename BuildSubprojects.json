@@ -64,7 +64,7 @@
       "type": "build-copy",
       "name": "gamebryo-plugin-management",
       "path": "extensions/gamebryo-plugin-management",
-      "removeModules": ["nmm-api", "nexus-api"],
+      "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-plugin-management"
     }
@@ -73,7 +73,7 @@
       "type": "build-copy",
       "name": "gamebryo-savegame-management",
       "path": "extensions/gamebryo-savegame-management",
-      "removeModules": ["nmm-api", "nexus-api"],
+      "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-savegame-management"
     }
@@ -82,7 +82,7 @@
       "type": "build-copy",
       "name": "gamebryo-test-settings",
       "path": "extensions/gamebryo-test-settings",
-      "removeModules": ["nmm-api", "nexus-api"],
+      "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-test-settings"
     }
@@ -91,7 +91,7 @@
       "type": "build-copy",
       "name": "gamebryo-bsa-support",
       "path": "extensions/gamebryo-bsa-support",
-      "removeModules": ["nmm-api", "nexus-api", "bsatk"],
+      "removeModules": ["vortex-api", "nexus-api", "bsatk"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-bsa-support"
     }
@@ -100,7 +100,7 @@
       "type": "build-copy",
       "name": "gamebryo-ba2-support",
       "path": "extensions/gamebryo-ba2-support",
-      "removeModules": ["nmm-api", "nexus-api", "ba2tk"],
+      "removeModules": ["vortex-api", "nexus-api", "ba2tk"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-ba2-support"
     }
@@ -109,7 +109,7 @@
       "type": "build-copy",
       "name": "local-gamesettings",
       "path": "extensions/local-gamesettings",
-      "removeModules": ["nmm-api", "nexus-api"],
+      "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/local-gamesettings"
     }
@@ -118,7 +118,7 @@
       "type": "build-copy",
       "name": "gamebryo-archive-invalidation",
       "path": "extensions/gamebryo-archive-invalidation",
-      "removeModules": ["nmm-api", "nexus-api"],
+      "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-archive-invalidation"
     }
@@ -127,7 +127,7 @@
       "type": "build-copy",
       "name": "mod-dependency-manager",
       "path": "extensions/mod-dependency-manager",
-      "removeModules": ["nmm-api", "nexus-api"],
+      "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.scss", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mod-dependency-manager"
     }
@@ -136,7 +136,7 @@
       "type": "build-copy",
       "name": "meta-editor",
       "path": "extensions/meta-editor",
-      "removeModules": ["nmm-api", "nexus-api"],
+      "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/meta-editor"
     }
@@ -145,7 +145,7 @@
       "type": "build-copy",
       "name": "nexus-migration-tool",
       "path": "extensions/nexus-migration-tool",
-      "removeModules": ["nmm-api"],
+      "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/nexus-migration-tool"
     }
@@ -154,7 +154,7 @@
       "type": "build-copy",
       "name": "feedback",
       "path": "extensions/feedback",
-      "removeModules": ["nmm-api"],
+      "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/feedback"
     }
@@ -163,7 +163,7 @@
       "type": "build-copy",
       "name": "mod-highlight",
       "path": "extensions/mod-highlight",
-      "removeModules": ["nmm-api"],
+      "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mod-highlight"
     }
@@ -172,7 +172,7 @@
       "type": "build-copy",
       "name": "theme-switcher",
       "path": "extensions/theme-switcher",
-      "removeModules": ["nmm-api"],
+      "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/theme-switcher"
     }
@@ -181,7 +181,7 @@
       "type": "build-copy",
       "name": "gameinfo-steam",
       "path": "extensions/gameinfo-steam",
-      "removeModules": ["nmm-api"],
+      "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gameinfo-steam"
     }

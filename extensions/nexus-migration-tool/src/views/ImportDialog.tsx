@@ -10,7 +10,6 @@ import {
   FILENAME, FILES, LOCAL, MOD_ID, MOD_NAME, MOD_VERSION,
 } from '../importedModAttributes';
 
-import { ComponentEx, Icon, selectors, Steps, Table, tooltip, types } from 'nmm-api';
 import * as opn from 'opn';
 import * as path from 'path';
 import * as React from 'react';
@@ -20,6 +19,7 @@ import { Alert, Button, DropdownButton, InputGroup, MenuItem,
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
+import { ComponentEx, Icon, selectors, Steps, Table, tooltip, types } from 'vortex-api';
 
 type Step = 'start' | 'setup' | 'working' | 'review';
 

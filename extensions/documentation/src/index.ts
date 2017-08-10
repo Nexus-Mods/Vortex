@@ -1,6 +1,6 @@
 import DocumentationPage from './DocumentationPage';
 
-import { types } from 'nmm-api';
+import { types } from 'vortex-api';
 
 function init(context: types.IExtensionContext) {
 

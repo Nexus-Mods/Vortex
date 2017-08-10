@@ -2558,10 +2558,10 @@
     "version": "0.2.1",
     "repository": ""
   },
-  "nmm-api@0.0.1": {
+  "vortex-api@0.0.1": {
     "licenses": "GPL-3.0",
     "publisher": "Black Tree Gaming Ltd",
-    "name": "nmm-api",
+    "name": "vortex-api",
     "version": "0.0.1",
     "repository": ""
   },

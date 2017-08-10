@@ -44,7 +44,7 @@
     "iconv-lite": "^0.4.15",
     "immutability-helper": "^2.2.2",
     "json-loader": "^0.5.4",
-    "nmm-api": "file:../../api",
+    "vortex-api": "file:../../api",
     "parse-ini": "file:../../lib/js/parse-ini",
     "react": "^15.3.2",
     "react-bootstrap": "^0.30.6",

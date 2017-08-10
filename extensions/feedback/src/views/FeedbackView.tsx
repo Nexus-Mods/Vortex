@@ -5,10 +5,6 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
-import {
-  actions, BinaryToggle, ComponentEx, Dropzone, FlexLayout, Icon, IconBar, ITableRowAction,
-  log, MainPage, Table, tooltip, types, util,
-} from 'nmm-api';
 import * as os from 'os';
 import * as path from 'path';
 import * as React from 'react';
@@ -18,6 +14,10 @@ import { Col, ControlLabel, DropdownButton, FormGroup, Grid,
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import { dir as tmpDir, file as tmpFile } from 'tmp';
+import {
+  actions, BinaryToggle, ComponentEx, Dropzone, FlexLayout, Icon, IconBar, ITableRowAction,
+  log, MainPage, Table, tooltip, types, util,
+} from 'vortex-api';
 
 type ControlMode = 'urls' | 'files';
 

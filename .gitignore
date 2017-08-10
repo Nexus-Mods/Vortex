@@ -15,7 +15,7 @@ auto.gypi
 auto-top.gypi
 
 # temporary fonts directory used during font-svg generation
-fonts/
+/fonts/
 
 # Build results
 [Dd]ebug/
