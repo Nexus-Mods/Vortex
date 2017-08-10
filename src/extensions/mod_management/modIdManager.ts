@@ -3,10 +3,10 @@ const invalidOSXChars: string[] = [ '/'];
 const invalidLinuxChars: string[] = [ '/' ];
 
 export function deriveModInstallName(archiveName: string, info: any) {
-  return MaskFSInvalidChars(archiveName, process.platform);
+  return maskFSInvalidChars(archiveName, process.platform);
 }
 
-function MaskFSInvalidChars(archiveName: string, OS: string) {
+function maskFSInvalidChars(archiveName: string, OS: string) {
   let invalidChars: string[] = [];
   if (OS === 'linux') {
     invalidChars = invalidLinuxChars;
