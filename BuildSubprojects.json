@@ -30,8 +30,8 @@
       "type": "build-copy",
       "condition": "buildType === 'out'",
       "name": "modinstaller (for development)",
-      "path": "lib/csharp",
-      "sources": ["**/*.cs", "**/*.csproj", "src/Component.sln"],
+      "path": "lib/csharp/fomod-installer",
+      "sources": ["**/*.cs", "**/*.csproj", "src/FomodInstaller.sln"],
       "build": "buildDev",
       "copyTo": "{BUILD_DIR}/lib/modinstaller"
     },
@@ -39,8 +39,8 @@
       "type": "build-copy",
       "condition": "buildType !== 'out'",
       "name": "modinstaller (for distribution)",
-      "path": "lib/csharp",
-      "sources": ["**/*.cs", "**/*.csproj", "src/Component.sln"],
+      "path": "lib/csharp/fomod-installer",
+      "sources": ["**/*.cs", "**/*.csproj", "src/FomodInstaller.sln"],
       "build": "build",
       "copyTo": "{BUILD_DIR}/lib/modinstaller"
     }

@@ -44,7 +44,7 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
     testSupportedLib = edge.func({
       assemblyFile: path.resolve(dirname(), '..', '..', 'lib', 'ModInstaller',
                                  'ModInstaller.dll'),
-      typeName: 'Components.ModInstaller.InstallerProxy',
+      typeName: 'FomodInstaller.ModInstaller.InstallerProxy',
       methodName: 'TestSupported',
     });
   }
@@ -71,7 +71,7 @@ function install(files: string[], scriptPath: string,
     installLib = edge.func({
       assemblyFile: path.resolve(dirname(), '..', '..', 'lib', 'ModInstaller',
                                  'ModInstaller.dll'),
-      typeName: 'Components.ModInstaller.InstallerProxy',
+      typeName: 'FomodInstaller.ModInstaller.InstallerProxy',
       methodName: 'Install',
     });
   }
