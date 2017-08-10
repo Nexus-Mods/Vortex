@@ -36,6 +36,10 @@ function timedRequire(orig) {
 }
 
 export default function() {
+  if (process.env.NODE_ENV !== 'development') {
+    return () => undefined;
+  }
+
   let start = new Date().getTime();
   const orig = Module.prototype.require;
   Module.prototype.require = timedRequire(orig);
