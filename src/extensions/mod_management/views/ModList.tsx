@@ -154,6 +154,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         icon: 'remove',
         title: 'Remove',
         action: this.removeSelected,
+        hotKey: { code: 46 },
       },
     ];
 

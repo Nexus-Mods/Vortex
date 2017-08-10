@@ -34,6 +34,7 @@ export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: a
 export interface ITableRowAction extends IActionDefinition {
   singleRowAction?: boolean;
   multiRowAction?: boolean;
+  hotKey?: { code: number, shift?: boolean, alt?: boolean, ctrl?: boolean };
 }
 
 export interface IBaseProps {
@@ -383,6 +384,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private handleKeyDown = (evt: React.KeyboardEvent<any>) => {
     const { multiSelect } = this.props;
     const { lastSelected }  = this.state;
+
     if (evt.target !== this.mScrollRef) {
       return;
     }
@@ -419,7 +421,24 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       if (this.mRowRefs[newItem] !== undefined) {
         this.scrollToItem(this.mRowRefs[newItem], Math.abs(offset) > 1);
       }
+    } else {
+      const action = this.props.actions.find(iter =>
+        this.matchHotKey(iter, evt.keyCode, evt.shiftKey, evt.altKey, evt.ctrlKey));
+      if (action !== undefined) {
+        evt.preventDefault();
+        const { rowState } = this.state;
+        action.action(Object.keys(rowState).filter(id => rowState[id].selected));
+      }
     }
+  }
+
+  private matchHotKey(action: ITableRowAction, code: number,
+                      shift: boolean, alt: boolean, ctrl: boolean): boolean {
+    return (action.hotKey !== undefined)
+      && (action.hotKey.code === code)
+      && (action.hotKey.shift || false === shift)
+      && (action.hotKey.alt || false === alt)
+      && (action.hotKey.ctrl || false === ctrl);
   }
 
   private refreshSorted(props: IProps) {

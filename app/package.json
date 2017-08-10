@@ -37,7 +37,7 @@
     "modmeta-db": "file:../external/modmeta-db",
     "nbind": "^0.3.6",
     "nexus-api": "file:../lib/js/nexus-api",
-    "nmm-api": "file:../api",
+    "vortex-api": "file:../api",
     "node-7z": "Nexus-Mods/node-7z",
     "node-ipc": "^9.0.1",
     "node-rest-client": "^3.1.0",
