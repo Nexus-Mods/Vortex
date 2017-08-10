@@ -79,7 +79,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     return (
       <MainPage>
         <MainPage.Body>
-          <ListGroup style={{ overflowY: 'auto', height: '100%' }}>
+          <ListGroup className='profile-list'>
             {sortedProfiles.map((profileId) => this.renderProfile(profileId, supportedFeatures))}
             {this.renderAddOrEdit(edit)}
           </ListGroup>

@@ -1482,6 +1482,12 @@ a[role=menuitem] svg {
   margin-right: 3px;
 }
 
+.profile-list {
+  overflow-y: auto;
+  height: 100%;
+  margin-right: $half-gutter;
+}
+
 // /profile page
 ////////////////
 
@@ -2026,6 +2032,7 @@ a[role=menuitem] svg {
   height: 100%;
   display: flex;
   flex-direction: column;
+  margin-right: $half-gutter;
 }
 
 #settings-tab > .tab-content {

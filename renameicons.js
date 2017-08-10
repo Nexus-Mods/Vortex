@@ -63,6 +63,27 @@ function transformAttributes(attrs) {
   return res;
 }
 
+function transformPath(path) {
+  const res = Object.assign({}, path);
+  if (res.$.fill === 'currentColor') {
+    delete res.$.fill;
+  } else if (res.$['data-color']) {
+    delete res.$['data-color'];
+  }
+  return res;
+}
+
+function transformG(g) {
+  const res = Object.assign({}, g);
+  if (res.$.fill === 'currentColor') {
+    delete res.$.fill;
+  }
+  if (res.path) {
+    res.path = res.path.map(transformPath);
+  }
+  return res;
+}
+
 const data = fs.readFileSync('fonts/myicons/svg/img/nc-icons.svg');
 
 const parsed = xml2js.parseString(data.toString(), (err, result) => {
@@ -70,9 +91,14 @@ const parsed = xml2js.parseString(data.toString(), (err, result) => {
     console.error('failed to parse input svg');
     return;
   }
-  result.svg.symbol = result.svg.symbol.map(sym => Object.assign(_.omit(sym, ['title']), {
-    $: transformAttributes(sym.$),
-  }));
+  result.svg.symbol = result.svg.symbol.map(sym => {
+    const res = Object.assign(_.omit(sym, ['title']), {
+      $: transformAttributes(sym.$),
+    });
+    res.g[0].g = res.g[0].g.map(transformG);
+
+    return res;
+  });
   const builder = new xml2js.Builder();
   fs.writeFileSync('assets/fonts/vortex.svg', builder.buildObject(result));
   // console.log('res', require('util').inspect(result, { depth: 1000 }));
