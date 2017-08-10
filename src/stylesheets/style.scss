@@ -1268,8 +1268,6 @@ a[role=menuitem] svg {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 5px;
-  margin: 5px;
   .popover {
     max-width: 600px;
   }
@@ -1382,7 +1380,6 @@ a[role=menuitem] svg {
 
 .discovery-progress-container {
   display: flex;
-  padding: $half-gutter;
 }
 
 .discovery-progress-0 {
@@ -2158,6 +2155,22 @@ a[role=menuitem] svg {
   &.layout-fill {
     width: 100%;
     height: 100%;
+  }
+}
+
+.layout-container-row {
+  >.layout-flex {
+    >.layout-flex-inner {
+      display: inline;
+    }
+  }
+}
+
+.layout-container-column {
+  >.layout-flex {
+    >.layout-flex-inner {
+      display: inline;
+    }
   }
 }
 

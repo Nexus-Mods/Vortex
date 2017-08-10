@@ -6,6 +6,7 @@ function appendClasses(old: string, add: string[]): string {
   return old ? old + ' ' + addStr : addStr;
 }
 
+// minimize but fit the content
 const Fixed = (props: React.HTMLAttributes<HTMLDivElement>) => {
   return (
     <div
@@ -17,19 +18,15 @@ const Fixed = (props: React.HTMLAttributes<HTMLDivElement>) => {
   );
 };
 
+// uses all available space for the contents but no more
 const Flex = (props: React.HTMLAttributes<HTMLDivElement>) => {
-  const fullStyle = {
-    position: 'absolute' as 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    ...props.style,
-  };
   return (
     <div className='layout-flex'>
-      <div {..._.omit(props, ['style'])} style={fullStyle}>
-      { props.children }
+      <div
+        className={appendClasses(props.className, ['layout-flex-inner'])}
+        {..._.omit(props, ['className'])}
+      >
+        { props.children }
       </div>
     </div>
   );
@@ -53,7 +50,7 @@ class FlexLayout extends React.PureComponent<IProps, {}> {
 
     const fullStyle = { ...style, flexDirection: type };
 
-    const classes = ['layout-container'];
+    const classes = ['layout-container', `layout-container-${type}`];
     if (fill !== false) {
       classes.push('layout-fill');
     }

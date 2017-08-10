@@ -5,6 +5,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import Icon from '../../../views/Icon';
+import MainPage from '../../../views/MainPage';
 
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -76,10 +77,14 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const supportedFeatures = features.filter((feature) => feature.supported());
 
     return (
-      <ListGroup style={{ overflowY: 'auto', height: '100%' }}>
-      { sortedProfiles.map((profileId) => this.renderProfile(profileId, supportedFeatures)) }
-      { this.renderAddOrEdit(edit) }
-      </ListGroup>
+      <MainPage>
+        <MainPage.Body>
+          <ListGroup style={{ overflowY: 'auto', height: '100%' }}>
+            {sortedProfiles.map((profileId) => this.renderProfile(profileId, supportedFeatures))}
+            {this.renderAddOrEdit(edit)}
+          </ListGroup>
+        </MainPage.Body>
+      </MainPage>
     );
   }
 

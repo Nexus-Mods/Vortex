@@ -3,6 +3,8 @@ import { PropsCallback } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
 
+import MainPage from './MainPage';
+
 import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
 import * as Redux from 'redux';
@@ -44,11 +46,11 @@ class Settings extends ComponentEx<IProps, {}> {
 
     const combined = objects.reduce((prev: ICombinedSettingsPage[], current: ISettingsPage) => {
       const result = prev.slice();
-      const page = prev.find((ele: ICombinedSettingsPage) => ele.title === current.title);
-      if (page === undefined) {
+      const existingPage = prev.find((ele: ICombinedSettingsPage) => ele.title === current.title);
+      if (existingPage === undefined) {
         result.push({ title: current.title, elements: [ current ] });
       } else {
-        page.elements.push(current);
+        existingPage.elements.push(current);
       }
       return result;
     }, []);
@@ -57,9 +59,13 @@ class Settings extends ComponentEx<IProps, {}> {
       ? settingsPage : combined[0].title;
 
     return (
-      <Tabs id='settings-tab' activeKey={page} onSelect={this.setCurrentPage}>
-        { combined.map(this.renderTab) }
-      </Tabs>
+      <MainPage>
+        <MainPage.Body>
+          <Tabs id='settings-tab' activeKey={page} onSelect={this.setCurrentPage}>
+            {combined.map(this.renderTab)}
+          </Tabs>
+        </MainPage.Body>
+      </MainPage>
     );
   }
 

@@ -182,7 +182,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     const { anonymous, sending } = this.state;
     return (
       <FlexLayout.Fixed>
-        <FlexLayout type='row' style={{ position: 'static' }}>
+        <FlexLayout fill={false} type='row' style={{ position: 'static' }}>
           <FlexLayout.Flex>
             <FormGroup>
               <ControlLabel>{t('Attached Files')}</ControlLabel>

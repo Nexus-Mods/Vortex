@@ -182,8 +182,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         </MainPage.Header>
         <MainPage.Body>
           <FlexLayout type='column'>
-            <FlexLayout.Flex className='gamepicker-body'>
-              <div ref={this.setScrollRef}>
+            <FlexLayout.Flex>
+              <div ref={this.setScrollRef} className='gamepicker-body'>
                 <span style={{ display: 'table' }}>
                   <h3>{t('Managed')}</h3>
                   {this.renderGames(managedGameList, 'managed')}

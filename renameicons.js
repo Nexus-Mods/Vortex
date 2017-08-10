@@ -40,7 +40,7 @@ const nameMap = {
   'square-download': 'download',
   'alert-circle-que': 'circle-question',
   'alert-circle-exc': 'circle-exclamation',
-  'alert-circle-i': 'circle-question',
+  'alert-circle-i': 'circle-info',
   'alert-square-exc': 'square-exclamation',
   'alert-square-i': 'square-info',
   'bold-remove': 'cross',
