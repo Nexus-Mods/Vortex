@@ -141,8 +141,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private settingsPage: IMainPage;
   private nextState: IMainWindowState;
 
-  private pageHeader: JSX.Element = null;
-  private pageOverlay: JSX.Element = null;
   private menuLayer: JSX.Element = null;
 
   private overlayRef: HTMLElement = null;
@@ -353,9 +351,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.overlayRef = ref;
   }
 
+  private getOverlayRef = () => this.overlayRef;
+
   private setHeaderRef = ref => {
     this.headerRef = ref;
   }
+
+  private getHeaderRef = () => this.headerRef;
 
   private renderFooter() {
     return (
@@ -402,8 +404,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         page={page}
         active={active}
         secondary={secondaryPage === page.title}
-        overlayPortal={this.overlayRef}
-        headerPortal={this.headerRef}
+        overlayPortal={this.getOverlayRef}
+        headerPortal={this.getHeaderRef}
       />
     );
   }

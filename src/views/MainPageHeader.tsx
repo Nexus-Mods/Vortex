@@ -8,7 +8,7 @@ import { Portal } from 'react-overlays';
 
 export interface IComponentContext {
   api: IExtensionApi;
-  headerPortal: HTMLElement;
+  headerPortal: () => HTMLElement;
   page: string;
 }
 
@@ -21,7 +21,7 @@ type IProps = IConnectedProps;
 class MainPageHeader extends React.Component<IProps, {}> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
-    headerPortal: PropTypes.object,
+    headerPortal: PropTypes.func,
     page: PropTypes.string,
   };
 
@@ -33,15 +33,13 @@ class MainPageHeader extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
     return (this.props.mainPage === this.context.page) ? (
-      <Portal container={this.headerPortal}>
+      <Portal container={this.context.headerPortal}>
         <div className='mainpage-header'>
           {this.props.children}
         </div>
       </Portal>
     ) : null;
   }
-
-  private headerPortal = () => this.context.headerPortal;
 }
 
 function mapStateToProps(state: IState): IConnectedProps {

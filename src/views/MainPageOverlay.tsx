@@ -8,7 +8,7 @@ import { Portal } from 'react-overlays';
 
 interface IComponentContext {
   api: IExtensionApi;
-  overlayPortal: HTMLElement;
+  overlayPortal: () => HTMLElement;
   page: string;
 }
 
@@ -21,7 +21,7 @@ type IProps = IConnectedProps;
 class MainPageOverlay extends React.Component<IProps, {}> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
-    overlayPortal: PropTypes.object,
+    overlayPortal: PropTypes.func,
     page: PropTypes.string,
   };
 
@@ -29,15 +29,13 @@ class MainPageOverlay extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
     return (this.context.page === this.props.mainPage) ? (
-      <Portal container={this.overlayPortal}>
+      <Portal container={this.context.overlayPortal}>
         <div>
           {this.props.children}
         </div>
       </Portal>
     ) : null;
   }
-
-  private overlayPortal = () => this.context.overlayPortal;
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
