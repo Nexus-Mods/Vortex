@@ -501,18 +501,22 @@ a[role=menuitem] svg {
 // drawn on a separate layer so it's not cut off
 // by containers higher up in the hierarchy
 
-#menu-layer {
+.menu-layer {
   position: absolute;
   width: 100%;
   height: 100%;
-  z-index: $zindex-menu-layer;
   pointer-events: none;
+  z-index: $zindex-menu-layer;
 
   > * {
     pointer-events: initial;
     width: 100%;
     height: 100%;
   }
+}
+
+.modal-container .menu-layer {
+  z-index: $zindex-modal + 5;
 }
 
 // /portal menu
@@ -853,8 +857,6 @@ a[role=menuitem] svg {
 
 .main-page {
   transition: visibility 0s 300ms, opacity 300ms;
-  // asymmetric padding. We allow pages to extend all the way to the right edge
-  padding: $half-gutter 0 $half-gutter $half-gutter;
   flex: 1 1 0;
   position: relative;
 
@@ -874,6 +876,15 @@ a[role=menuitem] svg {
     // make secondary page always show at the bottom
     order: 1;
   }
+}
+
+.main-page-inner {
+  position: absolute;
+  // asymmetric padding. We allow pages to extend all the way to the right edge
+  top: $half-gutter;
+  bottom: $half-gutter;
+  left: $half-gutter;
+  right: 0;
 }
 
 .main-page-body {

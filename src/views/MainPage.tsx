@@ -20,7 +20,7 @@ class MainPage extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { children, domRef } = this.props;
     return (
-      <div ref={domRef} style={{ height: '100%' }}>
+      <div ref={domRef} className='main-page-inner'>
         {children}
       </div>
     );

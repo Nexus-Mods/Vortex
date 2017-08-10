@@ -223,7 +223,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     return (
       <div className={hidpi ? 'hidpi' : 'lodpi'}>
-        <div id='menu-layer' ref={this.setMenuLayer} />
+        <div className='menu-layer' ref={this.setMenuLayer} />
         <FlexLayout type='column'>
           {this.renderToolbar()}
           {this.renderBody()}

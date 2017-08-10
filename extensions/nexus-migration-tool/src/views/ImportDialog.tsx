@@ -14,12 +14,12 @@ import * as opn from 'opn';
 import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, DropdownButton, InputGroup, MenuItem,
-  Modal, ProgressBar, SplitButton,
+  ProgressBar, SplitButton,
 } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
-import { ComponentEx, Icon, selectors, Steps, Table, tooltip, types } from 'vortex-api';
+import { ComponentEx, Icon, Modal, selectors, Steps, Table, tooltip, types } from 'vortex-api';
 
 type Step = 'start' | 'setup' | 'working' | 'review';
 
@@ -35,8 +35,8 @@ interface IActionProps {
 type IProps = IConnectedProps & IActionProps;
 
 interface IComponentState {
-  options: string[];
-  selectedOption: string;
+  sources: string[];
+  selectedSources: string;
   modsToImport: { [id: string]: IModEntry };
   error: string;
   importEnabled: { [id: string]: boolean };
@@ -55,9 +55,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     super(props);
 
     this.initState({
-      options: [],
+      sources: undefined,
       modsToImport: {},
-      selectedOption: '',
+      selectedSources: '',
       error: undefined,
       importEnabled: {},
       counter: 0,
@@ -105,10 +105,12 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, importStep } = this.props;
-    const {error} = this.state;
+    const { error, sources } = this.state;
 
     const canCancel = ['start', 'setup'].indexOf(importStep) !== -1;
-    const nextLabel = this.nextLabel(importStep);
+    const nextLabel = ((sources !== undefined) && (sources.length > 0))
+      ? this.nextLabel(importStep)
+      : undefined;
 
     return (
       <Modal show={ importStep !== undefined } onHide={this.nop}>
@@ -173,41 +175,74 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderStart(): JSX.Element {
+    const { sources, selectedSources } = this.state;
+
+    return this.renderStartContent();
+  }
+
+  private renderStartContent() {
     const { t } = this.props;
-    const { options, selectedOption } = this.state;
+    const { sources, selectedSources } = this.state;
+
     return (
-      <div style={{ height: '100%' }}>
-        <span style={{ display: 'flex', flexDirection: 'column',
-                       justifyContent: 'space-around', height: '100%' }}>
-          {t('This tool is an easy way of transferring your current '
-           + 'NMM configuration into Vortex.')}
-          <div>
-            {t('Before you continue, please take note of a few things:')}
-            <ul>
-              <li>{t('Mods will be copied from NMM to Vortex. This may take a while.')}</li>
-              <li>{t('Your original NMM installation is not modified.')}</li>
-              <li>{t('Please make sure you have enough disk space to copy the selected mods.')}</li>
-              <li>{t('A new profile is create inside Vortex.')}</li>
-            </ul>
-          </div>
-          <div>
-            {t('If you have multiple instances of NMM installed you can select which one '
-              + 'to import here:')}
-            <SplitButton
-              id='import-select-source'
-              title={selectedOption}
-              onSelect={this.selectSource}
-              style={{ marginLeft: 15 }}
-            >
-              {options.map(this.renderOption)}
-            </SplitButton>
-          </div>
-        </span>
+      <span style={{
+        display: 'flex', flexDirection: 'column',
+        justifyContent: 'space-around', height: '100%',
+      }}>
+        {t('This tool is an easy way of transferring your current '
+          + 'NMM configuration into Vortex.')}
+        <div>
+          {t('Before you continue, please take note of a few things:')}
+          <ul>
+            <li>{t('Mods will be copied from NMM to Vortex. This may take a while.')}</li>
+            <li>{t('Your original NMM installation is not modified.')}</li>
+            <li>{t('Please make sure you have enough disk space to copy the selected mods.')}</li>
+            <li>{t('A new profile is create inside Vortex.')}</li>
+          </ul>
+        </div>
+        {sources === undefined
+          ? <Icon name='spinner' pulse />
+          : sources.length === 0
+            ? this.renderNoSources()
+            : this.renderSources(sources, selectedSources)
+        }
+      </span>
+    );
+  }
+
+  private renderNoSources(): JSX.Element {
+    const { t } = this.props;
+
+    return (
+      <span className='import-errors'>
+        <Icon name='cross' />
+        {' '}
+        {t('No NMM install found with mods for this game. ' +
+          'Please note that only NMM > 0.60 is supported.')}
+      </span>
+    );
+  }
+
+  private renderSources(sources, selectedSource): JSX.Element {
+    const { t } = this.props;
+
+    return (
+      <div>
+        {t('If you have multiple instances of NMM installed you can select which one '
+          + 'to import here:')}
+        <SplitButton
+          id='import-select-source'
+          title={selectedSource}
+          onSelect={this.selectSource}
+          style={{ marginLeft: 15 }}
+        >
+          {sources.map(this.renderSource)}
+        </SplitButton>
       </div>
     );
   }
 
-  private renderOption = option => {
+  private renderSource = option => {
     return <MenuItem key={option} eventKey={option}>{option}</MenuItem>;
   }
 
@@ -275,7 +310,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectSource = eventKey => {
-    this.nextState.selectedOption = eventKey;
+    this.nextState.selectedSources = eventKey;
   }
 
   private nop = () => undefined;
@@ -293,14 +328,14 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   private start() {
     findInstances(this.props.gameId)
       .then(found => {
-        this.nextState.options = found;
-        this.nextState.selectedOption = found[0];
+        this.nextState.sources = found;
+        this.nextState.selectedSources = found[0];
       });
   }
 
   private setup() {
     const virtualPath =
-      path.join(this.state.selectedOption, 'VirtualInstall', 'VirtualModConfig.xml');
+      path.join(this.state.selectedSources, 'VirtualInstall', 'VirtualModConfig.xml');
 
     parseNMMConfigFile(virtualPath, {})
       .then((modEntries: IModEntry[]) => {
@@ -323,15 +358,15 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
   private startImport() {
     const { t } = this.props;
-    const { modsToImport, selectedOption } = this.state;
+    const { modsToImport, selectedSources } = this.state;
 
     this.mTrace = new TraceImport();
 
     const modList = Object.keys(modsToImport).map(id => modsToImport[id]);
     const enabledMods = modList.filter(mod => this.isModEnabled(mod));
 
-    this.mTrace.initDirectory(selectedOption)
-      .then(() => importMods(this.context.api, this.mTrace, selectedOption, enabledMods,
+    this.mTrace.initDirectory(selectedSources)
+      .then(() => importMods(this.context.api, this.mTrace, selectedSources, enabledMods,
         (mod: string, pos: number) => {
           this.nextState.progress = { mod, pos };
         }))
