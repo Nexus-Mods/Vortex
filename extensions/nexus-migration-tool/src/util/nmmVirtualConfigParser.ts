@@ -82,9 +82,13 @@ export function parseModEntries(xmlData: string, mods: any): Promise<ModEntry[]>
     genHash(modFilePath)
       .then((hashResult: IHashResult) => {
           fileMD5 = hashResult.md5sum;
+      })
+      .catch(() => {
+        fileMD5 = '';
       });
 
-    const derivedId: string = util.deriveInstallName(elementModName, '');
+    const derivedId: string = util.deriveInstallName(
+      path.basename(elementModFilename, path.extname(elementModFilename)), '');
 
     const modEntry: ModEntry = {
       nexusId: elementModId,
@@ -97,7 +101,7 @@ export function parseModEntries(xmlData: string, mods: any): Promise<ModEntry[]>
       archiveMD5: fileMD5,
       importFlag: true,
       isAlreadyManaged: ((modListSet !== null) && (modListSet !== undefined)
-        && (modListSet.entries.length > 0)) ? modListSet.has(derivedId) : false,
+        && (modListSet.size > 0)) ? modListSet.has(derivedId) : false,
       fileEntries: modFileEntries,
     };
 

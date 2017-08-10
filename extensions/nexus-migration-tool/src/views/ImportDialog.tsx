@@ -334,10 +334,13 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private setup() {
+    const { gameId } = this.props;
     const virtualPath =
       path.join(this.state.selectedSources, 'VirtualInstall', 'VirtualModConfig.xml');
+    const state: types.IState = this.context.api.store.getState();
+    const mods = state.persistent.mods[gameId] || {};
 
-    parseNMMConfigFile(virtualPath, {})
+    parseNMMConfigFile(virtualPath, mods)
       .then((modEntries: IModEntry[]) => {
         this.nextState.modsToImport = modEntries.reduce((prev, value) => {
           // modfilename appears to be the only field that we can rely on being set and it being
