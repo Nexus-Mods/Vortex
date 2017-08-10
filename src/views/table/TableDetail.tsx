@@ -290,7 +290,7 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
     return (
       <div style={{ height: '100%', position: 'relative', display: 'flex', overflowX: 'hidden' }}>
         {show ? null : this.renderHandle() }
-        <div style={{ display: 'flex' }} >
+        <div style={{ display: 'flex', flexDirection: 'column' }} >
           {detailList.length > 0 ? (
             <form className={'table-form-details ' + visClass}>
               {detailList.map(obj => this.renderDetail(obj))}

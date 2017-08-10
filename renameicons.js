@@ -48,6 +48,7 @@ const nameMap = {
   world: 'globe',
   centralize: 'compress',
   disperse: 'expand',
+  'dashboard-half': 'tachometer',
 };
 
 function transformId(id) {

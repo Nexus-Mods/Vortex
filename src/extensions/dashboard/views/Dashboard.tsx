@@ -103,7 +103,9 @@ class Dashboard extends ComponentEx<IProps, { counter: number }> {
 
     return (
       <MainPage>
-        <MainPage.Body style={{ height: '100%', overflowY: 'auto' }}>
+        <MainPage.Body
+          style={{ height: '100%', overflowY: 'auto', width: '100%', overflowX: 'hidden' }}
+        >
           <PackeryGrid totalWidth={3} onChangeLayout={this.onChangeLayout}>
             {sorted.map(this.renderItem)}
           </PackeryGrid>

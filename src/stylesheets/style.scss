@@ -726,6 +726,8 @@ a[role=menuitem] svg {
 #main-nav-sidebar {
   background-color: $brand-menu;
   transition: max-width $expand-sidebar-delay;
+  display: flex;
+  flex-direction: column;
 
   // inside the main nav sidebar
   // (contains everything except the minimize/maximize button)
@@ -734,8 +736,7 @@ a[role=menuitem] svg {
     height: 100%;
     display: flex;
     overflow-y: auto;
-
-    padding-bottom: 24px; // padding to accomodate the absolute-positioned minimize-button
+    flex: 1 1 0;
   }
 
   .menu-label {
@@ -909,8 +910,6 @@ a[role=menuitem] svg {
 }
 
 .btn-menu-minimize {
-  bottom: 0px;
-  position: absolute;
   border: 0px;
   padding: 1px;
   width: 100%;
@@ -1145,6 +1144,10 @@ a[role=menuitem] svg {
 
   &.bug {
     color: $brand-danger;
+  }
+
+  svg {
+    margin-left: 0.4em;
   }
 }
 
