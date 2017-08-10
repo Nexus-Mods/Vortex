@@ -1,4 +1,4 @@
-const { types } = require('nmm-api');
+const { types } = require('vortex-api');
 const Registry = require('winreg');
 
 function findGame() {

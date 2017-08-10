@@ -20,26 +20,22 @@ function getVirtualFolder(userConfig: string, gameId: string): string {
   }
 
   const setting = item.textContent;
-  console.log('setting', setting);
   return setting;
 }
 
 function findInstances(gameId: string): Promise<string[]> {
   const base = path.resolve(remote.app.getPath('appData'), '..', 'local', 'Black_Tree_Gaming');
-  console.log('base', base);
   return fs.readdirAsync(base)
-    .then((instances: string[]) => Promise.map(instances,
-      instance => {
-        console.log('instance', instance);
-        return fs.readdirAsync(path.join(base, instance))
-        .then((versions: string[]) => Promise.map(versions,
-        version => fs.readFileAsync(path.join(base, instance, version, 'user.config'))
-          .then((data: NodeBuffer) => {
-            return getVirtualFolder(data.toString(), gameId);
-          })));
-      }))
+    .then((instances: string[]) =>
+      Promise.map(instances, instance =>
+        fs.readdirAsync(path.join(base, instance))
+        .then((versions: string[]) =>
+          Promise.map(versions, version =>
+            fs.readFileAsync(path.join(base, instance, version, 'user.config'))
+            .then((data: NodeBuffer) => {
+              return getVirtualFolder(data.toString(), gameId);
+          })))))
       .then(result => {
-          console.log('result', result);
           // remove duplicates, in a case-insensitive way, remove undefined
           const set = result.reduce((prev: { [key: string]: string }, value: string[]) => {
               value.forEach(val => {

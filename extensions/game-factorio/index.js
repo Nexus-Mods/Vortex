@@ -1,4 +1,4 @@
-const { log, util } = require('nmm-api');
+const { log, util } = require('vortex-api');
 
 const Promise = require('bluebird');
 const { remote } = require('electron');

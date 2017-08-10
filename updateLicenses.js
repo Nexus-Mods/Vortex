@@ -14,7 +14,7 @@ checker.init(
       return console.error('error', err);
     }
 
-    const deleteKeys = ['nmm-api', 'vortex'];
+    const deleteKeys = ['vortex-api', 'vortex'];
     Object.keys(json).forEach(key => {
       // make the license path relative. license-checker has an option
       // to do that for us but that causes errors

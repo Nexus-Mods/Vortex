@@ -47,7 +47,7 @@ function main(context) {
     supportedTools: tools,
     queryModPath: () => './data',
     logo: 'gameart.png',
-    executable: () => { 'fallout3.exe', 'fallout3ng.exe' },
+    executable: () => 'fallout3.exe',
     requiredFiles: [
       'fallout3.exe',
     ],

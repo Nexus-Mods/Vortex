@@ -1,4 +1,4 @@
-const { log, util } = require('nmm-api');
+const { log, util } = require('vortex-api');
 
 const path = require('path');
 
