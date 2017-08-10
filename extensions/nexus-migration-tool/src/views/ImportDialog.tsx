@@ -366,7 +366,8 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const enabledMods = modList.filter(mod => this.isModEnabled(mod));
 
     this.mTrace.initDirectory(selectedSources)
-      .then(() => importMods(this.context.api, this.mTrace, selectedSources, enabledMods,
+      .then(() => importMods(this.context.api, this.mTrace,
+        path.join(selectedSources, 'VirtualInstall'), enabledMods,
         (mod: string, pos: number) => {
           this.nextState.progress = { mod, pos };
         }))

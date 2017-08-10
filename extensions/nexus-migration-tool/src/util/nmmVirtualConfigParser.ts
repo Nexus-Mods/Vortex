@@ -63,14 +63,16 @@ export function parseModEntries(xmlData: string, mods: any): Promise<ModEntry[]>
         fileLink.getElementsByTagName('linkPriority')[0].childNodes[0].nodeValue;
       const nodeIsActive = fileLink.getElementsByTagName('isActive')[0].childNodes[0].nodeValue;
 
-      const fileEntry: FileEntry = {
-        fileSource: nodeRealPath,
-        fileDestination: nodeVirtualPath,
-        isActive: (nodeIsActive.toLocaleLowerCase() === 'true'),
-        filePriority: (parseInt(nodeLinkPriority, 10)),
-      };
+      if ((nodeVirtualPath !== null) && (nodeVirtualPath !== undefined)) {
+        const fileEntry: FileEntry = {
+          fileSource: nodeRealPath,
+          fileDestination: nodeVirtualPath,
+          isActive: (nodeIsActive.toLocaleLowerCase() === 'true'),
+          filePriority: (parseInt(nodeLinkPriority, 10)),
+        };
 
-      modFileEntries.push(fileEntry);
+        modFileEntries.push(fileEntry);
+      }
     }
 
     const modFilePath = path.join(elementArchivePath, elementModFilename);

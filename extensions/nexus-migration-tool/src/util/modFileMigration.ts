@@ -41,19 +41,13 @@ export function transferUnpackedMod(mod: ModEntry,
 
   const operation = keepSource ? fs.copyAsync : fs.renameAsync;
 
-  mod.fileEntries.map((file) => {
-    if ((file !== null) && (file !== undefined)) {
-      const destPath: string = path.join(currentModPath, mod.vortexId, file.fileDestination);
-      log ('info', 'Unpacked mod file transfer: ', destPath);
-      fs.mkdirsAsync(path.dirname(destPath))
-      .then (() => {
-        operation(path.join(nmmVirtualPath, file.fileSource), destPath)
+  return Promise.map(mod.fileEntries, file =>
+      fs.mkdirsAsync(path.dirname(path.join(currentModPath, mod.vortexId, file.fileDestination)))
+      .then (() =>
+        operation(path.join(nmmVirtualPath, file.fileSource),
+          path.join(currentModPath, mod.vortexId, file.fileDestination))
         .catch(err => {
           failedFiles.push(file.fileSource + ' - ' + err.message);
-        });
-      });
-    }
-  });
-
-  return Promise.resolve(failedFiles);
+        })))
+  .then(() => Promise.resolve(failedFiles));
 }
