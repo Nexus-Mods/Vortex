@@ -25,7 +25,9 @@ export function syncToProfile(
     });
   }).then(() => {
     log('debug', 'sync to profile complete');
-  });
+  })
+  .catch(err =>
+    Promise.reject(new Error('failed to sync to profile: ' + err.message)));
 }
 
 export function syncFromProfile(
@@ -42,5 +44,7 @@ export function syncFromProfile(
     });
   }).then(() => {
     log('debug', 'sync from profile complete');
-  });
+  })
+  .catch(err =>
+    Promise.reject(new Error('failed from sync to profile: ' + err.message)));
 }

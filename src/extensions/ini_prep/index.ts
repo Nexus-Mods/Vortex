@@ -1,4 +1,5 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
+import {log} from '../../util/log';
 import {getSafe} from '../../util/storeHelper';
 import {objDiff, setdefault} from '../../util/util';
 
@@ -17,14 +18,23 @@ import * as fs from 'fs-extra-promise';
 import IniParser, {IniFile, WinapiFormat} from 'parse-ini';
 import * as path from 'path';
 
-function ensureIniBackups(gameMode: string) {
+function ensureIniBackups(gameMode: string): Promise<void> {
   return Promise.map(iniFiles(gameMode), file => {
     const backupFile = file + '.base';
     const bakedFile = file + '.baked';
-    return Promise.map(
-        [backupFile, bakedFile],
-        copy => fs.statAsync(copy).catch(err => fs.copyAsync(file, copy)));
-  });
+    return Promise.map([backupFile, bakedFile],
+      copy => fs.statAsync(copy)
+        .catch(err =>
+          fs.copyAsync(file, copy)
+            .catch(copyErr => {
+              if (copyErr.code === 'ENOENT') {
+                log('warn', 'ini file missing', file);
+              } else {
+                return Promise.reject(copyErr);
+              }
+            })));
+  })
+    .then(() => undefined);
 }
 
 function genIniFormat(format: string) {
@@ -153,12 +163,28 @@ function main(context: IExtensionContext) {
   });
 
   context.once(() => {
+    let deactivated: boolean = false;
+
     context.api.events.on('gamemode-activated', (gameMode: string) => {
-      ensureIniBackups(gameMode);
+      ensureIniBackups(gameMode)
+      .catch(err => {
+        context.api.showErrorNotification(
+          'Failed to create backups of the ini files for this game.',
+          {
+            Warning:
+              'To avoid data loss, ini tweaks are not going to be applied in this session.\n' +
+              'Please fix the problem and restart Vortex.',
+            Reason: err.message,
+          });
+        deactivated = true;
+      });
     });
 
     context.api.events.on('bake-settings', (gameId: string, mods: IMod[],
                                             callback: (err: Error) => void) => {
+      if (deactivated) {
+        return;
+      }
       const paths = context.api.store.getState().settings.mods.paths;
       discoverSettingsChanges(gameId)
         .then(() => bakeSettings(gameId, mods, paths))
@@ -167,6 +193,9 @@ function main(context: IExtensionContext) {
     });
 
     context.api.events.on('purge-mods', () => {
+      if (deactivated) {
+        return;
+      }
       const gameMode = activeGameId(context.api.store.getState());
       discoverSettingsChanges(gameMode)
         .then(() => purgeChanges(gameMode));
