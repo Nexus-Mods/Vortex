@@ -18,12 +18,20 @@ const Fixed = (props: React.HTMLAttributes<HTMLDivElement>) => {
   );
 };
 
+export interface IFlexProps {
+  fill?: boolean;
+}
+
 // uses all available space for the contents but no more
-const Flex = (props: React.HTMLAttributes<HTMLDivElement>) => {
+const Flex = (props: IFlexProps & React.HTMLAttributes<HTMLDivElement>) => {
+  const classes = ['layout-flex-inner'];
+  if (props.fill === true) {
+    classes.push('layout-flex-fill');
+  }
   return (
     <div className='layout-flex'>
       <div
-        className={appendClasses(props.className, ['layout-flex-inner'])}
+        className={appendClasses(props.className, classes)}
         {..._.omit(props, ['className'])}
       >
         { props.children }

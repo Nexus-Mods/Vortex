@@ -22,6 +22,7 @@
     "@types/react-redux": "4.4.35",
     "@types/rimraf": "^0.0.28",
     "bsatk": "file:../../lib/cpp/bsatk",
+    "copyfiles": "^1.2.0",
     "electron-rebuild": "^1.5.7",
     "vortex-api": "file:../../api",
     "rimraf": "^2.6.1",

@@ -64,7 +64,7 @@ class Developer extends Component<{}, {}> {
         <FlexLayout.Fixed>
           <DispatcherTool />
         </FlexLayout.Fixed>
-        <FlexLayout.Flex>
+        <FlexLayout.Flex fill={true}>
           <LogMonTool />
         </FlexLayout.Flex>
       </FlexLayout>

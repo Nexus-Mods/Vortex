@@ -100,15 +100,16 @@ function activateGame(store: Redux.Store<IState>, gameId: string) {
   const state: IState = store.getState();
   const profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId],
     undefined);
-  if (profileId === undefined) {
+  const profile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
+  if ((profileId === undefined) || (profile === undefined)) {
     const profiles = getSafe(state, ['persistent', 'profiles'], []);
     const gameProfiles: IProfile[] = Object.keys(profiles)
       .filter((id: string) => profiles[id].gameId === gameId)
       .map((id: string) => profiles[id]);
     store.dispatch(showDialog('question', 'Choose profile', {
       message: 'Please choose the profile to use with this game',
-      choices: gameProfiles.map((profile: IProfile, idx: number) =>
-        ({ id: profile.id, text: profile.name, value: idx === 0 })),
+      choices: gameProfiles.map((iter: IProfile, idx: number) =>
+        ({ id: iter.id, text: iter.name, value: idx === 0 })),
     }, {
         Activate: null,
       }))
