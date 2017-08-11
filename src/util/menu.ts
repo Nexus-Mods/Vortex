@@ -4,7 +4,7 @@ import ExtensionManager from './ExtensionManager';
 import { debugTranslations, getMissingTranslations } from './i18n';
 import { log } from './log';
 
-import { Electron, remote } from 'electron';
+import { remote } from 'electron';
 
 const { Menu, clipboard } = remote;
 
@@ -15,7 +15,7 @@ const { Menu, clipboard } = remote;
  * @param {ExtensionManager} extensions
  */
 export function initApplicationMenu(extensions: ExtensionManager) {
-  const fileMenu: Electron.MenuItemOptions[] = [
+  const fileMenu: Electron.MenuItemConstructorOptions[] = [
     {
       role: 'close',
     },
@@ -23,7 +23,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
 
   let recordTranslation = false;
 
-  const viewMenu: Electron.MenuItemOptions[] = [];
+  const viewMenu: Electron.MenuItemConstructorOptions[] = [];
 
   // main pages
   extensions.apply('registerMainPage',
@@ -73,7 +73,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         recordTranslation = !recordTranslation;
         debugTranslations(recordTranslation);
         log('info', 'toogle', { recordTranslation, label: viewMenu[viewMenu.length - 1].label });
-        const subMenu: Electron.Menu = menu.items[1].submenu as Electron.Menu;
+        const subMenu: Electron.Menu = (menu.items[1] as any).submenu as Electron.Menu;
         subMenu.items[viewMenu.length - 1].enabled = recordTranslation;
       },
     });

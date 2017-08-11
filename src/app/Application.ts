@@ -16,7 +16,7 @@ import SplashScreenT from './SplashScreen';
 import TrayIconT from './TrayIcon';
 
 import * as Promise from 'bluebird';
-import {app, BrowserWindow, Electron, ipcMain} from 'electron';
+import {app, BrowserWindow, ipcMain} from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';

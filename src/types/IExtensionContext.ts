@@ -8,7 +8,6 @@ import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
 import * as Promise from 'bluebird';
-import { Electron } from 'electron';
 import * as I18next from 'i18next';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
@@ -276,7 +275,7 @@ export interface IExtensionApi {
    * @type {Electron.AppPathName}
    * @memberOf IExtensionApi
    */
-  getPath: (name: Electron.AppPathName) => string;
+  getPath: (name: string) => string;
 
   /**
    * register a callback for changes to the state

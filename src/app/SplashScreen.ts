@@ -1,7 +1,5 @@
 import {delayed} from '../util/delayed';
 
-import {Electron} from 'electron';
-
 class SplashScreen {
   private mWindow: Electron.BrowserWindow = null;
 
@@ -28,7 +26,7 @@ class SplashScreen {
   }
 
   public create(): Promise<void> {
-    const BrowserWindow: Electron.BrowserWindow = require('electron').BrowserWindow;
+    const BrowserWindow: typeof Electron.BrowserWindow = require('electron').BrowserWindow;
 
     return new Promise<void>((resolve, reject) => {
       const onReady = () => {

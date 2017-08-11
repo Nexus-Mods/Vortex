@@ -1,4 +1,4 @@
-import { app, Electron, Menu, Tray } from 'electron';
+import { app, Menu, Tray } from 'electron';
 import * as path from 'path';
 
 class TrayIcon {

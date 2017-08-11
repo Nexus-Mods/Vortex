@@ -5,7 +5,7 @@ import { activeGameId } from '../../../util/selectors';
 import { ButtonType } from '../../../views/IconBar';
 import ToolbarIcon from '../../../views/ToolbarIcon';
 
-import { dialog as dialogIn, Electron, remote } from 'electron';
+import { dialog as dialogIn, remote } from 'electron';
 import * as React from 'react';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
