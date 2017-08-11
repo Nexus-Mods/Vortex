@@ -7,7 +7,7 @@
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "clear": "rm-local-modules",
-    "postinstall": "electron-rebuild -w ba2tk",
+    "postinstall": "electron-rebuild -w ba2tk -t dev,prod",
     "copy_ba2tk": "copyfiles -f ./node_modules/ba2tk/build/Release/nbind.node ./dist/ba2tk",
     "prebuild": "typings prune && typings install",
     "build": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo",

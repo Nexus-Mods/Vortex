@@ -6,7 +6,7 @@
   "scripts": {
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
-    "postinstall": "electron-rebuild -w font-manager",
+    "postinstall": "electron-rebuild -w font-manager -t prod,dev",
     "prebuild": "typings prune && typings install",
     "copy_lib": "copyfiles -u 4 node_modules/font-manager/build/Release/fontmanager.node dist",
     "copy_themes": "copyfiles themes/**/* dist",

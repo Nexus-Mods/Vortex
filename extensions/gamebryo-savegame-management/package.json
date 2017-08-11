@@ -8,7 +8,7 @@
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "clear": "rm-local-modules",
-    "postinstall": "electron-rebuild -w gamebryo-savegame",
+    "postinstall": "electron-rebuild -w gamebryo-savegame -t dev,prod",
     "prebuild": "typings prune && typings install",
     "build": "npm run tsc && npm run webpack && copyfiles -f ./node_modules/gamebryo-savegame/build/Release/nbind.node ./dist/savegamelib && copyfiles -f ./node_modules/gamebryo-savegame/dist/liblz4.dll ./dist/savegamelib && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-savegame-management",

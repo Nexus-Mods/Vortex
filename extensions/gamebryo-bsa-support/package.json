@@ -7,7 +7,7 @@
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "clear": "rm-local-modules",
-    "postinstall": "electron-rebuild -w bsatk",
+    "postinstall": "electron-rebuild -w bsatk -t dev,prod",
     "copy_bsatk": "copyfiles -f ./node_modules/bsatk/build/Release/nbind.node ./dist/bsatk",
     "prebuild": "typings prune && typings install",
     "build": "npm run tsc && npm run webpack && npm run copy_bsatk && extractInfo",

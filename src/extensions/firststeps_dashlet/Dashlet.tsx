@@ -127,7 +127,7 @@ class Dashlet extends ComponentEx<IProps, {}> {
       'settings-review': 'sliders',
       settings: 'sliders',
       automation: 'wand',
-      search: 'zoom',
+      search: 'search',
     }[type];
   }
 
