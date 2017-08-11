@@ -330,7 +330,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       }).then((result: IDialogResult) => {
         addCategory = result.action === 'Add';
         if (addCategory) {
-          const checkId = Object.keys(categories[gameMode]).filter((id: string) =>
+          const checkId = Object.keys(categories[gameMode] || {}).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
             onShowError('An error occurred adding the new category', 'ID already used.');

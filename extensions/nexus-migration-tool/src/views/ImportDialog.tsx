@@ -197,7 +197,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
             <li>{t('Mods will be copied from NMM to Vortex. This may take a while.')}</li>
             <li>{t('Your original NMM installation is not modified.')}</li>
             <li>{t('Please make sure you have enough disk space to copy the selected mods.')}</li>
-            <li>{t('A new profile is create inside Vortex.')}</li>
+            <li>{t('A new profile is created inside Vortex.')}</li>
           </ul>
         </div>
         {sources === undefined
