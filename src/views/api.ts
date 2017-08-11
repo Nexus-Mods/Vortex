@@ -3,7 +3,7 @@ import BinaryToggle from './BinaryToggle';
 import DNDContainer from './DNDContainer';
 import Dropzone from './Dropzone';
 import FlexLayout from './FlexLayout';
-import FormFeedbackAwesome from './FormFeedbackAwesome';
+import FormFeedback from './FormFeedback';
 import FormInput from './FormInput';
 import Icon from './Icon';
 import IconBar from './IconBar';
@@ -18,7 +18,7 @@ import TableTextFilter from './table/TextFilter';
 import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
 
-export {Advanced, DNDContainer, Dropzone, FlexLayout, FormFeedbackAwesome, FormInput,
+export {Advanced, DNDContainer, Dropzone, FlexLayout, FormFeedback, FormInput,
         ChangeDataHandler, Icon, IconBar, ITableRowAction, MainPage, Modal, More, Table,
         TableDateTimeFilter, TableNumericFilter, TableTextFilter,
         BinaryToggle, Steps, makeGetSelection, ToolbarIcon, tooltip};

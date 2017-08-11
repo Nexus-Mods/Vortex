@@ -3,7 +3,7 @@ import {PureComponentEx} from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 
 import ExtensionGate from '../ExtensionGate';
-import FormFeedback from '../FormFeedbackAwesome';
+import FormFeedback from '../FormFeedback';
 import FormInput from '../FormInput';
 import Icon from '../Icon';
 import More from '../More';

@@ -9,7 +9,7 @@ import { Button, Col, ControlLabel, Form, FormControl, FormGroup, Modal } from '
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as semver from 'semver';
-import { actions, ComponentEx, FormFeedbackAwesome, More, types, util } from 'vortex-api';
+import { actions, ComponentEx, FormFeedback, More, types, util } from 'vortex-api';
 
 interface IDialog {
   gameId: string;
@@ -54,7 +54,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
         this.nextState.type = nextProps.dialog.type;
         this.nextState.reference = {
           ...nextProps.dialog.reference,
-          versionMatch: '^' + nextProps.dialog.reference.versionMatch,
+          versionMatch: this.genVersionMatch(nextProps.dialog.reference.versionMatch),
         };
       } else {
         this.nextState.type = undefined;
@@ -137,10 +137,17 @@ class Editor extends ComponentEx<IProps, IComponentState> {
         </Col>
       );
 
-    const versionInvalid =
-      (semver.validRange(versionMatch) === null) ? t('Range invalid')
-      : !semver.satisfies(dialog.reference.versionMatch, versionMatch) ? t('Doesn\'t match the mod')
-      : null;
+    const refVer = dialog.reference.versionMatch;
+
+    let versionInvalid = null;
+
+    if (semver.validRange(versionMatch) === null) {
+      versionInvalid = t('Range invalid');
+    } else if (semver.valid(refVer) && !semver.satisfies(refVer, versionMatch)) {
+      versionInvalid = t('Doesn\'t match the mod');
+    } else if (!semver.valid(refVer) && (refVer !== versionMatch)) {
+      versionInvalid = t('Doesn\'t match the mod');
+    }
 
     return (
       <Form horizontal>
@@ -158,7 +165,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 onChange={this.changeFileExpression}
               />
               <ControlLabel>{expressionInvalid}</ControlLabel>
-              <FormFeedbackAwesome />
+              <FormFeedback />
             </FormGroup>
           </Col>
         </FormGroup>
@@ -180,12 +187,20 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 onChange={this.changeVersion}
               />
               <ControlLabel>{versionInvalid}</ControlLabel>
-              <FormFeedbackAwesome />
+              <FormFeedback />
             </FormGroup>
           </Col>
         </FormGroup>
       </Form>
     );
+  }
+
+  private genVersionMatch(input: string): string {
+    if (semver.valid(input)) {
+      return '^' + input;
+    } else {
+      return input;
+    }
   }
 
   private changeFileExpression = (evt) => {

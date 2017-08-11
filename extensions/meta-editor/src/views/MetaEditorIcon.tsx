@@ -1,6 +1,6 @@
 import { setShowMetaEditor } from '../actions';
 
-import { ComponentEx, FormFeedbackAwesome, Icon,
+import { ComponentEx, FormFeedback, Icon,
          log, selectors, ToolbarIcon, tooltip,
          util } from 'vortex-api';
 

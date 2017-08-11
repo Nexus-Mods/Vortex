@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup,
          Modal, Nav, NavItem } from 'react-bootstrap';
 import { translate } from 'react-i18next';
-import { ComponentEx, FormFeedbackAwesome } from 'vortex-api';
+import { ComponentEx, FormFeedback } from 'vortex-api';
 
 interface IBaseProps {
   fileName: string;
@@ -142,7 +142,7 @@ class RuleEditor extends ComponentEx<IRule, IComponentState> {
             value={md5}
             onChange={this.setMD5}
           />
-          <FormFeedbackAwesome />
+          <FormFeedback />
         </FormGroup>
       </form>
     );

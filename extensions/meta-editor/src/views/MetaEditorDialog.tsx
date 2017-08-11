@@ -13,7 +13,7 @@ import { connect } from 'react-redux';
 import semver = require('semver');
 import * as url from 'url';
 import * as nodeUtil from 'util';
-import { ComponentEx, FormFeedbackAwesome, Icon, log, selectors, tooltip, util } from 'vortex-api';
+import { ComponentEx, FormFeedback, Icon, log, selectors, tooltip, util } from 'vortex-api';
 
 interface IConnectedProps {
   downloads: { [id: string]: any };
@@ -81,7 +81,7 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
                 value={info.fileVersion}
                 onChange={this.changeFileVersion}
               />
-              <FormFeedbackAwesome />
+              <FormFeedback />
             </FormGroup>
             <FormGroup
               validationState={urlState as 'error' | 'success'}
@@ -92,7 +92,7 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
                 value={info.sourceURI}
                 onChange={this.changeSourceURI}
               />
-              <FormFeedbackAwesome />
+              <FormFeedback />
             </FormGroup>
             <FormGroup>
               <ControlLabel>

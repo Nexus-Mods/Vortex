@@ -1,4 +1,4 @@
-import FormFeedbackAwesome from './FormFeedbackAwesome';
+import FormFeedback from './FormFeedback';
 import { IconButton } from './TooltipControls';
 
 import { remote } from 'electron';
@@ -52,7 +52,7 @@ export class FormTextItem extends React.Component<IFormItemProps, {}> {
           />
           { validation ? <ControlLabel>{validation}</ControlLabel> : null }
         </Col>
-        <FormFeedbackAwesome />
+        <FormFeedback />
       </FormGroup>
       );
   }

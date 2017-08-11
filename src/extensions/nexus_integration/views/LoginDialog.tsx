@@ -1,7 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
-import FormFeedbackAwesome from '../../../views/FormFeedbackAwesome';
+import FormFeedback from '../../../views/FormFeedback';
 import { Button } from '../../../views/TooltipControls';
 
 import { setUserAPIKey } from '../actions/account';
@@ -138,7 +138,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
           placeholder={t('Create an API key on www.nexusmods.com and paste it here')}
           onChange={this.handleChangeAPIKey}
         />
-        <FormFeedbackAwesome pending={validation.pending} />
+        <FormFeedback pending={validation.pending} />
       </FormGroup>
     );
   }
