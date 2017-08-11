@@ -23,7 +23,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -44,8 +44,9 @@
     <Reference Include="Antlr3.Runtime">
       <HintPath>..\..\lib\Antlr\Antlr3.Runtime.dll</HintPath>
     </Reference>
-    <Reference Include="AntlrUtil">
-      <HintPath>..\..\lib\Antlr\AntlrUtil.dll</HintPath>
+    <Reference Include="AntlrUtil, Version=1.1.6165.30835, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\AntlrUtil\bin\Debug\AntlrUtil.dll</HintPath>
     </Reference>
     <Reference Include="ICSharpCode.TextEditor">
       <HintPath>..\..\lib\ICSharpCode.TextEditor.dll</HintPath>
@@ -190,6 +191,6 @@
       <FilesToCopy Include="$(TargetDir)$(TargetName)*.dll" />
       <FilesToCopy Include="$(TargetDir)antlr*.dll" />
     </ItemGroup>
-    <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(SolutionDir)$(OutDir)ScriptTypes\" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(OutDir)ScriptTypes\" SkipUnchangedFiles="true" />
   </Target>
 </Project>

@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModInstallerTests", "ModIns
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UtilsTests", "UtilsTests\UtilsTests.csproj", "{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AntlrUtil", "AntlrUtil\AntlrUtil.csproj", "{8B2AD10B-4E22-4559-A784-648179225ADC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -141,6 +143,18 @@ Global
 		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Release|x64.Build.0 = Release|Any CPU
 		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Release|x86.ActiveCfg = Release|Any CPU
 		{DECB195F-A137-4545-AFB9-CFF6CCE00F6D}.Release|x86.Build.0 = Release|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Debug|x64.Build.0 = Debug|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Debug|x86.Build.0 = Debug|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Release|x64.ActiveCfg = Release|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Release|x64.Build.0 = Release|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Release|x86.ActiveCfg = Release|Any CPU
+		{8B2AD10B-4E22-4559-A784-648179225ADC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

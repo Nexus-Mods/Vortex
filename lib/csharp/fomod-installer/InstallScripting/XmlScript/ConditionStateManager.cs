@@ -121,11 +121,11 @@ namespace FomodInstaller.Scripting.XmlScript
 				{
                     // ??? Where is this used? Do we need it
                     //m_dicImageCache[p_strPath] = new ExtendedImage(Mod.GetFile(p_strPath));
-                    return Properties.Resources.notFoundJPG;
+                    return null;
                 }
 				catch (FileNotFoundException)
 				{
-					return Properties.Resources.notFoundJPG;
+					return null;
 				}
 			}
 			return m_dicImageCache[p_strPath];

@@ -59,25 +59,5 @@ namespace Nexus.Client.ModManagement.Scripting.ModScript.Properties {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap document_open_5 {
-            get {
-                object obj = ResourceManager.GetObject("document_open_5", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap document_save_5 {
-            get {
-                object obj = ResourceManager.GetObject("document_save_5", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
     }
 }
