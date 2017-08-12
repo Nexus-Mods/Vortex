@@ -309,6 +309,7 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerDialog('profile-transfer-connector', Connector);
+  context.registerDialog('transfer-dialog-settings', TransferDialog);
 
   return true;
 }

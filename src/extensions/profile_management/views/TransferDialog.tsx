@@ -142,6 +142,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
   private apply = () => {
     const { dialog } = this.state;
+    // Apply edits to target profile
     this.close();
   }
 
