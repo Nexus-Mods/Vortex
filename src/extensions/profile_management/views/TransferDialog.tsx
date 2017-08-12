@@ -3,6 +3,7 @@ import { IProfile } from '../types/IProfile';
 
 import { ComponentEx, log, tooltip } from 'nmm-api';
 import * as React from 'react';
+import { Button, Checkbox, FormControl, Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 
