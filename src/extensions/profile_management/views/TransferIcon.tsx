@@ -30,13 +30,14 @@ export interface IBaseProps {
 
 interface IConnectedProps {
   gameId: string;
+  profiles: IProfile[];
 }
 
 interface IActionProps {
   onSetSource: (id: string, pos: { x: number, y: number }) => void;
   onSetTarget: (id: string, pos: { x: number, y: number }) => void;
-  onEditDialog: (gameId: string, referenceId: string,
-                 reference: string, defaultType: string) => void;
+  onEditDialog: (gameId: string, source: IProfile,
+                 target: IProfile, profiles: IProfile[]) => void;
 }
 
 interface IComponentState {
@@ -83,10 +84,6 @@ function updateCursorPos(monitor: __ReactDnd.DragSourceMonitor,
     const curPos = monitor.getClientOffset();
     const dist = Math.abs(curPos.x - lastUpdatePos.x) + Math.abs(curPos.y - lastUpdatePos.y);
     if (dist > 2) {
-      /*
-      const sourceId = (monitor.getItem() as any).id;
-      onSetSource(sourceId, componentCenter(component));
-      */
       lastUpdatePos = curPos;
       onSetTarget(null, curPos);
     }
@@ -107,17 +104,18 @@ const transferSource: __ReactDnd.DragSourceSpec<IProps> = {
     clearTimeout(cursorPosUpdater);
     cursorPosUpdater = undefined;
 
-    const source: string = (monitor.getItem() as any).id;
-    props.onSetSource(source, undefined);
+    const source: IProfile = (monitor.getItem() as IProfile);
+    props.onSetSource(source.id, undefined);
 
     if (monitor.getDropResult() === null) {
       return;
     }
 
-    const dest: string = (monitor.getDropResult() as any).id;
+    const destId: string = (monitor.getDropResult() as any).id;
+    const dest: IProfile = props.profiles.find(x => x.id === destId);
 
     if (source !== dest) {
-      props.onEditDialog(props.profile.gameId, source, dest, 'after');
+      props.onEditDialog(props.profile.gameId, sourceProfile, dest, props.profiles);
     }
   },
 };
@@ -194,7 +192,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
     const popoverBlocks = [];
 
     if (popoverBlocks.length > 0) {
-      classes.push('btn-transfer-hasrules');
+      classes.push('btn-transfer-hasOptions');
     } else {
       popoverBlocks.push(t('Drag to another connector to start a profile transfer.'));
     }
@@ -205,13 +203,13 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
     );
 
     const connectorIcon = connectDragSource(
-        <div style={{ display: 'inline' }}>
+        <div style={{ display: 'inline-block' }}>
           <tooltip.IconButton
             id={`btn-meta-data-${profile.id}`}
             className={classes.join(' ')}
             key={`rules-${profile.id}`}
             tooltip={t('Drag to profile to start the transfer')}
-            icon='export'
+            icon='import'
             ref={this.setRef}
             onClick={this.toggleOverlay}
           />
@@ -255,6 +253,7 @@ const TransferIconDrag =
 function mapStateToProps(state): IConnectedProps {
   return {
     gameId: selectors.activeGameId(state),
+    profiles: selectors.gameProfiles(state),
   };
 }
 
@@ -262,8 +261,8 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onSetSource: (id, pos) => dispatch(setSource(id, pos)),
     onSetTarget: (id, pos) => dispatch(setTarget(id, pos)),
-    onEditDialog: (gameId, profileId, reference, defaultType) =>
-      dispatch(setCreateTransfer(gameId, profileId, reference, defaultType)),
+    onEditDialog: (gameId, source, target, profiles) =>
+      dispatch(setCreateTransfer(gameId, source, target, profiles)),
   };
 }
 

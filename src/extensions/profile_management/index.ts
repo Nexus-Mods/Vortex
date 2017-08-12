@@ -32,6 +32,7 @@ import { IProfile } from './types/IProfile';
 import { IProfileFeature } from './types/IProfileFeature';
 import Connector from './views/Connector';
 import ProfileView from './views/ProfileView';
+import TransferDialog from './views/TransferDialog';
 
 import { activeGameId, activeProfile } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
