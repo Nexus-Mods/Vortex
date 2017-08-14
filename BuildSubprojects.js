@@ -176,11 +176,11 @@ function processCustom(project, buildType, feedback) {
       .then(() => npm(['install'], { cwd: project.path }, feedback))
       .then(() => npm(['run', typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback));
   if (project.copyTo !== undefined) {
+    const source = path.join(project.path, 'dist', '**', '*');
     const output = format(project.copyTo, { BUILD_DIR: buildType });
-    feedback.log('copying files to ' + output);
+    feedback.log('copying files', source, output);
     res =
-        res.then(() => copyfilesAsync(
-                     [path.join(project.path, 'dist', '**', '*'), output], 3));
+        res.then(() => copyfilesAsync([source, output], project.depth || 3));
   }
   return res;
 }

@@ -33,6 +33,7 @@
       "path": "lib/csharp/fomod-installer",
       "sources": ["**/*.cs", "**/*.csproj", "src/FomodInstaller.sln"],
       "build": "buildDev",
+      "depth": 4,
       "copyTo": "{BUILD_DIR}/lib/modinstaller"
     },
     {
@@ -42,6 +43,7 @@
       "path": "lib/csharp/fomod-installer",
       "sources": ["**/*.cs", "**/*.csproj", "src/FomodInstaller.sln"],
       "build": "build",
+      "depth": 4,
       "copyTo": "{BUILD_DIR}/lib/modinstaller"
     }
   ], [
