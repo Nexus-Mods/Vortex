@@ -14,6 +14,10 @@ export const setModEnabled = safeCreateAction(
   'SET_MOD_ENABLED',
   (profileId: string, modId: string, enable: boolean) => ({profileId, modId, enable}));
 
+export const forgetMod = safeCreateAction(
+  'FORGET_PROFILE_MOD',
+  (profileId: string, modId: string) => ({ profileId, modId }));
+
 export const setFeature = safeCreateAction(
-  'SET_FEATURE',
+  'SET_PROFILE_FEATURE',
   (profileId: string, featureId: string, value: any) => ({profileId, featureId, value}));

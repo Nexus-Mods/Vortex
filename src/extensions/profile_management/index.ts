@@ -23,7 +23,7 @@ import { IState } from '../../types/IState';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 
-import { setProfile } from './actions/profiles';
+import { forgetMod, setProfile } from './actions/profiles';
 import { setCurrentProfile, setNextProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
 import { settingsReducer } from './reducers/settings';
@@ -56,6 +56,15 @@ function profilePath(store: Redux.Store<any>, profile: IProfile): string {
 
 function checkProfile(store: Redux.Store<any>, currentProfile: IProfile): Promise<void> {
   return fs.ensureDirAsync(profilePath(store, currentProfile));
+}
+
+function sanitiseProfile(store: Redux.Store<any>, profile: IProfile): void {
+  const state: IState = store.getState();
+  Object.keys(profile.modState).forEach(modId => {
+    if (state.persistent.mods[profile.gameId][modId] === undefined) {
+      store.dispatch(forgetMod(profile.id, modId));
+    }
+  });
 }
 
 function refreshProfile(store: Redux.Store<any>, profile: IProfile,
@@ -237,8 +246,9 @@ function init(context: IExtensionContextExt): boolean {
               });
             };
             context.api.events.emit('profile-will-change', current, enqueue);
-
-            queue.then(() => refreshProfile(store, profile, 'export'))
+            sanitiseProfile(store, profile);
+            queue
+                .then(() => refreshProfile(store, profile, 'export'))
                 .then(() => {
                   const gameId = profile !== undefined ? profile.gameId : undefined;
                   store.dispatch(setCurrentProfile(gameId, current));

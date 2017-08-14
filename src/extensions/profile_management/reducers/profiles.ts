@@ -27,6 +27,9 @@ export const profilesReducer: IReducerSpec = {
         [profileId, 'modState', modId, 'enabled'],
         enable);
     },
+    [actions.forgetMod as any]: (state, payload) => {
+      return deleteOrNop(state, [payload.profileId, 'modState', payload.modId]);
+    },
     [actions.setFeature as any]: (state, payload) => {
       const { profileId, featureId, value } = payload;
 

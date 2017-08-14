@@ -101,7 +101,6 @@ class GameRow extends ComponentEx<IProps, {}> {
                 icon='alert-circle-i'
                 className='btn-embed'
                 tooltip={t('Show Details')}
-                stroke
               />
             </OverlayTrigger>
             <IconBar

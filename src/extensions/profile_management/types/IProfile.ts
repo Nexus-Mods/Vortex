@@ -1,6 +1,5 @@
 export interface IProfileMod {
   enabled: boolean;
-  order: number;
 }
 
 export interface IProfile {

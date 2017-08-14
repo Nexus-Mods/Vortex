@@ -119,7 +119,12 @@
       "!**/node_modules/leveldown/deps${/*}",
       "!**/node_modules/node-sass/{build,src,vendor}${/*}",
       "!**/node_modules/react-layout-pane/{demo,docs}${/*}",
-      "!**/node_modules/recharts/umd${/*}"
+      "!**/node_modules/recharts/umd${/*}",
+      "!**/node_modules/ffi/deps",
+      "!**/Release/*.map",
+      "!**/node_modules/recharts/node_modules/d3-scale/img",
+      "!**/node_modules/recharts/node_modules/d3-shape/img",
+      "!**/node_modules/d3-geo/img"
     ]
   },
   "parserOptions": {
