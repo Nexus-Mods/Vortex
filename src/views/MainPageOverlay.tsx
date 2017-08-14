@@ -28,6 +28,9 @@ class MainPageOverlay extends React.Component<IProps, {}> {
   public context: IComponentContext;
 
   public render(): JSX.Element {
+    if (this.context.overlayPortal() === null) {
+      return null;
+    }
     return (this.context.page === this.props.mainPage) ? (
       <Portal container={this.context.overlayPortal}>
         <div>

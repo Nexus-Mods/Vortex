@@ -32,6 +32,9 @@ class MainPageHeader extends React.Component<IProps, {}> {
   }
 
   public render(): JSX.Element {
+    if (this.context.headerPortal() === null) {
+      return null;
+    }
     return (this.props.mainPage === this.context.page) ? (
       <Portal container={this.context.headerPortal}>
         <div className='mainpage-header'>
