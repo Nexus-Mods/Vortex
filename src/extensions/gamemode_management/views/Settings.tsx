@@ -35,8 +35,8 @@ class SearchPathEntry extends ComponentEx<IPathProps, {}> {
         <IconButton
           className='btn-embed'
           id='remove'
-          tooltip={ t('Remove') }
-          onClick={ this.removePath }
+          tooltip={t('Remove')}
+          onClick={this.removePath}
           icon='remove'
         />
       </ListGroupItem>
@@ -76,18 +76,18 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
         <FormGroup>
           <ControlLabel>{ t('Search Paths') }</ControlLabel>
           <ListGroup className='list-game-search'>
-            { searchPaths.map(this.renderPath) }
+            {searchPaths.map(this.renderPath)}
             <ListGroupItem>
               <IconButton
                 className='btn-embed'
                 id='add'
-                tooltip={ t('Add') }
-                onClick={ this.addSearchPath }
+                tooltip={t('Add')}
+                onClick={this.addSearchPath}
                 icon='plus'
               />
             </ListGroupItem>
           </ListGroup>
-          <HelpBlock>{ t('Directories to search when looking for games.') }</HelpBlock>
+          <HelpBlock>{t('Directories to search when looking for games.')}</HelpBlock>
         </FormGroup>
       </form>
     );

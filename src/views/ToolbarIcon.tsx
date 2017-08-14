@@ -40,13 +40,13 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
         disabled={disabled}
         className={className}
       >
-        { ['icon', 'both'].indexOf(bType) !== -1
+        {['icon', 'both'].indexOf(bType) !== -1
           ? <Icon set={iconSet} name={icon} pulse={pulse} />
-          : null }
-        { ['text', 'both'].indexOf(bType) !== -1
+          : null}
+        {['text', 'both'].indexOf(bType) !== -1
           ? <p className='button-text'>{text}</p>
-          : null }
-        { this.props.children }
+          : null}
+        {this.props.children}
       </Button>
     );
   }

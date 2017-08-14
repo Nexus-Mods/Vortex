@@ -85,13 +85,13 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
     return (
       <form>
         <FormGroup controlId='languageSelect'>
-          <ControlLabel>{t('Language') }</ControlLabel>
+          <ControlLabel>{t('Language')}</ControlLabel>
           <FormControl
             componentClass='select'
             onChange={this.selectLanguage}
             value={currentLanguage}
           >
-            { this.state.languages.map((language) => this.renderLanguage(language)) }
+            {this.state.languages.map((language) => this.renderLanguage(language))}
           </FormControl>
         </FormGroup>
         <FormGroup controlId='advanced'>
@@ -156,7 +156,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   private renderLanguage(language: ILanguage): JSX.Element {
     return (
       <option key={language.key} value={language.key}>
-      { this.languageName(language) }
+      {this.languageName(language)}
       </option>
     );
   }

@@ -109,7 +109,9 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
     return (
       <Tweak
         key={`tweak-${fileName}`}
-        fileName={fileName} enabled={isEnabled} onToggle={this.toggle}
+        fileName={fileName}
+        enabled={isEnabled}
+        onToggle={this.toggle}
       />);
   }
 

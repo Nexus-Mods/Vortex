@@ -5,10 +5,10 @@ import { IModWithState } from '../types/IModProps';
 import { compare } from 'semvish';
 
 function byModId(input: IModWithState[]): IModWithState[][] {
-  const byModId = input.reduce((prev: { [modId: string]: IModWithState[] }, value) =>
+  const grouped = input.reduce((prev: { [modId: string]: IModWithState[] }, value) =>
     pushSafe(prev, [getSafe(value, ['attributes', 'modId'], undefined)], value)
     , {});
-  return Object.keys(byModId).map(modId => byModId[modId]);
+  return Object.keys(grouped).map(modId => grouped[modId]);
 }
 
 interface IFileId {
@@ -42,11 +42,11 @@ function byFile(input: IModWithState[]): IModWithState[][] {
   const groups: IModWithState[][] = [];
   input.forEach((mod: IModWithState) => {
     // TODO: O(n^2)
-    const group = groups.find(iter => fileMatch(iter[0], mod));
-    if (group === undefined) {
+    const fileGroup = groups.find(iter => fileMatch(iter[0], mod));
+    if (fileGroup === undefined) {
       groups.push([mod]);
     } else {
-      group.push(mod);
+      fileGroup.push(mod);
     }
   });
   return groups;

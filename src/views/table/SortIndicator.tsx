@@ -21,8 +21,8 @@ class SortIndicator extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { direction } = this.props;
     return (
-      <div style={{ display: 'inline' }} onClick={ this.cycleDirection }>
-        <Icon name={ this.icon(direction) } />
+      <div style={{ display: 'inline' }} onClick={this.cycleDirection}>
+        <Icon name={this.icon(direction)} />
       </div>
     );
   }
@@ -36,8 +36,8 @@ class SortIndicator extends React.Component<IProps, {}> {
   private icon(direction: SortDirection): string {
     switch (direction) {
       case 'none': return 'arrow-updown';
-      case 'asc': return 'triangle-down';
-      case 'desc': return 'triangle-up';
+      case 'asc': return 'triangle-up';
+      case 'desc': return 'triangle-down';
       default: return 'question';
     }
   }

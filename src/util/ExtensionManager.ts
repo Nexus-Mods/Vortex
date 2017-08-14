@@ -86,6 +86,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
     this.mApiAdditions = [];
     // TODO: check if this is necessary. Ususally the arrow lambda should
     //   bind this automatically
+    // tslint:disable-next-line:no-this-assignment
     const that = this;
     this.mOptional = new Proxy({}, {
       get(target, key: PropertyKey): any {

@@ -49,6 +49,8 @@ const nameMap = {
   centralize: 'compress',
   disperse: 'expand',
   'dashboard-half': 'tachometer',
+  'like-2': 'like-maybe',
+  security: 'shield',
 };
 
 function transformId(id) {

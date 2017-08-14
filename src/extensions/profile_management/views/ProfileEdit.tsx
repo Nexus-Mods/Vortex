@@ -49,9 +49,9 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
       <FormControl
         autoFocus
         type='text'
-        value={ edit.name }
-        onChange={ this.changeEditName }
-        onKeyPress={ this.handleKeypress }
+        value={edit.name}
+        onChange={this.changeEditName}
+        onKeyPress={this.handleKeypress}
         style={{flexGrow: 1}}
       />
     );
@@ -59,10 +59,10 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
       <ListGroupItem key={profileId}>
         <div className='inline-form'>
         {inputControl}
-        <Button id='__accept' tooltip={ t('Accept') } onClick={ this.saveEdit }>
+        <Button id='__accept' tooltip={t('Accept')} onClick={this.saveEdit}>
           <Icon name='check' />
         </Button>
-        <Button id='__cancel' tooltip={ t('Cancel') } onClick={ onCancelEdit }>
+        <Button id='__cancel' tooltip={t('Cancel')} onClick={onCancelEdit}>
           <Icon name='remove' />
         </Button>
         </div>

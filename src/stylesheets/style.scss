@@ -334,27 +334,23 @@ div:hover > .hover-expand {
 .select-compact {
   padding: 0px;
   height: auto;
+  font-weight: normal;
 
   .Select-value {
     margin: 0px;
     padding: 0px;
-    height: 20px;
     white-space: nowrap;
   }
   .Select-value-icon {
-    padding: 0px 7px;
-  }
-  .Select-value-label {
     padding: 0px 7px;
   }
   .Select-control {
     height: 20px;
   }
   .Select-input {
-    height: 20px;
     margin-top: 0.2em;
     input {
-      height: 100%;
+      line-height: initial;
     }
   }
   .Select-placeholder {
@@ -466,8 +462,7 @@ a[role=menuitem] svg {
 }
 
 .icon-stroke {
-  stroke: $brand-bg;
-  stroke-width: 0.25em;
+  stroke: currentColor;
 }
 
 @keyframes icon-spin {

@@ -14,7 +14,7 @@ import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { setActivator, setPath } from '../actions/settings';
 import { IModActivator } from '../types/IModActivator';
 import resolvePath, { pathDefaults, PathKey } from '../util/resolvePath';
-import supportedActivators from '../util/supportedActivators';
+import getSupportedActivators from '../util/supportedActivators';
 
 import getText from '../texts';
 
@@ -102,11 +102,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     const gameName = getSafe(discovery, ['name'], getSafe(game, ['name'], undefined));
 
+    const label = t('Settings for {{name}}', {
+      replace: {
+        name: game.name,
+      },
+    });
+
     return gameMode !== undefined ? (
       <form>
-        <FormControl.Static componentClass='h4'>{ t('Settings for {{name}}', { replace: {
-          name: game.name,
-          }}) }</FormControl.Static>
+        <FormControl.Static componentClass='h4'>{label}</FormControl.Static>
         <Panel footer={this.renderFooter()}>
           {this.renderPathCtrl(paths, t('Base Path'), 'base')}
           {this.renderPathCtrl(paths, t('Download Path'), 'download')}
@@ -145,7 +149,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
    * @returns {IModActivator[]}
    */
   private supportedActivators(): IModActivator[] {
-    return supportedActivators(this.props.activators, this.props.state);
+    return getSupportedActivators(this.props.activators, this.props.state);
   }
 
   private pathsChanged() {

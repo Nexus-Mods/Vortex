@@ -37,7 +37,7 @@ class EndorseModButton extends ComponentEx<IProps, {}> {
       Undecided: { icon: 'like-maybe', tooltip: t('Undecided') },
       Abstained: { icon: 'like-no', tooltip: t('Abstained') },
       Endorsed: { icon: 'like', tooltip: t('Endorsed') },
-    }[endorsedStatus] || { icon: 'star-half-o', tooltip: t('Undecided') };
+    }[endorsedStatus] || { icon: 'like-maybe', tooltip: t('Undecided') };
 
     return (
       <div style={{ textAlign: 'center' }}>
@@ -47,6 +47,7 @@ class EndorseModButton extends ComponentEx<IProps, {}> {
           tooltip={tooltip}
           icon={icon}
           onClick={this.endorseMod}
+          stroke
         />
       </div>
     );

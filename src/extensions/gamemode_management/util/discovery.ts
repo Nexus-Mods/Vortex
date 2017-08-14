@@ -142,7 +142,7 @@ export function quickDiscovery(knownGames: IGame[],
  */
 function walk(searchPath: string,
               matchList: Set<string>,
-              blackList: RegExp,
+              exclude: RegExp,
               resultCB: (path: string) => void,
               progress: Progress,
               normalize: Normalize) {
@@ -150,7 +150,7 @@ function walk(searchPath: string,
     searchPath += path.sep;
   }
 
-  if (blackList.test(searchPath)) {
+  if (exclude.test(searchPath)) {
     return null;
   }
 
@@ -207,7 +207,7 @@ function walk(searchPath: string,
           subProgress = progress.derive();
           progress.completed(statPaths[idx]);
         }
-        return walk(statPaths[idx], matchList, blackList, resultCB,
+        return walk(statPaths[idx], matchList, exclude, resultCB,
          subProgress, normalize);
       });
     }).catch(err => {

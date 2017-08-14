@@ -93,19 +93,19 @@ export const INSTALL_TIME: ITableAttribute = {
     if (detail) {
       const lang = getCurrentLanguage();
       return (
-        <p>
+        <span>
           {
             timeString !== undefined
               ? new Date(timeString).toLocaleString(lang)
               : t('Not installed')
           }
-        </p>
+        </span>
       );
     } else {
       if (timeString === undefined) {
-        return <p>{t('Not installed')}</p>;
+        return <span>{t('Not installed')}</span>;
       }
-      return <p>{ relativeTime(new Date(timeString), t) }</p>;
+      return <span>{relativeTime(new Date(timeString), t)}</span>;
     }
   },
   calc: (mod: IModWithState) => new Date(getSafe(mod.attributes, ['installTime'], '')),

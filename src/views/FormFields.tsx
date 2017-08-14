@@ -39,7 +39,7 @@ export class FormTextItem extends React.Component<IFormItemProps, {}> {
         style={style}
       >
         <Col componentClass={ControlLabel} sm={3}>
-          { label }
+          {label}
         </Col>
         <Col sm={9}>
           <FormControl
@@ -50,7 +50,7 @@ export class FormTextItem extends React.Component<IFormItemProps, {}> {
             readOnly={readOnly}
             maxLength={maxLength}
           />
-          { validation ? <ControlLabel>{validation}</ControlLabel> : null }
+          {validation ? <ControlLabel>{validation}</ControlLabel> : null}
         </Col>
         <FormFeedback />
       </FormGroup>

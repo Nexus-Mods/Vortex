@@ -84,12 +84,12 @@ class ToolButton extends ComponentEx<IProps, IToolButtonState> {
     }
 
     return (
-      <div className={ classes.join(' ') }>
+      <div className={classes.join(' ')}>
         <div className='tool-icon-container'>
           <ToolIcon imageUrl={starter.iconPath} imageId={this.mImageId} valid={valid} />
         </div>
         <span>{starter.name}</span>
-        { primary ? <Icon className='tool-bookmark' name='bookmark'/> : null }
+        {primary ? <Icon className='tool-bookmark' name='bookmark'/> : null}
         <IconBar
           id={`tool-starter-${starter.id}`}
           className='buttons'

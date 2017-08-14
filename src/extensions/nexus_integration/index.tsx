@@ -616,7 +616,7 @@ function init(context: IExtensionContextExt): boolean {
   }), (props: { APIKey: string }) => props.APIKey === undefined, () => {
     const t = context.api.translate;
 
-    return (<span>{ t('You\'re not logged in on Nexus Mods.') }</span>);
+    return (<span>{t('You\'re not logged in on Nexus Mods.')}</span>);
   }, () => ({
     icon: 'key',
     text: context.api.translate('Log in'),

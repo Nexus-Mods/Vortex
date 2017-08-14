@@ -35,7 +35,7 @@ class FormFeedback extends React.Component<IFormFeedbackProps, {}> {
     } else {
       return (
         <div {...elementProps} className={classNames(className, classes)}>
-          { icon }
+          {icon}
         </div>
       );
     }
@@ -44,12 +44,12 @@ class FormFeedback extends React.Component<IFormFeedbackProps, {}> {
   private icon(state: string, pending: boolean): JSX.Element {
     const style = { verticalAlign: 'baseline' };
     if (pending) {
-      return <Icon name='spinner' pulse style={ style } />;
+      return <Icon name='spinner' pulse style={style} />;
     }
     switch (state) {
-      case 'success': return <Icon name='check' style={ style } />;
-      case 'warning': return <Icon name='triangle-alert' style={ style } />;
-      case 'error': return <Icon name='cross' style={ style } />;
+      case 'success': return <Icon name='check' style={style} />;
+      case 'warning': return <Icon name='triangle-alert' style={style} />;
+      case 'error': return <Icon name='cross' style={style} />;
       default: return undefined;
     }
   }

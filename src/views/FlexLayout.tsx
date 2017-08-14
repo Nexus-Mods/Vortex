@@ -13,7 +13,7 @@ const Fixed = (props: React.HTMLAttributes<HTMLDivElement>) => {
       className={appendClasses(props.className, ['layout-fixed'])}
       {..._.omit(props, ['className'])}
     >
-      { props.children }
+      {props.children}
     </div>
   );
 };
@@ -34,7 +34,7 @@ const Flex = (props: IFlexProps & React.HTMLAttributes<HTMLDivElement>) => {
         className={appendClasses(props.className, classes)}
         {..._.omit(props, ['className'])}
       >
-        { props.children }
+        {props.children}
       </div>
     </div>
   );
@@ -69,7 +69,7 @@ class FlexLayout extends React.PureComponent<IProps, {}> {
         style={fullStyle}
         {...relayProps}
       >
-        { this.props.children }
+        {this.props.children}
       </div>
     );
   }

@@ -280,7 +280,8 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
       <Dropdown
         id='add-tool-button'
         className='btn-add-tool'
-        container={this.mRef}>
+        container={this.mRef}
+      >
         <Dropdown.Toggle>
           <Icon name='plus' />
           <span className='btn-add-tool-text'>{t('Add Tool')}</span>

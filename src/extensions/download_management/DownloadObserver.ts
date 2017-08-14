@@ -78,9 +78,8 @@ export class DownloadObserver {
                       return Promise.resolve([inputUrl]);
                     }
                   }))
-        .reduce((prev: string[], current: string[]) => {
-          return prev.concat(current);
-        }, []);
+        .reduce((prev: string[], current: string[]) =>
+          prev.concat(current), []);
   }
 
   private handleStartDownload(urls: string[],

@@ -1,4 +1,5 @@
 import {showDialog} from '../../actions/notifications';
+import { setSettingsPage } from '../../actions/session';
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {IState, IStatePaths} from '../../types/IState';
 import { ITableAttribute, Placement } from '../../types/ITableAttribute';
@@ -313,7 +314,8 @@ function genValidActivatorCheck(api: IExtensionApi) {
       },
       severity: 'error',
       automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
-        api.events.emit('show-modal', 'settings');
+        api.events.emit('show-main-page', 'Settings');
+        api.store.dispatch(setSettingsPage('Mods'));
         api.events.on('hide-modal', (modal) => {
           if (modal === 'settings') {
             fixResolve();

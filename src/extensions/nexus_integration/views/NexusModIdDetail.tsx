@@ -39,7 +39,7 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
             onChange={this.updateNexusModId}
             readOnly={readOnly}
           />
-          { readOnly ? null : <FormFeedback /> }
+          {readOnly ? null : <FormFeedback />}
           <ControlLabel>
             {isIdValid ? <p><a onClick={this.openPage}>{t('Visit on www.nexusmods.com')}</a></p>
                        : <p>{t('Nexus Mod Ids are numbers')}</p>}

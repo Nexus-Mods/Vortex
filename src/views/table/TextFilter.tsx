@@ -34,6 +34,9 @@ class TextFilter implements ITableFilter {
 
   public matches(filter: any, value: any): boolean {
     if (this.mCaseSensitive) {
+      if ((value === undefined) || (filter === undefined)) {
+        return false;
+      }
       return value.toLowerCase().indexOf(filter.toLowerCase()) !== -1;
     } else {
       return value.indexOf(filter) !== -1;

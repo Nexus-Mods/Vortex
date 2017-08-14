@@ -114,18 +114,18 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     return (profileId === this.state.edit) ? null : (
       <ProfileItem
-        t={ t }
-        key={ profileId }
-        profile={ profiles[profileId] }
-        features={ features }
-        gameName={ gameName }
-        active={ currentProfile === profileId }
-        onClone={ this.onCloneProfile }
-        onRemove={ this.onRemoveProfile }
-        onActivate={ onSetNextProfile }
-        onStartEditing={ this.editExistingProfile }
-        highlightGameId={ this.state.highlightGameId }
-        onSetHighlightGameId={ this.setHighlightGameId }
+        t={t}
+        key={profileId}
+        profile={profiles[profileId]}
+        features={features}
+        gameName={gameName}
+        active={currentProfile === profileId}
+        onClone={this.onCloneProfile}
+        onRemove={this.onRemoveProfile}
+        onActivate={onSetNextProfile}
+        onStartEditing={this.editExistingProfile}
+        highlightGameId={this.state.highlightGameId}
+        onSetHighlightGameId={this.setHighlightGameId}
       />
     );
   }
@@ -154,15 +154,15 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     return (
       <ProfileEdit
-        key={ edit }
-        profileId={ edit }
-        gameId={ gameId }
-        t={ t }
-        features={ features }
-        profile={ profile }
-        onSetFeature={ onSetFeature }
-        onSaveEdit={ this.saveEdit }
-        onCancelEdit={ this.endEdit }
+        key={edit}
+        profileId={edit}
+        gameId={gameId}
+        t={t}
+        features={features}
+        profile={profile}
+        onSetFeature={onSetFeature}
+        onSaveEdit={this.saveEdit}
+        onCancelEdit={this.endEdit}
       />
     );
   }
@@ -173,9 +173,9 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
       <ListGroupItem
         key='__add'
         header={<Icon name='plus' />}
-        onClick={ this.editNewProfile }
+        onClick={this.editNewProfile}
       >
-        { t('Add Profile') }
+        {t('Add Profile')}
       </ListGroupItem>
     );
   }

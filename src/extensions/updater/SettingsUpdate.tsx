@@ -23,14 +23,14 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
     return (
       <form>
         <FormGroup controlId='updateChannel'>
-          <ControlLabel>{t('Update') }</ControlLabel>
+          <ControlLabel>{t('Update')}</ControlLabel>
           <FormControl
             componentClass='select'
-            onChange={ this.selectChannel }
+            onChange={this.selectChannel}
             value={updateChannel}
           >
-            <option value='stable'>{ t('Stable') }</option>
-            <option value='beta'>{ t('Beta') }</option>
+            <option value='stable'>{t('Stable')}</option>
+            <option value='beta'>{t('Beta')}</option>
           </FormControl>
         </FormGroup>
       </form>

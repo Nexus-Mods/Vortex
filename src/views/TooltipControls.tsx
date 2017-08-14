@@ -158,11 +158,11 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
           delayHide={150}
         >
           <BootstrapButton {...relayProps as any}>
-            { ['icon', 'both'].indexOf(bType) !== -1 ? <SvgIcon name={icon} /> : null }
-            { ['text', 'both'].indexOf(bType) !== -1
+            {['icon', 'both'].indexOf(bType) !== -1 ? <SvgIcon name={icon} /> : null}
+            {['text', 'both'].indexOf(bType) !== -1
               ? <p className='button-text'>{tooltipText}</p>
-              : null }
-            { this.props.children }
+              : null}
+            {this.props.children}
           </BootstrapButton>
         </OverlayTrigger>
       );

@@ -79,17 +79,17 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
   public render(): JSX.Element {
     const { t, APIKey, visible, onHide, userInfo } = this.props;
     return (
-      <Modal show={visible} onHide={ onHide }>
+      <Modal show={visible} onHide={onHide}>
         <Modal.Header>
           <Modal.Title>
-          { APIKey === '' ? t('API Key Validation') : t('User Info') }
+          {APIKey === '' ? t('API Key Validation') : t('User Info')}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {this.renderLoginForm()}
         </Modal.Body>
         <Modal.Footer>
-          { this.renderSubmitButton() }
+          {this.renderSubmitButton()}
         </Modal.Footer>
       </Modal>
     );
@@ -161,16 +161,16 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
           <ControlLabel>{t('UserName: {{name}}', { replace: { name } })}</ControlLabel>
         </div>
         <div>
-          <ControlLabel>{
-            t('Premium: {{isPremium}}',
-              { replace: { isPremium: (isPremium ? t('YES') : t('NO')) } })
-          } </ControlLabel>
+          <ControlLabel>
+            {t('Premium: {{isPremium}}',
+              { replace: { isPremium: (isPremium ? t('YES') : t('NO')) } })}
+          </ControlLabel>
         </div>
         <div>
-          <ControlLabel>{
-            t('Supporter: {{isSupporter}}',
-              { replace: { isSupporter: (isSupporter ? t('YES') : t('NO')) } })
-          }</ControlLabel>
+          <ControlLabel>
+            {t('Supporter: {{isSupporter}}',
+              { replace: { isSupporter: (isSupporter ? t('YES') : t('NO')) } })}
+          </ControlLabel>
         </div>
         <div>
           <ControlLabel>{t('Email: {{email}}', { replace: { email } })}</ControlLabel>

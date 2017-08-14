@@ -65,11 +65,11 @@ function execInfo(scriptPath: string, parameters?: string[]) {
 }
 
 function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string, main: (ipc) => void) {
-  const path = require('path');
+  const elevatedPath = require('path');
   const requireOrig = require;
   const newRequire: any = (id: string): any => {
     if (id.startsWith('.')) {
-      return requireOrig(path.join(baseDir, id));
+      return requireOrig(elevatedPath.join(baseDir, id));
     } else {
       return requireOrig(id);
     }

@@ -260,7 +260,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 <ControlLabel>{t('Environment Variables')}</ControlLabel>
               </Col>
               <Col sm={9}>
-                {this.renderEnvironment(this.state.tool.environment) }
+                {this.renderEnvironment(this.state.tool.environment)}
               </Col>
             </FormGroup>
 

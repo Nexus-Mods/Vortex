@@ -8,12 +8,12 @@ import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
 import * as Promise from 'bluebird';
+import contentType = require('content-type');
 import * as fs from 'fs-extra-promise';
 import * as http from 'http';
 import * as path from 'path';
 import requestT = require('request');
 import * as url from 'url';
-import contentType = require('content-type');
 
 import { log } from '../../util/log';
 
