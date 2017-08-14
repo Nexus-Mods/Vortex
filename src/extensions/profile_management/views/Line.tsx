@@ -31,7 +31,6 @@ const Line = (props: ILineProps) => {
       width={boxWidth}
       height={boxHeight}
       style={{ position: 'fixed', top, left, pointerEvents: 'none' }}
-      z-index={1}
     >
       <path className={className} d={path} fill='none' />
     </svg>

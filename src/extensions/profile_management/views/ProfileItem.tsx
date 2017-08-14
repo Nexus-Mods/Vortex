@@ -16,11 +16,13 @@ export interface IProps {
   profile: IProfile;
   gameName: string;
   features: IProfileFeature[];
+  highlightGameId: string;
 
   onActivate: (profileId: string) => void;
   onClone: (profileId: string) => void;
   onRemove: (profileId: string) => void;
   onStartEditing: (id: string) => void;
+  onSetHighlightGameId: (gameId: string) => void;
 }
 
 /**
@@ -31,7 +33,7 @@ export interface IProps {
  */
 class ProfileItem extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, active, features, gameName, profile } = this.props;
+    const { t, active, features, gameName, highlightGameId, profile } = this.props;
 
     const enabledMods = Object.keys(profile.modState).reduce(
       (prev: number, key: string): number => {
@@ -41,10 +43,15 @@ class ProfileItem extends ComponentEx<IProps, {}> {
     // TODO: not using ListGroupItem because it puts the content into
     //       <p>-tags so it doesn't support 'complex' content
 
-    const className = active ? 'list-group-item active' : 'list-group-item';
+    const classes = ['list-group-item'];
+    if ((highlightGameId !== undefined) && (highlightGameId !== profile.gameId)) {
+      classes.push('disabled');
+    } else if (active) {
+      classes.push('active');
+    }
 
     return (
-      <span className={className} style={{ display: 'flex' }}>
+      <span className={classes.join(' ')} style={{ display: 'flex' }}>
         <div style={{ flex: '1 1 0' }}>
           <h4 className='list-group-item-heading'>{`${gameName} - ${profile.name}`}</h4>
           <div className='list-group-item-text'>
@@ -62,6 +69,11 @@ class ProfileItem extends ComponentEx<IProps, {}> {
           </div>
         </div>
         <div className='profile-actions'>
+          <TransferIcon
+            t={t}
+            profile={profile}
+            onSetHighlightGameId={this.props.onSetHighlightGameId}
+          />
           <IconButton
             className='btn-embed'
             id={`btn-profile-select-${profile.id}`}

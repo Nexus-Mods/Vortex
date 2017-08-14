@@ -50,6 +50,7 @@ interface IActionProps {
 
 interface IViewState {
   edit: string;
+  highlightGameId: string;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -65,6 +66,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     this.state = {
       edit: null,
+      highlightGameId: undefined,
     };
   }
 
@@ -122,8 +124,16 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         onRemove={ this.onRemoveProfile }
         onActivate={ onSetNextProfile }
         onStartEditing={ this.editExistingProfile }
+        highlightGameId={ this.state.highlightGameId }
+        onSetHighlightGameId={ this.setHighlightGameId }
       />
     );
+  }
+
+  private setHighlightGameId = (gameId: string) => {
+    this.setState(update(this.state, {
+      highlightGameId: { $set: gameId },
+    }));
   }
 
   private renderAddOrEdit(editId: string) {

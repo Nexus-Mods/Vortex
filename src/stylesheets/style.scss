@@ -223,7 +223,7 @@ textarea {
   color: $text-color;
   overflow: hidden;
   white-space: nowrap;
-  padding: 10px 25px 10px 14px;
+  padding: 10px 25px 10px 16px;
   -webkit-user-drag: none;
 }
 
@@ -236,14 +236,14 @@ textarea {
 .nav-pills.nav-pills.nav-stacked > li.active > a:hover,
 .nav-pills.nav-stacked > li.active > a:focus {
   border-left: 4px solid $brand-warning;
-  padding-left: 10px;
+  padding-left: 12px;
 }
 
 .nav-pills.nav-stacked > li.secondary > a,
 .nav-pills.nav-pills.nav-stacked > li.secondary > a:hover,
 .nav-pills.nav-stacked > li.secondary > a:focus {
   border-left: 4px solid $brand-info;
-  padding-left: 10px;
+  padding-left: 12px;
   background-color: $brand-primary;
 }
 
@@ -1486,6 +1486,16 @@ a[role=menuitem] svg {
   overflow-y: auto;
   height: 100%;
   margin-right: $half-gutter;
+}
+
+.profile-connector-layer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  pointer-events: none;
 }
 
 // /profile page

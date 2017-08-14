@@ -1,7 +1,15 @@
-import * as actions from '../actions/transferSetup';
+import { IState } from '../../../types/IState';
+import { ComponentEx } from '../../../util/ComponentEx';
+import { log } from '../../../util/log';
+import { getSafe } from '../../../util/storeHelper';
+import { IconButton } from '../../../views/TooltipControls';
+
+import { IMod } from '../../mod_management/types/IMod';
+
+import { setModEnabled } from '../actions/profiles';
+import { closeDialog } from '../actions/transferSetup';
 import { IProfile } from '../types/IProfile';
 
-import { ComponentEx, log, tooltip } from 'nmm-api';
 import * as React from 'react';
 import { Button, Checkbox, FormControl, Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
@@ -9,23 +17,24 @@ import { connect } from 'react-redux';
 
 interface IDialog {
   gameId: string;
-  source: IProfile;
-  target: IProfile;
-  profiles: IProfile[];
+  source: string;
+  target: string;
 }
 
 interface IConnectedProps {
   dialog: IDialog;
+  mods: { [key: string]: IMod };
+  profiles: { [key: string]: IProfile };
 }
 
 interface IActionProps {
   onCloseDialog: () => void;
+  onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => void;
 }
 
 interface IComponentState {
   dialog: IDialog;
-  setLoadOrder: boolean;
-  setModOrder: boolean;
+  transferEnabledMods: boolean;
 }
 
 type IProps = IConnectedProps & IActionProps;
@@ -39,7 +48,10 @@ type IProps = IConnectedProps & IActionProps;
 class Editor extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
-    this.initState({ dialog: undefined, setLoadOrder: false, setModOrder: false });
+    this.initState({
+      dialog: undefined,
+      transferEnabledMods: true,
+    });
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
@@ -49,12 +61,8 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t } = this.props;
+    const { t, profiles } = this.props;
     const { dialog } = this.state;
-    let profiles;
-    if (dialog !== undefined) {
-      profiles = dialog.profiles;
-    }
 
     return (
       <Modal show={dialog !== undefined} onHide={this.close}>
@@ -62,65 +70,36 @@ class Editor extends ComponentEx<IProps, IComponentState> {
           ? (
             <Modal.Body>
             <div>
-              <FormControl
-                componentClass='select'
-                onChange={this.changeSource}
-                value={dialog.source.id}
-                style={{ marginTop: 20, marginBottom: 20, width: 'initial', display: 'inline' }}
-              >
-              {profiles.map(this.renderProfileOptions)}
-              </FormControl>
-              <tooltip.IconButton
+              <FormControl.Static>
+                {t('From: {{source}}', { replace: { source: profiles[dialog.source].name } })}
+              </FormControl.Static>
+              <IconButton
                 id='btn-swap-profiles'
                 icon='swap-horizontal'
                 tooltip={t('Swap profiles')}
-                rotate={90}
                 onClick={this.swapProfiles}
               />
-              <FormControl
-                componentClass='select'
-                onChange={this.changeTarget}
-                value={dialog.target.id}
-                style={{ marginTop: 20, marginBottom: 20, width: 'initial', display: 'inline' }}
-              >
-              {profiles.map(this.renderProfileOptions)}
-              </FormControl>
+              <FormControl.Static>
+                {t('To: {{target}}', { replace: { target: profiles[dialog.target].name } })}
+              </FormControl.Static>
             </div>
-            <div>
             <Checkbox
-                checked={false}
-                onChange={this.toggleLoadOrder}
-                style={{ display: 'inline' }}
-              >
-                {t('Transfer Load Order')}
+              checked={this.state.transferEnabledMods}
+              onChange={this.toggleTransferEnabled}
+            >
+              {t('Transfer Enabled Mods')}
             </Checkbox>
-            </div>
-            <div>
-            <Checkbox
-                checked={false}
-                onChange={this.toggleModOrder}
-                style={{ display: 'inline' }}
-              >
-                {t('Transfer Mod Order')}
-            </Checkbox>
-            </div>
           </Modal.Body>)
           : null}
         <Modal.Footer>
           <Button onClick={this.close}>{t('Cancel')}</Button>
-          <Button onClick={this.apply}>{t('Apply')}</Button>
+          <Button onClick={this.apply}>{t('Transfer')}</Button>
         </Modal.Footer>
       </Modal>);
   }
 
-  private renderProfileOptions(profile: IProfile): JSX.Element {
-    return (
-      <option key={profile.id} value={profile.id }>{profile.name}</option>
-    );
-  }
-
   private swapProfiles = () => {
-    const temp = this.nextState.dialog.target;
+    const temp = this.nextState.dialog.source;
     this.nextState.dialog.source = this.nextState.dialog.target;
     this.nextState.dialog.target = temp;
   }
@@ -129,12 +108,8 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     this.nextState.dialog.source = event.currentTarget.value;
   }
 
-  private toggleLoadOrder = (event) => {
-    this.nextState.setLoadOrder = event.currentTarget.value;
-  }
-
-  private toggleModOrder = (event) => {
-    this.nextState.setModOrder = event.currentTarget.value;
+  private toggleTransferEnabled = () => {
+    this.nextState.transferEnabledMods = !this.state.transferEnabledMods;
   }
 
   private changeTarget = (event) => {
@@ -142,8 +117,12 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 
   private apply = () => {
+    const { mods, onSetModEnabled, profiles } = this.props;
     const { dialog } = this.state;
-    // Apply edits to target profile
+    Object.keys(mods).forEach(modId => {
+      onSetModEnabled(dialog.target, modId,
+        getSafe(profiles, [dialog.source, 'modState', modId, 'enabled'], false));
+    });
     this.close();
   }
 
@@ -152,16 +131,20 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
-  const dialog: IDialog = state.session.profileTransfer.dialog;
+function mapStateToProps(state: IState): IConnectedProps {
+  const dialog: IDialog = (state.session as any).profileTransfer.dialog;
   return {
     dialog,
+    profiles: state.persistent.profiles,
+    mods: dialog !== undefined ? state.persistent.mods[dialog.gameId] : undefined,
   };
 }
 
 function mapDispatchToProps(dispatch): IActionProps {
   return {
-    onCloseDialog: () => dispatch(actions.closeDialog()),
+    onCloseDialog: () => dispatch(closeDialog()),
+    onSetModEnabled: (profileId: string, modId: string, enabled: boolean) =>
+      dispatch(setModEnabled(profileId, modId, enabled)),
   };
 }
 

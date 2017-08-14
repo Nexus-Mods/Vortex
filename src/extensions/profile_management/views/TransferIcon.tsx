@@ -1,6 +1,8 @@
 import { setCreateTransfer, setSource, setTarget } from '../actions/transferSetup';
 
+import { IState } from '../../../types/IState';
 import { ComponentEx } from '../../../util/ComponentEx';
+import { log } from '../../../util/log';
 import * as tooltip from '../../../views/TooltipControls';
 import * as selectors from '../selectors';
 
@@ -14,10 +16,6 @@ import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
 import { connect } from 'react-redux';
 
-import { log } from '../../../util/log';
-
-let sourceProfile: IProfile;
-
 function splitOnce(input: string, separator: string): string[] {
   const idx = input.indexOf(separator);
   return [input.slice(0, idx), input.slice(idx + 1)];
@@ -26,22 +24,21 @@ function splitOnce(input: string, separator: string): string[] {
 export interface IBaseProps {
   profile: IProfile;
   t: I18next.TranslationFunction;
+  onSetHighlightGameId: (gameId: string) => void;
 }
 
 interface IConnectedProps {
   gameId: string;
-  profiles: IProfile[];
+  profiles: { [key: string]: IProfile };
 }
 
 interface IActionProps {
   onSetSource: (id: string, pos: { x: number, y: number }) => void;
   onSetTarget: (id: string, pos: { x: number, y: number }) => void;
-  onEditDialog: (gameId: string, source: IProfile,
-                 target: IProfile, profiles: IProfile[]) => void;
+  onEditDialog: (gameId: string, source: string, target: string) => void;
 }
 
 interface IComponentState {
-  reference: string;
   showOverlay: boolean;
 }
 
@@ -55,6 +52,7 @@ interface IDropProps {
   connectDropTarget: __ReactDnd.ConnectDropTarget;
   isOver: boolean;
   canDrop: boolean;
+  sourceId: string;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & IDragProps & IDropProps;
@@ -94,13 +92,14 @@ function updateCursorPos(monitor: __ReactDnd.DragSourceMonitor,
 
 const transferSource: __ReactDnd.DragSourceSpec<IProps> = {
   beginDrag(props: IProps, monitor: __ReactDnd.DragSourceMonitor, component) {
+    props.onSetHighlightGameId(props.profile.gameId);
     updateCursorPos(monitor, component, props.onSetSource, props.onSetTarget);
-    sourceProfile = props.profile;
     return {
       id: props.profile.id,
     };
   },
   endDrag(props: IProps, monitor: __ReactDnd.DragSourceMonitor) {
+    props.onSetHighlightGameId(undefined);
     clearTimeout(cursorPosUpdater);
     cursorPosUpdater = undefined;
 
@@ -112,10 +111,9 @@ const transferSource: __ReactDnd.DragSourceSpec<IProps> = {
     }
 
     const destId: string = (monitor.getDropResult() as any).id;
-    const dest: IProfile = props.profiles.find(x => x.id === destId);
 
-    if (source !== dest) {
-      props.onEditDialog(props.profile.gameId, sourceProfile, dest, props.profiles);
+    if (source.id !== destId) {
+      props.onEditDialog(props.profile.gameId, source.id, destId);
     }
   },
 };
@@ -139,10 +137,12 @@ function collectDrag(dragConnect: __ReactDnd.DragSourceConnector,
 
 function collectDrop(dropConnect: __ReactDnd.DropTargetConnector,
                      monitor: __ReactDnd.DropTargetMonitor): IDropProps {
+  const item: any = monitor.getItem();
   return {
     connectDropTarget: dropConnect.dropTarget(),
     isOver: monitor.isOver(),
     canDrop: monitor.canDrop(),
+    sourceId: item !== null ? item.id : undefined,
   };
 }
 
@@ -153,7 +153,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
 
-    this.initState({ reference: undefined, showOverlay: false });
+    this.initState({ showOverlay: false });
     this.mIsMounted = false;
   }
 
@@ -174,7 +174,8 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
       }
       nextProps.onSetSource(nextProps.profile.id, pos);
     } else if (this.props.isOver !== nextProps.isOver) {
-      if (this.props.profile.gameId === sourceProfile.gameId) {
+      if ((this.props.profile.id !== nextProps.sourceId)
+          && (this.props.profile.gameId === this.props.profiles[nextProps.sourceId].gameId)) {
         let pos;
         if (nextProps.isOver) {
           pos = componentCenter(this);
@@ -187,14 +188,14 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, connectDragSource, connectDropTarget, profile } = this.props;
 
-    const classes = ['btn-transfer'];
+    const classes = ['btn-embed'];
 
     const popoverBlocks = [];
 
     if (popoverBlocks.length > 0) {
       classes.push('btn-transfer-hasOptions');
     } else {
-      popoverBlocks.push(t('Drag to another connector to start a profile transfer.'));
+      popoverBlocks.push(t('Drag to another profile to transfer settings.'));
     }
     const popover = (
       <Popover id={`popover-${profile.id}`} style={{ maxWidth: 500 }}>
@@ -225,7 +226,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
         </div>);
 
     return connectDropTarget(
-      <div style={{ textAlign: 'center', width: '100%' }}>
+      <div style={{ textAlign: 'center', display: 'inline-block' }}>
         {connectorIcon}
       </div>);
   }
@@ -250,10 +251,10 @@ const TransferIconDrag =
     DragSource(type, transferSource, collectDrag)(
       TransferIcon));
 
-function mapStateToProps(state): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     gameId: selectors.activeGameId(state),
-    profiles: selectors.gameProfiles(state),
+    profiles: state.persistent.profiles,
   };
 }
 
@@ -261,8 +262,8 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onSetSource: (id, pos) => dispatch(setSource(id, pos)),
     onSetTarget: (id, pos) => dispatch(setTarget(id, pos)),
-    onEditDialog: (gameId, source, target, profiles) =>
-      dispatch(setCreateTransfer(gameId, source, target, profiles)),
+    onEditDialog: (gameId, source, target) =>
+      dispatch(setCreateTransfer(gameId, source, target)),
   };
 }
 
