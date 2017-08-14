@@ -628,7 +628,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     modIds.forEach((key: string) => {
       if (!getSafe(modState, [key, 'enabled'], false)) {
-        onSetModEnabled(profileId, key, true);
+        this.setModState(profileId, key, 'enabled');
       }
     });
     this.context.api.events.emit('mods-enabled', modIds, true);

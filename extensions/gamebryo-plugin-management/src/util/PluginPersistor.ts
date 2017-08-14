@@ -131,7 +131,7 @@ class PluginPersistor implements types.IPersistor {
 
   private toPluginListOriginal(input: string[]) {
     return input.filter(
-        (pluginName: string) => this.mPlugins[pluginName].enabled);
+        (pluginName: string) => util.getSafe(this.mPlugins, [pluginName, 'enabled'], false);
   }
 
   private toPluginListFallout4(input: string[]) {

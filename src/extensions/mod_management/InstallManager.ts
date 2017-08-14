@@ -89,9 +89,11 @@ class InstallManager {
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: (gameId: string) => string;
   private mTask: ZipT;
+  private mQueue: Promise<void>;
 
   constructor(installPath: (gameId: string) => string) {
     this.mGetInstallPath = installPath;
+    this.mQueue = Promise.resolve();
   }
 
   /**
@@ -155,146 +157,148 @@ class InstallManager {
     let installGameId: string;
     let installContext: InstallContext;
 
-    this.queryGameId(api.store, downloadGameId)
-        .then(gameId => {
-          installGameId = gameId;
-          installContext = new InstallContext(gameId, api.store.dispatch);
-          installContext.startIndicator(baseName);
-          return api.lookupModMeta({filePath: archivePath, gameId});
-        })
-        .then((modInfo: ILookupResult[]) => {
-          if (modInfo.length > 0) {
-            fullInfo.meta = modInfo[0].value;
-          }
+    this.mQueue = this.mQueue
+      .then(() => this.queryGameId(api.store, downloadGameId))
+      .then(gameId => {
+        installGameId = gameId;
+        installContext = new InstallContext(gameId, api.store.dispatch);
+        installContext.startIndicator(baseName);
+        return api.lookupModMeta({ filePath: archivePath, gameId });
+      })
+      .then((modInfo: ILookupResult[]) => {
+        if (modInfo.length > 0) {
+          fullInfo.meta = modInfo[0].value;
+        }
 
-          modId = this.deriveInstallName(baseName, fullInfo);
-          // if the name is already taken, consult the user,
-          // repeat until user canceled, decided to replace the existing
-          // mod or provided a new, unused name
-          const checkNameLoop = () => this.checkModExists(modId, api, installGameId) ?
-                       this.queryUserReplace(modId, installGameId, api)
-                           .then((choice: { name: string, enable: boolean }) => {
-                             modId = choice.name;
-                             if (choice.enable) {
-                               enable = true;
-                             }
-                             return checkNameLoop();
-                           }) :
-                       Promise.resolve(modId);
-
-          return checkNameLoop();
-        })
-        // TODO: this is only necessary to get at the fileId and the fileId isn't
-        //   even a particularly good way to discover conflicts
-        .then(() => filterModInfo(fullInfo, undefined))
-        .then(modInfo => {
-          const oldMod =
-              (modInfo.fileId !== undefined) ?
-                  this.findPreviousVersionMod(modInfo.fileId, api.store,
-                                              installGameId) :
-                  undefined;
-
-          if (oldMod !== undefined) {
-            const wasEnabled = getSafe(currentProfile.modState, [oldMod.id, 'enabled'], false);
-            return this.userVersionChoice(oldMod, api.store)
-                .then((action: string) => {
-                  if (action === 'Install') {
-                    enable = enable || wasEnabled;
-                    if (wasEnabled) {
-                      setModEnabled(currentProfile.id, oldMod.id, false);
-                    }
-                    return null;
-                  } else if (action === 'Replace') {
-                    // we need to remove the old mod before continuing. This ensures
-                    // the mod is deactivated and undeployed (as to not leave dangling
-                    // links) and it ensures we do a clean install of the mod
-                    return new Promise((resolve, reject) => {
-                      api.events.emit('remove-mod', currentProfile.gameId, oldMod.id,
-                        (error: Error) => {
-                          if (error !== null) {
-                            return Promise.reject(error);
-                          } else {
-                            // use the same mod id as the old version so that all profiles
-                            // keep using it.
-                            modId = oldMod.id;
-                            enable = enable || wasEnabled;
-                            return Promise.resolve();
-                          }
-                      });
-                    });
-                  }
-                });
-          } else {
-            return null;
-          }
-        })
-        .then(() => {
-          installContext.startInstallCB(modId, archiveId);
-
-          destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
-          tempPath = destinationPath + '.installing';
-          return this.installInner(api.store, archivePath,
-                                   tempPath, destinationPath, installGameId);
-        })
-        .then((result) => {
-          installContext.setInstallPathCB(modId, destinationPath);
-          return this.processInstructions(api, archivePath, tempPath, destinationPath,
-                                          installGameId, result);
-        })
-        .then(() => filterModInfo(fullInfo, destinationPath))
-        .then(modInfo => {
-          installContext.finishInstallCB('success', modInfo);
-          if (enable) {
-            api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
-          }
-          if (processDependencies) {
-            this.installDependencies(modInfo.rules, this.mGetInstallPath(installGameId),
-                                     installContext, api);
-          }
-          if (callback !== undefined) {
-            callback(null, modId);
-          }
-        })
-        .catch(err => {
-          const canceled =
-            (err instanceof UserCanceled) || err === null || err.message === 'Canceled';
-          let prom = destinationPath !== undefined
-              ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
-              : Promise.resolve();
-
-          prom = prom.then(() =>
-            installContext.finishInstallCB(canceled ? 'canceled' : 'failed'));
-
-          if (err === undefined) {
-            return prom.then(() => {
-              if (callback !== undefined) {
-                callback(new Error('unknown error'), null);
+        modId = this.deriveInstallName(baseName, fullInfo);
+        // if the name is already taken, consult the user,
+        // repeat until user canceled, decided to replace the existing
+        // mod or provided a new, unused name
+        const checkNameLoop = () => this.checkModExists(modId, api, installGameId) ?
+          this.queryUserReplace(modId, installGameId, api)
+            .then((choice: { name: string, enable: boolean }) => {
+              modId = choice.name;
+              if (choice.enable) {
+                enable = true;
               }
-            });
-          } else if (canceled) {
-            return prom.then(() => {
-              if (callback !== undefined) {
-                callback(err, null);
-              }
-            });
-          } else {
-            const { genHash } = require('modmeta-db');
-            const errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;
+              return checkNameLoop();
+            }) :
+          Promise.resolve(modId);
 
-            return prom
-              .then(() => genHash(archivePath))
-              .then((hashResult: IHashResult) => {
-                const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
-                installContext.reportError(
-                  'Installation failed',
-                  `The installer ${id} failed: ${errMessage}`);
-                if (callback !== undefined) {
-                  callback(err, modId);
+        return checkNameLoop();
+      })
+      // TODO: this is only necessary to get at the fileId and the fileId isn't
+      //   even a particularly good way to discover conflicts
+      .then(() => filterModInfo(fullInfo, undefined))
+      .then(modInfo => {
+        const oldMod =
+          (modInfo.fileId !== undefined) ?
+            this.findPreviousVersionMod(modInfo.fileId, api.store,
+              installGameId) :
+            undefined;
+
+        if (oldMod !== undefined) {
+          const wasEnabled = getSafe(currentProfile.modState, [oldMod.id, 'enabled'], false);
+          return this.userVersionChoice(oldMod, api.store)
+            .then((action: string) => {
+              if (action === 'Install') {
+                enable = enable || wasEnabled;
+                if (wasEnabled) {
+                  setModEnabled(currentProfile.id, oldMod.id, false);
                 }
-              });
-          }
-        })
-        .finally(() => { installContext.stopIndicator(); });
+                return null;
+              } else if (action === 'Replace') {
+                // we need to remove the old mod before continuing. This ensures
+                // the mod is deactivated and undeployed (as to not leave dangling
+                // links) and it ensures we do a clean install of the mod
+                return new Promise((resolve, reject) => {
+                  api.events.emit('remove-mod', currentProfile.gameId, oldMod.id,
+                    (error: Error) => {
+                      if (error !== null) {
+                        return Promise.reject(error);
+                      } else {
+                        // use the same mod id as the old version so that all profiles
+                        // keep using it.
+                        modId = oldMod.id;
+                        enable = enable || wasEnabled;
+                        return Promise.resolve();
+                      }
+                    });
+                });
+              }
+            });
+        } else {
+          return null;
+        }
+      })
+      .then(() => {
+        installContext.startInstallCB(modId, archiveId);
+
+        destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
+        tempPath = destinationPath + '.installing';
+        return this.installInner(api.store, archivePath,
+          tempPath, destinationPath, installGameId);
+      })
+      .then((result) => {
+        installContext.setInstallPathCB(modId, destinationPath);
+        return this.processInstructions(api, archivePath, tempPath, destinationPath,
+          installGameId, result);
+      })
+      .finally(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }))
+      .then(() => filterModInfo(fullInfo, destinationPath))
+      .then(modInfo => {
+        installContext.finishInstallCB('success', modInfo);
+        if (enable) {
+          api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
+        }
+        if (processDependencies) {
+          this.installDependencies(modInfo.rules, this.mGetInstallPath(installGameId),
+            installContext, api);
+        }
+        if (callback !== undefined) {
+          callback(null, modId);
+        }
+      })
+      .catch(err => {
+        const canceled =
+          (err instanceof UserCanceled) || err === null || err.message === 'Canceled';
+        let prom = destinationPath !== undefined
+          ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
+          : Promise.resolve();
+
+        prom = prom.then(() =>
+          installContext.finishInstallCB(canceled ? 'canceled' : 'failed'));
+
+        if (err === undefined) {
+          return prom.then(() => {
+            if (callback !== undefined) {
+              callback(new Error('unknown error'), null);
+            }
+          });
+        } else if (canceled) {
+          return prom.then(() => {
+            if (callback !== undefined) {
+              callback(err, null);
+            }
+          });
+        } else {
+          const { genHash } = require('modmeta-db');
+          const errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;
+
+          return prom
+            .then(() => genHash(archivePath))
+            .then((hashResult: IHashResult) => {
+              const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
+              installContext.reportError(
+                'Installation failed',
+                `The installer ${id} failed: ${errMessage}`);
+              if (callback !== undefined) {
+                callback(err, modId);
+              }
+            });
+        }
+      })
+      .finally(() => { installContext.stopIndicator(); });
   }
 
   /**
@@ -461,7 +465,7 @@ class InstallManager {
           .then((resultInner) => this.processInstructions(
             api, mod.path, tempPath, destinationPath,
             gameId, resultInner))
-          .then(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }));
+          .finally(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }));
       })
         .then(() => undefined);
   }
@@ -523,10 +527,7 @@ class InstallManager {
                                             destinationPath))
       .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))
       .then(() => this.processSubmodule(api, instructionGroups.submodule,
-                                        destinationPath, gameId))
-      .finally(() =>
-        rimrafAsync(path.join(destinationPath + '.installing'),
-          { glob: false, maxBusyTries: 1 }));
+                                        destinationPath, gameId));
     }
 
   private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {

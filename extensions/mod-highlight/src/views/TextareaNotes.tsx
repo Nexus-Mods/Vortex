@@ -77,7 +77,7 @@ class TextareaNotes extends ComponentEx<IProps, IComponentState> {
   private getValue(props: IProps) {
     const value = util.getSafe(props.mods[0].attributes, ['notes'], '');
     const different = props.mods.find(iter =>
-        util.getSafe(iter.attributes, ['notes'], '') !== value) !== undefined;
+        util.getSafe(iter, ['attributes', 'notes'], '') !== value) !== undefined;
 
     return different ? null : value;
   }
