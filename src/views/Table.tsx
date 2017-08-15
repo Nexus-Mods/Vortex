@@ -183,7 +183,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
             </thead>
             {this.renderBody(this.mVisibleAttributes)}
           </Table>
-          { this.props.children }
+          {this.props.children}
         </div>
         <div className={`table-details-pane ${openClass}`}>
           {this.renderDetails(rowIds)}
@@ -362,8 +362,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           attribute={attribute}
           state={attributeState}
           doFilter={filt !== undefined}
-          onSetSortDirection={ this.setSortDirection }
-          onSetFilter={ this.setFilter }
+          onSetSortDirection={this.setSortDirection}
+          onSetFilter={this.setFilter}
           t={t}
         >
           {attribute.filter !== undefined ? (

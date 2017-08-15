@@ -74,7 +74,7 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
     return (
       <form>
         <FormGroup>
-          <ControlLabel>{ t('Search Paths') }</ControlLabel>
+          <ControlLabel>{t('Search Paths')}</ControlLabel>
           <ListGroup className='list-game-search'>
             {searchPaths.map(this.renderPath)}
             <ListGroupItem>

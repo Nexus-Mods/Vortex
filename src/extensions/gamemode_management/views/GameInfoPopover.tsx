@@ -68,8 +68,8 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
     return (
       <Table>
         <tbody>
-          { keysToRender.map(this.renderGameInfo) }
-          { loading ? <tr><td><Icon name='spinner' pulse /></td></tr> : null }
+          {keysToRender.map(this.renderGameInfo)}
+          {loading ? <tr><td><Icon name='spinner' pulse /></td></tr> : null}
         </tbody>
       </Table>
     );

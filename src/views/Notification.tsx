@@ -37,9 +37,9 @@ class Notification extends ComponentEx<IProps, {}> {
 
     return (
       <div role='alert' className={`notification alert-${styleName}`} >
-        { this.typeToIcon(type) }{' '}
+        {this.typeToIcon(type)}{' '}
         <p className='hover-expand'>
-          { lines.map((line, idx) => <span key={idx}>{line}</span>) }
+          {lines.map((line, idx) => <span key={idx}>{line}</span>)}
         </p>
         <div className='notification-buttons'>
           {actions !== undefined ? actions.map(this.renderAction) : null}

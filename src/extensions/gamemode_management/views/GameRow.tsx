@@ -74,7 +74,7 @@ class GameRow extends ComponentEx<IProps, {}> {
     );
 
     return (
-      <ListGroupItem className={ classes.join(' ') }>
+      <ListGroupItem className={classes.join(' ')}>
         <Media>
           <Media.Left>
             <div className='game-thumbnail-container-list'>

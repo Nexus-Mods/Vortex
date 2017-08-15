@@ -104,8 +104,7 @@ function todos(api: IExtensionApi): IToDo[] {
         const path = <strong>{basePath} </strong>;
 
         return (
-          <span style={{ overflowX: 'hidden', textOverflow: 'ellipsis' }
-          }>
+          <span style={{ overflowX: 'hidden', textOverflow: 'ellipsis' }}>
             <Interpolate
               i18nKey='Data for this game will be stored in {{path}}.'
               path={path}

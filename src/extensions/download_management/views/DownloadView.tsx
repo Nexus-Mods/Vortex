@@ -285,7 +285,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       <MainPage>
         <FlexLayout type='column'>
           <FlexLayout.Fixed>
-            { secondary ? null : <DownloadGraph /> }
+            {secondary ? null : <DownloadGraph />}
           </FlexLayout.Fixed>
           <FlexLayout.Flex>
             <SuperTable

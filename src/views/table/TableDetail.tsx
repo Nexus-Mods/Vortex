@@ -102,7 +102,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
     const helpIcon = attribute.help !== undefined
       ? (
         <More id={`more-tableattribute-${attribute.id}`} name={attribute.name}>
-          { attribute.help }
+          {attribute.help}
         </More>
       ) : null;
 
@@ -289,7 +289,7 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
     const visClass = (show ? 'table-form-details-show' : 'table-form-details-hide');
     return (
       <div style={{ height: '100%', position: 'relative', display: 'flex', overflowX: 'hidden' }}>
-        {show ? null : this.renderHandle() }
+        {show ? null : this.renderHandle()}
         <div style={{ display: 'flex', flexDirection: 'column' }} >
           {detailList.length > 0 ? (
             <form className={'table-form-details ' + visClass}>
@@ -297,7 +297,7 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
             </form>
           ) : (
             <h4 style={{ marginTop: 'auto', marginBottom: 'auto', padding: 5 }}>
-              { t('Multiple items selected') }
+              {t('Multiple items selected')}
             </h4>
           )
           }
@@ -329,7 +329,8 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
     };
 
     return (
-      <Button style={style}
+      <Button
+        style={style}
         onClick={onToggleShow}
       >
         <div style={textStyle}><Icon name='up' />{' '}{title || t('Details')}</div>

@@ -50,11 +50,11 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
     return (
       <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
         <img
-          className={ 'thumbnail-img' }
-          src={ logoPath }
+          className={'thumbnail-img'}
+          src={logoPath}
         />
         <div className='bottom'>
-          <span className='name'>{ t(game.name) }</span>
+          <span className='name'>{t(game.name)}</span>
           <IconBar
             id={`game-thumbnail-${game.id}`}
             className='buttons'

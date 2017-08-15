@@ -120,7 +120,7 @@ export class FormPathItem extends React.Component<IFormPathProps, {}> {
               />
             </InputGroup.Button>
           </InputGroup>
-          { validation ? <ControlLabel>{validation}</ControlLabel> : null }
+          {validation ? <ControlLabel>{validation}</ControlLabel> : null}
         </Col>
       </FormGroup>
       );

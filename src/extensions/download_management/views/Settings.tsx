@@ -23,14 +23,14 @@ class Settings extends ComponentEx<IProps, {}> {
       <form>
         <FormGroup>
           <ControlLabel>
-            { t('Parallel downloads') + ': ' + parallelDownloads.toString() }
+            {t('Parallel downloads') + ': ' + parallelDownloads.toString()}
           </ControlLabel>
           <FormControl
             type='range'
-            value={ parallelDownloads }
+            value={parallelDownloads}
             min={1}
             max={10}
-            onChange={ this.onChangeParallelDownloads }
+            onChange={this.onChangeParallelDownloads}
           />
         </FormGroup>
       </form>

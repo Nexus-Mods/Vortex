@@ -51,7 +51,7 @@ class NotificationButton extends ComponentEx<IProps, {}> {
 
     const popover = (
       <Popover id='notifications-popover' arrowOffsetLeft={64}>
-        { items.length > 0 ? items : t('No Notifications') }
+        {items.length > 0 ? items : t('No Notifications')}
       </Popover>
     );
 
@@ -64,7 +64,7 @@ class NotificationButton extends ComponentEx<IProps, {}> {
       >
         <Button id='notifications-button'>
           <Icon name='bell' />
-          { items.length === 0 ? null : <Badge>{items.length}</Badge> }
+          {items.length === 0 ? null : <Badge>{items.length}</Badge>}
         </Button>
       </OverlayTrigger>
     );

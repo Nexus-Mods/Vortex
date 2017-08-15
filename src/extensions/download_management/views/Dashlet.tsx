@@ -55,17 +55,21 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
               data={progress}
               gap={2}
             />
-            <div style={{
-              position: 'absolute',
-              top: 0, left: 0,
-              width: '100%', height: '100%',
-              display: 'inline-flex',
-            }}>
-              <div style={{
-                marginTop: 'auto',
-                marginBottom: 'auto',
-                width: '100%',
-              }} >
+            <div
+              style={{
+                position: 'absolute',
+                top: 0, left: 0,
+                width: '100%', height: '100%',
+                display: 'inline-flex',
+              }}
+            >
+              <div
+                style={{
+                  marginTop: 'auto',
+                  marginBottom: 'auto',
+                  width: '100%',
+                }}
+              >
                 {bytesToString(speeds[speeds.length - 1])}/s
               </div>
             </div>
@@ -76,7 +80,7 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
     return (
       <div className='dashlet dashlet-download'>
         <h4 style={{ position: 'absolute' }}>{t('Download Progress')}</h4>
-          { content }
+          {content}
       </div>
     );
   }

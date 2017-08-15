@@ -53,7 +53,7 @@ function PortalMenu(props: IPortalMenuProps) {
       target={props.target}
     >
       <Dropdown.Menu style={{ display: 'block' }} onClose={props.onClose} open={props.open}>
-        { props.children }
+        {props.children}
       </Dropdown.Menu>
     </Overlay>
   );

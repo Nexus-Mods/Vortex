@@ -241,7 +241,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       <ProgressBar
         striped={phase.progress < 100}
         key={idx}
-        className={ `discovery-progress-${idx % 4}` }
+        className={`discovery-progress-${idx % 4}`}
         active={phase.progress < 100}
         min={0}
         max={100 * Object.keys(discovery.phases).length}

@@ -142,14 +142,12 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
                 onChange={this.startSearch}
               />
               <span className='search-position' >
-                {
-                  t('{{ pos }} of {{ total }}', {
-                    replace: {
-                      pos: searchFoundCount > 0 ? (searchFocusIndex + 1) : 0,
-                      total: searchFoundCount || 0,
-                    },
-                  })
-                }
+                {t('{{ pos }} of {{ total }}', {
+                  replace: {
+                    pos: searchFoundCount > 0 ? (searchFocusIndex + 1) : 0,
+                    total: searchFoundCount || 0,
+                  },
+                })}
               </span>
             </div>
             <IconButton

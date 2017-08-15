@@ -96,7 +96,7 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
           <p><strong>Electron</strong> {(process.versions as any).electron}</p>
           <p><strong>Node</strong> {process.versions.node}</p>
           <p><strong>Chrome</strong> {(process.versions as any).chrome}</p>
-          { licenseBox }
+          {licenseBox}
         </Modal.Body>
       );
     }

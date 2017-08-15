@@ -161,7 +161,7 @@ class TableRow extends React.Component<IRowProps, {}> {
         container={this.props.container}
         placeholder={this.renderPlaceholder()}
       >
-        { this.renderRow() }
+        {this.renderRow()}
       </VisibilityProxy>
     );
   }
