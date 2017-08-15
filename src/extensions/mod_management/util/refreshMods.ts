@@ -13,9 +13,7 @@ import * as path from 'path';
 function refreshMods(installPath: string, knownMods: string[],
                      onAddMod: (mod: IMod) => void, onRemoveMods: (names: string[]) => void) {
   return fs.ensureDirAsync(installPath)
-    .then(() => {
-      return fs.readdirAsync(installPath);
-    })
+    .then(() => fs.readdirAsync(installPath))
     .then((modNames: string[]) => {
       const addedMods = modNames.filter((name: string) => knownMods.indexOf(name) === -1);
       const removedMods = knownMods.filter((name: string) => modNames.indexOf(name) === -1);

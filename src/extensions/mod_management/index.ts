@@ -7,6 +7,7 @@ import {ITestResult} from '../../types/ITestResult';
 import { UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import LazyComponent from '../../util/LazyComponent';
+import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import ReduxProp from '../../util/ReduxProp';
 import {
@@ -342,66 +343,104 @@ function attributeExtractor(input: any) {
   });
 }
 
-function once(api: IExtensionApi) {
-    const store: Redux.Store<any> = api.store;
+function cleanupIncompleteInstalls(api: IExtensionApi) {
+  const store: Redux.Store<IState> = api.store;
 
-    if (installManager === undefined) {
-      installManager = new InstallManager((gameId: string) =>
-        resolvePath('install', store.getState().settings.mods.paths, gameId));
-      installers.forEach((installer: IInstaller) => {
-        installManager.addInstaller(installer.priority, installer.testSupported, installer.install);
-      });
-    }
+  const { mods } = store.getState().persistent;
+  const { paths } = store.getState().settings.mods;
 
-    const updateModActivation = genUpdateModActivation();
-    const activationTimer = new Debouncer(
-      (manual: boolean) => updateModActivation(api, manual)
-    , 2000);
-
-    api.events.on('activate-mods', (callback: (err: Error) => void) => {
-      activationTimer.runNow(callback, true);
-    });
-
-    api.events.on('schedule-activate-mods', (callback: (err: Error) => void) => {
-      activationTimer.schedule(callback, false);
-    });
-
-    api.events.on('purge-mods', (callback: (err: Error) => void) => {
-      purgeMods(api);
-    });
-
-    api.events.on('await-activation', (callback: (err: Error) => void) => {
-      activationTimer.wait(callback);
-    });
-
-    api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
-      if (store.getState().settings.automation.deploy) {
-        activationTimer.schedule(undefined, false);
+  Object.keys(mods).forEach(gameId => {
+    Object.keys(mods[gameId]).forEach(modId => {
+      const mod = mods[gameId][modId];
+      if (mod.state === 'installing') {
+        const fullPath = path.join(resolvePath('install', paths, gameId), mod.installationPath);
+        log('warn', 'mod was not installed completelely and will be removed', { mod, fullPath });
+        // this needs to be synchronous because once is synchronous and we have to complete this
+        // before the application fires the gamemode-changed event because at that point we
+        // create new mods from the unknown directories (especially the .installing ones)
+        try {
+          fs.removeSync(fullPath);
+        } catch (err) {
+          if (err.code !== 'ENOENT') {
+            log('error', 'failed to clean up', err);
+          }
+        }
+        try {
+          fs.removeSync(fullPath + '.installing');
+        } catch (err) {
+          if (err.code !== 'ENOENT') {
+            log('error', 'failed to clean up', err);
+          }
+        }
+        store.dispatch(removeMod(gameId, modId));
       }
     });
+  });
+}
 
-    api.events.on('gamemode-activated',
-      (newMode: string) => onGameModeActivated(api, activators, newMode));
+function once(api: IExtensionApi) {
+  const store: Redux.Store<any> = api.store;
 
-    api.onStateChange(
+  if (installManager === undefined) {
+    installManager = new InstallManager(
+        (gameId: string) => resolvePath(
+            'install', store.getState().settings.mods.paths, gameId));
+    installers.forEach((installer: IInstaller) => {
+      installManager.addInstaller(installer.priority, installer.testSupported,
+                                  installer.install);
+    });
+  }
+
+  const updateModActivation = genUpdateModActivation();
+  const activationTimer = new Debouncer(
+      (manual: boolean) => updateModActivation(api, manual), 2000);
+
+  api.events.on('activate-mods', (callback: (err: Error) => void) => {
+    activationTimer.runNow(callback, true);
+  });
+
+  api.events.on('schedule-activate-mods', (callback: (err: Error) => void) => {
+    activationTimer.schedule(callback, false);
+  });
+
+  api.events.on('purge-mods',
+                (callback: (err: Error) => void) => { purgeMods(api); });
+
+  api.events.on('await-activation', (callback: (err: Error) => void) => {
+    activationTimer.wait(callback);
+  });
+
+  api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
+    if (store.getState().settings.automation.deploy) {
+      activationTimer.schedule(undefined, false);
+    }
+  });
+
+  api.events.on('gamemode-activated', (newMode: string) => onGameModeActivated(
+                                          api, activators, newMode));
+
+  api.onStateChange(
       ['settings', 'mods', 'paths'],
       (previous, current) => onPathsChanged(api, previous, current));
 
-    api.events.on(
-        'start-install',
-        (archivePath: string, callback?: (error, id: string) => void) => {
-          installManager.install(null, archivePath,
-                                 activeGameId(store.getState()), api,
-                                 {}, true, false, callback);
-        });
+  api.events.on('start-install', (archivePath: string,
+                                  callback?: (error, id: string) => void) => {
+    installManager.install(null, archivePath, activeGameId(store.getState()),
+                           api, {}, true, false, callback);
+  });
 
-    api.events.on('start-install-download',
-        (downloadId: string, callback?: (error, id: string) => void) =>
+  api.events.on(
+      'start-install-download',
+      (downloadId: string, callback?: (error, id: string) => void) =>
           onStartInstallDownload(api, installManager, downloadId, callback));
 
-    api.events.on('remove-mod',
+  api.events.on(
+      'remove-mod',
       (gameMode: string, modId: string, callback?: (error: Error) => void) =>
-        onRemoveMod(api, activators, gameMode, modId, callback));
+          onRemoveMod(api, activators, gameMode, modId, callback));
+
+  cleanupIncompleteInstalls(api);
+
 }
 
 function init(context: IExtensionContextExt): boolean {
