@@ -8,8 +8,9 @@ import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import * as update from 'immutability-helper';
+import * as opn from 'opn';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup, Image, Modal } from 'react-bootstrap';
+import { ControlLabel, FormControl, FormGroup, HelpBlock, Image, Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
 
 export interface IBaseProps {
@@ -135,9 +136,12 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
           style={{ resize: 'none', width: '100%' }}
           rows={4}
           value={APIKey}
-          placeholder={t('Create an API key on www.nexusmods.com and paste it here')}
+          placeholder={t('Create an API key and paste it here')}
           onChange={this.handleChangeAPIKey}
         />
+        <HelpBlock>
+          <a onClick={this.openAPIKeyPage}>{t('Click here to create an API key')}</a>
+        </HelpBlock>
         <FormFeedback pending={validation.pending} />
       </FormGroup>
     );
@@ -181,6 +185,11 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
 
   private handleChange(event, field) {
     this.setState(update(this.state, { [field]: { $set: event.target.value } }));
+  }
+
+  private openAPIKeyPage = evt => {
+    evt.preventDefault();
+    opn('https://rd.nexusmods.com/users/myaccount?tab=api+access');
   }
 
   private validationState(): IValidationState {
