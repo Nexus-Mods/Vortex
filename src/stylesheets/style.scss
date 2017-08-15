@@ -431,6 +431,10 @@ a[role=menuitem] svg {
   color: $link-color;
 }
 
+.icon-button.has-children svg {
+  margin-right: 0.5em;
+}
+
 // /generic control rules
 /////////////////////////
 

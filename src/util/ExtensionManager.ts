@@ -286,12 +286,21 @@ class ExtensionManager {
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
       // and everything in this phase of startup is synchronous anyway
-      const disableExtensions = fs.readdirSync(app.getPath('temp'))
-        .filter(name => name.startsWith('__disable_'));
-      disableExtensions.forEach(ext => {
-        initStore.dispatch(setExtensionEnabled(ext.substr(10), false));
-        fs.unlinkSync(path.join(app.getPath('temp'), ext));
-      });
+      try {
+        const disableExtensions =
+            fs.readdirSync(app.getPath('temp'))
+                .filter(name => name.startsWith('__disable_'));
+        disableExtensions.forEach(ext => {
+          initStore.dispatch(setExtensionEnabled(ext.substr(10), false));
+          fs.unlinkSync(path.join(app.getPath('temp'), ext));
+        });
+      } catch (err) {
+        // an ENOENT will happen on the first start where the dir doesn't
+        // exist yet. No problem
+        if (err.code !== 'ENOENT') {
+          log('error', 'failed to read disabled extensions', err.message);
+        }
+      }
 
       this.mExtensionState = initStore.getState().app.extensions;
       const extensionsPath = path.join(app.getPath('userData'), 'plugins');

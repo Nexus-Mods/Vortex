@@ -72,6 +72,9 @@ class NotificationButton extends ComponentEx<IProps, {}> {
 
   private setRef = ref => {
     this.mRef = ref;
+    if (ref !== null) {
+      this.mRef.show();
+    }
   }
 
   private inverseSort(lhs: INotification, rhs: INotification) {

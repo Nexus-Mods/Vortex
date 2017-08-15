@@ -85,6 +85,10 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
       buttonProps['className'] = 'icon-button';
     }
 
+    if (React.Children.count(this.props.children) > 0) {
+      buttonProps['className'] += ' has-children';
+    }
+
     if (typeof (this.props.tooltip) === 'string') {
       return (
         <BootstrapButton {...buttonProps} title={this.props.tooltip}>

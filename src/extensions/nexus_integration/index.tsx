@@ -633,7 +633,7 @@ function init(context: IExtensionContextExt): boolean {
       </span>
     );
   }, () => ({
-    icon: 'link',
+    icon: 'chain',
     text: context.api.translate('Associate'),
     onClick: associateNXM,
   }));
