@@ -24,7 +24,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\..\Build\bin\Debug\</OutputPath>
-	<BaseIntermediateOutputPath>..\..\Build\obj\</BaseIntermediateOutputPath>
+    <BaseIntermediateOutputPath>..\..\Build\obj\</BaseIntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>

@@ -21,8 +21,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Build\bin\Debug\</OutputPath>
-	<BaseIntermediateOutputPath>..\Build\obj\</BaseIntermediateOutputPath>
+    <OutputPath>..\Build\tests\Debug\</OutputPath>
+    <BaseIntermediateOutputPath>..\Build\obj\</BaseIntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -30,8 +30,8 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\Build\bin\Release\</OutputPath>
-	<BaseIntermediateOutputPath>..\Build\obj\</BaseIntermediateOutputPath>
+    <OutputPath>..\Build\tests\Release\</OutputPath>
+    <BaseIntermediateOutputPath>..\Build\obj\</BaseIntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
