@@ -23,7 +23,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\bin\Debug\</OutputPath>
+    <OutputPath>..\..\Build\bin\Debug\</OutputPath>
+	<BaseIntermediateOutputPath>..\..\Build\obj\</BaseIntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -34,7 +35,8 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\..\Build\bin\Release\</OutputPath>
+	<BaseIntermediateOutputPath>..\..\Build\obj\</BaseIntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -140,38 +142,18 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\add.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\delete.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Antlr3 Include="CPL\CPLLexer.g">
       <Generator>MSBuild:Compile</Generator>
     </Antlr3>
     <Antlr3 Include="CPL\CPLParser.g">
       <Generator>MSBuild:Compile</Generator>
     </Antlr3>
-    <None Include="Resources\edit.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\add-install-step.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\add-option-group.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\add-option.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CPL\CPLImportParser.g">
     </None>
     <None Include="CPL\CPLImportLexer.g" />
-    <None Include="Resources\add-file-set.png" />
     <EmbeddedResource Include="Schemas\XmlScript5.0.xsd" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\notFoundJPG.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

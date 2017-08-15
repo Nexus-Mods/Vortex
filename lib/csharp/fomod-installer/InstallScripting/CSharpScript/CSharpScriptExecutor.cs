@@ -53,11 +53,12 @@ namespace FomodInstaller.Scripting.CSharpScript
         /// Executes the script.
         /// </summary>
         /// <param name="p_scpScript">The C# Script to execute.</param>
+        /// <param name="p_strDataPath">Path where data for this script (i.e. screenshots) is stored.</param>
         /// <returns><c>true</c> if the script completes successfully;
         /// <c>false</c> otherwise.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="p_scpScript"/> is not a
         /// <see cref="CSharpScript"/>.</exception>
-        public override Task<IList<Instruction>> DoExecute(IScript p_scpScript)
+        public override Task<IList<Instruction>> DoExecute(IScript p_scpScript, string p_strDataPath)
         {
             if (!(p_scpScript is CSharpScript))
                 throw new ArgumentException("The given script must be of type CSharpScript.", "p_scpScript");
@@ -71,7 +72,7 @@ namespace FomodInstaller.Scripting.CSharpScript
             IList<Instruction> instructions = new List<Instruction>();
             m_csfFunctions.SetInstructionContainer(instructions);
 
-            AppDomain admScript = CreateSandbox(p_scpScript);
+            AppDomain admScript = CreateSandbox(p_scpScript, p_strDataPath);
             object[] args = { m_csfFunctions };
             AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
             ScriptRunner srnRunner = null;
@@ -188,8 +189,10 @@ namespace FomodInstaller.Scripting.CSharpScript
         /// the folder containing the script's script type class in the sandboxes PrivateBinPath.
         /// We need to do this so that any helper classes and libraries used by the script
         /// can be found.</param>
+        /// <param name="p_strDataPath">path where data for this script is stored. The sandbox will
+        /// allow read-access to this (and only this) directory</param>
         /// <returns>A sandboxed domain.</returns>
-        protected AppDomain CreateSandbox(IScript p_scpScript)
+        protected AppDomain CreateSandbox(IScript p_scpScript, string p_strDataPath)
         {
             Trace.TraceInformation("Creating C# Script Sandbox...");
             Trace.Indent();
@@ -234,10 +237,8 @@ namespace FomodInstaller.Scripting.CSharpScript
             pstGrantSet.AddPermission(new MediaPermission(MediaPermissionImage.SafeImage));
 
             //add the specific permissions the script will need
-            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Write, Path.GetTempPath()));
-            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, Path.GetTempPath()));
-            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Append, Path.GetTempPath()));
-            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.PathDiscovery, Path.GetTempPath()));
+            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, p_strDataPath));
+            pstGrantSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.PathDiscovery, p_strDataPath));
 
             Trace.Unindent();
 

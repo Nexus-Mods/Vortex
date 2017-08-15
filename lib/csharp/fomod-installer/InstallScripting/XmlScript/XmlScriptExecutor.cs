@@ -38,12 +38,13 @@ namespace FomodInstaller.Scripting.XmlScript
         /// <summary>
         /// Executes the script.
         /// </summary>
-        /// <param name="scpScript">The XMl Script to execute.</param>
+        /// <param name="scpScript">The XML Script to execute.</param>
+        /// <param name="dataPath">path where data files for the script are stored</param>
         /// <returns><c>true</c> if the script completes successfully;
         /// <c>false</c> otherwise.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="scpScript"/> is not an
         /// <see cref="XmlScript"/>.</exception>
-        public async override Task<IList<Instruction>> DoExecute(IScript scpScript)
+        public async override Task<IList<Instruction>> DoExecute(IScript scpScript, string dataPath)
         {
             TaskCompletionSource<IList<Instruction>> Source = new TaskCompletionSource<IList<Instruction>>(); 
             List<InstallableFile> PluginsToActivate = new List<InstallableFile>();
