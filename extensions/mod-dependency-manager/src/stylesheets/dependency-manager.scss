@@ -31,7 +31,11 @@
 }
 
 .btn-dependency-norules svg {
-  fill: $gray-light;
+  fill: $gray-dark;
+}
+
+.btn-dependency-norules:hover svg {
+  fill: $link-hover-color;
 }
 
 .btn-conflict {

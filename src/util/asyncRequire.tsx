@@ -28,6 +28,9 @@ export default function(id: string, basedir?: string): Promise<any> {
       }
 
       fs.readFile(filePath, (err, data) => {
+        if (err !== null) {
+          return reject(err);
+        }
         const paths = Module._nodeModulePaths(path.dirname(filePath));
         const mod = new Module(filePath, module.parent);
         mod.filename = filePath;

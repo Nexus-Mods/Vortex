@@ -291,7 +291,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
             id='fomod-cancel'
             className='close-button'
             tooltip={t('Cancel')}
-            icon='remove'
+            icon='cross'
             onClick={this.cancel}
           />
         </Modal.Header>
