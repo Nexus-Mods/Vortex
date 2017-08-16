@@ -100,6 +100,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, activators, discovery, game, gameMode } = this.props;
     const { currentActivator, paths, supportedActivators } = this.state;
 
+    if (game === undefined) {
+      return (
+        <Jumbotron>
+          <div style={{ fontSize: 'x-large', margin: '0 1em' }}>
+            {t('Settings on this page are game-specific ' +
+              'so you have to select a game to manage first.')}
+          </div>
+        </Jumbotron>
+      );
+    }
+
     const gameName = getSafe(discovery, ['name'], getSafe(game, ['name'], undefined));
 
     const label = t('Settings for {{name}}', {
@@ -108,7 +119,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       },
     });
 
-    return gameMode !== undefined ? (
+    return (
       <form>
         <FormControl.Static componentClass='h4'>{label}</FormControl.Static>
         <Panel footer={this.renderFooter()}>
@@ -132,13 +143,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </ControlLabel>
         {this.renderActivators(supportedActivators, currentActivator)}
       </form>
-    ) : (
-      <Jumbotron>
-        <div style={{ fontSize: 'x-large', margin: '0 1em' }}>
-          {t('Settings on this page are game-specific ' +
-             'so you have to select a game to manage first.')}
-        </div>
-      </Jumbotron>
     );
   }
 
