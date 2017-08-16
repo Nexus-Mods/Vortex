@@ -9,7 +9,7 @@ import ExtensionManagerT from '../util/ExtensionManager';
 import lazyRequire from '../util/lazyRequire';
 import {log, setLogPath} from '../util/log';
 import {allHives, createVortexStore, syncStore} from '../util/store';
-import {getSafe} from '../util/storeHelper';
+import {getSafe, setSafe} from '../util/storeHelper';
 
 import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
@@ -17,6 +17,7 @@ import TrayIconT from './TrayIcon';
 
 import * as Promise from 'bluebird';
 import {app, BrowserWindow, Electron, ipcMain} from 'electron';
+import * as origFS from 'fs';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -74,27 +75,99 @@ class Application {
     });
 
     app.on('ready', () => {
-      let splash: SplashScreenT;
+      if (args.get) {
+        this.handleGet(args.get);
+      } else if (args.set) {
+        this.handleSet(args.set);
+      } else {
+        this.regularStart(args);
+      }
+    });
+  }
 
-      this.testShouldQuit(args.wait ? 10 : -1)
-          .then(() => this.startSplash())
-          // start initialization
-          .then(splashIn => {
-            splash = splashIn;
-            return this.createStore();
-          })
-          .then(() => this.createTray())
-          .then(() => this.initDevel())
-          .then(() => this.startUi())
-          // end initialization
-          .then(() => splash.fadeOut())
-          .catch((err) => {
-            terminate({
-              message: 'Startup failed',
-              details: err.message,
-              stack: err.stack,
-            });
+  private regularStart(args: IParameters): Promise<void> {
+    let splash: SplashScreenT;
+
+    return this.testShouldQuit(args.wait ? 10 : -1)
+        .then(() => this.startSplash())
+        // start initialization
+        .then(splashIn => {
+          splash = splashIn;
+          return this.createStore();
+        })
+        .then(() => this.createTray())
+        .then(() => this.initDevel())
+        .then(() => this.startUi())
+        // end initialization
+        .then(() => splash.fadeOut())
+        .catch((err) => {
+          terminate({
+            message: 'Startup failed',
+            details: err.message,
+            stack: err.stack,
           });
+        });
+  }
+
+  private handleGet(getPath: string | true): Promise<void> {
+    if (getPath === true) {
+      origFS.writeSync(1, 'Usage: vortex --get <path>\n');
+      app.quit();
+      return;
+    }
+    const levelup = require('levelup');
+    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
+    const dbpath = path.join(process.env['APPDATA'], vortexPath, 'state');
+    const db = levelup(dbpath);
+    const pathArray = getPath.split('.');
+
+    db.get('global_' + pathArray[0], (err, value) => {
+      if (err) {
+        process.stderr.write(err + '\n');
+      } else {
+        const { inspect } = require('util');
+        process.stdout.write(
+          inspect(getSafe(JSON.parse(value), pathArray.slice(1), '<invalid>')) + '\n');
+      }
+      app.quit();
+    });
+  }
+
+  private handleSet(setParameters: string[]): Promise<void> {
+    if (setParameters.length !== 2) {
+      process.stdout.write('Usage: vortex --set <path>=<value>\n');
+      app.quit();
+      return;
+    }
+
+    const levelup = require('levelup');
+    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
+    const dbpath = path.join(process.env['APPDATA'], vortexPath, 'state');
+    const db = levelup(dbpath);
+    const pathArray = setParameters[0].split('.');
+
+    db.get('global_' + pathArray[0], (err, value) => {
+      if (err) {
+        process.stderr.write(err);
+        app.quit();
+      } else {
+        const data = JSON.parse(value);
+        const oldValue = getSafe(data, pathArray.slice(1), undefined);
+        const newValue = typeof(oldValue === 'object')
+          ? JSON.parse(setParameters[1])
+          : oldValue.constructor(setParameters[1]);
+        if (oldValue !== undefined) {
+          const newData = setSafe(data, pathArray.slice(1), newValue);
+          db.put('global_' + pathArray[0], JSON.stringify(newData), (setErr) => {
+            if (setErr) {
+              process.stderr.write(setErr);
+            }
+            app.quit();
+          });
+        } else {
+          app.quit();
+        }
+      }
     });
   }
 
