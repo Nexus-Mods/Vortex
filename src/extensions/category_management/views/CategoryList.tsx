@@ -406,9 +406,26 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  private removeSubcategories = (children: ICategoriesTree[]) => {
+    const { categories, gameMode, onRemoveCategory } = this.props;
+
+    children.forEach(child => {
+      if (child.children.length > 0) {
+        onRemoveCategory(gameMode, child.categoryId);
+        this.removeSubcategories(child.children);
+      } else {
+        onRemoveCategory(gameMode, child.categoryId);
+      }
+    });
+  }
+
   private removeCategory = (category: any) => {
     const {gameMode, onRemoveCategory} = this.props;
     onRemoveCategory(gameMode, category.node.categoryId);
+
+    if (category.node.children.length > 0) {
+      this.removeSubcategories(category.node.children);
+    }
   }
 
   private generateNodeProps = (rowInfo) => {
