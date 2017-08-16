@@ -1,4 +1,6 @@
 import { showDialog } from '../../actions/notifications';
+import Dropdown from '../../controls/Dropdown';
+import Icon from '../../controls/Icon';
 import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import asyncRequire, { Placeholder } from '../../util/asyncRequire';
@@ -10,8 +12,6 @@ import { activeGameId } from '../../util/selectors';
 import StarterInfo from '../../util/StarterInfo';
 import { DeployResult } from '../../util/startTool';
 import { getSafe } from '../../util/storeHelper';
-import Dropdown from '../../views/Dropdown';
-import Icon from '../../views/Icon';
 
 import {
   addDiscoveredTool,

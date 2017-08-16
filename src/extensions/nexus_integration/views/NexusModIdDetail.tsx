@@ -1,6 +1,6 @@
+import FormFeedback from '../../../controls/FormFeedback';
+import FormInput from '../../../controls/FormInput';
 import { ComponentEx } from '../../../util/ComponentEx';
-import FormFeedback from '../../../views/FormFeedback';
-import FormInput from '../../../views/FormInput';
 
 import { setModAttribute } from '../../mod_management/actions/mods';
 

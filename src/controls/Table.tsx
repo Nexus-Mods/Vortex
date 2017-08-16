@@ -1,5 +1,6 @@
 import {selectRows, setAttributeFilter, setAttributeSort,
         setAttributeVisible, setSplitPos} from '../actions/tables';
+import FlexLayout from '../controls/FlexLayout';
 import {IActionDefinition} from '../types/IActionDefinition';
 import {IAttributeState} from '../types/IAttributeState';
 import {IRowState, IState, ITableState} from '../types/IState';
@@ -11,7 +12,6 @@ import {IExtensibleProps} from '../util/ExtensionProvider';
 import smoothScroll from '../util/smoothScroll';
 import {getSafe, setSafe} from '../util/storeHelper';
 import {truthy} from '../util/util';
-import FlexLayout from '../views/FlexLayout';
 
 import Icon from './Icon';
 import IconBar from './IconBar';

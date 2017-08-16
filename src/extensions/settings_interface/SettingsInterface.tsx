@@ -1,6 +1,7 @@
+import More from '../../controls/More';
+import Toggle from '../../controls/Toggle';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
-import More from '../../views/More';
 
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
@@ -98,44 +99,41 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
           <ControlLabel>{t('Advanced')}</ControlLabel>
           <div>
             <div>
-              <Checkbox
+              <Toggle
                 checked={advanced}
-                onChange={this.toggleAdvanced}
-                style={{ display: 'inline' }}
+                onToggle={this.toggleAdvanced}
               >
                 {t('Enable advanced mode')}
-              </Checkbox>
-              <More id='more-advanced-settings' name={t('Advanced')}>
-                {getText('advanced', t)}
-              </More>
+                <More id='more-advanced-settings' name={t('Advanced')}>
+                  {getText('advanced', t)}
+                </More>
+              </Toggle>
             </div>
             <div>
-              <Checkbox
+              <Toggle
                 checked={profilesVisible}
-                onChange={this.toggleProfiles}
-                style={{ display: 'inline' }}
+                onToggle={this.toggleProfiles}
               >
                 {t('Enable Profile management')}
-              </Checkbox>
-              <More id='more-profile-settings' name={t('Profiles')}>
-                {getTextProfiles('profiles', t)}
-              </More>
+                <More id='more-profile-settings' name={t('Profiles')}>
+                  {getTextProfiles('profiles', t)}
+                </More>
+              </Toggle>
             </div>
           </div>
         </FormGroup>
         <FormGroup controlId='automation'>
           <ControlLabel>{t('Automation')}</ControlLabel>
           <div>
-            <Checkbox
+            <Toggle
               checked={autoDeployment}
-              onChange={this.toggleAutoDeployment}
-              style={{ display: 'inline' }}
+              onToggle={this.toggleAutoDeployment}
             >
               {t('Deploy mods immediately when they get enabled')}
-            </Checkbox>
-            <More id='more-deploy-settings' name={t('Deployment')}>
-              {getTextModManagement('deployment', t)}
-            </More>
+              <More id='more-deploy-settings' name={t('Deployment')}>
+                {getTextModManagement('deployment', t)}
+              </More>
+            </Toggle>
           </div>
         </FormGroup>
       </form>

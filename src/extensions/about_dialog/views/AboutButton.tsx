@@ -1,6 +1,6 @@
+import ToolbarIcon from '../../../controls/ToolbarIcon';
 import asyncRequire, { Placeholder } from '../../../util/asyncRequire';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
-import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import AboutDialogT from './AboutDialog';
 let AboutDialog: typeof AboutDialogT = Placeholder;

@@ -1,13 +1,13 @@
+import { Button } from '../../controls/TooltipControls';
 import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
 import { truthy } from '../../util/util';
-import { Button } from '../../views/TooltipControls';
 
 import * as React from 'react';
 import { FormControl, InputGroup } from 'react-bootstrap';
 
-export class DateTimeFilterComponent extends React.Component<IFilterProps, {}> {
+export class NumericFilterComponent extends React.Component<IFilterProps, {}> {
   private currentComparison: 'eq' | 'ge' | 'le';
-  private currentValue: Date;
+  private currentValue: number;
   private comparisons;
 
   constructor(props: IFilterProps) {
@@ -41,24 +41,24 @@ export class DateTimeFilterComponent extends React.Component<IFilterProps, {}> {
     const currentComparison = this.comparisons[filt.comparison];
 
     return (
-        <InputGroup style={{ width: '100%' }}>
-          <InputGroup.Addon className='group-addon-btn'>
-            <Button
-              id='btn-date-direction'
-              className='btn-embed'
-              onClick={this.toggleDirection}
-              tooltip={currentComparison.tooltip}
-            >
-              {currentComparison.symbol}
-            </Button>
-          </InputGroup.Addon>
-          <FormControl
-            className='form-field-compact'
-            type='Date'
-            value={filt.value}
-            onChange={this.changeFilter}
-          />
-        </InputGroup>
+      <InputGroup style={{ width: '100%' }}>
+        <InputGroup.Addon className='group-addon-btn'>
+          <Button
+            id='btn-numeric-direction'
+            className='btn-embed'
+            onClick={this.toggleDirection}
+            tooltip={currentComparison.tooltip}
+          >
+            {currentComparison.symbol}
+          </Button>
+        </InputGroup.Addon>
+        <FormControl
+          className='form-field-compact'
+          type='number'
+          value={filt.value}
+          onChange={this.changeFilter}
+        />
+      </InputGroup>
     );
   }
 
@@ -83,36 +83,23 @@ export class DateTimeFilterComponent extends React.Component<IFilterProps, {}> {
   }
 }
 
-function roundToDay(date: Date): Date {
-  const result = new Date(date.getTime());
-  result.setMilliseconds(0);
-  result.setSeconds(0);
-  result.setMinutes(0);
-  result.setHours(0);
-  return result;
-}
-
-class DateTimeFilter implements ITableFilter {
-  public component = DateTimeFilterComponent;
+class NumericFilter implements ITableFilter {
+  public component = NumericFilterComponent;
   public raw = false;
 
-  public matches(filter: any, input: any): boolean {
+  public matches(filter: any, input: number): boolean {
     const { comparison, value } = filter;
 
     if (!truthy(value)) {
       return true;
     }
 
-    if (input === undefined) {
-      return false;
-    }
-
     return {
-      eq: (lhs, rhs) => lhs.getTime() === rhs.getTime(),
+      eq: (lhs, rhs) => lhs === rhs,
       ge: (lhs, rhs) => lhs >= rhs,
       le: (lhs, rhs) => lhs <= rhs,
-    }[comparison](roundToDay(input), roundToDay(new Date(value)));
+    }[comparison](input, parseInt(value, 10));
   }
 }
 
-export default DateTimeFilter;
+export default NumericFilter;

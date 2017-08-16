@@ -1,10 +1,10 @@
+import Icon from '../../controls/Icon';
+import IconBar from '../../controls/IconBar';
+import { Button } from '../../controls/TooltipControls';
 import { IActionDefinition } from '../../types/IActionDefinition';
 import { ComponentEx } from '../../util/ComponentEx';
 import StarterInfo from '../../util/StarterInfo';
 import { truthy } from '../../util/util';
-import Icon from '../../views/Icon';
-import IconBar from '../../views/IconBar';
-import { Button } from '../../views/TooltipControls';
 
 import { setPrimaryTool } from './actions';
 import ToolIcon from './ToolIcon';

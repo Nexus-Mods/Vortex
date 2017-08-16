@@ -1,13 +1,13 @@
 import { removeExtension, setExtensionEnabled } from '../../actions/app';
+import Dropzone, { ControlMode } from '../../controls/Dropzone';
+import FlexLayout from '../../controls/FlexLayout';
+import Table, { ITableRowAction } from '../../controls/Table';
 import { IExtensionState, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import { spawnSelf } from '../../util/util';
-import Dropzone, { ControlMode } from '../../views/Dropzone';
-import FlexLayout from '../../views/FlexLayout';
 import MainPage from '../../views/MainPage';
-import Table, { ITableRowAction } from '../../views/Table';
 
 import { IDownload } from '../download_management/types/IDownload';
 import { downloadPath } from '../mod_management/selectors';

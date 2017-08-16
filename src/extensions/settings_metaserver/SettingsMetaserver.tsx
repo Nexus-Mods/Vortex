@@ -1,9 +1,9 @@
+import Icon from '../../controls/Icon';
+import InputButton from '../../controls/InputButton';
+import { Button } from '../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import {setSafe} from '../../util/storeHelper';
 import DNDContainer from '../../views/DNDContainer';
-import Icon from '../../views/Icon';
-import InputButton from '../../views/InputButton';
-import { Button } from '../../views/TooltipControls';
 import { addMetaserver, removeMetaserver, setPriorities } from './actions';
 
 import * as I18next from 'i18next';

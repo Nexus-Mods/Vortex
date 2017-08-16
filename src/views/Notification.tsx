@@ -1,6 +1,6 @@
+import Icon from '../controls/Icon';
 import { INotification, INotificationAction, NotificationType } from '../types/INotification';
 import { ComponentEx } from '../util/ComponentEx';
-import Icon from '../views/Icon';
 
 import * as I18next from 'i18next';
 import * as React from 'react';

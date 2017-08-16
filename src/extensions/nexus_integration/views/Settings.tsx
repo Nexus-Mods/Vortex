@@ -1,8 +1,8 @@
 import { showDialog } from '../../../actions/notifications';
+import { Button } from '../../../controls/TooltipControls';
 import { DialogType, IDialogActions, IDialogContent } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
-import { Button } from '../../../views/TooltipControls';
 import { setAssociatedWithNXMURLs } from '../actions/settings';
 
 import chromeAllowScheme from '../util/chromeAllowScheme';

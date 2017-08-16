@@ -1,6 +1,6 @@
+import Icon from '../../../controls/Icon';
 import { IDiscoveryPhase, IDiscoveryState } from '../../../types/IState';
 import { sum } from '../../../util/util';
-import Icon from '../../../views/Icon';
 
 import * as React from 'react';
 import { ProgressBar } from 'react-bootstrap';

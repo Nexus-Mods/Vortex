@@ -1,4 +1,4 @@
-import Icon from '../../views/Icon';
+import Icon from '../../controls/Icon';
 
 import * as React from 'react';
 import { Image } from 'react-bootstrap';

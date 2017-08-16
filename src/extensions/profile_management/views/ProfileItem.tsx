@@ -1,7 +1,7 @@
+import Icon from '../../../controls/Icon';
+import { Icon as TooltipIcon, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
-import Icon from '../../../views/Icon';
-import { Icon as TooltipIcon, IconButton } from '../../../views/TooltipControls';
 import TransferIcon from './TransferIcon';
 
 import { IProfile } from '../types/IProfile';

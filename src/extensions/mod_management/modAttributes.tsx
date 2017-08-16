@@ -1,10 +1,10 @@
+import Icon from '../../controls/Icon';
+import DateTimeFilter from '../../controls/table/DateTimeFilter';
 import {ITableAttribute} from '../../types/ITableAttribute';
 import { ComponentEx } from '../../util/ComponentEx';
 import { getCurrentLanguage } from '../../util/i18n';
 import relativeTime from '../../util/relativeTime';
 import { getSafe, setSafe } from '../../util/storeHelper';
-import Icon from '../../views/Icon';
-import DateTimeFilter from '../../views/table/DateTimeFilter';
 
 import { IModWithState } from './types/IModProps';
 import Description from './views/Description';

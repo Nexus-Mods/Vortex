@@ -1,10 +1,9 @@
-import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-
+import Icon from '../../../controls/Icon';
+import { IconButton } from '../../../controls/TooltipControls';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IState } from '../../../types/IState';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { isNullOrWhitespace } from '../../../util/util';
-import Icon from '../../../views/Icon';
-import { IconButton } from '../../../views/TooltipControls';
 
 import { addSearchPath, removeSearchPath } from '../actions/settings';
 

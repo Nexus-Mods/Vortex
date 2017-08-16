@@ -1,9 +1,8 @@
+import { ButtonType } from '../../../controls/IconBar';
+import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
-
-import { ButtonType } from '../../../views/IconBar';
-import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { dialog as dialogIn, Electron, remote } from 'electron';
 import * as React from 'react';

@@ -15,8 +15,8 @@ import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import { dir as tmpDir, file as tmpFile } from 'tmp';
 import {
-  actions, BinaryToggle, ComponentEx, Dropzone, FlexLayout, Icon, IconBar, ITableRowAction,
-  log, MainPage, Table, tooltip, types, util,
+  actions, ComponentEx, Dropzone, FlexLayout, Icon, IconBar, ITableRowAction,
+  log, MainPage, Table, Toggle, tooltip, types, util,
 } from 'vortex-api';
 
 type ControlMode = 'urls' | 'files';
@@ -103,7 +103,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
           {feedbackFiles[feedbackFile].filename}
         </p>
         <p style={{ display: 'inline' }}>
-          {' '}({ util.bytesToString(feedbackFiles[feedbackFile].size) })
+          {' '}({util.bytesToString(feedbackFiles[feedbackFile].size)})
         </p>
         <tooltip.IconButton
           className='btn-embed btn-line-right'
@@ -207,12 +207,12 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
             >
               {t('Submit Feedback')}
             </tooltip.Button>
-            <BinaryToggle
-              value={anonymous}
+            <Toggle
+              checked={anonymous}
               onToggle={this.setAnonymous}
             >
               {t('Send anonymously')}
-            </BinaryToggle>
+            </Toggle>
           </FlexLayout.Fixed>
         </FlexLayout>
       </FlexLayout.Fixed>

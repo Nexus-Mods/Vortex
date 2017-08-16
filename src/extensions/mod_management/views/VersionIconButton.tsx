@@ -1,6 +1,6 @@
+import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
-import { IconButton } from '../../../views/TooltipControls';
 
 import { IDownload } from '../../download_management/types/IDownload';
 

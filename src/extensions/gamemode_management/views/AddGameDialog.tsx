@@ -1,8 +1,8 @@
+import { FormCheckboxItem, FormPathItem, FormTextItem } from '../../../controls/FormFields';
+import More from '../../../controls/More';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { log } from '../../../util/log';
-import { FormCheckboxItem, FormPathItem, FormTextItem } from '../../../views/FormFields';
-import More from '../../../views/More';
 
 import { setAddGameDialogVisible } from '../actions/session';
 import { addDiscoveredGame } from '../actions/settings';

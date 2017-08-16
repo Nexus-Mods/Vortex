@@ -1,13 +1,13 @@
 import { showDialog } from '../../../actions/notifications';
+import Icon from '../../../controls/Icon';
+import More from '../../../controls/More';
+import { Button } from '../../../controls/TooltipControls';
 import { DialogType, IDialogActions, IDialogContent } from '../../../types/IDialog';
 import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
-import Icon from '../../../views/Icon';
-import More from '../../../views/More';
-import { Button } from '../../../views/TooltipControls';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';

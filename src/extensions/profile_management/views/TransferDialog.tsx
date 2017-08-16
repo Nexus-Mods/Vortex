@@ -1,8 +1,8 @@
+import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx } from '../../../util/ComponentEx';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
-import { IconButton } from '../../../views/TooltipControls';
 
 import { IMod } from '../../mod_management/types/IMod';
 

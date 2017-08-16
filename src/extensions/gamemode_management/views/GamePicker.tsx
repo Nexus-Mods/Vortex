@@ -1,5 +1,11 @@
 import { DialogType, IDialogActions,
          IDialogContent, showDialog } from '../../../actions/notifications';
+import Advanced from '../../../controls/Advanced';
+import FlexLayout from '../../../controls/FlexLayout';
+import Icon from '../../../controls/Icon';
+import IconBar, { ButtonType } from '../../../controls/IconBar';
+import ToolbarIcon from '../../../controls/ToolbarIcon';
+import { Button, IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IDiscoveryPhase, IDiscoveryState, IState } from '../../../types/IState';
@@ -7,13 +13,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import Advanced from '../../../views/Advanced';
-import FlexLayout from '../../../views/FlexLayout';
-import Icon from '../../../views/Icon';
-import IconBar, { ButtonType } from '../../../views/IconBar';
 import MainPage from '../../../views/MainPage';
-import ToolbarIcon from '../../../views/ToolbarIcon';
-import { Button, IconButton } from '../../../views/TooltipControls';
 
 import { setGamePath } from '../../gamemode_management/actions/settings';
 import { IProfile } from '../../profile_management/types/IProfile';

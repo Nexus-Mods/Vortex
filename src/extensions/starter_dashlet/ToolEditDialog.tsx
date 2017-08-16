@@ -1,10 +1,10 @@
 import { displayGroup } from '../../actions/session';
+import { FormPathItem, FormTextItem } from '../../controls/FormFields';
+import { Button, IconButton } from '../../controls/TooltipControls';
 import { IComponentContext } from '../../types/IComponentContext';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
-import { FormPathItem, FormTextItem } from '../../views/FormFields';
-import { Button, IconButton } from '../../views/TooltipControls';
 
 import { getSafe } from '../../util/storeHelper';
 

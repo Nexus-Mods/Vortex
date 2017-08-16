@@ -1,6 +1,7 @@
+import TextFilter from '../../controls/table/TextFilter';
+
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { bytesToString } from '../../util/util';
-import TextFilter from '../../views/table/TextFilter';
 
 import DownloadProgressFilter from './views/DownloadProgressFilter';
 

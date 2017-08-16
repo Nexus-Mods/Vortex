@@ -1,6 +1,6 @@
+import Icon from '../../../controls/Icon';
 import { connect } from '../../../util/ComponentEx';
 import { bytesToString } from '../../../util/util';
-import Icon from '../../../views/Icon';
 
 import * as React from 'react';
 

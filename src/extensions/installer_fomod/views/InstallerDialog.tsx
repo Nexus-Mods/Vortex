@@ -1,7 +1,7 @@
+import FlexLayout from '../../../controls/FlexLayout';
+import {IconButton} from '../../../controls/TooltipControls';
 import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
 import {pushSafe, removeValue} from '../../../util/storeHelper';
-import FlexLayout from '../../../views/FlexLayout';
-import {IconButton} from '../../../views/TooltipControls';
 
 import {GroupType, IGroup, IHeaderImage, IInstallerState, IInstallStep,
         IPlugin, OrderType} from '../types/interface';

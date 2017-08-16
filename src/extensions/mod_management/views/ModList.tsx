@@ -1,4 +1,10 @@
 import { showDialog } from '../../../actions/notifications';
+import DropdownButton from '../../../controls/DropdownButton';
+import Icon from '../../../controls/Icon';
+import IconBar from '../../../controls/IconBar';
+import SuperTable, { ITableRowAction } from '../../../controls/Table';
+import TextFilter from '../../../controls/table/TextFilter';
+import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IAttributeState } from '../../../types/IAttributeState';
 import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../../../types/IDialog';
@@ -8,13 +14,7 @@ import { ComponentEx, connect, extend, translate } from '../../../util/Component
 import Debouncer from '../../../util/Debouncer';
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
-import DropdownButton from '../../../views/DropdownButton';
-import Icon from '../../../views/Icon';
-import IconBar from '../../../views/IconBar';
 import MainPage from '../../../views/MainPage';
-import SuperTable, { ITableRowAction } from '../../../views/Table';
-import TextFilter from '../../../views/table/TextFilter';
-import { IconButton } from '../../../views/TooltipControls';
 
 import { IDownload } from '../../download_management/types/IDownload';
 import { setModEnabled } from '../../profile_management/actions/profiles';

@@ -1,10 +1,10 @@
+import Icon from '../../controls/Icon';
+import More from '../../controls/More';
+import { IconButton } from '../../controls/TooltipControls';
 import { IToDoButton, ToDoType } from '../../types/IExtensionContext';
 import { II18NProps } from '../../types/II18NProps';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import * as selectors from '../../util/selectors';
-import Icon from '../../views/Icon';
-import More from '../../views/More';
-import { IconButton } from '../../views/TooltipControls';
 
 import { dismissStep } from './actions';
 import { IToDo } from './IToDo';

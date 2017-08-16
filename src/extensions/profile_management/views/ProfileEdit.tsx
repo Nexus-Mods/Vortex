@@ -1,7 +1,7 @@
+import Icon from '../../../controls/Icon';
+import {Button} from '../../../controls/TooltipControls';
 import {ComponentEx} from '../../../util/ComponentEx';
 import {getSafe, setSafe} from '../../../util/storeHelper';
-import Icon from '../../../views/Icon';
-import {Button} from '../../../views/TooltipControls';
 
 import {IProfile} from '../types/IProfile';
 import {IProfileFeature} from '../types/IProfileFeature';

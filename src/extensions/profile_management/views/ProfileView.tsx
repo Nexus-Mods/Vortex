@@ -1,10 +1,10 @@
 import { DialogType, IDialogActions, IDialogContent, IDialogResult,
          showDialog } from '../../../actions/notifications';
+import Icon from '../../../controls/Icon';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import Icon from '../../../views/Icon';
 import MainPage from '../../../views/MainPage';
 
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';

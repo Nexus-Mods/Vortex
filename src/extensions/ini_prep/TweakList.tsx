@@ -1,8 +1,8 @@
+import Toggle from '../../controls/Toggle';
 import { IState } from '../../types/IState';
 import { ComponentEx, connect, PureComponentEx, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
-import Toggle from '../../views/BinaryToggle';
 
 import { setINITweakEnabled } from '../mod_management/actions/mods';
 import { INI_TWEAKS_PATH } from '../mod_management/InstallManager';
@@ -54,7 +54,7 @@ class Tweak extends PureComponentEx<ITweakProps, {}> {
 
     return (
       <ListGroupItem className='listitem-tweak'>
-        <Toggle value={enabled} onToggle={this.toggle} /> {match[1]}
+        <Toggle checked={enabled} onToggle={this.toggle}>{match[1]}</Toggle>
       </ListGroupItem>);
   }
 

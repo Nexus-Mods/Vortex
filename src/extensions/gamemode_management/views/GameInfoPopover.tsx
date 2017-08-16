@@ -1,7 +1,7 @@
+import Icon from '../../../controls/Icon';
 import { IGameInfoEntry, IState } from '../../../types/IState';
 import { ComponentEx, connect } from '../../../util/ComponentEx';
 import { bytesToString } from '../../../util/util';
-import Icon from '../../../views/Icon';
 
 import { IGameStored } from '../types/IGameStored';
 

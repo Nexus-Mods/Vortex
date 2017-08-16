@@ -1,8 +1,8 @@
+import Advanced from '../../../controls/Advanced';
+import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId, activeProfile, currentGameDiscovery } from '../../../util/selectors';
-import Advanced from '../../../views/Advanced';
-import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { currentActivator, installPath } from '../../mod_management/selectors';

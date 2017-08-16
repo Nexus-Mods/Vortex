@@ -1,8 +1,8 @@
 import { showDialog } from '../../../actions/notifications';
+import FormFeedback from '../../../controls/FormFeedback';
+import { Button } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
-import FormFeedback from '../../../views/FormFeedback';
-import { Button } from '../../../views/TooltipControls';
 
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';

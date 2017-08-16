@@ -3,7 +3,7 @@ import { INotification } from '../types/INotification';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
-import Icon from './Icon';
+import Icon from '../controls/Icon';
 import Notification from './Notification';
 
 import * as React from 'react';

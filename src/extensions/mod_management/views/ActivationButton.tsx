@@ -1,10 +1,10 @@
 import { DialogType,
          IDialogContent, IDialogResult, showDialog } from '../../../actions/notifications';
+import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId, activeProfile } from '../../../util/selectors';
-import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IProfileMod } from '../../profile_management/types/IProfile';

@@ -1,6 +1,6 @@
+import { ButtonType } from '../../../controls/IconBar';
+import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ButtonType } from '../../../views/IconBar';
-import ToolbarIcon from '../../../views/ToolbarIcon';
 
 import { setAddGameDialogVisible } from '../actions/session';
 

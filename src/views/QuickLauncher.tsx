@@ -1,4 +1,5 @@
 import { showDialog } from '../actions/notifications';
+import { IconButton } from '../controls/TooltipControls';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
@@ -12,7 +13,6 @@ import { activeGameId, currentGame, currentGameDiscovery } from '../util/selecto
 import StarterInfo from '../util/StarterInfo';
 import { DeployResult } from '../util/startTool';
 import { getSafe } from '../util/storeHelper';
-import { IconButton } from '../views/TooltipControls';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';

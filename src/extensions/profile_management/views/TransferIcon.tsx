@@ -1,11 +1,10 @@
-import { setCreateTransfer, setSource, setTarget } from '../actions/transferSetup';
-
+import * as tooltip from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx } from '../../../util/ComponentEx';
 import { log } from '../../../util/log';
-import * as tooltip from '../../../views/TooltipControls';
 import * as selectors from '../selectors';
 
+import { setCreateTransfer, setSource, setTarget } from '../actions/transferSetup';
 import { IProfile } from '../types/IProfile';
 
 import * as I18next from 'i18next';

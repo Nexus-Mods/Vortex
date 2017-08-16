@@ -1,9 +1,9 @@
 import { DialogType, IDialogActions, IDialogContent } from '../../../actions/notifications';
+import Advanced from '../../../controls/Advanced';
+import IconBar from '../../../controls/IconBar';
+import OverlayTrigger from '../../../controls/OverlayTrigger';
+import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
-import Advanced from '../../../views/Advanced';
-import IconBar from '../../../views/IconBar';
-import OverlayTrigger from '../../../views/OverlayTrigger';
-import { IconButton } from '../../../views/TooltipControls';
 
 import { IMod } from '../../mod_management/types/IMod';
 

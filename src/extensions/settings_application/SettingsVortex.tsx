@@ -1,8 +1,8 @@
 import { setMultiUser } from '../../actions/user';
+import More from '../../controls/More';
 import { IState } from '../../types/IState';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { spawnSelf } from '../../util/util';
-import More from '../../views/More';
 
 import getText from './texts';
 

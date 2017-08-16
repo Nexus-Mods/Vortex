@@ -1,7 +1,6 @@
 import * as CoreActions from '../actions/index';
-
+import FlexLayout from '../controls/FlexLayout';
 import LogMonTool from '../util/DevTools';
-import FlexLayout from '../views/FlexLayout';
 
 import * as React from 'react';
 import { Component } from 'react';

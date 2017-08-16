@@ -1,8 +1,8 @@
 import { setDialogVisible } from '../../../actions/session';
+import Icon from '../../../controls/Icon';
+import { Button, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
-import Icon from '../../../views/Icon';
-import { Button, IconButton } from '../../../views/TooltipControls';
 
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';

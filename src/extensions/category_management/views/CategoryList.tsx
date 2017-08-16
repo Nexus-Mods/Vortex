@@ -1,4 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
+import Icon from '../../../controls/Icon';
+import IconBar from '../../../controls/IconBar';
+import { Button, IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../../../types/IDialog';
@@ -6,9 +9,6 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import lazyRequire from '../../../util/lazyRequire';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
-import Icon from '../../../views/Icon';
-import IconBar from '../../../views/IconBar';
-import { Button, IconButton } from '../../../views/TooltipControls';
 
 import { IMod } from '../../mod_management/types/IMod';
 

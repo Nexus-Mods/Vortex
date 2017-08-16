@@ -1,6 +1,6 @@
+import Icon from '../../../controls/Icon';
+import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
-import Icon from '../../../views/Icon';
-import { IconButton } from '../../../views/TooltipControls';
 
 import * as I18next from 'i18next';
 import * as React from 'react';

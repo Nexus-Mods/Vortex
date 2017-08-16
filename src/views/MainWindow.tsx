@@ -1,6 +1,9 @@
 import { setDialogVisible, setOpenMainPage, setOverlayOpen } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
-
+import FlexLayout from '../controls/FlexLayout';
+import Icon from '../controls/Icon';
+import IconBar from '../controls/IconBar';
+import { Button, IconButton, NavItem } from '../controls/TooltipControls';
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IComponentContext } from '../types/IComponentContext';
 import { IExtensionApi, IMainPageOptions } from '../types/IExtensionContext';
@@ -13,17 +16,13 @@ import DeveloperType from './Developer';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
-import FlexLayout from './FlexLayout';
 import GlobalOverlay from './GlobalOverlay';
-import Icon from './Icon';
-import IconBar from './IconBar';
 import MainFooter from './MainFooter';
 import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
 import NotificationButton from './NotificationButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
-import { Button, IconButton, NavItem } from './TooltipControls';
 
 import * as I18next from 'i18next';
 import * as update from 'immutability-helper';

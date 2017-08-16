@@ -1,11 +1,11 @@
 import { closeDialog } from '../actions/notifications';
+import Icon from '../controls/Icon';
 import {
   DialogType, ICheckbox, IDialog,
   IDialogContent, IInput,
 } from '../types/IDialog';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
-import Icon from '../views/Icon';
 
 import * as I18next from 'i18next';
 import * as update from 'immutability-helper';

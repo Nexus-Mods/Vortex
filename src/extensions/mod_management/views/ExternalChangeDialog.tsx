@@ -1,6 +1,6 @@
+import { Button } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { midClip } from '../../../util/util';
-import { Button } from '../../../views/TooltipControls';
 
 import { confirmExternalChanges, setExternalChangeAction } from '../actions/externalChanges';
 

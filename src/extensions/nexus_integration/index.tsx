@@ -1,5 +1,7 @@
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { setDialogVisible } from '../../actions/session';
+import Icon from '../../controls/Icon';
+import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
@@ -10,8 +12,6 @@ import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
-import Icon from '../../views/Icon';
-import InputButton from '../../views/InputButton';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';

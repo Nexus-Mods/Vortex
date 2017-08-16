@@ -1,6 +1,6 @@
+import Icon from '../../../controls/Icon';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import {log} from '../../../util/log';
-import Icon from '../../../views/Icon';
 
 import { ILicense } from '../types/ILicense';
 

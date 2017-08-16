@@ -1,7 +1,7 @@
 import { setSettingsPage } from '../../actions/session';
+import Icon from '../../controls/Icon';
+import More from '../../controls/More';
 import { IExtensionApi, ToDoType } from '../../types/IExtensionContext';
-import Icon from '../../views/Icon';
-import More from '../../views/More';
 
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
