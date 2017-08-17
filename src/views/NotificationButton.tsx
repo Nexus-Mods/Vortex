@@ -55,18 +55,22 @@ class NotificationButton extends ComponentEx<IProps, {}> {
       </Popover>
     );
 
+    // TODO: current typings don't expose "shouldUpdatePosition" but it's there
+    const MyOverlayTrigger: any = OverlayTrigger;
+
     return (
-      <OverlayTrigger
+      <MyOverlayTrigger
         ref={this.setRef}
         overlay={popover}
         trigger='click'
         placement='bottom'
+        shouldUpdatePosition={true}
       >
         <Button id='notifications-button'>
           <Icon name='bell' />
           {items.length === 0 ? null : <Badge>{items.length}</Badge>}
         </Button>
-      </OverlayTrigger>
+      </MyOverlayTrigger>
     );
   }
 
