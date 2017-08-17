@@ -56,7 +56,12 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
-    this.nextState.starter = this.makeStarter(nextProps);
+    // { discoveredTools, game, gameDiscovery, primaryTool }
+    if ((nextProps.discoveredTools !== this.props.discoveredTools)
+        || (nextProps.game !== this.props.game)
+        || (nextProps.gameDiscovery !== this.props.primaryTool)) {
+      this.nextState.starter = this.makeStarter(nextProps);
+    }
   }
 
   public render(): JSX.Element {

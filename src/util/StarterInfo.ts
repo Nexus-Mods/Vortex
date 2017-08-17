@@ -22,6 +22,16 @@ export interface IStarterInfo {
   environment: { [key: string]: string };
 }
 
+const userDataPath = ((): () => string => {
+  let cache: string;
+  return () => {
+    if (cache === undefined) {
+      cache = remote.app.getPath('userData');
+    }
+    return cache;
+  };
+})();
+
 /**
  * holds info about an executable to start
  *
@@ -45,7 +55,7 @@ class StarterInfo implements IStarterInfo {
   }
 
   private static gameIconRW(gameId: string) {
-    return path.join(remote.app.getPath('userData'), gameId, 'icon.png');
+    return path.join(userDataPath(), gameId, 'icon.png');
   }
 
   private static toolIcon(gameId: string, extensionPath: string,
@@ -59,8 +69,7 @@ class StarterInfo implements IStarterInfo {
     }
   }
   private static toolIconRW(gameId: string, toolId: string) {
-    return path.join(remote.app.getPath('userData'),
-      gameId, 'icons', toolId + '.png');
+    return path.join(userDataPath(), gameId, 'icons', toolId + '.png');
   }
 
   public id: string;
@@ -74,6 +83,7 @@ class StarterInfo implements IStarterInfo {
   public environment: { [key: string]: string };
   private mExtensionPath: string;
   private mLogoName: string;
+  private mIconPathCache: string;
 
   constructor(game: IGameStored, gameDiscovery: IDiscoveryResult,
               tool?: IToolStored, toolDiscovery?: IDiscoveredTool) {
@@ -95,11 +105,16 @@ class StarterInfo implements IStarterInfo {
   }
 
   public get iconPath(): string {
-    if (this.isGame) {
-      return StarterInfo.gameIcon(this.gameId, this.mExtensionPath, this.mLogoName);
-    } else {
-      return StarterInfo.toolIcon(this.gameId, this.mExtensionPath, this.id, this.mLogoName);
+    if (this.mIconPathCache === undefined) {
+      if (this.isGame) {
+        this.mIconPathCache = StarterInfo.gameIcon(
+            this.gameId, this.mExtensionPath, this.mLogoName);
+      } else {
+        this.mIconPathCache = StarterInfo.toolIcon(
+            this.gameId, this.mExtensionPath, this.id, this.mLogoName);
+      }
     }
+    return this.mIconPathCache;
   }
 
   private initFromGame(game: IGameStored, gameDiscovery: IDiscoveryResult) {

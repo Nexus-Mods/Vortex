@@ -2,7 +2,7 @@ import Icon from '../../controls/Icon';
 import IconBar from '../../controls/IconBar';
 import { Button } from '../../controls/TooltipControls';
 import { IActionDefinition } from '../../types/IActionDefinition';
-import { ComponentEx } from '../../util/ComponentEx';
+import { PureComponentEx } from '../../util/ComponentEx';
 import StarterInfo from '../../util/StarterInfo';
 import { truthy } from '../../util/util';
 
@@ -29,7 +29,7 @@ export interface IToolButtonState {
   imageUrl: string;
 }
 
-class ToolButton extends ComponentEx<IProps, IToolButtonState> {
+class ToolButton extends PureComponentEx<IProps, IToolButtonState> {
   private mImageId: number;
   private mStaticElements: IActionDefinition[];
 

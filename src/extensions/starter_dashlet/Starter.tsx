@@ -42,6 +42,7 @@ import { generate as shortid } from 'shortid';
 interface IWelcomeScreenState {
   editTool: StarterInfo;
   counter: number;
+  tools: StarterInfo[];
 }
 
 interface IActionProps {
@@ -62,9 +63,9 @@ interface IConnectedProps {
   primaryTool: string;
 }
 
-type IWelcomeScreenProps = IConnectedProps & IActionProps;
+type IStarterProps = IConnectedProps & IActionProps;
 
-class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
+class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   private mIsMounted: boolean = false;
   private mRef: Element = null;
   constructor(props) {
@@ -73,6 +74,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     this.state = {
       editTool: undefined,
       counter: 1,
+      tools: this.generateToolStarters(props),
     };
   }
 
@@ -94,6 +96,15 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
 
   public componentWillUnmount() {
     this.mIsMounted = false;
+  }
+
+  public componentWillReceiveProps(nextProps: IStarterProps) {
+    if ((nextProps.discoveredGames !== this.props.discoveredGames)
+       || (nextProps.discoveredTools !== this.props.discoveredTools)
+       || (nextProps.gameMode !== this.props.gameMode)
+       || (nextProps.knownGames !== this.props.knownGames)) {
+      this.setState(update(this.state, { tools: { $set: this.generateToolStarters(nextProps) } }));
+   }
   }
 
   public render(): JSX.Element {
@@ -122,6 +133,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
 
   private renderToolIcons(game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element {
     const { discoveredTools, primaryTool } = this.props;
+    const { tools } = this.state;
 
     if ((game === undefined) && (getSafe(discoveredGame, ['id'], undefined) === undefined)) {
       return null;
@@ -131,41 +143,11 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     const knownTools: IToolStored[] = getSafe(game, ['supportedTools'], []);
     const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
 
-    // add the main game executable
-    const starters: StarterInfo[] = [
-    ];
-
-    try {
-      starters.push(new StarterInfo(game, discoveredGame));
-    } catch (err) {
-      log('error', 'invalid game', { err });
-    }
-
-    // add the tools provided by the game extension (whether they are found or not)
-    knownTools.forEach((tool: IToolStored) => {
-      try {
-        starters.push(new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]));
-      } catch (err) {
-        log('warn', 'invalid tool', { err });
-      }
-    });
-
-    // finally, add those tools that were added manually
-    Object.keys(discoveredTools)
-      .filter(toolId => !preConfTools.has(toolId))
-      .forEach(toolId => {
-        try {
-          starters.push(new StarterInfo(game, discoveredGame, undefined, discoveredTools[toolId]));
-        } catch (err) {
-          log('error', 'tool configuration invalid', { gameId, toolId });
-        }
-      });
-
-    const hidden = starters.filter(starter =>
+    const hidden = tools.filter(starter =>
       (discoveredTools[starter.id] !== undefined)
       && (discoveredTools[starter.id].hidden === true));
 
-    const visible = starters.filter(starter =>
+    const visible = tools.filter(starter =>
       starter.isGame
       || (discoveredTools[starter.id] === undefined)
       || (discoveredTools[starter.id].hidden !== true));
@@ -216,6 +198,48 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
         onMakePrimary={this.makePrimary}
       />
     );
+  }
+
+  private generateToolStarters(props: IStarterProps): StarterInfo[] {
+    const { discoveredGames, discoveredTools, gameMode, knownGames } = props;
+
+    const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
+    const discoveredGame = discoveredGames[gameMode];
+    const knownTools: IToolStored[] = getSafe(game, ['supportedTools'], []);
+    const gameId = discoveredGame.id || game.id;
+    const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
+
+    // add the main game executable
+    const starters: StarterInfo[] = [
+    ];
+
+    try {
+      starters.push(new StarterInfo(game, discoveredGame));
+    } catch (err) {
+      log('error', 'invalid game', { err });
+    }
+
+    // add the tools provided by the game extension (whether they are found or not)
+    knownTools.forEach((tool: IToolStored) => {
+      try {
+        starters.push(new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]));
+      } catch (err) {
+        log('warn', 'invalid tool', { err });
+      }
+    });
+
+    // finally, add those tools that were added manually
+    Object.keys(discoveredTools)
+      .filter(toolId => !preConfTools.has(toolId))
+      .forEach(toolId => {
+        try {
+          starters.push(new StarterInfo(game, discoveredGame, undefined, discoveredTools[toolId]));
+        } catch (err) {
+          log('error', 'tool configuration invalid', { gameId, toolId });
+        }
+      });
+
+    return starters;
   }
 
   private queryElevate = (name: string) => {
