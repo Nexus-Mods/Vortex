@@ -3,6 +3,7 @@ import FormFeedback from '../../../controls/FormFeedback';
 import { Button } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
@@ -38,15 +39,7 @@ interface IValidationState {
 
 interface ILoginFormState {
   APIKey: string;
-  isSubmitted: boolean;
-  userId: string;
-  name: string;
-  email: string;
-  statusCode: string;
-  statusCodeMessage: string;
-  isPremium: boolean;
-  isSupporter: boolean;
-  profileUrl: string;
+  didSubmit: boolean;
 }
 
 class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
@@ -55,26 +48,8 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
 
     this.state = {
       APIKey: '',
-      isSubmitted: false,
-      userId: '',
-      name: '',
-      email: '',
-      statusCode: null,
-      statusCodeMessage: '',
-      isPremium: false,
-      isSupporter: false,
-      profileUrl: '',
+      didSubmit: false,
     };
-  }
-
-  public componentWillMount() {
-    if (this.props.userInfo !== undefined) {
-      this.initUserInfo(this.props);
-    }
-  }
-
-  public componentWillReceiveProps(nextProps: IProps) {
-    this.initUserInfo(nextProps);
   }
 
   public render(): JSX.Element {
@@ -83,7 +58,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
       <Modal show={visible} onHide={onHide}>
         <Modal.Header>
           <Modal.Title>
-          {APIKey === '' ? t('API Key Validation') : t('User Info')}
+          {userInfo === undefined ? t('API Key') : t('User Info')}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -97,24 +72,24 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
   }
 
   private renderLoginForm(): JSX.Element {
-    const { APIKey } = this.props;
+    const { APIKey, userInfo } = this.props;
     return (
       <form>
-        {APIKey === undefined ? this.renderKeyInput() : this.renderAccountInfo()}
+        {userInfo === undefined ? this.renderKeyInput() : this.renderAccountInfo()}
       </form>
     );
   }
 
   private renderSubmitButton(): JSX.Element {
-    const { t, APIKey } = this.props;
-    return (APIKey === undefined)
+    const { t, APIKey, userInfo } = this.props;
+    return (userInfo === undefined)
       ? (
         <Button id='submit-apikey' tooltip={t('Submit')} onClick={this.apiKeySubmit}>
           {t('Submit')}
         </Button>
       )
       : (
-        <Button id='remove-apikey' tooltip={t('Remove Key')} onClick={this.apiKeySubmit}>
+        <Button id='remove-apikey' tooltip={t('Remove Key')} onClick={this.clearAPIKey}>
           {t('Remove Key')}
         </Button>
       );
@@ -133,7 +108,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
         <ControlLabel>{validation.reason}</ControlLabel>
         <textarea
           name='APIKey'
-          style={{ resize: 'none', width: '100%' }}
+          style={{ resize: 'none', width: '100%', paddingRight: '2em' }}
           rows={4}
           value={APIKey}
           placeholder={t('Create an API key and paste it here')}
@@ -149,7 +124,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
 
   private renderAccountInfo() {
     const { t } = this.props;
-    const { name, email, isPremium, isSupporter, profileUrl, userId } = this.state;
+    const { name, email, isPremium, isSupporter, profileUrl, userId } = this.props.userInfo;
 
     return (
       <FormGroup
@@ -183,77 +158,41 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
     );
   }
 
-  private handleChange(event, field) {
-    this.setState(update(this.state, { [field]: { $set: event.target.value } }));
-  }
-
   private openAPIKeyPage = evt => {
     evt.preventDefault();
     opn('https://rd.nexusmods.com/users/myaccount?tab=api+access');
   }
 
   private validationState(): IValidationState {
-    const { isSubmitted, APIKey, statusCode, statusCodeMessage } = this.state;
+    const { APIKey, userInfo } = this.props;
+    const { didSubmit } = this.state;
+    const editAPIKey = this.state.APIKey;
 
-    if (!isSubmitted) {
-      return {};
-    }
-    if (APIKey.length === 0) {
-      return { state: 'warning', reason: 'Missing API Key' };
-    }
-    if (statusCode === null) {
+    if (didSubmit && (APIKey === undefined)) {
+      return { state: 'warning', reason: 'API Key rejected' };
+    } else if ((APIKey !== undefined) && (userInfo === undefined)) {
       return { pending: true, reason: 'Verifying...' };
-    }
-    if (statusCode !== '200') {
-      return { state: 'warning', reason: statusCodeMessage };
+    } else if ((!truthy(editAPIKey) && !truthy(APIKey)) || (editAPIKey === APIKey)) {
+      return {};
     }
 
     return { state: 'success' };
   }
 
-  private apiKeySubmit = (event) => {
-    this.authenticateAPIKey();
-  }
-
-  private authenticateAPIKey() {
+  private apiKeySubmit = () => {
     const { onSetAPIKey } = this.props;
-    const { APIKey } = this.state;
-    const propAPIKey = this.props.APIKey;
-
-    if (propAPIKey !== undefined) {
-      onSetAPIKey(undefined);
-      this.setState(update(this.state, { isSubmitted: { $set: false } }));
-    } else {
-      this.setState(update(this.state, {
-        isSubmitted: { $set: true },
-        statusCode: { $set: null },
-        statusCodeMessage: { $set: '' },
-      }));
-      if (APIKey !== '') {
-        onSetAPIKey(APIKey);
-      }
-    }
+    this.setState(update(this.state, { didSubmit: { $set: true } }));
+    onSetAPIKey(this.state.APIKey);
   }
 
-  private initUserInfo(props: IProps) {
-    const { userInfo } = props;
-    if (userInfo === undefined) {
-      return;
-    }
-    this.setState(update(this.state, {
-      userId: { $set: userInfo.userId },
-      name: { $set: userInfo.name },
-      isPremium: { $set: userInfo.isPremium },
-      isSupporter: { $set: userInfo.isSupporter },
-      email: { $set: userInfo.email },
-      profileUrl: { $set: userInfo.profileUrl },
-    }));
+  private clearAPIKey = () => {
+    this.props.onSetAPIKey(undefined);
   }
 
   private handleChangeAPIKey = (event) => {
-    this.setState(update(this.state, { statusCode: { $set: '' } }));
-    this.setState(update(this.state, { statusCodeMessage: { $set: '' } }));
-    this.handleChange(event, 'APIKey');
+    this.setState(update(this.state, {
+      APIKey: { $set: event.target.value.trim() },
+    }));
   }
 }
 

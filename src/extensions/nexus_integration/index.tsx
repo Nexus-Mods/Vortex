@@ -21,6 +21,7 @@ import { IMod } from '../mod_management/types/IMod';
 import modName from '../mod_management/util/modName';
 import { IProfileMod } from '../profile_management/types/IProfile';
 
+import { setUserAPIKey } from './actions/account';
 import { setUserInfo } from './actions/session';
 import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
@@ -535,14 +536,14 @@ function once(api: IExtensionApi) {
   api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
     (oldValue: string, newValue: string) => {
       nexus.setKey(newValue);
-      if (newValue === undefined) {
-        api.store.dispatch(setUserInfo(undefined));
-      } else {
+      api.store.dispatch(setUserInfo(undefined));
+      if (newValue !== undefined) {
         fetchUserInfo(nexus, newValue)
           .then(userInfo => {
             api.store.dispatch(setUserInfo(userInfo));
           })
           .catch(err => {
+            api.store.dispatch(setUserAPIKey(undefined));
             showError(api.store.dispatch,
               'An error occurred validating the API Key',
               'Please provide a valid API Key!');

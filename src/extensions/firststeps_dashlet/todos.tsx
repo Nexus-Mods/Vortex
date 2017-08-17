@@ -67,7 +67,7 @@ function todos(api: IExtensionApi): IToDo[] {
         return (
           <span>
             <Interpolate
-              i18nKey='You are currently in {{mode}} {{more}} mode.'
+              i18nKey='You are currently in {{mode}}{{more}} mode.'
               mode={mode}
               more={more}
             />
