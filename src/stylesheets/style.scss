@@ -692,13 +692,12 @@ a[role=menuitem] svg {
 .modal-dialog {
   max-width: 80%;
   min-width: 400px;
-
-  width: auto;
 }
 
 .common-dialog-wide {
   .modal-dialog {
     height: 80%;
+    width: auto;
   }
 
   .modal-content {

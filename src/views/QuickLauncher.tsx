@@ -143,8 +143,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   private queryElevate = (name: string) => {
     const { t, onShowDialog } = this.props;
     return onShowDialog('question', t('Requires elevation'), {
-      message: t('{{name}} cannot be started because it requires elevation. ' +
-        'Would you like to run the tool elevated?', {
+      message: t('{{name}} needs to be run as administrator.', {
           replace: {
             name,
           },
@@ -154,10 +153,8 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       },
     }, {
         Cancel: null,
-        'Run elevated': null,
-      }).then(result => {
-        return result.action === 'Run elevated';
-      });
+        'Run as administrator': null,
+      }).then(result => result.action === 'Run as administrator');
   }
 
   private queryDeploy = (): Promise<DeployResult> => {

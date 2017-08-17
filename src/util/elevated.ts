@@ -161,7 +161,7 @@ function runElevated(ipcPath: string, func: (ipc: any) => void,
           // this is reached after the user confirmed the UAC dialog but before node
           // has read the script source so we have to give a little time for that to
           // happen before we can remove the tmp file
-          // setTimeout(cleanup, 1000);
+          setTimeout(cleanup, 5000);
           if (execErr) {
             reject(execErr);
           } else {

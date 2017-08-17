@@ -19,6 +19,7 @@ function runToolElevated(starter: StarterInfo,
     id: starter.id,
     toolPath: starter.exePath.replace(/\\/g, '\\\\'),
     parameters: starter.commandLine,
+    environment: starter.environment,
     toolCWD,
   };
 
@@ -41,8 +42,7 @@ function runToolElevated(starter: StarterInfo,
       onError(ipcData.message, ipcData.meta.err);
     });
     // run it
-    elevated(ipcPath, runElevatedCustomTool,
-      elevatedTool);
+    elevated(ipcPath, runElevatedCustomTool, elevatedTool);
   });
   ipc.server.start();
 }
