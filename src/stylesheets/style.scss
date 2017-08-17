@@ -692,13 +692,12 @@ a[role=menuitem] svg {
 .modal-dialog {
   max-width: 80%;
   min-width: 400px;
-
-  width: auto;
 }
 
 .common-dialog-wide {
   .modal-dialog {
     height: 80%;
+    width: auto;
   }
 
   .modal-content {
@@ -1668,7 +1667,7 @@ a[role=menuitem] svg {
 
 .tool-bookmark {
   // balance the padding of the tool button
-  margin-top: floor(($gutter-width / -2));
+  margin-top: floor(($gutter-width / -3));
 }
 
 .btn-add-tool {
@@ -1820,7 +1819,6 @@ a[role=menuitem] svg {
   overflow-y: auto;
   img {
     max-width: 50%;
-    float: left;
     margin: 5px;
   }
 }
@@ -1914,11 +1912,6 @@ a[role=menuitem] svg {
     flex: 1 0%;
     display: flex;
     padding: 10px;
-  }
-
-  .modal-header {
-    padding-top: 0px;
-    padding-bottom: 0px;
   }
 
   .modal-footer {

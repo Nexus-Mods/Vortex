@@ -9,6 +9,8 @@ export interface IFeedMessage {
   summary: string;
   description: string;
   link: string;
+  titleRendered?: React.ReactChild[];
+  descriptionRendered?: React.ReactChild[];
 }
 
 function retrieve(url: string): Promise<IFeedMessage[]> {

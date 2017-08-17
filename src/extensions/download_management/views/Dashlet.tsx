@@ -70,7 +70,7 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
                   width: '100%',
                 }}
               >
-                {bytesToString(speeds[speeds.length - 1])}/s
+                {bytesToString(speeds[speeds.length - 1] || 0)}/s
               </div>
             </div>
         </div>

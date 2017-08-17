@@ -185,10 +185,12 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const { sources, selectedSources } = this.state;
 
     return (
-      <span style={{
-        display: 'flex', flexDirection: 'column',
-        justifyContent: 'space-around', height: '100%',
-      }}>
+      <span
+        style={{
+          display: 'flex', flexDirection: 'column',
+          justifyContent: 'space-around', height: '100%',
+        }}
+      >
         {t('This tool is an easy way of transferring your current '
           + 'NMM configuration into Vortex.')}
         <div>

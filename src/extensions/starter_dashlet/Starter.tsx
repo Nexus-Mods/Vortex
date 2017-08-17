@@ -42,6 +42,7 @@ import { generate as shortid } from 'shortid';
 interface IWelcomeScreenState {
   editTool: StarterInfo;
   counter: number;
+  tools: StarterInfo[];
 }
 
 interface IActionProps {
@@ -62,18 +63,19 @@ interface IConnectedProps {
   primaryTool: string;
 }
 
-type IWelcomeScreenProps = IConnectedProps & IActionProps;
+type IStarterProps = IConnectedProps & IActionProps;
 
-class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
+class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   private mIsMounted: boolean = false;
   private mRef: Element = null;
   constructor(props) {
     super(props);
 
-    this.state = {
+    this.initState({
       editTool: undefined,
       counter: 1,
-    };
+      tools: this.generateToolStarters(props),
+    });
   }
 
   public componentWillMount() {
@@ -94,6 +96,15 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
 
   public componentWillUnmount() {
     this.mIsMounted = false;
+  }
+
+  public componentWillReceiveProps(nextProps: IStarterProps) {
+    if ((nextProps.discoveredGames !== this.props.discoveredGames)
+       || (nextProps.discoveredTools !== this.props.discoveredTools)
+       || (nextProps.gameMode !== this.props.gameMode)
+       || (nextProps.knownGames !== this.props.knownGames)) {
+      this.nextState.tools = this.generateToolStarters(nextProps);
+   }
   }
 
   public render(): JSX.Element {
@@ -122,6 +133,7 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
 
   private renderToolIcons(game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element {
     const { discoveredTools, primaryTool } = this.props;
+    const { tools } = this.state;
 
     if ((game === undefined) && (getSafe(discoveredGame, ['id'], undefined) === undefined)) {
       return null;
@@ -131,41 +143,11 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     const knownTools: IToolStored[] = getSafe(game, ['supportedTools'], []);
     const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
 
-    // add the main game executable
-    const starters: StarterInfo[] = [
-    ];
-
-    try {
-      starters.push(new StarterInfo(game, discoveredGame));
-    } catch (err) {
-      log('error', 'invalid game', { err });
-    }
-
-    // add the tools provided by the game extension (whether they are found or not)
-    knownTools.forEach((tool: IToolStored) => {
-      try {
-        starters.push(new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]));
-      } catch (err) {
-        log('warn', 'invalid tool', { err });
-      }
-    });
-
-    // finally, add those tools that were added manually
-    Object.keys(discoveredTools)
-      .filter(toolId => !preConfTools.has(toolId))
-      .forEach(toolId => {
-        try {
-          starters.push(new StarterInfo(game, discoveredGame, undefined, discoveredTools[toolId]));
-        } catch (err) {
-          log('error', 'tool configuration invalid', { gameId, toolId });
-        }
-      });
-
-    const hidden = starters.filter(starter =>
+    const hidden = tools.filter(starter =>
       (discoveredTools[starter.id] !== undefined)
       && (discoveredTools[starter.id].hidden === true));
 
-    const visible = starters.filter(starter =>
+    const visible = tools.filter(starter =>
       starter.isGame
       || (discoveredTools[starter.id] === undefined)
       || (discoveredTools[starter.id].hidden !== true));
@@ -218,11 +200,52 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     );
   }
 
+  private generateToolStarters(props: IStarterProps): StarterInfo[] {
+    const { discoveredGames, discoveredTools, gameMode, knownGames } = props;
+
+    const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
+    const discoveredGame = discoveredGames[gameMode];
+    const knownTools: IToolStored[] = getSafe(game, ['supportedTools'], []);
+    const gameId = discoveredGame.id || game.id;
+    const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
+
+    // add the main game executable
+    const starters: StarterInfo[] = [
+    ];
+
+    try {
+      starters.push(new StarterInfo(game, discoveredGame));
+    } catch (err) {
+      log('error', 'invalid game', { err });
+    }
+
+    // add the tools provided by the game extension (whether they are found or not)
+    knownTools.forEach((tool: IToolStored) => {
+      try {
+        starters.push(new StarterInfo(game, discoveredGame, tool, discoveredTools[tool.id]));
+      } catch (err) {
+        log('warn', 'invalid tool', { err });
+      }
+    });
+
+    // finally, add those tools that were added manually
+    Object.keys(discoveredTools)
+      .filter(toolId => !preConfTools.has(toolId))
+      .forEach(toolId => {
+        try {
+          starters.push(new StarterInfo(game, discoveredGame, undefined, discoveredTools[toolId]));
+        } catch (err) {
+          log('error', 'tool configuration invalid', { gameId, toolId });
+        }
+      });
+
+    return starters;
+  }
+
   private queryElevate = (name: string) => {
     const { t, onShowDialog } = this.props;
     return onShowDialog('question', t('Requires elevation'), {
-      message: t('{{name}} cannot be started because it requires elevation. ' +
-        'Would you like to run the tool elevated?', {
+      message: t('{{name}} needs to be run as administrator.', {
           replace: {
             name,
           },
@@ -232,9 +255,9 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
       },
     }, {
         Cancel: null,
-        'Run elevated': null,
+        'Run as administrator': null,
       }).then(result => {
-        return result.action === 'Run elevated';
+        return result.action === 'Run as administrator';
       });
   }
 
@@ -359,10 +382,8 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
     // Through the counter, which is used in the key for the tool buttons
     // this also forces all tool buttons to be re-mounted to ensure the icon is
     // correctly updated
-    this.setState(update(this.state, {
-      editTool: { $set: undefined },
-      counter: { $set: this.state.counter + 1 },
-    }));
+    this.nextState.editTool = undefined;
+    this.nextState.counter = this.state.counter + 1;
   }
 
   private addNewTool = () => {
@@ -380,15 +401,11 @@ class Starter extends ComponentEx<IWelcomeScreenProps, IWelcomeScreenState> {
       requiredFiles: [],
       logo: '',
     });
-    this.setState(update(this.state, {
-      editTool: { $set: empty },
-    }));
+    this.nextState.editTool = empty;
   }
 
   private editTool = (starter: StarterInfo) => {
-    this.setState(update(this.state, {
-      editTool: { $set: starter },
-    }));
+    this.nextState.editTool = starter;
   }
 
   private removeTool = (starter: StarterInfo) => {

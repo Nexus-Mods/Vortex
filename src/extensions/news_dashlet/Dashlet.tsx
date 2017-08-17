@@ -31,7 +31,7 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
     rss(this.props.url)
     .then(result => {
       this.setState({
-        messages: result,
+        messages: result.map(this.transformMessage),
       });
     })
     .catch((err: Error) => {
@@ -53,6 +53,13 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private transformMessage(input: IFeedMessage): IFeedMessage {
+    const res = { ...input };
+    res.titleRendered = bbcode(input.title);
+    res.descriptionRendered = bbcode(input.description);
+    return res;
+  }
+
   private renderMessages(messages: IFeedMessage[]): JSX.Element {
     return (
       <ListGroup className='list-news'>
@@ -63,17 +70,14 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
 
   private renderMessage = (message: IFeedMessage): JSX.Element => {
     const { t, maxLength } = this.props;
-    let shortened = message.description;
-    if (shortened === null) {
+    const shortened = message.descriptionRendered[0];
+    if (shortened === undefined) {
       return;
-    }
-    if (shortened.length > maxLength) {
-      shortened = shortened.substr(0, maxLength) + '...';
     }
     return (
       <ListGroupItem key={message.guid}>
-        <h4><a href={message.link} onClick={this.openMore}>{bbcode(message.title)}</a></h4>
-        {bbcode(shortened)}
+        <h4><a href={message.link} onClick={this.openMore}>{message.titleRendered}</a></h4>
+        {shortened}
       </ListGroupItem>
     );
   }

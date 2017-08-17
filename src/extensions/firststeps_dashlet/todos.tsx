@@ -147,9 +147,9 @@ function todos(api: IExtensionApi): IToDo[] {
             </a>
           );
 
-          const text = 'If games you have installed weren\'t {{ discovered }}, '
+          const text = 'If games you have installed weren\'t {{discovered}}, '
             + 'Vortex can search for them. This can take some time. '
-            + 'Currenty these directories will be searched: {{ settings }}.';
+            + 'Currenty these directories will be searched: {{settings}}.';
 
           return (
             <span>

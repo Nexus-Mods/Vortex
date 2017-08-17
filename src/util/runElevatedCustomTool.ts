@@ -4,6 +4,8 @@ let toolPath: string;
 let toolCWD: string;
 // tslint:disable-next-line:prefer-const
 let parameters: string[];
+// tslint:disable-next-line:prefer-const
+let environment: any;
 
 function runElevatedCustomTool(ipcClient) {
   const exec = require('child_process').execFile;
@@ -15,6 +17,7 @@ function runElevatedCustomTool(ipcClient) {
 
     const execOptions = {
         cwd: toolCWD,
+        env: { ...process.env, ...environment },
       };
 
     toolPath = toolPath.replace(/\\/g, '\\\\');
