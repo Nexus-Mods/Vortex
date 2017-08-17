@@ -411,11 +411,9 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
     children.forEach(child => {
       if (child.children.length > 0) {
-        onRemoveCategory(gameMode, child.categoryId);
         this.removeSubcategories(child.children);
-      } else {
-        onRemoveCategory(gameMode, child.categoryId);
       }
+      onRemoveCategory(gameMode, child.categoryId);
     });
   }
 
