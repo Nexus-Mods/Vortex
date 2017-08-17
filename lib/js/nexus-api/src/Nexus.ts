@@ -113,8 +113,8 @@ class Nexus {
     return new Promise<types.IGameListEntry[]>((resolve, reject) => {
       const req = this.mRestClient.methods.getGames(this.args({}),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
-      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('requestTimeout', () => reject(new TimeoutError('timeout contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -124,8 +124,8 @@ class Nexus {
       const req = this.mRestClient.methods.getGameInfo(
         this.args({ path: this.filter({ gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
-      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('requestTimeout', () => reject(new TimeoutError('timeout contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -135,8 +135,8 @@ class Nexus {
       const req = this.mRestClient.methods.getModInfo(
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
-      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('requestTimeout', () => reject(new TimeoutError('timeout contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -148,9 +148,9 @@ class Nexus {
         (data, response) => this.handleResult(data, response, resolve, reject));
       req.on('requestTimeout', r => {
         r.abort();
-        reject(new TimeoutError('contacting api ' + modId));
+        reject(new TimeoutError('timeout contacting api ' + modId));
       });
-      req.on('responesTimeout', res => reject(new TimeoutError('contacting api')));
+      req.on('responesTimeout', res => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -162,8 +162,8 @@ class Nexus {
       const req = this.mRestClient.methods.getFileInfo(
         this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
-      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('requestTimeout', () => reject(new TimeoutError('timeout contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -175,8 +175,8 @@ class Nexus {
       const req = this.mRestClient.methods.getDownloadURLs(
         this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('contacting api')));
-      req.on('responesTimeout', () => reject(new TimeoutError('contacting api')));
+      req.on('requestTimeout', () => reject(new TimeoutError('timeout contacting api')));
+      req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -241,7 +241,7 @@ class Nexus {
       try {
         resolve(data);
       } catch (err) {
-        reject(new Error('failed to parse server response: ' + err.message ));
+        reject(new Error('failed to parse server response: ' + err.message));
       }
     } else {
       reject(new NexusError(data.message, response.statusCode));
