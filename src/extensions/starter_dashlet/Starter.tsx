@@ -71,11 +71,11 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   constructor(props) {
     super(props);
 
-    this.state = {
+    this.initState({
       editTool: undefined,
       counter: 1,
       tools: this.generateToolStarters(props),
-    };
+    });
   }
 
   public componentWillMount() {
@@ -103,7 +103,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
        || (nextProps.discoveredTools !== this.props.discoveredTools)
        || (nextProps.gameMode !== this.props.gameMode)
        || (nextProps.knownGames !== this.props.knownGames)) {
-      this.setState(update(this.state, { tools: { $set: this.generateToolStarters(nextProps) } }));
+      this.nextState.tools = this.generateToolStarters(nextProps);
    }
   }
 
@@ -383,10 +383,8 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     // Through the counter, which is used in the key for the tool buttons
     // this also forces all tool buttons to be re-mounted to ensure the icon is
     // correctly updated
-    this.setState(update(this.state, {
-      editTool: { $set: undefined },
-      counter: { $set: this.state.counter + 1 },
-    }));
+    this.nextState.editTool = undefined;
+    this.nextState.counter = this.state.counter + 1;
   }
 
   private addNewTool = () => {
@@ -404,15 +402,11 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       requiredFiles: [],
       logo: '',
     });
-    this.setState(update(this.state, {
-      editTool: { $set: empty },
-    }));
+    this.nextState.editTool = empty;
   }
 
   private editTool = (starter: StarterInfo) => {
-    this.setState(update(this.state, {
-      editTool: { $set: starter },
-    }));
+    this.nextState.editTool = starter;
   }
 
   private removeTool = (starter: StarterInfo) => {

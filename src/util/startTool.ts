@@ -88,25 +88,25 @@ function startTool(starter: StarterInfo,
   return startDeploy(queryDeploy, events)
     .then((doStart: boolean) => {
       if (doStart) {
-       try {
-            const defaults = {
-             cwd: starter.workingDirectory,
-             env: { ...[process.env, starter.environment]},
-            };
-            const child = spawn(starter.exePath, [], defaults);
+        try {
+          const defaults = {
+            cwd: starter.workingDirectory,
+            env: { ...process.env, ...starter.environment },
+          };
+          const child = spawn(starter.exePath, [], defaults);
 
-            child.on('error', (err) => {
-              onShowError('Failed to run executable', err);
-            });
+          child.on('error',
+                   (err) => { onShowError('Failed to run executable', err); });
 
-            child.on('close', (code) => {
-              if (code !== 0) {
-                // TODO: the child_process returns an exit code of 53 for SSE and FO4, and an exit
-                // code of 1 for Skyrim. We don't know why but it doesn't seem to affect anything
-                log('warn', 'child process exited with code: ' + code , {});
-              }
-            });
-      } catch (err) {
+          child.on('close', (code) => {
+            if (code !== 0) {
+              // TODO: the child_process returns an exit code of 53 for SSE and
+              // FO4, and an exit code of 1 for Skyrim. We don't know why but it
+              // doesn't seem to affect anything
+              log('warn', 'child process exited with code: ' + code, {});
+            }
+          });
+        } catch (err) {
         // TODO: as of the current electron version (1.4.14) the error isn't precise
         //   enough to determine if the error was actually lack of elevation but among
         //   the errors that report "UNKNOWN" this should be the most likely one.

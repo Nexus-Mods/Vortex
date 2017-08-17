@@ -1668,7 +1668,7 @@ a[role=menuitem] svg {
 
 .tool-bookmark {
   // balance the padding of the tool button
-  margin-top: floor(($gutter-width / -2));
+  margin-top: floor(($gutter-width / -3));
 }
 
 .btn-add-tool {
