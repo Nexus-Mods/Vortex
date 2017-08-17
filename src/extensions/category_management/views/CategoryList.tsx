@@ -4,7 +4,7 @@ import IconBar from '../../../controls/IconBar';
 import { Button, IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
-import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import lazyRequire from '../../../util/lazyRequire';
 import { showError } from '../../../util/message';
@@ -42,7 +42,7 @@ interface IActionProps {
   onSetCategoryOrder: (gameId: string, categoryIds: string[]) => void;
   onRenameCategory: (activeGameId: string, categoryId: string, newCategory: {}) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: IDialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Promise<IDialogResult>;
 }
 
 interface IConnectedProps {
@@ -265,10 +265,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const {gameMode, onShowDialog, onRenameCategory} = this.props;
     onShowDialog('info', 'Rename Category', {
       input: [{ id: 'newCategory', value: info.node.title, label: 'Category' }],
-    }, {
-        Cancel: null,
-        Rename: null,
-      }).then((result: IDialogResult) => {
+    }, [ { label: 'Cancel' }, { label: 'Rename' } ])
+    .then((result: IDialogResult) => {
         if ((result.action === 'Rename') && (result.input.newCategory !== undefined)) {
           onRenameCategory(gameMode, info.node.categoryId, result.input.newCategory);
         }
@@ -287,10 +285,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           label: 'Category ID',
         },
       ],
-    }, {
-        Cancel: null,
-        Add: null,
-      }).then((result: IDialogResult) => {
+    }, [{ label: 'Cancel' }, { label: 'Add' }])
+    .then((result: IDialogResult) => {
         if (result.action === 'Add') {
           const checkId = Object.keys(categories[gameMode]).filter((id: string) =>
             id === result.input.newCategoryId);
@@ -322,10 +318,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           label: 'Category ID',
         },
       ],
-    }, {
-        Cancel: null,
-        Add: null,
-      }).then((result: IDialogResult) => {
+    }, [{ label: 'Cancel' }, { label: 'Add' }])
+      .then((result: IDialogResult) => {
         addCategory = result.action === 'Add';
         if (addCategory) {
           const checkId = Object.keys(categories[gameMode] || {}).filter((id: string) =>

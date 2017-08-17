@@ -1,4 +1,4 @@
-import { DialogType, IDialogActions, IDialogContent,
+import { DialogActions, DialogType, IDialogContent,
          IDialogResult, showDialog } from '../actions/notifications';
 import { IComponentContext } from '../types/IComponentContext';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
@@ -31,7 +31,7 @@ interface IConnectedProps {}
 
 interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: IDialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Promise<IDialogResult>;
 }
 
 type DropMode = 'no' | 'url' | 'file' | 'hover' | 'invalid';
@@ -159,11 +159,8 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
           type: 'url',
           value: dialogDefault,
         }],
-      }, {
-          Cancel: null,
-          Download: null,
-        }).then(result => {
-
+      }, [ { label: 'Cancel' }, { label: 'Download' } ])
+      .then(result => {
           if (result.action === 'Download') {
             this.props.drop('urls', [result.input.url]);
           }
@@ -187,7 +184,7 @@ function mapStateToProps(state): IConnectedProps {
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onShowDialog: (type: DialogType, title: string,
-                   content: IDialogContent, actions: IDialogActions) =>
+                   content: IDialogContent, actions: DialogActions) =>
       dispatch(showDialog(type, title, content, actions)),
   };
 }

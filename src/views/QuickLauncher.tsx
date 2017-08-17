@@ -4,7 +4,7 @@ import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDisco
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
 import ToolIcon from '../extensions/starter_dashlet/ToolIcon';
-import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../types/IDialog';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { ComponentEx, connect } from '../util/ComponentEx';
 import { log } from '../util/log';
@@ -40,7 +40,7 @@ interface IConnectedProps {
 interface IActionProps {
   onShowError: (message: string, details?: string | Error) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: IDialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Promise<IDialogResult>;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -151,10 +151,8 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       options: {
         translated: true,
       },
-    }, {
-        Cancel: null,
-        'Run as administrator': null,
-      }).then(result => result.action === 'Run as administrator');
+    }, [ { label: 'Cancel' }, { label: 'Run as administrator' } ])
+    .then(result => result.action === 'Run as administrator');
   }
 
   private queryDeploy = (): Promise<DeployResult> => {
@@ -165,11 +163,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       return onShowDialog('question', 'Deploy now?', {
         message: 'You should deploy mods now, otherwise the mods in game '
                + 'will be outdated',
-      }, {
-        Cancel: null,
-        Skip: null,
-        Deploy: null,
-      })
+      }, [ { label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' } ])
       .then((result) => {
         switch (result.action) {
           case 'Skip': return Promise.resolve<DeployResult>('skip');

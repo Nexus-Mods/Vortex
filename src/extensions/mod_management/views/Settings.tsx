@@ -2,7 +2,7 @@ import { showDialog } from '../../../actions/notifications';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import { Button } from '../../../controls/TooltipControls';
-import { DialogType, IDialogActions, IDialogContent } from '../../../types/IDialog';
+import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
@@ -50,7 +50,7 @@ interface IActionProps {
     type: DialogType,
     title: string,
     content: IDialogContent,
-    actions: IDialogActions,
+    actions: DialogActions,
   ) => void;
   onShowError: (message: string, details: string | Error) => void;
 }
@@ -211,11 +211,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               if (installFiles.length + downloadFiles.length > 0) {
                 this.props.onShowDialog('info', 'Invalid Destination', {
                   message: 'The destination directory has to be empty',
-                }, {
-                    Ok: () => {
-                      reject(null);
-                    },
-                  });
+                }, [ { label: 'Ok', action: () => reject(null) } ]);
               } else {
                 resolve();
               }

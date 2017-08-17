@@ -207,7 +207,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onShowLoginError:
-    (message: string) => dispatch(showDialog('error', 'Error', { message }, { Close: null })),
+    (message: string) => dispatch(showDialog('error', 'Error', { message },
+                                             [ { label: 'Close' } ])),
   };
 }
 

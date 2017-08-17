@@ -1,4 +1,8 @@
-import { addNotification, showDialog } from '../actions/notifications';
+import {
+  addNotification,
+  IDialogAction,
+  showDialog,
+} from '../actions/notifications';
 
 import { createErrorReport } from './errorHandling';
 
@@ -89,10 +93,12 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
  *                        want string or Errors but since some node apis return non-Error objects
  *                        where Errors are expected we have to be a bit more flexible here.
  */
-export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
+export function showError<S>(dispatch: Redux.Dispatch<S>,
+                             message: string,
                              details?: string | Error | any,
                              isHTML: boolean = false,
-                             id?: string) {
+                             id?: string,
+                             allowReport: boolean = true) {
   const err = renderError(details);
 
   log('error', message, err.message);
@@ -109,6 +115,27 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
     },
   };
 
+  const actions: IDialogAction[] = [];
+
+  if (allowReport) {
+    actions.push({
+      label: 'Report',
+      action: () => {
+        const stack = details instanceof Error ? details.stack : undefined;
+        const repDetails = details instanceof Error ? undefined : err.message;
+        return createErrorReport('Error',
+                                 {
+                                   message,
+                                   stack,
+                                   details: repDetails,
+                                 },
+                                 ['bug']);
+      },
+    });
+  }
+
+  actions.push({ label: 'Close', default: true });
+
   dispatch(addNotification({
     id,
     type: 'error',
@@ -116,18 +143,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>, message: string,
     actions: details !== undefined ? [{
       title: 'More',
       action: (dismiss: () => void) => {
-        dispatch(showDialog('error', 'Error', content, {
-          Report: () => {
-            const stack = details instanceof Error ? details.stack : undefined;
-            const repDetails = details instanceof Error ? undefined : err.message;
-            return createErrorReport('Error', {
-              message,
-              stack,
-              details: repDetails,
-            }, ['bug']);
-          },
-          Close: null,
-        }));
+        dispatch(showDialog('error', 'Error', content, actions));
       },
     }] : [],
   }));

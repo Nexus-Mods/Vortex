@@ -1,4 +1,4 @@
-import { DialogType, IDialogActions, IDialogContent, IDialogResult,
+import { DialogActions, DialogType, IDialogContent, IDialogResult,
          showDialog } from '../../../actions/notifications';
 import Icon from '../../../controls/Icon';
 import { IState } from '../../../types/IState';
@@ -45,7 +45,7 @@ interface IActionProps {
   onSetNextProfile: (profileId: string) => void;
   onSetFeature: (profileId: string, featureId: string, value: any) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: IDialogActions) => void;
+                 actions: DialogActions) => void;
 }
 
 interface IViewState {
@@ -219,11 +219,13 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const { onRemoveProfile, onShowDialog, profiles } = this.props;
     onShowDialog('question', 'Confirm', {
       message: 'Remove this profile? This can\'t be undone',
-    }, {
-        Cancel: null,
-        Remove: () => fs.removeAsync(profilePath(profiles[profileId]))
-          .then(() => onRemoveProfile(profileId)),
-      });
+    }, [
+        { label: 'Cancel' },
+        {
+          label: 'Remove', action: () => fs.removeAsync(profilePath(profiles[profileId]))
+            .then(() => onRemoveProfile(profileId)),
+        },
+    ]);
   }
 
   private editExistingProfile = (profileId: string) => {

@@ -1,7 +1,7 @@
 import { showDialog } from '../../actions/notifications';
 import Dropdown from '../../controls/Dropdown';
 import Icon from '../../controls/Icon';
-import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../../types/IDialog';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import asyncRequire, { Placeholder } from '../../util/asyncRequire';
 import { ComponentEx, connect } from '../../util/ComponentEx';
@@ -50,7 +50,7 @@ interface IActionProps {
   onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => void;
   onShowError: (message: string, details?: string | Error) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: IDialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Promise<IDialogResult>;
   onMakePrimary: (gameId: string, toolId: string) => void;
 }
 
@@ -253,10 +253,8 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       options: {
         translated: true,
       },
-    }, {
-        Cancel: null,
-        'Run as administrator': null,
-      }).then(result => {
+    }, [ { label: 'Cancel' }, { label: 'Run as administrator' } ])
+    .then(result => {
         return result.action === 'Run as administrator';
       });
   }
@@ -269,11 +267,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       return onShowDialog('question', 'Deploy now?', {
         message: 'You should deploy mods now, otherwise the mods in game '
         + 'will be outdated',
-      }, {
-          Cancel: null,
-          Skip: null,
-          Deploy: null,
-        })
+      }, [ { label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' } ])
         .then((result) => {
           switch (result.action) {
             case 'Skip': return Promise.resolve<DeployResult>('skip');

@@ -345,10 +345,10 @@ class InstallManager {
               message:
                   'The game associated with this download is not discovered.',
             },
-            {
-              Cancel: () => reject(new UserCanceled()),
-              [btnLabel]: () => resolve(currentGameId),
-            }));
+            [
+              { label: 'Cancel', action: () => reject(new UserCanceled()) },
+              { label: btnLabel, action: () => resolve(currentGameId) },
+            ]));
       } else if (currentGameId !== downloadGameId) {
         store.dispatch(showDialog(
             'question', 'Download is for a different game',
@@ -357,13 +357,13 @@ class InstallManager {
                   'This download is associated with a different game than the current.' +
                       'Which one do you want to install it for?',
             },
-            {
-              Cancel: () => reject(new UserCanceled()),
-              [gameName(store.getState(), currentGameId)]:
-                  () => resolve(currentGameId),
-              [gameName(store.getState(), downloadGameId)]:
-                  () => resolve(downloadGameId),
-            }));
+            [
+              { label: 'Cancel', action: () => reject(new UserCanceled()) },
+              { label: gameName(store.getState(), currentGameId), action:
+                  () => resolve(currentGameId) },
+              { label: gameName(store.getState(), downloadGameId), action:
+                  () => resolve(downloadGameId) },
+            ]));
       } else {
         resolve(downloadGameId);
       }
@@ -382,11 +382,7 @@ class InstallManager {
                   value: '',
                   label: 'A password is required to extract this archive',
                 }],
-              },
-              {
-                Cancel: null,
-                Continue: null,
-              }))
+              }, [ { label: 'Cancel' }, { label: 'Continue' } ]))
           .then((result: IDialogResult) => {
             if (result.action === 'Continue') {
               resolve(result.input['password']);
@@ -430,13 +426,9 @@ class InstallManager {
         {
           message:
               'This installer is (partially) unsupported as it\'s ' +
-                  'using functionality that hasn\'t been implemented yet. ' +
-                  'Please help us fix this by submitting an error report with a link to this mod.',
-        },
-        {
-          Report: makeReport,
-          Close: null,
-        }));
+              'using functionality that hasn\'t been implemented yet. ' +
+              'Please help us fix this by submitting an error report with a link to this mod.',
+        }, [ { label: 'Report', action: makeReport }, { label: 'Close' } ]));
 
     api.sendNotification({
       type: 'info',
@@ -559,11 +551,11 @@ class InstallManager {
             'You can replace the existing one or install this one alongside it. ' +
             'If you have other profiles they will continue using the old version.',
           },
-          {
-            Cancel: null,
-            Replace: null,
-            Install: null,
-          }))
+          [
+            { label: 'Cancel' },
+            { label: 'Replace' },
+            { label: 'Install' },
+          ]))
         .then((result: IDialogResult) => {
           if (result.action === 'Cancel') {
             reject(new UserCanceled());
@@ -591,11 +583,11 @@ class InstallManager {
               label: 'Name',
             }],
           },
-          {
-            Cancel: null,
-            Replace: null,
-            Rename: null,
-          }))
+          [
+            { label: 'Cancel' },
+            { label: 'Rename' },
+            { label: 'Replace' },
+          ]))
         .then((result: IDialogResult) => {
           if (result.action === 'Cancel') {
             reject(new UserCanceled());
@@ -728,11 +720,13 @@ class InstallManager {
 installed, ${requiredDownloads} of them have to be downloaded first.`;
 
           api.store.dispatch(
-            showDialog('question', 'Install Dependencies', { message }, {
-              "Don't install": null,
-              Install:
-              () => this.doInstallDependencies(dependencies, api),
-            }));
+              showDialog('question', 'Install Dependencies', {message}, [
+                {label: 'Don\'t install'},
+                {
+                  label: 'Install',
+                  action: () => this.doInstallDependencies(dependencies, api),
+                },
+              ]));
         });
       })
       .catch((err) => {

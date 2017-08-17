@@ -131,10 +131,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
     askUser = api.store.dispatch(
       showDialog('question', 'Retrieve Categories', {
         message: 'Clicking RETRIEVE you will lose all your changes',
-      }, {
-          Cancel: null,
-          Retrieve: null,
-        }))
+      }, [ { label: 'Cancel' }, { label: 'Retrieve' } ]))
       .then((result: IDialogResult) => {
         return result.action === 'Retrieve';
       });
@@ -436,7 +433,7 @@ function once(api: IExtensionApi) {
         .catch(err => {
           showError(api.store.dispatch,
             'An error occurred validating the API Key',
-            'Please provide a valid API Key!');
+            'Please provide a valid API Key!', false, undefined, false);
         });
     }
   }
@@ -546,7 +543,7 @@ function once(api: IExtensionApi) {
             api.store.dispatch(setUserAPIKey(undefined));
             showError(api.store.dispatch,
               'An error occurred validating the API Key',
-              'Please provide a valid API Key!');
+              'Please provide a valid API Key!', false, undefined, false);
           });
       }
     });

@@ -120,9 +120,7 @@ function activateGame(store: Redux.Store<IState>, gameId: string) {
       message: 'Please choose the profile to use with this game',
       choices: gameProfiles.map((iter: IProfile, idx: number) =>
         ({ id: iter.id, text: iter.name, value: idx === 0 })),
-    }, {
-        Activate: null,
-      }))
+    }, [ { label: 'Activate' } ]))
       .then((dialogResult: IDialogResult) => {
         if (dialogResult.action === 'Activate') {
           const selectedId = Object.keys(dialogResult.input).find(

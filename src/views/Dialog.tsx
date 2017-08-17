@@ -14,22 +14,35 @@ import {
   Button, Checkbox, ControlLabel, FormControl, FormGroup,
   Modal, Radio,
 } from 'react-bootstrap';
+import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 
 interface IActionProps {
   t: (input: string) => string;
   onDismiss: (action: string) => void;
   action: string;
+  isDefault: boolean;
 }
 
 class Action extends React.Component<IActionProps, {}> {
   public render(): JSX.Element {
-    const { t, action } = this.props;
+    const { t, action, isDefault } = this.props;
     return (
-      <Button id='close' onClick={this.dismiss}>
+      <Button
+        id='close'
+        onClick={this.dismiss}
+        bsStyle={isDefault ? 'primary' : undefined}
+        ref={isDefault ? this.focus : undefined}
+      >
         {t(action)}
       </Button>
     );
+  }
+
+  private focus = ref => {
+    if (ref !== null) {
+      (ReactDOM.findDOMNode(ref) as HTMLElement).focus();
+    }
   }
 
   private dismiss = () => {
@@ -95,7 +108,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           {this.renderContent(dialogState)}
         </Modal.Body>
         <Modal.Footer>
-          {dialog.actions.map(this.renderAction)}
+          {
+            dialog.actions.map((action) =>
+              this.renderAction(action, action === dialog.defaultAction))
+          }
         </Modal.Footer>
       </Modal>
     ) : null;
@@ -270,23 +286,23 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }));
   }
 
-  private renderAction = (action: string): JSX.Element => {
+  private renderAction = (action: string, isDefault: boolean): JSX.Element => {
     const { t } = this.props;
     return (
-      <Action t={t} key={action} action={action} onDismiss={this.dismiss} />
+      <Action t={t} key={action} action={action} isDefault={isDefault} onDismiss={this.dismiss} />
     );
   }
 
   private iconForType(type: DialogType) {
     switch (type) {
       case 'info': return (
-        <Icon name='circle-info' style={{ height: '32px', width: '32px', color: 'blue' }} />
+        <Icon name='circle-info' className='icon-info'/>
       );
       case 'error': return (
-        <Icon name='circle-exclamation' style={{ height: '32px', width: '32px', color: 'red' }} />
+        <Icon name='circle-exclamation' className='icon-error'/>
       );
       case 'question': return (
-        <Icon name='circle-question' style={{ height: '32px', width: '32px', color: 'blue' }} />
+        <Icon name='circle-question' className='icon-question'/>
       );
       default: return null;
     }

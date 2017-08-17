@@ -1,4 +1,4 @@
-import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../types/IDialog';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { INotification } from '../types/INotification';
 import {log} from '../util/log';
 
@@ -28,8 +28,9 @@ export const dismissNotification = safeCreateAction('DISMISS_NOTIFICATION');
  */
 export const addDialog = safeCreateAction(
     'SHOW_MODAL_DIALOG',
-    (id: string, type: string, title: string, content: IDialogContent, actions: string[]) =>
-        ({id, type, title, content, actions}));
+    (id: string, type: string, title: string, content: IDialogContent,
+     defaultAction: string, actions: string[]) =>
+        ({id, type, title, content, defaultAction, actions}));
 
 /**
  * dismiss the dialog being displayed
@@ -88,14 +89,17 @@ class DialogCallbacks {
  * @returns
  */
 export function showDialog(type: DialogType, title: string,
-                           content: IDialogContent, actions: IDialogActions) {
+                           content: IDialogContent, actions: DialogActions) {
   return (dispatch) => {
     return new Promise<IDialogResult>((resolve, reject) => {
       const id = shortid();
-      dispatch(addDialog(id, type, title, content, Object.keys(actions)));
+      const defaultAction = actions.find(iter => iter.default === true).label;
+      dispatch(addDialog(id, type, title, content, defaultAction,
+                         actions.map(action => action.label)));
       DialogCallbacks.instance()[id] = (actionKey: string, input?: any) => {
-        if (actions[actionKey] != null) {
-          actions[actionKey](input);
+        const action = actions.find(iter => iter.label === actionKey);
+        if (action != null) {
+          action.action(input);
         }
         resolve({ action: actionKey, input });
       };

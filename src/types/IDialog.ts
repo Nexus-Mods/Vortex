@@ -1,15 +1,20 @@
 export type DialogType =
   'success' | 'info' | 'error' | 'question';
 
-export interface IDialogActions {
-    [label: string]: (label) => void;
+export interface IDialogAction {
+  label: string;
+  default?: boolean;
+  action?: (label: string) => void;
 }
+
+export type DialogActions = IDialogAction[];
 
 export interface IDialog {
   id: string;
   type: DialogType;
   title: string;
   content: IDialogContent;
+  defaultAction: string;
   actions: string[];
 }
 

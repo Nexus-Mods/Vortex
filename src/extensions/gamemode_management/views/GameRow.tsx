@@ -1,4 +1,4 @@
-import { DialogType, IDialogActions, IDialogContent } from '../../../actions/notifications';
+import { DialogActions, DialogType, IDialogContent } from '../../../actions/notifications';
 import Advanced from '../../../controls/Advanced';
 import IconBar from '../../../controls/IconBar';
 import OverlayTrigger from '../../../controls/OverlayTrigger';
@@ -33,7 +33,7 @@ export interface IProps {
   onSetGamePath: (gameId: string, gamePath: string, modsPath: string) => void;
   onSetGameDiscovery: (gameId: string, result: IDiscoveryResult) => void;
   onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: IDialogActions) => void;
+                 content: IDialogContent, actions: DialogActions) => void;
 }
 
 /**
@@ -155,10 +155,10 @@ class GameRow extends ComponentEx<IProps, {}> {
                 message: t('This directory doesn\'t appear to contain the game. '
                   + 'Expected to find these files: {{ files }}',
                   { replace: { files: game.requiredFiles.join(', ') } }),
-              }, {
-                  Cancel: null,
-                  'Try Again': this.openLocation,
-              });
+              }, [
+                  { label: 'Cancel' },
+                  { label: 'Try Again', action: this.openLocation },
+              ]);
             });
         }
       });
@@ -186,10 +186,10 @@ class GameRow extends ComponentEx<IProps, {}> {
                 message: t('This directory doesn\'t appear to contain the game. '
                   + 'Expected to find these files: {{ files }}',
                   { replace: { files: game.requiredFiles.join(', ') } }),
-              }, {
-                  Cancel: null,
-                  'Try Again': this.openLocation,
-                });
+              }, [
+                  { label: 'Cancel' },
+                  { label: 'Try Again', action: this.openLocation },
+              ]);
             });
         }
       });

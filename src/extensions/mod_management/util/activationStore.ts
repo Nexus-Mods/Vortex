@@ -45,10 +45,7 @@ function queryPurge(api: IExtensionApi,
       'outdated the purge may be incomplete. When purging from the "right" instance ' +
       'the manifest isn\'t required, it can reliably deduce which files need to ' +
       'be removed.'),
-  }, {
-      Cancel: null,
-      Purge: null,
-    }))
+  }, [ { label: 'Cancel' }, { label: 'Purge' } ]))
     .then(result => {
       if (result.action === 'Purge') {
         return fallbackPurge(basePath, files);

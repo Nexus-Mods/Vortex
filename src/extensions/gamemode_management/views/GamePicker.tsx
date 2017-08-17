@@ -1,4 +1,4 @@
-import { DialogType, IDialogActions,
+import { DialogActions, DialogType,
          IDialogContent, showDialog } from '../../../actions/notifications';
 import Advanced from '../../../controls/Advanced';
 import FlexLayout from '../../../controls/FlexLayout';
@@ -71,7 +71,7 @@ interface IActionProps {
   onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) => void;
   onSetAddGameDialogVisible: () => void;
   onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: IDialogActions) => void;
+                 content: IDialogContent, actions: DialogActions) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;

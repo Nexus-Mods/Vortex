@@ -694,6 +694,25 @@ a[role=menuitem] svg {
   min-width: 400px;
 }
 
+.modal-title {
+  display: flex;
+  align-items: center;
+
+  svg {
+    width: 2em;
+    height: 2em;
+    margin-right: 1em;
+  }
+  .icon-info,
+  .icon-question {
+    color: $brand-info;
+  }
+
+  .icon-error {
+    color: $brand-danger;
+  }
+}
+
 .common-dialog-wide {
   .modal-dialog {
     height: 80%;

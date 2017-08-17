@@ -1,6 +1,6 @@
 import { showDialog } from '../../../actions/notifications';
 import { Button } from '../../../controls/TooltipControls';
-import { DialogType, IDialogActions, IDialogContent } from '../../../types/IDialog';
+import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { setAssociatedWithNXMURLs } from '../actions/settings';
@@ -21,7 +21,7 @@ interface IConnectedProps {
 interface IActionProps {
   onAssociate: (associate: boolean) => void;
   onDialog: (type: DialogType, title: string,
-             content: IDialogContent, actions: IDialogActions) => void;
+             content: IDialogContent, actions: DialogActions) => void;
   onShowError: (message: string, details: string | Error) => void;
 }
 
@@ -61,30 +61,28 @@ class Settings extends ComponentEx<IProps, {}> {
     const { onDialog, onShowError } = this.props;
     onDialog('info', 'Is Chrome running?', {
       message: 'Chrome has to be closed, otherwise this fix has no effect.',
-    }, {
-      Cancel: null,
-      Continue: () => {
-        chromeAllowScheme('nxm')
-        .then((changed: boolean) => {
-          if (changed) {
-            onDialog('success', 'Success', {
-              message: 'Fix was applied',
-            }, {
-              Close: null,
-            });
-          } else {
-            onDialog('info', 'Nothing changed', {
-              message: 'No change was necessary',
-            }, {
-              Close: null,
-            });
-          }
-        })
-        .catch((err: Error) => {
-          onShowError('Failed to fix NXM handling in Chrome', err);
-        });
-      },
-    });
+    }, [
+        { label: 'Cancel' },
+        {
+          label: 'Continue', action: () => {
+            chromeAllowScheme('nxm')
+              .then((changed: boolean) => {
+                if (changed) {
+                  onDialog('success', 'Success', {
+                    message: 'Fix was applied',
+                  }, [ { label: 'Close' } ]);
+                } else {
+                  onDialog('info', 'Nothing changed', {
+                    message: 'No change was necessary',
+                  }, [ { label: 'Close' } ]);
+                }
+              })
+              .catch((err: Error) => {
+                onShowError('Failed to fix NXM handling in Chrome', err);
+              });
+          },
+        },
+    ]);
   }
 
   private associate = (evt: React.MouseEvent<any>) => {
@@ -105,7 +103,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(setAssociatedWithNXMURLs(associate));
     },
     onDialog: (type: DialogType, title: string,
-               content: IDialogContent, actions: IDialogActions) => {
+               content: IDialogContent, actions: DialogActions) => {
       dispatch(showDialog(type, title, content, actions));
     },
     onShowError: (message: string, details: string | Error) => {

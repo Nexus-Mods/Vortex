@@ -56,9 +56,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
           title: 'More',
           action: () => api.store.dispatch(showDialog('info', 'Check failed', {
             message: result.description.long,
-          }, {
-            Close: null,
-          })),
+          }, [ { label: 'Close' } ])),
         }];
         if (result.automaticFix !== undefined) {
           actions.push({

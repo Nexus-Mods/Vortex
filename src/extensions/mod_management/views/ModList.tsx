@@ -7,7 +7,7 @@ import TextFilter from '../../../controls/table/TextFilter';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IAttributeState } from '../../../types/IAttributeState';
-import { DialogType, IDialogActions, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
@@ -103,7 +103,7 @@ interface IActionProps {
   onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => void;
   onSetModEnabled: (profileId: string, modId: string, enabled: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
-                 actions: IDialogActions) => Promise<IDialogResult>;
+                 actions: DialogActions) => Promise<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
 }
 
@@ -696,10 +696,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         { id: 'mod', text: t('Remove Mod'), value: true },
         { id: 'archive', text: t('Remove Archive'), value: false },
       ],
-    }, {
-        Cancel: null,
-        Remove: null,
-      }).then((result: IDialogResult) => {
+    }, [ { label: 'Cancel' }, { label: 'Remove' } ])
+    .then((result: IDialogResult) => {
         removeMods = result.action === 'Remove' && result.input.mod;
         removeArchive = result.action === 'Remove' && result.input.archive;
 
