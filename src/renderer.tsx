@@ -99,6 +99,9 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 function findExtensionName(stack: string): string {
+  if (stack === undefined) {
+    return undefined;
+  }
   const stackSplit = stack.split('\n').filter(line => line.match(/^[ ]*at /));
   const extPaths = ExtensionManager.getExtensionPaths();
   const expression = `(${extPaths.join('|').replace(/\\/g, '\\\\')})[\\\\/]([^\\\\/]*)`;

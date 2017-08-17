@@ -1,3 +1,9 @@
+#import-dialog {
+  .modal-dialog {
+    width: 80%;
+  }
+}
+
 .table-mods-to-import .dropdown {
   display: inline-flex;
 }
@@ -6,6 +12,10 @@
   padding: 2px 10px;
   border: 0px;
   min-width: 100px;
+}
+
+.table-mods-to-import.cell-local {
+  text-align: center;
 }
 
 #dropdown-mods-to-import-status {

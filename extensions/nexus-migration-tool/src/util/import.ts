@@ -22,7 +22,7 @@ function importMods(api: types.IExtensionApi,
       trace.log('info', 'transfer unpacked mods files');
       const installPath = selectors.installPath(state);
       return Promise.mapSeries(mods, (mod, idx) => {
-        trace.log('info', 'transfering', mod.modName);
+        trace.log('info', 'transferring', mod.modName);
         progress(mod.modName, idx);
         return transferUnpackedMod(mod, sourcePath, installPath, true)
           .then(failed => {
@@ -33,7 +33,7 @@ function importMods(api: types.IExtensionApi,
           });
       })
         .then(() => {
-          trace.log('info', 'Finished transfering unpacked mod files');
+          trace.log('info', 'Finished transferring unpacked mod files');
           const gameId = selectors.activeGameId(state);
           const profileId = shortid();
           createProfile(gameId, profileId, 'Imported NMM Profile', api.store.dispatch);

@@ -1,114 +1,119 @@
-import {IFileEntry as FileEntry, IModEntry as ModEntry, ParseError} from '../types/nmmEntries';
+import { IFileEntry, IModEntry, ParseError } from '../types/nmmEntries';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
+import * as modmetaT from 'modmeta-db';
 import * as path from 'path';
 import { log, types, util } from 'vortex-api';
+const modmeta = util.lazyRequire<typeof modmetaT>('modmeta-db');
 
-export function parseNMMConfigFile(nmmFilePath: string, mods: any): Promise<any> {
-  return fs.readFileAsync(nmmFilePath)
-  .catch((err) => {
-    return Promise.reject(
-      new ParseError('The selected folder does not contain a VirtualModConfig.xml file.'));
-  })
-  .then((data) => {
-    return parseModEntries(data.toString('utf-8'), mods);
-  });
+interface IModMap {
+  [modId: string]: types.IMod;
 }
 
-export function parseModEntries(xmlData: string, mods: any): Promise<ModEntry[]> {
-  const nmmModList: ModEntry[] = [];
+export function parseNMMConfigFile(nmmFilePath: string, mods: IModMap): Promise<any> {
+  return fs.readFileAsync(nmmFilePath)
+      .catch(
+          err => Promise.reject(new ParseError(
+              'The selected folder does not contain a VirtualModConfig.xml file.')))
+      .then(data => parseModEntries(data.toString('utf-8'), mods, path.dirname(nmmFilePath)));
+}
+
+function getInner(ele: Element, tagName: string): string {
+  return ele.getElementsByTagName(tagName)[0].childNodes[0].nodeValue;
+}
+
+function transformFileEntry(
+    fileLink: Element, adjustRealPath: (input: string) => string): IFileEntry {
+  const virtualPath = fileLink.getAttribute('virtualPath');
+  if ((virtualPath === null) || (virtualPath === undefined)) {
+    return undefined;
+  }
+
+  return {
+    fileSource: adjustRealPath(fileLink.getAttribute('realPath')),
+    fileDestination: virtualPath,
+    isActive: getInner(fileLink, 'isActive').toLowerCase() === 'true',
+    filePriority: parseInt(getInner(fileLink, 'linkPriority'), 10),
+  };
+}
+
+export function parseModEntries(
+    xmlData: string, mods: IModMap,
+    virtualInstallPath: string): Promise<IModEntry[]> {
+  const nmmModList: IModEntry[] = [];
   const parser = new DOMParser();
 
-  const modListSet = ((mods !== null) && (mods !== undefined)) ?
-    new Set(Object.keys(mods).map((key: string) => mods[key].id)) : new Set();
+  // lookup to determine if a mod is already installed in vortex
+  const modListSet = new Set(Object.keys(mods || {}).map((key: string) => mods[key].id));
 
   const xmlDoc = parser.parseFromString(xmlData, 'text/xml');
   const version = xmlDoc.getElementsByTagName('virtualModActivator')[0];
 
+  // sanity checks for the file structure
   if ((version === null) || (version === undefined)) {
     return Promise.reject(new ParseError(
-      'The selected folder does not contain a valid VirtualModConfig.xml file.'));
-  } else if (version.getAttribute('fileVersion') !== '0.3.0.0') {
-    return Promise.reject(
-      new ParseError('The selected folder contains an older VirtualModConfig.xml file,'
-      + 'you need to upgrade your NMM before proceeding with the mod import.'));
+        'The selected folder does not contain a valid VirtualModConfig.xml file.'));
+  }
+
+  if (version.getAttribute('fileVersion') !== '0.3.0.0') {
+    return Promise.reject(new ParseError(
+        'The selected folder contains an older VirtualModConfig.xml file,' +
+        'you need to upgrade your NMM before proceeding with the mod import.'));
   }
 
   const modInfoList = xmlDoc.getElementsByTagName('modInfo');
-  if (modInfoList === undefined || modInfoList.length <= 0) {
-    return Promise.reject(
-      new ParseError('The selected folder contains an empty VirtualModConfig.xml file.'));
+  if ((modInfoList === undefined) || (modInfoList.length <= 0)) {
+    return Promise.reject(new ParseError(
+        'The selected folder contains an empty VirtualModConfig.xml file.'));
   }
 
-  for (const modInfo of modInfoList) {
-    if (!modInfo.hasChildNodes) {
-      continue;
-    }
-
-    const elementModId = modInfo.getAttribute('modId');
-    const elementDownloadId = modInfo.getAttribute('downloadId');
-    const elementModName = modInfo.getAttribute('modName');
-    const elementModFilename = modInfo.getAttribute('modFileName');
-    const elementArchivePath = modInfo.getAttribute('modFilePath');
-    const elementModVersion = modInfo.getAttribute('FileVersion');
-
-    const modFileEntries: FileEntry[] = [];
-
-    for (const fileLink of modInfo.getElementsByTagName('fileLink')) {
-      const nodeRealPath = fileLink.getAttribute('realPath');
-      const nodeVirtualPath = fileLink.getAttribute('virtualPath');
-      const nodeLinkPriority =
-        fileLink.getElementsByTagName('linkPriority')[0].childNodes[0].nodeValue;
-      const nodeIsActive = fileLink.getElementsByTagName('isActive')[0].childNodes[0].nodeValue;
-
-      if ((nodeVirtualPath !== null) && (nodeVirtualPath !== undefined)) {
-        const fileEntry: FileEntry = {
-          fileSource: nodeRealPath,
-          fileDestination: nodeVirtualPath,
-          isActive: (nodeIsActive.toLocaleLowerCase() === 'true'),
-          filePriority: (parseInt(nodeLinkPriority, 10)),
-        };
-
-        modFileEntries.push(fileEntry);
-      }
-    }
-
-    const modFilePath = path.join(elementArchivePath, elementModFilename);
-    let fileMD5: string = '';
-
-    const { genHash } = require('modmeta-db');
-    genHash(modFilePath)
-      .then((hashResult: IHashResult) => {
-          fileMD5 = hashResult.md5sum;
-      })
-      .catch(() => {
-        fileMD5 = '';
-      });
-
-    const derivedId: string = util.deriveInstallName(
-      path.basename(elementModFilename, path.extname(elementModFilename)), '');
-
-    const modEntry: ModEntry = {
-      nexusId: elementModId,
-      vortexId: derivedId,
-      downloadId: elementDownloadId,
-      modName: elementModName,
-      modFilename: elementModFilename,
-      archivePath: elementArchivePath,
-      modVersion: elementModVersion,
-      archiveMD5: fileMD5,
+  return Promise.map(Array.from(modInfoList), modInfo => {
+    const res: any = {
+      nexusId: modInfo.getAttribute('modId'),
+      downloadId: modInfo.getAttribute('downloadId'),
+      modName: modInfo.getAttribute('modName'),
+      modFilename: modInfo.getAttribute('modFileName'),
+      archivePath: modInfo.getAttribute('modFilePath'),
+      modVersion: modInfo.getAttribute('FileVersion'),
       importFlag: true,
-      isAlreadyManaged: ((modListSet !== null) && (modListSet !== undefined)
-        && (modListSet.size > 0)) ? modListSet.has(derivedId) : false,
-      fileEntries: modFileEntries,
     };
 
-    nmmModList.push(modEntry);
-  }
+    const archiveName =
+        path.basename(res.modFilename, path.extname(res.modFilename));
+    res.vortexId = util.deriveInstallName(archiveName, {});
+    res.isAlreadyManaged = modListSet.has(res.vortexId);
 
-  return Promise.resolve(nmmModList);
+    let useOldPath: boolean = false;
+
+    // NMM has a crazy workaround where it will use an install path based on
+    // the download id or the archive name, whatever is available
+    const adjustRealPath = (input: string): string => {
+      return path.join(useOldPath ? archiveName : res.downloadId,
+                       ...input.split(path.sep).slice(1));
+    };
+
+    return fs.statAsync(path.join(virtualInstallPath, archiveName))
+        .then(() => { useOldPath = true; })
+        .catch(() => undefined)
+        .then(() => {
+          const fileLinks = modInfo.getElementsByTagName('fileLink');
+
+          res.fileEntries =
+              Array.from(fileLinks)
+                  .map(fileLink => transformFileEntry(fileLink, adjustRealPath))
+                  .filter(entry => entry !== undefined);
+
+          const modFilePath = path.join(res.archivePath, res.modFilename);
+
+          return modmeta.genHash(modFilePath);
+        })
+        .then((hashResult: modmetaT.IHashResult) => {
+          res.archiveMD5 = hashResult.md5sum;
+        })
+        .catch(() => { res.archiveMD5 = null; })
+        .then(() => res as IModEntry);
+  });
 }
 
 export default parseNMMConfigFile;

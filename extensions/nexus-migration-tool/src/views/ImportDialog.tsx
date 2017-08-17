@@ -113,18 +113,18 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       : undefined;
 
     return (
-      <Modal show={ importStep !== undefined } onHide={this.nop}>
+      <Modal id='import-dialog' show={importStep !== undefined} onHide={this.nop}>
         <Modal.Header>
-          <Modal.Title>{ t('Nexus Mod Manager (NMM) Migration Tool') }</Modal.Title>
+          <Modal.Title>{t('Nexus Mod Manager (NMM) Migration Tool')}</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ height: '60vh', display: 'flex', flexDirection: 'column' }}>
           {this.renderStep(importStep)}
-          { error !== undefined ? <Alert>{error}</Alert> : this.renderContent(importStep)}
+          {error !== undefined ? <Alert>{error}</Alert> : this.renderContent(importStep)}
         </Modal.Body>
         <Modal.Footer>
-          { canCancel ? <Button onClick={this.cancel}>{ t('Cancel') }</Button> : null }
+          {canCancel ? <Button onClick={this.cancel}>{t('Cancel')}</Button> : null}
           { nextLabel ? (
-            <Button disabled={error !== undefined} onClick={this.next}>{ nextLabel }</Button>
+            <Button disabled={error !== undefined} onClick={this.next}>{nextLabel}</Button>
            ) : null }
         </Modal.Footer>
       </Modal>
