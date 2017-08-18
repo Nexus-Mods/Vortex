@@ -52,6 +52,7 @@ function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStore
 
 interface IBaseProps {
   onRefreshGameInfo: (gameId: string) => Promise<void>;
+  onBrowseGameLocation: (gameId: string) => Promise<void>;
 }
 
 interface IConnectedProps {
@@ -181,7 +182,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           </div>
         </MainPage.Header>
         <MainPage.Body>
-          <FlexLayout type='column'>
+          <FlexLayout type='column' className='game-page'>
             <FlexLayout.Flex>
               <div ref={this.setScrollRef} className='gamepicker-body'>
                 <span style={{ display: 'table' }}>
@@ -207,14 +208,14 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                   </ProgressBar>
                 </FlexLayout.Flex>
                 <FlexLayout.Fixed>
-                  <Button
+                  <IconButton
                     id='start-discovery'
+                    icon={discovery.running ? 'stop' : 'search'}
                     tooltip={discovery.running ? t('Stop search') : t('Search for games')}
                     onClick={discovery.running ? this.stopDiscovery : this.startDiscovery}
-                    placement='top'
                   >
-                    <Icon name={discovery.running ? 'stop' : 'search'} />
-                  </Button>
+                    {t('Search for games')}
+                  </IconButton>
                 </FlexLayout.Fixed>
               </div>
             </FlexLayout.Fixed>
@@ -312,9 +313,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             type={type}
             active={game.id === gameMode}
             onRefreshGameInfo={onRefreshGameInfo}
-            onSetGamePath={this.setGamePath}
-            onSetGameDiscovery={this.addDiscoveredGame}
-            onShowDialog={this.props.onShowDialog}
+            onBrowseGameLocation={this.props.onBrowseGameLocation}
           />))
         }
       </ListGroup>

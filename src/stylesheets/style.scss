@@ -2081,11 +2081,13 @@ a[role=menuitem] svg {
 ////////////
 // game page
 
+.game-page {
+  padding-right: $half-gutter;
+}
+
 .popover-game-info {
   max-width: 500px;
 }
-
-
 
 // /game page
 /////////////

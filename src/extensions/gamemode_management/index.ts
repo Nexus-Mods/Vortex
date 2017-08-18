@@ -1,4 +1,5 @@
-import { GameInfoQuery, IExtensionContext } from '../../types/IExtensionContext';
+import { showDialog } from '../../actions/notifications';
+import { GameInfoQuery, IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
 import LazyComponent from '../../util/LazyComponent';
@@ -12,7 +13,7 @@ import {IDownload} from '../download_management/types/IDownload';
 import { setNextProfile } from '../profile_management/actions/settings';
 
 import { setGameInfo } from './actions/persistent';
-import { addSearchPath } from './actions/settings';
+import { addDiscoveredGame, addSearchPath, setGamePath } from './actions/settings';
 import { discoveryReducer } from './reducers/discovery';
 import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
@@ -31,7 +32,9 @@ import GameModeManager from './GameModeManager';
 import { currentGame, currentGameDiscovery } from './selectors';
 
 import * as Promise from 'bluebird';
-import { shell } from 'electron';
+import { remote, shell } from 'electron';
+import * as fs from 'fs-extra-promise';
+import * as path from 'path';
 import * as Redux from 'redux';
 
 let gameModeManager: GameModeManager;
@@ -121,6 +124,87 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
   .then(() => undefined);
 }
 
+function verifyGamePath(game: IGameStored, gamePath: string): Promise<void> {
+  return Promise.map(game.requiredFiles, file =>
+    fs.statAsync(path.join(gamePath, file)))
+    .then(() => undefined);
+}
+
+function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
+  const state: IState = api.store.getState();
+  const game = state.session.gameMode.known.find(iter => iter.id === gameId);
+  const discovery = state.settings.gameMode.discovered[gameId];
+
+  return new Promise<void>((resolve, reject) => {
+    if (discovery !== undefined) {
+      remote.dialog.showOpenDialog(null, {
+        properties: ['openDirectory'],
+        defaultPath: discovery.path,
+      }, (fileNames: string[]) => {
+        if (fileNames !== undefined) {
+          verifyGamePath(game, fileNames[0])
+            .then(() => {
+              let modPath = game.modPath;
+              if (!path.isAbsolute(modPath)) {
+                modPath = path.resolve(fileNames[0], modPath);
+              }
+              api.store.dispatch(setGamePath(game.id, fileNames[0], modPath));
+              resolve();
+            })
+            .catch(() => {
+              api.store.dispatch(showDialog('error', 'Game not found', {
+                message: api.translate('This directory doesn\'t appear to contain the game. '
+                  + 'Expected to find these files: {{ files }}',
+                  { replace: { files: game.requiredFiles.join(', ') } }),
+              }, [
+                  { label: 'Cancel', action: () => resolve() },
+                  { label: 'Try Again',
+                    action: () => browseGameLocation(api, gameId).then(() => resolve()) },
+                ]));
+            });
+        } else {
+          resolve();
+        }
+      });
+    } else {
+      remote.dialog.showOpenDialog(null, {
+        properties: ['openDirectory'],
+      }, (fileNames: string[]) => {
+        if (fileNames !== undefined) {
+          verifyGamePath(game, fileNames[0])
+            .then(() => {
+              let modPath = game.modPath;
+              if (!path.isAbsolute(modPath)) {
+                modPath = path.resolve(fileNames[0], modPath);
+              }
+              api.store.dispatch(addDiscoveredGame(game.id, {
+                path: fileNames[0],
+                modPath,
+                tools: {},
+                hidden: false,
+                environment: game.environment,
+              }));
+              resolve();
+            })
+            .catch(() => {
+              api.store.dispatch(showDialog('error', 'Game not found', {
+                message: api.translate('This directory doesn\'t appear to contain the game. '
+                  + 'Expected to find these files: {{ files }}',
+                  { replace: { files: game.requiredFiles.join(', ') } }),
+              }, [
+                  { label: 'Cancel', action: () => resolve() },
+                  { label: 'Try Again',
+                    action: () => browseGameLocation(api, gameId).then(() => resolve()) },
+                ]));
+            });
+        } else {
+          resolve();
+        }
+      });
+    }
+  });
+}
+
 function init(context: IExtensionContext): boolean {
   const activity = new ReduxProp(context.api, [
     ['session', 'discovery'],
@@ -131,6 +215,7 @@ function init(context: IExtensionContext): boolean {
     group: 'global',
     props: () => ({
       onRefreshGameInfo: (gameId: string) => refreshGameInfo(context.api.store, gameId),
+      onBrowseGameLocation: (gameId: string) => browseGameLocation(context.api, gameId),
     }),
     activity,
   });
@@ -200,6 +285,9 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-discovered-buttons', 110, 'folder-gallery', {},
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
+  context.registerAction('game-undiscovered-buttons', 115, 'folder-open', {},
+    context.api.translate('Manually set Location'),
+    (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
   context.registerDialog('add-game', AddGameDialog);
   context.registerDashlet('Game Picker', 2, 2, 0, Dashlet, () =>

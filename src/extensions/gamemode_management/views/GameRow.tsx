@@ -30,10 +30,7 @@ export interface IProps {
   getBounds: () => ClientRect;
   container: HTMLElement;
   onRefreshGameInfo: (gameId: string) => Promise<void>;
-  onSetGamePath: (gameId: string, gamePath: string, modsPath: string) => void;
-  onSetGameDiscovery: (gameId: string, result: IDiscoveryResult) => void;
-  onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: DialogActions) => void;
+  onBrowseGameLocation: (gameId: string) => Promise<void>;
 }
 
 /**
@@ -127,73 +124,8 @@ class GameRow extends ComponentEx<IProps, {}> {
     }
   }
 
-  private verifyGamePath(game: IGameStored, gamePath: string): Promise<void> {
-    return Promise.map(game.requiredFiles, file =>
-      fs.statAsync(path.join(gamePath, file)))
-    .then(() => undefined);
-  }
-
   private openLocation = () => {
-    const { discovery, game, onSetGameDiscovery, onSetGamePath,
-            onShowDialog, t } = this.props;
-    if (discovery !== undefined) {
-      remote.dialog.showOpenDialog(null, {
-        properties: ['openDirectory'],
-        defaultPath: discovery.path,
-      }, (fileNames: string[]) => {
-        if (fileNames !== undefined) {
-          this.verifyGamePath(game, fileNames[0])
-            .then(() => {
-              let modPath = game.modPath;
-              if (!path.isAbsolute(modPath)) {
-                modPath = path.resolve(fileNames[0], modPath);
-              }
-              onSetGamePath(game.id, fileNames[0], modPath);
-            })
-            .catch(() => {
-              onShowDialog('error', 'Game not found', {
-                message: t('This directory doesn\'t appear to contain the game. '
-                  + 'Expected to find these files: {{ files }}',
-                  { replace: { files: game.requiredFiles.join(', ') } }),
-              }, [
-                  { label: 'Cancel' },
-                  { label: 'Try Again', action: this.openLocation },
-              ]);
-            });
-        }
-      });
-    } else {
-      remote.dialog.showOpenDialog(null, {
-        properties: ['openDirectory'],
-      }, (fileNames: string[]) => {
-        if (fileNames !== undefined) {
-          this.verifyGamePath(game, fileNames[0])
-            .then(() => {
-              let modPath = game.modPath;
-              if (!path.isAbsolute(modPath)) {
-                modPath = path.resolve(fileNames[0], modPath);
-              }
-              onSetGameDiscovery(game.id, {
-                path: fileNames[0],
-                modPath,
-                tools: {},
-                hidden: false,
-                environment: game.environment,
-              });
-            })
-            .catch(() => {
-              onShowDialog('error', 'Game not found', {
-                message: t('This directory doesn\'t appear to contain the game. '
-                  + 'Expected to find these files: {{ files }}',
-                  { replace: { files: game.requiredFiles.join(', ') } }),
-              }, [
-                  { label: 'Cancel' },
-                  { label: 'Try Again', action: this.openLocation },
-              ]);
-            });
-        }
-      });
-    }
+    this.props.onBrowseGameLocation(this.props.game.id);
   }
 }
 
