@@ -4,7 +4,7 @@ import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 
-import { dialog as dialogIn, Electron, remote } from 'electron';
+import { dialog as dialogIn, remote } from 'electron';
 import * as React from 'react';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;

@@ -161,7 +161,7 @@ const ignoredExceptions = new RegExp('(' + [
   'Cannot read property \'__reactInternalInstance.*\' of null',
 ].join('|') + ')');
 
-process.on('uncaughtException', error => {
+process.on('uncaughtException' as any, error => {
   if (getMessageString(error).match(ignoredExceptions)) {
     return;
   }

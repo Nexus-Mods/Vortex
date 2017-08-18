@@ -5,7 +5,7 @@ import Debouncer from '../util/Debouncer';
 import * as storeHelperT from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
-import { Electron, screen } from 'electron';
+import { screen } from 'electron';
 import * as Redux from 'redux';
 
 class MainWindow {
@@ -29,11 +29,11 @@ class MainWindow {
     }, 500);
   }
 
-  public create(store: Redux.Store<IState>): Promise<void> {
+  public create(store: Redux.Store<IState>): Promise<Electron.WebContents> {
     if (this.mWindow !== null) {
-      return Promise.resolve();
+      return Promise.resolve(undefined);
     }
-    const BrowserWindow: Electron.BrowserWindow = require('electron').BrowserWindow;
+    const BrowserWindow: typeof Electron.BrowserWindow = require('electron').BrowserWindow;
 
     this.mWindow = new BrowserWindow(this.getWindowSettings(store.getState().settings.window));
 

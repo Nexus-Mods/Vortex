@@ -53,7 +53,7 @@ function main() {
     app.commandLine.appendSwitch('remote-debugging-port', '9222');
   }
 
-  process.on('uncaughtException', (error: any) => {
+  process.on('uncaughtException' as any, (error: any) => {
     let details: IError;
 
     switch (typeof error) {
