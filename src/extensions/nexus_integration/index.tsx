@@ -46,7 +46,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
-import Nexus, { IDownloadURL, IFileInfo, IModInfo, TimeoutError } from 'nexus-api';
+import Nexus, { IDownloadURL, IFileInfo, IModInfo, NexusError, TimeoutError } from 'nexus-api';
 import * as opn from 'opn';
 import * as path from 'path';
 import * as React from 'react';
@@ -396,6 +396,13 @@ function genModIdAttribute(api: IExtensionApi): ITableAttribute {
   };
 }
 
+function errorFromNexusError(err: NexusError): string {
+  switch (err.statusCode) {
+    case 401: return 'Login was refused, please review your API key.';
+    default: return err.message;
+  }
+}
+
 function once(api: IExtensionApi) {
   const registerFunc = () => {
     api.registerProtocol('nxm', (url: string) => {
@@ -430,10 +437,17 @@ function once(api: IExtensionApi) {
             'Server didn\'t respond to validation request, web-based '
             + 'features will be unavailable');
         })
-        .catch(err => {
+        .catch(NexusError, err => {
           showError(api.store.dispatch,
-            'An error occurred validating the API Key',
-            'Please provide a valid API Key!', false, undefined, false);
+            'Server reported an error validating your API Key',
+            errorFromNexusError(err), false, undefined, false);
+        })
+        .catch(err => {
+          // if there is an "errno", this is more of a technical problem, like
+          // network is offline or server not reachable
+          showError(api.store.dispatch,
+            'An error occurred validating your API Key',
+            err.message, false, undefined, false);
         });
     }
   }

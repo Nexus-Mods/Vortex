@@ -47,7 +47,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
     super(props);
 
     this.state = {
-      APIKey: '',
+      APIKey: props.APIKey,
       didSubmit: false,
     };
   }

@@ -153,7 +153,7 @@ class Application {
       } else {
         const data = JSON.parse(value);
         const oldValue = getSafe(data, pathArray.slice(1), undefined);
-        const newValue = typeof(oldValue === 'object')
+        const newValue = typeof(oldValue) === 'object'
           ? JSON.parse(setParameters[1])
           : oldValue.constructor(setParameters[1]);
         if (oldValue !== undefined) {
