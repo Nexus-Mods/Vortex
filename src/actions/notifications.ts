@@ -93,8 +93,9 @@ export function showDialog(type: DialogType, title: string,
   return (dispatch) => {
     return new Promise<IDialogResult>((resolve, reject) => {
       const id = shortid();
-      const defaultAction = actions.find(iter => iter.default === true).label;
-      dispatch(addDialog(id, type, title, content, defaultAction,
+      const defaultAction = actions.find(iter => iter.default === true);
+      const defaultLabel = defaultAction !== undefined ? defaultAction.label : undefined;
+      dispatch(addDialog(id, type, title, content, defaultLabel,
                          actions.map(action => action.label)));
       DialogCallbacks.instance()[id] = (actionKey: string, input?: any) => {
         const action = actions.find(iter => iter.label === actionKey);

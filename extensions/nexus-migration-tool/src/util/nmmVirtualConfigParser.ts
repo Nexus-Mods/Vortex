@@ -71,7 +71,7 @@ export function parseModEntries(
   return Promise.map(Array.from(modInfoList), modInfo => {
     const res: any = {
       nexusId: modInfo.getAttribute('modId'),
-      downloadId: modInfo.getAttribute('downloadId'),
+      downloadId: parseInt(modInfo.getAttribute('downloadId'), 10),
       modName: modInfo.getAttribute('modName'),
       modFilename: modInfo.getAttribute('modFileName'),
       archivePath: modInfo.getAttribute('modFilePath'),

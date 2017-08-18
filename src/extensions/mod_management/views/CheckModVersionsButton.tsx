@@ -33,7 +33,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
         <ToolbarIcon
           id='check-mods-version'
           icon='spinner'
-          text={t('Check mods version')}
+          text={t('Checking for mod updates')}
           buttonType={buttonType}
           disabled={true}
           pulse={true}
@@ -44,7 +44,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
         <ToolbarIcon
           id='check-mods-version'
           icon='cloud-refresh'
-          text={t('Check mods version')}
+          text={t('Check for mod updates')}
           onClick={this.checkModsVersion}
           buttonType={buttonType}
         />

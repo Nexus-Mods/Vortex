@@ -3,7 +3,7 @@ import * as util from 'util';
 export interface IModEntry {
   nexusId: string;
   vortexId: string;
-  downloadId: string;
+  downloadId: number;
   modName: string;
   modFilename: string;
   archivePath: string;

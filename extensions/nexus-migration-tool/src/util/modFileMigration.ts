@@ -53,7 +53,7 @@ export function transferUnpackedMod(mod: ModEntry, nmmVirtualPath: string,
   });
 
   const failedFiles: string[] = [];
-  return Promise.map(Array.from(directories).sort(byLength), fs.mkdirAsync)
+  return Promise.map(Array.from(directories).sort(byLength), dir => fs.mkdirAsync(dir))
       .then(() => Promise.map(
                 mod.fileEntries,
                 file => operation(path.join(nmmVirtualPath, file.fileSource),

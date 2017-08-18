@@ -65,7 +65,8 @@ html {
 .btn-line-right {
   position: absolute;
   right: 10px;
-  top: 5px;
+  top: 0px;
+  height: 100%;
 }
 
 // text in a button that combines icon and text
@@ -675,11 +676,13 @@ a[role=menuitem] svg {
 #notifications-button {
   margin-top: auto;
   margin-bottom: auto;
+  position: relative;
   .badge {
     padding: 1px 3px;
     font-size: $font-size-small;
-    margin-left: -8px;
-    margin-bottom: 8px;
+    position: absolute;
+    right: 8px;
+    top: 8px;
   }
 }
 
@@ -1220,8 +1223,8 @@ a[role=menuitem] svg {
     color: $brand-danger;
   }
 
-  svg {
-    margin-left: 0.4em;
+  .icon-button {
+    margin-left: 0.4em !important;
   }
 }
 

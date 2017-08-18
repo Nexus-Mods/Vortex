@@ -19,18 +19,17 @@ function zipFiles(files: string[]): Promise<string> {
   }
   const Zip: typeof ZipT = require('node-7z');
   const task: ZipT = new Zip();
+
   return new Promise<string>((resolve, reject) => {
     const filePath = tmpName({
       postfix: '.7z',
-    }, (err, tmpPath: string) => {
-      if (err !== null) {
-        return reject(err);
-      }
-      return resolve(tmpPath);
-    });
-  }).then(tmpPath =>
-    task.add(tmpPath, files, { ssw: true })
-      .then(() => tmpPath));
+    }, (err, tmpPath: string) => (err !== null)
+      ? reject(err)
+      : resolve(tmpPath));
+  })
+    .then(tmpPath =>
+      task.add(tmpPath, files, { ssw: true })
+        .then(() => tmpPath));
 }
 
 function submitFeedback(nexus: Nexus, message: string, feedbackFiles: string[],
@@ -41,7 +40,11 @@ function submitFeedback(nexus: Nexus, message: string, feedbackFiles: string[],
       archive = tmpPath;
       return nexus.sendFeedback(message, tmpPath, anonymous);
     })
-    .then(() => fs.removeAsync(archive));
+    .then(() => {
+      if (archive !== undefined) {
+        fs.removeAsync(archive);
+      }
+    });
 }
 
 export default submitFeedback;

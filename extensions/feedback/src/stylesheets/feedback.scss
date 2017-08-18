@@ -1,5 +1,5 @@
 .feedback-page {
-  margin-right: $gutter-width / 2;
+  padding-right: $gutter-width / 2;
 }
 
 .textarea-feedback {
@@ -38,4 +38,12 @@
   border-style: solid;
   border-width: 2px;
   border-color: $brand-warning;
+}
+
+.feedback-controls > * {
+  padding: floor(($gutter-width / 2));
+
+  .toggle-container {
+    margin-top: 4px;
+  }
 }

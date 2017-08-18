@@ -24,7 +24,7 @@ interface IActionProps {
     type: types.DialogType,
     title: string,
     content: types.IDialogContent,
-    actions: types.IDialogActions,
+    actions: types.DialogActions,
   ) => Promise<types.IDialogResult>;
 }
 
@@ -96,11 +96,11 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
               onChange={this.selectTheme}
               value={currentTheme}
             >
-              { this.state.themes.map(theme => this.renderTheme(theme, theme)) }
+              {this.state.themes.map(theme => this.renderTheme(theme, theme))}
             </FormControl>
             <InputGroup.Button>
-              <Button onClick={this.clone} >{ t('Clone') }</Button>
-              { editable ? <Button onClick={this.remove}>{ t('Remove') }</Button> : null }
+              <Button onClick={this.clone} >{t('Clone')}</Button>
+              {editable ? <Button onClick={this.remove}>{t('Remove')}</Button> : null}
             </InputGroup.Button>
           </InputGroup>
         </FormGroup>
@@ -192,10 +192,8 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
           placeholder: 'Theme Name',
           value: theme,
         } ],
-    }, {
-      Cancel: null,
-      Clone: null,
-    }).then(res => {
+    }, [ { label: 'Cancel' }, { label: 'Clone' } ])
+    .then(res => {
       if (res.action === 'Clone') {
         if (res.input.name && (themes.indexOf(res.input.name) === -1)) {
           const targetDir = path.join(themePath(), res.input.name);
@@ -216,21 +214,23 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
       message: t('Are you sure you want to remove the theme {{theme}}', {
         replace: { theme: currentTheme },
       }),
-    }, {
-        Cancel: null,
-        Confirm: () => {
-          const targetDir = path.join(themePath(), currentTheme);
-          this.selectThemeImpl('__default');
-          this.nextState.themes = this.state.themes.filter(theme => theme !== currentTheme);
-          fs.removeAsync(targetDir)
-            .then(() => {
-              log('info', 'removed theme', targetDir);
-            })
-            .catch(err => {
-              log('error', 'failed to remove theme', { err });
-            });
-        },
-      });
+    }, [
+        { label: 'Cancel' },
+        {
+          label: 'Confirm', action: () => {
+            const targetDir = path.join(themePath(), currentTheme);
+            this.selectThemeImpl('__default');
+            this.nextState.themes = this.state.themes.filter(theme => theme !== currentTheme);
+            fs.removeAsync(targetDir)
+              .then(() => {
+                log('info', 'removed theme', targetDir);
+              })
+              .catch(err => {
+                log('error', 'failed to remove theme', { err });
+              });
+          },
+      },
+      ]);
   }
 
   private selectTheme = (evt) => {

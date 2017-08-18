@@ -52,7 +52,7 @@ interface IActionProps {
     type: types.DialogType,
     title: string,
     content: types.IDialogContent,
-    actions: types.IDialogActions) => Promise<types.IDialogResult>;
+    actions: types.DialogActions) => Promise<types.IDialogResult>;
   onShowActivity: (message: string, id?: string) => void;
   onShowError: (message: string, details: any, id?: string) => void;
   onShowSuccess: (message: string, id?: string) => void;
@@ -288,10 +288,8 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
           options: {
             translated: true,
           },
-        }, {
-            Cancel: null,
-            Continue: null,
-          }).then((result: types.IDialogResult) => {
+        }, [{ label: 'Cancel' }, { label: 'Continue' }])
+          .then((result: types.IDialogResult) => {
             restorePlugins = result.action === 'Continue';
             if (restorePlugins) {
               this.context.api.events.emit('set-plugin-list', saves[instanceId].attributes.plugins);
@@ -317,10 +315,8 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       options: {
         translated: true,
       },
-    }, {
-        Cancel: null,
-        Delete: null,
-      }).then((result: types.IDialogResult) => {
+    }, [ { label: 'Cancel' }, { label: 'Delete' } ])
+      .then((result: types.IDialogResult) => {
         doRemoveSavegame = result.action === 'Delete';
         if (doRemoveSavegame) {
           return Promise.map(instanceIds, (id: string) =>
@@ -348,11 +344,11 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       options: {
         translated: true,
       },
-    }, {
-        Cancel: null,
-        Move: null,
-        Copy: null,
-      })
+    }, [
+        { label: 'Cancel' },
+        { label: 'Move' },
+        { label: 'Copy' },
+    ])
       .then((result: types.IDialogResult) => {
         if (result.action === 'Cancel') {
           return;

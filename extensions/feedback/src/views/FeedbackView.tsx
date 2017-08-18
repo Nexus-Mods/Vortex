@@ -30,7 +30,7 @@ interface IActionProps {
   onDismissNotification: (id: string) => void;
   onRemoveFeedbackFile: (feedbackFileId: string) => void;
   onShowDialog: (type: types.DialogType, title: string, content: types.IDialogContent,
-                 actions: types.IDialogActions) => void;
+                 actions: types.DialogActions) => void;
   onShowError: (message: string, details?: string | Error, notificationId?: string) => void;
   onClearFeedbackFiles: () => void;
   onAddFeedbackFile: (feedbackFile: IFeedbackFile) => void;
@@ -182,7 +182,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     const { anonymous, sending } = this.state;
     return (
       <FlexLayout.Fixed>
-        <FlexLayout fill={false} type='row' style={{ position: 'static' }}>
+        <FlexLayout fill={false} type='row' className='feedback-controls'>
           <FlexLayout.Flex>
             <FormGroup>
               <ControlLabel>{t('Attached Files')}</ControlLabel>
@@ -233,12 +233,10 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
           message: t('This will attach your Vortex setting to the report, not including ' +
             'confidential data like usernames and passwords. ' +
             'We have no control over what third-party extensions store in settings though.'),
-        }, {
-            Cancel: null,
-            Continue: () => {
-              this.attachState('settings', 'Vortex Settings');
-            },
-          });
+        }, [
+          { label: 'Cancel' },
+          { label: 'Continue', action: () => { this.attachState('settings', 'Vortex Settings'); } },
+        ]);
         break;
       }
       case 'state': {
@@ -249,12 +247,10 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
             'These could be very useful for understanding your feedback but you have ' +
             'decide if you are willing to share this informaiton. ' +
             'We will, of course, treat your information as confidential.'),
-        }, {
-            Cancel: null,
-            Continue: () => {
-              this.attachState('persistent', 'Vortex State');
-            },
-          });
+        }, [
+          { label: 'Cancel' },
+          { label: 'Continue', action: () => { this.attachState('persistent', 'Vortex State'); } },
+        ]);
         break;
       }
     }

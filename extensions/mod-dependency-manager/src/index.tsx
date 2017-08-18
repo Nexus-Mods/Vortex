@@ -165,9 +165,7 @@ function updateConflictInfo(t: I18next.TranslationFunction,
         t('Unsolved file conflicts'), {
           message: message.join('\n'),
           options: { translated: true, wrap: true },
-        }, {
-          Close: null,
-        }));
+        }, [ { label: 'Close' } ]));
     };
 
     store.dispatch(actions.addNotification({
@@ -242,9 +240,7 @@ function checkRulesFulfilled(api: types.IExtensionApi) {
             t('Unsolved file conflicts'), {
               message: message.join('\n'),
               options: { translated: true, wrap: true },
-            }, {
-              Close: null,
-            }));
+            }, [ { label: 'Close' } ]));
         };
 
         store.dispatch(actions.addNotification({

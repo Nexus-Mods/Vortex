@@ -170,7 +170,9 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
         defaultPath: dialogDefault,
         title: dialogHint,
       }).then(filePath => {
-        this.props.drop('files', [filePath]);
+        if (filePath !== undefined) {
+          this.props.drop('files', [filePath]);
+        }
       });
     }
   }
