@@ -10,6 +10,16 @@ import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import { actions, selectors, types } from 'vortex-api';
 
+function getInner(ele: Element): string {
+  if ((ele !== undefined) && (ele !== null)) {
+    const node = ele.childNodes[0];
+    if (node !== undefined) {
+      return node.nodeValue;
+    }
+  }
+  return undefined;
+}
+
 function enhance(sourcePath: string, input: IModEntry): Promise<IModEntry> {
   // this id is currently identically to what we store as the vortexId but I don't want
   // to rely on that always being the case
@@ -23,12 +33,16 @@ function enhance(sourcePath: string, input: IModEntry): Promise<IModEntry> {
     .then(infoXmlData => {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(infoXmlData.toString(), 'text/xml');
-      const origCategory = xmlDoc.querySelector('fomod CategoryId');
-      const customCategory = xmlDoc.querySelector('fomod CustomCategoryId');
+      const category = getInner(xmlDoc.querySelector('fomod CustomCategoryId'))
+                    || getInner(xmlDoc.querySelector('fomod CategoryId'));
+
+      const categoryId = category !== undefined
+        ? parseInt(category, 10)
+        : undefined;
 
       return {
         ...input,
-        categoryId: parseInt((customCategory || origCategory).childNodes[0].nodeValue, 10),
+        categoryId,
       };
     });
 }
