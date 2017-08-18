@@ -12,6 +12,7 @@ export interface IModEntry {
   importFlag: boolean;
   isAlreadyManaged: boolean;
   fileEntries: IFileEntry[];
+  categoryId?: number;
 }
 
 export interface IFileEntry {

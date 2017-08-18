@@ -37,6 +37,7 @@ export function addMods(gameID: string, profileId: string,
         fileId: modEntry.downloadId,
         fileMD5: modEntry.archiveMD5,
         notes: 'Imported using the NMM-Migration-Tool',
+        category: modEntry.categoryId,
       },
     };
     if (modEntry.nexusId) {
