@@ -1,5 +1,4 @@
 import * as Promise from 'bluebird';
-import * as Redux from 'redux';
 import * as request from 'request';
 import { log, types, util } from 'vortex-api';
 

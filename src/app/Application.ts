@@ -109,8 +109,8 @@ class Application {
         });
   }
 
-  private handleGet(getPath: string | true): Promise<void> {
-    if (getPath === true) {
+  private handleGet(getPath: string | boolean): Promise<void> {
+    if (typeof(getPath) === 'boolean') {
       origFS.writeSync(1, 'Usage: vortex --get <path>\n');
       app.quit();
       return;

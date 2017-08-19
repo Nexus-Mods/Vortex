@@ -57,7 +57,7 @@ class ModDB {
   private mRestClient: restT.Client;
   private mTimeout: number;
   private mGameId: string;
-  private mBlacklist: Set<IBlacklistEntry> = new Set();
+  private mBlacklist: Set<string> = new Set();
   private mLog: LogFunc;
 
   /**

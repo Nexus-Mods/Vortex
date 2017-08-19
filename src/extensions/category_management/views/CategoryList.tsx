@@ -175,7 +175,6 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             onVisibilityToggle={this.toggleVisibility}
             onMoveNode={this.moveNode}
             style={{ height: '95%' }}
-            autoHeight={false}
             searchQuery={searchString}
             searchFocusOffset={searchFocusIndex}
             searchFinishCallback={this.searchFinishCallback}

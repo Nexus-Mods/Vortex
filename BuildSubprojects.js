@@ -74,7 +74,7 @@ function spawnAsync(exe, args, options, out) {
   return new Promise((resolve, reject) => {
     let desc = `${options.cwd || '.'}/${exe} ${args.join(' ')}`;
     out.log('started: ' + desc);
-    console.log('started: ' + desc);
+    console.log('started', desc, new Date().toLocaleTimeString());
     try {
       let proc = spawn(exe, args, options);
       proc.stdout.on('data', (data) => out.log(data.toString()));

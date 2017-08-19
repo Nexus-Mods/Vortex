@@ -10,16 +10,15 @@
         "rootDir": "./src",
         "outDir": "./out",
         "sourceMap": true,
-        "jsx":"react",
-        "skipLibCheck": true
+        "jsx":"react"
     },
     "files": [
-        "typings/index.d.ts",
-        "typings.custom/index.d.ts",
-        "src/main.ts",
-        "src/index.ts",
-        "src/renderer.tsx",
-        "src/splash.ts",
-        "src/extensions/index.ts"
+      "typings/index.d.ts",
+      "typings.custom/index.d.ts",
+      "src/main.ts",
+      "src/index.ts",
+      "src/renderer.tsx",
+      "src/splash.ts",
+      "src/extensions/index.ts"
     ]
 }

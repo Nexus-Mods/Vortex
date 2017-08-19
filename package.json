@@ -10,36 +10,24 @@
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
     "_assets_app": "node InstallAssets.js app",
-
     "_update_submodules": "git submodule foreach git pull origin master",
-
     "_build_subprojects_out": "npm run _update_submodules && node BuildSubprojects.js out",
     "_build_subprojects_app": "npm run _update_submodules && node BuildSubprojects.js app",
-
     "_clean_app": "cd app && rm-local-modules",
     "_install_app": "cd app && npm install && npm update",
-
     "build_api": "tsc -p ./api && npm install ./api",
-
     "build_rest": "npm run _assets_out && npm run build_api && npm run _build_subprojects_out",
-
     "prepackage": "npm run build_api && npm run _clean_app && npm run _install_app && npm run _build_subprojects_app && npm run _assets_app && npm install 7zip-bin",
     "package": "build",
-
     "prestart": "npm run build",
     "start": "cross-env NODE_ENV=development electron .",
-
     "preinstallex": "npm install rm-local-modules && rm-local-modules",
     "installex": "npm install && npm run build",
-
     "preinstall": "git submodule update --init --recursive",
     "postinstall": "typings prune && typings install",
-
-    "lessc": "lessc --clean-css --include-path=node_modules/bootswatch:node_modules/bootstrap-less src/stylesheets/index.less out/assets/css/base.css",
     "sassc": "node-sass src/stylesheets/index.scss out/assets/css/base.css",
     "test": "jest --no-cache",
     "doc": "typedoc --out doc src",
-
     "build": "tsc -p . && npm run build_rest",
     "buildwatch": "npm run build_rest && concurrently -p \"\" --kill-others \"tsc -p . -w\" npm-watch"
   },
@@ -122,6 +110,7 @@
       "!**/node_modules/recharts/umd${/*}",
       "!**/node_modules/ffi/deps",
       "!**/Release/*.map",
+      "!**/node_modules/bootstrap-sass/assets/fonts",
       "!**/node_modules/recharts/node_modules/d3-scale/img",
       "!**/node_modules/recharts/node_modules/d3-shape/img",
       "!**/node_modules/d3-geo/img"
@@ -149,7 +138,6 @@
     "@types/lodash": "^4.14.52",
     "@types/minimatch": "^2.0.29",
     "@types/node": "^7.0.13",
-    "@types/uuid": "^3.0.0",
     "@types/react": "^15.0.22",
     "@types/react-addons-perf": "^0.14.17",
     "@types/react-addons-shallow-compare": "^0.14.19",
@@ -158,9 +146,11 @@
     "@types/react-dnd": "^2.0.31",
     "@types/react-dnd-html5-backend": "^2.1.6",
     "@types/react-dom": "^15.5.0",
+    "@types/react-i18next": "^4.6.0",
     "@types/react-redux": "4.4.35",
     "@types/react-router": "^4.0.4",
     "@types/react-select": "^1.0.47",
+    "@types/react-sortable-tree": "^0.1.1",
     "@types/react-split-pane": "^0.1.6",
     "@types/react-transition-group": "^1.1.1",
     "@types/redux": "^3.6.0",
@@ -173,23 +163,10 @@
     "@types/rimraf": "^0.0.28",
     "@types/shortid": "^0.0.28",
     "@types/tmp": "^0.0.32",
+    "@types/uuid": "^3.0.0",
     "ajv": "^5.0.4-beta.0",
-    "babel-cli": "^6.14.0",
-    "babel-core": "^6.14.0",
     "babel-jest": "^19.0.0",
-    "babel-plugin-uglify": "^1.0.2",
-    "babel-polyfill": "^6.13.0",
-    "babel-preset-es2015": "6.24.1",
-    "babel-preset-react": "^6.11.1",
-    "babel-preset-react-optimize": "^1.0.1",
-    "babel-preset-stage-0": "^6.5.0",
-    "babel-register": "^6.11.6",
-    "babel-template": "^6.15.0",
-    "babel-traverse": "^6.15.0",
-    "babel-types": "^6.15.0",
-    "babylon": "^6.9.1",
     "bluebird": "^3.4.6",
-    "bootstrap-less": "^3.3.8",
     "bootstrap-sass": "^3.3.7",
     "bootswatch": "^3.3.7",
     "classnames": "^2.2.5",
@@ -208,7 +185,7 @@
     "electron-debug": "^1.0.1",
     "electron-devtools-installer": "^2.0.1",
     "electron-rebuild": "^1.5.7",
-    "electron-updater": "^1.9.0",
+    "electron-updater": "^2.8.7",
     "enzyme": "^2.6.0",
     "feedparser": "^2.2.1",
     "ffi": "^2.1.0",
@@ -219,8 +196,6 @@
     "jest": "^19.0.2",
     "jest-cli": "^19.0.2",
     "json-loader": "^0.5.7",
-    "less": "^2.7.1",
-    "less-plugin-clean-css": "^1.5.1",
     "leveldown": "^1.6.0",
     "levelup": "^1.3.5",
     "license-checker": "^11.0.0",
@@ -231,7 +206,6 @@
     "node-ipc": "^9.0.1",
     "node-rest-client": "^3.1.0",
     "node-sass": "^4.3.0",
-    "uuid": "^3.1.0",
     "npm-watch": "^0.1.6",
     "prop-types": "^15.5.8",
     "react-addons-perf": "^15.4.1",
@@ -245,9 +219,9 @@
     "react-redux": "^5.0.4",
     "react-safe-html": "^0.4.0",
     "react-select": "^1.0.0-rc.3",
-    "react-split-pane": "^0.1.63",
     "react-shallow-testutils": "^2.0.0",
     "react-sortable-tree": "^0.1.8",
+    "react-split-pane": "^0.1.63",
     "react-transition-group": "^1.1.3",
     "redux": "^3.5.2",
     "redux-act": "^1.1.1",
@@ -262,6 +236,7 @@
     "request": "^2.76.0",
     "reselect": "^2.5.4",
     "rm-local-modules": "^0.0.2",
+    "rollup-plugin-typescript": "^0.8.1",
     "semvish": "^1.1.0",
     "shortid": "^2.2.6",
     "simple-vdf": "^1.1.0",
@@ -273,6 +248,7 @@
     "tslint-react": "^3.2.0",
     "typedoc": "^0.5.10",
     "typings": "^2.1.1",
+    "uuid": "^3.1.0",
     "winreg": "^1.2.2",
     "winston": "^2.2.0"
   },
@@ -298,6 +274,6 @@
     "resolve": "^1.3.2",
     "rimraf": "^2.6.0",
     "source-map-support": "^0.4.10",
-    "typescript": "2.3.4"
+    "typescript": "2.4.2"
   }
 }

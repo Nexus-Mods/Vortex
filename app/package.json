@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -19,7 +19,7 @@
     "draggabilly": "^2.1.1",
     "drivelist": "^5.1.4",
     "edge": "^6.5.1",
-    "electron-updater": "^1.9.0",
+    "electron-updater": "^2.8.7",
     "exe-version": "file:../lib/cpp/exe-version",
     "feedparser": "^2.2.1",
     "ffi": "^2.1.0",

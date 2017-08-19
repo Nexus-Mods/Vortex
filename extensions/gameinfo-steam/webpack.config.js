@@ -18,13 +18,6 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx', '.json']
   },
-  plugins: [
-    new webpack.optimize.UglifyJsPlugin({
-      compress: { warnings: false },
-      comments: false,
-      sourceMap: false
-    })
-  ],
   externals: [
     'bluebird',
     'ffi',
@@ -45,6 +38,7 @@ module.exports = {
     'react-layout-pane',
     'react-redux',
     'ref',
+    'request',
     'util'
   ]
 };

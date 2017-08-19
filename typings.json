@@ -10,7 +10,6 @@
     "electron-builder": "registry:dt/electron-builder#2.0.2+20160316155526",
     "fs-extra-promise": "registry:dt/fs-extra-promise#0.0.0+20160919071823",
     "jest": "registry:dt/jest#15.1.1+20160919141445",
-    "less": "registry:dt/less#0.0.0+20160608105036",
     "node-uuid": "registry:dt/node-uuid#0.0.0+20160316155526",
     "node-uuid/node-uuid-base": "registry:dt/node-uuid/node-uuid-base#0.0.0+20160316155526",
     "react-fontawesome": "registry:dt/react-fontawesome#1.1.0+20160829152611",
@@ -28,6 +27,5 @@
     "typescript": "registry:dt/typescript#0.4.0+20160317120654"
   },
   "dependencies": {
-    "string-template": "registry:npm/string-template#1.0.0+20160723033700"
   }
 }

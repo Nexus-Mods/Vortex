@@ -1,5 +1,3 @@
-/// <reference path="../typings/globals/redux/index.d.ts" />
-
 interface WatcherCallback {
   store: Redux.Store<any>;
   selector: string;
