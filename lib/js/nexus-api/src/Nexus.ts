@@ -91,8 +91,11 @@ class Nexus {
       const req = this.mRestClient.methods.validateKey(
         this.args({ headers: this.filter({ APIKEY: key }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('validating key')));
-      req.on('responesTimeout', () => reject(new TimeoutError('validateing key')));
+      req.on('requestTimeout', () => {
+        req.abort();
+        reject(new TimeoutError('timeout validating key'));
+      });
+      req.on('responesTimeout', () => reject(new TimeoutError('timeout validateing key')));
       req.on('error', (err) => reject(err));
     });
   }
@@ -113,7 +116,10 @@ class Nexus {
     return new Promise<types.IGameListEntry[]>((resolve, reject) => {
       const req = this.mRestClient.methods.getGames(this.args({}),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('timeout contacting api')));
+      req.on('requestTimeout', () => {
+        req.abort();
+        reject(new TimeoutError('timeout contacting api'));
+      });
       req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });
@@ -124,7 +130,10 @@ class Nexus {
       const req = this.mRestClient.methods.getGameInfo(
         this.args({ path: this.filter({ gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('timeout contacting api')));
+      req.on('requestTimeout', () => {
+        req.abort();
+        reject(new TimeoutError('timeout contacting api'));
+      });
       req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });
@@ -135,7 +144,10 @@ class Nexus {
       const req = this.mRestClient.methods.getModInfo(
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('timeout contacting api')));
+      req.on('requestTimeout', () => {
+        req.abort();
+        reject(new TimeoutError('timeout contacting api'));
+      });
       req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });
@@ -147,7 +159,7 @@ class Nexus {
         this.args({ path: this.filter({ modId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
       req.on('requestTimeout', r => {
-        r.abort();
+        req.abort();
         reject(new TimeoutError('timeout contacting api ' + modId));
       });
       req.on('responesTimeout', res => reject(new TimeoutError('timeout contacting api')));
@@ -162,7 +174,10 @@ class Nexus {
       const req = this.mRestClient.methods.getFileInfo(
         this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('timeout contacting api')));
+      req.on('requestTimeout', r => {
+        req.abort();
+        reject(new TimeoutError('timeout contacting api ' + modId));
+      });
       req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });
@@ -175,7 +190,10 @@ class Nexus {
       const req = this.mRestClient.methods.getDownloadURLs(
         this.args({ path: this.filter({ modId, fileId, gameId }) }),
         (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => reject(new TimeoutError('timeout contacting api')));
+      req.on('requestTimeout', r => {
+        req.abort();
+        reject(new TimeoutError('timeout contacting api ' + modId));
+      });
       req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
       req.on('error', (err) => reject(err));
     });

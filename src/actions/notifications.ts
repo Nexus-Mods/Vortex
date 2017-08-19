@@ -1,6 +1,7 @@
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { INotification } from '../types/INotification';
 import {log} from '../util/log';
+import {truthy} from '../util/util';
 
 import safeCreateAction from './safeCreateAction';
 
@@ -99,7 +100,7 @@ export function showDialog(type: DialogType, title: string,
                          actions.map(action => action.label)));
       DialogCallbacks.instance()[id] = (actionKey: string, input?: any) => {
         const action = actions.find(iter => iter.label === actionKey);
-        if (action != null) {
+        if (truthy(action.action)) {
           action.action(input);
         }
         resolve({ action: actionKey, input });
