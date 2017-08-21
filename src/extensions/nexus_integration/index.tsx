@@ -208,9 +208,11 @@ function processErrorMessage(
 }
 
 function endorseModImpl(
-  store: Redux.Store<any>,
+  api: IExtensionApi,
   gameId: string,
-  modId: string, endorsedStatus: string) {
+  modId: string,
+  endorsedStatus: string) {
+  const { store } = api;
   const mod: IMod = getSafe(store.getState(), ['persistent', 'mods', gameId, modId], undefined);
 
   if (mod === undefined) {
@@ -229,6 +231,14 @@ function endorseModImpl(
 
   const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
+
+  if (!truthy(version)) {
+    api.sendNotification({
+      type: 'info',
+      message: api.translate('You can\'t endorse a mod that has no version set.'),
+    });
+    return;
+  }
 
   store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'pending'));
   sendEndorseMod(nexus, convertGameId(gameId), nexusModId, version, endorsedStatus)
@@ -424,7 +434,7 @@ function once(api: IExtensionApi) {
     api.store.dispatch(setUpdatingMods(gameMode, false));
 
     endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
-      endorseModImpl(api.store, gameId, modId, endorsedStatus);
+      endorseModImpl(api, gameId, modId, endorsedStatus);
 
     if (state.settings.nexus.associateNXM) {
       registerFunc();
@@ -496,7 +506,7 @@ function once(api: IExtensionApi) {
         'An error occurred endorsing a mod',
         'You are not logged in!');
     } else {
-      endorseModImpl(api.store, gameId, modId, endorsedStatus);
+      endorseModImpl(api, gameId, modId, endorsedStatus);
     }
   });
 

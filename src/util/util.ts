@@ -70,7 +70,7 @@ export function copyFileAtomic(srcPath: string,
                 (err: any, genPath: string, fd: number,
                  cleanupCB: () => void) => {
                   if (err) {
-                    reject(err);
+                    return reject(err);
                   }
                   cleanup = cleanupCB;
                   tmpPath = genPath;
@@ -93,7 +93,9 @@ export function copyFileAtomic(srcPath: string,
         }
       }))
       .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
-      .then(() => fs.renameAsync(tmpPath, destPath))
+      .then(() => (tmpPath !== undefined)
+          ? fs.renameAsync(tmpPath, destPath)
+          : Promise.resolve())
       .catch(err => {
         log('info', 'failed to copy', {srcPath, destPath, err: err.stack});
         if (cleanup !== undefined) {

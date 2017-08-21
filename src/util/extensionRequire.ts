@@ -1,3 +1,5 @@
+import ExtensionManager from './ExtensionManager';
+
 import {app as appIn, remote} from 'electron';
 import Module = require('module');
 import * as path from 'path';
@@ -13,8 +15,9 @@ const extensionsPath = path.join(app.getPath('userData'), 'plugins');
  * @returns
  */
 function extensionRequire(orig) {
+  const extensionPaths = ExtensionManager.getExtensionPaths();
   return function(id) {
-    if (this.filename.startsWith(extensionsPath)) {
+    if (extensionPaths.find(iter => this.filename.startsWith(iter)) !== undefined) {
       let res = require.main.require(id);
       if (res === undefined) {
         res = orig.apply(this, arguments);

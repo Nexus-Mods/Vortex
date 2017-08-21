@@ -40,12 +40,11 @@ class LootInterface {
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
       if (gameSupported(gameMode)) {
-        try {
-          this.init(gameMode as GameId, gamePath);
-        } catch (err) {
-          context.api.showErrorNotification('Failed to initialize LOOT', err);
-          this.mLoot = undefined;
-        }
+        this.init(gameMode as GameId, gamePath)
+          .catch(err => {
+            context.api.showErrorNotification('Failed to initialize LOOT', err);
+            this.mLoot = undefined;
+          });
       } else {
         this.mLoot = undefined;
       }
@@ -146,46 +145,51 @@ class LootInterface {
     });
   }
 
-  private init(gameMode: GameId, gamePath: string) {
+  private init(gameMode: GameId, gamePath: string): Promise<void> {
     const t = this.mExtensionApi.translate;
-    this.mLoot = new LootDatabase(gameMode, gamePath, pluginPath(gameMode));
-    this.mLootGame = gameMode;
-    this.promisify();
+    const localPath = pluginPath(gameMode);
+    return fs.ensureDirAsync(localPath)
+      .then(() => {
+        this.mLoot = new LootDatabase(gameMode, gamePath, localPath);
+        this.mLootGame = gameMode;
+        this.promisify();
 
-    // little bit of hackery: If tasks are queued before the game mode is activated
-    // we assume they are intended for the first active game mode.
-    // In that case those tasks were blocked behind a promise that resolves on the
-    // mOnFirstInit call. But we have to do our initialisation first!
-    let preInitQueue: Promise<void>;
-    if (this.mOnFirstInit !== null) {
-      preInitQueue = this.mLootQueue;
-      this.mLootQueue = Promise.resolve();
-    }
+        // little bit of hackery: If tasks are queued before the game mode is activated
+        // we assume they are intended for the first active game mode.
+        // In that case those tasks were blocked behind a promise that resolves on the
+        // mOnFirstInit call. But we have to do our initialisation first!
+        let preInitQueue: Promise<void>;
+        if (this.mOnFirstInit !== null) {
+          preInitQueue = this.mLootQueue;
+          this.mLootQueue = Promise.resolve();
+        }
 
-    const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
-    this.enqueue(t('Update Masterlist'), () => {
-      return fs.ensureDirAsync(path.dirname(masterlistPath))
-          .then(() =>
-                    this.updateAsync(masterlistPath,
-                                     `https://github.com/loot/${gameMode}.git`,
-                                     'v0.10')
-                        .catch(err => {
-                          this.mExtensionApi.showErrorNotification(
-                              'failed to update masterlist', err);
-                        }));
-    });
-    this.readLists(gameMode);
-    if (preInitQueue) {
-      // there were tasks enqueued before the game mode was activated. Now we can run them.
-      // enqueue a new promise that resolves once those pre-init tasks are done and unblock them.
-      this.enqueue(t('Init Queue'), () => {
-        this.mOnFirstInit();
-        this.mOnFirstInit = null;
-        return new Promise<void>((resolve, reject) => {
-          preInitQueue.then(() => resolve());
+        const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
+        this.enqueue(t('Update Masterlist'), () => {
+          return fs.ensureDirAsync(path.dirname(masterlistPath))
+            .then(() =>
+              this.updateAsync(masterlistPath,
+                `https://github.com/loot/${gameMode}.git`,
+                'v0.10')
+                .catch(err => {
+                  this.mExtensionApi.showErrorNotification(
+                    'failed to update masterlist', err);
+                }));
         });
+        this.readLists(gameMode);
+        if (preInitQueue) {
+          // there were tasks enqueued before the game mode was activated. Now we can run them.
+          // enqueue a new promise that resolves once those pre-init tasks are done and unblock
+          // them.
+          this.enqueue(t('Init Queue'), () => {
+            this.mOnFirstInit();
+            this.mOnFirstInit = null;
+            return new Promise<void>((resolve, reject) => {
+              preInitQueue.then(() => resolve());
+            });
+          });
+        }
       });
-    }
   }
 
   private promisify() {

@@ -90,7 +90,7 @@ class StyleManager {
     return new Promise<void>((resolve, reject) => {
       sass.render({
         outFile: path.join(assetsPath, 'theme.css'),
-        includePaths: [assetsPath, modulesPath],
+        includePaths: [assetsPath, asarUnpacked(modulesPath)],
         data: sassIndex,
         outputStyle: isDevel ? 'expanded' : 'compressed',
       },

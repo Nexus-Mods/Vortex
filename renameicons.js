@@ -51,6 +51,7 @@ const nameMap = {
   'dashboard-half': 'tachometer',
   'like-2': 'like-maybe',
   security: 'shield',
+  'lock-open': 'unlock',
 };
 
 function transformId(id) {

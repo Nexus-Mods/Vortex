@@ -34,6 +34,10 @@ class GameThumbnail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, active, container, game, getBounds, onRefreshGameInfo, type } = this.props;
 
+    if (game === undefined) {
+      return null;
+    }
+
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
     const gameInfoPopover = (
