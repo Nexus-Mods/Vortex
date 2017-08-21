@@ -70,7 +70,8 @@ function init(language: string): Promise<IInitResult> {
         },
         (error, tFunc) => {
           if ((error !== null) && (error !== undefined)) {
-            return resolve({i18n: res, tFunc: str => str, error});
+            const trans = str => str;
+            return resolve({i18n: res, tFunc: trans, error});
           }
           resolve({i18n: res, tFunc});
         });

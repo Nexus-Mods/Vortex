@@ -136,7 +136,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
       const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
       return (
         <Select
-          options={choices}
+          options={choices as any}
           value={choiceKey}
           onChange={this.changeCellSelect}
           valueKey='key'
@@ -225,7 +225,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
     this.changeCell(evt.currentTarget.value);
   }
 
-  private changeCellSelect = (value: { key: string, text: string }) => {
+  private changeCellSelect = (value: any) => {
     if (value !== null) {
       this.changeCell(value.key);
     } else {

@@ -270,7 +270,7 @@ class ExtensionManager {
       selectExecutable: this.selectExecutable,
       selectDir: this.selectDir,
       events: this.mEventEmitter,
-      translate: (input: string, options?: I18next.TranslationOptions) => {
+      translate: (input, options?) => {
         return this.mTranslator !== undefined ? this.mTranslator.t(input, options) : input;
       },
       getPath: this.getPath,

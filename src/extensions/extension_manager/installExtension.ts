@@ -8,7 +8,7 @@ import * as rimraf from 'rimraf';
 const app = appIn || remote.app;
 
 type rimrafType = (path: string, options: any, callback: (err?) => void) => void;
-const rimrafAsync = Promise.promisify(rimraf as rimrafType);
+const rimrafAsync: (removePath: string, options: any) => Promise<void> = Promise.promisify(rimraf);
 
 function installExtension(archivePath: string): Promise<void> {
   const extensionsPath = path.join(app.getPath('userData'), 'plugins');

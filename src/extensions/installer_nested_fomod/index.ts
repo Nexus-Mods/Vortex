@@ -8,10 +8,11 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {log} from '../../util/log';
 
 import {IProgressDelegate} from '../mod_management/types/IInstall';
+import {ISupportedResult} from '../mod_management/types/ITestSupported';
 
 import * as path from 'path';
 
-function testSupported(files: string[]): Promise<boolean> {
+function testSupported(files: string[]): Promise<ISupportedResult> {
   return new Promise((resolve, reject) => {
     const fomod = files.find((file) => path.extname(file) === '.fomod');
     if (fomod !== undefined) {
