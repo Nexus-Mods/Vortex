@@ -1151,6 +1151,19 @@ a[role=menuitem] svg {
 ////////////////////
 // single components
 
+// diagnostics files dialog
+.diagnostics-files-sessions-panel {
+  height: 100%;
+  max-height: 200px;
+  overflow-y: scroll;
+}
+
+.diagnostics-files-log-panel {
+  height: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
 // about dialog
 .about-panel {
   height: 100%;

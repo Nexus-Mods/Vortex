@@ -4,6 +4,7 @@
 import {} from './about_dialog';
 import {} from './category_management';
 import {} from './dashboard';
+import {} from './diagnostics_files';
 import {} from './download_management';
 import {} from './extension_manager';
 import {} from './firststeps_dashlet';
