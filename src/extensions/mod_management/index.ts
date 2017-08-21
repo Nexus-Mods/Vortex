@@ -283,16 +283,18 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute {
     isSortable: true,
     isToggleable: true,
     isDefaultVisible: false,
+    supportsMultiple: true,
     calc: (mod: IMod) => {
       const source = modSources.find(iter => iter.id === mod.attributes['source']);
       return source !== undefined ? source.name : 'None';
     },
     edit: {
       choices: () => modSources.map(source => ({ key: source.id, text: source.name })),
-      onChangeValue: (rowId: string, newValue: string) => {
+      onChangeValue: (rowIds: string[], newValue: string) => {
         const store = api.store;
         const gameMode = activeGameId(store.getState());
-        store.dispatch(setModAttribute(gameMode, rowId, 'source', newValue));
+        rowIds.forEach(rowId => store.dispatch(setModAttribute(
+                           gameMode, rowId, 'source', newValue)));
       },
     },
   };

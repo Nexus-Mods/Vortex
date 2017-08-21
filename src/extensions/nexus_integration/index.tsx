@@ -283,12 +283,14 @@ function renderNexusModIdDetail(
   mod: IModWithState,
   t: I18next.TranslationFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
+  const fileName: string = getSafe(mod.attributes, ['name'], undefined);
   const gameMode = activeGameId(store.getState());
   return (
     <NexusModIdDetail
       modId={mod.id}
       nexusModId={nexusModId}
       gameId={gameMode}
+      fileName={fileName}
       readOnly={mod.state === 'downloaded'}
       t={t}
       store={store}
@@ -388,11 +390,13 @@ function genModIdAttribute(api: IExtensionApi): ITableAttribute {
     calc: (mod: IMod) =>
       mod.attributes['source'] === 'nexus'
         ? getSafe(mod.attributes, ['modId'], null)
-        : undefined,
+        : undefined
+    ,
     placement: 'detail',
     isToggleable: false,
     edit: {},
     isSortable: false,
+    isVolatile: true,
   };
 }
 

@@ -6,7 +6,7 @@ import { setModAttribute } from '../../mod_management/actions/mods';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
+import { Button, ControlLabel, FormControl, FormGroup, InputGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
 
 export interface IProps {
@@ -14,6 +14,7 @@ export interface IProps {
   modId: string;
   readOnly: boolean;
   nexusModId: string;
+  fileName: string;
   t: I18next.TranslationFunction;
   store: Redux.Store<any>;
 }
@@ -25,7 +26,7 @@ export interface IProps {
  */
 class NexusModIdDetail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, nexusModId, readOnly } = this.props;
+    const { t, fileName, nexusModId, readOnly } = this.props;
 
     const isIdValid = (nexusModId !== undefined) && !isNaN(Number(nexusModId));
 
@@ -34,12 +35,23 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
         <FormGroup
           validationState={isIdValid ? 'success' : 'warning'}
         >
-          <FormInput
-            value={nexusModId || ''}
-            onChange={this.updateNexusModId}
-            readOnly={readOnly}
-          />
-          {readOnly ? null : <FormFeedback />}
+          <InputGroup style={{ width: '100%' }}>
+            <div style={{ position: 'relative' }}>
+              <FormInput
+                placeholder='Placeholder'
+                value={nexusModId || ''}
+                onChange={this.updateNexusModId}
+                readOnly={readOnly}
+              />
+              {readOnly ? null : <FormFeedback />}
+            </div>
+            {(readOnly || isIdValid || (fileName === undefined))
+              ? null
+              : (<InputGroup.Button style={{ width: 'initial' }}>
+                <Button onClick={this.guessNexusId}>{t('Guess')}</Button>
+              </InputGroup.Button>
+              )}
+          </InputGroup>
           <ControlLabel>
             {isIdValid ? <p><a onClick={this.openPage}>{t('Visit on www.nexusmods.com')}</a></p>
                        : <p>{t('Nexus Mod Ids are numbers')}</p>}
@@ -47,6 +59,14 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
         </FormGroup>
       </div>
     );
+  }
+
+  private guessNexusId = () => {
+    const { fileName, gameId, modId, store } = this.props;
+    const match = fileName.match(/-([0-9]+)-/);
+    if (match !== null) {
+      store.dispatch(setModAttribute(gameId, modId, 'modId', match[1]));
+    }
   }
 
   private updateNexusModId = (newValue) => {

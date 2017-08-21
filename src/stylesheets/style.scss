@@ -135,6 +135,10 @@ textarea {
   background-color: $brand-bg;
 }
 
+.form-control-feedback {
+  z-index: 4;
+}
+
 .has-warning {
   .help-block,
   .control-label,
@@ -596,9 +600,9 @@ a[role=menuitem] svg {
   background-color: $brand-secondary;
 }
 
-::placeholder,
 ::-webkit-input-placeholder {
-  color: lighten($text-color, 20%);
+  color: darken($text-color, 20%) !important;
+  font-style: italic;
 }
 
 // /globals

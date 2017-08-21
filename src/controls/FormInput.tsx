@@ -26,6 +26,7 @@ export interface IComponentState {
  */
 class FormInput extends React.PureComponent<IProps, IComponentState> {
   private mDebouncer: Debouncer;
+  private mLastCommitted: any;
 
   constructor(props: IProps) {
     super(props);
@@ -33,9 +34,17 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       cachedValue: props.value,
     };
     this.mDebouncer = new Debouncer(newValue => {
+      this.mLastCommitted = newValue;
       this.props.onChange(newValue);
       return null;
     }, 250);
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if ((newProps.value !== this.props.value)
+        && (this.mLastCommitted !== newProps.value)) {
+      this.setState({ cachedValue: newProps.value });
+    }
   }
 
   public render(): JSX.Element {
