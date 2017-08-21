@@ -44,9 +44,10 @@ export class HTTPError extends Error {
   }
 }
 
-function handleRestResult(resolve, reject, url, error, response, body) {
+function handleRestResult(resolve, reject, url: string, error: any,
+                          response: request.RequestResponse, body: any) {
   if (error !== null) {
-    if (error.code === 'ETIMEDOUT') {
+    if ((error.code === 'ETIMEDOUT') || (error.code === 'ESOCKETTIMEOUT')) {
       return reject(new TimeoutError('request timed out: ' + url));
     }
     return reject(error);

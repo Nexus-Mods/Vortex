@@ -83,7 +83,7 @@ class InputButton extends ComponentEx<IProps, IComponentState> {
             tooltip={t('Cancel')}
             onClick={this.closeInput}
           >
-            <Icon name='remove' />
+            <Icon name='cross' />
           </Button>
         </div>
       );
