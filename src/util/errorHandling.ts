@@ -14,7 +14,6 @@ import {
 } from 'electron';
 import * as fs from 'fs-extra-promise';
 import NexusT from 'nexus-api';
-import * as restT from 'node-rest-client';
 import * as opn from 'opn';
 import * as path from 'path';
 import * as uuid from 'uuid';
@@ -82,6 +81,9 @@ export function createErrorReport(type: string, error: IError, labels: string[] 
 }
 
 // unused code for reporting to github directly
+// TODO: remove eventually. If this gets reactivated for some reason, please replace
+//   node-rest-client with request
+/*
 function githubReport(hash: string, type: string, error: IError, labels: string[]): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const { Client } = require('node-rest-client') as typeof restT;
@@ -124,6 +126,7 @@ function githubReport(hash: string, type: string, error: IError, labels: string[
       });
   });
 }
+*/
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[]): Promise<void> {
   const app = appIn || remote.app;

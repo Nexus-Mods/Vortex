@@ -2,8 +2,8 @@ import * as types from './types';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs';
-import * as restT from 'node-rest-client';
 import request = require('request');
+import format = require('string-template');
 
 interface IRequestArgs {
   headers?: any;
@@ -44,20 +44,70 @@ export class HTTPError extends Error {
   }
 }
 
+function handleRestResult(resolve, reject, url, error, response, body) {
+  if (error !== null) {
+    if (error.code === 'ETIMEDOUT') {
+      return reject(new TimeoutError('request timed out: ' + url));
+    }
+    return reject(error);
+  }
+
+  try {
+    const data = JSON.parse(body);
+
+    if ((response.statusCode < 200) || (response.statusCode >= 300)) {
+      reject(new NexusError(data.message, response.statusCode));
+    }
+
+    resolve(data);
+  } catch (err) {
+    reject(new Error('failed to parse server response'));
+  }
+}
+
+function restGet(url: string, args: IRequestArgs): Promise<any> {
+  return new Promise<any>((resolve, reject) => {
+    request.get(format(url, args.path || {}), {
+      headers: args.headers,
+      followRedirect: true,
+      timeout: args.requestConfig.timeout,
+    }, (error, response, body) => {
+      handleRestResult(resolve, reject, url, error, response, body);
+    });
+  });
+}
+
+function restPost(url: string, args: IRequestArgs): Promise<any> {
+  return new Promise<any>((resolve, reject) => {
+    request.post({
+      url: format(url, args.path),
+      headers: args.headers,
+      followRedirect: true,
+      timeout: args.requestConfig.timeout,
+      form: args.data,
+    }, (error, response, body) => {
+      handleRestResult(resolve, reject, url, error, response, body);
+    });
+  });
+}
+
+function rest(url: string, args: IRequestArgs): Promise<any> {
+  return args.data !== undefined
+    ? restPost(url, args)
+    : restGet(url, args);
+}
+
 /**
  * implements the Nexus API
  *
  * @class Nexus
  */
 class Nexus {
-  private mRestClient: restT.Client;
   private mBaseData: IRequestArgs;
 
   private mBaseURL = 'https://api.nexusmods.com/v1';
 
   constructor(game: string, apiKey: string, timeout?: number) {
-    const { Client } = require('node-rest-client') as typeof restT;
-    this.mRestClient = new Client();
     this.mBaseData = {
       headers: {
         'Content-Type': 'application/json',
@@ -74,8 +124,6 @@ class Nexus {
         timeout: timeout || 5000,
       },
     };
-
-    this.initMethods();
   }
 
   public setGame(gameId: string): void {
@@ -87,116 +135,53 @@ class Nexus {
   }
 
   public validateKey(key?: string): Promise<types.IValidateKeyResponse> {
-    return new Promise<types.IValidateKeyResponse>((resolve, reject) => {
-      const req = this.mRestClient.methods.validateKey(
-        this.args({ headers: this.filter({ APIKEY: key }) }),
-        (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => {
-        req.abort();
-        reject(new TimeoutError('timeout validating key'));
-      });
-      req.on('responesTimeout', () => reject(new TimeoutError('timeout validateing key')));
-      req.on('error', (err) => reject(err));
-    });
+    return rest(this.mBaseURL + '/users/validate',
+                this.args({ headers: this.filter({ APIKEY: key }) }));
   }
 
   public endorseMod(modId: number, modVersion: string,
                     endorseStatus: string, gameId?: string): Promise<any> {
-    return new Promise<any>((resolve, reject) => {
-      this.mRestClient.methods.endorseMod(
-        this.args({
-          path: this.filter({ gameId, modId, endorseStatus }),
-          data: this.filter({ Version: modVersion }),
-        }),
-        (data, response) => this.handleResult(data, response, resolve, reject));
-    });
+    return rest(this.mBaseURL + '/games/{gameId}/mods/{modId}/{endorseStatus}', this.args({
+      path: this.filter({ gameId, modId, endorseStatus }),
+      data: this.filter({ Version: modVersion }),
+    }));
   }
 
   public getGames(): Promise<types.IGameListEntry[]> {
-    return new Promise<types.IGameListEntry[]>((resolve, reject) => {
-      const req = this.mRestClient.methods.getGames(this.args({}),
-        (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => {
-        req.abort();
-        reject(new TimeoutError('timeout contacting api'));
-      });
-      req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
-      req.on('error', (err) => reject(err));
-    });
+    return rest(this.mBaseURL + '/games', this.args({}));
   }
 
   public getGameInfo(gameId?: string): Promise<types.IGameInfo> {
-    return new Promise<types.IGameInfo>((resolve, reject) => {
-      const req = this.mRestClient.methods.getGameInfo(
-        this.args({ path: this.filter({ gameId }) }),
-        (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => {
-        req.abort();
-        reject(new TimeoutError('timeout contacting api'));
-      });
-      req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
-      req.on('error', (err) => reject(err));
-    });
+    return rest(this.mBaseURL + '/games/{gameId}', this.args({
+      path: this.filter({ gameId }),
+    }));
   }
 
   public getModInfo(modId: number, gameId?: string): Promise<types.IModInfo> {
-    return new Promise<types.IModInfo>((resolve, reject) => {
-      const req = this.mRestClient.methods.getModInfo(
-        this.args({ path: this.filter({ modId, gameId }) }),
-        (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', () => {
-        req.abort();
-        reject(new TimeoutError('timeout contacting api'));
-      });
-      req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
-      req.on('error', (err) => reject(err));
-    });
+    return rest(this.mBaseURL + '/games/{gameId}/mods/{modId}', this.args({
+      path: this.filter({ modId, gameId }),
+    }));
   }
 
   public getModFiles(modId: number, gameId?: string): Promise<types.IModFiles> {
-    return new Promise<types.IModFiles>((resolve, reject) => {
-      const req = this.mRestClient.methods.getModFiles(
-        this.args({ path: this.filter({ modId, gameId }) }),
-        (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', r => {
-        req.abort();
-        reject(new TimeoutError('timeout contacting api ' + modId));
-      });
-      req.on('responesTimeout', res => reject(new TimeoutError('timeout contacting api')));
-      req.on('error', (err) => reject(err));
-    });
+    return rest(this.mBaseURL + '/games/{gameId}/mods/{modId}/files', this.args({
+      path: this.filter({ modId, gameId }),
+    }));
   }
 
   public getFileInfo(modId: number,
                      fileId: number,
                      gameId?: string): Promise<types.IFileInfo> {
-    return new Promise<types.IFileInfo>((resolve, reject) => {
-      const req = this.mRestClient.methods.getFileInfo(
-        this.args({ path: this.filter({ modId, fileId, gameId }) }),
-        (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', r => {
-        req.abort();
-        reject(new TimeoutError('timeout contacting api ' + modId));
-      });
-      req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
-      req.on('error', (err) => reject(err));
-    });
+    return rest(this.mBaseURL + '/games/{gameId}/mods/{modId}/files/{fileId}', this.args({
+      path: this.filter({ modId, fileId, gameId }),
+    }));
   }
 
   public getDownloadURLs(modId: number,
                          fileId: number,
                          gameId?: string): Promise<types.IDownloadURL[]> {
-    return new Promise<types.IDownloadURL[]>((resolve, reject) => {
-      const req = this.mRestClient.methods.getDownloadURLs(
-        this.args({ path: this.filter({ modId, fileId, gameId }) }),
-        (data, response) => this.handleResult(data, response, resolve, reject));
-      req.on('requestTimeout', r => {
-        req.abort();
-        reject(new TimeoutError('timeout contacting api ' + modId));
-      });
-      req.on('responesTimeout', () => reject(new TimeoutError('timeout contacting api')));
-      req.on('error', (err) => reject(err));
-    });
+    return rest(this.mBaseURL + '/games/{gameId}/mods/{modId}/files/{fileId}/download_link',
+                this.args({ path: this.filter({ modId, fileId, gameId }) }));
   }
 
   public sendFeedback(message: string,
@@ -275,35 +260,6 @@ class Nexus {
       };
     }
     return result;
-  }
-
-  private initMethods() {
-    // tslint:disable:no-invalid-template-strings
-    this.mRestClient.registerMethod(
-      'validateKey', this.mBaseURL + '/users/validate', 'GET');
-
-    this.mRestClient.registerMethod(
-      'getGames', this.mBaseURL + '/games', 'GET');
-
-    this.mRestClient.registerMethod(
-      'getGameInfo', this.mBaseURL + '/games/${gameId}', 'GET');
-
-    this.mRestClient.registerMethod(
-      'getModInfo', this.mBaseURL + '/games/${gameId}/mods/${modId}', 'GET');
-
-    this.mRestClient.registerMethod(
-      'getModFiles', this.mBaseURL + '/games/${gameId}/mods/${modId}/files', 'GET');
-
-    this.mRestClient.registerMethod(
-      'getFileInfo', this.mBaseURL + '/games/${gameId}/mods/${modId}/files/${fileId}', 'GET');
-
-    this.mRestClient.registerMethod(
-      'endorseMod', this.mBaseURL + '/games/${gameId}/mods/${modId}/${endorseStatus}', 'POST');
-
-    this.mRestClient.registerMethod(
-      'getDownloadURLs',
-      this.mBaseURL + '/games/${gameId}/mods/${modId}/files/${fileId}/download_link', 'GET');
-    // tslint:enable:no-invalid-template-string
   }
 }
 

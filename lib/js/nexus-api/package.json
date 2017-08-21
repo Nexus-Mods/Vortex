@@ -21,10 +21,10 @@
     "@types/ref-struct": "^0.0.28",
     "@types/ref-union": "^0.0.28",
     "@types/typescript": "^2.0.0",
-    "typescript": "2.3.4"
+    "typescript": "2.4.2"
   },
   "dependencies": {
     "bluebird": "^3.5.0",
-    "node-rest-client": "^2.0.1"
+    "string-template": "^1.0.0"
   }
 }

@@ -30,9 +30,9 @@ import { settingsReducer } from './reducers/settings';
 import { checkModVersion, retrieveModInfo } from './util/checkModsVersion';
 import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
-import fetchUserInfo from './util/fetchUserInfo';
 import retrieveCategoryList from './util/retrieveCategories';
 import submitFeedback from './util/submitFeedback';
+import transformUserInfo from './util/transformUserInfo';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import LoginDialog from './views/LoginDialog';
@@ -431,15 +431,15 @@ function once(api: IExtensionApi) {
     }
 
     if (state.confidential.account.nexus.APIKey !== undefined) {
-      fetchUserInfo(nexus, state.confidential.account.nexus.APIKey)
+      nexus.validateKey(state.confidential.account.nexus.APIKey)
         .then(userInfo => {
-          api.store.dispatch(setUserInfo(userInfo));
+          api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
         })
         .catch(TimeoutError, err => {
           showError(api.store.dispatch,
             'API Key validation timed out',
             'Server didn\'t respond to validation request, web-based '
-            + 'features will be unavailable');
+            + 'features will be unavailable', false, undefined, false);
         })
         .catch(NexusError, err => {
           showError(api.store.dispatch,
@@ -553,9 +553,9 @@ function once(api: IExtensionApi) {
       nexus.setKey(newValue);
       api.store.dispatch(setUserInfo(undefined));
       if (newValue !== undefined) {
-        fetchUserInfo(nexus, newValue)
+        nexus.validateKey(newValue)
           .then(userInfo => {
-            api.store.dispatch(setUserInfo(userInfo));
+            api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
           })
           .catch(err => {
             api.store.dispatch(setUserAPIKey(undefined));

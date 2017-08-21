@@ -204,7 +204,6 @@
     "minimist": "^1.2.0",
     "nbind": "^0.3.6",
     "node-ipc": "^9.0.1",
-    "node-rest-client": "^3.1.0",
     "node-sass": "^4.3.0",
     "npm-watch": "^0.1.6",
     "prop-types": "^15.5.8",
