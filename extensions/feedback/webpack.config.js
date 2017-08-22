@@ -1,24 +1,22 @@
 var webpack = require('webpack');
 
 module.exports = {
-  entry: './out/index.js',
+  entry: './src/index.tsx',
   target: 'electron-renderer',
   node: { __filename: false, __dirname: false },
   output: {
     libraryTarget: 'commonjs2',
     library: 'feedback',
-    filename: './dist/index.js'
+    filename: './dist/index.js',
+    sourceMapFilename: './dist/feedback.js.map',
   },
   module: {
     loaders: [
-      { test: /\.json?$/, loader: 'json-loader' },
+      { test: /\.tsx?$/, loader: 'ts-loader' },
+      { test: /\.json$/, loader: 'json-loader' },
     ]
   },
-  resolve: { extensions: ['', '.js', '.jsx', '.json'] },
-  _plugins: [
-    new webpack.optimize.UglifyJsPlugin(
-        { compress: { warnings: false }, comments: false, sourceMap: false })
-  ],
+  resolve: { extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'] },
   devtool: 'source-map',
   externals: [
     'bluebird',

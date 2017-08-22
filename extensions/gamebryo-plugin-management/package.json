@@ -5,13 +5,12 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "postinstall": "electron-rebuild -w esptk,loot -t dev,prod",
     "copy_esptk": "copyfiles -f ./node_modules/esptk/build/Release/nbind.node ./dist/esptk",
     "copy_loot": "copyfiles -f ./node_modules/loot/build/Release/nbind.node ./dist/loot && copyfiles -f ./node_modules/loot/loot_api/loot_api.dll ./dist/loot",
     "prebuild": "typings prune && typings install",
-    "build": "npm run tsc && npm run webpack && npm run copy_esptk && npm run copy_loot && copyfiles -f src/stylesheets/plugin_management.scss dist && extractInfo",
+    "build": "npm run webpack && npm run copy_esptk && npm run copy_loot && copyfiles -f src/stylesheets/plugin_management.scss dist && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-plugin-management",
     "buildDev": "npm run build && npm run installDev"
   },
@@ -25,9 +24,9 @@
   "devDependencies": {
     "@types/iconv-lite": "^0.0.1",
     "@types/immutability-helper" : "^2.0.15",
-    "@types/react": "^0.14.55",
-    "@types/react-bootstrap": "^0.0.37",
-    "@types/react-dom": "^0.14.19",
+    "@types/react": "^16.0.3",
+    "@types/react-bootstrap": "^0.0.52",
+    "@types/react-dom": "^15.5.4",
     "@types/react-i18next": "^1.7.5",
     "@types/react-redux": "4.4.35",
     "@types/react-router": "^2.0.41",
@@ -41,7 +40,7 @@
     "electron-rebuild": "^1.4.0",
     "esptk": "file:../../lib/cpp/esptk",
     "fs-extra-promise": "^0.4.1",
-    "i18next": "^3.5.1",
+    "i18next": "^8.4.3",
     "iconv-lite": "^0.4.15",
     "immutability-helper": "^2.2.2",
     "json-loader": "^0.5.4",
@@ -53,7 +52,8 @@
     "react-i18next": "^1.10.1",
     "react-select": "^1.0.0-rc.5",
     "redux-act": "^1.1.0",
-    "webpack": "^1.13.2",
-    "js-yaml": "^3.8.2"
+    "webpack": "^3.5.5",
+    "js-yaml": "^3.8.2",
+    "ts-loader": "^2.3.3"
   }
 }

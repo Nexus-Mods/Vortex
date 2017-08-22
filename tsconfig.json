@@ -10,6 +10,7 @@
         "rootDir": "./src",
         "outDir": "./out",
         "sourceMap": true,
+        "mapRoot": "/",
         "jsx":"react"
     },
     "files": [
