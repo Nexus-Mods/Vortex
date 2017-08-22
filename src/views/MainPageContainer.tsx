@@ -44,7 +44,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, {}> {
     const props = page.propsFunc();
 
     const classes = ['main-page'];
-    classes.push(active ? 'active' : 'hidden');
+    classes.push(active ? 'page-active' : 'page-hidden');
     if (secondary) {
       classes.push('secondary');
     }

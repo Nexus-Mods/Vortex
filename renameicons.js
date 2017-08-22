@@ -70,6 +70,10 @@ function transformPath(path) {
   const res = Object.assign({}, path);
   if (res.$.fill === 'currentColor') {
     delete res.$.fill;
+  } else if ((res.$.fill === 'none') && (res.$.stroke === undefined)) {
+    // we don't stroke by default so if there is no filling,
+    // we have to (re-)enable stroke
+    res.$.stroke = 'currentColor';
   } else if (res.$['data-color']) {
     delete res.$['data-color'];
   }
