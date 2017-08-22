@@ -1,29 +1,31 @@
-var webpack = require('webpack');
+const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
-  entry: './out/index.js',
+  entry: './src/index.ts',
   target: 'electron-renderer',
   node: { __filename: false, __dirname: false },
   output: {
     libraryTarget: 'commonjs2',
     library: 'gamebryo-plugin-management',
-    filename: './dist/index.js'
+    filename: 'index.js',
+    sourceMapFilename: 'gamebryo-plugins.js.map',
+    path: path.resolve(__dirname, 'dist'),
   },
   module: {
     loaders: [
-      { test: /\.json?$/, loader: 'json-loader' },
+      { test: /\.tsx?$/, loader: 'ts-loader' },
+      { test: /\.json$/, loader: 'json-loader' },
     ]
   },
-  resolve: { extensions: ['', '.js', '.jsx', '.json'] },
-  _plugins: [
-    new webpack.optimize.UglifyJsPlugin(
-        { compress: { warnings: false }, comments: false, sourceMap: false })
-  ],
+  resolve: { extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'] },
+  plugins: [],
   devtool: 'source-map',
   externals: [
     'bluebird',
     'fs',
     'fs-extra-promise',
+    'iconv-lite', 
     'immutability-helper',
     'lodash',
     'net',
@@ -35,6 +37,8 @@ module.exports = {
     'react-act',
     'react-bootstrap',
     'react-dom',
+    'react-dnd',
+    'react-dnd-html5-backend',
     'react-i18next',
     'react-layout-pane',
     'react-redux',

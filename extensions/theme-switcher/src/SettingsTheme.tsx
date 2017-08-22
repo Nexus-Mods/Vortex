@@ -197,7 +197,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
       if (res.action === 'Clone') {
         if (res.input.name && (themes.indexOf(res.input.name) === -1)) {
           const targetDir = path.join(themePath(), res.input.name);
-          fs.ensureDirAsync(targetDir)
+          return fs.ensureDirAsync(targetDir)
           .then(() => this.saveThemeInternal(res.input.name, this.state.variables))
           .then(() => {
             this.nextState.themes.push(res.input.name);
@@ -205,6 +205,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
           });
         }
       }
+      return Promise.resolve();
     });
   }
 

@@ -87,6 +87,8 @@ function install(files: string[], scriptPath: string,
           resolve(result);
         }
       });
+  }).finally(() => {
+    currentInstallPromise = Promise.resolve();
   });
   return currentInstallPromise;
 }

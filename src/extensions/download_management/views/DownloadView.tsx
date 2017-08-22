@@ -10,7 +10,7 @@ import GameFilter from '../../../controls/table/GameFilter';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
-import { IDialogResult } from '../../../types/IDialog';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getCurrentLanguage } from '../../../util/i18n';
@@ -63,7 +63,8 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onShowDialog: (type, title, content, actions) => Promise<IDialogResult>;
+  onShowDialog: (type: DialogType, title: string, content: IDialogContent,
+                 actions: DialogActions) => Promise<IDialogResult>;
   onDeselect: (downloadId: string) => void;
   onStartMove: (id: string, filePath: string, game: string) => void;
   onFinishMove: (id: string) => void;
@@ -140,7 +141,8 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
           if (this.mIsMounted) {
             this.nextState.mtime = stat.mtime;
           }
-        });
+        })
+        .catch(err => undefined);
     }
   }
 }
@@ -204,8 +206,8 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
           return undefined;
         }
         return fs.statAsync(path.join(this.props.downloadPath, attributes.localPath))
-        .then(
-          stat => Promise.resolve(stat.mtime));
+        .then(stat => Promise.resolve(stat.mtime))
+        .catch(() => undefined);
       },
       placement: 'both',
       isToggleable: true,
@@ -378,10 +380,10 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         message: t('Do you really want to delete this archive?',
           { count: downloadIds.length, replace: { count: downloadIds.length } })
         + '\n' + downloadNames.join('\n'),
-      }, {
-          Cancel: null,
-          Remove: () => downloadIds.forEach(removeId),
-        });
+      }, [
+          { label: 'Cancel' },
+          { label: 'Remove', action: () => downloadIds.forEach(removeId) },
+      ]);
     }
   }
 
@@ -417,19 +419,21 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       if (download.failCause.htmlFile !== undefined) {
         onShowDialog('error', 'Download failed', {
           htmlFile: download.failCause.htmlFile,
-        }, {
-            Delete: () => this.context.api.events.emit('remove-download', downloadId),
-            Close: null,
-          });
+        }, [
+            { label: 'Delete',
+              action: () => this.context.api.events.emit('remove-download', downloadId) },
+            { label: 'Close' },
+        ]);
       }
     } else if (download.state === 'redirect') {
       onShowDialog('error', 'Received website', {
         message: t('The url lead to this website, maybe it contains a redirection?'),
         htmlFile: download.failCause.htmlFile,
-      }, {
-          Delete: () => this.context.api.events.emit('remove-download', downloadId),
-          Close: null,
-        });
+      }, [
+          { label: 'Delete',
+            action: () => this.context.api.events.emit('remove-download', downloadId) },
+          { label: 'Close' },
+      ]);
     }
   }
 

@@ -49,7 +49,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   private renderLoginName() {
     const { t, APIKey, userInfo } = this.props;
 
-    if ((APIKey !== undefined) && (userInfo !== undefined)) {
+    if ((APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null)) {
       return (
         <FormGroup>
           <div className='username'>
@@ -68,7 +68,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   private renderAvatar() {
     const { t, APIKey, userInfo } = this.props;
 
-    const loggedIn = (APIKey !== undefined) && (userInfo !== undefined);
+    const loggedIn = (APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null);
 
     return (
       <Button

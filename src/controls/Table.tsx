@@ -118,7 +118,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     };
     this.mVisibleAttributes = this.visibleAttributes(props.objects, props.attributeState);
     this.updateCalculatedValues({}, props)
-    .then(() => this.refreshSorted(props));
+    .then(() => {
+      this.refreshSorted(props);
+      return null;
+    });
 
     this.mSplitDebouncer = new Debouncer((...args) => {
       props.onSetSplitPos(props.tableId, args[0]);
@@ -138,8 +141,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     if ((newProps.data !== this.props.data) || (newProps.dataId !== this.props.dataId)) {
       this.updateCalculatedValues(this.props.data, newProps)
-      .then(() => this.refreshSorted(newProps));
-      this.updateSelection(newProps);
+      .then(() => {
+        this.refreshSorted(newProps);
+        this.updateSelection(newProps);
+        return null;
+      });
     } else if ((newProps.attributeState !== this.props.attributeState)
             || (newProps.language !== this.props.language)
             || (newProps.filter !== this.props.filter)) {
@@ -545,7 +551,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       return Promise.map(objects, (attribute: ITableAttribute) => {
         if ((attribute.isVolatile === true) || (oldData[rowId] !== data[rowId])) {
           return Promise.resolve(attribute.calc(data[rowId], t))
-            .then((newValue) => {
+            .then(newValue => {
               if (!_.isEqual(newValue, newValues[rowId][attribute.id])) {
                 newValues = update(newValues, {
                   [rowId]: {
@@ -553,6 +559,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
                   },
                 });
               }
+              return null;
             });
         } else {
           return Promise.resolve();

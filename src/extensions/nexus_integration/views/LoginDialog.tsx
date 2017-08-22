@@ -58,7 +58,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
       <Modal show={visible} onHide={onHide}>
         <Modal.Header>
           <Modal.Title>
-          {userInfo === undefined ? t('API Key') : t('User Info')}
+          {((userInfo === undefined) || (userInfo === null)) ? t('API Key') : t('User Info')}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -75,14 +75,16 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
     const { APIKey, userInfo } = this.props;
     return (
       <form>
-        {userInfo === undefined ? this.renderKeyInput() : this.renderAccountInfo()}
+        {((userInfo === undefined) || (userInfo === null))
+          ? this.renderKeyInput()
+          : this.renderAccountInfo()}
       </form>
     );
   }
 
   private renderSubmitButton(): JSX.Element {
     const { t, APIKey, userInfo } = this.props;
-    return (userInfo === undefined)
+    return ((userInfo === undefined) || (userInfo === null))
       ? (
         <Button id='submit-apikey' tooltip={t('Submit')} onClick={this.apiKeySubmit}>
           {t('Submit')}
@@ -172,6 +174,8 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
       return { state: 'warning', reason: 'API Key rejected' };
     } else if ((APIKey !== undefined) && (userInfo === undefined)) {
       return { pending: true, reason: 'Verifying...' };
+    } else if ((APIKey !== undefined) && (userInfo === null)) {
+      return { state: 'warning', reason: 'API Key not validated' };
     } else if ((!truthy(editAPIKey) && !truthy(APIKey)) || (editAPIKey === APIKey)) {
       return {};
     }
@@ -182,6 +186,10 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
   private apiKeySubmit = () => {
     const { onSetAPIKey } = this.props;
     this.setState(update(this.state, { didSubmit: { $set: true } }));
+    if (this.state.APIKey === this.props.APIKey) {
+      // unset the api key first to ensure this registers as a state-change
+      onSetAPIKey(undefined);
+    }
     onSetAPIKey(this.state.APIKey);
   }
 

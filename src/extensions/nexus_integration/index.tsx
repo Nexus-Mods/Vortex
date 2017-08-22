@@ -30,9 +30,9 @@ import { settingsReducer } from './reducers/settings';
 import { checkModVersion, retrieveModInfo } from './util/checkModsVersion';
 import { convertGameId, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
-import fetchUserInfo from './util/fetchUserInfo';
 import retrieveCategoryList from './util/retrieveCategories';
 import submitFeedback from './util/submitFeedback';
+import transformUserInfo from './util/transformUserInfo';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import LoginDialog from './views/LoginDialog';
@@ -208,9 +208,11 @@ function processErrorMessage(
 }
 
 function endorseModImpl(
-  store: Redux.Store<any>,
+  api: IExtensionApi,
   gameId: string,
-  modId: string, endorsedStatus: string) {
+  modId: string,
+  endorsedStatus: string) {
+  const { store } = api;
   const mod: IMod = getSafe(store.getState(), ['persistent', 'mods', gameId, modId], undefined);
 
   if (mod === undefined) {
@@ -229,6 +231,14 @@ function endorseModImpl(
 
   const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
+
+  if (!truthy(version)) {
+    api.sendNotification({
+      type: 'info',
+      message: api.translate('You can\'t endorse a mod that has no version set.'),
+    });
+    return;
+  }
 
   store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'pending'));
   sendEndorseMod(nexus, convertGameId(gameId), nexusModId, version, endorsedStatus)
@@ -424,27 +434,28 @@ function once(api: IExtensionApi) {
     api.store.dispatch(setUpdatingMods(gameMode, false));
 
     endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
-      endorseModImpl(api.store, gameId, modId, endorsedStatus);
+      endorseModImpl(api, gameId, modId, endorsedStatus);
 
     if (state.settings.nexus.associateNXM) {
       registerFunc();
     }
 
     if (state.confidential.account.nexus.APIKey !== undefined) {
-      fetchUserInfo(nexus, state.confidential.account.nexus.APIKey)
-        .then(userInfo => {
-          api.store.dispatch(setUserInfo(userInfo));
-        })
+      nexus.validateKey(state.confidential.account.nexus.APIKey)
+        .then(userInfo =>
+          api.store.dispatch(setUserInfo(transformUserInfo(userInfo))))
         .catch(TimeoutError, err => {
           showError(api.store.dispatch,
             'API Key validation timed out',
             'Server didn\'t respond to validation request, web-based '
-            + 'features will be unavailable');
+            + 'features will be unavailable', false, undefined, false);
+          api.store.dispatch(setUserInfo(null));
         })
         .catch(NexusError, err => {
           showError(api.store.dispatch,
             'Server reported an error validating your API Key',
             errorFromNexusError(err), false, undefined, false);
+          api.store.dispatch(setUserInfo(null));
         })
         .catch(err => {
           // if there is an "errno", this is more of a technical problem, like
@@ -452,6 +463,7 @@ function once(api: IExtensionApi) {
           showError(api.store.dispatch,
             'An error occurred validating your API Key',
             err.message, false, undefined, false);
+          api.store.dispatch(setUserInfo(null));
         });
     }
   }
@@ -496,7 +508,7 @@ function once(api: IExtensionApi) {
         'An error occurred endorsing a mod',
         'You are not logged in!');
     } else {
-      endorseModImpl(api.store, gameId, modId, endorsedStatus);
+      endorseModImpl(api, gameId, modId, endorsedStatus);
     }
   });
 
@@ -553,9 +565,9 @@ function once(api: IExtensionApi) {
       nexus.setKey(newValue);
       api.store.dispatch(setUserInfo(undefined));
       if (newValue !== undefined) {
-        fetchUserInfo(nexus, newValue)
+        nexus.validateKey(newValue)
           .then(userInfo => {
-            api.store.dispatch(setUserInfo(userInfo));
+            api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
           })
           .catch(err => {
             api.store.dispatch(setUserAPIKey(undefined));

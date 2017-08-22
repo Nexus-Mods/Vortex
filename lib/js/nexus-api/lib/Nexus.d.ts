@@ -13,7 +13,6 @@ export declare class HTTPError extends Error {
     constructor(statusCode: number, message: string);
 }
 declare class Nexus {
-    private mRestClient;
     private mBaseData;
     private mBaseURL;
     constructor(game: string, apiKey: string, timeout?: number);
@@ -31,6 +30,5 @@ declare class Nexus {
     private filter(obj);
     private handleResult(data, response, resolve, reject);
     private args(customArgs);
-    private initMethods();
 }
 export default Nexus;

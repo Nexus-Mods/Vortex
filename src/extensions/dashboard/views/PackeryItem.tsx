@@ -48,7 +48,7 @@ class PackeryItem extends React.Component<IProps, {}> {
     }
 
     if (Draggabilly === undefined) {
-      Draggabilly = require('Draggabilly');
+      Draggabilly = require('draggabilly');
     }
     props.packery.bindDraggabillyEvents(new Draggabilly(this.mRef));
   }

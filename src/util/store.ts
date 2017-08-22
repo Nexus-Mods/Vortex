@@ -77,6 +77,7 @@ function persist(store: Redux.Store<IState>, levelStorage: IStorage,
           details: 'The application state file is damaged.',
           stack: err.stack,
         });
+        return reject(err);
       }
       persistor.rehydrate(state);
       resolve(persistor);
@@ -127,7 +128,7 @@ export function extendStore(store: Redux.Store<IState>,
         // automatically rehydrate
         const internalPersistor = persistStore(store, settings, (err, state) => {
           if (err !== null) {
-            reject(err);
+            return reject(err);
           } else {
             log('info', 'External state loaded',
                 {hive, state: JSON.stringify(state)});
@@ -142,6 +143,7 @@ export function extendStore(store: Redux.Store<IState>,
                     message: 'Failed to reload state',
                     details: innerErr.message,
                   });
+                  return reject(innerErr);
                 } else {
                   // TODO: this seems to cause the state to be applied twice.
                   //   not a big deal but curious

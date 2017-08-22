@@ -14,7 +14,6 @@
         "declaration": true
     },
     "files": [
-        "src/index.ts",
-        "typings.custom/node-rest-client.d.ts"
+        "src/index.ts"
     ]
 }

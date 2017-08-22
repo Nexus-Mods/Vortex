@@ -342,18 +342,18 @@ function init(context: IExtensionContext): boolean {
       });
     }
 
-    const changeGameMode = (oldGameId: string, newGameId: string, oldProfileId: string) => {
+    const changeGameMode = (oldGameId: string, newGameId: string,
+                            oldProfileId: string): Promise<void> => {
       if (newGameId === undefined) {
-        return;
+        return Promise.resolve();
       }
 
       return gameModeManager.setupGameMode(newGameId)
-        .then(() => {
-          gameModeManager.setGameMode(oldGameId, newGameId);
-        }).catch((err) => {
+        .then(() => gameModeManager.setGameMode(oldGameId, newGameId))
+        .catch((err) => {
           showError(store.dispatch, 'Failed to set game mode', err);
           // unset profile
-          store.dispatch(setNextProfile(undefined));
+          return store.dispatch(setNextProfile(undefined));
         });
     };
 
@@ -363,25 +363,33 @@ function init(context: IExtensionContext): boolean {
         const oldGameId = getSafe(state, ['persistent', 'profiles', prev, 'gameId'], undefined);
         const newGameId = getSafe(state, ['persistent', 'profiles', current, 'gameId'], undefined);
         log('debug', 'active profile id changed', { prev, current, oldGameId, newGameId });
-        if (oldGameId !== newGameId) {
-          changeGameMode(oldGameId, newGameId, prev);
-        }
-        const game = {
-          ...currentGame(state),
-          ...currentGameDiscovery(state),
-        };
+        const prom = (oldGameId !== newGameId)
+          ? changeGameMode(oldGameId, newGameId, prev)
+          : Promise.resolve();
 
-        const t = context.api.translate;
-        context.api.sendNotification({
-          type: 'info',
-          message: t('Switched game mode: {{mode}}', { replace: {
-            mode: game.name,
-          } }),
-          displayMS: 4000,
+        prom.then(() => {
+          const game = {
+              ...currentGame(state),
+              ...currentGameDiscovery(state),
+          };
+
+          const t = context.api.translate;
+          context.api.sendNotification({
+            type: 'info',
+            message: t('Switched game mode: {{mode}}',
+                       {
+                         replace: {
+                           mode: game.name,
+                         },
+                       }),
+            displayMS: 4000,
+          });
+          return null;
         });
       });
 
-    changeGameMode(undefined, activeGameId(store.getState()), undefined);
+    changeGameMode(undefined, activeGameId(store.getState()), undefined)
+    .then(() => null);
   });
 
   return true;

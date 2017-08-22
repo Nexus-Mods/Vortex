@@ -174,16 +174,16 @@ class InstallManager {
         // if the name is already taken, consult the user,
         // repeat until user canceled, decided to replace the existing
         // mod or provided a new, unused name
-        const checkNameLoop = () => this.checkModExists(modId, api, installGameId) ?
-          this.queryUserReplace(modId, installGameId, api)
+        const checkNameLoop = () => this.checkModExists(modId, api, installGameId)
+          ? this.queryUserReplace(modId, installGameId, api)
             .then((choice: { name: string, enable: boolean }) => {
               modId = choice.name;
               if (choice.enable) {
                 enable = true;
               }
               return checkNameLoop();
-            }) :
-          Promise.resolve(modId);
+            })
+          : Promise.resolve(modId);
 
         return checkNameLoop();
       })
@@ -191,11 +191,9 @@ class InstallManager {
       //   even a particularly good way to discover conflicts
       .then(() => filterModInfo(fullInfo, undefined))
       .then(modInfo => {
-        const oldMod =
-          (modInfo.fileId !== undefined) ?
-            this.findPreviousVersionMod(modInfo.fileId, api.store,
-              installGameId) :
-            undefined;
+        const oldMod = (modInfo.fileId !== undefined)
+          ? this.findPreviousVersionMod(modInfo.fileId, api.store, installGameId)
+          : undefined;
 
         if (oldMod !== undefined) {
           const wasEnabled = getSafe(currentProfile.modState, [oldMod.id, 'enabled'], false);
@@ -206,7 +204,7 @@ class InstallManager {
                 if (wasEnabled) {
                   setModEnabled(currentProfile.id, oldMod.id, false);
                 }
-                return null;
+                return Promise.resolve();
               } else if (action === 'Replace') {
                 // we need to remove the old mod before continuing. This ensures
                 // the mod is deactivated and undeployed (as to not leave dangling
@@ -228,7 +226,7 @@ class InstallManager {
               }
             });
         } else {
-          return null;
+          return Promise.resolve();
         }
       })
       .then(() => {
@@ -258,6 +256,7 @@ class InstallManager {
         if (callback !== undefined) {
           callback(null, modId);
         }
+        return null;
       })
       .catch(err => {
         const canceled =
@@ -298,7 +297,7 @@ class InstallManager {
             });
         }
       })
-      .finally(() => { installContext.stopIndicator(); });
+      .finally(() => installContext.stopIndicator());
   }
 
   /**

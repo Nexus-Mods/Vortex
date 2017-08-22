@@ -40,9 +40,7 @@ function getAllFiles(basePath: string, mods: types.IMod[]): Promise<IFileMap> {
       return Promise.resolve();
     });
   })
-    .then(() => {
-      return files;
-    });
+    .then(() => files);
 }
 
 interface IConflictMap {

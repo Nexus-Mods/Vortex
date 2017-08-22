@@ -189,7 +189,7 @@ function renderRuleType(t: I18next.TranslationFunction, type: RuleType): string 
   }
 }
 
-function checkRulesFulfilled(api: types.IExtensionApi) {
+function checkRulesFulfilled(api: types.IExtensionApi): Promise<void> {
   const t = api.translate;
   const store = api.store;
   const state = store.getState();
@@ -197,7 +197,7 @@ function checkRulesFulfilled(api: types.IExtensionApi) {
   const gameMode = selectors.activeGameId(state);
   const mods = state.persistent.mods[gameMode];
 
-  Promise.map(enabledMods, modLookup => {
+  return Promise.map(enabledMods, modLookup => {
     const mod: types.IMod = mods[modLookup.id];
 
     return api.lookupModMeta({
@@ -281,13 +281,13 @@ function checkConflictsAndRules(api: types.IExtensionApi): Promise<void> {
     });
 }
 
-function generateLoadOrder(api: types.IExtensionApi) {
+function generateLoadOrder(api: types.IExtensionApi): Promise<void> {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
   const state: types.IState = store.getState();
   const gameMods = state.persistent.mods[gameMode] || [];
   const mods = Object.keys(gameMods).map(key => gameMods[key]);
-  util.sortMods(gameMode, mods, api)
+  return util.sortMods(gameMode, mods, api)
   .then(sortedMods => {
     loadOrder = sortedMods.reduce(
       (prev: { [id: string]: number }, modId: string, idx: number) => {
@@ -347,21 +347,23 @@ function main(context: types.IExtensionContext) {
 
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       const state: types.IState = store.getState();
-      generateLoadOrder(context.api);
-      updateMetaRules(context.api, gameMode, state.persistent.mods[gameMode])
+      generateLoadOrder(context.api)
+        .then(() => updateMetaRules(context.api, gameMode, state.persistent.mods[gameMode]))
         .then(rules => {
           dependencyState.modRules = rules;
+          return null;
         });
     });
 
     context.api.onStateChange(['persistent', 'mods'], (oldState, newState) => {
       const gameMode = selectors.activeGameId(store.getState());
       if (oldState[gameMode] !== newState[gameMode]) {
-        generateLoadOrder(context.api);
-        updateMetaRules(context.api, gameMode, newState[gameMode])
+        generateLoadOrder(context.api)
+          .then(() => updateMetaRules(context.api, gameMode, newState[gameMode]))
           .then(rules => {
             dependencyState.modRules = rules;
             updateConflictTimer.schedule(undefined);
+            return null;
           });
       }
     });

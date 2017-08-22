@@ -10,8 +10,8 @@ export function syncToProfile(
   onError: (error: string, details: string | Error) => void): Promise<void> {
   log('debug', 'sync to profile', { profilePath, sourceFiles });
   return fs.ensureDirAsync(profilePath)
-  .then(() => {
-    return Promise.map(sourceFiles, (filePath: string) => {
+  .then(() =>
+    Promise.map(sourceFiles, (filePath: string) => {
       const destPath = path.join(profilePath, path.basename(filePath));
       return copyFileAtomic(filePath, destPath)
       .catch(err => {
@@ -22,8 +22,8 @@ export function syncToProfile(
           onError('failed to sync to profile: ' + filePath, err);
         }
       });
-    });
-  }).then(() => {
+    }))
+  .then(() => {
     log('debug', 'sync to profile complete');
   })
   .catch(err =>

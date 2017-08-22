@@ -50,13 +50,13 @@ class UserlistPersistor implements types.IPersistor {
     }));
   }
 
-  public loadFiles(gameMode: string) {
+  public loadFiles(gameMode: string): Promise<void> {
     if (!gameSupported(gameMode)) {
-      return;
+      return Promise.resolve();
     }
     this.mUserlistPath = path.join(app.getPath('userData'), gameMode, 'userlist.yaml');
     // read the files now and update the store
-    this.deserialize();
+    return this.deserialize();
   }
 
   public setResetCallback(cb: () => void) {
@@ -100,9 +100,7 @@ class UserlistPersistor implements types.IPersistor {
       return Promise.resolve();
     }
     // ensure we don't try to concurrently write the files
-    this.mSerializeQueue = this.mSerializeQueue.then(() => {
-      this.doSerialize();
-    });
+    this.mSerializeQueue = this.mSerializeQueue.then(() => this.doSerialize());
     return this.mSerializeQueue;
   }
 
@@ -128,10 +126,10 @@ class UserlistPersistor implements types.IPersistor {
 
   private deserialize(): Promise<void> {
     if (this.mUserlist === undefined) {
-      return;
+      return Promise.resolve();
     }
 
-    fs.readFileAsync(this.mUserlistPath)
+    return fs.readFileAsync(this.mUserlistPath)
     .then((data: NodeBuffer) => {
       this.mUserlist = safeLoad(data.toString());
       if (this.mResetCallback) {

@@ -946,7 +946,7 @@ a[role=menuitem] svg {
 }
 
 .main-page {
-  transition: visibility 0s 300ms, opacity 300ms;
+  transition: opacity 500ms;
   flex: 1 1 0;
   position: relative;
 
@@ -956,10 +956,19 @@ a[role=menuitem] svg {
     transition-delay: 0s;
   }
 
-  &.hidden {
+  &.page-hidden {
+    transition: visibility 0s 500ms, opacity 500ms;
     opacity: 0;
     z-index: 0;
     visibility: hidden;
+
+    // hack to make sure the page can fade out without looking
+    // too broken while not displacing the visible page
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
   }
 
   &.secondary {

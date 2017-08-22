@@ -2,7 +2,7 @@ import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import OverlayTrigger from '../../../controls/OverlayTrigger';
 import { IconButton } from '../../../controls/TooltipControls';
-import { ComponentEx } from '../../../util/ComponentEx';
+import { PureComponentEx } from '../../../util/ComponentEx';
 
 import { IGameStored } from '../types/IGameStored';
 
@@ -29,10 +29,15 @@ export interface IProps {
  *
  * @class GameThumbnail
  */
-class GameThumbnail extends ComponentEx<IProps, {}> {
+class GameThumbnail extends PureComponentEx<IProps, {}> {
   private mRef = null;
+
   public render(): JSX.Element {
     const { t, active, container, game, getBounds, onRefreshGameInfo, type } = this.props;
+
+    if (game === undefined) {
+      return null;
+    }
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
 

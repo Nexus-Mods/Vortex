@@ -42,7 +42,7 @@ class MainWindow {
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
-    // mainWindow.webContents.openDevTools();
+    // this.mWindow.webContents.openDevTools();
 
     this.mWindow.webContents.session.on(
         'will-download', (event, item, webContents) => {

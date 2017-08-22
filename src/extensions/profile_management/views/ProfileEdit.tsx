@@ -63,7 +63,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           <Icon name='check' />
         </Button>
         <Button id='__cancel' tooltip={t('Cancel')} onClick={onCancelEdit}>
-          <Icon name='remove' />
+          <Icon name='cross' />
         </Button>
         </div>
         <div>

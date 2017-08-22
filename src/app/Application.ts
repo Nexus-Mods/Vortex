@@ -63,6 +63,7 @@ class Application {
 
   private setupAppEvents(args: IParameters) {
     app.on('window-all-closed', () => {
+      log('info', 'clean application end');
       if (process.platform !== 'darwin') {
         app.quit();
       }

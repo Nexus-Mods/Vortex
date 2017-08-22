@@ -78,7 +78,8 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     });
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
+    this.mRef = ReactDOM.findDOMNode(this);
     this.mIsMounted = true;
     asyncRequire('./ToolEditDialog', __dirname)
       .then(moduleIn => {
@@ -87,11 +88,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           this.forceUpdate();
         }
       });
-  }
-
-  public componentDidMount() {
-    this.mRef = ReactDOM.findDOMNode(this);
-    this.forceUpdate();
   }
 
   public componentWillUnmount() {
@@ -205,6 +201,11 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
 
     const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
     const discoveredGame = discoveredGames[gameMode];
+
+    if (game === undefined || discoveredGame === undefined) {
+      return [];
+    }
+
     const knownTools: IToolStored[] = getSafe(game, ['supportedTools'], []);
     const gameId = discoveredGame.id || game.id;
     const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
