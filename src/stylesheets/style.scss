@@ -69,6 +69,14 @@ html {
   height: 100%;
 }
 
+// button inside a (input- or list-) line  pulled to the top
+.btn-line-top {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  display: inline-block;
+}
+
 // text in a button that combines icon and text
 .button-text {
   margin-left: 10px;
@@ -1160,8 +1168,8 @@ a[role=menuitem] svg {
 
 .diagnostics-files-log-panel {
   height: 100%;
-  max-height: 300px;
-  overflow-y: auto;
+  max-height: 350px;
+  overflow-y: scroll;
 }
 
 // about dialog

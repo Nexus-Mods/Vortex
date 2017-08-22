@@ -1,5 +1,10 @@
 export interface ISession {
   from: string;
   to: string;
-  logs: string[];
+  logs: ILog[];
+}
+
+export interface ILog {
+  text: string;
+  type: string;
 }

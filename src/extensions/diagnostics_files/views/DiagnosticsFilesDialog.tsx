@@ -3,14 +3,14 @@ import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import { log } from '../../../util/log';
 
-import { ISession } from '../types/ISession';
+import { ILog, ISession } from '../types/ISession';
 
-import { remote } from 'electron';
+import { clipboard, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, ListGroup, ListGroupItem, Modal } from 'react-bootstrap';
+import { Button, ListGroup, ListGroupItem, Modal, Panel } from 'react-bootstrap';
 
 export interface IBaseProps {
   shown: boolean;
@@ -19,10 +19,9 @@ export interface IBaseProps {
 
 interface IComponentState {
   sessions: ISession[];
-  textLog: string[];
+  textLog: ILog[];
+  activeSession: string;
 }
-
-let textColor: string = '';
 
 type IProps = IBaseProps;
 
@@ -34,6 +33,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     this.state = {
       sessions: [],
       textLog: [],
+      activeSession: '',
     };
   }
 
@@ -60,16 +60,16 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       body = (
         <Modal.Body id='diagnostics-files' >
           <div style={{ marginTop: 5, marginBottom: 5 }}><p><strong>{t('Sessions')}</strong></p>
-            <div className='diagnostics-files-sessions-panel'>
+            <ListGroup className='diagnostics-files-sessions-panel'>
               {Object.keys(sessions).map((key) => this.renderSession(key))}
-            </div>
+            </ListGroup>
           </div>
           <div style={{ marginTop: 5, marginBottom: 5 }}><p><strong>{t('Log')}</strong></p>
-            <div className='diagnostics-files-log-panel'>
+            <ListGroup className='diagnostics-files-log-panel'>
               {
                 Object.keys(textLog).map((key) => this.renderLog(key))
               }
-            </div>
+            </ListGroup>
           </div>
         </Modal.Body>
       );
@@ -111,14 +111,28 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
                 splittedSessions.forEach((sessionElement, sessionIndex) => {
 
-                  const splittedLogs = sessionElement.split('\n');
+                  const splittedLogs = sessionElement.split('\r\n');
+                  const logArray: ILog[] = [];
+
+                  splittedLogs.forEach(element => {
+                    let textType = '';
+                    if (element.toLowerCase().indexOf('- error:') > -1) {
+                      textType = 'ERROR';
+                    }
+
+                    logArray.push({
+                      text: element,
+                      type: textType,
+                    });
+
+                  });
 
                   sessionArray.push({
                     from: sessionElement !== undefined ? sessionElement.substring(0, 30) : '',
                     to: splittedSessions[sessionIndex + 1] !== undefined ?
                       splittedSessions[sessionIndex + 1].substring(0, 30) :
                       splittedLogs[splittedLogs.length - 2].substring(0, 30),
-                    logs: splittedLogs,
+                    logs: logArray,
                   });
                 });
               });
@@ -139,23 +153,29 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
   private renderSession = (key: string) => {
     const { t } = this.props;
-    const { sessions } = this.state;
+    const { activeSession, sessions } = this.state;
 
-    const warnings = sessions[key].logs.filter((item) =>
-      item.toLowerCase().indexOf('- warn:') > -1);
     const errors = sessions[key].logs.filter((item) =>
-      item.toLowerCase().indexOf('- error:') > -1);
+      item.type === 'ERROR');
     const from = sessions[key].from;
     const to = sessions[key].to;
+
+    let isCrashed = '';
+    if (sessions[key].logs[Object.keys(sessions[key].logs).length - 2] !== undefined) {
+      if (sessions[key].logs[Object.keys(sessions[key].logs).length - 2].type === 'ERROR') {
+        isCrashed = '- Crashed! ';
+      }
+    }
 
     return (
       <ListGroupItem
         key={sessions[key].from}
+        active={activeSession === key}
       >
         <div>{'From ' + from + ' to ' + to}</div>
-        {errors.length > 0 || warnings.lenght > 0 ?
+        {errors.length > 0 ?
           <div style={{ color: 'orange' }}>
-            {'( Errors: ' + errors.length + ' - Warnings: ' + warnings.length + ' )'}
+            {'( Errors: ' + errors.length + ' ' + isCrashed + ')'}
           </div> : null
         }
         <IconButton
@@ -169,32 +189,61 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private copyToClipboard = (evt) => {
+    const { textLog } = this.state;
+    const key = evt.currentTarget.id;
+
+    clipboard.writeText(textLog[key].text);
+  }
+
   private renderLog = (key: string) => {
     const { t } = this.props;
     const { textLog } = this.state;
 
-    if (textLog[key].toLowerCase().indexOf('- warn:') > -1) {
-      textColor = 'yellow';
-    } else if (textLog[key].toLowerCase().indexOf('- error:') > -1) {
+    let textColor = '';
+
+    if (textLog[key].type === 'ERROR') {
       textColor = 'red';
-    } else if (textLog[key].toLowerCase().indexOf('- info:') > -1) {
-      textColor = '';
-    } else if (textLog[key].toLowerCase().indexOf('- debug:') > -1) {
-      textColor = '';
     }
 
     return (
-      <p key={key} style={{ color: textColor }}>
-        {textLog[key]}
-      </p>
+
+      <ListGroupItem
+        key={key}
+      >
+        {textLog[key].type === 'ERROR' ?
+          <div>
+            <IconButton
+              className='btn-embed btn-line-top'
+              id={key}
+              tooltip={t('Copy error text')}
+              onClick={this.copyToClipboard}
+              icon='clone'
+            />
+            <Panel bsStyle='danger' collapsible header={t('ERROR')}>
+              <p key={key} style={{ color: textColor }}>
+                {textLog[key].text}
+              </p>
+
+            </Panel>
+          </div>
+          : <p key={key} style={{ color: textColor }}>
+            {textLog[key].text}
+          </p>
+        }
+
+      </ListGroupItem>
     );
   }
 
   private showSession = (evt) => {
-    const { sessions } = this.state;
+    const { textLog, sessions } = this.state;
     const key = evt.currentTarget.id;
 
     this.setState(update(this.state, {
+      activeSession: {
+        $set: key,
+      },
       textLog: {
         $set: sessions[key].logs,
       },
