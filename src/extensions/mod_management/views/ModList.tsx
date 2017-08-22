@@ -169,9 +169,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
-    this.mUpdateDebouncer = new Debouncer((newProps) => {
-      return this.updateModsWithState(newProps);
-    }, 100);
+    this.mUpdateDebouncer = new Debouncer(
+      (newProps) => this.updateModsWithState(newProps), 100);
 
     this.state = {
       bounds: { top: 0, bottom: 0, height: 0, width: 0, left: 0, right: 0 },
@@ -495,7 +494,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         return filterModInfo(newProps.downloads[archiveId].modInfo, undefined)
         .then(info => ({ archiveId, info }));
       } else {
-        return undefined;
+        return Promise.resolve(undefined);
       }
     })
       .then((modAttributes: Array<{ archiveId: string, info: any }>) => {
@@ -529,6 +528,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         // assign only after mod grouping is updated so these don't go out of sync
         this.mModsWithState = newModsWithState;
         this.mLastUpdateProps = newProps;
+        return null;
       });
   }
 

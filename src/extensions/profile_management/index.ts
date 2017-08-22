@@ -68,7 +68,7 @@ function sanitiseProfile(store: Redux.Store<any>, profile: IProfile): void {
 }
 
 function refreshProfile(store: Redux.Store<any>, profile: IProfile,
-                        direction: 'import' | 'export') {
+                        direction: 'import' | 'export'): Promise<void> {
   if (profile === undefined) {
     return Promise.resolve();
   }
@@ -215,12 +215,12 @@ function init(context: IExtensionContextExt): boolean {
             const state: IState = store.getState();
             if (state.settings.profiles.nextProfileId !== current) {
               // cancel if there was another profile switch while we waited
-              return;
+              return null;
             }
 
             if (state.settings.profiles.activeProfileId === current) {
               // also do nothing if we're actually resetting the nextprofile
-              return;
+              return null;
             }
 
             finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
@@ -239,17 +239,16 @@ function init(context: IExtensionContextExt): boolean {
             // is rejected but that would only work if we could roll back
             // changes that happened.
             const enqueue = (cb: () => Promise<void>) => {
-              queue = queue.then(cb).catch(err => {
-                Promise.resolve();
-              });
+              queue = queue.then(cb).catch(err => Promise.resolve());
             };
+
             context.api.events.emit('profile-will-change', current, enqueue);
             sanitiseProfile(store, profile);
-            queue
+            return queue
                 .then(() => refreshProfile(store, profile, 'export'))
                 .then(() => {
                   const gameId = profile !== undefined ? profile.gameId : undefined;
-                  store.dispatch(setCurrentProfile(gameId, current));
+                  return store.dispatch(setCurrentProfile(gameId, current));
                 })
                 .catch((err: Error) => {
                   showError(store.dispatch, 'Failed to set profile', err);
@@ -274,6 +273,7 @@ function init(context: IExtensionContextExt): boolean {
           if (initProfile !== undefined) {
             context.api.events.emit('profile-did-change', initProfile.id);
           }
+          return null;
         })
          .catch((err: Error) => {
             showError(store.dispatch, 'Failed to set profile', err);

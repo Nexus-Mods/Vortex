@@ -214,31 +214,28 @@ class DownloadManager {
     const nameTemplate: string = decodeURI(path.basename(url.parse(urls[0]).pathname));
     const destPath = destinationPath || this.mDownloadPath;
     return fs.ensureDirAsync(destPath)
-    .then(() => {
-      return this.unusedName(destPath, nameTemplate);
-    })
-    .then((filePath: string) => {
-      return new Promise<IDownloadResult>((resolve, reject) => {
-        const download: IRunningDownload = {
-          id,
-          origName: nameTemplate,
-          tempName: filePath,
-          urls,
-          lastProgressSent: 0,
-          received: 0,
-          chunks: [],
-          progressCB,
-          finishCB: resolve,
-          failedCB: (err) => {
-            reject(err);
-          },
-          promises: [],
-        };
-        download.chunks.push(this.initChunk(download));
-        this.mQueue.push(download);
-        this.tickQueue();
-      });
-    });
+      .then(() => this.unusedName(destPath, nameTemplate))
+      .then((filePath: string) =>
+        new Promise<IDownloadResult>((resolve, reject) => {
+          const download: IRunningDownload = {
+            id,
+            origName: nameTemplate,
+            tempName: filePath,
+            urls,
+            lastProgressSent: 0,
+            received: 0,
+            chunks: [],
+            progressCB,
+            finishCB: resolve,
+            failedCB: (err) => {
+              reject(err);
+            },
+            promises: [],
+          };
+          download.chunks.push(this.initChunk(download));
+          this.mQueue.push(download);
+          this.tickQueue();
+        }));
   }
 
   public resume(id: string, filePath: string, urls: string[], received: number, size: number,

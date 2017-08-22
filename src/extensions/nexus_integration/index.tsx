@@ -442,19 +442,20 @@ function once(api: IExtensionApi) {
 
     if (state.confidential.account.nexus.APIKey !== undefined) {
       nexus.validateKey(state.confidential.account.nexus.APIKey)
-        .then(userInfo => {
-          api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
-        })
+        .then(userInfo =>
+          api.store.dispatch(setUserInfo(transformUserInfo(userInfo))))
         .catch(TimeoutError, err => {
           showError(api.store.dispatch,
             'API Key validation timed out',
             'Server didn\'t respond to validation request, web-based '
             + 'features will be unavailable', false, undefined, false);
+          api.store.dispatch(setUserInfo(null));
         })
         .catch(NexusError, err => {
           showError(api.store.dispatch,
             'Server reported an error validating your API Key',
             errorFromNexusError(err), false, undefined, false);
+          api.store.dispatch(setUserInfo(null));
         })
         .catch(err => {
           // if there is an "errno", this is more of a technical problem, like
@@ -462,6 +463,7 @@ function once(api: IExtensionApi) {
           showError(api.store.dispatch,
             'An error occurred validating your API Key',
             err.message, false, undefined, false);
+          api.store.dispatch(setUserInfo(null));
         });
     }
   }

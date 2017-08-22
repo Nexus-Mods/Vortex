@@ -31,12 +31,10 @@ function refreshMods(installPath: string, knownMods: string[],
               installTime: stat.ctime,
             },
           };
-          onAddMod(mod);
+          return onAddMod(mod);
         });
       })
-      .then(() => {
-        onRemoveMods(removedMods);
-      });
+      .then(() => onRemoveMods(removedMods));
     });
 }
 

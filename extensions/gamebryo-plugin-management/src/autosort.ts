@@ -41,6 +41,7 @@ class LootInterface {
       const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
       if (gameSupported(gameMode)) {
         this.init(gameMode as GameId, gamePath)
+          .then(() => null)
           .catch(err => {
             context.api.showErrorNotification('Failed to initialize LOOT', err);
             this.mLoot = undefined;
@@ -71,9 +72,7 @@ class LootInterface {
             state.session.plugins.pluginList[name] !== undefined,
           );
           return this.sortAsync(pluginNames)
-            .then((sorted: string[]) => {
-              store.dispatch(setPluginOrder(sorted));
-            });
+            .then((sorted: string[]) => store.dispatch(setPluginOrder(sorted)));
         });
       }
       return Promise.resolve();
@@ -125,9 +124,7 @@ class LootInterface {
 
     this.enqueue(t('Load Lists'), () => {
       return fs.statAsync(userlistPath)
-        .then((stat: fs.Stats) => {
-          return Promise.resolve(stat.mtime);
-        })
+        .then((stat: fs.Stats) => Promise.resolve(stat.mtime))
         .catch(() => Promise.resolve(null))
         .then(mtime => {
           // load & evaluate lists first time we need them and whenever
@@ -189,6 +186,7 @@ class LootInterface {
             });
           });
         }
+        return null;
       });
   }
 
@@ -203,7 +201,7 @@ class LootInterface {
       Promise.promisify(this.mLoot.evalLists, { context: this.mLoot });
   }
 
-  private enqueue(description: string, step: () => Promise<void>) {
+  private enqueue(description: string, step: () => Promise<void>): void {
     this.mLootQueue = this.mLootQueue.then(() => {
       this.mOnSetLootActivity(description);
       return step()

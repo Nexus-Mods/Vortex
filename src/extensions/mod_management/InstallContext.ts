@@ -54,6 +54,7 @@ class InstallContext implements IInstallContext {
       type: 'activity',
     });
     this.mIndicatorId = id;
+    this.mInstallOutcome = undefined;
   }
 
   public stopIndicator(): void {

@@ -33,19 +33,14 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
                           onAddDownload: (name: string) => void,
                           onRemoveDownloads: (name: string[]) => void) {
   return fs.ensureDirAsync(downloadPath)
-    .then(() => {
-      return fs.readdirAsync(downloadPath);
-    })
+    .then(() => fs.readdirAsync(downloadPath))
     .then((downloadNames: string[]) => {
       const addedDLs = downloadNames.filter((name: string) => knownDLs.indexOf(name) === -1);
       const removedDLs = knownDLs.filter((name: string) => downloadNames.indexOf(name) === -1);
 
-      return Promise.map(addedDLs, (modName: string) => {
-        onAddDownload(modName);
-      })
-        .then(() => {
-          onRemoveDownloads(removedDLs);
-        });
+      return Promise.map(addedDLs, (modName: string) =>
+        onAddDownload(modName))
+        .then(() => onRemoveDownloads(removedDLs));
     });
 }
 

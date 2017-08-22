@@ -77,6 +77,7 @@ export function onGameModeActivated(api: IExtensionApi,
   })
     .then(() => {
       api.events.emit('mods-refreshed');
+      return null;
     })
     .catch((err: Error) => {
       showError(store.dispatch, 'Failed to refresh mods', err);
@@ -91,13 +92,13 @@ export function onPathsChanged(api: IExtensionApi,
   const gameMode = activeGameId(state);
   if (previous[gameMode] !== current[gameMode]) {
     const knownMods = Object.keys(state.persistent.mods[gameMode]);
-    refreshMods(installPath(state), knownMods, (mod: IMod) => {
-      api.store.dispatch(addMod(gameMode, mod));
-    }, (modNames: string[]) => {
-      modNames.forEach((name: string) => {
-        api.store.dispatch(removeMod(gameMode, name));
-      });
-    })
+    refreshMods(installPath(state), knownMods, (mod: IMod) =>
+      api.store.dispatch(addMod(gameMode, mod))
+      , (modNames: string[]) => {
+        modNames.forEach((name: string) =>
+          api.store.dispatch(removeMod(gameMode, name)));
+      })
+      .then(() => null)
       .catch((err: Error) => {
         showError(store.dispatch, 'Failed to refresh mods', err);
       });

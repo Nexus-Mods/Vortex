@@ -202,7 +202,7 @@ class AddGameDialog extends ComponentEx<IProps, IComponentState> {
       const ext = path.extname(fileNames[0]);
       const logoName = `logo${ext}`;
       this.nextState.game.logo = logoName;
-      fs.ensureDirAsync(extensionPath)
+      return fs.ensureDirAsync(extensionPath)
         .then(() => fs.copyAsync(fileNames[0], path.join(extensionPath, logoName)))
         .then(() => {
           this.nextState.imgCounter++;

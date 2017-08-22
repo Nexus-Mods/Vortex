@@ -949,8 +949,10 @@ a[role=menuitem] svg {
   }
 
   &.page-hidden {
+    transition: visibility 0s 500ms, opacity 500ms;
     opacity: 0;
     z-index: 0;
+    visibility: hidden;
 
     // hack to make sure the page can fade out without looking
     // too broken while not displacing the visible page

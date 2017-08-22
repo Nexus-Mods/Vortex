@@ -45,7 +45,7 @@
     },
     {
       "name": "Attach to renderer",
-      "type": "node2",
+      "type": "node",
       "request": "attach",
       "port": 9222,
       "sourceMaps": true

@@ -80,6 +80,7 @@ class GameModeManager {
 
     log('info', 'changed game mode', {oldMode, newMode});
     this.mOnGameModeActivated(newMode);
+    return Promise.resolve();
   }
 
   /**

@@ -56,6 +56,15 @@ import thunkMiddleware from 'redux-thunk';
 
 import extensionRequire from './util/extensionRequire';
 
+/*
+Promise.config({
+  warnings: true,
+  longStackTraces: true,
+  cancellation: true,
+  monitoring: true,
+});
+*/
+
 log('debug', 'renderer process started', { pid: process.pid });
 
 stopTime();
