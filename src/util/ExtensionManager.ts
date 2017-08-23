@@ -14,9 +14,9 @@ import {
 } from '../types/IExtensionContext';
 import {INotification} from '../types/INotification';
 import { IExtensionState } from '../types/IState';
-import lazyRequire from '../util/lazyRequire';
 
 import { Archive } from './archives';
+import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
 import { activeGameId } from './selectors';
@@ -793,6 +793,8 @@ class ExtensionManager {
       'ini_prep',
       'news_dashlet',
     ];
+
+    require('./extensionRequire').default();
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
     return staticExtensions

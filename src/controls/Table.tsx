@@ -98,6 +98,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private mVisibleAttributes: ITableAttribute[];
   private mSplitDebouncer: Debouncer;
   private mSplitContainer: any;
+  private mHeadRef: HTMLElement;
   private mScrollRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
   private mLastSelectOnly: number = 0;
@@ -180,6 +181,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           <Table condensed hover>
             <thead
               className='table-header'
+              ref={this.setHeadRef}
               style={{ transform: 'translate(0, 0)' }}
             >
               <tr>
@@ -472,8 +474,12 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     return newSelection;
   }
 
-  private setSplitRef = (ref) => {
+  private setSplitRef = ref => {
     this.mSplitContainer = ref;
+  }
+
+  private setHeadRef = ref => {
+    this.mHeadRef = ref;
   }
 
   private setRowRef = (ref: any) => {
@@ -503,9 +509,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     }
   }
 
-  private translateHeader(event) {
-    const transform = `translate(0, ${event.target.scrollTop}px)`;
-    event.target.querySelector('thead').style.transform = transform;
+  private translateHeader = (event) => {
+    if ((this.mHeadRef !== undefined) && (this.mHeadRef !== null)) {
+      const transform = `translate(0, ${event.target.scrollTop}px)`;
+      this.mHeadRef.style.transform = transform;
+    }
   }
 
   private mainPaneRef = (ref) => {

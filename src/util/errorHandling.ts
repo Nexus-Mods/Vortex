@@ -16,7 +16,7 @@ import * as fs from 'fs-extra-promise';
 import NexusT from 'nexus-api';
 import * as opn from 'opn';
 import * as path from 'path';
-import * as uuid from 'uuid';
+import {} from 'uuid';
 
 // could be a bit more dynamic but how often is this going to change?
 const repo = 'Nexus-Mods/Vortex-Private';
@@ -132,7 +132,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const app = appIn || remote.app;
   const Nexus: typeof NexusT = require('nexus-api').default;
 
-  const referenceId = uuid.v4();
+  const referenceId = require('uuid').v4();
   const nexus = new Nexus(undefined, '');
   return nexus.sendFeedback(
     createReport(type, error, app.getVersion()),

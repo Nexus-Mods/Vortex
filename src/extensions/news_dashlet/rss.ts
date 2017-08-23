@@ -1,7 +1,7 @@
 import { HTTPError } from '../../util/CustomErrors';
 
 import * as FeedParser from 'feedparser';
-import * as request from 'request';
+import {} from 'request';
 
 export interface IFeedMessage {
   guid: string;
@@ -15,7 +15,7 @@ export interface IFeedMessage {
 
 function retrieve(url: string): Promise<IFeedMessage[]> {
   return new Promise<IFeedMessage[]>((resolve, reject) => {
-    const req = request(url);
+    const req = require('request')(url);
     const parser = new FeedParser();
 
     const result: IFeedMessage[] = [];

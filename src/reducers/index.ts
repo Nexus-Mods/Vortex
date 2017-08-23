@@ -17,7 +17,7 @@ import { tableReducer } from './tables';
 import { userReducer } from './user';
 import { windowReducer } from './window';
 
-import * as _ from 'lodash';
+import pick = require('lodash/pick');
 import { combineReducers, Reducer, ReducersMapObject } from 'redux';
 import { createReducer } from 'redux-act';
 import { REHYDRATE } from 'redux-persist/constants';
@@ -30,7 +30,7 @@ function safeCombineReducers(reducer: ReducersMapObject) {
   const combined = combineReducers(reducer);
   return (state, action) => {
     const red = state !== undefined
-      ? _.pick(state, redKeys)
+      ? pick(state, redKeys)
       : undefined;
     return {
       ...state,
