@@ -34,6 +34,7 @@ export const stateReducer: IReducerSpec = {
         chunks: [],
         localPath: undefined,
         fileMD5: undefined,
+        fileTime: undefined,
       });
     },
     [action.downloadProgress as any]: (state, payload) => {
@@ -75,6 +76,7 @@ export const stateReducer: IReducerSpec = {
       return merge(state, [ 'files', payload.id ], {
         state: payload.state,
         failCause: payload.failCause,
+        fileTime: new Date(),
       });
     },
     [action.pauseDownload as any]: (state, payload) => {
@@ -105,6 +107,7 @@ export const stateReducer: IReducerSpec = {
         game: payload.game,
         localPath: payload.localPath,
         size: payload.fileSize,
+        fileTime: new Date(),
         urls: [],
         modInfo: {},
         chunks: [],

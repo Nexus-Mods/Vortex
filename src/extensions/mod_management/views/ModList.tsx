@@ -508,6 +508,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             attributes: {
               ...mod.info,
               customFileName: mod.info.fileName || newProps.downloads[mod.archiveId].localPath,
+              installTime: newProps.downloads[mod.archiveId].fileTime,
             },
           };
           changed = true;

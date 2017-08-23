@@ -73,6 +73,11 @@ export interface IDownload {
   fileMD5: string;
 
   /**
+   * date/time the file finished downloading
+   */
+  fileTime: Date;
+
+  /**
    * size in bytes
    *
    * @type {number}
