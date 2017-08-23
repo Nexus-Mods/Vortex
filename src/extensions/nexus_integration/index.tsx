@@ -429,7 +429,7 @@ function once(api: IExtensionApi) {
   { // limit lifetime of state
     const state = api.store.getState();
 
-    const Nexus: typeof NexusT = require('nexus-api');
+    const Nexus: typeof NexusT = require('nexus-api').default;
     nexus = new Nexus(activeGameId(state),
       getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''));
 
