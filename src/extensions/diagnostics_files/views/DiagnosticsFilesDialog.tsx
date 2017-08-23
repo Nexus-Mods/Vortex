@@ -51,7 +51,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, shown } = this.props;
-    const { sessions, textLog } = this.state;
+    const { activeSession, sessions, textLog } = this.state;
 
     let body = null;
 
@@ -64,7 +64,8 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
               {Object.keys(sessions).map((key) => this.renderSession(key))}
             </ListGroup>
           </div>
-          <div style={{ marginTop: 5, marginBottom: 5 }}><p><strong>{t('Log')}</strong></p>
+          <div style={{ marginTop: 5, marginBottom: 5 }} key={activeSession}>
+            <p><strong>{t('Log')}</strong></p>
             <ListGroup className='diagnostics-files-log-panel'>
               {
                 Object.keys(textLog).map((key) => this.renderLog(key))
@@ -114,37 +115,38 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
                   const splittedLogs = sessionElement.split('\r\n');
                   const logArray: ILog[] = [];
 
-                  splittedLogs.forEach(element => {
+                  splittedLogs.forEach((element, index) => {
                     let textType = '';
                     if (element.toLowerCase().indexOf('- error:') > -1) {
                       textType = 'ERROR';
                     }
 
-                    logArray.push({
-                      text: element,
-                      type: textType,
+                    if (element !== '' && index !== splittedLogs.length - 1) {
+                      logArray.push({
+                        text: element,
+                        type: textType,
+                      });
+                    }
+                  });
+
+                  if (logArray.length > 1) {
+                    sessionArray.push({
+                      from: sessionElement !== undefined ? sessionElement.substring(0, 31) : '',
+                      to: logArray[logArray.length - 1].text.substring(0, 31),
+                      logs: logArray,
                     });
-
-                  });
-
-                  sessionArray.push({
-                    from: sessionElement !== undefined ? sessionElement.substring(0, 30) : '',
-                    to: splittedSessions[sessionIndex + 1] !== undefined ?
-                      splittedSessions[sessionIndex + 1].substring(0, 30) :
-                      splittedLogs[splittedLogs.length - 2].substring(0, 30),
-                    logs: logArray,
-                  });
+                  }
                 });
+              })
+              .then(() => {
+                this.setState(update(this.state, {
+                  sessions: {
+                    $set: sessionArray,
+                  },
+                }));
               });
           }
         });
-      })
-      .then(() => {
-        this.setState(update(this.state, {
-          sessions: {
-            $set: sessionArray,
-          },
-        }));
       })
       .catch((err) => {
         log('error', 'failed to read logs files', err.message);
@@ -200,12 +202,6 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const { textLog } = this.state;
 
-    let textColor = '';
-
-    if (textLog[key].type === 'ERROR') {
-      textColor = 'red';
-    }
-
     return (
 
       <ListGroupItem
@@ -221,13 +217,13 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
               icon='clone'
             />
             <Panel bsStyle='danger' collapsible header={t('ERROR')}>
-              <p key={key} style={{ color: textColor }}>
+              <p key={key} style={{ color: 'red' }}>
                 {textLog[key].text}
               </p>
 
             </Panel>
           </div>
-          : <p key={key} style={{ color: textColor }}>
+          : <p key={key}>
             {textLog[key].text}
           </p>
         }
@@ -241,12 +237,8 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const key = evt.currentTarget.id;
 
     this.setState(update(this.state, {
-      activeSession: {
-        $set: key,
-      },
-      textLog: {
-        $set: sessions[key].logs,
-      },
+      activeSession: { $set: key },
+      textLog: { $set: sessions[key].logs },
     }));
   }
 
