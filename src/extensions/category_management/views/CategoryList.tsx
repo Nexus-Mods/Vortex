@@ -5,6 +5,7 @@ import { Button, IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import lazyRequire from '../../../util/lazyRequire';
 import { showError } from '../../../util/message';
@@ -13,7 +14,7 @@ import { activeGameId } from '../../../util/selectors';
 import { IMod } from '../../mod_management/types/IMod';
 
 import { removeCategory, renameCategory, setCategory, setCategoryOrder } from '../actions/category';
-import { ICategory } from '../types/ICategoryDictionary';
+import { ICategory, ICategoryDictionary } from '../types/ICategoryDictionary';
 import { ICategoriesTree } from '../types/ITrees';
 import createTreeDataObject from '../util/createTreeDataObject';
 
@@ -36,7 +37,7 @@ interface ISearchMatch {
 }
 
 interface IActionProps {
-  onShowError: (message: string, details: string | Error) => void;
+  onShowError: (message: string, details?: string | Error) => void;
   onSetCategory: (gameId: string, categoryId: string, category: ICategory) => void;
   onRemoveCategory: (gameId: string, categoryId: string) => void;
   onSetCategoryOrder: (gameId: string, categoryIds: string[]) => void;
@@ -48,7 +49,7 @@ interface IActionProps {
 interface IConnectedProps {
   gameMode: string;
   language: string;
-  categories: ICategory[];
+  categories: ICategoryDictionary;
   mods: { [ modId: string ]: IMod };
 }
 
@@ -219,8 +220,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
                       expanded: Set<string>): ICategoriesTree[] {
     let filtered: Set<string>;
     if (showEmpty) {
-      const { categories, gameMode } = this.props;
-      filtered = new Set(Object.keys(categories[gameMode]));
+      const { categories } = this.props;
+      filtered = new Set(Object.keys(categories));
     } else {
       filtered = new Set(this.getNonEmptyCategories(treeData, []));
     }
@@ -239,11 +240,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 
   private toggleShowEmpty = () => {
-    const {t, categories, gameMode, mods, onShowError} = this.props;
+    const {t, categories, mods, onShowError} = this.props;
     const { showEmpty } = this.state;
 
     try {
-      const newTree = createTreeDataObject(t, categories[gameMode], mods);
+      const newTree = createTreeDataObject(t, categories, mods);
       this.nextState.treeData = newTree;
       this.nextState.showEmpty = !showEmpty;
     } catch (err) {
@@ -252,51 +253,56 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 
   private expandAll = () => {
-    const { categories, gameMode } = this.props;
-    this.nextState.expanded = Object.keys(categories[gameMode]);
+    const { categories } = this.props;
+    this.nextState.expanded = Object.keys(categories);
   }
 
   private collapseAll = () => {
     this.nextState.expanded = [];
   }
 
-  private renameCategory = (info: { node: ICategoriesTree, path: string[] }) => {
-    const {gameMode, onShowDialog, onRenameCategory} = this.props;
+  private renameCategory = (evt: React.MouseEvent<any>) => {
+    const {categories, gameMode, onShowDialog, onRenameCategory} = this.props;
+
+    const categoryId = evt.currentTarget.value;
+    const category = categories[categoryId];
+
     onShowDialog('info', 'Rename Category', {
-      input: [{ id: 'newCategory', value: info.node.title, label: 'Category' }],
+      input: [{ id: 'newCategory', value: category.name, label: 'Category' }],
     }, [ { label: 'Cancel' }, { label: 'Rename' } ])
     .then((result: IDialogResult) => {
         if ((result.action === 'Rename') && (result.input.newCategory !== undefined)) {
-          onRenameCategory(gameMode, info.node.categoryId, result.input.newCategory);
+          onRenameCategory(gameMode, categoryId, result.input.newCategory);
         }
       });
   }
 
-  private addCategory = (info: { node: ICategoriesTree, path: string[] }) => {
+  private addCategory = (evt: React.MouseEvent<any>) => {
     const {categories, gameMode, onSetCategory, onShowDialog, onShowError} = this.props;
     const lastIndex = this.searchLastRootId(categories);
+    const parentId = evt.currentTarget.value;
 
     onShowDialog('question', 'Add Child Category', {
       input: [
         { id: 'newCategory', value: '', label: 'Category Name' },
         {
-          id: 'newCategoryId', value: lastIndex.toString(),
-          label: 'Category ID',
+         id: 'newCategoryId', value: lastIndex.toString(),
+         label: 'Category ID',
         },
       ],
     }, [{ label: 'Cancel' }, { label: 'Add' }])
     .then((result: IDialogResult) => {
         if (result.action === 'Add') {
-          const checkId = Object.keys(categories[gameMode]).filter((id: string) =>
+          const checkId = Object.keys(categories).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
-            onShowError('An error occurred adding the new category', 'ID already used.');
+            onShowError('ID already used.');
           } else if (result.input.newCategoryId === '') {
-            onShowError('An error occurred adding the new category', 'Category ID empty.');
+            onShowError('Category ID empty.');
           } else {
             onSetCategory(gameMode, result.input.newCategoryId, {
               name: result.input.newCategory,
-              parentCategory: info.node.categoryId,
+              parentCategory: parentId,
               order: 0,
             });
           }
@@ -321,7 +327,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       .then((result: IDialogResult) => {
         addCategory = result.action === 'Add';
         if (addCategory) {
-          const checkId = Object.keys(categories[gameMode] || {}).filter((id: string) =>
+          const checkId = Object.keys(categories || {}).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
             onShowError('An error occurred adding the new category', 'ID already used.');
@@ -338,11 +344,10 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private searchLastRootId(categories: any) {
-    const {gameMode} = this.props;
+  private searchLastRootId(categories: ICategoryDictionary) {
     let maxId = 0;
-    if (categories[gameMode] !== undefined) {
-    Object.keys(categories[gameMode]).filter((id: string) => {
+    if (categories !== undefined) {
+    Object.keys(categories).filter((id: string) => {
       if (parseInt(id, 10) > maxId) {
         maxId = parseInt(id, 10);
       }
@@ -365,12 +370,12 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   private refreshTree(props: IProps) {
     const { t } = this.props;
-    const { categories, gameMode, mods, onShowError } = props;
+    const { categories, mods, onShowError } = props;
 
-    if (categories[gameMode] !== undefined) {
-      if (categories[gameMode].length !== 0) {
+    if (categories !== undefined) {
+      if (Object.keys(categories).length !== 0) {
         this.nextState.treeData =
-          createTreeDataObject(t, categories[gameMode], mods);
+          createTreeDataObject(t, categories, mods);
       } else {
         const globalPersistentPath = path.join(remote.app.getPath('userData'), 'state');
         onShowError('An error occurred loading the categories.',
@@ -399,12 +404,19 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private removeCategory = (category: any) => {
-    const {gameMode, onRemoveCategory} = this.props;
-    onRemoveCategory(gameMode, category.node.categoryId);
+  private removeCategoryId = (id: string) => {
+    const { categories, gameMode, onRemoveCategory } = this.props;
+    Object.keys(categories)
+      .filter(iterId => categories[iterId].parentCategory === id)
+      .forEach(iterId => this.removeCategoryId(iterId));
+    onRemoveCategory(gameMode, id);
   }
 
-  private generateNodeProps = (rowInfo) => {
+  private removeCategory = (evt: React.MouseEvent<any>) => {
+    this.removeCategoryId(evt.currentTarget.value);
+  }
+
+  private generateNodeProps = (rowInfo: { node: ICategoriesTree }) => {
     const {t} = this.props;
     return {
       buttons: [
@@ -413,8 +425,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             id='rename-category'
             className='btn-embed'
             tooltip={t('Rename Category')}
-            value={rowInfo}
-            onClick={this.renameCategory.bind(this, rowInfo)}
+            value={rowInfo.node.categoryId}
+            onClick={this.renameCategory}
           >
             <Icon name='pencil' />
           </Button>
@@ -424,7 +436,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             id='add-category'
             className='btn-embed'
             tooltip={t('Add Child Category')}
-            onClick={this.addCategory.bind(this, rowInfo)}
+            value={rowInfo.node.categoryId}
+            onClick={this.addCategory}
           >
             <Icon name='folder-add' />
           </Button>
@@ -434,7 +447,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             id='remove-category'
             className='btn-embed'
             tooltip={t('Remove Category')}
-            onClick={this.removeCategory.bind(this, rowInfo)}
+            value={rowInfo.node.categoryId}
+            onClick={this.removeCategory}
           >
             <Icon name='remove' />
           </Button>
@@ -476,17 +490,17 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   const gameMode = activeGameId(state);
   return {
     gameMode,
     language: state.settings.interface.language,
-    categories: state.persistent.categories,
+    categories: state.persistent.categories[gameMode],
     mods: state.persistent.mods[gameMode],
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
   return {
     onRenameCategory: (gameId: string, categoryId: string, newCategory: string) =>
       dispatch(renameCategory(gameId, categoryId, newCategory)),
@@ -496,7 +510,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(removeCategory(gameId, categoryId)),
     onSetCategoryOrder: (gameId: string, categoryIds: string[]) =>
       dispatch(setCategoryOrder(gameId, categoryIds)),
-    onShowError: (message: string, details: string | Error) =>
+    onShowError: (message: string, details?: string | Error) =>
       showError(dispatch, message, details),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
