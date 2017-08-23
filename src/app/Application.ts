@@ -1,15 +1,14 @@
 import {setInstanceId} from '../actions/app';
-import reducer from '../reducers/index';
+import {} from '../reducers/index';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
-import {delayed} from '../util/delayed';
+import {} from '../util/delayed';
 import * as develT from '../util/devel';
-import {terminate} from '../util/errorHandling';
+import {} from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import lazyRequire from '../util/lazyRequire';
 import {log, setLogPath} from '../util/log';
-import {allHives, createVortexStore, syncStore} from '../util/store';
-import {getSafe, setSafe} from '../util/storeHelper';
+import {} from '../util/storeHelper';
 
 import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
@@ -102,7 +101,7 @@ class Application {
         // end initialization
         .then(() => splash.fadeOut())
         .catch((err) => {
-          terminate({
+          require('../util/errorHandling').terminate({
             message: 'Startup failed',
             details: err.message,
             stack: err.stack,
@@ -127,6 +126,7 @@ class Application {
         process.stderr.write(err + '\n');
       } else {
         const { inspect } = require('util');
+        const { getSafe } = require('../util/storeHelper');
         process.stdout.write(
           inspect(getSafe(JSON.parse(value), pathArray.slice(1), '<invalid>')) + '\n');
       }
@@ -152,6 +152,7 @@ class Application {
         process.stderr.write(err);
         app.quit();
       } else {
+        const { getSafe, setSafe } = require('../util/storeHelper');
         const data = JSON.parse(value);
         const oldValue = getSafe(data, pathArray.slice(1), undefined);
         const newValue = typeof(oldValue) === 'object'
@@ -190,7 +191,7 @@ class Application {
   }
 
   private createStore(): Promise<void> {
-    const {baseStore, setupStore} = require('../util/store');
+    const { allHives, createVortexStore, syncStore } = require('../util/store');
 
     const newStore = createVortexStore([]);
 
@@ -217,6 +218,7 @@ class Application {
         }
         const ExtensionManager = require('../util/ExtensionManager').default;
         this.mExtensions = new ExtensionManager(newStore);
+        const reducer = require('../reducers/index').default;
         newStore.replaceReducer(reducer(this.mExtensions.getReducers()));
         appPersistor.stop();
         return syncStore(newStore, app.getPath('userData'), allHives(this.mExtensions));
@@ -238,7 +240,7 @@ class Application {
 
   private showMainWindow() {
     const windowMetrics = this.mStore.getState().settings.window;
-    const maximized: boolean = getSafe(windowMetrics, ['maximized'], false);
+    const maximized: boolean = windowMetrics.maximized || false;
     this.mMainWindow.show(maximized);
   }
 
@@ -260,10 +262,9 @@ class Application {
 
     if (shouldQuit) {
       if (retries > 0) {
-        return delayed(100).then(() => this.testShouldQuit(retries - 1));
+        return require('../util/delayed').delayed(100).then(() => this.testShouldQuit(retries - 1));
       }
       app.quit();
-      process.exit();
     }
 
     return Promise.resolve();

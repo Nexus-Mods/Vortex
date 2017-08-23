@@ -14,9 +14,9 @@ import {
 } from '../types/IExtensionContext';
 import {INotification} from '../types/INotification';
 import { IExtensionState } from '../types/IState';
-import lazyRequire from '../util/lazyRequire';
 
 import { Archive } from './archives';
+import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
 import { activeGameId } from './selectors';
@@ -445,6 +445,13 @@ class ExtensionManager {
           } catch (err) {
             log('warn', 'failed to call once',
                 {err: err.message, stack: err.stack});
+            this.mApi.showErrorNotification(
+              'Extension failed to initialize. If this isn\'t an official extension, '
+              + 'please report the error to the respective author.', {
+              extension: call.extension,
+              err: err.message,
+              stack: err.stack,
+            });
           }
         });
   }
@@ -794,6 +801,8 @@ class ExtensionManager {
       'ini_prep',
       'news_dashlet',
     ];
+
+    require('./extensionRequire').default();
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
     return staticExtensions

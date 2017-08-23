@@ -308,12 +308,17 @@ function genValidActivatorCheck(api: IExtensionApi) {
     }
 
     const messages = activators.map(
-      (activator) => `${activator.name} - ${activator.isSupported(state)}`);
+      (activator) => `[*] ${activator.name} - [i]${activator.isSupported(state)}[/i]`);
 
     return resolve({
       description: {
-        short: 'In the current constellation, mods can\'t be activated.',
-        long: messages.join('\n'),
+        short: 'Mods can\'t be deployed.',
+        long: 'With the current settings, mods can\'t be deployed.\n'
+          + 'Please read the following error messages from the deployment '
+          + 'plugins and fix one of them.\nAt least the "hardlink deployment" '
+          + 'can usually be made to work.\n\n[list]'
+          + messages.join('\n')
+          + '[/list]',
       },
       severity: 'error',
       automaticFix: () => new Promise<void>((fixResolve, fixReject) => {

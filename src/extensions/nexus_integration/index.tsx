@@ -46,7 +46,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
-import Nexus, { IDownloadURL, IFileInfo, IModInfo, NexusError, TimeoutError } from 'nexus-api';
+import NexusT, { IDownloadURL, IFileInfo, IModInfo, NexusError as NexusErrorT } from 'nexus-api';
 import * as opn from 'opn';
 import * as path from 'path';
 import * as React from 'react';
@@ -57,7 +57,7 @@ import * as util from 'util';
 
 type IModWithState = IMod & IProfileMod;
 
-let nexus: Nexus;
+let nexus: NexusT;
 let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
 
 export interface IExtensionContextExt extends IExtensionContext {
@@ -262,6 +262,8 @@ function checkModVersionsImpl(
     .map(modId => mods[modId])
     .filter(mod => mod.attributes.source === 'nexus');
 
+  const {TimeoutError} = require('nexus-api');
+
   return Promise.mapSeries(modsList, mod =>
     checkModVersion(store.dispatch, nexus, gameId, mod)
       .catch(TimeoutError, err => {
@@ -410,7 +412,7 @@ function genModIdAttribute(api: IExtensionApi): ITableAttribute {
   };
 }
 
-function errorFromNexusError(err: NexusError): string {
+function errorFromNexusError(err: NexusErrorT): string {
   switch (err.statusCode) {
     case 401: return 'Login was refused, please review your API key.';
     default: return err.message;
@@ -427,6 +429,7 @@ function once(api: IExtensionApi) {
   { // limit lifetime of state
     const state = api.store.getState();
 
+    const Nexus: typeof NexusT = require('nexus-api').default;
     nexus = new Nexus(activeGameId(state),
       getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''));
 
@@ -441,6 +444,7 @@ function once(api: IExtensionApi) {
     }
 
     if (state.confidential.account.nexus.APIKey !== undefined) {
+      const {NexusError, TimeoutError} = require('nexus-api');
       nexus.validateKey(state.confidential.account.nexus.APIKey)
         .then(userInfo =>
           api.store.dispatch(setUserInfo(transformUserInfo(userInfo))))

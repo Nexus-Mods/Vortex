@@ -35,7 +35,7 @@ class ModActivator extends LinkingActivator {
 
   constructor(api: IExtensionApi) {
     super(
-        'symlink_activator_elevated', 'Symlink activator (Elevated)',
+        'symlink_activator_elevated', 'Symlink deployment (Elevated)',
         'Installs the mods by setting symlinks in the destination directory. ' +
             'This implementation will create the symlinks using a separate process ' +
             'with elevated permissions and therefore works even if Vortex isn\'t run ' +
@@ -80,7 +80,8 @@ class ModActivator extends LinkingActivator {
       gameId = activeGameId(state);
     }
     if (this.isGamebryoGame(gameId)) {
-      return 'Doesn\'t work wtih the gamebryo engine.';
+      return 'Doesn\'t work with games based on the gamebryo engine '
+        + '(including Skyrim SE and Fallout 4)';
     }
     return undefined;
   }

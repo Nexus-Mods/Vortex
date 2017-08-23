@@ -5,6 +5,7 @@ import {
   IDialogContent, IInput,
 } from '../types/IDialog';
 import { IState } from '../types/IState';
+import bbcode from '../util/bbcode';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
 import * as I18next from 'i18next';
@@ -154,6 +155,12 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       controls.push((
         <div key='dialog-content-html'>
           <webview src={`file://${content.htmlFile}`} />
+        </div>
+      ));
+    } else if (content.bbcode !== undefined) {
+      controls.push((
+        <div>
+          {bbcode(content.bbcode)}
         </div>
       ));
     } else if (content.htmlText !== undefined) {

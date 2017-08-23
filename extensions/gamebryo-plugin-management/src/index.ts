@@ -329,13 +329,13 @@ function testMissingMasters(t: I18next.TranslationFunction,
       description: {
         short: 'Missing Masters',
         long:
-        'Some of the enabled plugins depend on others that are not enabled: \n' +
+        'Some of the enabled plugins depend on others that are not enabled:\n[list]' +
         Object.keys(broken).map(plugin => {
-          return t('{{plugin}} depends on {{missing}}', {replace: {
+          return '[*] ' + t('[b]{{plugin}}[/b] depends on [b]{{missing}}[/b]', {replace: {
             plugin,
             missing: broken[plugin].join(', '),
           }});
-        }).join('\n'),
+        }).join('\n') + '[/list]',
       },
       severity: 'warning' as types.ProblemSeverity,
     });

@@ -45,6 +45,7 @@ export interface IDialogContent {
    */
   htmlText?: string;
   message?: string;
+  bbcode?: string;
   checkboxes?: ICheckbox[];
   choices?: ICheckbox[];
   input?: IInput[];

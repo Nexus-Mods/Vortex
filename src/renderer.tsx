@@ -54,7 +54,8 @@ import { applyMiddleware, compose, createStore, Store } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 import thunkMiddleware from 'redux-thunk';
 
-import extensionRequire from './util/extensionRequire';
+// ensures tsc includes this dependency
+import {} from './util/extensionRequire';
 
 /*
 Promise.config({
@@ -68,8 +69,6 @@ Promise.config({
 log('debug', 'renderer process started', { pid: process.pid });
 
 stopTime();
-
-extensionRequire();
 
 remote.app.setPath('temp', path.join(remote.app.getPath('userData'), 'temp'));
 crashReporter.start({

@@ -32,7 +32,7 @@ export function addMods(gameID: string, profileId: string,
       installationPath: modName,
       attributes: {
         name: modName,
-        installTime: new Date().getTime().toString(),
+        installTime: new Date(),
         version: modEntry.modVersion,
         fileId: modEntry.downloadId,
         fileMD5: modEntry.archiveMD5,

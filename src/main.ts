@@ -12,16 +12,14 @@ import Application from './app/Application';
 import { IError } from './types/IError';
 import commandLine from './util/commandLine';
 import { sendReport, terminate } from './util/errorHandling';
+// ensures tsc includes this dependency
+import {} from './util/extensionRequire';
 import { log, setupLogging } from './util/log';
 
 import { app, crashReporter } from 'electron';
 import * as path from 'path';
 
-import extensionRequire from './util/extensionRequire';
-
 stopTime();
-
-extensionRequire();
 
 crashReporter.start({
   productName: 'Vortex',

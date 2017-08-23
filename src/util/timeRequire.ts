@@ -23,12 +23,13 @@ function timedRequire(orig) {
 
     if (requires[id] === undefined) {
       reqCount = reqCount + 1;
-      requires[id] = { selfDuration, fullDuration, countDiff };
+      requires[id] = { selfDuration, fullDuration, countDiff, parent: this || { filename: '' } };
     } else {
       requires[id] = {
         selfDuration: requires[id].selfDuration + selfDuration,
         fullDuration: requires[id].fullDuration + fullDuration,
         countDiff: Math.max(requires[id].countDiff, countDiff),
+        parent: requires[id].parent,
       }
     }
     return res;
@@ -60,7 +61,7 @@ export default function() {
             .sort((lhs, rhs) => lhs.full - rhs.full)
             .map(
                 rq =>
-                    `${rq.id}, self: ${rq.self} ms, full: ${rq.full} ms, count: ${rq.count}`)
+                    `${rq.id}, self: ${rq.self} ms, full: ${rq.full} ms, count: ${rq.count}, parent: ${requires[rq.id].parent.filename}`)
             .join('\n'));
 
     requires = {};
