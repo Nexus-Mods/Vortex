@@ -217,6 +217,8 @@ class ContextProxyHandler implements ProxyHandler<any> {
   }
 }
 
+const UNDEFINED = {};
+
 /**
  * interface to extensions. This loads extensions and provides the api extensions
  * use
@@ -524,14 +526,17 @@ class ExtensionManager {
 
   private stateChangeHandler = (watchPath: string[],
                                 callback: StateChangeCallback) => {
-    let lastValue;
+    // have to initialize to a value that we _know_ is never set by the user.
+    let lastValue = UNDEFINED;
+
+    const key = watchPath.join('.');
 
     const changeHandler = ({cbStore, selector, prevState, currentState,
                             prevValue, currentValue}) => {
       // redux-watch may trigger even if no change occurred so we have to
-      // do our own change, otherwise we could end up in an endless loop
+      // do our own check, otherwise we could end up in an endless loop
       // if the callback causes redux-watch to trigger again without change
-      if (currentValue === lastValue) {
+      if ((currentValue === lastValue) && (lastValue !== UNDEFINED)) {
         return;
       }
       lastValue = currentValue;
@@ -547,7 +552,6 @@ class ExtensionManager {
       });
     };
 
-    const key = watchPath.join('.');
     if (this.mWatches[key] === undefined) {
       this.mWatches[key] = [];
       this.mReduxWatcher.watch(watchPath, changeHandler);

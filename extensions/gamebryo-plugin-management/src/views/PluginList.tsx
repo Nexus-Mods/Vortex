@@ -21,7 +21,7 @@ import * as React from 'react';
 import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
 import {translate} from 'react-i18next';
 import {connect} from 'react-redux';
-import {ComponentEx, FlexLayout, IconBar, ITableRowAction, MainPage,
+import {ComponentEx, FlexLayout, IconBar, ITableRowAction, log, MainPage,
         selectors, Table, TableTextFilter, ToolbarIcon,
         types, util} from 'vortex-api';
 
@@ -287,7 +287,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         <MainPage.Body>
           <FlexLayout type='column'>
             <FlexLayout.Fixed>
-              { lootActivity ? <h4>{lootActivity}</h4> : null }
+              {lootActivity ? <h4>{lootActivity}</h4> : null}
             </FlexLayout.Fixed>
             <FlexLayout.Flex>
               <Table
@@ -319,13 +319,27 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     Promise.each(pluginNames, (pluginName: string) => {
       return new Promise((resolve, reject) => {
-        const esp = new ESPFile(plugins[pluginName].filePath);
-        pluginsParsed[pluginName] = {
-          isMaster: esp.isMaster,
-          description: esp.description,
-          author: esp.author,
-          masterList: esp.masterList,
-        };
+        try {
+          const esp = new ESPFile(plugins[pluginName].filePath);
+          pluginsParsed[pluginName] = {
+            isMaster: esp.isMaster,
+            description: esp.description,
+            author: esp.author,
+            masterList: esp.masterList,
+          };
+        } catch (err) {
+          // TODO: there is a time window where this is called on a file that
+          //   no longer exists. Since the error message reported from the native
+          //   lib isn't super informative we can't differentiate yet, so not
+          //   treating this as a big problem.
+          log('warn', 'failed to parse esp', { path: plugins[pluginName].filePath, error: err });
+          pluginsParsed[pluginName] = {
+            isMaster: false,
+            description: '',
+            author: '',
+            masterList: [],
+          };
+        }
         resolve();
       });
     })
