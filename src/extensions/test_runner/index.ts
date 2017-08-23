@@ -55,7 +55,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
         const actions: INotificationAction[] = [{
           title: 'More',
           action: () => api.store.dispatch(showDialog('info', 'Check failed', {
-            message: result.description.long,
+            bbcode: result.description.long,
           }, [ { label: 'Close' } ])),
         }];
         if (result.automaticFix !== undefined) {

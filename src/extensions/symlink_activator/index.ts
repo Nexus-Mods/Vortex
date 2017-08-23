@@ -22,7 +22,7 @@ class ModActivator extends LinkingActivator {
 
   constructor(api: IExtensionApi) {
     super(
-        'symlink_activator', 'Symlink activator',
+        'symlink_activator', 'Symlink deployment',
         'Installs the mods by setting symlinks in the destination directory. ' +
             'This implementation requires the account running Vortex to have write access ' +
             'to the mod directory. On Windows the account has to be an administrator.',
@@ -36,7 +36,8 @@ class ModActivator extends LinkingActivator {
     if (this.isGamebryoGame(gameId)) {
       // gamebryo engine seems to have some check on FindFirstFile/FindNextFile results that
       // makes it ignore symbolic links
-      return 'Doesn\'t work with the gamebryo engine.';
+      return 'Doesn\'t work with games based on the gamebryo engine '
+        + '(including Skyrim SE and Fallout 4)';
     }
 
     const activeGameDiscovery: IDiscoveryResult =

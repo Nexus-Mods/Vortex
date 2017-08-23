@@ -26,7 +26,7 @@ export class FileFound extends Error {
 class ModActivator extends LinkingActivator {
   constructor(api: IExtensionApi) {
     super(
-        'hardlink_activator', 'Hardlink activator',
+        'hardlink_activator', 'Hardlink deployment',
         'Installs the mods by setting hard links in the destination directory. ' +
             'This implementation requires the account running Vortex to have write access ' +
             'to the mod directory.',
@@ -56,7 +56,9 @@ class ModActivator extends LinkingActivator {
       if (fs.statSync(installPath(state)).dev !==
           fs.statSync(activeGameDiscovery.modPath).dev) {
         // hard links work only on the same drive
-        return 'Works only if mods are installed on the same drive as the game.';
+        return 'Works only if mods are installed on the same drive as the game. '
+          + 'You can go to settings and change the mod directory to the same drive '
+          + 'as the game.';
       }
     } catch (err) {
       // this can happen when managing the the game for the first time
