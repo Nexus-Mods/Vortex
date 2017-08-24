@@ -1964,6 +1964,13 @@ a[role=menuitem] svg {
   .pager {
     margin: 5px 0px;
   }
+
+  .description {
+    padding: 15px;
+    margin: 15px;
+    background-color: $brand-bg;
+    overflow-y: auto;
+  }
 }
 
 // /fomod dialog

@@ -76,7 +76,7 @@ namespace FomodInstaller.Scripting.XmlScript
                 IList<Option> options = lstSteps[stepId].OptionGroups[groupId].Options;
                 for (int i = 0; i < options.Count; ++i)
                 {
-                    if (selectedIds.Contains(i))
+                    if (selectedIds.Contains(i) || (resolveOptionType(options[i]) == OptionType.Required))
                     {
                         selectedOptions.Add(options[i]);
                         options[i].Flags.ForEach((ConditionalFlag flag) =>
@@ -117,6 +117,7 @@ namespace FomodInstaller.Scripting.XmlScript
                     }
                     else
                     {
+                        preselectOptions(selectedOptions, lstSteps[stepIdx]);
                         sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
                     }
                 });
@@ -125,15 +126,39 @@ namespace FomodInstaller.Scripting.XmlScript
                 Source.SetCanceled();
             };
 
+            string bannerPath = string.IsNullOrEmpty(hifHeaderInfo.ImagePath)
+                ? null
+                : Path.Combine(ModArchive.Prefix, hifHeaderInfo.ImagePath);
             m_Delegates.ui.StartDialog(hifHeaderInfo.Title,
-                new HeaderImage(hifHeaderInfo.ImagePath, hifHeaderInfo.ShowFade, hifHeaderInfo.Height),
+                new HeaderImage(bannerPath, hifHeaderInfo.ShowFade, hifHeaderInfo.Height),
                 select, cont, cancel);
 
+            preselectOptions(selectedOptions, lstSteps[stepIdx]);
             sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
 
             return await Source.Task;
         }
  
+        private OptionType resolveOptionType(Option opt)
+        {
+            return opt.GetOptionType(m_csmState, m_Delegates);
+        }
+
+        private void preselectOptions(ISet<Option> selectedOptions, InstallStep step)
+        {
+            foreach (OptionGroup group in step.OptionGroups)
+            {
+                foreach (Option option in group.Options)
+                {
+                    OptionType type = resolveOptionType(option);
+                    if ((type == OptionType.Required) || (type == OptionType.Recommended))
+                    {
+                        selectedOptions.Add(option);
+                    }
+                }
+            }
+        }
+
         private void sendState(IList<InstallStep> lstSteps, string strPrefixPath, ISet<Option> selected, int stepIdx)
         {
             Func<IEnumerable<InstallStep>, IEnumerable<InstallerStep>> convertSteps = steps =>
@@ -148,8 +173,7 @@ namespace FomodInstaller.Scripting.XmlScript
                 int idx = 0;
                 return options.Select(option => new Interface.ui.Option(idx++, option.Name, option.Description,
                     string.IsNullOrEmpty(option.ImagePath) ? null : Path.Combine(strPrefixPath, option.ImagePath),
-                    selected.Contains(option)
-                    ));
+                    selected.Contains(option), resolveOptionType(option).ToString()));
             };
 
             Func<IEnumerable<OptionGroup>, IEnumerable<Group>> convertGroups = groups =>
