@@ -10,7 +10,7 @@ export interface IBaseProps {
   shouldUpdatePosition?: boolean;
 }
 
-export type IProps = IBaseProps & ReactBootstrap.OverlayProps;
+export type IProps = IBaseProps & typeof Overlay.prototype.props;
 
 /**
  * custom variant of the overlay that automatically chooses the placement
@@ -54,8 +54,8 @@ class MyOverlay extends React.Component<IProps, { placement: string }> {
     );
   }
 
-  private onEnter = () => {
-    const node = this.props.target();
+  private onEnter = (input: HTMLElement) => {
+    const node = typeof this.props.target === 'function' ? this.props.target() : this.props.target;
     if (node) {
       const bounds: ClientRect = this.props.getBounds();
       if (this.props.orientation === 'horizontal') {
@@ -73,7 +73,7 @@ class MyOverlay extends React.Component<IProps, { placement: string }> {
       }
     }
     if (this.props.onEnter) {
-      this.props.onEnter();
+      this.props.onEnter(input);
     }
   }
 }

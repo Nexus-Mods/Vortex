@@ -15,7 +15,7 @@ export interface ITooltipProps {
   buttonType?: ButtonType;
 }
 
-export type ButtonProps = ITooltipProps & typeof BootstrapButton.defaultProps;
+export type ButtonProps = ITooltipProps & typeof BootstrapButton.prototype.props;
 
 /**
  * Button with a tooltip
@@ -174,7 +174,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
   }
 }
 
-export type NavItemProps = ITooltipProps & typeof BootstrapNavItem.defaultProps;
+export type NavItemProps = ITooltipProps & typeof BootstrapNavItem.prototype.props;
 
 export class NavItem extends React.Component<NavItemProps, {}> {
   public render() {

@@ -8,7 +8,7 @@ import * as path from 'path';
 const app = appIn || remote.app;
 
 class LevelStorage implements IStorage {
-  private mDB: LevelUp;
+  private mDB: levelup.LevelUp;
 
   constructor(basePath: string, name: string) {
     this.mDB = levelup(path.join(basePath, name));

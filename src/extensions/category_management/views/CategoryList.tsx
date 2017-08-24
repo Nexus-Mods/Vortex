@@ -416,7 +416,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     this.removeCategoryId(evt.currentTarget.value);
   }
 
-  private generateNodeProps = (rowInfo: { node: ICategoriesTree }) => {
+  private generateNodeProps = (rowInfo: SortableTreeT.ExtendedNodeData) => {
     const {t} = this.props;
     return {
       buttons: [

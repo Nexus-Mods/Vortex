@@ -8,7 +8,6 @@ import Notification from './Notification';
 
 import * as React from 'react';
 import { Badge, Button, OverlayTrigger, Popover } from 'react-bootstrap';
-import { CSSTransitionGroup } from 'react-transition-group';
 
 export interface IBaseProps {
   id: string;

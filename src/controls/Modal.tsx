@@ -2,7 +2,7 @@ import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import * as ReactBootstrap from 'react-bootstrap';
 
-class MyModal extends React.PureComponent<ReactBootstrap.ModalProps, {}> {
+class MyModal extends React.PureComponent<typeof ReactBootstrap.Modal.prototype.props, {}> {
   public static Header = ReactBootstrap.Modal.Header;
   public static Title = ReactBootstrap.Modal.Title;
   public static Body = ReactBootstrap.Modal.Body;
