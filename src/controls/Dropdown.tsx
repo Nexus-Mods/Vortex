@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { Dropdown } from 'react-bootstrap';
+import { Dropdown, DropdownMenu, DropdownToggle } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
 export interface IBaseProps {
@@ -18,8 +18,8 @@ export type IProps = IBaseProps & typeof Dropdown.prototype.props;
  * @extends {React.Component<IProps, { up: boolean }>}
  */
 class MyDropdown extends React.Component<IProps, { up: boolean }> {
-  public static Menu = Dropdown.Menu;
-  public static Toggle = Dropdown.Toggle;
+  public static Menu: typeof DropdownMenu = Dropdown.Menu;
+  public static Toggle: typeof DropdownToggle = Dropdown.Toggle;
   private mNode: Element;
 
   constructor(props: IProps) {

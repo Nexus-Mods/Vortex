@@ -1,12 +1,12 @@
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import * as ReactBootstrap from 'react-bootstrap';
+import { Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from 'react-bootstrap';
 
-class MyModal extends React.PureComponent<typeof ReactBootstrap.Modal.prototype.props, {}> {
-  public static Header = ReactBootstrap.Modal.Header;
-  public static Title = ReactBootstrap.Modal.Title;
-  public static Body = ReactBootstrap.Modal.Body;
-  public static Footer = ReactBootstrap.Modal.Footer;
+class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
+  public static Header: typeof ModalHeader = Modal.Header;
+  public static Title: typeof ModalTitle = Modal.Title;
+  public static Body: typeof ModalBody = Modal.Body;
+  public static Footer: typeof ModalFooter = Modal.Footer;
 
   public static childContextTypes: React.ValidationMap<any> = {
     menuLayer: PropTypes.object,
@@ -22,7 +22,7 @@ class MyModal extends React.PureComponent<typeof ReactBootstrap.Modal.prototype.
     return (
       <div className='modal-container'>
         <div className='menu-layer' ref={this.setMenuLayer}/>
-        <ReactBootstrap.Modal {...this.props} />
+        <Modal {...this.props} />
       </div>
     );
   }
