@@ -150,20 +150,23 @@ function updateConflictInfo(t: I18next.TranslationFunction,
     store.dispatch(actions.dismissNotification('mod-file-conflict'));
   } else {
     const message: string[] = [
-      t('There are unsolved file conflicts. Such conflicts are not necessarily ' +
-        'a problem but you should set up a rule to decide the priorities between ' +
-        'these mods, otherwise it will be random (not really but it might as well be).'),
+      t('There are unsolved file conflicts. Such conflicts are not necessarily '
+        + 'a problem but you should set up a rule to decide the priorities between '
+        + 'these mods, otherwise it will be random (not really but it might as well be).\n'
+        + 'To do this, open the mods page, make sure the "Dependencies" column is visible '
+        + 'and then click on red bolt icons to choose how the conflict is resolved.\n'),
+      '[list]',
     ].concat(Object.keys(unsolved).map(modId =>
-      t('{{modName}} conflicts with {{conflicts}}', { replace: {
+      '[*]' + t('[b]{{modName}}[/b] conflicts with [b]{{conflicts}}[/b]', { replace: {
         modName: renderModName(mods[modId]),
         conflicts: unsolved[modId].map(
           conflict => renderModLookup(conflict.otherMod)).join(', '),
-      }})));
+      }})), '[/list]');
     const showDetails = () => {
       store.dispatch(actions.showDialog(
-        'error',
+        'info',
         t('Unsolved file conflicts'), {
-          message: message.join('\n'),
+          bbcode: message.join('\n'),
           options: { translated: true, wrap: true },
         }, [ { label: 'Close' } ]));
     };
@@ -236,7 +239,7 @@ function checkRulesFulfilled(api: types.IExtensionApi): Promise<void> {
           }).join('\n')));
         const showDetails = () => {
           store.dispatch(actions.showDialog(
-            'error',
+            'info',
             t('Unsolved file conflicts'), {
               message: message.join('\n'),
               options: { translated: true, wrap: true },
