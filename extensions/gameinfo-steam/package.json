@@ -5,9 +5,8 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
-    "build": "npm run tsc && npm run webpack && extractInfo"
+    "build": "npm run webpack && extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

@@ -11,7 +11,7 @@ import { app as appIn, remote } from 'electron';
 
 import { parse } from 'simple-vdf';
 
-const app = appIn || remote.app;
+const app = (remote !== undefined) ? remote.app : appIn;
 
 export interface ISteamEntry {
   appid: string;

@@ -6,8 +6,9 @@ import * as types from './types/api';
 import * as util from './util/api';
 import { log } from './util/log';
 import * as selectors from './util/selectors';
+import * as webpack from './util/webpack';
 
 export * from './controls/api';
 export * from './views/api';
-export { actions, types, log, selectors, util };
+export { actions, types, log, selectors, util, webpack };
 export { ComponentEx, PureComponentEx } from './util/ComponentEx';
