@@ -173,19 +173,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const newPath = resolvePath(pathKey, this.state.paths, gameMode);
 
     return Promise.join(fs.statAsync(oldPath), fs.statAsync(newPath),
-      (statOld: fs.Stats, statNew: fs.Stats) => {
-        return Promise.resolve(statOld.dev === statNew.dev);
-      })
-      .then((sameVolume: boolean) => {
-        if (sameVolume) {
-          return fs.renameAsync(oldPath, newPath);
-        } else {
-          return fs.copyAsync(oldPath, newPath)
-            .then(() => {
-              return fs.removeAsync(oldPath);
-            });
-        }
-      });
+      (statOld: fs.Stats, statNew: fs.Stats) =>
+        Promise.resolve(statOld.dev === statNew.dev))
+      .then((sameVolume: boolean) => sameVolume
+        // in the move case we have to ensure the parent directory exists
+        // and the directory itself doesn't, otherwise the move will fail
+        ? fs.ensureDirAsync(path.dirname(newPath))
+            .then(() => fs.removeAsync(newPath))
+            .then(() => fs.renameAsync(oldPath, newPath))
+        // in the copy case, just copy, then remove the original
+        : fs.copyAsync(oldPath, newPath)
+            .then(() => fs.removeAsync(oldPath)));
   }
 
   private applyPaths = () => {
@@ -194,6 +192,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const newDownloadPath: string = resolvePath('download', this.state.paths, gameMode);
 
     const oldInstallPath = resolvePath('install', this.props.paths, gameMode);
+    const oldDownloadPath = resolvePath('download', this.props.paths, gameMode);
 
     const purgePromise = oldInstallPath !== newInstallPath
       ? this.purgeActivation()
@@ -204,39 +203,57 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .then(() => Promise.join(fs.ensureDirAsync(newInstallPath),
                                fs.ensureDirAsync(newDownloadPath)))
       .then(() => {
-        // ensure the destination files are empty
-        return Promise.join(fs.readdirAsync(newInstallPath), fs.readdirAsync(newDownloadPath),
-          (installFiles: string[], downloadFiles: string[]) => {
-            return new Promise((resolve, reject) => {
-              if (installFiles.length + downloadFiles.length > 0) {
-                this.props.onShowDialog('info', 'Invalid Destination', {
-                  message: 'The destination directory has to be empty',
-                }, [ { label: 'Ok', action: () => reject(null) } ]);
-              } else {
-                resolve();
-              }
-            });
-          });
+        const queue = Promise.resolve();
+        let fileCount = 0;
+        if (oldInstallPath !== newInstallPath) {
+          queue
+            .then(() => fs.readdirAsync(newInstallPath))
+            .then(files => fileCount += files.length);
+        }
+        if (oldDownloadPath !== newDownloadPath) {
+          queue
+            .then(() => fs.readdirAsync(newDownloadPath))
+            .then(files => fileCount += files.length);
+        }
+        // ensure the destination directories are empty
+        return new Promise((resolve, reject) => {
+          if (fileCount > 0) {
+            this.props.onShowDialog('info', 'Invalid Destination', {
+              message: 'The destination directory has to be empty',
+            }, [{ label: 'Ok', action: () => reject(null) }]);
+          } else {
+            resolve();
+          }
+        });
       })
       .then(() => {
-        this.setState(setSafe(this.state, ['busy'], t('Moving download directory')));
-        return this.transferPath('download');
+        if (oldDownloadPath !== newDownloadPath) {
+          this.setState(setSafe(this.state, ['busy'], t('Moving download directory')));
+          return this.transferPath('download');
+        } else {
+          return Promise.resolve();
+        }
       })
       .then(() => {
-        this.setState(setSafe(this.state, ['busy'], t('Moving mod directory')));
-        return this.transferPath('install');
+        if (oldInstallPath !== newInstallPath) {
+          this.setState(setSafe(this.state, ['busy'], t('Moving mod directory')));
+          return this.transferPath('install');
+        } else {
+          return Promise.resolve();
+        }
       })
       .then(() => {
         onSetPath(gameMode, 'base', this.state.paths[gameMode].base);
         onSetPath(gameMode, 'download', this.state.paths[gameMode].download);
         onSetPath(gameMode, 'install', this.state.paths[gameMode].install);
-        this.setState(setSafe(this.state, ['busy'], undefined));
       })
       .catch((err) => {
-        this.setState(setSafe(this.state, ['busy'], undefined));
         if (err !== null) {
           onShowError('Failed to move directories', err);
         }
+      })
+      .finally(() => {
+        this.setState(setSafe(this.state, ['busy'], undefined));
       });
   }
 

@@ -36,7 +36,11 @@ class DynamicProps extends React.Component<IBaseProps, {}> {
 
   public componentDidMount() {
     listeners.push(this);
-    this.refreshProps();
+    if (listeners.length === 1) {
+      refreshListeners();
+    } else {
+      this.refreshProps();
+    }
   }
 
   public componentWillUnmount() {
@@ -68,9 +72,9 @@ const listeners: DynamicProps[] = [];
 
 function refreshListeners() {
   listeners.forEach(listener => listener.refreshProps());
-  setTimeout(refreshListeners, 500);
+  if (listeners.length > 0) {
+    setTimeout(refreshListeners, 500);
+  }
 }
-
-refreshListeners();
 
 export default DynamicProps;
