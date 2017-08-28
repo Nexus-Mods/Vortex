@@ -213,13 +213,13 @@ class InstallManager {
                   api.events.emit('remove-mod', currentProfile.gameId, oldMod.id,
                     (error: Error) => {
                       if (error !== null) {
-                        return Promise.reject(error);
+                        reject(error);
                       } else {
                         // use the same mod id as the old version so that all profiles
                         // keep using it.
                         modId = oldMod.id;
                         enable = enable || wasEnabled;
-                        return Promise.resolve();
+                        resolve();
                       }
                     });
                 });
@@ -245,6 +245,7 @@ class InstallManager {
       .finally(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }))
       .then(() => filterModInfo(fullInfo, destinationPath))
       .then(modInfo => {
+        console.log('mod info', modInfo);
         installContext.finishInstallCB('success', modInfo);
         if (enable) {
           api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
