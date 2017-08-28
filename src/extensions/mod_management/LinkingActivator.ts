@@ -65,12 +65,13 @@ abstract class LinkingActivator implements IModActivator {
       .then(func => {
         this.mNormalize = func;
         this.mNewActivation = {};
-        if (!clean) {
-          lastActivation.forEach(file => {
-            const key = this.mNormalize(file.relPath);
-            this.mPreviousActivation[key] = this.mNewActivation[key] = file;
-          });
-        }
+        lastActivation.forEach(file => {
+          const key = this.mNormalize(file.relPath);
+          this.mPreviousActivation[key] = file;
+          if (!clean) {
+            this.mNewActivation[key] = file;
+          }
+        });
       });
   }
 
@@ -92,59 +93,62 @@ abstract class LinkingActivator implements IModActivator {
          this.diffActivation(this.mPreviousActivation, this.mNewActivation));
 
     return Promise.map([].concat(removed, sourceChanged, contentChanged),
-      key => {
-        const outputPath = path.join(dataPath, this.mPreviousActivation[key].relPath);
-        return this.unlinkFile(outputPath)
-          .then(() => fs.renameAsync(outputPath + LinkingActivator.BACKUP_TAG, outputPath)
-                              .catch(() => undefined))
-          .then(() => delete this.mPreviousActivation[key])
-          .catch(err => {
-            log('warn', 'failed to unlink', {
-              path: this.mPreviousActivation[key].relPath,
-              error: err.message,
+                       key => {
+                         const outputPath = path.join(
+                             dataPath, this.mPreviousActivation[key].relPath);
+                         return this.unlinkFile(outputPath)
+                             .then(() => fs.renameAsync(
+                                               outputPath +
+                                                   LinkingActivator.BACKUP_TAG,
+                                               outputPath)
+                                             .catch(() => undefined))
+                             .then(() => delete this.mPreviousActivation[key])
+                             .catch(err => {
+                               log('warn', 'failed to unlink', {
+                                 path: this.mPreviousActivation[key].relPath,
+                                 error: err.message,
+                               });
+                               ++errorCount;
+                             });
+                       })
+        // then, (re-)link all files that were added or changed
+        .then(() => Promise.mapSeries(
+                  added,
+                  key => this.deployFile(key, installPathStr, dataPath, false)
+                             .catch(err => {
+                               log('warn', 'failed to link', {
+                                 link: this.mNewActivation[key].relPath,
+                                 source: this.mNewActivation[key].source,
+                                 error: err.message,
+                               });
+                               ++errorCount;
+                             })))
+        .then(() => Promise.mapSeries(
+                  [].concat(sourceChanged, contentChanged),
+                  (key: string) =>
+                      this.deployFile(key, installPathStr, dataPath, true)
+                          .catch(err => {
+                            log('warn', 'failed to link', {
+                              link: this.mNewActivation[key].relPath,
+                              source: this.mNewActivation[key].source,
+                              error: err.message,
+                            });
+                            ++errorCount;
+                          })))
+        .then(() => {
+          if (errorCount > 0) {
+            addNotification({
+              type: 'error',
+              title: this.mApi.translate('Activation failed'),
+              message: this.mApi.translate(
+                  '{{count}} files were not correctly activated (see log for details)',
+                  {replace: {count: errorCount}}),
             });
-            ++errorCount;
-          });
-      })
-      // then, (re-)link all files that were added or changed
-      .then(() => Promise.map(
-        [].concat(added, sourceChanged, contentChanged),
-        (key: string) => {
-          const fullPath = path.join(
-            installPathStr, this.mNewActivation[key].source,
-            this.mNewActivation[key].relPath);
-          const fullOutputPath = path.join(dataPath, this.mNewActivation[key].relPath);
-          return fs.statAsync(fullOutputPath)
-          // file exists
-          .then(stat => fs.renameAsync(fullOutputPath,
-                                       fullOutputPath + LinkingActivator.BACKUP_TAG))
-          .catch(err => undefined)
-          .then(() => this.linkFile(fullOutputPath, fullPath)
-            .then(() => this.mPreviousActivation[key] =
-              this.mNewActivation[key])
-            .catch(err => {
-              log('warn', 'failed to link', {
-                link: this.mNewActivation[key].relPath,
-                source: this.mNewActivation[key].source,
-                error: err.message,
-              });
-              ++errorCount;
-            }));
-        }))
-      .then(() => {
-        if (errorCount > 0) {
-          addNotification({
-            type: 'error',
-            title: this.mApi.translate('Activation failed'),
-            message: this.mApi.translate(
-              '{{count}} files were not correctly activated (see log for details)',
-              { replace: { count: errorCount } }),
-          });
-        }
+          }
 
-        return Object.keys(this.mPreviousActivation)
-          .map(key => this.mPreviousActivation[key]);
-      });
+          return Object.keys(this.mPreviousActivation)
+              .map(key => this.mPreviousActivation[key]);
+        });
   }
 
   public activate(installPath: string, dataPath: string,
@@ -200,8 +204,7 @@ abstract class LinkingActivator implements IModActivator {
       const fileDataPath = path.join(dataPath, fileEntry.relPath);
       const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
       return fs.statAsync(fileDataPath)
-        .then((stat: fs.Stats):
-          Promise<boolean> => {
+        .then((stat: fs.Stats): Promise<boolean> => {
           if (stat.mtime.getTime() !== fileEntry.time) {
             nonLinks.push({
               filePath: fileEntry.relPath,
@@ -238,6 +241,34 @@ abstract class LinkingActivator implements IModActivator {
   protected abstract unlinkFile(linkPath: string): Promise<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
   protected abstract isLink(linkPath: string, sourcePath: string): Promise<boolean>;
+
+  private deployFile(key: string, installPathStr: string, dataPath: string,
+                     replace: boolean) {
+    const fullPath = path.join(installPathStr, this.mNewActivation[key].source,
+                               this.mNewActivation[key].relPath);
+    const fullOutputPath =
+        path.join(dataPath, this.mNewActivation[key].relPath);
+
+    const backupProm = replace
+      ? Promise.resolve()
+      : fs.renameAsync(fullOutputPath,
+                       fullOutputPath + LinkingActivator.BACKUP_TAG)
+        .catch(err => {
+          // if the backup fails because there is nothing to backup, that's great,
+          // that's the most common outcome. Otherwise we failed to backup an existing
+          // file, so continuing could cause data loss
+          if (err.code === 'ENOENT') {
+            return undefined;
+          } else {
+            Promise.reject(err);
+          }
+        });
+
+    return backupProm.then(() =>
+                               this.linkFile(fullOutputPath, fullPath)
+                                   .then(() => this.mPreviousActivation[key] =
+                                             this.mNewActivation[key]));
+  }
 
   private diffActivation(before: IActivation, after: IActivation) {
     const keysBefore = Object.keys(before);

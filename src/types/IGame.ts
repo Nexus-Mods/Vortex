@@ -44,6 +44,9 @@ export interface IGame extends ITool {
    *          true then the file will be placed as c:/awesomegame/mods/crazytexture.dds.
    *          If mergeMods is false then it will be c:/awesomegame/mods/crazymod/crazytexture.dds.
    *
+   * Note: This flag is currently not used, vortex always acts as if mergeMods was true, the
+   *   additional directory level is introduced by the mod installer
+   *
    * @type {boolean}
    * @memberOf IGame
    */

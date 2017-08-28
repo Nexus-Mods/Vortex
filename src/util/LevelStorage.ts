@@ -1,4 +1,6 @@
 import { IStorage } from '../types/IStorage';
+import delayed from './delayed';
+import { log } from './log';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
@@ -8,10 +10,25 @@ import * as path from 'path';
 const app = appIn || remote.app;
 
 class LevelStorage implements IStorage {
-  private mDB: LevelUp;
+  public static create(basePath: string, name: string): Promise<LevelStorage> {
+    return new Promise<LevelStorage>((resolve, reject) => {
+      const db =
+          (levelup as any)(path.join(basePath, name), undefined, (err) => {
+            if (err !== null) {
+              log('info', 'failed to open db', err);
+              resolve(
+                  delayed(100).then(() => LevelStorage.create(basePath, name)));
+            } else {
+              resolve(new LevelStorage(db));
+            }
+          });
+    });
+  }
 
-  constructor(basePath: string, name: string) {
-    this.mDB = levelup(path.join(basePath, name));
+  private mDB: levelup.LevelUp;
+
+  constructor(db: levelup.LevelUp) {
+    this.mDB = db;
   }
 
   public close(): Promise<void> {

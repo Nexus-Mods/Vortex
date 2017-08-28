@@ -316,7 +316,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
               className='table-actions'
               staticElements={elements}
               instanceId={selected}
-              collapse={true}
+              collapse='force'
             />
           ) : <div><p>{t('Actions')}</p></div>
         }

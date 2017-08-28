@@ -313,6 +313,11 @@ class InstallManager {
                          (iterPath, stats) => {
                            if (stats.isFile()) {
                              fileList.push(path.relative(tempPath, iterPath));
+                           } else {
+                             // unfortunately we also have to pass directories because
+                             // some mods contain empty directories to control stop-folder
+                             // management...
+                             fileList.push(path.relative(tempPath, iterPath) + path.sep);
                            }
                            return Promise.resolve();
                          }))

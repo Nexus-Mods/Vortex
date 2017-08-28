@@ -1,7 +1,6 @@
 import Debouncer from '../util/Debouncer';
 
 import * as React from 'react';
-import {FormControlProps} from 'react-bootstrap';
 
 export interface IProps {
   value: string;

@@ -12,7 +12,6 @@ import * as React from 'react';
 export type IModWithState = IMod & IProfileMod;
 
 export interface IBaseProps {
-  groupedMods: { [id: string]: IModWithState[] };
   buttonType: ButtonType;
 }
 
@@ -53,11 +52,9 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
   }
 
   private checkModsVersion = () => {
-    const { gameMode, groupedMods, mods } = this.props;
+    const { gameMode, mods } = this.props;
 
-    if (groupedMods !== undefined) {
-      this.context.api.events.emit('check-mods-version', gameMode, groupedMods, mods);
-    }
+    this.context.api.events.emit('check-mods-version', gameMode, mods);
   }
 }
 

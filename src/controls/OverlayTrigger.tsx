@@ -10,7 +10,7 @@ export interface IBaseProps {
   shouldUpdatePosition?: boolean;
 }
 
-export type IProps = IBaseProps & ReactBootstrap.OverlayTriggerProps;
+export type IProps = IBaseProps & typeof OverlayTrigger.prototype.props;
 
 /**
  * custom variant of the overlay trigger that automatically chooses the placement

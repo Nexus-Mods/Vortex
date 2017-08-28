@@ -4,10 +4,14 @@ export interface IHeaderImage {
   height: number;
 }
 
-export type OrderType = 'AlphaAsc' | 'AlphaDesc' | 'Explicit';
+export type OrderType =
+  'AlphaAsc' | 'AlphaDesc' | 'Explicit';
 
 export type GroupType =
   'SelectAtLeastOne' | 'SelectAtMostOne' | 'SelectExactlyOne' | 'SelectAll' | 'SelectAny';
+
+export type PluginType =
+  'Required' | 'Optional' | 'Recommended' | 'NotUsable' | 'CouldBeUsable';
 
 export interface IPlugin {
   id: number;
@@ -15,6 +19,7 @@ export interface IPlugin {
   name: string;
   description: string;
   image: string;
+  type: PluginType;
 }
 
 export interface IGroup {

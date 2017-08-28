@@ -256,6 +256,20 @@ function renderer() {
       extensions.doOnce();
       extensions.renderStyle()
         .then(() => {
+          initApplicationMenu(extensions);
+          startupFinished();
+          eventEmitter.emit('startup');
+          // render the page content
+          ReactDOM.render(
+            <Provider store={store}>
+              <I18nextProvider i18n={i18n}>
+                <ExtensionProvider extensions={extensions}>
+                  <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
+                </ExtensionProvider>
+              </I18nextProvider>
+            </Provider>,
+            document.getElementById('content'),
+          );
           ipcRenderer.send('show-window');
         })
         .catch(err => {
@@ -264,20 +278,6 @@ function renderer() {
             details: err.formatted,
           });
         });
-      initApplicationMenu(extensions);
-      startupFinished();
-      eventEmitter.emit('startup');
-      // render the page content
-      ReactDOM.render(
-        <Provider store={store}>
-          <I18nextProvider i18n={i18n}>
-            <ExtensionProvider extensions={extensions}>
-              <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
-            </ExtensionProvider>
-          </I18nextProvider>
-        </Provider>,
-        document.getElementById('content'),
-      );
     });
 
   // prevent the page from being changed through drag&drop

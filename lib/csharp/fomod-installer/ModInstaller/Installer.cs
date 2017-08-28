@@ -154,6 +154,11 @@ namespace FomodInstaller.ModInstaller
             {
                 foreach (string ArchiveFile in fileList)
                 {
+                    if (ArchiveFile.EndsWith("" + Path.DirectorySeparatorChar))
+                    {
+                        // don't include directories, only files
+                        continue;
+                    }
                     string destination;
                     if (ArchiveFile.StartsWith(prefix))
                     {

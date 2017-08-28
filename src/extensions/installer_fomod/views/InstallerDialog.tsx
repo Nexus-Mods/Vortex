@@ -1,18 +1,23 @@
 import FlexLayout from '../../../controls/FlexLayout';
-import {IconButton} from '../../../controls/TooltipControls';
+import { IconButton } from '../../../controls/TooltipControls';
 import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
-import {pushSafe, removeValue} from '../../../util/storeHelper';
+import { pushSafe, removeValue } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 
-import {GroupType, IGroup, IHeaderImage, IInstallerState, IInstallStep,
-        IPlugin, OrderType} from '../types/interface';
+import {
+  GroupType, IGroup, IHeaderImage, IInstallerState, IInstallStep,
+  IPlugin, OrderType,
+} from '../types/interface';
 
 import * as I18next from 'i18next';
 import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
-import { Checkbox, ControlLabel, Form, FormGroup, Modal, Pager,
-         ProgressBar, Radio } from 'react-bootstrap';
+import {
+  Checkbox, ControlLabel, Form, FormGroup, Modal, Pager,
+  ProgressBar, Radio,
+} from 'react-bootstrap';
 
 interface IGroupProps {
   t: I18next.TranslationFunction;
@@ -37,9 +42,9 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   public componentDidUpdate(oldProps: IGroupProps, oldState: IGroupState) {
     const {group, onSelect} = this.props;
     const {selectedPlugins} = this.state;
-    const valid = this.validateFunc(group.type)(selectedPlugins);
+    const valid: string = this.validateFunc(group.type)(selectedPlugins);
     if (selectedPlugins !== oldState.selectedPlugins) {
-      onSelect(group.id, selectedPlugins, valid);
+      onSelect(group.id, selectedPlugins, valid === undefined);
     }
   }
 
@@ -53,12 +58,15 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     const {group} = this.props;
     const {selectedPlugins} = this.state;
 
-    const validationState = this.validateFunc(group.type)(selectedPlugins) ? null : 'error';
+    const validationMessage = this.validateFunc(group.type)(selectedPlugins);
+    const validationState = validationMessage === undefined ? null : 'error';
 
     return (
       <FormGroup validationState={validationState}>
         <ControlLabel>
           {group.name}
+          {' '}
+          {validationMessage ? `(${validationMessage})` : null}
         </ControlLabel>
         {this.renderNoneOption()}
         {group.options.map(this.renderPlugin)}
@@ -72,12 +80,16 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
       .map((plugin) => plugin.id);
   }
 
-  private validateFunc(type: GroupType) {
+  private validateFunc(type: GroupType): (selected: number[]) => string {
+    const { t } = this.props;
     switch (type) {
-      case 'SelectAtLeastOne': return (selected: number[]) => selected.length > 0;
-      case 'SelectAtMostOne': return (selected: number[]) => selected.length < 2;
-      case 'SelectExactlyOne': return (selected: number[]) => selected.length === 1;
-      default: return () => true;
+      case 'SelectAtLeastOne': return (selected: number[]) => (selected.length === 0)
+        ? t('Select at least one') : undefined;
+      case 'SelectAtMostOne': return (selected: number[]) => (selected.length > 1)
+        ? t('Select at most one') : undefined;
+      case 'SelectExactlyOne': return (selected: number[]) => (selected.length !== 1)
+        ? t('Select exactly one') : undefined;
+      default: return () => undefined;
     }
   }
 
@@ -109,6 +121,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
 
     const isSelected = selectedPlugins.indexOf(plugin.id) !== -1;
     const id = `${stepId}-${group.id}-${plugin.id}`;
+    const readOnly = plugin.type === 'Required';
 
     switch (group.type) {
       case 'SelectExactlyOne':
@@ -120,7 +133,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             value={plugin.id}
             name={group.id.toString()}
             checked={isSelected}
-            onChange={this.select}
+            onChange={readOnly ? this.showDescription : this.select}
           >{plugin.name}
           </Radio>
         );
@@ -130,7 +143,6 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             id={'checkbox-' + id}
             key={plugin.id}
             checked={true}
-            readOnly={true}
             value={plugin.id}
             onClick={this.showDescription}
           >{plugin.name}
@@ -143,7 +155,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             key={plugin.id}
             value={plugin.id}
             checked={isSelected}
-            onChange={this.select}
+            onChange={readOnly ? this.showDescription : this.select}
           >{plugin.name}
           </Checkbox>
         );
@@ -160,10 +172,11 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   private select = (evt: React.FormEvent<any>) => {
-    const {group} = this.props;
+    const {group, onShowDescription} = this.props;
 
     if (evt.currentTarget.value === 'none') {
       this.setState({ selectedPlugins: [] });
+      onShowDescription(undefined, undefined);
       return;
     }
 
@@ -253,8 +266,8 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     };
   }
   public componentWillReceiveProps(nextProps: IProps) {
-    if ((this.props.installerState !== undefined) &&
-      ((this.props.installerInfo !== nextProps.installerInfo)
+    if ((this.props.installerState !== undefined)
+      && ((this.props.installerInfo !== nextProps.installerInfo)
         || (this.props.installerState.currentStep !== nextProps.installerState.currentStep))) {
       this.setState({
         invalidGroups: [],
@@ -297,7 +310,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
         </Modal.Header>
         <Modal.Body>
           <FlexLayout type='row' style={{ position: 'relative' }}>
-            <FlexLayout.Flex style={{ overflowY: 'auto' }}>
+            <FlexLayout.Flex fill style={{ overflowY: 'auto' }}>
               <Step
                 t={t}
                 step={steps[idx]}
@@ -305,9 +318,15 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
                 onShowDescription={this.showDescription}
               />
             </FlexLayout.Flex>
-            <FlexLayout.Fixed style={{ maxWidth: '60%', overflowY: 'auto' }}>
-              {this.renderImage()}
-              <ControlLabel readOnly={true}>{currentDescription}</ControlLabel>
+            <FlexLayout.Fixed style={{ maxWidth: '60%', minWidth: '40%', overflowY: 'auto' }}>
+              <FlexLayout type='column'>
+                <FlexLayout.Fixed style={{ padding: 15 }}>
+                  {this.renderImage()}
+                </FlexLayout.Fixed>
+                <FlexLayout.Flex fill className='description'>
+                  <ControlLabel readOnly={true}>{currentDescription}</ControlLabel>
+                </FlexLayout.Flex>
+              </FlexLayout>
             </FlexLayout.Fixed>
           </FlexLayout>
         </Modal.Body>
@@ -354,16 +373,19 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     }
   }
   private renderImage = () => {
-    const { dataPath } = this.props;
+    const { dataPath, installerInfo } = this.props;
     const { currentImage } = this.state;
-    if ((currentImage === undefined) || (currentImage === null)
-        || (dataPath === undefined) || (dataPath === null)) {
+
+    const image = currentImage || installerInfo.image.path;
+
+    if (!truthy(dataPath) || !truthy(image)) {
       return null;
     }
+
     return (
       <img
-        src={path.join(dataPath, currentImage)}
-        style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }}
+        src={path.join(dataPath, image)}
+        style={{ maxWidth: '100%', maxHeight: '40vh', width: 'auto', height: 'auto' }}
       />
     );
   }

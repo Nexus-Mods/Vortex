@@ -1,42 +1,58 @@
 import * as Promise from 'bluebird';
-import * as ffi from 'ffi';
+import {} from 'ffi';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as ref from 'ref';
-import * as struct from 'ref-struct';
-import * as uniontype from 'ref-union';
+import * as refT from 'ref';
+import * as structT from 'ref-struct';
+import * as uniontypeT from 'ref-union';
 
 import * as tmp from 'tmp';
 
-const DUMMYUNIONNAME = uniontype({
-  hIcon: ref.refType(ref.types.void),
-  hMonitor: ref.refType(ref.types.void),
-});
-
-const voidPtr = ref.refType(ref.types.void);
-
-const SHELLEXECUTEINFO = struct({
-  cbSize: ref.types.uint32,
-  fMask: ref.types.uint32,
-  hwnd: voidPtr,
-  lpVerb: ref.types.CString,
-  lpFile: ref.types.CString,
-  lpParameters: ref.types.CString,
-  lpDirectory: ref.types.CString,
-  nShow: ref.types.int32,
-  hInstApp: voidPtr,
-  lpIDList: voidPtr,
-  lpClass: ref.types.CString,
-  hkeyClass: voidPtr,
-  dwHotKey: ref.types.uint32,
-  DUMMYUNIONNAME,
-  hProcess: voidPtr,
-});
-
-const SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
+let DUMMYUNIONNAME: uniontypeT;
+let SHELLEXECUTEINFO: structT;
+let voidPtr: refT.Type;
+let SHELLEXECUTEINFOPtr: refT.Type;
 let shell32;
 
+function initTypes() {
+  if (DUMMYUNIONNAME !== undefined) {
+    return;
+  }
+
+  const ref = require('ref');
+  const struct = require('ref-struct');
+  const uniontype = require('ref-union');
+
+  voidPtr = ref.refType(ref.types.void);
+
+  DUMMYUNIONNAME = uniontype({
+    hIcon: voidPtr,
+    hMonitor: voidPtr,
+  });
+
+  SHELLEXECUTEINFO = struct({
+    cbSize: ref.types.uint32,
+    fMask: ref.types.uint32,
+    hwnd: voidPtr,
+    lpVerb: ref.types.CString,
+    lpFile: ref.types.CString,
+    lpParameters: ref.types.CString,
+    lpDirectory: ref.types.CString,
+    nShow: ref.types.int32,
+    hInstApp: voidPtr,
+    lpIDList: voidPtr,
+    lpClass: ref.types.CString,
+    hkeyClass: voidPtr,
+    dwHotKey: ref.types.uint32, DUMMYUNIONNAME,
+    hProcess: voidPtr,
+  });
+
+  SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
+}
+
 function execInfo(scriptPath: string, parameters?: string[]) {
+  const ref = require('ref');
+
   const instApp = ref.alloc(voidPtr);
 
   const paramStr = parameters !== undefined ? ' ' + parameters.join(' ') : '';
@@ -108,8 +124,10 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string, main
  */
 function runElevated(ipcPath: string, func: (ipc: any) => void,
                      args?: any, moduleBase?: string): Promise<any> {
+  initTypes();
   if (shell32 === undefined) {
     if (process.platform === 'win32') {
+      const ffi = require('ffi');
       shell32 = new ffi.Library('Shell32', {
         ShellExecuteExA: ['bool', [SHELLEXECUTEINFOPtr]],
       });

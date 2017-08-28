@@ -187,14 +187,16 @@ namespace FomodInstaller.Interface
             public string name;
             public string description;
             public string image;
+            public string type;
 
-            public Option(int id, string name, string description, string image, bool selected) : this()
+            public Option(int id, string name, string description, string image, bool selected, string type) : this()
             {
                 this.id = id;
                 this.name = name;
                 this.description = description;
                 this.image = image;
                 this.selected = selected;
+                this.type = type;
             }
         }
 

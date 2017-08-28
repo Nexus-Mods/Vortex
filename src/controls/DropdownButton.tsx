@@ -7,7 +7,7 @@ export interface IBaseProps {
   container?: Element;
 }
 
-export type IProps = IBaseProps & ReactBootstrap.DropdownButtonProps;
+export type IProps = IBaseProps & typeof DropdownButton.prototype.props;
 
 /**
  * An enhanced dropdown button that adjusts placement of the popover based on the

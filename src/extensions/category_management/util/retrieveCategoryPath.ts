@@ -3,7 +3,7 @@ import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
 function createCategoryDetailPath(categories: any, category: string,
-                                  categoryPath: string) {
+                                  categoryPath: string, visited: Set<string> = new Set()) {
   if (categories[category] === undefined) {
     return 'unknown';
   }
@@ -11,7 +11,10 @@ function createCategoryDetailPath(categories: any, category: string,
     ? categories[category].name
     : categories[category].name + ' --> ' + categoryPath;
 
-  if (categories[category].parentCategory !== undefined) {
+  visited.add(category);
+
+  if ((categories[category].parentCategory !== undefined)
+      && !visited.has(categories[category].parentCategory)) {
     return createCategoryDetailPath(categories,
       categories[category].parentCategory, categoryPath);
   } else {

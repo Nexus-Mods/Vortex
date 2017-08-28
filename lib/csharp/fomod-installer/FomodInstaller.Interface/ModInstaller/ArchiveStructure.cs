@@ -18,13 +18,14 @@ namespace FomodInstaller.Interface
 
         public ArchiveStructure(IEnumerable<string> files)
         {
-            // convert all paths to lower case since the FileTree is implemented case sensitive
             m_ftFiles = new FileTree(files);
         }
 
         /// <summary>
-        /// This searches through the structure recursively to find one one of the stop folders or files
+        /// This searches through the structure recursively to find one of the stop folders or files
         /// and return the path up to there.
+        /// It employs a breadth first search so if there are multiple stop folders, the one with the lowest
+        /// folder depth is returned.
         /// This is used to determine the path "prefix" that should be ignored in scripted installers (
         /// the scripts specify paths relative to this prefix)
         /// </summary>

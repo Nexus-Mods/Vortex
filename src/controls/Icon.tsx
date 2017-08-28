@@ -102,15 +102,6 @@ class Icon extends React.Component<IIconProps, {}> {
     this.setIcon(this.props);
   }
 
-  public componentDidMount() {
-    // TODO: this is a hack. rotation works correctly only when we know the center of the control.
-    // on startup I have the case that the control isn't it's final size yet so the rotation
-    // is broken. This here is a somewhat performant way of checking for resize for one second
-    if (this.props.rotate) {
-      window.requestAnimationFrame(this.updateRotate);
-    }
-  }
-
   public componentWillReceiveProps(newProps: IIconProps) {
     this.setIcon(newProps);
   }
@@ -152,7 +143,7 @@ class Icon extends React.Component<IIconProps, {}> {
       // with svg transforms we have to provide the center of rotation ourselves
       // and we can't use relative units.
       if (this.mRef !== undefined) {
-        const { width, height } = this.mRef.getBoundingClientRect();
+        const { width, height } = this.mCurrentSize;
         transforms.push(
           `rotate(${this.props.rotate}, ${Math.floor(width / 2)}, ${Math.floor(height / 2)})`);
       }
@@ -182,22 +173,6 @@ class Icon extends React.Component<IIconProps, {}> {
       const { width, height } = ref.getBoundingClientRect();
       this.mCurrentSize = { width, height };
       this.forceUpdate();
-    }
-  }
-
-  private updateRotate = () => {
-    if (this.mRef !== undefined) {
-      ++this.mTicks;
-      const { width, height } = this.mRef.getBoundingClientRect();
-      if ((width !== this.mCurrentSize.width)
-          || (height !== this.mCurrentSize.height)) {
-        this.mCurrentSize = { width, height };
-        this.forceUpdate();
-        this.mTicks = 0;
-      }
-      if (this.mTicks < 60) {
-        window.requestAnimationFrame(this.updateRotate);
-      }
     }
   }
 
