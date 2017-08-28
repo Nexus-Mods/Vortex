@@ -381,7 +381,9 @@ class ExtensionManager {
     this.mApi.showErrorNotification =
         (message: string, details: string | Error) => {
           // unfortunately it appears we can't send an error object via ipc
-          const errMessage = typeof(details) === 'string' ? details : details.message;
+          const errMessage = typeof(details) === 'string'
+            ? details
+            : details.message + '\n' + details.stack;
           ipc.send('show-error-notification', message, errMessage);
         };
     this.mApi.store = store;
