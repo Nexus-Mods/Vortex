@@ -1,4 +1,5 @@
 import ToolbarIcon from '../../../controls/ToolbarIcon';
+import { IExtensionContext } from '../../../types/IExtensionContext';
 import asyncRequire, { Placeholder } from '../../../util/asyncRequire';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 
@@ -10,6 +11,7 @@ import * as React from 'react';
 
 export interface IBaseProps {
   buttonType: 'icon' | 'text' | 'both';
+  context: IExtensionContext;
 }
 
 interface IComponentState {
@@ -19,7 +21,6 @@ interface IComponentState {
 type IProps = IBaseProps;
 
 class DiagnosticsFilesButton extends ComponentEx<IProps, IComponentState> {
-  private mIsMounted: boolean = false;
   constructor(props) {
     super(props);
     this.state = {
@@ -28,22 +29,16 @@ class DiagnosticsFilesButton extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-    this.mIsMounted = true;
-    asyncRequire('./DiagnosticsFilesDialog', __dirname)
-    .then(DiagnosticsFilesDialogIn => {
-      DiagnosticsFilesDialog = DiagnosticsFilesDialogIn.default;
-      if (this.mIsMounted) {
-        this.forceUpdate();
-      }
-    });
-  }
 
-  public componentWillUnmount() {
-    this.mIsMounted = false;
+    asyncRequire('./DiagnosticsFilesDialog', __dirname)
+      .then(DiagnosticsFilesDialogIn => {
+        DiagnosticsFilesDialog = DiagnosticsFilesDialogIn.default;
+        this.forceUpdate();
+      });
   }
 
   public render(): JSX.Element {
-    const { t, buttonType } = this.props;
+    const { t, buttonType, context } = this.props;
     const { dialogVisible } = this.state;
 
     return (
@@ -58,6 +53,7 @@ class DiagnosticsFilesButton extends ComponentEx<IProps, IComponentState> {
         <DiagnosticsFilesDialog
           shown={dialogVisible}
           onHide={this.hideDiagnosticsFilesLayer}
+          context={context}
         />
       </ToolbarIcon>
     );

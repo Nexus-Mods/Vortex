@@ -3,7 +3,7 @@ import { IExtensionContext } from '../../types/IExtensionContext';
 import DiagnosticsFilesButton from './views/DiagnosticsFilesButton';
 
 function init(context: IExtensionContext): boolean {
-  context.registerAction('help-icons', 200, DiagnosticsFilesButton, {});
+  context.registerAction('help-icons', 200, DiagnosticsFilesButton, {}, () => ({ context }));
 
   return true;
 }

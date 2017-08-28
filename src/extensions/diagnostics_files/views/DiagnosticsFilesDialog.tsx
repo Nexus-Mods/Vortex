@@ -1,12 +1,13 @@
 import FlexLayout from '../../../controls/FlexLayout';
-import { IconButton } from '../../../controls/TooltipControls';
+import { Icon as TooltipIcon, IconButton } from '../../../controls/TooltipControls';
+import { IExtensionContext } from '../../../types/IExtensionContext';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import { log } from '../../../util/log';
 
 import { ILog, ISession } from '../types/ISession';
 import { loadVortexLogs } from '../util/loadVortexLogs';
 
-import { clipboard, remote } from 'electron';
+import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as path from 'path';
@@ -16,77 +17,63 @@ import { Button, ListGroup, ListGroupItem, Modal, Panel } from 'react-bootstrap'
 export interface IBaseProps {
   shown: boolean;
   onHide: () => void;
+  context: IExtensionContext;
 }
 
 interface IComponentState {
   sessions: ISession[];
-  textLog: ILog[];
-  activeSession: string;
+  textLog: string;
+  logErrors: ILog[];
 }
 
 type IProps = IBaseProps;
 
 class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
-  private mMounted: boolean;
   constructor(props) {
     super(props);
-    this.mMounted = false;
     this.state = {
       sessions: [],
-      textLog: [],
-      activeSession: '',
+      textLog: '',
+      logErrors: [],
     };
   }
 
   public componentWillMount() {
     loadVortexLogs()
-    .then((sessionArray) => {
-      this.setState(update(this.state, {
-        sessions: { $set: sessionArray },
-      }));
-    })
-    .catch((err) => {
-      log('error', 'failed to read logs files', err.message);
-    });
-  }
-
-  public componentDidMount() {
-    this.mMounted = true;
-  }
-
-  public componentWillUnmount() {
-    this.mMounted = false;
+      .then((sessionArray) => {
+        this.setState(update(this.state, {
+          sessions: { $set: sessionArray },
+        }));
+      })
+      .catch((err) => {
+        log('error', 'failed to read logs files', err.message);
+      });
   }
 
   public render(): JSX.Element {
     const { t, shown } = this.props;
-    const { activeSession, sessions, textLog } = this.state;
+    const { sessions, textLog } = this.state;
 
     let body = null;
 
     if (shown) {
 
       body = (
-        <Modal.Body id='diagnostics-files' >
-          <div style={{ marginTop: 5, marginBottom: 5 }}><p><strong>{t('Sessions')}</strong></p>
-            <ListGroup className='diagnostics-files-sessions-panel'>
+        <Modal.Body id='diagnostics-files'       >
+          <div style={{ marginTop: 5, marginBottom: 5 }}>
+            <div className='diagnostics-files-sessions-panel'>
               {Object.keys(sessions).map((key) => this.renderSession(key))}
-            </ListGroup>
+            </div>
           </div>
-          <div style={{ marginTop: 5, marginBottom: 5 }} key={activeSession}>
-            <p><strong>{t('Log')}</strong></p>
-            <ListGroup className='diagnostics-files-log-panel'>
-              {
-                Object.keys(textLog).map((key) => this.renderLog(key))
-              }
-            </ListGroup>
+          <div style={{ marginTop: 5, marginBottom: 5 }}>
+            {this.renderDetail()}
           </div>
         </Modal.Body>
       );
     }
 
     return (
-      <Modal show={shown} onHide={this.props.onHide}>
+      <Modal bsSize='lg' show={shown} onHide={this.resetDetail}>
         <Modal.Header>
           <Modal.Title>
             {t('Diagnostics Files')}
@@ -96,7 +83,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         <Modal.Footer>
           <Button
             id='close'
-            onClick={this.props.onHide}
+            onClick={this.resetDetail}
           >
             {t('Close')}
           </Button>
@@ -105,9 +92,17 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private resetDetail = () => {
+    this.setState(update(this.state, {
+      logErrors: { $set: [] },
+      textLog: { $set: '' },
+    }));
+    this.props.onHide();
+  }
+
   private renderSession = (key: string) => {
     const { t } = this.props;
-    const { activeSession, sessions } = this.state;
+    const { sessions } = this.state;
 
     const errors = sessions[key].logs.filter((item) =>
       item.type === 'ERROR');
@@ -122,66 +117,113 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     }
 
     return (
-      <ListGroupItem
-        key={sessions[key].from}
-        active={activeSession === key}
-      >
-        <div>{'From ' + from + ' to ' + to}</div>
-        {errors.length > 0 ?
-          <div style={{ color: 'orange' }}>
-            {'( Errors: ' + errors.length + ' ' + isCrashed + ')'}
-          </div> : null
-        }
-        <IconButton
-          className='btn-embed btn-line-right'
-          id={key}
-          tooltip={t('Show log')}
-          onClick={this.showSession}
-          icon='eye'
-        />
-      </ListGroupItem>
+      <span style={{ display: 'flex' }} key={key}>
+        <div style={{ flex: '1 1 0' }}>
+          <h4>
+            {'From ' + from + ' to ' + to + ' - Errors: ' + errors.length + isCrashed}
+          </h4>
+        </div>
+        <div className='diagnostics-files-actions'>
+          <IconButton
+            className='btn-embed'
+            id={key}
+            tooltip={t('Show full log')}
+            onClick={this.showDetail}
+            icon='eye'
+            value='LOG'
+          />
+          {errors.length > 0 ? (
+            <IconButton
+              className='btn-embed'
+              id={key}
+              tooltip={t('Show errors')}
+              onClick={this.showDetail}
+              icon='bug'
+              value='ERR'
+            />
+          ) : null}
+          <IconButton
+            className='btn-embed'
+            id={key}
+            tooltip={t('Report log')}
+            onClick={this.reportLog}
+            icon='message'
+          />
+        </div>
+      </span>
     );
   }
 
-  private copyToClipboard = (evt) => {
-    const { textLog } = this.state;
+  private renderDetail = () => {
+    const { t } = this.props;
+    const { textLog, logErrors } = this.state;
+
+    if (logErrors.length > 0) {
+      return (
+        <ListGroup className='diagnostics-files-log-panel'>
+          {
+            Object.keys(logErrors).map((logKey) => {
+              return (
+                <ListGroupItem
+                  key={logKey}
+                >
+                  {logErrors[logKey].text}
+                </ListGroupItem>
+              );
+            })
+          }
+        </ListGroup>
+      );
+    } else if (textLog !== '') {
+      return (
+        <div>
+          <textarea
+            value={textLog}
+            id='textarea-diagnostics-files'
+            className='textarea-diagnostics-files'
+          />
+        </div>
+      );
+    }
+  }
+
+  private showDetail = (evt) => {
+    const { textLog, sessions } = this.state;
     const key = evt.currentTarget.id;
 
-    clipboard.writeText(textLog[key].text);
+    const detail = evt.currentTarget.value;
+
+    if (detail === 'ERR') {
+      const logs = sessions[key].logs.filter((element) => element.type === 'ERROR');
+
+      this.setState(update(this.state, {
+        textLog: { $set: '' },
+        logErrors: { $set: logs },
+      }));
+    } else if (detail === 'LOG') {
+      this.setState(update(this.state, {
+        logErrors: { $set: [] },
+        textLog: { $set: sessions[key].fullLog },
+      }));
+    }
   }
 
-  private renderLog = (key: string) => {
-    const { t } = this.props;
-    const { textLog } = this.state;
+  private reportLog = (evt) => {
+    const { textLog, sessions } = this.state;
+    const key = evt.currentTarget.id;
 
-    return (
+    const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
 
-      <ListGroupItem
-        key={key}
-      >
-        {textLog[key].type === 'ERROR' ?
-          <div>
-            <IconButton
-              className='btn-embed btn-line-top'
-              id={key}
-              tooltip={t('Copy error text')}
-              onClick={this.copyToClipboard}
-              icon='clone'
-            />
-            <Panel bsStyle='danger' collapsible header={t('ERROR')}>
-              <p key={key} style={{ color: 'red' }}>
-                {textLog[key].text}
-              </p>
-
-            </Panel>
-          </div>
-          : <p key={key}>
-            {textLog[key].text}
-          </p>
-        }
-
-      </ListGroupItem>
-    );
+    fs.writeFileAsync(nativeCrashesPath + '\\session.log', sessions[key].fullLog)
+      .then(() => {
+        this.resetDetail();
+        this.context.api.events.emit('report-log-error',
+          path.join(nativeCrashesPath, 'session.log'));
+        this.props.onHide();
+      })
+      .catch((err) => {
+        log('error', 'failed to write log session file', err.message);
+      });
   }
 
   private showSession = (evt) => {
