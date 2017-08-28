@@ -1014,8 +1014,10 @@ a[role=menuitem] svg {
 /////////
 // tables
 .table-actions {
+  display: inline-flex;
   >.btn {
     @extend .btn-embed;
+    @extend .hcenter;
   }
 }
 
@@ -1110,10 +1112,6 @@ a[role=menuitem] svg {
 .table-header {
   margin-right: $scrollbar-width;
   transform-style: preserve-3d;
-}
-
-.table-actions > button {
-  @extend .hcenter;
 }
 
 .btn-table-filter {
@@ -1888,6 +1886,10 @@ a[role=menuitem] svg {
     border-style: solid;
     border-color: $brand-warning;
   }
+}
+
+#downloads-action-icons .btn {
+  @extend .btn-embed;
 }
 
 // /download page

@@ -23,9 +23,11 @@ function initTypes() {
   const struct = require('ref-struct');
   const uniontype = require('ref-union');
 
+  voidPtr = ref.refType(ref.types.void);
+
   DUMMYUNIONNAME = uniontype({
-    hIcon: ref.refType(ref.types.void),
-    hMonitor: ref.refType(ref.types.void),
+    hIcon: voidPtr,
+    hMonitor: voidPtr,
   });
 
   SHELLEXECUTEINFO = struct({
@@ -46,8 +48,6 @@ function initTypes() {
   });
 
   SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
-
-  voidPtr = ref.refType(ref.types.void);
 }
 
 function execInfo(scriptPath: string, parameters?: string[]) {

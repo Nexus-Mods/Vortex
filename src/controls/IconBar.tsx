@@ -23,7 +23,7 @@ export interface IBaseProps {
   tooltipPlacement?: 'top' | 'right' | 'bottom' | 'left';
   buttonType?: ButtonType;
   orientation?: 'horizontal' | 'vertical';
-  collapse?: boolean;
+  collapse?: boolean | 'force';
 }
 
 export interface IExtensionProps {
@@ -112,7 +112,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       const unCollapsed: IActionDefinition[] = [];
 
       icons.forEach(action => {
-        if ((action.options === undefined) || !action.options.noCollapse) {
+        if ((collapse === 'force')
+            || ((action.options === undefined) || !action.options.noCollapse)) {
           collapsed.push(action);
         } else {
           unCollapsed.push(action);

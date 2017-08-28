@@ -255,7 +255,6 @@ function endorseModImpl(
 function checkModVersionsImpl(
   store: Redux.Store<any>,
   gameId: string,
-  groupedMods: { [id: string]: IModWithState[] },
   mods: { [modId: string]: IMod }): Promise<string[]> {
 
   const modsList = Object.keys(mods)
@@ -476,7 +475,7 @@ function once(api: IExtensionApi) {
     retrieveCategories(api, isUpdate);
   });
 
-  api.events.on('check-mods-version', (gameId, groupedMods, mods) => {
+  api.events.on('check-mods-version', (gameId, mods) => {
     const APIKEY = getSafe(api.store.getState(),
       ['confidential', 'account', 'nexus', 'APIKey'], '');
     if (APIKEY === '') {
@@ -485,7 +484,7 @@ function once(api: IExtensionApi) {
         'You are not logged in!');
     } else {
       api.store.dispatch(setUpdatingMods(gameId, true));
-      checkModVersionsImpl(api.store, gameId, groupedMods, mods)
+      checkModVersionsImpl(api.store, gameId, mods)
         .then((errorMessages: string[]) => {
           if (errorMessages.length !== 0) {
             showError(api.store.dispatch,

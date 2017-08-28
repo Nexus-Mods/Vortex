@@ -237,6 +237,9 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         action: this.inspect,
         condition: this.inspectable,
         multiRowAction: false,
+        options: {
+          noCollapse: true,
+        },
       },
       {
         icon: 'file-add',
@@ -244,6 +247,9 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         action: this.install,
         condition: this.installable,
         hotKey: { code: 13 },
+        options: {
+          noCollapse: true,
+        },
       },
       {
         icon: 'button-pause',

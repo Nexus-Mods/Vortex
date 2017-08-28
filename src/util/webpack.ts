@@ -4,6 +4,7 @@ import * as webpack from 'webpack';
 function externalsDirect(): webpack.ExternalsObjectElement {
   return [
     'bluebird',
+    'electron',
     'exe-version',
     'ffi',
     'fs',

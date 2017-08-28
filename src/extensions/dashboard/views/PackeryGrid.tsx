@@ -15,6 +15,7 @@ export interface IProps {
 class Packery extends React.Component<IProps, {}> {
   private mPackery: any;
   private mRef: Element;
+  private mLayoutTimer: NodeJS.Timer;
   private mRefreshTimer: NodeJS.Timer;
 
   constructor(props: IProps) {
@@ -22,9 +23,7 @@ class Packery extends React.Component<IProps, {}> {
   }
 
   public componentDidUpdate() {
-    if (this.mPackery !== undefined) {
-      this.mPackery.layout();
-    }
+    this.scheduleLayout();
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
@@ -74,6 +73,18 @@ class Packery extends React.Component<IProps, {}> {
 
   private saveLayout = (items) => {
     this.props.onChangeLayout(items.map(item => item.element.id));
+  }
+
+  private scheduleLayout() {
+    if (this.mLayoutTimer !== undefined) {
+      clearTimeout(this.mLayoutTimer);
+    }
+    this.mLayoutTimer = setTimeout(() => {
+      this.mLayoutTimer = undefined;
+      if (this.mPackery !== undefined) {
+        this.mPackery.layout();
+      }
+    }, 50);
   }
 
   private scheduleRefresh() {

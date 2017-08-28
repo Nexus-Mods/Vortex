@@ -156,6 +156,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         action: this.removeSelected,
         hotKey: { code: 46 },
       },
+      {
+        icon: 'cloud-refresh',
+        title: 'Check for update',
+        action: this.checkForUpdate,
+      },
     ];
 
     this.staticButtons = [
@@ -713,6 +718,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             }
           }));
       });
+  }
+
+  private checkForUpdate = (modIds: string[]) => {
+    const { gameMode, mods } = this.props;
+
+    this.context.api.events.emit('check-mods-version', gameMode, _.pick(mods, modIds));
   }
 }
 

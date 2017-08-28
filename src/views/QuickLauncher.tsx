@@ -47,12 +47,13 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
   starter: StarterInfo;
+  gameIconCache: { [gameId: string]: { icon: string, game: IGameStored } };
 }
 
 class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
-    this.initState({ starter: this.makeStarter(props) });
+    this.initState({ starter: this.makeStarter(props), gameIconCache: this.genGameIconCache() });
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
@@ -62,38 +63,36 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         || (nextProps.gameDiscovery !== this.props.primaryTool)) {
       this.nextState.starter = this.makeStarter(nextProps);
     }
+
+    if ((nextProps.profiles !== this.props.profiles)
+        || (nextProps.discoveredGames !== this.props.discoveredGames)) {
+      this.nextState.gameIconCache = this.genGameIconCache();
+    }
   }
 
   public render(): JSX.Element {
     const { t, discoveredGames, game, knownGames, profiles } = this.props;
-    const { starter } = this.state;
+    const { gameIconCache, starter } = this.state;
 
     if (starter === undefined) {
       return null;
     }
 
-    const managedGamesIds = new Set<string>(Object.keys(profiles)
-      .map(profileId => profiles[profileId].gameId)
-      .filter(gameId => !getSafe(discoveredGames, [gameId, 'hidden'], false)));
-
     // TODO: this leaves out manually added games
-    const managedGames = Array.from(managedGamesIds)
-      .map(gameId => knownGames.find(iter => iter.id === gameId))
-      .filter(iter => iter !== undefined);
 
     return (
       <div className='container-quicklaunch'>
         <DropdownButton
           id='dropdown-quicklaunch'
           className='btn-quicklaunch'
-          title={this.renderGameOption(game, starter) as any}
+          title={this.renderGameOption(game.id, starter) as any}
           key={game.id}
           onSelect={this.changeGame}
         >
           {
-            managedGames.map(managedGame => (
-              <MenuItem key={managedGame.id} eventKey={managedGame.id}>
-                {this.renderGameOption(managedGame)}
+            Object.keys(gameIconCache).map(gameId => (
+              <MenuItem key={gameId} eventKey={gameId}>
+                {this.renderGameOption(gameId)}
               </MenuItem>
               ))
           }
@@ -111,16 +110,18 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderGameOption = (managedGame: IGameStored, starter?: StarterInfo) => {
+  private renderGameOption = (gameId: string, starter?: StarterInfo) => {
     const { discoveredGames } = this.props;
+    const { gameIconCache } = this.state;
 
-    const discovered = discoveredGames[managedGame.id];
+    const discovered = discoveredGames[gameId];
 
-    const iconPath = StarterInfo.getGameIcon(managedGame, discovered);
+    const iconPath = gameIconCache[gameId].icon;
+    const game = gameIconCache[gameId].game;
 
     const displayName =
-      getSafe(discovered, ['shortName'], getSafe(managedGame, ['shortName'], undefined))
-      || getSafe(discovered, ['name'], getSafe(managedGame, ['name'], undefined));
+      getSafe(discovered, ['shortName'], getSafe(game, ['shortName'], undefined))
+      || getSafe(discovered, ['name'], getSafe(game, ['name'], undefined));
 
     return (
       <div style={{ display: 'flex' }}>
@@ -130,6 +131,23 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         <span className='menu-label'>{displayName}</span>
       </div>
     );
+  }
+
+  private genGameIconCache(): { [gameId: string]: { icon: string, game: IGameStored } } {
+    const { discoveredGames, knownGames, profiles } = this.props;
+
+    const managedGamesIds = Array.from(new Set<string>(Object.keys(profiles)
+      .map(profileId => profiles[profileId].gameId)
+      .filter(gameId => !getSafe(discoveredGames, [gameId, 'hidden'], false))));
+
+    return managedGamesIds.reduce((prev, gameId) => {
+      const game = knownGames.find(iter => iter.id === gameId);
+      prev[gameId] = {
+        icon: StarterInfo.getGameIcon(game, discoveredGames[gameId]),
+        game,
+      };
+      return prev;
+    }, {});
   }
 
   private changeGame = (gameId) => {
