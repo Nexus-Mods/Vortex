@@ -73,6 +73,11 @@ export interface ITableAttribute<T = any> {
    */
   isDefaultVisible?: boolean;
   /**
+   * if this is true and if the user hasn't changed column sorting yet, this column will be used
+   * for sorting (ascending) as long as it's visible and no previous column had this flag set.
+   */
+  isDefaultSort?: boolean;
+  /**
    * if true, the calc-function for this attribute is called from time to time to see if it changed.
    * Otherwise (default) the values for this attribute are only updated when the input data to the
    * table changes. This means you need this flag, if the value of the attribute may change without
