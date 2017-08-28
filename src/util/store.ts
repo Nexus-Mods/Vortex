@@ -49,11 +49,16 @@ export function createVortexStore([]): Redux.Store<IState> {
 }
 
 function initStorage(basePath: string): Promise<IStorage> {
-  if (storage[basePath] === undefined) {
-    // storage[basePath] = new StorageLogger(new LevelStorage(basePath, 'state'));
-    storage[basePath] = new LevelStorage(basePath, 'state');
+  if (storage[basePath] !== undefined) {
+    return Promise.resolve(storage[basePath]);
   }
-  return Promise.resolve(storage[basePath]);
+
+  return LevelStorage.create(basePath, 'state')
+      .then((levelStorage) => {
+        // storage[basePath] = new StorageLogger(levelStorage);
+        storage[basePath] = levelStorage;
+        return storage[basePath];
+      });
 }
 
 function persist(store: Redux.Store<IState>, levelStorage: IStorage,
