@@ -230,7 +230,7 @@ textarea {
   white-space: nowrap;
   padding: 10px 25px 10px 16px;
   -webkit-user-drag: none;
-}
+} 
 
 .nav > li > a:hover,
 .nav > li > a:focus {
@@ -806,7 +806,6 @@ a[role=menuitem] svg {
 // the naviation buttons on the left
 #main-nav-sidebar {
   background-color: $brand-menu;
-  transition: max-width $expand-sidebar-delay;
   display: flex;
   flex-direction: column;
 
@@ -814,6 +813,7 @@ a[role=menuitem] svg {
   // (contains everything except the minimize/maximize button)
   #main-nav-container {
     flex-direction: column;
+    transition: max-width $expand-sidebar-delay, min-width $expand-sidebar-delay;
     height: 100%;
     display: flex;
     overflow-y: auto;
@@ -821,15 +821,17 @@ a[role=menuitem] svg {
   }
 
   .menu-label {
-    transition: opacity $expand-sidebar-delay, min-width $expand-sidebar-delay;
+    transition: opacity $expand-sidebar-delay, margin-left $expand-sidebar-delay;
     vertical-align: middle;
-    margin-left: 10px;
-    min-width: 125px;
     font-size: $font-size-base;
+    margin-left: 10px;
   }
 
   &.sidebar-expanded {
-    max-width: 500px;
+    #main-nav-container {
+      max-width: 500px;
+    }
+
     .menu-label {
       opacity: 1;
     }
@@ -844,8 +846,10 @@ a[role=menuitem] svg {
   }
 
   &.sidebar-compact {
-    min-width: 0px;
-    max-width: 48px;
+    #main-nav-container {
+      min-width: 0px;
+      max-width: 48px;
+    }
     .menu-label {
       opacity: 0;
       width: 0;
