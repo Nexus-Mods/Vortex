@@ -105,7 +105,6 @@ function init(context: IExtensionContext): boolean {
 
   context.once(() => {
     context.api.events.on('trigger-test-run', (eventType: string, delay?: number) => {
-      log('debug', 'triggering test run', eventType);
       runChecks(context.api, eventType, delay);
     });
 
