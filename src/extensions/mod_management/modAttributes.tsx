@@ -108,11 +108,12 @@ export const INSTALL_TIME: ITableAttribute = {
       return <span>{relativeTime(new Date(timeString), t)}</span>;
     }
   },
-  calc: (mod: IModWithState) => new Date(getSafe(mod.attributes, ['installTime'], '')),
+  calc: (mod: IModWithState) => new Date(getSafe(mod.attributes, ['installTime'], 0)),
   placement: 'both',
   isToggleable: true,
   isDefaultVisible: false,
   edit: {},
   isSortable: true,
+  sortFunc: (lhs: Date, rhs: Date) => (lhs.getTime() || 0) - (rhs.getTime() || 0),
   filter: new DateTimeFilter(),
 };

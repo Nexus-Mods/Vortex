@@ -11,9 +11,8 @@ export interface IProps {
 
 function next(direction: SortDirection): SortDirection {
   switch (direction) {
-    case 'none': return 'asc';
     case 'asc': return 'desc';
-    default: return 'none';
+    default: return 'asc';
   }
 }
 

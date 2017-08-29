@@ -46,6 +46,7 @@ export interface IBaseProps {
   actions: ITableRowAction[];
   detailsTitle?: string;
   multiSelect?: boolean;
+  defaultSort?: string;
 }
 
 interface IConnectedProps {
@@ -450,14 +451,28 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 
   private refreshSorted(props: IProps) {
-    const { attributeState, data, language } = props;
+    const { data, language } = props;
     const filtered: { [key: string]: any } =
       this.filteredRows(props, this.mVisibleAttributes, data);
+
+    const attrState = this.getAttributeStates(props);
+
     this.setState(update(this.state, {
       sortedRows: {
-        $set: this.sortedRows(attributeState || {}, this.mVisibleAttributes, filtered, language),
+        $set: this.sortedRows(attrState, this.mVisibleAttributes, filtered, language),
       },
     }));
+  }
+
+  private getAttributeStates(props: IProps): { [id: string]: IAttributeState } {
+    return (truthy(props.attributeState) || (this.mVisibleAttributes === undefined))
+      ? props.attributeState
+      : this.mVisibleAttributes.reduce((prev, attribute) => {
+        if (attribute.isDefaultSort === true) {
+          prev[attribute.id] = { sortDirection: 'asc' };
+        }
+        return prev;
+      }, {});
   }
 
   private selectRelative = (delta: number): string => {
@@ -830,7 +845,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   private getAttributeState(attribute: ITableAttribute,
                             attributeStatesIn?: { [id: string]: IAttributeState }) {
-    const attributeStates = attributeStatesIn || this.props.attributeState || {};
+    const attributeStates = attributeStatesIn || this.getAttributeStates(this.props) || {};
 
     const defaultVisible =
       attribute.isDefaultVisible !== undefined ? attribute.isDefaultVisible : true;
