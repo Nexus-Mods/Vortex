@@ -29,11 +29,9 @@ class DiagnosticsFilesButton extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-
     asyncRequire('./DiagnosticsFilesDialog', __dirname)
       .then(DiagnosticsFilesDialogIn => {
         DiagnosticsFilesDialog = DiagnosticsFilesDialogIn.default;
-        this.forceUpdate();
       });
   }
 

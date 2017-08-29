@@ -24,6 +24,7 @@ interface IComponentState {
   sessions: ISession[];
   textLog: string;
   logErrors: ILog[];
+  sessionKey: string;
 }
 
 type IProps = IBaseProps;
@@ -35,6 +36,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       sessions: [],
       textLog: '',
       logErrors: [],
+      sessionKey: '',
     };
   }
 
@@ -52,7 +54,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, shown } = this.props;
-    const { sessions, textLog } = this.state;
+    const { sessions } = this.state;
 
     let body = null;
 
@@ -96,13 +98,14 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     this.setState(update(this.state, {
       logErrors: { $set: [] },
       textLog: { $set: '' },
+      sessionKey: { $set: '' },
     }));
     this.props.onHide();
   }
 
   private renderSession = (key: string) => {
     const { t } = this.props;
-    const { sessions } = this.state;
+    const { sessions, sessionKey } = this.state;
 
     const errors = sessions[key].logs.filter((item) =>
       item.type === 'ERROR');
@@ -116,12 +119,17 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       }
     }
 
+    const classes = ['list-group-item'];
+    if ((sessionKey !== '') && (sessionKey === key)) {
+      classes.push('active');
+    }
+
     return (
-      <span style={{ display: 'flex' }} key={key}>
+      <span className={classes.join(' ')} style={{ display: 'flex' }} key={key}>
         <div style={{ flex: '1 1 0' }}>
-          <h4>
-            {'From ' + from + ' to ' + to + ' - Errors: ' + errors.length + isCrashed}
-          </h4>
+          {errors.length > 0 ? 'From ' + from + ' to ' + to +
+            ' - Errors: ' + errors.length + isCrashed : 'From ' + from + ' to ' + to
+          }
         </div>
         <div className='diagnostics-files-actions'>
           <IconButton
@@ -160,27 +168,32 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
     if (logErrors.length > 0) {
       return (
-        <ListGroup className='diagnostics-files-log-panel'>
-          {
-            Object.keys(logErrors).map((logKey) => {
-              return (
-                <ListGroupItem
-                  key={logKey}
-                >
-                  {logErrors[logKey].text}
-                </ListGroupItem>
-              );
-            })
-          }
-        </ListGroup>
+        <div>
+          <p>{t('Errors')}</p>
+          <ListGroup className='diagnostics-files-log-panel'>
+            {
+              Object.keys(logErrors).map((logKey) => {
+                return (
+                  <ListGroupItem
+                    key={logKey}
+                  >
+                    {logErrors[logKey].text}
+                  </ListGroupItem>
+                );
+              })
+            }
+          </ListGroup>
+        </div>
       );
     } else if (textLog !== '') {
       return (
         <div>
+          <p>{t('Full log')}</p>
           <textarea
             value={textLog}
             id='textarea-diagnostics-files'
             className='textarea-diagnostics-files'
+
           />
         </div>
       );
@@ -188,7 +201,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private showDetail = (evt) => {
-    const { textLog, sessions } = this.state;
+    const { sessions } = this.state;
     const key = evt.currentTarget.id;
 
     const detail = evt.currentTarget.value;
@@ -199,17 +212,19 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       this.setState(update(this.state, {
         textLog: { $set: '' },
         logErrors: { $set: logs },
+        sessionKey: { $set: key },
       }));
     } else if (detail === 'LOG') {
       this.setState(update(this.state, {
         logErrors: { $set: [] },
         textLog: { $set: sessions[key].fullLog },
+        sessionKey: { $set: key },
       }));
     }
   }
 
   private reportLog = (evt) => {
-    const { textLog, sessions } = this.state;
+    const { sessions } = this.state;
     const key = evt.currentTarget.id;
 
     const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
@@ -227,7 +242,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private showSession = (evt) => {
-    const { textLog, sessions } = this.state;
+    const { sessions } = this.state;
     const key = evt.currentTarget.id;
 
     this.setState(update(this.state, {
