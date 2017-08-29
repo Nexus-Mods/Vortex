@@ -189,6 +189,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "mtframework-arc-support",
+      "path": "extensions/mtframework-arc-support",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/mtframework-arc-support"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "name": "exe-version-rebuild",
       "module": "exe-version",

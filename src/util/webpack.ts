@@ -44,13 +44,13 @@ export function externals(): webpack.ExternalsElement {
   };
 }
 
-export function output(moduleName: string): webpack.Output {
+export function output(moduleName: string, basePath): webpack.Output {
   return {
     libraryTarget: 'commonjs2',
     library: moduleName,
     filename: 'index.js',
     sourceMapFilename: `${moduleName}.js.map`,
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(basePath, 'dist'),
   };
 }
 
@@ -61,12 +61,12 @@ export function loaders(): webpack.Rule[] {
   ];
 }
 
-export default function config(moduleName: string): webpack.Configuration {
+export default function config(moduleName: string, basePath: string): webpack.Configuration {
   return {
-    entry: './out/index.js',
+    entry: './src/index.ts',
     target: 'electron-renderer',
     node: {__filename: false, __dirname: false},
-    output: output(moduleName),
+    output: output(moduleName, basePath),
     module: {
       loaders: loaders(),
     },

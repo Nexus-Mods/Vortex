@@ -46,7 +46,8 @@ function findInstances(gameId: string): Promise<string[]> {
               return prev;
           }, {});
           return Object.keys(set).map(key => set[key]);
-      });
+      })
+    .catch(err => (err.code === 'ENOENT') ? [] : Promise.reject(err));
 }
 
 export default findInstances;

@@ -185,7 +185,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
 
     const classes = ['btn-dependency'];
 
-    const lootRules: ILOOTPlugin = userlist.find(rule => rule.name === plugin.name) || {
+    const lootRules: ILOOTPlugin = (userlist || []).find(rule => rule.name === plugin.name) || {
       name: plugin.name,
     };
 

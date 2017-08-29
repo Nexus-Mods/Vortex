@@ -245,7 +245,6 @@ class InstallManager {
       .finally(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }))
       .then(() => filterModInfo(fullInfo, destinationPath))
       .then(modInfo => {
-        console.log('mod info', modInfo);
         installContext.finishInstallCB('success', modInfo);
         if (enable) {
           api.store.dispatch(setModEnabled(currentProfile.id, modId, true));

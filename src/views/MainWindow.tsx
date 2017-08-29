@@ -144,6 +144,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private overlayRef: HTMLElement = null;
   private headerRef: HTMLElement = null;
+  private sidebarRef: HTMLElement = null;
 
   constructor(props: IProps) {
     super(props);
@@ -294,9 +295,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     return (
       <FlexLayout.Flex>
-        <FlexLayout type='row' style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
+        <FlexLayout type='row' style={{ overflow: 'hidden' }}>
           <FlexLayout.Fixed id='main-nav-sidebar' className={sbClass}>
-            <div id='main-nav-container'>
+            <div id='main-nav-container' ref={this.setSidebarRef}>
               <Nav
                 bsStyle='pills'
                 stacked
@@ -357,6 +358,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private getHeaderRef = () => this.headerRef;
+
+  private setSidebarRef = ref => {
+    this.sidebarRef = ref;
+    this.sidebarRef.setAttribute('style', 'min-width: ' + ref.getBoundingClientRect().width + 'px');
+  }
 
   private renderFooter() {
     return (
@@ -450,7 +456,16 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private toggleMenu = () => {
-    this.props.onSetTabsMinimized(!this.props.tabsMinimized);
+    const newMinimized = !this.props.tabsMinimized;
+    this.props.onSetTabsMinimized(newMinimized);
+    if (newMinimized) {
+      this.sidebarRef.setAttribute('style', '');
+    } else {
+      setTimeout(() => {
+        this.sidebarRef.setAttribute('style',
+          'min-width:' + this.sidebarRef.getBoundingClientRect().width + 'px');
+      }, 500);
+    }
   }
 
   private renderDeveloperModal() {

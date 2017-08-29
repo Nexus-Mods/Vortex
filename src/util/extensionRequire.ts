@@ -18,7 +18,12 @@ function extensionRequire(orig) {
   const extensionPaths = ExtensionManager.getExtensionPaths();
   return function(id) {
     if (extensionPaths.find(iter => this.filename.startsWith(iter)) !== undefined) {
-      let res = require.main.require(id);
+      let res;
+      try {
+        res = require.main.require(id);
+      } catch (err) {
+        // nop, leave res undefined so orig gets tried
+      }
       if (res === undefined) {
         res = orig.apply(this, arguments);
       }

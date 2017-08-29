@@ -1,9 +1,12 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import {IState} from '../../types/IState';
 import { UserCanceled } from '../../util/CustomErrors';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
+import {truthy} from '../../util/util';
 
 import { ISupportedResult } from '../mod_management/types/ITestSupported';
+import resolvePath from '../mod_management/util/resolvePath';
 
 import { endDialog, setInstallerDataPath } from './actions/installerUI';
 import Core from './delegates/core';
@@ -13,8 +16,8 @@ import InstallerDialog from './views/InstallerDialog';
 import * as Promise from 'bluebird';
 import * as edgeT from 'edge';
 const edge = lazyRequire<typeof edgeT>('edge');
+import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-
 import * as util from 'util';
 
 let testSupportedLib;
@@ -97,6 +100,31 @@ export interface IExtensionContextExt extends IExtensionContext {
   registerInstaller: (priority, testSupported, install) => void;
 }
 
+function processAttributes(input: any, modPath: string): Promise<any> {
+  if (modPath === undefined) {
+    return Promise.resolve({});
+  }
+  return fs.readFileAsync(path.join(modPath, 'fomod', 'info.xml'))
+      .then((data: NodeBuffer) => {
+        let offset = 0;
+        let encoding = 'utf8';
+        if (data.readUInt16LE(0) === 0xFEFF) {
+          encoding = 'utf16le';
+          offset = 2;
+        } else if (data.compare(Buffer.from([0xEF, 0xBB, 0xBF]), 0, 3, 0, 3) === 0) {
+          offset = 3;
+        }
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(data.slice(offset).toString(encoding), 'text/xml');
+        const name: Element = xmlDoc.querySelector('fomod Name');
+        return truthy(name)
+          ? {
+            customFileName: name.childNodes[0].nodeValue,
+          } : {};
+      })
+      .catch(err => ({}));
+}
+
 function init(context: IExtensionContextExt): boolean {
   context.registerInstaller(
     100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
@@ -115,6 +143,8 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerDialog('fomod-installer', InstallerDialog);
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
+
+  context.registerAttributeExtractor(75, processAttributes);
 
   return true;
 }
