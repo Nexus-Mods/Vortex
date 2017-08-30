@@ -255,6 +255,12 @@ function renderer() {
       }
       extensions.doOnce();
       extensions.renderStyle()
+        .catch(err => {
+          terminate({
+            message: 'failed to parse UI theme',
+            details: err,
+          });
+        })
         .then(() => {
           initApplicationMenu(extensions);
           startupFinished();
@@ -271,12 +277,6 @@ function renderer() {
             document.getElementById('content'),
           );
           ipcRenderer.send('show-window');
-        })
-        .catch(err => {
-          terminate({
-            message: 'failed to parse UI theme',
-            details: err.formatted,
-          });
         });
     });
 

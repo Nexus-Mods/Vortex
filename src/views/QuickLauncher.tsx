@@ -142,6 +142,9 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     return managedGamesIds.reduce((prev, gameId) => {
       const game = knownGames.find(iter => iter.id === gameId);
+      if ((game === undefined) || (discoveredGames[gameId] === undefined)) {
+        return prev;
+      }
       prev[gameId] = {
         icon: StarterInfo.getGameIcon(game, discoveredGames[gameId]),
         game,
