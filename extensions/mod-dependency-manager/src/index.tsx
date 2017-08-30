@@ -121,9 +121,11 @@ function findRule(ref: IModLookupInfo): IBiDirRule {
   });
 }
 
-function updateConflictInfo(t: I18next.TranslationFunction,
-                            store: Redux.Store<types.IState>,
+function updateConflictInfo(api: types.IExtensionApi,
                             conflicts: { [modId: string]: IConflict[] }) {
+  const t: I18next.TranslationFunction = api.translate;
+  const store: Redux.Store<types.IState> = api.store;
+
   const gameMode: string = selectors.activeGameId(store.getState());
   const mods = store.getState().persistent.mods[gameMode];
   const unsolved: { [modId: string]: IConflict[] } = {};
@@ -152,9 +154,7 @@ function updateConflictInfo(t: I18next.TranslationFunction,
     const message: string[] = [
       t('There are unsolved file conflicts. Such conflicts are not necessarily '
         + 'a problem but you should set up a rule to decide the priorities between '
-        + 'these mods, otherwise it will be random (not really but it might as well be).\n'
-        + 'To do this, open the mods page, make sure the "Dependencies" column is visible '
-        + 'and then click on red bolt icons to choose how the conflict is resolved.\n'),
+        + 'these mods, otherwise it will be random (not really but it might as well be).\n'),
       '[list]',
     ].concat(Object.keys(unsolved).map(modId =>
       '[*]' + t('[b]{{modName}}[/b] conflicts with [b]{{conflicts}}[/b]', { replace: {
@@ -168,7 +168,13 @@ function updateConflictInfo(t: I18next.TranslationFunction,
         t('Unsolved file conflicts'), {
           bbcode: message.join('\n'),
           options: { translated: true, wrap: true },
-        }, [ { label: 'Close' } ]));
+        }, [
+          { label: 'Close' },
+          { label: 'Show', action: () => {
+            store.dispatch(actions.setAttributeVisible('mods', 'dependencies', true));
+            api.events.emit('show-main-page', 'Mods');
+          } },
+      ]));
     };
 
     store.dispatch(actions.addNotification({
@@ -276,7 +282,7 @@ function checkConflictsAndRules(api: types.IExtensionApi): Promise<void> {
   return determineConflicts(modPath, mods)
     .then(conflictMap => {
       store.dispatch(setConflictInfo(conflictMap));
-      updateConflictInfo(api.translate, store, conflictMap);
+      updateConflictInfo(api, conflictMap);
       return checkRulesFulfilled(api);
     })
     .finally(() => {

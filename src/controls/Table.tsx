@@ -172,7 +172,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const rowIds = Object.keys(rowState).filter(rowId => rowState[rowId].selected);
 
     return (
-      <div className='table-container'>
+      <div id={`table-${tableId}`} className='table-container'>
         <div
           className='table-main-pane'
           ref={this.mainPaneRef}

@@ -88,26 +88,43 @@ abstract class LinkingActivator implements IModActivator {
 
     const installPathStr = selectors.installPath(state);
 
+    const newActivation = this.mNewActivation;
+    const previousActivation = this.mPreviousActivation;
+
     // unlink all files that were removed or changed
     ({added, removed, sourceChanged, contentChanged} =
-         this.diffActivation(this.mPreviousActivation, this.mNewActivation));
+         this.diffActivation(previousActivation, newActivation));
 
     return Promise.map([].concat(removed, sourceChanged, contentChanged),
                        key => {
                          const outputPath = path.join(
-                             dataPath, this.mPreviousActivation[key].relPath);
+                             dataPath, previousActivation[key].relPath);
                          return this.unlinkFile(outputPath)
                              .then(() => fs.renameAsync(
                                                outputPath +
                                                    LinkingActivator.BACKUP_TAG,
                                                outputPath)
                                              .catch(() => undefined))
-                             .then(() => delete this.mPreviousActivation[key])
+                             .then(() => delete previousActivation[key])
                              .catch(err => {
                                log('warn', 'failed to unlink', {
-                                 path: this.mPreviousActivation[key].relPath,
+                                 path: previousActivation[key].relPath,
                                  error: err.message,
                                });
+                               // need to make sure the deployment manifest
+                               // reflects the actual state, otherwise we may
+                               // leave files orphaned
+                               newActivation[key] = previousActivation[key];
+                               let idx = sourceChanged.indexOf(key);
+                               if (idx !== -1) {
+                                sourceChanged.splice(idx, 1);
+                               } else {
+                                 idx = contentChanged.indexOf(key);
+                                 if (idx !== -1) {
+                                   contentChanged.splice(idx, 1);
+                                 }
+                               }
+
                                ++errorCount;
                              });
                        })
@@ -117,8 +134,8 @@ abstract class LinkingActivator implements IModActivator {
                   key => this.deployFile(key, installPathStr, dataPath, false)
                              .catch(err => {
                                log('warn', 'failed to link', {
-                                 link: this.mNewActivation[key].relPath,
-                                 source: this.mNewActivation[key].source,
+                                 link: newActivation[key].relPath,
+                                 source: newActivation[key].source,
                                  error: err.message,
                                });
                                ++errorCount;
@@ -129,8 +146,8 @@ abstract class LinkingActivator implements IModActivator {
                       this.deployFile(key, installPathStr, dataPath, true)
                           .catch(err => {
                             log('warn', 'failed to link', {
-                              link: this.mNewActivation[key].relPath,
-                              source: this.mNewActivation[key].source,
+                              link: newActivation[key].relPath,
+                              source: newActivation[key].source,
                               error: err.message,
                             });
                             ++errorCount;
@@ -139,15 +156,15 @@ abstract class LinkingActivator implements IModActivator {
           if (errorCount > 0) {
             addNotification({
               type: 'error',
-              title: this.mApi.translate('Activation failed'),
+              title: this.mApi.translate('Deployment failed'),
               message: this.mApi.translate(
-                  '{{count}} files were not correctly activated (see log for details)',
+                  '{{count}} files were not correctly deployed (see log for details)',
                   {replace: {count: errorCount}}),
             });
           }
 
-          return Object.keys(this.mPreviousActivation)
-              .map(key => this.mPreviousActivation[key]);
+          return Object.keys(previousActivation)
+              .map(key => previousActivation[key]);
         });
   }
 
@@ -264,10 +281,9 @@ abstract class LinkingActivator implements IModActivator {
           }
         });
 
-    return backupProm.then(() =>
-                               this.linkFile(fullOutputPath, fullPath)
-                                   .then(() => this.mPreviousActivation[key] =
-                                             this.mNewActivation[key]));
+    return backupProm.then(() => this.linkFile(fullOutputPath, fullPath)
+                                     .then(() => this.mPreviousActivation[key] =
+                                               this.mNewActivation[key]));
   }
 
   private diffActivation(before: IActivation, after: IActivation) {
