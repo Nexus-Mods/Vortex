@@ -48,7 +48,7 @@ export function loadVortexLogs(): Promise<ISession[]> {
                     sessionElement.substring(0, 31).replace('-', '') : '',
                   to: logArray[logArray.length - 1].text.substring(0, 30),
                   logs: logArray,
-                  fullLog: sessionElement,
+                  fullLog: (logArray.map((log) => log.text).join('\n')),
                 });
               }
             });

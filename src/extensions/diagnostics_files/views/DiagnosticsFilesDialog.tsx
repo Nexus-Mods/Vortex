@@ -206,21 +206,13 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
     const detail = evt.currentTarget.value;
 
-    if (detail === 'ERR') {
-      const logs = sessions[key].logs.filter((element) => element.type === 'ERROR');
+    const logs = sessions[key].logs.filter((element) => element.type === 'ERROR');
 
-      this.setState(update(this.state, {
-        textLog: { $set: '' },
-        logErrors: { $set: logs },
-        sessionKey: { $set: key },
-      }));
-    } else if (detail === 'LOG') {
-      this.setState(update(this.state, {
-        logErrors: { $set: [] },
-        textLog: { $set: sessions[key].fullLog },
-        sessionKey: { $set: key },
-      }));
-    }
+    this.setState(update(this.state, {
+      textLog: detail === 'ERR' ? { $set: '' } : { $set: sessions[key].fullLog },
+      logErrors: detail === 'ERR' ? { $set: logs } : { $set: [] },
+      sessionKey: { $set: key },
+    }));
   }
 
   private reportLog = (evt) => {
