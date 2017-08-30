@@ -600,6 +600,12 @@ export interface IExtensionContext {
   registerAttributeExtractor: (priority: number, extractor: AttributeExtractor) => void;
 
   /**
+   * register a dependency on a different extension
+   * @param {string} extId id of the extension that this one depends on
+   */
+  requireExtension: (extId: string) => void;
+
+  /**
    * called once after the store has been set up and after all extensions have been initialized
    * This means that if your extension registers its own extension function
    * (@see registerExtensionFunction) then those registrations happen before once is called.

@@ -1,4 +1,4 @@
-import { IExtensionState } from '../../types/IState';
+import {IExtensionLoadFailure, IExtensionState} from '../../types/IState';
 
 export interface IExtension {
   name: string;
@@ -8,4 +8,6 @@ export interface IExtension {
   bundled?: boolean;
 }
 
-export type IExtensionWithState = IExtension & IExtensionState;
+export type IExtensionWithState = IExtension & IExtensionState & {
+  loadFailures: IExtensionLoadFailure[];
+};
