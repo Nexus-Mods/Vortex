@@ -25,7 +25,7 @@ function main(context) {
     name: 'Dragon\'s Dogma',
     mergeMods: true,
     queryPath: findGame,
-    queryModPath: () => './',
+    queryModPath: () => './nativePC',
     logo: 'gameart.png',
     executable: () => 'DDDA.exe',
     requiredFiles: [

@@ -42,16 +42,17 @@ namespace FomodInstaller.ModInstaller.Tests
 		[InlineData(0, new object[] { "test.esm", "test.esp" }, "", null, null)]
 		[InlineData(0, new object[] { "test.esm", "test.esp" }, "C:\\Xunit\\TEST", null, null)]
 		[InlineData(0, new object[] { "test.esm", "test.esp" }, "C:\\Xunit\\TEST", null, null)]
-		public async Task Install(int dummy, List<string> modArchiveFileList,
-			string destinationPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
+		public async Task Install(int dummy, List<string> modArchiveFileList, List<string> gameSpecificStopFolders,
+            string destinationPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
 		{
 			Assert.Empty(modArchiveFileList);
+            Assert.Empty(gameSpecificStopFolders);
 			Assert.Empty(destinationPath);
 			Assert.NotNull(progressDelegate);
 			Assert.NotNull(coreDelegate);
 
 			Installer installer = new Installer();
-			var actual = await installer.Install(modArchiveFileList, destinationPath, progressDelegate, coreDelegate);
+			var actual = await installer.Install(modArchiveFileList, gameSpecificStopFolders, destinationPath, progressDelegate, coreDelegate);
 
 			// Xunit test
 			Assert.Null(actual);

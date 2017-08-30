@@ -25,6 +25,7 @@ namespace FomodInstaller.Interface
         private string FomodRoot = "fomod";
         private string FomodScreenshotPath = "fomod/screenshot";
         private IList<string> ModFiles;
+        private IList<string> StopFolders;
         private string ScreenshotFilesPath = string.Empty;
         private string InstallScriptPath = null;
         private string PathPrefix = null;
@@ -60,8 +61,8 @@ namespace FomodInstaller.Interface
 
         public string TempPath
         {
-            private set;
             get;
+            private set;
         }
 
         /// <summary>
@@ -105,9 +106,19 @@ namespace FomodInstaller.Interface
         #endregion
 
         #region Constructor
-        public Mod(List<string> listModFiles, string installScriptPath, string tempFolderPath, IScriptType scriptType)
+        
+        /// <summary>
+        /// This provides interaction with the mod files.
+        /// </summary>
+        /// <param name="listModFiles">The list of files inside the mod archive.</param>
+        /// <param name="gameSpecificStopFolders">The list of game specific stop folders.</param>
+        /// <param name="installScriptPath">The path to the uncompressed install script file, if any.</param>
+        /// <param name="tempFolderPath">Temporary path where install scripts can work.</param>
+        /// <param name="scriptType">The script type, if any.</param>
+        public Mod(List<string> listModFiles, List<string> gameSpecificStopFolders, string installScriptPath, string tempFolderPath, IScriptType scriptType)
         {
             ModFiles = listModFiles;
+            StopFolders = gameSpecificStopFolders;
             GetScreenshotPath(listModFiles);
             InstallScriptPath = installScriptPath;
             TempPath = tempFolderPath;
@@ -141,7 +152,7 @@ namespace FomodInstaller.Interface
                 await Task.Run(() =>
                 {
                     ArchiveStructure arch = new ArchiveStructure(ModFiles);
-                    PathPrefix = arch.FindPathPrefix(new string[] { "fomod" }, new string[] { @".*\.esp", @".*\.esm" });
+                    PathPrefix = arch.FindPathPrefix(StopFolders, new string[] { @".*\.esp", @".*\.esm" });
                 });
             }
         }
@@ -202,6 +213,7 @@ namespace FomodInstaller.Interface
         private List<string> GetFiles(string targetDirectory, bool isRecursive)
         {
             List<string> DirectoryFiles = new List<string>();
+            List<string> Directories = new List<string>();
 
             string PathPrefix = TextUtil.NormalizePath(targetDirectory, true);
 
@@ -216,9 +228,16 @@ namespace FomodInstaller.Interface
                         if (StopIndex > 0)
                             continue;
                     }
-                    DirectoryFiles.Add(file);
+                    if (file.EndsWith(Path.DirectorySeparatorChar.ToString()) || file.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+                      Directories.Add(file);
+                    else
+                      DirectoryFiles.Add(file);
                 }
             }
+
+            foreach (string directory in Directories)
+              if (!DirectoryFiles.Any(x => x.IndexOf(directory, StringComparison.InvariantCultureIgnoreCase) >= 0))
+                DirectoryFiles.Add(directory);
 
             return DirectoryFiles;
         }

@@ -241,6 +241,7 @@ namespace FomodInstaller.Scripting.XmlScript.Parsers
 						throw new ParserException("Invalid file node: " + xelFile.Name + ". At this point the config file has been validated against the schema, so there's something wrong with the parser.");
 				}
 			}
+
 			lstFiles.Sort();
 			return lstFiles;
 		}
