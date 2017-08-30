@@ -203,8 +203,6 @@ function todos(api: IExtensionApi): IToDo[] {
       props: state => ({ profilesVisible: state.settings.interface.profilesVisible }),
       condition: (props: any) => !props.profilesVisible,
       render: (t: TranslationFunction, props: any): JSX.Element => {
-        const link =
-          <a onClick={openInterfaceSettings}><Icon name='sliders' />{' '}{t('Settings')} </a>;
         const more = (
           <More id='more-profiles-dash' name={t('Profiles')} >
             {getTextProfiles('profiles', t)}
@@ -213,9 +211,8 @@ function todos(api: IExtensionApi): IToDo[] {
         return (
           <span>
             <Interpolate
-              i18nKey='Profile Management{{more}} is disabled. Open {{link}} to enable.'
+              i18nKey='Profile Management{{more}} is disabled.'
               more={more}
-              link={link}
             />
           </span>
         );

@@ -55,6 +55,11 @@ export interface INotificationState {
   dialogs: IDialog[];
 }
 
+export interface IExtensionLoadFailure {
+  id: string;
+  args: { [key: string]: any };
+}
+
 /**
  * "ephemeral" session state.
  * This state is generated at startup and forgotten at application exit
@@ -70,6 +75,7 @@ export interface ISession {
   secondaryPage: string;
   activity: { [id: string]: string };
   settingsPage: string;
+  extLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
 }
 
 export interface IRowState {
@@ -82,7 +88,7 @@ export interface ITableState {
 }
 
 export interface IExtensionState {
-  enabled: boolean;
+  enabled: boolean | 'failed';
   remove: boolean;
 }
 
@@ -150,6 +156,7 @@ export interface IStatePaths {
 export interface ISettingsMods {
   paths: { [gameId: string]: IStatePaths };
   modlistState: { [id: string]: IAttributeState };
+  activator: { [gameId: string]: string };
 }
 
 export interface ISettings {

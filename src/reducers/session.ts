@@ -29,6 +29,8 @@ export const sessionReducer: IReducerSpec = {
           [ 'secondaryPage' ], '');
       }
     },
+    [actions.setExtensionLoadFailures as any]: (state, payload) =>
+      setSafe(state, ['extLoadFailures'], payload),
   },
   defaults: {
     displayGroups: {},
@@ -38,5 +40,6 @@ export const sessionReducer: IReducerSpec = {
     secondaryPage: '',
     activity: {},
     settingsPage: undefined,
+    extLoadFailures: {},
   },
 };

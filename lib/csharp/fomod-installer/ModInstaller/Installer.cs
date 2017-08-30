@@ -57,10 +57,11 @@ namespace FomodInstaller.ModInstaller
         /// This will simulate the mod installation and decide installation choices and files final paths.
         /// </summary>
         /// <param name="modArchiveFileList">The list of files inside the mod archive.</param>
+        /// <param name="gameSpecificStopFolders">The list of game specific stop folders.</param>
         /// <param name="scriptPath">The path to the uncompressed install script file, if any.</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
         /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
-        public async override Task<Dictionary<string, object>> Install(List<string> modArchiveFileList,
+        public async override Task<Dictionary<string, object>> Install(List<string> modArchiveFileList, List<string> gameSpecificStopFolders,
             string scriptPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
             IList<Instruction> Instructions = new List<Instruction>();
@@ -78,7 +79,7 @@ namespace FomodInstaller.ModInstaller
             if (!string.IsNullOrEmpty(scriptPath) && !string.IsNullOrEmpty(ScriptFilePath))
                 ScriptFilePath = Path.Combine(scriptPath, ScriptFilePath);
             IScriptType ScriptType = await GetScriptType(modArchiveFileList);
-            Mod modToInstall = new Mod(modArchiveFileList, ScriptFilePath, scriptPath, ScriptType);
+            Mod modToInstall = new Mod(modArchiveFileList, gameSpecificStopFolders, ScriptFilePath, scriptPath, ScriptType);
             await modToInstall.Initialize();
 
             progressDelegate(50);
@@ -89,7 +90,7 @@ namespace FomodInstaller.ModInstaller
             }
             else
             {
-                Instructions = await BasicModInstall(modArchiveFileList, progressDelegate, coreDelegate);
+                Instructions = await BasicModInstall(modArchiveFileList, gameSpecificStopFolders, progressDelegate, coreDelegate);
             }
 
             progressDelegate(100);
@@ -140,14 +141,12 @@ namespace FomodInstaller.ModInstaller
         /// <param name="fileList">The list of files inside the mod archive.</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
         /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
-        protected async Task<List<Instruction>> BasicModInstall(List<string> fileList, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
+        protected async Task<List<Instruction>> BasicModInstall(List<string> fileList, List<string> gameSpecificStopFolders, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
         {
             List<Instruction> FilesToInstall = new List<Instruction>();
             ArchiveStructure arch = new ArchiveStructure(fileList);
             // TODO: This is very gamebryo-centric
-            string prefix = arch.FindPathPrefix(new string[] { "distantlod", "facegen", "fonts", "interface", "menus", "meshes", "music", "scripts",
-                                                               "shaders", "sound", "strings", "textures", "trees", "video", "skse", "obse", "nvse",
-                                                               "fose", "asi", "SkyProc Patchers" },
+            string prefix = arch.FindPathPrefix(gameSpecificStopFolders,
                                                 new string[] { @".*\.esp", @".*\.esm" });
 
             await Task.Run(() =>

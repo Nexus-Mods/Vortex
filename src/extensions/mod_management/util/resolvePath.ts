@@ -13,7 +13,8 @@ export const pathDefaults = {
     install: path.join('{base}', 'mods'),
   };
 
-function resolvePath(key: PathKey, paths: { [gameId: string]: IStatePaths }, gameMode: string) {
+function resolvePath(key: PathKey, paths: {[gameId: string]: IStatePaths},
+                     gameMode: string): string {
   const formatKeys = {
     USERDATA: remote.app.getPath('userData'),
     GAME: gameMode,

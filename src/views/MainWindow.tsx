@@ -165,6 +165,16 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     };
 
     this.applicationButtons = [];
+
+    this.props.api.events.on('show-main-page', title => {
+      this.setMainPage(title, false);
+    });
+
+    this.props.api.events.on('show-modal', id => {
+      this.updateState({
+        showLayer: { $set: id },
+      });
+    });
   }
 
   public getChildContext(): IComponentContext {
@@ -176,16 +186,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     if (this.props.objects.length > 0) {
       this.setMainPage(this.props.objects[0].title, false);
     }
-
-    this.props.api.events.on('show-main-page', title => {
-      this.setMainPage(title, false);
-    });
-
-    this.props.api.events.on('show-modal', id => {
-      this.updateState({
-        showLayer: { $set: id },
-      });
-    });
 
     this.updateSize();
   }
@@ -361,7 +361,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private setSidebarRef = ref => {
     this.sidebarRef = ref;
-    this.sidebarRef.setAttribute('style', 'min-width: ' + ref.getBoundingClientRect().width + 'px');
+    if (this.sidebarRef !== null) {
+      this.sidebarRef.setAttribute('style',
+        'min-width: ' + ref.getBoundingClientRect().width + 'px');
+    }
   }
 
   private renderFooter() {
@@ -458,13 +461,15 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private toggleMenu = () => {
     const newMinimized = !this.props.tabsMinimized;
     this.props.onSetTabsMinimized(newMinimized);
-    if (newMinimized) {
-      this.sidebarRef.setAttribute('style', '');
-    } else {
-      setTimeout(() => {
-        this.sidebarRef.setAttribute('style',
-          'min-width:' + this.sidebarRef.getBoundingClientRect().width + 'px');
-      }, 500);
+    if (this.sidebarRef !== null) {
+      if (newMinimized) {
+        this.sidebarRef.setAttribute('style', '');
+      } else {
+        setTimeout(() => {
+          this.sidebarRef.setAttribute('style',
+            'min-width:' + this.sidebarRef.getBoundingClientRect().width + 'px');
+        }, 500);
+      }
     }
   }
 

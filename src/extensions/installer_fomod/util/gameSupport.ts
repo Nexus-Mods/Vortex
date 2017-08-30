@@ -7,24 +7,60 @@ function bethIni(gamePath: string, iniName: string) {
   return path.join(app.getPath('documents'), 'My Games', gamePath, iniName + '.ini');
 }
 
+function archiveTopLevelDirectories(gameMode: string) {
+  let topLevelDirectories: string[];
+
+  switch (gameMode) {
+    case 'fallout4':
+    case 'skyrimse':
+    case 'fallout4':
+    case 'skyrimse':
+    case 'skyrim':
+    case 'oblivion':
+      topLevelDirectories = ['distantlod', 'textures', 'meshes', 'music', 'shaders', 'video',
+      'interface', 'fonts', 'scripts', 'facegen', 'menus', 'lodsettings', 'lsdata', 'sound',
+      'strings', 'trees', 'skse', 'obse', 'nvse', 'fose', 'asi', 'SkyProc Patchers'];
+      break;
+    case 'dragonsdogma':
+      topLevelDirectories = ['movie', 'rom', 'sa', 'sound', 'system', 'tgs', 'usershader',
+      'usertexture'];
+      break;
+    default:
+      topLevelDirectories = [];
+  }
+
+  topLevelDirectories.push('fomod');
+
+  return topLevelDirectories;
+}
+
 const gameSupport = {
+  dragonsdogma: {
+    topLevelDirectories: () => archiveTopLevelDirectories('dragonsdogma'),
+  },
   fallout4: {
     iniPath: () => bethIni('Fallout4', 'Fallout4'),
+    topLevelDirectories: () => archiveTopLevelDirectories('fallout4'),
   },
   fallout3: {
     iniPath: () => bethIni('Fallout3', 'Fallout3'),
+    topLevelDirectories: () => archiveTopLevelDirectories('fallout3'),
   },
   falloutnv: {
     iniPath: () => bethIni('FalloutNV', 'Fallout'),
+    topLevelDirectories: () => archiveTopLevelDirectories('falloutnv'),
   },
   oblivion: {
     iniPath: () => bethIni('Oblivion', 'Oblivion'),
+    topLevelDirectories: () => archiveTopLevelDirectories('oblivion'),
   },
   skyrim: {
     iniPath: () => bethIni('Skyrim', 'Skyrim'),
+    topLevelDirectories: () => archiveTopLevelDirectories('skyrim'),
   },
   skyrimse: {
     iniPath: () => bethIni('Skyrim Special Edition', 'Skyrim'),
+    topLevelDirectories: () => archiveTopLevelDirectories('skyrimse'),
   },
 };
 
@@ -35,4 +71,13 @@ export function getIniFilePath(gameMode: string) {
   }
 
   return gameSupport[gameMode].iniPath();
+}
+
+export function getTopLevelDirectories(gameMode: string) {
+  if ((gameSupport[gameMode] === undefined)
+      || (gameSupport[gameMode].topLevelDirectories === undefined)) {
+    return [];
+  }
+
+  return gameSupport[gameMode].topLevelDirectories();
 }

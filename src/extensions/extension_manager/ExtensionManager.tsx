@@ -2,7 +2,7 @@ import { removeExtension, setExtensionEnabled } from '../../actions/app';
 import Dropzone, { ControlMode } from '../../controls/Dropzone';
 import FlexLayout from '../../controls/FlexLayout';
 import Table, { ITableRowAction } from '../../controls/Table';
-import { IExtensionState, IState } from '../../types/IState';
+import { IExtensionLoadFailure, IExtensionState, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { getSafe } from '../../util/storeHelper';
@@ -29,6 +29,7 @@ interface IConnectedProps {
   extensionConfig: { [extId: string]: IExtensionState };
   downloads: { [dlId: string]: IDownload };
   downloadPath: string;
+  loadFailures: { [extId: string]: IExtensionLoadFailure[] };
 }
 
 interface IActionProps {
@@ -195,11 +196,16 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   private mergeExt(extensions: { [id: string]: IExtension },
                    extensionConfig: { [id: string]: IExtensionState })
                    : { [id: string]: IExtensionWithState } {
+    const { loadFailures } = this.props;
     return Object.keys(extensions).reduce((prev, id) => {
       if (!getSafe(extensionConfig, [id, 'remove'], false)) {
+        const enabled = loadFailures[id] === undefined ?
+          getSafe(extensionConfig, [id, 'enabled'], true)
+          : 'failed';
         prev[id] = {
           ...extensions[id],
-          enabled: getSafe(extensionConfig, [id, 'enabled'], true),
+          enabled,
+          loadFailures: loadFailures[id] || [],
         };
       }
       return prev;
@@ -243,7 +249,11 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
+    // TODO: don't use || {} in mapStateToProps because {} is always a new object and
+    //   thus causes constant re-drawing. but when removing this, make sure no access
+    //   to undefined can happen
     extensionConfig: state.app.extensions || {},
+    loadFailures: state.session.base.extLoadFailures,
     downloads: state.persistent.downloads.files,
     downloadPath: downloadPath(state),
   };

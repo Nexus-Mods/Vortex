@@ -27,3 +27,5 @@ export const startActivity = safeCreateAction('START_ACTIVITY',
 
 export const stopActivity = safeCreateAction('STOP_ACTIVITY',
   (group: string, activityId: string) => ({ group, activityId }));
+
+export const setExtensionLoadFailures = safeCreateAction('SET_EXT_LOAD_FAILURES');

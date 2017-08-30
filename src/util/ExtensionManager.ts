@@ -1,5 +1,6 @@
 import { forgetExtension, setExtensionEnabled } from '../actions/app';
 import { addNotification, dismissNotification } from '../actions/notifications';
+import { setExtensionLoadFailures } from '../actions/session';
 
 import { ExtensionInit } from '../types/Extension';
 import {
@@ -12,16 +13,17 @@ import {
   IReducerSpec,
   StateChangeCallback,
 } from '../types/IExtensionContext';
-import {INotification} from '../types/INotification';
-import { IExtensionState } from '../types/IState';
+import { INotification } from '../types/INotification';
+import { IExtensionLoadFailure, IExtensionState } from '../types/IState';
 
 import { Archive } from './archives';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
 import { activeGameId } from './selectors';
-import {getSafe} from './storeHelper';
+import { getSafe } from './storeHelper';
 import StyleManagerT from './StyleManager';
+import { setdefault } from './util';
 
 import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, remote } from 'electron';
@@ -120,30 +122,47 @@ class ContextProxyHandler implements ProxyHandler<any> {
   }
 
   /**
-   * remove all init calls from incompatible extesions
+   * remove all init calls from incompatible extensions
    */
-  public unloadIncompatible(furtherAPIs: Set<string>) {
-    const addAPIs: string[] = this.mApiAdditions.map((addition: IApiAddition) => addition.key);
+  public unloadIncompatible(furtherAPIs: Set<string>,
+                            allExtensions: string[]): { [extId: string]: IExtensionLoadFailure[] } {
+    const addAPIs: string[] =
+        this.mApiAdditions.map((addition: IApiAddition) => addition.key);
     const fullAPI = new Set([...furtherAPIs, ...this.staticAPIs, ...addAPIs]);
 
-    const incompatibleExtensions = new Set<string>();
+    const incompatibleExtensions: { [extId: string]: IExtensionLoadFailure[] } = {};
 
     this.mInitCalls.filter(
       (call: IInitCall) => !call.optional && !fullAPI.has(call.key))
     .forEach((call: IInitCall) => {
       log('debug', 'unsupported api call', { extension: call.extension, api: call.key });
-      incompatibleExtensions.add(call.extension);
+      setdefault(incompatibleExtensions, call.extension, [])
+        .push({ id: 'unsupported-api' });
     });
-    if (incompatibleExtensions.size > 0) {
+
+    const testValid = (extId: string, requiredId?: string) => {
+      if (allExtensions.indexOf(requiredId) === -1) {
+        setdefault(incompatibleExtensions, extId, []).push(
+          { id: 'dependency', args: { dependencyId: requiredId } });
+      }
+    };
+
+    this.getCalls('requireExtension').forEach(call => {
+      testValid(call.extension, ...call.arguments);
+    });
+
+    if (Object.keys(incompatibleExtensions).length > 0) {
       log('info', 'extensions ignored for using unsupported api',
-          { extensions: Array.from(incompatibleExtensions).join(', ') });
+          { extensions: Object.keys(incompatibleExtensions).join(', ') });
       this.mInitCalls = this.mInitCalls.filter((call: IInitCall) =>
-        !incompatibleExtensions.has(call.extension));
+        incompatibleExtensions[call.extension] === undefined);
     } else {
       if (remote !== undefined) {
         log('debug', 'all extensions compatible');
       }
     }
+
+    return incompatibleExtensions;
   }
 
   /**
@@ -207,6 +226,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerGame: undefined,
       registerGameInfoProvider: undefined,
       registerAttributeExtractor: undefined,
+      requireExtension: undefined,
       api: undefined,
       once: undefined,
       onceMain: undefined,
@@ -255,6 +275,7 @@ class ExtensionManager {
   private mPid: number;
   private mContextProxyHandler: ContextProxyHandler;
   private mExtensionState: { [extId: string]: IExtensionState };
+  private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mPid = process.pid;
@@ -357,6 +378,8 @@ class ExtensionManager {
       (event, notification) => this.mApi.sendNotification(notification));
     ipcRenderer.on('show-error-notification',
       (event, message, details) => this.mApi.showErrorNotification(message, details));
+
+    store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
   }
 
   /**
@@ -585,8 +608,12 @@ class ExtensionManager {
         log('warn', 'couldn\'t initialize extension', {name: ext.name, err: err.message});
       }
     });
-    this.mContextProxyHandler.unloadIncompatible(ExtensionManager.sUIAPIs);
+    // need to store them locally for now because the store isn't loaded at this time
+    this.mLoadFailures = this.mContextProxyHandler.unloadIncompatible(
+        ExtensionManager.sUIAPIs, this.mExtensions.map(ext => ext.name));
+
     if (remote !== undefined) {
+      // renderer process
       log('info', 'all extensions initialized');
     }
   }

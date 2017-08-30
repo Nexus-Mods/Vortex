@@ -11,6 +11,7 @@ import resolvePath from '../mod_management/util/resolvePath';
 import { endDialog, setInstallerDataPath } from './actions/installerUI';
 import Core from './delegates/core';
 import { installerUIReducer } from './reducers/installerUI';
+import { getTopLevelDirectories } from './util/gameSupport';
 import InstallerDialog from './views/InstallerDialog';
 
 import * as Promise from 'bluebird';
@@ -67,7 +68,7 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
 
 let currentInstallPromise: Promise<any> = Promise.resolve();
 
-function install(files: string[], scriptPath: string,
+function install(files: string[], topLevelDirectories: string[], scriptPath: string,
                  progressDelegate: ProgressDelegate,
                  coreDelegates: Core): Promise<any> {
   if (installLib === undefined) {
@@ -80,7 +81,7 @@ function install(files: string[], scriptPath: string,
   }
 
   currentInstallPromise = new Promise((resolve, reject) => {
-    installLib({ files, scriptPath, progressDelegate, coreDelegates },
+    installLib({ files, topLevelDirectories, scriptPath, progressDelegate, coreDelegates },
       (err: Error, result: any) => {
         if ((err !== null) && (err !== undefined)) {
           log('info', 'got err', util.inspect(err));
@@ -129,10 +130,11 @@ function init(context: IExtensionContextExt): boolean {
   context.registerInstaller(
     100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
       const coreDelegates = new Core(context.api, gameId);
+      const topLevelDirectories = getTopLevelDirectories(gameId);
       return currentInstallPromise
         .then(() => {
           context.api.store.dispatch(setInstallerDataPath(scriptPath));
-          return install(files, scriptPath, progressDelegate, coreDelegates);
+          return install(files, topLevelDirectories, scriptPath, progressDelegate, coreDelegates);
         })
         .catch((err) => {
           context.api.store.dispatch(endDialog());
