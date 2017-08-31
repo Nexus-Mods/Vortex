@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Antlr.Runtime;
 using Antlr.Runtime.Tree;
-using Nexus.Client.Util.Antlr;
+using FomodInstaller.Util.Antlr;
 
 namespace FomodInstaller.Scripting.ModScript
 {

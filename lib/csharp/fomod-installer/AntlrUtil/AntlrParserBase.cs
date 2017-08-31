@@ -2,7 +2,7 @@
 using Antlr.Runtime;
 using Antlr.Runtime.Tree;
 
-namespace Nexus.Client.Util.Antlr
+namespace FomodInstaller.Util.Antlr
 {
 	/// <summary>
 	/// The base parser for ANTLR parsers.

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nexus.Client.Util.Antlr
+namespace FomodInstaller.Util.Antlr
 {
 	/// <summary>
 	/// Describes an error genered while parsing CPL.

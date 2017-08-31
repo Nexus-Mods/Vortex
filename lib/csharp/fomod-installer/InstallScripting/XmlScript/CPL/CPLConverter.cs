@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using Antlr.Runtime.Tree;
-using Nexus.Client.Util.Antlr;
+using FomodInstaller.Util.Antlr;
 
 namespace FomodInstaller.Scripting.XmlScript
 {

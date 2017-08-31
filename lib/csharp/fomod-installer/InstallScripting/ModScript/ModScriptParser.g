@@ -14,7 +14,7 @@ options {
 @parser::header {
 	//turn off warning about not needing CLSCompliant attribute
 	#pragma warning disable 3021
-	using Nexus.Client.Util.Antlr;
+	using FomodInstaller.Util.Antlr;
 }
 
 @members {
