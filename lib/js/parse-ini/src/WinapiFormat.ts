@@ -40,15 +40,16 @@ class WinapiFormat implements IIniFormat {
   public write(filePath: string, data: any, changes: IChanges): Promise<void> {
     // TODO: make async!
     changes.removed.forEach((fullKey) => {
-      const [section, key] = fullKey.split('.');
+      const [section, key] = fullKey.split('###');
       this.kernel32.WritePrivateProfileStringA(TEXT(section), TEXT(key), null, TEXT(filePath));
     });
     [].concat(changes.added, changes.changed)
         .forEach((fullKey) => {
-          const[section, key] = fullKey.split('.');
-          this.kernel32.WritePrivateProfileStringA(TEXT(section), TEXT(key),
-                                                  TEXT(data[section][key]),
-                                                  TEXT(filePath));
+          const[section, key] = fullKey.split('###');
+          this.kernel32.WritePrivateProfileStringA(TEXT(section),
+                                                   TEXT(key),
+                                                   TEXT(data[section][key]),
+                                                   TEXT(filePath));
         });
     return Promise.resolve();
   }
@@ -65,7 +66,7 @@ class WinapiFormat implements IIniFormat {
 
             if (size === bufferLength - 2) {
               return this.readSectionList(filePath, bufferLength * 2)
-                  .then((result) => resolve(result));
+                  .then(resolve);
             }
 
             const result: string[] = [];

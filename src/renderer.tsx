@@ -57,15 +57,6 @@ import thunkMiddleware from 'redux-thunk';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
 
-/*
-Promise.config({
-  warnings: true,
-  longStackTraces: true,
-  cancellation: true,
-  monitoring: true,
-});
-*/
-
 log('debug', 'renderer process started', { pid: process.pid });
 
 stopTime();
@@ -79,7 +70,10 @@ crashReporter.start({
 });
 
 // allow promises to be cancelled.
-Promise.config({ cancellation: true });
+Promise.config({
+  cancellation: true,
+  longStackTraces: true, // should probably disable this before a public release
+});
 
 // set up store. Through the electronEnhancer this is automatically
 // synchronized with the main process store

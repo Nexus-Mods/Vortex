@@ -18,7 +18,15 @@ function getFileList(basePath: string): Promise<IFileEntry[]> {
     }
     return Promise.resolve();
   })
-  .then(() => result);
+  .then(() => result)
+  .catch(err => {
+    if (err.code === 'ENOENT') {
+      // if the directory doesn't exist it obviously doesn't contain files, right?
+      return [];
+    } else {
+      return Promise.reject(err);
+    }
+  });
 }
 
 export default getFileList;
