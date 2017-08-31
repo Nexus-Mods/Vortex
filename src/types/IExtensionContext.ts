@@ -151,9 +151,10 @@ export interface IArchiveOptions {
  */
 export interface IArchiveHandler {
   readDir(archPath: string): Promise<string[]>;
-  readFile(filePath: string): NodeJS.ReadableStream;
-  extractFile(filePath: string, outputPath: string): Promise<void>;
+  readFile?(filePath: string): NodeJS.ReadableStream;
+  extractFile?(filePath: string, outputPath: string): Promise<void>;
   extractAll(outputPath: string): Promise<void>;
+  create?(sourcePath: string): Promise<void>;
 }
 
 export type ArchiveHandlerCreator =

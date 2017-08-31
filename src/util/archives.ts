@@ -15,19 +15,33 @@ export class Archive {
     this.mHandler = handler;
   }
 
-  public readDir(dirPath: string): Promise<string[]> {
-    return this.mHandler.readDir(dirPath);
+  public get readDir(): (archivePath: string) => Promise<string[]> {
+    return (this.mHandler.readDir !== undefined)
+      ? (archivePath: string) => this.mHandler.readDir(archivePath)
+      : undefined;
   }
 
-  public readFile(filePath: string): NodeJS.ReadableStream {
-    return this.mHandler.readFile(filePath);
+  public get readFile(): (filePath: string) => NodeJS.ReadableStream {
+    return (this.mHandler.readFile !== undefined)
+      ? (filePath: string) => this.mHandler.readFile(filePath)
+      : undefined;
   }
 
-  public extractFile(filePath: string, outputPath: string): Promise<void> {
-    return this.mHandler.extractFile(filePath, outputPath);
+  public get extractFile(): (filePath: string, outputPath: string) => Promise<void> {
+    return (this.mHandler.extractFile !== undefined)
+      ? (filePath: string, outputPath: string) => this.mHandler.extractFile(filePath, outputPath)
+      : undefined;
   }
 
-  public extractAll(outputPath: string): Promise<void> {
-    return this.mHandler.extractAll(outputPath);
+  public get extractAll(): (outputPath: string) => Promise<void> {
+    return (this.mHandler.extractAll !== undefined)
+      ? (outputPath: string) => this.mHandler.extractAll(outputPath)
+      : undefined;
+  }
+
+  public get create(): (sourcePath: string) => Promise<void> {
+    return (this.mHandler.create !== undefined)
+      ? (sourcePath: string) => this.mHandler.create(sourcePath)
+      : undefined;
   }
 }

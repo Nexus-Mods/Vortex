@@ -104,6 +104,10 @@ class GameModeManager {
     }
   }
 
+  public get games(): IGame[] {
+    return this.mKnownGames;
+  }
+
   /**
    * starts game discovery, only using the search function from the game
    * extension
@@ -157,7 +161,7 @@ class GameModeManager {
       logo: game.logo,
       mergeMods: game.mergeMods,
       modPath: game.queryModPath(),
-      extensionPath: game.pluginPath,
+      extensionPath: game.extensionPath,
       requiredFiles: game.requiredFiles,
       supportedTools: game.supportedTools !== null
         ? game.supportedTools.map(this.storeTool)

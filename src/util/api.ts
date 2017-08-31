@@ -6,6 +6,7 @@
 export * from './message';
 export * from './storeHelper';
 
+import { getGames } from '../extensions/gamemode_management/index';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import renderModName from '../extensions/mod_management/util/modName';
 import sortMods from '../extensions/mod_management/util/sort';
@@ -35,6 +36,7 @@ export {
   deriveModInstallName as deriveInstallName,
   extend,
   getCurrentLanguage,
+  getGames,
   getNormalizeFunc,
   isNullOrWhitespace,
   LazyComponent,

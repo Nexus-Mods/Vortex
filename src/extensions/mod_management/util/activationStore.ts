@@ -57,18 +57,17 @@ function queryPurge(api: IExtensionApi,
 
 export function loadActivation(api: IExtensionApi, gamePath: string): Promise<IDeployedFile[]> {
   const tagFile = path.join(gamePath, 'vortex.deployment.json');
-  return fs.readFileAsync(tagFile).then(tagData => {
-    const state = api.store.getState();
-    const tagObject = JSON.parse(tagData.toString());
-    if (tagObject.instance !== state.app.instanceId) {
-      return queryPurge(api, gamePath, tagObject.files)
-          .then(() => saveActivation(state.app.instanceId, gamePath, []))
-          .then(() => Promise.resolve([]));
-    } else {
-      return Promise.resolve(tagObject.files);
-    }
-  })
-  .catch(() => []);
+  return fs.readFileAsync(tagFile)
+      .catch(() => '{ "files": [] }')
+      .then(tagData => {
+        const state = api.store.getState();
+        const tagObject = JSON.parse(tagData.toString());
+        return ((tagObject.instance !== state.app.instanceId) && (tagObject.files.length > 0))
+           ? queryPurge(api, gamePath, tagObject.files)
+              .then(() => saveActivation(state.app.instanceId, gamePath, []))
+              .then(() => Promise.resolve([]))
+           : Promise.resolve(tagObject.files);
+      });
 }
 
 export function saveActivation(instance: string, gamePath: string, activation: IDeployedFile[]) {

@@ -1,5 +1,6 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
+import getFileList from '../../util/getFileList';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
 import * as selectors from '../../util/selectors';
@@ -21,13 +22,14 @@ interface IActivation {
   [relPath: string]: IDeployedFile;
 }
 
+export const BACKUP_TAG = '.vortex_backup';
+
 /**
  * base class for mod activators that use some form of file-based linking
  * (which is probably all of them)
  */
 abstract class LinkingActivator implements IModActivator {
   public static TAG_NAME = '__delete_if_empty';
-  public static BACKUP_TAG = '.vortex_backup';
 
   public id: string;
   public name: string;
@@ -101,8 +103,7 @@ abstract class LinkingActivator implements IModActivator {
                              dataPath, previousActivation[key].relPath);
                          return this.unlinkFile(outputPath)
                              .then(() => fs.renameAsync(
-                                               outputPath +
-                                                   LinkingActivator.BACKUP_TAG,
+                                               outputPath + BACKUP_TAG,
                                                outputPath)
                                              .catch(() => undefined))
                              .then(() => delete previousActivation[key])
@@ -168,22 +169,25 @@ abstract class LinkingActivator implements IModActivator {
         });
   }
 
-  public activate(installPath: string, dataPath: string,
-                  mod: IMod): Promise<void> {
-    const sourceBase = path.join(installPath, mod.installationPath);
-    return walk(sourceBase, (iterPath: string, stats: fs.Stats) => {
-             if (!stats.isDirectory()) {
-               const relPath: string = path.relative(sourceBase, iterPath);
-               // mods are activated in order of ascending priority so
-               // overwriting is fine here
-               this.mNewActivation[this.mNormalize(relPath)] = {
-                 relPath,
-                 source: mod.installationPath,
-                 time: stats.mtime.getTime(),
-               };
-             }
-             return Promise.resolve();
-           }).then(() => undefined);
+  public activate(sourcePath: string, sourceName: string, dataPath: string,
+                  blackList: Set<string>): Promise<void> {
+    return getFileList(sourcePath)
+        .then(fileEntries => {
+          fileEntries.forEach(entry => {
+            const relPath: string = path.relative(sourcePath, entry.filePath);
+            if (!entry.stats.isDirectory() && !blackList.has(relPath)) {
+              // mods are activated in order of ascending priority so
+              // overwriting is fine here
+              this.mNewActivation[this.mNormalize(relPath)] = {
+                relPath,
+                source: sourceName,
+                time: entry.stats.mtime.getTime(),
+              };
+            }
+            return Promise.resolve();
+          });
+        })
+        .then(() => undefined);
   }
 
   public deactivate(installPath: string, dataPath: string,
@@ -268,8 +272,7 @@ abstract class LinkingActivator implements IModActivator {
 
     const backupProm = replace
       ? Promise.resolve()
-      : fs.renameAsync(fullOutputPath,
-                       fullOutputPath + LinkingActivator.BACKUP_TAG)
+      : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG)
         .catch(err => {
           // if the backup fails because there is nothing to backup, that's great,
           // that's the most common outcome. Otherwise we failed to backup an existing
@@ -326,10 +329,10 @@ abstract class LinkingActivator implements IModActivator {
                     // empty
                     empty = false;
 
-                    if (stat.file.endsWith(LinkingActivator.BACKUP_TAG)) {
+                    if (stat.file.endsWith(BACKUP_TAG)) {
                       const fullPath = path.join(baseDir, stat.file);
                       return fs.renameAsync(fullPath,
-                        fullPath.substr(0, fullPath.length - LinkingActivator.BACKUP_TAG.length));
+                        fullPath.substr(0, fullPath.length - BACKUP_TAG.length));
                     }
                   }
                   return Promise.resolve();

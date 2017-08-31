@@ -100,6 +100,8 @@ export interface IModActivator {
    * @param {boolean} clean whether the activate commands should be treated
    *                        as deltas (false) to the existing activation or whether
    *                        we're deploying from scratch (true)
+   * @param {IDeployedFile[]} lastActivation previous deployment state to be used as
+   *                                         the reference for newly deployed files
    *
    * @memberOf IModActivator
    */
@@ -124,13 +126,16 @@ export interface IModActivator {
 
   /**
    * activate the specified mod in the specified location
-   * @param {string} installPath Vortex path where mods are installed from (source)
+   * @param {string} sourcePath source where the mod is installed
+   * @param {string} sourceName name to be stored as the source of files. usually the path of the
+   *                            mod subdirectory
    * @param {string} dataPath game path where mods are installed to (destination)
-   * @param {string} mod the mod to activate
+   * @param {string[]} blacklist list of files to skip
    *
    * @memberOf IModActivator
    */
-  activate: (installPath: string, dataPath: string, mod: IMod) => Promise<void>;
+  activate: (sourcePath: string, sourceName: string, dataPath: string,
+             blackList: Set<string>) => Promise<void>;
 
   /**
    * deactivate the specified mod, removing all files it has deployed to the destination
