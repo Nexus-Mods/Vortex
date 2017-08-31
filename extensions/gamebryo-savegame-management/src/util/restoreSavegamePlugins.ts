@@ -40,7 +40,7 @@ function restoreSavegamePlugins(
         .map(fileName => fileName.toLowerCase())
         .filter(fileName => {
           const ext = path.extname(fileName);
-          return ['.esp', '.esm'].indexOf(ext) !== -1;
+          return ['.esp', '.esm', '.esl'].indexOf(ext) !== -1;
         }));
 
       const missing = save.attributes.plugins

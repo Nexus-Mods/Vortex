@@ -70,7 +70,7 @@ class PluginList extends React.Component<IProps, IComponentState> {
       .then((files: string[]) => {
         const plugins = files.filter((fileName: string) => {
           const ext = path.extname(fileName).toLowerCase();
-          return ['.esp', '.esm'].indexOf(ext) !== -1;
+          return ['.esp', '.esm', '.esl'].indexOf(ext) !== -1;
         }).map((fileName) => fileName.toLowerCase());
 
         this.setState(update(this.state, {

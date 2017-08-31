@@ -41,7 +41,7 @@ interface IModStates {
 }
 
 function isPlugin(fileName: string): boolean {
-  return ['.esp', '.esm'].indexOf(path.extname(fileName).toLowerCase()) !== -1;
+  return ['.esp', '.esm', '.esl'].indexOf(path.extname(fileName).toLowerCase()) !== -1;
 }
 
 /**
@@ -73,7 +73,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
                                               mod.installationPath))
                  .then((fileNames: string[]) => {
                    fileNames.filter((fileName: string) =>
-                                        ['.esp', '.esm'].indexOf(
+                                        ['.esp', '.esm', '.esl'].indexOf(
                                             path.extname(fileName)) !== -1)
                        .forEach((fileName: string) => {
                          pluginSources[fileName] = mod.name || mod.id;
@@ -422,34 +422,37 @@ function init(context: IExtensionContextExt) {
       const currentProfile = selectors.activeProfile(state);
       if ((profileId === currentProfile.id) && gameSupported(currentProfile.gameId)) {
         const mod: types.IMod = state.persistent.mods[currentProfile.gameId][modId];
-        fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
-        .then(files => {
-          const plugins = files.filter(
-            fileName => ['.esp', '.esm'].indexOf(path.extname(fileName).toLowerCase()) !== -1);
-          if (plugins.length === 1) {
-            context.api.store.dispatch(setPluginEnabled(plugins[0], true));
-          } else if (plugins.length > 1) {
-            const t = context.api.translate;
-            context.api.sendNotification({
-              type: 'info',
-              message: t('The mod {{ modName }} contains multiple plugins', {
-                replace: {
-                  modName: util.renderModName(mod),
-                },
-              }),
-              actions: [
-                {
-                  title: 'Enable all',
-                  action: dismiss => {
-                    plugins.forEach(plugin =>
-                    context.api.store.dispatch(setPluginEnabled(plugin, true)));
-                    dismiss();
-                  },
-                },
-              ],
+        fs.readdirAsync(
+              path.join(selectors.installPath(state), mod.installationPath))
+            .then(files => {
+              const plugins = files.filter(
+                  fileName => ['.esp', '.esm', '.esl'].indexOf(
+                                  path.extname(fileName).toLowerCase()) !== -1);
+              if (plugins.length === 1) {
+                context.api.store.dispatch(setPluginEnabled(plugins[0], true));
+              } else if (plugins.length > 1) {
+                const t = context.api.translate;
+                context.api.sendNotification({
+                  type: 'info',
+                  message: t('The mod {{ modName }} contains multiple plugins',
+                             {
+                               replace: {
+                                 modName: util.renderModName(mod),
+                               },
+                             }),
+                  actions: [
+                    {
+                      title: 'Enable all',
+                      action: dismiss => {
+                        plugins.forEach(plugin => context.api.store.dispatch(
+                                            setPluginEnabled(plugin, true)));
+                        dismiss();
+                      },
+                    },
+                  ],
+                });
+              }
             });
-          }
-        });
       }
     });
   });
