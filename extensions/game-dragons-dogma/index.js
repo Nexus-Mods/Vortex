@@ -20,10 +20,13 @@ function findGame() {
 }
 
 function main(context) {
+  context.requireExtension('mtframework-arc-support');
+
   context.registerGame({
     id: 'dragonsdogma',
     name: 'Dragon\'s Dogma',
     mergeMods: true,
+    mergeArchive: filePath => path.basename(filePath).toLowerCase() === 'game_main.arc',
     queryPath: findGame,
     queryModPath: () => './nativePC',
     logo: 'gameart.png',
