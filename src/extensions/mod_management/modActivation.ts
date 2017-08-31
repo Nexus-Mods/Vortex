@@ -173,19 +173,20 @@ export function activateMods(api: IExtensionApi,
         merged = new Set<string>(mergedFiles);
         return activator.prepare(destinationPath, true, lastActivation);
       })
-      .then(() => Promise.each(mods,
-                               mod => {
-                                 try {
-                                   return activator.activate(
-                                       path.join(modBasePath,
-                                                 mod.installationPath),
-                                       mod.installationPath, destinationPath, merged);
-                                 } catch (err) {
-                                   log('error', 'failed to deploy mod',
-                                       {err: err.message, id: mod.id});
-                                 }
-                               }))
+      .then(() => Promise.each(
+                mods,
+                mod => {
+                  try {
+                    return activator.activate(
+                        path.join(modBasePath, mod.installationPath),
+                        mod.installationPath, destinationPath, merged);
+                  } catch (err) {
+                    log('error', 'failed to deploy mod',
+                        {err: err.message, id: mod.id});
+                  }
+                }))
       .then(() => activator.activate(path.join(modBasePath, MERGED_PATH),
-                                     MERGED_PATH, destinationPath, new Set<string>()))
+                                     MERGED_PATH, destinationPath,
+                                     new Set<string>()))
       .then(() => activator.finalize(destinationPath));
 }

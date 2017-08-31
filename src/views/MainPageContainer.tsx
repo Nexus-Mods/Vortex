@@ -1,8 +1,10 @@
 import { IMainPage } from '../types/IMainPage';
-import { ComponentEx } from '../util/ComponentEx';
+import { ComponentEx, translate } from '../util/ComponentEx';
+import { log } from '../util/log';
 
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
+import { Jumbotron } from 'react-bootstrap';
 
 export interface IBaseProps {
   page: IMainPage;
@@ -39,9 +41,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { active, page, secondary } = this.props;
-
-    const props = page.propsFunc();
+    const { t, active, page, secondary } = this.props;
 
     const classes = ['main-page'];
     classes.push(active ? 'page-active' : 'page-hidden');
@@ -49,12 +49,23 @@ class MainPageContainer extends ComponentEx<IBaseProps, {}> {
       classes.push('secondary');
     }
 
-    return (
-      <div className={classes.join(' ')}>
-        <page.component active={active} secondary={secondary} {...props} />
-      </div>
-    );
+    try {
+      const props = page.propsFunc();
+
+      return (
+        <div className={classes.join(' ')}>
+          <page.component active={active} secondary={secondary} {...props} />
+        </div>
+      );
+    } catch (err) {
+      log('warn', 'error rendering extension main page', { err: err.message });
+      return (
+        <div className={classes.join(' ')}>
+          <Jumbotron><h4>{t('Unavailable')}</h4></Jumbotron>
+        </div>
+      );
+    }
   }
 }
 
-export default MainPageContainer;
+export default translate(['common'], { wait: false })(MainPageContainer);

@@ -211,6 +211,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       ;
   }
 
+  public componentWillReceiveProps(newProps: IProps) {
+    const page = newProps.objects.find(iter => iter.title === newProps.mainPage);
+    if ((page !== undefined) && !page.visible()) {
+      this.setMainPage('Dashboard', false);
+    }
+  }
+
   public render(): JSX.Element {
     const { activeProfileId, onHideDialog, nextProfileId, visibleDialog } = this.props;
     const { hidpi } = this.state;
@@ -396,7 +403,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderPage(page: IMainPage, globalOverlay: JSX.Element) {
-    const { mainPage, secondaryPage } = this.props;
+    const { t, mainPage, secondaryPage } = this.props;
     const { loadedPages } = this.state;
 
     if (loadedPages.indexOf(page.title) === -1) {

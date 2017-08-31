@@ -15,7 +15,6 @@ const cssHighlightList: string[] = [
 
 export interface IBaseProps {
   mod: types.IMod;
-  gameMode: string;
 }
 
 interface IActionProps {
@@ -23,6 +22,7 @@ interface IActionProps {
 }
 
 interface IConnectedProps {
+  gameMode: string;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -126,7 +126,9 @@ class HighlightButton extends ComponentEx<IProps, {}> {
 }
 
 function mapStateToProps(state: types.IState): IConnectedProps {
-  return {};
+  return {
+    gameMode: selectors.activeGameId(state),
+  };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {

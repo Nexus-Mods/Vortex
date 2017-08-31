@@ -137,7 +137,9 @@ function register(context: IExtensionContextExt) {
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
     props: () => ({
-      nativePlugins: nativePlugins(selectors.activeGameId(context.api.store.getState())),
+      nativePlugins: gameSupported(selectors.activeGameId(context.api.store.getState()))
+        ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
+        : [],
     }),
     activity: lootActivity,
   });
