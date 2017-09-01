@@ -62,7 +62,7 @@ function mergeArchive(api: IExtensionApi, relArcPath: string, basePath: string,
       .then(() => fs.statAsync(path.join(basePath, relArcPath) + BACKUP_TAG)
         .then(() => path.join(basePath, relArcPath) + BACKUP_TAG))
         .catch(() => path.join(basePath, relArcPath))
-      .then(sourcePath => api.openArchive(sourcePath))
+      .then(sourcePath => api.openArchive(sourcePath, path.extname(relArcPath).substr(1)))
       .then(archive => archive.extractAll(resultPath))
       // save size and hash for files from the base so we can later recognize duplicates
       // in the mod archives

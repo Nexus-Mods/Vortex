@@ -1511,9 +1511,7 @@ a[role=menuitem] svg {
 // quicklaunch
 
 .container-quicklaunch {
-  margin-right: $half-gutter;
-  margin-top: auto;
-  margin-bottom: auto;
+  margin: auto $half-gutter auto 1px;
 
   >.btn-group {
     >.btn-quicklaunch {

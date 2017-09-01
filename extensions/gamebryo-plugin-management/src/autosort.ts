@@ -69,7 +69,9 @@ class LootInterface {
           }
           let pluginNames: string[] = Object.keys(state.loadOrder);
           pluginNames = pluginNames.filter((name: string) =>
-            state.session.plugins.pluginList[name] !== undefined,
+            (state.session.plugins.pluginList[name] !== undefined)
+            // TODO: current loot doesn't support esl yet
+            && (path.extname(name) !== '.esl'),
           );
           return this.sortAsync(pluginNames)
             .then((sorted: string[]) => store.dispatch(setPluginOrder(sorted)));

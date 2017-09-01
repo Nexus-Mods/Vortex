@@ -22,6 +22,8 @@ interface IActivation {
   [relPath: string]: IDeployedFile;
 }
 
+// TODO: guess I need to pull this out of the linking activator as the activation
+//   code needs to know about these files when merging archives
 export const BACKUP_TAG = '.vortex_backup';
 
 /**

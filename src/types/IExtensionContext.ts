@@ -333,7 +333,7 @@ export interface IExtensionApi {
   /**
    * opens an archive
    */
-  openArchive: (archivePath: string) => Promise<Archive>;
+  openArchive: (archivePath: string, extension?: string) => Promise<Archive>;
 
   /**
    * insert or replace a sass-stylesheet. It gets integrated into the existing sheets based
