@@ -15,7 +15,7 @@ import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, ListGroup, ListGroupItem, Modal, Panel } from 'react-bootstrap';
+import { Button, Jumbotron, ListGroup, ListGroupItem, Modal, Panel } from 'react-bootstrap';
 
 export interface IBaseProps {
   visible: boolean;
@@ -76,18 +76,30 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
     if (visible) {
 
-      body = (
-        <Modal.Body id='diagnostics-files'>
-          <div style={{ marginTop: 5, marginBottom: 5 }}>
-            <div className='diagnostics-files-sessions-panel'>
-              {logSessions.map((session, index) => this.renderSessions(session, index))}
+      if (logSessions.length > 0) {
+        body = (
+          <Modal.Body id='diagnostics-files'>
+            <div style={{ marginTop: 5, marginBottom: 5 }}>
+              <div className='diagnostics-files-sessions-panel'>
+                {logSessions.map((session, index) => this.renderSessions(session, index))}
+              </div>
             </div>
-          </div>
-          <div style={{ marginTop: 5, marginBottom: 5 }}>
-            {this.renderDetail()}
-          </div>
-        </Modal.Body>
-      );
+            <div style={{ marginTop: 5, marginBottom: 5 }}>
+              {this.renderDetail()}
+            </div>
+          </Modal.Body>
+        );
+      } else {
+        body = (
+          <Modal.Body id='diagnostics-files'>
+            <Jumbotron>
+              <div style={{ fontSize: 'medium', margin: '0 1em' }}>
+                {t('An error occurred loading Vortex logs.')}
+              </div>
+            </Jumbotron>
+          </Modal.Body>
+        );
+      }
     }
 
     return (
