@@ -280,11 +280,17 @@ void GamebryoSaveGame::readFO4(GamebryoSaveGame::FileWrapper &file)
   m_CreationTime = windowsTicksToEpoch(ftime);
   file.readImage(true);
 
-  file.skip<uint8_t>(); // form version
+  uint8_t formVersion;
+  file.read(formVersion);
   file.read(ignore);          // game version
   file.skip<uint32_t>(); // plugin info size
 
   file.readPlugins();
+
+  if (formVersion >= 0x44) {
+    // lazy: just read the esls into the existing plugin list
+    file.readLightPlugins();
+  }
 }
 
 GamebryoSaveGame::FileWrapper::FileWrapper(GamebryoSaveGame *game)
@@ -392,6 +398,17 @@ void GamebryoSaveGame::FileWrapper::readImage(unsigned long width, unsigned long
 void GamebryoSaveGame::FileWrapper::readPlugins()
 {
   unsigned char count;
+  read(count);
+  for (std::size_t i = 0; i < count; ++i) {
+    std::string name;
+    read(name);
+    m_Game->m_Plugins.push_back(name);
+  }
+}
+
+void GamebryoSaveGame::FileWrapper::readLightPlugins()
+{
+  uint16_t count;
   read(count);
   for (std::size_t i = 0; i < count; ++i) {
     std::string name;

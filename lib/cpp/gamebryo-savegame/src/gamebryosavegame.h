@@ -125,6 +125,9 @@ private:
     /* Read the plugin list */
     void readPlugins();
 
+    /* Read the list of light plugins */
+    void readLightPlugins();
+
     /* treat the following bytes as compressed */
     void setCompression(unsigned short format, unsigned long compressedSize, unsigned long uncompressedSize);
 
