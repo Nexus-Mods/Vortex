@@ -52,8 +52,12 @@ function genMergeSet(game: IGame, installPath: string,
 }
 
 // merge a single archive
-function mergeArchive(api: IExtensionApi, relArcPath: string, basePath: string,
-                      sources: string[], mergePath: string) {
+function mergeArchive(api: IExtensionApi,
+                      game: IGame,
+                      relArcPath: string,
+                      basePath: string,
+                      sources: string[],
+                      mergePath: string) {
   const baseContent: { [path: string]: { size: number, hash: string } } = {};
   const resultPath = path.join(mergePath, 'result');
 
@@ -62,22 +66,20 @@ function mergeArchive(api: IExtensionApi, relArcPath: string, basePath: string,
       .then(() => fs.statAsync(path.join(basePath, relArcPath) + BACKUP_TAG)
         .then(() => path.join(basePath, relArcPath) + BACKUP_TAG))
         .catch(() => path.join(basePath, relArcPath))
-      .then(sourcePath => api.openArchive(sourcePath, path.extname(relArcPath).substr(1)))
+      .then(sourcePath => api.openArchive(sourcePath, { gameId: game.id},
+                                          path.extname(relArcPath).substr(1)))
       .then(archive => archive.extractAll(resultPath))
       // save size and hash for files from the base so we can later recognize duplicates
       // in the mod archives
-      .then(() => walk(resultPath, (iterPath, stats) => {
-        if (stats.isDirectory()) {
-          return;
-        }
-        return calcHash(iterPath)
-        .then(hash => {
-          baseContent[path.relative(resultPath, iterPath)] = {
-            size: stats.size,
-            hash,
-          };
-        });
-      }))
+      .then(() => walk(resultPath, (iterPath, stats) => stats.isDirectory()
+          ? Promise.resolve()
+          : calcHash(iterPath)
+              .then(hash => {
+                baseContent[path.relative(resultPath, iterPath)] = {
+                  size: stats.size,
+                  hash,
+                };
+              })))
       // now iterate over each mod containing the archive, extract their version
       // of the archive, then copy every file from the archive that differs from the
       // base into the output directory, overwriting the file from previous mods if
@@ -112,7 +114,7 @@ function mergeArchive(api: IExtensionApi, relArcPath: string, basePath: string,
       }))
       .then(() =>
         // finally, create the new archive
-        api.openArchive(path.join(mergePath, relArcPath))
+        api.openArchive(path.join(mergePath, relArcPath), { gameId: game.id })
           .then(archive => archive.create(resultPath)))
       .then(() => fs.removeAsync(resultPath));
 }
@@ -142,8 +144,8 @@ function prepareMerged(api: IExtensionApi,
         mergeSet = mergeSetIn;
         return Promise.each(
             Object.keys(mergeSet),
-            relPath => mergeArchive(api, relPath,
-              destinationPath, mergeSet[relPath], mergeDest));
+            relPath => mergeArchive(api, game, relPath, destinationPath,
+                                    mergeSet[relPath], mergeDest));
       })
       .then(() => Object.keys(mergeSet));
 }

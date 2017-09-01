@@ -6,6 +6,7 @@ import { ExtensionInit } from '../types/Extension';
 import {
   ArchiveHandlerCreator,
   IArchiveHandler,
+  IArchiveOptions,
   IExtensionApi,
   IExtensionContext,
   ILookupDetails,
@@ -744,7 +745,9 @@ class ExtensionManager {
       });
   }
 
-  private openArchive = (archivePath: string, ext?: string): Promise<Archive> => {
+  private openArchive = (archivePath: string,
+                         options?: IArchiveOptions,
+                         ext?: string): Promise<Archive> => {
     if (this.mArchiveHandlers === undefined) {
       // lazy loading the archive handlers
       this.mArchiveHandlers = {};
@@ -757,7 +760,7 @@ class ExtensionManager {
     if (creator === undefined) {
       return Promise.reject(new Error('unsupported archive format ' + ext));
     }
-    return creator(archivePath, {})
+    return creator(archivePath, options || {})
       .then((handler: IArchiveHandler) => {
         return Promise.resolve(new Archive(handler));
       });
