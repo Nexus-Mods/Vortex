@@ -45,10 +45,14 @@ interface IRenderedDash {
   comp: JSX.Element;
 }
 
+interface IComponentState {
+  counter: number;
+}
+
 /**
  * base layouter for the dashboard. No own content, just layouting
  */
-class Dashboard extends ComponentEx<IProps, { counter: number }> {
+class Dashboard extends ComponentEx<IProps, IComponentState> {
   private mUpdateTimer: NodeJS.Timer;
   private mLayoutDebouncer: Debouncer;
 
@@ -88,11 +92,12 @@ class Dashboard extends ComponentEx<IProps, { counter: number }> {
 
   public render(): JSX.Element {
     const { objects, layout } = this.props;
+
     const state = this.context.api.store.getState();
 
     const layoutMap: { [key: string]: number } = {};
     if (layout !== undefined) {
-      layout.map((item: string, idx: number) => layoutMap[item] = idx - 1000);
+      layout.forEach((item: string, idx: number) => layoutMap[item] = idx - 1000);
     }
 
     const sorted = objects
