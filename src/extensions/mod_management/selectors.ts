@@ -5,7 +5,7 @@ import resolvePath from './util/resolvePath';
 
 import { createSelector } from 'reselect';
 
-interface IPathMap {
+export interface IPathMap {
   [gameId: string]: IStatePaths;
 }
 
