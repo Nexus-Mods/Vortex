@@ -1,3 +1,5 @@
+import {ArcGame} from './types';
+
 import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
 import * as fs from 'fs-extra-promise';
@@ -6,7 +8,8 @@ import * as path from 'path';
 export interface IARCOptions {
   compression?: boolean;
   forceCompression?: boolean;
-  game?: 'DD' | 'REHD' | 'RE5' | 'RE6' | 'REV' | 'REV2' | 'DMC4' | 'DMC4SE' | 'UMVC3';
+  game?: ArcGame;
+  version?: number;
 }
 
 interface IListEntry {
@@ -73,12 +76,19 @@ class ARCWrapper {
 
   private run(command: string, parameters: string[], options: IARCOptions): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      const args = [
+      let args = [
         '-' + command,
-        options.game || '-DD',
+        options.game !== undefined ? '-' + options.game : '-DD',
         '-pc',
         '-noextcorrect',
-      ].concat(parameters);
+      ];
+
+      if (options.version !== undefined) {
+        args.push('-v');
+        args.push(options.version.toFixed());
+      }
+      args = args.concat(parameters);
+
       const process = spawn(path.join(__dirname, 'ARCtool.exe'), args, {
         shell: true,
       });

@@ -26,8 +26,10 @@ class Packery extends React.Component<IProps, {}> {
     this.scheduleLayout();
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
-    if (nextProps.totalWidth !== this.props.totalWidth) {
+  public componentWillReceiveProps(nextProps: typeof Packery.prototype.props) {
+    if ((nextProps.totalWidth !== this.props.totalWidth)
+      || (React.Children.count(nextProps.children)
+        !== React.Children.count(this.props.children))) {
       this.scheduleRefresh();
     }
   }

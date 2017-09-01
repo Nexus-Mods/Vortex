@@ -141,6 +141,12 @@ export interface IArchiveOptions {
   // if set, the archive should be integrity-checked on loading (i.e. crc checks) if possible
   // whether this is supported and how much it slows down loading depends on the file type.
   verify?: boolean;
+  // if set, give a hint to the archive handler what game this archive is of. This is useful
+  // when similar formats are used in different games with differences in format.
+  gameId?: string;
+  // give a hint to the archive handler what format the archive is. Usually a file should identify
+  // its format but you can never know. Can also be very useful when creating a new archive
+  version?: string;
 }
 
 /**
@@ -333,7 +339,8 @@ export interface IExtensionApi {
   /**
    * opens an archive
    */
-  openArchive: (archivePath: string, extension?: string) => Promise<Archive>;
+  openArchive: (archivePath: string, options?: IArchiveOptions,
+                extension?: string) => Promise<Archive>;
 
   /**
    * insert or replace a sass-stylesheet. It gets integrated into the existing sheets based
