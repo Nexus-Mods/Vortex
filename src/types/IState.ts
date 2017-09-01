@@ -9,6 +9,9 @@ import { IGameStored } from '../extensions/gamemode_management/types/IGameStored
 import { IMod } from '../extensions/mod_management/types/IMod';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
 
+// re-export these to keep the imports from extensions local
+export { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
+
 /**
  * interface to represent a position on the screen
  *

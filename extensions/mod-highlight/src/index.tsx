@@ -5,7 +5,6 @@ import * as React from 'react';
 import { selectors, types, util } from 'vortex-api';
 
 function init(context: types.IExtensionContext) {
-
   context.registerTableAttribute('mods', {
     id: 'notes',
     description: 'Mod Notes',
@@ -28,11 +27,11 @@ function init(context: types.IExtensionContext) {
     description: 'Mod Highlight',
     icon: 'lightbulb-o',
     placement: 'table',
-    customRenderer: (mod, detailCell, t) => {
-      const gameMode = selectors.activeGameId(context.api.store.getState());
-      return (<HighlightButton gameMode={gameMode} mod={mod} />);
-    },
-    calc: (mod) => util.getSafe(mod.attributes, ['icon'], ''),
+    customRenderer: (mod: types.IMod, detailCell: boolean, t: I18next.TranslationFunction) =>
+      <HighlightButton mod={mod} />,
+    calc: (mod: types.IMod) =>
+      util.getSafe(mod.attributes, ['icon'], '')
+      + ' - ' + util.getSafe(mod.attributes, ['color'], ''),
     isToggleable: true,
     edit: {},
     isSortable: true,

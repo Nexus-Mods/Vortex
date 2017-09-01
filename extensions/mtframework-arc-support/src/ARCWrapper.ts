@@ -39,7 +39,12 @@ class ARCWrapper {
     const baseName = path.basename(archivePath, path.extname(archivePath));
     const tempPath = path.join(path.dirname(archivePath), baseName);
     return this.run('x', [ quote(archivePath) ], options || {})
-      .then(() => fs.renameAsync(tempPath, outputPath));
+      .then(() => fs.moveAsync(tempPath, outputPath, { overwrite: true }));
+  }
+
+  public create(archivePath: string, source: string, options?: IARCOptions): Promise<void> {
+    return this.run('c', [ quote(source) ], options || {})
+      .then(() => fs.moveAsync(source + '.arc', archivePath, { overwrite: true }));
   }
 
   private parseList(input: string): IListEntry[] {
@@ -72,8 +77,9 @@ class ARCWrapper {
         '-' + command,
         options.game || '-DD',
         '-pc',
+        '-noextcorrect',
       ].concat(parameters);
-      const process = spawn('ARCtool.exe', args, {
+      const process = spawn(path.join(__dirname, 'ARCtool.exe'), args, {
         shell: true,
       });
 

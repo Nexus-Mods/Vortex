@@ -394,7 +394,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       name: '',
       executable: undefined,
       requiredFiles: [],
-      logo: '',
+      logo: undefined,
     });
     this.nextState.editTool = empty;
   }

@@ -399,7 +399,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         <InputGroup>
           {content}
           <InputGroup.Button>
-            <BSButton disabled={!changed} onClick={this.applyActivator}>{t('Set')}</BSButton>
+            <BSButton disabled={!changed} onClick={this.applyActivator}>{t('Apply')}</BSButton>
           </InputGroup.Button>
         </InputGroup>
         <HelpBlock>
@@ -417,6 +417,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private selectActivator = (evt) => {
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
+    console.log('select activator', target.value);
     this.setState(setSafe(this.state, ['currentActivator'], target.value));
   }
 }

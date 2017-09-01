@@ -15,24 +15,21 @@ function refreshMods(installPath: string, knownMods: string[],
   return fs.ensureDirAsync(installPath)
     .then(() => fs.readdirAsync(installPath))
     .then((modNames: string[]) => {
-      const addedMods = modNames.filter((name: string) => knownMods.indexOf(name) === -1);
-      const removedMods = knownMods.filter((name: string) => modNames.indexOf(name) === -1);
+      const filtered = modNames.filter(name => !name.startsWith('__'));
+      const addedMods = filtered.filter((name: string) => knownMods.indexOf(name) === -1);
+      const removedMods = knownMods.filter((name: string) => filtered.indexOf(name) === -1);
 
       return Promise.map(addedMods, (modName: string) => {
         const fullPath: string = path.join(installPath, modName);
-        return fs.statAsync(fullPath)
-        .then((stat: fs.Stats) => {
-          const mod: IMod = {
-            id: modName,
-            installationPath: modName,
-            state: 'installed',
-            attributes: {
-              name: modName,
-              installTime: stat.ctime,
-            },
-          };
-          return onAddMod(mod);
-        });
+        return fs.statAsync(fullPath).then((stat: fs.Stats) => onAddMod({
+                                             id: modName,
+                                             installationPath: modName,
+                                             state: 'installed',
+                                             attributes: {
+                                               name: modName,
+                                               installTime: stat.ctime,
+                                             },
+                                           }));
       })
       .then(() => onRemoveMods(removedMods));
     });

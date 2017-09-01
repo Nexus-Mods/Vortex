@@ -9,7 +9,7 @@ function flatten(obj: any): { [key: string]: any } {
     if ((typeof(obj[key]) === 'object') && !Array.isArray(obj[key])) {
       const inner = flatten(obj[key]);
       Object.keys(inner).forEach((innerKey: string) => {
-        result[key + '.' + innerKey] = inner[innerKey];
+        result[key + '###' + innerKey] = inner[innerKey];
       });
     } else {
       result[key] = obj[key];

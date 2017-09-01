@@ -663,6 +663,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     const sortAttribute: ITableAttribute = attributes.find(attribute => {
       return (attributeState[attribute.id] !== undefined)
+          && (attributeState[attribute.id].sortDirection !== undefined)
           && (attributeState[attribute.id].sortDirection !== 'none');
     });
 

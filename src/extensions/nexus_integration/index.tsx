@@ -456,7 +456,7 @@ function once(api: IExtensionApi) {
         })
         .catch(NexusError, err => {
           showError(api.store.dispatch,
-            'Server reported an error validating your API Key',
+            'Failed to validate API Key',
             errorFromNexusError(err), false, undefined, false);
           api.store.dispatch(setUserInfo(null));
         })
@@ -464,7 +464,7 @@ function once(api: IExtensionApi) {
           // if there is an "errno", this is more of a technical problem, like
           // network is offline or server not reachable
           showError(api.store.dispatch,
-            'An error occurred validating your API Key',
+            'Failed to validate API Key',
             err.message, false, undefined, false);
           api.store.dispatch(setUserInfo(null));
         });
@@ -572,11 +572,15 @@ function once(api: IExtensionApi) {
           .then(userInfo => {
             api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
           })
+          .catch(NexusErrorT, (err: NexusErrorT) => {
+            showError(api.store.dispatch, 'Failed to validate API Key',
+                      errorFromNexusError(err));
+          })
           .catch(err => {
             api.store.dispatch(setUserAPIKey(undefined));
             showError(api.store.dispatch,
-              'An error occurred validating the API Key',
-              'Please provide a valid API Key!', false, undefined, false);
+              'Failed to validate API Key',
+              err);
           });
       }
     });

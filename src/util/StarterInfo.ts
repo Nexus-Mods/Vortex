@@ -50,7 +50,11 @@ class StarterInfo implements IStarterInfo {
       fs.statSync(iconPath);
       return iconPath;
     } catch (err) {
-      return path.join(extensionPath, logo);
+      if (logo !== undefined) {
+        return path.join(extensionPath, logo);
+      } else {
+        return undefined;
+      }
     }
   }
 
@@ -65,7 +69,11 @@ class StarterInfo implements IStarterInfo {
       fs.statSync(iconPath);
       return iconPath;
     } catch (err) {
-      return path.join(extensionPath, toolLogo);
+      if (toolLogo !== undefined) {
+        return path.join(extensionPath, toolLogo);
+      } else {
+        return undefined;
+      }
     }
   }
   private static toolIconRW(gameId: string, toolId: string) {
@@ -99,7 +107,7 @@ class StarterInfo implements IStarterInfo {
       this.isGame = false;
       this.initFromTool(this.gameId, tool, toolDiscovery);
     }
-    if ((this.id === undefined) || (this.name === undefined) || (this.mLogoName === undefined)) {
+    if ((this.id === undefined) || (this.name === undefined)) {
       throw new Error('invalid starter information');
     }
   }
@@ -114,6 +122,7 @@ class StarterInfo implements IStarterInfo {
             this.gameId, this.mExtensionPath, this.id, this.mLogoName);
       }
     }
+
     return this.mIconPathCache;
   }
 

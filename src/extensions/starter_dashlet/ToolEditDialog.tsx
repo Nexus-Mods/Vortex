@@ -183,11 +183,11 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   }
 
   public render(): JSX.Element {
-    const { t, onClose, tool } = this.props;
-    const { isGame, name } = this.state.tool;
-    let realName = name;
-    if ((realName === undefined) && (tool !== undefined)) {
-      realName = tool.name;
+    const { t, onClose } = this.props;
+    const { tool } = this.state;
+    let realName: string = tool.name;
+    if ((realName === undefined) && (this.props.tool !== undefined)) {
+      realName = this.props.tool.name;
     }
 
     return (
@@ -210,14 +210,14 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
               onChangeValue={this.handleChange}
               maxLength={50}
             />
-            {isGame ? (
+            {tool.isGame ? (
               <FormTextItem
                 t={t}
                 controlId='target'
                 label={t('Target')}
                 placeholder={t('Target')}
                 stateKey='target'
-                value={this.state.tool.exePath}
+                value={tool.exePath}
                 readOnly
               />
             ) : (
@@ -227,7 +227,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                   label={t('Target')}
                   placeholder={t('Target')}
                   stateKey='exePath'
-                  value={this.state.tool.exePath}
+                  value={tool.exePath}
                   onChangeValue={this.handleChangePath}
                   directory={false}
                 />
@@ -239,7 +239,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
               label={t('Command Line')}
               placeholder={t('Command Line Parameters')}
               stateKey='commandLine'
-              value={this.state.tool.commandLine.join(' ')}
+              value={tool.commandLine.join(' ')}
               onChangeValue={this.handleChangeParameters}
             />
 
@@ -249,10 +249,10 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 label={t('Start In')}
                 placeholder={t('Working Directory')}
                 stateKey='workingDirectory'
-                value={this.state.tool.workingDirectory}
+                value={tool.workingDirectory}
                 onChangeValue={this.handleChange}
                 directory={true}
-                readOnly={isGame}
+                readOnly={tool.isGame}
             />
 
             <FormGroup>
@@ -260,7 +260,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 <ControlLabel>{t('Environment Variables')}</ControlLabel>
               </Col>
               <Col sm={9}>
-                {this.renderEnvironment(this.state.tool.environment)}
+                {this.renderEnvironment(tool.environment)}
               </Col>
             </FormGroup>
 
@@ -275,7 +275,11 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                     tooltip={t('Change')}
                     onClick={this.handleChangeIcon}
                   >
-                    <ToolIcon imageUrl={tool.iconPath} imageId={this.state.imageId} valid={true} />
+                    <ToolIcon
+                      imageUrl={this.props.tool.iconPath}
+                      imageId={this.state.imageId}
+                      valid={true}
+                    />
                   </Button>
                 </FormControl.Static>
               </Col>
@@ -401,21 +405,17 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     const destPath = tool.iconOutPath;
 
     return fs.ensureDirAsync(path.dirname(destPath))
-      .then(() => {
-        if (path.extname(filePath) === '.exe') {
-          return new Promise<void>((resolve, reject) => {
-            extractIconToFile(filePath, destPath, (err) => {
-              if (err !== null) {
-                reject(err);
-              } else {
-                resolve();
-              }
-            }, 32, 'png');
-          });
-        } else {
-          return fs.copyAsync(filePath, destPath);
-        }
-      })
+      .then(() => (path.extname(filePath) === '.exe')
+        ? new Promise<void>((resolve, reject) => {
+          extractIconToFile(filePath, destPath, (err) => {
+            if (err !== null) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          }, 32, 'png');
+        })
+        : fs.copyAsync(filePath, destPath))
       .then(() => {
         this.clearCache();
         this.forceUpdate();

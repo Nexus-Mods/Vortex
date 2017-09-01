@@ -34,7 +34,7 @@ export interface IGame extends ITool {
    * @type {string}
    * @memberOf IGame
    */
-  pluginPath?: string;
+  extensionPath?: string;
 
   /**
    * whether to merge mods in the destination directory or put each mod into a separate
@@ -51,6 +51,13 @@ export interface IGame extends ITool {
    * @memberOf IGame
    */
   mergeMods: boolean;
+
+  /**
+   * determines if a file is to be merged with others with the same path, instead of the
+   * highest-priority one being used. This only work if support for repackaging the file type
+   * is available
+   */
+  mergeArchive?: (filePath: string) => boolean;
 
   /**
    * Optional setup function. If this game requires some form of setup before it can be modded

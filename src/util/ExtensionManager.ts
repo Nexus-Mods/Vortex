@@ -744,13 +744,15 @@ class ExtensionManager {
       });
   }
 
-  private openArchive = (archivePath: string): Promise<Archive> => {
+  private openArchive = (archivePath: string, ext?: string): Promise<Archive> => {
     if (this.mArchiveHandlers === undefined) {
       // lazy loading the archive handlers
       this.mArchiveHandlers = {};
       this.apply('registerArchiveType', this.registerArchiveHandler);
     }
-    const ext = path.extname(archivePath).substr(1);
+    if (ext === undefined) {
+      ext = path.extname(archivePath).substr(1);
+    }
     const creator = this.mArchiveHandlers[ext];
     if (creator === undefined) {
       return Promise.reject(new Error('unsupported archive format ' + ext));

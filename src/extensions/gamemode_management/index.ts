@@ -39,6 +39,11 @@ import * as Redux from 'redux';
 
 let gameModeManager: GameModeManager;
 
+// this isn't nice...
+export function getGames(): IGame[] {
+  return gameModeManager !== undefined ? gameModeManager.games : [];
+}
+
 const extensionGames: IGame[] = [];
 
 interface IProvider {
@@ -227,7 +232,7 @@ function init(context: IExtensionContext): boolean {
   context.registerFooter('discovery-progress', ProgressFooter);
 
   context.registerGame = (game: IGame, extensionPath: string) => {
-    game.pluginPath = extensionPath;
+    game.extensionPath = extensionPath;
     extensionGames.push(game);
   };
 

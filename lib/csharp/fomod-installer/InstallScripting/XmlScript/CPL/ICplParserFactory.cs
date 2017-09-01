@@ -1,4 +1,4 @@
-﻿using Nexus.Client.Util.Antlr;
+﻿using FomodInstaller.Util.Antlr;
 
 namespace FomodInstaller.Scripting.XmlScript
 {

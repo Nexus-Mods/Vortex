@@ -21,24 +21,33 @@ interface IComponentState {
 type IProps = IBaseProps;
 
 class Dashlet extends ComponentEx<IProps, IComponentState> {
+  private mMounted: boolean = false;
+
   constructor(props) {
     super(props);
 
     this.state = {};
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
+    this.mMounted = true;
     rss(this.props.url)
     .then(result => {
-      this.setState({
-        messages: result.map(this.transformMessage),
-      });
+      if (this.mMounted) {
+        this.setState({
+          messages: result.map(this.transformMessage),
+        });
+    }
     })
     .catch((err: Error) => {
       this.setState({
         error: err.message,
       });
     });
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = false;
   }
 
   public render(): JSX.Element {

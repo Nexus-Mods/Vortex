@@ -20,6 +20,7 @@ import {
 import {getSafe} from '../../util/storeHelper';
 
 import {IDownload} from '../download_management/types/IDownload';
+import {getGames} from '../gamemode_management/index';
 import {IDiscoveryResult} from '../gamemode_management/types/IDiscoveryResult';
 import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfileMod} from '../profile_management/types/IProfile';
@@ -255,16 +256,19 @@ function genUpdateModActivation() {
       // activated
       .then(() => sortMods(gameMode, modList, api))
       .then((sortedMods: string[]) => {
-        const sortedModList = modList.sort((lhs: IMod, rhs: IMod) =>
-          sortedMods.indexOf(lhs.id) -
-          sortedMods.indexOf(rhs.id));
+        const sortedModList = modList
+          .filter(mod => getSafe(modState, [mod.id, 'enabled'], false))
+          .sort((lhs: IMod, rhs: IMod) =>
+            sortedMods.indexOf(lhs.id) -
+            sortedMods.indexOf(rhs.id));
 
-        return activateMods(instPath, gameDiscovery.modPath, sortedModList,
-          modState, activator, lastActivation)
-          .then(newActivation =>
-            saveActivation(state.app.instanceId,
-              gameDiscovery.modPath, newActivation))
-          .then(() => bakeSettings(api, gameMode, sortedModList));
+        return activateMods(api, getGames().find(iter => iter.id === gameMode),
+                            instPath, gameDiscovery.modPath, sortedModList,
+                            activator, lastActivation)
+            .then(newActivation =>
+                      saveActivation(state.app.instanceId,
+                                     gameDiscovery.modPath, newActivation))
+            .then(() => bakeSettings(api, gameMode, sortedModList));
       })
       .catch(UserCanceled, () => undefined)
       .catch(err => api.showErrorNotification('failed to deploy mods', err))

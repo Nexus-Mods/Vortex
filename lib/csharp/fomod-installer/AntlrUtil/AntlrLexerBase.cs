@@ -1,7 +1,7 @@
 ﻿using System;
 using Antlr.Runtime;
 
-namespace Nexus.Client.Util.Antlr
+namespace FomodInstaller.Util.Antlr
 {
 	/// <summary>
 	/// The base lexer for ANTRL lexers.

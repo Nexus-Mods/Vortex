@@ -14,19 +14,18 @@ class ARCHandler implements types.IArchiveHandler {
   }
 
   public readDir(dirPath: string): Promise<string[]> {
-    return this.mArc.list(this.mArchivePath);
-  }
-
-  public extractFile(filePath: string, outputPath: string): Promise<void> {
-    return Promise.resolve();
+    return this.mArc.list(this.mArchivePath)
+      .then(list => list
+        .filter(entry => entry.startsWith(dirPath))
+        .map(entry => entry.substr(dirPath.length)));
   }
 
   public extractAll(outputPath: string): Promise<void> {
     return this.mArc.extract(this.mArchivePath, outputPath);
   }
 
-  public readFile(filePath: string): NodeJS.ReadableStream {
-    return undefined;
+  public create(sourcePath: string): Promise<void> {
+    return this.mArc.create(this.mArchivePath, sourcePath);
   }
 }
 
