@@ -8,7 +8,7 @@ import * as path from 'path';
 export function loadVortexLogs(): Promise<ISession[]> {
 
   const logPath = remote.app.getPath('userData');
-  const sessionArray: ISession[] = [];
+  const sessions: ISession[] = [];
 
   return fs.readdirAsync(logPath)
     .then((logPathFiles: string[]) => {
@@ -22,7 +22,7 @@ export function loadVortexLogs(): Promise<ISession[]> {
             splittedSessions.forEach((sessionElement, sessionIndex) => {
 
               const splittedLogs = sessionElement.split('\r\n');
-              const logArray: ILog[] = [];
+              const logElements: ILog[] = [];
 
               splittedLogs.forEach((element, index) => {
                 let textType = '';
@@ -35,20 +35,20 @@ export function loadVortexLogs(): Promise<ISession[]> {
                 }
 
                 if (element !== '' && index !== splittedLogs.length - 1) {
-                  logArray.push({
+                  logElements.push({
                     text: element,
                     type: textType,
                   });
                 }
               });
 
-              if (logArray.length > 1) {
-                sessionArray.push({
+              if (logElements.length > 1) {
+                sessions.push({
                   from: sessionElement !== undefined ?
                     sessionElement.substring(0, 31).replace('-', '') : '',
-                  to: logArray[logArray.length - 1].text.substring(0, 30),
-                  logs: logArray,
-                  fullLog: (logArray.map((log) => log.text).join('\n')),
+                  to: logElements[logElements.length - 1].text.substring(0, 30),
+                  logs: logElements,
+                  fullLog: (logElements.map((log) => log.text).join('\n')),
                 });
               }
             });
@@ -56,6 +56,6 @@ export function loadVortexLogs(): Promise<ISession[]> {
       });
     })
     .then(() => {
-      return Promise.resolve(sessionArray);
+      return Promise.resolve(sessions);
     });
 }

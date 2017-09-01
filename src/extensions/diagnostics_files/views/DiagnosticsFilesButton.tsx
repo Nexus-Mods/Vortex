@@ -1,24 +1,27 @@
+import { setDialogVisible } from '../../../actions/session';
+
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IExtensionContext } from '../../../types/IExtensionContext';
 import asyncRequire, { Placeholder } from '../../../util/asyncRequire';
-import { ComponentEx, translate } from '../../../util/ComponentEx';
-
-import DiagnosticsFilesDialogT from './DiagnosticsFilesDialog';
-let DiagnosticsFilesDialog: typeof DiagnosticsFilesDialogT = Placeholder;
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 
 import * as update from 'immutability-helper';
 import * as React from 'react';
+import * as Redux from 'redux';
 
 export interface IBaseProps {
   buttonType: 'icon' | 'text' | 'both';
-  context: IExtensionContext;
 }
 
 interface IComponentState {
   dialogVisible: boolean;
 }
 
-type IProps = IBaseProps;
+interface IActionProps {
+  onShowDialog: () => void;
+}
+
+type IProps = IBaseProps & IActionProps;
 
 class DiagnosticsFilesButton extends ComponentEx<IProps, IComponentState> {
   constructor(props) {
@@ -28,16 +31,8 @@ class DiagnosticsFilesButton extends ComponentEx<IProps, IComponentState> {
     };
   }
 
-  public componentWillMount() {
-    asyncRequire('./DiagnosticsFilesDialog', __dirname)
-      .then(DiagnosticsFilesDialogIn => {
-        DiagnosticsFilesDialog = DiagnosticsFilesDialogIn.default;
-      });
-  }
-
   public render(): JSX.Element {
-    const { t, buttonType, context } = this.props;
-    const { dialogVisible } = this.state;
+    const { t, buttonType } = this.props;
 
     return (
       <ToolbarIcon
@@ -47,13 +42,7 @@ class DiagnosticsFilesButton extends ComponentEx<IProps, IComponentState> {
         placement='top'
         onClick={this.showDiagnosticsFilesLayer}
         buttonType={buttonType}
-      >
-        <DiagnosticsFilesDialog
-          shown={dialogVisible}
-          onHide={this.hideDiagnosticsFilesLayer}
-          context={context}
-        />
-      </ToolbarIcon>
+      />
     );
   }
 
@@ -66,11 +55,16 @@ class DiagnosticsFilesButton extends ComponentEx<IProps, IComponentState> {
   }
 
   private setDialogVisible(visible: boolean): void {
-    this.setState(update(this.state, {
-      dialogVisible: { $set: visible },
-    }));
+    this.props.onShowDialog();
   }
 }
 
-export default
-  translate(['common'], { wait: false })(DiagnosticsFilesButton) as React.ComponentClass<{}>;
+function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+  return {
+    onShowDialog: () => dispatch(setDialogVisible('diagnostics-files-dialog')),
+  };
+}
+
+export default connect(null, mapDispatchToProps)(
+  translate(['common'], { wait: false })
+    (DiagnosticsFilesButton)) as React.ComponentClass<{ IBaseProps }>;
