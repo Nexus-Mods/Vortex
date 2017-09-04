@@ -71,11 +71,9 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, logSessions, visible } = this.props;
-
     let body = null;
 
     if (visible) {
-
       if (logSessions.length > 0) {
         body = (
           <Modal.Body id='diagnostics-files'>
@@ -143,7 +141,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     let isCrashed = '';
     if (session.logs[Object.keys(session.logs).length - 2] !== undefined) {
       if (session.logs[Object.keys(session.logs).length - 2].type === 'ERROR') {
-        isCrashed = '- Crashed! ';
+        isCrashed = ' - Crashed! ';
       }
     }
 
@@ -152,12 +150,21 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       classes.push('active');
     }
 
+    let sessionText: string = t('From ') + from + t(' to ') + to;
+    switch (true) {
+      case errors.length > 1:
+        sessionText = sessionText + ' - ' + t('Errors:') + errors.length; break;
+      case errors.length === 1:
+        sessionText = sessionText + ' - ' + t('Error:') + errors.length; break;
+    }
+
     return (
       <span className={classes.join(' ')} style={{ display: 'flex' }} key={index}>
         <div style={{ flex: '1 1 0' }}>
-          {errors.length > 0 ? 'From ' + from + ' to ' + to +
-            ' - Errors: ' + errors.length + isCrashed : 'From ' + from + ' to ' + to
-          }
+          {sessionText}
+          <span style={{color: 'orange'}}>
+            {isCrashed}
+            </span>
         </div>
         <div className='diagnostics-files-actions'>
           <IconButton

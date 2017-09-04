@@ -56,6 +56,6 @@ export function loadVortexLogs(): Promise<ISession[]> {
       });
     })
     .then(() => {
-      return Promise.resolve(sessions);
+      return Promise.resolve(sessions.reverse());
     });
 }
