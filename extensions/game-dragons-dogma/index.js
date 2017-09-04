@@ -19,6 +19,10 @@ function findGame() {
   });
 }
 
+function modPath() {
+  return 'nativePC';
+}
+
 function main(context) {
   context.requireExtension('mtframework-arc-support');
 
@@ -28,7 +32,7 @@ function main(context) {
     mergeMods: true,
     mergeArchive: filePath => path.basename(filePath).toLowerCase() === 'game_main.arc',
     queryPath: findGame,
-    queryModPath: () => './nativePC',
+    queryModPath: modPath,
     logo: 'gameart.png',
     executable: () => 'DDDA.exe',
     requiredFiles: [
