@@ -1,6 +1,7 @@
 const { log, util } = require('vortex-api');
 
 const { remote } = require('electron');
+const fs = require('fs-extra-promise');
 const path = require('path');
 
 function findGame() {

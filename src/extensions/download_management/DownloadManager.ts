@@ -121,6 +121,8 @@ class DownloadWorker {
 
     this.mHeadersCB(response.headers);
 
+    log('debug', 'retrieving range',
+        { id: this.mJob.workerId, range: response.headers['content-range'] });
     if (this.mJob.responseCB !== undefined) {
       let size: number = parseInt(response.headers['content-length'] as string, 10);
       if ('content-range' in response.headers) {
@@ -368,6 +370,8 @@ class DownloadManager {
         download.assembler.setTotalSize(download.size);
       }
     }
+    log('debug', 'start download worker',
+      { name: download.tempName, workerId, size: job.size });
     job.dataCB = (offset: number, data: Buffer) => {
       download.assembler.addChunk(offset, data);
       download.received += data.byteLength;
@@ -402,7 +406,12 @@ class DownloadManager {
         });
         offset += chunkSize;
       }
+      log('debug', 'downloading file in chunks',
+        { size: chunkSize, count: download.chunks.length, total: size });
       this.tickQueue();
+    } else {
+      log('debug', 'file is too small to be chunked',
+        { name: download.finalName, size });
     }
   }
 
@@ -429,10 +438,15 @@ class DownloadManager {
   private finishChunk(download: IRunningDownload, job: IDownloadJob, interrupted: boolean) {
     job.state = interrupted ? 'paused' : 'finished';
     this.stopWorker(job.workerId);
+
+    log('debug', 'stopping chunk worker',
+      { interrupted, id: job.workerId, offset: job.offset, size: job.size });
+
     const activeChunks = download.chunks.find(
       (chunk: IDownloadJob) => ['paused', 'finished'].indexOf(chunk.state) === -1);
     if (activeChunks === undefined) {
       let finalPath = download.tempName;
+      log('debug', 'no more active chunks, stopping download', { finalPath });
       download.assembler.close()
         .then(() => {
           if (download.finalName !== undefined) {
@@ -452,6 +466,7 @@ class DownloadManager {
           const unfinishedChunks = download.chunks
             .filter(chunk => chunk.state === 'paused')
             .map(this.toStoredChunk);
+          log('debug', 'remaining chunks', { finalPath, unfinishedChunks });
           download.finishCB({ filePath: finalPath, headers: download.headers, unfinishedChunks });
         });
     }

@@ -1,5 +1,6 @@
 const { log, util } = require('vortex-api');
 
+const { remote } = require('electron');
 const fs = require('fs-extra-promise');
 const path = require('path');
 
@@ -7,9 +8,9 @@ function findGame() {
   let steam = new util.Steam();
   return steam.allGames()
   .then((games) => {
-    let game = games.find((entry) => entry.name === 'Dragon\'s Dogma: Dark Arisen');
-    if (game !== undefined) {
-      return game.gamePath;
+    let starbound = games.find((entry) => entry.name === 'Starbound');
+    if (starbound !== undefined) {
+      return starbound.gamePath;
     }
     return null;
   })
@@ -19,28 +20,37 @@ function findGame() {
   });
 }
 
+function gameExecutable() {
+  if (process.platform === 'win32') {
+    return 'win32/starbound.exe';
+  }
+  return 'win64/starbound.exe';
+}
+
 function modPath() {
-  return 'nativePC';
+  return 'mods';
+}
+
+function prepareForModding() {
+  return fs.ensureDirAsync(modPath());
 }
 
 function main(context) {
-  context.requireExtension('mtframework-arc-support');
-
   context.registerGame({
-    id: 'dragonsdogma',
-    name: 'Dragon\'s Dogma',
-    mergeMods: true,
-    mergeArchive: filePath => path.basename(filePath).toLowerCase() === 'game_main.arc',
+    id: 'starbound',
+    name: 'Starbound',
+    mergeMods: false,
     queryPath: findGame,
     queryModPath: modPath,
     logo: 'gameart.png',
-    executable: () => 'DDDA.exe',
+    executable: gameExecutable,
     requiredFiles: [
-      'DDDA.exe',
+      gameExecutable,
     ],
     supportedTools: null,
+    setup: prepareForModding,
     details: {
-      steamAppId: 367500,
+      steamAppId: 211820,
     },
   });
 

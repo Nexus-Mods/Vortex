@@ -99,6 +99,7 @@ export class DownloadObserver {
         .then(derivedUrls => this.mManager.enqueue(id, derivedUrls, processCB,
                                                    downloadPath))
         .then((res: IDownloadResult) => {
+          log('debug', 'download finished', { file: res.filePath });
           this.handleDownloadFinished(id, callback, res);
         })
         .catch((err) => {
@@ -141,6 +142,7 @@ export class DownloadObserver {
           .then((md5Hash: IHashResult) => {
             this.mStore.dispatch(setDownloadHash(id, md5Hash.md5sum));
           })
+          .catch(err => callback(err, id))
           .finally(() => {
             this.mStore.dispatch(finishDownload(id, 'finished'));
 
@@ -217,7 +219,10 @@ export class DownloadObserver {
       this.mManager.resume(downloadId, fullPath, download.urls,
                            download.received, download.size, download.chunks,
                            this.genProgressCB(downloadId))
-          .then(res => this.handleDownloadFinished(downloadId, callback, res));
+          .then(res => {
+            log('debug', 'download finished (resumed)', { file: res.filePath });
+            this.handleDownloadFinished(downloadId, callback, res);
+          });
     }
   }
 }
