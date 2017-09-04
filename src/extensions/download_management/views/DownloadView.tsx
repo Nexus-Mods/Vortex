@@ -271,7 +271,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         hotKey: { code: 46 },
       },
       {
-        icon: 'stop',
+        icon: 'button-stop',
         title: 'Cancel',
         action: this.remove,
         condition: this.cancelable,
