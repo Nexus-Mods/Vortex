@@ -27,6 +27,7 @@
     "react-bootstrap": "^0.31.0",
     "react-dom": "^15.6.1",
     "react-i18next": "^4.6.2",
+    "ts-loader": "^2.3.3",
     "webpack": "^3.1.0"
   }
 }
