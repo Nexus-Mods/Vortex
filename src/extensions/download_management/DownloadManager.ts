@@ -1,8 +1,9 @@
+import Debouncer from '../../util/Debouncer';
 import { countIf } from '../../util/util';
 import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
-import { ProgressCallback } from './types/IProgressCallback';
+import { ProgressCallback } from './types/ProgressCallback';
 
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
@@ -45,12 +46,14 @@ type FinishCallback = (paused: boolean) => void;
  * @class DownloadWorker
  */
 class DownloadWorker {
+  private static BUFFER_SIZE = 256 * 1024;
   private mJob: IDownloadJob;
   private mRequest: requestT.Request;
   private mProgressCB: (bytes: number) => void;
   private mFinishCB: FinishCallback;
   private mHeadersCB: (headers: any) => void;
   private mUserAgent: string;
+  private mBuffer: NodeBuffer;
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
@@ -102,6 +105,14 @@ class DownloadWorker {
   }
 
   private handleComplete(response: http.IncomingMessage, body) {
+    if (this.mBuffer !== undefined) {
+      this.mJob.dataCB(this.mJob.offset, this.mBuffer);
+      this.mJob.received += this.mBuffer.length;
+      this.mJob.offset += this.mBuffer.length;
+      this.mJob.size -= this.mBuffer.length;
+      this.mProgressCB(this.mBuffer.length);
+    }
+
     if (this.mJob.completionCB !== undefined) {
       this.mJob.completionCB();
     }
@@ -147,10 +158,19 @@ class DownloadWorker {
   }
 
   private handleData(data) {
-    this.mJob.dataCB(this.mJob.offset, data);
-    this.mJob.offset += data.length;
-    this.mJob.size -= data.length;
-    this.mProgressCB(data.length);
+    if (this.mBuffer === undefined) {
+      this.mBuffer = data;
+    } else {
+      this.mBuffer = Buffer.concat([ this.mBuffer, data ]);
+      if (this.mBuffer.length >= DownloadWorker.BUFFER_SIZE) {
+        this.mJob.dataCB(this.mJob.offset, this.mBuffer);
+        this.mJob.received += this.mBuffer.length;
+        this.mJob.offset += this.mBuffer.length;
+        this.mJob.size -= this.mBuffer.length;
+        this.mProgressCB(this.mBuffer.length);
+        this.mBuffer = undefined;
+      }
+    }
   }
 }
 
@@ -297,7 +317,7 @@ class DownloadManager {
       (value: IRunningDownload) => value.id === id);
     if (download === undefined) {
       log('warn', 'failed to pause download, not found', { id });
-      return;
+      return undefined;
     }
     log('info', 'pause download', { id });
 
@@ -307,6 +327,7 @@ class DownloadManager {
     download.chunks.forEach((value: IDownloadJob) => {
       if (value.state === 'running') {
         unfinishedChunks.push({
+          received: value.received,
           offset: value.offset,
           size: value.size,
           url: value.url,
@@ -327,6 +348,7 @@ class DownloadManager {
       url: download.urls[0],
       offset: 0,
       state: 'init',
+      received: 0,
       size: this.mMinChunkSize,
       errorCB: (err) => { this.cancelDownload(download, err); },
       responseCB: (size: number, fileName: string) =>
@@ -349,9 +371,14 @@ class DownloadManager {
     while ((freeSpots > 0) && (idx < this.mQueue.length)) {
       let unstartedChunks = countIf(this.mQueue[idx].chunks, value => value.state === 'init');
       while ((freeSpots > 0) && (unstartedChunks > 0)) {
-        this.startWorker(this.mQueue[idx]);
-        --unstartedChunks;
-        --freeSpots;
+        try {
+          this.startWorker(this.mQueue[idx]);
+          --unstartedChunks;
+          --freeSpots;
+        } catch (err) {
+          this.mQueue[idx].failedCB(err);
+          this.mQueue.splice(idx, 1);
+        }
       }
       ++idx;
     }
@@ -360,12 +387,20 @@ class DownloadManager {
   private startWorker(download: IRunningDownload) {
     const workerId: number = this.mNextId++;
     this.mSpeedCalculator.initCounter(workerId);
-    const job: IDownloadJob = download.chunks.find((ele) => ele.state === 'init');
+    const job: IDownloadJob = download.chunks.find(ele => ele.state === 'init');
     job.state = 'running';
     job.workerId = workerId;
 
     if (download.assembler === undefined) {
-      download.assembler = new FileAssembler(download.tempName);
+      try {
+        download.assembler = new FileAssembler(download.tempName);
+      } catch (err) {
+        if (err.code === 'EBUSY') {
+          throw new Error('output file is locked');
+        } else {
+          throw err;
+        }
+      }
       if (download.size) {
         download.assembler.setTotalSize(download.size);
       }
@@ -373,14 +408,25 @@ class DownloadManager {
     log('debug', 'start download worker',
       { name: download.tempName, workerId, size: job.size });
     job.dataCB = (offset: number, data: Buffer) => {
-      download.assembler.addChunk(offset, data);
-      download.received += data.byteLength;
-      download.progressCB(download.received, download.size,
-                          download.tempName);
+      // these values will change until the data was written to file
+      // so copy them so we write the correct info to state
+      const receivedNow = download.received;
+      const chunksNow = download.chunks.map(this.toStoredChunk);
+      download.assembler.addChunk(offset, data)
+        .then((synced: boolean) => {
+          download.received += data.byteLength;
+          if (synced) {
+            log('debug', 'sync output file', { chunks: chunksNow });
+          }
+          download.progressCB(receivedNow, download.size,
+                              synced ? chunksNow : undefined, download.tempName);
+        });
     };
 
     this.mBusyWorkers[workerId] = new DownloadWorker(job,
-      (bytes) => this.mSpeedCalculator.addMeasure(workerId, bytes),
+      (bytes) => {
+        this.mSpeedCalculator.addMeasure(workerId, bytes);
+      },
       (pause) => this.finishChunk(download, job, pause),
       (headers) => download.headers = headers,
       this.mUserAgent);
@@ -399,6 +445,7 @@ class DownloadManager {
       let offset = this.mMinChunkSize + 1;
       while (offset < size) {
         download.chunks.push({
+          received: 0,
           offset,
           size: chunkSize,
           state: 'init',
@@ -407,7 +454,7 @@ class DownloadManager {
         offset += chunkSize;
       }
       log('debug', 'downloading file in chunks',
-        { size: chunkSize, count: download.chunks.length, total: size });
+        { size: chunkSize, count: download.chunks.length, max: this.mMaxChunks, total: size });
       this.tickQueue();
     } else {
       log('debug', 'file is too small to be chunked',
@@ -420,6 +467,7 @@ class DownloadManager {
       url: job.url,
       size: job.size,
       offset: job.offset,
+      received: job.received,
     };
   }
 
@@ -429,6 +477,7 @@ class DownloadManager {
       offset: chunk.offset,
       state: 'init',
       size: chunk.size,
+      received: chunk.received,
     };
   }
 

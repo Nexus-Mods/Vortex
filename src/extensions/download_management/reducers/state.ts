@@ -41,11 +41,15 @@ export const stateReducer: IReducerSpec = {
       if (state.files[payload.id] === undefined) {
         return state;
       }
-      return merge(state, [ 'files', payload.id ], {
+      const update = {
         state: 'started',
         received: payload.received,
         size: payload.total,
-      });
+      };
+      if (payload.chunks !== undefined) {
+        update['chunks'] = payload.chunks;
+      }
+      return merge(state, [ 'files', payload.id ], update);
     },
     [action.setDownloadFilePath as any]: (state, payload) =>
       setOrNop(state, [ 'files', payload.id, 'localPath' ], payload.filePath),
@@ -61,6 +65,15 @@ export const stateReducer: IReducerSpec = {
       return merge(state, ['files', downloadId], {
         fileMD5: payload.fileMD5,
         size: payload.fileSize,
+      });
+    },
+    [action.setDownloadInterrupted as any]: (state, payload) => {
+      if (state.files[payload.id] === undefined) {
+        return state;
+      }
+      return merge(state, [ 'files', payload.id ], {
+        state: 'paused',
+        received: payload.realReceived,
       });
     },
     [action.startDownload as any]: (state, payload) => {

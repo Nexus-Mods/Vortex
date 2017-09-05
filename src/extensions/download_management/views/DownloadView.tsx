@@ -401,7 +401,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   private cancelable = (downloadIds: string[]) => {
-    const match = ['init', 'started', 'paused'];
+    const match = ['init', 'started', 'paused', 'redirect'];
     return downloadIds.find((downloadId: string) => (
       match.indexOf(this.getDownload(downloadId).state) >= 0
     )) !== undefined;

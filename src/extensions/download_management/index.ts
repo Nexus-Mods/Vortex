@@ -1,10 +1,18 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { IState } from '../../types/IState';
 import LazyComponent from '../../util/LazyComponent';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
+import { sum } from '../../util/util';
 
-import { addLocalDownload, removeDownload, setDownloadHashByFile,
-         setDownloadSpeed } from './actions/state';
+import {
+  addLocalDownload,
+  pauseDownload,
+  removeDownload,
+  setDownloadHashByFile,
+  setDownloadInterrupted,
+  setDownloadSpeed,
+} from './actions/state';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
 import { IDownload } from './types/IDownload';
@@ -85,6 +93,8 @@ function init(context: IExtensionContextExt): boolean {
 
     const store = context.api.store;
 
+    let manager: DownloadManager;
+
     context.api.registerProtocol('http', url => {
         context.api.events.emit('start-download', [url], {});
     });
@@ -126,17 +136,27 @@ function init(context: IExtensionContextExt): boolean {
                                    fileMD5, fileSize));
       });
 
-    const manager = new DownloadManagerImpl(
-      selectors.downloadPath(store.getState()),
-      store.getState().settings.downloads.maxParallelDownloads,
-      store.getState().settings.downloads.maxChunks,
-      (speed: number) => {
-        if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
-          store.dispatch(setDownloadSpeed(speed));
-        }
-      },
-      `Nexus Client v2.${app.getVersion()}`);
-    observer = observeImpl(context.api.events, store, manager, protocolHandlers);
+    {
+      manager = new DownloadManagerImpl(
+          selectors.downloadPath(store.getState()),
+          store.getState().settings.downloads.maxParallelDownloads,
+          store.getState().settings.downloads.maxChunks, (speed: number) => {
+            if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
+              store.dispatch(setDownloadSpeed(speed));
+            }
+          }, `Nexus Client v2.${app.getVersion()}`);
+      observer =
+          observeImpl(context.api.events, store, manager, protocolHandlers);
+
+      const downloads = store.getState().persistent.downloads.files;
+      const interruptedDownloads = Object.keys(downloads)
+        .filter(id => downloads[id].state === 'started');
+      interruptedDownloads.forEach(id => {
+        store.dispatch(
+          setDownloadInterrupted(id,
+            downloads[id].size - sum(downloads[id].chunks.map(chunk => chunk.size))));
+      });
+    }
   });
 
   return true;

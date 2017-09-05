@@ -17,7 +17,8 @@ export const initDownload = safeCreateAction('INIT_DOWNLOAD',
  * set download progress (in percent)
  */
 export const downloadProgress = safeCreateAction('DOWNLOAD_PROGRESS',
-  (id: string, received: number, total: number) => ({ id, received, total }));
+  (id: string, received: number, total: number, chunks: IChunk[]) =>
+    ({ id, received, total, chunks }));
 
 /**
  * set/change the file path
@@ -49,6 +50,9 @@ export const setDownloadHashByFile = safeCreateAction('SET_DOWNLOAD_HASH_BY_FILE
  */
 export const pauseDownload = safeCreateAction('PAUSE_DOWNLOAD',
   (id: string, paused: boolean, chunks?: IChunk[]) => ({ id, paused, chunks }));
+
+export const setDownloadInterrupted = safeCreateAction('SET_DOWNLOAD_INTERRUPTED',
+  (id: string, realReceived: number) => ({ id, realReceived }));
 
 /**
  * remove a download (and associated file if any)
