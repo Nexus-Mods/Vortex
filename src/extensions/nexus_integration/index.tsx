@@ -100,6 +100,7 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
         api.events.emit('start-download', uris, {
           game: url.gameId.toLowerCase(),
           source: 'nexus',
+          name: nexusFileInfo.name,
           nexus: {
             ids: { gameId, modId: url.modId, fileId: url.fileId },
             modInfo: nexusModInfo,
@@ -574,7 +575,7 @@ function once(api: IExtensionApi) {
           })
           .catch(NexusErrorT, (err: NexusErrorT) => {
             showError(api.store.dispatch, 'Failed to validate API Key',
-                      errorFromNexusError(err));
+                      errorFromNexusError(err), false, undefined, false);
           })
           .catch(err => {
             api.store.dispatch(setUserAPIKey(undefined));

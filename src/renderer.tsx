@@ -129,7 +129,9 @@ const terminateFromError = (error: any) => {
   switch (typeof error) {
     case 'object': {
       const extension = findExtensionName(error.stack);
-      details = { message: error.message, stack: error.stack, extension };
+      details = (error.message === undefined) && (error.stack === undefined)
+        ? { message: require('util').inspect(error), extension }
+        : { message: error.message, stack: error.stack, extension };
       break;
     }
     case 'string': {

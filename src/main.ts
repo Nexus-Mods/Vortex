@@ -56,7 +56,9 @@ function main() {
 
     switch (typeof error) {
       case 'object': {
-        details = {message: error.message, details: error.stack};
+        details = (error.message === undefined) && (error.stack === undefined)
+        ? { message: require('util').inspect(error) }
+        : { message: error.message, stack: error.stack };
       }              break;
       case 'string': {
         details = {message: error as string};
