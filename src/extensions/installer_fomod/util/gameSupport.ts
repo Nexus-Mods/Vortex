@@ -7,31 +7,24 @@ function bethIni(gamePath: string, iniName: string) {
   return path.join(app.getPath('documents'), 'My Games', gamePath, iniName + '.ini');
 }
 
-function archiveTopLevelDirectories(gameMode: string) {
-  let topLevelDirectories: string[];
-
-  switch (gameMode) {
-    case 'fallout4':
-    case 'skyrimse':
-    case 'fallout4':
-    case 'skyrimse':
-    case 'skyrim':
-    case 'oblivion':
-      topLevelDirectories = ['distantlod', 'textures', 'meshes', 'music', 'shaders', 'video',
+const gamebryoTopLevel: string[] = ['distantlod', 'textures', 'meshes', 'music', 'shaders', 'video',
       'interface', 'fonts', 'scripts', 'facegen', 'menus', 'lodsettings', 'lsdata', 'sound',
-      'strings', 'trees', 'skse', 'obse', 'nvse', 'fose', 'asi', 'SkyProc Patchers'];
-      break;
-    case 'dragonsdogma':
-      topLevelDirectories = ['movie', 'rom', 'sa', 'sound', 'system', 'tgs', 'usershader',
-      'usertexture'];
-      break;
-    default:
-      topLevelDirectories = [];
+      'strings', 'trees', 'asi'];
+
+const allTopLevel: string[] = ['fomod'];
+
+function archiveTopLevelDirectories(gameMode: string) {
+  switch (gameMode) {
+    case 'fallout3': return [].concat(allTopLevel, gamebryoTopLevel, ['fose']);
+    case 'falloutnv': return [].concat(allTopLevel, gamebryoTopLevel, ['nvse']);
+    case 'fallout4': return [].concat(allTopLevel, gamebryoTopLevel, ['f4se']);
+    case 'oblivion': return [].concat(allTopLevel, gamebryoTopLevel, ['obse']);
+    case 'skyrim': return [].concat(allTopLevel, gamebryoTopLevel, ['skse', 'SkyProc Patchers']);
+    case 'skyrimse': return [].concat(allTopLevel, gamebryoTopLevel);
+    case 'dragonsdogma': return ['movie', 'rom', 'sa', 'sound', 'system', 'tgs',
+                                 'usershader', 'usertexture'].concat(allTopLevel);
+    default: return [].concat(allTopLevel);
   }
-
-  topLevelDirectories.push('fomod');
-
-  return topLevelDirectories;
 }
 
 const gameSupport = {

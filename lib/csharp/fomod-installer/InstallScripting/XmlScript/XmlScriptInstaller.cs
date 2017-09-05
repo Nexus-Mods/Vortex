@@ -168,7 +168,15 @@ namespace FomodInstaller.Scripting.XmlScript
         {
             bool booSuccess = false;
 
-            modInstallInstructions.Add(Instruction.CreateCopy(fromPath, toPath));
+            if (toPath.EndsWith("" + Path.AltDirectorySeparatorChar)
+                || toPath.EndsWith("" + Path.DirectorySeparatorChar))
+            {
+                modInstallInstructions.Add(Instruction.CreateMKDir(toPath));
+
+            } else
+            {
+                modInstallInstructions.Add(Instruction.CreateCopy(fromPath, toPath));
+            }
 
             booSuccess = true;
 
