@@ -3788,30 +3788,6 @@
     "version": "1.0.9",
     "licenseFile": "node_modules\\sntp\\LICENSE"
   },
-  "source-map-support@0.4.15": {
-    "licenses": "MIT",
-    "repository": "https://github.com/evanw/node-source-map-support",
-    "name": "source-map-support",
-    "version": "0.4.15",
-    "licenseFile": "node_modules\\source-map-support\\LICENSE.md"
-  },
-  "source-map@0.4.4": {
-    "licenses": "BSD-3-Clause",
-    "repository": "https://github.com/mozilla/source-map",
-    "publisher": "Nick Fitzgerald",
-    "email": "nfitzgerald@mozilla.com",
-    "name": "source-map",
-    "version": "0.4.4"
-  },
-  "source-map@0.5.6": {
-    "licenses": "BSD-3-Clause",
-    "repository": "https://github.com/mozilla/source-map",
-    "publisher": "Nick Fitzgerald",
-    "email": "nfitzgerald@mozilla.com",
-    "name": "source-map",
-    "version": "0.5.6",
-    "licenseFile": "node_modules\\source-map\\LICENSE"
-  },
   "spdx-correct@1.0.2": {
     "licenses": "Apache-2.0",
     "repository": "https://github.com/kemitchell/spdx-correct.js",

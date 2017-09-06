@@ -1,5 +1,6 @@
 const fs = require('fs');
 const _ = require('lodash');
+const path = require('path');
 const xml2js = require('xml2js');
 
 const nameMap = {
@@ -54,6 +55,14 @@ const nameMap = {
   'lock-open': 'unlock',
 };
 
+// fix icons that incorrectly have a color set
+const decolorize = new Set([
+  'nc-skew-up',
+  'nc-skew-down',
+  'nc-skew-left',
+  'nc-skew-right',
+]);
+
 function transformId(id) {
   return id
     .replace(/^nc-(.*)/, (m, match) => 'icon-' + (nameMap[match] || match))
@@ -66,9 +75,9 @@ function transformAttributes(attrs) {
   return res;
 }
 
-function transformPath(path) {
-  const res = Object.assign({}, path);
-  if (res.$.fill === 'currentColor') {
+function transformPath(p, decol) {
+  const res = Object.assign({}, p);
+  if (decol || (res.$.fill === 'currentColor')) {
     delete res.$.fill;
   } else if ((res.$.fill === 'none') && (res.$.stroke === undefined)) {
     // we don't stroke by default so if there is no filling,
@@ -80,18 +89,18 @@ function transformPath(path) {
   return res;
 }
 
-function transformG(g) {
+function transformG(g, decol) {
   const res = Object.assign({}, g);
   if (res.$.fill === 'currentColor') {
     delete res.$.fill;
   }
   if (res.path) {
-    res.path = res.path.map(transformPath);
+    res.path = res.path.map(p => transformPath(p, decol));
   }
   return res;
 }
 
-const data = fs.readFileSync('fonts/myicons/svg/img/nc-icons.svg');
+const data = fs.readFileSync(path.join('..', 'fonts', 'myicons', 'svg', 'img', 'nc-icons.svg'));
 
 const parsed = xml2js.parseString(data.toString(), (err, result) => {
   if (err !== null) {
@@ -102,11 +111,13 @@ const parsed = xml2js.parseString(data.toString(), (err, result) => {
     const res = Object.assign(_.omit(sym, ['title']), {
       $: transformAttributes(sym.$),
     });
-    res.g[0].g = res.g[0].g.map(transformG);
+    const doDecolorize = decolorize.has(sym.$.id);
+    console.log('decol', sym.$.id, doDecolorize);
+    res.g[0].g = res.g[0].g.map(g => transformG(g, doDecolorize));
 
     return res;
   });
   const builder = new xml2js.Builder();
-  fs.writeFileSync('assets/fonts/vortex.svg', builder.buildObject(result));
+  fs.writeFileSync(path.join('..', 'assets', 'fonts', 'vortex.svg'), builder.buildObject(result));
   // console.log('res', require('util').inspect(result, { depth: 1000 }));
 });

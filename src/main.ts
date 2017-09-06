@@ -2,8 +2,6 @@
  * entry point for the main process
  */
 
-import 'source-map-support/register';
-
 import timeRequire from './util/timeRequire';
 const stopTime = timeRequire();
 
