@@ -44,8 +44,6 @@ function main() {
 
   application = new Application(mainArgs);
 
-  log('info', 'logging set up');
-
   if (process.env.NODE_ENV === 'development') {
     log('info', 'enabling debugging');
     app.commandLine.appendSwitch('remote-debugging-port', '9222');

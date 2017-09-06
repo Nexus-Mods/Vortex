@@ -1,15 +1,16 @@
 import Debouncer from './Debouncer';
 
 import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import * as sass from 'node-sass';
 import * as path from 'path';
 
+const app = appIn || remote.app;
+
 function asarUnpacked(input: string): string {
   return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
-
-const isDevel: boolean = process.env.NODE_ENV === 'development';
 
 class StyleManager {
   private static RENDER_DELAY = 200;
@@ -80,6 +81,9 @@ class StyleManager {
 
     const sassIndex: string =
       stylesheets.map(name => `@import "${name.replace(/\\/g, '\\\\')}";\n`).join('\n');
+
+    // development builds are always versioned as 0.0.1
+    const isDevel: boolean = app.getVersion() === '0.0.1';
 
     const basePath = asarUnpacked(__dirname);
     const assetsPath = path.resolve(basePath, '..', 'assets', 'css');
