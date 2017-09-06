@@ -150,11 +150,15 @@ function init(context: IExtensionContextExt): boolean {
 
       const downloads = store.getState().persistent.downloads.files;
       const interruptedDownloads = Object.keys(downloads)
-        .filter(id => downloads[id].state === 'started');
+        .filter(id => ['init', 'started'].indexOf(downloads[id].state) !== -1);
       interruptedDownloads.forEach(id => {
-        store.dispatch(
-          setDownloadInterrupted(id,
-            downloads[id].size - sum(downloads[id].chunks.map(chunk => chunk.size))));
+        let realSize = (downloads[id].size !== 0)
+            ? downloads[id].size - sum(downloads[id].chunks.map(chunk => chunk.size))
+            : 0;
+        if (isNaN(realSize)) {
+          realSize = 0;
+        }
+        store.dispatch(setDownloadInterrupted(id, realSize));
       });
     }
   });

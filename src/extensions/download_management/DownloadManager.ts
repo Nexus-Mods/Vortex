@@ -233,6 +233,9 @@ class DownloadManager {
    */
   public enqueue(id: string, urls: string[], progressCB: ProgressCallback,
                  destinationPath?: string): Promise<IDownloadResult> {
+    if (urls.length === 0) {
+      return Promise.reject(new  Error('No download urls'));
+    }
     const nameTemplate: string = decodeURI(path.basename(url.parse(urls[0]).pathname));
     const destPath = destinationPath || this.mDownloadPath;
     return fs.ensureDirAsync(destPath)
@@ -256,6 +259,8 @@ class DownloadManager {
           };
           download.chunks.push(this.initChunk(download));
           this.mQueue.push(download);
+          progressCB(0, undefined,
+                     download.chunks.map(this.toStoredChunk), filePath);
           this.tickQueue();
         }));
   }
@@ -408,18 +413,21 @@ class DownloadManager {
     log('debug', 'start download worker',
       { name: download.tempName, workerId, size: job.size });
     job.dataCB = (offset: number, data: Buffer) => {
+      if (isNaN(download.received)) {
+        download.received = 0;
+      }
       // these values will change until the data was written to file
       // so copy them so we write the correct info to state
       const receivedNow = download.received;
-      const chunksNow = download.chunks.map(this.toStoredChunk);
       download.assembler.addChunk(offset, data)
         .then((synced: boolean) => {
           download.received += data.byteLength;
-          if (synced) {
-            log('debug', 'sync output file', { chunks: chunksNow });
-          }
-          download.progressCB(receivedNow, download.size,
-                              synced ? chunksNow : undefined, download.tempName);
+          download.progressCB(
+              receivedNow, download.size,
+              synced
+                ? download.chunks.map(this.toStoredChunk)
+                : undefined,
+              download.tempName);
         });
     };
 
@@ -472,13 +480,19 @@ class DownloadManager {
   }
 
   private toJob = (download: IRunningDownload, chunk: IChunk): IDownloadJob => {
-    return {
+    const job: IDownloadJob = {
       url: chunk.url,
       offset: chunk.offset,
       state: 'init',
       size: chunk.size,
       received: chunk.received,
     };
+    if (download.size === undefined) {
+      // if the size isn't known yet, use the first job response to update it
+      job.responseCB = (size: number, fileName: string) =>
+        this.updateDownload(download, size, fileName);
+    }
+    return job;
   }
 
   /**
@@ -495,19 +509,21 @@ class DownloadManager {
       (chunk: IDownloadJob) => ['paused', 'finished'].indexOf(chunk.state) === -1);
     if (activeChunks === undefined) {
       let finalPath = download.tempName;
-      log('debug', 'no more active chunks, stopping download', { finalPath });
       download.assembler.close()
         .then(() => {
           if (download.finalName !== undefined) {
             return download.finalName
             .then((resolvedPath: string) => {
               finalPath = resolvedPath;
+              log('debug', 'renaming download', { from: download.tempName, to: resolvedPath });
               return fs.renameAsync(download.tempName, resolvedPath);
             });
           } else if ((download.headers !== undefined)
                      && (contentType.parse(download.headers['content-type']).type === 'text/html')
                      && (!download.tempName.toLowerCase().endsWith('.html'))) {
             finalPath = download.tempName + '.html';
+            log('debug', 'renaming redirected download',
+              { from: download.tempName, to: finalPath });
             return fs.renameAsync(download.tempName, finalPath);
           }
         })

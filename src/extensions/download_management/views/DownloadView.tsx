@@ -90,6 +90,7 @@ interface IFileTimeProps {
   detail: boolean;
   download: IDownload;
   downloadPath: string;
+  time: Date;
 }
 
 class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
@@ -111,16 +112,19 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
   }
 
   public componentWillReceiveProps(nextProps: IFileTimeProps) {
-    if ((this.props.downloadPath !== nextProps.downloadPath)
-      || (this.props.download !== nextProps.download)) {
+    if ((nextProps.time === undefined)
+      && ((this.props.downloadPath !== nextProps.downloadPath)
+        || (this.props.download !== nextProps.download))) {
         this.updateTime();
       }
   }
 
   public render(): JSX.Element {
-    const { t, detail, download, language } = this.props;
-    const { mtime } = this.state;
-    if ((download.localPath === undefined) || (mtime === undefined)) {
+    const { t, detail, download, language, time } = this.props;
+
+    const mtime = time || this.state.mtime;
+
+    if (mtime === undefined) {
       return null;
     }
 
@@ -145,6 +149,12 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
         .catch(err => undefined);
     }
   }
+}
+
+function downloadTime(download: IDownload) {
+  return (download.fileTime !== undefined)
+    ? new Date(download.fileTime)
+    : undefined;
 }
 
 class DownloadView extends ComponentEx<IProps, IComponentState> {
@@ -185,12 +195,17 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       description: 'Time the file was last modified',
       icon: 'calendar-plus-o',
       customRenderer: (attributes: IDownload, detail: boolean, t) => {
-        if (attributes.game !== this.props.gameMode) {
+        const time = downloadTime(attributes);
+
+        if ((time === undefined)
+            && ((attributes.game !== this.props.gameMode)
+                || (attributes.localPath === undefined))) {
           return null;
         }
         return (
           <FileTime
             t={t}
+            time={time}
             download={attributes}
             downloadPath={this.props.downloadPath}
             detail={detail}
@@ -199,11 +214,15 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         );
       },
       calc: (attributes: IDownload) => {
-        if (attributes.localPath === undefined) {
-          return undefined;
+        const time = downloadTime(attributes);
+
+        if (time !== undefined) {
+          return time;
         }
-        if (attributes.game !== this.props.gameMode) {
-          return undefined;
+
+        if ((attributes.game !== this.props.gameMode)
+          || (attributes.localPath === undefined)) {
+          return null;
         }
         return fs.statAsync(path.join(this.props.downloadPath, attributes.localPath))
         .then(stat => Promise.resolve(stat.mtime))

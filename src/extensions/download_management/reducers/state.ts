@@ -34,7 +34,7 @@ export const stateReducer: IReducerSpec = {
         chunks: [],
         localPath: undefined,
         fileMD5: undefined,
-        fileTime: undefined,
+        fileTime: new Date(),
       });
     },
     [action.downloadProgress as any]: (state, payload) => {
@@ -42,7 +42,7 @@ export const stateReducer: IReducerSpec = {
         return state;
       }
       const update = {
-        state: 'started',
+        state: payload.received > 0 ? 'started' : 'init',
         received: payload.received,
         size: payload.total,
       };
@@ -98,10 +98,15 @@ export const stateReducer: IReducerSpec = {
         // only allow pause for downloads that are active
         return state;
       }
-      state = setOrNop(state, ['files', payload.id, 'chunks'],
-                       payload.paused ? payload.chunks : []);
-      return setOrNop(state, [ 'files', payload.id, 'state' ],
-                      payload.paused ? 'paused' : 'started');
+      if (payload.chunks !== undefined) {
+        state = setOrNop(state, ['files', payload.id, 'chunks'], payload.chunks);
+      }
+      const newState = payload.paused
+        ? 'paused'
+        : (getSafe(state, ['files', payload.id, 'received'], 0) > 0)
+          ? 'started'
+          : 'init';
+      return setOrNop(state, [ 'files', payload.id, 'state' ], newState);
     },
     [action.setDownloadSpeed as any]: (state, payload) => {
       const temp = setSafe(state, ['speed'], payload);

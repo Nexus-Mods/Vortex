@@ -33,7 +33,7 @@ import * as util from 'util';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], filePath?: string) {
-  if (total > 0) {
+  if ((total !== 0) || (chunks !== undefined)) {
     store.dispatch(downloadProgress(dlId, received, total, chunks));
   }
   if ((filePath !== undefined) &&
