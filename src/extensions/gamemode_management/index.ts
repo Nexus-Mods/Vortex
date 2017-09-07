@@ -3,6 +3,7 @@ import { GameInfoQuery, IExtensionApi, IExtensionContext } from '../../types/IEx
 import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
 import LazyComponent from '../../util/LazyComponent';
+import local from '../../util/local';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import ReduxProp from '../../util/ReduxProp';
@@ -37,11 +38,19 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
 
-let gameModeManager: GameModeManager;
-
 // this isn't nice...
+const $ = local<{
+  gameModeManager: GameModeManager,
+}>('gamemode-management', {
+  gameModeManager: undefined,
+});
+
+// ...neither is this
 export function getGames(): IGame[] {
-  return gameModeManager !== undefined ? gameModeManager.games : [];
+  if ($.gameModeManager === undefined) {
+    throw new Error('getGames only available in renderer process');
+  }
+  return $.gameModeManager.games;
 }
 
 const extensionGames: IGame[] = [];
@@ -261,8 +270,8 @@ function init(context: IExtensionContext): boolean {
   };
 
   context.registerAction('game-icons', 100, 'refresh', {}, 'Quickscan', () => {
-    if (gameModeManager !== undefined) {
-      gameModeManager.startQuickDiscovery()
+    if ($.gameModeManager !== undefined) {
+      $.gameModeManager.startQuickDiscovery()
       .then((gameNames: string[]) => {
         const message = gameNames.length === 0
           ? 'No new games found'
@@ -303,19 +312,19 @@ function init(context: IExtensionContext): boolean {
     const events = context.api.events;
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
-    gameModeManager = new GameModeManagerImpl(
+    $.gameModeManager = new GameModeManagerImpl(
       context.api.getPath('userData'),
       extensionGames,
       (gameMode: string) => {
         events.emit('gamemode-activated', gameMode);
       });
-    gameModeManager.attachToStore(store);
-    gameModeManager.startQuickDiscovery();
+    $.gameModeManager.attachToStore(store);
+    $.gameModeManager.startQuickDiscovery();
 
-    events.on('start-discovery', () => gameModeManager.startSearchDiscovery());
+    events.on('start-discovery', () => $.gameModeManager.startSearchDiscovery());
     events.on('cancel-discovery', () => {
       log('info', 'received cancel discovery');
-      gameModeManager.stopSearchDiscovery();
+      $.gameModeManager.stopSearchDiscovery();
     });
 
     events.on('refresh-game-info', (gameId: string, callback: (err: Error) => void) => {
@@ -353,8 +362,8 @@ function init(context: IExtensionContext): boolean {
         return Promise.resolve();
       }
 
-      return gameModeManager.setupGameMode(newGameId)
-        .then(() => gameModeManager.setGameMode(oldGameId, newGameId))
+      return $.gameModeManager.setupGameMode(newGameId)
+        .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId))
         .catch((err) => {
           showError(store.dispatch, 'Failed to set game mode', err);
           // unset profile

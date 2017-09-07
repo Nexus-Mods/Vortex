@@ -17,7 +17,7 @@ import Debouncer from './Debouncer';
 import runElevated from './elevated';
 import { terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
-import getNormalizeFunc from './getNormalizeFunc';
+import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
 import { getCurrentLanguage } from './i18n';
 import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
@@ -42,6 +42,7 @@ export {
   LazyComponent,
   lazyRequire,
   makeReactive,
+  Normalize,
   NotSupportedError,
   ReduxProp,
   relativeTime,

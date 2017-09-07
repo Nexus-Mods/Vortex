@@ -1,4 +1,4 @@
-import {IFileEntry as FileEntry, IModEntry as ModEntry} from '../types/nmmEntries';
+import { IModEntry } from '../types/nmmEntries';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -37,7 +37,7 @@ function byLength(lhs: string, rhs: string): number {
  * @param {string} currentModPath
  * @param {boolean} keepSource
  */
-export function transferUnpackedMod(mod: ModEntry, nmmVirtualPath: string,
+export function transferUnpackedMod(mod: IModEntry, nmmVirtualPath: string,
                                     installPath: string,
                                     keepSource: boolean): Promise<string[]> {
   const operation = keepSource ? fs.copyAsync : fs.renameAsync;

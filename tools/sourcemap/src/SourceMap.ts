@@ -44,20 +44,20 @@ class SourceMap {
       ? path.relative(this.mBasePath, file)
       : file;
 
-    if (this.mConsumers[file] === undefined) {
+    if (this.mConsumers[relPath] === undefined) {
       const correctedPath = path.join(this.mSourcePath, relPath);
-      this.mConsumers[file] = fs.readFile(correctedPath)
+      this.mConsumers[relPath] = fs.readFile(correctedPath)
         .then(data => {
           const sourceMapPath = this.findSourceMapPath(data.toString());
           if (sourceMapPath === undefined) {
             return Promise.reject(null);
           }
-          return fs.readFile(path.join(this.mSourcePath, sourceMapPath));
+          return fs.readFile(path.resolve(this.mSourcePath, path.dirname(relPath), sourceMapPath));
         })
         .then((data: Buffer) => new SourceMapConsumer(data.toString()))
-        .catch(err => null);
+        .catch(err =>  null);
     }
-    return this.mConsumers[file];
+    return this.mConsumers[relPath];
   }
 }
 

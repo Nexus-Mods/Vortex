@@ -10,7 +10,7 @@
         "rootDir": "./src",
         "outDir": "./out",
         "sourceMap": true,
-        "mapRoot": "/"
+        "skipLibCheck": true
     },
     "files": [
       "src/main.ts"

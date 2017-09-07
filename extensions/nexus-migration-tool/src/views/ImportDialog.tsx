@@ -36,7 +36,7 @@ type IProps = IConnectedProps & IActionProps;
 
 interface IComponentState {
   sources: string[];
-  selectedSources: string;
+  selectedSource: string;
   modsToImport: { [id: string]: IModEntry };
   error: string;
   importEnabled: { [id: string]: boolean };
@@ -57,7 +57,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     this.initState({
       sources: undefined,
       modsToImport: {},
-      selectedSources: '',
+      selectedSource: '',
       error: undefined,
       importEnabled: {},
       counter: 0,
@@ -175,14 +175,8 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderStart(): JSX.Element {
-    const { sources, selectedSources } = this.state;
-
-    return this.renderStartContent();
-  }
-
-  private renderStartContent() {
     const { t } = this.props;
-    const { sources, selectedSources } = this.state;
+    const { sources, selectedSource } = this.state;
 
     return (
       <span
@@ -206,7 +200,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           ? <Icon name='spinner' pulse />
           : sources.length === 0
             ? this.renderNoSources()
-            : this.renderSources(sources, selectedSources)
+            : this.renderSources(sources, selectedSource)
         }
       </span>
     );
@@ -225,7 +219,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderSources(sources, selectedSource): JSX.Element {
+  private renderSources(sources: string[], selectedSource: string): JSX.Element {
     const { t } = this.props;
 
     return (
@@ -312,7 +306,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectSource = eventKey => {
-    this.nextState.selectedSources = eventKey;
+    this.nextState.selectedSource = eventKey;
   }
 
   private nop = () => undefined;
@@ -331,14 +325,14 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     findInstances(this.props.gameId)
       .then(found => {
         this.nextState.sources = found;
-        this.nextState.selectedSources = found[0];
+        this.nextState.selectedSource = found[0];
       });
   }
 
   private setup() {
     const { gameId } = this.props;
     const virtualPath =
-      path.join(this.state.selectedSources, 'VirtualInstall', 'VirtualModConfig.xml');
+      path.join(this.state.selectedSource, 'VirtualInstall', 'VirtualModConfig.xml');
     const state: types.IState = this.context.api.store.getState();
     const mods = state.persistent.mods[gameId] || {};
 
@@ -363,16 +357,16 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
   private startImport() {
     const { t } = this.props;
-    const { modsToImport, selectedSources } = this.state;
+    const { modsToImport, selectedSource } = this.state;
 
     this.mTrace = new TraceImport();
 
     const modList = Object.keys(modsToImport).map(id => modsToImport[id]);
     const enabledMods = modList.filter(mod => this.isModEnabled(mod));
 
-    this.mTrace.initDirectory(selectedSources)
+    this.mTrace.initDirectory(selectedSource)
       .then(() => importMods(this.context.api, this.mTrace,
-        path.join(selectedSources, 'VirtualInstall'), enabledMods,
+        path.join(selectedSource, 'VirtualInstall'), enabledMods,
         (mod: string, pos: number) => {
           this.nextState.progress = { mod, pos };
         }))
