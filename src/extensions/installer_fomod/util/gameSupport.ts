@@ -23,6 +23,10 @@ function archiveTopLevelDirectories(gameMode: string) {
     case 'skyrimse': return [].concat(allTopLevel, gamebryoTopLevel);
     case 'dragonsdogma': return ['movie', 'rom', 'sa', 'sound', 'system', 'tgs',
                                  'usershader', 'usertexture'].concat(allTopLevel);
+    case 'witcher2': return ['abilities', 'characters', 'combat', 'cutscenes',
+                              'engine', 'environment', 'environment_levels', 'fx',
+                              'game', 'globals', 'items', 'junk', 'levels', 'reactions',
+                              'speedtree', 'templates', 'tests'].concat(allTopLevel);
     default: return [].concat(allTopLevel);
   }
 }
@@ -54,6 +58,9 @@ const gameSupport = {
   skyrimse: {
     iniPath: () => bethIni('Skyrim Special Edition', 'Skyrim'),
     topLevelDirectories: () => archiveTopLevelDirectories('skyrimse'),
+  },
+  witcher2: {
+    topLevelDirectories: () => archiveTopLevelDirectories('witcher2'),
   },
 };
 
