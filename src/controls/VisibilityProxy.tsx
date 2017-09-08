@@ -25,9 +25,41 @@ export interface IState {
  * @extends {React.Component<IProps, IState>}
  */
 class VisibilityProxy extends React.Component<IProps, IState> {
-  private mNode: Element;
-  private mDebounceTimer: NodeJS.Timer;
-  private mTimer: NodeJS.Timer;
+  // need to use maps because the keys aren't PODs
+  private static sObservers: Map<Element, IntersectionObserver> = new Map();
+  private static sInstances: Map<Element, () => void> = new Map();
+
+  private static getObserver(container: HTMLElement) {
+    if (!VisibilityProxy.sObservers.has(container || null)) {
+      VisibilityProxy.sObservers.set(container || null,
+          new IntersectionObserver(VisibilityProxy.callback, {
+        root: container,
+      }));
+    }
+    return VisibilityProxy.sObservers.get(container);
+  }
+
+  private static callback(entries: IntersectionObserverEntry[], observer: IntersectionObserver) {
+    entries.forEach(entry => {
+      if (entry.intersectionRatio > 0) {
+        const cb = VisibilityProxy.sInstances.get(entry.target);
+        if (cb !== undefined) {
+          cb();
+          observer.unobserve(entry.target);
+          VisibilityProxy.sInstances.delete(entry.target);
+        }
+      }
+    });
+  }
+
+  private static observe(container: HTMLElement, target: HTMLElement, cb: () => void) {
+    VisibilityProxy.sInstances.set(target, cb);
+    VisibilityProxy.getObserver(container).observe(target);
+  }
+
+  private static unobserve(container: HTMLElement, target: HTMLElement) {
+    VisibilityProxy.getObserver(container).unobserve(target);
+  }
 
   constructor(props: IProps) {
     super(props);
@@ -37,14 +69,13 @@ class VisibilityProxy extends React.Component<IProps, IState> {
   }
 
   public componentDidMount() {
-    this.mNode = ReactDOM.findDOMNode(this);
-    if (!this.testVisible()) {
-      this.watch();
-    }
+    VisibilityProxy.observe(this.props.container, ReactDOM.findDOMNode(this), () => {
+      this.setState({ visible: true });
+    });
   }
 
   public componentWillUnmount() {
-    this.unwatch();
+    VisibilityProxy.unobserve(this.props.container, ReactDOM.findDOMNode(this));
   }
 
   public render(): JSX.Element {
@@ -54,85 +85,6 @@ class VisibilityProxy extends React.Component<IProps, IState> {
       return this.props.placeholder;
     }
   }
-
-  private get container(): HTMLElement | Window {
-    return this.props.container || window;
-  }
-
-  private get containerRect(): IRect {
-    const {container} = this.props;
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      return {
-        top: rect.top,
-        left: rect.left,
-        bottom: rect.bottom,
-        right: rect.right,
-      };
-    } else {
-      return {
-        top: 0,
-        left: 0,
-        bottom: window.innerHeight,
-        right: window.innerWidth,
-      };
-    }
-  }
-
-  private watch() {
-    this.startTimer();
-    this.container.addEventListener('scroll', this.testVisibleTimer);
-    this.container.addEventListener('resize', this.testVisibleTimer);
-  }
-
-  private unwatch() {
-    this.container.removeEventListener('scroll', this.testVisibleTimer);
-    this.container.removeEventListener('resize', this.testVisibleTimer);
-    clearTimeout(this.mTimer);
-  }
-
-  private startTimer() {
-    this.mTimer = setTimeout(() => {
-      this.testVisibleTimer();
-      this.startTimer();
-    }, 1000);
-  }
-
-  private testVisibleTimer = () => {
-    if (this.mDebounceTimer !== undefined) {
-      // update already scheduled
-      return;
-    }
-    this.mDebounceTimer = setTimeout(() => {
-      this.mDebounceTimer = undefined;
-      this.testVisible();
-    }, 100);
-  }
-
-  private testVisible() {
-    if (this.mNode === undefined) {
-      return false;
-    }
-    const bounds = this.mNode.getBoundingClientRect();
-    const refRect = this.containerRect;
-    const newVisible = !(
-      (bounds.bottom < refRect.top)
-      || (bounds.top > refRect.bottom)
-      || (bounds.right < refRect.left)
-      || (bounds.left > refRect.right)
-    );
-
-    if (newVisible !== this.state.visible) {
-      this.setState(update(this.state, {
-        visible: { $set: newVisible },
-      }));
-    }
-    if (newVisible) {
-      this.unwatch();
-    }
-    return newVisible;
-  }
-
 }
 
 export default VisibilityProxy;
