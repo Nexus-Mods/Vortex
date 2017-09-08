@@ -211,6 +211,9 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
 
   private remove = () => {
     const { t, currentTheme, onShowDialog } = this.props;
+    if (!currentTheme) {
+      throw new Error('invalid theme');
+    }
     onShowDialog('question', t('Confirm removal'), {
       message: t('Are you sure you want to remove the theme {{theme}}', {
         replace: { theme: currentTheme },

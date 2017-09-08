@@ -1,6 +1,7 @@
 import {log} from '../../util/log';
 import {showError} from '../../util/message';
 import * as selectors from '../../util/selectors';
+import { truthy } from '../../util/util';
 
 import resolvePath from '../mod_management/util/resolvePath';
 
@@ -184,7 +185,7 @@ export class DownloadObserver {
       // need to cancel the download
       this.mManager.stop(downloadId);
     }
-    if (download.localPath !== undefined) {
+    if (truthy(download.localPath)) {
       const dlPath = resolvePath('download',
           this.mStore.getState().settings.mods.paths, download.game);
       fs.removeAsync(path.join(dlPath, download.localPath))

@@ -14,6 +14,7 @@ import { ComponentEx, connect, extend, translate } from '../../../util/Component
 import Debouncer from '../../../util/Debouncer';
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import { IDownload } from '../../download_management/types/IDownload';
@@ -673,7 +674,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       });
     })
       .then(() => Promise.map(modIds, key =>
-        mods[key] !== undefined
+        ((mods[key] !== undefined) && truthy(mods[key].installationPath))
           ? fs.removeAsync(path.join(installPath, mods[key].installationPath))
           : Promise.resolve())
         .then(() => undefined));
