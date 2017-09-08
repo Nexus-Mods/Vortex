@@ -16,6 +16,7 @@ function externalsDirect(): webpack.ExternalsObjectElement {
     'nbind',
     'net',
     'node',
+    'parse-ini',
     'path',
     'react',
     'react-act',
