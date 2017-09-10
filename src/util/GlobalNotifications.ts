@@ -43,8 +43,8 @@ class GlobalNotifications {
         this.showNotification(currentNotification);
       } else {
         currentNotification = this.mKnownNotifications[0];
-        log('info', 'new notification', { id: currentNotification.id });
         if (currentNotification !== undefined) {
+          log('info', 'new notification', { id: currentNotification.id });
           this.showNotification(currentNotification);
         }
       }

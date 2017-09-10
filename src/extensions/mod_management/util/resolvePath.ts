@@ -15,6 +15,9 @@ export const pathDefaults = {
 
 function resolvePath(key: PathKey, paths: {[gameId: string]: IStatePaths},
                      gameMode: string): string {
+  if (gameMode === undefined) {
+    throw new Error('invalid game mode');
+  }
   const formatKeys = {
     USERDATA: remote.app.getPath('userData'),
     GAME: gameMode,

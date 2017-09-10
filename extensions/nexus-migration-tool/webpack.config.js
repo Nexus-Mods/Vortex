@@ -6,7 +6,7 @@ module.exports = {
   node: { __filename: false, __dirname: false },
   output: {
     libraryTarget: 'commonjs2',
-    library: 'gamebryo-plugin-management',
+    library: 'nexus-migration-tool',
     filename: './dist/index.js'
   },
   module: {
@@ -15,10 +15,7 @@ module.exports = {
     ]
   },
   resolve: { extensions: ['', '.js', '.jsx', '.json'] },
-  _plugins: [
-    new webpack.optimize.UglifyJsPlugin(
-        { compress: { warnings: false }, comments: false, sourceMap: false })
-  ],
+  plugins: [],
   devtool: 'source-map',
   externals: [
     'bluebird',
@@ -26,7 +23,7 @@ module.exports = {
     'fs-extra-promise',
     'immutability-helper',
     'lodash',
-	'modmeta-db',
+    'modmeta-db',
     'net',
     'vortex-api',
     'node',

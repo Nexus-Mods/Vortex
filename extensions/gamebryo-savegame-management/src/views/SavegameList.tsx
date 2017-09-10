@@ -319,12 +319,13 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       .then((result: types.IDialogResult) => {
         doRemoveSavegame = result.action === 'Delete';
         if (doRemoveSavegame) {
-          return Promise.map(instanceIds, (id: string) =>
-            fs.removeAsync(path.join(mygamesPath(currentProfile.gameId), savesPath, id))
+          return Promise.map(instanceIds, id => !!id
+            ? fs.removeAsync(path.join(mygamesPath(currentProfile.gameId), savesPath, id))
               .then(() => {
                 onRemoveSavegame(id);
-              }))
-              .then(() => undefined);
+              })
+            : Promise.reject(new Error('invalid savegame id')))
+            .then(() => undefined);
         } else {
           return Promise.resolve();
         }

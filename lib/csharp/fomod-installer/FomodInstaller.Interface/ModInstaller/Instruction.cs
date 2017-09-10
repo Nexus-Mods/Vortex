@@ -12,6 +12,15 @@
             };
         }
 
+        public static Instruction CreateMKDir(string destination)
+        {
+            return new Instruction()
+            {
+                type = "mkdir",
+                destination = destination,
+            };
+        }
+
         public static Instruction GenerateFile(string byteSource, string destination)
         {
             return new Instruction()

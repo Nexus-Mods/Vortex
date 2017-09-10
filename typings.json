@@ -23,7 +23,6 @@
   },
   "globalDependencies": {
     "base16": "registry:dt/base16#1.0.0+20160902130643",
-    "source-map-support": "registry:dt/source-map-support#0.2.10+20160316155526",
     "typescript": "registry:dt/typescript#0.4.0+20160317120654"
   },
   "dependencies": {

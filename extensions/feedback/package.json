@@ -20,6 +20,6 @@
     "react-bootstrap": "^0.30.6",
     "tmp": "^0.0.31",
     "webpack": "^3.5.5",
-    "ts-loader": "^2.3.3"
+    "ts-loader": "2.3.4"
   }
 }

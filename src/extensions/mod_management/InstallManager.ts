@@ -72,6 +72,7 @@ interface IInstruction {
 
 class InstructionGroups {
   public copy: IInstruction[] = [];
+  public mkdir: IInstruction[] = [];
   public submodule: IInstruction[] = [];
   public generatefile: IInstruction[] = [];
   public iniedit: IInstruction[] = [];
@@ -441,6 +442,14 @@ class InstallManager {
     });
   }
 
+  private processMKDir(instructions: IInstruction[],
+                       destinationPath: string): Promise<void> {
+    return Promise.each(instructions,
+                        instruction => fs.ensureDirAsync(path.join(
+                            destinationPath, instruction.destination)))
+        .then(() => undefined);
+  }
+
   private processGenerateFiles(generatefile: IInstruction[],
                                destinationPath: string): Promise<void> {
     return Promise.each(generatefile, gen => {
@@ -517,8 +526,9 @@ class InstallManager {
     const instructionGroups = this.transformInstructions(result.instructions);
     this.reportUnsupported(api, instructionGroups.unsupported, archivePath);
 
-    return this.extractArchive(api.store, archivePath, tempPath, destinationPath,
-                               instructionGroups.copy)
+    return this.processMKDir(instructionGroups.mkdir, destinationPath)
+      .then(() => this.extractArchive(api.store, archivePath, tempPath, destinationPath,
+                               instructionGroups.copy))
       .then(() => this.processGenerateFiles(instructionGroups.generatefile,
                                             destinationPath))
       .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))

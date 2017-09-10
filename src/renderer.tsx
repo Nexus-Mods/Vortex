@@ -5,8 +5,6 @@
 import timeRequire from './util/timeRequire';
 let stopTime = timeRequire();
 
-import 'source-map-support/register';
-
 import * as path from 'path';
 import * as ReactDOM from 'react-dom';
 
@@ -129,7 +127,9 @@ const terminateFromError = (error: any) => {
   switch (typeof error) {
     case 'object': {
       const extension = findExtensionName(error.stack);
-      details = { message: error.message, stack: error.stack, extension };
+      details = (error.message === undefined) && (error.stack === undefined)
+        ? { message: require('util').inspect(error), extension }
+        : { message: error.message, stack: error.stack, extension };
       break;
     }
     case 'string': {
@@ -251,7 +251,7 @@ function renderer() {
       extensions.renderStyle()
         .catch(err => {
           terminate({
-            message: 'failed to parse UI theme',
+            message: 'failed to parse UI theme: ' + process.cwd(),
             details: err,
           });
         })

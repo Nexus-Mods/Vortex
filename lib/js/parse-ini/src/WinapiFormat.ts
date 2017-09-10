@@ -98,8 +98,12 @@ class WinapiFormat implements IIniFormat {
             let offset = 0;
             while ((buf.readInt8(offset) !== 0) && (offset < buf.length)) {
               const kvPair = ref.readCString(buf, offset);
-              const [key, value] = kvPair.split('=').map((s) => s.trim());
-              result[key] = value;
+              const splitIdx = kvPair.indexOf('=');
+              if (splitIdx !== -1) {
+                const[key, value] =
+                    [kvPair.slice(0, splitIdx), kvPair.slice(splitIdx + 1)];
+                result[key] = value;
+              }
               offset += kvPair.length + 1;
             }
 

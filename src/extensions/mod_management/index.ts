@@ -18,6 +18,7 @@ import {
   installPath,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
+import {truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
 import {getGames} from '../gamemode_management/index';
@@ -115,6 +116,10 @@ function purgeMods(api: IExtensionApi): Promise<void> {
   const t = api.translate;
   const activator = getActivator(state);
 
+  if (activator === undefined) {
+    return Promise.reject(new Error('can\t purge without deployment method selected'));
+  }
+
   const notificationId = api.sendNotification({
     type: 'activity',
     message: t('Purging mods'),
@@ -148,8 +153,9 @@ function applyFileActions(gameDiscovery: IDiscoveryResult,
   // process the actions that the user selected in the dialog
   return Promise.map(actionGroups['drop'] || [],
     // delete the files the user wants to drop
-    (entry) => fs.removeAsync(path.join(
-      gameDiscovery.modPath, entry.filePath)))
+    (entry) => truthy(entry.filePath)
+      ? fs.removeAsync(path.join(gameDiscovery.modPath, entry.filePath))
+      : Promise.reject(new Error('invalid file path')))
     .then(() => Promise.map(
       actionGroups['import'] || [],
       // copy the files the user wants to import

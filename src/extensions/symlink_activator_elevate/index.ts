@@ -3,7 +3,7 @@ import {UserCanceled} from '../../util/CustomErrors';
 import * as elevatedT from '../../util/elevated';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
-import { activeGameId } from '../../util/selectors';
+import { activeGameId, gameName } from '../../util/selectors';
 
 import LinkingActivator from '../mod_management/LinkingActivator';
 import {
@@ -82,6 +82,13 @@ class ModActivator extends LinkingActivator {
     if (this.isGamebryoGame(gameId)) {
       return 'Doesn\'t work with games based on the gamebryo engine '
         + '(including Skyrim SE and Fallout 4)';
+    }
+    if (this.isUnsupportedGame(gameId)) {
+      // Mods for this games use some file types that have issues working with symbolic links
+      if (this.isUnsupportedGame(gameId)) {
+        // Mods for this games use some file types that have issues working with symbolic links
+        return 'Doesn\'t work with ' + gameName(state, gameId);
+      }
     }
     return undefined;
   }
@@ -180,6 +187,10 @@ class ModActivator extends LinkingActivator {
 
   private isGamebryoGame(gameId: string): boolean {
     return ['skyrim', 'skyrimse', 'fallout4', 'falloutnv', 'oblivion'].indexOf(gameId) !== -1;
+  }
+
+  private isUnsupportedGame(gameId: string): boolean {
+    return ['nomanssky'].indexOf(gameId) !== -1;
   }
 }
 

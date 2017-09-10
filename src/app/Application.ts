@@ -89,7 +89,10 @@ class Application {
     let splash: SplashScreenT;
 
     return this.testShouldQuit(args.wait ? 10 : -1)
-        .then(() => this.startSplash())
+        .then(() => {
+          log('info', '--------------------------');
+          return this.startSplash();
+        })
         // start initialization
         .then(splashIn => {
           splash = splashIn;

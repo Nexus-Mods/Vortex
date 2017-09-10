@@ -1,6 +1,7 @@
 import TextFilter from '../../controls/table/TextFilter';
 
 import { ITableAttribute } from '../../types/ITableAttribute';
+import { getSafe } from '../../util/storeHelper';
 import { bytesToString } from '../../util/util';
 
 import DownloadProgressFilter from './views/DownloadProgressFilter';
@@ -8,15 +9,33 @@ import DownloadProgressFilter from './views/DownloadProgressFilter';
 import { IDownload } from './types/IDownload';
 
 import * as I18next from 'i18next';
+import * as path from 'path';
 import * as React from 'react';
 import {ProgressBar} from 'react-bootstrap';
+import * as url from 'url';
+
+function nameFromUrl(input: string) {
+  if (input === undefined) {
+    return undefined;
+  }
+
+  const pathname = url.parse(input).pathname;
+  if (pathname === undefined) {
+    return undefined;
+  }
+
+  return decodeURI(path.basename(pathname));
+}
 
 export const FILE_NAME: ITableAttribute = {
   id: 'filename',
   name: 'Filename',
   description: 'Name of the download',
   icon: '',
-  calc: (attributes: IDownload) => attributes.localPath,
+  calc: (attributes: IDownload) =>
+    attributes.localPath
+    || nameFromUrl(attributes.urls[0])
+    || getSafe(attributes, ['modInfo', 'name'], undefined),
   placement: 'both',
   isToggleable: false,
   edit: {},

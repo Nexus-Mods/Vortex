@@ -75,7 +75,7 @@ export interface IDownload {
   /**
    * date/time the file finished downloading
    */
-  fileTime: Date;
+  fileTime: string;
 
   /**
    * size in bytes

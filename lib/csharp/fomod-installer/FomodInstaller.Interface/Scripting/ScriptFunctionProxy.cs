@@ -100,7 +100,15 @@ namespace FomodInstaller.Interface
         {
             foreach (string ArchiveFile in fileList)
             {
-                modInstallInstructions.Add(Instruction.CreateCopy(ArchiveFile, ArchiveFile));
+                if (ArchiveFile.EndsWith("" + Path.DirectorySeparatorChar)
+                    || ArchiveFile.EndsWith("" + Path.AltDirectorySeparatorChar))
+                {
+                    modInstallInstructions.Add(Instruction.CreateMKDir(ArchiveFile));
+                }
+                else
+                {
+                    modInstallInstructions.Add(Instruction.CreateCopy(ArchiveFile, ArchiveFile));
+                }
                 // Progress should increase.	
             }
 
@@ -157,7 +165,15 @@ namespace FomodInstaller.Interface
                 FromPath = Path.Combine(Mod.Prefix, FromPath);
             string ToPath = TextUtil.NormalizePath(to, false, false, false);
 
-            modInstallInstructions.Add(Instruction.CreateCopy(FromPath, ToPath));
+            if (ToPath.EndsWith("" + Path.DirectorySeparatorChar)
+                || ToPath.EndsWith("" + Path.AltDirectorySeparatorChar))
+            {
+                modInstallInstructions.Add(Instruction.CreateMKDir(ToPath));
+            }
+            else
+            {
+                modInstallInstructions.Add(Instruction.CreateCopy(FromPath, ToPath));
+            }
 
             booSuccess = true;
 

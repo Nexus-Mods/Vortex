@@ -1,6 +1,7 @@
 import {log} from '../../util/log';
 import {showError} from '../../util/message';
 import * as selectors from '../../util/selectors';
+import { truthy } from '../../util/util';
 
 import resolvePath from '../mod_management/util/resolvePath';
 
@@ -13,8 +14,10 @@ import {
   setDownloadFilePath,
   setDownloadHash,
 } from './actions/state';
+import {IChunk} from './types/IChunk';
 import {IDownload} from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
+import { ProgressCallback } from './types/ProgressCallback';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 
 import DownloadManager from './DownloadManager';
@@ -30,9 +33,9 @@ import * as nodeURL from 'url';
 import * as util from 'util';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
-                        total: number, filePath?: string) {
-  if (total > 0) {
-    store.dispatch(downloadProgress(dlId, received, total));
+                        total: number, chunks: IChunk[], filePath?: string) {
+  if ((total !== 0) || (chunks !== undefined)) {
+    store.dispatch(downloadProgress(dlId, received, total, chunks));
   }
   if ((filePath !== undefined) &&
       (path.basename(filePath) !==
@@ -50,6 +53,7 @@ export class DownloadObserver {
   private mStore: Redux.Store<any>;
   private mManager: DownloadManager;
   private mProtocolHandlers: IProtocolHandlers;
+  private mChunkUpdates: { [dlId: string]: NodeJS.Timer } = {};
 
   constructor(events: NodeJS.EventEmitter, store: Redux.Store<any>,
               manager: DownloadManager, protocolHandlers: IProtocolHandlers) {
@@ -153,19 +157,20 @@ export class DownloadObserver {
     }
   }
 
-  private genProgressCB(id: string) {
+  private genProgressCB(id: string): ProgressCallback {
     let lastUpdateTick = 0;
     let lastUpdatePerc = 0;
-    return (received: number, total: number, updatedFilePath?: string) => {
+    return (received: number, total: number, chunks: IChunk[], updatedFilePath?: string) => {
       // avoid updating too frequently because it causes ui updates
       const now = new Date().getTime();
       const newPerc = Math.floor((received * 100) / total);
-      if ((now - lastUpdateTick < 200) || (newPerc === lastUpdatePerc)) {
+      if ((chunks === undefined)
+          && ((now - lastUpdateTick < 200) || (newPerc === lastUpdatePerc))) {
         return;
       }
       lastUpdateTick = now;
       lastUpdatePerc = newPerc;
-      progressUpdate(this.mStore, id, received, total, updatedFilePath);
+      progressUpdate(this.mStore, id, received, total, chunks, updatedFilePath);
     };
   }
 
@@ -180,10 +185,15 @@ export class DownloadObserver {
       // need to cancel the download
       this.mManager.stop(downloadId);
     }
-    if (download.localPath !== undefined) {
-      log('debug', 'will delete', {path: download.localPath});
-      this.mStore.dispatch(removeDownload(downloadId));
-      fs.removeAsync(path.join(selectors.downloadPath(this.mStore.getState()), download.localPath));
+    if (truthy(download.localPath)) {
+      const dlPath = resolvePath('download',
+          this.mStore.getState().settings.mods.paths, download.game);
+      fs.removeAsync(path.join(dlPath, download.localPath))
+          .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
+          .catch(err => {
+            showError(this.mStore.dispatch, 'Failed to remove file', err, false,
+                      undefined, err.code !== 'EPERM');
+          });
     } else {
       this.mStore.dispatch(removeDownload(downloadId));
     }

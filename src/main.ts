@@ -2,8 +2,6 @@
  * entry point for the main process
  */
 
-import 'source-map-support/register';
-
 import timeRequire from './util/timeRequire';
 const stopTime = timeRequire();
 
@@ -44,8 +42,6 @@ function main() {
 
   application = new Application(mainArgs);
 
-  log('info', 'logging set up');
-
   if (process.env.NODE_ENV === 'development') {
     log('info', 'enabling debugging');
     app.commandLine.appendSwitch('remote-debugging-port', '9222');
@@ -56,7 +52,9 @@ function main() {
 
     switch (typeof error) {
       case 'object': {
-        details = {message: error.message, details: error.stack};
+        details = (error.message === undefined) && (error.stack === undefined)
+        ? { message: require('util').inspect(error) }
+        : { message: error.message, stack: error.stack };
       }              break;
       case 'string': {
         details = {message: error as string};

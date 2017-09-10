@@ -16,6 +16,7 @@ function externalsDirect(): webpack.ExternalsObjectElement {
     'nbind',
     'net',
     'node',
+    'parse-ini',
     'path',
     'react',
     'react-act',
@@ -71,6 +72,7 @@ export default function config(moduleName: string, basePath: string): webpack.Co
       loaders: loaders(),
     },
     resolve: {extensions: ['.js', '.jsx', '.json', '.ts', '.tsx']},
+    devtool: 'source-map',
     externals: externals(),
   };
 }

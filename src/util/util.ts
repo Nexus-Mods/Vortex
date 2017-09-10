@@ -32,9 +32,8 @@ export function countIf<T>(container: T[], predicate: (value: T) => boolean): nu
  * @returns {number}
  */
 export function sum(container: number[]): number {
-  return container.reduce((total: number, value: number): number => {
-    return total + value;
-  }, 0);
+  return container.reduce((total: number, value: number): number =>
+    total + value, 0);
 }
 
 /**

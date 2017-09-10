@@ -2,6 +2,7 @@ import {IExtensionApi} from '../../types/IExtensionContext';
 import {IStatePaths} from '../../types/IState';
 import {showError} from '../../util/message';
 import {getSafe} from '../../util/storeHelper';
+import {truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
 import {activeGameId, activeProfile} from '../profile_management/selectors';
@@ -25,9 +26,8 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
-export function onGameModeActivated(api: IExtensionApi,
-                                    activators: IModActivator[],
-                                    newGame: string) {
+export function onGameModeActivated(
+    api: IExtensionApi, activators: IModActivator[], newGame: string) {
   const store = api.store;
   const state = store.getState();
   const configuredActivatorId = currentActivator(state);
@@ -145,7 +145,7 @@ export function onRemoveMod(api: IExtensionApi,
       : Promise.resolve())
     .then(() => activator.finalize(dataPath))
     .then(newActivation => saveActivation(state.app.instanceId, dataPath, newActivation))
-    .then(() => mod !== undefined
+    .then(() => truthy(mod)
       ? fs.removeAsync(path.join(installationPath, mod.installationPath))
           .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
       : Promise.resolve())
