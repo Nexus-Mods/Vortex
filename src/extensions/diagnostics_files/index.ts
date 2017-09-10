@@ -1,13 +1,15 @@
+
+import { setDialogVisible } from '../../actions/session';
 import { IExtensionContext } from '../../types/IExtensionContext';
 
-import { sessionReducer } from './reducers/session';
-import DiagnosticsFilesButton from './views/DiagnosticsFilesButton';
 import DiagnosticsFilesDialog from './views/DiagnosticsFilesDialog';
 
 function init(context: IExtensionContext): boolean {
-  context.registerAction('help-icons', 200, DiagnosticsFilesButton, {}, () => ({}));
-  context.registerReducer(['session', 'diagnosticsFiles'], sessionReducer);
-  context.registerDialog('diagnostics-files-dialog', DiagnosticsFilesDialog, () => ({ context }));
+
+  context.registerAction('help-icons', 200, 'bug', {}, 'Diagnostics Files',
+  () => context.api.store.dispatch(setDialogVisible('diagnostics-files-dialog')));
+
+  context.registerDialog('diagnostics-files-dialog', DiagnosticsFilesDialog, () => ({}));
 
   return true;
 }
