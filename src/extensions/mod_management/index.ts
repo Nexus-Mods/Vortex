@@ -230,7 +230,7 @@ function genUpdateModActivation() {
 
     const gate = manual ? Promise.resolve() : activator.userGate();
 
-    let lastActivation: IDeployedFile[] = [];
+    let lastDeployment: IDeployedFile[] = [];
 
     // test if anything was changed by an external application
     return gate.then(() => {
@@ -250,14 +250,14 @@ function genUpdateModActivation() {
       return loadActivation(api, gameDiscovery.modPath);
     })
       .then(currentActivation => {
-        lastActivation = currentActivation;
+        lastDeployment = currentActivation;
         return activator.externalChanges(instPath, gameDiscovery.modPath, currentActivation);
       })
       .then((changes: IFileChange[]) =>
         (changes.length === 0)
           ? Promise.resolve([])
           : api.store.dispatch(showExternalChanges(changes)))
-      .then(fileActions => applyFileActions(gameDiscovery, instPath, lastActivation, fileActions))
+      .then(fileActions => applyFileActions(gameDiscovery, instPath, lastDeployment, fileActions))
       // sort (all) mods based on their dependencies so the right files get
       // activated
       .then(() => sortMods(gameMode, modList, api))
@@ -270,7 +270,7 @@ function genUpdateModActivation() {
 
         return activateMods(api, getGames().find(iter => iter.id === gameMode),
                             instPath, gameDiscovery.modPath, sortedModList,
-                            activator, lastActivation)
+                            activator, lastDeployment)
             .then(newActivation =>
                       saveActivation(state.app.instanceId,
                                      gameDiscovery.modPath, newActivation))

@@ -5,9 +5,14 @@ import { IModWithState } from '../types/IModProps';
 import { compare } from 'semvish';
 
 function byModId(input: IModWithState[]): IModWithState[][] {
-  const grouped = input.reduce((prev: { [modId: string]: IModWithState[] }, value) =>
-    pushSafe(prev, [getSafe(value, ['attributes', 'modId'], undefined)], value)
-    , {});
+  const grouped = input.reduce((prev: { [modId: string]: IModWithState[] }, value) => {
+    const modId = getSafe(value, ['attributes', 'modId'], undefined);
+    if (prev[modId] === undefined) {
+      prev[modId] = [];
+    }
+    prev[modId].push(value);
+    return prev;
+  }, {});
   return Object.keys(grouped).map(modId => grouped[modId]);
 }
 
@@ -98,6 +103,6 @@ function groupMods(mods: IModWithState[], options: IGroupingOptions): IModWithSt
   }
 
   return temp;
-  }
+}
 
 export default groupMods;
