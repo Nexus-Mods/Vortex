@@ -62,6 +62,15 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const { logSessions } = this.state;
 
     if (nextProps.visible) {
+      this.setState(update(this.state, {
+        textLog: { $set: '' },
+        sessionKey: { $set: -1 },
+        checkboxInfo: { $set: true },
+        checkboxError: { $set: true },
+        checkboxDebug: { $set: true },
+        checkboxWarning: { $set: true },
+      }));
+
       loadVortexLogs()
         .then((sessions) => {
           this.setState(update(this.state, {
@@ -71,17 +80,6 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         .catch((err) => {
           onShowError('Failed to read Vortex logs', err.message);
         });
-    }
-
-    if (this.props.visible !== nextProps.visible) {
-      this.setState(update(this.state, {
-        textLog: { $set: '' },
-        sessionKey: { $set: -1 },
-        checkboxInfo: { $set: true },
-        checkboxError: { $set: true },
-        checkboxDebug: { $set: true },
-        checkboxWarning: { $set: true },
-      }));
     }
   }
 
@@ -333,7 +331,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     });
 
     this.setState(update(this.state, {
-      textLog: { $set: textLog.join('\r\n') },
+      textLog: { $set: textLog.join('\n') },
       sessionKey: { $set: key },
       checkboxError: {
         $set: filter === 'ERROR' ? !this.state.checkboxError : this.state.checkboxError,
@@ -372,7 +370,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       logSessions[key].logs.forEach(element => {
         textList = textList.concat(element.text);
       });
-      fullLog = textList.join('\r\n');
+      fullLog = textList.join('\n');
     } else {
       fullLog = textLog;
     }

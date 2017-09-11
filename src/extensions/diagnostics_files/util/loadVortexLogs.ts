@@ -48,8 +48,8 @@ export function loadVortexLogs(): Promise<ISession[]> {
               });
 
               if (logElements.length > 1) {
-                const parsedDate = Date.parse(sessionElement.substring(0, 31));
-                if (sessionElement !== undefined && !isNaN(parsedDate)) {
+                const parsedFrom = Date.parse(sessionElement.substring(0, 31));
+                if (sessionElement !== undefined && !isNaN(parsedFrom)) {
                   sessions.push({
                     from: sessionElement.substring(0, 31),
                     to: logElements[logElements.length - 1].text.substring(0, 30),
