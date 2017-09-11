@@ -92,3 +92,9 @@ $expand-sidebar-delay: 300ms;
 
 //== Scrollbar
 $scrollbar-width:        0.75em;
+
+// TODO: for reasons I don't fully understand, the support for touch actions
+// impacts scroll performance quite considerably, even when using the mouse.
+// For most users, disabling this is probably fine but I guess we should
+// make it a configuration or theme option
+$touch-action: manipulation;

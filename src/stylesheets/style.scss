@@ -9,6 +9,10 @@ html {
   letter-spacing: 0.03em;
 }
 
+body {
+  touch-action: $touch-action;
+}
+
 #content {
   background-color: $brand-bg;
 }

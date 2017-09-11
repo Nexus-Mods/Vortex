@@ -172,9 +172,8 @@ class TableRow extends React.Component<IRowProps, {}> {
       <tr
         id={data.__id}
         ref={domRef}
-        style={{ minHeight: '1.4em' }}
       >
-        <td>{' '}</td>
+        <td>{'\u00A0'}</td>
       </tr>
     );
   }

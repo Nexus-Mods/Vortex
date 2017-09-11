@@ -136,6 +136,10 @@ export function onRemoveMod(api: IExtensionApi,
 
   const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
 
+  // remove from state first, otherwise if the deletion takes some time it will appear as if nothing
+  // happened
+  store.dispatch(removeMod(gameMode, modId));
+
   const dataPath = currentGameDiscovery(state).modPath;
   loadActivation(api, dataPath)
     .then(lastActivation => activator.prepare(
@@ -150,7 +154,6 @@ export function onRemoveMod(api: IExtensionApi,
           .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
       : Promise.resolve())
     .then(() => {
-      store.dispatch(removeMod(gameMode, modId));
       callback(null);
     })
     .catch(err => callback(err));

@@ -347,7 +347,7 @@ function init(context: IExtensionContext): boolean {
           // 'system' drives are the non-removable ones
           if (disk.system) {
             if (disk.mountpoints) {
-              store.dispatch(addSearchPath(disk.mountpoints[0].path));
+              disk.mountpoints.forEach(mp => store.dispatch(addSearchPath(mp.path)));
             } else {
               store.dispatch(addSearchPath(disk.mountpoint));
             }
