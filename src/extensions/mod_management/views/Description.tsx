@@ -51,15 +51,15 @@ class Description extends React.Component<IProps, IComponentState> {
 
     return (
       <div>
-      <Overlay
-        rootClose
-        placement='left'
-        onHide={this.hide}
-        show={this.state.open}
-        target={this.getRef}
-      >
-        {popover}
-      </Overlay>
+        <Overlay
+          rootClose
+          placement='left'
+          onHide={this.hide}
+          show={this.state.open}
+          target={this.getRef}
+        >
+          {popover}
+        </Overlay>
         <a ref={this.setRef} onClick={this.toggle}>{this.mShortBB}</a>
       </div>
     );

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Button, ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
+import { Button, ControlLabel, FormGroup, Overlay, Popover } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import { actions, ComponentEx, Icon, selectors, tooltip, types, util } from 'vortex-api';
@@ -27,12 +27,23 @@ interface IConnectedProps {
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
+interface IComponentState {
+  showOverlay: boolean;
+}
+
 /**
  * Highlight Button
  *
  * @class HighlightButton
  */
-class HighlightButton extends ComponentEx<IProps, {}> {
+class HighlightButton extends ComponentEx<IProps, IComponentState> {
+  private mRef: JSX.Element;
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.initState({ showOverlay: false });
+  }
 
   public render(): JSX.Element {
     const { mod, t } = this.props;
@@ -71,14 +82,23 @@ class HighlightButton extends ComponentEx<IProps, {}> {
 
     return (
       <div style={{ textAlign: 'center' }}>
-        <OverlayTrigger trigger='click' rootClose placement='bottom' overlay={popoverBottom}>
-          <tooltip.IconButton
-            className={'highlight-base ' + (color !== '' ? color : 'highlight-default')}
-            icon={icon !== '' ? icon : 'eye'}
-            id={mod.id}
-            tooltip={t('Change Icon')}
-          />
-        </OverlayTrigger>
+        <Overlay
+          rootClose
+          placement='bottom'
+          onHide={this.toggleOverlay}
+          show={this.state.showOverlay}
+          target={this.mRef as any}
+        >
+          {popoverBottom}
+        </Overlay>
+        <tooltip.IconButton
+          ref={this.setRef}
+          className={'highlight-base ' + (color !== '' ? color : 'highlight-default')}
+          icon={icon !== '' ? icon : 'eye'}
+          id={mod.id}
+          tooltip={t('Change Icon')}
+          onClick={this.toggleOverlay}
+        />
       </div>
     );
   }
@@ -123,6 +143,13 @@ class HighlightButton extends ComponentEx<IProps, {}> {
     onSetModAttribute(gameMode, mod.id, 'color', color.currentTarget.value);
   }
 
+  private setRef = (ref: JSX.Element) => {
+    this.mRef = ref;
+  }
+
+  private toggleOverlay = () => {
+    this.nextState.showOverlay = !this.state.showOverlay;
+  }
 }
 
 function mapStateToProps(state: types.IState): IConnectedProps {

@@ -144,6 +144,7 @@ export interface IRowProps {
   selected: boolean;
   domRef?: (ref) => void;
   container: HTMLElement;
+  initVisible: boolean;
 }
 
 class TableRow extends React.Component<IRowProps, {}> {
@@ -156,29 +157,29 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   public render(): JSX.Element {
-    return (
+    return this.props.initVisible ? this.renderRow() : (
       <VisibilityProxy
         container={this.props.container}
-        placeholder={this.renderPlaceholder()}
-      >
-        {this.renderRow()}
-      </VisibilityProxy>
+        placeholder={this.renderPlaceholder}
+        content={this.renderRow}
+      />
     );
   }
 
-  private renderPlaceholder(): JSX.Element {
+  private renderPlaceholder = (): JSX.Element => {
     const { data, domRef } = this.props;
     return (
       <tr
         id={data.__id}
         ref={domRef}
+        style={{ minHeight: '1.4em' }}
       >
-        <td><Icon name='spinner' pulse /></td>
+        <td>{' '}</td>
       </tr>
     );
   }
 
-  private renderRow(): JSX.Element {
+  private renderRow = (): JSX.Element => {
     const { attributes, data, onClick, selected, tableId, actions } = this.props;
 
     const classes = [];

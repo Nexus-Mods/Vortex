@@ -6,6 +6,9 @@ import ScreenshotCanvas from './views/ScreenshotCanvas';
 import * as React from 'react';
 import { TableDateTimeFilter, TableNumericFilter, TableTextFilter, types, util } from 'vortex-api';
 
+let language: string;
+let collator: Intl.Collator;
+
 export const SAVEGAME_ID: types.ITableAttribute = {
   id: 'id',
   name: 'Savegame id',
@@ -31,7 +34,11 @@ export const CHARACTER_NAME: types.ITableAttribute = {
   filter: new CharacterFilter(),
   edit: {},
   sortFunc: (lhs: string, rhs: string, locale: string): number => {
-    return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
+    if ((collator === undefined) || (locale !== language)) {
+      language = locale;
+      collator = new Intl.Collator(locale, { sensitivity: 'base' });
+    }
+    return collator.compare(lhs, rhs);
   },
 };
 
@@ -62,7 +69,11 @@ export const LOCATION: types.ITableAttribute = {
   isSortable: true,
   filter: new TableTextFilter(true),
   sortFunc: (lhs: string, rhs: string, locale: string): number => {
-    return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
+    if ((collator === undefined) || (locale !== language)) {
+      language = locale;
+      collator = new Intl.Collator(locale, { sensitivity: 'base' });
+    }
+    return collator.compare(lhs, rhs);
   },
   edit: {},
 };

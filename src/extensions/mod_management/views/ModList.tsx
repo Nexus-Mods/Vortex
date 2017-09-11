@@ -384,6 +384,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private initAttributes() {
+    let lang: string;
+    let collator: Intl.Collator;
+
     this.modNameAttribute = {
       id: 'name',
       name: 'Mod Name',
@@ -401,7 +404,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isDefaultSort: true,
       filter: new TextFilter(true),
       sortFunc: (lhs: string, rhs: string, locale: string): number => {
-        return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
+        if ((collator === undefined) || (locale !== lang)) {
+          lang = locale;
+          collator = new Intl.Collator(locale, { sensitivity: 'base' });
+        }
+        return collator.compare(lhs, rhs);
       },
     };
 

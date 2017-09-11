@@ -170,6 +170,9 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       dropActive: false,
     };
 
+    let lang: string;
+    let collator: Intl.Collator;
+
     this.gameColumn = {
       id: 'gameid',
       name: 'Game',
@@ -185,7 +188,11 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       isSortable: true,
       filter: new GameFilter(),
       sortFunc: (lhs: string, rhs: string, locale: string): number => {
-        return lhs.localeCompare(rhs, locale, { sensitivity: 'base' });
+        if ((collator === undefined) || (locale !== lang)) {
+          lang = locale;
+          collator = new Intl.Collator(locale, { sensitivity: 'base' });
+        }
+        return collator.compare(lhs, rhs);
       },
     };
 

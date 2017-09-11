@@ -114,7 +114,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       calculatedValues: undefined,
       splitMax: 9999,
       rowState: {},
-      sortedRows: [],
+      sortedRows: undefined,
       detailsOpen: false,
       rowIdsDelayed: [],
     };
@@ -205,12 +205,16 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const { calculatedValues, sortedRows } = this.state;
 
     if ((calculatedValues === undefined) || (sortedRows === undefined)) {
-      return null;
+      return <tbody />;
     }
+
+    // TODO: forcing the first 40 items to be visible. Would be nicer to have a more dynamic
+    //   estimate of the number of items that will be visible, but there is no reliable way
+    //   to know the size without rendering
 
     return (
       <tbody>
-        {sortedRows.map(row => this.renderRow(row, visibleAttributes))}
+        {sortedRows.map((row, idx) => this.renderRow(row, idx < 40, visibleAttributes))}
       </tbody>
     );
   }
@@ -325,7 +329,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       );
   }
 
-  private renderRow(data: any, visibleAttributes: ITableAttribute[]): JSX.Element {
+  private renderRow(data: any, initVisible: boolean,
+                    visibleAttributes: ITableAttribute[]): JSX.Element {
     const { t, actions, language, tableId } = this.props;
     const { calculatedValues, rowState } = this.state;
 
@@ -350,6 +355,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         selected={getSafe(rowState, [data.id, 'selected'], false)}
         domRef={this.setRowRef}
         container={this.mScrollRef}
+        initVisible={initVisible}
       />
     );
   }
@@ -566,26 +572,31 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     // recalculate each attribute in each row
     return Promise.map(Object.keys(data), (rowId: string) => {
+      const delta: any = {};
+
       if (newValues[rowId] === undefined) {
-        newValues = update(newValues, {
-          [rowId]: { $set: { __id: rowId } },
-        });
+        delta.__id = rowId;
       }
       return Promise.map(objects, (attribute: ITableAttribute) => {
         if ((attribute.isVolatile === true) || (oldData[rowId] !== data[rowId])) {
           return Promise.resolve(attribute.calc(data[rowId], t))
             .then(newValue => {
-              if (!_.isEqual(newValue, newValues[rowId][attribute.id])) {
-                newValues = update(newValues, {
-                  [rowId]: {
-                    [attribute.id]: { $set: newValue },
-                  },
-                });
+              if (!_.isEqual(newValue, getSafe(newValues, [rowId, attribute.id], undefined))) {
+                if (delta[rowId] === undefined) {
+                  delta[rowId] = {};
+                }
+                delta[attribute.id] = newValue;
               }
               return null;
             });
         } else {
           return Promise.resolve();
+        }
+      }).then(() => {
+        if (Object.keys(delta).length > 0) {
+          newValues = (newValues[rowId] === undefined)
+            ? update(newValues, { [rowId]: { $set: delta } })
+            : update(newValues, { [rowId]: { $merge: delta } });
         }
       });
     }).then(() =>

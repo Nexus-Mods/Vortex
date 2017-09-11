@@ -11,7 +11,8 @@ interface IRect {
 
 export interface IProps {
   container?: HTMLElement;
-  placeholder: JSX.Element;
+  placeholder: () =>  JSX.Element;
+  content: () =>  JSX.Element;
 }
 
 export interface IState {
@@ -79,11 +80,9 @@ class VisibilityProxy extends React.Component<IProps, IState> {
   }
 
   public render(): JSX.Element {
-    if (this.state.visible) {
-      return React.Children.only(this.props.children);
-    } else {
-      return this.props.placeholder;
-    }
+    return (this.state.visible)
+      ? this.props.content()
+      : this.props.placeholder();
   }
 }
 

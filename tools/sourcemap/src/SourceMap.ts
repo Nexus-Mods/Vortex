@@ -52,10 +52,18 @@ class SourceMap {
           if (sourceMapPath === undefined) {
             return Promise.reject(null);
           }
-          return fs.readFile(path.resolve(this.mSourcePath, path.dirname(relPath), sourceMapPath));
+          const fullPath: string = (sourceMapPath.startsWith('/'))
+            ? this.mBasePath + sourceMapPath
+            : path.resolve(this.mSourcePath, path.dirname(relPath), sourceMapPath);
+          return fs.readFile(fullPath);
         })
         .then((data: Buffer) => new SourceMapConsumer(data.toString()))
-        .catch(err =>  null);
+        .catch(err => {
+          if (err !== null) {
+            console.error('failed to read sourcemap', err);
+          }
+          return null;
+        });
     }
     return this.mConsumers[relPath];
   }
