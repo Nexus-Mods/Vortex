@@ -14,7 +14,7 @@ export function loadVortexLogs(): Promise<ISession[]> {
     .then((logPathFiles: string[]) => {
       const logFiles = logPathFiles.filter((file) =>
         path.extname(file) === '.log' &&
-        path.basename(file).indexOf('vortex') > -1,
+        path.basename(file).substring(0, 6) === 'vortex',
       ).sort((lhs: string, rhs: string) => rhs.localeCompare(lhs));
       return Promise.each(logFiles, (logFileName: string) => {
         return fs.readFileAsync(path.join(logPath, logFileName), 'utf8')
