@@ -1,0 +1,50 @@
+{
+  "name": "mo-import",
+  "version": "0.0.1",
+  "description": "Import Mods from Mod Organizer",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
+    "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/mo-import",
+    "prebuild": "typings prune && typings install",
+    "build": "npm run webpack && copyfiles -f src/stylesheets/mo-import.scss dist && extractInfo",
+    "buildDev": "npm run build && npm run installDev"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@types/immutability-helper": "^2.0.15",
+    "@types/react": "^0.14.55",
+    "@types/react-bootstrap": "^0.0.37",
+    "@types/react-dom": "^0.14.19",
+    "@types/react-i18next": "^1.7.5",
+    "@types/react-redux": "4.4.35",
+    "@types/react-router": "^2.0.41",
+    "babel-core": "^6.14.0",
+    "babel-loader": "^6.2.5",
+    "babel-polyfill": "^6.13.0",
+    "bluebird": "^3.4.6",
+    "copyfiles": "^1.0.0",
+    "core-error-predicates": "^1.1.0",
+    "fs-extra-promise": "^1.0.1",
+    "i18next": "^3.5.1",
+    "immutability-helper": "^2.2.2",
+    "json-loader": "^0.5.4",
+    "modmeta-db": "file:../../external/modmeta-db",
+    "parse-ini": "file:../../lib/js/parse-ini",
+    "react": "^15.3.2",
+    "react-bootstrap": "^0.30.6",
+    "react-dom": "^15.3.2",
+    "react-i18next": "^1.10.1",
+    "semver": "^5.3.0",
+    "ts-loader": "2.3.4",
+    "vortex-api": "file:../../api",
+    "webpack": "^3.5.6"
+  }
+}

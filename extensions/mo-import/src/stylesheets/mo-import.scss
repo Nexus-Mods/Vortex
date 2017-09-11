@@ -1,0 +1,76 @@
+#import-dialog {
+  .modal-dialog {
+    width: 80%;
+  }
+}
+
+.table-mo-mods-import .dropdown {
+  display: inline-flex;
+}
+
+.table-mo-mods-import .dropdown > button {
+  padding: 2px 10px;
+  border: 0px;
+  min-width: 100px;
+}
+
+.table-mo-mods-import.cell-local {
+  text-align: center;
+}
+
+#dropdown-mo-mods-import-status {
+  padding: 2px 5px;
+  border: 0px;
+  border-left: 1px solid $gray-light;
+  min-width: 0px;
+}
+
+.import-working-container {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: $gutter-width;
+}
+
+.import-success {
+  @extend .h3;
+  text-align: center;
+  color: $brand-success;
+  svg {
+    width: 2em;
+    height: 2em;
+  }
+}
+
+.import-errors {
+  @extend .h3;
+  text-align: center;
+  color: $brand-danger;
+}
+
+.import-review-text {
+  color: $text-color-disabled;
+}
+
+.btn-mo-mods-import-status-yes, .toggle-mo-mods-import-status-yes {
+  background-color: $brand-success;
+}
+
+.btn-mo-mods-import-status-no, .toggle-mo-mods-import-status-no {
+  background-color: $gray;
+}
+
+.import-wait-container {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: $gutter-width;
+
+  .page-wait-spinner {
+    width: 2em;
+    height: 2em;
+  }
+}

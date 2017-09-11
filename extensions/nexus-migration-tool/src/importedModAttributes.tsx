@@ -87,8 +87,8 @@ export const LOCAL: types.ITableAttribute<IModEntry> = {
   customRenderer: (mod: IModEntry, detail: boolean, t: I18next.TranslationFunction) => {
     return mod.isAlreadyManaged ? (
       <tooltip.Icon
-        id={ `import-duplicate-${mod.nexusId}` }
-        tooltip={t('This mod is already managed by vortex')}
+        id={`import-duplicate-${mod.nexusId}`}
+        tooltip={t('This mod is already managed by Vortex')}
         name='triangle-alert'
       />
    ) : null;

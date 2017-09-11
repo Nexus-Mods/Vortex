@@ -12,6 +12,7 @@ import renderModName from '../extensions/mod_management/util/modName';
 import sortMods from '../extensions/mod_management/util/sort';
 import { Archive } from './archives';
 import AsyncComponent from './AsyncComponent';
+import copyRecursive from './copyRecursive';
 import { NotSupportedError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import runElevated from './elevated';
@@ -32,6 +33,7 @@ export {
   Archive,
   AsyncComponent,
   bytesToString,
+  copyRecursive,
   Debouncer,
   deriveModInstallName as deriveInstallName,
   extend,

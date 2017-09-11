@@ -417,7 +417,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private selectActivator = (evt) => {
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    console.log('select activator', target.value);
     this.setState(setSafe(this.state, ['currentActivator'], target.value));
   }
 }

@@ -198,6 +198,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "mo-import",
+      "path": "extensions/mo-import",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/mo-import"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "name": "exe-version-rebuild",
       "module": "exe-version",
