@@ -1,7 +1,7 @@
 import { removeRule } from '../actions/userlist';
 import { setCreateRule, setSource, setTarget } from '../actions/userlistEdit';
 
-import { ILOOTPlugin } from '../types/ILOOTList';
+import { ILOOTPlugin, ILootReference } from '../types/ILOOTList';
 import { IPluginCombined } from '../types/IPlugins';
 
 import { ComponentEx, selectors, tooltip } from 'vortex-api';
@@ -26,6 +26,7 @@ export interface IBaseProps {
 interface IConnectedProps {
   gameId: string;
   userlist: ILOOTPlugin[];
+  masterlist: ILOOTPlugin[];
 }
 
 interface IActionProps {
@@ -181,12 +182,15 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, connectDragSource, connectDropTarget, plugin, userlist } = this.props;
+    const { t, connectDragSource, connectDropTarget, masterlist, plugin, userlist } = this.props;
 
     const classes = ['btn-dependency'];
 
-    const lootRules: ILOOTPlugin = (userlist || []).find(rule => rule.name === plugin.name) || {
+    // TODO: this is quite inefficient...
+    const lootRules: ILOOTPlugin = {
       name: plugin.name,
+      ...this.pluginFrom((masterlist || []).find(rule => rule.name === plugin.name), true),
+      ...this.pluginFrom((userlist || []).find(rule => rule.name === plugin.name), false),
     };
 
     const popoverBlocks = [];
@@ -196,7 +200,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         <div key='after'>
           {t('Loads after:')}
           <ul>
-            {(lootRules.after || []).map(name => this.renderRule(name, 'after'))}
+            {(lootRules.after || []).map(
+              ref => this.renderRule(ref, 'after', lootRules.readOnly))}
           </ul>
         </div>
       ));
@@ -207,7 +212,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         <div key='requires'>
         {t('Requires:')}
         <ul>
-          {(lootRules.req || []).map(name => this.renderRule(name, 'requires'))}
+          {(lootRules.req || []).map(
+            ref => this.renderRule(ref, 'requires', lootRules.readOnly))}
         </ul>
       </div>
       ));
@@ -218,7 +224,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         <div key='incompatible'>
         {t('Incompatible:')}
         <ul>
-          {(lootRules.inc || []).map(name => this.renderRule(name, 'incompatible'))}
+          {(lootRules.inc || []).map(
+            ref => this.renderRule(ref, 'incompatible', lootRules.readOnly))}
         </ul>
       </div>
       ));
@@ -263,6 +270,30 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       </div>);
   }
 
+  private renderRule = (ref: string | ILootReference, ruleType: string, readOnly: boolean) => {
+    const { t } = this.props;
+
+    const { name, display } = (typeof(ref) === 'string')
+      ? { name: ref, display: ref }
+      : ref;
+
+    if (readOnly) {
+      return <li key={name} className='rule-readonly'>{display}</li>;
+    }
+
+    return (
+      <li key={name}>{display}
+        <tooltip.IconButton
+          id={`btn-rule-remove-${name}`}
+          value={`${ruleType}:${name}`}
+          className='btn-embed'
+          icon='remove'
+          tooltip={t('Remove')}
+          onClick={this.onRemove}
+        />
+      </li>
+    );
+  }
   private setRef = (ref) => {
     this.mRef = ref;
   }
@@ -275,21 +306,12 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     this.nextState.showOverlay = false;
   }
 
-  private renderRule = (name: string, ruleType: string) => {
-    const { t } = this.props;
-    return (
-      <li key={name}>{name}
-        <tooltip.IconButton
-          id={`btn-rule-remove-${name}`}
-          value={`${ruleType}:${name}`}
-          className='btn-embed'
-          icon='remove'
-          tooltip={t('Remove')}
-          onClick={this.onRemove}
-        />
-      </li>
-    );
+  private pluginFrom(input: ILOOTPlugin, readOnly: boolean): ILOOTPlugin {
+    return readOnly
+      ? { ...input, readOnly: true }
+      : input;
   }
+
   /*
   private removeRule = (plugin: string, type: string, reference: string) => {
     const { gameId, plugin, onRemoveRule } = this.props;
@@ -314,6 +336,7 @@ function mapStateToProps(state): IConnectedProps {
   return {
     gameId: selectors.activeGameId(state),
     userlist: state.userlist.plugins,
+    masterlist: state.masterlist.plugins,
   };
 }
 

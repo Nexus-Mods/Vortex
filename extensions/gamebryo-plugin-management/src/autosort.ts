@@ -8,7 +8,7 @@ import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import {GameId, LootDatabase} from 'loot';
 import * as path from 'path';
-import {log, selectors, types} from 'vortex-api';
+import {actions, log, selectors, types} from 'vortex-api';
 
 class LootInterface {
   private mLoot: LootDatabase;
@@ -203,12 +203,45 @@ class LootInterface {
       Promise.promisify(this.mLoot.evalLists, { context: this.mLoot });
   }
 
+  private reportCycle(err: Error) {
+    this.mExtensionApi.sendNotification({
+      type: 'warning',
+      message: 'Plugins not sorted because of cyclic rules',
+      actions: [
+        {
+          title: 'More',
+          action: (dismiss: () => void) => {
+            const bbcode = this.mExtensionApi.translate(
+              'LOOT reported a cyclic interaction between rules.<br />'
+              + 'In the simplest case this is something like '
+              + '[i]"A needs to load after B"[/i] and [i]"B needs to load after A"[/i] '
+              + 'but it can be arbitrarily complicated: [i]"A after B after C after A"[/i].<br />'
+              + 'This conflict involves at least one custom rule.<br />'
+              + 'Please read the LOOT message and change your custom rules to resolve the cycle: '
+              + '[quote]' + err.message + '[/quote]');
+            this.mExtensionApi.store.dispatch(
+                actions.showDialog('info', 'Cyclic interaction', {bbcode}, [
+                  {
+                    label: 'Close',
+                  },
+                ]));
+          },
+        },
+      ],
+    });
+  }
+
   private enqueue(description: string, step: () => Promise<void>): void {
     this.mLootQueue = this.mLootQueue.then(() => {
       this.mOnSetLootActivity(description);
       return step()
       .catch((err: Error) => {
-        this.mExtensionApi.showErrorNotification('LOOT operation failed', err);
+        if (err.message.startsWith('Cyclic interaction')) {
+          this.reportCycle(err);
+        } else {
+          this.mExtensionApi.showErrorNotification('LOOT operation failed',
+                                                   err);
+        }
       })
       .finally(() => {
         this.mOnSetLootActivity('');

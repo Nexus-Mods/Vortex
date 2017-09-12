@@ -125,6 +125,7 @@ interface IExtensionContextExt extends types.IExtensionContext {
 
 let pluginPersistor: PluginPersistor;
 let userlistPersistor: UserlistPersistor;
+let masterlistPersistor: UserlistPersistor;
 let loot: LootInterface;
 let refreshTimer: NodeJS.Timer;
 
@@ -152,6 +153,7 @@ function register(context: IExtensionContextExt) {
   context.registerReducer(['session', 'plugins'], pluginsReducer);
   context.registerReducer(['loadOrder'], loadOrderReducer);
   context.registerReducer(['userlist'], userlistReducer);
+  context.registerReducer(['masterlist'], { defaults: {}, reducers: {} });
   context.registerReducer(['settings', 'plugins'], settingsReducer);
   context.registerReducer(['session', 'pluginDependencies'], userlistEditReducer);
 
@@ -173,17 +175,25 @@ function initPersistor(context: IExtensionContextExt) {
   };
   // TODO: Currently need to stop this from being called in the main process.
   //   This is mega-ugly and needs to go
-  if ((pluginPersistor === undefined) && (remote !== undefined)) {
-    pluginPersistor = new PluginPersistor(onError);
-  }
-  if ((userlistPersistor === undefined) && (remote !== undefined)) {
-    userlistPersistor = new UserlistPersistor(onError);
+  if (remote !== undefined) {
+    if (pluginPersistor === undefined) {
+      pluginPersistor = new PluginPersistor(onError);
+    }
+    if (userlistPersistor === undefined) {
+      userlistPersistor = new UserlistPersistor('userlist', onError);
+    }
+    if (masterlistPersistor === undefined) {
+      masterlistPersistor = new UserlistPersistor('masterlist', onError);
+    }
   }
   if (pluginPersistor !== undefined) {
     context.registerPersistor('loadOrder', pluginPersistor);
   }
   if (userlistPersistor !== undefined) {
     context.registerPersistor('userlist', userlistPersistor);
+  }
+  if (masterlistPersistor !== undefined) {
+    context.registerPersistor('masterlist', masterlistPersistor);
   }
 }
 
@@ -230,6 +240,10 @@ function startSync(api: types.IExtensionApi): Promise<void> {
 
   if (userlistPersistor !== undefined) {
     prom = prom.then(() => userlistPersistor.loadFiles(gameId));
+  }
+
+  if (masterlistPersistor !== undefined) {
+    prom = prom.then(() => masterlistPersistor.loadFiles(gameId));
   }
 
   return prom.then(() => {
@@ -403,6 +417,7 @@ function init(context: IExtensionContextExt) {
           enqueue(() => {
             return stopSync()
               .then(() => userlistPersistor.disable())
+              .then(() => masterlistPersistor.disable())
               .then(() => loot.wait());
           });
         });

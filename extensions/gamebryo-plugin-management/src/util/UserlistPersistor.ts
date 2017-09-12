@@ -26,13 +26,16 @@ class UserlistPersistor implements types.IPersistor {
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
   private mOnError: (message: string, details: Error) =>  void;
+  private mMode: 'userlist' | 'masterlist';
 
-  constructor(onError: (message: string, details: Error) => void) {
+  constructor(mode: 'userlist' | 'masterlist',
+              onError: (message: string, details: Error) => void) {
     this.mUserlist = {
       globals: [],
       plugins: [],
     };
     this.mOnError = onError;
+    this.mMode = mode;
   }
 
   public disable(): Promise<void> {
@@ -54,7 +57,11 @@ class UserlistPersistor implements types.IPersistor {
     if (!gameSupported(gameMode)) {
       return Promise.resolve();
     }
-    this.mUserlistPath = path.join(app.getPath('userData'), gameMode, 'userlist.yaml');
+    this.mUserlistPath = (this.mMode === 'userlist')
+      ? path.join(app.getPath('userData'), gameMode, 'userlist.yaml')
+      : path.resolve(remote.app.getPath('appData'), '..', 'Local', 'LOOT',
+                       gameMode, 'masterlist.yaml');
+
     // read the files now and update the store
     return this.deserialize();
   }
@@ -78,7 +85,7 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   public getAllKeys(cb: (error: Error, keys?: string[]) => void): void {
-    cb(null, ['userlist']);
+    cb(null, [this.mMode]);
   }
 
   private enqueue(fn: () => Promise<void>): Promise<void> {
@@ -105,7 +112,9 @@ class UserlistPersistor implements types.IPersistor {
   }
 
   private doSerialize(): Promise<void> {
-    if ((this.mUserlist === undefined) || (this.mUserlistPath === undefined)) {
+    if ((this.mUserlist === undefined)
+        || (this.mUserlistPath === undefined)
+        || (this.mMode === 'masterlist')) {
       return;
     }
 
@@ -131,7 +140,7 @@ class UserlistPersistor implements types.IPersistor {
 
     return fs.readFileAsync(this.mUserlistPath)
     .then((data: NodeBuffer) => {
-      this.mUserlist = safeLoad(data.toString());
+      this.mUserlist = safeLoad(data.toString(), { json: true } as any);
       if (this.mResetCallback) {
         this.mResetCallback();
         this.mLoaded = true;

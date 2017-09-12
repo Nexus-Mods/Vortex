@@ -30,17 +30,23 @@ export interface IDirtyInfo {
   nav?: number;
 }
 
+export interface ILootReference {
+  name: string;
+  display: string;
+}
+
 export interface ILOOTPlugin {
   name: string;
   enabled?: boolean;
   priority?: number;
-  after?: string[];
-  req?: string[];
-  inc?: string[];
+  after?: Array<string | ILootReference>;
+  req?: Array<string | ILootReference>;
+  inc?: Array<string | ILootReference>;
   msg?: IMessage[];
   tag?: BashTag[];
   url?: ILocation[];
   dirty?: IDirtyInfo[];
+  readOnly: boolean;
 }
 
 export interface ILOOTList {
