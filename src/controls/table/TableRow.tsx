@@ -157,8 +157,9 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   public render(): JSX.Element {
-    return this.props.initVisible ? this.renderRow() : (
+    return (
       <VisibilityProxy
+        startVisible={this.props.initVisible}
         container={this.props.container}
         placeholder={this.renderPlaceholder}
         content={this.renderRow}
@@ -179,7 +180,7 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   private renderRow = (): JSX.Element => {
-    const { attributes, data, onClick, selected, tableId, actions } = this.props;
+    const { attributes, data, domRef, onClick, selected, tableId, actions } = this.props;
 
     const classes = [];
 
@@ -200,7 +201,7 @@ class TableRow extends React.Component<IRowProps, {}> {
         key={data.__id}
         className={classes.join(' ')}
         onClick={onClick}
-        ref={this.props.domRef}
+        ref={domRef}
       >
         {attributes.map(this.renderAttribute)}
         {

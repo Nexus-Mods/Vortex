@@ -136,7 +136,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
       const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
       return (
         <Select
-          options={choices as any}
+          options={choices}
           value={choiceKey}
           onChange={this.changeCellSelect}
           valueKey='key'

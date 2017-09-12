@@ -11,8 +11,9 @@ interface IRect {
 
 export interface IProps {
   container?: HTMLElement;
-  placeholder: () =>  JSX.Element;
-  content: () =>  JSX.Element;
+  placeholder: () => JSX.Element;
+  content: () => JSX.Element;
+  startVisible: boolean;
 }
 
 export interface IState {
@@ -35,43 +36,59 @@ class VisibilityProxy extends React.Component<IProps, IState> {
       VisibilityProxy.sObservers.set(container || null,
           new IntersectionObserver(VisibilityProxy.callback, {
         root: container,
-      }));
+        rootMargin: '80px 0px 80px 0px',
+        threshold: [0.5],
+      } as any));
     }
     return VisibilityProxy.sObservers.get(container);
   }
 
   private static callback(entries: IntersectionObserverEntry[], observer: IntersectionObserver) {
     entries.forEach(entry => {
-      if (entry.intersectionRatio > 0) {
+      if ((entry as any).isIntersecting) {
         const cb = VisibilityProxy.sInstances.get(entry.target);
         if (cb !== undefined) {
           cb();
-          observer.unobserve(entry.target);
-          VisibilityProxy.sInstances.delete(entry.target);
         }
       }
     });
   }
 
-  private static observe(container: HTMLElement, target: HTMLElement, cb: () => void) {
+  private static observe(container: HTMLElement,
+                         target: HTMLElement,
+                         cb: () => void) {
     VisibilityProxy.sInstances.set(target, cb);
     VisibilityProxy.getObserver(container).observe(target);
   }
 
   private static unobserve(container: HTMLElement, target: HTMLElement) {
+    VisibilityProxy.sInstances.delete(target);
     VisibilityProxy.getObserver(container).unobserve(target);
   }
 
   constructor(props: IProps) {
     super(props);
     this.state = {
-      visible: false,
+      visible: props.startVisible,
     };
   }
 
   public componentDidMount() {
-    VisibilityProxy.observe(this.props.container, ReactDOM.findDOMNode(this), () => {
-      this.setState({ visible: true });
+    // TODO: right now this proxy only switches from invisible to visible, mostly
+    //   because in our use case, switching the control visible is a serious performance
+    //   act
+    //   BUT: having all those controls visible (offscreen) also causes a burden when
+    //   relayouting
+    if (this.state.visible) {
+      return;
+    }
+
+    const node: HTMLElement = ReactDOM.findDOMNode(this);
+    VisibilityProxy.observe(this.props.container, node, () => {
+      if (!this.state.visible) {
+        VisibilityProxy.unobserve(this.props.container, node);
+        this.setState({ visible: true });
+      }
     });
   }
 

@@ -61,7 +61,7 @@
     "react-markdown": "^2.4.4",
     "react-redux": "^5.0.4",
     "react-safe-html": "^0.4.0",
-    "react-select": "^1.0.0-rc.3",
+    "react-select": "1.0.0-rc.3",
     "react-sortable-tree": "^1.2.0",
     "react-split-pane": "^0.1.63",
     "recharts": "^1.0.0-alpha.4",

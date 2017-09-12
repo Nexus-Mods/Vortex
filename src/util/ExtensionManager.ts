@@ -607,7 +607,8 @@ class ExtensionManager {
       try {
         ext.initFunc(contextProxy as IExtensionContext);
       } catch (err) {
-        log('warn', 'couldn\'t initialize extension', {name: ext.name, err: err.message});
+        log('warn', 'couldn\'t initialize extension',
+          {name: ext.name, err: err.message, stack: err.stack});
       }
     });
     // need to store them locally for now because the store isn't loaded at this time
