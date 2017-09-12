@@ -1,10 +1,14 @@
+import {LogLevel} from '../../../util/log';
+
 export interface ISession {
-  from: string;
-  to: string;
+  from: Date;
+  to: Date;
   logs: ILog[];
 }
 
 export interface ILog {
+  lineno: number;
+  time: string;
   text: string;
-  type: string;
+  type: LogLevel;
 }

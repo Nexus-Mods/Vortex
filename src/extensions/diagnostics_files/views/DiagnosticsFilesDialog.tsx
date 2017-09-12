@@ -1,6 +1,6 @@
 import FlexLayout from '../../../controls/FlexLayout';
-import { Icon as TooltipIcon, IconButton } from '../../../controls/TooltipControls';
-import { IExtensionContext } from '../../../types/IExtensionContext';
+import Icon from '../../../controls/Icon';
+import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { log } from '../../../util/log';
@@ -9,6 +9,7 @@ import { showError } from '../../../util/message';
 import { ILog, ISession } from '../types/ISession';
 import { loadVortexLogs } from '../util/loadVortexLogs';
 
+import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
@@ -25,15 +26,17 @@ export interface IBaseProps {
 }
 
 interface IConnectedProps {
+  language: string;
 }
 
 interface IComponentState {
-  textLog: string;
-  sessionKey: number;
-  checkboxError: boolean;
-  checkboxWarning: boolean;
-  checkboxInfo: boolean;
-  checkboxDebug: boolean;
+  sessionIdx: number;
+  show: {
+    error: boolean;
+    warning: boolean;
+    info: boolean;
+    debug: boolean;
+  };
   logSessions: ISession[];
 }
 
@@ -44,16 +47,19 @@ interface IActionProps {
 type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
+  private mIsMounted: boolean = false;
+
   constructor(props) {
     super(props);
     this.state = {
-      textLog: '',
-      sessionKey: -1,
-      checkboxError: true,
-      checkboxWarning: true,
-      checkboxInfo: true,
-      checkboxDebug: true,
-      logSessions: [],
+      sessionIdx: -1,
+      show: {
+        error: true,
+        warning: true,
+        info: true,
+        debug: false,
+      },
+      logSessions: undefined,
     };
   }
 
@@ -61,25 +67,18 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const { onShowError } = this.props;
     const { logSessions } = this.state;
 
-    if (nextProps.visible) {
+    if (!this.props.visible && nextProps.visible) {
       this.setState(update(this.state, {
-        textLog: { $set: '' },
         sessionKey: { $set: -1 },
-        checkboxInfo: { $set: true },
-        checkboxError: { $set: true },
-        checkboxDebug: { $set: true },
-        checkboxWarning: { $set: true },
+        show: { $set: {
+          error: true,
+          warning: true,
+          info: true,
+          debug: false,
+        } },
       }));
 
-      loadVortexLogs()
-        .then((sessions) => {
-          this.setState(update(this.state, {
-            logSessions: { $set: sessions },
-          }));
-        })
-        .catch((err) => {
-          onShowError('Failed to read Vortex logs', err.message);
-        });
+      this.updateLogs();
     }
   }
 
@@ -87,43 +86,45 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const { logSessions } = this.state;
     const { onShowError } = this.props;
 
-    loadVortexLogs()
-      .then((sessions) => {
-        this.setState(update(this.state, {
-          logSessions: { $set: sessions },
-        }));
-      })
-      .catch((err) => {
-        onShowError('Failed to read Vortex logs files', err.message);
-      });
+    this.mIsMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.mIsMounted = false;
   }
 
   public render(): JSX.Element {
     const { t, visible } = this.props;
     const { logSessions } = this.state;
-    let body = null;
+
+    let body: JSX.Element;
 
     if (visible) {
-      if (logSessions.length > 0) {
+      if (logSessions === undefined) {
         body = (
           <Modal.Body id='diagnostics-files'>
-            <div style={{ marginTop: 5, marginBottom: 5 }}>
-              <div className='diagnostics-files-sessions-panel'>
-                {logSessions.map((session, index) => this.renderSessions(session, index))}
-              </div>
-            </div>
-            <div style={{ marginTop: 5, marginBottom: 5 }}>
-              {this.renderDetail()}
-            </div>
+            <Icon name='spinner' pulse/>
+          </Modal.Body>
+        );
+      } else if (logSessions.length > 0) {
+        const sessionsSorted = logSessions
+          .sort((lhs, rhs) => rhs.from.getTime() - lhs.from.getTime());
+
+        body = (
+          <Modal.Body id='diagnostics-files'>
+            <FlexLayout.Fixed>
+              <ListGroup className='diagnostics-files-sessions-panel'>
+                {sessionsSorted.map(this.renderSession)}
+              </ListGroup>
+            </FlexLayout.Fixed>
+            {this.renderLog()}
           </Modal.Body>
         );
       } else {
         body = (
           <Modal.Body id='diagnostics-files'>
-            <Jumbotron>
-              <div style={{ fontSize: 'medium', margin: '0 1em' }}>
-                {t('An error occurred loading Vortex logs.')}
-              </div>
+            <Jumbotron className='diagnostics-files-error'>
+              {t('An error occurred loading Vortex logs.')}
             </Jumbotron>
           </Modal.Body>
         );
@@ -150,240 +151,183 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderSessions = (session: ISession, index: number) => {
-    const { t } = this.props;
-    const { logSessions, sessionKey } = this.state;
+  private renderSession = (session: ISession, index: number) => {
+    const { t, language } = this.props;
+    const { sessionIdx } = this.state;
 
-    const errors = session.logs.filter((item) =>
-      item.type === 'ERROR');
+    const errors = session.logs.filter(item => item.type === 'error');
     const from = session.from;
     const to = session.to;
 
     let isCrashed = '';
-    if (session.logs[Object.keys(session.logs).length - 2] !== undefined) {
-      if (session.logs[Object.keys(session.logs).length - 2].type === 'ERROR') {
-        isCrashed = ' - Crashed! ';
-      }
+    if ((session.from === undefined)
+        && !session.logs[session.logs.length - 1].text.endsWith('clean application end')) {
+      isCrashed = ` - ${t('Crashed')}!`;
     }
 
     const classes = ['list-group-item'];
-    if ((sessionKey > -1) && (sessionKey === index)) {
+    if (sessionIdx === index) {
       classes.push('active');
     }
 
     const sessionText = (
       <div style={{ width: '90%' }}>
-        <span>{t('From ')}</span>
-        <span style={{ color: 'green', fontWeight: 'bold' }}>{from}</span>
-        <span>{t(' to ')}</span>
-        <span style={{ color: 'green', fontWeight: 'bold' }}>{to}</span>
-        {errors.length > 1 ? <span>{' - ' + t('Errors:') + errors.length}</span> : undefined}
-        {errors.length === 1 ? <span>{' - ' + t('Error:') + errors.length}</span> : undefined}
-        <span style={{ color: 'orange' }}>{isCrashed}</span>
+        <span>{t('From') + ' '}</span>
+        <span className='session-from'>{from.toLocaleString(language)}</span>
+        <span>{' ' + t('to') + ' '}</span>
+        <span className='session-to'>{to.toLocaleString(language)}</span>
+        {errors.length > 0 ? <span>
+          {' - ' + t('{{ count }} error', { count: errors.length })}
+        </span> : null}
+        <span className='session-crashed'>{isCrashed}</span>
       </div>
     );
 
     return (
-      <span
+      <ListGroupItem
         className={classes.join(' ')}
-        style={{ display: 'flex' }}
         key={index}
-        onClick={this.showDetail}
-        id={index.toString()}
+        onClick={this.selectSession}
+        value={index}
       >
-        <div style={{ flex: '1 1 0' }}>
-          {sessionText}
-        </div>
-        <div className='diagnostics-files-actions'>
-          {errors.length > 0 ? (
-            <IconButton
-              className='btn-embed'
-              id={index.toString()}
-              tooltip={t('Report log')}
-              onClick={this.reportLog}
-              icon='message'
-            />
-          ) : null}
-        </div>
-      </span>
+        {sessionText}
+      </ListGroupItem>
     );
   }
 
-  private renderDetail = () => {
+  private renderFilterButtons() {
     const { t } = this.props;
-    const {
-      sessionKey, checkboxDebug, checkboxError, checkboxInfo,
-      checkboxWarning, textLog } = this.state;
+    const { logSessions, sessionIdx, show } = this.state;
 
-    if (sessionKey > -1) {
-      return (
-        <div>
-          <p>{t('Full log')}</p>
-          <div style={{ display: 'inline-flex', flexDirection: 'row' }}>
-            <span>
-              <Checkbox
-                key='checkboxInfo'
-                checked={checkboxInfo}
-                onClick={this.showDetail}
-                value='INFO'
-                style={{ color: 'green', padding: '5px', verticalAlign: 'middle' }}
-              >{t('INFO')}
-              </Checkbox>
-            </span>
-            <span>
-              <Checkbox
-                key='checkboxDebug'
-                checked={checkboxDebug}
-                onClick={this.showDetail}
-                value='DEBUG'
-                style={{ color: 'yellow', padding: '5px' }}
-              >{t('DEBUG')}
-              </Checkbox>
-            </span>
-            <span>
-              <Checkbox
-                key='checkboxWarning'
-                checked={checkboxWarning}
-                onClick={this.showDetail}
-                value='WARNING'
-                style={{ color: 'orange', padding: '5px' }}
-              >{t('WARNING')}
-              </Checkbox>
-            </span>
-            <span>
-              <Checkbox
-                key='checkboxError'
-                checked={checkboxError}
-                onClick={this.showDetail}
-                value='ERROR'
-                style={{ color: 'red', padding: '5px' }}
-              >{t('ERROR')}
-              </Checkbox>
-            </span>
-          </div>
+    const errors = (sessionIdx === -1)
+      ? []
+      : logSessions[sessionIdx].logs.filter(item => item.type === 'error');
+
+    return (
+      <FlexLayout type='row'>
+        {['debug', 'info', 'warning', 'error'].map(type => (
           <div>
-            <textarea
-              value={textLog}
-              id='textarea-diagnostics-files'
-              className='textarea-diagnostics-files'
-              key={textLog}
-              readOnly={true}
-            />
+            <Checkbox
+              key={`checkbox-${type}`}
+              className={`log-filter-${type}`}
+              checked={show[type]}
+              onClick={this.toggleFilter}
+              value={type}
+            >
+              {t(type.toUpperCase())}
+            </Checkbox>
           </div>
-        </div>
-      );
-    } else {
+        )) }
+        <FlexLayout.Flex/>
+        <Button onClick={this.copyToClipboard}>
+          {t('Copy to Clipoard')}
+        </Button>
+        {errors.length > 0 ? (
+          <Button
+            id={`report-log-${sessionIdx}`}
+            onClick={this.reportLog}
+          >
+          {t('Report')}
+          </Button>
+        ) : null}
+      </FlexLayout>
+    );
+  }
+
+  private renderLogLine(line: ILog): JSX.Element {
+    return (
+      <li key={line.lineno} className={`log-line-${line.type}`}>
+        <span className='log-time'>{line.time}</span>
+        {' - '}
+        <span className={`log-type-${line.type}`}>{line.type}</span>
+        {': '}
+        <span className='log-text'>{line.text}</span>
+      </li>
+    );
+  }
+
+  private renderLog() {
+    const { logSessions, sessionIdx, show } = this.state;
+
+    if (sessionIdx === -1) {
       return null;
     }
+
+    const enabledLevels = new Set(Object.keys(show).filter(key => show[key]));
+
+    const filteredLog = logSessions[sessionIdx].logs
+      .filter(line => enabledLevels.has(line.type))
+      .map(this.renderLogLine);
+
+    return (
+      <FlexLayout type='column' className='diagnostics-files-log-panel'>
+        <FlexLayout.Fixed>
+          {this.renderFilterButtons()}
+        </FlexLayout.Fixed>
+        <FlexLayout.Flex>
+          <ul className='log-list'>
+            {filteredLog}
+          </ul>
+        </FlexLayout.Flex>
+      </FlexLayout>
+    );
   }
 
-  private updateTextArea = (key: number, filter: string) => {
-    const { logSessions } = this.state;
-    let checkboxError = this.state.checkboxError;
-    let checkboxDebug = this.state.checkboxDebug;
-    let checkboxInfo = this.state.checkboxInfo;
-    let checkboxWarning = this.state.checkboxWarning;
-
-    let logs: ILog[] = [];
-
-    if (filter !== undefined) {
-      switch (filter) {
-        case 'INFO': checkboxInfo = !this.state.checkboxInfo; break;
-        case 'DEBUG': checkboxDebug = !this.state.checkboxDebug; break;
-        case 'ERROR': checkboxError = !this.state.checkboxError; break;
-        case 'WARNING': checkboxWarning = !this.state.checkboxWarning; break;
-      }
-    }
-
-    if (checkboxError) {
-      logs = logs.concat(logSessions[key].logs.filter((element) => {
-        if (element.type === 'ERROR') {
-          return element.text;
-        }
-      }));
-    }
-    if (checkboxWarning) {
-      logs = logs.concat(logSessions[key].logs.filter((element) => {
-        if (element.type === 'WARNING') {
-          return element.text;
-        }
-      }));
-    }
-    if (checkboxDebug) {
-      logs = logs.concat(logSessions[key].logs.filter((element) => {
-        if (element.type === 'DEBUG') {
-          return element.text;
-        }
-      }));
-    }
-    if (checkboxInfo) {
-      logs = logs.concat(logSessions[key].logs.filter((element) => {
-        if (element.type === 'INFO') {
-          return element.text;
-        }
-      }));
-    }
-
-    let textLog: string[] = [];
-    logs.forEach(element => {
-      textLog = textLog.concat(element.text).sort((lhs: string, rhs: string) =>
-        lhs.localeCompare(rhs));
-    });
-
-    this.setState(update(this.state, {
-      textLog: { $set: textLog.join('\n') },
-      sessionKey: { $set: key },
-      checkboxError: {
-        $set: filter === 'ERROR' ? !this.state.checkboxError : this.state.checkboxError,
-      },
-      checkboxDebug: {
-        $set: filter === 'DEBUG' ? !this.state.checkboxDebug : this.state.checkboxDebug,
-      },
-      checkboxInfo: {
-        $set: filter === 'INFO' ? !this.state.checkboxInfo : this.state.checkboxInfo,
-      },
-      checkboxWarning: {
-        $set: filter === 'WARNING' ? !this.state.checkboxWarning
-          : this.state.checkboxWarning,
-      },
-    }));
+  private updateLogs(): Promise<void> {
+    const { onShowError } = this.props;
+    return loadVortexLogs()
+      .then(sessions => {
+        this.setState(update(this.state, {
+          logSessions: { $set: sessions },
+        }));
+      })
+      .catch((err) => {
+        onShowError('Failed to read Vortex logs', err.message);
+      });
   }
 
-  private showDetail = (evt) => {
-    const { sessionKey } = this.state;
+  private toggleFilter = (evt) => {
+    const { show } = this.state;
     const filter = evt.currentTarget.value;
-    let key: number = -1;
-    filter !== undefined ? key = sessionKey : key = parseInt(evt.currentTarget.id, 10);
-    this.updateTextArea(key, filter);
+    this.setState(update(this.state, { show: { [filter]: { $set: !show[filter] } } }));
+  }
+
+  private selectSession = (evt) => {
+    const idx = evt.currentTarget.value;
+    this.setState(update(this.state, { sessionIdx: { $set: idx } }));
+  }
+
+  private copyToClipboard = () => {
+    const { logSessions, sessionIdx, show } = this.state;
+
+    const enabledLevels = new Set(Object.keys(show).filter(key => show[key]));
+
+    const filteredLog = logSessions[sessionIdx].logs
+      .filter(line => enabledLevels.has(line.type))
+      .map(line => `${line.time} - ${line.type}: ${line.text}`)
+      .join('\n');
+    remote.clipboard.writeText(filteredLog);
   }
 
   private reportLog = (evt) => {
     const { onShowError } = this.props;
-    const { logSessions } = this.state;
-    const { textLog } = this.state;
-    const key = evt.currentTarget.id;
-    let fullLog: string = '';
+    const { logSessions, sessionIdx } = this.state;
 
     const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp');
-    if (textLog === '') {
-      let textList: string[] = [];
-      logSessions[key].logs.forEach(element => {
-        textList = textList.concat(element.text);
-      });
-      fullLog = textList.join('\n');
-    } else {
-      fullLog = textLog;
-    }
+    const fullLog: string = logSessions[sessionIdx].logs
+      .map(line => `${line.time} - ${line.type}: ${line.text}`)
+      .join('\n');
 
     this.props.onHide();
-    fs.writeFileAsync(path.join(nativeCrashesPath, 'session.log'), fullLog)
+    const logPath = path.join(nativeCrashesPath, 'session.log');
+    fs.writeFileAsync(logPath, fullLog)
       .then(() => {
-        this.context.api.events.emit('report-log-error',
-          path.join(nativeCrashesPath, 'session.log'));
+        this.context.api.events.emit('report-log-error', logPath);
       })
       .catch((err) => {
         onShowError('Failed to write log session file', err.message);
-      });
+      })
+      .then(() => null);
   }
 
   private showSession = (evt) => {
@@ -397,8 +341,10 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-function mapStateToProps(state): IConnectedProps {
-  return {};
+function mapStateToProps(state: IState): IConnectedProps {
+  return {
+    language: state.settings.interface.language,
+  };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {

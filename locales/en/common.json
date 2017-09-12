@@ -7,5 +7,6 @@
   "{{ count }} day ago_plural": "{{ count }} days ago",
   "{{ count }} week ago_plural": "{{ count }} weeks ago",
   "{{ count }} month ago_plural": "{{ count }} months ago",
-  "{{ count }} year ago_plural": "{{ count }} years ago"
+  "{{ count }} year ago_plural": "{{ count }} years ago",
+  "{{ count }} error_plural": "{{ count }} errors"
 }

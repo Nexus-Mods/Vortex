@@ -1180,34 +1180,6 @@ a[role=menuitem] svg {
 ////////////////////
 // single components
 
-// diagnostics files dialog
-.diagnostics-files-sessions-panel {
-  height: 100%;
-  max-height: 200px;
-  overflow-y: scroll;
-}
-
-.diagnostics-files-log-panel {
-  height: 100%;
-  max-height: 350px;
-  overflow-y: scroll;
-  overflow-x: hidden;
-}
-
-.textarea-diagnostics-files {
-  width: 100%;
-  height: 500px;
-  resize: none;
-  top: 0;
-  bottom: 0;
-}
-
-.diagnostics-files-actions {
-  .btn {
-    padding: 2px;
-  }
-}
-
 // about dialog
 .about-panel {
   height: 100%;
@@ -2204,6 +2176,87 @@ a[role=menuitem] svg {
 
 // /settings page
 /////////////////
+
+///////////////////////////
+// diagnostics files dialog
+
+#diagnostics-files {
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+
+  > div {
+    margin: $half-gutter 0;
+  }
+
+  .diagnostics-files-error {
+    font-size: 'medium';
+    margin: '0 1em';
+  }
+}
+
+.diagnostics-files-sessions-panel {
+  height: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  .session-from, .session-to {
+    color: $brand-info;
+    font-weight: bold;
+  }
+  .session-crashed {
+    color: $brand-danger;
+  }
+}
+
+.diagnostics-files-log-panel {
+  .checkbox {
+    margin: 0px $half-gutter;
+  }
+
+  .log-list {
+    list-style-type: none;
+    padding-left: 0px;
+    overflow-y: auto;
+    height: 100%;
+  }
+
+  .log-time {
+    color: $text-color-disabled;
+  }
+
+  .log-filter-debug, .log-type-debug {
+    color: $gray;
+  }
+
+  .log-filter-info, .log-type-info {
+    color: $brand-info;
+  }
+
+  .log-filter-warning, .log-type-warning {
+    color: $brand-warning;
+  }
+
+  .log-filter-error, .log-type-error {
+    color: $brand-danger;
+  }
+}
+
+.textarea-diagnostics-files {
+  width: 100%;
+  height: 500px;
+  resize: none;
+  top: 0;
+  bottom: 0;
+}
+
+.diagnostics-files-actions {
+  .btn {
+    padding: 2px;
+  }
+}
+
+// diagnostics files dialog
+///////////////////////////
 
 ////////
 // HIDPI

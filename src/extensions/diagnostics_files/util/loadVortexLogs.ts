@@ -1,68 +1,57 @@
-import { ILog, ISession } from '../types/iSession';
+import {LogLevel} from '../../../util/log';
+
+import { ILog, ISession } from '../types/ISession';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
-export function loadVortexLogs(): Promise<ISession[]> {
+const lineRE = /^([^-]*) - ([a-z]*): (.*)\r?$/;
 
+function parseLine(line: string, idx: number): ILog {
+  const match = line.match(lineRE);
+  if ((match !== null) && (match.length === 4)) {
+    return {
+      lineno: idx,
+      time: match[1],
+      type: match[2] as LogLevel,
+      text: match[3],
+    };
+  } else {
+    return undefined;
+  }
+}
+
+export function loadVortexLogs(): Promise<ISession[]> {
   const logPath = remote.app.getPath('userData');
-  const sessions: ISession[] = [];
 
   return fs.readdirAsync(logPath)
-    .then((logPathFiles: string[]) => {
-      const logFiles = logPathFiles.filter((file) =>
-        path.extname(file) === '.log' &&
-        path.basename(file).substring(0, 6) === 'vortex',
-      ).sort((lhs: string, rhs: string) => rhs.localeCompare(lhs));
-      return Promise.each(logFiles, (logFileName: string) => {
-        return fs.readFileAsync(path.join(logPath, logFileName), 'utf8')
-          .then(text => {
-            const splittedSessions = text.split('- info: --------------------------');
+    .filter((fileName: string) => fileName.match(/vortex[0-9]?\.log/) !== null)
+    .then((logFileNames: string[]) => {
+      logFileNames = logFileNames.sort((lhs: string, rhs: string) => rhs.localeCompare(lhs));
+      return Promise.mapSeries(logFileNames, (logFileName: string) =>
+                              fs.readFileAsync(path.join(logPath, logFileName), 'utf8'));
+    })
+    .then((data: string[]) => data.join('\n'))
+    .then((text: string) => {
+      const splittedSessions = text.split('- info: --------------------------');
 
-            splittedSessions.forEach((sessionElement, sessionIndex) => {
+      return splittedSessions.map((sessionElement: string): ISession => {
+        // const splittedLogs = sessionElement.split(/\r?\n(?!^[ ])(?!^\n)(?!^[ERROR])/m);
+        const logElements: ILog[] = sessionElement
+          .split('\n')
+          .map(parseLine)
+          .filter(line => line !== undefined);
 
-              const splittedLogs = sessionElement.split(/\r?\n(?!^[ ])(?!^\n)(?!^[ERROR])/m);
-              const logElements: ILog[] = [];
-
-              splittedLogs.forEach((element, index) => {
-                let textType = '';
-
-                if (element.substring(30, 38) === '- error:') {
-                  textType = 'ERROR';
-                } else if (element.substring(30, 38) === '- debug:') {
-                  textType = 'DEBUG';
-                } else if (element.substring(30, 37) === '- info:') {
-                  textType = 'INFO';
-                } else if (element.substring(30, 37) === '- warn:') {
-                  textType = 'WARNING';
-                }
-
-                if (element !== '' && index !== splittedLogs.length - 1) {
-                  logElements.push({
-                    text: element,
-                    type: textType,
-                  });
-                }
-              });
-
-              if (logElements.length > 1) {
-                const parsedFrom = Date.parse(sessionElement.substring(0, 31));
-                if (sessionElement !== undefined && !isNaN(parsedFrom)) {
-                  sessions.push({
-                    from: sessionElement.substring(0, 31),
-                    to: logElements[logElements.length - 1].text.substring(0, 30),
-                    logs: logElements,
-                  });
-                }
-              }
-            });
-          });
+        return ((logElements.length > 1) ?
+                    {
+                      from: new Date(logElements[0].time),
+                      to: new Date(logElements[logElements.length - 1].time),
+                      logs: logElements,
+                    } :
+                    undefined) as ISession;
       });
     })
-    .then(() => {
-      return Promise.resolve(sessions.sort((lhs: ISession, rhs: ISession) =>
-        new Date(lhs.from).getTime() < new Date(rhs.from).getTime() ? 1 : -1));
-    });
+    .filter((session: ISession) => session !== undefined);
 }

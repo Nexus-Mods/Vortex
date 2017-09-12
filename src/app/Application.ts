@@ -7,7 +7,7 @@ import * as develT from '../util/devel';
 import {} from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import lazyRequire from '../util/lazyRequire';
-import {log, setLogPath} from '../util/log';
+import {log, setLogPath, setupLogging} from '../util/log';
 import {} from '../util/storeHelper';
 
 import MainWindowT from './MainWindow';
@@ -90,6 +90,7 @@ class Application {
 
     return this.testShouldQuit(args.wait ? 10 : -1)
         .then(() => {
+          setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
           log('info', '--------------------------');
           return this.startSplash();
         })
