@@ -830,6 +830,7 @@ class ExtensionManager {
       'settings_interface',
       'settings_application',
       'about_dialog',
+      'diagnostics_files',
       'dashboard',
       'starter_dashlet',
       'firststeps_dashlet',

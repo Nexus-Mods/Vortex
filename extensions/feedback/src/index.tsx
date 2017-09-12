@@ -72,6 +72,23 @@ function init(context: types.IExtensionContext) {
 
   context.once(() => {
     context.api.setStylesheet('feedback', path.join(__dirname, 'feedback.scss'));
+
+    context.api.events.on('report-log-error',
+      (logSessionPath: string) => {
+
+        fs.statAsync(logSessionPath)
+          .then((stats) => {
+            const fileSize = stats.size / 1024 !== 0 ? Math.round(stats.size / 1024) : 1;
+            const feedbackFile: IFeedbackFile = {
+              filename: path.basename(logSessionPath),
+              filePath: logSessionPath,
+              size: fileSize,
+              type: 'log',
+            };
+            context.api.store.dispatch(addFeedbackFile(feedbackFile));
+          });
+        context.api.events.emit('show-main-page', 'Feedback');
+      });
   });
 
   return true;

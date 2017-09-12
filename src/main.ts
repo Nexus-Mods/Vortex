@@ -12,7 +12,7 @@ import commandLine from './util/commandLine';
 import { sendReport, terminate } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
-import { log, setupLogging } from './util/log';
+import { log } from './util/log';
 
 import { app, crashReporter } from 'electron';
 import * as path from 'path';
@@ -37,8 +37,6 @@ function main() {
     return sendReport(mainArgs.report)
     .then(() => app.quit());
   }
-
-  setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
 
   application = new Application(mainArgs);
 
