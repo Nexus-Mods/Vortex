@@ -18,13 +18,17 @@ function findGame() {
   });
 }
 
+function modPath() {
+  return 'game';
+}
+
 function main(context) {
   context.registerGame({
     id: 'stateofdecay',
     name: 'State of Decay',
     mergeMods: false,
     queryPath: findGame,
-    queryModPath: () => './',
+    queryModPath: modPath,
     logo: 'gameart.png',
     executable: () => 'StateOfDecay.exe',
     requiredFiles: [

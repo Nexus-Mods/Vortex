@@ -23,6 +23,9 @@ function archiveTopLevelDirectories(gameMode: string) {
     case 'skyrimse': return [].concat(allTopLevel, gamebryoTopLevel);
     case 'dragonsdogma': return ['movie', 'rom', 'sa', 'sound', 'system', 'tgs',
                                  'usershader', 'usertexture'].concat(allTopLevel);
+    case 'stateofdecay': return ['characters', 'dialog', 'Entities', 'languages',
+                                  'levels', 'libs', 'objects', 'scripts',
+                                   'sounds'].concat(allTopLevel);
     case 'witcher2': return ['abilities', 'characters', 'combat', 'cutscenes',
                               'engine', 'environment', 'environment_levels', 'fx',
                               'game', 'globals', 'items', 'junk', 'levels', 'reactions',

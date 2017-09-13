@@ -113,7 +113,7 @@ class ModActivator extends LinkingActivator {
   }
 
   private isUnsupportedGame(gameId: string): boolean {
-    return ['nomanssky'].indexOf(gameId) !== -1;
+    return ['nomanssky', 'stateofdecay'].indexOf(gameId) !== -1;
   }
 }
 
