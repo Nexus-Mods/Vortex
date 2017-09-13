@@ -1,5 +1,8 @@
+import More from '../../../controls/More';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { setMaxDownloads } from '../actions/settings';
+
+import getText from '../texts';
 
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
@@ -24,6 +27,9 @@ class Settings extends ComponentEx<IProps, {}> {
         <FormGroup>
           <ControlLabel>
             {t('Download Threads') + ': ' + parallelDownloads.toString()}
+            <More id='more-download-threads' name={t('Download Threads')} >
+              {getText('download-threads', t)}
+            </More>
           </ControlLabel>
           <FormControl
             type='range'

@@ -44,6 +44,10 @@ class More extends React.Component<IProps, IComponentState> {
     const { children, id, name, orientation } = this.props;
     const { open } = this.state;
 
+    if (children === undefined) {
+      return null;
+    }
+
     let pCounter = 0;
     const popover = (
       <Popover id={`popover-${id}`} className='more-popover' title={name}>
@@ -76,6 +80,7 @@ class More extends React.Component<IProps, IComponentState> {
   }
 
   private toggle = evt => {
+    evt.preventDefault();
     this.setState({ open: !this.state.open });
   }
 

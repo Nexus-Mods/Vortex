@@ -87,6 +87,7 @@ export interface IIconProps {
   inverse?: boolean;
   flip?: 'horizontal' | 'vertical';
   rotate?: number;
+  svgStyle?: string;
 }
 
 function renderPath(pathComp: IPath, idx: number) {
@@ -107,7 +108,7 @@ class Icon extends React.Component<IIconProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { name, style } = this.props;
+    const { name, style, svgStyle } = this.props;
     const set = this.props.set || 'vortex';
 
     let classes = ['icon', `icon-${name}`];
@@ -162,6 +163,7 @@ class Icon extends React.Component<IIconProps, {}> {
         style={style}
         ref={this.setRef}
       >
+        {svgStyle !== undefined ? <style type='text/css'>{svgStyle}</style> : null}
         <use xlinkHref={'#' + id} transform={transforms.join(' ')} />
       </svg>
     );

@@ -122,6 +122,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return (
       <form>
         <FormControl.Static componentClass='h4'>{label}</FormControl.Static>
+        <ControlLabel>
+          {t('Paths')}
+          <More id='more-paths' name={t('Paths')} >
+            {getText('paths', t)}
+          </More>
+        </ControlLabel>
         <Panel footer={this.renderFooter()}>
           {this.renderPathCtrl(paths, t('Base Path'), 'base')}
           {this.renderPathCtrl(paths, t('Download Path'), 'download')}
@@ -315,7 +321,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       this.mBrowseCBs[pathKey] = () => this.browsePath(pathKey);
     }
 
-    const gamePaths = paths[gameMode] || pathDefaults;
+    const gamePaths = {
+      ...pathDefaults,
+      ...paths[gameMode],
+    };
 
     return (
       <FormGroup>

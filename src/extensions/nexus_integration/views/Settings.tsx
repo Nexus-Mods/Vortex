@@ -1,4 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
+import Icon from '../../../controls/Icon';
+import More from '../../../controls/More';
+import Toggle from '../../../controls/Toggle';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -7,9 +10,24 @@ import { setAssociatedWithNXMURLs } from '../actions/settings';
 
 import chromeAllowScheme from '../util/chromeAllowScheme';
 
+import getText from '../texts';
+
 import * as React from 'react';
 import { Checkbox, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
+
+function nop() {
+  // nop
+}
+
+function DownloadButton(): JSX.Element {
+  return (
+    <div className='nexusmods-action-button'>
+      <Icon name='nexus' svgStyle='.st0, .st1, #path11 { fill-opacity: 0 !important }' />
+      <a className='nexusmods-fake-link' onClick={nop}>Download with Manager</a>
+    </div>
+  );
+}
 
 interface IBaseProps {
 }
@@ -34,24 +52,26 @@ class Settings extends ComponentEx<IProps, {}> {
     return (
       <form>
         <FormGroup>
-          <Checkbox
+          <Toggle
             checked={associated}
-            onChange={this.associate}
+            onToggle={this.associate}
             disabled={process.platform === 'linux'}
           >
-            {t('Associate with NXM URLs')}
-          </Checkbox>
+            {t('Handle ')}<DownloadButton/>{t('buttons on nexusmods.com')}
+          </Toggle>
           {process.platform === 'linux' ? <HelpBlock>Not supported on Linux</HelpBlock> : null}
-          <p>
-            {t('Fix nxm link on Chrome (Requires Chrome to be closed)')}
+          <div style={{ marginTop: 15 }}>
+            {t('Fix nexusmods-links in Chrome (Requires Chrome to be closed)')}
+            <More id='more-chrome-fix' name={t('Chrome Fix')}>{getText('chrome-fix', t)}</More>
             <Button
               tooltip={t('Fix')}
               id='chrome-download-fix'
               onClick={this.chromeFix}
+              style={{ marginLeft: 5 }}
             >
-              {t('Apply')}
+              {t('Fix now')}
             </Button>
-          </p>
+          </div>
         </FormGroup>
       </form>
     );
@@ -85,9 +105,9 @@ class Settings extends ComponentEx<IProps, {}> {
     ]);
   }
 
-  private associate = (evt: React.MouseEvent<any>) => {
+  private associate = (enabled: boolean) => {
     const { onAssociate } = this.props;
-    onAssociate((evt.target as HTMLInputElement).checked);
+    onAssociate(enabled);
   }
 }
 

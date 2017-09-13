@@ -1,6 +1,8 @@
+import More from '../../controls/More';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { setUpdateChannel } from './actions';
+import getText from './texts';
 
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
@@ -19,11 +21,15 @@ type IProps = IActionProps & IConnectedProps;
 class SettingsUpdate extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, updateChannel } = this.props;
-
     return (
       <form>
         <FormGroup controlId='updateChannel'>
-          <ControlLabel>{t('Update')}</ControlLabel>
+          <ControlLabel>
+            {t('Update')}
+            <More id='more-update-channel' name={t('Update Channel')}>
+              {getText('update-channel', t)}
+            </More>
+          </ControlLabel>
           <FormControl
             componentClass='select'
             onChange={this.selectChannel}

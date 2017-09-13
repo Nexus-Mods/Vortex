@@ -1,10 +1,13 @@
 import Icon from '../../controls/Icon';
 import InputButton from '../../controls/InputButton';
+import More from '../../controls/More';
 import { Button } from '../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import {setSafe} from '../../util/storeHelper';
 import DNDContainer from '../../views/DNDContainer';
+
 import { addMetaserver, removeMetaserver, setPriorities } from './actions';
+import getText from './texts';
 
 import * as I18next from 'i18next';
 import * as _ from 'lodash';
@@ -267,7 +270,12 @@ class SettingsMetaserver extends ComponentEx<IProps, IState> {
     return (
       <form>
         <FormGroup>
-          <ControlLabel>{t('Meta server')}</ControlLabel>
+          <ControlLabel>
+            {t('Meta server')}
+            <More id='more-metaserver' name={t('Meta Server')}>
+              {getText('meta-server', t)}
+            </More>
+          </ControlLabel>
           <DNDContainer>
             <ServerList
               t={t}

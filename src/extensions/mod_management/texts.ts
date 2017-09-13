@@ -56,6 +56,24 @@ function getText(id: string, t: I18next.TranslationFunction) {
         'Only sources that are supported by Vortex can be selected.\n' +
         'If the mod was removed from the source it may make sense to select no source here to ' +
         'quiet error messages.');
+    case 'paths': {
+      return t(
+        'Vortex uses defaults to store mods you download and install.\n'
+        + 'If you don\'t like these defaults or can\'t use them (i.e. because you need to use '
+        + 'the deployment method using hard link and the game is on a different drive) '
+        + 'then use these settings to change the directories. Existing files will be '
+        + 'moved to the new location automatically once you confirm the new paths.\n'
+        + 'Please make sure you have write permission to the new directories.\n\n'
+        + 'You can use "variables" to save yourself some typing:\n'
+        + ' - {BASE} is replaced with the base path from the first box.\n'
+        + ' - {GAME} is replaced with the id of the game\n'
+        + ' - {USERDATA} is replaced with a platform dependent data directory that is guaranteed '
+        + 'to have write access.\n'
+        + '\n'
+        + 'Example: If you only change the base path to "d:\\vortex\\{GAME}" and your active game '
+        + 'is Skyrim then all your downloads will be located in "d:\\vortex\\skyrim\\downloads" '
+        + 'and all your extracted mods will be in "d:\\vortex\\skyrim\\mods".');
+    }
     default:
       return undefined;
   }

@@ -1,5 +1,6 @@
 import { showDialog } from '../../../actions/notifications';
 import FormFeedback from '../../../controls/FormFeedback';
+import More from '../../../controls/More';
 import { Button } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
@@ -7,6 +8,8 @@ import { truthy } from '../../../util/util';
 
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
+
+import getText from '../texts';
 
 import * as update from 'immutability-helper';
 import * as opn from 'opn';
@@ -58,7 +61,10 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
       <Modal show={visible} onHide={onHide}>
         <Modal.Header>
           <Modal.Title>
-          {((userInfo === undefined) || (userInfo === null)) ? t('API Key') : t('User Info')}
+          {!truthy(userInfo) ? t('API Key') : t('User Info')}
+          {!truthy(userInfo) ? <More id='more-api-key' name={t('API Key')}>
+            {getText('apikey', t)}
+          </More> : null}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -66,6 +72,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
         </Modal.Body>
         <Modal.Footer>
           {this.renderSubmitButton()}
+          <Button id='btn-close-login' onClick={onHide} tooltip={t('Close')}>{t('Close')}</Button>
         </Modal.Footer>
       </Modal>
     );

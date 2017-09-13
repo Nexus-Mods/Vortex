@@ -23,6 +23,7 @@ type ControlMode = 'urls' | 'files';
 
 interface IConnectedProps {
   feedbackFiles: { [fileId: string]: IFeedbackFile };
+  APIKey: string;
 }
 
 interface IActionProps {
@@ -94,7 +95,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   }
 
   private renderFeedbackFile = (feedbackFile: string) => {
-    const { feedbackFiles, onRemoveFeedbackFile, t } = this.props;
+    const { t, feedbackFiles, onRemoveFeedbackFile } = this.props;
     return (
       <ListGroupItem
         key={feedbackFiles[feedbackFile].filename}
@@ -178,7 +179,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   }
 
   private renderFilesArea(): JSX.Element {
-    const { t, feedbackFiles } = this.props;
+    const { t, APIKey, feedbackFiles } = this.props;
     const { anonymous, sending } = this.state;
     return (
       <FlexLayout.Fixed>
@@ -208,8 +209,9 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
               {t('Submit Feedback')}
             </tooltip.Button>
             <Toggle
-              checked={anonymous}
+              checked={anonymous || (APIKey === undefined)}
               onToggle={this.setAnonymous}
+              disabled={APIKey === undefined}
             >
               {t('Send anonymously')}
             </Toggle>
@@ -302,7 +304,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   }
 
   private submitFeedback = (event) => {
-    const { feedbackFiles, onClearFeedbackFiles, onDismissNotification,
+    const { APIKey, feedbackFiles, onClearFeedbackFiles, onDismissNotification,
             onShowActivity, onShowError } = this.props;
     const { anonymous, feedbackMessage } = this.state;
     const app = appIn || remote.app;
@@ -317,8 +319,10 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       files.push(feedbackFiles[key].filePath);
     });
 
+    const sendAnonymously = anonymous || (APIKey === undefined);
+
     this.context.api.events.emit('submit-feedback',
-                                 feedbackMessage, files, anonymous, (err: Error) => {
+                                 feedbackMessage, files, sendAnonymously, (err: Error) => {
       this.nextState.sending = false;
       if (err !== null) {
         onShowError('Failed to send feedback', err, notificationId);
@@ -372,6 +376,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     feedbackFiles: state.session.feedback.feedbackFiles,
+    APIKey: state.confidential.account.nexus.APIKey,
   };
 }
 

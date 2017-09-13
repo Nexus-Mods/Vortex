@@ -630,16 +630,13 @@ class InstallManager {
       return Promise.resolve(undefined);
     }
     return this.mInstallers[offset].testSupported(fileList).then(
-      (testResult: ISupportedResult) => {
-        if (testResult.supported === true) {
-          return Promise.resolve({
+      (testResult: ISupportedResult) => (testResult.supported === true)
+          ? Promise.resolve({
             installer: this.mInstallers[offset],
             requiredFiles: testResult.requiredFiles,
-          });
-        } else {
-          return this.getInstaller(fileList, offset + 1);
-        }
-      }).catch((err) => {
+          })
+          : this.getInstaller(fileList, offset + 1))
+      .catch((err) => {
         log('warn', 'failed to test installer support', err.message);
         return this.getInstaller(fileList, offset + 1);
       });
