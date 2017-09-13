@@ -8,4 +8,4 @@ export const addFeedbackFile = createAction('ADD_FEEDBACK_FILE',
 export const removeFeedbackFile = createAction('REMOVE_FEEDBACK_FILE',
   (feedbackFileId: string) => ({ feedbackFileId }));
 
-export const clearFeedbackFiles = createAction('CLEAR_FEEDBACK_FILES', () => ({}));
+export const clearFeedbackFiles = createAction('CLEAR_FEEDBACK_FILES');

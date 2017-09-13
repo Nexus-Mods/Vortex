@@ -307,7 +307,10 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   private pluginFrom(input: ILOOTPlugin, readOnly: boolean): ILOOTPlugin {
-    return readOnly
+    if (input === undefined) {
+      return undefined;
+    }
+    return readOnly === true
       ? { ...input, readOnly: true }
       : input;
   }
