@@ -411,9 +411,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             <BSButton disabled={!changed} onClick={this.applyActivator}>{t('Apply')}</BSButton>
           </InputGroup.Button>
         </InputGroup>
-        <HelpBlock>
-          {activatorIdx !== -1 ? activators[activatorIdx].description : null}
-        </HelpBlock>
+        { activatorIdx !== -1 ? (
+          <HelpBlock>
+            {activators[activatorIdx].description}
+            <More id='more-activator-detail' name={activators[activatorIdx].name}>
+              {activators[activatorIdx].detailedDescription(t)}
+            </More>
+          </HelpBlock>
+        ) : null }
       </FormGroup>
     );
   }

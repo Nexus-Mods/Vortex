@@ -145,6 +145,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private overlayRef: HTMLElement = null;
   private headerRef: HTMLElement = null;
   private sidebarRef: HTMLElement = null;
+  private sidebarTimer: NodeJS.Timer;
 
   constructor(props: IProps) {
     super(props);
@@ -468,11 +469,16 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private toggleMenu = () => {
     const newMinimized = !this.props.tabsMinimized;
     this.props.onSetTabsMinimized(newMinimized);
+    if (this.sidebarTimer !== undefined) {
+      clearTimeout(this.sidebarTimer);
+      this.sidebarTimer = undefined;
+    }
     if (this.sidebarRef !== null) {
       if (newMinimized) {
         this.sidebarRef.setAttribute('style', '');
       } else {
-        setTimeout(() => {
+        this.sidebarTimer = setTimeout(() => {
+          this.sidebarTimer = undefined;
           this.sidebarRef.setAttribute('style',
             'min-width:' + this.sidebarRef.getBoundingClientRect().width + 'px');
         }, 500);

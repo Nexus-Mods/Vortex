@@ -36,6 +36,18 @@ function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
   return (lhs.position || 100) - (rhs.position || 100);
 }
 
+// takes the props of a Popover. ignores the arrow, applies the absolute
+// position
+function MenuWrap(props: any): JSX.Element {
+  const { children, positionLeft, positionTop } = props;
+
+  return (
+    <div style={{ top: positionTop, left: positionLeft, position: 'absolute' }}>
+      <div className='menu-content'>{children}</div>
+    </div>
+  );
+}
+
 interface IPortalMenuProps {
   open: boolean;
   layer: any;
@@ -52,9 +64,15 @@ function PortalMenu(props: IPortalMenuProps) {
       placement='bottom'
       target={props.target}
     >
-      <Dropdown.Menu style={{ display: 'block' }} onClose={props.onClose} open={props.open}>
-        {props.children}
-      </Dropdown.Menu>
+      <MenuWrap>
+        <Dropdown.Menu
+          style={{ display: 'block', position: 'initial' }}
+          onClose={props.onClose}
+          open={props.open}
+        >
+          {props.children}
+        </Dropdown.Menu>
+      </MenuWrap>
     </Overlay>
   );
 }

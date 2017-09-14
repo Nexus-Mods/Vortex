@@ -11,6 +11,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fsOrig from 'fs';
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import * as path from 'path';
 
 const app = appIn || remote.app;
@@ -23,10 +24,26 @@ class ModActivator extends LinkingActivator {
   constructor(api: IExtensionApi) {
     super(
         'symlink_activator', 'Symlink deployment',
-        'Installs the mods by setting symlinks in the destination directory. ' +
-            'This implementation requires the account running Vortex to have write access ' +
-            'to the mod directory. On Windows the account has to be an administrator.',
-            api);
+        'Deploys mods by setting symlinks in the destination directory.', api);
+  }
+
+  public detailedDescription(t: I18next.TranslationFunction): string {
+    return t(
+      'Symbolic links are special files containing a reference to another file. '
+      + 'They are supported directly by the low-level API of the operating system '
+      + 'so any application trying to open a symbolic link will actually open '
+      + 'the referenced file unless the application asks specifically to not be '
+      + 'redirected.\n'
+      + 'Advantages:\n'
+      + ' - good compatibility and availability\n'
+      + ' - can link across partitions (unlike hard links)\n'
+      + ' - an application that absolutely needs to know can recognize a symlink '
+      + '(unlike hard links)\n'
+      + 'Disadvantages:\n'
+      + ' - some games and applications refuse to work with symbolic links for no '
+      + 'good reason.\n'
+      + ' - On windows you need admin rights to create a symbolic link, even when '
+      + 'your regular account has write access to source and destination.');
   }
 
   public isSupported(state: any, gameId?: string): string {

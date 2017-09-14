@@ -53,7 +53,7 @@ class SourceMap {
             return Promise.reject(null);
           }
           const fullPath: string = (sourceMapPath.startsWith('/'))
-            ? this.mBasePath + sourceMapPath
+            ? this.mSourcePath + sourceMapPath
             : path.resolve(this.mSourcePath, path.dirname(relPath), sourceMapPath);
           return fs.readFile(fullPath);
         })

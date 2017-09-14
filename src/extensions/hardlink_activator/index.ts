@@ -12,6 +12,7 @@ import walk from '../../util/walk';
 import * as Promise from 'bluebird';
 import * as fsOrig from 'fs';
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import * as path from 'path';
 
 import * as util from 'util';
@@ -27,10 +28,30 @@ class ModActivator extends LinkingActivator {
   constructor(api: IExtensionApi) {
     super(
         'hardlink_activator', 'Hardlink deployment',
-        'Installs the mods by setting hard links in the destination directory. ' +
-            'This implementation requires the account running Vortex to have write access ' +
-            'to the mod directory.',
+        'Deploys mods by setting hard links in the destination directory.',
         api);
+  }
+
+  public detailedDescription(t: I18next.TranslationFunction): string {
+    return t(
+      'File Systems store files in two parts: \n'
+      + ' - an index entry that contains the file name, '
+      + 'access rights, change and creating times and so on\n'
+      + ' - the actual file data\n'
+      + 'Hard Links work by creating a second index entry referencing '
+      + 'the same data as the original. The second index is '
+      + 'a full-fledged index, so there is no differentiation between "original" and "link" '
+      + 'after the link was created.\n'
+      + 'Advantages:\n'
+      + ' - perfect compatibility\n'
+      + ' - no performance penalty\n'
+      + ' - Wide OS and FS support\n'
+      + 'Disadvantages:\n'
+      + ' - mods have to be on the same partition as the game\n'
+      + ' - Due to fact hard links are so "compatible", a lot of applications will act '
+      + 'as if original and link were separate files. This includes some backup solutions, tools '
+      + 'that measure used disk space and so on, so it will often look like the link was actually '
+      + 'a copy.');
   }
 
   public isSupported(state: any, gameId?: string): string {

@@ -238,6 +238,12 @@ class LootInterface {
       .catch((err: Error) => {
         if (err.message.startsWith('Cyclic interaction')) {
           this.reportCycle(err);
+        } else if (err.message.endsWith('is not a valid plugin')) {
+          this.mExtensionApi.sendNotification({
+            type: 'warning',
+            message: this.mExtensionApi.translate('Not sorted because: {{msg}}',
+              { replace: { msg: err.message } }),
+          });
         } else {
           this.mExtensionApi.showErrorNotification('LOOT operation failed',
                                                    err);

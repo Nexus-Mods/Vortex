@@ -1,6 +1,7 @@
 import { IMod } from './IMod';
 
 import * as Promise from 'bluebird';
+import * as I18next from 'i18next';
 
 /**
  * details about a file change
@@ -73,6 +74,14 @@ export interface IModActivator {
    * @memberOf IModActivator
    */
   readonly description: string;
+
+  /**
+   * returns more extensive description/explanation of the activator.
+   *
+   * @type {string}
+   * @memberOf IModActivator
+   */
+  detailedDescription: (t: I18next.TranslationFunction) => string;
 
   /**
    * determine if this activator is supported in the current environment

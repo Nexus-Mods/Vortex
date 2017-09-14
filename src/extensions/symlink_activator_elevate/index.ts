@@ -15,6 +15,7 @@ import walk from './walk';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import ipc = require('node-ipc');
 import * as path from 'path';
 
@@ -35,11 +36,9 @@ class ModActivator extends LinkingActivator {
 
   constructor(api: IExtensionApi) {
     super(
-        'symlink_activator_elevated', 'Symlink deployment (Elevated)',
-        'Installs the mods by setting symlinks in the destination directory. ' +
-            'This implementation will create the symlinks using a separate process ' +
-            'with elevated permissions and therefore works even if Vortex isn\'t run ' +
-            'as administrator.', api);
+        'symlink_activator_elevated', 'Symlink deployment (Run as Administrator)',
+        'Deploys mods by setting symlinks in the destination directory. '
+        + 'This is run as administrator and requires your permission every time we deploy.', api);
     this.mElevatedClient = null;
 
     this.mWaitForUser = () => new Promise<void>((resolve, reject) => api.sendNotification({
@@ -54,6 +53,25 @@ class ModActivator extends LinkingActivator {
         action: dismiss => { dismiss(); reject(new UserCanceled()); },
       }],
     }));
+  }
+
+  public detailedDescription(t: I18next.TranslationFunction): string {
+    return t(
+      'Symbolic links are special files containing a reference to another file. '
+      + 'They are supported directly by the low-level API of the operating system '
+      + 'so any application trying to open a symbolic link will actually open '
+      + 'the referenced file unless the application asks specifically to not be '
+      + 'redirected.\n'
+      + 'Advantages:\n'
+      + ' - good compatibility and availability\n'
+      + ' - can link across partitions (unlike hard links)\n'
+      + ' - an application that absolutely needs to know can recognize a symlink '
+      + '(unlike hard links)\n'
+      + 'Disadvantages:\n'
+      + ' - some games and applications refuse to work with symbolic links for no '
+      + 'good reason.\n'
+      + ' - On windows you need admin rights to create a symbolic link, even when '
+      + 'your regular account has write access to source and destination.');
   }
 
   public userGate(): Promise<void> {

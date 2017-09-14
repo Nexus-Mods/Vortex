@@ -15,6 +15,7 @@ import {
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 
@@ -62,6 +63,10 @@ abstract class LinkingActivator implements IModActivator {
    */
   public userGate(): Promise<void> {
     return Promise.resolve();
+  }
+
+  public detailedDescription(t: I18next.TranslationFunction): string {
+    return this.description;
   }
 
   public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[]): Promise<void> {
