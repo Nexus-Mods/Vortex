@@ -234,7 +234,7 @@ class DownloadManager {
   public enqueue(id: string, urls: string[], progressCB: ProgressCallback,
                  destinationPath?: string): Promise<IDownloadResult> {
     if (urls.length === 0) {
-      return Promise.reject(new  Error('No download urls'));
+      return Promise.reject(new Error('No download urls'));
     }
     const nameTemplate: string = decodeURI(path.basename(url.parse(urls[0]).pathname));
     const destPath = destinationPath || this.mDownloadPath;

@@ -41,7 +41,7 @@ class InputButton extends ComponentEx<IProps, IComponentState> {
     super(props);
 
     this.state = {
-      input: undefined,
+      input: '',
     };
   }
 

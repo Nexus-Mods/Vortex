@@ -1,3 +1,4 @@
+import {ProcessCanceled} from '../../util/CustomErrors';
 import {log} from '../../util/log';
 import {showError} from '../../util/message';
 import * as selectors from '../../util/selectors';
@@ -89,9 +90,18 @@ export class DownloadObserver {
   private handleStartDownload(urls: string[],
                               modInfo: any,
                               events: NodeJS.EventEmitter,
-                              callback?: (error: Error, id: string) => void) {
+                              callback?: (error: Error, id?: string) => void) {
     const id = shortid();
     const gameMode = modInfo.game || selectors.activeGameId(this.mStore.getState());
+
+    if (gameMode === undefined) {
+      if (callback !== undefined) {
+        callback(new ProcessCanceled(
+            'You need to select a game to manage before downloading this file'));
+      }
+      return;
+    }
+
     this.mStore.dispatch(initDownload(id, urls, modInfo, gameMode));
 
     const downloadPath = resolvePath('download',
@@ -107,17 +117,15 @@ export class DownloadObserver {
           this.handleDownloadFinished(id, callback, res);
         })
         .catch((err) => {
-          let message;
+          let details = err;
           if (err.http_headers !== undefined) {
-            message = (err.http_headers.nexuserror !== undefined)
+            details = (err.http_headers.nexuserror !== undefined)
               ? err.http_headers.nexuserrorinfo
               : err.http_headers.status;
-          } else {
-            message = err.message;
           }
-          log('warn', 'download failed', {message, err: util.inspect(err)});
-          showError(this.mStore.dispatch, 'Download failed', message);
-          this.mStore.dispatch(finishDownload(id, 'failed', {message}));
+          log('warn', 'download failed', {details, err: util.inspect(err)});
+          showError(this.mStore.dispatch, 'Download failed', details);
+          this.mStore.dispatch(finishDownload(id, 'failed', {details}));
           if (callback !== undefined) {
             callback(err, id);
           }

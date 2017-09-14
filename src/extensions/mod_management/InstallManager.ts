@@ -366,6 +366,9 @@ class InstallManager {
   private queryGameId(store: Redux.Store<any>,
                       downloadGameId: string): Promise<string> {
     const currentGameId = activeGameId(store.getState());
+    if (currentGameId === undefined) {
+      return Promise.resolve(downloadGameId);
+    }
     return new Promise<string>((resolve, reject) => {
       if (getSafe(store.getState(),
                   ['settings', 'gameMode', 'discovered', downloadGameId],
@@ -637,7 +640,9 @@ class InstallManager {
             resolve({ name: result.input, enable: false });
           } else if (result.action === 'Replace') {
             const currentProfile = activeProfile(api.store.getState());
-            const wasEnabled = getSafe(currentProfile.modState, [modId, 'enabled'], false);
+            const wasEnabled = (currentProfile !== undefined) && (currentProfile.gameId === gameId)
+              ? getSafe(currentProfile.modState, [modId, 'enabled'], false)
+              : false;
             api.events.emit('remove-mod', gameId, modId, (err) => {
               if (err !== null) {
                 reject(err);

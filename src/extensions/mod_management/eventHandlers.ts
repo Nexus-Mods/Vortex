@@ -140,7 +140,13 @@ export function onRemoveMod(api: IExtensionApi,
   // happened
   store.dispatch(removeMod(gameMode, modId));
 
-  const dataPath = currentGameDiscovery(state).modPath;
+  const gameDiscovery = getSafe(state, ['settings', 'gameMode', 'discovered', gameMode], undefined);
+  if (gameDiscovery === undefined) {
+    // if the game hasn't been discovered we can't deploy, but that's not really a big problem
+    return callback(null);
+  }
+
+  const dataPath = gameDiscovery.modPath;
   loadActivation(api, dataPath)
     .then(lastActivation => activator.prepare(
       dataPath, false, lastActivation))
