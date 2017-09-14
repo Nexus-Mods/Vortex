@@ -14,14 +14,18 @@ class Plugins extends DelegateBase {
   public isActive =
       (pluginName: string, callback: (err, res: boolean) => void) => {
         try {
+          log('debug', 'isActive called', pluginName);
           const state = this.api.store.getState();
 
           const plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
           // the installer may use a different case than we have on disk
-          pluginName = plugins.find((plugin) => plugin.toLowerCase() ===
-                                                pluginName.toLowerCase());
-          const enabled =
-              getSafe(state, ['loadOrder', pluginName, 'enabled'], false);
+          const localName = plugins.find(plugin =>
+            plugin.toLowerCase() === pluginName.toLowerCase());
+          if (localName === undefined) {
+            // unknown plugin can't be enabled
+            return callback(null, false);
+          }
+          const enabled = getSafe(state, ['loadOrder', localName, 'enabled'], false);
           return callback(null, enabled);
         } catch (err) {
           return callback(err, false);
@@ -31,25 +35,25 @@ class Plugins extends DelegateBase {
   public isPresent =
       (pluginName: string, callback: (err, res: boolean) => void) => {
         try {
-          log('info', 'isPresent called', util.inspect(pluginName));
+          log('debug', 'isPresent called', pluginName);
           const state = this.api.store.getState();
 
           const plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
-          pluginName = plugins.find((plugin) => plugin.toLowerCase() === pluginName.toLowerCase());
+          const localName = plugins.find(plugin =>
+            plugin.toLowerCase() === pluginName.toLowerCase());
 
-          return callback(null, pluginName !== undefined);
+          return callback(null, localName !== undefined);
         } catch (err) {
           return callback(err, false);
         }
       }
 
   public getAll = (isActiveOnly: boolean, callback: (err, res: string[]) => void) => {
-    log('info', 'getAll called', util.inspect(isActiveOnly));
+    log('debug', 'getAll called', isActiveOnly);
     try {
       const state = this.api.store.getState();
       let plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
 
-      log('info', 'getAll debug state', util.inspect(isActiveOnly));
       if (isActiveOnly === true) {
         plugins =
             plugins.filter((plugin) => getSafe(

@@ -50,13 +50,13 @@ export class Context extends DelegateBase {
 
   public getAppVersion =
       (dummy: any, callback: (err, res: string) => void) => {
-        log('info', 'getAppVersion called');
+        log('debug', 'getAppVersion called');
         return callback(null, app.getVersion());
       }
 
   public getCurrentGameVersion =
       (dummy: any, callback: (err, res: string) => void) => {
-        log('info', 'getCurrentGameVersion called');
+        log('debug', 'getCurrentGameVersion called');
         const executable = this.gameDiscovery.executable || this.gameInfo.executable;
         const gameExePath =
             path.join(this.gameDiscovery.path, executable);
@@ -65,12 +65,14 @@ export class Context extends DelegateBase {
 
   public getExtenderVersion =
       (extender: string, callback: (err, res: string) => void) => {
+        log('debug', 'getExtenderVersion called');
         const sePath = path.join(this.gameDiscovery.path, `${extender}_loader.exe`);
         return callback(null, getVersion(sePath));
       }
 
   public isExtenderPresent =
       (par: any, callback: (err, res: boolean) => void) => {
+        log('debug', 'isExtenderPresent called');
         const extender = extenderForGame(this.gameId);
         if (extender === undefined) {
           return callback(null, false);
@@ -84,7 +86,7 @@ export class Context extends DelegateBase {
 
   public checkIfFileExists =
       (fileName: string, callback: (err, res: boolean) => void) => {
-        log('info', 'checkIfFileExists called', util.inspect(fileName));
+        log('debug', 'checkIfFileExists called', util.inspect(fileName));
         const state = this.api.store.getState();
         const currentGameInfo = currentGameDiscovery(state);
         const fullFilePath = path.join(currentGameInfo.modPath, fileName);
@@ -96,7 +98,7 @@ export class Context extends DelegateBase {
 
   public getExistingDataFile =
       (fileName: string, callback: (err, res: any) => void) => {
-        log('info', 'getExistingDataFile called', util.inspect(fileName));
+        log('debug', 'getExistingDataFile called', util.inspect(fileName));
         const state = this.api.store.getState();
         const currentGameInfo = currentGameDiscovery(state);
         const fullFilePath = path.join(currentGameInfo.modPath, fileName);
@@ -108,7 +110,7 @@ export class Context extends DelegateBase {
 
   public getExistingDataFileList =
       (searchOptions: any[], callback: (err, res: string[]) => void) => {
-        log('info', 'getExistingDataFileList called', util.inspect(searchOptions[0]));
+        log('debug', 'getExistingDataFileList called', util.inspect(searchOptions[0]));
         const state = this.api.store.getState();
         const currentGameInfo = currentGameDiscovery(state);
         const fullFilePath = path.join(currentGameInfo.modPath, searchOptions[0]);

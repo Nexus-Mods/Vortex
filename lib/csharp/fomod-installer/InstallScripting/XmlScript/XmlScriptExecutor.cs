@@ -72,27 +72,34 @@ namespace FomodInstaller.Scripting.XmlScript
 
             Action<int, int, int[]> select = (int stepId, int groupId, int[] optionIds) =>
             {
-                ISet<int> selectedIds = new HashSet<int>(optionIds);
-                IList<Option> options = lstSteps[stepId].OptionGroups[groupId].Options;
-                for (int i = 0; i < options.Count; ++i)
+                // this needs to happen asynchronously so that this call returns to javascript and js can
+                // return to its main loop and respond to delegated requests, otherwise we could dead-lock
+                Task.Run(() =>
                 {
-                    if (selectedIds.Contains(i) || (resolveOptionType(options[i]) == OptionType.Required))
+                    ISet<int> selectedIds = new HashSet<int>(optionIds);
+                    IList<Option> options = lstSteps[stepId].OptionGroups[groupId].Options;
+                    for (int i = 0; i < options.Count; ++i)
                     {
-                        selectedOptions.Add(options[i]);
-                        options[i].Flags.ForEach((ConditionalFlag flag) =>
+                        if (selectedIds.Contains(i) || (resolveOptionType(options[i]) == OptionType.Required))
                         {
-                            m_csmState.SetFlagValue(flag.Name, flag.ConditionalValue, options[i]);
-                        });
-                    } else
-                    {
-                        selectedOptions.Remove(options[i]);
-                        m_csmState.RemoveFlags(options[i]);
+                            selectedOptions.Add(options[i]);
+                            options[i].Flags.ForEach((ConditionalFlag flag) =>
+                            {
+                                m_csmState.SetFlagValue(flag.Name, flag.ConditionalValue, options[i]);
+                            });
+                        }
+                        else
+                        {
+                            selectedOptions.Remove(options[i]);
+                            m_csmState.RemoveFlags(options[i]);
+                        }
                     }
-                }
-                sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
+                    sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
+                });
             };
 
             Action<bool> cont = (bool forward) => {
+                // this needs to happen asynchronously, see above
                 Task.Run(() =>
                 {
                     if (forward)
@@ -123,7 +130,11 @@ namespace FomodInstaller.Scripting.XmlScript
                 });
             };
             Action cancel = () => {
-                Source.SetCanceled();
+                // this needs to happen asynchronously, see above
+                Task.Run(() =>
+                {
+                    Source.SetCanceled();
+                });
             };
 
             string bannerPath = string.IsNullOrEmpty(hifHeaderInfo.ImagePath)

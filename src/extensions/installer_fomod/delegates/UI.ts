@@ -1,10 +1,13 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
+import { log } from '../../../util/log';
 import {showError} from '../../../util/message';
 
 import {endDialog, setDialogState, startDialog} from '../actions/installerUI';
 import {IInstallerInfo, IInstallerState, IReportError, StateCallback} from '../types/interface';
 
 import DelegateBase from './DelegateBase';
+
+import { inspect } from 'util';
 
 class UI extends DelegateBase {
   private mStateCB: StateCallback;
@@ -27,7 +30,8 @@ class UI extends DelegateBase {
       .removeListener('fomod-installer-cancel', this.onDialogEnd);
   }
 
-  public startDialog = (info: IInstallerInfo) => {
+  public startDialog = (info: IInstallerInfo, callback: (err) => void) => {
+    log('debug', 'startDialog called', inspect(info, true, null));
     this.mContinueCB = info.cont;
     this.mStateCB = info.select;
     this.mCancelCB = info.cancel;
@@ -36,13 +40,16 @@ class UI extends DelegateBase {
         moduleName: info.moduleName,
         image: info.image,
       }));
+      callback(null);
     } catch (err) {
       showError(this.api.store.dispatch, 'start installer dialog failed',
         err);
+      callback(err);
     }
   }
 
   public endDialog = () => {
+    log('debug', 'endDialog called');
     try {
       this.api.store.dispatch(endDialog());
     } catch (err) {
@@ -54,16 +61,20 @@ class UI extends DelegateBase {
     this.mContinueCB = this.mStateCB = this.mCancelCB = undefined;
   }
 
-  public updateState = (state: IInstallerState) => {
+  public updateState = (state: IInstallerState, callback: (err) => void) => {
+    log('debug', 'updateState', inspect(state));
     try {
       this.api.store.dispatch(setDialogState(state));
+      callback(null);
     } catch (err) {
       showError(this.api.store.dispatch, 'update installer dialog failed',
         err);
+      callback(err);
     }
   }
 
   public reportError = (parameters: IReportError) => {
+    log('debug', 'reportError', inspect(parameters, null));
     try {
       this.api.showErrorNotification(
         parameters.title, parameters.message + '\n' + parameters.details);

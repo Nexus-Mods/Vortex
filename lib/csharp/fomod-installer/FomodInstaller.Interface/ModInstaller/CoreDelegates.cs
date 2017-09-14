@@ -3,12 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Utils;
 
 namespace FomodInstaller.Interface
 {
     using SelectCB = Action<int, int, int[]>;
     using ContinueCB = Action<bool>;
     using CancelCB = Action;
+
+    struct Defaults
+    {
+        public static int TIMEOUT_MS = 5000;
+    }
 
     #region Plugin
 
@@ -27,7 +33,7 @@ namespace FomodInstaller.Interface
 
         public async Task<string[]> GetAll(bool activeOnly)
         {
-            object res = await mGetAll(activeOnly);
+            object res = await TaskHelper.Timeout(mGetAll(activeOnly), Defaults.TIMEOUT_MS);
             if (res != null)
             {
                 return ((IEnumerable)res).Cast<object>()
@@ -40,13 +46,13 @@ namespace FomodInstaller.Interface
 
         public async Task<bool> IsActive(string pluginName)
         {
-            object res = await mIsActive(pluginName);
+            object res = await TaskHelper.Timeout(mIsActive(pluginName), Defaults.TIMEOUT_MS);
             return (bool)res;
         }
 
         public async Task<bool> IsPresent(string pluginName)
         {
-            object res = await mIsPresent(pluginName);
+            object res = await TaskHelper.Timeout(mIsPresent(pluginName), Defaults.TIMEOUT_MS);
             return (bool)res;
         }
     }
@@ -69,7 +75,7 @@ namespace FomodInstaller.Interface
         public async Task<string> GetIniString(string iniFileName, string iniSection, string iniKey)
         {
             string[] Params = new string[] { iniFileName, iniSection, iniKey };
-            object res = await mGetIniString(Params);
+            object res = await TaskHelper.Timeout(mGetIniString(Params), Defaults.TIMEOUT_MS);
             if (res != null)
             {
                 return res.ToString();
@@ -81,7 +87,7 @@ namespace FomodInstaller.Interface
         public async Task<int> GetIniInt(string iniFileName, string iniSection, string iniKey)
         {
             string[] Params = new string[] { iniFileName, iniSection, iniKey };
-            object res = await mGetIniInt(Params);
+            object res = await TaskHelper.Timeout(mGetIniInt(Params), Defaults.TIMEOUT_MS);
             if (res != null)
             {
                 return (int)res;
@@ -118,44 +124,44 @@ namespace FomodInstaller.Interface
 
         public async Task<string> GetAppVersion()
         {
-            object res = await mGetAppVersion(null);
+            object res = await TaskHelper.Timeout(mGetAppVersion(null), Defaults.TIMEOUT_MS);
             return (string)res;
         }
 
         public async Task<string> GetCurrentGameVersion()
         {
-            object res = await mGetCurrentGameVersion(null);
+            object res = await TaskHelper.Timeout(mGetCurrentGameVersion(null), Defaults.TIMEOUT_MS);
             return (string)res;
         }
 
         public async Task<string> GetExtenderVersion(string extender)
         {
-            object res = await mGetExtenderVersion(extender);
+            object res = await TaskHelper.Timeout(mGetExtenderVersion(extender), Defaults.TIMEOUT_MS);
             return (string)res;
         }
 
         public async Task<bool> IsExtenderPresent()
         {
-            object res = await mIsExtenderPresent(null);
+            object res = await TaskHelper.Timeout(mIsExtenderPresent(null), Defaults.TIMEOUT_MS);
             return (bool)res;
         }
 
         public async Task<bool> CheckIfFileExists(string fileName)
         {
-            object res = await mCheckIfFileExists(fileName);
+            object res = await TaskHelper.Timeout(mCheckIfFileExists(fileName), Defaults.TIMEOUT_MS);
             return (bool)res;
         }
 
         public async Task<byte[]> GetExistingDataFile(string dataFile)
         {
-            object res = await mGetExistingDataFile(dataFile);
+            object res = await TaskHelper.Timeout(mGetExistingDataFile(dataFile), Defaults.TIMEOUT_MS);
             return (byte[])res;
         }
 
         public async Task<string[]> GetExistingDataFileList(string folderPath, string searchFilter, bool isRecursive)
         {
             object[] Params = new object[] { folderPath, searchFilter, isRecursive };
-            object res = await mGetExistingDataFileList(Params);
+            object res = await TaskHelper.Timeout(mGetExistingDataFileList(Params), Defaults.TIMEOUT_MS);
             return (string[])res;
         }
     }
@@ -299,27 +305,28 @@ namespace FomodInstaller.Interface
 
             public async void StartDialog(string moduleName, HeaderImage image, SelectCB select, ContinueCB cont, CancelCB cancel)
             {
-                await mStartDialog(new StartParameters(moduleName, image, select, cont, cancel));
+                await TaskHelper.Timeout(
+                   mStartDialog(new StartParameters(moduleName, image, select, cont, cancel)), Defaults.TIMEOUT_MS);
             }
 
             public async void EndDialog()
             {
-                await mEndDialog(null);
+                await TaskHelper.Timeout(mEndDialog(null), Defaults.TIMEOUT_MS);
             }
 
             public async void UpdateState(InstallerStep[] installSteps, int currentStep)
             {
-                await mUpdateState(new UpdateParameters(installSteps, currentStep));
+                await TaskHelper.Timeout(mUpdateState(new UpdateParameters(installSteps, currentStep)), Defaults.TIMEOUT_MS);
             }
 
             public async void ReportError(string title, string message, string details)
             {
-                await mReportError(new Dictionary<string, dynamic>
+                await TaskHelper.Timeout(mReportError(new Dictionary<string, dynamic>
                 {
                     { "title", title },
                     { "message", message },
                     { "details", details }
-                });
+                }), Defaults.TIMEOUT_MS);
             }
         }
     }

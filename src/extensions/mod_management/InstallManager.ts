@@ -255,7 +255,9 @@ class InstallManager {
         return this.processInstructions(api, archivePath, tempPath, destinationPath,
           installGameId, result);
       })
-      .finally(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }))
+      .finally(() => (tempPath !== undefined)
+        ? rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 })
+        : Promise.resolve())
       .then(() => filterModInfo(fullInfo, destinationPath))
       .then(modInfo => {
         installContext.finishInstallCB('success', modInfo);

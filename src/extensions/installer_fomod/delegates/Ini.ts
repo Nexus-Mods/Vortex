@@ -11,6 +11,7 @@ import DelegateBase from './DelegateBase';
 
 import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
 import * as path from 'path';
+import { inspect } from 'util';
 
 class Ini extends DelegateBase {
   private gameId: string;
@@ -27,7 +28,7 @@ class Ini extends DelegateBase {
 
   public getIniString =
       (params: string[], callback: (err, res: string) => void) => {
-        log('info', 'GetIniString called', '');
+        log('debug', 'GetIniString called', inspect(params));
 
         let iniValue: string;
         const selectedFile = params[0];
@@ -58,7 +59,7 @@ class Ini extends DelegateBase {
 
   public getIniInt = (params: string[],
                       callback: (err, res: number) => void) => {
-    log('info', 'GetIniString called', '');
+    log('debug', 'GetIniString called', inspect(params));
 
     let iniValue: number;
     const selectedFile = params[0];
