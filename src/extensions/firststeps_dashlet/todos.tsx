@@ -98,7 +98,10 @@ function todos(api: IExtensionApi): IToDo[] {
       id: 'paths',
       type: 'settings' as ToDoType,
       condition: props => props.gameMode !== undefined,
-      props: state => selectors.basePath(state),
+      props: state => ({
+        basePath: selectors.basePath(state),
+        gameMode: selectors.activeGameId(state),
+      }),
       render: (t: TranslationFunction, props: any): JSX.Element => {
         const { basePath } = props;
         const path = <strong>{basePath} </strong>;

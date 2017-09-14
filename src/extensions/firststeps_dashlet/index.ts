@@ -1,4 +1,5 @@
 import { IExtensionContext, ToDoType } from '../../types/IExtensionContext';
+import {showError} from '../../util/message';
 
 import Dashlet from './Dashlet';
 import { IToDo } from './IToDo';
@@ -23,7 +24,7 @@ function init(context: IExtensionContext): boolean {
   };
 
   context.registerDashlet('ToDo', 2, 2, 200, Dashlet, state => {
-    const allTodos = [].concat(todos(context.api), extTodos);
+    const allTodos: IToDo[] = [].concat(todos(context.api), extTodos);
     const steps = state.settings.firststeps.steps;
 
     const visibleSteps = allTodos.filter(item => {
