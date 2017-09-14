@@ -367,9 +367,6 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   private handleChangePath = (field: 'exePath', filePath: string) => {
     const { tool } = this.props;
 
-    const iconPath = tool.iconPath;
-    let toolPath: string;
-
     this.handleChange('exePath', filePath);
     if (!this.state.tool.name) {
       this.handleChange('name', path.basename(filePath, path.extname(filePath)));
@@ -377,8 +374,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     if (!this.state.tool.workingDirectory) {
       this.handleChange('workingDirectory', path.dirname(filePath));
     }
-    toolPath = filePath;
-    return fs.statAsync(iconPath);
+    this.useImage(filePath);
   }
 
   private handleChangeIcon = () => {
