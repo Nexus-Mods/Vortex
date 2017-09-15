@@ -15,6 +15,7 @@ import AsyncComponent from './AsyncComponent';
 import copyRecursive from './copyRecursive';
 import { NotSupportedError, ProcessCanceled, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
+import delayed from './delayed';
 import runElevated from './elevated';
 import { terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
@@ -35,6 +36,7 @@ export {
   bytesToString,
   copyRecursive,
   Debouncer,
+  delayed,
   deriveModInstallName as deriveInstallName,
   extend,
   getCurrentLanguage,
