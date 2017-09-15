@@ -490,7 +490,7 @@ function once(api: IExtensionApi) {
           if (errorMessages.length !== 0) {
             showError(api.store.dispatch,
               'Checking for mod updates succeeded but there were errors',
-              errorMessages.join('\n\n'));
+              errorMessages.join('\n\n'), false, undefined, false);
           }
         })
         .catch(err => {

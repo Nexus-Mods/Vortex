@@ -228,6 +228,10 @@ function init(context: IExtensionContextExt): boolean {
             });
 
             const profile = state.persistent.profiles[current];
+            if ((profile === undefined) && (current !== undefined)) {
+              showError(store.dispatch, 'Tried to set invalid profile', current);
+              return Promise.resolve();
+            }
 
             let queue: Promise<void> = Promise.resolve();
             // emit an event notifying about the impending profile change.
@@ -243,6 +247,12 @@ function init(context: IExtensionContextExt): boolean {
             };
 
             context.api.events.emit('profile-will-change', current, enqueue);
+
+            if (current === undefined) {
+              store.dispatch(setCurrentProfile(undefined, undefined));
+              return queue;
+            }
+
             sanitiseProfile(store, profile);
             return queue
                 .then(() => refreshProfile(store, profile, 'export'))

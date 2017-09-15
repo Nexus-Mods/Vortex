@@ -2,6 +2,7 @@ import { showDialog } from '../../actions/notifications';
 import { GameInfoQuery, IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
+import {ProcessCanceled} from '../../util/CustomErrors';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
 import { log } from '../../util/log';
@@ -365,7 +366,12 @@ function init(context: IExtensionContext): boolean {
       return $.gameModeManager.setupGameMode(newGameId)
         .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId))
         .catch((err) => {
-          showError(store.dispatch, 'Failed to set game mode', err);
+          if (err instanceof ProcessCanceled) {
+            showError(store.dispatch, 'Failed to set game mode',
+                      err.message, false, undefined, false);
+          } else {
+            showError(store.dispatch, 'Failed to set game mode', err);
+          }
           // unset profile
           return store.dispatch(setNextProfile(undefined));
         });
@@ -387,7 +393,12 @@ function init(context: IExtensionContext): boolean {
               ...currentGameDiscovery(state),
           };
 
+          if (game.name === undefined) {
+            return null;
+          }
+
           const t = context.api.translate;
+
           context.api.sendNotification({
             type: 'info',
             message: t('Switched game mode: {{mode}}',

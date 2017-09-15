@@ -1,4 +1,3 @@
-import * as path from 'path';
 import { clearSavegames, setSavegamePath,
    setSavegames, showTransferDialog } from './actions/session';
 import { sessionReducer } from './reducers/session';
@@ -10,6 +9,7 @@ import SavegameList from './views/SavegameList';
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import IniParser, {IniFile, WinapiFormat} from 'parse-ini';
+import * as path from 'path';
 import { selectors, types, util } from 'vortex-api';
 
 const parser = new IniParser(new WinapiFormat());
@@ -18,6 +18,11 @@ let fsWatcher: fs.FSWatcher;
 function updateSaveSettings(store: Redux.Store<any>,
                             profileId: string): Promise<string> {
   const currentProfile = selectors.activeProfile(store.getState());
+  if (currentProfile === undefined) {
+    // how did we get here then???
+    return Promise.reject(new util.ProcessCanceled('no current profile'));
+  }
+
   return parser.read(iniPath(currentProfile.gameId))
     .then((iniFile: IniFile<any>) => {
       const localPath = path.join('Saves', profileId);

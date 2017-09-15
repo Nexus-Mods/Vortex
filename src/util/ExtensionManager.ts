@@ -7,6 +7,7 @@ import {
   ArchiveHandlerCreator,
   IArchiveHandler,
   IArchiveOptions,
+  IErrorOptions,
   IExtensionApi,
   IExtensionContext,
   ILookupDetails,
@@ -284,7 +285,7 @@ class ExtensionManager {
     this.mEventEmitter = eventEmitter;
     this.mApi = {
       showErrorNotification:
-        (message: string, details: string | Error | any, isHTML: boolean = false) => {
+        (message: string, details: string | Error | any) => {
         if (typeof(details) === 'string') {
           dialog.showErrorBox(message, details);
         } else {
@@ -366,8 +367,11 @@ class ExtensionManager {
       return noti.id;
     };
     this.mApi.showErrorNotification =
-      (message: string, details: string | Error | any, isHTML: boolean = false) => {
-      showError(store.dispatch, message, details, isHTML);
+      (message: string, details: string | Error | any, options?: IErrorOptions) => {
+      showError(store.dispatch, message, details,
+        (options !== undefined) && (options.isHTML === true),
+        undefined,
+        (options !== undefined) && (options.allowReport !== false));
     };
     this.mApi.dismissNotification = (id: string) => {
       store.dispatch(dismissNotification(id));

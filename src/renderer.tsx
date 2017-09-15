@@ -14,7 +14,7 @@ if (process.env.NODE_ENV === 'production') {
   //  calls and speeding up the rest by turning process.env into a static
   //  object.
   //  I have not yet made any benchmarks to verify that
-  // tslint:disable-next-line:no-var-requires
+  // tslint:disable-next-line:no-var-requires no-submodule-imports
   require('react/dist/react.min.js');
   require.cache[require.resolve('react')] =
     require.cache[require.resolve('react/dist/react.min.js')];

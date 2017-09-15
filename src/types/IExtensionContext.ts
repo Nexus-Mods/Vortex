@@ -174,6 +174,11 @@ export interface IGameDetail {
   type?: string;
 }
 
+export interface IErrorOptions {
+  isHTML?: boolean;
+  allowReport?: boolean;
+}
+
 /**
  * a query function that will be called to retrieve information about a game.
  * The game object passed in in a union of the IGameStored and IDiscoveryResult data
@@ -209,7 +214,8 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  showErrorNotification?: (message: string, detail: string | Error | any, isHTML?: boolean) => void;
+  showErrorNotification?: (message: string, detail: string | Error | any,
+                           options?: IErrorOptions) => void;
 
   /**
    * hides a notification by its id

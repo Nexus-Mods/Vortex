@@ -2,6 +2,7 @@ import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
+import {ProcessCanceled} from '../../util/CustomErrors';
 import { log } from '../../util/log';
 
 import {
@@ -73,14 +74,21 @@ class GameModeManager {
   public setGameMode(oldMode: string, newMode: string): Promise<void> {
     const game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
     const gameDiscovery = this.mStore.getState().settings.gameMode.discovered[newMode];
-    if ((game === undefined) && (gameDiscovery === undefined)) {
+    if (gameDiscovery === undefined) {
       // new game mode is not valid
-      return Promise.reject(new Error('unknown game mode'));
+      return Promise.reject(new Error('game mode not found'));
     }
 
-    log('info', 'changed game mode', {oldMode, newMode});
-    this.mOnGameModeActivated(newMode);
-    return Promise.resolve();
+    return fs.statAsync(gameDiscovery.modPath)
+    .then(() => {
+      log('info', 'changed game mode', {oldMode, newMode});
+      this.mOnGameModeActivated(newMode);
+    })
+    .catch(err => {
+      return (err.code === 'ENOENT')
+      ? Promise.reject(new ProcessCanceled('mod directory missing: ' + gameDiscovery.modPath))
+      : Promise.reject(err);
+    });
   }
 
   /**

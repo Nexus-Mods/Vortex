@@ -160,7 +160,7 @@ export function retrieveModInfo(
     .catch((err: NexusError) => {
       showError(store.dispatch, 'An error occurred looking up the mod',
         errorFromNexus(err), false, undefined, false);
-      // prevent this error to come up every time the icon is re-rendered
+      // prevent this error from coming up every time the icon is re-rendered
       store.dispatch(setModAttribute(gameId, mod.id, 'endorsed', 'Undecided'));
     });
 }

@@ -16,7 +16,7 @@ class LootInterface {
   private mLootQueue: Promise<void>;
   private mOnSetLootActivity: (activity: string) => void;
   private mExtensionApi: types.IExtensionApi;
-  private mOnFirstInit: () => void;
+  private mOnFirstInit: () => void = null;
 
   private mUserlistTime: Date;
 
@@ -181,8 +181,10 @@ class LootInterface {
           // enqueue a new promise that resolves once those pre-init tasks are done and unblock
           // them.
           this.enqueue(t('Init Queue'), () => {
-            this.mOnFirstInit();
-            this.mOnFirstInit = null;
+            if (this.mOnFirstInit !== null) {
+              this.mOnFirstInit();
+              this.mOnFirstInit = null;
+            }
             return new Promise<void>((resolve, reject) => {
               preInitQueue.then(() => resolve());
             });
