@@ -325,10 +325,17 @@ function testMissingMasters(t: I18next.TranslationFunction,
     (plugin: string) => loadOrder[plugin].enabled);
   const pluginDetails =
     enabledPlugins.filter((name: string) => pluginList[name] !== undefined)
-      .map((plugin) => ({
-        name: plugin,
-        detail: new ESPFile(pluginList[plugin].filePath),
-      }));
+      .map((plugin) => {
+        try {
+          return {
+            name: plugin,
+            masterList: new ESPFile(pluginList[plugin].filePath).masterList,
+          };
+        } catch (err) {
+          log('warn', 'failed to parse esp file', { name, err: err.message });
+          return { name: plugin, masterList: [] };
+        }
+      });
   // previously this only contained plugins that were marked as masters but apparenly
   // some plugins reference non-masters as their dependency.
   const masters = new Set<string>([].concat(
@@ -336,7 +343,7 @@ function testMissingMasters(t: I18next.TranslationFunction,
     nativePlugins(gameMode)).map(name => name.toLowerCase()));
 
   const broken = pluginDetails.reduce((prev, plugin) => {
-    const missing = plugin.detail.masterList.filter(
+    const missing = plugin.masterList.filter(
       (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
     if (missing.length > 0) {
       log('info', 'missing masters', { plugin: plugin.name, missing: missing.join(', ') });

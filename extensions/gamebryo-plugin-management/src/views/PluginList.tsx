@@ -314,7 +314,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private updatePlugins(plugins: IPlugins) {
     const pluginNames: string[] = Object.keys(plugins);
 
-    const pluginsParsed = {};
+    const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;
 
     Promise.each(pluginNames, (pluginName: string) => {
@@ -323,6 +323,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           const esp = new ESPFile(plugins[pluginName].filePath);
           pluginsParsed[pluginName] = {
             isMaster: esp.isMaster,
+            parseFailed: false,
             description: esp.description,
             author: esp.author,
             masterList: esp.masterList,
@@ -335,6 +336,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           log('warn', 'failed to parse esp', { path: plugins[pluginName].filePath, error: err });
           pluginsParsed[pluginName] = {
             isMaster: false,
+            parseFailed: true,
             description: '',
             author: '',
             masterList: [],

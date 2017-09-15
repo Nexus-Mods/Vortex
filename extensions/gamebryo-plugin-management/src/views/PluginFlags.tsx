@@ -19,6 +19,10 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
     result.push(t('Master'));
   }
 
+  if (plugin.parseFailed) {
+    result.push(t('Couldn\'t parse'));
+  }
+
   if (plugin.isNative) {
     result.push(t('Native'));
   }
@@ -52,6 +56,17 @@ const PluginFlags = (props: IProps): JSX.Element => {
         key={key}
         name='globe'
         tooltip={t('Master')}
+      />);
+  }
+
+  if (plugin.parseFailed) {
+    const key = `ico-parsefailed-${plugin.name}`;
+    flags.push(
+      <tooltip.Icon
+        id={key}
+        key={key}
+        name='ban-bold'
+        tooltip={t('Failed to parse this plugin')}
       />);
   }
 

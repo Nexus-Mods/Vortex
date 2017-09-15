@@ -39,6 +39,7 @@ export interface IPlugins { [fileName: string]: IPlugin; }
  */
 export interface IPluginParsed {
   isMaster: boolean;
+  parseFailed: boolean;
   masterList: string[];
   author: string;
   description: string;

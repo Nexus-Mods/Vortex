@@ -112,7 +112,6 @@ const parsed = xml2js.parseString(data.toString(), (err, result) => {
       $: transformAttributes(sym.$),
     });
     const doDecolorize = decolorize.has(sym.$.id);
-    console.log('decol', sym.$.id, doDecolorize);
     res.g[0].g = res.g[0].g.map(g => transformG(g, doDecolorize));
 
     return res;
