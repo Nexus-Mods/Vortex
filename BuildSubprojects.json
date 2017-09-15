@@ -145,11 +145,11 @@
   ], [
     {
       "type": "build-copy",
-      "name": "nexus-migration-tool",
-      "path": "extensions/nexus-migration-tool",
+      "name": "nmm-import-tool",
+      "path": "extensions/nmm-import-tool",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
-      "copyTo": "{BUILD_DIR}/bundledPlugins/nexus-migration-tool"
+      "copyTo": "{BUILD_DIR}/bundledPlugins/nmm-import-tool"
     }
   ],[
     {

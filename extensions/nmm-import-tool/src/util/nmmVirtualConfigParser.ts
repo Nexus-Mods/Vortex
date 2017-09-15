@@ -99,14 +99,18 @@ export function parseModEntries(
         .then(() => {
           const fileLinks = modInfo.getElementsByTagName('fileLink');
 
+          if ((fileLinks !== undefined) && (fileLinks.length > 0)) {
           res.fileEntries =
               Array.from(fileLinks)
                   .map(fileLink => transformFileEntry(fileLink, adjustRealPath))
                   .filter(entry => entry !== undefined);
+          } else {
+            res.fileEntries = [];
+          }
 
           const modFilePath = path.join(res.archivePath, res.modFilename);
 
-          return modmeta.genHash(modFilePath);
+          return modmeta.genHash(modFilePath).catch(err => null);
         })
         .then((hashResult: modmetaT.IHashResult) => {
           res.archiveMD5 = hashResult.md5sum;

@@ -1,5 +1,5 @@
-import { parseModEntries } from '../extensions/nexus-migration-tool/src/util/nmmVirtualConfigParser';
-import { ParseError } from '../extensions/nexus-migration-tool/src/types/nmmEntries';
+import { parseModEntries } from '../extensions/nmm-import-tool/src/util/nmmVirtualConfigParser';
+import { ParseError } from '../extensions/nmm-import-tool/src/types/nmmEntries';
 
 describe('parseModEntries', () => {
   it('parse the NMM virtual config file', () => {

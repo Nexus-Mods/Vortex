@@ -7,23 +7,18 @@ import { log } from 'vortex-api';
 
 /**
  * copy or move a list of mod archives
- * @param {string[]} modArchives
+ * @param {string} modArchive
  * @param {string} destSavePath
- * @param {boolean} keepSource
  */
-export function transferArchives(modArchives: string[],
-                                 currentModsPath: string,
-                                 keepSource: boolean): Promise<string[]> {
-  const failedArchives: string[] = [];
+export function transferArchive(modArchivePath: string,
+                                destSavePath: string): Promise<string> {
+  let failedArchive: string = null;
 
-  const operation = keepSource ? fs.copyAsync : fs.renameAsync;
-
-  return Promise.map(modArchives, archive =>
-    operation(archive, path.join(currentModsPath, path.basename(archive)))
-    .catch(err => {
-      failedArchives.push(archive + ' - ' + err.message);
-    }))
-    .then(() => Promise.resolve(failedArchives));
+  return fs.copyAsync(modArchivePath, path.join(destSavePath, path.basename(modArchivePath)))
+  .catch(err => {
+    failedArchive = modArchivePath + ' - ' + err.message;
+  })
+  .then(() => Promise.resolve(failedArchive));
 }
 
 function byLength(lhs: string, rhs: string): number {
@@ -34,12 +29,11 @@ function byLength(lhs: string, rhs: string): number {
  * copy or move a list of mod files
  * @param {ModEntry} mod
  * @param {string} nmmVirtualPath
- * @param {string} currentModPath
+ * @param {string} installPath
  * @param {boolean} keepSource
  */
 export function transferUnpackedMod(mod: IModEntry, nmmVirtualPath: string,
-                                    installPath: string,
-                                    keepSource: boolean): Promise<string[]> {
+                                    installPath: string, keepSource: boolean): Promise<string[]> {
   const operation = keepSource ? fs.copyAsync : fs.renameAsync;
 
   const destPath = path.join(installPath, mod.vortexId);
@@ -48,6 +42,7 @@ export function transferUnpackedMod(mod: IModEntry, nmmVirtualPath: string,
   // in a first step in the hope that this is faster than calling mkdirs
   // for each file individually
   const directories = new Set<string>();
+  directories.add(destPath);
   mod.fileEntries.forEach(file => {
     directories.add(path.dirname(path.join(destPath, file.fileDestination)));
   });

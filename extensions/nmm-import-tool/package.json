@@ -1,15 +1,15 @@
 {
-  "name": "nexus-migration-tool",
+  "name": "nmm-import-tool",
   "version": "0.0.1",
-  "description": "Migration tool for the Nexus Mod Manager",
+  "description": "Import tool for the Nexus Mod Manager",
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
-    "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/nexus-migration-tool",
+    "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/nmm-import-tool",
     "prebuild": "typings prune && typings install",
-    "build": "npm run tsc && npm run webpack && copyfiles -f src/stylesheets/migration-tool.scss dist && extractInfo",
+    "build": "npm run tsc && npm run webpack && copyfiles -f src/stylesheets/import-tool.scss dist && extractInfo",
     "buildDev": "npm run build && npm run installDev"
   },
   "author": "Black Tree Gaming Ltd.",

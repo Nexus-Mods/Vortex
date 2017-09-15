@@ -6,7 +6,7 @@ module.exports = {
   node: { __filename: false, __dirname: false },
   output: {
     libraryTarget: 'commonjs2',
-    library: 'nexus-migration-tool',
+    library: 'nmm-import-tool',
     filename: './dist/index.js'
   },
   module: {

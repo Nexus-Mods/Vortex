@@ -16,13 +16,13 @@ function init(context: types.IExtensionContext): boolean {
 
   context.registerDialog('nmm-import', ImportDialog);
 
-  context.registerReducer(['session', 'modmigration'], sessionReducer);
+  context.registerReducer(['session', 'modimport'], sessionReducer);
   context.registerAction('mod-icons', 115, 'import', {}, 'Import from NMM', () => {
     context.api.store.dispatch(setImportStep('start'));
   });
 
   context.once(() => {
-    context.api.setStylesheet('nexus-migration-tool', path.join(__dirname, 'migration-tool.scss'));
+    context.api.setStylesheet('nmm-import-tool', path.join(__dirname, 'import-tool.scss'));
   });
 
   return true;

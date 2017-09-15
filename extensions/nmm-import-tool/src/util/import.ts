@@ -1,4 +1,4 @@
-import { transferArchives, transferUnpackedMod} from '../util/modFileMigration';
+import { transferArchive, transferUnpackedMod} from '../util/modFileImport';
 
 import {IModEntry} from '../types/nmmEntries';
 import TraceImport from './TraceImport';
@@ -28,7 +28,8 @@ function enhance(sourcePath: string, input: IModEntry): Promise<IModEntry> {
   return fs.readFileAsync(path.join(cacheBasePath, 'cacheInfo.txt'))
     .then(data => {
       const fields = data.toString().split('@@');
-      return fs.readFileAsync(path.join(cacheBasePath, fields[1], 'fomod', 'info.xml'));
+      return fs.readFileAsync(path.join(cacheBasePath,
+        (fields[1] === '-') ? '' : fields[1], 'fomod', 'info.xml'));
     })
     .then(infoXmlData => {
       const parser = new DOMParser();
@@ -51,6 +52,7 @@ function importMods(api: types.IExtensionApi,
                     trace: TraceImport,
                     sourcePath: string,
                     mods: IModEntry[],
+                    transferArchives: boolean,
                     progress: (mod: string, idx: number) => void): Promise<string[]> {
   const state = api.store.getState();
 
@@ -60,17 +62,27 @@ function importMods(api: types.IExtensionApi,
     .then(() => {
       trace.log('info', 'transfer unpacked mods files');
       const installPath = selectors.installPath(state);
+      const downloadPath = selectors.downloadPath(state);
       return Promise.map(mods, mod => enhance(sourcePath, mod))
       .then(modsEx => Promise.mapSeries(modsEx, (mod, idx) => {
         trace.log('info', 'transferring', mod);
         progress(mod.modName, idx);
         return transferUnpackedMod(mod, sourcePath, installPath, true)
-          .then(failed => {
-            if (failed.length > 0) {
-              trace.log('error', 'Failed to import', failed);
-              errors.push(mod.modName);
-            }
-          });
+        .then(failed => {
+          if (failed.length > 0) {
+            trace.log('error', 'Failed to import', failed);
+            errors.push(mod.modName);
+          }
+          if (transferArchives) {
+            return transferArchive(path.join(mod.archivePath, mod.modFilename), downloadPath)
+              .then(failedArchive => {
+                if (failedArchive !== null) {
+                  trace.log('error', 'Failed to import mod archive', failedArchive);
+                  errors.push(mod.modFilename);
+                }
+              });
+          }
+        });
       })
         .then(() => {
           trace.log('info', 'Finished transferring unpacked mod files');

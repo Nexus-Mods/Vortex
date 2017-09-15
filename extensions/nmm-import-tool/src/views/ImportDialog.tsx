@@ -13,7 +13,7 @@ import {
 import * as opn from 'opn';
 import * as path from 'path';
 import * as React from 'react';
-import { Alert, Button, DropdownButton, InputGroup, MenuItem,
+import { Alert, Button, Checkbox, DropdownButton, InputGroup, MenuItem,
   ProgressBar, SplitButton,
 } from 'react-bootstrap';
 import { translate } from 'react-i18next';
@@ -37,6 +37,7 @@ type IProps = IConnectedProps & IActionProps;
 interface IComponentState {
   sources: string[];
   selectedSource: string;
+  importArchives: boolean;
   modsToImport: { [id: string]: IModEntry };
   error: string;
   importEnabled: { [id: string]: boolean };
@@ -56,6 +57,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
     this.initState({
       sources: undefined,
+      importArchives: false,
       modsToImport: {},
       selectedSource: '',
       error: undefined,
@@ -115,7 +117,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <Modal id='import-dialog' show={importStep !== undefined} onHide={this.nop}>
         <Modal.Header>
-          <Modal.Title>{t('Nexus Mod Manager (NMM) Migration Tool')}</Modal.Title>
+          <Modal.Title>{t('Nexus Mod Manager (NMM) Import Tool')}</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ height: '60vh', display: 'flex', flexDirection: 'column' }}>
           {this.renderStep(importStep)}
@@ -214,7 +216,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         <Icon name='cross' />
         {' '}
         {t('No NMM install found with mods for this game. ' +
-          'Please note that only NMM > 0.60 is supported.')}
+          'Please note that only NMM > 0.63 is supported.')}
       </span>
     );
   }
@@ -234,12 +236,25 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         >
           {sources.map(this.renderSource)}
         </SplitButton>
+        <Checkbox
+          id='import-mod-archives'
+          checked={this.state.importArchives}
+          onChange={this.toggleArchiveImport}
+        >
+          {t('Check this box if you want to import mod archives (not necessary for Vortex)')}
+        </Checkbox>
       </div>
     );
   }
 
   private renderSource = option => {
     return <MenuItem key={option} eventKey={option}>{option}</MenuItem>;
+  }
+
+  private toggleArchiveImport = () => {
+    const {importArchives} = this.state;
+
+    this.nextState.importArchives = !importArchives;
   }
 
   private renderSelectMods(): JSX.Element {
@@ -357,7 +372,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
   private startImport() {
     const { t } = this.props;
-    const { modsToImport, selectedSource } = this.state;
+    const { importArchives, modsToImport, selectedSource } = this.state;
 
     this.mTrace = new TraceImport();
 
@@ -367,7 +382,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     this.mTrace.initDirectory(selectedSource)
       .then(() => importMods(this.context.api, this.mTrace,
         path.join(selectedSource, 'VirtualInstall'), enabledMods,
-        (mod: string, pos: number) => {
+        importArchives, (mod: string, pos: number) => {
           this.nextState.progress = { mod, pos };
         }))
       .then(errors => {
@@ -380,7 +395,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     gameId: selectors.activeGameId(state),
-    importStep: state.session.modmigration.importStep,
+    importStep: state.session.modimport.importStep,
   };
 }
 

@@ -36,7 +36,7 @@ export function addMods(gameID: string, profileId: string,
         version: modEntry.modVersion,
         fileId: modEntry.downloadId,
         fileMD5: modEntry.archiveMD5,
-        notes: 'Imported using the NMM-Migration-Tool',
+        notes: 'Imported using the NMM-Import-Tool',
         category: modEntry.categoryId,
       },
     };

@@ -10,17 +10,17 @@ class TraceImport {
 
   constructor() {
     const now = new Date();
-    const name = `migration-${now.getTime()}`;
+    const name = `nmm_import-${now.getTime()}`;
     this.mPath = path.join(remote.app.getPath('userData'), name);
   }
 
   public get logFilePath(): string {
-    return path.join(this.mPath, 'migration.log');
+    return path.join(this.mPath, 'nmm_import.log');
   }
 
   public initDirectory(importPath: string): Promise<void> {
     return fs.mkdirAsync(this.mPath)
-      .then(() => fs.createWriteStream(path.join(this.mPath, 'migration.log')))
+      .then(() => fs.createWriteStream(path.join(this.mPath, 'nmm_import.log')))
       .then(stream => {
         this.mLogFile = stream;
         return fs.copyAsync(
