@@ -37,17 +37,19 @@ function getText(id: string, t: I18next.TranslationFunction) {
         'id on Nexus so it should always be the same).');
     case 'version':
       return t(
-        'Version of the mod. Certain features are only available if the mod follows a ' +
-        'standardized scheme called "semantic versioning" (see http://semver.org/) where a ' +
+        'Version of the mod. A warning here means that the mod doesn\'t follow the recognized ' +
+        'versioning standard but that just means Vortex may not be able to provide some ' +
+        'of the more advanced features or they are slightly less convenient to use.\n\n' +
+        'Vortex supports "semantic versioning" (see http://semver.org/) where a ' +
         'version consists of three numbers separated by dots like this: "1.2.0".\n' +
-        'A warning here means that the version doesn\'t comply.\n\n' +
         'In semantic versioning the first number is the "major" version that gets incremented ' +
         'only on a big update that isn\'t compatible with previous versions so updating may ' +
         'break things (dependencies, save games).\n' +
-        'Second number is called "minor" and incremented when new features were introduced.\n' +
+        'Second number is called "minor" and gets incremented when new features were ' +
+        'introduced.\n' +
         'Third number is called "patch" and gets increased if there were only bugfixes.\n' +
         'Thus "1.2.5" should definitively be more stable than "1.2.4". "1.3.0" should have all ' +
-        'the bugfixes of "1.2.5" but it also adds features so there could be new bugs.\n' +
+        'the bugfixes of "1.2.x" so far but it also adds features so there could be new bugs.\n' +
         'These dots are NOT decimal marks, version 1.10.0 is (much) newer than 1.3.0.');
     case 'source':
       return t(

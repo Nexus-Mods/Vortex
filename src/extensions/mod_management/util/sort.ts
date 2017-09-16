@@ -78,7 +78,32 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<str
         log('error', 'failed to sort mods',
             {msg: err.message, stack: err.stack});
       })
-      .then(() => Promise.resolve(alg.topsort(dependencies)));
+      .then(() => {
+        try {
+          return Promise.resolve(alg.topsort(dependencies));
+        } catch (err) {
+          // exception type not included in typings
+          if (err instanceof (alg.topsort as any).CycleException) {
+            api.showErrorNotification('Mod rules contain cycles',
+              'Dependency rules between your mods contain cycles, '
+                    + 'like "A after B" and "B after A". You need to remove one of the '
+                    + 'rules causing the cycle, otherwise your mods can\'t be '
+                    + 'applied in the right order.<br/><ul>'
+                    + renderCycles(alg.findCycles(dependencies))
+                    + '</ul>'
+              , { isHTML: true, allowReport: false });
+            // return unsorted
+            return Promise.resolve(mods.map(mod => mod.id));
+          } else {
+            return Promise.reject(err);
+          }
+        }
+      });
+}
+
+function renderCycles(cycles: string[][]): string {
+  return cycles.map((cycle, idx) =>
+    `<li>Cycle ${idx + 1}: ${cycle.join(', ')}</li>`).join('<br />');
 }
 
 export default sortMods;
