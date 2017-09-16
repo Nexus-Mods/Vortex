@@ -12,6 +12,7 @@ import { Button, FormControl, ListGroup, ListGroupItem,
          Modal, OverlayTrigger, Popover } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import * as ReduxThunk from 'redux-thunk';
 import { actions as nmmActions, ComponentEx, tooltip, types } from 'vortex-api';
 
 interface IConnectedProps {

@@ -10,6 +10,7 @@ import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import { genHash } from 'modmeta-db';
 import * as path from 'path';
+import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { actions, selectors, types } from 'vortex-api';
 
