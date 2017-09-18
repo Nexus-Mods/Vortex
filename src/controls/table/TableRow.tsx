@@ -72,7 +72,7 @@ class TableCell extends React.Component<ICellProps, {}> {
             <Dropdown.Menu
               onSelect={this.changeCell}
             >
-            {choices.map(this.renderChoice)}
+            {choices.filter(choice => choice.visible !== false).map(this.renderChoice)}
             </Dropdown.Menu>
           </Dropdown>
         );

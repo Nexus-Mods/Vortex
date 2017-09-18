@@ -1306,9 +1306,12 @@ a[role=menuitem] svg {
   background-color: $gray;
 }
 
-.btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled,
-.btn-extensions-enabled-uninstalled, .toggle-extensions-enabled-uninstalled {
+.btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled {
   background-color: $brand-info;
+}
+
+.btn-mods-enabled-installing, .toggle-mods-enabled-installing {
+  background-color: $gray;
 }
 
 .option-mods-enabled-uninstalled {

@@ -9,6 +9,11 @@ export type ValidationState = 'success' | 'warning' | 'error';
 export interface IEditChoice {
   key: string;
   text: string;
+  /**
+   * select if this choice is visible (default) to the user.
+   * invisible choices can only be set programmatically
+   */
+  visible?: boolean;
 }
 
 export interface IFilterProps {

@@ -420,6 +420,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       calc: (mod: IModWithState) => {
         if (mod.state === 'downloaded') {
           return 'Uninstalled';
+        } else if (mod.state === 'installing') {
+          return 'Installing';
         }
         return mod.enabled === true ? 'Enabled' : 'Disabled';
       },
@@ -431,6 +433,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           { key: 'enabled', text: 'Enabled' },
           { key: 'disabled', text: 'Disabled' },
           { key: 'uninstalled', text: 'Uninstalled' },
+          { key: 'installing', text: 'Installing', visible: false },
         ],
         onChangeValue: this.changeModEnabled,
       },
@@ -596,6 +599,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private changeModEnabled = (modId: string, value: any) => {
     const { profileId } = this.props;
+
+    if (this.mModsWithState[modId].state === 'installing') {
+      // can't change state while installing
+      return;
+    }
 
     if (value === undefined) {
       this.cycleModState(profileId, modId, value);

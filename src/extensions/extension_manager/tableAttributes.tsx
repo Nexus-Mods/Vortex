@@ -41,7 +41,7 @@ function getTableAttributes(context: IAttributesContext):
         choices: () => [
           { key: 'enabled', text: 'Enabled' },
           { key: 'disabled', text: 'Disabled' },
-          { key: 'failed', text: 'Failed' },
+          { key: 'failed', text: 'Failed', visible: false },
         ],
         onChangeValue: (extId: string, value: string) => {
           return value === undefined

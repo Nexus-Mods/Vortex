@@ -94,7 +94,7 @@ export const FILE_SIZE: ITableAttribute = {
   description: 'Total size of the file',
   icon: 'chart-bars',
   customRenderer: (download: IDownload, detailCell: boolean, t: I18next.TranslationFunction) =>
-    <p>{download.size !== undefined ? bytesToString(download.size) : '???'}</p>,
+    <span>{download.size !== undefined ? bytesToString(download.size) : '???'}</span>,
   calc: (download: IDownload) => download.size,
   placement: 'table',
   isToggleable: true,
