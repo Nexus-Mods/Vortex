@@ -78,7 +78,7 @@
     "ref-union": "^1.0.1",
     "request": "^2.76.0",
     "reselect": "^3.0.1",
-    "rimraf": "^2.6.0",
+    "rimraf": "TanninOne/rimraf",
     "shortid": "^2.2.6",
     "simple-vdf": "^1.1.0",
     "string-template": "^1.0.0",

@@ -256,7 +256,7 @@ class InstallManager {
           installGameId, result);
       })
       .finally(() => (tempPath !== undefined)
-        ? rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 })
+        ? rimrafAsync(tempPath, { glob: false })
         : Promise.resolve())
       .then(() => filterModInfo(fullInfo, destinationPath))
       .then(modInfo => {

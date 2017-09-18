@@ -138,7 +138,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     const controls: JSX.Element[] = [];
 
-    const wrap = (content.options && !content.options.wrap) ? 'off' : 'on';
+    const wrap = (content.options && (content.options.wrap === false)) ? 'off' : 'on';
 
     if (content.message !== undefined) {
       controls.push((
