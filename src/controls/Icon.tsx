@@ -76,7 +76,7 @@ function convertAttrs(attrs: IAttrMap): IAttrMap {
 
 export interface IIconProps {
   className?: string;
-  style?: { [key: string]: string };
+  style?: { [key: string]: string | number };
   size?: number;
   set?: string;
   name: string;
