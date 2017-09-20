@@ -9,7 +9,7 @@ import {activeGameId, activeProfile} from '../profile_management/selectors';
 import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
 import {IMod} from './types/IMod';
-import {IModActivator} from './types/IModActivator';
+import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {loadActivation, saveActivation} from './util/activationStore';
 
 import {getGame} from '../gamemode_management/index';
@@ -29,7 +29,7 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 export function onGameModeActivated(
-    api: IExtensionApi, activators: IModActivator[], newGame: string) {
+    api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
   const store = api.store;
   const state: IState = store.getState();
   const configuredActivatorId = currentActivator(state);
@@ -116,7 +116,7 @@ export function onPathsChanged(api: IExtensionApi,
 }
 
 export function onRemoveMod(api: IExtensionApi,
-                            activators: IModActivator[],
+                            activators: IDeploymentMethod[],
                             gameMode: string,
                             modId: string,
                             callback?: (error: Error) => void) {
@@ -145,7 +145,7 @@ export function onRemoveMod(api: IExtensionApi,
 
   const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
   // TODO: can only use one activator that needs to support the whole game
-  const activator: IModActivator = activatorId !== undefined
+  const activator: IDeploymentMethod = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
     : activators.find(act => allTypesSupported(act, state, gameMode, modTypes) === undefined);
 

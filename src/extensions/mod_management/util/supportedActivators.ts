@@ -2,7 +2,7 @@ import {IState} from '../../../types/IState';
 import { getGame } from '../../gamemode_management';
 import { currentGameDiscovery } from '../../gamemode_management/selectors';
 import { activeGameId } from '../../profile_management/selectors';
-import { IModActivator } from '../types/IModActivator';
+import { IDeploymentMethod } from '../types/IDeploymentMethod';
 
 import allTypesSupported from './allTypesSupported';
 
@@ -10,9 +10,9 @@ import allTypesSupported from './allTypesSupported';
  * return only those activators that are supported based on the current state
  *
  * @param {*} state
- * @returns {IModActivator[]}
+ * @returns {IDeploymentMethod[]}
  */
-function supportedActivators(activators: IModActivator[], state: IState): IModActivator[] {
+function supportedActivators(activators: IDeploymentMethod[], state: IState): IDeploymentMethod[] {
   const gameId = activeGameId(state);
   const discovery = state.settings.gameMode.discovered[gameId];
   if (discovery === undefined) {

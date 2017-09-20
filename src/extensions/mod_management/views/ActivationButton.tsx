@@ -9,7 +9,7 @@ import { activeGameId, activeProfile } from '../../../util/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
-import { IModActivator } from '../types/IModActivator';
+import { IDeploymentMethod } from '../types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
 import * as React from 'react';

@@ -6,12 +6,12 @@ import {log} from '../../util/log';
 import * as selectors from '../../util/selectors';
 import walk from '../../util/walk';
 
-import {IMod} from './types/IMod';
 import {
   IDeployedFile,
+  IDeploymentMethod,
   IFileChange,
-  IModActivator,
-} from './types/IModActivator';
+} from './types/IDeploymentMethod';
+import {IMod} from './types/IMod';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -31,7 +31,7 @@ export const BACKUP_TAG = '.vortex_backup';
  * base class for mod activators that use some form of file-based linking
  * (which is probably all of them)
  */
-abstract class LinkingActivator implements IModActivator {
+abstract class LinkingActivator implements IDeploymentMethod {
   public static TAG_NAME = '__delete_if_empty';
 
   public id: string;

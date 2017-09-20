@@ -1,6 +1,6 @@
-import {IModActivator} from '../types/IModActivator';
+import {IDeploymentMethod} from '../types/IDeploymentMethod';
 
-function allTypesSupported(activator: IModActivator, state: any,
+function allTypesSupported(activator: IDeploymentMethod, state: any,
                            gameId: string, types: string[]): string {
   let reason: string;
   types.find(type => {

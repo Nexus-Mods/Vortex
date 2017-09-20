@@ -5,11 +5,11 @@ import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
 
-import LinkingActivator from '../mod_management/LinkingActivator';
+import LinkingDeployment from '../mod_management/LinkingDeployment';
 import {
   IDeployedFile,
-  IModActivator,
-} from '../mod_management/types/IModActivator';
+  IDeploymentMethod,
+} from '../mod_management/types/IDeploymentMethod';
 
 import walk from './walk';
 
@@ -24,7 +24,7 @@ import { remoteCode } from './remoteCode';
 const elevated =
     lazyRequire<typeof elevatedT>('../../util/elevated', __dirname);
 
-class ModActivator extends LinkingActivator {
+class DeploymentMethod extends LinkingDeployment {
   public id: string;
   public name: string;
   public description: string;
@@ -210,11 +210,11 @@ class ModActivator extends LinkingActivator {
 }
 
 export interface IExtensionContextEx extends IExtensionContext {
-  registerModActivator: (activator: IModActivator) => void;
+  registerDeploymentMethod: (deployment: IDeploymentMethod) => void;
 }
 
 function init(context: IExtensionContextEx): boolean {
-  context.registerModActivator(new ModActivator(context.api));
+  context.registerDeploymentMethod(new DeploymentMethod(context.api));
 
   return true;
 }

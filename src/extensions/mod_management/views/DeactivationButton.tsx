@@ -9,7 +9,7 @@ import { currentActivator, installPath } from '../../mod_management/selectors';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { IMod } from '../types/IMod';
-import { IModActivator } from '../types/IModActivator';
+import { IDeploymentMethod } from '../types/IDeploymentMethod';
 
 import * as React from 'react';
 import * as Redux from 'redux';

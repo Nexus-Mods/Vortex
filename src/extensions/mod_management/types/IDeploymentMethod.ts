@@ -49,7 +49,7 @@ export interface IDeployedFile {
   //   criterium
 }
 
-export interface IModActivator {
+export interface IDeploymentMethod {
 
   /**
    * id of the activator for lookup in code

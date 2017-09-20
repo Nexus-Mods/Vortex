@@ -8,10 +8,10 @@ import walk from '../../util/walk';
 
 import { IProfileMod } from '../profile_management/types/IProfile';
 
+import { IDeployedFile, IDeploymentMethod } from './types/IDeploymentMethod';
 import { IMod } from './types/IMod';
-import { IDeployedFile, IModActivator } from './types/IModActivator';
 
-import { BACKUP_TAG } from './LinkingActivator';
+import { BACKUP_TAG } from './LinkingDeployment';
 
 import * as Promise from 'bluebird';
 import * as crypto from 'crypto';
@@ -159,7 +159,7 @@ function prepareMerged(api: IExtensionApi,
  * @param {string} destinationPath the game mod path
  * @param {IMod[]} mods list of mods to activate (sorted from lowest to highest
  * priority)
- * @param {IModActivator} activator the activator to use
+ * @param {IDeploymentMethod} activator the activator to use
  * @returns {Promise<void>}
  */
 export function activateMods(api: IExtensionApi,
@@ -167,7 +167,7 @@ export function activateMods(api: IExtensionApi,
                              modBasePath: string,
                              destinationPath: string,
                              mods: IMod[],
-                             activator: IModActivator,
+                             activator: IDeploymentMethod,
                              lastActivation: IDeployedFile[]): Promise<IDeployedFile[]> {
   let merged: Set<string>;
   return prepareMerged(api, game, modBasePath, destinationPath, mods)

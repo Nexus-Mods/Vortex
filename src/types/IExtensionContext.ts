@@ -1,8 +1,8 @@
+import {IDeploymentMethod} from '../extensions/mod_management/types/IDeploymentMethod';
 import {
   IInstallResult,
   IInstruction,
 } from '../extensions/mod_management/types/IInstallResult';
-import {IModActivator} from '../extensions/mod_management/types/IModActivator';
 import {
   InstallFunc,
   ProgressDelegate,
@@ -27,7 +27,7 @@ import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
 
-export { TestSupported, IInstallResult, IInstruction, IModActivator,
+export { TestSupported, IInstallResult, IInstruction, IDeploymentMethod,
          InstallFunc, ISupportedResult, ProgressDelegate };
 
 export type PropsCallback = () => any;
@@ -451,7 +451,7 @@ export interface IExtensionContext {
    *
    * @memberof IExtensionContext
    */
-  registerModActivator: (activator: IModActivator) => void;
+  registerDeploymentMethod: (method: IDeploymentMethod) => void;
 
   /**
    * register an installer

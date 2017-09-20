@@ -5,9 +5,9 @@ import { activeGameId } from '../../util/selectors';
 
 import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
-import LinkingActivator from '../mod_management/LinkingActivator';
+import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { installPath } from '../mod_management/selectors';
-import { IModActivator } from '../mod_management/types/IModActivator';
+import { IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
 
 import walk from '../../util/walk';
 
@@ -26,7 +26,7 @@ export class FileFound extends Error {
   }
 }
 
-class ModActivator extends LinkingActivator {
+class DeploymentMethod extends LinkingDeployment {
   constructor(api: IExtensionApi) {
     super(
         'hardlink_activator', 'Hardlink deployment',
@@ -118,7 +118,7 @@ class ModActivator extends LinkingActivator {
           let tagDir: Promise<void>;
           if (created !== null) {
             tagDir = fs.writeFileAsync(
-                path.join(created, LinkingActivator.TAG_NAME),
+                path.join(created, LinkingDeployment.TAG_NAME),
                 'This directory was created by Vortex deployment and will be removed ' +
                     'during purging if it\'s empty');
           } else {
@@ -151,11 +151,11 @@ class ModActivator extends LinkingActivator {
 }
 
 export interface IExtensionContextEx extends IExtensionContext {
-  registerModActivator: (activator: IModActivator) => void;
+  registerDeploymentMethod: (activator: IDeploymentMethod) => void;
 }
 
 function init(context: IExtensionContextEx): boolean {
-  context.registerModActivator(new ModActivator(context.api));
+  context.registerDeploymentMethod(new DeploymentMethod(context.api));
 
   return true;
 }

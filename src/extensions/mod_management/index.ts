@@ -39,8 +39,8 @@ import {IMod} from './types/IMod';
 import {
   IDeployedFile,
   IFileChange,
-  IModActivator,
-} from './types/IModActivator';
+  IDeploymentMethod,
+} from './types/IDeploymentMethod';
 import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
 import {TestSupported} from './types/TestSupported';
@@ -69,7 +69,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
-const activators: IModActivator[] = [];
+const activators: IDeploymentMethod[] = [];
 
 let installManager: InstallManager;
 
@@ -83,7 +83,7 @@ const installers: IInstaller[] = [];
 
 const modSources: IModSource[] = [];
 
-function registerModActivator(activator: IModActivator) {
+function registerDeploymentMethod(activator: IDeploymentMethod) {
   activators.push(activator);
 }
 
@@ -95,12 +95,12 @@ function registerModSource(id: string, name: string, onBrowse: () => void) {
   modSources.push({ id, name, onBrowse });
 }
 
-function getActivator(state: IState): IModActivator {
+function getActivator(state: IState): IDeploymentMethod {
   const gameId = activeGameId(state);
   const activatorId = currentActivator(state);
-  let activator: IModActivator;
+  let activator: IDeploymentMethod;
   if (activatorId !== undefined) {
-    activator = activators.find((act: IModActivator) => act.id === activatorId);
+    activator = activators.find((act: IDeploymentMethod) => act.id === activatorId);
   }
   if (activator === undefined) {
     const gameDiscovery = currentGameDiscovery(state);
@@ -534,7 +534,7 @@ function init(context: IExtensionContext): boolean {
 
   context.registerTableAttribute('mods', genModsSourceAttribute(context.api));
 
-  context.registerModActivator = registerModActivator;
+  context.registerDeploymentMethod = registerDeploymentMethod;
   context.registerInstaller = registerInstaller;
   context.registerAttributeExtractor = registerAttributeExtractor;
   context.registerModSource = registerModSource;

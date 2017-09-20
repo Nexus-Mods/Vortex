@@ -4,7 +4,7 @@ import {IState} from '../../../types/IState';
 import {UserCanceled} from '../../../util/CustomErrors';
 
 import {IDeploymentManifest, ManifestFormat} from '../types/IDeploymentManifest';
-import {IDeployedFile} from '../types/IModActivator';
+import {IDeployedFile} from '../types/IDeploymentMethod';
 
 import format_1 from './manifest_formats/format_1';
 

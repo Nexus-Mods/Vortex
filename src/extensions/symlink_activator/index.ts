@@ -6,8 +6,8 @@ import walk from '../../util/walk';
 
 import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
-import LinkingActivator from '../mod_management/LinkingActivator';
-import { IModActivator } from '../mod_management/types/IModActivator';
+import LinkingDeployment from '../mod_management/LinkingDeployment';
+import { IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
@@ -18,7 +18,7 @@ import * as path from 'path';
 
 const app = appIn || remote.app;
 
-class ModActivator extends LinkingActivator {
+class DeploymendMethod extends LinkingDeployment {
   public id: string;
   public name: string;
   public description: string;
@@ -143,11 +143,11 @@ class ModActivator extends LinkingActivator {
 }
 
 export interface IExtensionContextEx extends IExtensionContext {
-  registerModActivator: (activator: IModActivator) => void;
+  registerDeploymentMethod: (method: IDeploymentMethod) => void;
 }
 
 function init(context: IExtensionContextEx): boolean {
-  context.registerModActivator(new ModActivator(context.api));
+  context.registerDeploymentMethod(new DeploymendMethod(context.api));
 
   return true;
 }
