@@ -2,8 +2,6 @@ import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 
-import { setAddGameDialogVisible } from '../actions/session';
-
 import * as I18next from 'i18next';
 import * as React from 'react';
 

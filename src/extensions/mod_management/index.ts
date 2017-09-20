@@ -1,6 +1,7 @@
 import {showDialog} from '../../actions/notifications';
 import { setSettingsPage } from '../../actions/session';
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
+import {IGame} from '../../types/IGame';
 import {IState, IStatePaths} from '../../types/IState';
 import { ITableAttribute, Placement } from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
@@ -21,7 +22,7 @@ import {getSafe} from '../../util/storeHelper';
 import {truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
-import {getGames} from '../gamemode_management/index';
+import {getGame} from '../gamemode_management/index';
 import {IDiscoveryResult} from '../gamemode_management/types/IDiscoveryResult';
 import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfileMod} from '../profile_management/types/IProfile';
@@ -33,7 +34,7 @@ import {externalChangesReducer} from './reducers/externalChanges';
 import {modsReducer} from './reducers/mods';
 import {settingsReducer} from './reducers/settings';
 import {IFileEntry} from './types/IFileEntry';
-import {IInstall} from './types/IInstall';
+import {IInstruction} from './types/IInstallResult';
 import {IMod} from './types/IMod';
 import {
   IDeployedFile,
@@ -41,8 +42,10 @@ import {
   IModActivator,
 } from './types/IModActivator';
 import {IModSource} from './types/IModSource';
-import {ITestSupported} from './types/ITestSupported';
+import {InstallFunc} from './types/InstallFunc';
+import {TestSupported} from './types/TestSupported';
 import { loadActivation, saveActivation } from './util/activationStore';
+import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
 import { registerAttributeExtractor } from './util/filterModInfo';
 import resolvePath from './util/resolvePath';
@@ -72,24 +75,19 @@ let installManager: InstallManager;
 
 interface IInstaller {
   priority: number;
-  testSupported: ITestSupported;
-  install: IInstall;
+  testSupported: TestSupported;
+  install: InstallFunc;
 }
 
 const installers: IInstaller[] = [];
 
 const modSources: IModSource[] = [];
 
-export interface IExtensionContextExt extends IExtensionContext {
-  registerModActivator: (activator: IModActivator) => void;
-  registerInstaller: (priority: number, testSupported: ITestSupported, install: IInstall) => void;
-}
-
 function registerModActivator(activator: IModActivator) {
   activators.push(activator);
 }
 
-function registerInstaller(priority: number, testSupported: ITestSupported, install: IInstall) {
+function registerInstaller(priority: number, testSupported: TestSupported, install: InstallFunc) {
   installers.push({ priority, testSupported, install });
 }
 
@@ -98,13 +96,19 @@ function registerModSource(id: string, name: string, onBrowse: () => void) {
 }
 
 function getActivator(state: IState): IModActivator {
+  const gameId = activeGameId(state);
   const activatorId = currentActivator(state);
   let activator: IModActivator;
   if (activatorId !== undefined) {
     activator = activators.find((act: IModActivator) => act.id === activatorId);
   }
   if (activator === undefined) {
-    activator = activators.find((act: IModActivator) => act.isSupported(state) === undefined);
+    const gameDiscovery = currentGameDiscovery(state);
+
+    const types = Object.keys(getGame(gameId)
+      .getModPaths(gameDiscovery.path));
+    activator = activators.find(act =>
+      allTypesSupported(act, state, gameId, types) === undefined);
   }
   return activator;
 }
@@ -112,6 +116,7 @@ function getActivator(state: IState): IModActivator {
 function purgeMods(api: IExtensionApi): Promise<void> {
   const state = api.store.getState();
   const instPath = installPath(state);
+  const gameId = activeGameId(state);
   const gameDiscovery = currentGameDiscovery(state);
   const t = api.translate;
   const activator = getActivator(state);
@@ -126,15 +131,20 @@ function purgeMods(api: IExtensionApi): Promise<void> {
     title: t('Purging'),
   });
 
-  return loadActivation(api, gameDiscovery.modPath)
-      .then(() => activator.purge(instPath, gameDiscovery.modPath))
-      .then(() => saveActivation(state.app.instanceId, gameDiscovery.modPath, []))
-      .catch(UserCanceled, () => undefined)
-      .catch(err => api.showErrorNotification('failed to purge mods', err))
-      .finally(() => api.dismissNotification(notificationId));
+  const game: IGame = getGame(gameId);
+  const modPaths = game.getModPaths(gameDiscovery.path);
+
+  return Promise.each(Object.keys(modPaths), typeId =>
+    loadActivation(api, modPaths[typeId])
+      .then(() => activator.purge(instPath, modPaths[typeId]))
+      .then(() => saveActivation(state.app.instanceId, modPaths[typeId], [])))
+  .catch(UserCanceled, () => undefined)
+  .catch(err => api.showErrorNotification('failed to purge mods', err))
+  .finally(() => api.dismissNotification(notificationId));
 }
 
-function applyFileActions(gameDiscovery: IDiscoveryResult,
+function applyFileActions(gameId: string,
+                          gameDiscovery: IDiscoveryResult,
                           instPath: string,
                           lastActivation: IDeployedFile[],
                           fileActions: IFileEntry[]) {
@@ -150,17 +160,19 @@ function applyFileActions(gameDiscovery: IDiscoveryResult,
     actionGroups[action.action].push(action);
   });
 
+  const modPaths = getGame(gameId).getModPaths(gameDiscovery.path);
+
   // process the actions that the user selected in the dialog
   return Promise.map(actionGroups['drop'] || [],
     // delete the files the user wants to drop
     (entry) => truthy(entry.filePath)
-      ? fs.removeAsync(path.join(gameDiscovery.modPath, entry.filePath))
+      ? fs.removeAsync(path.join(modPaths[entry.modTypeId], entry.filePath))
       : Promise.reject(new Error('invalid file path')))
     .then(() => Promise.map(
       actionGroups['import'] || [],
       // copy the files the user wants to import
       (entry) => fs.copyAsync(
-        path.join(gameDiscovery.modPath, entry.filePath),
+        path.join(modPaths[entry.modTypeId], entry.filePath),
         path.join(instPath, entry.source, entry.filePath))))
     .then(() => {
       // remove files that the user wants to restore from
@@ -199,6 +211,8 @@ function genUpdateModActivation() {
     const gameMode = activeGameId(state);
     const instPath = installPath(state);
     const gameDiscovery = currentGameDiscovery(state);
+    const game = getGame(gameMode);
+    const modPaths = game.getModPaths(gameDiscovery.path);
     const t = api.translate;
     let profile = activeProfile(state);
     let modState = profile !== undefined ? profile.modState : {};
@@ -230,55 +244,64 @@ function genUpdateModActivation() {
 
     const gate = manual ? Promise.resolve() : activator.userGate();
 
-    let lastDeployment: IDeployedFile[] = [];
+    const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
 
     // test if anything was changed by an external application
     return gate.then(() => {
-      // update mod state again because if the user did have to
-      // confirm, it's more intuitive
-      // if we deploy the state at the time he confirmed, not when
-      // the deployment was triggered
-      profile = activeProfile(api.store.getState());
-      lastActivatedState = modState =
-        profile !== undefined ? profile.modState : {};
-      notificationId = api.sendNotification({
-        type: 'activity',
-        message: t('Deploying mods'),
-        title: t('Deploying'),
-      });
+        // update mod state again because if the user did have to
+        // confirm, it's more intuitive
+        // if we deploy the state at the time he confirmed, not when
+        // the deployment was triggered
+        profile = activeProfile(api.store.getState());
+        lastActivatedState = modState =
+          profile !== undefined ? profile.modState : {};
+        notificationId = api.sendNotification({
+          type: 'activity',
+          message: t('Deploying mods'),
+          title: t('Deploying'),
+        });
 
-      return loadActivation(api, gameDiscovery.modPath);
+        return Promise.each(Object.keys(modPaths),
+          typeId => loadActivation(api, modPaths[typeId]).then(
+            deployedFiles => lastDeployment[typeId] = deployedFiles));
+      })
+      .then(() => {
+        // for each mod type, check if the local files were changed outside vortex
+        const changes: { [typeId: string]: IFileChange[] } = {};
+        return Promise.each(Object.keys(modPaths),
+          typeId => activator.externalChanges(instPath, modPaths[typeId],
+            lastDeployment[typeId]).then(fileChanges => {
+              if (fileChanges.length > 0) {
+                changes[typeId] = fileChanges;
+              }
+            }))
+          .then(() => changes);
+      })
+      .then((changes: { [typeId: string]: IFileChange[] }) => (Object.keys(changes).length === 0)
+        ? Promise.resolve([])
+        : api.store.dispatch(showExternalChanges(changes)))
+    .then(fileActions => Promise.mapSeries(Object.keys(lastDeployment),
+      typeId => applyFileActions(gameMode, gameDiscovery, instPath,
+                                 lastDeployment[typeId], fileActions)))
+    // sort (all) mods based on their dependencies so the right files get activated
+    .then(() => sortMods(gameMode, modList, api))
+    .then((sortedMods: string[]) => {
+      const sortedModList = modList
+        .filter(mod => getSafe(modState, [mod.id, 'enabled'], false))
+        .sort((lhs: IMod, rhs: IMod) => sortedMods.indexOf(lhs.id) - sortedMods.indexOf(rhs.id));
+
+      return Promise.each(Object.keys(modPaths),
+        typeId => activateMods(api, game,
+                               instPath, modPaths[typeId], sortedModList,
+                               activator, lastDeployment[typeId])
+          .then(newActivation =>
+            saveActivation(state.app.instanceId,
+              modPaths[typeId], newActivation))
+          .then(() => bakeSettings(api, gameMode, sortedModList)));
     })
-      .then(currentActivation => {
-        lastDeployment = currentActivation;
-        return activator.externalChanges(instPath, gameDiscovery.modPath, currentActivation);
-      })
-      .then((changes: IFileChange[]) =>
-        (changes.length === 0)
-          ? Promise.resolve([])
-          : api.store.dispatch(showExternalChanges(changes)))
-      .then(fileActions => applyFileActions(gameDiscovery, instPath, lastDeployment, fileActions))
-      // sort (all) mods based on their dependencies so the right files get
-      // activated
-      .then(() => sortMods(gameMode, modList, api))
-      .then((sortedMods: string[]) => {
-        const sortedModList = modList
-          .filter(mod => getSafe(modState, [mod.id, 'enabled'], false))
-          .sort((lhs: IMod, rhs: IMod) =>
-            sortedMods.indexOf(lhs.id) -
-            sortedMods.indexOf(rhs.id));
-
-        return activateMods(api, getGames().find(iter => iter.id === gameMode),
-                            instPath, gameDiscovery.modPath, sortedModList,
-                            activator, lastDeployment)
-            .then(newActivation =>
-                      saveActivation(state.app.instanceId,
-                                     gameDiscovery.modPath, newActivation))
-            .then(() => bakeSettings(api, gameMode, sortedModList));
-      })
-      .catch(UserCanceled, () => undefined)
-      .catch(err => api.showErrorNotification('failed to deploy mods', err))
-      .finally(() => api.dismissNotification(notificationId));
+    .catch(UserCanceled, () => undefined)
+    .catch(err => api.showErrorNotification('failed to deploy mods', err))
+    .finally(() => api.dismissNotification(notificationId));
   };
 }
 
@@ -317,8 +340,14 @@ function genValidActivatorCheck(api: IExtensionApi) {
       return resolve(undefined);
     }
 
-    const messages = activators.map(
-      (activator) => `[*] ${activator.name} - [i]${activator.isSupported(state)}[/i]`);
+    const gameId = activeGameId(state);
+    const modPaths = getGame(gameId)
+      .getModPaths(currentGameDiscovery(state).path);
+
+    const messages = activators.map((activator) => {
+      const supported = allTypesSupported(activator, state, gameId, Object.keys(modPaths));
+      return `[*] ${activator.name} - [i]${supported}[/i]`;
+    });
 
     return resolve({
       description: {
@@ -460,7 +489,7 @@ function once(api: IExtensionApi) {
 
 }
 
-function init(context: IExtensionContextExt): boolean {
+function init(context: IExtensionContext): boolean {
   const modsActivity = new ReduxProp(context.api, [
     ['session', 'base', 'activity', 'mods'],
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));

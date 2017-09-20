@@ -8,6 +8,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
+import { getGame } from '../../gamemode_management';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -268,9 +269,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     const oldActivator = activators.find(iter => iter.id === currentActivator);
     const installPath = resolvePath('install', paths, gameMode);
+    const game = getGame(gameMode);
+    const modPaths = game.getModPaths(discovery.path);
 
     return oldActivator !== undefined
-      ? oldActivator.purge(installPath, discovery.modPath)
+      ? Promise.mapSeries(Object.keys(modPaths),
+                          typeId => oldActivator.purge(installPath, modPaths[typeId]))
+        .then(() => undefined)
       : Promise.resolve();
   }
 

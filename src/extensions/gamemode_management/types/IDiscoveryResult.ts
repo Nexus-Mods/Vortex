@@ -14,7 +14,6 @@ import { IToolStored } from './IToolStored';
  */
 export interface IDiscoveryResult {
   path?: string;
-  modPath?: string;
   tools?: {
     [id: string]: IToolStored;
   };

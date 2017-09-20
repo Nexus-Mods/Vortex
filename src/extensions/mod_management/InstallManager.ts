@@ -2,7 +2,7 @@ import { showDialog } from '../../actions/notifications';
 import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
-import {createErrorReport} from '../../util/errorHandling';
+import { createErrorReport } from '../../util/errorHandling';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
 import { activeGameId, activeProfile, downloadPath, gameName } from '../../util/selectors';
@@ -11,14 +11,17 @@ import { setdefault } from '../../util/util';
 import walk from '../../util/walk';
 
 import { IDownload } from '../download_management/types/IDownload';
+import { getGame } from '../gamemode_management';
+import { IModType } from '../gamemode_management/types/IModType';
 import modName from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
 import { IDependency } from './types/IDependency';
-import { IInstall } from './types/IInstall';
-import { IMod } from './types/IMod';
+import { IInstallResult, IInstruction } from './types/IInstallResult';
+import {IMod} from './types/IMod';
 import { IModInstaller } from './types/IModInstaller';
-import { ISupportedResult, ITestSupported } from './types/ITestSupported';
+import { InstallFunc } from './types/InstallFunc';
+import { ISupportedResult, TestSupported } from './types/TestSupported';
 import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 
@@ -65,19 +68,6 @@ interface ISupportedInstaller {
   requiredFiles: string[];
 }
 
-type InstructionType = 'copy' | 'submodule' | 'generatefile' | 'iniedit' | 'unsupported';
-
-interface IInstruction {
-  type: InstructionType;
-
-  path?: string;
-  source?: string;
-  destination?: string;
-  section?: string;
-  key?: string;
-  value?: string;
-}
-
 class InstructionGroups {
   public copy: IInstruction[] = [];
   public mkdir: IInstruction[] = [];
@@ -111,15 +101,15 @@ class InstallManager {
    * @param {number} priority priority of the installer. the lower the number the higher
    *                          the priority, so at priority 0 the extension would always be
    *                          the first to be queried
-   * @param {ITestSupported} testSupported
+   * @param {TestSupported} testSupported
    * @param {IInstall} install
    *
    * @memberOf InstallManager
    */
   public addInstaller(
     priority: number,
-    testSupported: ITestSupported,
-    install: IInstall) {
+    testSupported: TestSupported,
+    install: InstallFunc) {
     this.mInstallers.push({ priority, testSupported, install });
     this.mInstallers.sort((lhs: IModInstaller, rhs: IModInstaller): number => {
       return lhs.priority - rhs.priority;
@@ -250,11 +240,16 @@ class InstallManager {
         return this.installInner(api.store, archivePath,
           tempPath, destinationPath, installGameId);
       })
-      .then((result) => {
+      .then(result => {
         installContext.setInstallPathCB(modId, destinationPath);
-        return this.processInstructions(api, archivePath, tempPath, destinationPath,
-          installGameId, result);
+        return this.determineModType(installGameId, result.instructions)
+          .then(type => {
+            installContext.setModType(modId, type);
+            return result;
+          });
       })
+      .then(result => this.processInstructions(api, archivePath, tempPath, destinationPath,
+                                               installGameId, result))
       .finally(() => (tempPath !== undefined)
         ? rimrafAsync(tempPath, { glob: false })
         : Promise.resolve())
@@ -274,8 +269,12 @@ class InstallManager {
         return null;
       })
       .catch(err => {
-        const canceled =
-          (err instanceof UserCanceled) || err === null || err.message === 'Canceled';
+        // TODO: make this nicer. especially: The first check doesn't recognize UserCanceled
+        //   exceptions from extensions, hence we have to do the string check (last one)
+        const canceled = (err instanceof UserCanceled)
+                         || (err === null)
+                         || (err.message === 'Canceled')
+                         || (err.stack.startsWith('UserCanceled: canceled by user') !== -1);
         let prom = destinationPath !== undefined
           ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
           : Promise.resolve();
@@ -327,7 +326,8 @@ class InstallManager {
    * find the right installer for the specified archive, then install
    */
   private installInner(store: Redux.Store<any>, archivePath: string,
-                       tempPath: string, destinationPath: string, gameId: string) {
+                       tempPath: string, destinationPath: string,
+                       gameId: string): Promise<IInstallResult> {
     const fileList: string[] = [];
     return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
                                   () => undefined,
@@ -363,6 +363,28 @@ class InstallManager {
               fileList, tempPath, gameId,
               (perc: number) => log('info', 'progress', perc));
         });
+  }
+
+  private determineModType(gameId: string, installInstructions: IInstruction[]): Promise<string> {
+    const modTypes: IModType[] = getGame(gameId).modTypes;
+    // sort with priority descending so we can stop as soon as we've hit the first match
+    const sorted = modTypes.sort((lhs, rhs) => rhs.priority - lhs.priority);
+    let found = false;
+    return Promise.mapSeries(sorted, (type: IModType): Promise<string> => {
+      if (!found) {
+        return type.test(installInstructions)
+        .then(matches => {
+          if (matches) {
+            found = true;
+            return Promise.resolve(type.typeId);
+          } else {
+            return Promise.resolve(null);
+          }
+        });
+      } else {
+        return Promise.resolve<string>(null);
+      }
+    }).then(matches => matches.find(match => match !== null) || '');
   }
 
   private queryGameId(store: Redux.Store<any>,

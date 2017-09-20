@@ -1,8 +1,8 @@
-import {IInstall} from './IInstall';
-import {ITestSupported} from './ITestSupported';
+import {InstallFunc} from './InstallFunc';
+import {TestSupported} from './TestSupported';
 
 export interface IModInstaller {
   priority: number;
-  testSupported: ITestSupported;
-  install: IInstall;
+  testSupported: TestSupported;
+  install: InstallFunc;
 }

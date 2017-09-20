@@ -18,12 +18,10 @@ import MainPage from '../../../views/MainPage';
 import { setGamePath } from '../../gamemode_management/actions/settings';
 import { IProfile } from '../../profile_management/types/IProfile';
 
-import { setAddGameDialogVisible } from '../actions/session';
 import { addDiscoveredGame, setGameHidden, setPickerLayout } from '../actions/settings';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
-import AddGameButton from './AddGameButton';
 import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
 import ShowHiddenButton from './ShowHiddenButton';
@@ -44,7 +42,6 @@ function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStore
     mergeMods: discovered.mergeMods,
     extensionPath: discovered.extensionPath,
     logo: discovered.logo,
-    modPath: discovered.modPath,
     requiredFiles: [],
     supportedTools: [],
   };
@@ -68,9 +65,8 @@ interface IConnectedProps {
 interface IActionProps {
   onHide: (gameId: string, hidden: boolean) => void;
   onSetPickerLayout: (layout: 'list' | 'small' | 'large') => void;
-  onSetGamePath: (gameId: string, gamePath: string, modPath: string) => void;
+  onSetGamePath: (gameId: string, gamePath: string) => void;
   onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) => void;
-  onSetAddGameDialogVisible: () => void;
   onShowDialog: (type: DialogType, title: string,
                  content: IDialogContent, actions: DialogActions) => void;
 }
@@ -101,11 +97,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     };
 
     this.buttons = [
-      {
-        component: AddGameButton,
-        props: () =>
-          ({ t: this.props.t, showAddGameDialog: this.showAddGameDialog }),
-      },
       {
         component: ShowHiddenButton,
         props: () =>
@@ -265,10 +256,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private getScrollContainer = () => this.mScrollRef;
 
-  private showAddGameDialog = () => {
-    this.props.onSetAddGameDialogVisible();
-  }
-
   private toggleHidden = () => {
     this.setState(update(this.state, { showHidden: { $set: !this.state.showHidden } }));
   }
@@ -340,8 +327,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private setGamePath = (gameId: string, gamePath: string, modPath: string) => {
-    this.props.onSetGamePath(gameId, gamePath, modPath);
+  private setGamePath = (gameId: string, gamePath: string) => {
+    this.props.onSetGamePath(gameId, gamePath);
   }
 
   private addDiscoveredGame = (gameId: string, discovery: IDiscoveryResult) => {
@@ -367,12 +354,10 @@ function mapDispatchToProps(dispatch): IActionProps {
       dispatch(setGameHidden(gameId, hidden)),
     onSetPickerLayout: (layout) =>
       dispatch(setPickerLayout(layout)),
-    onSetGamePath: (gameId: string, gamePath: string, modPath: string) =>
-      dispatch(setGamePath(gameId, gamePath, modPath)),
+    onSetGamePath: (gameId: string, gamePath: string) =>
+      dispatch(setGamePath(gameId, gamePath)),
     onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) =>
       dispatch(addDiscoveredGame(gameId, result)),
-    onSetAddGameDialogVisible: () =>
-      dispatch(setAddGameDialogVisible(true)),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
   };

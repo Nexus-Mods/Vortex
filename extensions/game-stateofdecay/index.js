@@ -1,6 +1,5 @@
-const { log, util } = require('vortex-api');
-
 const path = require('path');
+const { log, util } = require('vortex-api');
 
 function findGame() {
   let steam = new util.Steam();
@@ -18,17 +17,13 @@ function findGame() {
   });
 }
 
-function modPath() {
-  return 'game';
-}
-
 function main(context) {
   context.registerGame({
     id: 'stateofdecay',
     name: 'State of Decay',
     mergeMods: false,
     queryPath: findGame,
-    queryModPath: modPath,
+    queryModPath: () => 'game',
     logo: 'gameart.png',
     executable: () => 'StateOfDecay.exe',
     requiredFiles: [

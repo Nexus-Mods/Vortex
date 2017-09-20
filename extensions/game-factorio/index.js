@@ -22,17 +22,15 @@ function findGame() {
 }
 
 function modPath() {
-  if (process.platform === 'win32') {
-    return path.join(remote.app.getPath('appData'), 'Factorio', 'mods');
-  }
-  return path.join(remote.app.getPath('home'), '.factorio', 'mods');
+  return (process.platform === 'win32')
+      ? path.join(remote.app.getPath('appData'), 'Factorio', 'mods')
+      : path.join(remote.app.getPath('home'), '.factorio', 'mods');
 }
 
 function gameExecutable() {
-  if (process.platform === 'win32') {
-    return 'bin/x64/Factorio.exe';
-  }
-  return 'bin/x64/factorio';
+  return (process.platform === 'win32')
+    ? 'bin/x64/Factorio.exe'
+    : 'bin/x64/factorio';
 }
 
 function prepareForModding() {

@@ -1,6 +1,5 @@
-const { log, util } = require('vortex-api');
-
 const path = require('path');
+const { log, util } = require('vortex-api');
 
 function findGame() {
   let steam = new util.Steam();
@@ -24,7 +23,7 @@ function main(context) {
     name: 'War Thunder',
     mergeMods: false,
     queryPath: findGame,
-    queryModPath: () => 'UserSkins/',
+    queryModPath: () => 'UserSkins',
     logo: 'gameart.png',
     executable: () => 'aces.exe',
     requiredFiles: [

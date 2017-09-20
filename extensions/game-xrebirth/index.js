@@ -1,7 +1,6 @@
-const { log, util } = require('vortex-api');
-
 const fs = require('fs-extra-promise');
 const path = require('path');
+const { log, util } = require('vortex-api');
 
 function findGame() {
   let steam = new util.Steam();
@@ -25,7 +24,7 @@ function main(context) {
     name: 'X Rebirth',
     mergeMods: false,
     queryPath: findGame,
-    queryModPath: () => 'extensions/',
+    queryModPath: () => 'extensions',
     logo: 'gameart.png',
     executable: () => 'XRebirth.exe',
     requiredFiles: [

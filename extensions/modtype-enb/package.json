@@ -1,0 +1,33 @@
+{
+  "name": "modtype-enb",
+  "version": "0.0.1",
+  "description": "Support for enb mods",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/i18next": "^8.4.0",
+    "@types/react": "^15.0.36",
+    "@types/react-bootstrap": "^0.0.52",
+    "@types/react-dom": "^15.5.1",
+    "@types/react-i18next": "^1.7.9",
+    "@types/react-redux": "^4.4.46",
+    "@types/react-router": "^4.0.14",
+    "@types/redux": "^3.6.0",
+    "babel-loader": "^7.1.1",
+    "bluebird": "^3.5.0",
+    "i18next": "^8.4.3",
+    "vortex-api": "file:../../api",
+    "react": "^15.6.1",
+    "react-bootstrap": "^0.31.0",
+    "react-dom": "^15.6.1",
+    "react-i18next": "^4.6.2",
+    "ts-loader": "2.3.4",
+    "webpack": "^3.1.0"
+  }
+}

@@ -207,6 +207,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "modtype-enb",
+      "path": "extensions/modtype-enb",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-enb"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "name": "exe-version-rebuild",
       "module": "exe-version",

@@ -87,7 +87,6 @@ export function quickDiscovery(knownGames: IGame[],
           log('info', 'found game', { name: game.name, location: gamePath });
           onDiscoveredGame(game.id, {
             path: gamePath,
-            modPath: game.queryModPath(),
             tools: {},
             hidden: false,
             environment: game.environment,
@@ -105,7 +104,6 @@ export function quickDiscovery(knownGames: IGame[],
             log('info', 'found game', { name: game.name, location: resolvedPath });
             onDiscoveredGame(game.id, {
               path: resolvedPath,
-              modPath: game.queryModPath(),
             });
           }
           resolve(game.name);
@@ -233,7 +231,6 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
         if (game.queryModPath !== undefined) {
           onDiscoveredGame(gameId, {
             path: testPath,
-            modPath: game.queryModPath(),
           });
         } else {
           onDiscoveredTool(gameId, {

@@ -35,6 +35,12 @@ export const setModAttribute = safeCreateAction('SET_MOD_ATTRIBUTE',
     ({ gameId, modId, attribute, value }));
 
 /**
+ * sets the type of a mod
+ */
+export const setModType = safeCreateAction('SET_MOD_TYPE',
+  (gameId: string, modId: string, type: string) => ({ gameId, modId, type }));
+
+/**
  * add a dependency rule for this mod
  */
 export const addModRule = safeCreateAction('ADD_MOD_RULE',

@@ -50,7 +50,7 @@ abstract class LinkingActivator implements IModActivator {
     this.mApi = api;
   }
 
-  public abstract isSupported(state: any, gameId?: string): string;
+  public abstract isSupported(state: any, gameId: string, modTypeId: string): string;
 
   /**
    * if necessary, get user confirmation we should deploy now. Right now this

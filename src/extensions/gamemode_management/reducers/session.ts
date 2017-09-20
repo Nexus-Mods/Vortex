@@ -11,11 +11,8 @@ import * as update from 'immutability-helper';
 export const sessionReducer: IReducerSpec = {
   reducers: {
     [actions.setKnownGames as any]: (state, payload) => update(state, { known: { $set: payload } }),
-    [actions.setAddGameDialogVisible as any]:
-      (state, payload) => setSafe(state, ['addDialogVisible'], payload.visible),
   },
   defaults: {
     known: [],
-    addDialogVisible: false,
   },
 };

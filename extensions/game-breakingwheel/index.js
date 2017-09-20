@@ -24,7 +24,7 @@ function main(context) {
     name: 'Breaking Wheel',
     mergeMods: false,
     queryPath: findGame,
-    queryModPath: () => 'ModdingTools/',
+    queryModPath: () => 'ModdingTools',
     logo: 'gameart.png',
     executable: () => 'Ellie_Ball_Project.exe',
     requiredFiles: [

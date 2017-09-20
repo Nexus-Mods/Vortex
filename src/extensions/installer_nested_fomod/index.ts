@@ -4,11 +4,13 @@
  * to another installer.
  */
 
-import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
+import {
+  IExtensionApi,
+  IExtensionContext,
+  ISupportedResult,
+  ProgressDelegate,
+} from '../../types/IExtensionContext';
 import {log} from '../../util/log';
-
-import {IProgressDelegate} from '../mod_management/types/IInstall';
-import {ISupportedResult} from '../mod_management/types/ITestSupported';
 
 import * as path from 'path';
 
@@ -24,7 +26,7 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
 }
 
 function install(files: string[], destinationPath: string,
-                 gameId: string, progress: IProgressDelegate,
+                 gameId: string, progress: ProgressDelegate,
                  api: IExtensionApi): Promise<any> {
   return new Promise((resolve, reject) => {
     const fomod = files.find((file) => path.extname(file) === '.fomod');
@@ -42,7 +44,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerInstaller(
       0, testSupported,
       (files: string[], destinationPath: string, gameId: string,
-       progress: IProgressDelegate) =>
+       progress: ProgressDelegate) =>
           install(files, destinationPath, gameId, progress, context.api));
 
   return true;

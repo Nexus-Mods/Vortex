@@ -1,11 +1,15 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
+import {
+  IExtensionContext,
+  IInstallResult,
+  ISupportedResult,
+  ProgressDelegate,
+} from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
 import { UserCanceled } from '../../util/CustomErrors';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import {truthy} from '../../util/util';
 
-import { ISupportedResult } from '../mod_management/types/ITestSupported';
 import resolvePath from '../mod_management/util/resolvePath';
 
 import { endDialog, setInstallerDataPath } from './actions/installerUI';
@@ -23,7 +27,6 @@ import * as util from 'util';
 
 let testSupportedLib;
 let installLib;
-type ProgressDelegate = (perc: number) => void;
 
 function dirname() {
   return __dirname.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
@@ -56,10 +59,8 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
   return new Promise<ISupportedResult>((resolve, reject) => {
     testSupportedLib({files}, (err: Error, result: ISupportedResult) => {
       if ((err !== null) && (err !== undefined)) {
-        log('info', 'got err', util.inspect(err));
         reject(transformError(err));
       } else {
-        log('info', 'got result', util.inspect(result));
         resolve(result);
       }
     });
@@ -70,7 +71,7 @@ let currentInstallPromise: Promise<any> = Promise.resolve();
 
 function install(files: string[], topLevelDirectories: string[], scriptPath: string,
                  progressDelegate: ProgressDelegate,
-                 coreDelegates: Core): Promise<any> {
+                 coreDelegates: Core): Promise<IInstallResult> {
   if (installLib === undefined) {
     installLib = edge.func({
       assemblyFile: path.resolve(dirname(), '..', '..', 'lib', 'ModInstaller',
@@ -84,10 +85,8 @@ function install(files: string[], topLevelDirectories: string[], scriptPath: str
     installLib({ files, topLevelDirectories, scriptPath, progressDelegate, coreDelegates },
       (err: Error, result: any) => {
         if ((err !== null) && (err !== undefined)) {
-          log('info', 'got err', util.inspect(err));
           reject(transformError(err));
         } else {
-          log('info', 'result', util.inspect(result));
           resolve(result);
         }
       });
@@ -95,10 +94,6 @@ function install(files: string[], topLevelDirectories: string[], scriptPath: str
     currentInstallPromise = Promise.resolve();
   });
   return currentInstallPromise;
-}
-
-export interface IExtensionContextExt extends IExtensionContext {
-  registerInstaller: (priority, testSupported, install) => void;
 }
 
 function processAttributes(input: any, modPath: string): Promise<any> {
@@ -126,7 +121,7 @@ function processAttributes(input: any, modPath: string): Promise<any> {
       .catch(err => ({}));
 }
 
-function init(context: IExtensionContextExt): boolean {
+function init(context: IExtensionContext): boolean {
   context.registerInstaller(
     100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
       const coreDelegates = new Core(context.api, gameId);

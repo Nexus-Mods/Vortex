@@ -138,9 +138,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     const controls: JSX.Element[] = [];
 
-    const wrap = (content.options && (content.options.wrap === false)) ? 'off' : 'on';
-
     if (content.message !== undefined) {
+      const wrap = (content.options && (content.options.wrap === true)) ? 'on' : 'off';
       controls.push((
         <textarea
           key='dialog-content-message'

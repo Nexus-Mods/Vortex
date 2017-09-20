@@ -92,7 +92,7 @@ export interface IModActivator {
    *
    * @memberOf IModActivator
    */
-  isSupported: (state: any, gameId?: string) => string;
+  isSupported: (state: any, gameId: string, modTypeId: string) => string;
 
   /**
    * if mod deployment in some way requires user interaction we should give the user control
@@ -154,7 +154,7 @@ export interface IModActivator {
   /**
    * deactivate all mods at the destination location
    * @param {string} installPath Vortex path where mods are installed from (source)
-   * @param {string} dataPath game path where mods are installed to (destination)
+   * @param {string} dataPath game paths where mods are installed to (destination)
    * Vortex itself does not keep track which files were installed by the
    * activator so if the activator can not discover those automatically it
    * it has to do its own bookkeeping.

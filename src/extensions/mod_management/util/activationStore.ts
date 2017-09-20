@@ -1,11 +1,44 @@
 import {showDialog} from '../../../actions/notifications';
 import {IExtensionApi} from '../../../types/IExtensionContext';
+import {IState} from '../../../types/IState';
 import {UserCanceled} from '../../../util/CustomErrors';
+
+import {IDeploymentManifest, ManifestFormat} from '../types/IDeploymentManifest';
 import {IDeployedFile} from '../types/IModActivator';
+
+import format_1 from './manifest_formats/format_1';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+
+const CURRENT_VERSION = 1;
+
+const formats: { [version: number]: ManifestFormat } = {
+  1: format_1,
+};
+
+function emptyManifest(instance: string): IDeploymentManifest {
+  return {
+    version: CURRENT_VERSION,
+    instance,
+    files: [],
+  };
+}
+
+function readManifest(data: string): IDeploymentManifest {
+  let parsed = JSON.parse(data);
+  let lastVersion = 0;
+  while (lastVersion < CURRENT_VERSION) {
+    parsed = formats[parsed.version || 1](parsed);
+    if ((parsed.version === lastVersion) && (parsed.version < CURRENT_VERSION)) {
+      // this should not happen!
+      throw new Error(`unsupported format upgrade ${parsed.version} -> ${CURRENT_VERSION}`);
+    }
+    lastVersion = parsed.version;
+  }
+  return parsed;
+}
 
 function fallbackPurge(basePath: string,
                        files: IDeployedFile[]): Promise<void> {
@@ -57,12 +90,15 @@ function queryPurge(api: IExtensionApi,
 
 export function loadActivation(api: IExtensionApi, gamePath: string): Promise<IDeployedFile[]> {
   const tagFile = path.join(gamePath, 'vortex.deployment.json');
-  return fs.readFileAsync(tagFile)
-      .catch(() => '{ "files": [] }')
-      .then(tagData => {
-        const state = api.store.getState();
-        const tagObject = JSON.parse(tagData.toString());
-        return ((tagObject.instance !== state.app.instanceId) && (tagObject.files.length > 0))
+  const state: IState = api.store.getState();
+  const instanceId = state.app.instanceId;
+  return fs.readFileAsync(tagFile, 'utf8')
+      .then(data => readManifest(data))
+      .catch(err => (err.code === 'ENOENT')
+        ? emptyManifest(instanceId)
+        : Promise.reject(err))
+      .then(tagObject => {
+        return ((tagObject.instance !== instanceId) && (tagObject.files.length > 0))
            ? queryPurge(api, gamePath, tagObject.files)
               .then(() => saveActivation(state.app.instanceId, gamePath, []))
               .then(() => Promise.resolve([]))

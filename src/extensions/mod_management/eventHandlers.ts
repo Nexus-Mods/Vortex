@@ -1,5 +1,5 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
-import {IStatePaths} from '../../types/IState';
+import {IState, IStatePaths} from '../../types/IState';
 import {showError} from '../../util/message';
 import {getSafe} from '../../util/storeHelper';
 import {truthy} from '../../util/util';
@@ -12,9 +12,11 @@ import {IMod} from './types/IMod';
 import {IModActivator} from './types/IModActivator';
 import {loadActivation, saveActivation} from './util/activationStore';
 
+import {getGame} from '../gamemode_management/index';
 import {currentGameDiscovery} from '../gamemode_management/selectors';
 import {setModEnabled} from '../profile_management/actions/profiles';
 
+import allTypesSupported from './util/allTypesSupported';
 import refreshMods from './util/refreshMods';
 import resolvePath from './util/resolvePath';
 import supportedActivators from './util/supportedActivators';
@@ -29,12 +31,14 @@ import * as path from 'path';
 export function onGameModeActivated(
     api: IExtensionApi, activators: IModActivator[], newGame: string) {
   const store = api.store;
-  const state = store.getState();
+  const state: IState = store.getState();
   const configuredActivatorId = currentActivator(state);
   const supported = supportedActivators(activators, state);
   const configuredActivator =
     supported.find(activator => activator.id === configuredActivatorId);
-  const gameDiscovery = currentGameDiscovery(state);
+  const gameId = activeGameId(state);
+  const gameDiscovery = state.settings.gameMode.discovered[gameId];
+  const game = getGame(gameId);
 
   const instPath = installPath(state);
 
@@ -46,16 +50,22 @@ export function onGameModeActivated(
 
     if ((configuredActivatorId !== undefined) && (oldActivator === undefined)) {
       api.showErrorNotification(
-        'Deployment method "' + configuredActivatorId + '" no longer available',
-        'The deployment method used with this game is no longer available. ' +
-        'This probably means you removed the corresponding extension or ' +
-        'it can no longer be loaded due to a bug.\n' +
-        'Vortex can\'t clean up files deployed with an unsupported method. ' +
-        'You should try to restore it, purge deployment and then switch ' +
-        'to a different method.');
+        'Deployment method no longer available',
+        {
+          reason:
+          'The deployment method used with this game is no longer available. ' +
+          'This probably means you removed the corresponding extension or ' +
+          'it can no longer be loaded due to a bug.\n' +
+          'Vortex can\'t clean up files deployed with an unsupported method. ' +
+          'You should try to restore it, purge deployment and then switch ' +
+          'to a different method.',
+          method: configuredActivatorId,
+        }, { allowReport: false });
     } else {
+      const modPaths = game.getModPaths(gameDiscovery.path);
       const purgePromise = oldActivator !== undefined
-        ? oldActivator.purge(instPath, gameDiscovery.modPath)
+        ? Promise.mapSeries(Object.keys(modPaths),
+            typeId => oldActivator.purge(instPath, modPaths[typeId])).then(() => undefined)
         : Promise.resolve();
 
       purgePromise.then(() => {
@@ -111,7 +121,7 @@ export function onRemoveMod(api: IExtensionApi,
                             modId: string,
                             callback?: (error: Error) => void) {
   const store = api.store;
-  const state = store.getState();
+  const state: IState = store.getState();
   let mod: IMod;
 
   try {
@@ -129,10 +139,15 @@ export function onRemoveMod(api: IExtensionApi,
 
   store.dispatch(setModEnabled(profile.id, modId, false));
 
+  const discovery = state.settings.gameMode.discovered[gameMode];
+  const game = getGame(gameMode);
+  const modTypes = Object.keys(game.getModPaths(discovery.path));
+
   const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
+  // TODO: can only use one activator that needs to support the whole game
   const activator: IModActivator = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
-    : activators.find(act => act.isSupported(state, gameMode) === undefined);
+    : activators.find(act => allTypesSupported(act, state, gameMode, modTypes) === undefined);
 
   const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
 

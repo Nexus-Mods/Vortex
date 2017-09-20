@@ -25,8 +25,9 @@ function defaultAction(changeType: string): FileAction {
   }
 }
 
-function changeToEntry(change: IFileChange) {
+function changeToEntry(modTypeId: string, change: IFileChange): IFileEntry {
   return {
+    modTypeId,
     filePath: change.filePath,
     source: change.source,
     type: change.changeType,
@@ -34,12 +35,17 @@ function changeToEntry(change: IFileChange) {
   };
 }
 
-export function showExternalChanges(changes: IFileChange[]) {
+export function showExternalChanges(changes: { [typeId: string]: IFileChange[] }) {
   return (dispatch) =>
     new Promise<IFileEntry[]>((resolve, reject) => {
       curResolve = resolve;
       curReject = reject;
-      dispatch(setExternalChanges(changes.map(changeToEntry)));
+      const entries: IFileEntry[] = [];
+      Object.keys(changes).forEach(typeId => {
+        changes[typeId].forEach(fileChange =>
+          entries.push(changeToEntry(typeId, fileChange)));
+      });
+      dispatch(setExternalChanges(entries));
   });
 }
 

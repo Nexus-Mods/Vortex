@@ -3,9 +3,15 @@ import { INotification } from '../../types/INotification';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 
-import { addMod, removeMod, setModAttribute,
-         setModInstallationPath, setModState } from './actions/mods';
-import { IMod, ModState } from './types/IMod';
+import {
+  addMod,
+  removeMod,
+  setModAttribute,
+  setModInstallationPath,
+  setModState,
+  setModType,
+} from './actions/mods';
+import {IMod, ModState} from './types/IMod';
 
 import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 
@@ -25,6 +31,7 @@ class InstallContext implements IInstallContext {
   private mSetModState: (id: string, state: ModState) => void;
   private mSetModAttribute: (id: string, key: string, value: any) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
+  private mSetModType: (id: string, modType: string) => void;
 
   private mAddedId: string;
   private mIndicatorId: string;
@@ -45,6 +52,8 @@ class InstallContext implements IInstallContext {
       dispatch(setModAttribute(gameMode, id, key, value));
     this.mSetModInstallationPath = (id, installPath) =>
       dispatch(setModInstallationPath(gameMode, id, installPath));
+    this.mSetModType = (id, modType) =>
+      dispatch(setModType(gameMode, id, modType));
   }
 
   public startIndicator(id: string): void {
@@ -70,6 +79,7 @@ class InstallContext implements IInstallContext {
   public startInstallCB(id: string, archiveId: string): void {
     this.mAddMod({
       id,
+      type: '',
       archiveId,
       installationPath: id,
       state: 'installing',
@@ -107,6 +117,10 @@ class InstallContext implements IInstallContext {
 
   public setInstallPathCB(id: string, installPath: string) {
     this.mSetModInstallationPath(id, path.basename(installPath));
+  }
+
+  public setModType(modId: string, modType: string) {
+    this.mSetModType(modId, modType);
   }
 
   public reportError(message: string, details?: string | Error, allowReport?: boolean): void {

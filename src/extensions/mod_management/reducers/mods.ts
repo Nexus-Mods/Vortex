@@ -51,6 +51,13 @@ export const modsReducer: IReducerSpec = {
       }
       return setSafe(state, [gameId, modId, 'attributes', attribute], value);
     },
+    [actions.setModType as any]: (state, payload) => {
+      const { gameId, modId, type } = payload;
+      if (getSafe(state, [gameId, modId], undefined) === undefined) {
+        return state;
+      }
+      return setSafe(state, [gameId, modId, 'type'], type);
+    },
     [actions.addModRule as any]: (state, payload) => {
       const { gameId, modId, rule } = payload;
       if ((state[gameId] === undefined) || (state[gameId][modId] === undefined)) {

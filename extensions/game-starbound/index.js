@@ -27,12 +27,8 @@ function gameExecutable() {
   return 'win64/starbound.exe';
 }
 
-function modPath() {
-  return 'mods';
-}
-
 function prepareForModding() {
-  return fs.ensureDirAsync(modPath());
+  return fs.ensureDirAsync('mods');
 }
 
 function main(context) {
@@ -41,7 +37,7 @@ function main(context) {
     name: 'Starbound',
     mergeMods: false,
     queryPath: findGame,
-    queryModPath: modPath,
+    queryModPath: () => 'mods',
     logo: 'gameart.png',
     executable: gameExecutable,
     requiredFiles: [

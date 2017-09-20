@@ -1,8 +1,10 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
+import { IGame } from '../../types/IGame';
 import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
 import walk from '../../util/walk';
 
+import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingActivator from '../mod_management/LinkingActivator';
 import { IModActivator } from '../mod_management/types/IModActivator';
@@ -46,7 +48,7 @@ class ModActivator extends LinkingActivator {
       + 'your regular account has write access to source and destination.');
   }
 
-  public isSupported(state: any, gameId?: string): string {
+  public isSupported(state: any, gameId: string, typeId: string): string {
     if (gameId === undefined) {
       gameId = activeGameId(state);
     }
@@ -61,11 +63,17 @@ class ModActivator extends LinkingActivator {
       return 'Doesn\'t work with ' + gameName(state, gameId);
     }
 
-    const activeGameDiscovery: IDiscoveryResult =
-      state.settings.gameMode.discovered[gameId];
+    const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
+
+    if (discovery === undefined) {
+      return 'No game discovery';
+    }
+
+    const game: IGame = getGame(gameId);
+    const modPaths = game.getModPaths(discovery.path);
 
     try {
-      fsOrig.accessSync(activeGameDiscovery.modPath, fsOrig.constants.W_OK);
+      fsOrig.accessSync(modPaths[typeId], fsOrig.constants.W_OK);
       if (!this.ensureAdmin()) {
         return 'Requires admin rights on windows';
       }

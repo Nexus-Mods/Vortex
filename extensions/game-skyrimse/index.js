@@ -73,7 +73,7 @@ function main(context) {
     mergeMods: true,
     queryPath: findGame,
     supportedTools: tools,
-    queryModPath: () => './data',
+    queryModPath: () => 'data',
     logo: 'gameart.png',
     executable: () => 'SkyrimSE.exe',
     requiredFiles: [

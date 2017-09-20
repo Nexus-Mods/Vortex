@@ -1,3 +1,17 @@
+import {
+  IInstallResult,
+  IInstruction,
+} from '../extensions/mod_management/types/IInstallResult';
+import {IModActivator} from '../extensions/mod_management/types/IModActivator';
+import {
+  InstallFunc,
+  ProgressDelegate,
+} from '../extensions/mod_management/types/InstallFunc';
+import {
+  ISupportedResult,
+  TestSupported,
+} from '../extensions/mod_management/types/TestSupported';
+
 import { Archive } from '../util/archives';
 import ReduxProp from '../util/ReduxProp';
 
@@ -12,6 +26,9 @@ import * as I18next from 'i18next';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
+
+export { TestSupported, IInstallResult, IInstruction, IModActivator,
+         InstallFunc, ISupportedResult, ProgressDelegate };
 
 export type PropsCallback = () => any;
 
@@ -430,6 +447,23 @@ export interface IExtensionContext {
   registerSettings: RegisterSettings;
 
   /**
+   * register a mod deployment method
+   *
+   * @memberof IExtensionContext
+   */
+  registerModActivator: (activator: IModActivator) => void;
+
+  /**
+   * register an installer
+   * @param {number} priority the priority of the installer. The supported installer with the
+   *                          highest priority gets to handle the mod
+   * @param {TestSupported} testSupported function called to determine if the handler can deal
+   *                                      with a mod
+   * @param {InstallFunc} install function called to actually install a mod
+   */
+  registerInstaller: (priority: number, testSupported: TestSupported, install: InstallFunc) => void;
+
+  /**
    * register an action (can be a button or a menu item)
    *
    * @type {IRegisterIcon}
@@ -612,6 +646,25 @@ export interface IExtensionContext {
    * @param {AttributeExtractor} extractor the function producing mod attributes
    */
   registerAttributeExtractor: (priority: number, extractor: AttributeExtractor) => void;
+
+  /**
+   * register a mod type
+   * @param {string} id internal identifier for this mod type. can't be the empty string ''!
+   * @param {number} priority if there is difficulty differentiating between two mod types, the
+   *                          higher priority one wins. Otherwise please use 100 so there is
+   *                          room for other extensions with lower and higher priority
+   * @param {(gameId) => boolean} isSupported return true if the mod type is supported for this
+   *                                          game
+   * @param {(game: IGame) => string} getPath given the specified game, return the absolute path to
+   *                                          where games of this type should be installed.
+   * @param {(instructions) => Promise<boolean>} test given the list of install instructions,
+   *                                                  determine if the installed mod is of this type
+   */
+  registerModType: (id: string,
+                    priority: number,
+                    isSupported: (gameId: string) => boolean,
+                    getPath: (game: IGame) => string,
+                    test: (installInstructions: IInstruction[]) => Promise<boolean>) => void;
 
   /**
    * register a dependency on a different extension

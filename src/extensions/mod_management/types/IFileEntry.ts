@@ -9,4 +9,5 @@ export interface IFileEntry {
   source: string;
   type: 'refchange' | 'valchange' | 'deleted';
   action: FileAction;
+  modTypeId: string;
 }

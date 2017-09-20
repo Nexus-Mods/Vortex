@@ -79,16 +79,20 @@ class GameModeManager {
       return Promise.reject(new Error('game mode not found'));
     }
 
-    return fs.statAsync(gameDiscovery.modPath)
-    .then(() => {
-      log('info', 'changed game mode', {oldMode, newMode});
-      this.mOnGameModeActivated(newMode);
-    })
-    .catch(err => {
-      return (err.code === 'ENOENT')
-      ? Promise.reject(new ProcessCanceled('mod directory missing: ' + gameDiscovery.modPath))
-      : Promise.reject(err);
-    });
+    let modPath = game.queryModPath(gameDiscovery.path);
+    if (!path.isAbsolute(modPath)) {
+      modPath = path.resolve(gameDiscovery.path, modPath);
+    }
+    return fs.statAsync(modPath)
+      .then(() => {
+        log('info', 'changed game mode', {oldMode, newMode});
+        this.mOnGameModeActivated(newMode);
+      })
+      .catch(err => {
+        return (err.code === 'ENOENT')
+        ? Promise.reject(new ProcessCanceled('Mod directory missing: ' + modPath))
+        : Promise.reject(err);
+      });
   }
 
   /**
@@ -168,7 +172,6 @@ class GameModeManager {
       id: game.id,
       logo: game.logo,
       mergeMods: game.mergeMods,
-      modPath: game.queryModPath(),
       extensionPath: game.extensionPath,
       requiredFiles: game.requiredFiles,
       supportedTools: game.supportedTools !== null
@@ -197,9 +200,6 @@ class GameModeManager {
   }
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
-    if (!path.isAbsolute(result.modPath)) {
-      result.modPath = path.resolve(result.path, result.modPath);
-    }
     this.mStore.dispatch(addDiscoveredGame(gameId, result));
   }
 }

@@ -72,7 +72,7 @@ function main(context) {
     mergeMods: true,
     queryPath: findGame,
     supportedTools: tools,
-    queryModPath: () => './data',
+    queryModPath: () => 'data',
     logo: 'gameart.png',
     executable: () => 'TESV.exe',
     requiredFiles: [
