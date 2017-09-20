@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "0.9.6",
+  "version": "0.10.0",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -84,6 +84,7 @@
     "string-template": "^1.0.0",
     "tmp": "^0.0.33",
     "winreg": "^1.2.2",
-    "winston": "^2.2.0"
+    "winston": "^2.2.0",
+    "xml2js": "^0.4.19"
   }
 }
