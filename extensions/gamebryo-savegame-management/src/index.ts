@@ -17,13 +17,14 @@ let fsWatcher: fs.FSWatcher;
 
 function updateSaveSettings(store: Redux.Store<any>,
                             profileId: string): Promise<string> {
-  const currentProfile = selectors.activeProfile(store.getState());
-  if (currentProfile === undefined) {
+  const state: types.IState = store.getState();
+  const profile = state.persistent.profiles[profileId];
+  if (profile === undefined) {
     // how did we get here then???
     return Promise.reject(new util.ProcessCanceled('no current profile'));
   }
 
-  return parser.read(iniPath(currentProfile.gameId))
+  return parser.read(iniPath(profile.gameId))
     .then((iniFile: IniFile<any>) => {
       const localPath = path.join('Saves', profileId);
       if (iniFile.data.General === undefined) {
@@ -32,20 +33,20 @@ function updateSaveSettings(store: Redux.Store<any>,
       // TODO: we should provide a way for the user to set his own
       //   save path without overwriting it
       iniFile.data.General.SLocalSavePath =
-          util.getSafe(currentProfile, ['features', 'local_saves'], false)
+          util.getSafe(profile, ['features', 'local_saves'], false)
             ? localPath + path.sep
             : iniFile.data.General.SLocalSavePath = 'Saves' + path.sep;
 
-      parser.write(iniPath(currentProfile.gameId), iniFile);
+      parser.write(iniPath(profile.gameId), iniFile);
 
       store.dispatch(setSavegamePath(iniFile.data.General.SLocalSavePath));
       store.dispatch(clearSavegames());
 
-      if (!gameSupported(currentProfile.gameId)) {
+      if (!gameSupported(profile.gameId)) {
         return;
       }
 
-      const readPath = mygamesPath(currentProfile.gameId) + path.sep +
+      const readPath = mygamesPath(profile.gameId) + path.sep +
         iniFile.data.General.SLocalSavePath;
 
       return fs.ensureDirAsync(readPath)

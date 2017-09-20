@@ -103,10 +103,7 @@ class ModActivator extends LinkingActivator {
     }
     if (this.isUnsupportedGame(gameId)) {
       // Mods for this games use some file types that have issues working with symbolic links
-      if (this.isUnsupportedGame(gameId)) {
-        // Mods for this games use some file types that have issues working with symbolic links
-        return 'Doesn\'t work with ' + gameName(state, gameId);
-      }
+      return 'Doesn\'t work with ' + gameName(state, gameId);
     }
     return undefined;
   }

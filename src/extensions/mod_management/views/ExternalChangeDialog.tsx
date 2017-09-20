@@ -151,8 +151,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderChanged =
-  (text: string, type: string, entries: IFileEntry[]) => {
+  private renderChanged = (text: string, type: string, entries: IFileEntry[]) => {
     const { t } = this.props;
     if (entries.length === 0) {
       return null;

@@ -453,8 +453,18 @@ function init(context: IExtensionContextExt) {
       const currentProfile = selectors.activeProfile(state);
       if ((profileId === currentProfile.id) && gameSupported(currentProfile.gameId)) {
         const mod: types.IMod = state.persistent.mods[currentProfile.gameId][modId];
-        fs.readdirAsync(
-              path.join(selectors.installPath(state), mod.installationPath))
+        fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
+            .catch(err => {
+              if (err.code === 'ENOENT') {
+                context.api.showErrorNotification(
+                  'A mod could no longer be found on disk. Please don\'t delete mods manually '
+                  + 'but uninstall them through Vortex.', { id: mod.id }, { allowReport: false });
+                context.api.store.dispatch(actions.removeMod(currentProfile.gameId, modId));
+                return Promise.reject(new util.ProcessCanceled('mod was deleted'));
+              } else {
+                return Promise.reject(err);
+              }
+            })
             .then(files => {
               const plugins = files.filter(
                   fileName => ['.esp', '.esm', '.esl'].indexOf(
@@ -483,7 +493,8 @@ function init(context: IExtensionContextExt) {
                   ],
                 });
               }
-            });
+            })
+            .catch(util.ProcessCanceled, () => undefined);
       }
     });
   });

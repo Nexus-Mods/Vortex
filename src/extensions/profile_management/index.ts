@@ -58,10 +58,10 @@ function checkProfile(store: Redux.Store<any>, currentProfile: IProfile): Promis
   return fs.ensureDirAsync(profilePath(store, currentProfile));
 }
 
-function sanitiseProfile(store: Redux.Store<any>, profile: IProfile): void {
+function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
   const state: IState = store.getState();
   Object.keys(profile.modState).forEach(modId => {
-    if (state.persistent.mods[profile.gameId][modId] === undefined) {
+    if (getSafe(state.persistent.mods, [profile.gameId, modId], undefined) === undefined) {
       store.dispatch(forgetMod(profile.id, modId));
     }
   });
@@ -253,7 +253,7 @@ function init(context: IExtensionContextExt): boolean {
               return queue;
             }
 
-            sanitiseProfile(store, profile);
+            sanitizeProfile(store, profile);
             return queue
                 .then(() => refreshProfile(store, profile, 'export'))
                 .then(() => {
@@ -302,18 +302,16 @@ function init(context: IExtensionContextExt): boolean {
 
             if (prevState !== currentState) {
               Object.keys(currentState)
-                  .forEach(modId => {
-                    const isEnabled =
-                        getSafe(currentState, [modId, 'enabled'], false);
-                    const wasEnabled =
-                        getSafe(prevState, [modId, 'enabled'], false);
+                .forEach(modId => {
+                  const isEnabled = getSafe(currentState, [modId, 'enabled'], false);
+                  const wasEnabled = getSafe(prevState, [modId, 'enabled'], false);
 
-                    if (isEnabled !== wasEnabled) {
-                      context.api.events.emit(
-                          isEnabled ? 'mod-enabled' : 'mod-disabled', profileId,
-                          modId);
-                    }
-                  });
+                  if (isEnabled !== wasEnabled) {
+                    context.api.events.emit(
+                        isEnabled ? 'mod-enabled' : 'mod-disabled', profileId,
+                        modId);
+                  }
+                });
             }
           });
         });
