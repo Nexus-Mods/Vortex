@@ -216,7 +216,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         <Icon name='cross' />
         {' '}
         {t('No NMM install found with mods for this game. ' +
-          'Please note that only NMM > 0.63 is supported.')}
+          'Please note that only NMM >= 0.63 is supported.')}
       </span>
     );
   }
@@ -380,14 +380,18 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const enabledMods = modList.filter(mod => this.isModEnabled(mod));
 
     this.mTrace.initDirectory(selectedSource)
-      .then(() => importMods(this.context.api, this.mTrace,
+      .then(() => {
+        this.mTrace.log('info', 'NMM Mods (count): ' + modList.length +
+          ' - Importing (count):' + enabledMods.length);
+        importMods(this.context.api, this.mTrace,
         path.join(selectedSource, 'VirtualInstall'), enabledMods,
         importArchives, (mod: string, pos: number) => {
           this.nextState.progress = { mod, pos };
-        }))
-      .then(errors => {
-        this.nextState.failedImports = errors;
-        this.props.onSetStep('review');
+        })
+        .then(errors => {
+          this.nextState.failedImports = errors;
+          this.props.onSetStep('review');
+        });
       });
   }
 }
