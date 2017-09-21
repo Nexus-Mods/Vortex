@@ -16,6 +16,7 @@ import { IModType } from '../gamemode_management/types/IModType';
 import modName from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
+import {setModAttribute} from './actions/mods';
 import { IDependency } from './types/IDependency';
 import { IInstallResult, IInstruction } from './types/IInstallResult';
 import {IMod} from './types/IMod';
@@ -75,6 +76,7 @@ class InstructionGroups {
   public generatefile: IInstruction[] = [];
   public iniedit: IInstruction[] = [];
   public unsupported: IInstruction[] = [];
+  public attribute: IInstruction[] = [];
 }
 
 export const INI_TWEAKS_PATH = 'Ini Tweaks';
@@ -249,7 +251,7 @@ class InstallManager {
           });
       })
       .then(result => this.processInstructions(api, archivePath, tempPath, destinationPath,
-                                               installGameId, result))
+                                               installGameId, modId, result))
       .finally(() => (tempPath !== undefined)
         ? rimrafAsync(tempPath, { glob: false })
         : Promise.resolve())
@@ -274,7 +276,7 @@ class InstallManager {
         const canceled = (err instanceof UserCanceled)
                          || (err === null)
                          || (err.message === 'Canceled')
-                         || (err.stack.startsWith('UserCanceled: canceled by user') !== -1);
+                         || err.stack.startsWith('UserCanceled: canceled by user');
         let prom = destinationPath !== undefined
           ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
           : Promise.resolve();
@@ -352,7 +354,7 @@ class InstallManager {
                            }
                            return Promise.resolve();
                          }))
-        .then(() => this.getInstaller(fileList))
+        .then(() => this.getInstaller(fileList, gameId))
         .then(supportedInstaller => {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
@@ -524,10 +526,18 @@ class InstallManager {
         return this.installInner(api.store, mod.path, tempPath, destinationPath, gameId)
           .then((resultInner) => this.processInstructions(
             api, mod.path, tempPath, destinationPath,
-            gameId, resultInner))
+            gameId, mod.key, resultInner))
           .finally(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }));
       })
         .then(() => undefined);
+  }
+
+  private processAttribute(api: IExtensionApi, attribute: IInstruction[],
+                           gameId: string, modId: string): Promise<void> {
+    attribute.forEach(attr => {
+      api.store.dispatch(setModAttribute(gameId, modId, attr.key, attr.value));
+    });
+    return Promise.resolve();
   }
 
   private processIniEdits(iniEdits: IInstruction[], destinationPath: string): Promise<void> {
@@ -564,7 +574,7 @@ class InstallManager {
 
   private processInstructions(api: IExtensionApi, archivePath: string,
                               tempPath: string, destinationPath: string,
-                              gameId: string,
+                              gameId: string, modId: string,
                               result: { instructions: IInstruction[] }) {
     if (result.instructions === null) {
       // this is the signal that the installer has already reported what went
@@ -588,7 +598,8 @@ class InstallManager {
                                             destinationPath))
       .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))
       .then(() => this.processSubmodule(api, instructionGroups.submodule,
-                                        destinationPath, gameId));
+                                        destinationPath, gameId))
+      .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId));
     }
 
   private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {
@@ -681,21 +692,22 @@ class InstallManager {
 
   private getInstaller(
     fileList: string[],
+    gameId: string,
     offsetIn?: number): Promise<ISupportedInstaller> {
     const offset = offsetIn || 0;
     if (offset >= this.mInstallers.length) {
       return Promise.resolve(undefined);
     }
-    return this.mInstallers[offset].testSupported(fileList).then(
+    return this.mInstallers[offset].testSupported(fileList, gameId).then(
       (testResult: ISupportedResult) => (testResult.supported === true)
           ? Promise.resolve({
             installer: this.mInstallers[offset],
             requiredFiles: testResult.requiredFiles,
           })
-          : this.getInstaller(fileList, offset + 1))
+          : this.getInstaller(fileList, gameId, offset + 1))
       .catch((err) => {
         log('warn', 'failed to test installer support', err.message);
-        return this.getInstaller(fileList, offset + 1);
+        return this.getInstaller(fileList, gameId, offset + 1);
       });
   }
 

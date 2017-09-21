@@ -48,8 +48,11 @@ class InstallContext implements IInstallContext {
       showError(dispatch, message, details, false, undefined, allowReport);
     this.mSetModState = (id, state) =>
       dispatch(setModState(gameMode, id, state));
-    this.mSetModAttribute = (id, key, value) =>
-      dispatch(setModAttribute(gameMode, id, key, value));
+    this.mSetModAttribute = (id, key, value) => {
+      if (value !== undefined) {
+        dispatch(setModAttribute(gameMode, id, key, value));
+      }
+    };
     this.mSetModInstallationPath = (id, installPath) =>
       dispatch(setModInstallationPath(gameMode, id, installPath));
     this.mSetModType = (id, modType) =>

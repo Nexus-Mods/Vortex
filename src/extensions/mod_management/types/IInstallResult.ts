@@ -1,4 +1,5 @@
-export type InstructionType = 'copy' | 'submodule' | 'generatefile' | 'iniedit' | 'unsupported';
+export type InstructionType =
+  'copy' | 'submodule' | 'generatefile' | 'iniedit' | 'unsupported' | 'attribute';
 
 export interface IInstruction {
   type: InstructionType;
