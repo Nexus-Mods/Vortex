@@ -1,4 +1,6 @@
 export function remoteCode(ipcClient) {
+  const TAG_NAME = '__delete_if_empty';
+
   const walk = require('./walk').default;
   const fs = require('fs-extra-promise');
   const path = require('path');
@@ -6,6 +8,21 @@ export function remoteCode(ipcClient) {
   ipcClient.on('link-file', (payload) => {
     const {source, destination} = payload;
     fs.ensureDirAsync(path.dirname(destination))
+        .then(created => {
+          if (created !== null) {
+            ipcClient.emit('log', {
+              level: 'debug',
+              message: 'created directory',
+              meta: { dirName: path.dirname(destination) },
+            });
+            return fs.writeFileAsync(
+                path.join(created, TAG_NAME),
+                'This directory was created by Vortex deployment and will be removed ' +
+                    'during purging if it\'s empty');
+          } else {
+            return Promise.resolve();
+          }
+        })
         .then(() => fs.symlinkAsync(source, destination))
         .then(() => {
           ipcClient.emit('log', {

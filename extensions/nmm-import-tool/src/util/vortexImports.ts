@@ -28,6 +28,7 @@ export function addMods(gameID: string, profileId: string,
     const modName = modEntry.modFilename.substr(0, modEntry.modFilename.lastIndexOf('.'));
     const mod: types.IMod = {
       id: modName,
+      type: '',
       state: 'installed',
       installationPath: modName,
       attributes: {

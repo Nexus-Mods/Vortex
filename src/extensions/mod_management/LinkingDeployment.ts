@@ -148,6 +148,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                                });
                                ++errorCount;
                              })))
+        // then update modified files
         .then(() => Promise.mapSeries(
                   [].concat(sourceChanged, contentChanged),
                   (key: string) =>

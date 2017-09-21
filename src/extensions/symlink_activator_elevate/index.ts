@@ -31,6 +31,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   private mElevatedClient: any;
   private mOutstanding: string[];
+  private mQuitTimer: NodeJS.Timer;
   private mDone: () => void;
   private mWaitForUser: () => Promise<void>;
 
@@ -79,15 +80,16 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[]): Promise<void> {
-    return this.startElevated()
-      .then(() => super.prepare(dataPath, clean, lastActivation));
+    return super.prepare(dataPath, clean, lastActivation);
   }
 
   public finalize(dataPath: string): Promise<IDeployedFile[]> {
-    return super.finalize(dataPath).then(result => {
-      this.stopElevated();
-      return result;
-    });
+    return this.startElevated()
+        .then(() => super.finalize(dataPath))
+        .then(result => {
+          this.stopElevated();
+          return result;
+        });
   }
 
   public isSupported(state: any, gameId?: string): string {
@@ -159,27 +161,30 @@ class DeploymentMethod extends LinkingDeployment {
     const ipcPath: string = 'nmm_elevate_symlink';
 
     return new Promise<void>((resolve, reject) => {
-          ipc.serve(ipcPath, () => {
-            ipc.server.on('initialised', (data, socket) => {
-              this.mElevatedClient = socket;
-              resolve();
-            });
-            ipc.server.on('finished', (modPath: string) => {
-              this.mOutstanding.splice(this.mOutstanding.indexOf(modPath), 1);
-              if ((this.mOutstanding.length === 0) && (this.mDone !== null)) {
-                this.finish();
-              }
-            });
-            ipc.server.on('socket.disconnected', () => {
-              ipc.server.stop();
-              this.mElevatedClient = null;
-            });
-            ipc.server.on('log', (data: any) => {
-              log(data.level, data.message, data.meta);
-            });
-            return elevated.default(ipcPath, remoteCode, {}, __dirname);
-          });
+          if (this.mQuitTimer !== undefined) {
+            // if there is already an elevated process, just keep it around a bit longer
+            clearTimeout(this.mQuitTimer);
+            return resolve();
+          }
+          ipc.serve(ipcPath, () => undefined);
           ipc.server.start();
+          ipc.server.on('initialised', (data, socket) => {
+            this.mElevatedClient = socket;
+            resolve();
+          });
+          ipc.server.on('finished', (modPath: string) => {
+            this.mOutstanding.splice(this.mOutstanding.indexOf(modPath), 1);
+            if ((this.mOutstanding.length === 0) && (this.mDone !== null)) {
+              this.finish();
+            }
+          });
+          ipc.server.on('socket.disconnected', () => {
+            ipc.server.stop();
+          });
+          ipc.server.on('log', (data: any) => {
+            log(data.level, data.message, data.meta);
+          });
+          return elevated.default(ipcPath, remoteCode, {}, __dirname);
         });
   }
 
@@ -195,8 +200,16 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private finish() {
-    ipc.server.emit(this.mElevatedClient, 'quit');
-    ipc.server.stop();
+    if (this.mQuitTimer !== undefined) {
+      clearTimeout(this.mQuitTimer);
+    }
+    this.mQuitTimer = setTimeout(() => {
+      ipc.server.emit(this.mElevatedClient, 'quit');
+      ipc.server.stop();
+      this.mElevatedClient = null;
+      this.mQuitTimer = undefined;
+    }, 1000);
+
     this.mDone();
   }
 

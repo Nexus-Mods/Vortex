@@ -19,7 +19,7 @@ import {
   installPath,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
-import {truthy} from '../../util/util';
+import {setdefault, truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
 import {getGame} from '../gamemode_management/index';
@@ -33,14 +33,10 @@ import {setActivator} from './actions/settings';
 import {externalChangesReducer} from './reducers/externalChanges';
 import {modsReducer} from './reducers/mods';
 import {settingsReducer} from './reducers/settings';
+import {IDeployedFile, IDeploymentMethod, IFileChange} from './types/IDeploymentMethod';
 import {IFileEntry} from './types/IFileEntry';
 import {IInstruction} from './types/IInstallResult';
 import {IMod} from './types/IMod';
-import {
-  IDeployedFile,
-  IFileChange,
-  IDeploymentMethod,
-} from './types/IDeploymentMethod';
 import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
 import {TestSupported} from './types/TestSupported';
@@ -143,50 +139,50 @@ function purgeMods(api: IExtensionApi): Promise<void> {
   .finally(() => api.dismissNotification(notificationId));
 }
 
-function applyFileActions(gameId: string,
-                          gameDiscovery: IDiscoveryResult,
-                          instPath: string,
-                          lastActivation: IDeployedFile[],
-                          fileActions: IFileEntry[]) {
+/**
+ * look at the file actions and act accordingly. Depending on the action this can
+ * be a direct file operation or a modification to the previous manifest so that
+ * the deployment ext runs the necessary operation
+ * @param {string} sourcePath the "virtual" mod directory
+ * @param {string} outputPath the destination directory where the game expects mods
+ * @param {IDeployedFile[]} lastDeployment previous deployment to use as reference
+ * @param {IFileEntry[]} fileActions actions the user selected for external changes
+ * @returns {Promise<IDeployedFile[]>} an updated deployment manifest to use as a reference
+ *                                     for the new one
+ */
+function applyFileActions(sourcePath: string,
+                          outputPath: string,
+                          lastDeployment: IDeployedFile[],
+                          fileActions: IFileEntry[]): Promise<IDeployedFile[]> {
   if (fileActions === undefined) {
-    return Promise.resolve();
+    return Promise.resolve(lastDeployment);
   }
 
-  const actionGroups: { [type: string]: IFileEntry[] } = {};
-  fileActions.forEach((action: IFileEntry) => {
-    if (actionGroups[action.action] === undefined) {
-      actionGroups[action.action] = [];
-    }
-    actionGroups[action.action].push(action);
-  });
-
-  const modPaths = getGame(gameId).getModPaths(gameDiscovery.path);
+  const actionGroups: { [type: string]: IFileEntry[] } = fileActions.reduce((prev, value) => {
+      setdefault(prev, value.action, []).push(value);
+      return prev;
+    }, {});
 
   // process the actions that the user selected in the dialog
   return Promise.map(actionGroups['drop'] || [],
-    // delete the files the user wants to drop
-    (entry) => truthy(entry.filePath)
-      ? fs.removeAsync(path.join(modPaths[entry.modTypeId], entry.filePath))
-      : Promise.reject(new Error('invalid file path')))
-    .then(() => Promise.map(
-      actionGroups['import'] || [],
+      // delete the files the user wants to drop.
+      (entry) => truthy(entry.filePath)
+        ? fs.removeAsync(path.join(outputPath, entry.filePath))
+        : Promise.reject(new Error('invalid file path')))
+    .then(() => Promise.map(actionGroups['import'] || [],
       // copy the files the user wants to import
       (entry) => fs.copyAsync(
-        path.join(modPaths[entry.modTypeId], entry.filePath),
-        path.join(instPath, entry.source, entry.filePath))))
+        path.join(outputPath, entry.filePath),
+        path.join(sourcePath, entry.source, entry.filePath))))
     .then(() => {
       // remove files that the user wants to restore from
       // the activation list because then they get reinstalled
-      if (actionGroups['restore'] !== undefined) {
-        const restoreSet = new Set(actionGroups['restore'].map(entry => entry.filePath));
-        const newActivation = lastActivation.filter(entry =>
-          !restoreSet.has(entry.relPath));
-        lastActivation = newActivation;
-      } else {
-        return Promise.resolve();
-      }
+      const restoreSet = new Set((actionGroups['restore'] || []).map(entry => entry.filePath));
+      const newActivation = lastDeployment.filter(entry => !restoreSet.has(entry.relPath));
+      lastDeployment = newActivation;
+      return Promise.resolve();
     })
-    .then(() => undefined);
+    .then(() => lastDeployment);
 }
 
 function bakeSettings(api: IExtensionApi, gameMode: string, sortedModList: IMod[]) {
@@ -280,9 +276,11 @@ function genUpdateModActivation() {
       .then((changes: { [typeId: string]: IFileChange[] }) => (Object.keys(changes).length === 0)
         ? Promise.resolve([])
         : api.store.dispatch(showExternalChanges(changes)))
-    .then(fileActions => Promise.mapSeries(Object.keys(lastDeployment),
-      typeId => applyFileActions(gameMode, gameDiscovery, instPath,
-                                 lastDeployment[typeId], fileActions)))
+    .then((fileActions: IFileEntry[]) => Promise.mapSeries(Object.keys(lastDeployment),
+      typeId => applyFileActions(modPaths[typeId], instPath,
+                                 lastDeployment[typeId],
+                                 fileActions.filter(action => action.modTypeId === typeId))
+                .then(newLastDeployment => lastDeployment[typeId] = newLastDeployment)))
     // sort (all) mods based on their dependencies so the right files get activated
     .then(() => sortMods(gameMode, modList, api))
     .then((sortedMods: string[]) => {
@@ -292,12 +290,13 @@ function genUpdateModActivation() {
 
       return Promise.each(Object.keys(modPaths),
         typeId => activateMods(api, game,
-                               instPath, modPaths[typeId], sortedModList,
+                               instPath, modPaths[typeId],
+                               sortedModList.filter(mod => (mod.type || '') === typeId),
                                activator, lastDeployment[typeId])
           .then(newActivation =>
             saveActivation(state.app.instanceId,
-              modPaths[typeId], newActivation))
-          .then(() => bakeSettings(api, gameMode, sortedModList)));
+              modPaths[typeId], newActivation)))
+        .then(() => bakeSettings(api, gameMode, sortedModList));
     })
     .catch(UserCanceled, () => undefined)
     .catch(err => api.showErrorNotification('failed to deploy mods', err))
