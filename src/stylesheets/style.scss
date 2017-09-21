@@ -1388,6 +1388,8 @@ a[role=menuitem] svg {
 
 .gamepicker-body {
   height: 100%;
+  // has to be relative for popovers to scroll along
+  position: relative;
   overflow-y: auto;
   overflow-x: hidden;
   .popover {

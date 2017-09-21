@@ -33,7 +33,7 @@ function install(files: string[],
   const basePath = path.dirname(refFile);
 
   const instructions: types.IInstruction[] = files
-      .filter(filePath => !filePath.endsWith('\\') && filePath.startsWith(basePath))
+      .filter(filePath => !filePath.endsWith(path.sep) && filePath.startsWith(basePath + path.sep))
           .map(filePath => makeCopy(basePath, filePath));
 
   return Promise.resolve({ instructions });

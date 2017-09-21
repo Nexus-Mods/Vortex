@@ -74,7 +74,7 @@ class GameModeManager {
   public setGameMode(oldMode: string, newMode: string): Promise<void> {
     const game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
     const gameDiscovery = this.mStore.getState().settings.gameMode.discovered[newMode];
-    if (gameDiscovery === undefined) {
+    if ((game === undefined) || (gameDiscovery === undefined)) {
       // new game mode is not valid
       return Promise.reject(new Error('game mode not found'));
     }

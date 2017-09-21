@@ -75,7 +75,7 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
         <FormGroup>
           <ControlLabel>{t('Search Paths')}</ControlLabel>
           <ListGroup className='list-game-search'>
-            {searchPaths.map(this.renderPath)}
+            {searchPaths.sort().map(this.renderPath)}
             <ListGroupItem>
               <IconButton
                 className='btn-embed'

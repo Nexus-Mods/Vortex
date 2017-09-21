@@ -74,7 +74,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           triggerRef={this.setRef}
           getBounds={getBounds || this.getWindowBounds}
           container={container}
-          orientation='vertical'
+          orientation='horizontal'
           shouldUpdatePosition={true}
           trigger='click'
           rootClose={true}

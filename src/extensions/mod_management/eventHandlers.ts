@@ -1,5 +1,5 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
-import {IState, IStatePaths} from '../../types/IState';
+import {IDiscoveryResult, IState, IStatePaths} from '../../types/IState';
 import {showError} from '../../util/message';
 import {getSafe} from '../../util/storeHelper';
 import {truthy} from '../../util/util';
@@ -8,8 +8,8 @@ import {IDownload} from '../download_management/types/IDownload';
 import {activeGameId, activeProfile} from '../profile_management/selectors';
 import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
-import {IMod} from './types/IMod';
 import {IDeploymentMethod} from './types/IDeploymentMethod';
+import {IMod} from './types/IMod';
 import {loadActivation, saveActivation} from './util/activationStore';
 
 import {getGame} from '../gamemode_management/index';
@@ -141,7 +141,8 @@ export function onRemoveMod(api: IExtensionApi,
 
   const discovery = state.settings.gameMode.discovered[gameMode];
   const game = getGame(gameMode);
-  const modTypes = Object.keys(game.getModPaths(discovery.path));
+  const modPaths = game.getModPaths(discovery.path);
+  const modTypes = Object.keys(modPaths);
 
   const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
   // TODO: can only use one activator that needs to support the whole game
@@ -155,14 +156,14 @@ export function onRemoveMod(api: IExtensionApi,
   // happened
   store.dispatch(removeMod(gameMode, modId));
 
-  const gameDiscovery = getSafe(state, ['settings', 'gameMode', 'discovered', gameMode], undefined);
-  if (gameDiscovery === undefined) {
-    // if the game hasn't been discovered we can't deploy, but that's not really a big problem
+  if (discovery === undefined) {
+    // if the game hasn't been discovered we can't deploy, but that's not really a problem
     return callback(null);
   }
 
-  const dataPath = gameDiscovery.modPath;
-  loadActivation(api, dataPath)
+  Promise.each(modTypes, typeId => {
+    const dataPath = modPaths[typeId];
+    loadActivation(api, dataPath)
     .then(lastActivation => activator.prepare(
       dataPath, false, lastActivation))
     .then(() => mod !== undefined
@@ -170,14 +171,15 @@ export function onRemoveMod(api: IExtensionApi,
       : Promise.resolve())
     .then(() => activator.finalize(dataPath))
     .then(newActivation => saveActivation(state.app.instanceId, dataPath, newActivation))
-    .then(() => truthy(mod)
-      ? fs.removeAsync(path.join(installationPath, mod.installationPath))
-          .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
-      : Promise.resolve())
-    .then(() => {
-      callback(null);
-    })
     .catch(err => callback(err));
+  })
+  .then(() => truthy(mod)
+    ? fs.removeAsync(path.join(installationPath, mod.installationPath))
+        .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+    : Promise.resolve())
+  .then(() => {
+    callback(null);
+  });
 }
 
 export function onStartInstallDownload(api: IExtensionApi,
