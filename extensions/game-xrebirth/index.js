@@ -116,7 +116,6 @@ function main(context) {
     requiredFiles: [
       'XRebirth.exe',
     ],
-    supportedTools: null,
     details: {
       steamAppId: 2870,
     },

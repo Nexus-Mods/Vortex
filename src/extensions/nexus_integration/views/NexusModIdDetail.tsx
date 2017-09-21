@@ -1,6 +1,7 @@
 import FormFeedback from '../../../controls/FormFeedback';
 import FormInput from '../../../controls/FormInput';
 import { ComponentEx } from '../../../util/ComponentEx';
+import { truthy } from '../../../util/util';
 
 import { setModAttribute } from '../../mod_management/actions/mods';
 
@@ -28,7 +29,7 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, fileName, nexusModId, readOnly } = this.props;
 
-    const isIdValid = (nexusModId !== undefined) && !isNaN(Number(nexusModId));
+    const isIdValid = truthy(nexusModId) && !isNaN(Number(nexusModId));
 
     return (
       <div>
@@ -38,7 +39,7 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
           <InputGroup style={{ width: '100%' }}>
             <div style={{ position: 'relative' }}>
               <FormInput
-                placeholder='Placeholder'
+                placeholder='i.e. 1337'
                 value={nexusModId || ''}
                 onChange={this.updateNexusModId}
                 readOnly={readOnly}

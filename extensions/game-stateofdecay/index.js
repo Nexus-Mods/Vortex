@@ -29,7 +29,6 @@ function main(context) {
     requiredFiles: [
       'StateOfDecay.exe',
     ],
-    supportedTools: null,
     details: {
       steamAppId: 241540,
     },

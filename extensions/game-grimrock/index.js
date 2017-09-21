@@ -40,7 +40,6 @@ function main(context) {
     requiredFiles: [
       'grimrock.exe',
     ],
-    supportedTools: null,
     setup: prepareForModding,
     details: {
       steamAppId: 207170,

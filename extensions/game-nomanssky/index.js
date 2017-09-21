@@ -30,7 +30,6 @@ function main(context) {
     requiredFiles: [
       'NMS.exe',
     ],
-    supportedTools: null,
     details: {
       steamAppId: 275850,
     },

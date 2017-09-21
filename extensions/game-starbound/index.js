@@ -43,7 +43,6 @@ function main(context) {
     requiredFiles: [
       gameExecutable,
     ],
-    supportedTools: null,
     setup: prepareForModding,
     details: {
       steamAppId: 211820,

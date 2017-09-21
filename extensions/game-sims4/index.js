@@ -42,7 +42,6 @@ function main(context) {
     requiredFiles: [
       'game/bin/TS4.exe',
     ],
-    supportedTools: null,
   });
 
   return true;

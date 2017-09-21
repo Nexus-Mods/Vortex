@@ -50,7 +50,6 @@ function main(context) {
     requiredFiles: [
       'Bethesda.net_Launcher.exe',
     ],
-    supportedTools: null,
     details: {
       steamAppId: 306130,
     },

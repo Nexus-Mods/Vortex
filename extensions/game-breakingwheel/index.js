@@ -30,7 +30,6 @@ function main(context) {
     requiredFiles: [
       'Ellie_Ball_Project.exe',
     ],
-    supportedTools: null,
     details: {
       steamAppId: 545890,
     },

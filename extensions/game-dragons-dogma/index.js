@@ -34,7 +34,6 @@ function main(context) {
     requiredFiles: [
       'DDDA.exe',
     ],
-    supportedTools: null,
     details: {
       steamAppId: 367500,
     },

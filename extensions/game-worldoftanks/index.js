@@ -66,7 +66,6 @@ function main(context) {
     requiredFiles: [
       'WorldOfTanks.exe',
     ],
-    supportedTools: null,
     details: {
     },
   });

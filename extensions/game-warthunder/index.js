@@ -29,7 +29,6 @@ function main(context) {
     requiredFiles: [
       'aces.exe',
     ],
-    supportedTools: null,
     details: {
       steamAppId: 236390,
     },

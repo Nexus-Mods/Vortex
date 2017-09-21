@@ -50,7 +50,6 @@ function main(context) {
       'data/core/graphics/factorio.ico',
     ],
     setup: prepareForModding,
-    supportedTools: null,
     details: {
       steamAppId: 427520,
     },

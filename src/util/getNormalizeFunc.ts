@@ -35,7 +35,6 @@ function getNormalizeFunc(testPath: string): Promise<Normalize> {
       });
 
       if (fileName === undefined) {
-        log('warn', 'failed to determine case sensitivity', { testPath });
         return null;
       }
 
@@ -44,10 +43,15 @@ function getNormalizeFunc(testPath: string): Promise<Normalize> {
     })
     .then((stats: Array<Promise.Inspection<fs.Stats>>) => {
       if (stats === null) {
-        // fallback
-        return  process.platform === 'win32'
-          ? CaseInsensitiveNormalize
-          : CaseSensitiveNormalize;
+        const parent = path.dirname(testPath);
+        if (parent === testPath) {
+          log('warn', 'failed to determine case sensitivity', {testPath});
+          return process.platform === 'win32'
+            ? CaseInsensitiveNormalize
+            : CaseSensitiveNormalize;
+        } else {
+          return getNormalizeFunc(parent);
+        }
       }
 
       // we stated the original file name, the lower case variant and the upper case variant.
