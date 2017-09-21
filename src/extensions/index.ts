@@ -21,6 +21,7 @@ import {} from './settings_application';
 import {} from './settings_interface';
 import {} from './settings_metaserver';
 import {} from './starter_dashlet';
+import {} from './sticky_mods';
 import {} from './symlink_activator';
 import {} from './symlink_activator_elevate';
 import {} from './test_runner';

@@ -70,7 +70,7 @@ function install(files,
                   });
                   attrInstructions.push({
                     type: 'attribute',
-                    key: 'taints_savegame',
+                    key: 'sticky',
                     value: parsed.content.$.save === 'true',
                   });
                   attrInstructions.push({
