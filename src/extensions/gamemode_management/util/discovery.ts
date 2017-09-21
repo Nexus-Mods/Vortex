@@ -19,7 +19,7 @@ export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
 export type DiscoveredToolCB = (toolId: string, result: IDiscoveredTool) => void;
 
 function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB) {
-  if (tools === null) {
+  if (tools === undefined) {
     return;
   }
 
@@ -283,7 +283,7 @@ export function searchDiscovery(
         files.push({ fileName: required, gameId: knownGame.id, application: knownGame });
       }
     }
-    if (knownGame.supportedTools !== null) {
+    if (knownGame.supportedTools !== undefined) {
       knownGame.supportedTools.forEach((supportedTool: ITool) => {
         if (getSafe(discoveredGames, [knownGame.id, 'tools', supportedTool.id, 'path'], undefined)
             === undefined) {

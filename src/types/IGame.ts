@@ -57,7 +57,7 @@ export interface IGame extends ITool {
    *
    * @memberOf IGame
    */
-  supportedTools: ITool[];
+  supportedTools?: ITool[];
 
   /**
    * path to the game extension and assets included with it. This is automatically
@@ -96,7 +96,7 @@ export interface IGame extends ITool {
    * (like creating a directory, changing a registry key, ...) do it here. It will be called
    * every time before the game mode is activated.
    */
-  setup?: () => Promise<void>;
+  setup?: (discovery: IDiscoveryResult) => Promise<void>;
 
   /**
    * additional details about the game that may be used by extensions. Some extensions may work

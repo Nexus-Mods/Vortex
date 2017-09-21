@@ -112,7 +112,11 @@ class GameModeManager {
     } else if ((game === undefined) || (game.setup === undefined)) {
       return Promise.resolve();
     } else {
-      return game.setup();
+      try {
+        return game.setup(gameDiscovery);
+      } catch (err) {
+        return Promise.reject(err);
+      }
     }
   }
 
@@ -174,7 +178,7 @@ class GameModeManager {
       mergeMods: game.mergeMods,
       extensionPath: game.extensionPath,
       requiredFiles: game.requiredFiles,
-      supportedTools: game.supportedTools !== null
+      supportedTools: game.supportedTools !== undefined
         ? game.supportedTools.map(this.storeTool)
         : [],
       executable: game.executable(),

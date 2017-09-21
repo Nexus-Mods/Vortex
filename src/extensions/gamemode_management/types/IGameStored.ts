@@ -9,7 +9,7 @@ export interface IGameStored {
   extensionPath: string;
   requiredFiles: string[];
   executable: string;
-  supportedTools: IToolStored[];
+  supportedTools?: IToolStored[];
   environment?: { [key: string]: string };
   details?: { [key: string]: any };
 }

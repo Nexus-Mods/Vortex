@@ -87,13 +87,22 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  public componentWillMount() {
+    if (this.props.dialogs.length > 0) {
+      this.setState(update(this.state, {
+        currentDialogId: { $set: this.props.dialogs[0].id },
+        dialogState: { $set: this.props.dialogs[0].content },
+      }));
+    }
+  }
+
   public render(): JSX.Element {
     const { t, dialogs } = this.props;
     const { dialogState } = this.state;
 
     const dialog = dialogs.length > 0 ? dialogs[0] : undefined;
 
-    if (dialog === undefined) {
+    if ((dialog === undefined) || (dialogState === undefined)) {
       return null;
     }
 
