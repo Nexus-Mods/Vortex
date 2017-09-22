@@ -163,15 +163,14 @@ export function onRemoveMod(api: IExtensionApi,
 
   Promise.each(modTypes, typeId => {
     const dataPath = modPaths[typeId];
-    loadActivation(api, dataPath)
-    .then(lastActivation => activator.prepare(
-      dataPath, false, lastActivation))
-    .then(() => mod !== undefined
-      ? activator.deactivate(installationPath, dataPath, mod)
-      : Promise.resolve())
-    .then(() => activator.finalize(dataPath))
-    .then(newActivation => saveActivation(state.app.instanceId, dataPath, newActivation))
-    .catch(err => callback(err));
+    loadActivation(api, typeId, dataPath)
+      .then(lastActivation => activator.prepare(dataPath, false, lastActivation))
+      .then(() => mod !== undefined
+        ? activator.deactivate(installationPath, dataPath, mod)
+        : Promise.resolve())
+      .then(() => activator.finalize(dataPath))
+      .then(newActivation => saveActivation(typeId, state.app.instanceId, dataPath, newActivation))
+      .catch(err => callback(err));
   })
   .then(() => truthy(mod)
     ? fs.removeAsync(path.join(installationPath, mod.installationPath))

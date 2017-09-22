@@ -127,6 +127,7 @@ class DeploymentMethod extends LinkingDeployment {
           return tagDir.then(() => fs.linkAsync(sourcePath, linkPath))
               .catch((err) => {
                 if (err.code !== 'EEXIST') {
+                  log('debug', 'failed to hard-link because file exists', { linkPath });
                   throw err;
                 }
               });

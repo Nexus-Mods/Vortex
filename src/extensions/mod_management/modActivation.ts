@@ -159,7 +159,7 @@ function prepareMerged(api: IExtensionApi,
  * @param {string} destinationPath the game mod path
  * @param {IMod[]} mods list of mods to activate (sorted from lowest to highest
  * priority)
- * @param {IDeploymentMethod} activator the activator to use
+ * @param {IDeploymentMethod} method the activator to use
  * @returns {Promise<void>}
  */
 export function activateMods(api: IExtensionApi,
@@ -167,19 +167,19 @@ export function activateMods(api: IExtensionApi,
                              modBasePath: string,
                              destinationPath: string,
                              mods: IMod[],
-                             activator: IDeploymentMethod,
+                             method: IDeploymentMethod,
                              lastActivation: IDeployedFile[]): Promise<IDeployedFile[]> {
   let merged: Set<string>;
   return prepareMerged(api, game, modBasePath, destinationPath, mods)
       .then((mergedFiles: string[]) => {
         merged = new Set<string>(mergedFiles);
-        return activator.prepare(destinationPath, true, lastActivation);
+        return method.prepare(destinationPath, true, lastActivation);
       })
       .then(() => Promise.each(
                 mods,
                 mod => {
                   try {
-                    return activator.activate(
+                    return method.activate(
                         path.join(modBasePath, mod.installationPath),
                         mod.installationPath, destinationPath, merged);
                   } catch (err) {
@@ -187,8 +187,8 @@ export function activateMods(api: IExtensionApi,
                         {err: err.message, id: mod.id});
                   }
                 }))
-      .then(() => activator.activate(path.join(modBasePath, MERGED_PATH),
+      .then(() => method.activate(path.join(modBasePath, MERGED_PATH),
                                      MERGED_PATH, destinationPath,
                                      new Set<string>()))
-      .then(() => activator.finalize(destinationPath));
+      .then(() => method.finalize(destinationPath));
 }

@@ -88,8 +88,10 @@ function queryPurge(api: IExtensionApi,
     });
 }
 
-export function loadActivation(api: IExtensionApi, modPath: string): Promise<IDeployedFile[]> {
-  const tagFile = path.join(modPath, 'vortex.deployment.json');
+export function loadActivation(api: IExtensionApi, modType: string,
+                               modPath: string): Promise<IDeployedFile[]> {
+  const typeTag = modType.length > 0 ? modType + '.' : '';
+  const tagFile = path.join(modPath, `vortex.deployment.${typeTag}json`);
   const state: IState = api.store.getState();
   const instanceId = state.app.instanceId;
   return fs.readFileAsync(tagFile, 'utf8')
@@ -100,19 +102,24 @@ export function loadActivation(api: IExtensionApi, modPath: string): Promise<IDe
       .then(tagObject => {
         return ((tagObject.instance !== instanceId) && (tagObject.files.length > 0))
            ? queryPurge(api, modPath, tagObject.files)
-              .then(() => saveActivation(state.app.instanceId, modPath, []))
+              .then(() => saveActivation(modType, state.app.instanceId, modPath, []))
               .then(() => Promise.resolve([]))
            : Promise.resolve(tagObject.files);
       });
 }
 
-export function saveActivation(instance: string, gamePath: string, activation: IDeployedFile[]) {
-  const tagFile = path.join(gamePath, 'vortex.deployment.json');
-
-  return fs.writeFileAsync(tagFile, JSON.stringify(
-                                        {
-                                          instance,
-                                          files: activation,
-                                        },
-                                        undefined, 2));
+export function saveActivation(modType: string, instance: string,
+                               gamePath: string, activation: IDeployedFile[]) {
+  const typeTag = modType.length > 0 ? modType + '.' : '';
+  const tagFile = path.join(gamePath, `vortex.deployment.${typeTag}json`);
+  if (activation.length === 0) {
+    return fs.removeAsync(tagFile).catch(err => undefined);
+  } else {
+    return fs.writeFileAsync(tagFile, JSON.stringify(
+                                          {
+                                            instance,
+                                            files: activation,
+                                          },
+                                          undefined, 2));
+  }
 }

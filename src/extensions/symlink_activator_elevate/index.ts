@@ -86,10 +86,8 @@ class DeploymentMethod extends LinkingDeployment {
   public finalize(dataPath: string): Promise<IDeployedFile[]> {
     return this.startElevated()
         .then(() => super.finalize(dataPath))
-        .then(result => {
-          this.stopElevated();
-          return result;
-        });
+        .then(result => this.stopElevated()
+            .then(() => result));
   }
 
   public isSupported(state: any, gameId?: string): string {
@@ -134,18 +132,18 @@ class DeploymentMethod extends LinkingDeployment {
     // purge by removing all symbolic links that point to a file inside
     // the install directory
     return this.startElevated()
-    .then(() => walk(dataPath, (iterPath: string, stats: fs.Stats) => {
-          if (!stats.isSymbolicLink()) {
-            return Promise.resolve();
-          }
-          return fs.readlinkAsync(iterPath).then((symlinkPath) => {
-            if (!path.relative(installPath, symlinkPath).startsWith('..')) {
-              ipc.server.emit(this.mElevatedClient, 'remove-link',
-                              {destination: iterPath});
+      .then(() => walk(dataPath, (iterPath: string, stats: fs.Stats) => {
+            if (!stats.isSymbolicLink()) {
+              return Promise.resolve();
             }
-          });
-        }))
-    .then(() => this.stopElevated());
+            return fs.readlinkAsync(iterPath).then((symlinkPath) => {
+              if (!path.relative(installPath, symlinkPath).startsWith('..')) {
+                ipc.server.emit(this.mElevatedClient, 'remove-link',
+                                {destination: iterPath});
+              }
+            });
+          }))
+      .then(() => this.stopElevated());
   }
 
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {

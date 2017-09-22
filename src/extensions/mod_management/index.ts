@@ -131,9 +131,9 @@ function purgeMods(api: IExtensionApi): Promise<void> {
   const modPaths = game.getModPaths(gameDiscovery.path);
 
   return Promise.each(Object.keys(modPaths), typeId =>
-    loadActivation(api, modPaths[typeId])
+    loadActivation(api, typeId, modPaths[typeId])
       .then(() => activator.purge(instPath, modPaths[typeId]))
-      .then(() => saveActivation(state.app.instanceId, modPaths[typeId], [])))
+      .then(() => saveActivation(typeId, state.app.instanceId, modPaths[typeId], [])))
   .catch(UserCanceled, () => undefined)
   .catch(err => api.showErrorNotification('failed to purge mods', err))
   .finally(() => api.dismissNotification(notificationId));
@@ -258,7 +258,7 @@ function genUpdateModActivation() {
         });
 
         return Promise.each(Object.keys(modPaths),
-          typeId => loadActivation(api, modPaths[typeId]).then(
+          typeId => loadActivation(api, typeId, modPaths[typeId]).then(
             deployedFiles => lastDeployment[typeId] = deployedFiles));
       })
       .then(() => {
@@ -294,8 +294,7 @@ function genUpdateModActivation() {
                                sortedModList.filter(mod => (mod.type || '') === typeId),
                                activator, lastDeployment[typeId])
           .then(newActivation =>
-            saveActivation(state.app.instanceId,
-              modPaths[typeId], newActivation)))
+            saveActivation(typeId, state.app.instanceId, modPaths[typeId], newActivation)))
         .then(() => bakeSettings(api, gameMode, sortedModList));
     })
     .catch(UserCanceled, () => undefined)

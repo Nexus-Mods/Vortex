@@ -189,7 +189,7 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
 }
 
 function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
-  return Promise.map(game.requiredFiles, file =>
+  return Promise.map(game.requiredFiles || [], file =>
     fs.statAsync(path.join(gamePath, file)))
     .then(() => undefined);
 }
@@ -197,9 +197,11 @@ function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
 function transformModPaths(basePath: string, input: { [type: string]: string }):
     { [type: string]: string } {
   return Object.keys(input).reduce((prev, type) => {
-    prev[type] = (path.isAbsolute(input[type]))
-      ? input[type]
-      : path.resolve(basePath, input[type]);
+    if (input[type] !== undefined) {
+      prev[type] = (path.isAbsolute(input[type]))
+        ? input[type]
+        : path.resolve(basePath, input[type]);
+    }
     return prev;
   }, {});
 }
@@ -221,7 +223,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
               api.store.dispatch(setGamePath(game.id, fileNames[0]));
               resolve();
             })
-            .catch(() => {
+            .catch(err => {
               api.store.dispatch(showDialog('error', 'Game not found', {
                 message: api.translate('This directory doesn\'t appear to contain the game. '
                   + 'Expected to find these files: {{ files }}',
@@ -243,7 +245,6 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
         if (fileNames !== undefined) {
           verifyGamePath(game, fileNames[0])
             .then(() => {
-              const modPath = transformModPaths(fileNames[0], game.getModPaths(discovery.path));
               api.store.dispatch(addDiscoveredGame(game.id, {
                 path: fileNames[0],
                 tools: {},
@@ -252,7 +253,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
               }));
               resolve();
             })
-            .catch(() => {
+            .catch(err => {
               api.store.dispatch(showDialog('error', 'Game not found', {
                 message: api.translate('This directory doesn\'t appear to contain the game. '
                   + 'Expected to find these files: {{ files }}',
@@ -366,7 +367,7 @@ function init(context: IExtensionContext): boolean {
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
   context.registerAction('game-undiscovered-buttons', 115, 'folder-open', {},
-    context.api.translate('Manually set Location'),
+    context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
   context.registerDashlet('Game Picker', 2, 2, 0, Dashlet, () =>
