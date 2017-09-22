@@ -33,6 +33,7 @@ function externalsDirect(): webpack.ExternalsObjectElement {
     'semvish',
     'util',
     'vortex-api',
+    'winreg',
   ].reduce((prev, key) => {
     prev[key] = key;
     return prev;

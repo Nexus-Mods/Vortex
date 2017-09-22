@@ -5,7 +5,7 @@ import { types, util } from 'vortex-api';
 
 function testSupported(files: string[]): Promise<types.ISupportedResult> {
   const supported =
-    files.find(filePath => path.basename(filePath).toLowerCase() === 'enbseries.ini') !== null;
+    files.find(filePath => path.basename(filePath).toLowerCase() === 'enbseries.ini') !== undefined;
   return Promise.resolve({
     supported,
     requiredFiles: [],
@@ -78,7 +78,7 @@ function init(context: types.IExtensionContext) {
   });
 
   context.registerModType('enb', 100, () => true, getPath, testEnb);
-  context.registerInstaller(50, testSupported, install);
+  context.registerInstaller('enb', 50, testSupported, install);
 
   return true;
 }
