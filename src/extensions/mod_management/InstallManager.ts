@@ -272,13 +272,13 @@ class InstallManager {
         return null;
       })
       .catch(err => {
-        log('info', 'install interrupted', { err: err.message });
         // TODO: make this nicer. especially: The first check doesn't recognize UserCanceled
         //   exceptions from extensions, hence we have to do the string check (last one)
         const canceled = (err instanceof UserCanceled)
                          || (err === null)
                          || (err.message === 'Canceled')
-                         || err.stack.startsWith('UserCanceled: canceled by user');
+                         || ((err.stack !== undefined)
+                             && err.stack.startsWith('UserCanceled: canceled by user'));
         let prom = destinationPath !== undefined
           ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
           : Promise.resolve();

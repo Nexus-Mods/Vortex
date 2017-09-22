@@ -65,6 +65,13 @@ function getNormalizeFunc(testPath: string): Promise<Normalize> {
         log('debug', 'file system case-sensitive', { testPath });
         return CaseSensitiveNormalize;
       }
+    })
+    .catch(err => {
+      if (err.code === 'ENOENT') {
+        return getNormalizeFunc(path.dirname(testPath));
+      } else {
+        return Promise.reject(err);
+      }
     });
 }
 

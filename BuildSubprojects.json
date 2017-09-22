@@ -216,6 +216,24 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "modtype-dinput",
+      "path": "extensions/modtype-dinput",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-dinput"
+    }
+  ], [
+    {
+      "type": "build-copy",
+      "name": "modtype-gedosato",
+      "path": "extensions/modtype-gedosato",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-gedosato"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "name": "exe-version-rebuild",
       "module": "exe-version",

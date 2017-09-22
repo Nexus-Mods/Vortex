@@ -15,6 +15,7 @@ class DarkSouls {
     this.details = {
       steamAppId: 211420,
     };
+    this.requiredFiles = ['DATA/DARKSOULS.exe'];
   }
 
   queryPath() {
@@ -38,10 +39,6 @@ class DarkSouls {
 
   executable() {
     return path.join('DATA', 'DARKSOULS.exe');
-  }
-
-  requiredFiles() {
-    return ['DATA/DARKSOULS.exe'];
   }
 
   setup(discovery) {

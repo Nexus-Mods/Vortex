@@ -118,6 +118,19 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     );
   }
 
+  private attachFile(filePath: string, type?: string): Promise<void> {
+    const { onAddFeedbackFile } = this.props;
+    return fs.statAsync(filePath)
+      .then(stats => {
+        onAddFeedbackFile({
+          filename: path.basename(filePath),
+          filePath,
+          size: stats.size,
+          type: type || path.extname(filePath).slice(1),
+        });
+      });
+  }
+
   private dropFeedback = (type: ControlMode, feedbackFilePaths: string[]) => {
     const { onAddFeedbackFile } = this.props;
 
@@ -126,17 +139,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     }
 
     if (type === 'files') {
-      fs.statAsync(feedbackFilePaths[0])
-        .then((stats) => {
-          const feedbackFile: IFeedbackFile = {
-            filename: path.basename(feedbackFilePaths[0]),
-            filePath: feedbackFilePaths[0],
-            size: stats.size,
-            type: path.extname(feedbackFilePaths[0]),
-          };
-
-          onAddFeedbackFile(feedbackFile);
-        });
+      this.attachFile(feedbackFilePaths[0]).then(() => null);
     }
   }
 
@@ -290,17 +293,10 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
   private attachLog() {
     const { onAddFeedbackFile } = this.props;
 
-    const logFile = path.join(remote.app.getPath('userData'), 'vortex.log');
-
-    fs.statAsync(logFile)
-      .then((stats) => {
-        onAddFeedbackFile({
-          filename: path.basename(logFile),
-          filePath: logFile,
-          size: stats.size,
-          type: 'Log',
-        });
-      });
+    this.attachFile(
+      path.join(remote.app.getPath('userData'), 'vortex.log'), 'log');
+    this.attachFile(
+      path.join(remote.app.getPath('userData'), 'vortex1.log'), 'log');
   }
 
   private submitFeedback = (event) => {

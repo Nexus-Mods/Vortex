@@ -464,9 +464,15 @@ function once(api: IExtensionApi) {
         .catch(err => {
           // if there is an "errno", this is more of a technical problem, like
           // network is offline or server not reachable
-          showError(api.store.dispatch,
-            'Failed to validate API Key',
-            err.message, false, undefined, false);
+          if (err.code === 'ESOCKETTIMEDOUT') {
+            showError(api.store.dispatch,
+              'Connection to Nexus API timed out, please check your internet connection',
+              undefined, false, undefined, false);
+          } else {
+            showError(api.store.dispatch,
+              'Failed to validate API Key',
+              err.message, false, undefined, false);
+          }
           api.store.dispatch(setUserInfo(null));
         });
     }
