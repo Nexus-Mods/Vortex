@@ -247,31 +247,31 @@ function renderer() {
       if (error !== undefined) {
         showError(store.dispatch, 'failed to initialize localization', error);
       }
-      extensions.doOnce();
-      extensions.renderStyle()
+      return extensions.doOnce();
+    })
+    .then(() => extensions.renderStyle()
         .catch(err => {
           terminate({
             message: 'failed to parse UI theme: ' + process.cwd(),
             details: err,
           });
-        })
-        .then(() => {
-          initApplicationMenu(extensions);
-          startupFinished();
-          eventEmitter.emit('startup');
-          // render the page content
-          ReactDOM.render(
-            <Provider store={store}>
-              <I18nextProvider i18n={i18n}>
-                <ExtensionProvider extensions={extensions}>
-                  <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
-                </ExtensionProvider>
-              </I18nextProvider>
-            </Provider>,
-            document.getElementById('content'),
-          );
-          ipcRenderer.send('show-window');
-        });
+        }))
+    .then(() => {
+      initApplicationMenu(extensions);
+      startupFinished();
+      eventEmitter.emit('startup');
+      // render the page content
+      ReactDOM.render(
+        <Provider store={store}>
+          <I18nextProvider i18n={i18n}>
+            <ExtensionProvider extensions={extensions}>
+              <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
+            </ExtensionProvider>
+          </I18nextProvider>
+        </Provider>,
+        document.getElementById('content'),
+      );
+      ipcRenderer.send('show-window');
     });
 
   // prevent the page from being changed through drag&drop

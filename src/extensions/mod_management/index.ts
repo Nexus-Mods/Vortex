@@ -70,6 +70,7 @@ const activators: IDeploymentMethod[] = [];
 let installManager: InstallManager;
 
 interface IInstaller {
+  id: string;
   priority: number;
   testSupported: TestSupported;
   install: InstallFunc;
@@ -83,8 +84,9 @@ function registerDeploymentMethod(activator: IDeploymentMethod) {
   activators.push(activator);
 }
 
-function registerInstaller(priority: number, testSupported: TestSupported, install: InstallFunc) {
-  installers.push({ priority, testSupported, install });
+function registerInstaller(id: string, priority: number,
+                           testSupported: TestSupported, install: InstallFunc) {
+  installers.push({ id, priority, testSupported, install });
 }
 
 function registerModSource(id: string, name: string, onBrowse: () => void) {
@@ -539,7 +541,7 @@ function init(context: IExtensionContext): boolean {
 
   registerAttributeExtractor(100, attributeExtractor);
 
-  registerInstaller(1000, basicInstaller.testSupported, basicInstaller.install);
+  registerInstaller('fallback', 1000, basicInstaller.testSupported, basicInstaller.install);
 
   context.once(() => once(context.api));
 

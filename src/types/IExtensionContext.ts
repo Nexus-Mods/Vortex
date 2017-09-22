@@ -455,13 +455,15 @@ export interface IExtensionContext {
 
   /**
    * register an installer
+   * @param {string} id id for the installer. currently only used for logging
    * @param {number} priority the priority of the installer. The supported installer with the
    *                          highest priority gets to handle the mod
    * @param {TestSupported} testSupported function called to determine if the handler can deal
    *                                      with a mod
    * @param {InstallFunc} install function called to actually install a mod
    */
-  registerInstaller: (priority: number, testSupported: TestSupported, install: InstallFunc) => void;
+  registerInstaller: (id: string, priority: number,
+                      testSupported: TestSupported, install: InstallFunc) => void;
 
   /**
    * register an action (can be a button or a menu item)
@@ -685,7 +687,7 @@ export interface IExtensionContext {
    *
    * @memberOf IExtensionContext
    */
-  once: (callback: () => void) => void;
+  once: (callback: () => void | Promise<void>) => void;
 
   /**
    * similar to once but this callback will be run (only) on the electron "main" process.

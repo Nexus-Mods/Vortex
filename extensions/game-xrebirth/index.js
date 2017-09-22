@@ -121,7 +121,7 @@ function main(context) {
     },
   });
 
-  context.registerInstaller(50, testSupported, install);
+  context.registerInstaller('xrebirth', 50, testSupported, install);
 
   return true;
 }

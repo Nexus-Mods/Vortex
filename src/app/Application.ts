@@ -92,6 +92,7 @@ class Application {
         .then(() => {
           setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
           log('info', '--------------------------');
+          log('info', 'Vortex Version', app.getVersion());
           return this.startSplash();
         })
         // start initialization
@@ -229,7 +230,7 @@ class Application {
       })
       .then(() => {
         this.mStore = newStore;
-        this.mExtensions.doOnce();
+        return this.mExtensions.doOnce();
       });
   }
 

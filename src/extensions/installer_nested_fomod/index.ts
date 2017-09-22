@@ -12,6 +12,7 @@ import {
 } from '../../types/IExtensionContext';
 import {log} from '../../util/log';
 
+import * as Promise from 'bluebird';
 import * as path from 'path';
 
 function testSupported(files: string[]): Promise<ISupportedResult> {
@@ -36,13 +37,9 @@ function install(files: string[], destinationPath: string,
   });
 }
 
-export interface IExtensionContextExt extends IExtensionContext {
-  registerInstaller: (priority, testSupported, install) => void;
-}
-
-function init(context: IExtensionContextExt): boolean {
+function init(context: IExtensionContext): boolean {
   context.registerInstaller(
-      0, testSupported,
+      'nested_fomod', 0, testSupported,
       (files: string[], destinationPath: string, gameId: string,
        progress: ProgressDelegate) =>
           install(files, destinationPath, gameId, progress, context.api));

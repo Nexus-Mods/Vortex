@@ -123,7 +123,7 @@ function processAttributes(input: any, modPath: string): Promise<any> {
 
 function init(context: IExtensionContext): boolean {
   context.registerInstaller(
-    100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
+    'fomod', 100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
       const coreDelegates = new Core(context.api, gameId);
       const topLevelDirectories = getTopLevelDirectories(gameId);
       return currentInstallPromise

@@ -60,6 +60,7 @@ class InstallContext implements IInstallContext {
   }
 
   public startIndicator(id: string): void {
+    log('info', 'start mod install', { id });
     this.mAddNotification({
       id: 'install_' + id,
       message: 'Installing ' + id,
@@ -95,6 +96,11 @@ class InstallContext implements IInstallContext {
   }
 
   public finishInstallCB(outcome: InstallOutcome, info?: any): void {
+    log('info', 'finish mod install', {
+      id: this.mIndicatorId,
+      outcome: this.mInstallOutcome,
+      info,
+    });
     if (outcome === 'success') {
       this.mSetModState(this.mAddedId, 'installed');
       this.mSetModAttribute(this.mAddedId, 'installTime', new Date());
@@ -119,11 +125,13 @@ class InstallContext implements IInstallContext {
   }
 
   public setInstallPathCB(id: string, installPath: string) {
+    log('info', 'using install path', { id, installPath });
     this.mSetModInstallationPath(id, path.basename(installPath));
   }
 
-  public setModType(modId: string, modType: string) {
-    this.mSetModType(modId, modType);
+  public setModType(id: string, modType: string) {
+    log('info', 'determined mod type', { id, modType });
+    this.mSetModType(id, modType);
   }
 
   public reportError(message: string, details?: string | Error, allowReport?: boolean): void {

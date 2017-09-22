@@ -262,6 +262,7 @@ class InstallManager {
           api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
         }
         if (processDependencies) {
+          log('info', 'process dependencies', { modId });
           this.installDependencies(modInfo.rules, this.mGetInstallPath(installGameId),
             installContext, api);
         }
@@ -271,6 +272,7 @@ class InstallManager {
         return null;
       })
       .catch(err => {
+        log('info', 'install interrupted', { err: err.message });
         // TODO: make this nicer. especially: The first check doesn't recognize UserCanceled
         //   exceptions from extensions, hence we have to do the string check (last one)
         const canceled = (err instanceof UserCanceled)
@@ -359,6 +361,7 @@ class InstallManager {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
           }
+          log('info', 'found installer to use', { id: supportedInstaller.id });
 
           const {installer, requiredFiles} = supportedInstaller;
           return installer.install(
@@ -368,24 +371,25 @@ class InstallManager {
   }
 
   private determineModType(gameId: string, installInstructions: IInstruction[]): Promise<string> {
+    log('info', 'determine mod type', { gameId });
     const modTypes: IModType[] = getGame(gameId).modTypes;
     // sort with priority descending so we can stop as soon as we've hit the first match
     const sorted = modTypes.sort((lhs, rhs) => rhs.priority - lhs.priority);
     let found = false;
     return Promise.mapSeries(sorted, (type: IModType): Promise<string> => {
-      if (!found) {
-        return type.test(installInstructions)
-        .then(matches => {
-          if (matches) {
-            found = true;
-            return Promise.resolve(type.typeId);
-          } else {
-            return Promise.resolve(null);
-          }
-        });
-      } else {
+      if (found) {
         return Promise.resolve<string>(null);
       }
+
+      return type.test(installInstructions)
+      .then(matches => {
+        if (matches) {
+          found = true;
+          return Promise.resolve(type.typeId);
+        } else {
+          return Promise.resolve(null);
+        }
+      });
     }).then(matches => matches.find(match => match !== null) || '');
   }
 
@@ -698,18 +702,14 @@ class InstallManager {
     if (offset >= this.mInstallers.length) {
       return Promise.resolve(undefined);
     }
-    return this.mInstallers[offset].testSupported(fileList, gameId).then(
-      (testResult: ISupportedResult) => (testResult.supported === true)
+    return this.mInstallers[offset].testSupported(fileList, gameId)
+      .then((testResult: ISupportedResult) => (testResult.supported === true)
           ? Promise.resolve({
-            installer: this.mInstallers[offset],
-            requiredFiles: testResult.requiredFiles,
-          })
-          : this.getInstaller(fileList, gameId, offset + 1))
-      .catch((err) => {
-        log('warn', 'failed to test installer support', err.message);
-        return this.getInstaller(fileList, gameId, offset + 1);
-      });
-  }
+              installer: this.mInstallers[offset],
+              requiredFiles: testResult.requiredFiles,
+            })
+          : this.getInstaller(fileList, gameId, offset + 1));
+ }
 
   /**
    * determine the mod name (on disk) from the archive path
