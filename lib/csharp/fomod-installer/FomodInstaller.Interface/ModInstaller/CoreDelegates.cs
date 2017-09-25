@@ -305,28 +305,52 @@ namespace FomodInstaller.Interface
 
             public async void StartDialog(string moduleName, HeaderImage image, SelectCB select, ContinueCB cont, CancelCB cancel)
             {
-                await TaskHelper.Timeout(
-                   mStartDialog(new StartParameters(moduleName, image, select, cont, cancel)), Defaults.TIMEOUT_MS);
+                try
+                {
+                    await TaskHelper.Timeout(
+                       mStartDialog(new StartParameters(moduleName, image, select, cont, cancel)), Defaults.TIMEOUT_MS);
+                } catch (Exception e)
+                {
+                    Console.WriteLine("exception in start dialog: {0}", e);
+                }
             }
 
             public async void EndDialog()
             {
-                await TaskHelper.Timeout(mEndDialog(null), Defaults.TIMEOUT_MS);
+                try
+                {
+                    await TaskHelper.Timeout(mEndDialog(null), Defaults.TIMEOUT_MS);
+                } catch (Exception e)
+                {
+                    Console.WriteLine("exception in end dialog: {0}", e);
+                }
             }
 
             public async void UpdateState(InstallerStep[] installSteps, int currentStep)
             {
-                await TaskHelper.Timeout(mUpdateState(new UpdateParameters(installSteps, currentStep)), Defaults.TIMEOUT_MS);
+                try
+                {
+                    await TaskHelper.Timeout(mUpdateState(new UpdateParameters(installSteps, currentStep)), Defaults.TIMEOUT_MS);
+                } catch (Exception e)
+                {
+                    Console.WriteLine("exception in update state: {0}", e);
+                }
             }
 
             public async void ReportError(string title, string message, string details)
             {
-                await TaskHelper.Timeout(mReportError(new Dictionary<string, dynamic>
+                try
                 {
-                    { "title", title },
-                    { "message", message },
-                    { "details", details }
-                }), Defaults.TIMEOUT_MS);
+                    await TaskHelper.Timeout(mReportError(new Dictionary<string, dynamic> {
+                        { "title", title },
+                        { "message", message },
+                        { "details", details }
+                    }), Defaults.TIMEOUT_MS);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("exception in report error: {0}", e);
+                }
             }
         }
     }

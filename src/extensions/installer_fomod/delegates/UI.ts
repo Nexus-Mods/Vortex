@@ -48,13 +48,15 @@ class UI extends DelegateBase {
     }
   }
 
-  public endDialog = () => {
+  public endDialog = (dummy, callback: (err) => void) => {
     log('debug', 'endDialog called');
     try {
       this.api.store.dispatch(endDialog());
+      callback(null);
     } catch (err) {
       showError(this.api.store.dispatch, 'end installer dialog failed',
         err);
+      callback(err);
     }
     // unset the callbacks because they belong to c# so having links here
     // might prevent the c# object from being cleaned up
