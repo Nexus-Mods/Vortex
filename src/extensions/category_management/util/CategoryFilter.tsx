@@ -53,11 +53,13 @@ const CategoryFilterComponentConn = connect(mapStateToProps)(
 
 class CategoryFilter implements ITableFilter {
   public component = CategoryFilterComponentConn;
-  public raw = true;
+  public raw = 'attributes';
 
   public matches(filter: any, value: any, state: IState): boolean {
     const filtList = filter as string[];
-    const allCategories = this.categoryChain(value, state);
+    const allCategories = (value !== undefined)
+      ? this.categoryChain(value.toString(), state)
+      : new Set<string>();
 
     return (filtList.length === 0)
       || (filtList.find(filt => allCategories.has(filt)) !== undefined);
@@ -68,7 +70,7 @@ class CategoryFilter implements ITableFilter {
     const categories = state.persistent.categories[gameId];
     const result = new Set<string>();
     let iter = category;
-    while (truthy(iter)) {
+    while (truthy(iter) && (categories[iter] !== undefined)) {
       result.add(iter);
       iter = categories[iter].parentCategory;
     }

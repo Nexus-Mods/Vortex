@@ -175,7 +175,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     let collator: Intl.Collator;
 
     this.gameColumn = {
-      id: 'gameid',
+      id: 'game',
       name: 'Game',
       description: 'The game this download is associated with',
       icon: 'controller',

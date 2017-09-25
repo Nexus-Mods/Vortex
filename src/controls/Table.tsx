@@ -653,8 +653,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           return false;
         }
 
-        const value = attribute.filter.raw
-          ? data[rowId].attributes[attribute.id]
+        const value = attribute.filter.raw !== false
+          ? attribute.filter.raw === true
+            ? data[rowId][attribute.id]
+            : data[rowId][attribute.filter.raw][attribute.id]
           : calculatedValues[rowId][attribute.id];
 
         return truthy(filter[attribute.id])

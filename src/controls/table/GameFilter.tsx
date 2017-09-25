@@ -1,11 +1,14 @@
 import { IGameStored } from '../../extensions/gamemode_management/types/IGameStored';
+import { IState } from '../../types/IState';
 import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
+import { activeGameId } from '../../util/selectors';
 
 import * as React from 'react';
 import { connect } from 'react-redux';
 import * as Select from 'react-select';
+
 export interface IConnectedProps {
-  games: { [gameId: string]: IGameStored};
+  games: IGameStored[];
 }
 
 export type IProps = IFilterProps & IConnectedProps;
@@ -14,13 +17,13 @@ export class GameFilterComponent extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { filter, games } = this.props;
 
-    const game = Object.keys(games)
-      .map(gameId => games[gameId].shortName || games[gameId].name);
-
-    const options = game.map(name => ({
-      label: name,
-      value: name,
-    }));
+    const options = [{
+      label: '<Current Game>',
+      value: '$',
+    }].concat(games.map(game => ({
+      label: game.shortName || game.name,
+      value: game.id,
+    })));
 
     return (
       <Select
@@ -38,7 +41,7 @@ export class GameFilterComponent extends React.Component<IProps, {}> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     games: state.session.gameMode.known,
   };
@@ -49,10 +52,12 @@ const FilterConn = connect(mapStateToProps)(
 
 class GameFilter implements ITableFilter {
   public component = FilterConn;
-  public raw = false;
+  public raw = 'modInfo';
 
-  public matches(filter: any, value: any): boolean {
-    return filter === value;
+  public matches(filter: any, value: any, state: IState): boolean {
+    return (filter === '$')
+      ? activeGameId(state) === value
+      : filter === value;
   }
 }
 

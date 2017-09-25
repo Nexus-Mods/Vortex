@@ -22,9 +22,7 @@ class DarkSouls {
     let steam = new util.Steam();
     return steam.allGames()
         .then((games) => {
-          console.log('all games', games);
           let game = games.find((entry) => entry.appid === '211420');
-          console.log('game', game);
           return (game !== undefined) ? game.gamePath : null;
         })
         .catch((err) => {
@@ -42,7 +40,6 @@ class DarkSouls {
   }
 
   setup(discovery) {
-    console.log('setup', discovery, path.join(discovery.path, this.queryModPath(discovery.path)));
     return fs.statAsync(path.join(discovery.path, this.queryModPath(discovery.path)))
         .catch(err => {
           if (err.code !== 'ENOENT') {

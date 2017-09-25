@@ -25,7 +25,7 @@ export interface IFilterProps {
 
 export interface ITableFilter {
   matches: (filter: any, value: any, state: any) => boolean;
-  raw: boolean;
+  raw: string | boolean;
   component: React.ComponentClass<IFilterProps>;
 }
 
