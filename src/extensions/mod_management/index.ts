@@ -61,6 +61,7 @@ import getText from './texts';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import { genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
@@ -462,8 +463,8 @@ function once(api: IExtensionApi) {
     }
   });
 
-  api.events.on('gamemode-activated', (newMode: string) => onGameModeActivated(
-                                          api, activators, newMode));
+  api.events.on('gamemode-activated',
+      (newMode: string) => onGameModeActivated(api, activators, newMode));
 
   api.onStateChange(
       ['settings', 'mods', 'paths'],
@@ -471,8 +472,11 @@ function once(api: IExtensionApi) {
 
   api.events.on('start-install', (archivePath: string,
                                   callback?: (error, id: string) => void) => {
-    installManager.install(null, archivePath, activeGameId(store.getState()),
-                           api, {}, true, false, callback);
+    genHash(archivePath)
+    .then(hashResult => {
+      installManager.install(null, archivePath, activeGameId(store.getState()),
+                            api, { fileMD5: hashResult.md5sum }, true, false, callback);
+      });
   });
 
   api.events.on(
