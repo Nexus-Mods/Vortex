@@ -103,7 +103,7 @@ class RuleDescription extends React.Component<IDescriptionProps, {}> {
   private renderReference = (ref: IReference): JSX.Element => {
     const style = { display: 'inline' };
     if ((ref.logicalFileName === undefined) && (ref.fileExpression === undefined)) {
-      return <p style={style}>{ ref.fileMD5 }</p>;
+      return <p style={style}>{ref.fileMD5}</p>;
     }
     return (
       <p style={style}>

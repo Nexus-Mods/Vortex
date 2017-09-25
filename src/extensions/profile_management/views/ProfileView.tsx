@@ -169,13 +169,24 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
   private renderAddProfile() {
     const { t } = this.props;
+
+    const { discoveredGames, gameId, games } = this.props;
+
+    if (gameId === undefined) {
+      return null;
+    }
+
+    const game = games.find((iter: IGameStored) => iter.id === gameId);
+    const discovered = discoveredGames[gameId];
+    const gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
+
     return (
       <ListGroupItem
         key='__add'
         header={<Icon name='plus' />}
         onClick={this.editNewProfile}
       >
-        {t('Add Profile')}
+        {t('Add "{{ name }}" Profile', { replace: { name: gameName } })}
       </ListGroupItem>
     );
   }

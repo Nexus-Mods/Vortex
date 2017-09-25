@@ -91,7 +91,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<str
                     + 'applied in the right order.<br/><ul>'
                     + renderCycles(alg.findCycles(dependencies))
                     + '</ul>'
-              , { isHTML: true, allowReport: false });
+              , { id: 'mod-cycles', isHTML: true, allowReport: false });
             // return unsorted
             return Promise.resolve(mods.map(mod => mod.id));
           } else {

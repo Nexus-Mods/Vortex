@@ -45,10 +45,17 @@ interface IComponentState {
   sending: boolean;
 }
 
-const SAMPLE_REPORT = 'E.g. \n' +
+const SAMPLE_REPORT = 'Please\n' +
+  ' - use punctuation and linebreaks\n' +
+  ' - be precise and to the point\n' +
+  ' - report only one issue per message\n' +
+  ' - avoid making assumptions, just report what you see\n' +
+  'Time you save us with a great report is time we can spend on fixing more bugs ' +
+  'provide more features.\n\n' +
+  'I.e.\n' +
   'Summary: The mod downloads properly but when I try to install it nothing happens.\n' +
-  'Expected Results: The mod is installed. \n' +
-  'Actual Results: Nothing happens. \n' +
+  'Expected Results: The mod is installed.\n' +
+  'Actual Results: Nothing happens.\n' +
   'Steps to reproduce: Download a mod, then click Install inside the Actions menu.';
 
 class FeedbackPage extends ComponentEx<Props, IComponentState> {

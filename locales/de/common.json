@@ -22,7 +22,7 @@
   "Enabled": "Aktiviert",
   "Enable": "Aktivieren",
   "Profiles": "Profile",
-  "Add Profile": "Profil hinzufügen",
+  "Add \"{{ name }}\" Profile": "Profil für \"{{ name }}\" hinzufügen",
   "Edit": "Ändern",
   "Remove": "Entfernen",
   "Games": "Spiele",

@@ -373,7 +373,7 @@ class ExtensionManager {
       (message: string, details: string | Error | any, options?: IErrorOptions) => {
       showError(store.dispatch, message, details,
         (options !== undefined) && (options.isHTML === true),
-        undefined,
+        (options !== undefined) ? options.id : undefined,
         (options !== undefined) && (options.allowReport !== false));
     };
     this.mApi.dismissNotification = (id: string) => {
