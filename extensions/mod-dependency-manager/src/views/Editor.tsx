@@ -103,8 +103,9 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const {t, dialog} = this.props;
     const {logicalFileName, versionMatch, fileExpression, fileMD5} = reference;
 
-    if (((logicalFileName === '') && (fileExpression === ''))
-       || (dialog.reference.versionMatch === undefined)) {
+    if (((logicalFileName === '')
+         && (fileExpression === ''))
+        || (versionMatch === undefined)) {
       return (
         <Form horizontal>
           <FormGroup>
@@ -141,7 +142,9 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
     let versionInvalid = null;
 
-    if (semver.validRange(versionMatch) === null) {
+    if (versionMatch === '*') {
+      // treat * as always valid, even if the version is not semver compliant
+    } else if (semver.validRange(versionMatch) === null) {
       versionInvalid = t('Range invalid');
     } else if (semver.valid(refVer) && !semver.satisfies(refVer, versionMatch)) {
       versionInvalid = t('Doesn\'t match the mod');
@@ -152,7 +155,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     return (
       <Form horizontal>
         <FormGroup>
-          { nameLabel }
+          {nameLabel}
           <Col sm={9}>
             <FormGroup
               style={{ marginLeft: 0, marginRight: 0 }}
@@ -196,7 +199,9 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 
   private genVersionMatch(input: string): string {
-    if (semver.valid(input)) {
+    if (input === undefined) {
+      return '*';
+    } else if (semver.valid(input)) {
       return '^' + input;
     } else {
       return input;
