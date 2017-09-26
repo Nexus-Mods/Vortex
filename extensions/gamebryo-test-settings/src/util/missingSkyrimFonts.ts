@@ -7,7 +7,9 @@ function missingSkyrimFonts(state: types.IState, skyrimDefaultFonts: Set<string>
                             gameId: string): Promise<string[]> {
   const gameDiscovery: types.IDiscoveryResult = util.getSafe(state,
     ['settings', 'gameMode', 'discovered', gameId], undefined);
-  const fontconfigTxt = path.join(gameDiscovery.modPath, 'interface', 'fontconfig.txt');
+  const game = util.getGame(gameId);
+  const modPath = game.getModPaths(gameDiscovery.path)[''];
+  const fontconfigTxt = path.join(modPath, 'interface', 'fontconfig.txt');
 
   return fs.readFileAsync(fontconfigTxt)
     .then((fontconfig: NodeBuffer) => {
@@ -24,7 +26,7 @@ function missingSkyrimFonts(state: types.IState, skyrimDefaultFonts: Set<string>
       // test the remaining files for existence
       // TODO: I guess we should also check in bsas, right?
       return Promise.map(removedFonts, (font: string) => {
-        const fontFile: string = path.join(gameDiscovery.modPath, font);
+        const fontFile: string = path.join(modPath, font);
         return fs.statAsync(fontFile)
           .then(() => null)
           .catch(() => fontFile);

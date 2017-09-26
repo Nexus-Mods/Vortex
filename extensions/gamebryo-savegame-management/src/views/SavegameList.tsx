@@ -267,7 +267,8 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
             onShowError, onShowSuccess, saves } = this.props;
     const { discoveredGames, gameMode } = this.props;
 
-    const modPath = discoveredGames[gameMode].modPath;
+    const game = util.getGame(gameMode);
+    const modPath = game.getModPaths(discoveredGames[gameMode].path)[''];
 
     const notificationId = 'restore-plugins-id';
     onShowActivity('Restoring plugins', notificationId);

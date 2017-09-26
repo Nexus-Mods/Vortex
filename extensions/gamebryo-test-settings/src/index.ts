@@ -85,9 +85,12 @@ function testSkyrimFontsImpl(context: types.IExtensionContext) {
     return Promise.resolve(undefined);
   }
 
+  const game = util.getGame(gameId);
+
   const prom = defaultFonts[gameId] !== undefined
     ? Promise.resolve(undefined)
-    : context.api.openArchive(path.join(gameDiscovery.modPath, 'Skyrim - Interface.bsa'))
+    : context.api.openArchive(path.join(game.getModPaths(gameDiscovery.path)[''],
+                              'Skyrim - Interface.bsa'))
     .then((archive: util.Archive) => archive.readDir('interface'))
     .then((files: string[]) => {
       defaultFonts[gameId] = new Set<string>(files
