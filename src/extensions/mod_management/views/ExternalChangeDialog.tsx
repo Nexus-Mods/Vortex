@@ -201,12 +201,12 @@ class ExternalChangeDialog extends ComponentEx<IProps, {}> {
     this.props.onClose(this.props.changes, false);
   }
 
-  private renderRow = (entry: IFileEntry): JSX.Element => {
+  private renderRow = (entry: IFileEntry, idx: number): JSX.Element => {
     const { t, onChangeAction } = this.props;
 
     return (
       <ChangeRow
-        key={entry.filePath}
+        key={idx}
         entry={entry}
         t={t}
         onChangeAction={onChangeAction}

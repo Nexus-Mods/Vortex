@@ -7,24 +7,21 @@ import { activeGameId, downloadPath } from '../util/selectors';
 import { getSafe } from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
-/*
-import * as fs from 'fs-extra-promise';
-import * as update from 'immutability-helper';
-import * as path from 'path';
-*/
 
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import * as Redux from 'redux';
-// import { generate as shortid } from 'shortid';
 
-export type ControlMode = 'urls' | 'files';
+export type DropType = 'urls' | 'files';
 
 export interface IBaseProps {
-  drop: (type: ControlMode, paths: string[]) => void;
-  accept: ControlMode[];
+  drop: (type: DropType, paths: string[]) => void;
+  accept: DropType[];
+  clickable?: boolean;
   dialogHint?: string;
   dialogDefault?: string;
+  style?: React.CSSProperties;
+  dragOverlay?: JSX.Element;
 }
 
 interface IConnectedProps {}
@@ -43,6 +40,8 @@ interface IComponentState {
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class Dropzone extends ComponentEx<IProps, IComponentState> {
+  private mWrapperMode: boolean = false;
+  private mLeaveDelay: NodeJS.Timer;
   constructor(props) {
     super(props);
 
@@ -51,10 +50,21 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  public render(): JSX.Element {
-    const { t, accept } = this.props;
+  public componentWillMount() {
+    // styling is considerably different depending on whether this is
+    // a stand-alone control or a wrapper for other controls
+    this.mWrapperMode = React.Children.count(this.props.children) > 0;
+  }
 
-    const classes = [ 'dropzone-url' ];
+  public render(): JSX.Element {
+    const { t, accept, clickable, dragOverlay, style } = this.props;
+
+    const classes = [ 'dropzone' ];
+    if (!this.mWrapperMode) {
+      classes.push('stand-alone');
+    } else {
+      classes.push('wrapper');
+    }
     if (this.state.dropActive === 'invalid') {
       classes.push('hover-invalid');
     } else if (this.state.dropActive === 'hover') {
@@ -81,33 +91,59 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
         onDragOver={this.onDragOver}
         onDragLeave={this.onDragLeave}
         onDrop={this.onDrop}
-        onMouseOver={this.onHover}
-        onMouseLeave={this.onHoverLeave}
-        onClick={this.onClick}
+        onMouseOver={(clickable !== false) ? this.onHover : undefined}
+        onMouseLeave={(clickable !== false) ? this.onHoverLeave : undefined}
+        onClick={(clickable !== false) ? this.onClick : undefined}
+        style={{ ...style, position: 'relative' }}
       >
-        {this.state.dropActive === 'hover'
-          ? t('Click to {{clickMode}}', { replace: { clickMode } })
-          : t('Drop {{accept}}', { replace: { accept: acceptList.join(t(' or ')) } })}
+        {React.Children.count(this.props.children) > 0
+          ? this.props.children
+          : this.state.dropActive === 'hover'
+            ? t('Click to {{clickMode}}', { replace: { clickMode } })
+            : t('Drop {{accept}}', { replace: { accept: acceptList.join(t(' or ')) } })}
+        {(dragOverlay !== undefined) && (['no', 'invalid'].indexOf(this.state.dropActive) === -1)
+          ? <div className='drag-overlay'>{dragOverlay}</div>
+          : null}
       </div>
     );
   }
 
-  private onDragEnter = (evt: React.DragEvent<any>) => {
-    evt.preventDefault();
+  private setDropMode(evt: React.DragEvent<any>) {
     let type: DropMode = 'invalid';
-    if (evt.dataTransfer.getData('Url') !== '') {
+    if ((evt.dataTransfer.types.indexOf('text/uri-list') !== -1)
+        && (this.props.accept.indexOf('urls') !== -1)) {
       type = 'url';
-    } else if (evt.dataTransfer.files.length > 0) {
+    } else if ((evt.dataTransfer.types.indexOf('Files') !== -1)
+               && (this.props.accept.indexOf('files') !== -1)) {
       type = 'file';
     }
+
     this.nextState.dropActive = type;
+  }
+
+  private onDragEnter = (evt: React.DragEvent<any>) => {
+    evt.preventDefault();
+    this.setDropMode(evt);
   }
 
   private onDragOver = (evt: React.DragEvent<any>) => {
     evt.preventDefault();
     evt.stopPropagation();
+
+    if (this.mLeaveDelay !== undefined) {
+      clearTimeout(this.mLeaveDelay);
+    }
+
+    if (this.state.dropActive === 'no') {
+      this.setDropMode(evt);
+    }
+
     try {
-      evt.dataTransfer.dropEffect = this.state.dropActive === 'url' ? 'link' : 'move';
+      evt.dataTransfer.dropEffect = this.state.dropActive === 'invalid'
+        ? 'none'
+        : this.state.dropActive === 'url'
+          ? 'link'
+          : 'copy';
     } catch (err) {
       // continue regardless of error
     }
@@ -116,7 +152,13 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
 
   private onDragLeave = (evt: React.DragEvent<any>) => {
     evt.preventDefault();
-    this.nextState.dropActive = 'no';
+    if (this.mLeaveDelay !== undefined) {
+      clearTimeout(this.mLeaveDelay);
+    }
+    // delay event on drag leave,
+    this.mLeaveDelay = setTimeout(() => {
+      this.nextState.dropActive = 'no';
+    }, 100);
   }
 
   private onDrop = (evt: React.DragEvent<any>) => {

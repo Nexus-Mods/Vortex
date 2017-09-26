@@ -1,5 +1,6 @@
 import { showDialog } from '../../../actions/notifications';
 import DropdownButton from '../../../controls/DropdownButton';
+import Dropzone, { DropType } from '../../../controls/Dropzone';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
@@ -223,6 +224,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
+    const dragOverlay = <h2>{t('Drop to install')}</h2>;
+
     return (
       <MainPage ref={this.setBoundsRef}>
         <MainPage.Header>
@@ -233,23 +236,31 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           />
         </MainPage.Header>
         <MainPage.Body>
-          <SuperTable
-            tableId='mods'
-            detailsTitle={t('Mod Attributes')}
-
-            data={this.mPrimaryMods}
-            staticElements={[
-              PICTURE,
-              this.modEnabledAttribute,
-              this.modNameAttribute,
-              this.modVersionAttribute,
-              this.modVersionDetailAttribute,
-              INSTALL_TIME,
-            ]}
-            actions={this.modActions}
+          <Dropzone
+            accept={['files']}
+            drop={this.dropMod}
+            style={{ height: '100%' }}
+            dragOverlay={dragOverlay}
+            clickable={false}
           >
-          {this.renderMoreMods(modSources)}
-          </SuperTable>
+            <SuperTable
+              tableId='mods'
+              detailsTitle={t('Mod Attributes')}
+
+              data={this.mPrimaryMods}
+              staticElements={[
+                PICTURE,
+                this.modEnabledAttribute,
+                this.modNameAttribute,
+                this.modVersionAttribute,
+                this.modVersionDetailAttribute,
+                INSTALL_TIME,
+              ]}
+              actions={this.modActions}
+            >
+            {this.renderMoreMods(modSources)}
+            </SuperTable>
+          </Dropzone>
         </MainPage.Body>
         <MainPage.Overlay>
           <IconBar
@@ -741,6 +752,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { gameMode, mods } = this.props;
 
     this.context.api.events.emit('check-mods-version', gameMode, _.pick(mods, modIds));
+  }
+
+  private dropMod = (type: DropType, values: string[]) => {
+    values.forEach(value =>
+      this.context.api.events.emit('start-install', value));
   }
 }
 

@@ -1,6 +1,6 @@
 import { showDialog } from '../../../actions/notifications';
 import { selectRows } from '../../../actions/tables';
-import Dropzone, { ControlMode } from '../../../controls/Dropzone';
+import Dropzone, { DropType } from '../../../controls/Dropzone';
 import FlexLayout from '../../../controls/FlexLayout';
 import IconBar from '../../../controls/IconBar';
 import InputButton from '../../../controls/InputButton';
@@ -500,7 +500,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private dropDownload = (type: ControlMode, dlPaths: string[]) => {
+  private dropDownload = (type: DropType, dlPaths: string[]) => {
     if (type === 'urls') {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}));
     } else {

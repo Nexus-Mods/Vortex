@@ -1,5 +1,5 @@
 import { removeExtension, setExtensionEnabled } from '../../actions/app';
-import Dropzone, { ControlMode } from '../../controls/Dropzone';
+import Dropzone, { DropType } from '../../controls/Dropzone';
 import FlexLayout from '../../controls/FlexLayout';
 import Table, { ITableRowAction } from '../../controls/Table';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../../types/IState';
@@ -150,7 +150,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private dropExtension = (type: ControlMode, extPaths: string[]) => {
+  private dropExtension = (type: DropType, extPaths: string[]) => {
     if (type === 'files') {
       Promise.map(extPaths, extPath => installExtension(extPath).catch(err => {
         this.context.api.showErrorNotification('Failed to install extension', err);
