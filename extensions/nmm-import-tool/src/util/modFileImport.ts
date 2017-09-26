@@ -32,7 +32,7 @@ function byLength(lhs: string, rhs: string): number {
  * @param {string} installPath
  * @param {boolean} keepSource
  */
-export function transferUnpackedMod(mod: IModEntry, nmmVirtualPath: string,
+export function transferUnpackedMod(mod: IModEntry, nmmVirtualPath: string, nmmLinkPath: string,
                                     installPath: string, keepSource: boolean): Promise<string[]> {
   const operation = keepSource ? fs.copyAsync : fs.renameAsync;
 
@@ -54,8 +54,17 @@ export function transferUnpackedMod(mod: IModEntry, nmmVirtualPath: string,
                 file => operation(path.join(nmmVirtualPath, file.fileSource),
                                   path.join(destPath, file.fileDestination))
                             .catch(err => {
+                              if ((err.code === 'ENOENT') && (nmmLinkPath)) {
+                                operation(path.join(nmmLinkPath, file.fileSource),
+                                path.join(destPath, file.fileDestination))
+                                .catch(linkErr => {
+                                  failedFiles.push(file.fileSource + ' - ' +
+                                  linkErr.message);
+                                });
+                              } else {
                               failedFiles.push(file.fileSource + ' - ' +
                                                err.message);
+                              }
                             })))
       .then(() => Promise.resolve(failedFiles));
 }

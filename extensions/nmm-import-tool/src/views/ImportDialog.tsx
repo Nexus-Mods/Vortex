@@ -35,8 +35,8 @@ interface IActionProps {
 type IProps = IConnectedProps & IActionProps;
 
 interface IComponentState {
-  sources: string[];
-  selectedSource: string;
+  sources: string[][];
+  selectedSource: string[];
   importArchives: boolean;
   modsToImport: { [id: string]: IModEntry };
   error: string;
@@ -59,7 +59,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       sources: undefined,
       importArchives: false,
       modsToImport: {},
-      selectedSource: '',
+      selectedSource: [],
       error: undefined,
       importEnabled: {},
       counter: 0,
@@ -221,7 +221,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderSources(sources: string[], selectedSource: string): JSX.Element {
+  private renderSources(sources: string[][], selectedSource: string[]): JSX.Element {
     const { t } = this.props;
 
     return (
@@ -230,7 +230,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           + 'to import here:')}
         <SplitButton
           id='import-select-source'
-          title={selectedSource}
+          title={selectedSource[0]}
           onSelect={this.selectSource}
           style={{ marginLeft: 15 }}
         >
@@ -248,7 +248,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderSource = option => {
-    return <MenuItem key={option} eventKey={option}>{option}</MenuItem>;
+    return <MenuItem key={option} eventKey={option}>{option[0]}</MenuItem>;
   }
 
   private toggleArchiveImport = () => {
@@ -347,7 +347,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   private setup() {
     const { gameId } = this.props;
     const virtualPath =
-      path.join(this.state.selectedSource, 'VirtualInstall', 'VirtualModConfig.xml');
+      path.join(this.state.selectedSource[0], 'VirtualInstall', 'VirtualModConfig.xml');
     const state: types.IState = this.context.api.store.getState();
     const mods = state.persistent.mods[gameId] || {};
 
@@ -371,20 +371,23 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private startImport() {
-    const { t } = this.props;
+    const { gameId, t } = this.props;
     const { importArchives, modsToImport, selectedSource } = this.state;
 
     this.mTrace = new TraceImport();
 
     const modList = Object.keys(modsToImport).map(id => modsToImport[id]);
     const enabledMods = modList.filter(mod => this.isModEnabled(mod));
+    const virtualInstallPath = path.join(selectedSource[0], 'VirtualInstall');
+    const nmmLinkPath = (selectedSource[1]) ? path.join(selectedSource[1], gameId, 'NMMLink') : '';
+    const modsPath = selectedSource[2];
 
-    this.mTrace.initDirectory(selectedSource)
+    this.mTrace.initDirectory(selectedSource[0])
       .then(() => {
         this.mTrace.log('info', 'NMM Mods (count): ' + modList.length +
           ' - Importing (count):' + enabledMods.length);
         importMods(this.context.api, this.mTrace,
-        path.join(selectedSource, 'VirtualInstall'), enabledMods,
+        virtualInstallPath, nmmLinkPath, modsPath, enabledMods,
         importArchives, (mod: string, pos: number) => {
           this.nextState.progress = { mod, pos };
         })

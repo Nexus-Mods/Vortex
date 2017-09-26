@@ -7,23 +7,42 @@ function convertGameId(input: string): string {
   return input.replace(/(?:^|\s)\S/g, (a) => a.toUpperCase());
 }
 
-function getVirtualFolder(userConfig: string, gameId: string): string {
+function getVirtualFolder(userConfig: string, gameId: string): string[] {
   const parser = new DOMParser();
 
   const xmlDoc = parser.parseFromString(userConfig, 'text/xml');
 
-  const item = xmlDoc
+  let item = xmlDoc
     .querySelector(`setting[name="VirtualFolder"] item[modeId="${convertGameId(gameId)}"] string`);
 
   if (item === null) {
     return undefined;
   }
 
-  const setting = item.textContent;
+  const virtualPath = item.textContent;
+  let nmmLinkPath = '';
+
+  item = xmlDoc
+  .querySelector(`setting[name="HDLinkFolder"] item[modeId="${convertGameId(gameId)}"] string`);
+
+  if (item !== null) {
+    nmmLinkPath = item.textContent;
+  }
+
+  item = xmlDoc
+  .querySelector(`setting[name="ModFolder"] item[modeId="${convertGameId(gameId)}"] string`);
+
+  if (item === null) {
+    return undefined;
+  }
+
+  const modsPath = item.textContent;
+
+  const setting = [ virtualPath, nmmLinkPath, modsPath ];
   return setting;
 }
 
-function findInstances(gameId: string): Promise<string[]> {
+function findInstances(gameId: string): Promise<string[][]> {
   const base = path.resolve(remote.app.getPath('appData'), '..', 'local', 'Black_Tree_Gaming');
   return fs.readdirAsync(base)
     .then((instances: string[]) =>
@@ -37,10 +56,10 @@ function findInstances(gameId: string): Promise<string[]> {
           })))))
       .then(result => {
           // remove duplicates, in a case-insensitive way, remove undefined
-          const set = result.reduce((prev: { [key: string]: string }, value: string[]) => {
+          const set = result.reduce((prev: { [key: string]: string[] }, value: string[][]) => {
               value.forEach(val => {
                   if (val !== undefined) {
-                      prev[val.toUpperCase()] = val;
+                      prev[val[0].toUpperCase()] = val;
                   }
               });
               return prev;

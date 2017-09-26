@@ -24,7 +24,7 @@ function enhance(sourcePath: string, input: IModEntry): Promise<IModEntry> {
   // this id is currently identically to what we store as the vortexId but I don't want
   // to rely on that always being the case
   const id = path.basename(input.modFilename, path.extname(input.modFilename));
-  const cacheBasePath = path.resolve(sourcePath, '..', 'cache', id);
+  const cacheBasePath = path.resolve(sourcePath, 'cache', id);
   return fs.readFileAsync(path.join(cacheBasePath, 'cacheInfo.txt'))
     .then(data => {
       const fields = data.toString().split('@@');
@@ -51,6 +51,8 @@ function enhance(sourcePath: string, input: IModEntry): Promise<IModEntry> {
 function importMods(api: types.IExtensionApi,
                     trace: TraceImport,
                     sourcePath: string,
+                    alternateSourcePath: string,
+                    modsPath: string,
                     mods: IModEntry[],
                     transferArchives: boolean,
                     progress: (mod: string, idx: number) => void): Promise<string[]> {
@@ -63,11 +65,11 @@ function importMods(api: types.IExtensionApi,
       trace.log('info', 'transfer unpacked mods files');
       const installPath = selectors.installPath(state);
       const downloadPath = selectors.downloadPath(state);
-      return Promise.map(mods, mod => enhance(sourcePath, mod))
+      return Promise.map(mods, mod => enhance(modsPath, mod))
       .then(modsEx => Promise.mapSeries(modsEx, (mod, idx) => {
         trace.log('info', 'transferring', mod);
         progress(mod.modName, idx);
-        return transferUnpackedMod(mod, sourcePath, installPath, true)
+        return transferUnpackedMod(mod, sourcePath, alternateSourcePath, installPath, true)
         .then(failed => {
           if (failed.length > 0) {
             trace.log('error', 'Failed to import', failed);
