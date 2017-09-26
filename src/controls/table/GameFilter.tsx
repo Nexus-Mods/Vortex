@@ -52,7 +52,7 @@ const FilterConn = connect(mapStateToProps)(
 
 class GameFilter implements ITableFilter {
   public component = FilterConn;
-  public raw = 'modInfo';
+  public raw = true;
 
   public matches(filter: any, value: any, state: IState): boolean {
     return (filter === '$')

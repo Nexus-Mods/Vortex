@@ -61,6 +61,8 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
   const readErrors = [];
 
   const gameMods = state.persistent.mods[gameMode] || {};
+  const game = util.getGame(gameMode);
+  const modPath = game.getModPaths(currentDiscovery.path)[''];
 
   const enabledModIds = Object.keys(gameMods).filter(
       modId => util.getSafe(newModList, [modId, 'enabled'], false));
@@ -94,7 +96,6 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
         if (currentDiscovery === undefined) {
           return Promise.resolve([]);
         }
-        const modPath = currentDiscovery.modPath;
         // if reading the mod directory fails that's probably a broken installation,
         // but it's not the responsible of this extension to report that, the
         // game mode management will notice this as well.
@@ -107,7 +108,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
           const modName = pluginSources[fileName];
           pluginStates[fileName] = {
             modName: modName || '',
-            filePath: path.join(currentDiscovery.modPath, fileName),
+            filePath: path.join(modPath, fileName),
             isNative:
                 modName === undefined && isNativePlugin(gameMode, fileName),
           };
@@ -253,7 +254,8 @@ function startSync(api: types.IExtensionApi): Promise<void> {
     if (gameDiscovery === undefined) {
       return;
     }
-    const modPath = gameDiscovery.modPath;
+    const game = util.getGame(gameId);
+    const modPath = game.getModPaths(gameDiscovery.path)[''];
     if (modPath === undefined) {
       // can this even happen?
       log('error', 'mod path unknown', {
