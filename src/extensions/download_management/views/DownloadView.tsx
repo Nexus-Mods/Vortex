@@ -492,19 +492,10 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     const { gameMode, onStartMove, onFinishMove, onMoveFailed } = this.props;
     const id = shortid();
     onStartMove(id, destination, gameMode);
-    fs.renameAsync(source, destination)
-      .catch(err => {
-        if (err.code === 'EXDEV') {
-          // can't rename cross devices, copy&unlink it is
-          return fs.copyAsync(source, destination)
-            .then(() => fs.unlinkAsync(source));
-        } else {
-          throw err;
-        }
-      })
+    fs.copyAsync(source, destination)
       .then(() => onFinishMove(id))
       .catch(err => {
-        log('info', 'failed to move', { err });
+        log('info', 'failed to copy', { err });
         onMoveFailed(id);
       });
   }
