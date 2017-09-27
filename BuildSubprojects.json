@@ -234,6 +234,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "open-directory",
+      "path": "extensions/open-directory",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/open-directory"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "name": "exe-version-rebuild",
       "module": "exe-version",
