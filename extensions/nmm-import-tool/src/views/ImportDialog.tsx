@@ -83,9 +83,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           { key: 'yes', text: 'Import' },
           { key: 'no', text: 'Don\'t import' },
         ],
-        onChangeValue: (modId: string, value: any) => {
-          this.nextState.importEnabled[modId] = (value === undefined)
-            ? !(this.state.importEnabled[modId] !== false)
+        onChangeValue: (mod: IModEntry, value: any) => {
+          this.nextState.importEnabled[mod.modName] = (value === undefined)
+            ? !(this.state.importEnabled[mod.modName] !== false)
             : value === 'yes';
           ++this.nextState.counter;
         },

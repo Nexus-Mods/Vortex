@@ -70,11 +70,11 @@ function init(context: IExtensionContext): boolean {
     edit: {
       readOnly: (mod: IModWithState) => mod.state === 'downloaded',
       choices: () => getCategoryChoices(context.api.store.getState()),
-      onChangeValue: (rowIds: string[], newValue: any) => {
+      onChangeValue: (rows: IModWithState[], newValue: any) => {
         const gameMode = activeGameId(context.api.store.getState());
-        rowIds.forEach(rowId => {
+        rows.forEach(row => {
           context.api.store.dispatch(
-              setModAttribute(gameMode, rowId, 'category', newValue));
+              setModAttribute(gameMode, row.id, 'category', newValue));
         });
       },
     },

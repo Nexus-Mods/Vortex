@@ -103,13 +103,13 @@ class TableCell extends React.Component<ICellProps, {}> {
   }
 
   private cycle = () => {
-    const { attribute, rowId } = this.props;
-    attribute.edit.onChangeValue(rowId, undefined);
+    const { attribute, rawData } = this.props;
+    attribute.edit.onChangeValue(rawData, undefined);
   }
 
   private changeCell = (key) => {
-    const { attribute, rowId } = this.props;
-    attribute.edit.onChangeValue(rowId, key);
+    const { attribute, rawData } = this.props;
+    attribute.edit.onChangeValue(rawData, key);
   }
 
   private renderChoice = (choice: IEditChoice): JSX.Element => {
@@ -126,9 +126,9 @@ class TableCell extends React.Component<ICellProps, {}> {
   }
 
   private toggle = () => {
-    const { attribute, data, rowId } = this.props;
+    const { attribute, data, rawData } = this.props;
     const value = data;
-    attribute.edit.onChangeValue(rowId, !value);
+    attribute.edit.onChangeValue(rawData, !value);
   }
 }
 

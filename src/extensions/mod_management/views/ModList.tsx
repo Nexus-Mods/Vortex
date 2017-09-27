@@ -408,8 +408,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isToggleable: false,
       edit: {
         readOnly: (mod: IModWithState) => mod.state === 'downloaded',
-        onChangeValue: (modId: string, value: any) =>
-          this.props.onSetModAttribute(this.props.gameMode, modId, 'customFileName', value),
+        onChangeValue: (mod: IModWithState, value: any) =>
+          this.props.onSetModAttribute(this.props.gameMode, mod.id, 'customFileName', value),
       },
       isSortable: true,
       isDefaultSort: true,
@@ -463,8 +463,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       edit: {
         readOnly: (mod: IModWithState) => mod.state === 'downloaded',
         validate: (input: string) => semver.valid(input) ? 'success' : 'warning',
-        onChangeValue: (modId: string, value: any) =>
-          this.props.onSetModAttribute(this.props.gameMode, modId, 'version', value),
+        onChangeValue: (mod: IModWithState, value: any) =>
+          this.props.onSetModAttribute(this.props.gameMode, mod.id, 'version', value),
       },
       isSortable: false,
     };
@@ -608,18 +608,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private changeModEnabled = (modId: string, value: any) => {
+  private changeModEnabled = (mod: IModWithState, value: any) => {
     const { profileId } = this.props;
 
-    if (this.mModsWithState[modId].state === 'installing') {
+    if (this.mModsWithState[mod.id].state === 'installing') {
       // can't change state while installing
       return;
     }
 
     if (value === undefined) {
-      this.cycleModState(profileId, modId, value);
+      this.cycleModState(profileId, mod.id, value);
     } else {
-      this.setModState(profileId, modId, value);
+      this.setModState(profileId, mod.id, value);
     }
   }
 

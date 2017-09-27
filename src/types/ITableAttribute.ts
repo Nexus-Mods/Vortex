@@ -129,7 +129,7 @@ export interface ITableAttribute<T = any> {
    * does this attribute support displaying and editing multiple values? defaults to false.
    * If this is false the attribute is not displayed with multiple items selected. If this is true,
    * customRenderer receives an array of objects to display and onChangeValue receive an array of
-   * rowIds to set the new value on
+   * rows to set the new value on
    *
    * @type {boolean}
    * @memberof ITableAttribute

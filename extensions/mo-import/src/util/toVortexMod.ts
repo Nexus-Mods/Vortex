@@ -6,6 +6,7 @@ function toVortexMod(input: IModEntry, md5Hash: string): types.IMod {
   const mod: types.IMod = {
     id: input.modName,
     state: 'installed',
+    type: '',
     installationPath: input.modName,
     attributes: {
       name: input.modName,
