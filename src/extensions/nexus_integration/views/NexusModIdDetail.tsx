@@ -3,6 +3,7 @@ import FormInput from '../../../controls/FormInput';
 import { ComponentEx } from '../../../util/ComponentEx';
 import { truthy } from '../../../util/util';
 
+import { setDownloadModInfo } from '../../download_management/actions/state';
 import { setModAttribute } from '../../mod_management/actions/mods';
 
 import * as I18next from 'i18next';
@@ -13,7 +14,8 @@ import * as Redux from 'redux';
 export interface IProps {
   gameId: string;
   modId: string;
-  readOnly: boolean;
+  readOnly?: boolean;
+  isDownload: boolean;
   nexusModId: string;
   fileName: string;
   t: I18next.TranslationFunction;
@@ -71,9 +73,12 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
   }
 
   private updateNexusModId = (newValue) => {
-    const { gameId, modId, store } = this.props;
-
-    store.dispatch(setModAttribute(gameId, modId, 'modId', newValue));
+    const { gameId, isDownload, modId, store } = this.props;
+    if (isDownload) {
+      store.dispatch(setDownloadModInfo(modId, 'nexus.ids.modId', newValue));
+    } else {
+      store.dispatch(setModAttribute(gameId, modId, 'modId', newValue));
+    }
   }
 
   private openPage = () => {

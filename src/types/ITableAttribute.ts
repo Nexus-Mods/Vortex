@@ -175,6 +175,6 @@ export interface ITableAttribute<T = any> {
      *
      * If this attribute is undefined, the field is readonly
      */
-    onChangeValue?: (rowId: string | string[], newValue: any) => void,
+    onChangeValue?: (objects: T | T[], newValue: any) => void,
   };
 }

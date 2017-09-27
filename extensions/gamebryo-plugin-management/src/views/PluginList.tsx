@@ -210,16 +210,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           { key: 'enabled', text: 'Enabled' },
           { key: 'disabled', text: 'Disabled' },
         ],
-        onChangeValue: (pluginId: string, value: any) => {
-          if (this.props.plugins[pluginId].isNative) {
+        onChangeValue: (plugin: IPluginCombined, value: any) => {
+          if (plugin.isNative) {
             // safeguard so we don't accidentally disable a native plugin
             return;
           }
           if (value === undefined) {
             // toggle
-            this.props.onSetPluginEnabled(pluginId, !this.state.pluginsCombined[pluginId].enabled);
+            this.props.onSetPluginEnabled(plugin.name, !plugin.enabled);
           } else {
-            this.props.onSetPluginEnabled(pluginId, value === 'enabled');
+            this.props.onSetPluginEnabled(plugin.name, value === 'enabled');
           }
         },
       },

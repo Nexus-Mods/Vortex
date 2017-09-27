@@ -180,7 +180,7 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   private renderRow = (): JSX.Element => {
-    const { attributes, data, domRef, onClick, selected, tableId, actions } = this.props;
+    const { actions, attributes, data, domRef, onClick, selected, tableId } = this.props;
 
     const classes = [];
 

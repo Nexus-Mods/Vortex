@@ -90,6 +90,12 @@ class VisibilityProxy extends React.Component<IProps, IState> {
         this.setState({ visible: true });
       }
     });
+    (window as any).requestIdleCallback(() => {
+      if (!this.state.visible) {
+        VisibilityProxy.unobserve(this.props.container, node);
+        this.setState({ visible: true });
+      }
+    });
   }
 
   public componentWillUnmount() {

@@ -21,6 +21,7 @@ import {
 import {getSafe} from '../../util/storeHelper';
 import {setdefault, truthy} from '../../util/util';
 
+import {setDownloadModInfo} from '../download_management/actions/state';
 import {IDownload} from '../download_management/types/IDownload';
 import {getGame} from '../gamemode_management/index';
 import {IDiscoveryResult} from '../gamemode_management/types/IDiscoveryResult';
@@ -324,11 +325,17 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute {
     },
     edit: {
       choices: () => modSources.map(source => ({ key: source.id, text: source.name })),
-      onChangeValue: (rowIds: string[], newValue: string) => {
+      onChangeValue: (mods: IMod[], newValue: string) => {
         const store = api.store;
-        const gameMode = activeGameId(store.getState());
-        rowIds.forEach(rowId => store.dispatch(setModAttribute(
-                           gameMode, rowId, 'source', newValue)));
+        const state = store.getState();
+        const gameMode = activeGameId(state);
+        mods.forEach(mod => {
+          if (mod.state === 'downloaded') {
+            store.dispatch(setDownloadModInfo(mod.id, 'source', newValue));
+          } else {
+            store.dispatch(setModAttribute(gameMode, mod.id, 'source', newValue));
+          }
+        });
       },
     },
   };

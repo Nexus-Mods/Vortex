@@ -49,7 +49,10 @@ const SAMPLE_REPORT = 'Please\n' +
   ' - use punctuation and linebreaks\n' +
   ' - be precise and to the point\n' +
   ' - report only one issue per message\n' +
-  ' - avoid making assumptions, just report what you see\n' +
+  ' - avoid making assumptions, just report what you see and what you expected to see\n' +
+  ' - include a concrete example of how to reproduce the error. Even if its a general ' +
+  'problem ("fomods using feature x do y when they should do z") include one sequence of ' +
+  'actions that expose the problem.\n' +
   'Time you save us with a great report is time we can spend on fixing more bugs ' +
   'provide more features.\n\n' +
   'I.e.\n' +

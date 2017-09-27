@@ -303,7 +303,7 @@ function renderNexusModIdDetail(
       nexusModId={nexusModId}
       gameId={gameMode}
       fileName={fileName}
-      readOnly={mod.state === 'downloaded'}
+      isDownload={mod.state === 'downloaded'}
       t={t}
       store={store}
     />

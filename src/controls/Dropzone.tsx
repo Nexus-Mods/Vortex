@@ -65,11 +65,10 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
     } else {
       classes.push('wrapper');
     }
-    if (this.state.dropActive === 'invalid') {
-      classes.push('hover-invalid');
-    } else if (this.state.dropActive === 'hover') {
+
+    if (this.state.dropActive === 'hover') {
       classes.push('hover-click');
-    } else if (this.state.dropActive !== 'no') {
+    } else if (['no', 'invalid'].indexOf(this.state.dropActive) === -1) {
       classes.push('hover-valid');
     }
 
@@ -119,14 +118,20 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
     }
 
     this.nextState.dropActive = type;
+    return type !== 'invalid';
   }
 
   private onDragEnter = (evt: React.DragEvent<any>) => {
-    evt.preventDefault();
-    this.setDropMode(evt);
+    if (evt.preventDefault()) {
+      this.setDropMode(evt);
+    }
   }
 
   private onDragOver = (evt: React.DragEvent<any>) => {
+    if (this.state.dropActive === 'invalid') {
+      return;
+    }
+
     evt.preventDefault();
     evt.stopPropagation();
 
@@ -139,9 +144,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
     }
 
     try {
-      evt.dataTransfer.dropEffect = this.state.dropActive === 'invalid'
-        ? 'none'
-        : this.state.dropActive === 'url'
+      evt.dataTransfer.dropEffect = this.state.dropActive === 'url'
           ? 'link'
           : 'copy';
     } catch (err) {
@@ -151,6 +154,10 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
   }
 
   private onDragLeave = (evt: React.DragEvent<any>) => {
+    if (['no', 'invalid'].indexOf(this.state.dropActive) !== -1) {
+      return;
+    }
+
     evt.preventDefault();
     if (this.mLeaveDelay !== undefined) {
       clearTimeout(this.mLeaveDelay);

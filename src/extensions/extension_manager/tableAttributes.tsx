@@ -43,10 +43,10 @@ function getTableAttributes(context: IAttributesContext):
           { key: 'disabled', text: 'Disabled' },
           { key: 'failed', text: 'Failed', visible: false },
         ],
-        onChangeValue: (extId: string, value: string) => {
+        onChangeValue: (extension: IExtensionWithState, value: string) => {
           return value === undefined
-            ? context.onToggleExtensionEnabled(extId)
-            : context.onSetExtensionEnabled(extId, value === 'enabled');
+            ? context.onToggleExtensionEnabled(extension.name)
+            : context.onSetExtensionEnabled(extension.name, value === 'enabled');
         },
       },
       isSortable: false,

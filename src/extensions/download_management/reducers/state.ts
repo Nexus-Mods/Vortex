@@ -130,6 +130,10 @@ export const stateReducer: IReducerSpec = {
         modInfo: {},
         chunks: [],
       }),
+    [action.setDownloadModInfo as any]: (state, payload) =>
+      setSafe(state,
+        ['files', payload.id, 'modInfo'].concat(payload.key.split('.')),
+        payload.value),
   },
   defaults: {
     speed: 0,

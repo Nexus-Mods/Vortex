@@ -76,7 +76,7 @@ function updateSaves(store: Redux.Store<any>,
 }
 
 function init(context): boolean {
-  context.registerAction('savegames-icons', 200, 'cog', {}, 'Transfer Savegames', () => {
+  context.registerAction('savegames-icons', 200, 'circle-in', {}, 'Transfer Savegames', () => {
     context.api.store.dispatch(showTransferDialog(true));
   });
 

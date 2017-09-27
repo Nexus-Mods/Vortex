@@ -72,3 +72,6 @@ export const setDownloadSpeed = safeCreateAction('SET_DOWNLOAD_SPEED');
 export const addLocalDownload = safeCreateAction('ADD_LOCAL_DOWNLOAD',
   (id: string, game: string, localPath: string, fileSize: number) =>
     ({ id, game, localPath, fileSize }));
+
+export const setDownloadModInfo = safeCreateAction('SET_DOWNLOAD_MODINFO',
+  (id: string, key: string, value: any) => ({ id, key, value }));

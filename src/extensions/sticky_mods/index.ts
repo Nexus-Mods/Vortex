@@ -17,9 +17,10 @@ function testModSticky(api: IExtensionApi, previous: IProfile, current: IProfile
   const mods = state.persistent.mods[current.gameId];
   Object.keys(previous.modState)
       .forEach(modId => {
-        if ((mods[modId].attributes['sticky'] === true) &&
-            !previous.modState[modId].enabled &&
-            current.modState[modId].enabled) {
+        if ((mods[modId] !== undefined)
+            && (mods[modId].attributes['sticky'] === true)
+            && !previous.modState[modId].enabled
+            && current.modState[modId].enabled) {
           api.sendNotification({
             type: 'warning',
             message: api.translate(

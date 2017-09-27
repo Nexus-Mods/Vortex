@@ -356,10 +356,11 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
   }
 
   private onChangeData = (rowIds: string[], attributeId: string, value: any) => {
+    const { rawData } = this.props;
     const attribute = this.props.attributes
     .find((attr: ITableAttribute) => attr.id === attributeId);
     if (attribute.supportsMultiple === true) {
-      attribute.edit.onChangeValue(rowIds, value);
+      attribute.edit.onChangeValue(rowIds.map(rowId => rawData[rowId]), value);
     } else if (rowIds.length === 1) {
       attribute.edit.onChangeValue(rowIds[0], value);
     }

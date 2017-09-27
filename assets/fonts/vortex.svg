@@ -864,4 +864,20 @@
       </g>
     </g>
   </symbol>
+  <symbol id="icon-open-in-browser" viewBox="0 0 32 32">
+    <g>
+      <g class="nc-icon-wrapper">
+        <polygon data-color="color-2" points="16,11 9,20 15,20 15,32 17,32 17,20 23,20 "/>
+        <path d="M31,0H1C0.448,0,0,0.448,0,1v24c0,0.552,0.448,1,1,1h7v-2H2V8h28v16h-6v2h7c0.552,0,1-0.448,1-1V1 C32,0.448,31.552,0,31,0z M9,5H3V3h6V5z"/>
+      </g>
+    </g>
+  </symbol>
+  <symbol id="icon-circle-in" viewBox="0 0 32 32">
+    <g>
+      <g class="nc-icon-wrapper">
+        <path d="M21,5c-5.738,0-10.444,4.394-10.95,10H19v-5l7,6l-7,6v-5h-8.95c0.506,5.606,5.212,10,10.95,10 c6.075,0,11-4.925,11-11S27.075,5,21,5z"/>
+        <path d="M10,16c0-0.338,0.021-0.67,0.05-1H0v2h10.05C10.021,16.67,10,16.338,10,16z"/>
+      </g>
+    </g>
+  </symbol>
 </svg>
