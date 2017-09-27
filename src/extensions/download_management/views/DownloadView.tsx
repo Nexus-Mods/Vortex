@@ -1,5 +1,4 @@
 import { showDialog } from '../../../actions/notifications';
-import { selectRows } from '../../../actions/tables';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import FlexLayout from '../../../controls/FlexLayout';
 import IconBar from '../../../controls/IconBar';
@@ -66,7 +65,6 @@ interface IConnectedProps {
 interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
-  onDeselect: (downloadId: string) => void;
   onStartMove: (id: string, filePath: string, game: string) => void;
   onFinishMove: (id: string) => void;
   onMoveFailed: (id: string) => void;
@@ -409,7 +407,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
   private remove = (downloadIds: string[]) => {
     const removeId = (id: string) => {
-      this.props.onDeselect(id);
       this.context.api.events.emit('remove-download', id);
     };
 
@@ -526,8 +523,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onDeselect: (downloadId: string) =>
-      dispatch(selectRows('downloads', [downloadId], false)),
     onStartMove: (id: string, filePath: string, game: string) => {
       dispatch(initDownload(id, [], {}, game));
       dispatch(setDownloadFilePath(id, path.basename(filePath)));

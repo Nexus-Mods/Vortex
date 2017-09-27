@@ -121,12 +121,14 @@ export interface IBaseProps {
   t: I18next.TranslationFunction;
   mod: types.IMod;
   localState: ILocalState;
+  onHighlight: (highlight: boolean) => void;
 }
 
 interface IConnectedProps {
   gameId: string;
   conflicts: { [modId: string]: IConflict[] };
   enabledMods: IModLookupInfo[];
+  source: { id: string, pos: any };
 }
 
 interface IActionProps {
@@ -296,9 +298,11 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       nextProps.onSetSource(nextProps.mod.id, pos);
     } else if (this.props.isOver !== nextProps.isOver) {
       let pos;
+
       if (nextProps.isOver) {
         pos = componentCenter(this);
       }
+      nextProps.onHighlight(nextProps.isOver);
       nextProps.onSetTarget(nextProps.mod.id, pos);
     }
   }
@@ -311,18 +315,27 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         || this.props.gameId !== nextProps.gameId
         || this.props.mod !== nextProps.mod
         || this.props.localState.modRules !== nextProps.localState.modRules
+        || this.props.source !== nextProps.source
         || this.state !== nextState;
   }
 
   public render(): JSX.Element {
-    const { connectDropTarget, mod } = this.props;
+    const { connectDropTarget, mod, source } = this.props;
 
     if (mod.state !== 'installed') {
       return null;
     }
 
+    const classes = ['dependencies-inner'];
+
+    if (source !== undefined) {
+      // while dragging, make this div larger, overflowing into neighboring columns
+      // to make it easier to hit
+      classes.push('connecting');
+    }
+
     return connectDropTarget(
-      <div style={{ textAlign: 'center', width: '100%' }}>
+      <div className={classes.join(' ')}>
         {this.renderConnectorIcon(mod)}
         {this.renderConflictIcon(mod)}
       </div>);
@@ -519,6 +532,7 @@ function mapStateToProps(state): IConnectedProps {
     gameId,
     conflicts: state.session.dependencies.conflicts,
     enabledMods: enabledModKeys(state),
+    source: util.getSafe(state, ['session', 'dependencies', 'connection', 'source'], undefined),
   };
 }
 

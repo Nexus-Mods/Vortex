@@ -1,4 +1,4 @@
-import {selectRows, setAttributeFilter, setAttributeSort,
+import {setAttributeFilter, setAttributeSort,
         setAttributeVisible, setSplitPos} from '../actions/tables';
 import FlexLayout from '../controls/FlexLayout';
 import {IActionDefinition} from '../types/IActionDefinition';
@@ -10,7 +10,7 @@ import {connect, extend, PureComponentEx, translate} from '../util/ComponentEx';
 import Debouncer from '../util/Debouncer';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import smoothScroll from '../util/smoothScroll';
-import {getSafe, setSafe} from '../util/storeHelper';
+import { getSafe, merge, setSafe } from '../util/storeHelper';
 import {truthy} from '../util/util';
 
 import Icon from './Icon';
@@ -353,9 +353,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         language={language}
         onClick={this.selectRow}
         selected={getSafe(rowState, [data.id, 'selected'], false)}
+        highlighted={getSafe(rowState, [data.id, 'highlighted'], false)}
         domRef={this.setRowRef}
         container={this.mScrollRef}
         initVisible={initVisible}
+        onHighlight={this.setRowHighlight}
       />
     );
   }
@@ -507,6 +509,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     if (ref !== null) {
       this.mRowRefs[ref.id] = ref;
     }
+  }
+
+  private setRowHighlight = (rowId: string, highlighted: boolean) => {
+    this.setState(setSafe(this.state, ['rowState', rowId, 'highlighted'], highlighted));
   }
 
   private scrollToItem = (item: HTMLElement, smooth: boolean) => {

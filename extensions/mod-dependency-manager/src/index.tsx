@@ -327,8 +327,14 @@ function main(context: types.IExtensionContext) {
     description: 'Relations to other mods',
     icon: 'plug',
     placement: 'table',
-    customRenderer: (mod, detailCell, t) =>
-      <DependencyIcon mod={mod} t={t} localState={dependencyState} />,
+    customRenderer: (mod, detailCell, t, props) => (
+      <DependencyIcon
+        mod={mod}
+        t={t}
+        localState={dependencyState}
+        onHighlight={props.onHighlight}
+      />
+    ),
     calc: (mod: types.IMod) =>
       dependencyState.modRules.filter(rule => matchReference(rule.source, mod)),
     isToggleable: true,

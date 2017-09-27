@@ -25,6 +25,8 @@ interface ICellProps {
   onChangeData: (rowIds: string[], attributeId: string, value: any) => void;
 }
 
+const nop = () => undefined;
+
 class ValueComponent extends React.Component<any, {}> {
   public render() {
     return (
@@ -70,7 +72,9 @@ class DetailCell extends React.Component<ICellProps, {}> {
         return null;
       }
       const attrControl = attribute.customRenderer(
-        attribute.supportsMultiple ? values : values[0], true, t);
+        attribute.supportsMultiple ? values : values[0], true, t, {
+          onHighlight: nop,
+        });
       content = attrControl !== null ? (
         <FormControl.Static componentClass='div'>
           {

@@ -8,22 +8,6 @@ import { deleteOrNop, setSafe } from '../util/storeHelper';
  */
 export const tableReducer: IReducerSpec = {
   reducers: {
-    [actions.selectRows as any]: (state, payload) => {
-      const { tableId, rowIds, selected } = payload;
-      let copy = state;
-      if (!selected) {
-        rowIds.forEach((id: string) => {
-          // TODO: this only works as long as selected is the only row-state we save
-          copy = deleteOrNop(copy, [tableId, 'rows', id]);
-        });
-      } else {
-        rowIds.forEach((id: string) => {
-          copy = setSafe(copy, [tableId, 'rows', id, 'selected'], selected);
-        });
-      }
-
-      return copy;
-    },
     [actions.setAttributeVisible as any]: (state, payload) => {
       const { tableId, attributeId, visible } = payload;
       return setSafe(state, [tableId, 'attributes', attributeId, 'enabled'], visible);

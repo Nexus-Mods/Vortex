@@ -2,9 +2,6 @@ import {SortDirection} from '../types/SortDirection';
 
 import safeCreateAction from './safeCreateAction';
 
-export const selectRows = safeCreateAction('SELECT_ROWS',
-  (tableId: string, rowIds: string[], selected: boolean) => ({ tableId, rowIds, selected }));
-
 export const setAttributeVisible = safeCreateAction('SET_ATTRIBUTE_VISIBLE',
   (tableId: string, attributeId: string, visible: boolean) => ({ tableId, attributeId, visible }));
 

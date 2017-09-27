@@ -83,6 +83,7 @@ export interface ISession {
 
 export interface IRowState {
   selected: boolean;
+  highlighted: boolean;
 }
 
 export interface ITableState {

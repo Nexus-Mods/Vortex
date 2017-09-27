@@ -21,6 +21,7 @@ interface ICellProps {
   tableId: string;
   t: I18next.TranslationFunction;
   container: HTMLElement;
+  onHighlight: (highlight: boolean) => void;
 }
 
 class TableCell extends React.Component<ICellProps, {}> {
@@ -31,14 +32,16 @@ class TableCell extends React.Component<ICellProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { t, attribute, container, data, language, rawData, rowId, tableId } = this.props;
+    const { t, attribute, container, data, language, onHighlight,
+            rawData, rowId, tableId } = this.props;
 
     // if a custom renderer was set then rowData is the raw object
     // passed to the table by the user.
     // otherwise rowData is the calculated value of this cell
 
     if (attribute.customRenderer !== undefined) {
-      const attrControl = attribute.customRenderer(rawData, false, t) || null;
+      const attrControl = attribute.customRenderer(rawData, false, t, {
+        onHighlight }) || null;
       return attrControl !== null ? (
         <ExtensionGate id={`extension-${rowId}-${attribute.id}`}>
           {attrControl}
@@ -142,9 +145,11 @@ export interface IRowProps {
   language: string;
   onClick: React.MouseEventHandler<any>;
   selected: boolean;
+  highlighted: boolean;
   domRef?: (ref) => void;
   container: HTMLElement;
   initVisible: boolean;
+  onHighlight: (rowId: string, highlight: boolean) => void;
 }
 
 class TableRow extends React.Component<IRowProps, {}> {
@@ -153,6 +158,7 @@ class TableRow extends React.Component<IRowProps, {}> {
     return (this.props.data !== nextProps.data)
       || (this.props.rawData !== nextProps.rawData)
       || (this.props.selected !== nextProps.selected)
+      || (this.props.highlighted !== nextProps.highlighted)
       || (this.props.attributes !== nextProps.attributes);
   }
 
@@ -180,12 +186,16 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   private renderRow = (): JSX.Element => {
-    const { actions, attributes, data, domRef, onClick, selected, tableId } = this.props;
+    const { actions, attributes, data, domRef, highlighted,
+            onClick, selected, tableId } = this.props;
 
     const classes = [];
 
     if (selected) {
       classes.push('table-selected');
+    }
+    if (highlighted) {
+      classes.push('table-highlighted');
     }
 
     let hasActions = false;
@@ -235,6 +245,11 @@ class TableRow extends React.Component<IRowProps, {}> {
     );
   }
 
+  private highlight = (highlight: boolean) => {
+    const {data, onHighlight} = this.props;
+    onHighlight(data.__id, highlight);
+  }
+
   private renderCell(
     attribute: ITableAttribute,
     rawData: any,
@@ -253,6 +268,7 @@ class TableRow extends React.Component<IRowProps, {}> {
         tableId={tableId}
         language={language}
         container={container}
+        onHighlight={this.highlight}
       />
     );
   }

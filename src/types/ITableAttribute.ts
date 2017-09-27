@@ -29,6 +29,10 @@ export interface ITableFilter {
   component: React.ComponentClass<IFilterProps>;
 }
 
+export interface ICustomProps {
+  onHighlight: (highlight: boolean) => void;
+}
+
 /**
  * declaration of an attribute of a table
  *
@@ -104,7 +108,7 @@ export interface ITableAttribute<T = any> {
    * have to implement it yourself.
    */
   customRenderer?: (object: T | T[], detailCell: boolean,
-                    t: I18next.TranslationFunction) => JSX.Element;
+                    t: I18next.TranslationFunction, props: ICustomProps) => JSX.Element;
   /**
    * determine the display value for this attribute. This is used for display if customRenderer is
    * not specified. It's also used for sorting the table so unless isSortable is false and a
