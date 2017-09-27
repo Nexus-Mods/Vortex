@@ -32,6 +32,7 @@ interface IGroupState {
 }
 
 class Group extends React.PureComponent<IGroupProps, IGroupState> {
+  private mValidate: (selected: number[]) => string;
   constructor(props: IGroupProps) {
     super(props);
     this.state = {
@@ -51,6 +52,16 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   public componentWillReceiveProps(newProps: IGroupProps) {
     if (!_.isEqual(this.props.group, newProps.group)) {
       this.setState({ selectedPlugins: this.getSelectedPlugins(newProps) });
+      this.mValidate = this.validateFunc(newProps.group.type);
+    }
+  }
+
+  public componentWillMount() {
+    const { group, onSelect } = this.props;
+    const { selectedPlugins } = this.state;
+    this.mValidate = this.validateFunc(group.type);
+    if (this.mValidate(selectedPlugins) !== undefined) {
+      onSelect(group.id, selectedPlugins, false);
     }
   }
 
@@ -58,7 +69,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     const {group} = this.props;
     const {selectedPlugins} = this.state;
 
-    const validationMessage = this.validateFunc(group.type)(selectedPlugins);
+    const validationMessage = this.mValidate(selectedPlugins);
     const validationState = validationMessage === undefined ? null : 'error';
 
     return (
@@ -350,7 +361,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
                     {nextVisible.name || t('Next')}
                   </Pager.Item>
                 ) : (
-                  <Pager.Item next disabled={nextDisabled} onClick={this.next}>
+                  <Pager.Item draggable={false} next disabled={nextDisabled} onClick={this.next}>
                     {t('Finish')}
                   </Pager.Item>
                 )
@@ -361,6 +372,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     );
   }
   private nop = () => undefined;
+
   private select = (groupId: number, plugins: number[], valid: boolean) => {
     const {events} = this.context.api;
     const {installerState} = this.props;
@@ -372,6 +384,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       this.setState(pushSafe(this.state, ['invalidGroups'], groupId));
     }
   }
+
   private renderImage = () => {
     const { dataPath, installerInfo } = this.props;
     const { currentImage } = this.state;
