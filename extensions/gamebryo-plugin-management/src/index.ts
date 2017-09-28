@@ -49,7 +49,7 @@ function isPlugin(fileName: string): boolean {
  */
 function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Promise<void> {
   if (newModList === undefined) {
-    return;
+    return Promise.resolve();
   }
 
   const state = store.getState();
@@ -58,6 +58,10 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
   const pluginSources: { [pluginName: string]: string } = {};
 
   const currentDiscovery = selectors.currentGameDiscovery(state);
+  if ((currentDiscovery === undefined) || (currentDiscovery.path === undefined)) {
+    // paranoia, this shouldn't happen
+    return Promise.resolve();
+  }
   const readErrors = [];
 
   const gameMods = state.persistent.mods[gameMode] || {};
@@ -251,7 +255,7 @@ function startSync(api: types.IExtensionApi): Promise<void> {
 
   return prom.then(() => {
     const gameDiscovery = selectors.currentGameDiscovery(store.getState());
-    if (gameDiscovery === undefined) {
+    if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
       return;
     }
     const game = util.getGame(gameId);

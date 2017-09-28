@@ -272,6 +272,32 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   });
 }
 
+function removeDisapearedGames(api: IExtensionApi): Promise<void> {
+  const state: IState = api.store.getState();
+  const discovered = state.settings.gameMode.discovered;
+  const known = state.session.gameMode.known;
+
+  return Promise.map(
+    Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined),
+    gameId => {
+      const stored = known.find(iter => iter.id === gameId);
+      return stored === undefined
+        ? Promise.resolve()
+        : Promise.map(stored.requiredFiles,
+          file => fs.statAsync(path.join(discovered[gameId].path, file)))
+          .then(() => undefined)
+          .catch(err => {
+            api.sendNotification({
+              type: 'info',
+              message: api.translate('{{gameName}} no longer found',
+                                     { replace: { gameName: stored.name } }),
+            });
+
+            api.store.dispatch(setGamePath(gameId, undefined));
+          });
+    }).then(() => undefined);
+}
+
 function init(context: IExtensionContext): boolean {
   const activity = new ReduxProp(context.api, [
     ['session', 'discovery'],
@@ -339,10 +365,13 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-icons', 100, 'refresh', {}, 'Quickscan', () => {
     if ($.gameModeManager !== undefined) {
       $.gameModeManager.startQuickDiscovery()
-      .then((gameNames: string[]) => {
-        const message = gameNames.length === 0
+      .then((gameIds: string[]) => {
+        const state: IState = context.api.store.getState();
+        const knownGames = state.session.gameMode.known;
+        const message = gameIds.length === 0
           ? 'No new games found'
-          : gameNames.map(name => '- ' + name).join('\n');
+          : gameIds.map(id => '- ' + knownGames.find(iter => iter.id === id).name).join('\n');
+        removeDisapearedGames(context.api);
         context.api.sendNotification({
           type: 'success',
           message: 'Discovery completed\n' + message,
@@ -385,7 +414,10 @@ function init(context: IExtensionContext): boolean {
         events.emit('gamemode-activated', gameMode);
       });
     $.gameModeManager.attachToStore(store);
-    $.gameModeManager.startQuickDiscovery();
+    $.gameModeManager.startQuickDiscovery()
+    .then(() => {
+      removeDisapearedGames(context.api);
+    });
 
     events.on('start-discovery', () => $.gameModeManager.startSearchDiscovery());
     events.on('cancel-discovery', () => {

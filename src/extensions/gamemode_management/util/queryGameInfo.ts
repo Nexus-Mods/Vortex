@@ -1,5 +1,6 @@
 import {IGameDetail} from '../../../types/IExtensionContext';
 import {IGame} from '../../../types/IGame';
+import {log} from '../../../util/log';
 import walk from '../../../util/walk';
 
 import {IDiscoveryResult} from '../types/IDiscoveryResult';
@@ -33,6 +34,10 @@ function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]:
         type: 'bytes',
       },
     };
+  })
+  .catch(err => {
+    log('error', 'failed to query game info', { err: err.message });
+    return {};
   });
 }
 

@@ -111,6 +111,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const game = games.find((iter: IGameStored) => iter.id === profiles[profileId].gameId);
     const discovered = discoveredGames[profiles[profileId].gameId];
     const gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
+    const available = (discovered !== undefined) && (discovered.path !== undefined);
 
     return (profileId === this.state.edit) ? null : (
       <ProfileItem
@@ -120,6 +121,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         features={features}
         gameName={gameName}
         active={currentProfile === profileId}
+        available={available}
         onClone={this.onCloneProfile}
         onRemove={this.onRemoveProfile}
         onActivate={onSetNextProfile}

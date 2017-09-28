@@ -24,6 +24,7 @@ export interface IBaseProps {
   profile: IProfile;
   t: I18next.TranslationFunction;
   onSetHighlightGameId: (gameId: string) => void;
+  disabled: boolean;
 }
 
 interface IConnectedProps {
@@ -115,6 +116,9 @@ const transferSource: __ReactDnd.DragSourceSpec<IProps> = {
       props.onEditDialog(props.profile.gameId, source.id, destId);
     }
   },
+  canDrag(props: IProps) {
+    return !props.disabled;
+  },
 };
 
 const transferTarget: __ReactDnd.DropTargetSpec<IProps> = {
@@ -174,6 +178,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
       nextProps.onSetSource(nextProps.profile.id, pos);
     } else if (this.props.isOver !== nextProps.isOver) {
       if ((this.props.profile.id !== nextProps.sourceId)
+          && (nextProps.sourceId !== undefined)
           && (this.props.profile.gameId === this.props.profiles[nextProps.sourceId].gameId)) {
         let pos;
         if (nextProps.isOver) {
@@ -185,7 +190,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, connectDragSource, connectDropTarget, profile } = this.props;
+    const { t, connectDragSource, connectDropTarget, disabled, profile } = this.props;
 
     const classes = ['btn-embed'];
 
@@ -206,9 +211,10 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
         <div style={{ display: 'inline-block' }}>
           <tooltip.IconButton
             id={`btn-meta-data-${profile.id}`}
+            disabled={disabled}
             className={classes.join(' ')}
             key={`rules-${profile.id}`}
-            tooltip={t('Drag to profile to start the transfer')}
+            tooltip={t('Drag to another profile to transfer settings')}
             icon='import'
             ref={this.setRef}
             onClick={this.toggleOverlay}

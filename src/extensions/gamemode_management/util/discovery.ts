@@ -85,13 +85,25 @@ export function quickDiscovery(knownGames: IGame[],
         // synchronous
         if (gamePath) {
           log('info', 'found game', { name: game.name, location: gamePath });
-          onDiscoveredGame(game.id, {
-            path: gamePath,
-            tools: {},
-            hidden: false,
-            environment: game.environment,
-          });
-          resolve(game.name);
+          verifyToolDir(game, gamePath)
+            .then(() => {
+              onDiscoveredGame(game.id, {
+                path: gamePath,
+                tools: {},
+                hidden: false,
+                environment: game.environment,
+              });
+              resolve(game.id);
+            })
+            .catch(err => {
+              if (err.code === 'ENOENT') {
+                log('warn', 'game directory not valid', { gamePath });
+              } else {
+                log('error', 'failed to verify game directory',
+                  { gamePath, error: err.message });
+              }
+              resolve();
+            });
         } else {
           log('debug', 'game not found', game.id);
           resolve();
@@ -99,16 +111,32 @@ export function quickDiscovery(knownGames: IGame[],
       } else {
         // asynchronous
         (gamePath as Promise<string>)
+        .then(resolvedPath => truthy(resolvedPath)
+          ? verifyToolDir(game, resolvedPath)
+            .then(() => resolvedPath)
+            .catch(err => {
+              if (err.code === 'ENOENT') {
+                log('warn', 'game directory not valid', { resolvedPath });
+              } else {
+                log('error', 'failed to verify game directory',
+                  { gamePath, error: err.message });
+              }
+              return Promise.resolve();
+            })
+          : Promise.resolve(undefined))
         .then(resolvedPath => {
-          if (resolvedPath) {
+          if (truthy(resolvedPath)) {
             log('info', 'found game', { name: game.name, location: resolvedPath });
             onDiscoveredGame(game.id, {
               path: resolvedPath,
             });
+            resolve(game.id);
+          } else {
+            resolve();
           }
-          resolve(game.name);
         }).catch((err) => {
-          log('debug', 'game not found', { id: game.id, err: err.message });
+          log('debug', 'game not found',
+            { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });
           resolve();
         });
       }
@@ -131,7 +159,7 @@ export function quickDiscovery(knownGames: IGame[],
  * @param {Set<string>} blackList
  * @param {(path: string) => void} resultCB
  * @param {Progress} progress
- * @param {normalize} a function to normalize a filename for the
+ * @param {Normalize} normalize a function to normalize a filename for the
  *                    search folder, i.e. in a case-insensitive fs
  *                    it will upper-case the input. the entries of
  *                    matchList and blackList will be normalized within
@@ -219,32 +247,37 @@ function walk(searchPath: string,
     });
 }
 
+function verifyToolDir(tool: ITool, testPath: string): Promise<void> {
+  return Promise.mapSeries(tool.requiredFiles,
+    (fileName: string) => {
+      return fs.statAsync(path.join(testPath, fileName));
+    })
+    .then(() => undefined);
+}
+
 function testApplicationDirValid(application: ITool, testPath: string, gameId: string,
                                  onDiscoveredGame: DiscoveredCB,
                                  onDiscoveredTool: DiscoveredToolCB): void {
-  Promise.mapSeries(application.requiredFiles,
-                    (fileName: string) => {
-                      return fs.statAsync(path.join(testPath, fileName));
-                    })
-      .then(() => {
-        const game = application as IGame;
-        if (game.queryModPath !== undefined) {
-          onDiscoveredGame(gameId, {
-            path: testPath,
-          });
-        } else {
-          onDiscoveredTool(gameId, {
-            ...application,
-            path: path.join(testPath, application.executable()),
-            hidden: false,
-            custom: false,
-            workingDirectory: testPath,
-          });
-        }
-      })
-      .catch(() => {
-        log('info', 'invalid', {game: application.id, path: testPath});
-      });
+  verifyToolDir(application, testPath)
+    .then(() => {
+      const game = application as IGame;
+      if (game.queryModPath !== undefined) {
+        onDiscoveredGame(gameId, {
+          path: testPath,
+        });
+      } else {
+        onDiscoveredTool(gameId, {
+          ...application,
+          path: path.join(testPath, application.executable()),
+          hidden: false,
+          custom: false,
+          workingDirectory: testPath,
+        });
+      }
+    })
+    .catch(() => {
+      log('info', 'invalid', {game: application.id, path: testPath});
+    });
 }
 
 const blackList = [

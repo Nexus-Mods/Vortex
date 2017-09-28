@@ -13,6 +13,7 @@ import * as React from 'react';
 export interface IProps {
   t: I18next.TranslationFunction;
   active: boolean;
+  available: boolean;
   profile: IProfile;
   gameName: string;
   features: IProfileFeature[];
@@ -33,7 +34,7 @@ export interface IProps {
  */
 class ProfileItem extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, active, features, gameName, highlightGameId, profile } = this.props;
+    const { t, active, available, features, gameName, highlightGameId, profile } = this.props;
 
     const enabledMods = Object.keys(profile.modState).reduce(
       (prev: number, key: string): number => {
@@ -44,7 +45,8 @@ class ProfileItem extends ComponentEx<IProps, {}> {
     //       <p>-tags so it doesn't support 'complex' content
 
     const classes = ['list-group-item'];
-    if ((highlightGameId !== undefined) && (highlightGameId !== profile.gameId)) {
+    if (((highlightGameId !== undefined) && (highlightGameId !== profile.gameId))
+        || !available) {
       classes.push('disabled');
     } else if (active) {
       classes.push('active');
@@ -71,13 +73,14 @@ class ProfileItem extends ComponentEx<IProps, {}> {
         <div className='profile-actions'>
           <TransferIcon
             t={t}
+            disabled={!available}
             profile={profile}
             onSetHighlightGameId={this.props.onSetHighlightGameId}
           />
           <IconButton
             className='btn-embed'
             id={`btn-profile-select-${profile.id}`}
-            disabled={active}
+            disabled={active || !available}
             tooltip={t('Enable')}
             onClick={this.activate}
             icon='play'
@@ -85,6 +88,7 @@ class ProfileItem extends ComponentEx<IProps, {}> {
           <IconButton
             className='btn-embed'
             id={`btn-profile-clone-${profile.id}`}
+            disabled={!available}
             tooltip={t('Clone')}
             onClick={this.cloneProfile}
             icon='clone'
@@ -92,6 +96,7 @@ class ProfileItem extends ComponentEx<IProps, {}> {
           <IconButton
             className='btn-embed'
             id={`btn-profile-edit-${profile.id}`}
+            disabled={!available}
             tooltip={t('Edit')}
             onClick={this.startEditing}
             icon='edit'
