@@ -8,6 +8,8 @@ import {} from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import lazyRequire from '../util/lazyRequire';
 import {log, setLogPath, setupLogging} from '../util/log';
+import { showError } from '../util/message';
+import { StateError } from '../util/reduxSanity';
 import {} from '../util/storeHelper';
 
 import MainWindowT from './MainWindow';
@@ -21,6 +23,7 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as uuidT from 'uuid';
+
 const uuid = lazyRequire<typeof uuidT>('uuid');
 
 class Application {
@@ -198,7 +201,7 @@ class Application {
   private createStore(): Promise<void> {
     const { allHives, createVortexStore, syncStore } = require('../util/store');
 
-    const newStore = createVortexStore([]);
+    const newStore = createVortexStore(this.sanityCheckCB);
 
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
@@ -232,6 +235,11 @@ class Application {
         this.mStore = newStore;
         return this.mExtensions.doOnce();
       });
+  }
+
+  private sanityCheckCB = (err: StateError) => {
+    showError(this.mStore.dispatch,
+      'An invalid state change was prevented, this was probably caused by a bug', err);
   }
 
   private initDevel(): Promise<void> {

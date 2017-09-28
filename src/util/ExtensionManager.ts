@@ -22,6 +22,7 @@ import { Archive } from './archives';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
+import { registerSanityCheck, SanityCheck } from './reduxSanity';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManagerT from './StyleManager';
@@ -231,6 +232,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerGameInfoProvider: undefined,
       registerAttributeExtractor: undefined,
       registerModType: undefined,
+      registerActionCheck: undefined,
       requireExtension: undefined,
       api: undefined,
       once: undefined,
@@ -440,6 +442,9 @@ class ExtensionManager {
     const reducers = [];
     this.apply('registerReducer', (statePath: string[], reducer: IReducerSpec) => {
       reducers.push({ path: statePath, reducer });
+    });
+    this.apply('registerActionCheck', (actionType: string, check: SanityCheck) => {
+      registerSanityCheck(actionType, check);
     });
     return reducers;
   }

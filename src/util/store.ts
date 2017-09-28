@@ -8,6 +8,7 @@ import {terminate} from './errorHandling';
 import ExtensionManager from './ExtensionManager';
 import LevelStorage from './LevelStorage';
 import { log } from './log';
+import {reduxSanity, StateError} from './reduxSanity';
 import StorageLogger from './StorageLogger';
 
 import * as Promise from 'bluebird';
@@ -26,7 +27,7 @@ import {AsyncNodeStorage} from 'redux-persist-node-storage';
 import thunkMiddleware from 'redux-thunk';
 
 /*
-const logMiddleware = (store) => (next) => (action) => {
+const logMiddleware = store => next => action => {
   log('debug', 'dispatch', { action });
 
   let res = next(action);
@@ -36,9 +37,10 @@ const logMiddleware = (store) => (next) => (action) => {
 
 const storage: { [path: string]: IStorage } = {};
 
-export function createVortexStore([]): Redux.Store<IState> {
+export function createVortexStore(sanityCallback: (err: StateError) => void): Redux.Store<IState> {
   const middleware = [
     thunkMiddleware,
+    reduxSanity(sanityCallback),
   ];
 
   const enhancer: Redux.StoreEnhancer<IState> =

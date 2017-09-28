@@ -194,6 +194,27 @@ function init(context: IExtensionContextExt): boolean {
         });
       };
 
+  context.registerActionCheck('SET_NEXT_PROFILE', (state: IState, action: any) => {
+    const { profileId } = action.payload;
+    if (profileId === undefined) {
+      // resetting must always work
+      return undefined;
+    }
+
+    const profile = state.persistent.profiles[profileId];
+    if (profile === undefined) {
+      return 'Unknown profile';
+    }
+
+    if (getSafe(state,
+                ['settings', 'gameMode', 'discovered', profile.gameId, 'path'],
+                undefined) === undefined) {
+      return 'Can\'t enable profile because game wasn\'t discovered';
+    }
+
+    return undefined;
+  });
+
   // ensure the current profile is always set to a valid value on startup and
   // when changing the game mode
   context.once(() => {

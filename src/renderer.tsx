@@ -38,6 +38,7 @@ import getI18n from './util/i18n';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
+import { reduxSanity, StateError } from './util/reduxSanity';
 import {extendStore} from './util/store';
 import MainWindow from './views/MainWindow';
 
@@ -79,6 +80,7 @@ Promise.config({
 const filter = true;
 const middleware = [
   thunkMiddleware,
+  reduxSanity(sanityCheckCB),
 ];
 
 let enhancer = null;
@@ -96,6 +98,11 @@ if (process.env.NODE_ENV === 'development') {
     applyMiddleware(...middleware),
     electronEnhancer({ filter }),
   );
+}
+
+function sanityCheckCB(err: StateError) {
+  showError(store.dispatch,
+    'An invalid state change was prevented, this was probably caused by a bug', err);
 }
 
 function findExtensionName(stack: string): string {

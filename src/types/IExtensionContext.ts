@@ -14,6 +14,7 @@ import {
 
 import { Archive } from '../util/archives';
 import ReduxProp from '../util/ReduxProp';
+import { SanityCheck } from '../util/reduxSanity';
 
 import { IActionOptions } from './IActionDefinition';
 import { IGame } from './IGame';
@@ -668,6 +669,24 @@ export interface IExtensionContext {
                     isSupported: (gameId: string) => boolean,
                     getPath: (game: IGame) => string,
                     test: (installInstructions: IInstruction[]) => Promise<boolean>) => void;
+
+  /**
+   * register an action sanity check
+   * a sanity check like this is called before any redux-action of the specified type and gets
+   * an opportunity to reject it with an error message.
+   * This is more powerful than checking inside the reducer as you can access the entire state
+   * for the check and it's more robust than checking before dispatching the action, because actions
+   * may be dispatched from many places.
+   * Please don't overdo this for high-frequency actions as that may affect performance. Also
+   * be aware of side effects from stopping an action as all other code is still run.
+   * I.e. if you'd reject the addition of a downloaded file, the file itself is still there.
+   * In extreme cases you could instead throw an exception from the check (which would bubble up
+   * through the dispatch call) which will likely crash Vortex.
+   * That might be preferrable to corrupting state
+   * @param {string} actionType type of the action (like STORE_WINDOW_SIZE)
+   * @param {SanityCheck} check the check to run for the specified action
+   */
+  registerActionCheck: (actionType: string, check: SanityCheck) => void;
 
   /**
    * register a dependency on a different extension
