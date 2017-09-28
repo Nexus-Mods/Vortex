@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://qconsulting.ca/fo3/ModConfig5.0.xsd">
+  <moduleName>Test Module</moduleName>
+  <installSteps order="Explicit">
+    <installStep name="Recommended">
+      <optionalFileGroups order="Explicit">
+        <group name="SelectExactlyOne - No Recommend" type="SelectExactlyOne">
+          <plugins order="Explicit">
+            <plugin name="File A">
+              <description>File A</description>
+              <conditionFlags>
+                <flag name="fileanorec">On</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Optional" />
+              </typeDescriptor>
+            </plugin>
+            <plugin name="File B">
+              <description>File B</description>
+              <conditionFlags>
+                <flag name="filebnorec">On</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Optional" />
+              </typeDescriptor>
+            </plugin>
+          </plugins>
+        </group>
+        <group name="SelectExactlyOne - With Recommend" type="SelectExactlyOne">
+          <plugins order="Explicit">
+            <plugin name="File A">
+              <description>File A (Recommended)</description>
+              <conditionFlags>
+                <flag name="filearec">On</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Recommended" />
+              </typeDescriptor>
+            </plugin>
+            <plugin name="File B">
+              <description>File B</description>
+              <conditionFlags>
+                <flag name="filebrec">On</flag>
+              </conditionFlags>
+              <typeDescriptor>
+                <type name="Optional" />
+              </typeDescriptor>
+            </plugin>
+          </plugins>
+        </group>
+        <group name="Results" type="SelectAny">
+          <plugins order="Explicit">
+            <plugin name="First A">
+              <description>File A Result</description>
+              <files />
+              <typeDescriptor>
+                <dependencyType>
+                  <defaultType name="NotUsable" />
+                  <patterns>
+                    <pattern>
+                      <dependencies>
+                        <flagDependency flag="fileanorec" value="On"/>
+                      </dependencies>
+                      <type name="Required"/>
+                    </pattern>
+                  </patterns>
+                </dependencyType>
+              </typeDescriptor>
+            </plugin>
+            <plugin name="First B">
+              <description>File B Result</description>
+              <files />
+              <typeDescriptor>
+                <dependencyType>
+                  <defaultType name="NotUsable" />
+                  <patterns>
+                    <pattern>
+                      <dependencies>
+                        <flagDependency flag="filebnorec" value="On"/>
+                      </dependencies>
+                      <type name="Required"/>
+                    </pattern>
+                  </patterns>
+                </dependencyType>
+              </typeDescriptor>
+            </plugin>
+            <plugin name="Second A">
+              <description>File A Result</description>
+              <files />
+              <typeDescriptor>
+                <dependencyType>
+                  <defaultType name="NotUsable" />
+                  <patterns>
+                    <pattern>
+                      <dependencies>
+                        <flagDependency flag="filearec" value="On"/>
+                      </dependencies>
+                      <type name="Required"/>
+                    </pattern>
+                  </patterns>
+                </dependencyType>
+              </typeDescriptor>
+            </plugin>
+            <plugin name="Second B">
+              <description>File B Result</description>
+              <files />
+              <typeDescriptor>
+                <dependencyType>
+                  <defaultType name="NotUsable" />
+                  <patterns>
+                    <pattern>
+                      <dependencies>
+                        <flagDependency flag="filebrec" value="On"/>
+                      </dependencies>
+                      <type name="Required"/>
+                    </pattern>
+                  </patterns>
+                </dependencyType>
+              </typeDescriptor>
+            </plugin>
+          </plugins>
+        </group>
+      </optionalFileGroups>
+    </installStep>
+  </installSteps>
+</config>

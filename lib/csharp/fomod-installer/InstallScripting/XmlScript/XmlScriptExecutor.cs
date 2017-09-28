@@ -16,6 +16,7 @@ namespace FomodInstaller.Scripting.XmlScript
         private Mod ModArchive = null;
         private CoreDelegates m_Delegates;
         private ConditionStateManager m_csmState;
+        private ISet<Option> m_SelectedOptions;
 
         #region Constructors
 
@@ -66,7 +67,7 @@ namespace FomodInstaller.Scripting.XmlScript
             if ((hifHeaderInfo.Height < 0) && hifHeaderInfo.ShowImage)
                 hifHeaderInfo.Height = 75;
 
-            ISet<Option> selectedOptions = new HashSet<Option>();
+            m_SelectedOptions = new HashSet<Option>();
 
             int stepIdx = findNextIdx(lstSteps, -1);
 
@@ -81,20 +82,13 @@ namespace FomodInstaller.Scripting.XmlScript
                     for (int i = 0; i < options.Count; ++i)
                     {
                         if (selectedIds.Contains(i) || (resolveOptionType(options[i]) == OptionType.Required))
-                        {
-                            selectedOptions.Add(options[i]);
-                            options[i].Flags.ForEach((ConditionalFlag flag) =>
-                            {
-                                m_csmState.SetFlagValue(flag.Name, flag.ConditionalValue, options[i]);
-                            });
-                        }
+                            enableOption(options[i]);
                         else
-                        {
-                            selectedOptions.Remove(options[i]);
-                            m_csmState.RemoveFlags(options[i]);
-                        }
+                            disableOption(options[i]);
                     }
-                    sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
+
+                    fixSelected(lstSteps[stepIdx]);
+                    sendState(lstSteps, ModArchive.Prefix, stepIdx);
                 });
             };
 
@@ -116,7 +110,7 @@ namespace FomodInstaller.Scripting.XmlScript
                         m_Delegates.ui.EndDialog();
                         XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
                         IEnumerable<InstallableFile> FilesToInstall = new List<InstallableFile>();
-                        foreach (IEnumerable<InstallableFile> files in selectedOptions.Select(option => option.Files))
+                        foreach (IEnumerable<InstallableFile> files in m_SelectedOptions.Select(option => option.Files))
                         {
                             FilesToInstall = FilesToInstall.Union(files);
                         }
@@ -124,8 +118,8 @@ namespace FomodInstaller.Scripting.XmlScript
                     }
                     else
                     {
-                        preselectOptions(selectedOptions, lstSteps[stepIdx]);
-                        sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
+                        preselectOptions(lstSteps[stepIdx]);
+                        sendState(lstSteps, ModArchive.Prefix, stepIdx);
                     }
                 });
             };
@@ -144,18 +138,33 @@ namespace FomodInstaller.Scripting.XmlScript
                 new HeaderImage(bannerPath, hifHeaderInfo.ShowFade, hifHeaderInfo.Height),
                 select, cont, cancel);
 
-            preselectOptions(selectedOptions, lstSteps[stepIdx]);
-            sendState(lstSteps, ModArchive.Prefix, selectedOptions, stepIdx);
+            preselectOptions(lstSteps[stepIdx]);
+            sendState(lstSteps, ModArchive.Prefix, stepIdx);
 
             return await Source.Task;
         }
- 
+
+        private void enableOption(Option option)
+        {
+            m_SelectedOptions.Add(option);
+            option.Flags.ForEach((ConditionalFlag flag) =>
+            {
+                m_csmState.SetFlagValue(flag.Name, flag.ConditionalValue, option);
+            });
+        }
+
+        private void disableOption(Option option)
+        {
+            m_SelectedOptions.Remove(option);
+            m_csmState.RemoveFlags(option);
+        }
+
         private OptionType resolveOptionType(Option opt)
         {
             return opt.GetOptionType(m_csmState, m_Delegates);
         }
 
-        private void preselectOptions(ISet<Option> selectedOptions, InstallStep step)
+        private void preselectOptions(InstallStep step)
         {
             foreach (OptionGroup group in step.OptionGroups)
             {
@@ -164,13 +173,28 @@ namespace FomodInstaller.Scripting.XmlScript
                     OptionType type = resolveOptionType(option);
                     if ((type == OptionType.Required) || (type == OptionType.Recommended))
                     {
-                        selectedOptions.Add(option);
+                        enableOption(option);
                     }
                 }
             }
         }
 
-        private void sendState(IList<InstallStep> lstSteps, string strPrefixPath, ISet<Option> selected, int stepIdx)
+        private void fixSelected(InstallStep step)
+        {
+            foreach (OptionGroup group in step.OptionGroups)
+            {
+                foreach (Option option in group.Options)
+                {
+                    OptionType type = resolveOptionType(option);
+                    if (type == OptionType.Required)
+                        enableOption(option);
+                    else if (type == OptionType.NotUsable)
+                        disableOption(option);
+                }
+            }
+        }
+
+        private void sendState(IList<InstallStep> lstSteps, string strPrefixPath, int stepIdx)
         {
             Func<IEnumerable<InstallStep>, IEnumerable<InstallerStep>> convertSteps = steps =>
             {
@@ -184,7 +208,7 @@ namespace FomodInstaller.Scripting.XmlScript
                 int idx = 0;
                 return options.Select(option => new Interface.ui.Option(idx++, option.Name, option.Description,
                     string.IsNullOrEmpty(option.ImagePath) ? null : Path.Combine(strPrefixPath, option.ImagePath),
-                    selected.Contains(option), resolveOptionType(option).ToString()));
+                    m_SelectedOptions.Contains(option), resolveOptionType(option).ToString()));
             };
 
             Func<IEnumerable<OptionGroup>, IEnumerable<Group>> convertGroups = groups =>

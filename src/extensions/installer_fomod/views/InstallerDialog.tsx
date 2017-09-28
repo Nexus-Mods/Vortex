@@ -87,8 +87,8 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
 
   private getSelectedPlugins(props: IGroupProps) {
     return props.group.options
-      .filter((plugin) => plugin.selected)
-      .map((plugin) => plugin.id);
+      .filter(plugin => plugin.selected)
+      .map(plugin => plugin.id);
   }
 
   private validateFunc(type: GroupType): (selected: number[]) => string {
@@ -166,6 +166,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             key={plugin.id}
             value={plugin.id}
             checked={isSelected}
+            disabled={plugin.type === 'NotUsable'}
             onChange={readOnly ? this.showDescription : this.select}
           >{plugin.name}
           </Checkbox>
