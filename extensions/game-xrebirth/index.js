@@ -42,54 +42,54 @@ function install(files,
   let outputPath = basePath;
 
   return fs.readFileAsync(path.join(destinationPath, contentPath),
-                          {encoding: 'utf8'})
+                          { encoding: 'utf8' })
       .then(data => new Promise((resolve, reject) => {
-              const parser = new Parser();
-              parser.parseString(data, (err, parsed) => {
-                console.log('parsed content', err, parsed);
-                if (err !== null) {
-                  return reject(err);
-                }
+        const parser = new Parser();
+        parser.parseString(data, (err, parsed) => {
+          console.log('parsed content', err, parsed);
+          if (err !== null) {
+            return reject(err);
+          }
 
-                try {
-                  const attrInstructions = [];
-                  outputPath = parsed.content.$.id;
-                  if (outputPath === undefined) {
-                    return reject(
-                        new Error('invalid or unsupported content.xml'));
-                  }
-                  attrInstructions.push({
-                    type: 'attribute',
-                    key: 'customFileName',
-                    value: parsed.content.$.name.trim(),
-                  });
-                  attrInstructions.push({
-                    type: 'attribute',
-                    key: 'description',
-                    value: parsed.content.$.description,
-                  });
-                  attrInstructions.push({
-                    type: 'attribute',
-                    key: 'sticky',
-                    value: parsed.content.$.save === 'true',
-                  });
-                  attrInstructions.push({
-                    trype: 'attribute',
-                    key: 'author',
-                    value: parsed.content.$.author,
-                  });
-                  attrInstructions.push({
-                    type: 'attribute',
-                    key: 'version',
-                    value: parsed.content.$.version,
-                  });
-                  resolve(attrInstructions);
-                } catch (parseErr) {
-                  return reject(
-                      new Error('failed to determine correct mod directory'));
-                }
-              });
-            }))
+          try {
+            const attrInstructions = [];
+            outputPath = parsed.content.$.id;
+            if (outputPath === undefined) {
+              return reject(
+                  new Error('invalid or unsupported content.xml'));
+            }
+            attrInstructions.push({
+              type: 'attribute',
+              key: 'customFileName',
+              value: parsed.content.$.name.trim(),
+            });
+            attrInstructions.push({
+              type: 'attribute',
+              key: 'description',
+              value: parsed.content.$.description,
+            });
+            attrInstructions.push({
+              type: 'attribute',
+              key: 'sticky',
+              value: parsed.content.$.save === 'true',
+            });
+            attrInstructions.push({
+              trype: 'attribute',
+              key: 'author',
+              value: parsed.content.$.author,
+            });
+            attrInstructions.push({
+              type: 'attribute',
+              key: 'version',
+              value: parsed.content.$.version,
+            });
+            resolve(attrInstructions);
+          } catch (parseErr) {
+            return reject(
+                new Error('failed to determine correct mod directory'));
+          }
+        });
+      }))
       .then(attrInstructions => {
         let instructions = attrInstructions.concat(
             files.filter(file => file.startsWith(basePath + path.sep) &&
