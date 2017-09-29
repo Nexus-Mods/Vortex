@@ -1,6 +1,7 @@
 import { showDialog } from '../../actions/notifications';
 import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi } from '../../types/IExtensionContext';
+import {IState} from '../../types/IState';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { createErrorReport } from '../../util/errorHandling';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -16,8 +17,8 @@ import { IModType } from '../gamemode_management/types/IModType';
 import modName from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
-import {setModAttribute} from './actions/mods';
-import { IDependency } from './types/IDependency';
+import {setModAttribute, setModType} from './actions/mods';
+import {IDependency} from './types/IDependency';
 import { IInstallResult, IInstruction } from './types/IInstallResult';
 import {IMod} from './types/IMod';
 import { IModInstaller } from './types/IModInstaller';
@@ -77,6 +78,7 @@ class InstructionGroups {
   public iniedit: IInstruction[] = [];
   public unsupported: IInstruction[] = [];
   public attribute: IInstruction[] = [];
+  public setmodtype: IInstruction[] = [];
 }
 
 export const INI_TWEAKS_PATH = 'Ini Tweaks';
@@ -244,11 +246,17 @@ class InstallManager {
       })
       .then(result => {
         installContext.setInstallPathCB(modId, destinationPath);
-        return this.determineModType(installGameId, result.instructions)
-          .then(type => {
-            installContext.setModType(modId, type);
-            return result;
-          });
+        const state: IState = api.store.getState();
+
+        if (state.persistent.mods[installGameId][modId].type === '') {
+          return this.determineModType(installGameId, result.instructions)
+              .then(type => {
+                installContext.setModType(modId, type);
+                return result;
+              });
+        } else {
+          return Promise.resolve(result);
+        }
       })
       .then(result => this.processInstructions(api, archivePath, tempPath, destinationPath,
                                                installGameId, modId, result))
@@ -361,7 +369,7 @@ class InstallManager {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
           }
-          log('info', 'found installer to use', { id: supportedInstaller.id });
+          log('info', 'found installer to use', { id: supportedInstaller });
 
           const {installer, requiredFiles} = supportedInstaller;
           return installer.install(
@@ -523,7 +531,7 @@ class InstallManager {
 
   private processSubmodule(api: IExtensionApi, submodule: IInstruction[],
                            destinationPath: string,
-                           gameId: string): Promise<void> {
+                           gameId: string, modId: string): Promise<void> {
     return Promise.each(submodule,
       mod => {
         const tempPath = destinationPath + '.' + mod.key + '.installing';
@@ -531,6 +539,11 @@ class InstallManager {
           .then((resultInner) => this.processInstructions(
             api, mod.path, tempPath, destinationPath,
             gameId, mod.key, resultInner))
+          .then(() => {
+            if (mod.submoduleType !== undefined) {
+              api.store.dispatch(setModType(gameId, modId, mod.submoduleType));
+            }
+          })
           .finally(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }));
       })
         .then(() => undefined);
@@ -541,6 +554,17 @@ class InstallManager {
     attribute.forEach(attr => {
       api.store.dispatch(setModAttribute(gameId, modId, attr.key, attr.value));
     });
+    return Promise.resolve();
+  }
+
+  private processSetModType(api: IExtensionApi, types: IInstruction[],
+                            gameId: string, modId: string): Promise<void> {
+    if (types.length > 0) {
+      api.store.dispatch(setModType(gameId, modId, types[types.length - 1].value));
+      if (types.length > 1) {
+        log('error', 'got more than one mod type, only the last was used', { types });
+      }
+    }
     return Promise.resolve();
   }
 
@@ -602,8 +626,10 @@ class InstallManager {
                                             destinationPath))
       .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))
       .then(() => this.processSubmodule(api, instructionGroups.submodule,
-                                        destinationPath, gameId))
-      .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId));
+                                        destinationPath, gameId, modId))
+      .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
+      .then(() => this.processSetModType(api, instructionGroups.attribute, gameId, modId))
+      ;
     }
 
   private checkModExists(installName: string, api: IExtensionApi, gameMode: string): boolean {

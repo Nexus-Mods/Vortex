@@ -1,5 +1,5 @@
 export type InstructionType =
-  'copy' | 'submodule' | 'generatefile' | 'iniedit' | 'unsupported' | 'attribute';
+  'copy' | 'submodule' | 'generatefile' | 'iniedit' | 'unsupported' | 'attribute' | 'setmodtype';
 
 export interface IInstruction {
   type: InstructionType;
@@ -10,6 +10,7 @@ export interface IInstruction {
   section?: string;
   key?: string;
   value?: string;
+  submoduleType?: string;
 }
 
 export interface IInstallResult {

@@ -1479,6 +1479,7 @@ a[role=menuitem] svg {
   position: absolute;
   top: 8px;
   right: 8px;
+  mix-blend-mode: difference;
 }
 
 .game-list-selected {
