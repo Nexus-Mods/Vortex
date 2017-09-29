@@ -28,7 +28,6 @@ function testSupportedTL(files, gameId) {
   const supported = (gameId === 'witcher3')
     && (files.find(file =>
       file.toLowerCase().split(path.sep).indexOf('mods') !== -1) !== undefined);
-  console.log('supported', supported);
   return Promise.resolve({
     supported,
     requiredFiles: [],
@@ -39,7 +38,6 @@ function installTL(files,
                    destinationPath,
                    gameId,
                    progressDelegate) {
-  console.log('install tl');
   let prefix = files.reduce((prev, file) => {
     const components = file.toLowerCase().split(path.sep);
     const idx = components.indexOf('mods');
@@ -57,8 +55,6 @@ function installTL(files,
     prefix = prefix.join(path.sep) + path.sep;
   }
 
-  console.log('files', files, prefix);
-
   const instructions = files
     .filter(file => !file.endsWith(path.sep) && file.toLowerCase().startsWith(prefix))
     .map(file => ({
@@ -66,8 +62,6 @@ function installTL(files,
       source: file,
       destination: file.slice(prefix.length),
     }));
-
-  console.log('instructions', instructions);
 
   return Promise.resolve({ instructions });
 }

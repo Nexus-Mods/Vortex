@@ -31,10 +31,19 @@ const userlistReducer: types.IReducerSpec = {
       util.setSafe(state, ['dialog'], payload),
     [actions.closeDialog as any]: (state, payload) =>
       util.setSafe(state, ['dialog'], undefined),
+    [actions.setQuickEdit as any]: (state, payload) =>
+      util.setSafe(state, ['quickEdit'], {
+        plugin: payload.pluginId,
+        mode: payload.mode,
+      }),
   },
   defaults: {
     connection: undefined,
     dialog: undefined,
+    quickEdit: {
+      plugin: undefined,
+      mode: 'after',
+    },
   },
 };
 

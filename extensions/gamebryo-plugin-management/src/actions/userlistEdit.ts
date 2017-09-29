@@ -7,7 +7,10 @@ export const setTarget = createAction('SET_PLUGIN_CONNECTION_TARGET',
   (id: string, pos: { x: number, y: number }) => ({ id, pos }));
 
 export const setCreateRule = createAction('SET_PLUGIN_CREATE_RULE',
-  (gameId: string, pluginId: string, reference: string, defaultType: string) =>
-    ({ gameId, pluginId, reference, type: defaultType }));
+  (pluginId: string, reference: string, defaultType: string) =>
+    ({ pluginId, reference, type: defaultType }));
 
 export const closeDialog = createAction('CLOSE_PLUGIN_RULE_DIALOG');
+
+export const setQuickEdit = createAction('SET_USERLIST_QUICK_EDIT',
+  (pluginId: string, mode: string) => ({ pluginId, mode }));

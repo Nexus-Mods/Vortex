@@ -164,6 +164,15 @@ function register(context: IExtensionContextExt) {
   context.registerReducer(['settings', 'plugins'], settingsReducer);
   context.registerReducer(['session', 'pluginDependencies'], userlistEditReducer);
 
+  context.registerActionCheck('ADD_USERLIST_RULE', (state: any, action: any) => {
+    const {pluginId, reference, type} = action.payload;
+    if (util.getSafe(state, ['userlist', 'plugins', pluginId, type], []).indexOf(reference)
+        !== -1) {
+      return `Duplicate rule "${pluginId} ${type} ${reference}"`;
+    }
+    return undefined;
+  });
+
   context.registerTest('plugins-locked', 'gamemode-activated',
     () => testPluginsLocked(selectors.activeGameId(context.api.store.getState())));
   context.registerTest('master-missing', 'plugins-changed',

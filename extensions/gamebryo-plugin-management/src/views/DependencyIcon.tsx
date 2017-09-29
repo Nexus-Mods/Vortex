@@ -1,13 +1,13 @@
-import { removeRule } from '../actions/userlist';
-import { setCreateRule, setSource, setTarget } from '../actions/userlistEdit';
+import { addRule, removeRule } from '../actions/userlist';
+import { setCreateRule, setQuickEdit, setSource, setTarget } from '../actions/userlistEdit';
 
 import { ILOOTPlugin, ILootReference } from '../types/ILOOTList';
 import { IPluginCombined } from '../types/IPlugins';
 
-import { ComponentEx, selectors, tooltip } from 'vortex-api';
+import { Advanced, ComponentEx, selectors, tooltip, util } from 'vortex-api';
 
 import * as React from 'react';
-import { Overlay, Popover } from 'react-bootstrap';
+import { Button, Checkbox, Overlay, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
@@ -27,6 +27,7 @@ interface IConnectedProps {
   gameId: string;
   userlist: ILOOTPlugin[];
   masterlist: ILOOTPlugin[];
+  quickEdit: { plugin: string, mode: string };
 }
 
 interface IActionProps {
@@ -34,7 +35,9 @@ interface IActionProps {
   onSetTarget: (id: string, pos: { x: number, y: number }) => void;
   onEditDialog: (gameId: string, referenceId: string,
                  reference: string, defaultType: string) => void;
-  onRemoveRule: (gameId: string, referenceId: string, reference: string, type: string) => void;
+  onAddRule: (referenceId: string, reference: string, type: string) => void;
+  onRemoveRule: (referenceId: string, reference: string, type: string) => void;
+  onQuickEdit: (pluginId: string, mode: string) => void;
 }
 
 interface IComponentState {
@@ -182,9 +185,58 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, connectDragSource, connectDropTarget, masterlist, plugin, userlist } = this.props;
+    const { plugin, quickEdit } = this.props;
 
-    const classes = ['btn-dependency'];
+    if (quickEdit.plugin !== undefined) {
+      return (plugin.name === quickEdit.plugin)
+        ? this.renderQuickEditClose()
+        : this.renderQuickEditCheckbox();
+    } else {
+      return this.renderConnector();
+    }
+  }
+
+  private renderQuickEditClose(): JSX.Element {
+    const {t} = this.props;
+    return (
+      <div style={{ textAlign: 'center', width: '100%' }}>
+        <tooltip.IconButton
+          id='close-userlist-quickedit'
+          key='close-userlist-quickedit'
+          className='quickedit-close'
+          tooltip={t('Close')}
+          onClick={this.closeQuickEdit}
+          icon='check'
+        />
+      </div>
+    );
+  }
+
+  private renderQuickEditCheckbox(): JSX.Element {
+    const { t, masterlist, plugin, quickEdit, userlist } = this.props;
+    const refPlugin = userlist.find(iter => iter.name === quickEdit.plugin);
+    const refMasterPlugin = masterlist.find(iter => iter.name === quickEdit.plugin);
+    const masterEnabled =
+      (util.getSafe(refMasterPlugin, [quickEdit.mode], []).indexOf(plugin.name) !== -1);
+    const thisEnabled = masterEnabled
+      || (util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.name) !== -1);
+    return (
+      <div style={{ textAlign: 'center', width: '100%' }}>
+        <tooltip.ToggleButton
+          onIcon='square-check'
+          offIcon='square-empty'
+          state={thisEnabled}
+          disabled={masterEnabled}
+          onClick={this.toggleQuick}
+          tooltip={t('load after {{ reference }}', { replace: { reference: quickEdit.plugin } })}
+          offTooltip={t('load after {{ reference }}', { replace: { reference: quickEdit.plugin } })}
+        />
+      </div>
+    );
+  }
+
+  private renderConnector(): JSX.Element {
+    const { t, connectDragSource, connectDropTarget, masterlist, plugin, userlist } = this.props;
 
     // TODO: this is quite inefficient...
     const lootRules: ILOOTPlugin = {
@@ -200,7 +252,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         <div key='after'>
           {t('Loads after:')}
           <ul>
-            {(lootRules.after || []).map(
+            {Array.from(lootRules.after || []).map(
               ref => this.renderRule(ref, 'after', lootRules.readOnly))}
           </ul>
         </div>
@@ -212,7 +264,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         <div key='requires'>
         {t('Requires:')}
         <ul>
-          {(lootRules.req || []).map(
+          {Array.from(lootRules.req || []).map(
             ref => this.renderRule(ref, 'requires', lootRules.readOnly))}
         </ul>
       </div>
@@ -224,18 +276,29 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         <div key='incompatible'>
         {t('Incompatible:')}
         <ul>
-          {(lootRules.inc || []).map(
+          {Array.from(lootRules.inc || []).map(
             ref => this.renderRule(ref, 'incompatible', lootRules.readOnly))}
         </ul>
       </div>
       ));
     }
 
+    const classes = ['btn-dependency'];
+
     if (popoverBlocks.length > 0) {
       classes.push('btn-dependency-hasrules');
     } else {
       popoverBlocks.push(t('Drag to another connector to define load order rules.'));
     }
+
+    popoverBlocks.push((
+      <div key='edit'>
+        <Advanced>
+          <Button onClick={this.startQuickEdit}>{t('Edit')}</Button>
+        </Advanced>
+      </div>
+    ));
+
     const popover = (
       <Popover id={`popover-${plugin.name}`} style={{ maxWidth: 500 }}>
       {popoverBlocks}
@@ -294,6 +357,28 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       </li>
     );
   }
+
+  private startQuickEdit = () => {
+    const { plugin } = this.props;
+    this.hideOverlay();
+    this.props.onQuickEdit(plugin.name, 'after');
+  }
+
+  private closeQuickEdit = () => {
+    this.props.onQuickEdit(undefined, undefined);
+  }
+
+  private toggleQuick = () => {
+    const { onAddRule, onRemoveRule, plugin, quickEdit, userlist } = this.props;
+    const refPlugin = userlist.find(iter => iter.name === quickEdit.plugin);
+    const thisEnabled = (util.getSafe(refPlugin, [quickEdit.mode], []).indexOf(plugin.name) !== -1);
+    if (thisEnabled) {
+      onRemoveRule(quickEdit.plugin, plugin.name, quickEdit.mode);
+    } else {
+      onAddRule(quickEdit.plugin, plugin.name, quickEdit.mode);
+    }
+  }
+
   private setRef = (ref) => {
     this.mRef = ref;
   }
@@ -324,7 +409,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   private onRemove = (evt) => {
     const { gameId, plugin, onRemoveRule } = this.props;
     const [ ruleType, pluginId ] = splitOnce(evt.currentTarget.value, ':');
-    onRemoveRule(gameId, plugin.name, pluginId, ruleType);
+    onRemoveRule(plugin.name, pluginId, ruleType);
   }
 }
 
@@ -340,6 +425,7 @@ function mapStateToProps(state): IConnectedProps {
     gameId: selectors.activeGameId(state),
     userlist: state.userlist.plugins,
     masterlist: state.masterlist.plugins,
+    quickEdit: state.session.pluginDependencies.quickEdit,
   };
 }
 
@@ -349,8 +435,11 @@ function mapDispatchToProps(dispatch): IActionProps {
     onSetTarget: (id, pos) => dispatch(setTarget(id, pos)),
     onEditDialog: (gameId, pluginId, reference, defaultType) =>
       dispatch(setCreateRule(gameId, pluginId, reference, defaultType)),
-    onRemoveRule: (gameId, pluginId, reference, ruleType) =>
-      dispatch(removeRule(gameId, pluginId, reference, ruleType)),
+    onAddRule: (pluginId, reference, ruleType) =>
+      dispatch(addRule(pluginId, reference, ruleType)),
+    onRemoveRule: (pluginId, reference, ruleType) =>
+      dispatch(removeRule(pluginId, reference, ruleType)),
+    onQuickEdit: (pluginId, mode) => dispatch(setQuickEdit(pluginId, mode)),
   };
 }
 

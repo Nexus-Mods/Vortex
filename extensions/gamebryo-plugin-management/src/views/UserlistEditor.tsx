@@ -1,5 +1,6 @@
 import { addRule } from '../actions/userlist';
 import * as actions from '../actions/userlistEdit';
+import { ILOOTPlugin } from '../types/ILOOTList';
 
 import * as React from 'react';
 import { Button, FormControl, Modal } from 'react-bootstrap';
@@ -18,11 +19,12 @@ interface IDialog {
 
 interface IConnectedProps {
   dialog: IDialog;
+  rules: ILOOTPlugin[];
 }
 
 interface IActionProps {
   onCloseDialog: () => void;
-  onAddRule: (gameId: string, pluginId: string, reference: string, type: string) => void;
+  onAddRule: (pluginId: string, reference: string, type: string) => void;
 }
 
 interface IComponentState {
@@ -99,10 +101,10 @@ class Editor extends ComponentEx<IProps, IComponentState> {
   }
 
   private save = () => {
-    const { onAddRule } = this.props;
+    const { onAddRule, rules } = this.props;
     const { dialog } = this.state;
 
-    onAddRule(dialog.gameId, dialog.pluginId, dialog.reference, dialog.type);
+    onAddRule(dialog.pluginId, dialog.reference, dialog.type);
 
     this.close();
   }
@@ -116,14 +118,15 @@ function mapStateToProps(state: any): IConnectedProps {
   const dialog: IDialog = state.session.pluginDependencies.dialog;
   return {
     dialog,
+    rules: state.userlist.plugins,
   };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onCloseDialog: () => dispatch(actions.closeDialog()),
-    onAddRule: (gameId, pluginId, referenceId, type) =>
-      dispatch(addRule(gameId, pluginId, referenceId, type)),
+    onAddRule: (pluginId, referenceId, type) =>
+      dispatch(addRule(pluginId, referenceId, type)),
   };
 }
 
