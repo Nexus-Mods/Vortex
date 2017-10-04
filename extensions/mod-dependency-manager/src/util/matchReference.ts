@@ -3,7 +3,7 @@ import { IModLookupInfo } from '../types/IModLookupInfo';
 import * as minimatch from 'minimatch';
 import { IReference } from 'modmeta-db';
 import * as path from 'path';
-import { satisfies, valid } from 'semvish';
+import { eq, satisfies, valid } from 'semvish';
 import { types } from 'vortex-api';
 
 function matchReferenceLookup(reference: IReference, mod: IModLookupInfo) {
@@ -28,7 +28,8 @@ function matchReferenceLookup(reference: IReference, mod: IModLookupInfo) {
   }
   if ((reference.versionMatch !== undefined) && (mod.version !== undefined)) {
     if (valid(mod.version)) {
-      if (!satisfies(mod.version, reference.versionMatch, true)) {
+      if (!eq(mod.version, reference.versionMatch)
+          && !satisfies(mod.version, reference.versionMatch, true)) {
         return false;
       }
     } else {
