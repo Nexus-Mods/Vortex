@@ -235,11 +235,11 @@
   ], [
     {
       "type": "build-copy",
-      "name": "modtype-dazip",
-      "path": "extensions/modtype-dazip",
+      "name": "modtype-dragonage",
+      "path": "extensions/modtype-dragonage",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
-      "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-dazip"
+      "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-dragonage"
     }
   ], [
     {
@@ -306,6 +306,13 @@
       "name": "drivelist-rebuild",
       "module": "drivelist",
       "sources": ["node_modules/drivelist/build/Release/drivelist.node"]
+    }
+  ], [
+    {
+      "type": "electron-rebuild",
+      "name": "libxml-rebuild",
+      "module": "libxml",
+      "sources": ["node_modules/drivelist/build/Release/libxml.node"]
     }
   ]
 ]

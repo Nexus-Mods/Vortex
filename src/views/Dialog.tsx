@@ -127,14 +127,14 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     ) : null;
   }
 
-  private translateParts(message: string, t: I18next.TranslationFunction) {
+  private translateParts(message: string, t: I18next.TranslationFunction, parameters?: any) {
     // split by linebreak, then by tab, apply translation function, then join
     // again (replacing tabs with spaces)
     return message
       .split('\n')
       .map((line: string) => line
         .split('\t')
-        .map((block: string) => t(block))
+        .map((block: string) => t(block, { replace: parameters }))
         .join(' '))
       .join('\n');
   }
@@ -153,7 +153,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         <textarea
           key='dialog-content-message'
           wrap={wrap}
-          defaultValue={this.translateParts(content.message, t)}
+          defaultValue={this.translateParts(content.message, t, content.parameters)}
           readOnly={true}
         />
       ));

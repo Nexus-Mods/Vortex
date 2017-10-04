@@ -1,6 +1,11 @@
 import {showDialog} from '../../actions/notifications';
 import { setSettingsPage } from '../../actions/session';
-import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
+import {
+  IExtensionApi,
+  IExtensionContext,
+  MergeFunc,
+  MergeTest,
+} from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import {IState, IStatePaths} from '../../types/IState';
 import { ITableAttribute, Placement } from '../../types/ITableAttribute';
@@ -19,7 +24,7 @@ import {
   installPath,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
-import {setdefault, truthy} from '../../util/util';
+import { removePersistent, setdefault, truthy } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {IDownload} from '../download_management/types/IDownload';
@@ -36,10 +41,12 @@ import {modsReducer} from './reducers/mods';
 import {settingsReducer} from './reducers/settings';
 import {IDeployedFile, IDeploymentMethod, IFileChange} from './types/IDeploymentMethod';
 import {IFileEntry} from './types/IFileEntry';
+import {IFileMerge} from './types/IFileMerge';
 import {IInstruction} from './types/IInstallResult';
 import {IMod} from './types/IMod';
 import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
+import {IResolvedMerger} from './types/IResolvedMerger';
 import {TestSupported} from './types/TestSupported';
 import { loadActivation, saveActivation } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
@@ -58,6 +65,7 @@ import { onGameModeActivated, onPathsChanged,
          onRemoveMod, onStartInstallDownload } from './eventHandlers';
 import InstallManager from './InstallManager';
 import { activateMods } from './modActivation';
+import mergeMods, { MERGED_PATH } from './modMerging';
 import getText from './texts';
 
 import * as Promise from 'bluebird';
@@ -82,6 +90,8 @@ const installers: IInstaller[] = [];
 
 const modSources: IModSource[] = [];
 
+const mergers: IFileMerge[] = [];
+
 function registerDeploymentMethod(activator: IDeploymentMethod) {
   activators.push(activator);
 }
@@ -93,6 +103,10 @@ function registerInstaller(id: string, priority: number,
 
 function registerModSource(id: string, name: string, onBrowse: () => void) {
   modSources.push({ id, name, onBrowse });
+}
+
+function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
+  mergers.push({ test, merge, modType });
 }
 
 function getActivator(state: IState): IDeploymentMethod {
@@ -246,6 +260,14 @@ function genUpdateModActivation() {
 
     const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
 
+    const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
+      const match = merge.test(game);
+      if (match !== undefined) {
+        prev.push({match, merge: merge.merge, modType: merge.modType});
+      }
+      return prev;
+    }, []);
+
     // test if anything was changed by an external application
     return gate.then(() => {
         // update mod state again because if the user did have to
@@ -292,14 +314,28 @@ function genUpdateModActivation() {
         .filter(mod => getSafe(modState, [mod.id, 'enabled'], false))
         .sort((lhs: IMod, rhs: IMod) => sortedMods.indexOf(lhs.id) - sortedMods.indexOf(rhs.id));
 
-      return Promise.each(Object.keys(modPaths),
-        typeId => activateMods(api, game,
-                               instPath, modPaths[typeId],
-                               sortedModList.filter(mod => (mod.type || '') === typeId),
-                               activator, lastDeployment[typeId])
-          .then(newActivation =>
-            saveActivation(typeId, state.app.instanceId, modPaths[typeId], newActivation)))
-        .then(() => bakeSettings(api, gameMode, sortedModList));
+      const mergedFileMap: { [modType: string]: string[] } = {};
+
+      // merge mods
+      return Promise.mapSeries(Object.keys(modPaths),
+          typeId => removePersistent(api.store, path.join(instPath, MERGED_PATH) + '.' + typeId))
+        .then(() => Promise.each(Object.keys(modPaths),
+          typeId => mergeMods(api, game, instPath, modPaths[typeId],
+                              sortedModList.filter(mod => (mod.type || '') === typeId),
+                              fileMergers)
+        .then(mergedFiles => {
+          mergedFileMap[typeId] = mergedFiles;
+        }))
+        // activate them all, once per mod type
+        .then(() => Promise.each(Object.keys(modPaths),
+          typeId => activateMods(api,
+                                instPath, modPaths[typeId],
+                                sortedModList.filter(mod => (mod.type || '') === typeId),
+                                activator, lastDeployment[typeId],
+                                typeId, new Set(mergedFileMap[typeId]))
+            .then(newActivation =>
+              saveActivation(typeId, state.app.instanceId, modPaths[typeId], newActivation))))
+        .then(() => bakeSettings(api, gameMode, sortedModList)));
     })
     .catch(UserCanceled, () => undefined)
     .catch(err => api.showErrorNotification('failed to deploy mods', err))
@@ -549,6 +585,7 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller = registerInstaller;
   context.registerAttributeExtractor = registerAttributeExtractor;
   context.registerModSource = registerModSource;
+  context.registerMerge = registerMerge;
 
   registerAttributeExtractor(100, attributeExtractor);
 

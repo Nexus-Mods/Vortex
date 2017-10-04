@@ -208,6 +208,25 @@ export interface IErrorOptions {
  */
 export type GameInfoQuery = (game: any) => Promise<{ [key: string]: IGameDetail }>;
 
+export interface IMergeFilter {
+  // files to use as basis for merge, will be copied to the merge
+  // directory during deployment (from in (absolute) to out (relative to working directory)
+  baseFiles: Array<{ in: string, out: string }>;
+  // filter function, needs to match all files (relative paths) in the mod to consider
+  // for merging
+  filter: (fileName: string) => boolean;
+}
+
+/**
+ * callback to determine if a merge function applies to a game. If true, return an
+ * object that describes what files to merge
+ */
+export type MergeTest = (game: IGame) => IMergeFilter;
+/**
+ * callback to do the actual merging
+ */
+export type MergeFunc = (filePath: string, mergeDir: string) => Promise<void>;
+
 /**
  * interface for convenience functions made available to extensions
  *
@@ -687,6 +706,12 @@ export interface IExtensionContext {
    * @param {SanityCheck} check the check to run for the specified action
    */
   registerActionCheck: (actionType: string, check: SanityCheck) => void;
+
+  /**
+   * register a file merge that needs to happen during deployment.
+   * modType is the type with which the merged file(s) should be deployed
+   */
+  registerMerge: (test: MergeTest, merge: MergeFunc, modType: string) => void;
 
   /**
    * register a dependency on a different extension

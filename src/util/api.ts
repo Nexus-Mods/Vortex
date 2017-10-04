@@ -27,13 +27,15 @@ import makeReactive from './makeReactive';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import Steam, { ISteamEntry } from './Steam';
-import { bytesToString, isNullOrWhitespace, setdefault } from './util';
+import { bytesToString, copyFileAtomic, isNullOrWhitespace,
+         removePersistent, setdefault } from './util';
 import walk from './walk';
 
 export {
   Archive,
   AsyncComponent,
   bytesToString,
+  copyFileAtomic,
   copyRecursive,
   Debouncer,
   delayed,
@@ -52,6 +54,7 @@ export {
   ProcessCanceled,
   ReduxProp,
   relativeTime,
+  removePersistent,
   renderModName,
   runElevated,
   setdefault,

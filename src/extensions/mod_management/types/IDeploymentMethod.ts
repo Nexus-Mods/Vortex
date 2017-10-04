@@ -139,7 +139,7 @@ export interface IDeploymentMethod {
    * @param {string} sourceName name to be stored as the source of files. usually the path of the
    *                            mod subdirectory
    * @param {string} dataPath game path where mods are installed to (destination)
-   * @param {string[]} blacklist list of files to skip
+   * @param {Set<string>} blacklist list of files to skip
    *
    * @memberOf IModActivator
    */

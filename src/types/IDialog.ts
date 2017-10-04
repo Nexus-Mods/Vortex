@@ -49,6 +49,7 @@ export interface IDialogContent {
   checkboxes?: ICheckbox[];
   choices?: ICheckbox[];
   input?: IInput[];
+  parameters?: any;
   options?: {
     translated?: boolean;
     wrap?: boolean;

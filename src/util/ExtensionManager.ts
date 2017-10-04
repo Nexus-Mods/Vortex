@@ -233,6 +233,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerAttributeExtractor: undefined,
       registerModType: undefined,
       registerActionCheck: undefined,
+      registerMerge: undefined,
       requireExtension: undefined,
       api: undefined,
       once: undefined,

@@ -36,6 +36,7 @@ function prepareForModding() {
 }
 
 function main(context) {
+  context.requireExtension('modtype-dragonage');
   context.registerGame({
     id: 'dragonage2',
     name: 'Dragon Age 2',
@@ -43,13 +44,12 @@ function main(context) {
     queryPath: findGame,
     queryModPath,
     logo: 'gameart.png',
-    executable: () => 'daorigins.exe',
+    executable: () => 'dragonage2.exe',
     setup: prepareForModding,
     requiredFiles: [
-      'daorigins.exe',
+      'dragonage2.exe',
     ],
     details: {
-      steamAppId: 17450,
     },
   });
 

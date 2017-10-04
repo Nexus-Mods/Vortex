@@ -34,12 +34,26 @@ function installOuter(files: string[],
   return Promise.resolve({ instructions });
 }
 
+function isDragonAge(gameId: string): boolean {
+  return [ 'dragonage', 'dragonage2' ].indexOf(gameId) !== -1;
+}
+
+function testIsSettings(): Promise<boolean> {
+  // only used for merged files
+  return Promise.resolve(false);
+}
+
 function init(context: types.IExtensionContext) {
   const getPath = (game: types.IGame) => {
     return path.join(app.getPath('documents'), 'BioWare', 'Dragon Age', 'AddIns');
   };
 
-  context.registerModType('dazip', 25, gameId => gameId === 'dragonage', getPath, testDazip);
+  const getSettingsPath = (game: types.IGame) => {
+    return path.join(app.getPath('documents'), 'BioWare', 'Dragon Age', 'Settings');
+  };
+
+  context.registerModType('dazip', 25, isDragonAge, getPath, testDazip);
+  context.registerModType('dragonage-settings', 999, isDragonAge, getSettingsPath, testIsSettings);
   context.registerInstaller('dazipOuter', 15, testSupportedOuter, installOuter);
   // the dazip itself is installed like a "regular" fomod, but it will have the dazip
   // modtype set from dazipOuter

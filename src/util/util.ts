@@ -1,3 +1,6 @@
+import { showDialog } from '../actions/notifications';
+import { IDialogResult } from '../types/IDialog';
+import { UserCanceled } from './CustomErrors';
 import delayed from './delayed';
 import { log } from './log';
 
@@ -7,6 +10,7 @@ import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as _ from 'lodash';
 import * as path from 'path';
+import * as Redux from 'redux';
 import { file } from 'tmp';
 
 /**
@@ -102,6 +106,32 @@ export function copyFileAtomic(srcPath: string,
         }
         return Promise.reject(err);
       });
+}
+
+export function removePersistent(store: Redux.Store<any>, destPath: string): Promise<void> {
+  return fs.removeAsync(destPath)
+    .catch(err => {
+      if (err.code === 'ENOENT') {
+        // the file I wanted gone was already gone??? Well, I can live with that...
+        return Promise.resolve();
+      } else if (err.code === 'EBUSY') {
+        return store.dispatch(showDialog('error', 'Busy', {
+          message: 'File is locked by another application: {{ fileName }}\n'
+                   + 'please unlock it and retry.',
+          parameters: { fileName: destPath },
+        }, [
+          { label: 'Cancel' },
+          { label: 'Retry', default: true },
+        ]))
+        .then((result: IDialogResult) => {
+          if (result.action === 'Retry') {
+            return removePersistent(store, destPath);
+          } else {
+            return Promise.reject(new UserCanceled());
+          }
+        });
+      }
+    });
 }
 
 /**
