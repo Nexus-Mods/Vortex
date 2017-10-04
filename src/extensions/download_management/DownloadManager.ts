@@ -21,6 +21,7 @@ import { log } from '../../util/log';
 interface IRunningDownload {
   id: string;
   fd?: number;
+  error: boolean;
   urls: string[];
   origName: string;
   tempName: string;
@@ -46,7 +47,8 @@ type FinishCallback = (paused: boolean) => void;
  * @class DownloadWorker
  */
 class DownloadWorker {
-  private static BUFFER_SIZE = 256 * 1024;
+  // buffering currently disabled, as it caused downloads to hang at the end
+  private static BUFFER_SIZE = 2 * 1024;
   private mJob: IDownloadJob;
   private mRequest: requestT.Request;
   private mProgressCB: (bytes: number) => void;
@@ -54,6 +56,7 @@ class DownloadWorker {
   private mHeadersCB: (headers: any) => void;
   private mUserAgent: string;
   private mBuffer: NodeBuffer;
+  private mDataHistory: Array<{ time: number, size: number }> = [];
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
@@ -69,7 +72,9 @@ class DownloadWorker {
   }
 
   public assignJob(job: IDownloadJob) {
+    this.mDataHistory = [];
     const request: typeof requestT = require('request');
+    log('debug', 'requesting range', { id: job.workerId, offset: job.offset, size: job.size });
 
     this.mRequest = request({
       method: 'GET',
@@ -78,6 +83,7 @@ class DownloadWorker {
         Range: `bytes=${job.offset}-${job.offset + job.size}`,
         'User-Agent': this.mUserAgent,
       },
+      timeout: 5000,
     })
     .on('error', (err) => this.handleError(err))
     .on('response', (response: http.IncomingMessage) => this.handleResponse(response))
@@ -97,14 +103,22 @@ class DownloadWorker {
   }
 
   private handleError(err) {
+    log('error', 'chunk error', { id: this.mJob.workerId, err });
     if (this.mJob.errorCB !== undefined) {
       this.mJob.errorCB(err);
     }
     this.mRequest.abort();
-    this.mFinishCB(false);
+    if ((err.code === 'ESOCKETTIMEDOUT') && (this.mDataHistory.length > 0)) {
+      this.assignJob(this.mJob);
+    } else {
+      this.mFinishCB(false);
+    }
   }
 
   private handleComplete(response: http.IncomingMessage, body) {
+    log('info', 'chunk completed, remaining buffer', {
+      length: this.mBuffer !== undefined ? this.mBuffer.byteLength : 0,
+    });
     if (this.mBuffer !== undefined) {
       this.mJob.dataCB(this.mJob.offset, this.mBuffer);
       this.mJob.received += this.mBuffer.length;
@@ -116,7 +130,18 @@ class DownloadWorker {
     if (this.mJob.completionCB !== undefined) {
       this.mJob.completionCB();
     }
-    this.mFinishCB(false);
+    if (this.mJob.size > 0) {
+      // how is this possible?
+      log('error', 'download was incomplete', {
+        id: this.mJob.workerId,
+        received: this.mJob.received,
+        size: this.mJob.size,
+        history: this.mDataHistory,
+      });
+      this.assignJob(this.mJob);
+    } else {
+      this.mFinishCB(false);
+    }
   }
 
   private handleResponse(response: http.IncomingMessage) {
@@ -158,18 +183,17 @@ class DownloadWorker {
   }
 
   private handleData(data) {
-    if (this.mBuffer === undefined) {
-      this.mBuffer = data;
-    } else {
-      this.mBuffer = Buffer.concat([ this.mBuffer, data ]);
-      if (this.mBuffer.length >= DownloadWorker.BUFFER_SIZE) {
-        this.mJob.dataCB(this.mJob.offset, this.mBuffer);
-        this.mJob.received += this.mBuffer.length;
-        this.mJob.offset += this.mBuffer.length;
-        this.mJob.size -= this.mBuffer.length;
-        this.mProgressCB(this.mBuffer.length);
-        this.mBuffer = undefined;
-      }
+    this.mDataHistory.push({ time: Date.now(), size: data.byteLength });
+    this.mBuffer = (this.mBuffer === undefined)
+      ? data : Buffer.concat([ this.mBuffer, data ]);
+
+    if (this.mBuffer.length >= DownloadWorker.BUFFER_SIZE) {
+      this.mJob.dataCB(this.mJob.offset, this.mBuffer);
+      this.mJob.received += this.mBuffer.length;
+      this.mJob.offset += this.mBuffer.length;
+      this.mJob.size -= this.mBuffer.length;
+      this.mProgressCB(this.mBuffer.length);
+      this.mBuffer = undefined;
     }
   }
 }
@@ -246,6 +270,7 @@ class DownloadManager {
             id,
             origName: nameTemplate,
             tempName: filePath,
+            error: false,
             urls,
             lastProgressSent: 0,
             received: 0,
@@ -272,6 +297,7 @@ class DownloadManager {
         id,
         origName: filePath,
         tempName: filePath,
+        error: false,
         urls,
         lastProgressSent: 0,
         received,
@@ -448,14 +474,18 @@ class DownloadManager {
     download.size = size;
     download.assembler.setTotalSize(size);
 
+    const remainingSize = size - this.mMinChunkSize;
+
     if (size > this.mMinChunkSize) {
-      const chunkSize = Math.ceil(Math.max(this.mMinChunkSize, size / this.mMaxChunks));
+      const chunkSize = Math.min(remainingSize,
+          Math.max(this.mMinChunkSize, Math.ceil(remainingSize / this.mMaxChunks)));
+
       let offset = this.mMinChunkSize + 1;
       while (offset < size) {
         download.chunks.push({
           received: 0,
           offset,
-          size: chunkSize,
+          size: Math.min(chunkSize, size - offset),
           state: 'init',
           url: download.urls[0],
         });
@@ -499,14 +529,19 @@ class DownloadManager {
    * gets called whenever a chunk runs to the end or is interrupted
    */
   private finishChunk(download: IRunningDownload, job: IDownloadJob, interrupted: boolean) {
-    job.state = interrupted ? 'paused' : 'finished';
     this.stopWorker(job.workerId);
 
     log('debug', 'stopping chunk worker',
       { interrupted, id: job.workerId, offset: job.offset, size: job.size });
 
+    job.state = (interrupted || (job.size > 0)) ? 'paused' : 'finished';
+    if (!interrupted && (job.size > 0)) {
+      download.error = true;
+    }
+
     const activeChunks = download.chunks.find(
       (chunk: IDownloadJob) => ['paused', 'finished'].indexOf(chunk.state) === -1);
+    log('debug', 'remaining chunks', { activeChunks });
     if (activeChunks === undefined) {
       let finalPath = download.tempName;
       download.assembler.close()
@@ -532,7 +567,12 @@ class DownloadManager {
             .filter(chunk => chunk.state === 'paused')
             .map(this.toStoredChunk);
           log('debug', 'remaining chunks', { finalPath, unfinishedChunks });
-          download.finishCB({ filePath: finalPath, headers: download.headers, unfinishedChunks });
+          download.finishCB({
+            filePath: finalPath,
+            headers: download.headers,
+            unfinishedChunks,
+            hadErrors: download.error,
+          });
         });
     }
     this.tickQueue();

@@ -264,7 +264,7 @@ function checkModVersionsImpl(
 
   const {TimeoutError} = require('nexus-api');
 
-  return Promise.mapSeries(modsList, mod =>
+  return Promise.map(modsList, mod =>
     checkModVersion(store.dispatch, nexus, gameId, mod)
       .catch(TimeoutError, err => {
         const name = modName(mod, { version: true });
@@ -286,7 +286,7 @@ function checkModVersionsImpl(
         } else {
           return `${name}:\n${detail.error}`;
         }
-      }))
+      }), { concurrency: 4 })
     .then(errorMessages => errorMessages.filter(msg => msg !== undefined));
 }
 

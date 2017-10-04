@@ -21,6 +21,8 @@ import * as path from 'path';
 
 import { remoteCode } from './remoteCode';
 
+ipc.config.logger = (message) => log('debug', 'ipc message', { message });
+
 const elevated =
     lazyRequire<typeof elevatedT>('../../util/elevated', __dirname);
 

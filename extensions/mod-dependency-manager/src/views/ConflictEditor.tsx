@@ -134,11 +134,10 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
               t('{{ count }} conflicting file', {
                 count: conflict.files.length,
                 replace: { count: conflict.files.length },
-              })
-            }</a>
+              })}</a>
           </OverlayTrigger>
         </div>
-        { this.renderReverseRule(reverseRule) }
+        {this.renderReverseRule(reverseRule)}
       </ListGroupItem>
     );
   }

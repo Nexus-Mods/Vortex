@@ -77,7 +77,7 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
       case 'bug-update': return 'bug';
       case 'bug-disable': return 'ban';
       case 'update': return 'cloud-download';
-      case 'update-site': return 'external-link';
+      case 'update-site': return 'open-in-browser';
       default: return undefined;
     }
   }

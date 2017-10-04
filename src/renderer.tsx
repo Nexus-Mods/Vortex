@@ -71,7 +71,8 @@ crashReporter.start({
 // allow promises to be cancelled.
 Promise.config({
   cancellation: true,
-  longStackTraces: true, // should probably disable this before a public release
+  // long stack traces would be sooo nice but the performance cost in some places is ridiculous
+  longStackTraces: false,
 });
 
 // set up store. Through the electronEnhancer this is automatically
