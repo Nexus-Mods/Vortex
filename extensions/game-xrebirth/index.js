@@ -1,8 +1,8 @@
 const Promise = require('bluebird');
 const fs = require('fs-extra-promise');
+const { parseXmlString } = require('libxmljs');
 const path = require('path');
 const { log, util } = require('vortex-api');
-const { Parser } = require('xml2js');
 
 function findGame() {
   let steam = new util.Steam();
@@ -44,51 +44,45 @@ function install(files,
   return fs.readFileAsync(path.join(destinationPath, contentPath),
                           { encoding: 'utf8' })
       .then(data => new Promise((resolve, reject) => {
-        const parser = new Parser();
-        parser.parseString(data, (err, parsed) => {
-          console.log('parsed content', err, parsed);
-          if (err !== null) {
-            return reject(err);
-          }
+        try {
+          const parsed = parseXmlString(data);
+          const attrInstructions = [];
 
-          try {
-            const attrInstructions = [];
-            outputPath = parsed.content.$.id;
-            if (outputPath === undefined) {
-              return reject(
-                  new Error('invalid or unsupported content.xml'));
-            }
-            attrInstructions.push({
-              type: 'attribute',
-              key: 'customFileName',
-              value: parsed.content.$.name.trim(),
-            });
-            attrInstructions.push({
-              type: 'attribute',
-              key: 'description',
-              value: parsed.content.$.description,
-            });
-            attrInstructions.push({
-              type: 'attribute',
-              key: 'sticky',
-              value: parsed.content.$.save === 'true',
-            });
-            attrInstructions.push({
-              trype: 'attribute',
-              key: 'author',
-              value: parsed.content.$.author,
-            });
-            attrInstructions.push({
-              type: 'attribute',
-              key: 'version',
-              value: parsed.content.$.version,
-            });
-            resolve(attrInstructions);
-          } catch (parseErr) {
+          outputPath = parsed.get('//content').attr('id').value();
+          if (outputPath === undefined) {
             return reject(
-                new Error('failed to determine correct mod directory'));
+                new Error('invalid or unsupported content.xml'));
           }
-        });
+          attrInstructions.push({
+            type: 'attribute',
+            key: 'customFileName',
+            value: parsed.get('//content').attr('name').value().trim(),
+          });
+          attrInstructions.push({
+            type: 'attribute',
+            key: 'description',
+            value: parsed.get('//content').attr('description').value(),
+          });
+          attrInstructions.push({
+            type: 'attribute',
+            key: 'sticky',
+            value: parsed.get('//content').attr('save').value() === 'true',
+          });
+          attrInstructions.push({
+            trype: 'attribute',
+            key: 'author',
+            value: parsed.get('//content').attr('author').value(),
+          });
+          attrInstructions.push({
+            type: 'attribute',
+            key: 'version',
+            value: parsed.get('//content').attr('version').value(),
+          });
+          resolve(attrInstructions);
+        } catch (parseErr) {
+          return reject(
+              new Error('failed to determine correct mod directory'));
+        }
       }))
       .then(attrInstructions => {
         let instructions = attrInstructions.concat(

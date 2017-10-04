@@ -102,7 +102,7 @@ function transformG(g, decol) {
 
 const data = fs.readFileSync(path.join('..', 'fonts', 'myicons', 'svg', 'img', 'nc-icons.svg'));
 
-const parsed = xml2js.parseString(data.toString(), (err, result) => {
+xml2js.parseString(data.toString(), (err, result) => {
   if (err !== null) {
     console.error('failed to parse input svg');
     return;

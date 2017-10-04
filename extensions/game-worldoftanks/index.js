@@ -1,7 +1,7 @@
 const fs = require('fs');
+const { parseXmlString } = require('libxmljs');
 const path = require('path');
 const Registry = require('winreg');
-const { Parser } = require('xml2js');
 const { log, util } = require('vortex-api');
 
 function findGame() {
@@ -36,19 +36,15 @@ let version;
 function queryModPath(gamePath) {
   if (version === undefined) {
     const data = fs.readFileSync(path.join(gamePath, 'version.xml'), { encoding: 'utf8' });
-    const parser = new Parser();
-    parser.parseString(data, (err, res) => {
-      if (err !== null) {
-        throw err;
-      }
-      try {
-        version = res['version.xml'].version[0];
-        version = version.replace(/ ?v.([0-9.]*) .*/, '$1');
-        fs.statSync(path.join(gamePath, 'res_mods', version));
-      } catch (parseErr) {
-        throw new Error('failed to determine correct mod directory');
-      }
-    });
+    const versionXML = parseXmlString(data);
+
+    try {
+      version = versionXML.get('//version.xml/version').text();
+      version = version.replace(/ ?v.([0-9.]*) .*/, '$1');
+      fs.statSync(path.join(gamePath, 'res_mods', version));
+    } catch (parseErr) {
+      throw new Error('failed to determine correct mod directory');
+    }
   }
 
   return path.join(gamePath, 'res_mods', version);
