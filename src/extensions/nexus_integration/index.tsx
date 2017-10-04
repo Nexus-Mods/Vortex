@@ -349,19 +349,26 @@ function processAttributes(input: any) {
   const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
 
   return ({
-    modId: getSafe(input.nexus, ['ids', 'modId'], undefined),
-    fileId: getSafe(input.nexus, ['ids', 'fileId'], undefined),
-    author: getSafe(input.nexus, ['modInfo', 'author'], undefined),
-    category: getSafe(input.nexus, ['modInfo', 'category_id'], undefined),
-    pictureUrl: getSafe(input.nexus, ['modInfo', 'picture_url'], undefined),
-    description: getSafe(input.nexus, ['modInfo', 'description'], undefined),
-    shortDescription: getSafe(input.nexus, ['modInfo', 'summary'], undefined),
-    fileType: getSafe(input.nexus, ['fileInfo', 'category_name'], undefined),
-    isPrimary: getSafe(input.nexus, ['fileInfo', 'is_primary'], undefined),
-    fileName: getSafe(input.nexus, ['fileInfo', 'name'], undefined),
+    modId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'modId'], undefined),
+    fileId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'fileId'], undefined),
+    author: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'author'], undefined),
+    category: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'category_id'], undefined),
+    pictureUrl: getSafe(input, ['download', 'modInfo', 'nexus',
+                                'modInfo', 'picture_url'], undefined),
+    description: getSafe(input, ['download', 'modInfo', 'nexus',
+                                 'modInfo', 'description'], undefined),
+    shortDescription: getSafe(input, ['download', 'modInfo', 'nexus',
+                                      'modInfo', 'summary'], undefined),
+    fileType: getSafe(input, ['download', 'modInfo', 'nexus',
+                              'fileInfo', 'category_name'], undefined),
+    isPrimary: getSafe(input, ['download', 'modInfo', 'nexus',
+                               'fileInfo', 'is_primary'], undefined),
+    logicalFileName: getSafe(input, ['download', 'modInfo', 'nexus',
+                                     'fileInfo', 'name'], undefined),
     changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
-    uploadedTimestamp: getSafe(input.nexus, ['fileInfo', 'uploaded_timestamp'], undefined),
-    version: getSafe(input.nexus, ['fileInfo', 'version'], undefined),
+    uploadedTimestamp: getSafe(input, ['download', 'modInfo', 'nexus',
+                                       'fileInfo', 'uploaded_timestamp'], undefined),
+    version: getSafe(input, ['download', 'modInfo', 'nexus', 'fileInfo', 'version'], undefined),
   });
 }
 

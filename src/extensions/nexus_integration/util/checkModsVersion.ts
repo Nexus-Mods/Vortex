@@ -100,7 +100,7 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
     if ((notOld.length === 1) && (notOld[0].file_id !== fileId)) {
       fileUpdates = [{
         old_file_id: fileId,
-        old_file_name: mod.attributes['fileName'],
+        old_file_name: mod.attributes['logicalFileName'],
         new_file_id: notOld[0].file_id,
         new_file_name: notOld[0].file_name,
         uploaded_time: notOld[0].uploaded_time,

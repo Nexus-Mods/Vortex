@@ -192,5 +192,5 @@ export function onStartInstallDownload(api: IExtensionApi,
   const downloadPath: string = resolvePath('download', inPaths, download.game);
   const fullPath: string = path.join(downloadPath, download.localPath);
   installManager.install(downloadId, fullPath, download.game, api,
-    download.modInfo, true, false, callback);
+    { download }, true, false, callback);
 }

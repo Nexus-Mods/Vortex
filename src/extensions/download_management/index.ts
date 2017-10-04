@@ -3,6 +3,7 @@ import { IState } from '../../types/IState';
 import LazyComponent from '../../util/LazyComponent';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
 import { sum } from '../../util/util';
 
 import {
@@ -58,6 +59,14 @@ export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (schema: string, handler: ProtocolHandler) => void;
 }
 
+function attributeExtractor(input: any) {
+  return Promise.resolve({
+    fileName: getSafe(input, ['download', 'localPath'], undefined),
+    fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
+    fileSize: getSafe(input, ['download', 'fileSize'], undefined),
+  });
+}
+
 function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
@@ -86,6 +95,8 @@ function init(context: IExtensionContextExt): boolean {
   context.registerDownloadProtocol = (schema: string, handler: ProtocolHandler) => {
     protocolHandlers[schema] = handler;
   };
+
+  context.registerAttributeExtractor(150, attributeExtractor);
 
   context.once(() => {
     const DownloadManagerImpl: typeof DownloadManager = require('./DownloadManager').default;

@@ -420,9 +420,9 @@ function genValidActivatorCheck(api: IExtensionApi) {
 function attributeExtractor(input: any) {
   return Promise.resolve({
     source: getSafe(input, ['source'], undefined),
-    fileName: getSafe(input.meta, ['fileName'], undefined),
-    fileMD5: getSafe(input.meta, ['fileMD5'], undefined),
-    fileSize: getSafe(input.meta, ['fileSize'], undefined),
+    fileName: getSafe(input, ['fileName'], undefined),
+    fileMD5: getSafe(input, ['fileMD5'], undefined),
+    fileSize: getSafe(input, ['fileSize'], undefined),
     version: getSafe(input.meta, ['fileVersion'], undefined),
     logicalFileName: getSafe(input.meta, ['logicalFileName'], undefined),
     rules: getSafe(input.meta, ['rules'], undefined),
