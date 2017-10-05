@@ -23,7 +23,7 @@ class GlobalNotifications {
         currentNotification = this.mKnownNotifications.find(
           (notification: INotification) => notification.id === this.mCurrentId);
         if (currentNotification === undefined) {
-          log('info', 'notification no longer exists');
+          log('info', 'notification no longer exists', this.mCurrentId);
           // notification no longer exists
           this.mCurrentId = undefined;
         }

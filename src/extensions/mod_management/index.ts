@@ -185,8 +185,8 @@ function applyFileActions(sourcePath: string,
   return Promise.map(actionGroups['drop'] || [],
       // delete the files the user wants to drop.
       (entry) => truthy(entry.filePath)
-        ? fs.removeAsync(path.join(outputPath, entry.filePath))
-        : Promise.reject(new Error('invalid file path')))
+          ? fs.removeAsync(path.join(outputPath, entry.filePath))
+          : Promise.reject(new Error('invalid file path')))
     .then(() => Promise.map(actionGroups['import'] || [],
       // copy the files the user wants to import
       (entry) => fs.copyAsync(
@@ -194,9 +194,12 @@ function applyFileActions(sourcePath: string,
         path.join(sourcePath, entry.source, entry.filePath))))
     .then(() => {
       // remove files that the user wants to restore from
-      // the activation list because then they get reinstalled
+      // the activation list because then they get reinstalled.
+      // this includes files that were deleted and those replaced
       const restoreSet = new Set((actionGroups['restore'] || []).map(entry => entry.filePath));
-      const newActivation = lastDeployment.filter(entry => !restoreSet.has(entry.relPath));
+      const dropSet = new Set((actionGroups['drop'] || []).map(entry => entry.filePath));
+      const newActivation = lastDeployment.filter(
+        entry => !restoreSet.has(entry.relPath) && !dropSet.has(entry.relPath));
       lastDeployment = newActivation;
       return Promise.resolve();
     })
@@ -303,7 +306,7 @@ function genUpdateModActivation() {
         ? Promise.resolve([])
         : api.store.dispatch(showExternalChanges(changes)))
     .then((fileActions: IFileEntry[]) => Promise.mapSeries(Object.keys(lastDeployment),
-      typeId => applyFileActions(modPaths[typeId], instPath,
+      typeId => applyFileActions(instPath, modPaths[typeId],
                                  lastDeployment[typeId],
                                  fileActions.filter(action => action.modTypeId === typeId))
                 .then(newLastDeployment => lastDeployment[typeId] = newLastDeployment)))
