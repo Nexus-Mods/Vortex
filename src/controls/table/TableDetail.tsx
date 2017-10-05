@@ -1,5 +1,6 @@
 import {IEditChoice, ITableAttribute} from '../../types/ITableAttribute';
 import {PureComponentEx} from '../../util/ComponentEx';
+import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 
 import ExtensionGate from '../ExtensionGate';
@@ -319,6 +320,7 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
 
   private renderHandle(): JSX.Element {
     const { t, title, onToggleShow } = this.props;
+    // TODO: hard coded style???
     const style = {
       border: '1px solid #0c5886',
       position: 'relative' as 'relative',
@@ -362,11 +364,14 @@ class DetailBox extends PureComponentEx<IDetailProps, {}> {
   private onChangeData = (rowIds: string[], attributeId: string, value: any) => {
     const { rawData } = this.props;
     const attribute = this.props.attributes
-    .find((attr: ITableAttribute) => attr.id === attributeId);
+      .find((attr: ITableAttribute) => attr.id === attributeId);
     if (attribute.supportsMultiple === true) {
       attribute.edit.onChangeValue(rowIds.map(rowId => rawData[rowId]), value);
     } else if (rowIds.length === 1) {
-      attribute.edit.onChangeValue(rowIds[0], value);
+      attribute.edit.onChangeValue(rawData[rowIds[0]], value);
+    } else {
+      log('error', 'attempt to change an attribute for multiple rows that doesn\'t support it',
+        { rowIds, attribute, value });
     }
   }
 }

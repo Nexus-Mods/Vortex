@@ -730,11 +730,22 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     onSetAttributeVisible(tableId, attributeId, visible);
   }
 
+  private getClasses(element: HTMLElement): string {
+    // because classname is supposed to be a string but on svg elements
+    // it may be SVGAnimatedString
+    const classAny: any = element.className;
+    return classAny === undefined
+      ? ''
+      : classAny instanceof SVGAnimatedString
+        ? classAny.baseVal
+        : element.className;
+  }
+
   private selectRow = (evt: React.MouseEvent<any>) => {
     let iter = evt.target as any;
     while ((iter !== null)
           && (iter.tagName !== 'BUTTON')
-          && (iter.className.split(' ').indexOf('xtd') === -1)) {
+          && (this.getClasses(iter).split(' ').indexOf('xtd') === -1)) {
       iter = iter.parentNode;
     }
 
