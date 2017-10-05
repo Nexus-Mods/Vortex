@@ -125,7 +125,6 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     classes.push('btngroup-collapsed');
 
     if (collapse) {
-      const dotdotdot: any = <Icon name='dots' rotate={90} />;
       const collapsed: IActionDefinition[] = [];
       const unCollapsed: IActionDefinition[] = [];
 
@@ -147,6 +146,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             tooltip={''}
             icon='dots'
             rotate={90}
+            rotateId={`dots-iconbar-${id}`}
             ref={this.setButtonRef}
           />
           <PortalMenu

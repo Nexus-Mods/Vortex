@@ -1,4 +1,5 @@
 import update = require('immutability-helper');
+import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
@@ -11,8 +12,8 @@ interface IRect {
 
 export interface IProps {
   container?: HTMLElement;
-  placeholder: () => JSX.Element;
-  content: () => JSX.Element;
+  placeholder: () => React.ReactNode;
+  content: () => React.ReactNode;
   startVisible: boolean;
 }
 
@@ -26,17 +27,17 @@ export interface IState {
  * @class VisibilityProxy
  * @extends {React.Component<IProps, IState>}
  */
-class VisibilityProxy extends React.Component<IProps, IState> {
+class VisibilityProxy extends React.Component<any, IState> {
   // need to use maps because the keys aren't PODs
   private static sObservers: Map<Element, IntersectionObserver> = new Map();
-  private static sInstances: Map<Element, () => void> = new Map();
+  private static sInstances: Map<Element, (visible: boolean) => void> = new Map();
 
   private static getObserver(container: HTMLElement) {
     if (!VisibilityProxy.sObservers.has(container || null)) {
       VisibilityProxy.sObservers.set(container || null,
           new IntersectionObserver(VisibilityProxy.callback, {
         root: container,
-        rootMargin: '80px 0px 80px 0px',
+        rootMargin: '240px 0px 240px 0px',
         threshold: [0.5],
       } as any));
     }
@@ -45,18 +46,16 @@ class VisibilityProxy extends React.Component<IProps, IState> {
 
   private static callback(entries: IntersectionObserverEntry[], observer: IntersectionObserver) {
     entries.forEach(entry => {
-      if ((entry as any).isIntersecting) {
-        const cb = VisibilityProxy.sInstances.get(entry.target);
-        if (cb !== undefined) {
-          cb();
-        }
+      const cb = VisibilityProxy.sInstances.get(entry.target);
+      if (cb !== undefined) {
+        cb((entry as any).isIntersecting);
       }
     });
   }
 
   private static observe(container: HTMLElement,
                          target: HTMLElement,
-                         cb: () => void) {
+                         cb: (visible: boolean) => void) {
     VisibilityProxy.sInstances.set(target, cb);
     VisibilityProxy.getObserver(container).observe(target);
   }
@@ -79,21 +78,10 @@ class VisibilityProxy extends React.Component<IProps, IState> {
     //   act
     //   BUT: having all those controls visible (offscreen) also causes a burden when
     //   relayouting
-    if (this.state.visible) {
-      return;
-    }
-
     const node: HTMLElement = ReactDOM.findDOMNode(this);
-    VisibilityProxy.observe(this.props.container, node, () => {
-      if (!this.state.visible) {
-        VisibilityProxy.unobserve(this.props.container, node);
-        this.setState({ visible: true });
-      }
-    });
-    (window as any).requestIdleCallback(() => {
-      if (!this.state.visible) {
-        VisibilityProxy.unobserve(this.props.container, node);
-        this.setState({ visible: true });
+    VisibilityProxy.observe(this.props.container, node, (visible: boolean) => {
+      if (this.state.visible !== visible) {
+        this.setState({ visible });
       }
     });
   }
@@ -103,9 +91,13 @@ class VisibilityProxy extends React.Component<IProps, IState> {
   }
 
   public render(): JSX.Element {
-    return (this.state.visible)
-      ? this.props.content()
-      : this.props.placeholder();
+    return (
+      <div {..._.omit(this.props, ['container', 'placeholder', 'content', 'startVisible'])}>{
+        (this.state.visible)
+          ? this.props.content()
+          : this.props.placeholder()
+      }</div>
+    );
   }
 }
 

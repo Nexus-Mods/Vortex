@@ -16,6 +16,7 @@ import {truthy} from '../util/util';
 import Icon from './Icon';
 import IconBar from './IconBar';
 import HeaderCell from './table/HeaderCell';
+import { Table, TBody, TH, THead, TR } from './table/MyTable';
 import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
 
@@ -23,7 +24,6 @@ import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
-import { Table } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as SplitPane from 'react-split-pane';
 import * as Redux from 'redux';
@@ -180,16 +180,16 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           onKeyDown={this.handleKeyDown}
         >
           <Table condensed hover>
-            <thead
+            <THead
               className='table-header'
-              ref={this.setHeadRef}
+              domRef={this.setHeadRef}
               style={{ transform: 'translate(0, 0)' }}
             >
-              <tr>
+              <TR>
                 {this.mVisibleAttributes.map(this.renderHeaderField)}
                 {actionHeader}
-              </tr>
-            </thead>
+              </TR>
+            </THead>
             {this.renderBody(this.mVisibleAttributes)}
           </Table>
           {this.props.children}
@@ -205,7 +205,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const { calculatedValues, sortedRows } = this.state;
 
     if ((calculatedValues === undefined) || (sortedRows === undefined)) {
-      return <tbody />;
+      return <TBody />;
     }
 
     // TODO: forcing the first 40 items to be visible. Would be nicer to have a more dynamic
@@ -213,9 +213,9 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     //   to know the size without rendering
 
     return (
-      <tbody>
+      <TBody>
         {sortedRows.map((row, idx) => this.renderRow(row, idx < 40, visibleAttributes))}
-      </tbody>
+      </TBody>
     );
   }
 
@@ -312,7 +312,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     }
 
     return (
-      <th className={`table-${tableId} header-action`}>
+      <TH className={`table-${tableId} header-action`}>
         {
           elements.length > 0 ? (
             <IconBar
@@ -325,7 +325,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
             />
           ) : <div><p>{t('Actions')}</p></div>
         }
-      </th>
+      </TH>
       );
   }
 
@@ -732,10 +732,13 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   private selectRow = (evt: React.MouseEvent<any>) => {
     let iter = evt.target as any;
-    while (['BUTTON', 'TR', null].indexOf(iter.tagName) === -1) {
+    while ((iter !== null)
+          && (iter.tagName !== 'BUTTON')
+          && (iter.className.split(' ').indexOf('xtd') === -1)) {
       iter = iter.parentNode;
     }
-    if (iter.tagName === 'BUTTON') {
+
+    if ((iter !== null) && (iter.tagName === 'BUTTON')) {
       // don't handle if the click was on a button
       return;
     }

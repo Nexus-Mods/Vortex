@@ -8,6 +8,8 @@ import {ITableRowAction} from '../Table';
 import {Button, IconButton} from '../TooltipControls';
 import VisibilityProxy from '../VisibilityProxy';
 
+import { TD, TR } from './MyTable';
+
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { FormControl, MenuItem, SplitButton } from 'react-bootstrap';
@@ -163,33 +165,10 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   public render(): JSX.Element {
-    return (
-      <VisibilityProxy
-        startVisible={this.props.initVisible}
-        container={this.props.container}
-        placeholder={this.renderPlaceholder}
-        content={this.renderRow}
-      />
-    );
-  }
+    const { data, domRef, highlighted, onClick,
+            selected } = this.props;
 
-  private renderPlaceholder = (): JSX.Element => {
-    const { data, domRef } = this.props;
-    return (
-      <tr
-        id={data.__id}
-        ref={domRef}
-      >
-        <td>{'\u00A0'}</td>
-      </tr>
-    );
-  }
-
-  private renderRow = (): JSX.Element => {
-    const { actions, attributes, data, domRef, highlighted,
-            onClick, selected, tableId } = this.props;
-
-    const classes = [];
+    const classes = ['xtr'];
 
     if (selected) {
       classes.push('table-selected');
@@ -198,6 +177,33 @@ class TableRow extends React.Component<IRowProps, {}> {
       classes.push('table-highlighted');
     }
 
+    return (
+      <VisibilityProxy
+        id={data.__id}
+        key={data.__id}
+        className={classes.join(' ')}
+        onClick={onClick}
+        ref={domRef}
+        style={{ display: 'table-row' }}
+
+        startVisible={this.props.initVisible}
+        container={this.props.container}
+        placeholder={this.renderPlaceholder}
+        content={this.renderRow}
+      />
+    );
+  }
+
+  private renderPlaceholder = (): React.ReactNode => {
+    const { data, domRef } = this.props;
+    return (
+      <TD>{'\u00A0'}</TD>
+    );
+  }
+
+  private renderRow = (): React.ReactNode => {
+    const { actions, attributes, data, domRef, tableId } = this.props;
+
     let hasActions = false;
     if (actions !== undefined) {
       const rowActions = actions.filter((action) =>
@@ -205,43 +211,35 @@ class TableRow extends React.Component<IRowProps, {}> {
       hasActions = rowActions.length > 0;
     }
 
-    return (
-      <tr
-        id={data.__id}
-        key={data.__id}
-        className={classes.join(' ')}
-        onClick={onClick}
-        ref={domRef}
-      >
-        {attributes.map(this.renderAttribute)}
-        {
-          hasActions
-            ? (
-              <td style={{ textAlign: 'center' }}>
-                <IconBar
-                  id={`${tableId}-action-icons`}
-                  group={`${tableId}-action-icons`}
-                  instanceId={data.__id}
-                  className='table-actions'
-                  staticElements={actions}
-                  collapse={true}
-                />
-              </td>
-            ) : null
-        }
-      </tr>
-    );
+    const res = attributes.map(this.renderAttribute);
+    if (hasActions) {
+      res.push(
+        <TD
+          style={{ textAlign: 'center' }}
+          key='action-cell'
+        >
+          <IconBar
+            id={`${tableId}-${data.__id}-action-icons`}
+            group={`${tableId}-action-icons`}
+            instanceId={data.__id}
+            className='table-actions'
+            staticElements={actions}
+            collapse={true}
+          />
+        </TD>);
+    }
+    return res;
   }
 
   private renderAttribute = (attribute: ITableAttribute): JSX.Element => {
     const { t, data, rawData, tableId } = this.props;
     return (
-      <td
+      <TD
         className={`table-${tableId} cell-${attribute.id}`}
         key={attribute.id}
       >
         {this.renderCell(attribute, rawData, data[attribute.id], t)}
-      </td>
+      </TD>
     );
   }
 

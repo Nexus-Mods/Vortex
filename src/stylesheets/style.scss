@@ -107,20 +107,20 @@ body {
 .table {
   margin-bottom: 0px;
 
-  >thead>tr>th {
+  >.xthead>.xtr>.xth {
     vertical-align: top;
   }
 
-  >tbody>tr>td {
+  >.xtbody>.xtr>.xtd {
     vertical-align: middle;
   }
 
-  >thead>tr>th,
-  >thead>tr>td,
-  >tbody>tr>th,
-  >tbody>tr>td,
-  >tfoot>tr>th,
-  >tfoot>tr>td {
+  >.xthead>.xtr>.xth,
+  >.xthead>.xtr>.xtd,
+  >.xtbody>.xtr>.xth,
+  >.xtbody>.xtr>.xtd,
+  >.xtfoot>.xtr>.xth,
+  >.xtfoot>.xtr>.xtd {
     border: none;
   }
 }
@@ -1064,13 +1064,13 @@ a[role=menuitem] svg {
   overflow-y: auto;
   flex: 1 1 0%;
 
-  thead {
+  .xthead {
     color: $text-color;
     background-image: linear-gradient($brand-menu, $brand-menu), 
           linear-gradient($table-header-border-color,$table-header-border-color);
     background-clip: content-box, padding-box;
 
-    th {
+    .xth {
       padding: $table-header-border-width 0px $table-header-border-width !important;
       height: 100%;
 
@@ -1096,7 +1096,7 @@ a[role=menuitem] svg {
     }
   }
 
-  tbody {
+  .xtbody {
     background-color: $brand-menu;
   }
 }
@@ -2469,6 +2469,97 @@ a[role=menuitem] svg {
 
 // /nexus download button
 /////////////////////////
+
+////////////////////
+// table replacement
+
+.xtable {
+  background-color: $table-bg;
+
+  > .xthead,
+  > .xtbody,
+  > .xtfoot {
+    > .xtr {
+      > .xth,
+      > .xtd {
+        padding: $table-cell-padding;
+        line-height: $line-height-base;
+        vertical-align: middle;
+        border-top: 1px solid $table-border-color;
+      }
+    }
+  }
+  > .xthead > .xtr > .xth {
+    vertical-align: bottom;
+    border-bottom: 2px solid $table-border-color;
+  }
+  > .xthead:first-child {
+    > .xtr:first-child {
+      > .xth,
+      > .xtd {
+        border-top: 0;
+      }
+    }
+  }
+}
+
+.table-condensed {
+  > .xthead,
+  > .xtbody,
+  > .xtfoot {
+    > .xtr {
+      > .xth,
+      > .xtd {
+        padding: $table-condensed-cell-padding;
+      }
+    }
+  }
+}
+
+.table-bordered {
+  border: 1px solid $table-border-color;
+  > .xthead,
+  > .xtbody,
+  > .xtfoot {
+    > .xtr {
+      > .xth,
+      > .xtd {
+        border: 1px solid $table-border-color;
+      }
+    }
+  }
+
+  > .xthead > .xtr {
+    > .xth,
+    > .xtd {
+      border-bottom-width: 2px;
+    }
+  }
+}
+
+.table-striped {
+  > .xtbody > .xtr::nth-of-type(odd) {
+    background-color: $table-bg-accent;
+  }
+}
+
+.table-hover {
+  > .xtbody > .xtr:hover {
+    background-color: $table-bg-hover;
+  }
+}
+
+.table > .xthead > .xtr > .xth,
+.table > .xthead > .xtr > .xtd,
+.table > .xtbody > .xtr > .xth,
+.table > .xtbody > .xtr > .xtd,
+.table > .xtfoot > .xtr > .xth,
+.table > .xtfoot > .xtr > .xtd {
+  line-height: $line-height-base;
+}
+
+// /table replacement
+/////////////////////
 
 /////////
 // other

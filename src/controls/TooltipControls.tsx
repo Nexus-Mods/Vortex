@@ -58,9 +58,11 @@ export interface IIconButtonExtraProps {
   inverse?: boolean;
   flip?: 'horizontal' | 'vertical';
   rotate?: number;
+  rotateId?: string;
 }
 
-const iconPropNames = new Set(['spin', 'pulse', 'stroke', 'border', 'inverse', 'flip', 'rotate']);
+const iconPropNames = new Set(['spin', 'pulse', 'stroke', 'border', 'inverse',
+                               'flip', 'rotate', 'rotateId']);
 
 export type IconButtonProps = ButtonProps & IIconButtonExtraProps;
 
@@ -221,6 +223,7 @@ export interface IFontAwesomeProps {
   name: string;
   pulse?: boolean;
   rotate?: '90' | '180' | '270';
+  rotateId?: string;
   spin?: boolean;
   stack?: string;
   style?: React.CSSProperties;

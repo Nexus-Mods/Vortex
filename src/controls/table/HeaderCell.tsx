@@ -5,6 +5,7 @@ import getAttr from '../../util/getAttr';
 
 import { IconButton } from '../TooltipControls';
 
+import { TH } from './MyTable';
 import SortIndicator from './SortIndicator';
 
 import * as I18next from 'i18next';
@@ -25,7 +26,10 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
   public render(): JSX.Element {
     const { t, attribute, className, doFilter } = this.props;
     return (
-      <th className={`table-header-cell ${className}`} key={attribute.id}>
+      <TH
+        className={`table-header-cell ${className}`}
+        key={attribute.id}
+      >
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div className='flex-fill' style={{ display: 'flex', flexDirection: 'row' }}>
             <p className='flex-fill' style={{ margin: 0 }}>{t(attribute.name)}</p>
@@ -36,7 +40,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
           </div>
           {doFilter ? this.props.children : null}
         </div>
-      </th>
+      </TH>
     );
   }
 

@@ -88,6 +88,7 @@ export interface IIconProps {
   inverse?: boolean;
   flip?: 'horizontal' | 'vertical';
   rotate?: number;
+  rotateId?: string;
   svgStyle?: string;
 }
 
@@ -96,7 +97,7 @@ function renderPath(pathComp: IPath, idx: number) {
 }
 
 class Icon extends React.Component<IIconProps, {}> {
-  private mRef: Element;
+  private static sCache: { [id: string]: { width: number, height: number } } = {};
   private mCurrentSize: { width: number, height: number };
   private mTicks: number = 0;
 
@@ -144,7 +145,7 @@ class Icon extends React.Component<IIconProps, {}> {
       // messes up the z-ordering of items.
       // with svg transforms we have to provide the center of rotation ourselves
       // and we can't use relative units.
-      if (this.mRef !== undefined) {
+      if (this.mCurrentSize !== undefined) {
         const { width, height } = this.mCurrentSize;
         transforms.push(
           `rotate(${this.props.rotate}, ${Math.floor(width / 2)}, ${Math.floor(height / 2)})`);
@@ -162,7 +163,7 @@ class Icon extends React.Component<IIconProps, {}> {
         preserveAspectRatio='xMidYMid meet'
         className={classes.join(' ')}
         style={style}
-        ref={this.setRef}
+        ref={this.props.rotate && (this.mCurrentSize === undefined) ? this.setRef : undefined}
       >
         {svgStyle !== undefined ? <style type='text/css'>{svgStyle}</style> : null}
         <use xlinkHref={'#' + id} transform={transforms.join(' ')} />
@@ -172,15 +173,24 @@ class Icon extends React.Component<IIconProps, {}> {
 
   private setRef = (ref: Element) => {
     if (ref !== null) {
-      this.mRef = ref;
       const { width, height } = ref.getBoundingClientRect();
       this.mCurrentSize = { width, height };
       this.forceUpdate();
+      if (this.props.rotateId !== undefined) {
+        Icon.sCache[this.props.rotateId] = this.mCurrentSize;
+      }
     }
   }
 
   private setIcon(props: IIconProps) {
-    const set = props.set || 'vortex';
+    this.loadSet(props.set || 'vortex');
+
+    if (props.rotate && (props.rotateId !== undefined) && (this.mCurrentSize === undefined)) {
+      this.mCurrentSize = Icon.sCache[props.rotateId];
+    }
+  }
+
+  private loadSet(set: string) {
 
     if (sets[set] === undefined) {
       // different extensions don't share the sets global so check in the dom
@@ -196,13 +206,12 @@ class Icon extends React.Component<IIconProps, {}> {
       newset.id = 'iconset-' + set;
       document.getElementById('icon-sets').appendChild(newset);
 
-      log('info', 'read font', path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg'));
+      const fontPath = path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg');
+      log('info', 'read font', fontPath);
       // TODO: this does not support adding icons from extensions yet
-      fs.readFileAsync(
-        path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg'), {})
+      fs.readFileAsync(fontPath, {})
         .then(data => {
           const parser = new DOMParser();
-          log('info', 'data', data.toString());
           const xmlDoc = parser.parseFromString(data.toString(), 'text/xml');
           const ids = Array.from(xmlDoc.getElementsByTagName('symbol'))
             .map(ele => ele.getAttribute('id'));

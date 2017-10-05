@@ -21,6 +21,7 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
   public static Menu: typeof DropdownMenu = Dropdown.Menu;
   public static Toggle: typeof DropdownToggle = Dropdown.Toggle;
   private mNode: Element;
+  private mOpen: boolean = false;
 
   constructor(props: IProps) {
     super(props);
@@ -64,6 +65,7 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
         this.setState({ up: newUp });
       }
     }
+    this.mOpen = isOpen;
 
     if (this.props.onToggle) {
       this.props.onToggle.apply(this, arguments);
