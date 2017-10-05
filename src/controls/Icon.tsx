@@ -2,6 +2,7 @@ import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
+import { log } from '../util/log';
 
 interface IAttr {
   [key: string]: string;
@@ -195,11 +196,13 @@ class Icon extends React.Component<IIconProps, {}> {
       newset.id = 'iconset-' + set;
       document.getElementById('icon-sets').appendChild(newset);
 
+      log('info', 'read font', path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg'));
       // TODO: this does not support adding icons from extensions yet
       fs.readFileAsync(
-        path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg'))
+        path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg'), {})
         .then(data => {
           const parser = new DOMParser();
+          log('info', 'data', data.toString());
           const xmlDoc = parser.parseFromString(data.toString(), 'text/xml');
           const ids = Array.from(xmlDoc.getElementsByTagName('symbol'))
             .map(ele => ele.getAttribute('id'));

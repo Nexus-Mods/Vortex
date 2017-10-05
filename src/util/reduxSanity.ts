@@ -1,5 +1,7 @@
 import { setdefault } from './util';
 
+import * as Redux from 'redux';
+
 export class StateError extends Error {
   private mAction: Redux.Action;
   constructor(action: Redux.Action, message: string) {
