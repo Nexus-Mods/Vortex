@@ -33,7 +33,7 @@ interface IConnectedProps {
 interface IActionProps {
   onSetSource: (id: string, pos: { x: number, y: number }) => void;
   onSetTarget: (id: string, pos: { x: number, y: number }) => void;
-  onEditDialog: (gameId: string, referenceId: string,
+  onEditDialog: (referenceId: string,
                  reference: string, defaultType: string) => void;
   onAddRule: (referenceId: string, reference: string, type: string) => void;
   onRemoveRule: (referenceId: string, reference: string, type: string) => void;
@@ -117,7 +117,7 @@ const dependencySource: __ReactDnd.DragSourceSpec<IProps> = {
     const dest: string = (monitor.getDropResult() as any).id;
 
     if (source !== dest) {
-      props.onEditDialog(props.gameId, source, dest, 'after');
+      props.onEditDialog(source, dest, 'after');
     }
   },
 };
@@ -433,8 +433,8 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onSetSource: (id, pos) => dispatch(setSource(id, pos)),
     onSetTarget: (id, pos) => dispatch(setTarget(id, pos)),
-    onEditDialog: (gameId, pluginId, reference, defaultType) =>
-      dispatch(setCreateRule(gameId, pluginId, reference, defaultType)),
+    onEditDialog: (pluginId, reference, defaultType) =>
+      dispatch(setCreateRule(pluginId, reference, defaultType)),
     onAddRule: (pluginId, reference, ruleType) =>
       dispatch(addRule(pluginId, reference, ruleType)),
     onRemoveRule: (pluginId, reference, ruleType) =>
