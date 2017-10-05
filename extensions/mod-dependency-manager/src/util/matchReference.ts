@@ -28,7 +28,9 @@ function matchReferenceLookup(reference: IReference, mod: IModLookupInfo) {
   }
   if ((reference.versionMatch !== undefined) && (mod.version !== undefined)) {
     if (valid(mod.version)) {
-      if (!eq(mod.version, reference.versionMatch)
+      // this is a bit crappy by semvish: it will report a version like 1.2 as valid,
+      // but calling "satisfies('1.2', '1.2', true)" returns false
+      if ((mod.version !== reference.versionMatch)
           && !satisfies(mod.version, reference.versionMatch, true)) {
         return false;
       }

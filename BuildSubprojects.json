@@ -310,9 +310,9 @@
   ], [
     {
       "type": "electron-rebuild",
-      "name": "libxml-rebuild",
-      "module": "libxml",
-      "sources": ["node_modules/drivelist/build/Release/libxml.node"]
+      "name": "libxmljs-rebuild",
+      "module": "libxmljs",
+      "sources": ["node_modules/libxmljs/build/Release/xmljs.node"]
     }
   ]
 ]
