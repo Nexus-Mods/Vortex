@@ -1046,7 +1046,7 @@ a[role=menuitem] svg {
 // tables
 .table-actions {
   display: inline-flex;
-  >.btn {
+  .btn {
     @extend .btn-embed;
     @extend .hcenter;
   }

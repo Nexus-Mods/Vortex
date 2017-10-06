@@ -119,9 +119,11 @@ export class DownloadObserver {
         .catch((err) => {
           let details = err;
           if (err.http_headers !== undefined) {
-            details = (err.http_headers.nexuserror !== undefined)
-              ? err.http_headers.nexuserrorinfo
-              : err.http_headers.status;
+            if (err.http_headers.nexuserror !== undefined) {
+              details = err.http_headers.nexuserrorinfo;
+            } else if (err.http_headers.status !== undefined) {
+              details = err.http_headers.status;
+            }
           }
           log('warn', 'download failed', {details, err: util.inspect(err)});
           showError(this.mStore.dispatch, 'Download failed', details);

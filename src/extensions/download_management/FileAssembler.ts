@@ -41,26 +41,26 @@ class FileAssembler {
     return new Promise<boolean>((resolve, reject) => {
       let synced = false;
       this.mWork = this.mWork
-          .then(() =>
-            // writing at an offset beyond the file limit
-            // works on windows and linux.
-            // I'll assume it means it will work on MacOS too...
-            fs.writeAsync(this.mFD, Buffer.from(data), 0,
-                          data.length, offset))
-          .then((bytesWritten: any) => {
-            this.mWritten += bytesWritten;
-            if (this.mWritten - this.mLastLogged > 1024 * 1024) {
-              this.mLastLogged = this.mWritten;
-              synced = true;
-              return fs.fsyncAsync(this.mFD).then(() => bytesWritten);
-            } else {
-              return Promise.resolve(bytesWritten);
-            }
-          })
-          .then((bytesWritten: number) =>
-            (bytesWritten !== data.length)
-              ? reject('incomplete write')
-              : resolve(synced));
+        .then(() =>
+          // writing at an offset beyond the file limit
+          // works on windows and linux.
+          // I'll assume it means it will work on MacOS too...
+          fs.writeAsync(this.mFD, Buffer.from(data), 0,
+                        data.length, offset))
+        .then((bytesWritten: any) => {
+          this.mWritten += bytesWritten;
+          if (this.mWritten - this.mLastLogged > 1024 * 1024) {
+            this.mLastLogged = this.mWritten;
+            synced = true;
+            return fs.fsyncAsync(this.mFD).then(() => bytesWritten);
+          } else {
+            return Promise.resolve(bytesWritten);
+          }
+        })
+        .then((bytesWritten: number) =>
+          (bytesWritten !== data.length)
+            ? reject('incomplete write')
+            : resolve(synced));
       });
   }
 
@@ -68,7 +68,9 @@ class FileAssembler {
     return this.mWork
     .then(() => {
       if (this.mFD !== undefined) {
-        return fs.closeAsync(this.mFD);
+        const fd = this.mFD;
+        this.mFD = undefined;
+        return fs.closeAsync(fd);
       } else {
         return Promise.resolve();
       }

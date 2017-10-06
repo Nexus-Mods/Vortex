@@ -47,8 +47,7 @@ type FinishCallback = (paused: boolean) => void;
  * @class DownloadWorker
  */
 class DownloadWorker {
-  // buffering currently disabled, as it caused downloads to hang at the end
-  private static BUFFER_SIZE = 2 * 1024;
+  private static BUFFER_SIZE = 256 * 1024;
   private mJob: IDownloadJob;
   private mRequest: requestT.Request;
   private mProgressCB: (bytes: number) => void;
@@ -57,6 +56,7 @@ class DownloadWorker {
   private mUserAgent: string;
   private mBuffer: NodeBuffer;
   private mDataHistory: Array<{ time: number, size: number }> = [];
+  private mEnded: boolean = false;
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
@@ -83,7 +83,6 @@ class DownloadWorker {
         Range: `bytes=${job.offset}-${job.offset + job.size}`,
         'User-Agent': this.mUserAgent,
       },
-      timeout: 5000,
     })
     .on('error', (err) => this.handleError(err))
     .on('response', (response: http.IncomingMessage) => this.handleResponse(response))
@@ -93,13 +92,19 @@ class DownloadWorker {
   }
 
   public cancel() {
-    this.mRequest.abort();
-    this.mFinishCB(false);
+    if (!this.mEnded) {
+      this.mRequest.abort();
+      this.mEnded = true;
+      this.mFinishCB(false);
+    }
   }
 
   public pause() {
-    this.mRequest.abort();
-    this.mFinishCB(true);
+    if (!this.mEnded) {
+      this.mRequest.abort();
+      this.mEnded = true;
+      this.mFinishCB(true);
+    }
   }
 
   private handleError(err) {
@@ -107,11 +112,14 @@ class DownloadWorker {
     if (this.mJob.errorCB !== undefined) {
       this.mJob.errorCB(err);
     }
-    this.mRequest.abort();
-    if ((err.code === 'ESOCKETTIMEDOUT') && (this.mDataHistory.length > 0)) {
-      this.assignJob(this.mJob);
-    } else {
-      this.mFinishCB(false);
+    if (!this.mEnded) {
+      this.mRequest.abort();
+      if ((err.code === 'ESOCKETTIMEDOUT') && (this.mDataHistory.length > 0)) {
+        this.assignJob(this.mJob);
+      } else {
+        this.mEnded = true;
+        this.mFinishCB(false);
+      }
     }
   }
 
@@ -127,9 +135,6 @@ class DownloadWorker {
       this.mProgressCB(this.mBuffer.length);
     }
 
-    if (this.mJob.completionCB !== undefined) {
-      this.mJob.completionCB();
-    }
     if (this.mJob.size > 0) {
       // how is this possible?
       log('error', 'download was incomplete', {
@@ -140,7 +145,14 @@ class DownloadWorker {
       });
       this.assignJob(this.mJob);
     } else {
-      this.mFinishCB(false);
+      if (this.mJob.completionCB !== undefined) {
+        this.mJob.completionCB();
+      }
+      if (!this.mEnded) {
+        this.mRequest.abort();
+        this.mFinishCB(false);
+        this.mEnded = true;
+      }
     }
   }
 
@@ -151,7 +163,10 @@ class DownloadWorker {
     // it. If it contains any redirect, the browser window will follow it and initiate a
     // download.
     if (response.statusCode >= 300) {
-      this.handleError({ message: response.statusMessage, http_headers: response.headers });
+      this.handleError({
+        message: response.statusMessage,
+        http_headers: JSON.stringify(response.headers),
+      });
       return;
     }
 
@@ -167,6 +182,11 @@ class DownloadWorker {
         if (sizeMatch.length > 1) {
           size = parseInt(sizeMatch[3], 10);
         }
+      }
+      if (size < this.mJob.size + this.mJob.offset) {
+        // on the first request it's possible we requested more than the file size if
+        // the file is smaller than 1MB. offset should always be 0 here
+        this.mJob.size = size - this.mJob.offset;
       }
 
       let fileName;
