@@ -21,7 +21,14 @@ function findInstances(games: {[gameId: string]: types.IDiscoveryResult},
     .filter(dirName => parseMOIni(games, path.join(base, dirName))
                             .then(moConfig => moConfig.game === gameId)
                             .catch(err => false))
-    .then((instances: string[]) => instances);
+    .then((instances: string[]) => instances)
+    .catch(err => {
+      if (err.code === 'ENOENT') {
+        return [];
+      } else {
+        return Promise.reject(err);
+      }
+    });
 }
 
 export default findInstances;
