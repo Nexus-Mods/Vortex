@@ -1,12 +1,12 @@
 import { addRule } from '../actions/userlist';
-import * as actions from '../actions/userlistEdit';
+import { closeDialog } from '../actions/userlistEdit';
 import { ILOOTPlugin } from '../types/ILOOTList';
 
 import * as React from 'react';
 import { Button, FormControl, Modal } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
-import { ComponentEx, tooltip } from 'vortex-api';
+import { actions, ComponentEx, tooltip } from 'vortex-api';
 
 type RuleType = 'after' | 'requires' | 'incompatible';
 
@@ -104,7 +104,12 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const { onAddRule, rules } = this.props;
     const { dialog } = this.state;
 
-    onAddRule(dialog.pluginId, dialog.reference, dialog.type);
+    const pluginRules = rules.find(iter => iter.name === dialog.pluginId);
+
+    if ((pluginRules[dialog.type] || []).indexOf(dialog.reference) === -1) {
+      // don't set a duplicate of the rule
+      onAddRule(dialog.pluginId, dialog.reference, dialog.type);
+    }
 
     this.close();
   }
@@ -124,7 +129,7 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
-    onCloseDialog: () => dispatch(actions.closeDialog()),
+    onCloseDialog: () => dispatch(closeDialog()),
     onAddRule: (pluginId, referenceId, type) =>
       dispatch(addRule(pluginId, referenceId, type)),
   };
