@@ -620,8 +620,8 @@ class InstallManager {
     this.reportUnsupported(api, instructionGroups.unsupported, archivePath);
 
     return this.processMKDir(instructionGroups.mkdir, destinationPath)
-      .then(() => this.extractArchive(api.store, archivePath, tempPath, destinationPath,
-                               instructionGroups.copy))
+      .then(() => this.extractArchive(api, archivePath, tempPath, destinationPath,
+                                      instructionGroups.copy))
       .then(() => this.processGenerateFiles(instructionGroups.generatefile,
                                             destinationPath))
       .then(() => this.processIniEdits(instructionGroups.iniedit, destinationPath))
@@ -867,13 +867,14 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
    * @param {string} destinationPath path to install to
    */
   private extractArchive(
-    store: Redux.Store<any>,
+    api: IExtensionApi,
     archivePath: string,
     tempPath: string,
     destinationPath: string,
     copies: IInstruction[]): Promise<void> {
     let normalize: Normalize;
 
+    const missingFiles: string[] = [];
     return fs.ensureDirAsync(destinationPath)
         .then(() => getNormalizeFunc(destinationPath))
         .then((normalizeFunc: Normalize) => {
@@ -882,11 +883,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
         .then(() => {
           const sourceMap: {[src: string]: string[]} =
               copies.reduce((prev, copy) => {
-                if (prev[copy.source] === undefined) {
-                  prev[copy.source] = [copy.destination];
-                } else {
-                  prev[copy.source].push(copy.destination);
-                }
+                setdefault(prev, copy.source, []).push(copy.destination);
                 return prev;
               }, {});
           // for each source, copy or rename to destination(s)
@@ -899,11 +896,31 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
               return fs.ensureDirAsync(path.dirname(destPath))
                 .then(() => idx === len - 1
                   ? fs.renameAsync(sourcePath, destPath)
-                  : fs.copyAsync(sourcePath, destPath));
+                  : fs.copyAsync(sourcePath, destPath))
+                .catch(err => {
+                  if (err.code === 'ENOENT') {
+                    missingFiles.push(destRel);
+                  } else {
+                    return Promise.reject(err);
+                  }
+                });
             });
           });
         })
-        .then(() => undefined);
+        .then(() => {
+          if (missingFiles.length > 0) {
+            api.showErrorNotification(api.translate('Invalid installer'),
+              api.translate('The installer in "{{name}}" tried to install files that were '
+                            + 'not part of the archive.\nThis is a bug in the mod, please '
+                            + 'report it to the mod author.\n'
+                            + 'Please note: NMM silently ignores this kind of errors so you '
+                            + 'might get this message for mods that appear to install '
+                            + 'fine with NMM. The mod will likely work, at least partially.',
+                          { replace: {name: path.basename(archivePath)} })
+              + '\n\n' + missingFiles.map(name => '- ' + name).join('\n')
+            , { allowReport: false });
+          }
+        });
   }
 }
 
