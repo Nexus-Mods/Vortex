@@ -188,6 +188,10 @@ export function onStartInstallDownload(api: IExtensionApi,
   const store = api.store;
   const state = store.getState();
   const download: IDownload = state.persistent.downloads.files[downloadId];
+  if (download === undefined) {
+    api.showErrorNotification('unknown download', { downloadId });
+    return;
+  }
   const inPaths = state.settings.mods.paths;
   const downloadPath: string = resolvePath('download', inPaths, download.game);
   const fullPath: string = path.join(downloadPath, download.localPath);
