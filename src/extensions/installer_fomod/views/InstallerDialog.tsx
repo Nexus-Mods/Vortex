@@ -31,6 +31,8 @@ interface IGroupState {
   selectedPlugins: number[];
 }
 
+const nop = () => undefined;
+
 class Group extends React.PureComponent<IGroupProps, IGroupState> {
   private mValidate: (selected: number[]) => string;
   constructor(props: IGroupProps) {
@@ -144,7 +146,8 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             value={plugin.id}
             name={group.id.toString()}
             checked={isSelected}
-            onChange={readOnly ? this.showDescription : this.select}
+            onClick={this.showDescription}
+            onChange={readOnly ? nop : this.select}
           >{plugin.name}
           </Radio>
         );
@@ -167,7 +170,8 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             value={plugin.id}
             checked={isSelected}
             disabled={plugin.type === 'NotUsable'}
-            onChange={readOnly ? this.showDescription : this.select}
+            onClick={this.showDescription}
+            onChange={readOnly ? nop : this.select}
           >{plugin.name}
           </Checkbox>
         );
