@@ -223,6 +223,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     return (
       <div style={{ textAlign: 'center', width: '100%' }}>
         <tooltip.ToggleButton
+          id={`quick-edit-${quickEdit.plugin}`}
           onIcon='square-check'
           offIcon='square-empty'
           state={thisEnabled}

@@ -17,6 +17,7 @@ import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import * as update from 'immutability-helper';
 import {SimpleMessage} from 'loot';
+import * as path from 'path';
 import * as React from 'react';
 import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
 import {translate} from 'react-i18next';
@@ -126,7 +127,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       edit: {},
       isSortable: true,
-      calc: (plugin: IPluginCombined) => toHex(plugin.modIndex),
+      calc: (plugin: IPluginCombined) => {
+        if (plugin.eslIndex === undefined) {
+          return toHex(plugin.modIndex);
+        } else {
+          return `${toHex(plugin.modIndex)} (${plugin.eslIndex})`;
+        }
+      },
       placement: 'table',
     },
     {
@@ -392,7 +399,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private modIndices(pluginObjects: ILoadOrder[]): { [pluginId: string]: number } {
+  private modIndices(pluginObjects: ILoadOrder[]): { [pluginId: string]: {
+    modIndex: number, eslIndex?: number } } {
     // overly complicated?
     // This sorts the whole plugin list by the load order, inserting the installed
     // native plugins at the top in their hard-coded order. Then it assigns
@@ -416,11 +424,23 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
 
     let modIndex = 0;
+    let eslIndex = 0;
     const res = {};
     byLO.forEach((plugin: IPluginCombined) => {
-      res[plugin.name] = (plugin.enabled || plugin.isNative)
-        ? modIndex++
-        : -1;
+      if (!plugin.enabled && !plugin.isNative) {
+        res[plugin.name] = { modIndex: -1 };
+      }
+
+      if (path.extname(plugin.name) === '.esl') {
+        res[plugin.name] = {
+          modIndex: 0xFE,
+          eslIndex: eslIndex++,
+        };
+      } else {
+        res[plugin.name] = {
+          modIndex: modIndex++,
+        };
+      }
     });
     return res;
   }
@@ -448,7 +468,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const result: { [id: string]: IPluginCombined } = {};
     pluginObjects.forEach((plugin: IPluginCombined) => {
       result[plugin.name] = plugin;
-      result[plugin.name].modIndex = modIndices[plugin.name];
+      result[plugin.name].modIndex = modIndices[plugin.name].modIndex;
+      result[plugin.name].eslIndex = modIndices[plugin.name].eslIndex;
     });
 
     return result;
@@ -472,7 +493,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
     const modIndices = this.modIndices(pluginsFlat);
     Object.keys(modIndices).forEach(pluginId => {
-      updateSet[pluginId].modIndex = { $set: modIndices[pluginId] };
+      updateSet[pluginId].modIndex = { $set: modIndices[pluginId].modIndex };
+      updateSet[pluginId].eslIndex = { $set: modIndices[pluginId].eslIndex };
     });
 
     this.setState(update(this.state, {

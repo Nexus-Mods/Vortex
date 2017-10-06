@@ -68,4 +68,5 @@ export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed & IPluginLoot
    * @type {number}
    */
   modIndex: number,
+  eslIndex?: number,
 };
