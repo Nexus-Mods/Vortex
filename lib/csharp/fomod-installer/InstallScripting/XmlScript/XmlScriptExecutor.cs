@@ -168,13 +168,20 @@ namespace FomodInstaller.Scripting.XmlScript
         {
             foreach (OptionGroup group in step.OptionGroups)
             {
+                bool setFirst = group.Type == OptionGroupType.SelectExactlyOne;
                 foreach (Option option in group.Options)
                 {
                     OptionType type = resolveOptionType(option);
                     if ((type == OptionType.Required) || (type == OptionType.Recommended))
                     {
                         enableOption(option);
+                        setFirst = false;
                     }
+                }
+
+                if (setFirst)
+                {
+                    enableOption(group.Options[0]);
                 }
             }
         }

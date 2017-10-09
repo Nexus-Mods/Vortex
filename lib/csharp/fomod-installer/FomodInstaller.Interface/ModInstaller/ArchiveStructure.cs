@@ -14,7 +14,30 @@ namespace FomodInstaller.Interface
     public class ArchiveStructure
     {
         private FileTree m_ftFiles;
-        private ISet<string> m_setIgnore = new HashSet<string> { "__MACOSX" };
+        private static IList<string> m_lstIgnore = new List<string> { "^__MACOSX" };
+        private static ISet<string> m_setIgnore = new HashSet<string>(m_lstIgnore);
+
+        public static string FindPathPrefix(IList<string> fileList, IList<string> expressions)
+        {
+            Regex skipExpression = new Regex(string.Join("|", m_lstIgnore), RegexOptions.IgnoreCase);
+            Regex matchExpression = new Regex(string.Join("|", expressions), RegexOptions.IgnoreCase);
+            int index = 0;
+            string res = fileList.First(filePath => {
+                if (skipExpression.IsMatch(filePath))
+                {
+                    return false;
+                }
+                Match match = matchExpression.Match(filePath.Replace('\\', '/'));
+                if (match.Success)
+                {
+                    index = match.Index;
+                }
+                return match.Success;
+            });
+            return (res != null)
+                ? res.Substring(0, index)
+                : "";
+        }
 
         public ArchiveStructure(IEnumerable<string> files)
         {
@@ -53,7 +76,7 @@ namespace FomodInstaller.Interface
                     stkPaths.Push(Path.Combine(strSourcePath, strDirectory));
                     if (dirExpression.IsMatch(strDirectory))
                     {
-                        return strSourcePath;
+                      return strSourcePath;
                     }
                 }
 
@@ -61,7 +84,7 @@ namespace FomodInstaller.Interface
                 {
                     if (fileExpression.IsMatch(strFile))
                     {
-                        return strSourcePath;
+                      return strSourcePath;
                     }
                 }
             }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FomodInstaller.Interface;
 using FomodInstaller.Scripting;
+using System.Text.RegularExpressions;
 
 namespace FomodInstaller.ModInstaller
 {
@@ -57,12 +58,16 @@ namespace FomodInstaller.ModInstaller
         /// This will simulate the mod installation and decide installation choices and files final paths.
         /// </summary>
         /// <param name="modArchiveFileList">The list of files inside the mod archive.</param>
-        /// <param name="gameSpecificStopFolders">The list of game specific stop folders.</param>
+        /// <param name="stopPatterns">patterns matching files or directories that should be at the top of the directory structure.</param>
         /// <param name="scriptPath">The path to the uncompressed install script file, if any.</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
         /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
-        public async override Task<Dictionary<string, object>> Install(List<string> modArchiveFileList, List<string> gameSpecificStopFolders,
-            string scriptPath, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
+        public async override Task<Dictionary<string, object>> Install(List<string> modArchiveFileList,
+                                                                       List<string> stopPatterns,
+                                                                       string pluginPath,
+                                                                       string scriptPath,
+                                                                       ProgressDelegate progressDelegate,
+                                                                       CoreDelegates coreDelegate)
         {
             IList<Instruction> Instructions = new List<Instruction>();
             ModFormatManager FormatManager = new ModFormatManager();
@@ -76,10 +81,8 @@ namespace FomodInstaller.ModInstaller
             {
                 // Currently this does nothing.
             }
-            if (!string.IsNullOrEmpty(scriptPath) && !string.IsNullOrEmpty(ScriptFilePath))
-                ScriptFilePath = Path.Combine(scriptPath, ScriptFilePath);
             IScriptType ScriptType = await GetScriptType(modArchiveFileList);
-            Mod modToInstall = new Mod(modArchiveFileList, gameSpecificStopFolders, ScriptFilePath, scriptPath, ScriptType);
+            Mod modToInstall = new Mod(modArchiveFileList, stopPatterns, ScriptFilePath, scriptPath, ScriptType);
             await modToInstall.Initialize();
 
             progressDelegate(50);
@@ -87,10 +90,23 @@ namespace FomodInstaller.ModInstaller
             if (modToInstall.HasInstallScript)
             {
                 Instructions = await ScriptedModInstall(modToInstall, progressDelegate, coreDelegate);
+                // f***ing ugly hack, but this is in NMM so...
+                if (pluginPath != null)
+                {
+                    string pattern = pluginPath + Path.DirectorySeparatorChar;
+                    Instructions = Instructions.Select(instruction =>
+                    {
+                        Instruction output = instruction;
+                        if ((output.type == "copy") && output.destination.StartsWith(pattern, System.StringComparison.InvariantCultureIgnoreCase)) {
+                            output.destination = output.destination.Substring(pattern.Length);
+                        }
+                        return output;
+                    }).ToList();
+                }
             }
             else
             {
-                Instructions = await BasicModInstall(modArchiveFileList, gameSpecificStopFolders, progressDelegate, coreDelegate);
+                Instructions = await BasicModInstall(modArchiveFileList, stopPatterns, progressDelegate, coreDelegate);
             }
 
             progressDelegate(100);
@@ -139,15 +155,16 @@ namespace FomodInstaller.ModInstaller
         /// This will assign all files to the proper destination.
         /// </summary>
         /// <param name="fileList">The list of files inside the mod archive.</param>
+        /// <param name="stopPatterns">patterns matching files or directories that should be at the top of the directory structure.</param>
         /// <param name="progressDelegate">A delegate to provide progress feedback.</param>
         /// <param name="coreDelegate">A delegate for all the interactions with the js core.</param>
-        protected async Task<List<Instruction>> BasicModInstall(List<string> fileList, List<string> gameSpecificStopFolders, ProgressDelegate progressDelegate, CoreDelegates coreDelegate)
+        protected async Task<List<Instruction>> BasicModInstall(List<string> fileList,
+                                                                List<string> stopPatterns,
+                                                                ProgressDelegate progressDelegate,
+                                                                CoreDelegates coreDelegate)
         {
             List<Instruction> FilesToInstall = new List<Instruction>();
-            ArchiveStructure arch = new ArchiveStructure(fileList);
-            // TODO: This is very gamebryo-centric
-            string prefix = arch.FindPathPrefix(gameSpecificStopFolders,
-                                                new string[] { @".*\.esp", @".*\.esm" });
+            string prefix = ArchiveStructure.FindPathPrefix(fileList, stopPatterns);
 
             await Task.Run(() =>
             {

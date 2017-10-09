@@ -25,7 +25,7 @@ namespace FomodInstaller.Interface
         private string FomodRoot = "fomod";
         private string FomodScreenshotPath = "fomod/screenshot";
         private IList<string> ModFiles;
-        private IList<string> StopFolders;
+        private IList<string> StopPatterns;
         private string ScreenshotFilesPath = string.Empty;
         private string InstallScriptPath = null;
         private string PathPrefix = null;
@@ -111,14 +111,16 @@ namespace FomodInstaller.Interface
         /// This provides interaction with the mod files.
         /// </summary>
         /// <param name="listModFiles">The list of files inside the mod archive.</param>
-        /// <param name="gameSpecificStopFolders">The list of game specific stop folders.</param>
+        /// <param name="stopPatterns">patterns matching files or directories that should be at the top of the directory structure.</param>
         /// <param name="installScriptPath">The path to the uncompressed install script file, if any.</param>
         /// <param name="tempFolderPath">Temporary path where install scripts can work.</param>
         /// <param name="scriptType">The script type, if any.</param>
-        public Mod(List<string> listModFiles, List<string> gameSpecificStopFolders, string installScriptPath, string tempFolderPath, IScriptType scriptType)
+        public Mod(List<string> listModFiles,
+                   List<string> stopPatterns,
+                   string installScriptPath, string tempFolderPath, IScriptType scriptType)
         {
             ModFiles = listModFiles;
-            StopFolders = gameSpecificStopFolders;
+            StopPatterns = stopPatterns;
             GetScreenshotPath(listModFiles);
             InstallScriptPath = installScriptPath;
             TempPath = tempFolderPath;
@@ -141,18 +143,19 @@ namespace FomodInstaller.Interface
             {
                 await Task.Run(() =>
                 {
-                    scriptData = FileSystem.ReadAllBytes(InstallScriptPath);
-                });
-
-                await Task.Run(() =>
-                {
+                    scriptData = FileSystem.ReadAllBytes(Path.Combine(TempPath, InstallScriptPath));
                     ModInstallScript = InstallScriptType.LoadScript(TextUtil.ByteToString(scriptData));
-                });
-
-                await Task.Run(() =>
-                {
-                    ArchiveStructure arch = new ArchiveStructure(ModFiles);
-                    PathPrefix = arch.FindPathPrefix(StopFolders, new string[] { @".*\.esp", @".*\.esm" });
+                    // when we have an install script, do we really assume that this script uses paths relative
+                    // to what our heuristics assumes is the top level directory?
+                    int offset = InstallScriptPath.IndexOf(Path.Combine("fomod", "ModuleConfig.xml"),
+                                                           StringComparison.InvariantCultureIgnoreCase);
+                    if (offset == -1)
+                    {
+                        PathPrefix = ArchiveStructure.FindPathPrefix(ModFiles, StopPatterns);
+                    } else
+                    {
+                        PathPrefix = InstallScriptPath.Substring(0, offset);
+                    }
                 });
             }
         }

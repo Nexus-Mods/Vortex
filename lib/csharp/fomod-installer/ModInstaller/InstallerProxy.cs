@@ -32,7 +32,8 @@ namespace FomodInstaller.ModInstaller
         public async Task<object> Install(dynamic input)
         {
             object[] files = (object[])input.files;
-            object[] stopFolders = (object[])input.topLevelDirectories;
+            object[] stopPatterns = (object[])input.stopPatterns;
+            object pluginPath = input.pluginPath;
             // this is actually the temporary path where the files requested in TestSupported
             // were put.
             string destinationPath = (string)input.scriptPath;
@@ -40,7 +41,8 @@ namespace FomodInstaller.ModInstaller
             CoreDelegates coreDelegates = new CoreDelegates(input.coreDelegates);
             return await mInstaller.Install(
                 new List<string>(files.Cast<string>()),
-                new List<string>(stopFolders.Cast<string>()),
+                new List<string>(stopPatterns.Cast<string>()),
+                (string)pluginPath,
                 destinationPath,
                 (int percent) => progressCB(percent),
                 coreDelegates
