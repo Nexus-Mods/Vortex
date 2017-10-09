@@ -138,7 +138,10 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
           size: stats.size,
           type: type || path.extname(filePath).slice(1),
         });
-      });
+      })
+      .catch(err => err.code === 'ENOENT'
+        ? Promise.resolve()
+        : Promise.reject(err));
   }
 
   private dropFeedback = (type: ControlMode, feedbackFilePaths: string[]) => {

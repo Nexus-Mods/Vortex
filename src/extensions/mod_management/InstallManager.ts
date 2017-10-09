@@ -617,6 +617,7 @@ class InstallManager {
     }
 
     const instructionGroups = this.transformInstructions(result.instructions);
+    log('debug', 'installer instructions', instructionGroups);
     this.reportUnsupported(api, instructionGroups.unsupported, archivePath);
 
     return this.processMKDir(instructionGroups.mkdir, destinationPath)
@@ -899,7 +900,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
                   : fs.copyAsync(sourcePath, destPath))
                 .catch(err => {
                   if (err.code === 'ENOENT') {
-                    missingFiles.push(destRel);
+                    missingFiles.push(srcRel);
                   } else {
                     return Promise.reject(err);
                   }

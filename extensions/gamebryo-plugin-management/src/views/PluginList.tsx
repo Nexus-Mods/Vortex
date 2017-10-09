@@ -377,7 +377,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { loadOrder, onSetPluginEnabled, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
-      if (plugins[key].isNative) {
+      if ((plugins[key] === undefined) || plugins[key].isNative) {
         return;
       }
       if (!util.getSafe(loadOrder, [key, 'enabled'], false)) {
@@ -390,7 +390,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { loadOrder, onSetPluginEnabled, plugins } = this.props;
 
     pluginIds.forEach((key: string) => {
-      if (plugins[key].isNative) {
+      if ((plugins[key] === undefined) || plugins[key].isNative) {
         return;
       }
       if (util.getSafe<boolean>(loadOrder, [key, 'enabled'], false)) {

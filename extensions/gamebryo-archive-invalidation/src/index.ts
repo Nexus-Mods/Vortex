@@ -34,17 +34,16 @@ function testArchivesAge(store: Redux.Store<types.IState>) {
                     'There is no drawback to doing this.',
           },
           severity: 'warning',
-          automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
-                          return Promise.map(files,
-                                             file => fs.utimesAsync(
-                                                 path.join(gamePath, file),
-                                                 age.getTime() / 1000,
-                                                 age.getTime() / 1000))
-                              .then((stats: any) => {
-                                fixResolve();
-                                return Promise.resolve(undefined);
-                              });
-                        }),
+          automaticFix: () => new Promise<void>(
+                  (fixResolve, fixReject) =>
+                      Promise.map(files, file => fs.utimesAsync(
+                                             path.join(gamePath, file),
+                                             age.getTime() / 1000,
+                                             age.getTime() / 1000))
+                          .then((stats: any) => {
+                            fixResolve();
+                            return Promise.resolve(undefined);
+                          })),
         });
       })
       .catch((err: Error) => {

@@ -32,10 +32,7 @@ function getAllFiles(basePath: string, mods: types.IMod[]): Promise<IFileMap> {
     return util.walk(modPath, (iterPath: string, stat: fs.Stats) => {
       if (stat.isFile()) {
         const relPath = path.relative(modPath, iterPath);
-        if (files[relPath] === undefined) {
-          files[relPath] = [];
-        }
-        files[relPath].push(mod);
+        util.setdefault(files, relPath.toLowerCase(), []).push(mod);
       }
       return Promise.resolve();
     });

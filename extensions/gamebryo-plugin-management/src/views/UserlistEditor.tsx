@@ -104,7 +104,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const { onAddRule, rules } = this.props;
     const { dialog } = this.state;
 
-    const pluginRules = rules.find(iter => iter.name === dialog.pluginId);
+    const pluginRules = rules.find(iter => iter.name === dialog.pluginId) || {};
 
     if ((pluginRules[dialog.type] || []).indexOf(dialog.reference) === -1) {
       // don't set a duplicate of the rule

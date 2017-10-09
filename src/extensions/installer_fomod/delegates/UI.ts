@@ -31,7 +31,6 @@ class UI extends DelegateBase {
   }
 
   public startDialog = (info: IInstallerInfo, callback: (err) => void) => {
-    log('debug', 'startDialog called', inspect(info, true, null));
     this.mContinueCB = info.cont;
     this.mStateCB = info.select;
     this.mCancelCB = info.cancel;
@@ -49,7 +48,6 @@ class UI extends DelegateBase {
   }
 
   public endDialog = (dummy, callback: (err) => void) => {
-    log('debug', 'endDialog called');
     try {
       this.api.store.dispatch(endDialog());
       callback(null);
@@ -64,7 +62,6 @@ class UI extends DelegateBase {
   }
 
   public updateState = (state: IInstallerState, callback: (err) => void) => {
-    log('debug', 'updateState', inspect(state));
     try {
       this.api.store.dispatch(setDialogState(state));
       callback(null);

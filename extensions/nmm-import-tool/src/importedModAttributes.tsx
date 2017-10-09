@@ -68,7 +68,7 @@ export const FILES: types.ITableAttribute = {
   name: 'Mod files',
   description: 'The number of files installed by this mod',
   icon: 'level-up',
-  calc: (mod: IModEntry) => mod.fileEntries.length,
+  calc: (mod: IModEntry) => (mod.fileEntries || []).length,
   placement: 'detail',
   isToggleable: true,
   isSortable: true,

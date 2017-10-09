@@ -426,7 +426,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     return parseMOIni(discovered, importPath)
       .then(moConfig => {
         this.nextState.importMOConfig = moConfig;
-        return readModEntries(moConfig.modPath, mods);
+        return (moConfig.modPath !== undefined)
+          ? readModEntries(moConfig.modPath, mods)
+          : [];
       })
       .then(modEntries => {
         this.nextState.modsToImport = modEntries.reduce((prev, value) => {

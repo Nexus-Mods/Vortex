@@ -43,6 +43,9 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
                           onRemoveDownloads: (name: string[]) => void) {
   return fs.ensureDirAsync(downloadPath)
     .then(() => fs.readdirAsync(downloadPath))
+    .filter((filePath: string) =>
+      fs.statAsync(path.join(downloadPath, filePath))
+      .then(stat => !stat.isDirectory()).catch(() => false))
     .then((downloadNames: string[]) => {
       const addedDLs = downloadNames.filter((name: string) => knownDLs.indexOf(name) === -1);
       const removedDLs = knownDLs.filter((name: string) => downloadNames.indexOf(name) === -1);
