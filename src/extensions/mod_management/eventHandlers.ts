@@ -15,6 +15,7 @@ import {loadActivation, saveActivation} from './util/activationStore';
 import {getGame} from '../gamemode_management/index';
 import {currentGameDiscovery} from '../gamemode_management/selectors';
 import {setModEnabled} from '../profile_management/actions/profiles';
+import {IProfile} from '../profile_management/types/IProfile';
 
 import allTypesSupported from './util/allTypesSupported';
 import refreshMods from './util/refreshMods';
@@ -115,6 +116,43 @@ export function onPathsChanged(api: IExtensionApi,
   }
 }
 
+function undeploy(api: IExtensionApi,
+                  activators: IDeploymentMethod[],
+                  gameMode: string,
+                  mod: IMod,
+                  callback?: (error: Error) => void): Promise<void> {
+  const store = api.store;
+  const state: IState = store.getState();
+
+  const discovery = state.settings.gameMode.discovered[gameMode];
+  const game = getGame(gameMode);
+  const modPaths = game.getModPaths(discovery.path);
+  const modTypes = Object.keys(modPaths);
+
+  const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
+  // TODO: can only use one activator that needs to support the whole game
+  const activator: IDeploymentMethod = activatorId !== undefined
+    ? activators.find(act => act.id === activatorId)
+    : activators.find(act => allTypesSupported(act, state, gameMode, modTypes) === undefined);
+
+  const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
+
+  if (discovery === undefined) {
+    // if the game hasn't been discovered we can't deploy, but that's not really a problem
+    return Promise.resolve(callback(null));
+  }
+
+  const dataPath = modPaths[mod.type];
+  return loadActivation(api, mod.type, dataPath)
+    .then(lastActivation => activator.prepare(dataPath, false, lastActivation))
+    .then(() => (mod !== undefined)
+      ? activator.deactivate(installationPath, dataPath, mod)
+      : Promise.resolve())
+    .then(() => activator.finalize(dataPath))
+    .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation))
+    .catch(err => callback(err));
+}
+
 export function onRemoveMod(api: IExtensionApi,
                             activators: IDeploymentMethod[],
                             gameMode: string,
@@ -135,43 +173,19 @@ export function onRemoveMod(api: IExtensionApi,
   // links in the mod directory
   const profileId =
     getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameMode], undefined);
-  const profile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
+  const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
 
-  store.dispatch(setModEnabled(profile.id, modId, false));
+  const wasEnabled = getSafe(profile, ['modState', modId, 'enabled'], false);
 
-  const discovery = state.settings.gameMode.discovered[gameMode];
-  const game = getGame(gameMode);
-  const modPaths = game.getModPaths(discovery.path);
-  const modTypes = Object.keys(modPaths);
-
-  const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
-  // TODO: can only use one activator that needs to support the whole game
-  const activator: IDeploymentMethod = activatorId !== undefined
-    ? activators.find(act => act.id === activatorId)
-    : activators.find(act => allTypesSupported(act, state, gameMode, modTypes) === undefined);
+  store.dispatch(setModEnabled(profileId, modId, false));
 
   const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
 
   // remove from state first, otherwise if the deletion takes some time it will appear as if nothing
   // happened
-  store.dispatch(removeMod(gameMode, modId));
+  store.dispatch(removeMod(gameMode, mod.id));
 
-  if (discovery === undefined) {
-    // if the game hasn't been discovered we can't deploy, but that's not really a problem
-    return callback(null);
-  }
-
-  Promise.each(modTypes, typeId => {
-    const dataPath = modPaths[typeId];
-    loadActivation(api, typeId, dataPath)
-      .then(lastActivation => activator.prepare(dataPath, false, lastActivation))
-      .then(() => mod !== undefined
-        ? activator.deactivate(installationPath, dataPath, mod)
-        : Promise.resolve())
-      .then(() => activator.finalize(dataPath))
-      .then(newActivation => saveActivation(typeId, state.app.instanceId, dataPath, newActivation))
-      .catch(err => callback(err));
-  })
+  (wasEnabled ? undeploy(api, activators, gameMode, mod, callback) : Promise.resolve())
   .then(() => truthy(mod)
     ? fs.removeAsync(path.join(installationPath, mod.installationPath))
         .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))

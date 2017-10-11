@@ -27,6 +27,9 @@ function emptyManifest(instance: string): IDeploymentManifest {
 }
 
 function readManifest(data: string): IDeploymentManifest {
+  if (data === '') {
+    return undefined;
+  }
   let parsed = JSON.parse(data);
   let lastVersion = 0;
   while (lastVersion < CURRENT_VERSION) {
@@ -100,6 +103,9 @@ export function loadActivation(api: IExtensionApi, modType: string,
         ? emptyManifest(instanceId)
         : Promise.reject(err))
       .then(tagObject => {
+        if (tagObject === undefined) {
+          tagObject = emptyManifest(instanceId);
+        }
         return ((tagObject.instance !== instanceId) && (tagObject.files.length > 0))
            ? queryPurge(api, modPath, tagObject.files)
               .then(() => saveActivation(modType, state.app.instanceId, modPath, []))
