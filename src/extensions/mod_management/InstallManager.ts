@@ -860,6 +860,18 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
         });
     });
   }
+
+  private transferFile(source: string, destination: string, move: boolean): Promise<void> {
+    const command = move ? fs.renameAsync : fs.copyAsync;
+    return fs.ensureDirAsync(path.dirname(destination))
+      .then(() => command(source, destination))
+      .catch(err => {
+        return err.code === 'EPERM'
+        ? Promise.delay(100).then(() => command(source, destination))
+        : Promise.reject(err);
+      });
+  }
+
   /**
    * extract an archive
    *
@@ -888,16 +900,13 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
                 return prev;
               }, {});
           // for each source, copy or rename to destination(s)
-          return Promise.map(Object.keys(sourceMap), srcRel => {
+          return Promise.mapSeries(Object.keys(sourceMap), srcRel => {
             const sourcePath = path.join(tempPath, srcRel);
             // need to do this sequentially, otherwise we can't use the idx to
             // decide between rename and copy
             return Promise.mapSeries(sourceMap[srcRel], (destRel, idx, len) => {
               const destPath = path.join(destinationPath, destRel);
-              return fs.ensureDirAsync(path.dirname(destPath))
-                .then(() => idx === len - 1
-                  ? fs.renameAsync(sourcePath, destPath)
-                  : fs.copyAsync(sourcePath, destPath))
+              return this.transferFile(sourcePath, destPath, idx === len - 1)
                 .catch(err => {
                   if (err.code === 'ENOENT') {
                     missingFiles.push(srcRel);

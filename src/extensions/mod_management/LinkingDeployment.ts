@@ -294,6 +294,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
           // file, so continuing could cause data loss
           if (err.code === 'ENOENT') {
             return undefined;
+          } else if (err.code === 'EBUSY') {
+            return Promise.delay(100).then(
+              () => fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG));
           } else {
             Promise.reject(err);
           }
