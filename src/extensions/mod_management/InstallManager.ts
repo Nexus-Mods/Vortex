@@ -168,7 +168,7 @@ class InstallManager {
           return Promise.reject(
             new ProcessCanceled('You need to select a game before installing this mod'));
         }
-        installContext = new InstallContext(gameId, api.store.dispatch);
+        installContext = new InstallContext(gameId, api.store);
         installContext.startIndicator(baseName);
         return api.lookupModMeta({ filePath: archivePath, gameId });
       })

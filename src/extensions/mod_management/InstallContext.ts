@@ -3,6 +3,9 @@ import { INotification } from '../../types/INotification';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 
+import {setModEnabled} from '../profile_management/actions/profiles';
+import {activeProfile} from '../profile_management/selectors';
+
 import {
   addMod,
   removeMod,
@@ -22,7 +25,6 @@ type IOnAddMod = (mod: IMod) => void;
 type IOnAddNotification = (notification: INotification) => void;
 
 class InstallContext implements IInstallContext {
-
   private mAddMod: (mod: IMod) => void;
   private mRemoveMod: (modId: string) => void;
   private mAddNotification: (notification: INotification) => void;
@@ -32,12 +34,14 @@ class InstallContext implements IInstallContext {
   private mSetModAttribute: (id: string, key: string, value: any) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
   private mSetModType: (id: string, modType: string) => void;
+  private mEnableMod: (modId: string) => void;
 
   private mAddedId: string;
   private mIndicatorId: string;
   private mInstallOutcome: InstallOutcome;
 
-  constructor(gameMode: string, dispatch: Redux.Dispatch<any>) {
+  constructor(gameMode: string, store: Redux.Store<any>) {
+    const dispatch = store.dispatch;
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
     this.mRemoveMod = (modId) => dispatch(removeMod(gameMode, modId));
     this.mAddNotification = (notification) =>
@@ -57,6 +61,10 @@ class InstallContext implements IInstallContext {
       dispatch(setModInstallationPath(gameMode, id, installPath));
     this.mSetModType = (id, modType) =>
       dispatch(setModType(gameMode, id, modType));
+    this.mEnableMod = (modId) => {
+      const profile = activeProfile(store.getState());
+      dispatch(setModEnabled(profile.id, modId, true));
+    };
   }
 
   public startIndicator(id: string): void {
@@ -145,11 +153,20 @@ class InstallContext implements IInstallContext {
 
   private outcomeNotification(outcome: InstallOutcome, id: string): INotification {
     switch (outcome) {
-      case 'success': return {
-        type: 'success',
-        message: `${id} installed`,
-        displayMS: 4000,
-      };
+      case 'success':
+        return {
+          type: 'success',
+          message: `${id} installed`,
+          actions: [
+            {
+              title: 'Enable',
+              action: dismiss => {
+                this.mEnableMod(this.mAddedId);
+                dismiss();
+              },
+            },
+          ],
+        };
       case 'canceled': return {
         type: 'info',
         message: 'Installation canceled',

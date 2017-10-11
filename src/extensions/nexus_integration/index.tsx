@@ -114,6 +114,23 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
         });
       });
     })
+    .then(downloadId => {
+      api.sendNotification({
+        id: url.fileId.toString(),
+        type: 'success',
+        message: api.translate('Download finished: {{name}}',
+                               { replace: { name: nexusFileInfo.name } }),
+        actions: [
+          {
+            title: 'Install', action: dismiss => {
+              api.events.emit('start-install-download', downloadId);
+              dismiss();
+            },
+          },
+        ],
+      });
+      return downloadId;
+    })
     .catch((err) => {
       api.sendNotification({
         id: url.fileId.toString(),
