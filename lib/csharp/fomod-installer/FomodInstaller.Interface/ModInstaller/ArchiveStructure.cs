@@ -22,7 +22,7 @@ namespace FomodInstaller.Interface
             Regex skipExpression = new Regex(string.Join("|", m_lstIgnore), RegexOptions.IgnoreCase);
             Regex matchExpression = new Regex(string.Join("|", expressions), RegexOptions.IgnoreCase);
             int index = 0;
-            string res = fileList.First(filePath => {
+            string res = fileList.FirstOrDefault(filePath => {
                 if (skipExpression.IsMatch(filePath))
                 {
                     return false;
