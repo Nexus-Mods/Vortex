@@ -357,7 +357,12 @@ function main(context: types.IExtensionContext) {
                               path.join(__dirname, 'dependency-manager.scss'));
 
     context.api.events.on('profile-did-change', () => {
-      updateConflictTimer.schedule(undefined);
+      const gameMode = selectors.activeGameId(store.getState());
+      updateMetaRules(context.api, gameMode, store.getState().persistent.mods[gameMode])
+      .then(rules => {
+        dependencyState.modRules = rules;
+        updateConflictTimer.schedule(undefined);
+      });
     });
 
     context.api.events.on('gamemode-activated', (gameMode: string) => {
