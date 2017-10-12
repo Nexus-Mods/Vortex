@@ -65,7 +65,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
               <tooltip.IconButton
                 id='btn-swap-rule-plugins'
                 icon='swap-horizontal'
-                tooltip={t('Swap plugins')}
+                tooltip={t('Swap plugins', { ns: 'gamebryo-plugin' })}
                 rotate={90}
                 onClick={this.swapPlugins}
               />
@@ -75,9 +75,11 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 value={dialog.type}
                 style={{ marginTop: 20, marginBottom: 20, width: 'initial', display: 'inline' }}
               >
-                <option value='after'>{t('Must load after')}</option>
-                <option value='requires'>{t('Depends on')}</option>
-                <option value='incompatible'>{t('Can\'t be loaded together with')}</option>
+                <option value='after'>{t('Must load after', { ns: 'gamebryo-plugin' })}</option>
+                <option value='requires'>{t('Depends on', { ns: 'gamebryo-plugin' })}</option>
+                <option value='incompatible'>
+                  {t('Can\'t be loaded together with', { ns: 'gamebryo-plugin' })}
+                </option>
               </FormControl>
             </div>
             {dialog.reference}

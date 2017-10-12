@@ -66,7 +66,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={key}
         key={key}
         name='ban-bold'
-        tooltip={t('Failed to parse this plugin')}
+        tooltip={t('Failed to parse this plugin', { ns: 'gamebryo-plugin' })}
       />);
   }
 
@@ -77,7 +77,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={key}
         key={key}
         name='lock'
-        tooltip={t('Loaded by the engine, can\'t be configured')}
+        tooltip={t('Loaded by the engine, can\'t be configured', { ns: 'gamebryo-plugin' })}
       />);
   }
 
@@ -88,7 +88,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={cleanKey}
         key={cleanKey}
         name='bug'
-        tooltip={t('Requires cleaning (LOOT)')}
+        tooltip={t('Requires cleaning (LOOT)', { ns: 'gamebryo-plugin' })}
       />);
   } else if (plugin.cleanliness === 'do_not_clean') {
     flags.push(
@@ -96,7 +96,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         id={cleanKey}
         key={cleanKey}
         name='shield'
-        tooltip={t('Must not be cleaned (LOOT)')}
+        tooltip={t('Must not be cleaned (LOOT)', { ns: 'gamebryo-plugin' })}
       />);
   }
 

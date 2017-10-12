@@ -242,8 +242,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             id: 'btn-autosort-loot',
             key: 'btn-autosort-loot',
             icon: autoSort ? 'lock' : 'unlock',
-            text: autoSort ? t('Autosort enabled (using LOOT)')
-                           : t('Autosort disabled (using LOOT)'),
+            text: autoSort ? t('Autosort enabled (using LOOT)', { ns: 'gamebryo-plugin' })
+                           : t('Autosort disabled (using LOOT)', { ns: 'gamebryo-plugin' }),
             state: autoSort,
             onClick: () => onSetAutoSortEnabled(!autoSort),
           };
@@ -256,7 +256,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             id: 'btn-sort',
             key: 'btn-sort',
             icon: 'sort-amount-asc',
-            text: t('Sort now'),
+            text: t('Sort now', { ns: 'gamebryo-plugin' }),
             onClick: () => this.context.api.events.emit('autosort-plugins'),
           };
         },

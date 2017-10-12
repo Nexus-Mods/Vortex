@@ -229,8 +229,10 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           state={thisEnabled}
           disabled={masterEnabled}
           onClick={this.toggleQuick}
-          tooltip={t('load after {{ reference }}', { replace: { reference: quickEdit.plugin } })}
-          offTooltip={t('load after {{ reference }}', { replace: { reference: quickEdit.plugin } })}
+          tooltip={t('load after {{ reference }}',
+                     { replace: { reference: quickEdit.plugin }, ns: 'gamebryo-plugin' })}
+          offTooltip={t('load after {{ reference }}',
+                        { replace: { reference: quickEdit.plugin }, ns: 'gamebryo-plugin' })}
         />
       </div>
     );
@@ -251,7 +253,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     if ((lootRules.after !== undefined) && (lootRules.after.length > 0)) {
       popoverBlocks.push((
         <div key='after'>
-          {t('Loads after:')}
+          {t('Loads after:', { ns: 'gamebryo-plugin' })}
           <ul>
             {Array.from(lootRules.after || []).map(
               ref => this.renderRule(ref, 'after', lootRules.readOnly))}
@@ -263,7 +265,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     if ((lootRules.req !== undefined) && (lootRules.req.length > 0)) {
       popoverBlocks.push((
         <div key='requires'>
-        {t('Requires:')}
+        {t('Requires:', { ns: 'gamebryo-plugin' })}
         <ul>
           {Array.from(lootRules.req || []).map(
             ref => this.renderRule(ref, 'requires', lootRules.readOnly))}
@@ -275,7 +277,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     if ((lootRules.inc !== undefined) && (lootRules.inc.length > 0)) {
       popoverBlocks.push((
         <div key='incompatible'>
-        {t('Incompatible:')}
+        {t('Incompatible:', { ns: 'gamebryo-plugin' })}
         <ul>
           {Array.from(lootRules.inc || []).map(
             ref => this.renderRule(ref, 'incompatible', lootRules.readOnly))}
@@ -312,7 +314,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
             id={`btn-meta-data-${plugin.name}`}
             className={classes.join(' ')}
             key={`rules-${plugin.name}`}
-            tooltip={t('Drag to another plugin to set userlist rule')}
+            tooltip={t('Drag to another plugin to set userlist rule', { ns: 'gamebryo-plugin' })}
             icon='connect'
             ref={this.setRef}
             onClick={this.toggleOverlay}

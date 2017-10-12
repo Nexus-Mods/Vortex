@@ -133,7 +133,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
             <a>{
               t('{{ count }} conflicting file', {
                 count: conflict.files.length,
-                replace: { count: conflict.files.length },
+                ns: 'dependency-manager',
               })}</a>
           </OverlayTrigger>
         </div>

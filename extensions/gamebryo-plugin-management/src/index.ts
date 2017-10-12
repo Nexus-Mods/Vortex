@@ -499,6 +499,7 @@ function init(context: IExtensionContextExt) {
                                replace: {
                                  modName: util.renderModName(mod),
                                },
+                               ns: 'gamebryo-plugin',
                              }),
                   actions: [
                     {

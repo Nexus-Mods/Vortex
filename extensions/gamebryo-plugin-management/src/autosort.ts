@@ -125,7 +125,7 @@ class LootInterface {
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
     const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
 
-    this.enqueue(t('Load Lists'), () => {
+    this.enqueue(t('Load Lists', { ns: 'gamebryo-plugin' }), () => {
       return fs.statAsync(userlistPath)
         .then((stat: fs.Stats) => Promise.resolve(stat.mtime))
         .catch(() => Promise.resolve(null))
@@ -165,7 +165,7 @@ class LootInterface {
         }
 
         const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
-        this.enqueue(t('Update Masterlist'), () => {
+        this.enqueue(t('Update Masterlist', { ns: 'gamebryo-plugin' }), () => {
           return fs.ensureDirAsync(path.dirname(masterlistPath))
             .then(() =>
               this.updateAsync(masterlistPath,
@@ -221,7 +221,7 @@ class LootInterface {
               + 'but it can be arbitrarily complicated: [i]"A after B after C after A"[/i].<br />'
               + 'This conflict involves at least one custom rule.<br />'
               + 'Please read the LOOT message and change your custom rules to resolve the cycle: '
-              + '[quote]' + err.message + '[/quote]');
+              + '[quote]' + err.message + '[/quote]', { ns: 'gamebryo-plugin' });
             this.mExtensionApi.store.dispatch(
                 actions.showDialog('info', 'Cyclic interaction', {bbcode}, [
                   {
@@ -245,7 +245,7 @@ class LootInterface {
           this.mExtensionApi.sendNotification({
             type: 'warning',
             message: this.mExtensionApi.translate('Not sorted because: {{msg}}',
-              { replace: { msg: err.message } }),
+              { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
           });
         } else {
           this.mExtensionApi.showErrorNotification('LOOT operation failed',
