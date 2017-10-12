@@ -1,5 +1,5 @@
-import Icon from '../../controls/Icon';
 import DateTimeFilter from '../../controls/table/DateTimeFilter';
+import ZoomableImage from '../../controls/ZoomableImage';
 import {ITableAttribute} from '../../types/ITableAttribute';
 import { ComponentEx } from '../../util/ComponentEx';
 import { getCurrentLanguage } from '../../util/i18n';
@@ -11,62 +11,6 @@ import Description from './views/Description';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { Image, Overlay } from 'react-bootstrap';
-
-interface IImageProps {
-  t: I18next.TranslationFunction;
-  url: string;
-  shortDescription: string;
-  longDescription: string;
-}
-
-class ImageComponent extends ComponentEx<IImageProps, { showOverlay: boolean }> {
-  private mRef: HTMLElement;
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      showOverlay: false,
-    };
-  }
-
-  public render(): JSX.Element {
-    const { t, longDescription, shortDescription, url } = this.props;
-    const { showOverlay } = this.state;
-
-    return (
-      <div className='mod-picture-container' ref={this.setRef}>
-        { (url !== undefined)
-          ? <Image className='mod-picture' src={url} onClick={this.toggleOverlay} />
-          : <Icon name='image' />
-        }
-        <Overlay
-          show={showOverlay}
-          onHide={this.toggleOverlay}
-          placement='left'
-          target={this.mRef as any}
-          container={this.context.menuLayer}
-          rootClose={true}
-        >
-          <Image src={url} className='mod-picture-large' onClick={this.toggleOverlay} />
-        </Overlay>
-        <Description
-          t={t}
-          long={longDescription}
-          short={shortDescription}
-        />
-      </div>
-    );
-  }
-
-  private setRef = ref => {
-    this.mRef = ref;
-  }
-
-  private toggleOverlay = () => {
-    this.setState(setSafe(this.state, ['showOverlay'], !this.state.showOverlay));
-  }
-}
 
 export const PICTURE: ITableAttribute = {
   id: 'picture',
@@ -76,7 +20,15 @@ export const PICTURE: ITableAttribute = {
     const short = getSafe(mod, ['attributes', 'shortDescription'], t('Description'));
 
     const url = getSafe(mod, ['attributes', 'pictureUrl'], undefined);
-    return <ImageComponent t={t} longDescription={long} shortDescription={short} url={url}/>;
+    return (
+      <ZoomableImage className='mod-picture' url={url}>
+        <Description
+          t={t}
+          long={long}
+          short={short}
+        />
+      </ZoomableImage>
+    );
   },
   calc: (mod: IModWithState) => getSafe(mod.attributes, ['pictureUrl'], ''),
   placement: 'detail',

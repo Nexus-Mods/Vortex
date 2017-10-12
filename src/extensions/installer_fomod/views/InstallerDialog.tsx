@@ -1,5 +1,7 @@
 import FlexLayout from '../../../controls/FlexLayout';
+import Modal from '../../../controls/Modal';
 import { IconButton } from '../../../controls/TooltipControls';
+import ZoomableImage from '../../../controls/ZoomableImage';
 import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
 import { pushSafe, removeValue } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
@@ -15,7 +17,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import {
-  Checkbox, ControlLabel, Form, FormGroup, Modal, Pager,
+  Checkbox, ControlLabel, Form, FormGroup, Pager,
   ProgressBar, Radio,
 } from 'react-bootstrap';
 
@@ -120,7 +122,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
         id={`radio-${stepId}-${group.id}-none`}
         key='none'
         name={group.id.toString()}
-        value='none'
+        data-value='none'
         checked={isSelected}
         onChange={this.select}
       >{t('None')}
@@ -136,6 +138,15 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     const id = `${stepId}-${group.id}-${plugin.id}`;
     const readOnly = plugin.type === 'Required';
 
+    const content = (
+      <a
+        className='fake-link'
+        data-value={plugin.id}
+        onMouseOver={this.showDescription}
+      >
+        {plugin.name}
+      </a>
+    );
     switch (group.type) {
       case 'SelectExactlyOne':
       case 'SelectAtMostOne':
@@ -143,12 +154,12 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
           <Radio
             id={'radio-' + id}
             key={plugin.id}
-            value={plugin.id}
+            data-value={plugin.id}
             name={group.id.toString()}
             checked={isSelected}
-            onClick={this.showDescription}
             onChange={readOnly ? nop : this.select}
-          >{plugin.name}
+          >
+            {content}
           </Radio>
         );
       case 'SelectAll':
@@ -157,9 +168,9 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             id={'checkbox-' + id}
             key={plugin.id}
             checked={true}
-            value={plugin.id}
-            onClick={this.showDescription}
-          >{plugin.name}
+            data-value={plugin.id}
+          >
+            {content}
           </Checkbox>
         );
       default:
@@ -167,12 +178,12 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
           <Checkbox
             id={'checkbox-' + id}
             key={plugin.id}
-            value={plugin.id}
+            data-value={plugin.id}
             checked={isSelected}
             disabled={plugin.type === 'NotUsable'}
-            onClick={this.showDescription}
             onChange={readOnly ? nop : this.select}
-          >{plugin.name}
+          >
+            {content}
           </Checkbox>
         );
     }
@@ -181,7 +192,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   private showDescription = (evt: React.FormEvent<any>) => {
     const {group, onShowDescription} = this.props;
 
-    const pluginId = parseInt(evt.currentTarget.value, 10);
+    const pluginId = parseInt(evt.currentTarget.getAttribute('data-value'), 10);
     const {image, description} = group.options[pluginId];
 
     onShowDescription(image, description);
@@ -190,13 +201,14 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   private select = (evt: React.FormEvent<any>) => {
     const {group, onShowDescription} = this.props;
 
-    if (evt.currentTarget.value === 'none') {
+    const value = evt.currentTarget.getAttribute('data-value');
+    if (value === 'none') {
       this.setState({ selectedPlugins: [] });
       onShowDescription(undefined, undefined);
       return;
     }
 
-    const pluginId = parseInt(evt.currentTarget.value, 10);
+    const pluginId = parseInt(value, 10);
 
     this.showDescription(evt);
 
@@ -401,9 +413,9 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     }
 
     return (
-      <img
-        src={path.join(dataPath, image)}
-        style={{ maxWidth: '100%', maxHeight: '40vh', width: 'auto', height: 'auto' }}
+      <ZoomableImage
+        url={path.join(dataPath, image)}
+        className='installer-image'
       />
     );
   }
