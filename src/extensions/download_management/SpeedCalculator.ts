@@ -33,6 +33,11 @@ class SpeedCalculator {
   public addMeasure(id: number, count: number) {
     const now: number = this.now();
 
+    if (this.mCounters[id] === undefined) {
+      // counter already stopped
+      return;
+    }
+
     const secondsPassed = now - this.mCounters[id].lastMeasure;
     const perSec = count / (secondsPassed + 1);
     for (let i = this.mHorizon - secondsPassed - 1; i < this.mHorizon; ++i) {

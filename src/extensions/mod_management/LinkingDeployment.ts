@@ -279,7 +279,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   protected abstract isLink(linkPath: string, sourcePath: string): Promise<boolean>;
 
   private deployFile(key: string, installPathStr: string, dataPath: string,
-                     replace: boolean) {
+                     replace: boolean): Promise<IDeployedFile> {
     const fullPath = path.join(installPathStr, this.mNewDeployment[key].source,
                                this.mNewDeployment[key].relPath);
     const fullOutputPath =

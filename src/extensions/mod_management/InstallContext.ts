@@ -1,7 +1,9 @@
 import { addNotification, dismissNotification } from '../../actions/notifications';
 import { INotification } from '../../types/INotification';
+import { IState } from '../../types/IState';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import { getSafe } from '../../util/storeHelper';
 
 import {setModEnabled} from '../profile_management/actions/profiles';
 import {activeProfile} from '../profile_management/selectors';
@@ -18,6 +20,7 @@ import {IMod, ModState} from './types/IMod';
 
 import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 
+import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
 
@@ -39,6 +42,7 @@ class InstallContext implements IInstallContext {
   private mAddedId: string;
   private mIndicatorId: string;
   private mInstallOutcome: InstallOutcome;
+  private mIsEnabled: (modId: string) => boolean;
 
   constructor(gameMode: string, store: Redux.Store<any>) {
     const dispatch = store.dispatch;
@@ -65,6 +69,10 @@ class InstallContext implements IInstallContext {
       const profile = activeProfile(store.getState());
       dispatch(setModEnabled(profile.id, modId, true));
     };
+    this.mIsEnabled = (modId) => {
+      const profile = activeProfile(store.getState());
+      return getSafe(profile, ['modState', modId, 'enabled'], false);
+    };
   }
 
   public startIndicator(id: string): void {
@@ -85,7 +93,12 @@ class InstallContext implements IInstallContext {
 
     this.mDismissNotification('install_' + this.mIndicatorId);
 
-    this.mAddNotification(this.outcomeNotification(this.mInstallOutcome, this.mIndicatorId));
+    Promise.delay(500)
+    .then(() => {
+      this.mAddNotification(
+        this.outcomeNotification(
+          this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId)));
+    });
   }
 
   public startInstallCB(id: string, archiveId: string): void {
@@ -97,7 +110,7 @@ class InstallContext implements IInstallContext {
       state: 'installing',
       attributes: {
         name: id,
-        installTime: 'ongoing',
+        installTime: new Date(),
       },
     });
     this.mAddedId = id;
@@ -151,13 +164,15 @@ class InstallContext implements IInstallContext {
     log('debug', 'install progress', { percent, file });
   }
 
-  private outcomeNotification(outcome: InstallOutcome, id: string): INotification {
+  private outcomeNotification(outcome: InstallOutcome, id: string,
+                              isEnabled: boolean): INotification {
     switch (outcome) {
       case 'success':
         return {
           type: 'success',
           message: `${id} installed`,
-          actions: [
+          displayMS: isEnabled ? 4000 : undefined,
+          actions: isEnabled ? [] : [
             {
               title: 'Enable',
               action: dismiss => {

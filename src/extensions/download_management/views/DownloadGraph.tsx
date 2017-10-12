@@ -32,6 +32,7 @@ interface IComponentState {
  */
 class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   private mRef: HTMLDivElement;
+  private mIsMounted: boolean = false;
 
   constructor(props: IProps) {
     super(props);
@@ -52,10 +53,12 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.updateDimensions();
     window.addEventListener('resize', this.updateDimensions);
+    this.mIsMounted = true;
   }
 
   public componentWillUnmount() {
     window.removeEventListener('resize', this.updateDimensions);
+    this.mIsMounted = false;
   }
 
   public render(): JSX.Element {
@@ -91,7 +94,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   }
 
   private updateDimensions = () => {
-    if (truthy(this.mRef)) {
+    if (truthy(this.mRef) && this.mIsMounted) {
       this.nextState.width = this.mRef.clientWidth;
     }
   }
