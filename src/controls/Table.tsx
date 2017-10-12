@@ -47,6 +47,8 @@ export interface IBaseProps {
   detailsTitle?: string;
   multiSelect?: boolean;
   defaultSort?: string;
+  showHeader?: boolean;
+  showDetails?: boolean;
 }
 
 interface IConnectedProps {
@@ -156,7 +158,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, actions, objects, splitPos, tableId } = this.props;
+    const { t, actions, objects, showHeader, showDetails, splitPos, tableId } = this.props;
     const { detailsOpen, rowState, splitMax } = this.state;
 
     let hasActions = false;
@@ -180,7 +182,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           onKeyDown={this.handleKeyDown}
         >
           <Table condensed hover>
-            <THead
+            {showHeader === false ? null : <THead
               className='table-header'
               domRef={this.setHeadRef}
               style={{ transform: 'translate(0, 0)' }}
@@ -190,13 +192,15 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
                 {actionHeader}
               </TR>
             </THead>
+            }
             {this.renderBody(this.mVisibleAttributes)}
           </Table>
           {this.props.children}
         </div>
-        <div className={`table-details-pane ${openClass}`}>
-          {this.renderDetails(rowIds)}
-        </div>
+        {showDetails === false ? null : (
+          <div className={`table-details-pane ${openClass}`}>
+            {this.renderDetails(rowIds)}
+          </div>)}
       </div>
     );
   }
@@ -659,11 +663,13 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           return false;
         }
 
+        const dataId = attribute.filter.dataId || attribute.id;
+
         const value = attribute.filter.raw !== false
           ? attribute.filter.raw === true
-            ? data[rowId][attribute.id]
-            : data[rowId][attribute.filter.raw][attribute.id]
-          : calculatedValues[rowId][attribute.id];
+            ? data[rowId][dataId]
+            : data[rowId][attribute.filter.raw][dataId]
+          : calculatedValues[rowId][dataId];
 
         return truthy(filter[attribute.id])
         && !attribute.filter.matches(filter[attribute.id], value,
