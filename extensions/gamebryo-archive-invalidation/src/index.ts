@@ -15,11 +15,14 @@ function testArchivesAge(store: Redux.Store<types.IState>) {
 
   const gamePath: string = util.getSafe(
       store.getState(),
-      ['settings', 'gameMode', 'discovered', gameId, 'modPath'], undefined);
+      ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined);
+
+  const game = util.getGame(gameId);
+  const dataPath = game.getModPaths(gamePath)[''];
 
   const age = targetAge(gameId);
 
-  return filesNewer(gamePath, fileFilter(gameId), age)
+  return filesNewer(dataPath, fileFilter(gameId), age)
       .then((files: string[]) => {
         if (files.length === 0) {
           return Promise.resolve(undefined);
@@ -37,7 +40,7 @@ function testArchivesAge(store: Redux.Store<types.IState>) {
           automaticFix: () => new Promise<void>(
                   (fixResolve, fixReject) =>
                       Promise.map(files, file => fs.utimesAsync(
-                                             path.join(gamePath, file),
+                                             path.join(dataPath, file),
                                              age.getTime() / 1000,
                                              age.getTime() / 1000))
                           .then((stats: any) => {
