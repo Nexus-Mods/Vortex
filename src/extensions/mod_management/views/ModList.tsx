@@ -4,6 +4,7 @@ import Dropzone, { DropType } from '../../../controls/Dropzone';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
+import OptionsFilter from '../../../controls/table/OptionsFilter';
 import TextFilter from '../../../controls/table/TextFilter';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
@@ -31,6 +32,7 @@ import groupMods from '../util/modGrouping';
 import modName from '../util/modName';
 import modUpdateState, { UpdateState } from '../util/modUpdateState';
 import resolvePath from '../util/resolvePath';
+import VersionFilter from '../util/VersionFilter';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
@@ -449,6 +451,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         onChangeValue: this.changeModEnabled,
       },
       isSortable: false,
+      filter: new OptionsFilter([
+        { value: true, label: 'Enabled' },
+        { value: false, label: 'Disabled' },
+        { value: undefined, label: 'Uninstalled' },
+      ], true),
     };
 
     this.modVersionDetailAttribute = {
@@ -480,6 +487,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       edit: {},
       isSortable: false,
+      filter: new VersionFilter(),
     };
 
   }

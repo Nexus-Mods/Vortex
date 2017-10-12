@@ -42,6 +42,7 @@ module.exports = {
     'react-i18next',
     'react-layout-pane',
     'react-redux',
+    'react-select',
     'ref',
     'semver',
     'semvish',
