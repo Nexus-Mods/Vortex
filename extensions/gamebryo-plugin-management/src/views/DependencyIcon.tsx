@@ -4,14 +4,14 @@ import { setCreateRule, setQuickEdit, setSource, setTarget } from '../actions/us
 import { ILOOTPlugin, ILootReference } from '../types/ILOOTList';
 import { IPluginCombined } from '../types/IPlugins';
 
-import { Advanced, ComponentEx, selectors, tooltip, util } from 'vortex-api';
-
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { Button, Checkbox, Overlay, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
 import { connect } from 'react-redux';
+import { Advanced, ComponentEx, selectors, tooltip, util } from 'vortex-api';
 
 function splitOnce(input: string, separator: string): string[] {
   const idx = input.indexOf(separator);

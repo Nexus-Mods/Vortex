@@ -6,7 +6,6 @@
     "babylon": "registry:dt/babylon#6.7.0+20160423062108",
     "bluebird": "registry:dt/bluebird#3.0.0+20160928162057",
     "electron/github-electron": "registry:dt/electron/github-electron#1.4.4+20161022024109",
-    "i18next": "registry:dt/i18next#2.3.4+20160803175212",
     "react": "registry:dt/react#0.14.0+20161024223416",
     "source-map": "registry:dt/source-map#0.0.0+20161003134342",
     "uglify-js": "registry:dt/uglify-js#2.6.1+20160316155526"
@@ -14,7 +13,6 @@
   "globalDevDependencies": {
     "babel-core": "registry:dt/babel-core#6.7.0+20160423062108",
     "bluebird": "registry:dt/bluebird#3.0.0+20160928162057",
-    "i18next": "registry:dt/i18next#2.3.4+20160803175212",
     "react": "registry:dt/react#0.14.0+20161024223416",
     "react-bootstrap": "registry:dt/react-bootstrap#0.0.0+20161107151335",
     "react-dom": "registry:dt/react-dom#0.14.0+20160412154040",

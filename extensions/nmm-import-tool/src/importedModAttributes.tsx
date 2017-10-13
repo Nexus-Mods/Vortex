@@ -1,5 +1,6 @@
 import { IFileEntry, IModEntry } from './types/nmmEntries';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { TableDateTimeFilter, TableNumericFilter,
   TableTextFilter, tooltip, types, util } from 'vortex-api';

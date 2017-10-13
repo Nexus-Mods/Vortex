@@ -2,6 +2,7 @@ import { IPluginCombined } from '../types/IPlugins';
 
 import { tooltip } from 'vortex-api';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 
 interface IBaseProps {

@@ -12,6 +12,7 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@types/i18next": "^8.4.0",
     "@types/react": "^0.14.55",
     "@types/react-redux": "4.4.35",
     "vortex-api": "file:../../api",

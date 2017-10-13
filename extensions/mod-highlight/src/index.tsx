@@ -1,6 +1,7 @@
 import HighlightButton from './views/HighlightButton';
 import TextareaNotes from './views/TextareaNotes';
 
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { selectors, types, util } from 'vortex-api';
 

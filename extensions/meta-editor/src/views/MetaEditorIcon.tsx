@@ -4,6 +4,7 @@ import { ComponentEx, FormFeedback, Icon,
          log, selectors, ToolbarIcon, tooltip,
          util } from 'vortex-api';
 
+import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, ListGroup,

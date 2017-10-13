@@ -10,6 +10,7 @@ import { setConflictDialog, setCreateRule, setSource, setTarget } from '../actio
 
 import { enabledModKeys } from '../selectors';
 
+import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
 import * as React from 'react';

@@ -5,14 +5,12 @@
     "babel-types": "registry:dt/babel-types#6.7.0+20160423062108",
     "babylon": "registry:dt/babylon#6.7.0+20160423062108",
     "bluebird": "registry:dt/bluebird#3.0.0+20160928162057",
-    "i18next": "registry:dt/i18next#2.3.4+20160803175212",
     "source-map": "registry:dt/source-map#0.0.0+20161003134342",
     "uglify-js": "registry:dt/uglify-js#2.6.1+20160316155526"
   },
   "globalDevDependencies": {
     "babel-core": "registry:dt/babel-core#6.7.0+20160423062108",
     "bluebird": "registry:dt/bluebird#3.0.0+20160928162057",
-    "i18next": "registry:dt/i18next#2.3.4+20160803175212",
     "redux": "registry:dt/redux#3.5.2+20160703092728",
     "semver": "registry:dt/semver#5.3.0+20160801120957",
     "webpack": "registry:dt/webpack#1.12.9+20161025142220"

@@ -1,7 +1,6 @@
 {
   "globalDependencies": {
     "bluebird": "registry:dt/bluebird#3.0.0+20160928162057",
-    "i18next": "registry:dt/i18next#2.3.4+20160803175212",
     "source-map": "registry:dt/source-map#0.0.0+20161003134342",
     "uglify-js": "registry:dt/uglify-js#2.6.1+20160316155526"
   },

@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@types/fs-extra-promise": "^0.0.31",
+    "@types/i18next": "^8.4.0",
     "@types/immutability-helper": "^2.0.15",
     "@types/react": "^0.14.55",
     "@types/react-bootstrap": "^0.0.37",

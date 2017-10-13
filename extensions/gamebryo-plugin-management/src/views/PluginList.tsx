@@ -15,6 +15,7 @@ import PluginFlagsFilter from './PluginFlagsFilter';
 
 import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
+import * as I18next from 'i18next';
 import * as update from 'immutability-helper';
 import {SimpleMessage} from 'loot';
 import * as path from 'path';
