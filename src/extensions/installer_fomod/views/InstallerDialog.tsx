@@ -158,6 +158,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             name={group.id.toString()}
             checked={isSelected}
             onChange={readOnly ? nop : this.select}
+            disabled={plugin.type === 'NotUsable'}
           >
             {content}
           </Radio>
@@ -167,7 +168,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
           <Checkbox
             id={'checkbox-' + id}
             key={plugin.id}
-            checked={true}
+            checked={plugin.type !== 'NotUsable'}
             data-value={plugin.id}
           >
             {content}
