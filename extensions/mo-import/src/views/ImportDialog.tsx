@@ -353,7 +353,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private setImportPathEvt(evt: React.KeyboardEvent<any>) {
+  private setImportPathEvt = (evt: React.KeyboardEvent<any>) => {
     this.setImportPath(evt.currentTarget.value);
   }
 

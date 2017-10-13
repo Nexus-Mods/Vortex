@@ -53,12 +53,24 @@ function parseMOIni(games: {[gameId: string]: types.IDiscoveryResult},
                       return parser.read(path.join(basePath, 'ModOrganizer.ini'));
                     })
       .then((file: IniFile<IIniSpec>) => {
+        let downloadPath = path.join(basePath, 'downloads');
+        let modPath = path.join(basePath, 'mods');
+        try {
+          downloadPath = file.data.Settings.download_directory;
+        } catch (err) {
+          // nop
+        }
+        try {
+          modPath = file.data.Settings.mod_directory;
+        } catch (err) {
+          // nop
+        }
         try {
           return {
             game: determineGame(games, file.data.General.gameName,
                                 file.data.General.gamePath, normalize),
-            downloadPath: file.data.Settings.download_directory,
-            modPath: file.data.Settings.mod_directory,
+            downloadPath,
+            modPath,
           };
         } catch (err) {
           return Promise.reject(err);
