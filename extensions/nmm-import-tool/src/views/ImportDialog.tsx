@@ -19,7 +19,8 @@ import { Alert, Button, Checkbox, DropdownButton, InputGroup, MenuItem,
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
-import { ComponentEx, Icon, Modal, selectors, Steps, Table, tooltip, types } from 'vortex-api';
+import { ComponentEx, Icon, Modal, selectors, Steps, Table,
+         Toggle, tooltip, types } from 'vortex-api';
 
 type Step = 'start' | 'setup' | 'working' | 'review';
 
@@ -230,19 +231,12 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           + 'to import here:')}
         <SplitButton
           id='import-select-source'
-          title={selectedSource[0]}
+          title={selectedSource[0] || ''}
           onSelect={this.selectSource}
           style={{ marginLeft: 15 }}
         >
           {sources.map(this.renderSource)}
         </SplitButton>
-        <Checkbox
-          id='import-mod-archives'
-          checked={this.state.importArchives}
-          onChange={this.toggleArchiveImport}
-        >
-          {t('Check this box if you want to import mod archives (not necessary for Vortex)')}
-        </Checkbox>
       </div>
     );
   }
@@ -258,16 +252,31 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderSelectMods(): JSX.Element {
-    const { counter, modsToImport } = this.state;
+    const { t } = this.props;
+    const { counter, importArchives, modsToImport } = this.state;
     return (
-      <Table
-        tableId='mods-to-import'
-        data={modsToImport}
-        dataId={counter}
-        actions={[]}
-        staticElements={[
-          this.mStatus, MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, FILES, LOCAL]}
-      />);
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Table
+          tableId='mods-to-import'
+          data={modsToImport}
+          dataId={counter}
+          actions={[]}
+          staticElements={[
+            this.mStatus, MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, FILES, LOCAL]}
+        />
+        <Toggle
+          checked={importArchives}
+          onToggle={this.toggleArchiveImport}
+          style={{ marginTop: 10 }}
+        >
+          <a
+            className='fake-link'
+            title={t('Imports only the archives referenced by imported mods')}
+          >
+            {t('Import archives')}
+          </a>
+        </Toggle>
+      </div>);
   }
 
   private renderWorking(): JSX.Element {
@@ -337,6 +346,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private start() {
+    this.nextState.error = undefined;
     findInstances(this.props.gameId)
       .then(found => {
         this.nextState.sources = found;
