@@ -1,5 +1,5 @@
 {
-  "name": "parse-ini",
+  "name": "vortex-parse-ini",
   "version": "0.0.1",
   "description": "Parse ini files, supporting different ini formats",
   "main": "./lib/index.js",

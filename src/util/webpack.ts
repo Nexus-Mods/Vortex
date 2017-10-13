@@ -16,7 +16,6 @@ function externalsDirect(): webpack.ExternalsObjectElement {
     'nbind',
     'net',
     'node',
-    'parse-ini',
     'path',
     'react',
     'react-act',
@@ -33,6 +32,7 @@ function externalsDirect(): webpack.ExternalsObjectElement {
     'semvish',
     'util',
     'vortex-api',
+    'vortex-parse-ini',
     'winreg',
   ].reduce((prev, key) => {
     prev[key] = key;

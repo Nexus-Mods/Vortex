@@ -9,9 +9,9 @@ import { getIniFilePath } from '../util/gameSupport';
 
 import DelegateBase from './DelegateBase';
 
-import IniParser, { IniFile, WinapiFormat } from 'parse-ini';
 import * as path from 'path';
 import { inspect } from 'util';
+import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
 
 class Ini extends DelegateBase {
   private gameId: string;

@@ -2,9 +2,9 @@ import { iniPath } from './gameSupport';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import { IniFile } from 'parse-ini';
 import * as path from 'path';
 import { types } from 'vortex-api';
+import { IniFile } from 'vortex-parse-ini';
 
 export const oblivionDefaultFonts = {
   SFontFile_1: 'Data\\Fonts\\Kingthings_Regular.fnt',

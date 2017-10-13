@@ -39,7 +39,7 @@
     "immutability-helper": "^2.2.2",
     "json-loader": "^0.5.4",
     "vortex-api": "file:../../api",
-    "parse-ini": "file:../../lib/js/parse-ini",
+    "vortex-parse-ini": "file:../../lib/js/vortex-parse-ini",
     "react": "^15.3.2",
     "react-bootstrap": "^0.30.6",
     "react-dom": "^15.3.2",

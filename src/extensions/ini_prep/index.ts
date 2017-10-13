@@ -15,8 +15,8 @@ import renderINITweaks from './TweakList';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
-import IniParser, {IniFile, WinapiFormat} from 'parse-ini';
 import * as path from 'path';
+import IniParser, {IniFile, WinapiFormat} from 'vortex-parse-ini';
 
 function ensureIniBackups(gameMode: string): Promise<void> {
   return Promise.map(iniFiles(gameMode), file => {

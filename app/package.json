@@ -47,7 +47,6 @@
     "uuid": "^3.1.0",
     "opn": "^5.1.0",
     "packery": "^2.1.1",
-    "parse-ini": "file:../lib/js/parse-ini",
     "prop-types": "^15.5.8",
     "react": "^15.3.0",
     "react-addons-css-transition-group": "^15.3.1",
@@ -84,6 +83,7 @@
     "simple-vdf": "^1.1.0",
     "string-template": "^1.0.0",
     "tmp": "^0.0.33",
+    "vortex-parse-ini": "file:../lib/js/vortex-parse-ini",
     "winreg": "^1.2.2",
     "winston": "^2.2.0"
   }

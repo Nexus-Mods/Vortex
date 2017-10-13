@@ -10,11 +10,11 @@
     },
     {
       "type": "install-module",
-      "name": "parse-ini",
-      "path": "lib/js/parse-ini",
+      "name": "vortex-parse-ini",
+      "path": "lib/js/vortex-parse-ini",
       "sources": ["src/*.ts"],
       "build": true,
-      "module": "parse-ini"
+      "module": "vortex-parse-ini"
     }
   ],
   [
