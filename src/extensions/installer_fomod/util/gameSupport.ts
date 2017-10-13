@@ -8,7 +8,7 @@ function bethIni(gamePath: string, iniName: string) {
 }
 
 function toWordExp(input: string): string {
-  return '\b' + input + '\b';
+  return '\\b' + input + '\\b';
 }
 
 const gamebryoTopLevel: string[] = ['distantlod', 'textures', 'meshes', 'music', 'shaders', 'video',
@@ -16,9 +16,9 @@ const gamebryoTopLevel: string[] = ['distantlod', 'textures', 'meshes', 'music',
       'strings', 'trees', 'asi'];
 
 const gamebryoPatterns: string[] = [
-  '[^/]*\.esp$',
-  '[^/]*\.esm$',
-  '[^/]*\.esl$',
+  '[^/]*\\.esp$',
+  '[^/]*\\.esm$',
+  '[^/]*\\.esl$',
   'fomod/ModuleConfig.xml$',
 ].concat(gamebryoTopLevel.map(toWordExp));
 

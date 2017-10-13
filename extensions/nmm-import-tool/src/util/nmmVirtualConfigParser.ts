@@ -77,6 +77,8 @@ export function parseModEntries(
       archivePath: modInfo.getAttribute('modFilePath'),
       modVersion: modInfo.getAttribute('FileVersion'),
       importFlag: true,
+      fileEntries: [],
+      archiveMD5: null,
     };
 
     const archiveName =
@@ -97,15 +99,19 @@ export function parseModEntries(
         .then(() => { useOldPath = true; })
         .catch(() => undefined)
         .then(() => {
-          const fileLinks = modInfo.getElementsByTagName('fileLink');
+          let fileLinks: NodeListOf<Element>;
+          try {
+            fileLinks = modInfo.getElementsByTagName('fileLink');
+          } catch (err) {
+            log('warn', 'VirtualModConfig.xml has no file links for mod',
+                { archiveName, error: err.message });
+          }
 
           if ((fileLinks !== undefined) && (fileLinks.length > 0)) {
-          res.fileEntries =
-              Array.from(fileLinks)
-                  .map(fileLink => transformFileEntry(fileLink, adjustRealPath))
-                  .filter(entry => entry !== undefined);
-          } else {
-            res.fileEntries = [];
+            res.fileEntries =
+                Array.from(fileLinks)
+                    .map(fileLink => transformFileEntry(fileLink, adjustRealPath))
+                    .filter(entry => entry !== undefined);
           }
 
           const modFilePath = path.join(res.archivePath, res.modFilename);

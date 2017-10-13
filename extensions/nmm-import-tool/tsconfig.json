@@ -9,7 +9,7 @@
     "rootDir": "./src",
     "outDir": "./out",
     "jsx": "react",
-    "sourceMap": false,
+    "sourceMap": true,
     "skipLibCheck": true
   },
     "exclude": [

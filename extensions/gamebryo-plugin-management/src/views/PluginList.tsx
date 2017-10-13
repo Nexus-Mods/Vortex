@@ -532,8 +532,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 }
 
 function mapStateToProps(state: any): IConnectedProps {
+  const profile = selectors.activeProfile(state);
   return {
-    gameMode: selectors.activeProfile(state).gameId,
+    gameMode: profile !== undefined ? profile.gameId : undefined,
     plugins: state.session.plugins.pluginList,
     lootActivity: state.session.plugins.lootActivity,
     loadOrder: state.loadOrder,
