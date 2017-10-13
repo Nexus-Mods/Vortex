@@ -310,8 +310,8 @@ function generateLoadOrder(api: types.IExtensionApi): Promise<void> {
 function main(context: types.IExtensionContext) {
   context.registerTableAttribute('mods', {
     id: 'loadOrder',
-    name: 'Load Order',
-    description: 'Load order derived from mod dependencies',
+    name: 'Install Order',
+    description: 'Install order derived from mod dependencies',
     icon: 'order',
     placement: 'table',
     isToggleable: true,
