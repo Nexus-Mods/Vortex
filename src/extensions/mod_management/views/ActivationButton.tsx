@@ -34,7 +34,7 @@ class ActivationButton extends ComponentEx<IProps, {}> {
 
     return (
     <ToolbarIcon
-      id='activate-mods'
+      id='deploy-mods'
       icon='chain'
       text={t('Deploy Mods')}
       onClick={this.activate}
@@ -44,7 +44,7 @@ class ActivationButton extends ComponentEx<IProps, {}> {
   }
 
   private activate = () => {
-    this.context.api.events.emit('activate-mods', (err) => {
+    this.context.api.events.emit('deploy-mods', (err) => {
       if (err !== null) {
         this.props.onShowError('Failed to activate mods', err);
       }

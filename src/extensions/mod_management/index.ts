@@ -219,7 +219,7 @@ function bakeSettings(api: IExtensionApi, gameMode: string, sortedModList: IMod[
   });
 }
 
-function genUpdateModActivation() {
+function genUpdateModDeployment() {
   let lastActivatedState: { [modId: string]: IProfileMod };
   let lastGameDiscovery: IDiscoveryResult;
 
@@ -484,28 +484,28 @@ function once(api: IExtensionApi) {
     });
   }
 
-  const updateModActivation = genUpdateModActivation();
-  const activationTimer = new Debouncer(
-      (manual: boolean) => updateModActivation(api, manual), 2000);
+  const updateModDeployment = genUpdateModDeployment();
+  const deploymentTimer = new Debouncer(
+      (manual: boolean) => updateModDeployment(api, manual), 2000);
 
-  api.events.on('activate-mods', (callback: (err: Error) => void) => {
-    activationTimer.runNow(callback, true);
+  api.events.on('deploy-mods', (callback: (err: Error) => void) => {
+    deploymentTimer.runNow(callback, true);
   });
 
-  api.events.on('schedule-activate-mods', (callback: (err: Error) => void) => {
-    activationTimer.schedule(callback, false);
+  api.events.on('schedule-deploy-mods', (callback: (err: Error) => void) => {
+    deploymentTimer.schedule(callback, false);
   });
 
   api.events.on('purge-mods',
                 (callback: (err: Error) => void) => { purgeMods(api); });
 
   api.events.on('await-activation', (callback: (err: Error) => void) => {
-    activationTimer.wait(callback);
+    deploymentTimer.wait(callback);
   });
 
   api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
     if (store.getState().settings.automation.deploy) {
-      activationTimer.schedule(undefined, false);
+      deploymentTimer.schedule(undefined, false);
     }
   });
 
@@ -534,6 +534,12 @@ function once(api: IExtensionApi) {
       'remove-mod',
       (gameMode: string, modId: string, callback?: (error: Error) => void) =>
           onRemoveMod(api, activators, gameMode, modId, callback));
+
+  api.events.on('profile-did-change', () => {
+    if (store.getState().settings.automation.deploy) {
+      deploymentTimer.schedule(undefined, false);
+    }
+  });
 
   cleanupIncompleteInstalls(api);
 

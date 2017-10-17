@@ -53,7 +53,7 @@ function startDeploy(queryDeploy: () => Promise<DeployResult>,
   .then(shouldDeploy => {
     if (shouldDeploy === 'yes') {
       return new Promise<boolean>((resolve, reject) => {
-              events.emit('activate-mods', (err) => {
+              events.emit('deploy-mods', (err) => {
                 if (err !== null) {
                   reject(err);
                 } else {

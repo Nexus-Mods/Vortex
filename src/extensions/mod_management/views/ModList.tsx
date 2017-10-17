@@ -699,7 +699,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     this.disableModsInner(modIds);
     return new Promise<void>((resolve, reject) => {
-      this.context.api.events.emit('activate-mods', (err: Error) => {
+      this.context.api.events.emit('deploy-mods', (err: Error) => {
         if (err === null) {
           resolve();
         } else {

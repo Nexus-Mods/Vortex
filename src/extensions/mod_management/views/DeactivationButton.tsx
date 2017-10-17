@@ -8,8 +8,8 @@ import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResu
 import { currentActivator, installPath } from '../../mod_management/selectors';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
-import { IMod } from '../types/IMod';
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
+import { IMod } from '../types/IMod';
 
 import * as React from 'react';
 import * as Redux from 'redux';
@@ -34,7 +34,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
 
     return (
       <Advanced><ToolbarIcon
-        id='activate-mods'
+        id='deploy-mods'
         icon='chain-broken'
         text={t('Purge Mods')}
         onClick={this.activate}
