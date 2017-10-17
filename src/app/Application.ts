@@ -163,9 +163,11 @@ class Application {
         const { getSafe, setSafe } = require('../util/storeHelper');
         const data = JSON.parse(value);
         const oldValue = getSafe(data, pathArray.slice(1), undefined);
-        const newValue = typeof(oldValue) === 'object'
-          ? JSON.parse(setParameters[1])
-          : oldValue.constructor(setParameters[1]);
+        const newValue = setParameters[1].length === 0
+          ? undefined
+          : typeof(oldValue) === 'object'
+            ? JSON.parse(setParameters[1])
+            : oldValue.constructor(setParameters[1]);
         if (oldValue !== undefined) {
           const newData = setSafe(data, pathArray.slice(1), newValue);
           db.put('global_' + pathArray[0], JSON.stringify(newData), (setErr) => {
