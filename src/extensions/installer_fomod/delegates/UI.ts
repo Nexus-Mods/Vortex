@@ -14,7 +14,7 @@ class UI extends DelegateBase {
   private mContinueCB: (direction) => void;
   private mCancelCB: () => void;
 
-  constructor(api: IExtensionApi) {
+  constructor(api: IExtensionApi, gameId: string) {
     super(api);
 
     api.events

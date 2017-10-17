@@ -2,13 +2,16 @@ import {IExtensionApi} from '../../../types/IExtensionContext';
 import {log} from '../../../util/log';
 import {getSafe} from '../../../util/storeHelper';
 
+import { getNativePlugins } from '../util/gameSupport';
 import DelegateBase from './DelegateBase';
 
 import * as util from 'util';
 
 class Plugins extends DelegateBase {
-  constructor(api: IExtensionApi) {
+  private mGameId: string;
+  constructor(api: IExtensionApi, gameId: string) {
     super(api);
+    this.mGameId = gameId;
   }
 
   public isActive =
@@ -25,7 +28,9 @@ class Plugins extends DelegateBase {
             // unknown plugin can't be enabled
             return callback(null, false);
           }
-          const enabled = getSafe(state, ['loadOrder', localName, 'enabled'], false);
+          const nativePlugins = getNativePlugins(this.mGameId);
+          const enabled = nativePlugins.indexOf(pluginName.toLowerCase()) !== -1
+                        || getSafe(state, ['loadOrder', localName, 'enabled'], false);
           return callback(null, enabled);
         } catch (err) {
           return callback(err, false);

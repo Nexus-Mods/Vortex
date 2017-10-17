@@ -11,9 +11,9 @@ export class Core {
   public ui: UI;
 
   constructor(api: IExtensionApi, gameId: string) {
-    this.plugin = new Plugins(api);
+    this.plugin = new Plugins(api, gameId);
     this.ini = new Ini(api, gameId);
-    this.ui = new UI(api);
+    this.ui = new UI(api, gameId);
     this.context = new Context(api, gameId);
   }
 
