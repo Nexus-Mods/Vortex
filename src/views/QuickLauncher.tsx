@@ -114,6 +114,11 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const { discoveredGames } = this.props;
     const { gameIconCache } = this.state;
 
+    if (gameIconCache[gameId] === undefined) {
+      log('error', 'failed to access game icon', { gameId });
+      return null;
+    }
+
     const discovered = discoveredGames[gameId];
 
     const iconPath = gameIconCache[gameId].icon;
