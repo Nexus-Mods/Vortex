@@ -41,7 +41,7 @@ function main(context) {
     logo: 'gameart.png',
     executable: gameExecutable,
     requiredFiles: [
-      gameExecutable,
+      gameExecutable(),
     ],
     setup: prepareForModding,
     details: {

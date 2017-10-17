@@ -35,6 +35,8 @@ export const settingsReducer: IReducerSpec = {
       ((state.searchPaths !== undefined) && (state.searchPaths.indexOf(payload) !== -1))
         ? state
         : pushSafe(state, ['searchPaths'], payload),
+    [actions.clearSearchPaths as any]: (state, payload) =>
+      setSafe(state, ['searchPaths'], []),
     [actions.removeSearchPath as any]: (state, payload) =>
       removeValue(state, ['searchPaths'], payload),
     [actions.setPickerLayout as any]: (state, payload) =>

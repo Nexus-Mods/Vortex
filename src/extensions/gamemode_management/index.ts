@@ -20,7 +20,9 @@ import {IDownload} from '../download_management/types/IDownload';
 import { setNextProfile } from '../profile_management/actions/settings';
 
 import { setGameInfo } from './actions/persistent';
-import { addDiscoveredGame, addSearchPath, setGamePath } from './actions/settings';
+import { addDiscoveredGame, addSearchPath,
+         clearSearchPaths,
+         setGamePath } from './actions/settings';
 import { discoveryReducer } from './reducers/discovery';
 import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
@@ -431,21 +433,30 @@ function init(context: IExtensionContext): boolean {
       .catch(err => callback(err));
     });
 
-    if (store.getState().settings.gameMode.searchPaths === undefined) {
+    let { searchPaths } = store.getState().settings.gameMode;
+
+    if ((searchPaths !== undefined) && Array.isArray(searchPaths[0])) {
+      store.dispatch(clearSearchPaths());
+      searchPaths = undefined;
+    }
+
+    if (searchPaths === undefined) {
       const {list} = require('drivelist');
       list((error, disks) => {
         if (error) {
           context.api.showErrorNotification('Failed to determine list of disk drives. ' +
             'Please review the settings before scanning for games.',
             error);
-          store.dispatch(addSearchPath(['C:']));
+          store.dispatch(addSearchPath('C:'));
           return;
         }
         for (const disk of disks.sort()) {
           // 'system' drives are the non-removable ones
           if (disk.system) {
             if (disk.mountpoints) {
-              disk.mountpoints.forEach(mp => store.dispatch(addSearchPath(mp.path)));
+              disk.mountpoints.forEach(mp => {
+                store.dispatch(addSearchPath(mp.path));
+              });
             } else {
               store.dispatch(addSearchPath(disk.mountpoint));
             }

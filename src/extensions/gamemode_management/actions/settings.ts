@@ -47,6 +47,8 @@ export const setGameHidden = safeCreateAction('SET_GAME_HIDDEN',
  */
 export const addSearchPath = safeCreateAction('ADD_SEARCH_PATH');
 
+export const clearSearchPaths = safeCreateAction('CLEAR_SEARCH_PATHS');
+
 /**
  * remove a search path
  */

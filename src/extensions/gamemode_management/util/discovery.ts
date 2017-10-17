@@ -330,15 +330,13 @@ export function searchDiscovery(
 
   // retrieve only the basenames of required files because the walk only ever looks
   // at the last path component of a file
-  const matchList: string[] = files.map((entry: IFileEntry) => {
-    return path.basename(entry.fileName);
-  });
+  const matchList: string[] = files.map(entry => path.basename(entry.fileName));
 
   const blExp = new RegExp(blackList.join('|'));
 
   return Promise.map(searchPaths,
       (searchPath: string, index: number) => {
-        log('info', 'searching for games & tools', { searchPaths });
+        log('info', 'searching for games & tools', { searchPath });
         const progressObj = new Progress(0, 100, (percent, label) =>
           progressCB(index, percent, label));
         // recurse through the search path and look for known files. use the appropriate file name
