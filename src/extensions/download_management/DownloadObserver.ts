@@ -35,6 +35,10 @@ import * as util from 'util';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], filePath?: string) {
+  if (store.getState().persistent.downloads.files[dlId] === undefined) {
+    // progress for a download that's no longer active
+    return;
+  }
   if ((total !== 0) || (chunks !== undefined)) {
     store.dispatch(downloadProgress(dlId, received, total, chunks));
   }
@@ -54,7 +58,6 @@ export class DownloadObserver {
   private mStore: Redux.Store<any>;
   private mManager: DownloadManager;
   private mProtocolHandlers: IProtocolHandlers;
-  private mChunkUpdates: { [dlId: string]: NodeJS.Timer } = {};
 
   constructor(events: NodeJS.EventEmitter, store: Redux.Store<any>,
               manager: DownloadManager, protocolHandlers: IProtocolHandlers) {
@@ -199,7 +202,7 @@ export class DownloadObserver {
           .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
           .catch(err => {
             showError(this.mStore.dispatch, 'Failed to remove file', err, false,
-                      undefined, err.code !== 'EPERM');
+                      undefined, ['EBUSY', 'EPERM'].indexOf(err.code) === -1);
           });
     } else {
       this.mStore.dispatch(removeDownload(downloadId));

@@ -331,7 +331,11 @@ class InstallManager {
             });
         }
       })
-      .finally(() => installContext.stopIndicator());
+      .finally(() => {
+        if (installContext !== undefined) {
+          installContext.stopIndicator();
+        }
+      });
   }
 
   /**

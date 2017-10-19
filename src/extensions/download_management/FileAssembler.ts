@@ -1,3 +1,4 @@
+import { ProcessCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 
 import * as Promise from 'bluebird';
@@ -41,16 +42,14 @@ class FileAssembler {
     return new Promise<boolean>((resolve, reject) => {
       let synced = false;
       this.mWork = this.mWork
-        .then(() => {
-          if (this.mFD === undefined) {
+        .then(() => (this.mFD === undefined)
             // file already closed, can't use new data
-            return Promise.resolve(0);
-          }
-          // writing at an offset beyond the file limit
-          // works on windows and linux.
-          // I'll assume it means it will work on MacOS too...
-          return fs.writeAsync(this.mFD, Buffer.from(data), 0, data.length, offset);
-        })
+            ? Promise.reject(new ProcessCanceled('file already closed'))
+            // writing at an offset beyond the file limit
+            // works on windows and linux.
+            // I'll assume it means it will work on MacOS too...
+            : fs.writeAsync(this.mFD, data, 0, data.length, offset)
+        )
         .then((bytesWritten: any) => {
           this.mWritten += bytesWritten;
           if (this.mWritten - this.mLastLogged > 1024 * 1024) {
@@ -64,7 +63,10 @@ class FileAssembler {
         .then((bytesWritten: number) =>
           (bytesWritten !== data.length)
             ? reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
-            : resolve(synced));
+            : resolve(synced))
+        .catch(ProcessCanceled, () => {
+          resolve(false);
+        });
       });
   }
 

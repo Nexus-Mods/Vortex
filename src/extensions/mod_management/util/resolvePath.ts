@@ -1,9 +1,11 @@
 import { IStatePaths } from '../../../types/IState';
 import { getSafe } from '../../../util/storeHelper';
 
-import { remote } from 'electron';
+import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import format = require('string-template');
+
+const app = appIn || remote.app;
 
 export type PathKey = 'base' | 'download' | 'install';
 
@@ -19,7 +21,7 @@ function resolvePath(key: PathKey, paths: {[gameId: string]: IStatePaths},
     return undefined;
   }
   const formatKeys = {
-    USERDATA: remote.app.getPath('userData'),
+    USERDATA: app.getPath('userData'),
     GAME: gameMode,
     base: undefined,
   };

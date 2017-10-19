@@ -110,11 +110,11 @@ function init(context: IExtensionContextExt): boolean {
     let manager: DownloadManager;
 
     context.api.registerProtocol('http', url => {
-        context.api.events.emit('start-download', [url], {});
+      context.api.events.emit('start-download', [url], {});
     });
 
     context.api.registerProtocol('https', url => {
-        context.api.events.emit('start-download', [url], {});
+      context.api.events.emit('start-download', [url], {});
     });
 
     context.api.events.on('gamemode-activated', () => {

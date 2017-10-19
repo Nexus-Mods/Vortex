@@ -12,8 +12,8 @@ import * as Promise from 'bluebird';
 import contentType = require('content-type');
 import * as fs from 'fs-extra-promise';
 import * as http from 'http';
+import * as https from 'https';
 import * as path from 'path';
-import requestT = require('request');
 import * as url from 'url';
 
 import { log } from '../../util/log';
@@ -49,14 +49,15 @@ type FinishCallback = (paused: boolean) => void;
 class DownloadWorker {
   private static BUFFER_SIZE = 256 * 1024;
   private mJob: IDownloadJob;
-  private mRequest: requestT.Request;
+  private mRequest: https.ClientRequest;
   private mProgressCB: (bytes: number) => void;
   private mFinishCB: FinishCallback;
   private mHeadersCB: (headers: any) => void;
   private mUserAgent: string;
-  private mBuffer: NodeBuffer;
+  private mBuffers: NodeBuffer[] = [];
   private mDataHistory: Array<{ time: number, size: number }> = [];
   private mEnded: boolean = false;
+  private mResponse: http.ClientResponse;
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
@@ -73,22 +74,37 @@ class DownloadWorker {
 
   public assignJob(job: IDownloadJob) {
     this.mDataHistory = [];
-    const request: typeof requestT = require('request');
     log('debug', 'requesting range', { id: job.workerId, offset: job.offset, size: job.size });
 
-    this.mRequest = request({
+    const parsed = url.parse(job.url);
+
+    this.mRequest = https.request({
       method: 'GET',
-      uri: job.url,
+      protocol: parsed.protocol,
+      port: parsed.port,
+      hostname: parsed.hostname,
+      path: parsed.path,
       headers: {
         Range: `bytes=${job.offset}-${job.offset + job.size}`,
         'User-Agent': this.mUserAgent,
       },
-    })
-    .on('error', (err) => this.handleError(err))
-    .on('response', (response: http.IncomingMessage) => this.handleResponse(response))
-    .on('complete', (response: http.IncomingMessage, body) => this.handleComplete(response, body))
-    .on('data', (data) => this.handleData(data))
-    ;
+      agent: new https.Agent(),
+    }, (res) => {
+      this.mResponse = res;
+      this.handleResponse(res);
+      res
+        .on('data', (data: Buffer) => {
+          this.handleData(data);
+        })
+        .on('end', () => {
+          this.handleComplete();
+          this.mRequest.abort();
+        });
+    });
+
+    this.mRequest
+      .on('error', (err) => this.handleError(err))
+      .end();
   }
 
   public cancel() {
@@ -101,6 +117,9 @@ class DownloadWorker {
 
   public pause() {
     if (!this.mEnded) {
+      if (this.mResponse !== undefined) {
+        this.mResponse.pause();
+      }
       this.mRequest.abort();
       this.mEnded = true;
       this.mFinishCB(true);
@@ -123,37 +142,33 @@ class DownloadWorker {
     }
   }
 
-  private handleComplete(response: http.IncomingMessage, body) {
-    log('info', 'chunk completed, remaining buffer', {
-      length: this.mBuffer !== undefined ? this.mBuffer.byteLength : 0,
+  private handleComplete() {
+    log('info', 'chunk completed', {
+      id: this.mJob.workerId,
+      numBuffers: this.mBuffers.length,
     });
-    if (this.mBuffer !== undefined) {
-      this.mJob.dataCB(this.mJob.offset, this.mBuffer);
-      this.mJob.received += this.mBuffer.length;
-      this.mJob.offset += this.mBuffer.length;
-      this.mJob.size -= this.mBuffer.length;
-      this.mProgressCB(this.mBuffer.length);
-    }
-
-    if (this.mJob.size > 0) {
-      // how is this possible?
-      log('error', 'download was incomplete', {
-        id: this.mJob.workerId,
-        received: this.mJob.received,
-        size: this.mJob.size,
-        history: this.mDataHistory,
-      });
-      this.assignJob(this.mJob);
-    } else {
-      if (this.mJob.completionCB !== undefined) {
-        this.mJob.completionCB();
-      }
-      if (!this.mEnded) {
-        this.mRequest.abort();
-        this.mFinishCB(false);
-        this.mEnded = true;
-      }
-    }
+    this.writeBuffer()
+      .then(() => {
+        if (this.mJob.size > 0) {
+          // how is this possible?
+          log('error', 'download was incomplete', {
+            id: this.mJob.workerId,
+            received: this.mJob.received,
+            size: this.mJob.size,
+            history: this.mDataHistory,
+          });
+          this.assignJob(this.mJob);
+        } else {
+          if (this.mJob.completionCB !== undefined) {
+            this.mJob.completionCB();
+          }
+          if (!this.mEnded) {
+            this.mRequest.abort();
+            this.mFinishCB(false);
+            this.mEnded = true;
+          }
+        }
+    });
   }
 
   private handleResponse(response: http.IncomingMessage) {
@@ -202,19 +217,38 @@ class DownloadWorker {
     }
   }
 
-  private handleData(data) {
-    this.mDataHistory.push({ time: Date.now(), size: data.byteLength });
-    this.mBuffer = (this.mBuffer === undefined)
-      ? data : Buffer.concat([ this.mBuffer, data ]);
+  private mergeBuffers(): Buffer {
+    const res = Buffer.concat(this.mBuffers);
+    this.mBuffers = [];
+    return res;
+  }
 
-    if (this.mBuffer.length >= DownloadWorker.BUFFER_SIZE) {
-      this.mJob.dataCB(this.mJob.offset, this.mBuffer);
-      this.mJob.received += this.mBuffer.length;
-      this.mJob.offset += this.mBuffer.length;
-      this.mJob.size -= this.mBuffer.length;
-      this.mProgressCB(this.mBuffer.length);
-      this.mBuffer = undefined;
+  private get bufferLength(): number {
+    return this.mBuffers.reduce((prev, iter) => prev + iter.length, 0);
+  }
+
+  private writeBuffer(): Promise<void> {
+    if (this.mBuffers.length === 0) {
+      return Promise.resolve();
     }
+    const merged = this.mergeBuffers();
+    const res = this.mJob.dataCB(this.mJob.offset, merged)
+      .then(synced => undefined);
+    this.mJob.received += merged.length;
+    this.mJob.offset += merged.length;
+    this.mJob.size -= merged.length;
+    return res;
+  }
+
+  private handleData(data: Buffer) {
+    this.mDataHistory.push({ time: Date.now(), size: data.byteLength });
+    this.mBuffers.push(data);
+
+    const bufferLength = this.bufferLength;
+    if (bufferLength >= DownloadWorker.BUFFER_SIZE) {
+      this.writeBuffer().then(() => null);
+    }
+    this.mProgressCB(data.length);
   }
 }
 
@@ -376,7 +410,7 @@ class DownloadManager {
 
     // stop running workers
     download.chunks.forEach((value: IDownloadJob) => {
-      if (value.state === 'running') {
+      if ((value.state === 'running') && (value.size > 0)) {
         unfinishedChunks.push({
           received: value.received,
           offset: value.offset,
@@ -465,7 +499,7 @@ class DownloadManager {
       // these values will change until the data was written to file
       // so copy them so we write the correct info to state
       const receivedNow = download.received;
-      download.assembler.addChunk(offset, data)
+      return download.assembler.addChunk(offset, data)
         .then((synced: boolean) => {
           download.received += data.byteLength;
           download.progressCB(
@@ -474,6 +508,7 @@ class DownloadManager {
                 ? download.chunks.map(this.toStoredChunk)
                 : undefined,
               download.tempName);
+          return synced;
         });
     };
 
