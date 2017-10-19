@@ -35,7 +35,7 @@
   },
   "watch": {},
   "engines": {
-    "electron": "1.7.8"
+    "electron": "1.7.9"
   },
   "jest": {
     "transform": {
@@ -185,7 +185,7 @@
     "draggabilly": "^2.1.1",
     "drivelist": "^5.1.4",
     "edge": "^7.10.1",
-    "electron": "1.7.8",
+    "electron": "1.7.9",
     "electron-builder": "^19.8.0",
     "electron-debug": "^1.0.1",
     "electron-devtools-installer": "^2.0.1",
