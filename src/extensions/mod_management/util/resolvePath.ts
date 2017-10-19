@@ -5,7 +5,7 @@ import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import format = require('string-template');
 
-const app = appIn || remote.app;
+const app = remote !== undefined ? remote.app : appIn;
 
 export type PathKey = 'base' | 'download' | 'install';
 

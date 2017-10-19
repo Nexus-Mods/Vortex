@@ -34,8 +34,12 @@ function determineGame(games: {[gameId: string]: types.IDiscoveryResult},
   }
 
   if (gamePath !== undefined) {
-    const gameId = Object.keys(games).find(iterId =>
-      normalize(games[iterId].path) === normalize(gamePath));
+    const gameId = Object.keys(games).find(iterId => {
+      if (games[iterId].path === undefined) {
+        return;
+      }
+      return normalize(games[iterId].path) === normalize(gamePath);
+    });
     if (gameId !== undefined) {
       return gameId;
     }

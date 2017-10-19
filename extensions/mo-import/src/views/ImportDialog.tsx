@@ -107,9 +107,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const { error, importStep, instances } = this.state;
 
     const canCancel = ['start', 'setup'].indexOf(importStep) !== -1;
-    const nextLabel = ((instances !== undefined) && (instances.length > 0))
-      ? this.nextLabel(importStep)
-      : undefined;
+    const nextLabel = this.nextLabel(importStep);
 
     return (
       <Modal id='import-dialog' show={visible} onHide={this.nop}>
