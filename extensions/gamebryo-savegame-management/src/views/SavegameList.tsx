@@ -25,6 +25,8 @@ import {
 // current typings know neither the function nor the return value
 declare const createImageBitmap: (imgData: ImageData) => Promise<any>;
 
+const placeholder: string = '------';
+
 class Dimensions {
   public width: number;
   public height: number;
@@ -196,7 +198,12 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
           componentClass='select'
           onChange={this.selectProfile}
         >
-          <option>------</option>
+          <option
+            key=''
+            value=''
+          >
+            {placeholder}
+          </option>
           {activeHasLocalSaves ? (
             <option
               key='__global'
@@ -235,13 +242,21 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   }
 
   private selectProfile = (evt) => {
-    const profileId = evt.currentTarget.value;
+    let profileId = evt.currentTarget.value;
+    if (profileId === '') {
+      profileId = undefined;
+    }
     this.nextState.profileId = profileId;
     this.loadSaves(profileId);
   }
 
   private loadSaves(selectedProfileId: string): Promise<void> {
     const { currentProfile, profiles, saves } = this.props;
+
+    if (selectedProfileId === undefined) {
+      this.nextState.importSaves = undefined;
+      return;
+    }
 
     const savesPath = path.join(mygamesPath(currentProfile.gameId), 'Saves',
       (selectedProfileId === '__global' ? '' : selectedProfileId));
@@ -367,7 +382,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         return transferSavegames(fileNames, sourceSavePath, destSavePath, result.action === 'Copy');
       })
       .then((failedCopies: string[]) => {
-        if (failedCopies.length === 0) {
+        if ((failedCopies === undefined) || (failedCopies.length === 0)) {
           this.context.api.sendNotification({
             type: 'success',
             message: t('{{ count }} savegame imported', { count: fileNames.length }),
