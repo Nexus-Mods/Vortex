@@ -40,6 +40,9 @@ function readManifest(data: string): IDeploymentManifest {
     }
     lastVersion = parsed.version;
   }
+  if (parsed.files === undefined) {
+    parsed.files = [];
+  }
   return parsed;
 }
 
