@@ -171,8 +171,11 @@ const ignoredExceptions = new RegExp('(' + [
   'Cannot read property \'__reactInternalInstance.*\' of null',
 ].join('|') + ')');
 
-process.on('uncaughtException' as any, error => {
+process.on('uncaughtException' as any, (error: any) => {
   if (getMessageString(error).match(ignoredExceptions)) {
+    return;
+  } else if ((error.stack !== undefined) && (error.stack.indexOf('clickstream.js') !== -1)) {
+    // ignore errors from clickstream
     return;
   }
   terminateFromError(error);
