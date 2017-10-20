@@ -53,7 +53,7 @@ interface IActionProps {
     content: IDialogContent,
     actions: DialogActions,
   ) => void;
-  onShowError: (message: string, details: string | Error) => void;
+  onShowError: (message: string, details: string | Error, allowReport: boolean) => void;
 }
 
 interface IComponentState {
@@ -210,20 +210,20 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .then(() => Promise.join(fs.ensureDirAsync(newInstallPath),
                                fs.ensureDirAsync(newDownloadPath)))
       .then(() => {
-        const queue = Promise.resolve();
+        let queue = Promise.resolve();
         let fileCount = 0;
         if (oldInstallPath !== newInstallPath) {
-          queue
+          queue = queue
             .then(() => fs.readdirAsync(newInstallPath))
-            .then(files => fileCount += files.length);
+            .then(files => { fileCount += files.length; });
         }
         if (oldDownloadPath !== newDownloadPath) {
-          queue
+          queue = queue
             .then(() => fs.readdirAsync(newDownloadPath))
-            .then(files => fileCount += files.length);
+            .then(files => { fileCount += files.length; });
         }
         // ensure the destination directories are empty
-        return new Promise((resolve, reject) => {
+        return queue.then(() => new Promise((resolve, reject) => {
           if (fileCount > 0) {
             this.props.onShowDialog('info', 'Invalid Destination', {
               message: 'The destination directory has to be empty',
@@ -231,7 +231,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           } else {
             resolve();
           }
-        });
+        }));
       })
       .then(() => {
         if (oldDownloadPath !== newDownloadPath) {
@@ -256,7 +256,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .catch((err) => {
         if (err !== null) {
-          onShowError('Failed to move directories', err);
+          if (err.code === 'EPERM') {
+            onShowError('Directories are locked', err, false);
+          } else {
+            onShowError('Failed to move directories', err, true);
+          }
         }
       })
       .finally(() => {
@@ -469,8 +473,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowDialog: (type, title, content, actions): void => {
       dispatch(showDialog(type, title, content, actions));
     },
-    onShowError: (message: string, details: string | Error): void => {
-      showError(dispatch, message, details);
+    onShowError: (message: string, details: string | Error, allowReport): void => {
+      showError(dispatch, message, details, false, undefined, allowReport);
     },
   };
 }
