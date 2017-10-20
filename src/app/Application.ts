@@ -165,7 +165,7 @@ class Application {
         const oldValue = getSafe(data, pathArray.slice(1), undefined);
         const newValue = setParameters[1].length === 0
           ? undefined
-          : typeof(oldValue) === 'object'
+          : (oldValue === undefined) || (typeof(oldValue) === 'object')
             ? JSON.parse(setParameters[1])
             : oldValue.constructor(setParameters[1]);
         if (oldValue !== undefined) {

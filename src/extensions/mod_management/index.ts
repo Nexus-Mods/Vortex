@@ -229,6 +229,9 @@ function genUpdateModDeployment() {
     const instPath = installPath(state);
     const gameDiscovery = currentGameDiscovery(state);
     const game = getGame(gameMode);
+    if (game === undefined) {
+      return Promise.reject(new Error('Game no longer available'));
+    }
     const modPaths = game.getModPaths(gameDiscovery.path);
     const t = api.translate;
     let profile = activeProfile(state);
