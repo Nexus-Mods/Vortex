@@ -71,19 +71,44 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   public render(): JSX.Element {
-    const { features, language, profiles } = this.props;
+    const { t, discoveredGames, features, gameId, games, language, profiles } = this.props;
     const { edit } = this.state;
 
-    const sortedProfiles: string[] = this.sortProfiles(profiles, language);
+    const currentGameProfiles: { [id: string]: IProfile } = {};
+    const otherProfiles: { [id: string]: IProfile } = {};
 
-    const supportedFeatures = features.filter((feature) => feature.supported());
+    Object.keys(profiles).forEach(profileId => {
+      if (profiles[profileId].gameId === gameId) {
+        currentGameProfiles[profileId] = profiles[profileId];
+      } else {
+        otherProfiles[profileId] = profiles[profileId];
+      }
+    });
+
+    const currentGameProfilesSorted = this.sortProfiles(currentGameProfiles, language);
+    const otherProfilesSorted = this.sortProfiles(otherProfiles, language);
+
+    // const sortedProfiles: string[] = this.sortProfiles(profiles, language);
+
+    const supportedFeatures = features.filter(feature => feature.supported());
+
+    const game = games.find((iter: IGameStored) => iter.id === gameId);
+    const discovered = discoveredGames[gameId];
+    const gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
 
     return (
       <MainPage>
         <MainPage.Body>
+          {gameName}
           <ListGroup className='profile-list'>
-            {sortedProfiles.map((profileId) => this.renderProfile(profileId, supportedFeatures))}
+            {currentGameProfilesSorted.map(
+              profileId => this.renderProfile(profileId, supportedFeatures))}
             {this.renderAddOrEdit(edit)}
+          </ListGroup>
+          {t('Other Games')}
+          <ListGroup className='profile-list'>
+            {otherProfilesSorted.map(
+              profileId => this.renderProfile(profileId, supportedFeatures))}
           </ListGroup>
         </MainPage.Body>
       </MainPage>
