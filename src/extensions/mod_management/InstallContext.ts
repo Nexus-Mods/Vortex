@@ -5,8 +5,9 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 
-import {setModEnabled} from '../profile_management/actions/profiles';
-import {activeProfile} from '../profile_management/selectors';
+import { setDownloadInstalled } from '../download_management/actions/state';
+import { setModEnabled } from '../profile_management/actions/profiles';
+import { activeProfile } from '../profile_management/selectors';
 
 import {
   addMod,
@@ -16,7 +17,7 @@ import {
   setModState,
   setModType,
 } from './actions/mods';
-import {IMod, ModState} from './types/IMod';
+import { IMod, ModState } from './types/IMod';
 
 import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 
@@ -38,9 +39,12 @@ class InstallContext implements IInstallContext {
   private mSetModInstallationPath: (id: string, installPath: string) => void;
   private mSetModType: (id: string, modType: string) => void;
   private mEnableMod: (modId: string) => void;
+  private mSetDownloadInstalled: (archiveId: string, gameId: string, modId: string) => void;
 
   private mAddedId: string;
   private mIndicatorId: string;
+  private mGameId: string;
+  private mArchiveId: string;
   private mInstallOutcome: InstallOutcome;
   private mIsEnabled: (modId: string) => boolean;
 
@@ -73,6 +77,9 @@ class InstallContext implements IInstallContext {
       const profile = activeProfile(store.getState());
       return getSafe(profile, ['modState', modId, 'enabled'], false);
     };
+    this.mSetDownloadInstalled = (archiveId, gameId, modId) => {
+      dispatch(setDownloadInstalled(archiveId, gameId, modId));
+    };
   }
 
   public startIndicator(id: string): void {
@@ -101,7 +108,7 @@ class InstallContext implements IInstallContext {
     });
   }
 
-  public startInstallCB(id: string, archiveId: string): void {
+  public startInstallCB(id: string, gameId: string, archiveId: string): void {
     this.mAddMod({
       id,
       type: '',
@@ -114,6 +121,8 @@ class InstallContext implements IInstallContext {
       },
     });
     this.mAddedId = id;
+    this.mGameId = gameId;
+    this.mArchiveId = archiveId;
   }
 
   public finishInstallCB(outcome: InstallOutcome, info?: any): void {
@@ -137,6 +146,7 @@ class InstallContext implements IInstallContext {
         Object.keys(info).forEach(
           (key: string) => { this.mSetModAttribute(this.mAddedId, key, info[key]); });
       }
+      this.mSetDownloadInstalled(this.mArchiveId, this.mGameId, this.mAddedId);
     } else {
       if (this.mAddedId !== undefined) {
         this.mRemoveMod(this.mAddedId);

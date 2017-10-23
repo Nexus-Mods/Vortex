@@ -237,7 +237,7 @@ class InstallManager {
         }
       })
       .then(() => {
-        installContext.startInstallCB(modId, archiveId);
+        installContext.startInstallCB(modId, installGameId, archiveId);
 
         destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
         tempPath = destinationPath + '.installing';

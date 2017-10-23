@@ -75,3 +75,6 @@ export const addLocalDownload = safeCreateAction('ADD_LOCAL_DOWNLOAD',
 
 export const setDownloadModInfo = safeCreateAction('SET_DOWNLOAD_MODINFO',
   (id: string, key: string, value: any) => ({ id, key, value }));
+
+export const setDownloadInstalled = safeCreateAction('SET_DOWNLOAD_INSTALLED',
+  (id: string, gameId: string, modId: string) => ({ id, gameId, modId }));

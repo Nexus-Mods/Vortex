@@ -134,6 +134,10 @@ export const stateReducer: IReducerSpec = {
       setSafe(state,
         ['files', payload.id, 'modInfo'].concat(payload.key.split('.')),
         payload.value),
+    [action.setDownloadInstalled as any]: (state, payload) =>
+      setSafe(state,
+        ['files', payload.id, 'installed'],
+        { gameId: payload.gameId, modId: payload.modId }),
   },
   defaults: {
     speed: 0,

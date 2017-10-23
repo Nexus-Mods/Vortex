@@ -65,6 +65,14 @@ export interface IDownload {
   modInfo: { [key: string]: any };
 
   /**
+   * id of the (last) mod installed from this archive. Will be undefined
+   * while the archive is not installed. This will not be unset if the
+   * mod is uninstalled, so to determine if the archive is actually installed
+   * one has to look at the dictionary of installed mods
+   */
+  installed?: { gameId: string, modId: string };
+
+  /**
    * hash of the file data
    *
    * @type {string}
