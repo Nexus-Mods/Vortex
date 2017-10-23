@@ -56,6 +56,7 @@ interface IConnectedProps {
   splitPos: number;
   language: string;
   filter: { [id: string]: any };
+  advancedMode: boolean;
 }
 
 interface IActionProps {
@@ -367,7 +368,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 
   private renderHeaderField = (attribute: ITableAttribute): JSX.Element => {
-    const { t, filter, tableId } = this.props;
+    const { t, advancedMode, filter, tableId } = this.props;
 
     const attributeState = this.getAttributeState(attribute);
 
@@ -385,6 +386,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           doFilter={filt !== undefined}
           onSetSortDirection={this.setSortDirection}
           onSetFilter={this.setFilter}
+          advancedMode={advancedMode}
           t={t}
         >
           {attribute.filter !== undefined ? (
@@ -931,6 +933,7 @@ function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedProps {
       getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], undefined),
     splitPos: getSafe(state, ['settings', 'tables', ownProps.tableId, 'splitPos'], 200),
     filter: getSafe(state, ['settings', 'tables', ownProps.tableId, 'filter'], undefined),
+    advancedMode: state.settings.interface.advanced,
   };
 }
 

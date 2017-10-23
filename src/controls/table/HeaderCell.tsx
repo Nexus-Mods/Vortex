@@ -17,6 +17,7 @@ export interface IHeaderProps {
   attribute: ITableAttribute;
   state: IAttributeState;
   doFilter: boolean;
+  advancedMode: boolean;
   onSetSortDirection: (id: string, dir: SortDirection) => void;
   onSetFilter: (id?: string, filter?: any) => void;
   t: I18next.TranslationFunction;
@@ -24,7 +25,7 @@ export interface IHeaderProps {
 
 class HeaderCell extends React.Component<IHeaderProps, {}> {
   public render(): JSX.Element {
-    const { t, attribute, className, doFilter } = this.props;
+    const { t, advancedMode, attribute, className, doFilter } = this.props;
     return (
       <TH
         className={`table-header-cell ${className}`}
@@ -34,7 +35,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
           <div className='flex-fill' style={{ display: 'flex', flexDirection: 'row' }}>
             <p className='flex-fill' style={{ margin: 0 }}>{t(attribute.name)}</p>
             <div style={{ whiteSpace: 'nowrap' }}>
-            {attribute.filter !== undefined ? this.renderFilterIndicator() : null}
+            {advancedMode && (attribute.filter !== undefined) ? this.renderFilterIndicator() : null}
             {attribute.isSortable ? this.renderSortIndicator() : null}
             </div>
           </div>

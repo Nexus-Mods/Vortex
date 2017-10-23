@@ -10,7 +10,7 @@
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
     "_assets_app": "node InstallAssets.js app",
-    "_update_submodules": "git submodule foreach git pull origin master",
+    "_update_submodules": "git submodule foreach git pull origin master || exit /b 0",
     "_build_subprojects_out": "npm run _update_submodules && node BuildSubprojects.js out",
     "_build_subprojects_app": "npm run _update_submodules && node BuildSubprojects.js app",
     "_clean_app": "cd app && rm-local-modules",

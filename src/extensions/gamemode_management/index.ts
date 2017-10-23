@@ -501,22 +501,21 @@ function init(context: IExtensionContext): boolean {
               ...currentGameDiscovery(state),
           };
 
-          if (game.name === undefined) {
-            return null;
+          if ((oldGameId !== newGameId)
+              && (game.name !== undefined)) {
+            const t = context.api.translate;
+
+            context.api.sendNotification({
+              type: 'info',
+              message: t('Switched game mode: {{mode}}',
+                {
+                  replace: {
+                    mode: game.name,
+                  },
+                }),
+              displayMS: 4000,
+            });
           }
-
-          const t = context.api.translate;
-
-          context.api.sendNotification({
-            type: 'info',
-            message: t('Switched game mode: {{mode}}',
-                       {
-                         replace: {
-                           mode: game.name,
-                         },
-                       }),
-            displayMS: 4000,
-          });
           return null;
         });
       });
