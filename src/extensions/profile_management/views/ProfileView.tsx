@@ -23,7 +23,7 @@ import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import { Collapse, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { generate as shortid } from 'shortid';
 
 export interface IBaseProps {
@@ -51,6 +51,7 @@ interface IActionProps {
 interface IViewState {
   edit: string;
   highlightGameId: string;
+  showOther: boolean;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -67,12 +68,13 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     this.state = {
       edit: null,
       highlightGameId: undefined,
+      showOther: true,
     };
   }
 
   public render(): JSX.Element {
     const { t, discoveredGames, features, gameId, games, language, profiles } = this.props;
-    const { edit } = this.state;
+    const { edit, showOther } = this.state;
 
     const currentGameProfiles: { [id: string]: IProfile } = {};
     const otherProfiles: { [id: string]: IProfile } = {};
@@ -98,18 +100,20 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     return (
       <MainPage>
-        <MainPage.Body>
+        <MainPage.Body style={{ overflowY: 'auto' }}>
           {gameName}
           <ListGroup className='profile-list'>
             {currentGameProfilesSorted.map(
               profileId => this.renderProfile(profileId, supportedFeatures))}
             {this.renderAddOrEdit(edit)}
           </ListGroup>
-          {t('Other Games')}
+          {t('Other Games')} <a onClick={this.toggleOther}>{showOther ? t('Hide') : t('Show')}</a>
+          <Collapse in={showOther}>
           <ListGroup className='profile-list'>
             {otherProfilesSorted.map(
               profileId => this.renderProfile(profileId, supportedFeatures))}
           </ListGroup>
+          </Collapse>
         </MainPage.Body>
       </MainPage>
     );
@@ -155,6 +159,12 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         onSetHighlightGameId={this.setHighlightGameId}
       />
     );
+  }
+
+  private toggleOther = () => {
+    this.setState(update(this.state, {
+      showOther: { $set: !this.state.showOther },
+    }));
   }
 
   private setHighlightGameId = (gameId: string) => {
