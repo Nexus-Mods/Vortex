@@ -1,4 +1,6 @@
+import Table from '../../../controls/Table';
 import { Button } from '../../../controls/TooltipControls';
+import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { midClip } from '../../../util/util';
 
@@ -8,8 +10,9 @@ import { FileAction, IFileEntry } from '../types/IFileEntry';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { Modal, Table } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
+import * as ReduxThunk from 'redux-thunk';
 
 export interface IBaseProps {
 }
@@ -44,56 +47,9 @@ const possibleActions: { [type: string]: IPossibleAction[] } = {
   ],
 };
 
-interface IRowProps {
-  t: I18next.TranslationFunction;
-  entry: IFileEntry;
-  onChangeAction: (fileNames: string[], action: FileAction) => void;
-}
-
-class ChangeRow extends React.Component<IRowProps, {}> {
-  public render(): JSX.Element {
-    const { entry } = this.props;
-
-    const actions = possibleActions[entry.type];
-
-    return (
-      <tr key={entry.filePath}>
-        <td><a className='fake-link' title={entry.filePath}>{midClip(entry.filePath, 50)}</a></td>
-        <td>
-          <select
-            className='form-control'
-            onChange={this.changeValue}
-            value={entry.action}
-          >
-            {actions.map((action) => this.renderChoice(action.key, action.text, entry))}
-          </select>
-        </td>
-      </tr>
-    );
-  }
-
-  private changeValue = (evt: React.ChangeEvent<HTMLSelectElement>) => {
-    const { entry, onChangeAction } = this.props;
-    onChangeAction([entry.filePath], evt.currentTarget.value as FileAction);
-  }
-
-  private renderChoice = (key: string, text: string, entry: IFileEntry): JSX.Element => {
-    const { t } = this.props;
-
-    return (
-      <option
-        key={key}
-        value={key}
-      >
-        {t(text)}
-      </option>
-    );
-  }
-}
-
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-class ExternalChangeDialog extends ComponentEx<IProps, {}> {
+class ExternalChangeDialog extends ComponentEx<IProps, { counter: number }> {
   private setAll = {
     refchange: (evt: React.MouseEvent<any>) => {
       this.setAllFunc('refchange', evt.currentTarget.href.split('#')[1]);
@@ -106,21 +62,28 @@ class ExternalChangeDialog extends ComponentEx<IProps, {}> {
     },
   };
 
+  private mRef: HTMLElement;
+
+  constructor() {
+    super();
+    this.state = { counter: 0 };
+  }
+
   public render(): JSX.Element {
     const { t, changes } = this.props;
 
     const visible = changes !== undefined && changes.length > 0;
 
-    const refChanged = changes.filter((change) => change.type === 'refchange');
-    const valChanged = changes.filter((change) => change.type === 'valchange');
-    const deleted = changes.filter((change) => change.type === 'deleted');
+    const refChanged = changes.filter(change => change.type === 'refchange');
+    const valChanged = changes.filter(change => change.type === 'valchange');
+    const deleted = changes.filter(change => change.type === 'deleted');
 
     return (
       <Modal id='ext-change-dialog' show={visible} onHide={nop}>
         <Modal.Header>
           <Modal.Title>{t('External Changes')}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body style={{ display: 'flex', flexDirection: 'column' }}>
           <div className='padded-text' style={{ flex: 0 }} >
             {t('One or more files have been modified on disk since Vortex last deployed. '
               + 'You have to decide what happens with them.')}
@@ -157,12 +120,14 @@ class ExternalChangeDialog extends ComponentEx<IProps, {}> {
       return null;
     }
 
+    const columns = this.genColumns(type);
+
     const actions = possibleActions[type];
 
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column' }}>
         {text}
-        <p>{actions.map((action) => (
+        <p>{actions.map(action => (
           <a
             key={action.key}
             onClick={this.setAll[type]}
@@ -172,15 +137,54 @@ class ExternalChangeDialog extends ComponentEx<IProps, {}> {
           </a>
         ))
         }</p>
-        <div style={{ overflowY: 'auto' }}>
-          <Table>
-            <tbody>
-              {entries.map(this.renderRow)}
-            </tbody>
-          </Table>
+        <div style={{ overflowY: 'auto', flex: '1 1 0' }}>
+          <Table
+            tableId={`external-change-${type}`}
+            data={entries}
+            actions={[]}
+            staticElements={columns}
+            showHeader={false}
+            showDetails={false}
+          />
         </div>
       </div>
     );
+  }
+
+  private genColumns(type: string): ITableAttribute[] {
+    const { onChangeAction } = this.props;
+
+    return [
+      {
+        id: 'name',
+        name: 'File Name',
+        description: 'file name',
+        calc: (file: IFileEntry) => file.filePath,
+        placement: 'table',
+        edit: {},
+      }, {
+        id: 'action',
+        name: 'Action',
+        description: 'the action to take on the file',
+        calc: (file: IFileEntry) =>
+          possibleActions[type].find(act => act.key === file.action).text,
+        placement: 'table',
+        edit: {
+          inline: true,
+          choices: () => possibleActions[type],
+          onChangeValue: (file: IFileEntry, value: any) => {
+            if (value === undefined) {
+              const typeActions = possibleActions[type];
+              const idx = typeActions.findIndex(act => act.key === file.action);
+              onChangeAction([file.filePath],
+                             typeActions[(idx + 1) % typeActions.length].key as FileAction);
+            } else {
+              onChangeAction([file.filePath], value);
+            }
+          },
+        },
+      },
+    ];
   }
 
   private setAllFunc = (changeType: string, action: FileAction) => {
@@ -199,19 +203,6 @@ class ExternalChangeDialog extends ComponentEx<IProps, {}> {
 
   private confirm = () => {
     this.props.onClose(this.props.changes, false);
-  }
-
-  private renderRow = (entry: IFileEntry, idx: number): JSX.Element => {
-    const { t, onChangeAction } = this.props;
-
-    return (
-      <ChangeRow
-        key={idx}
-        entry={entry}
-        t={t}
-        onChangeAction={onChangeAction}
-      />
-    );
   }
 }
 
