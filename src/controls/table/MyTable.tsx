@@ -37,7 +37,6 @@ export function THead(props: DProps<HTMLTableSectionElement>
       style={{ ...props.style, display: 'table-header-group' }}
       className={classes.join(' ')}
       ref={props.domRef}
-      {..._.omit(props, ['domRef', 'style', 'className'])}
     >
       {props.children}
     </div>
@@ -50,7 +49,6 @@ export function TBody(props: DProps<HTMLTableSectionElement>) {
     <div
       style={{ ...props.style, display: 'table-row-group' }}
       className={classes.join(' ')}
-      {..._.omit(props, ['style', 'className'])}
     >
       {props.children}
     </div>
@@ -75,7 +73,6 @@ export function TR(props: DProps<HTMLTableRowElement>) {
     <div
       style={{ ...props.style, display: 'table-row' }}
       className={classes.join(' ')}
-      {..._.omit(props, ['style', 'className'])}
     >
       {props.children}
     </div>

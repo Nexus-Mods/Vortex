@@ -443,6 +443,49 @@ function errorFromNexusError(err: NexusErrorT): string {
   }
 }
 
+function validateKey(api: IExtensionApi, key: string): Promise<void> {
+  const state = api.store.getState();
+  const { NexusError, TimeoutError } = require('nexus-api');
+
+  return nexus.validateKey(key)
+    .then(userInfo =>
+      api.store.dispatch(setUserInfo(transformUserInfo(userInfo))))
+    .catch(TimeoutError, err => {
+      showError(api.store.dispatch,
+        'API Key validation timed out',
+        'Server didn\'t respond to validation request, web-based '
+        + 'features will be unavailable', false, undefined, false);
+      api.store.dispatch(setUserInfo(null));
+    })
+    .catch(NexusError, err => {
+      showError(api.store.dispatch,
+        'Failed to validate API Key',
+        errorFromNexusError(err), false, undefined, false);
+      api.store.dispatch(setUserInfo(null));
+    })
+    .catch(err => {
+      // if there is an "errno", this is more of a technical problem, like
+      // network is offline or server not reachable
+      if (err.code === 'ESOCKETTIMEDOUT') {
+        api.sendNotification({
+          type: 'error',
+          message: 'Connection to nexusmods.com timed out, please check your internet connection',
+          actions: [
+            { title: 'Retry', action: dismiss => { validateKey(api, key); dismiss(); } },
+          ],
+        });
+        showError(api.store.dispatch,
+          'Connection to Nexus API timed out, please check your internet connection',
+          undefined, false, undefined, false);
+      } else {
+        showError(api.store.dispatch,
+          'Failed to validate API Key',
+          err.message, false, undefined, false);
+      }
+      api.store.dispatch(setUserInfo(null));
+    });
+}
+
 function once(api: IExtensionApi) {
   const registerFunc = () => {
     api.registerProtocol('nxm', (url: string) => {
@@ -468,37 +511,9 @@ function once(api: IExtensionApi) {
     }
 
     if (state.confidential.account.nexus.APIKey !== undefined) {
-      const {NexusError, TimeoutError} = require('nexus-api');
-      nexus.validateKey(state.confidential.account.nexus.APIKey)
-        .then(userInfo =>
-          api.store.dispatch(setUserInfo(transformUserInfo(userInfo))))
-        .catch(TimeoutError, err => {
-          showError(api.store.dispatch,
-            'API Key validation timed out',
-            'Server didn\'t respond to validation request, web-based '
-            + 'features will be unavailable', false, undefined, false);
-          api.store.dispatch(setUserInfo(null));
-        })
-        .catch(NexusError, err => {
-          showError(api.store.dispatch,
-            'Failed to validate API Key',
-            errorFromNexusError(err), false, undefined, false);
-          api.store.dispatch(setUserInfo(null));
-        })
-        .catch(err => {
-          // if there is an "errno", this is more of a technical problem, like
-          // network is offline or server not reachable
-          if (err.code === 'ESOCKETTIMEDOUT') {
-            showError(api.store.dispatch,
-              'Connection to Nexus API timed out, please check your internet connection',
-              undefined, false, undefined, false);
-          } else {
-            showError(api.store.dispatch,
-              'Failed to validate API Key',
-              err.message, false, undefined, false);
-          }
-          api.store.dispatch(setUserInfo(null));
-        });
+      (window as any).requestIdleCallback(() => {
+        validateKey(api, state.confidential.account.nexus.APIKey);
+      });
     }
   }
 
@@ -599,20 +614,7 @@ function once(api: IExtensionApi) {
       nexus.setKey(newValue);
       api.store.dispatch(setUserInfo(undefined));
       if (newValue !== undefined) {
-        nexus.validateKey(newValue)
-          .then(userInfo => {
-            api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
-          })
-          .catch(NexusErrorT, (err: NexusErrorT) => {
-            showError(api.store.dispatch, 'Failed to validate API Key',
-                      errorFromNexusError(err), false, undefined, false);
-          })
-          .catch(err => {
-            api.store.dispatch(setUserAPIKey(undefined));
-            showError(api.store.dispatch,
-              'Failed to validate API Key',
-              err);
-          });
+        validateKey(api, newValue);
       }
     });
 

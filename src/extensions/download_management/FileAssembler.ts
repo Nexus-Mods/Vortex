@@ -48,8 +48,7 @@ class FileAssembler {
             // writing at an offset beyond the file limit
             // works on windows and linux.
             // I'll assume it means it will work on MacOS too...
-            : fs.writeAsync(this.mFD, data, 0, data.length, offset)
-        )
+            : fs.writeAsync(this.mFD, data, 0, data.length, offset))
         .then((bytesWritten: any) => {
           this.mWritten += bytesWritten;
           if (this.mWritten - this.mLastLogged > 1024 * 1024) {

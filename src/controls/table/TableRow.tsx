@@ -24,6 +24,7 @@ interface ICellProps {
   t: I18next.TranslationFunction;
   container: HTMLElement;
   onHighlight: (highlight: boolean) => void;
+  right: boolean;
 }
 
 class TableCell extends React.Component<ICellProps, {}> {
@@ -35,7 +36,7 @@ class TableCell extends React.Component<ICellProps, {}> {
 
   public render(): JSX.Element {
     const { t, attribute, container, data, language, onHighlight,
-            rawData, rowId, tableId } = this.props;
+            rawData, right, rowId, tableId } = this.props;
 
     // if a custom renderer was set then rowData is the raw object
     // passed to the table by the user.
@@ -59,7 +60,11 @@ class TableCell extends React.Component<ICellProps, {}> {
         const currentChoice = choices.find(choice => choice.text === data);
         const key = currentChoice !== undefined ? currentChoice.key : undefined;
         return (
-          <Dropdown id={`dropdown-${tableId}-${attribute.id}`} container={container}>
+          <Dropdown
+            id={`dropdown-${tableId}-${attribute.id}`}
+            container={container}
+            pullRight={right}
+          >
             <Button
               id={`btn-${tableId}-${attribute.id}`}
               className={`btn-${tableId}-${attribute.id}-${key}`}
@@ -231,14 +236,16 @@ class TableRow extends React.Component<IRowProps, {}> {
     return res;
   }
 
-  private renderAttribute = (attribute: ITableAttribute): JSX.Element => {
+  private renderAttribute = (attribute: ITableAttribute, index: number,
+                             arr: ITableAttribute[]): JSX.Element => {
     const { t, data, rawData, tableId } = this.props;
     return (
       <TD
         className={`table-${tableId} cell-${attribute.id}`}
         key={attribute.id}
       >
-        {this.renderCell(attribute, rawData, data[attribute.id], t)}
+        {this.renderCell(attribute, rawData, data[attribute.id], t,
+                         index >= (arr.length / 2))}
       </TD>
     );
   }
@@ -252,7 +259,8 @@ class TableRow extends React.Component<IRowProps, {}> {
     attribute: ITableAttribute,
     rawData: any,
     calculatedData: any,
-    t: I18next.TranslationFunction): JSX.Element {
+    t: I18next.TranslationFunction,
+    right: boolean): JSX.Element {
 
     const { container, data, language, tableId } = this.props;
 
@@ -267,6 +275,7 @@ class TableRow extends React.Component<IRowProps, {}> {
         language={language}
         container={container}
         onHighlight={this.highlight}
+        right={right}
       />
     );
   }

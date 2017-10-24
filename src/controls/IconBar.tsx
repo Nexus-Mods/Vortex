@@ -38,7 +38,7 @@ function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
 
 // takes the props of a Popover. ignores the arrow, applies the absolute
 // position
-function MenuWrap(props: any): JSX.Element {
+function Positioner(props: any): JSX.Element {
   const { children, positionLeft, positionTop } = props;
 
   return (
@@ -50,21 +50,20 @@ function MenuWrap(props: any): JSX.Element {
 
 interface IPortalMenuProps {
   open: boolean;
-  layer: any;
   target: JSX.Element;
   children?: React.ReactNode[];
   onClose: () => void;
 }
 
-function PortalMenu(props: IPortalMenuProps) {
+function PortalMenu(props: IPortalMenuProps, context: any) {
   return (
     <Overlay
       show={props.open}
-      container={props.layer}
+      container={context.menuLayer}
       placement='bottom'
       target={props.target}
     >
-      <MenuWrap>
+      <Positioner>
         <Dropdown.Menu
           style={{ display: 'block', position: 'initial' }}
           onClose={props.onClose}
@@ -72,7 +71,7 @@ function PortalMenu(props: IPortalMenuProps) {
         >
           {props.children}
         </Dropdown.Menu>
-      </MenuWrap>
+      </Positioner>
     </Overlay>
   );
 }
@@ -150,7 +149,6 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             ref={this.setButtonRef}
           />
           <PortalMenu
-            layer={this.context.menuLayer}
             open={this.state.open}
             target={this.buttonRef}
             onClose={this.toggleCollapsed}

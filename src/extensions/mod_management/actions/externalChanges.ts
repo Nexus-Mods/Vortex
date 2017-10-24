@@ -1,8 +1,8 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 import {UserCanceled} from '../../../util/CustomErrors';
 
-import {FileAction, IFileEntry} from '../types/IFileEntry';
 import {IFileChange} from '../types/IDeploymentMethod';
+import {FileAction, IFileEntry} from '../types/IFileEntry';
 
 /**
  * stores info about files that were changed outside the control of Vortex. The user

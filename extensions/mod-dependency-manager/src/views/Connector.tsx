@@ -3,7 +3,7 @@ import Line from './Line';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { PureComponentEx, util } from 'vortex-api';
+import { ComponentEx, util } from 'vortex-api';
 
 interface ICoord {
   x: number;
@@ -15,7 +15,7 @@ interface IConnectorProps {
   target?: { id: string, pos: ICoord };
 }
 
-class ConnectorImpl extends PureComponentEx<IConnectorProps, {}> {
+class ConnectorImpl extends ComponentEx<IConnectorProps, {}> {
   public shouldComponentUpdate(nextProps: IConnectorProps) {
     return !_.isEqual(this.props.source, nextProps.source)
         || !_.isEqual(this.props.target, nextProps.target);

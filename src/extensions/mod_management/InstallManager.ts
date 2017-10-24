@@ -506,7 +506,10 @@ class InstallManager {
               'This installer is (partially) unsupported as it\'s ' +
               'using functionality that hasn\'t been implemented yet. ' +
               'Please help us fix this by submitting an error report with a link to this mod.',
-        }, [ { label: 'Report', action: makeReport }, { label: 'Close' } ]));
+        }, [
+          { label: 'Report', action: makeReport },
+          { label: 'Close' },
+        ]));
 
     api.sendNotification({
       type: 'info',
@@ -582,8 +585,8 @@ class InstallManager {
       return prev;
     }, {});
 
-    return fs.ensureDirAsync(path.join(destinationPath, INI_TWEAKS_PATH)),
-       Promise.map(Object.keys(byDest), destination => {
+    return fs.ensureDirAsync(path.join(destinationPath, INI_TWEAKS_PATH))
+      .then(() => Promise.map(Object.keys(byDest), destination => {
       const bySection: {[section: string]: IInstruction[]} =
           byDest[destination].reduce((prev, value) => {
             setdefault(prev, value.section, []).push(value);
@@ -600,7 +603,7 @@ class InstallManager {
       const content = Object.keys(bySection).map(renderSection).join(os.EOL);
 
       return fs.writeFileAsync(path.join(destinationPath, INI_TWEAKS_PATH, destination), content);
-    })
+    }))
     .then(() => undefined);
   }
 

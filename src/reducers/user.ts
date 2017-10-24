@@ -2,6 +2,7 @@ import * as actions from '../actions/user';
 import {IReducerSpec} from '../types/IExtensionContext';
 import {merge, setSafe} from '../util/storeHelper';
 
+// tslint:disable-next-line:no-submodule-imports
 import {REHYDRATE} from 'redux-persist/constants';
 
 export const userReducer: IReducerSpec = {

@@ -334,6 +334,10 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
                                  feedbackMessage, files, sendAnonymously, (err: Error) => {
       this.nextState.sending = false;
       if (err !== null) {
+        if ((err as any).body !== undefined) {
+          onShowError('Failed to send feedback', `${err.message} - ${(err as any).body}`,
+                      notificationId);
+        }
         onShowError('Failed to send feedback', err, notificationId);
         return;
       }

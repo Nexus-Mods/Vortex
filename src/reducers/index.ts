@@ -17,9 +17,10 @@ import { tableReducer } from './tables';
 import { userReducer } from './user';
 import { windowReducer } from './window';
 
-import pick = require('lodash/pick');
+import { pick } from 'lodash';
 import { combineReducers, Reducer, ReducersMapObject } from 'redux';
 import { createReducer } from 'redux-act';
+// tslint:disable-next-line:no-submodule-imports
 import { REHYDRATE } from 'redux-persist/constants';
 
 /**

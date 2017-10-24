@@ -22,8 +22,14 @@ export class UserCanceled extends Error {
 }
 
 export class HTTPError extends Error {
-  constructor(statusCode: number, message: string) {
+  private mBody: string;
+  constructor(statusCode: number, message: string, body: string) {
     super(`HTTP (${statusCode}) - ${message}`);
     this.name = this.constructor.name;
+    this.mBody = body;
+  }
+
+  public get body(): string {
+    return this.mBody;
   }
 }

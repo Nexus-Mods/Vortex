@@ -1,4 +1,3 @@
-import {showDialog} from '../../actions/notifications';
 import { setSettingsPage } from '../../actions/session';
 import {
   IExtensionApi,
@@ -241,17 +240,6 @@ function genUpdateModDeployment() {
     if (activator === undefined) {
       // this situation (no supported activator) should already be reported
       // elsewhere
-      return Promise.resolve();
-    }
-
-    if ((modState === lastActivatedState) &&
-      (gameDiscovery === lastGameDiscovery)) {
-      // early out if nothing relevant to the deployment has changed
-      api.sendNotification({
-        type: 'info',
-        message: t('No changes to deploy'),
-        displayMS: 3000,
-      });
       return Promise.resolve();
     }
 
@@ -562,19 +550,15 @@ function init(context: IExtensionContext): boolean {
     props: () => ({ modSources }),
   });
 
-  context.registerAction('mod-icons', 105, ActivationButton, () => {
-    return {
-      key: 'activate-button',
-      activators,
-    };
-  });
+  context.registerAction('mod-icons', 105, ActivationButton, {}, () => ({
+    key: 'activate-button',
+    activators,
+  }));
 
-  context.registerAction('mod-icons', 110, DeactivationButton, () => {
-    return {
-      key: 'deactivate-button',
-      activators,
-    };
-  });
+  context.registerAction('mod-icons', 110, DeactivationButton, {}, () => ({
+    key: 'deactivate-button',
+    activators,
+  }));
 
   const validActivatorCheck = genValidActivatorCheck(context.api);
 

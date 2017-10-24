@@ -96,7 +96,7 @@ function queryPurge(api: IExtensionApi,
 
 export function loadActivation(api: IExtensionApi, modType: string,
                                modPath: string): Promise<IDeployedFile[]> {
-  const typeTag = modType.length > 0 ? modType + '.' : '';
+  const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFile = path.join(modPath, `vortex.deployment.${typeTag}json`);
   const state: IState = api.store.getState();
   const instanceId = state.app.instanceId;

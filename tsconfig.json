@@ -11,6 +11,7 @@
         "outDir": "./out",
         "sourceMap": true,
         "mapRoot": "/",
+        "skipLibCheck": true,
         "jsx":"react"
     },
     "files": [

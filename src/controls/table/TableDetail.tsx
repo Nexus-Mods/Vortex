@@ -1,5 +1,5 @@
 import {IEditChoice, ITableAttribute} from '../../types/ITableAttribute';
-import {PureComponentEx} from '../../util/ComponentEx';
+import {ComponentEx} from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 
@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup,
          ListGroup, ListGroupItem } from 'react-bootstrap';
-import * as Select from 'react-select';
+import Select from 'react-select';
 
 interface ICellProps {
   language: string;
@@ -265,7 +265,7 @@ export interface IDetailProps {
   onToggleShow: () => void;
 }
 
-class DetailBox extends PureComponentEx<IDetailProps, {}> {
+class DetailBox extends ComponentEx<IDetailProps, {}> {
   constructor(props: IDetailProps) {
     super(props);
   }

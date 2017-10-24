@@ -38,9 +38,14 @@ export class TimeoutError extends Error {
 }
 
 export class HTTPError extends Error {
-  constructor(statusCode: number, message: string) {
+  private mBody: string;
+  constructor(statusCode: number, message: string, body: string) {
     super(`HTTP (${statusCode}) - ${message}`);
     this.name = this.constructor.name;
+    this.mBody = body;
+  }
+  public get body(): string {
+    return this.mBody;
   }
 }
 
@@ -222,7 +227,7 @@ class Nexus {
         if (error !== null) {
           return reject(error);
         } else if (response.statusCode >= 400) {
-          return reject(new HTTPError(response.statusCode, response.statusMessage));
+          return reject(new HTTPError(response.statusCode, response.statusMessage, body));
         } else {
           return resolve();
         }
