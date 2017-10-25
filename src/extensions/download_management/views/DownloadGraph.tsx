@@ -72,25 +72,41 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
+    const maxData = Math.max(...speeds);
+    const maxRounded = this.byteRound(maxData);
+    const ticks = [0, this.byteRound(maxRounded / 3),
+                   this.byteRound((maxRounded * 2) / 3), maxRounded];
+
     // TODO: animation disabled because https://github.com/recharts/recharts/issues/375
     return (
       <div className='chart-container download-chart' ref={this.setRef} >
         <recharts.LineChart width={this.state.width} height={200} data={data}>
-          <recharts.YAxis tickFormatter={this.valueFormatter} />
+          <recharts.YAxis
+            tickFormatter={this.valueFormatter}
+            ticks={ticks}
+            domain={[0, maxRounded]}
+          />
           <recharts.CartesianGrid strokeDasharray='3 3' vertical={false}/>
           <recharts.Line
             type='monotone'
             dataKey='speed'
             isAnimationActive={false}
+            dot={false}
           />
-          <recharts.Tooltip
+          { // updating the tooltip is extremely costy for some reason, ~22ms every time we update
+            /* <recharts.Tooltip
             formatter={this.valueFormatter}
             labelFormatter={this.labelFormatter}
             wrapperStyle={{ backgroundColor: '', border: '' }}
-          />
+          /> */}
         </recharts.LineChart>
       </div>
     );
+  }
+
+  private byteRound(input: number): number {
+    const roundVal = 128 * 1024;
+    return Math.ceil(input / roundVal) * roundVal;
   }
 
   private updateDimensions = () => {

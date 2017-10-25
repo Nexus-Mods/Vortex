@@ -231,5 +231,5 @@ export function bytesToString(bytes: number): string {
     ++labelIdx;
     bytes /= 1024;
   }
-  return bytes.toFixed(1) + ' ' + labels[labelIdx];
+  return bytes.toFixed(Math.max(0, labelIdx - 1)) + ' ' + labels[labelIdx];
 }
