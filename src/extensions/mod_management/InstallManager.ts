@@ -858,7 +858,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
       const download: IDownload = state.persistent.downloads.files[downloadId];
       const fullPath: string = path.join(downloadPath(state), download.localPath);
       this.install(downloadId, fullPath, download.game || activeGameId(state),
-        api, download.modInfo, false, false, (error, id) => {
+        api, { download }, false, false, (error, id) => {
           if (error === null) {
             resolve(id);
           } else {

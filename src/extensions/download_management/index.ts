@@ -66,7 +66,8 @@ function attributeExtractor(input: any) {
   return Promise.resolve({
     fileName: getSafe(input, ['download', 'localPath'], undefined),
     fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
-    fileSize: getSafe(input, ['download', 'fileSize'], undefined),
+    fileSize: getSafe(input, ['download', 'size'], undefined),
+    source: getSafe(input, ['download', 'modInfo', 'source'], undefined),
   });
 }
 
