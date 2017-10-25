@@ -1,5 +1,5 @@
 import Debouncer from '../../util/Debouncer';
-import { countIf } from '../../util/util';
+import { countIf, setdefault } from '../../util/util';
 import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
@@ -126,8 +126,13 @@ class DownloadWorker {
     }
   }
 
+  public restart() {
+    this.mResponse.removeAllListeners('error');
+    this.mRequest.abort();
+  }
+
   private handleError(err) {
-    log('error', 'chunk error', { id: this.mJob.workerId, err });
+    log('error', 'chunk error', { id: this.mJob.workerId, err, ended: this.mEnded });
     if (this.mJob.errorCB !== undefined) {
       this.mJob.errorCB(err);
     }
@@ -149,24 +154,13 @@ class DownloadWorker {
     });
     this.writeBuffer()
       .then(() => {
-        if (this.mJob.size > 0) {
-          // how is this possible?
-          log('error', 'download was incomplete', {
-            id: this.mJob.workerId,
-            received: this.mJob.received,
-            size: this.mJob.size,
-            history: this.mDataHistory,
-          });
-          this.assignJob(this.mJob);
-        } else {
-          if (this.mJob.completionCB !== undefined) {
-            this.mJob.completionCB();
-          }
-          if (!this.mEnded) {
-            this.mRequest.abort();
-            this.mFinishCB(false);
-            this.mEnded = true;
-          }
+        if (this.mJob.completionCB !== undefined) {
+          this.mJob.completionCB();
+        }
+        if (!this.mEnded) {
+          this.mRequest.abort();
+          this.mFinishCB(false);
+          this.mEnded = true;
         }
     });
   }
@@ -263,6 +257,7 @@ class DownloadManager {
   private mMaxChunks: number;
   private mDownloadPath: string;
   private mBusyWorkers: { [id: number]: DownloadWorker } = {};
+  private mSlowWorkers: { [id: number]: number } = {};
   private mQueue: IRunningDownload[] = [];
   private mPaused: IRunningDownload[] = [];
   private mNextId: number = 0;
@@ -514,7 +509,17 @@ class DownloadManager {
 
     this.mBusyWorkers[workerId] = new DownloadWorker(job,
       (bytes) => {
-        this.mSpeedCalculator.addMeasure(workerId, bytes);
+        const starving = this.mSpeedCalculator.addMeasure(workerId, bytes);
+        if (starving) {
+          this.mSlowWorkers[workerId] = (this.mSlowWorkers[workerId] || 0) + 1;
+          if (this.mSlowWorkers[workerId] > 15) {
+            log('debug', 'restarting slow worker', { workerId });
+            this.mBusyWorkers[workerId].restart();
+            delete this.mSlowWorkers[workerId];
+          }
+        } else if (starving === false) {
+          delete this.mSlowWorkers[workerId];
+        }
       },
       (pause) => this.finishChunk(download, job, pause),
       (headers) => download.headers = headers,
@@ -532,6 +537,8 @@ class DownloadManager {
     const remainingSize = size - this.mMinChunkSize;
 
     if (size > this.mMinChunkSize) {
+      // download the file in chunks. We use a fixed number of variable size chunks.
+      // Since the download link may expire we need to start all threads asap
       const chunkSize = Math.min(remainingSize,
           Math.max(this.mMinChunkSize, Math.ceil(remainingSize / this.mMaxChunks)));
 
@@ -636,6 +643,7 @@ class DownloadManager {
   private stopWorker(id: number) {
     this.mSpeedCalculator.stopCounter(id);
     delete this.mBusyWorkers[id];
+    delete this.mSlowWorkers[id];
   }
 
   /**

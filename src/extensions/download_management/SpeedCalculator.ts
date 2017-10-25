@@ -16,13 +16,16 @@ class SpeedCalculator {
   private mTimeSlices: number[] = [];
   private mHorizon: number;
   private mMeasureTime: number;
+  private mMaxRate: number = 0;
 
   constructor(horizon: number, speedCB: (speed: number) => void) {
     this.mHorizon = horizon;
     this.mMeasureTime = this.now();
     setInterval(() => {
       this.moveHorizon();
-      speedCB(sum(this.mTimeSlices) / this.mHorizon);
+      const totalRate = sum(this.mTimeSlices) / this.mHorizon;
+      this.mMaxRate = Math.max(this.mMaxRate, totalRate);
+      speedCB(totalRate);
     }, 1000);
   }
 
@@ -30,7 +33,7 @@ class SpeedCalculator {
     this.mCounters[id] = { lastMeasure: this.now(), timeSlices: [] };
   }
 
-  public addMeasure(id: number, count: number) {
+  public addMeasure(id: number, count: number): boolean {
     const now: number = this.now();
 
     if (this.mCounters[id] === undefined) {
@@ -50,7 +53,15 @@ class SpeedCalculator {
       this.mTimeSlices[i] += perSec;
       this.mCounters[id].timeSlices[i] += perSec;
     }
+    let starvation;
+    if ((secondsPassed > 0)
+        && (this.mCounters[id].timeSlices.length === this.mHorizon)) {
+      const rate = sum(this.mCounters[id].timeSlices) / this.mHorizon;
+      starvation = rate < ((this.mMaxRate / Object.keys(this.mCounters).length) / 5);
+    }
+
     this.mCounters[id].lastMeasure = now;
+    return starvation;
   }
 
   public stopCounter(id: number) {
@@ -61,6 +72,9 @@ class SpeedCalculator {
     const time = this.now();
     for (let i = 0; i < time - this.mMeasureTime; ++i) {
       this.mTimeSlices.shift();
+      Object.keys(this.mCounters).forEach(counterId => {
+        this.mCounters[counterId].timeSlices.shift();
+      });
     }
     this.mMeasureTime = time;
   }
