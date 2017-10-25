@@ -90,6 +90,7 @@ export const stateReducer: IReducerSpec = {
         state: payload.state,
         failCause: payload.failCause,
         fileTime: new Date(),
+        chunks: [],
       });
     },
     [action.pauseDownload as any]: (state, payload) => {
