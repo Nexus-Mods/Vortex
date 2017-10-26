@@ -8,7 +8,7 @@ function bethIni(gamePath: string, iniName: string) {
 }
 
 function toWordExp(input: string): string {
-  return '\\b' + input + '\\b';
+  return '(^|/)' + input + '(/|$)';
 }
 
 const gamebryoTopLevel: string[] = ['distantlod', 'textures', 'meshes', 'music', 'shaders', 'video',

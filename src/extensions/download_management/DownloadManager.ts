@@ -603,7 +603,6 @@ class DownloadManager {
 
     const activeChunks = download.chunks.find(
       (chunk: IDownloadJob) => ['paused', 'finished'].indexOf(chunk.state) === -1);
-    log('debug', 'remaining chunks', { activeChunks });
     if (activeChunks === undefined) {
       let finalPath = download.tempName;
       download.assembler.close()
@@ -628,7 +627,6 @@ class DownloadManager {
           const unfinishedChunks = download.chunks
             .filter(chunk => chunk.state === 'paused')
             .map(this.toStoredChunk);
-          log('debug', 'remaining chunks', { finalPath, unfinishedChunks });
           download.finishCB({
             filePath: finalPath,
             headers: download.headers,
