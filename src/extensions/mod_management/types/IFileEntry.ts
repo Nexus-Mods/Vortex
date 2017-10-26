@@ -1,13 +1,14 @@
 export type FileActionRef = 'import' | 'drop';
 export type FileActionVal = 'keep';
 export type FileActionDel = 'restore' | 'delete';
+export type FileActionSrcDel = 'drop' | 'import';
 
-export type FileAction = FileActionRef | FileActionVal | FileActionDel;
+export type FileAction = FileActionRef | FileActionVal | FileActionDel | FileActionSrcDel;
 
 export interface IFileEntry {
   filePath: string;
   source: string;
-  type: 'refchange' | 'valchange' | 'deleted';
+  type: 'refchange' | 'valchange' | 'deleted' | 'srcdeleted';
   action: FileAction;
   modTypeId: string;
 }

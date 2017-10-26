@@ -26,9 +26,10 @@ export interface IFileChange {
    *   creating a new file entry)
    * valchange means that the content of the file was changed
    *   in-place (as in: file was opened and then written to)
-   * deleted means that the file was deleted
+   * deleted means that the file was deleted in the destination directory
+   * srcdeleted means that the file was deleted in the source directory
    */
-  changeType: 'refchange' | 'valchange' | 'deleted';
+  changeType: 'refchange' | 'valchange' | 'deleted' | 'srcdeleted';
 }
 
 export interface IDeployedFile {

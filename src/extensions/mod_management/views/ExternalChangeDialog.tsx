@@ -45,6 +45,10 @@ const possibleActions: { [type: string]: IPossibleAction[] } = {
     { key: 'restore', text: 'Restore from mod' },
     { key: 'delete', text: 'Delete in mod as well' },
   ],
+  srcdeleted: [
+    { key: 'drop', text: 'Delete in destination as well' },
+    { key: 'import', text: 'Import to mod' },
+  ],
 };
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -59,6 +63,9 @@ class ExternalChangeDialog extends ComponentEx<IProps, { counter: number }> {
     },
     deleted: (evt: React.MouseEvent<any>) => {
       this.setAllFunc('deleted', evt.currentTarget.href.split('#')[1]);
+    },
+    srcdeleted: (evt: React.MouseEvent<any>) => {
+      this.setAllFunc('srcdeleted', evt.currentTarget.href.split('#')[1]);
     },
   };
 
@@ -77,6 +84,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, { counter: number }> {
     const refChanged = changes.filter(change => change.type === 'refchange');
     const valChanged = changes.filter(change => change.type === 'valchange');
     const deleted = changes.filter(change => change.type === 'deleted');
+    const srcdeleted = changes.filter(change => change.type === 'srcdeleted');
 
     return (
       <Modal id='ext-change-dialog' show={visible} onHide={nop}>
@@ -92,7 +100,10 @@ class ExternalChangeDialog extends ComponentEx<IProps, { counter: number }> {
           {this.renderChanged(t('These files were modified'), 'valchange', valChanged)}
           {this.renderChanged(t('These files were replaced (or removed from the mod)'),
             'refchange', refChanged)}
-          {this.renderChanged(t('These files were deleted'), 'deleted', deleted)}
+          {this.renderChanged(t('These files were deleted in output directory'),
+            'deleted', deleted)}
+          {this.renderChanged(t('These files were deleted in the mod directory'),
+            'srcdeleted', srcdeleted)}
         </Modal.Body>
         <Modal.Footer>
           <Button

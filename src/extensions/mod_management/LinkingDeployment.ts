@@ -239,8 +239,21 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.map(activation, fileEntry => {
       const fileDataPath = path.join(dataPath, fileEntry.relPath);
       const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
+
       return fs.statAsync(fileDataPath)
+        .catch(err => {
+          // can't stat, probably the file was deleted
+          nonLinks.push({
+            filePath: fileEntry.relPath,
+            source: fileEntry.source,
+            changeType: 'deleted',
+          });
+          return undefined;
+        })
         .then((stat: fs.Stats): Promise<boolean> => {
+          if (stat === undefined) {
+            return Promise.resolve(undefined);
+          }
           if (stat.mtime.getTime() !== fileEntry.time) {
             nonLinks.push({
               filePath: fileEntry.relPath,
@@ -249,7 +262,16 @@ abstract class LinkingActivator implements IDeploymentMethod {
             });
             return Promise.resolve(undefined);
           } else {
-            return this.isLink(fileDataPath, fileModPath);
+            return this.isLink(fileDataPath, fileModPath)
+            .catch(err => {
+              // can't stat, probably the file was deleted
+              nonLinks.push({
+                filePath: fileEntry.relPath,
+                source: fileEntry.source,
+                changeType: 'srcdeleted',
+              });
+              return undefined;
+            });
           }
         })
         .then((isLink?: boolean) => {
@@ -261,15 +283,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
               changeType: 'refchange',
             });
           }
-        })
-        .catch(err => {
-          // can't stat, probably the file was deleted
-          nonLinks.push({
-            filePath: fileEntry.relPath,
-            source: fileEntry.source,
-            changeType: 'deleted',
-          });
         });
+
       }).then(() => Promise.resolve(nonLinks));
   }
 
