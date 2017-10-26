@@ -1,0 +1,60 @@
+.toggle-container {
+  display: flex;
+
+  &.toggle-disabled {
+    filter: grayscale(80%);
+  }
+}
+
+.toggle {
+  position: relative;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  margin-right: 0.33em;
+}
+
+.toggle-track {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 8px;
+}
+
+.toggle-handle {
+  position: absolute;
+
+  width: 16px;
+  height: 16px;
+
+  border-radius: 8px;
+  background-color: $text-color;
+
+  transition: left ease 200ms;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  svg {
+    color: $brand-primary;
+    width: 0.75em;
+    height: 0.75em;
+  }
+}
+
+.toggle-off .toggle-track {
+  background-color: $text-color-disabled;
+}
+
+.toggle-off .toggle-handle {
+  left: 0;
+}
+
+.toggle-on .toggle-track {
+  background-color: $brand-success;
+}
+
+.toggle-on .toggle-handle {
+  left: 16px;
+}

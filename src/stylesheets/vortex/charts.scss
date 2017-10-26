@@ -1,0 +1,26 @@
+.chart-container {
+  text-align: -webkit-center;
+  border: $border-width solid $brand-secondary;
+  background-color: $brand-menu;
+  margin: $half-gutter;
+}
+
+.recharts-default-tooltip {
+  background-color: $brand-menu;
+  border: $border-width solid $brand-secondary;
+}
+
+.download-chart .recharts-curve {
+  stroke: $brand-success;
+}
+
+// without padding the labels on the y-axis are faded out.
+// Note that the chart maintains aspect ratio so adding a padding
+// on the horizontal actually also causes a small padding on the vertical
+.download-chart .recharts-surface {
+  padding-left: 15px;
+}
+
+.dashlet-download .recharts-sector {
+  fill: $brand-success;
+}

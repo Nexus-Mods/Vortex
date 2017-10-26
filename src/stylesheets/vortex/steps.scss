@@ -1,0 +1,34 @@
+.steps {
+  display: flex;
+  flex-direction: row;
+  hr {
+    height: 1px;
+    flex: 1 1 0;
+    margin: 10px 5px;
+    background-color: $gray;
+  }
+  .steps-step {
+    display: flex;
+    align-items: flex-start;
+  }
+  .steps-step-number {
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 1em;
+    width: 24px;
+    line-height: 22px;
+    text-align: center;
+    margin-right: 5px;
+  }
+  .steps-step-title {
+    font-size: 1.2em;
+  }
+
+  .steps-step-description {
+    font-size: 0.9em;
+  }
+
+  .steps-step.future {
+    color: $text-color-disabled;
+  }
+}

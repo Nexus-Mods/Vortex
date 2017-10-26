@@ -17,7 +17,6 @@ import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
 import GlobalOverlay from './GlobalOverlay';
-import MainFooter from './MainFooter';
 import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
 import NotificationButton from './NotificationButton';
@@ -233,7 +232,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <FlexLayout type='column'>
           {this.renderToolbar()}
           {this.renderBody()}
-          {this.renderFooter()}
         </FlexLayout>
         <Dialog />
         {this.renderDeveloperModal()}
@@ -288,11 +286,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderBody() {
-    const { t, mainPage, objects, overlayOpen, tabsMinimized } = this.props;
-
-    const globalPages = objects.filter(page => page.group === 'global');
-    const perGamePages = objects.filter(page => page.group === 'per-game');
-    const supportPages = objects.filter(page => page.group === 'support');
+    const { t, objects, overlayOpen, tabsMinimized } = this.props;
 
     const sbClass = tabsMinimized ? 'sidebar-compact' : 'sidebar-expanded';
 
@@ -301,36 +295,19 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const pages = objects.map(obj => this.renderPage(obj, globalOverlay));
     pages.push(this.renderPage(this.settingsPage, globalOverlay));
 
+    const pageGroups = [
+      { title: undefined, key: 'dashboard' },
+      { title: 'General', key: 'global' },
+      { title: 'Mods', key: 'per-game' },
+      { title: 'About', key: 'support' },
+    ];
+
     return (
       <FlexLayout.Flex>
         <FlexLayout type='row' style={{ overflow: 'hidden' }}>
           <FlexLayout.Fixed id='main-nav-sidebar' className={sbClass}>
             <div id='main-nav-container' ref={this.setSidebarRef}>
-              <Nav
-                bsStyle='pills'
-                stacked
-                activeKey={mainPage}
-                style={{ flexGrow: 1 }}
-              >
-                {globalPages.map(this.renderPageButton)}
-                {this.renderPageButton(this.settingsPage)}
-              </Nav>
-              <Nav
-                bsStyle='pills'
-                stacked
-                activeKey={mainPage}
-                style={{ flexGrow: 1 }}
-              >
-                {perGamePages.map(this.renderPageButton)}
-              </Nav>
-              <Nav
-                bsStyle='pills'
-                stacked
-                activeKey={mainPage}
-                style={{ flexGrow: 1 }}
-              >
-                {supportPages.map(this.renderPageButton)}
-              </Nav>
+              {pageGroups.map(this.renderPageGroup)}
             </div>
             <Button
               tooltip={tabsMinimized ? t('Restore') : t('Minimize')}
@@ -355,6 +332,30 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     );
   }
 
+  private renderPageGroup = ({ title, key }: { title: string, key: string }): JSX.Element => {
+    const { mainPage, objects, tabsMinimized } = this.props;
+    const pages = objects.filter(page => page.group === key);
+    if (key === 'global') {
+      pages.push(this.settingsPage);
+    }
+
+    const showTitle = !tabsMinimized && (title !== undefined);
+
+    return (
+      <div key={key}>
+        {showTitle ? <p className='main-nav-group-title'>{title}</p> : null}
+        <Nav
+          bsStyle='pills'
+          stacked
+          activeKey={mainPage}
+          className='main-nav-group'
+        >
+          {pages.map(this.renderPageButton)}
+        </Nav>
+      </div>
+    );
+  }
+
   private setOverlayRef = ref => {
     this.overlayRef = ref;
   }
@@ -373,14 +374,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       this.sidebarRef.setAttribute('style',
         'min-width: ' + ref.getBoundingClientRect().width + 'px');
     }
-  }
-
-  private renderFooter() {
-    return (
-      <FlexLayout.Fixed>
-        <MainFooter />
-      </FlexLayout.Fixed>
-    );
   }
 
   private renderPageButton = (page: IMainPage) => {

@@ -59,7 +59,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           src={logoPath}
         />
         <div className='bottom'>
-          <span className='name'>{t(game.name)}</span>
+          <h4 className='name'>{t(game.name)}</h4>
           <IconBar
             id={`game-thumbnail-${game.id}`}
             className='buttons'

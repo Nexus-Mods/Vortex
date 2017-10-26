@@ -1,0 +1,9 @@
+#popover-mod-description {
+  max-width: 700px;
+  // this popover tends to align with the top of the screen so the border isn't visible.
+  // This is irritating because the user has to look twice to see that nothing was cut off
+  margin-top: 5px;
+  img {
+    max-width: 100%;
+  }
+}

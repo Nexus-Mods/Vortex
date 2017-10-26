@@ -1,3 +1,4 @@
+import Dashlet from '../../controls/Dashlet';
 import bbcode from '../../util/bbcode';
 import { ComponentEx, translate } from '../../util/ComponentEx';
 
@@ -20,7 +21,7 @@ interface IComponentState {
 
 type IProps = IBaseProps;
 
-class Dashlet extends ComponentEx<IProps, IComponentState> {
+class RSSDashlet extends ComponentEx<IProps, IComponentState> {
   private mMounted: boolean = false;
 
   constructor(props) {
@@ -54,11 +55,10 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
     const { t, title } = this.props;
     const { error, messages } = this.state;
     return (
-      <div className='dashlet dashlet-news'>
-        <h4>{title}</h4>
+      <Dashlet className='dashlet-news' title={title}>
         {error !== undefined ? <Alert>{t('No messages received')}</Alert> : null}
         {messages !== undefined ? this.renderMessages(messages) : null}
-      </div>
+      </Dashlet>
     );
   }
 
@@ -97,4 +97,4 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-export default translate([ 'common' ], { wait: true })(Dashlet);
+export default translate([ 'common' ], { wait: true })(RSSDashlet);

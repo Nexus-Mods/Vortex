@@ -1,0 +1,22 @@
+// about dialog
+.about-panel {
+  height: 100%;
+  max-height: 200px;
+  overflow-y: scroll;
+}
+
+#about-dialog p {
+  margin: 0px;
+}
+
+.license-text {
+  margin-left: 10px;
+  background-color: $brand-selected;
+}
+
+.license-text-own {
+  margin-left: 10px;
+  background-color: $gray-lighter;
+  max-height: 400px;
+  overflow-y: scroll;
+}

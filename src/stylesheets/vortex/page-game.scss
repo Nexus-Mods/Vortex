@@ -1,0 +1,19 @@
+.game-page {
+  padding-right: $half-gutter;
+}
+
+.popover-game-info {
+  max-width: 500px;
+}
+
+.mod-installing {
+  background-color: $gray-dark;
+}
+
+.mod-installed {
+  background-color: $table-bg;
+}
+
+#btn-more-mods {
+  margin-top: $half-gutter;
+}

@@ -29,12 +29,20 @@ $brand-info:            #3498DB;
 $brand-warning:         #F1AE4E;
 $brand-danger:          #D95450;
 
-$brand-bg:              #192431;
-$brand-menu:            #202c3d;
-$brand-secondary:       #0c5886;
+//$brand-bg:              #192431;
+//$brand-menu:            #202c3d;
+//$brand-secondary:       #0c5886;
+//$brand-selected:        #4c5663;
+$brand-bg:              #2A2C2B;
+$brand-menu:            #4C4C4C;
+$brand-secondary:       red;
 $brand-selected:        #4c5663;
+$brand-clickable:        #D78F46;
 
-$table-header-border-width: 2px;
+$border-color: rgb(128, 128, 128);
+$border-width: 2px;
+
+$table-header-border-width: $border-width;
 $table-header-border-color: #145076;
 
 $body-bg:               $brand-menu;
@@ -54,10 +62,10 @@ $font-family-serif:       Georgia, "Times New Roman", Times, serif;
 $font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace;
 $font-family-base:        "Roboto";
 
-$font-size-base:          13px;
+$font-size-base:          12px;
 $hidpi-scale-factor:      100%;
 
-$headings-font-weight:    400;
+$headings-font-weight:    500;
 $headings-line-height:    1.5;
 $headings-color:          inherit;
 
