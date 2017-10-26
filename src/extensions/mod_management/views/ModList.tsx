@@ -720,14 +720,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     let removeMods: boolean;
     let removeArchive: boolean;
 
-    const modNames = modIds.map(modId => {
-      let name = modName(this.mModsWithState[modId], {
-        version: true,
-      });
-      if (this.mModsWithState[modId].state === 'downloaded') {
-        name += ' ' + t('(Archive only)');
-      }
-      return name;
+    const modNames = modIds
+      .filter(modId => this.mModsWithState[modId] !== undefined)
+      .map(modId => {
+        let name = modName(this.mModsWithState[modId], {
+          version: true,
+        });
+        if (this.mModsWithState[modId].state === 'downloaded') {
+          name += ' ' + t('(Archive only)');
+        }
+        return name;
     });
 
     onShowDialog('question', 'Confirm deletion', {
