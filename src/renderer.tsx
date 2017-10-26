@@ -53,6 +53,8 @@ import { applyMiddleware, compose, createStore, Store } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 import thunkMiddleware from 'redux-thunk';
 
+import luckyOrange from './util/luckyorange';
+
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
 
@@ -74,6 +76,10 @@ Promise.config({
   // long stack traces would be sooo nice but the performance cost in some places is ridiculous
   longStackTraces: false,
 });
+
+if (process.env.NODE_ENV !== 'development') {
+  luckyOrange();
+}
 
 // set up store. Through the electronEnhancer this is automatically
 // synchronized with the main process store
