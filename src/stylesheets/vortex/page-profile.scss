@@ -1,0 +1,37 @@
+.profile-details {
+  padding: 0px;
+  margin-top: 5px;
+  margin-bottom: 0px;
+  li {
+    display: inline;
+    list-style-type: none;
+    padding-right: 15px;
+  }
+}
+
+.profile-actions {
+  margin-top: auto;
+  margin-bottom: auto;
+  .btn {
+    padding: 4px;
+    vertical-align: text-bottom;
+  }
+}
+
+.icon-profile-feature {
+  margin-right: 3px;
+}
+
+.profile-list {
+  margin-right: $half-gutter;
+}
+
+.profile-connector-layer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  pointer-events: none;
+}

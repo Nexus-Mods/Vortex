@@ -1,0 +1,152 @@
+$thumbnail-width: 256px;
+
+#gamepicker-layout {
+  text-align: right;
+}
+
+.game-group {
+  display: grid;
+  justify-content: center;
+  grid-template-columns: repeat(auto-fill, $thumbnail-width + $gutter-width);
+
+  > .game-thumbnail {
+    margin: $half-gutter;
+  }
+}
+
+.gamepicker-body {
+  height: 100%;
+  // has to be relative for popovers to scroll along
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  .popover {
+    max-width: 600px;
+  }
+}
+
+.game-thumbnail {
+  position: relative;
+  width: $thumbnail-width;
+}
+
+.game-thumbnail-primary {
+  border-color: $brand-selected;
+}
+
+.game-thumbnail-default {
+  @extend .panel-default;
+  border-color: transparent;
+}
+
+.game-thumbnail-body {
+  @extend .panel-body;
+  padding: 0;
+
+  .bottom {
+    position: absolute;
+    left: 0px;
+    bottom: 0px;
+    width: 100%;
+    white-space: nowrap;
+    display: flex;
+    padding: 60px 10px 10px 10px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.95));
+
+    &div {
+      margin: auto 0px;
+    }
+  }
+
+  .buttons {
+    margin-top: auto;
+    margin-bottom: auto;
+    * {
+      display: inline-block;
+    }
+    button {
+      @extend .btn-embed;
+    }
+  }
+
+  .name { 
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-left: 5px;
+    flex: 1 1 0;
+  }
+
+  .thumbnail-img {
+    max-width: 256px;
+  }
+}
+
+.game-thumbnail-img-list {
+  max-width: 150px;
+  max-height: 50px;
+}
+
+.game-thumbnail-container-list {
+  width: 100px;
+  min-width: 50px;
+  padding: 0px;
+  margin: 0px;
+  text-align: center;
+}
+
+.game-thumbnail-info {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  mix-blend-mode: difference;
+}
+
+.game-list-selected {
+  background-color: $brand-selected;
+}
+
+.game-list-item {
+  .media-left {
+    vertical-align: middle;
+  }
+  .media-right {
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+}
+
+.btngroup-game-list {
+  display: inline-flex;
+  button {
+    @extend .btn-embed;
+  }
+}
+
+.progress {
+  margin: 6px;
+}
+
+.discovery-progress-container {
+  display: flex;
+}
+
+.discovery-progress-0 {
+  background-color: $brand-success;
+}
+
+.discovery-progress-1 {
+  background-color: $brand-info;
+}
+
+.discovery-progress-2 {
+  background-color: $brand-warning;
+}
+
+.discovery-progress-3 {
+  background-color: $brand-danger;
+}
+
+#img-add-game {
+  margin-bottom: 10px;
+}

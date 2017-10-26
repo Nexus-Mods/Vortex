@@ -115,15 +115,17 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     const gameName = getSafe(discoveredGame, ['name'], getSafe(game, ['name'], gameMode));
 
     return (
-      <Media id='starter-dashlet'>
-        <Media.Left>
-          {this.renderGameIcon(game, discoveredGame)}
-          {this.renderEditToolDialog()}
-        </Media.Left>
-        <Media.Body>
-          {this.renderToolIcons(game, discoveredGame)}
-        </Media.Body>
-      </Media>
+      <div className='dashlet dashlet-starter'>
+        <Media id='starter-dashlet'>
+          <Media.Left>
+            {this.renderGameIcon(game, discoveredGame)}
+            {this.renderEditToolDialog()}
+          </Media.Left>
+          <Media.Body>
+            {this.renderToolIcons(game, discoveredGame)}
+          </Media.Body>
+        </Media>
+      </div>
     );
   }
 

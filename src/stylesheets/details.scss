@@ -1,7 +1,9 @@
-@font-face {
+/*@font-face {
   font-family: 'Roboto';
   src: url(assets/fonts/roboto.woff2);
 }
+*/
+@import url("https://fonts.googleapis.com/css?family=Roboto:400,500,700,300");
 
 $font-size-large:         1.25em;
 $font-size-small:         0.85em;
@@ -30,7 +32,7 @@ $table-border-color:            $gray-lighter;
 $btn-font-weight:                normal;
 
 $btn-default-color:              $text-color;
-$btn-default-bg:                 $brand-secondary;
+$btn-default-bg:                 $brand-clickable;
 $btn-default-border:             $btn-default-bg;
 
 $btn-primary-color:              $btn-default-color;
@@ -221,12 +223,12 @@ $nav-link-hover-bg:                         $gray-lighter;
 $nav-disabled-link-color:                   $gray-light;
 $nav-disabled-link-hover-color:             $gray-light;
 
-$nav-tabs-border-color:                     $brand-secondary;
+$nav-tabs-border-color:                     $border-color;
 
 $nav-tabs-link-hover-border-color:          $gray-darker;
 $nav-tabs-active-link-hover-bg:             $body-bg;
 $nav-tabs-active-link-hover-color:          $gray-darker;
-$nav-tabs-active-link-hover-border-color:   $brand-secondary;
+$nav-tabs-active-link-hover-border-color:   $border-color;
 
 $nav-tabs-justified-link-border-color:            $gray-darker;
 $nav-tabs-justified-active-link-border-color:     $body-bg;
@@ -536,3 +538,5 @@ $dl-horizontal-offset:        $component-offset-horizontal;
 $dl-horizontal-breakpoint:    $grid-float-breakpoint;
 $hr-border:                   $gray-lighter;
 
+$half-gutter: floor($gutter-width / 2);
+$slim-gutter: floor($gutter-width / 4);

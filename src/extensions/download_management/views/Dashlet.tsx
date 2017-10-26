@@ -1,3 +1,4 @@
+import Dashlet from '../../../controls/Dashlet';
 import {IState} from '../../../types/IState';
 import asyncRequire from '../../../util/asyncRequire';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
@@ -78,10 +79,9 @@ class DownloadsDashlet extends ComponentEx<IProps, {}> {
     }
 
     return (
-      <div className='dashlet dashlet-download'>
-        <h4 style={{ position: 'absolute' }}>{t('Download Progress')}</h4>
-          {content}
-      </div>
+      <Dashlet title={t('Download Progress')} className='dashlet-download' >
+        {content}
+      </Dashlet>
     );
   }
 

@@ -1,0 +1,105 @@
+.dashlet {
+  border: $border-width solid $border-color;
+  background-color: $brand-menu;
+  padding: $half-gutter;
+  height: 100%;
+  h3 {
+    margin-top: 0;
+    text-transform: uppercase;
+  }
+  li {
+    border: 0px;
+    background-color: lighten($brand-menu, 5%);
+    margin-bottom: 2px;
+    .icon-todo-type {
+      margin-top: auto;
+      margin-bottom: auto;
+      margin-right: $half-gutter;
+      background-color: $brand-info;
+      padding: 0.5em;
+      width: 2.2em;
+      height: 2.2em;
+    }
+    span {
+      flex: 1 1 0;
+      margin-top: auto;
+      margin-bottom: auto;
+    }
+    button {
+      margin-top: auto;
+      margin-bottom: auto;
+      margin-left: 10px;
+    }
+  }
+}
+
+.dashlet-todo {
+  li {
+    display: flex;
+  }
+}
+
+.dashlet-news {
+  display: flex;
+  flex-direction: column;
+  ul {
+    margin-bottom: 0;
+  }
+}
+
+.packery-item {
+  padding: 5px;
+  overflow: hidden;
+}
+
+.packery-drop-placeholder {
+  outline: 3px dashed #4C4C4C;
+  outline-offset: -6px;
+  /* transition position changing */
+  -webkit-transition: -webkit-transform 0.2s;
+          transition: transform 0.2s;
+}
+
+.lodpi, .hidpi {
+  .packery-height-1 {
+    height: 190px;
+  }
+  .packery-height-2 {
+    height: 380px;
+  }
+  .packery-height-3 {
+    height: 570px;
+  }
+}
+
+.dashlet-game-title {
+  white-space: nowrap;
+  text-align: center;
+  margin: 0px;
+  height: 120px;
+  line-height: 100px;
+}
+
+.dashlet-game-more {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 130px;
+  background: linear-gradient(to right,rgba(25, 36, 49, 0), rgba(25, 36, 49, 0.75), rgb(25, 36, 49));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  a {
+    text-align: right;
+    margin-right: 20px;
+  }
+}
+
+.list-news {
+  overflow-y: auto;
+  img {
+    max-width: 50%;
+    margin: 5px;
+  }
+}

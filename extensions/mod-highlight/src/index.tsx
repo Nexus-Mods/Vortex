@@ -2,6 +2,7 @@ import HighlightButton from './views/HighlightButton';
 import TextareaNotes from './views/TextareaNotes';
 
 import * as I18next from 'i18next';
+import * as path from 'path';
 import * as React from 'react';
 import { selectors, types, util } from 'vortex-api';
 
@@ -37,6 +38,11 @@ function init(context: types.IExtensionContext) {
     edit: {},
     isSortable: true,
     isDefaultVisible: false,
+  });
+
+  context.once(() => {
+    context.api.setStylesheet('mod-highlight',
+                              path.join(__dirname, 'mod-highlight.scss'));
   });
 
   return true;

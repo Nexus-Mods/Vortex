@@ -30,7 +30,7 @@ import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { ListGroup, ProgressBar } from 'react-bootstrap';
+import { ListGroup, ProgressBar, Tab, Tabs } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
@@ -176,18 +176,28 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           <FlexLayout type='column' className='game-page'>
             <FlexLayout.Flex>
               <div ref={this.setScrollRef} className='gamepicker-body'>
-                <span style={{ display: 'table' }}>
-                  <h3>{t('Managed')}</h3>
-                  {this.renderGames(managedGameList, 'managed')}
-                </span>
-                <span style={{ display: 'table' }}>
-                  <h3>{t('Discovered')}</h3>
-                  {this.renderGames(discoveredGameList, 'discovered')}
-                </span>
-                <span style={{ display: 'table' }}>
-                  <h3>{t('Supported')}</h3>
-                  {this.renderGames(supportedGameList, 'undiscovered')}
-                </span>
+                <Tabs defaultActiveKey='managed' id='games-picker-tabs'>
+                  <Tab
+                    eventKey='managed'
+                    title={t('Managed ({{ num }})', { replace: { num: managedGameList.length } })}
+                  >
+                    {this.renderGames(managedGameList, 'managed')}
+                  </Tab>
+                  <Tab
+                    eventKey='discovered'
+                    title={t('Discovered ({{ num }})', {
+                      replace: { num: discoveredGameList.length } })}
+                  >
+                    {this.renderGames(discoveredGameList, 'discovered')}
+                  </Tab>
+                  <Tab
+                    eventKey='supported'
+                    title={t('Supported ({{ num }})', {
+                      replace: { num: supportedGameList.length } })}
+                  >
+                    {this.renderGames(supportedGameList, 'undiscovered')}
+                  </Tab>
+                </Tabs>
               </div>
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
@@ -311,6 +321,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const { t, onRefreshGameInfo } = this.props;
     return (
       <div>
+      <div className='game-group'>
         {games.map(game => (
           <GameThumbnail
             t={t}
@@ -323,6 +334,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             container={this.mScrollRef}
           />))
         }
+      </div>
       </div>
     );
   }

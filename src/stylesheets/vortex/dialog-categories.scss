@@ -1,0 +1,27 @@
+#btn-search-category-prev, #btn-search-category-next {
+  padding: 0px;
+}
+
+#btn-search-category-prev svg, #btn-search-category-next svg {
+  height: 24px;
+}
+
+.search-category-box {
+  margin-left: 10px;
+  position: absolute;
+  top: $modal-inner-padding;
+  right: $modal-inner-padding;
+}
+
+#search-category-input {
+  padding-right: 50px;
+}
+
+.search-position {
+  width: 100%;
+  text-align: right;
+  display: block;
+  margin-top: -25px;
+  margin-left: -5px;
+  pointer-events: none;
+}

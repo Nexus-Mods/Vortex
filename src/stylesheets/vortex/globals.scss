@@ -1,0 +1,33 @@
+html {
+  // for rem
+  font-size: $font-size-base;
+  // letter-spacing: 0.03em;
+}
+
+body {
+  touch-action: $touch-action;
+  text-rendering: optimizeLegibility;
+}
+
+#content {
+  background-color: $brand-bg;
+}
+
+::-webkit-scrollbar {
+  width: $scrollbar-width;
+  height: $scrollbar-width;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: $gray-dark;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-corner {
+  background-color: $brand-secondary;
+}
+
+::-webkit-input-placeholder {
+  color: darken($text-color, 20%) !important;
+  font-style: italic;
+}

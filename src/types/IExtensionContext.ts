@@ -63,7 +63,7 @@ export type RegisterFooter =
 export interface IMainPageOptions {
   hotkey?: string;
   visible?: () => boolean;
-  group: 'global' | 'per-game' | 'support';
+  group: 'dashboard' | 'global' | 'per-game' | 'support';
   props?: () => any;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;

@@ -1,0 +1,24 @@
+.nexusmods-action-button {
+  display: inline;
+  background: #57a5cc;
+  padding: 10px 9px;
+  margin: 0 8px;
+  > svg {
+    margin-right: 5px;
+    use {
+      .st0,
+      .st1 {
+        fill: #57a5cc !important;
+        fill-opacity: 0 !important;
+      }
+    }
+  }
+
+  >.nexusmods-fake-link {
+    color: #ffffff;
+    font-size: 12px;
+    text-transform: uppercase;
+    text-decoration: none;
+    line-height: 1.3;
+  }
+}
