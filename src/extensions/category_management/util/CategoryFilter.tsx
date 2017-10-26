@@ -7,7 +7,7 @@ import { ICategoryDictionary } from '../../category_management/types/ICategoryDi
 import { activeGameId } from '../../profile_management/selectors';
 
 import * as React from 'react';
-import * as Select from 'react-select';
+import Select from 'react-select';
 
 interface IConnectedProps {
   categories: ICategoryDictionary;

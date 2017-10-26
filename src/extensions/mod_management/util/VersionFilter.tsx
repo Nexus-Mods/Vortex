@@ -3,7 +3,7 @@ import { IFilterProps, ITableFilter } from '../../../types/ITableAttribute';
 import versionClean from './versionClean';
 
 import * as React from 'react';
-import * as Select from 'react-select';
+import Select from 'react-select';
 
 export class VersionFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {

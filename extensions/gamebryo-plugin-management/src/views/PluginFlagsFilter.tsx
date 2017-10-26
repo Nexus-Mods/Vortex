@@ -1,7 +1,7 @@
 import { types } from 'vortex-api';
 
 import * as React from 'react';
-import * as Select from 'react-select';
+import Select from 'react-select';
 
 export class PluginFlagFilterComponent extends React.Component<types.IFilterProps, {}> {
   public render(): JSX.Element {

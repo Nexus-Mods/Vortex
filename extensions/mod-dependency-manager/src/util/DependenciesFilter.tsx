@@ -1,9 +1,6 @@
 import * as React from 'react';
-import * as SelectX from 'react-select';
+import Select from 'react-select';
 import { types } from 'vortex-api';
-
-// TODO: having problem with types
-const Select: any = SelectX;
 
 export class DependenciesFilterComponent extends React.Component<types.IFilterProps, {}> {
   public render(): JSX.Element {

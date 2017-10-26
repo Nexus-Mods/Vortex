@@ -1,7 +1,7 @@
 import {IFilterProps, ITableFilter} from '../../../types/ITableAttribute';
 
 import * as React from 'react';
-import * as Select from 'react-select';
+import Select from 'react-select';
 
 export class EndorsementFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {

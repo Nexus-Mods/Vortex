@@ -5,7 +5,7 @@ import { connect } from '../../util/ComponentEx';
 import { truthy } from '../../util/util';
 
 import * as React from 'react';
-import * as Select from 'react-select';
+import Select from 'react-select';
 
 type IProps = IFilterProps;
 

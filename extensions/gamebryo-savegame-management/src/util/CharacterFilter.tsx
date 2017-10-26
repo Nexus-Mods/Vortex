@@ -2,7 +2,7 @@ import { ISavegame } from '../types/ISavegame';
 
 import * as React from 'react';
 import { connect } from 'react-redux';
-import * as Select from 'react-select';
+import Select from 'react-select';
 import { types } from 'vortex-api';
 
 interface IConnectedProps {

@@ -5,7 +5,7 @@ import { activeGameId } from '../../util/selectors';
 
 import * as React from 'react';
 import { connect } from 'react-redux';
-import * as Select from 'react-select';
+import Select from 'react-select';
 
 export interface IConnectedProps {
   games: IGameStored[];
