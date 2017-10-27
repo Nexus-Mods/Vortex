@@ -80,18 +80,19 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
     // TODO: animation disabled because https://github.com/recharts/recharts/issues/375
     return (
       <div className='chart-container download-chart' ref={this.setRef} >
-        <recharts.LineChart width={this.state.width} height={200} data={data}>
+        <recharts.AreaChart width={this.state.width} height={200} data={data}>
           <recharts.YAxis
             tickFormatter={this.valueFormatter}
             ticks={ticks}
             domain={[0, maxRounded]}
           />
           <recharts.CartesianGrid strokeDasharray='3 3' vertical={false}/>
-          <recharts.Line
+          <recharts.Area
             type='monotone'
             dataKey='speed'
             isAnimationActive={false}
             dot={false}
+            fill='url(#graph-gradient)'
           />
           { // updating the tooltip is extremely costy for some reason, ~22ms every time we update
             /* <recharts.Tooltip
@@ -99,7 +100,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
             labelFormatter={this.labelFormatter}
             wrapperStyle={{ backgroundColor: '', border: '' }}
           /> */}
-        </recharts.LineChart>
+        </recharts.AreaChart>
       </div>
     );
   }

@@ -161,7 +161,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     }, []);
 
     return (
-      <div>
+      <div style={{ height: '100%' }}>
         <Grid fluid>
           <Row>{
             visible.map((col, colIdx) => (

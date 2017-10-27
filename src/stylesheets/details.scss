@@ -26,7 +26,7 @@ $table-bg:                      $brand-menu;
 $table-bg-accent:               #e9e9e9;
 $table-bg-hover:                $brand-selected;
 $table-bg-active:               $table-bg-hover;
-$table-border-color:            $gray-lighter;
+$table-border-color:            $text-color;
 
 //== Buttons
 $btn-font-weight:                normal;
@@ -394,7 +394,7 @@ $progress-bar-info-bg:        $brand-info;
 //== List group
 
 $list-group-bg:                 initial;
-$list-group-border:             $brand-secondary;
+$list-group-border:             $border-color;
 $list-group-border-radius:      $border-radius-base;
 
 $list-group-hover-bg:           $gray-lighter;
@@ -415,7 +415,7 @@ $list-group-link-heading-color: $gray-dark;
 //== Panels
 
 $panel-bg:                    $brand-bg;
-$panel-body-padding:          $gutter-width / 2;
+$panel-body-padding:          $gutter-width / 2 0 $gutter-width / 2 $gutter-width / 2;
 $panel-heading-padding:       $gutter-width / 3 $gutter-width / 2;
 $panel-footer-padding:        $panel-heading-padding;
 $panel-border-radius:         $border-radius-base;

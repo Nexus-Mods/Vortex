@@ -37,6 +37,7 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
+import { Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 
@@ -317,34 +318,42 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     return (
       <MainPage>
         <FlexLayout type='column'>
-          <FlexLayout.Fixed>
-            {secondary ? null : <DownloadGraph />}
-          </FlexLayout.Fixed>
           <FlexLayout.Flex>
-            <SuperTable
-              tableId='downloads'
-              data={downloads}
-              staticElements={[
-                FILE_NAME,
-                this.fileTimeColumn,
-                this.gameColumn,
-                FILE_SIZE,
-                PROGRESS,
-              ]}
-              actions={this.actions}
-            />
+            <Panel className='download-panel'>
+              <FlexLayout type='column'>
+                <FlexLayout.Fixed>
+                  {secondary ? null : <DownloadGraph />}
+                </FlexLayout.Fixed>
+                <FlexLayout.Flex>
+                  <SuperTable
+                    tableId='downloads'
+                    data={downloads}
+                    staticElements={[
+                      FILE_NAME,
+                      this.fileTimeColumn,
+                      this.gameColumn,
+                      FILE_SIZE,
+                      PROGRESS,
+                    ]}
+                    actions={this.actions}
+                  />
+                </FlexLayout.Flex>
+              </FlexLayout>
+            </Panel>
           </FlexLayout.Flex>
           <FlexLayout.Fixed>
-            {
-              ((gameMode !== undefined) && !secondary)
-                ? (
-                  <Dropzone
-                    accept={['urls', 'files']}
-                    drop={this.dropDownload}
-                    dialogHint={t('Enter download URL')}
-                  />
-                ) : null
-            }
+            <Panel className='download-drop-panel'>
+              {
+                ((gameMode !== undefined) && !secondary)
+                  ? (
+                    <Dropzone
+                      accept={['urls', 'files']}
+                      drop={this.dropDownload}
+                      dialogHint={t('Enter download URL')}
+                    />
+                  ) : null
+              }
+              </Panel>
           </FlexLayout.Fixed>
         </FlexLayout>
         <MainPage.Overlay>

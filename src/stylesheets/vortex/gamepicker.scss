@@ -45,9 +45,10 @@ $thumbnail-width: 256px;
 
   .bottom {
     position: absolute;
-    left: 0px;
-    bottom: 0px;
-    width: 100%;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
     white-space: nowrap;
     display: flex;
     padding: 60px 10px 10px 10px;
@@ -59,10 +60,12 @@ $thumbnail-width: 256px;
   }
 
   .buttons {
-    margin-top: auto;
-    margin-bottom: auto;
-    * {
+    >* {
       display: inline-block;
+      margin: 4px;
+      background-color: $brand-clickable;
+      vertical-align: middle;
+      padding: 2px 8px;
     }
     button {
       @extend .btn-embed;
@@ -75,6 +78,8 @@ $thumbnail-width: 256px;
     text-overflow: ellipsis;
     padding-left: 5px;
     flex: 1 1 0;
+    position: absolute;
+    bottom: 0;
   }
 
   .thumbnail-img {
@@ -99,7 +104,6 @@ $thumbnail-width: 256px;
   position: absolute;
   top: 8px;
   right: 8px;
-  mix-blend-mode: difference;
 }
 
 .game-list-selected {

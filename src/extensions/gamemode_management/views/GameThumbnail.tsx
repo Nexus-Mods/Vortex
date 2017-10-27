@@ -60,32 +60,36 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
         />
         <div className='bottom'>
           <h4 className='name'>{t(game.name)}</h4>
+        </div>
+        <div className='hover-menu'>
           <IconBar
             id={`game-thumbnail-${game.id}`}
             className='buttons'
             group={`game-${type}-buttons`}
             instanceId={game.id}
             staticElements={[]}
-            collapse={true}
+            collapse={false}
+            buttonType='menu'
+            orientation='vertical'
           />
+          <OverlayTrigger
+            overlay={gameInfoPopover}
+            triggerRef={this.setRef}
+            getBounds={getBounds || this.getWindowBounds}
+            container={container}
+            orientation='horizontal'
+            shouldUpdatePosition={true}
+            trigger='click'
+            rootClose={true}
+          >
+            <IconButton
+              id={`btn-info-${game.id}`}
+              icon='alert-circle-i'
+              className='game-thumbnail-info btn-embed'
+              tooltip={t('Show Details')}
+            />
+          </OverlayTrigger>
         </div>
-        <OverlayTrigger
-          overlay={gameInfoPopover}
-          triggerRef={this.setRef}
-          getBounds={getBounds || this.getWindowBounds}
-          container={container}
-          orientation='horizontal'
-          shouldUpdatePosition={true}
-          trigger='click'
-          rootClose={true}
-        >
-          <IconButton
-            id={`btn-info-${game.id}`}
-            icon='alert-circle-i'
-            className='game-thumbnail-info btn-embed'
-            tooltip={t('Show Details')}
-          />
-        </OverlayTrigger>
       </Panel>
     );
   }

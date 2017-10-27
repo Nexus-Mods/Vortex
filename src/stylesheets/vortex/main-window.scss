@@ -213,7 +213,7 @@
   top: $half-gutter;
   bottom: $half-gutter;
   left: $half-gutter;
-  right: 0;
+  right: $half-gutter;
 }
 
 .main-page-body {
@@ -241,7 +241,6 @@
   border: 0px;
   padding: 1px;
   width: 100%;
-  background-color: $brand-secondary;
   display: flex;
   justify-content: center;
 }

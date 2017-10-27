@@ -50,3 +50,19 @@
 #downloads-action-icons .btn {
   @extend .btn-embed;
 }
+
+.download-panel {
+  height: 100%;
+  background-color: $brand-bg;
+  > .panel-body {
+    height: 100%;
+  }
+}
+
+#table-downloads {
+  padding-top: $half-gutter;
+}
+
+.download-drop-panel {
+  margin-top: $half-gutter;
+}

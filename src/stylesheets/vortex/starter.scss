@@ -1,6 +1,7 @@
 #starter-dashlet {
   overflow: visible;
   margin: 0;
+  height: 100%;
 
   .row>div {
     padding-top: $slim-gutter;
@@ -9,7 +10,7 @@
 
   .container-fluid {
     overflow-y: auto;
-    height: 175px;
+    height: 100%;
     padding: 0;
   }
 

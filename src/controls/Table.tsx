@@ -103,6 +103,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private mSplitDebouncer: Debouncer;
   private mSplitContainer: any;
   private mHeadRef: HTMLElement;
+  private mBodyRef: HTMLElement;
   private mScrollRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
   private mLastSelectOnly: number = 0;
@@ -218,7 +219,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     //   to know the size without rendering
 
     return (
-      <TBody>
+      <TBody domRef={this.setBodyRef} style={{ clipPath: 'inset(0px 0 0 0)' }}>
         {sortedRows.map((row, idx) => this.renderRow(row, idx < 40, visibleAttributes))}
       </TBody>
     );
@@ -511,6 +512,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     this.mHeadRef = ref;
   }
 
+  private setBodyRef = ref => {
+    this.mBodyRef = ref;
+  }
+
   private setRowRef = (ref: any) => {
     if (ref !== null) {
       this.mRowRefs[ref.id] = ref;
@@ -546,6 +551,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     if ((this.mHeadRef !== undefined) && (this.mHeadRef !== null)) {
       const transform = `translate(0, ${event.target.scrollTop}px)`;
       this.mHeadRef.style.transform = transform;
+    }
+
+    if ((this.mBodyRef !== undefined) && (this.mBodyRef !== null)) {
+      const clip = `inset(${event.target.scrollTop}px 0 0 0)`;
+      this.mBodyRef.style.clipPath = clip;
     }
   }
 

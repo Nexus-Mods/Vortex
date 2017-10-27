@@ -19,11 +19,6 @@
   flex: 1 1 0%;
 
   .xthead {
-    color: $text-color;
-    background-image: linear-gradient($brand-menu, $brand-menu), 
-          linear-gradient($table-header-border-color,$table-header-border-color);
-    background-clip: content-box, padding-box;
-
     .xth {
       padding: $table-header-border-width 0px $table-header-border-width !important;
       height: 100%;
@@ -38,14 +33,11 @@
 
       > div {
         height: 100%;
-        min-height: 48px;
+        // min-height: 48px;
         display: flex;
         justify-content: center;
         flex-direction: row;
-        padding: 16px 4px;
-        > :not(first-child) {
-          margin-top: 5px;
-        }
+        padding: 4px 4px;
       }
     }
   }
@@ -56,13 +48,14 @@
 }
 
 .table-details-pane {
+  contain: content;
   height: 100%;
   overflow-y: auto;
   padding: 0px;
   min-width: 32px;
   background-color: $brand-menu;
   transition: max-width 300ms;
-  border: 1px solid $brand-secondary;
+  border: 1px solid $border-color;
   border-right-width: 0px;
   &.open {
     max-width: 30%;

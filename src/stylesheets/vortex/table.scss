@@ -1,22 +1,22 @@
 .xtable {
-  background-color: $table-bg;
-
+  contain: content;
   > .xthead,
   > .xtbody,
   > .xtfoot {
+    background-color: $table-bg;
     > .xtr {
       > .xth,
       > .xtd {
         padding: $table-cell-padding;
         line-height: $line-height-base;
         vertical-align: middle;
-        border-top: 1px solid $table-border-color;
+        border-top: $table-row-gap solid $table-border-color;
       }
     }
   }
   > .xthead > .xtr > .xth {
     vertical-align: bottom;
-    border-bottom: 2px solid $table-border-color;
+    border-bottom: $table-header-separator solid $table-border-color;
   }
   > .xthead:first-child {
     > .xtr:first-child {
