@@ -107,10 +107,7 @@ function startTool(starter: StarterInfo,
             }
           });
         } catch (err) {
-        // TODO: as of the current electron version (1.4.14) the error isn't precise
-        //   enough to determine if the error was actually lack of elevation but among
-        //   the errors that report "UNKNOWN" this should be the most likely one.
-        if (err.errno === 'UNKNOWN') {
+        if (err.errno === 'EACCES') {
           queryElevate(starter.name)
           .then(shouldElevate => {
             if (shouldElevate) {
