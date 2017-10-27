@@ -49,7 +49,7 @@ import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, ButtonGroup, Jumbotron, MenuItem } from 'react-bootstrap';
+import { Button, ButtonGroup, Jumbotron, MenuItem, Panel } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import * as semver from 'semver';
@@ -238,31 +238,33 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           />
         </MainPage.Header>
         <MainPage.Body>
-          <Dropzone
-            accept={['files']}
-            drop={this.dropMod}
-            style={{ height: '100%' }}
-            dragOverlay={dragOverlay}
-            clickable={false}
-          >
-            <SuperTable
-              tableId='mods'
-              detailsTitle={t('Mod Attributes')}
-
-              data={this.mPrimaryMods}
-              staticElements={[
-                PICTURE,
-                this.modEnabledAttribute,
-                this.modNameAttribute,
-                this.modVersionAttribute,
-                this.modVersionDetailAttribute,
-                INSTALL_TIME,
-              ]}
-              actions={this.modActions}
+          <Panel>
+            <Dropzone
+              accept={['files']}
+              drop={this.dropMod}
+              style={{ height: '100%' }}
+              dragOverlay={dragOverlay}
+              clickable={false}
             >
-            {this.renderMoreMods(modSources)}
-            </SuperTable>
-          </Dropzone>
+              <SuperTable
+                tableId='mods'
+                detailsTitle={t('Mod Attributes')}
+
+                data={this.mPrimaryMods}
+                staticElements={[
+                  PICTURE,
+                  this.modEnabledAttribute,
+                  this.modNameAttribute,
+                  this.modVersionAttribute,
+                  this.modVersionDetailAttribute,
+                  INSTALL_TIME,
+                ]}
+                actions={this.modActions}
+              >
+              {this.renderMoreMods(modSources)}
+              </SuperTable>
+            </Dropzone>
+          </Panel>
         </MainPage.Body>
         <MainPage.Overlay>
           <IconBar

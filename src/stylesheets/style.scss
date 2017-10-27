@@ -239,6 +239,7 @@ textarea {
 .nav-pills.nav-pills.nav-stacked > li.active > a:hover,
 .nav-pills.nav-stacked > li.active > a:focus {
   background-color: $brand-selected;
+  border-right: 4px solid $brand-clickable;
 }
 
 .nav-pills.nav-stacked > li.secondary > a,
@@ -374,6 +375,7 @@ a[role=menuitem] svg {
 
 .media {
   overflow: visible;
+  display: flex;
 }
 
 .button-toggle {
@@ -464,6 +466,20 @@ a[role=menuitem] svg {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
+.popover {
+  contain: content;
+  border: 0px;
+}
+
+.panel {
+  border: $border-width solid $border-color;
+  height: 100%;
+  .panel-body {
+    background-color: $brand-menu;
+    height: 100%;
+  }
+}
+
 // /generic control rules
 /////////////////////////
 
@@ -474,6 +490,7 @@ a[role=menuitem] svg {
 @import "vortex/dashlet";
 @import "vortex/dialogs";
 @import "vortex/gamepicker";
+@import "vortex/hover-menu";
 @import "vortex/icon";
 @import "vortex/iconbar";
 @import "vortex/layout";

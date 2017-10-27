@@ -36,14 +36,16 @@ $brand-danger:          #D95450;
 $brand-bg:              #2A2C2B;
 $brand-menu:            #4C4C4C;
 $brand-secondary:       red;
-$brand-selected:        #4c5663;
+$brand-selected:        #2A2C2B;
 $brand-clickable:        #D78F46;
 
 $border-color: rgb(128, 128, 128);
 $border-width: 2px;
 
 $table-header-border-width: $border-width;
-$table-header-border-color: #145076;
+$table-header-border-color: $border-color;
+$table-row-gap: 0px;
+$table-header-separator: 1px;
 
 $body-bg:               $brand-menu;
 $text-color:            #eeeeee;
