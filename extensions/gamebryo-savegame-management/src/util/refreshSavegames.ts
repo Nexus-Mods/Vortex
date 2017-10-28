@@ -28,9 +28,12 @@ function refreshSavegames(savesPath: string,
                           onAddSavegame: (save: ISavegame) => void): Promise<string[]> {
   const failedReads: string[] = [];
   return fs.readdirAsync(savesPath)
+    .catch(err => (err.code === 'ENOENT')
+      ? Promise.resolve([])
+      : Promise.reject(err))
     .filter((savePath: string) => ['.ess', 'fos'].indexOf(path.extname(savePath)) !== -1)
-    .then((savegameNames: string[]) => {
-      return Promise.each(savegameNames, (savegameName: string) => {
+    .then((savegameNames: string[]) =>
+      Promise.each(savegameNames, (savegameName: string) => {
         const savegamePath = path.join(savesPath, savegameName);
         return loadSaveGame(savegamePath, onAddSavegame)
         .catch(err => (err.code === 'EBUSY')
@@ -41,11 +44,8 @@ function refreshSavegames(savesPath: string,
           failedReads.push(`${savegameName} - ${err.message}`);
           log('warn', 'Failed to parse savegame', { savegamePath, error: err.message });
         });
-      });
-    })
-    .then(() => {
-      return Promise.resolve(failedReads);
-    });
+      }))
+    .then(() => Promise.resolve(failedReads));
 }
 
 function timestampFormat(timestamp: number) {
