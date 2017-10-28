@@ -34,7 +34,7 @@ export const FILE_NAME: ITableAttribute = {
   icon: '',
   calc: (attributes: IDownload) =>
     attributes.localPath
-    || nameFromUrl(attributes.urls[0])
+    || nameFromUrl(getSafe(attributes, ['urls', 0], undefined))
     || getSafe(attributes, ['modInfo', 'name'], undefined),
   placement: 'both',
   isToggleable: false,
