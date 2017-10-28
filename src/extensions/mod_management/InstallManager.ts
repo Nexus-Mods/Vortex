@@ -32,6 +32,7 @@ import deriveModInstallName from './modIdManager';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import ZipT = require('node-7z');
 import * as os from 'os';
@@ -241,7 +242,7 @@ class InstallManager {
 
         destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
         tempPath = destinationPath + '.installing';
-        return this.installInner(api.store, archivePath,
+        return this.installInner(api, archivePath,
           tempPath, destinationPath, installGameId);
       })
       .then(result => {
@@ -338,22 +339,33 @@ class InstallManager {
       });
   }
 
+  private isCritical(error: string): boolean {
+    return (error.indexOf('Unexpected end of archive') !== -1)
+        || (error.indexOf('ERROR: Data Error') !== -1);
+  }
+
   /**
    * find the right installer for the specified archive, then install
    */
-  private installInner(store: Redux.Store<any>, archivePath: string,
+  private installInner(api: IExtensionApi, archivePath: string,
                        tempPath: string, destinationPath: string,
                        gameId: string): Promise<IInstallResult> {
     const fileList: string[] = [];
     return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
                                   () => undefined,
-                                  () => this.queryPassword(store))
-        .catch((err: Error) => {
-          if ((err.message.indexOf('Unexpected end of archive') !== -1)
-              || (err.message.indexOf('ERROR: Data Error') !== -1)) {
-            return Promise.reject(new ArchiveBrokenError());
+                                  () => this.queryPassword(api.store))
+        .catch((err: Error) => this.isCritical(err.message)
+          ? Promise.reject(new ArchiveBrokenError())
+          : Promise.reject(err))
+        .then(({ code, errors }: {code: number, errors: string[] }) => {
+          if (code !== 0) {
+            const critical = errors.find(this.isCritical);
+            if (critical !== undefined) {
+              return Promise.reject(new ArchiveBrokenError());
+            }
+            return this.queryContinue(api, errors);
           } else {
-            return Promise.reject(err);
+            return Promise.resolve();
           }
         })
         .then(() => walk(tempPath,
@@ -403,6 +415,21 @@ class InstallManager {
         }
       });
     }).then(matches => matches.find(match => match !== null) || '');
+  }
+
+  private queryContinue(api: IExtensionApi,
+                        errors: string[]): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      api.store.dispatch(showDialog('error', api.translate('Archive damaged'), {
+        bbcode: api.translate('Encountered errors extracting this archive. Please verify this '
+                  + 'file was downloaded correctly.\n[list]{{ errors }}[/list]', {
+                  replace: { errors: errors.map(err => '[*] ' + err) } }),
+        options: { translated: true },
+      }, [
+          { label: 'Cancel', action: () => reject(new UserCanceled()) },
+          { label: 'Continue', action: () => resolve() },
+        ]));
+    });
   }
 
   private queryGameId(store: Redux.Store<any>,
@@ -542,7 +569,7 @@ class InstallManager {
     return Promise.each(submodule,
       mod => {
         const tempPath = destinationPath + '.' + mod.key + '.installing';
-        return this.installInner(api.store, mod.path, tempPath, destinationPath, gameId)
+        return this.installInner(api, mod.path, tempPath, destinationPath, gameId)
           .then((resultInner) => this.processInstructions(
             api, mod.path, tempPath, destinationPath,
             gameId, mod.key, resultInner))
@@ -619,7 +646,7 @@ class InstallManager {
     }
 
     if ((result.instructions === undefined) ||
-      (result.instructions.length === 0)) {
+        (result.instructions.length === 0)) {
       return Promise.reject('installer returned no instructions');
     }
 
