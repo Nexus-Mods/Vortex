@@ -214,7 +214,10 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private isGamebryoGame(gameId: string): boolean {
-    return ['skyrim', 'skyrimse', 'fallout4', 'falloutnv', 'oblivion'].indexOf(gameId) !== -1;
+    return [
+      'oblivion', 'skyrim', 'skyrimse',
+      'fallout4', 'fallout3', 'falloutnv',
+    ].indexOf(gameId) !== -1;
   }
 
   private isUnsupportedGame(gameId: string): boolean {
