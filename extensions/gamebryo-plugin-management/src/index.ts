@@ -96,7 +96,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
           util.showError(
               store.dispatch, 'Failed to read some mods',
               'The following mods could not be searched (see log for details):\n' +
-                  readErrors.join('\n') + '\n' + (new Error()).stack);
+                  readErrors.join('\n') + '\n' + (new Error()).stack, false, undefined, false);
         }
         if (currentDiscovery === undefined) {
           return Promise.resolve([]);

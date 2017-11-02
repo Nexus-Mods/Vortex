@@ -434,8 +434,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => {
       dispatch(setToolVisible(gameId, toolId, visible));
     },
-    onShowError: (message: string, details?: string | Error) =>
-      showError(dispatch, message, details),
+    onShowError: (message: string, details?: any) => showError(dispatch, message, details),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
     onMakePrimary: (gameId: string, toolId: string) => dispatch(setPrimaryTool(gameId, toolId)),

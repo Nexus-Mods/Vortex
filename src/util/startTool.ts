@@ -83,7 +83,7 @@ function startTool(starter: StarterInfo,
                    events: NodeJS.EventEmitter,
                    queryElevate: (name: string) => Promise<boolean>,
                    queryDeploy: () => Promise<DeployResult>,
-                   onShowError: (message: string, details?: string | Error) => void,
+                   onShowError: (message: string, details?: any) => void,
                    ): Promise<void> {
   return startDeploy(queryDeploy, events)
     .then((doStart: boolean) => {
@@ -115,7 +115,10 @@ function startTool(starter: StarterInfo,
             }
           });
         } else {
-          log('info', 'failed to run custom tool', { err: err.message });
+          onShowError('failed to run executable', {
+            executable: starter.exePath,
+            error: err.message,
+          });
         }
       }
     }

@@ -160,14 +160,6 @@ export function onRemoveMod(api: IExtensionApi,
                             callback?: (error: Error) => void) {
   const store = api.store;
   const state: IState = store.getState();
-  let mod: IMod;
-
-  try {
-    const mods = state.persistent.mods[gameMode];
-    mod = mods[modId];
-  } catch (err) {
-    callback(err);
-  }
 
   // we need to remove the mod from activation, otherwise me might leave orphaned
   // links in the mod directory
@@ -180,6 +172,19 @@ export function onRemoveMod(api: IExtensionApi,
   store.dispatch(setModEnabled(profileId, modId, false));
 
   const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
+
+  let mod: IMod;
+
+  try {
+    const mods = state.persistent.mods[gameMode];
+    mod = mods[modId];
+  } catch (err) {
+    return callback(err);
+  }
+
+  if (mod !== undefined) {
+    return callback(null);
+  }
 
   // remove from state first, otherwise if the deletion takes some time it will appear as if nothing
   // happened

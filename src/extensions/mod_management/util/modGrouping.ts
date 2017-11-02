@@ -1,3 +1,4 @@
+import { log } from '../../../util/log';
 import { getSafe, pushSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { IModWithState } from '../types/IModProps';
@@ -73,8 +74,16 @@ function byEnabled(input: IModWithState[]): IModWithState[][] {
   }
   // disabled mods are only added to the group with the highest version enabled mod
   const primaryGroup = groups.sort(
-    (lhs, rhs) => compare(rhs[0].attributes['version'] || '0.0.0',
-                          lhs[0].attributes['version'] || '0.0.0'))[0];
+    (lhs, rhs) => {
+      try {
+        return compare(rhs[0].attributes['version'] || '0.0.0',
+                       lhs[0].attributes['version'] || '0.0.0');
+      } catch (err) {
+        log('warn', 'failed to compare mod versions', {
+          err: err.message, lhs: lhs[0].attributes['version'], rhs: rhs[0].attributes['version'] });
+        return 0;
+      }
+    })[0];
   input.filter((mod => !mod.enabled)).forEach(mod => primaryGroup.push(mod));
   return groups;
 }
