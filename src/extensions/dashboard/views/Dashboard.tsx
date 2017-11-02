@@ -97,7 +97,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
     const layoutMap: { [key: string]: number } = {};
     if (layout !== undefined) {
-      layout.forEach((item: string, idx: number) => layoutMap[item] = idx - 1000);
+      layout.forEach((item: string, idx: number) => layoutMap[item] = idx + 1000);
     }
 
     const sorted = objects

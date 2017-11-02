@@ -12,7 +12,7 @@ const settingsReducer: IReducerSpec = {
       (state, payload) => setSafe(state, ['dashboardLayout'], payload),
   },
   defaults: {
-    dashboardLayout: [],
+    dashboardLayout: ['Starter'],
   },
 };
 

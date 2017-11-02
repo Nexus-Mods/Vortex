@@ -83,7 +83,9 @@ class LootInterface {
 
     context.api.events.on('plugin-details', this.pluginDetails);
 
-    this.mOnSetLootActivity = (activity: string) => store.dispatch(setLootActivity(activity));
+    this.mOnSetLootActivity = (activity: string) => {
+      store.dispatch(setLootActivity(activity));
+    };
   }
 
   public wait(): Promise<void> {

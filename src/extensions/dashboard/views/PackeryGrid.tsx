@@ -74,6 +74,7 @@ class Packery extends React.Component<IProps, {}> {
   }
 
   private saveLayout = (items) => {
+    // TODO: this gets called a lot, is that a bug?
     this.props.onChangeLayout(items.map(item => item.element.id));
   }
 

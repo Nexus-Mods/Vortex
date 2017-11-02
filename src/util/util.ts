@@ -183,7 +183,7 @@ export function objDiff(lhs: any, rhs: any): any {
   const res = {};
 
   if ((typeof(lhs) === 'object') && (typeof(rhs) === 'object')) {
-    Object.keys(lhs).forEach(key => {
+    Object.keys(lhs || {}).forEach(key => {
       if ((rhs[key] === undefined)) {
         res['-' + key] = lhs[key];
       } else {
@@ -196,7 +196,7 @@ export function objDiff(lhs: any, rhs: any): any {
         }
       }
     });
-    Object.keys(rhs).forEach(key => {
+    Object.keys(rhs || {}).forEach(key => {
       if ((lhs[key] === undefined)) {
         res['+' + key] = rhs[key];
       }
@@ -231,5 +231,9 @@ export function bytesToString(bytes: number): string {
     ++labelIdx;
     bytes /= 1024;
   }
-  return bytes.toFixed(Math.max(0, labelIdx - 1)) + ' ' + labels[labelIdx];
+  try {
+    return bytes.toFixed(Math.max(0, labelIdx - 1)) + ' ' + labels[labelIdx];
+  } catch (err) {
+    return '???';
+  }
 }
