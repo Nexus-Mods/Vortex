@@ -6,6 +6,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import levelup = require('levelup');
 import * as path from 'path';
+import { objDiff } from './util';
 
 const app = appIn || remote.app;
 
@@ -25,6 +26,7 @@ class LevelStorage implements IStorage {
     });
   }
 
+  private mPrev: { [key: string]: any } = {};
   private mDB: levelup.LevelUp;
 
   constructor(db: levelup.LevelUp) {
@@ -58,6 +60,8 @@ class LevelStorage implements IStorage {
   }
 
   public setItem(key: string, value: string, callback?: (error?: Error) => void): Promise<void> {
+    const diff = objDiff(this.mPrev[key] || {}, JSON.parse(value));
+    this.mPrev[key] = JSON.parse(value);
     return new Promise<void>((resolve, reject) => {
       this.mDB.put(key, value, (error) => {
         if (callback) {

@@ -36,9 +36,11 @@ class ProfileItem extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, active, available, features, gameName, highlightGameId, profile } = this.props;
 
-    const enabledMods = Object.keys(profile.modState).reduce(
+    const modState = getSafe(profile, ['modState'], {});
+
+    const enabledMods = Object.keys(modState).reduce(
       (prev: number, key: string): number => {
-        return profile.modState[key].enabled ? prev + 1 : prev;
+        return modState[key].enabled ? prev + 1 : prev;
     }, 0);
 
     // TODO: not using ListGroupItem because it puts the content into

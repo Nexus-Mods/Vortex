@@ -779,11 +779,11 @@ function mapStateToProps(state: IState): IConnectedProps {
       state.settings.mods.paths, gameMode);
 
   return {
-    mods: state.persistent.mods[gameMode] || empty,
-    modState: profile !== undefined ? profile.modState : empty,
-    downloads: state.persistent.downloads.files || empty,
+    mods: getSafe(state, ['persistent', 'mods', gameMode], empty),
+    modState: getSafe(profile, ['modState'], empty),
+    downloads: getSafe(state, ['persistent', 'downloads', 'files'], empty),
     gameMode,
-    profileId: profile !== undefined ? profile.id : undefined,
+    profileId: getSafe(profile, ['id'], undefined),
     language: state.settings.interface.language,
     installPath: installPathSelector(state),
     downloadPath,

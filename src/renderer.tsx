@@ -39,7 +39,6 @@ import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
 import { reduxSanity, StateError } from './util/reduxSanity';
-import {extendStore} from './util/store';
 import MainWindow from './views/MainWindow';
 
 import * as Promise from 'bluebird';
@@ -89,23 +88,6 @@ const middleware = [
   thunkMiddleware,
   reduxSanity(sanityCheckCB),
 ];
-
-let enhancer = null;
-
-if (process.env.NODE_ENV === 'development') {
-  // tslint:disable-next-line:no-var-requires
-  const DevTools: typeof DevToolsType = require('./util/DevTools').default;
-  enhancer = compose(
-    applyMiddleware(...middleware),
-    electronEnhancer({ filter }),
-    DevTools.instrument(),
-  );
-} else {
-  enhancer = compose(
-    applyMiddleware(...middleware),
-    electronEnhancer({ filter }),
-  );
-}
 
 function sanityCheckCB(err: StateError) {
   showError(store.dispatch,
@@ -195,7 +177,28 @@ const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 stopTime = timeRequire();
 
-let store: Store<any> = createStore(reducer([]), enhancer);
+let enhancer = null;
+
+if (process.env.NODE_ENV === 'development') {
+  // tslint:disable-next-line:no-var-requires
+  const DevTools: typeof DevToolsType = require('./util/DevTools').default;
+  enhancer = compose(
+    applyMiddleware(...middleware),
+    electronEnhancer({ filter }),
+    DevTools.instrument(),
+  );
+} else {
+  enhancer = compose(
+    applyMiddleware(...middleware),
+    electronEnhancer({ filter }),
+  );
+}
+
+// we're going to re-create the store in a second, we just need it here so we
+// can initialize the ExtensionManager. However, electronEnhancer can't handle
+// being re-initialized, it leads to the main process no longer forwarding actions.
+// Therefore: no enhancer here, should be fine.
+let store: Store<any> = createStore(reducer([]));
 
 const extensions: ExtensionManager = new ExtensionManager(store, eventEmitter);
 const extReducers = extensions.getReducers();
@@ -258,9 +261,6 @@ function renderer() {
     .then(res => {
       ({ i18n, tFunc, error } = res);
       extensions.setTranslation(i18n);
-      return extendStore(store, extensions);
-    })
-    .then(() => {
       if (error !== undefined) {
         showError(store.dispatch, 'failed to initialize localization', error);
       }

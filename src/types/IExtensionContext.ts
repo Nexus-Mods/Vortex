@@ -127,6 +127,8 @@ export interface ILookupDetails {
   gameId?: string;
 }
 
+export type PersistorKey = string[];
+
 /**
  * a persistor is used to hook a data file into the store.
  * This way any data file can be made available through the store and
@@ -136,20 +138,11 @@ export interface ILookupDetails {
  * @interface IPersistor
  */
 export interface IPersistor {
-  /**
-   * called once the persistor is hooked up and active. The persistor can call this
-   * if data has changed outside the application and the store will rehydrate with the
-   * new data
-   *
-   * @param {() => void} cb
-   *
-   * @memberOf IPersistor
-   */
   setResetCallback(cb: () => void): void;
-  getItem(key: string, cb: (error: Error, result?: string) => void): void;
-  setItem(key: string, value: string | number, cb: (error: Error) => void): void;
-  removeItem(key: string, cb: (error: Error) => void): void;
-  getAllKeys(cb: (error: Error, keys?: string[]) => void): void;
+  getItem(key: PersistorKey): Promise<string>;
+  setItem(key: PersistorKey, value: string): Promise<void>;
+  removeItem(key: PersistorKey): Promise<void>;
+  getAllKeys(): Promise<PersistorKey[]>;
 }
 
 /**

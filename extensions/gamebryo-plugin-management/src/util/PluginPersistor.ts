@@ -86,32 +86,27 @@ class PluginPersistor implements types.IPersistor {
     this.mResetCallback = cb;
   }
 
-  public getItem(key: string, cb?: (error: Error, result?: string) => void): Promise<any> {
-    const res = JSON.stringify(this.mPlugins);
-    if (cb) {
-      cb(null, res);
-    }
-    return Promise.resolve(res);
+  public getItem(key: string[]): Promise<string> {
+    return Promise.resolve(JSON.stringify(util.getSafe(this.mPlugins, key, undefined)));
   }
 
-  public setItem(key: string, value: string, cb?: (error: Error) => void): Promise<void> {
-    const newPlugins = JSON.parse(value);
-    if (!_.isEqual(newPlugins, this.mPlugins)) {
-      this.mPlugins = newPlugins;
-      return this.serialize().then(() => cb && cb(null));
+  public setItem(key: string[], value: string): Promise<void> {
+    const newValue = JSON.parse(value);
+    if (newValue !== util.getSafe(this.mPlugins, key, undefined)) {
+      this.mPlugins = util.setSafe(this.mPlugins, key, newValue);
+      return this.serialize();
+    } else {
+      return Promise.resolve();
     }
   }
 
-  public removeItem(key: string, cb?: (error: Error) => void): Promise<void> {
-    delete this.mPlugins[key];
-    return this.serialize().then(() => cb && cb(null));
+  public removeItem(key: string[]): Promise<void> {
+    this.mPlugins = {};
+    return this.serialize();
   }
 
-  public getAllKeys(cb?: (error: Error, keys?: string[]) => void): Promise<void> {
-    if (cb) {
-      cb(null, ['loadOrder']);
-    }
-    return Promise.resolve();
+  public getAllKeys(): Promise<string[][]> {
+    return Promise.resolve(Object.keys(this.mPlugins).map(key => [key]));
   }
 
   private reportError(message: string, detail: Error) {

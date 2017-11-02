@@ -24,7 +24,7 @@ import PluginPersistor from './util/PluginPersistor';
 import UserlistPersistor from './util/UserlistPersistor';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
+import { ipcMain, ipcRenderer, remote } from 'electron';
 import ESPFile from 'esptk';
 import { access, constants } from 'fs';
 import * as fs from 'fs-extra-promise';
@@ -194,9 +194,9 @@ function initPersistor(context: IExtensionContextExt) {
   const onError = (message: string, detail: Error) => {
     context.api.showErrorNotification(message, detail);
   };
-  // TODO: Currently need to stop this from being called in the main process.
+  // TODO: Currently need to stop this from being called in the render process.
   //   This is mega-ugly and needs to go
-  if (remote !== undefined) {
+  if (remote === undefined) {
     if (pluginPersistor === undefined) {
       pluginPersistor = new PluginPersistor(onError);
     }
@@ -239,7 +239,22 @@ function updateCurrentProfile(store: Redux.Store<any>): Promise<void> {
 
 let watcher: fs.FSWatcher;
 
+let remotePromise: { resolve: () => void, reject: (err: Error) => void };
+
+// enabling/disableing sync of the persistors needs to happen in main process
+// but the events that trigger it happen in the renderer, so we have to use
+// ipcs to send the instruction and to return the result.
+function sendStartStopSync(enable: boolean): Promise<void> {
+  return new Promise((resolve, reject) => {
+    remotePromise = { resolve, reject };
+    ipcRenderer.send('plugin-sync', enable);
+  });
+}
+
 function stopSync(): Promise<void> {
+  if (remote !== undefined) {
+    return sendStartStopSync(false);
+  }
   if (watcher !== undefined) {
     watcher.close();
     watcher = undefined;
@@ -248,30 +263,16 @@ function stopSync(): Promise<void> {
   return pluginPersistor.disable();
 }
 
-function startSync(api: types.IExtensionApi): Promise<void> {
-  const store = api.store;
+function startSyncRemote(api: types.IExtensionApi): Promise<void> {
+  return sendStartStopSync(true).then(() => {
+    const store = api.store;
 
-  const gameId = selectors.activeGameId(store.getState());
-
-  let prom: Promise<void> = Promise.resolve();
-
-  if (pluginPersistor !== undefined) {
-    prom = pluginPersistor.loadFiles(gameId);
-  }
-
-  if (userlistPersistor !== undefined) {
-    prom = prom.then(() => userlistPersistor.loadFiles(gameId));
-  }
-
-  if (masterlistPersistor !== undefined) {
-    prom = prom.then(() => masterlistPersistor.loadFiles(gameId));
-  }
-
-  return prom.then(() => {
     const gameDiscovery = selectors.currentGameDiscovery(store.getState());
     if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
       return;
     }
+
+    const gameId = selectors.activeGameId(store.getState());
     const game = util.getGame(gameId);
     const modPath = game.getModPaths(gameDiscovery.path)[''];
     if (modPath === undefined) {
@@ -297,9 +298,34 @@ function startSync(api: types.IExtensionApi): Promise<void> {
       });
     } catch (err) {
       api.showErrorNotification('failed to watch mod directory', err,
-        { allowReport: err.code !== 'ENOENT' });
+                                {allowReport: err.code !== 'ENOENT'});
     }
   });
+}
+
+function startSync(api: types.IExtensionApi): Promise<void> {
+  if (remote !== undefined) {
+    return startSyncRemote(api);
+  }
+  const store = api.store;
+
+  const gameId = selectors.activeGameId(store.getState());
+
+  let prom: Promise<void> = Promise.resolve();
+
+  if (pluginPersistor !== undefined) {
+    prom = pluginPersistor.loadFiles(gameId);
+  }
+
+  if (userlistPersistor !== undefined) {
+    prom = prom.then(() => userlistPersistor.loadFiles(gameId));
+  }
+
+  if (masterlistPersistor !== undefined) {
+    prom = prom.then(() => masterlistPersistor.loadFiles(gameId));
+  }
+
+  return prom;
 }
 
 function testPluginsLocked(gameMode: string): Promise<types.ITestResult> {
@@ -408,8 +434,32 @@ function init(context: IExtensionContextExt) {
   register(context);
   initPersistor(context);
 
+  context.onceMain(() => {
+    ipcMain.on('plugin-sync', (event: Electron.Event, enabled: boolean) => {
+      const promise = enabled ? startSync(context.api) : stopSync();
+      promise
+        .then(() => {
+          event.sender.send('plugin-sync-ret', null);
+        })
+        .catch(err => {
+          event.sender.send('plugin-sync-ret', err);
+        });
+    });
+  });
+
   context.once(() => {
     const store = context.api.store;
+
+    ipcRenderer.on('plugin-sync-ret', (event, error: Error) => {
+      if (remotePromise !== undefined) {
+        if (error !== null) {
+          remotePromise.reject(error);
+        } else {
+          remotePromise.resolve();
+        }
+        remotePromise = undefined;
+      }
+    });
 
     context.api.setStylesheet('plugin-management', path.join(__dirname, 'plugin_management.scss'));
 

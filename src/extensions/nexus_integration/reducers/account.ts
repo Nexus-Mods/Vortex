@@ -9,7 +9,8 @@ import * as update from 'immutability-helper';
  */
 export const accountReducer: IReducerSpec = {
   reducers: {
-    [setUserAPIKey as any]: (state, payload) => update(state, { APIKey: { $set: payload } }),
+    [setUserAPIKey as any]: (state, payload) =>
+      update(state, { APIKey: { $set: payload } }),
   },
   defaults: {
     APIKey: undefined,

@@ -21,7 +21,6 @@ import { pick } from 'lodash';
 import { combineReducers, Reducer, ReducersMapObject } from 'redux';
 import { createReducer } from 'redux-act';
 // tslint:disable-next-line:no-submodule-imports
-import { REHYDRATE } from 'redux-persist/constants';
 
 /**
  * wrapper for combineReducers that doesn't drop unexpected keys
@@ -50,12 +49,10 @@ function deriveReducer(path: string, ele: any): Reducer<any> {
     }
     let red = ele.reducers;
     const pathArray = path.split('.').slice(1);
-    if (red[REHYDRATE] === undefined) {
+    if (red['__hydrate'] === undefined) {
       red = {
         ...ele.reducers,
-        [REHYDRATE]: (state, payload) => {
-          return rehydrate(state, payload, pathArray);
-        },
+        ['__hydrate']: (state, payload) => rehydrate(state, payload, pathArray),
       };
     }
     return createReducer(red, ele.defaults);

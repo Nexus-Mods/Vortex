@@ -59,7 +59,7 @@ class UserlistPersistor implements types.IPersistor {
     }
     this.mUserlistPath = (this.mMode === 'userlist')
       ? path.join(app.getPath('userData'), gameMode, 'userlist.yaml')
-      : path.resolve(remote.app.getPath('appData'), '..', 'Local', 'LOOT',
+      : path.resolve(app.getPath('appData'), '..', 'Local', 'LOOT',
                        gameMode, 'masterlist.yaml');
 
     // read the files now and update the store
@@ -70,22 +70,22 @@ class UserlistPersistor implements types.IPersistor {
     this.mResetCallback = cb;
   }
 
-  public getItem(key: string, cb: (error: Error, result?: string) => void): void {
-    cb(null, JSON.stringify(this.mUserlist || { globals: [], plugins: [] }));
+  public getItem(key: string[]): Promise<string> {
+    return Promise.resolve(JSON.stringify(this.mUserlist[key[0]]));
   }
 
-  public setItem(key: string, value: string, cb: (error: Error) => void): void {
-    this.mUserlist = JSON.parse(value);
-    this.serialize().then(() => cb(null));
+  public setItem(key: string[], value: string): Promise<void> {
+    this.mUserlist[key[0]] = JSON.parse(value);
+    return this.serialize();
   }
 
-  public removeItem(key: string, cb: (error: Error) => void): void {
-    delete this.mUserlist[key];
-    this.serialize().then(() => cb(null));
+  public removeItem(key: string[]): Promise<void> {
+    this.mUserlist[key[0]] = [];
+    return this.serialize();
   }
 
-  public getAllKeys(cb: (error: Error, keys?: string[]) => void): void {
-    cb(null, [this.mMode]);
+  public getAllKeys(): Promise<string[][]> {
+    return Promise.resolve(Object.keys(this.mUserlist).map(key => [key]));
   }
 
   private enqueue(fn: () => Promise<void>): Promise<void> {

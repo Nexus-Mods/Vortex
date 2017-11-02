@@ -7,10 +7,15 @@ import * as develT from '../util/devel';
 import {} from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import lazyRequire from '../util/lazyRequire';
+import LevelPersist from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
 import { showError } from '../util/message';
+import ReduxPersistor from '../util/ReduxPersistor';
 import { StateError } from '../util/reduxSanity';
+import { allHives, createVortexStore, currentStatePath, extendStore,
+         importState, insertPersistor, markImported } from '../util/store';
 import {} from '../util/storeHelper';
+import SubPersistor from '../util/SubPersistor';
 
 import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
@@ -29,6 +34,7 @@ const uuid = lazyRequire<typeof uuidT>('uuid');
 class Application {
   private mBasePath: string;
   private mStore: Redux.Store<IState>;
+  private mLevelPersistor: LevelPersist;
   private mArgs: IParameters;
   private mMainWindow: MainWindowT;
   private mExtensions: ExtensionManagerT;
@@ -201,15 +207,18 @@ class Application {
   }
 
   private createStore(): Promise<void> {
-    const { allHives, createVortexStore, syncStore } = require('../util/store');
-
     const newStore = createVortexStore(this.sanityCheckCB);
 
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
     // 3. load extensions, then load all settings, including extensions
-    return syncStore(newStore, this.mBasePath, ['user'])
-      .then(userPersistor => {
+    return LevelPersist.create(path.join(this.mBasePath, currentStatePath))
+      .then(levelPersistor => {
+        this.mLevelPersistor = levelPersistor;
+        return insertPersistor(
+          'user', new SubPersistor(this.mLevelPersistor, 'user'));
+      })
+      .then(() => {
         const multiUser = newStore.getState().user.multiUser;
         const dataPath = multiUser
           ? this.multiUserPath()
@@ -220,23 +229,39 @@ class Application {
         if (multiUser) {
           setLogPath(dataPath);
         }
-        return syncStore(newStore, dataPath, ['app']);
+        return insertPersistor(
+          'app', new SubPersistor(this.mLevelPersistor, 'app'));
       })
-      .then(appPersistor => {
+      .then(() => {
         if (newStore.getState().app.instanceId === undefined) {
-          newStore.dispatch(setInstanceId(uuid.v4()));
+          const newId = uuid.v4();
+          newStore.dispatch(setInstanceId(newId));
         }
         const ExtensionManager = require('../util/ExtensionManager').default;
         this.mExtensions = new ExtensionManager(newStore);
         const reducer = require('../reducers/index').default;
         newStore.replaceReducer(reducer(this.mExtensions.getReducers()));
-        appPersistor.stop();
-        return syncStore(newStore, app.getPath('userData'), allHives(this.mExtensions));
+        return Promise.mapSeries(allHives(this.mExtensions), hive =>
+          insertPersistor(hive, new SubPersistor(this.mLevelPersistor, hive)));
+      })
+      .then(() => importState(this.mBasePath))
+      .then(oldState => {
+        // mark as imported first, otherwise we risk importing again overwriting data.
+        // this way we risk not importing but since the old state is still there, that
+        // can be repaired
+        return markImported(this.mBasePath)
+          .then(() => {
+            newStore.dispatch({
+              type: '__hydrate',
+              payload: oldState,
+            });
+          });
       })
       .then(() => {
         this.mStore = newStore;
-        return this.mExtensions.doOnce();
-      });
+        return extendStore(newStore, this.mExtensions);
+      })
+      .then(() => this.mExtensions.doOnce());
   }
 
   private sanityCheckCB = (err: StateError) => {

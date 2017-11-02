@@ -3477,21 +3477,6 @@
     "version": "0.4.1",
     "licenseFile": "node_modules\\redux-electron-store\\LICENSE.md"
   },
-  "redux-persist-node-storage@1.0.2": {
-    "licenses": "MIT",
-    "repository": "https://github.com/pellejacobs/redux-persist-node-storage",
-    "name": "redux-persist-node-storage",
-    "version": "1.0.2"
-  },
-  "redux-persist@4.8.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/rt2zz/redux-persist",
-    "publisher": "rt2zz",
-    "email": "zack@root-two.com",
-    "name": "redux-persist",
-    "version": "4.8.0",
-    "licenseFile": "node_modules\\redux-persist\\LICENSE.md"
-  },
   "redux-thunk@2.2.0": {
     "licenses": "MIT",
     "repository": "https://github.com/gaearon/redux-thunk",

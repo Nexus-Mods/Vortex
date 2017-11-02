@@ -25,6 +25,6 @@ export const settingsReducer: IReducerSpec = {
     paths: {},
     modlistState: {},
     activator: {},
-    updatingMods: false,
+    updatingMods: {},
   },
 };

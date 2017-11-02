@@ -60,7 +60,7 @@ function checkProfile(store: Redux.Store<any>, currentProfile: IProfile): Promis
 
 function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
   const state: IState = store.getState();
-  Object.keys(profile.modState).forEach(modId => {
+  Object.keys(profile.modState || {}).forEach(modId => {
     if (getSafe(state.persistent.mods, [profile.gameId, modId], undefined) === undefined) {
       store.dispatch(forgetMod(profile.id, modId));
     }
