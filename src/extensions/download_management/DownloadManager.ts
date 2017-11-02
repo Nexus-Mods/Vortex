@@ -84,7 +84,7 @@ class DownloadWorker {
 
     const parsed = url.parse(job.url);
 
-    const lib: IHTTP = parsed.protocol === 'https' ? https : http;
+    const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 
     this.mRequest = lib.request({
       method: 'GET',
