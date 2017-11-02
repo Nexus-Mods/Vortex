@@ -46,7 +46,6 @@ export interface ILOOTPlugin {
   tag?: BashTag[];
   url?: ILocation[];
   dirty?: IDirtyInfo[];
-  readOnly: boolean;
 }
 
 export interface ILOOTList {

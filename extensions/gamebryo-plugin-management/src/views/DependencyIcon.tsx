@@ -242,45 +242,54 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     const { t, connectDragSource, connectDropTarget, masterlist, plugin, userlist } = this.props;
 
     // TODO: this is quite inefficient...
-    const lootRules: ILOOTPlugin = {
+    const lootRules: { name: string, ro: ILOOTPlugin, rw: ILOOTPlugin } = {
       name: plugin.name,
-      ...this.pluginFrom((masterlist || []).find(rule => rule.name === plugin.name), true),
-      ...this.pluginFrom((userlist || []).find(rule => rule.name === plugin.name), false),
+      ro: (masterlist || []).find(rule => rule.name === plugin.name) || { name: plugin.name },
+      rw: (userlist || []).find(rule => rule.name === plugin.name) || { name: plugin.name },
     };
 
     const popoverBlocks = [];
 
-    if ((lootRules.after !== undefined) && (lootRules.after.length > 0)) {
+    if (((lootRules.ro.after !== undefined) && (lootRules.ro.after.length > 0))
+        || ((lootRules.rw.after !== undefined) && (lootRules.rw.after.length > 0))) {
       popoverBlocks.push((
         <div key='after'>
           {t('Loads after:', { ns: 'gamebryo-plugin' })}
           <ul>
-            {Array.from(lootRules.after || []).map(
-              ref => this.renderRule(ref, 'after', lootRules.readOnly))}
+            {Array.from(util.getSafe(lootRules, ['ro', 'after'], []).map(
+              ref => this.renderRule(ref, 'after', true)))}
+            {Array.from(util.getSafe(lootRules, ['rw', 'after'], []).map(
+              ref => this.renderRule(ref, 'after', false)))}
           </ul>
         </div>
       ));
     }
 
-    if ((lootRules.req !== undefined) && (lootRules.req.length > 0)) {
+    if (((lootRules.ro.req !== undefined) && (lootRules.ro.req.length > 0))
+        || ((lootRules.rw.req !== undefined) && (lootRules.rw.req.length > 0))) {
       popoverBlocks.push((
         <div key='requires'>
         {t('Requires:', { ns: 'gamebryo-plugin' })}
         <ul>
-          {Array.from(lootRules.req || []).map(
-            ref => this.renderRule(ref, 'requires', lootRules.readOnly))}
+          {Array.from(util.getSafe(lootRules, ['ro', 'req'], []).map(
+            ref => this.renderRule(ref, 'requires', true)))}
+          {Array.from(util.getSafe(lootRules, ['rw', 'req'], []).map(
+            ref => this.renderRule(ref, 'requires', false)))}
         </ul>
       </div>
       ));
     }
 
-    if ((lootRules.inc !== undefined) && (lootRules.inc.length > 0)) {
+    if (((lootRules.ro.inc !== undefined) && (lootRules.ro.inc.length > 0))
+      || ((lootRules.rw.inc !== undefined) && (lootRules.rw.inc.length > 0))) {
       popoverBlocks.push((
         <div key='incompatible'>
         {t('Incompatible:', { ns: 'gamebryo-plugin' })}
         <ul>
-          {Array.from(lootRules.inc || []).map(
-            ref => this.renderRule(ref, 'incompatible', lootRules.readOnly))}
+          {Array.from(util.getSafe(lootRules, ['ro', 'inc'], []).map(
+            ref => this.renderRule(ref, 'incompatible', true)))}
+          {Array.from(util.getSafe(lootRules, ['rw', 'inc'], []).map(
+            ref => this.renderRule(ref, 'incompatible', false)))}
         </ul>
       </div>
       ));
@@ -398,9 +407,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     if (input === undefined) {
       return undefined;
     }
-    return readOnly === true
-      ? { ...input, readOnly: true }
-      : input;
+    return input;
   }
 
   private onRemove = (evt) => {
