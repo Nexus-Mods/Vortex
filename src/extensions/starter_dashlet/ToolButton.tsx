@@ -42,7 +42,7 @@ class ToolButton extends PureComponentEx<IProps, IToolButtonState> {
       {
         title: props.t('Run'),
         icon: 'play',
-        action: () => props.onRun(props.starter),
+        action: () => this.props.onRun(this.props.starter),
         condition: () => truthy(this.props.starter.exePath),
         options: {
           noCollapse: true,
