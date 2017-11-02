@@ -459,14 +459,23 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     const { t, onShowDialog } = this.props;
     const download = this.getDownload(downloadId);
     if (download.state === 'failed') {
-      if (download.failCause.htmlFile !== undefined) {
-        onShowDialog('error', 'Download failed', {
-          htmlFile: download.failCause.htmlFile,
-        }, [
+      const actions = [
             { label: 'Delete',
               action: () => this.context.api.events.emit('remove-download', downloadId) },
             { label: 'Close' },
-        ]);
+        ];
+      if (download.failCause.htmlFile !== undefined) {
+        onShowDialog('error', 'Download failed', {
+          htmlFile: download.failCause.htmlFile,
+        }, actions);
+      } else if (download.failCause.message) {
+        onShowDialog('error', 'Download failed', {
+          message: download.failCause.message,
+        }, actions);
+      } else {
+        onShowDialog('error', 'Download failed', {
+          message: 'Unknown reason',
+        }, actions);
       }
     } else if (download.state === 'redirect') {
       onShowDialog('error', 'Received website', {

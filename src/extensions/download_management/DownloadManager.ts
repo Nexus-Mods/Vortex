@@ -18,6 +18,12 @@ import * as url from 'url';
 
 import { log } from '../../util/log';
 
+interface IHTTP {
+  request: (options: https.RequestOptions | string | URL,
+            callback?: (res: http.IncomingMessage) => void) => http.ClientRequest;
+  Agent: typeof http.Agent;
+}
+
 interface IRunningDownload {
   id: string;
   fd?: number;
@@ -78,7 +84,9 @@ class DownloadWorker {
 
     const parsed = url.parse(job.url);
 
-    this.mRequest = https.request({
+    const lib: IHTTP = parsed.protocol === 'https' ? https : http;
+
+    this.mRequest = lib.request({
       method: 'GET',
       protocol: parsed.protocol,
       port: parsed.port,
@@ -88,7 +96,7 @@ class DownloadWorker {
         Range: `bytes=${job.offset}-${job.offset + job.size}`,
         'User-Agent': this.mUserAgent,
       },
-      agent: new https.Agent(),
+      agent: new lib.Agent(),
     }, (res) => {
       this.mResponse = res;
       this.handleResponse(res);

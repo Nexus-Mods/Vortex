@@ -120,17 +120,17 @@ export class DownloadObserver {
           this.handleDownloadFinished(id, callback, res);
         })
         .catch((err) => {
-          let details = err;
+          let message = err.message;
           if (err.http_headers !== undefined) {
             if (err.http_headers.nexuserror !== undefined) {
-              details = err.http_headers.nexuserrorinfo;
+              message = err.http_headers.nexuserrorinfo;
             } else if (err.http_headers.status !== undefined) {
-              details = err.http_headers.status;
+              message = err.http_headers.status;
             }
           }
-          log('warn', 'download failed', {details, err: util.inspect(err)});
-          showError(this.mStore.dispatch, 'Download failed', details);
-          this.mStore.dispatch(finishDownload(id, 'failed', {details}));
+          log('warn', 'download failed', {message, err: util.inspect(err)});
+          showError(this.mStore.dispatch, 'Download failed', message);
+          this.mStore.dispatch(finishDownload(id, 'failed', {message}));
           if (callback !== undefined) {
             callback(err, id);
           }
