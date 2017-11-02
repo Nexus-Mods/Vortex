@@ -349,9 +349,9 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
             </FlexLayout.Flex>
             <FlexLayout.Fixed style={{ maxWidth: '60%', minWidth: '40%', overflowY: 'auto' }}>
               <FlexLayout type='column'>
-                <FlexLayout.Fixed style={{ padding: 15 }}>
+                <FlexLayout.Flex>
                   {this.renderImage()}
-                </FlexLayout.Fixed>
+                </FlexLayout.Flex>
                 <FlexLayout.Flex fill className='description'>
                   <ControlLabel readOnly={true}>{currentDescription}</ControlLabel>
                 </FlexLayout.Flex>

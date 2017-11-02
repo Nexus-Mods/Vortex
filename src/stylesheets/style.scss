@@ -2047,13 +2047,16 @@ a[role=menuitem] svg {
 
 .installer-image {
   max-width: 100%;
-  max-height: 40vh;
+  max-height: 100%;
   width: auto;
   height: auto;
+  display: flex;
+  justify-content: center;
 
   .zoomable-image {
     max-width: 100%;
     max-height: 100%;
+    object-fit: contain;
   }
 }
 
