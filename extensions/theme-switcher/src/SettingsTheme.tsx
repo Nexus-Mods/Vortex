@@ -134,7 +134,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
           .then(stat => stat.isDirectory()))
       .catch(err => {
         if (err.code === 'ENOENT') {
-          log('warn', 'Failed to read theme dir', { path: basePath, err: err.message });
+          log('info', 'Failed to read theme dir', { path: basePath, err: err.message });
         } else {
           this.context.api.showErrorNotification(t('Failed to read theme directory'), err);
         }

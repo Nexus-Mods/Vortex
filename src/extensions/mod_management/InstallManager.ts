@@ -727,6 +727,9 @@ class InstallManager {
               value: modId,
               label: 'Name',
             }],
+            options: {
+              wrap: true,
+            },
           },
           [
             { label: 'Cancel' },

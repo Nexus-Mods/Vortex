@@ -7,30 +7,45 @@ import levelup = require('levelup');
 import { intersection, without } from 'lodash';
 import * as path from 'path';
 
-interface IPersistSettings {
-}
-
 const SEPARATOR: string = '###';
+
+function openDB(dbPath: string): Promise<levelup.LevelUp> {
+  return new Promise<levelup.LevelUp>((resolve, reject) => {
+    (levelup as any)(dbPath, undefined, (err, db) => {
+      if (err !== null) {
+        return reject(err);
+      }
+      return resolve(db);
+    });
+  });
+}
 
 class LevelPersist implements IPersistor {
   public static create(persistPath: string): Promise<LevelPersist> {
-    return new Promise<LevelPersist>((resolve, reject) => {
-      const db = (levelup as any)(persistPath, undefined, (err) => {
-        if (err !== null) {
-          log('info', 'failed to open db', err);
-          resolve(
-              delayed(100).then(() => LevelPersist.create(persistPath)));
-        } else {
-          resolve(new LevelPersist(db));
-        }
+    return openDB(persistPath)
+      .then(db => new LevelPersist(db))
+      .catch(err => {
+        log('info', 'failed to open db', err);
+        return delayed(100).then(() => LevelPersist.create(persistPath));
       });
-    });
   }
 
   private mDB: levelup.LevelUp;
 
   constructor(db: levelup.LevelUp) {
     this.mDB = db;
+  }
+
+  public changeDatabase(dbPath: string): Promise<void> {
+    return openDB(dbPath)
+      .then(db => {
+        this.mDB.close();
+        this.mDB = db;
+      })
+      .catch(err => {
+        log('info', 'failed to open db', err);
+        return delayed(100).then(() => this.changeDatabase(dbPath));
+      });
   }
 
   public setResetCallback(cb: () => void): void {

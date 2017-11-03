@@ -45,6 +45,9 @@ function fileMatch(lhs: IModWithState, rhs: IModWithState): boolean {
 }
 
 function byFile(input: IModWithState[]): IModWithState[][] {
+  if (input.length === 1) {
+    return [input];
+  }
   const groups: IModWithState[][] = [];
   input.forEach((mod: IModWithState) => {
     // TODO: O(n^2)

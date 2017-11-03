@@ -224,14 +224,18 @@ class Application {
           ? this.multiUserPath()
           : app.getPath('userData');
         app.setPath('userData', dataPath);
+        this.mBasePath = dataPath;
+        fs.ensureDirSync(dataPath);
 
         log('info', `using ${dataPath} as the storage directory`);
         if (multiUser) {
           setLogPath(dataPath);
+          return this.mLevelPersistor.changeDatabase(path.join(dataPath, currentStatePath));
+        } else {
+          return Promise.resolve();
         }
-        return insertPersistor(
-          'app', new SubPersistor(this.mLevelPersistor, 'app'));
       })
+      .then(() => insertPersistor('app', new SubPersistor(this.mLevelPersistor, 'app')))
       .then(() => {
         if (newStore.getState().app.instanceId === undefined) {
           const newId = uuid.v4();

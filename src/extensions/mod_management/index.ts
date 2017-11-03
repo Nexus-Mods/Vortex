@@ -197,9 +197,14 @@ function applyFileActions(sourcePath: string,
       // this includes files that were deleted and those replaced
       const restoreSet = new Set((actionGroups['restore'] || []).map(entry => entry.filePath));
       const dropSet = new Set((actionGroups['drop'] || []).map(entry => entry.filePath));
-      const newActivation = lastDeployment.filter(
-        entry => !restoreSet.has(entry.relPath) && !dropSet.has(entry.relPath));
-      lastDeployment = newActivation;
+      // also re-link all "keep" files. This ensures the filetime/checksum used to identify
+      // content changes is updated
+      const keepSet = new Set((actionGroups['keep'] || []).map(entry => entry.filePath));
+      const newDeployment = lastDeployment.filter(
+        entry => !restoreSet.has(entry.relPath)
+              && !dropSet.has(entry.relPath)
+              && !keepSet.has(entry.relPath));
+      lastDeployment = newDeployment;
       return Promise.resolve();
     })
     .then(() => lastDeployment);

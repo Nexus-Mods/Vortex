@@ -182,7 +182,7 @@ export function onRemoveMod(api: IExtensionApi,
     return callback(err);
   }
 
-  if (mod !== undefined) {
+  if (mod === undefined) {
     return callback(null);
   }
 
