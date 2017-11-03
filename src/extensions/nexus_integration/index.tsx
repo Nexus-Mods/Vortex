@@ -498,7 +498,7 @@ function once(api: IExtensionApi) {
 
     const Nexus: typeof NexusT = require('nexus-api').default;
     nexus = new Nexus(activeGameId(state),
-      getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''));
+      getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''), 30000);
 
     const gameMode = activeGameId(state);
     api.store.dispatch(setUpdatingMods(gameMode, false));
