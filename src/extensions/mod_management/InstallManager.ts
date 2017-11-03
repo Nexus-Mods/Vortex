@@ -385,7 +385,6 @@ class InstallManager {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
           }
-          log('info', 'found installer to use', { id: supportedInstaller });
 
           const {installer, requiredFiles} = supportedInstaller;
           return installer.install(

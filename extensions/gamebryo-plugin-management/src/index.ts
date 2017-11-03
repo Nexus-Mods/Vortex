@@ -225,13 +225,13 @@ function updateCurrentProfile(store: Redux.Store<any>): Promise<void> {
   const gameId = selectors.activeGameId(store.getState());
 
   if (!gameSupported(gameId)) {
-    return;
+    return Promise.resolve();
   }
 
   const profile = selectors.activeProfile(store.getState());
   if (profile === undefined) {
     log('warn', 'no profile active');
-    return;
+    return Promise.resolve();
   }
 
   return updatePluginList(store, profile.modState);

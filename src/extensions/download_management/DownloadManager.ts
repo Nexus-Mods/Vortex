@@ -1,5 +1,5 @@
 import Debouncer from '../../util/Debouncer';
-import { countIf, setdefault } from '../../util/util';
+import { countIf, setdefault, truthy } from '../../util/util';
 import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
@@ -9,6 +9,7 @@ import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
 import * as Promise from 'bluebird';
+import contentDisposition = require('content-disposition');
 import contentType = require('content-type');
 import * as fs from 'fs-extra-promise';
 import * as http from 'http';
@@ -208,12 +209,18 @@ class DownloadWorker {
 
       let fileName;
       if ('content-disposition' in response.headers) {
-        const fileNameExp: RegExp = /filename=(.*)/i;
-        const nameMatch: string[] =
-            (response.headers['content-disposition'] as string).match(fileNameExp);
-        if (nameMatch.length > 1) {
-          fileName = nameMatch[1];
+        let cd: string = response.headers['content-disposition'] as string;
+        // the content-disposition library can't deal with trailing semi-colon so
+        // we have to remove it before parsing
+        // see https://github.com/jshttp/content-disposition/issues/19
+        if (cd[cd.length - 1] === ';') {
+          cd = cd.substring(0, cd.length - 1);
         }
+        const disposition = contentDisposition.parse(cd);
+        if (truthy(disposition.parameters['filename'])) {
+          fileName = disposition.parameters['filename'];
+        }
+        log('debug', 'got file name', fileName);
       }
       this.mJob.responseCB(size, fileName);
     }
