@@ -143,7 +143,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                                ++errorCount;
                              });
                        })
-        // then, (re-)link all files that were added or changed
+        // then, (re-)link all files that were added
         .then(() => Promise.mapSeries(
                   added,
                   key => this.deployFile(key, installPathStr, dataPath, false)
@@ -240,17 +240,39 @@ abstract class LinkingActivator implements IDeploymentMethod {
       const fileDataPath = path.join(dataPath, fileEntry.relPath);
       const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
 
-      return fs.statAsync(fileDataPath)
+      return this.isLink(fileDataPath, fileModPath)
         .catch(err => {
-          // can't stat, probably the file was deleted
+          // can't stat source, probably the file was deleted
+          nonLinks.push({
+            filePath: fileEntry.relPath,
+            source: fileEntry.source,
+            changeType: 'srcdeleted',
+          });
+          return Promise.resolve();
+        })
+        .then((isLink?: boolean) => {
+          // treat isLink === undefined as true!
+          if (isLink === false) {
+            nonLinks.push({
+              filePath: fileEntry.relPath,
+              source: fileEntry.source,
+              changeType: 'refchange',
+            });
+            return Promise.resolve(undefined);
+          } else {
+            return fs.statAsync(fileDataPath);
+          }
+        })
+        .catch(err => {
+          // can't stat destination, probably the file was deleted
           nonLinks.push({
             filePath: fileEntry.relPath,
             source: fileEntry.source,
             changeType: 'deleted',
           });
-          return undefined;
+          return Promise.resolve(undefined);
         })
-        .then((stat: fs.Stats): Promise<boolean> => {
+        .then((stat?: fs.Stats): Promise<boolean> => {
           if (stat === undefined) {
             return Promise.resolve(undefined);
           }
@@ -263,28 +285,17 @@ abstract class LinkingActivator implements IDeploymentMethod {
             return Promise.resolve(undefined);
           } else {
             return this.isLink(fileDataPath, fileModPath)
-            .catch(err => {
-              // can't stat, probably the file was deleted
-              nonLinks.push({
-                filePath: fileEntry.relPath,
-                source: fileEntry.source,
-                changeType: 'srcdeleted',
+              .catch(err => {
+                // can't stat, probably the file was deleted
+                nonLinks.push({
+                  filePath: fileEntry.relPath,
+                  source: fileEntry.source,
+                  changeType: 'srcdeleted',
+                });
+                return undefined;
               });
-              return undefined;
-            });
-          }
-        })
-        .then((isLink?: boolean) => {
-          // treat isLink === undefined as true!
-          if (isLink === false) {
-            nonLinks.push({
-              filePath: fileEntry.relPath,
-              source: fileEntry.source,
-              changeType: 'refchange',
-            });
           }
         });
-
       }).then(() => Promise.resolve(nonLinks));
   }
 
