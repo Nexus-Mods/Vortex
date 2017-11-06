@@ -260,8 +260,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <FlexLayout.Fixed id='main-toolbar'>
         <QuickLauncher t={t} />
+        <div className='flex-fill' />
         <NotificationButton id='notification-button' />
-        <div className='mainpage-header-container' ref={this.setHeaderRef} />
         <IconBar
           className='application-icons'
           group='application-icons'
@@ -414,7 +414,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         active={active}
         secondary={secondaryPage === page.title}
         overlayPortal={this.getOverlayRef}
-        headerPortal={this.getHeaderRef}
       />
     );
   }

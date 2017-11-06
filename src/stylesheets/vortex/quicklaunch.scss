@@ -1,5 +1,5 @@
 .container-quicklaunch {
-  margin: auto $half-gutter auto 1px;
+  margin: auto $half-gutter auto 0;
 
   >.btn-group {
     >.btn-quicklaunch {
@@ -23,10 +23,15 @@
   }
 
   .tool-icon-container {
-    width: 64px;
-    height: 40px;
+    width: 200px;
+    height: 80px;
     display: flex;
     justify-content: center;
+    background-size: cover !important;
+
+    &:hover {
+      filter: brightness(150%);
+    }
 
     .tool-icon {
       max-width: 100%;

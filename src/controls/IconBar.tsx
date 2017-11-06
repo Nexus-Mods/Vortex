@@ -121,9 +121,9 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       classes.push(className);
     }
 
-    classes.push('btngroup-collapsed');
-
     if (collapse) {
+      classes.push('btngroup-collapsed');
+
       const collapsed: IActionDefinition[] = [];
       const unCollapsed: IActionDefinition[] = [];
 
@@ -173,7 +173,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       return (
         <ButtonGroup
           id={id}
-          className={className}
+          className={classes.join(' ')}
           style={style}
           vertical={orientation === 'vertical'}
         >

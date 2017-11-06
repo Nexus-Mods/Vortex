@@ -60,12 +60,25 @@ $thumbnail-width: 256px;
   }
 
   .buttons {
+    margin-right: $gutter-width;
+    height: 100%;
+    justify-content: center;
     >* {
       display: inline-block;
       margin: 4px;
-      background-color: $brand-clickable;
+      background-color: $text-color;
+      color: $brand-clickable;
       vertical-align: middle;
       padding: 2px 8px;
+      &:hover {
+        background-color: $link-hover-color;
+      }
+      &:active {
+        background-color: $link-hover-color;
+      }
+      &:focus {
+        background-color: $link-hover-color;
+      }
     }
     button {
       @extend .btn-embed;

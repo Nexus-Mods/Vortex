@@ -1,3 +1,25 @@
 .btngroup-collapsed > .btn {
   @extend .btn-embed;
 }
+
+.menubar {
+  display: flex;
+  flex-direction: row;
+
+  .btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 4px;
+    width: 64px;
+    border: 0;
+    flex: 1 1 0;
+  }
+  .button-text {
+    margin-top: 2px;
+    margin-bottom: 0px;
+    font-size: xx-small;
+    white-space: normal;
+  }
+}

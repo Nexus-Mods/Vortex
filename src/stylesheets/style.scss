@@ -67,12 +67,6 @@
   display: inline-block;
 }
 
-// text in a button that combines icon and text
-.button-text {
-  margin-left: 10px;
-  display: inline;
-}
-
 // toggle-button that is active
 .btn-toggle-on {
   background-color: $gray-dark;
@@ -615,6 +609,7 @@ a[role=menuitem] svg {
 
 .mod-picture {
   max-width: 256px;
+  text-align: center;
 
   .zoomable-image {
     max-width: 100%;

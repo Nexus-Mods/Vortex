@@ -44,6 +44,9 @@
 
   .xtbody {
     background-color: $brand-menu;
+    .xtr div {
+      padding: 4px 0px;
+    }
   }
 }
 

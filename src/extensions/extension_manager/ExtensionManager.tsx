@@ -22,7 +22,7 @@ import * as fs from 'fs-extra-promise';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
-import { Alert, Button } from 'react-bootstrap';
+import { Alert, Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 
 interface IConnectedProps {
@@ -120,31 +120,33 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     return (
       <MainPage>
         <MainPage.Body>
-          <FlexLayout type='column'>
-            <FlexLayout.Fixed>
-              {
-                reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
-                  ? this.renderReload()
-                  : null
-              }
-            </FlexLayout.Fixed>
-            <FlexLayout.Flex>
-              <Table
-                tableId='extensions'
-                data={extensionsWithState}
-                actions={this.actions}
-                staticElements={this.staticColumns}
-                multiSelect={false}
-              />
-            </FlexLayout.Flex>
-            <FlexLayout.Fixed>
-              <Dropzone
-                accept={['files', 'urls']}
-                drop={this.dropExtension}
-                dialogHint={t('Select extension file')}
-              />
-            </FlexLayout.Fixed>
-          </FlexLayout>
+          <Panel>
+            <FlexLayout type='column'>
+              <FlexLayout.Fixed>
+                {
+                  reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
+                    ? this.renderReload()
+                    : null
+                }
+              </FlexLayout.Fixed>
+              <FlexLayout.Flex>
+                <Table
+                  tableId='extensions'
+                  data={extensionsWithState}
+                  actions={this.actions}
+                  staticElements={this.staticColumns}
+                  multiSelect={false}
+                />
+              </FlexLayout.Flex>
+              <FlexLayout.Fixed>
+                <Dropzone
+                  accept={['files', 'urls']}
+                  drop={this.dropExtension}
+                  dialogHint={t('Select extension file')}
+                />
+              </FlexLayout.Fixed>
+            </FlexLayout>
+          </Panel>
         </MainPage.Body>
       </MainPage>
     );

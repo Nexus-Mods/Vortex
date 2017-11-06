@@ -184,6 +184,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           onKeyDown={this.handleKeyDown}
         >
           <Table condensed hover>
+            {this.renderBody(this.mVisibleAttributes)}
             {showHeader === false ? null : <THead
               className='table-header'
               domRef={this.setHeadRef}
@@ -195,7 +196,6 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
               </TR>
             </THead>
             }
-            {this.renderBody(this.mVisibleAttributes)}
           </Table>
           {this.props.children}
         </div>
@@ -219,7 +219,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     //   to know the size without rendering
 
     return (
-      <TBody domRef={this.setBodyRef} style={{ clipPath: 'inset(0px 0 0 0)' }}>
+      <TBody domRef={this.setBodyRef}>
         {sortedRows.map((row, idx) => this.renderRow(row, idx < 40, visibleAttributes))}
       </TBody>
     );
@@ -384,7 +384,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           key={attribute.id}
           attribute={attribute}
           state={attributeState}
-          doFilter={filt !== undefined}
+          doFilter={advancedMode}
           onSetSortDirection={this.setSortDirection}
           onSetFilter={this.setFilter}
           advancedMode={advancedMode}
@@ -551,11 +551,6 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     if ((this.mHeadRef !== undefined) && (this.mHeadRef !== null)) {
       const transform = `translate(0, ${event.target.scrollTop}px)`;
       this.mHeadRef.style.transform = transform;
-    }
-
-    if ((this.mBodyRef !== undefined) && (this.mBodyRef !== null)) {
-      const clip = `inset(${event.target.scrollTop}px 0 0 0)`;
-      this.mBodyRef.style.clipPath = clip;
     }
   }
 

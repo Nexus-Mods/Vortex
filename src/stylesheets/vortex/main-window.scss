@@ -2,7 +2,6 @@
 // (containing the quick launcher, login control, game-specific action buttons)
 #main-toolbar {
   background-color: $brand-menu;
-  height: 48px;
   display: flex;
 
   button {
@@ -23,6 +22,8 @@
 .application-icons {
   height: 100%;
   margin-left: $half-gutter;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 // the naviation buttons on the left
@@ -153,7 +154,7 @@
   flex: 1 1 0%;
   display: flex;
   border: $brand-secondary solid;
-  border-width: 0px 1px;
+  border-width: 0;
   height: 100%;
   >div {
     margin-top: auto;
@@ -162,12 +163,16 @@
 }
 
 .mainpage-header-container {
-  flex: 1 1 0%;
+  background-color: $brand-clickable;
   >div {
     width: 100%;
     height: 100%;
   }
-  margin-left: 20px;
+}
+
+.mainpage-body-container {
+  flex: 1 1 0;
+  position: relative;
 }
 
 // footer
@@ -179,6 +184,8 @@
   transition: opacity 500ms;
   flex: 1 1 0;
   position: relative;
+  display: flex;
+  flex-direction: column;
 
   &.current {
     opacity: 1;

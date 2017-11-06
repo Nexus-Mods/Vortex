@@ -5,7 +5,7 @@ import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import IconBar, { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
-import { Button, IconButton } from '../../../controls/TooltipControls';
+import { Button, IconButton, ToggleButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IDiscoveryPhase, IDiscoveryState, IState } from '../../../types/IState';
@@ -150,27 +150,42 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       <MainPage domRef={this.setRef}>
         <MainPage.Header>
           <IconBar
-            className='flex-fill'
             group='game-icons'
             staticElements={this.buttons}
-            buttonType='icon'
+            buttonType='both'
+            className='menubar'
           />
-          <div id='gamepicker-layout'>
-            <IconButton
+          <div className='flex-fill' />
+          <IconBar
+            id='gamepicker-layout-list'
+            group='gamepicker-layout-icons'
+            staticElements={[]}
+            buttonType='both'
+            className='menubar'
+          >
+            <ToggleButton
               id='gamepicker-layout-list'
-              className={pickerLayout === 'list' ? 'btn-toggle-on' : 'btn-toggle-off'}
               onClick={this.setLayoutList}
-              icon='list'
+              onIcon='list'
+              offIcon='list'
               tooltip={t('List')}
-            />
-            <IconButton
+              offTooltip={t('List')}
+              state={pickerLayout === 'list'}
+            >
+              <span className='button-text'>{t('List View')}</span>
+            </ToggleButton>
+            <ToggleButton
               id='gamepicker-layout-grid'
-              className={pickerLayout === 'small' ? 'btn-toggle-on' : 'btn-toggle-off'}
               onClick={this.setLayoutSmall}
-              icon='grid'
-              tooltip={t('Small Icons')}
-            />
-          </div>
+              onIcon='grid'
+              offIcon='grid'
+              tooltip={t('Grid')}
+              offTooltip={t('Grid')}
+              state={pickerLayout === 'small'}
+            >
+              <span className='button-text'>{t('Grid View')}</span>
+            </ToggleButton>
+          </IconBar>
         </MainPage.Header>
         <MainPage.Body>
           <FlexLayout type='column' className='game-page'>
