@@ -1317,6 +1317,10 @@ a[role=menuitem] svg {
   margin-bottom: auto;
 }
 
+.cell-file_count {
+  white-space: nowrap;
+}
+
 .btn-mods-enabled-enabled, .toggle-mods-enabled-enabled,
 .btn-extensions-enabled-enabled, .toggle-extensions-enabled-enabled {
   background-color: $brand-success;
