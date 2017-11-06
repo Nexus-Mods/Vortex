@@ -31,10 +31,17 @@ import * as uuidT from 'uuid';
 
 const uuid = lazyRequire<typeof uuidT>('uuid');
 
+function last(array: any[]): any {
+  if (array.length === 0) {
+    return undefined;
+  }
+  return array[array.length - 1];
+}
+
 class Application {
   private mBasePath: string;
   private mStore: Redux.Store<IState>;
-  private mLevelPersistor: LevelPersist;
+  private mLevelPersistors: LevelPersist[] = [];
   private mArgs: IParameters;
   private mMainWindow: MainWindowT;
   private mExtensions: ExtensionManagerT;
@@ -214,9 +221,9 @@ class Application {
     // 3. load extensions, then load all settings, including extensions
     return LevelPersist.create(path.join(this.mBasePath, currentStatePath))
       .then(levelPersistor => {
-        this.mLevelPersistor = levelPersistor;
+        this.mLevelPersistors.push(levelPersistor);
         return insertPersistor(
-          'user', new SubPersistor(this.mLevelPersistor, 'user'));
+          'user', new SubPersistor(levelPersistor, 'user'));
       })
       .then(() => {
         const multiUser = newStore.getState().user.multiUser;
@@ -230,12 +237,15 @@ class Application {
         log('info', `using ${dataPath} as the storage directory`);
         if (multiUser) {
           setLogPath(dataPath);
-          return this.mLevelPersistor.changeDatabase(path.join(dataPath, currentStatePath));
+          return LevelPersist.create(path.join(dataPath, currentStatePath))
+            .then(levelPersistor => {
+              this.mLevelPersistors.push(levelPersistor);
+            });
         } else {
           return Promise.resolve();
         }
       })
-      .then(() => insertPersistor('app', new SubPersistor(this.mLevelPersistor, 'app')))
+      .then(() => insertPersistor('app', new SubPersistor(last(this.mLevelPersistors), 'app')))
       .then(() => {
         if (newStore.getState().app.instanceId === undefined) {
           const newId = uuid.v4();
@@ -246,7 +256,7 @@ class Application {
         const reducer = require('../reducers/index').default;
         newStore.replaceReducer(reducer(this.mExtensions.getReducers()));
         return Promise.mapSeries(allHives(this.mExtensions), hive =>
-          insertPersistor(hive, new SubPersistor(this.mLevelPersistor, hive)));
+          insertPersistor(hive, new SubPersistor(last(this.mLevelPersistors), hive)));
       })
       .then(() => importState(this.mBasePath))
       .then(oldState => {
