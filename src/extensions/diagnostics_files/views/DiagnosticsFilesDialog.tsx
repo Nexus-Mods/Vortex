@@ -19,6 +19,7 @@ import {
   Button, Checkbox, Jumbotron, ListGroup,
   ListGroupItem, Modal, Panel,
 } from 'react-bootstrap';
+import * as Redux from 'redux';
 
 export interface IBaseProps {
   visible: boolean;

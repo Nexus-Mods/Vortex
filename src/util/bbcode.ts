@@ -5,6 +5,7 @@ import LineTag from './bbcode/LineTag';
 import LinkTag from './bbcode/LinkTag';
 import SizeTag from './bbcode/SizeTag';
 import SpoilerTag from './bbcode/SpoilerTag';
+import SvgTag from './bbcode/SvgTag';
 import YoutubeTag from './bbcode/YoutubeTag';
 
 import * as bbcode from 'bbcode-to-react';
@@ -19,6 +20,7 @@ bbcode.registerTag('font', FontTag);
 bbcode.registerTag('youtube', YoutubeTag);
 bbcode.registerTag('line', LineTag);
 bbcode.registerTag('heading', HeadingTag);
+bbcode.registerTag('svg', SvgTag);
 
 let convertDiv: HTMLDivElement;
 

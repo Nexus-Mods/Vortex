@@ -38,7 +38,7 @@ const nop = () => undefined;
 const possibleActions: { [type: string]: IPossibleAction[] } = {
   refchange: [
     { key: 'import', text: 'Apply' },
-    { key: 'drop', text: 'Restore' },
+    { key: 'drop', text: 'Undo' },
   ],
   valchange: [
     { key: 'nop', text: 'Apply' },
@@ -50,7 +50,7 @@ const possibleActions: { [type: string]: IPossibleAction[] } = {
   ],
   srcdeleted: [
     { key: 'drop', text: 'Apply' },
-    { key: 'import', text: 'Restore' },
+    { key: 'import', text: 'Undo' },
   ],
 };
 
@@ -126,10 +126,17 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
           <Modal.Title>{t('External Changes')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div className='padded-text' style={{ flex: 0 }} >
+              {t('One or more files have been modified on disk since Vortex last deployed. '
+                + 'To synchronize we have to either apply those changes permanently or '
+                + 'restore the original files.')}
+            </div>
+            {renderFunc(refChanged, valChanged, deleted, srcDeleted)}
+          </div>
           <Toggle checked={showFiles} onToggle={this.toggleShowFiles}>
             {t('Show individual files')}
           </Toggle>
-          {renderFunc(refChanged, valChanged, deleted, srcDeleted)}
         </Modal.Body>
         <Modal.Footer>
           <Button
@@ -167,15 +174,16 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div className='padded-text' style={{ flex: 0 }} >
-          {t('One or more files have been modified on disk since Vortex last deployed. '
-            + 'You have to decide what happens with them.')}
-        </div>
-
         {/* this.renderChangedSources(t('These mods were modified'), 'valchange', vc) */}
-        {this.renderChangedSources(t('Files were replaced'), 'refchange', rc)}
-        {this.renderChangedSources(t('Links were deleted'), 'deleted', d)}
-        {this.renderChangedSources(t('Source files were deleted'), 'srcdeleted', sd)}
+        {this.renderChangedSources(t('Files were modified'
+                                    + ' (default: apply changes to the mod)'),
+                                   'refchange', rc)}
+        {this.renderChangedSources(t('Source files were deleted'
+                                    + ' (default: apply, permanently removing the file)'),
+                                    'srcdeleted', sd)}
+        {this.renderChangedSources(t('Links were deleted'
+                                    + ' (default: restore link, mod remains unchanged)'),
+                                    'deleted', d)}
       </div>
     );
   }
@@ -186,15 +194,16 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div className='padded-text' style={{ flex: 0 }} >
-          {t('One or more files have been modified on disk since Vortex last deployed. '
-            + 'You have to decide what happens with them.')}
-        </div>
-
         {/* this.renderChangedFile(t('These files were modified'), 'valchange', valChanged) */}
-        {this.renderChangedFile(t('Files were replaced'), 'refchange', refChanged)}
-        {this.renderChangedFile(t('Links were deleted'), 'deleted', deleted)}
-        {this.renderChangedFile(t('Source files were deleted'), 'srcdeleted', srcDeleted)}
+        {this.renderChangedFile(t('Files were modified'
+                                 + ' (default: apply changes to the mod)'),
+                                 'refchange', refChanged)}
+        {this.renderChangedFile(t('Source files were deleted'
+                                 + ' (default: apply, permanently removing the file)'),
+                                 'srcdeleted', srcDeleted)}
+        {this.renderChangedFile(t('Links were deleted'
+                                 + ' (default: restore link, mod remains unchanged)'),
+                                 'deleted', deleted)}
       </div>
     );
   }

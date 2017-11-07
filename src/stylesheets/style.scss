@@ -799,6 +799,8 @@ a[role=menuitem] svg {
   min-height: 300px;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  max-height: 50vh;
 
   // the flex sizing may not be optimal
   > textarea {
@@ -2188,6 +2190,7 @@ a[role=menuitem] svg {
 
 .xtd.table-external-change-refchange.cell-name,
 .xtd.table-external-change-valchange.cell-name,
+.xtd.table-external-change-srcdeleted.cell-name,
 .xtd.table-external-change-deleted.cell-name {
   width: 100%;
 }
@@ -2196,6 +2199,8 @@ a[role=menuitem] svg {
 .table-external-change-refchange .dropup > button,
 .table-external-change-valchange .dropdown > button,
 .table-external-change-valchange .dropup > button,
+.table-external-change-srcdeleted .dropdown > button,
+.table-external-change-srcdeleted .dropup > button,
 .table-external-change-deleted .dropdown > button,
 .table-external-change-deleted .dropup > button {
   padding: 2px 10px;
@@ -2207,6 +2212,8 @@ a[role=menuitem] svg {
 .table-external-change-refchange .dropup,
 .table-external-change-valchange .dropdown,
 .table-external-change-valchange .dropup,
+.table-external-change-srcdeleted .dropdown,
+.table-external-change-srcdeleted .dropup,
 .table-external-change-deleted .dropdown,
 .table-external-change-deleted .dropup {
   display: inline-flex;
@@ -2214,6 +2221,7 @@ a[role=menuitem] svg {
 
 #dropdown-external-change-refchange-action,
 #dropdown-external-change-valchange-action,
+#dropdown-external-change-srcdeleted-action,
 #dropdown-external-change-deleted-action {
   padding: 2px 5px;
   border: 0px;
