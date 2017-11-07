@@ -237,7 +237,7 @@
     "node-7z": "Nexus-Mods/node-7z",
     "node-ipc": "^9.1.1",
     "node-sass": "^4.5.3",
-    "opn": "^5.1.0",
+    "opn": "TanninOne/opn",
     "packery": "^2.1.1",
     "prop-types": "^15.6.0",
     "react": "^15.3.0",
