@@ -85,7 +85,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
       });
   }
 
-  public finalize(dataPath: string): Promise<IDeployedFile[]> {
+  public finalize(dataPath: string,
+                  progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
     const state = this.mApi.store.getState();
     const gameId = selectors.activeGameId(state);
 
@@ -104,6 +105,25 @@ abstract class LinkingActivator implements IDeploymentMethod {
     // unlink all files that were removed or changed
     ({added, removed, sourceChanged, contentChanged} =
          this.diffActivation(previousDeployment, newDeployment));
+    log('debug', 'deployment', {
+      added: added.length,
+      removed: removed.length,
+      'source changed': sourceChanged.length,
+      modified: contentChanged.length,
+    });
+
+    const total = added.length + removed.length + sourceChanged.length + contentChanged.length;
+    let count = 0;
+    let lastReported = 0;
+    const progress = () => {
+      if (progressCB !== undefined) {
+        ++count;
+        if ((count % 1000) === 0) {
+          lastReported = count;
+          progressCB(count, total);
+        }
+      }
+    };
 
     return Promise.map([].concat(removed, sourceChanged, contentChanged),
                        key => {
@@ -120,7 +140,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
                              .then(() => fs.renameAsync(outputPath + BACKUP_TAG,
                                                         outputPath)
                                              .catch(() => undefined))
-                             .then(() => delete previousDeployment[key])
+                             .then(() => {
+                               progress();
+                               delete previousDeployment[key];
+                             })
                              .catch(err => {
                                log('warn', 'failed to unlink', {
                                  path: previousDeployment[key].relPath,
@@ -144,7 +167,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                              });
                        })
         // then, (re-)link all files that were added
-        .then(() => Promise.mapSeries(
+        .then(() => Promise.map(
                   added,
                   key => this.deployFile(key, installPathStr, dataPath, false)
                              .catch(err => {
@@ -154,9 +177,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
                                  error: err.message,
                                });
                                ++errorCount;
-                             })))
+                             })
+                            .then(() => progress()), { concurrency: 100 }))
         // then update modified files
-        .then(() => Promise.mapSeries(
+        .then(() => Promise.map(
                   [].concat(sourceChanged, contentChanged),
                   (key: string) =>
                       this.deployFile(key, installPathStr, dataPath, true)
@@ -167,7 +191,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                               error: err.message,
                             });
                             ++errorCount;
-                          })))
+                          }).then(() => progress()), { concurrency: 100 }))
         .then(() => {
           if (errorCount > 0) {
             addNotification({
@@ -199,8 +223,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
                 time: entry.stats.mtime.getTime(),
               };
             }
-            return Promise.resolve();
           });
+          return Promise.resolve();
         })
         .then(() => undefined);
   }
@@ -239,61 +263,57 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.map(activation, fileEntry => {
       const fileDataPath = path.join(dataPath, fileEntry.relPath);
       const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
+      let sourceDeleted: boolean = false;
 
       return this.isLink(fileDataPath, fileModPath)
         .catch(err => {
           // can't stat source, probably the file was deleted
-          nonLinks.push({
-            filePath: fileEntry.relPath,
-            source: fileEntry.source,
-            changeType: 'srcdeleted',
-          });
-          return Promise.resolve();
+          sourceDeleted = true;
+          return Promise.resolve(undefined);
         })
         .then((isLink?: boolean) => {
           // treat isLink === undefined as true!
-          if (isLink === false) {
-            nonLinks.push({
-              filePath: fileEntry.relPath,
-              source: fileEntry.source,
-              changeType: 'refchange',
-            });
-            return Promise.resolve(undefined);
-          } else {
+          if (isLink) {
             return fs.statAsync(fileDataPath);
+          } else {
+            if (isLink === false) {
+              nonLinks.push({
+                filePath: fileEntry.relPath,
+                source: fileEntry.source,
+                changeType: 'refchange',
+              });
+            }
+            return Promise.resolve(undefined);
           }
         })
         .catch(err => {
           // can't stat destination, probably the file was deleted
-          nonLinks.push({
-            filePath: fileEntry.relPath,
-            source: fileEntry.source,
-            changeType: 'deleted',
-          });
+          if (!sourceDeleted) {
+            nonLinks.push({
+              filePath: fileEntry.relPath,
+              source: fileEntry.source,
+              changeType: 'deleted',
+            });
+          } // otherwise: both source and destination were removed
           return Promise.resolve(undefined);
         })
         .then((stat?: fs.Stats): Promise<boolean> => {
           if (stat === undefined) {
             return Promise.resolve(undefined);
           }
-          if (stat.mtime.getTime() !== fileEntry.time) {
+          if (sourceDeleted) {
+            nonLinks.push({
+              filePath: fileEntry.relPath,
+              source: fileEntry.source,
+              changeType: 'srcdeleted',
+            });
+          } else if (stat.mtime.getTime() !== fileEntry.time) {
             nonLinks.push({
               filePath: fileEntry.relPath,
               source: fileEntry.source,
               changeType: 'valchange',
             });
             return Promise.resolve(undefined);
-          } else {
-            return this.isLink(fileDataPath, fileModPath)
-              .catch(err => {
-                // can't stat, probably the file was deleted
-                nonLinks.push({
-                  filePath: fileEntry.relPath,
-                  source: fileEntry.source,
-                  changeType: 'srcdeleted',
-                });
-                return undefined;
-              });
           }
         });
       }).then(() => Promise.resolve(nonLinks));

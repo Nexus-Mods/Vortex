@@ -132,7 +132,8 @@ export interface IDeploymentMethod {
    *
    * @memberOf IModActivator
    */
-  finalize: (dataPath: string) => Promise<IDeployedFile[]>;
+  finalize: (dataPath: string,
+             progressCB?: (files: number, total: number) => void) => Promise<IDeployedFile[]>;
 
   /**
    * activate the specified mod in the specified location

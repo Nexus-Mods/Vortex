@@ -20,6 +20,9 @@ export const sessionReducer: IReducerSpec = {
       pushSafe(state, [ 'activity', payload.group ], payload.activityId),
     [actions.stopActivity as any]: (state, payload) =>
       removeValue(state, [ 'activity', payload.group ], payload.activityId),
+    [actions.setProgress as any]: (state, payload) =>
+      setSafe(state, ['progress', payload.group, payload.progressId],
+              { text: payload.text, percent: Math.round(payload.percent) }),
     [actions.setOpenMainPage as any]: (state, payload) => {
       if (payload.secondary) {
         return setSafe(state, [ 'secondaryPage' ], payload.page);
@@ -39,6 +42,7 @@ export const sessionReducer: IReducerSpec = {
     mainPage: '',
     secondaryPage: '',
     activity: {},
+    progress: {},
     settingsPage: undefined,
     extLoadFailures: {},
   },
