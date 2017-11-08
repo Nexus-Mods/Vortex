@@ -134,8 +134,9 @@ class LootInterface {
         .then(mtime => {
           // load & evaluate lists first time we need them and whenever
           // the userlist has changed
-          if ((this.mUserlistTime === undefined) || (this.mUserlistTime !== mtime)) {
-            log('info', '(re-)loading loot lists');
+          if ((this.mUserlistTime === undefined)
+              || (this.mUserlistTime.getTime() !== mtime.getTime())) {
+            log('info', '(re-)loading loot lists', { mtime, last: this.mUserlistTime });
             return this.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '')
               .then(() => this.evalListsAsync())
               .then(() => this.mUserlistTime = mtime);
@@ -245,13 +246,14 @@ class LootInterface {
           this.reportCycle(err);
         } else if (err.message.endsWith('is not a valid plugin')) {
           this.mExtensionApi.sendNotification({
+            id: 'loot-failed',
             type: 'warning',
             message: this.mExtensionApi.translate('Not sorted because: {{msg}}',
               { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
           });
         } else {
           this.mExtensionApi.showErrorNotification('LOOT operation failed',
-                                                   err);
+                                                   err, { id: 'loot-failed' });
         }
       })
       .finally(() => {
