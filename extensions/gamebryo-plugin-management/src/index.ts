@@ -49,10 +49,6 @@ function isPlugin(fileName: string): boolean {
  * updates the list of known plugins for the managed game
  */
 function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Promise<void> {
-  if (newModList === undefined) {
-    return Promise.resolve();
-  }
-
   const state = store.getState();
 
   const gameMode = selectors.activeGameId(state);
@@ -109,7 +105,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
       .then((fileNames: string[]) => {
         const pluginNames: string[] = fileNames.filter(isPlugin);
         const pluginStates: IPlugins = {};
-        pluginNames.forEach((fileName: string) => {
+        pluginNames.forEach(fileName => {
           const modName = pluginSources[fileName];
           pluginStates[fileName] = {
             modName: modName || '',
