@@ -374,7 +374,8 @@ function testMissingMasters(t: I18next.TranslationFunction,
             masterList: new ESPFile(pluginList[plugin].filePath).masterList,
           };
         } catch (err) {
-          log('warn', 'failed to parse esp file', { name, err: err.message });
+          log('warn', 'failed to parse esp file',
+              { name: pluginList[plugin].filePath, err: err.message });
           return { name: plugin, masterList: [] };
         }
       });

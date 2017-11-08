@@ -101,7 +101,7 @@ class PluginPersistor implements types.IPersistor {
   }
 
   public removeItem(key: string[]): Promise<void> {
-    this.mPlugins = {};
+    this.mPlugins = util.deleteOrNop(this.mPlugins, key);
     return this.serialize();
   }
 
@@ -150,6 +150,7 @@ class PluginPersistor implements types.IPersistor {
       return Promise.resolve();
     }
     // ensure we don't try to concurrently write the files
+    // TODO: this can enqueue many duplicate file writes
     return this.enqueue(() => this.doSerialize());
   }
 

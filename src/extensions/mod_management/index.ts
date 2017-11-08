@@ -311,7 +311,7 @@ function genUpdateModDeployment() {
           .then(() => changes);
       })
       .then((changes: { [typeId: string]: IFileChange[] }) => {
-        log('debug', 'determined changes');
+        log('debug', 'done checking for external changes');
         progress('Sorting mods', 30);
         return (Object.keys(changes).length === 0) ?
                    Promise.resolve([]) :
@@ -325,7 +325,6 @@ function genUpdateModDeployment() {
       // sort (all) mods based on their dependencies so the right files get activated
       .then(() => sortMods(profile.gameId, modList, api))
       .then((sortedMods: string[]) => {
-        log('debug', 'mods sorted');
         const sortedModList = modList
           .filter(mod => getSafe(modState, [mod.id, 'enabled'], false))
           .sort((lhs: IMod, rhs: IMod) => sortedMods.indexOf(lhs.id) - sortedMods.indexOf(rhs.id));
@@ -341,7 +340,6 @@ function genUpdateModDeployment() {
                                 sortedModList.filter(mod => (mod.type || '') === typeId),
                                 fileMergers)
           .then(mergedFiles => {
-            log('debug', 'starting to activate mods', { typeId });
             mergedFileMap[typeId] = mergedFiles;
           }))
           // activate them all, once per mod type
