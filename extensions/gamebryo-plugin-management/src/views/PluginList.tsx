@@ -269,7 +269,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     this.updatePlugins(this.props.plugins);
   }
 
-  public componentWillReceiveProps(nextProps) {
+  public componentWillReceiveProps(nextProps: IProps) {
     if (this.props.plugins !== nextProps.plugins) {
       this.updatePlugins(nextProps.plugins);
     }
@@ -341,7 +341,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           //   no longer exists. Since the error message reported from the native
           //   lib isn't super informative we can't differentiate yet, so not
           //   treating this as a big problem.
-          log('warn', 'failed to parse esp', { path: plugins[pluginName].filePath, error: err });
+          log('info', 'failed to parse esp',
+            { path: plugins[pluginName].filePath, error: err.message });
           pluginsParsed[pluginName] = {
             isMaster: false,
             parseFailed: true,

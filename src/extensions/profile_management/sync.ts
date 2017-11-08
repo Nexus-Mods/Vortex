@@ -10,24 +10,23 @@ export function syncToProfile(
   onError: (error: string, details: string | Error) => void): Promise<void> {
   log('debug', 'sync to profile', { profilePath, sourceFiles });
   return fs.ensureDirAsync(profilePath)
-  .then(() =>
-    Promise.map(sourceFiles, (filePath: string) => {
-      const destPath = path.join(profilePath, path.basename(filePath));
-      return copyFileAtomic(filePath, destPath)
-      .catch(err => {
-        log('warn', 'failed to copy to profile', { filePath, destPath });
-        if (err.code !== 'EBADF') {
-          // EBADF would indicate the file doesn't exist, which isn't a problem,
-          // it's as if the file was empty
-          onError('failed to sync to profile: ' + filePath, err);
-        }
-      });
-    }))
-  .then(() => {
-    log('debug', 'sync to profile complete');
-  })
-  .catch(err =>
-    Promise.reject(new Error('failed to sync to profile: ' + err.message)));
+    .then(() =>
+      Promise.map(sourceFiles, (filePath: string) => {
+        const destPath = path.join(profilePath, path.basename(filePath));
+        return copyFileAtomic(filePath, destPath)
+        .catch(err => {
+          log('warn', 'failed to copy to profile', { filePath, destPath });
+          if (err.code !== 'EBADF') {
+            // EBADF would indicate the file doesn't exist, which isn't a problem,
+            // it's as if the file was empty
+            onError('failed to sync to profile: ' + filePath, err);
+          }
+        });
+      }))
+    .then(() => {
+      log('debug', 'sync to profile complete');
+    })
+    .catch(err => Promise.reject(new Error('failed to sync to profile: ' + err.message)));
 }
 
 export function syncFromProfile(
