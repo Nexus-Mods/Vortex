@@ -12,7 +12,6 @@ import { IMainPage } from '../types/IMainPage';
 import { IState } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
 import { getSafe } from '../util/storeHelper';
-import DeveloperType from './Developer';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
@@ -483,27 +482,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             'min-width:' + this.sidebarRef.getBoundingClientRect().width + 'px');
         }, 500);
       }
-    }
-  }
-
-  private renderDeveloperModal() {
-    if (process.env.NODE_ENV !== 'development') {
-      return null;
-    } else {
-      const Developer: typeof DeveloperType = require('./Developer').default;
-      return Developer === undefined ? null : (
-        <Modal
-          show={this.state.showLayer === 'developer'}
-          onHide={this.hideLayer}
-        >
-          <Modal.Header>
-            <Modal.Title>Developer</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Developer />
-          </Modal.Body>
-        </Modal>
-      );
     }
   }
 }
