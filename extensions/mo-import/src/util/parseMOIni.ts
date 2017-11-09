@@ -70,12 +70,12 @@ function parseMOIni(games: {[gameId: string]: types.IDiscoveryResult},
           // nop
         }
         try {
-          return {
+          return Promise.resolve({
             game: determineGame(games, file.data.General.gameName,
                                 file.data.General.gamePath, normalize),
             downloadPath,
             modPath,
-          };
+          });
         } catch (err) {
           return Promise.reject(err);
         }

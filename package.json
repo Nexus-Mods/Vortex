@@ -216,7 +216,7 @@
     "drivelist": "^5.2.6",
     "edge": "^7.10.1",
     "electron-devtools-installer": "^2.2.1",
-    "electron-updater": "^2.15.0",
+    "electron-updater": "^2.16.1",
     "exe-version": "file:lib/cpp/exe-version",
     "feedparser": "^2.2.2",
     "ffi": "^2.2.0",

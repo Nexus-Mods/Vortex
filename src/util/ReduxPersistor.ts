@@ -2,6 +2,7 @@ import {IPersistor} from '../types/IExtensionContext';
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
+import * as Redux from 'redux';
 
 function insert(target: any, key: string[], value: any) {
   try {

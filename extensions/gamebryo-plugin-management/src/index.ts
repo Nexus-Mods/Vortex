@@ -1,4 +1,4 @@
-import { setPluginEnabled, setPluginOrder, updateLoadOrder } from './actions/loadOrder';
+import { setPluginEnabled, setPluginOrder } from './actions/loadOrder';
 import { setPluginList } from './actions/plugins';
 import { loadOrderReducer } from './reducers/loadOrder';
 import { pluginsReducer } from './reducers/plugins';
@@ -115,7 +115,6 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
           };
         });
         store.dispatch(setPluginList(pluginStates));
-        // store.dispatch(updateLoadOrder(pluginNames));
         return Promise.resolve();
       })
       .catch((err: Error) => {
