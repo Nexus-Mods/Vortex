@@ -244,12 +244,18 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderWait() {
-    const { progressProfile } = this.props;
+    const { onHideDialog, progressProfile, visibleDialog } = this.props;
     const progress = getSafe(progressProfile, ['deploying'], undefined);
     const control = progress !== undefined
       ? <ProgressBar label={progress.text} now={progress.percent} style={{ width: '50%' }} />
       : <Icon name='spinner' pulse style={{ width: 64, height: 64 }} />;
-    return <div className='center-content'>{control}</div>;
+    return (
+      <div>
+        <div className='center-content'>{control}</div>
+        <Dialog />
+        <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
+      </div>
+    );
   }
 
   private updateState(spec: any) {
