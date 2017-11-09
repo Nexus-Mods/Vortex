@@ -185,10 +185,14 @@ function applyFileActions(sourcePath: string,
 
   // process the actions that the user selected in the dialog
   return Promise.map(actionGroups['drop'] || [],
-      // delete the files the user wants to drop.
+      // delete the links the user wants to drop.
       (entry) => truthy(entry.filePath)
           ? fs.removeAsync(path.join(outputPath, entry.filePath))
           : Promise.reject(new Error('invalid file path')))
+    .then(() => Promise.map(actionGroups['delete'] || [],
+      entry => truthy(entry.filePath)
+          ? fs.removeAsync(path.join(sourcePath, entry.source, entry.filePath))
+          : Promise.reject(new Error('invalid file path'))))
     .then(() => Promise.map(actionGroups['import'] || [],
       // copy the files the user wants to import
       (entry) => fs.copyAsync(
@@ -198,11 +202,13 @@ function applyFileActions(sourcePath: string,
       // remove files that the user wants to restore from
       // the activation list because then they get reinstalled.
       // this includes files that were deleted and those replaced
-      const restoreSet = new Set((actionGroups['restore'] || []).map(entry => entry.filePath));
-      const dropSet = new Set((actionGroups['drop'] || []).map(entry => entry.filePath));
-      const newDeployment = lastDeployment.filter(
-        entry => !restoreSet.has(entry.relPath)
-              && !dropSet.has(entry.relPath));
+      const dropSet = new Set([].concat(
+        (actionGroups['restore'] || []).map(entry => entry.filePath),
+        (actionGroups['drop'] || []).map(entry => entry.filePath),
+        // also remove the files that got deleted, except these won't be reinstalled
+        (actionGroups['delete'] || []).map(entry => entry.filePath),
+      ));
+      const newDeployment = lastDeployment.filter(entry => !dropSet.has(entry.relPath));
       lastDeployment = newDeployment;
       return Promise.resolve();
     })

@@ -20,7 +20,7 @@ function defaultAction(changeType: string): FileAction {
   switch (changeType) {
     case 'refchange': return 'import';
     case 'valchange': return 'nop';
-    case 'deleted': return 'restore';
+    case 'deleted': return 'delete';
     case 'srcdeleted': return 'drop';
     default: throw new Error('invalid file change ' + changeType);
   }

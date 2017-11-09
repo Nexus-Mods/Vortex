@@ -46,7 +46,7 @@ const possibleActions: { [type: string]: IPossibleAction[] } = {
   ],
   deleted: [
     { key: 'delete', text: 'Apply' },
-    { key: 'restore', text: 'Restore' },
+    { key: 'restore', text: 'Undo' },
   ],
   srcdeleted: [
     { key: 'drop', text: 'Apply' },
@@ -128,9 +128,8 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         <Modal.Body>
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div className='padded-text' style={{ flex: 0 }} >
-              {t('One or more files have been modified on disk since Vortex last deployed. '
-                + 'To synchronize we have to either apply those changes permanently or '
-                + 'restore the original files.')}
+              {t('Mod files were changed outside Vortex. '
+                + 'You can undo these changes now or apply them permanently.')}
             </div>
             {renderFunc(refChanged, valChanged, deleted, srcDeleted)}
           </div>
@@ -175,15 +174,9 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedSources(t('These mods were modified'), 'valchange', vc) */}
-        {this.renderChangedSources(t('Files were modified'
-                                    + ' (default: apply changes to the mod)'),
-                                   'refchange', rc)}
-        {this.renderChangedSources(t('Source files were deleted'
-                                    + ' (default: apply, permanently removing the file)'),
-                                    'srcdeleted', sd)}
-        {this.renderChangedSources(t('Links were deleted'
-                                    + ' (default: restore link, mod remains unchanged)'),
-                                    'deleted', d)}
+        {this.renderChangedSources(t('File content modified'), 'refchange', rc)}
+        {this.renderChangedSources(t('Files deleted in mod directory'), 'srcdeleted', sd)}
+        {this.renderChangedSources(t('Links deleted'), 'deleted', d)}
       </div>
     );
   }
@@ -195,15 +188,9 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedFile(t('These files were modified'), 'valchange', valChanged) */}
-        {this.renderChangedFile(t('Files were modified'
-                                 + ' (default: apply changes to the mod)'),
-                                 'refchange', refChanged)}
-        {this.renderChangedFile(t('Source files were deleted'
-                                 + ' (default: apply, permanently removing the file)'),
-                                 'srcdeleted', srcDeleted)}
-        {this.renderChangedFile(t('Links were deleted'
-                                 + ' (default: restore link, mod remains unchanged)'),
-                                 'deleted', deleted)}
+        {this.renderChangedFile(t('File content modified'), 'refchange', refChanged)}
+        {this.renderChangedFile(t('Source files were deleted'), 'srcdeleted', srcDeleted)}
+        {this.renderChangedFile(t('Links were deleted'), 'deleted', deleted)}
       </div>
     );
   }

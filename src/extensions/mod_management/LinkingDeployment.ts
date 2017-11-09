@@ -265,25 +265,25 @@ abstract class LinkingActivator implements IDeploymentMethod {
       const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
       let sourceDeleted: boolean = false;
 
-      return this.isLink(fileDataPath, fileModPath)
+      return fs.statAsync(fileModPath)
         .catch(err => {
           // can't stat source, probably the file was deleted
           sourceDeleted = true;
-          return Promise.resolve(undefined);
+          return Promise.resolve();
         })
+        .then(() => sourceDeleted
+          ? Promise.resolve(true)
+          : this.isLink(fileDataPath, fileModPath))
         .then((isLink?: boolean) => {
-          // treat isLink === undefined as true!
-          if (isLink) {
-            return fs.statAsync(fileDataPath);
-          } else {
-            if (isLink === false) {
-              nonLinks.push({
-                filePath: fileEntry.relPath,
-                source: fileEntry.source,
-                changeType: 'refchange',
-              });
-            }
+          if (!isLink) {
+            nonLinks.push({
+              filePath: fileEntry.relPath,
+              source: fileEntry.source,
+              changeType: 'refchange',
+            });
             return Promise.resolve(undefined);
+          } else {
+            return fs.statAsync(fileDataPath);
           }
         })
         .catch(err => {
@@ -308,11 +308,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
               changeType: 'srcdeleted',
             });
           } else if (stat.mtime.getTime() !== fileEntry.time) {
+            /* TODO not registering these atm as we have no way to "undo" anyway
             nonLinks.push({
               filePath: fileEntry.relPath,
               source: fileEntry.source,
               changeType: 'valchange',
             });
+            */
             return Promise.resolve(undefined);
           }
         });
