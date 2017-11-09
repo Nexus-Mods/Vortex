@@ -105,8 +105,8 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
 
   private mRef: HTMLElement;
 
-  constructor() {
-    super();
+  constructor(props: IProps) {
+    super(props);
     this.state = { showFiles: false };
   }
 
@@ -175,8 +175,8 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedSources(t('These mods were modified'), 'valchange', vc) */}
         {this.renderChangedSources(t('File content modified'), 'refchange', rc)}
-        {this.renderChangedSources(t('Files deleted in mod directory'), 'srcdeleted', sd)}
-        {this.renderChangedSources(t('Links deleted'), 'deleted', d)}
+        {this.renderChangedSources(t('Source files were deleted'), 'srcdeleted', sd)}
+        {this.renderChangedSources(t('Links were deleted'), 'deleted', d)}
       </div>
     );
   }

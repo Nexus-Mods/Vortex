@@ -1,5 +1,8 @@
+import { showDialog } from '../../actions/notifications';
+
 import More from '../../controls/More';
 import Toggle from '../../controls/Toggle';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 
@@ -11,6 +14,7 @@ import { setAdvancedMode, setLanguage, setProfilesVisible } from './actions/inte
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
+import * as Promise from 'bluebird';
 import { readdir } from 'fs';
 import * as update from 'immutability-helper';
 import * as path from 'path';
@@ -36,6 +40,8 @@ interface IActionProps {
   onSetAutoDeployment: (enabled: boolean) => void;
   onSetProfilesVisible: (visible: boolean) => void;
   onSetAdvancedMode: (advanced: boolean) => void;
+  onShowDialog: (type: DialogType, title: string,
+                 content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
 }
 
 interface IState {
@@ -165,8 +171,21 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   }
 
   private toggleProfiles = () => {
-    const { profilesVisible, onSetProfilesVisible } = this.props;
-    onSetProfilesVisible(!profilesVisible);
+    const { t, profilesVisible, onSetProfilesVisible, onShowDialog } = this.props;
+    if (profilesVisible) {
+      onShowDialog('question', t('Disabling Profile Management'), {
+        message: t('Please be aware that toggling this only disables the interface for profiles, '
+                 + 'meaning profiles don\'t get deleted and an active profile doesn\'t '
+                 + 'get disabled. The last active profile for each game will still be used '
+                 + '(i.e. its mod selection and local savegames).'),
+        options: { translated: true, wrap: true },
+      }, [
+        { label: 'Cancel' },
+        { label: 'Continue', action: () => onSetProfilesVisible(!profilesVisible) },
+      ]);
+    } else {
+      onSetProfilesVisible(!profilesVisible);
+    }
   }
 
   private toggleAdvanced = () => {
@@ -198,6 +217,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetAdvancedMode: (advanced: boolean) => {
       dispatch(setAdvancedMode(advanced));
     },
+    onShowDialog: (type, title, content, actions) =>
+      dispatch(showDialog(type, title, content, actions)),
   };
 }
 

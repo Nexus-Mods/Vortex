@@ -134,8 +134,9 @@ class LootInterface {
         .then(mtime => {
           // load & evaluate lists first time we need them and whenever
           // the userlist has changed
-          if ((this.mUserlistTime === undefined)
-              || (this.mUserlistTime.getTime() !== mtime.getTime())) {
+          if ((mtime !== null) &&
+              ((this.mUserlistTime === undefined) ||
+               (this.mUserlistTime.getTime() !== mtime.getTime()))) {
             log('info', '(re-)loading loot lists', { mtime, last: this.mUserlistTime });
             return this.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '')
               .then(() => this.evalListsAsync())
