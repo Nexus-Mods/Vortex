@@ -137,6 +137,10 @@ class DeploymendMethod extends LinkingDeployment {
     .catch(() => false);
   }
 
+  protected canRestore(): boolean {
+    return false;
+  }
+
   private ensureAdmin(): boolean {
     const userData = app.getPath('userData');
     // any file we know exists

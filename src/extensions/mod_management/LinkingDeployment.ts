@@ -264,6 +264,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
       const fileDataPath = path.join(dataPath, fileEntry.relPath);
       const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
       let sourceDeleted: boolean = false;
+      let destDeleted: boolean = false;
+      let destTime: Date;
 
       return fs.statAsync(fileModPath)
         .catch(err => {
@@ -271,52 +273,50 @@ abstract class LinkingActivator implements IDeploymentMethod {
           sourceDeleted = true;
           return Promise.resolve();
         })
-        .then(() => sourceDeleted
-          ? Promise.resolve(true)
-          : this.isLink(fileDataPath, fileModPath))
-        .then((isLink?: boolean) => {
-          if (!isLink) {
-            nonLinks.push({
-              filePath: fileEntry.relPath,
-              source: fileEntry.source,
-              changeType: 'refchange',
-            });
-            return Promise.resolve(undefined);
-          } else {
-            return fs.statAsync(fileDataPath);
-          }
-        })
+        .then(sourceStats =>
+          fs.lstatAsync(fileDataPath))
         .catch(err => {
           // can't stat destination, probably the file was deleted
-          if (!sourceDeleted) {
-            nonLinks.push({
-              filePath: fileEntry.relPath,
-              source: fileEntry.source,
-              changeType: 'deleted',
-            });
-          } // otherwise: both source and destination were removed
+          destDeleted = true;
           return Promise.resolve(undefined);
         })
-        .then((stat?: fs.Stats): Promise<boolean> => {
-          if (stat === undefined) {
-            return Promise.resolve(undefined);
+        .then(destStats => {
+          if (destStats !== undefined) {
+            destTime = destStats.mtime;
           }
-          if (sourceDeleted) {
+          return sourceDeleted || destDeleted
+            ? Promise.resolve(false)
+            : this.isLink(fileDataPath, fileModPath);
+        })
+        .then((isLink?: boolean) => {
+          if (sourceDeleted && !destDeleted && this.canRestore()) {
             nonLinks.push({
               filePath: fileEntry.relPath,
               source: fileEntry.source,
               changeType: 'srcdeleted',
             });
-          } else if (stat.mtime.getTime() !== fileEntry.time) {
-            /* TODO not registering these atm as we have no way to "undo" anyway
+          } else if (destDeleted && !sourceDeleted) {
+            nonLinks.push({
+              filePath: fileEntry.relPath,
+              source: fileEntry.source,
+              changeType: 'deleted',
+            });
+          } else if (!sourceDeleted && !destDeleted && !isLink) {
+            nonLinks.push({
+              filePath: fileEntry.relPath,
+              source: fileEntry.source,
+              changeType: 'refchange',
+            });
+          /* TODO not registering these atm as we have no way to "undo" anyway
+          } else if (destTime.getTime() !== fileEntry.time) {
             nonLinks.push({
               filePath: fileEntry.relPath,
               source: fileEntry.source,
               changeType: 'valchange',
             });
-            */
-            return Promise.resolve(undefined);
+          */
           }
+          return Promise.resolve(undefined);
         });
       }).then(() => Promise.resolve(nonLinks));
   }
@@ -325,6 +325,12 @@ abstract class LinkingActivator implements IDeploymentMethod {
   protected abstract unlinkFile(linkPath: string): Promise<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
   protected abstract isLink(linkPath: string, sourcePath: string): Promise<boolean>;
+  /**
+   * must return true if this deployment method is able to restore a file after the
+   * "original" was deleted. This is essentially true for hard links (since the file
+   * data isn't gone after removing the original) and false for everything else
+   */
+  protected abstract canRestore(): boolean;
 
   private deployFile(key: string, installPathStr: string, dataPath: string,
                      replace: boolean): Promise<IDeployedFile> {
