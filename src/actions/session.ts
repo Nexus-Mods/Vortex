@@ -28,4 +28,8 @@ export const startActivity = safeCreateAction('START_ACTIVITY',
 export const stopActivity = safeCreateAction('STOP_ACTIVITY',
   (group: string, activityId: string) => ({ group, activityId }));
 
+export const setProgress = safeCreateAction('SET_PROGRESS',
+  (group: string, progressId: string, text: string, percent: number) =>
+    ({ group, progressId, text, percent }));
+
 export const setExtensionLoadFailures = safeCreateAction('SET_EXT_LOAD_FAILURES');

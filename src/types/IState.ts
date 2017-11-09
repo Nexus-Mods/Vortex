@@ -63,6 +63,11 @@ export interface IExtensionLoadFailure {
   args: { [key: string]: any };
 }
 
+export interface IProgress {
+  text: string;
+  percent: number;
+}
+
 /**
  * "ephemeral" session state.
  * This state is generated at startup and forgotten at application exit
@@ -77,6 +82,7 @@ export interface ISession {
   mainPage: string;
   secondaryPage: string;
   activity: { [id: string]: string };
+  progress: { [group: string]: { [id: string]: IProgress } };
   settingsPage: string;
   extLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
 }

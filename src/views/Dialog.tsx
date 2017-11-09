@@ -18,6 +18,8 @@ import {
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 
+const nop = () => undefined;
+
 interface IActionProps {
   t: (input: string) => string;
   onDismiss: (action: string) => void;
@@ -110,7 +112,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ? 'wide'
       : 'regular';
     return dialog !== undefined ? (
-      <Modal className={`common-dialog-${type}`} show={dialog !== undefined} onHide={this.dismiss}>
+      <Modal className={`common-dialog-${type}`} show={dialog !== undefined} onHide={nop}>
         <Modal.Header>
           <Modal.Title>{this.iconForType(dialog.type)}{' '}{t(dialog.title)}</Modal.Title>
         </Modal.Header>

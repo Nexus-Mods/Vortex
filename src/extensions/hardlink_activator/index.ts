@@ -139,15 +139,14 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
-    return fs.lstatAsync(linkPath).then((linkStats: fs.Stats) => {
-      if (linkStats.nlink === 1) {
-        return false;
-      } else {
-        return fs.lstatAsync(sourcePath).then(
-          (sourceStats: fs.Stats) => linkStats.ino === sourceStats.ino,
-        );
-      }
-    });
+    return fs.lstatAsync(linkPath).then(linkStats => linkStats.nlink === 1
+        ? false
+        : fs.lstatAsync(sourcePath)
+            .then(sourceStats => linkStats.ino === sourceStats.ino));
+  }
+
+  protected canRestore(): boolean {
+    return true;
   }
 }
 

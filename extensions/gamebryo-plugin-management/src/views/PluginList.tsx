@@ -265,11 +265,45 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     ];
   }
 
+  public emptyPluginParsed(): { [plugin: string]: IPluginParsed } {
+    return Object.keys(this.props.plugins).reduce((prev, key) => {
+      prev[key] = {
+        isMaster: false,
+        parseFailed: false,
+        masterList: [],
+        author: '',
+        description: '',
+      };
+      return prev;
+    }, {});
+  }
+
+  public emptyPluginLOOT(): { [plugin: string]: IPluginLoot } {
+    return Object.keys(this.props.plugins).reduce((prev, key) => {
+      prev[key] = {
+        messages: [],
+        cleanliness: 'clean',
+        tags: { added: [], removed: [], userlistModified: false },
+      };
+      return prev;
+    }, {});
+  }
+
   public componentWillMount() {
+    const { plugins } = this.props;
+    const parsed = this.emptyPluginParsed();
+    const loot = this.emptyPluginLOOT();
+    const combined = this.detailedPlugins(plugins, loot, parsed);
+    this.setState(update(this.state, {
+      pluginsParsed: { $set: parsed },
+      pluginsLoot: { $set: loot },
+      pluginsCombined: { $set: combined },
+    }));
+
     this.updatePlugins(this.props.plugins);
   }
 
-  public componentWillReceiveProps(nextProps) {
+  public componentWillReceiveProps(nextProps: IProps) {
     if (this.props.plugins !== nextProps.plugins) {
       this.updatePlugins(nextProps.plugins);
     }
@@ -325,8 +359,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;
 
-    Promise.each(pluginNames, (pluginName: string) => {
-      return new Promise((resolve, reject) => {
+    return Promise.each(pluginNames, (pluginName: string) =>
+      new Promise((resolve, reject) => {
         try {
           const esp = new ESPFile(plugins[pluginName].filePath);
           pluginsParsed[pluginName] = {
@@ -341,7 +375,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           //   no longer exists. Since the error message reported from the native
           //   lib isn't super informative we can't differentiate yet, so not
           //   treating this as a big problem.
-          log('warn', 'failed to parse esp', { path: plugins[pluginName].filePath, error: err });
+          log('info', 'failed to parse esp',
+            { path: plugins[pluginName].filePath, error: err.message });
           pluginsParsed[pluginName] = {
             isMaster: false,
             parseFailed: true,
@@ -351,8 +386,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           };
         }
         resolve();
-      });
-    })
+      }))
       .then(() => {
         return new Promise((resolve, reject) => {
           this.context.api.events.emit('plugin-details',

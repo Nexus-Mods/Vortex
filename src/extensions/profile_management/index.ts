@@ -18,8 +18,10 @@
 
 import { IDialogResult, showDialog } from '../../actions/notifications';
 
+import { setProgress } from '../../actions/session';
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 
@@ -73,9 +75,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
     return Promise.resolve();
   }
   return checkProfile(store, profile)
-      .then(() => {
-        return profilePath(store, profile);
-      })
+      .then(() => profilePath(store, profile))
       .then((currentProfilePath: string) => {
         // if this is the first sync, we assume the files on disk belong
         // to the profile that was last active in Vortex. This could only be
@@ -257,8 +257,7 @@ function init(context: IExtensionContextExt): boolean {
             let queue: Promise<void> = Promise.resolve();
             // emit an event notifying about the impending profile change.
             // every listener can return a cb returning a promise which will be
-            // awaited
-            // before continuing.
+            // awaited before continuing.
             // It would be fun if we could cancel the profile change if one of
             // these promises
             // is rejected but that would only work if we could roll back
@@ -266,6 +265,10 @@ function init(context: IExtensionContextExt): boolean {
             const enqueue = (cb: () => Promise<void>) => {
               queue = queue.then(cb).catch(err => Promise.resolve());
             };
+
+            // changes to profile files are only saved back to the profile at this point
+            queue = queue.then(() => refreshProfile(store, oldProfile, 'import'));
+            const oldProfile = state.persistent.profiles[prev];
 
             context.api.events.emit('profile-will-change', current, enqueue);
 
@@ -275,9 +278,23 @@ function init(context: IExtensionContextExt): boolean {
             }
 
             sanitizeProfile(store, profile);
-            return queue
-                .then(() => refreshProfile(store, profile, 'export'))
+            return queue.then(() => refreshProfile(store, profile, 'export'))
+                .then(() => new Promise((resolve, reject) => {
+                  context.api.events.emit('deploy-mods',
+                    (err: Error) => {
+                      if (err === null) {
+                        resolve();
+                      } else {
+                        reject(err);
+                      }
+                    }, current,
+                    (text: string, percent: number) => {
+                      context.api.store.dispatch(
+                        setProgress('profile', 'deploying', text, percent));
+                    });
+                }))
                 .then(() => {
+                  context.api.store.dispatch(setProgress('profile', 'deploying'));
                   const gameId = profile !== undefined ? profile.gameId : undefined;
                   return store.dispatch(setCurrentProfile(gameId, current));
                 })
@@ -340,7 +357,8 @@ function init(context: IExtensionContextExt): boolean {
       const state: IState = store.getState();
       if (state.settings.profiles.nextProfileId !==
           state.settings.profiles.activeProfileId) {
-        store.dispatch(setNextProfile(state.settings.profiles.activeProfileId));
+        log('warn', 'started with a profile change in progress');
+        store.dispatch(setNextProfile(state.settings.profiles.activeProfileId || undefined));
       }
     }
   });

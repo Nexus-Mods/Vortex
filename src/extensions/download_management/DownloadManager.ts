@@ -35,6 +35,7 @@ interface IRunningDownload {
   finalName?: Promise<string>;
   lastProgressSent: number;
   received: number;
+  started: Date;
   size?: number;
   headers?: any;
   assembler?: FileAssembler;
@@ -336,6 +337,7 @@ class DownloadManager {
             tempName: filePath,
             error: false,
             urls,
+            started: new Date(),
             lastProgressSent: 0,
             received: 0,
             chunks: [],
@@ -354,8 +356,14 @@ class DownloadManager {
         }));
   }
 
-  public resume(id: string, filePath: string, urls: string[], received: number, size: number,
-                chunks: IChunk[], progressCB: ProgressCallback): Promise<IDownloadResult> {
+  public resume(id: string,
+                filePath: string,
+                urls: string[],
+                received: number,
+                size: number,
+                started: Date,
+                chunks: IChunk[],
+                progressCB: ProgressCallback): Promise<IDownloadResult> {
     return new Promise<IDownloadResult>((resolve, reject) => {
       const download: IRunningDownload = {
         id,
@@ -366,6 +374,7 @@ class DownloadManager {
         lastProgressSent: 0,
         received,
         size,
+        started,
         chunks: [],
         progressCB,
         finishCB: resolve,
@@ -527,7 +536,11 @@ class DownloadManager {
         const starving = this.mSpeedCalculator.addMeasure(workerId, bytes);
         if (starving) {
           this.mSlowWorkers[workerId] = (this.mSlowWorkers[workerId] || 0) + 1;
-          if (this.mSlowWorkers[workerId] > 15) {
+          // only restart slow workers within 15 minutes after starting the download,
+          // otherwise the url may have expired. There is no way to know how long the
+          // url remains valid, not even with the nexus api (at least not currently)
+          if ((this.mSlowWorkers[workerId] > 15)
+              && ((new Date().getTime() - download.started.getTime()) < 15 * 60 * 1000)) {
             log('debug', 'restarting slow worker', { workerId });
             this.mBusyWorkers[workerId].restart();
             delete this.mSlowWorkers[workerId];

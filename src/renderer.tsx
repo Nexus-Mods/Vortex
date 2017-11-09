@@ -29,7 +29,6 @@ process.env.SASS_BINARY_PATH = path.resolve(
 import { addNotification } from './actions/notifications';
 import reducer from './reducers/index';
 import { IError } from './types/IError';
-import DevToolsType from './util/DevTools';
 import { terminate } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
@@ -183,11 +182,10 @@ let enhancer = null;
 
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
-  const DevTools: typeof DevToolsType = require('./util/DevTools').default;
   enhancer = compose(
     applyMiddleware(...middleware),
     electronEnhancer({ filter }),
-    DevTools.instrument(),
+    (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__()
   );
 } else {
   enhancer = compose(

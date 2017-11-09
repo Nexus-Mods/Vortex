@@ -125,9 +125,16 @@ function init(context): boolean {
                 }
             });
           }, 1000);
-          fsWatcher = fs.watch(savesPath, {}, (evt: string, filename: string) => {
-            update.schedule(undefined);
-          });
+          try {
+            fsWatcher =
+                fs.watch(savesPath, {}, (evt: string, filename: string) => {
+                  update.schedule(undefined);
+                });
+          } catch (err) {
+            context.api.showErrorNotification('Can\'t watch saves directory for changes', {
+              path: savesPath, error: err.message,
+            });
+          }
         });
     });
   });

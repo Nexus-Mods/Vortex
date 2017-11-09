@@ -8,6 +8,7 @@ import { IProfileMod } from '../profile_management/types/IProfile';
 
 import { IDeployedFile, IDeploymentMethod } from './types/IDeploymentMethod';
 import { IMod } from './types/IMod';
+import renderModName from './util/modName';
 
 import { BACKUP_TAG } from './LinkingDeployment';
 import { MERGED_PATH } from './modMerging';
@@ -36,10 +37,14 @@ export function activateMods(api: IExtensionApi,
                              lastActivation: IDeployedFile[],
                              typeId: string,
                              merged: Set<string>,
+                             progressCB?: (name: string, progress: number) => void,
                             ): Promise<IDeployedFile[]> {
   return method.prepare(destinationPath, true, lastActivation)
-    .then(() => Promise.each(mods, mod => {
+    .then(() => Promise.each(mods, (mod, idx, length) => {
       try {
+        if (progressCB !== undefined) {
+          progressCB(renderModName(mod), Math.round((idx * 50) / length));
+        }
         return method.activate(path.join(modBasePath, mod.installationPath),
                               mod.installationPath, destinationPath, merged);
       } catch (err) {
@@ -48,5 +53,11 @@ export function activateMods(api: IExtensionApi,
     }))
     .then(() => method.activate(path.join(modBasePath, MERGED_PATH) + '.' + typeId,
                                 MERGED_PATH + '.' + typeId, destinationPath, new Set<string>()))
-    .then(() => method.finalize(destinationPath));
+    .then(() => {
+      const cb = progressCB === undefined
+        ? undefined
+        : (files: number, total: number) =>
+            progressCB(`${files}/${total} files`, 50 + (files * 50) / total);
+      return method.finalize(destinationPath, cb);
+    });
 }

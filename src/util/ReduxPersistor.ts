@@ -2,6 +2,7 @@ import {IPersistor} from '../types/IExtensionContext';
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
+import * as Redux from 'redux';
 
 function insert(target: any, key: string[], value: any) {
   try {
@@ -80,8 +81,8 @@ class ReduxPersistor<T> {
   private handleChange = () => {
     const oldState = this.mPersistedState;
     const newState = this.mStore.getState();
-    this.mPersistedState = newState;
     if (oldState !== newState) {
+      this.mPersistedState = newState;
       this.storeDiffHive(oldState, newState);
     }
   }

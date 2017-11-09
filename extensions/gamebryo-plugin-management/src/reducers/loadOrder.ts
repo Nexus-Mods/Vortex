@@ -15,30 +15,12 @@ export const loadOrderReducer: types.IReducerSpec = {
     [actions.setPluginEnabled as any]:
         (state, payload) => util.setSafe(state, [payload.pluginName, 'enabled'],
                                          payload.enabled),
-    [actions.updateLoadOrder as any]: (state, payload: string[]) => {
-      const copy = { ...state };
-      Object.keys(state).forEach((name: string) => {
-        if (payload.indexOf(name) === -1) {
-          delete copy[name];
-        }
-      });
-      let count = Object.keys(state).length;
-      payload.forEach((name: string) => {
-        if (copy[name] === undefined) {
-          copy[name] = {
-            enabled: false,
-            loadOrder: count++,
-          };
-        }
-      });
-      return copy;
-    },
     [actions.setPluginOrder as any]: (state, payload) => {
-      const copy = { ...state };
-      Object.keys(copy).forEach((pluginName: string) => {
-        copy[pluginName].loadOrder = payload.indexOf(pluginName);
+      let result = state;
+      payload.forEach((pluginName: string, idx: number) => {
+        result = util.setSafe(result, [pluginName, 'loadOrder'], idx);
       });
-      return copy;
+      return result;
     },
   },
   defaults: {},

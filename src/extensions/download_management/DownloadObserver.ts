@@ -237,7 +237,7 @@ export class DownloadObserver {
       const fullPath = path.join(downloadPath, download.localPath);
       this.mStore.dispatch(pauseDownload(downloadId, false));
       this.mManager.resume(downloadId, fullPath, download.urls,
-                           download.received, download.size, download.chunks,
+                           download.received, download.size, download.startTime, download.chunks,
                            this.genProgressCB(downloadId))
           .then(res => {
             log('debug', 'download finished (resumed)', { file: res.filePath });

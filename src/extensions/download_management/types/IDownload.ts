@@ -81,6 +81,11 @@ export interface IDownload {
   fileMD5: string;
 
   /**
+   * date/time the download was started
+   */
+  startTime: Date;
+
+  /**
    * date/time the file finished downloading
    */
   fileTime: string;

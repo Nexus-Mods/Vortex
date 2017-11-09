@@ -155,6 +155,10 @@ class DeploymentMethod extends LinkingDeployment {
     .catch(() => false);
   }
 
+  protected canRestore(): boolean {
+    return false;
+  }
+
   private startElevated(): Promise<void> {
     this.mOutstanding = [];
     this.mDone = null;

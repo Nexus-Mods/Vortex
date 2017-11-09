@@ -1,5 +1,5 @@
 export type FileActionRef = 'import' | 'drop';
-export type FileActionVal = 'keep';
+export type FileActionVal = 'nop';
 export type FileActionDel = 'restore' | 'delete';
 export type FileActionSrcDel = 'drop' | 'import';
 

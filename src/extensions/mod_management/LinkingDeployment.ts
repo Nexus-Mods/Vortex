@@ -85,7 +85,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
       });
   }
 
-  public finalize(dataPath: string): Promise<IDeployedFile[]> {
+  public finalize(dataPath: string,
+                  progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
     const state = this.mApi.store.getState();
     const gameId = selectors.activeGameId(state);
 
@@ -104,6 +105,25 @@ abstract class LinkingActivator implements IDeploymentMethod {
     // unlink all files that were removed or changed
     ({added, removed, sourceChanged, contentChanged} =
          this.diffActivation(previousDeployment, newDeployment));
+    log('debug', 'deployment', {
+      added: added.length,
+      removed: removed.length,
+      'source changed': sourceChanged.length,
+      modified: contentChanged.length,
+    });
+
+    const total = added.length + removed.length + sourceChanged.length + contentChanged.length;
+    let count = 0;
+    let lastReported = 0;
+    const progress = () => {
+      if (progressCB !== undefined) {
+        ++count;
+        if ((count % 1000) === 0) {
+          lastReported = count;
+          progressCB(count, total);
+        }
+      }
+    };
 
     return Promise.map([].concat(removed, sourceChanged, contentChanged),
                        key => {
@@ -120,7 +140,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
                              .then(() => fs.renameAsync(outputPath + BACKUP_TAG,
                                                         outputPath)
                                              .catch(() => undefined))
-                             .then(() => delete previousDeployment[key])
+                             .then(() => {
+                               progress();
+                               delete previousDeployment[key];
+                             })
                              .catch(err => {
                                log('warn', 'failed to unlink', {
                                  path: previousDeployment[key].relPath,
@@ -143,8 +166,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
                                ++errorCount;
                              });
                        })
-        // then, (re-)link all files that were added or changed
-        .then(() => Promise.mapSeries(
+        // then, (re-)link all files that were added
+        .then(() => Promise.map(
                   added,
                   key => this.deployFile(key, installPathStr, dataPath, false)
                              .catch(err => {
@@ -154,9 +177,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
                                  error: err.message,
                                });
                                ++errorCount;
-                             })))
+                             })
+                            .then(() => progress()), { concurrency: 100 }))
         // then update modified files
-        .then(() => Promise.mapSeries(
+        .then(() => Promise.map(
                   [].concat(sourceChanged, contentChanged),
                   (key: string) =>
                       this.deployFile(key, installPathStr, dataPath, true)
@@ -167,7 +191,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
                               error: err.message,
                             });
                             ++errorCount;
-                          })))
+                          }).then(() => progress()), { concurrency: 100 }))
         .then(() => {
           if (errorCount > 0) {
             addNotification({
@@ -199,8 +223,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
                 time: entry.stats.mtime.getTime(),
               };
             }
-            return Promise.resolve();
           });
+          return Promise.resolve();
         })
         .then(() => undefined);
   }
@@ -239,52 +263,61 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.map(activation, fileEntry => {
       const fileDataPath = path.join(dataPath, fileEntry.relPath);
       const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
+      let sourceDeleted: boolean = false;
+      let destDeleted: boolean = false;
+      let destTime: Date;
 
-      return fs.statAsync(fileDataPath)
+      return fs.statAsync(fileModPath)
         .catch(err => {
-          // can't stat, probably the file was deleted
-          nonLinks.push({
-            filePath: fileEntry.relPath,
-            source: fileEntry.source,
-            changeType: 'deleted',
-          });
-          return undefined;
+          // can't stat source, probably the file was deleted
+          sourceDeleted = true;
+          return Promise.resolve();
         })
-        .then((stat: fs.Stats): Promise<boolean> => {
-          if (stat === undefined) {
-            return Promise.resolve(undefined);
+        .then(sourceStats =>
+          fs.lstatAsync(fileDataPath))
+        .catch(err => {
+          // can't stat destination, probably the file was deleted
+          destDeleted = true;
+          return Promise.resolve(undefined);
+        })
+        .then(destStats => {
+          if (destStats !== undefined) {
+            destTime = destStats.mtime;
           }
-          if (stat.mtime.getTime() !== fileEntry.time) {
+          return sourceDeleted || destDeleted
+            ? Promise.resolve(false)
+            : this.isLink(fileDataPath, fileModPath);
+        })
+        .then((isLink?: boolean) => {
+          if (sourceDeleted && !destDeleted && this.canRestore()) {
             nonLinks.push({
               filePath: fileEntry.relPath,
               source: fileEntry.source,
-              changeType: 'valchange',
+              changeType: 'srcdeleted',
             });
-            return Promise.resolve(undefined);
-          } else {
-            return this.isLink(fileDataPath, fileModPath)
-            .catch(err => {
-              // can't stat, probably the file was deleted
-              nonLinks.push({
-                filePath: fileEntry.relPath,
-                source: fileEntry.source,
-                changeType: 'srcdeleted',
-              });
-              return undefined;
+          } else if (destDeleted && !sourceDeleted) {
+            nonLinks.push({
+              filePath: fileEntry.relPath,
+              source: fileEntry.source,
+              changeType: 'deleted',
             });
-          }
-        })
-        .then((isLink?: boolean) => {
-          // treat isLink === undefined as true!
-          if (isLink === false) {
+          } else if (!sourceDeleted && !destDeleted && !isLink) {
             nonLinks.push({
               filePath: fileEntry.relPath,
               source: fileEntry.source,
               changeType: 'refchange',
             });
+          /* TODO not registering these atm as we have no way to "undo" anyway
+          } else if (destTime.getTime() !== fileEntry.time) {
+            nonLinks.push({
+              filePath: fileEntry.relPath,
+              source: fileEntry.source,
+              changeType: 'valchange',
+            });
+          */
           }
+          return Promise.resolve(undefined);
         });
-
       }).then(() => Promise.resolve(nonLinks));
   }
 
@@ -292,6 +325,12 @@ abstract class LinkingActivator implements IDeploymentMethod {
   protected abstract unlinkFile(linkPath: string): Promise<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
   protected abstract isLink(linkPath: string, sourcePath: string): Promise<boolean>;
+  /**
+   * must return true if this deployment method is able to restore a file after the
+   * "original" was deleted. This is essentially true for hard links (since the file
+   * data isn't gone after removing the original) and false for everything else
+   */
+  protected abstract canRestore(): boolean;
 
   private deployFile(key: string, installPathStr: string, dataPath: string,
                      replace: boolean): Promise<IDeployedFile> {

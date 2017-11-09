@@ -9,10 +9,9 @@ import { IComponentContext } from '../types/IComponentContext';
 import { IExtensionApi, IMainPageOptions } from '../types/IExtensionContext';
 import { II18NProps } from '../types/II18NProps';
 import { IMainPage } from '../types/IMainPage';
-import { IState } from '../types/IState';
+import { IProgress, IState } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
 import { getSafe } from '../util/storeHelper';
-import DeveloperType from './Developer';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
@@ -28,8 +27,9 @@ import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Badge, ControlLabel, FormGroup, Modal, Nav } from 'react-bootstrap';
+import { Badge, ControlLabel, FormGroup, Modal, Nav, ProgressBar } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { truthy } from '../util/util';
 
 interface IPageButtonProps {
   t: I18next.TranslationFunction;
@@ -116,6 +116,7 @@ export interface IConnectedProps {
   secondaryPage: string;
   activeProfileId: string;
   nextProfileId: string;
+  progressProfile: { [progressId: string]: IProgress };
 }
 
 export interface IActionProps {
@@ -206,6 +207,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.props.secondaryPage !== nextProps.secondaryPage
       || this.props.activeProfileId !== nextProps.activeProfileId
       || this.props.nextProfileId !== nextProps.nextProfileId
+      || this.props.progressProfile !== nextProps.progressProfile
       || this.state.showLayer !== nextState.showLayer
       || this.state.hidpi !== nextState.hidpi
       ;
@@ -222,7 +224,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const { activeProfileId, onHideDialog, nextProfileId, visibleDialog } = this.props;
     const { hidpi } = this.state;
 
-    if (activeProfileId !== nextProfileId) {
+    if ((activeProfileId !== nextProfileId) && truthy(nextProfileId)) {
       return this.renderWait();
     }
 
@@ -234,20 +236,24 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           {this.renderBody()}
         </FlexLayout>
         <Dialog />
-        {this.renderDeveloperModal()}
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
       </div>
     );
   }
 
   private renderWait() {
-    const style = {
-      margin: 'auto',
-      width: '64px',
-      height: '100%',
-      display: 'block',
-    };
-    return <Icon name='spinner' pulse style={style} />;
+    const { onHideDialog, progressProfile, visibleDialog } = this.props;
+    const progress = getSafe(progressProfile, ['deploying'], undefined);
+    const control = progress !== undefined
+      ? <ProgressBar label={progress.text} now={progress.percent} style={{ width: '50%' }} />
+      : <Icon name='spinner' pulse style={{ width: 64, height: 64 }} />;
+    return (
+      <div>
+        <div className='center-content'>{control}</div>
+        <Dialog />
+        <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
+      </div>
+    );
   }
 
   private updateState(spec: any) {
@@ -477,27 +483,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       }
     }
   }
-
-  private renderDeveloperModal() {
-    if (process.env.NODE_ENV !== 'development') {
-      return null;
-    } else {
-      const Developer: typeof DeveloperType = require('./Developer').default;
-      return Developer === undefined ? null : (
-        <Modal
-          show={this.state.showLayer === 'developer'}
-          onHide={this.hideLayer}
-        >
-          <Modal.Header>
-            <Modal.Title>Developer</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Developer />
-          </Modal.Body>
-        </Modal>
-      );
-    }
-  }
 }
 
 function trueFunc() {
@@ -517,6 +502,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     secondaryPage: state.session.base.secondaryPage,
     activeProfileId: state.settings.profiles.activeProfileId,
     nextProfileId: state.settings.profiles.nextProfileId,
+    progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
   };
 }
 

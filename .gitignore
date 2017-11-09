@@ -5,6 +5,7 @@ out
 doc
 coverage
 .vscode/.BROWSE.VC.DB*
+*.VC.db
 app/bundledPlugins
 
 # User-specific files
@@ -27,4 +28,5 @@ build/
 bld/
 [Oo]bj/
 lib/cpp/loot/loot/
+lib/cpp/loot/loot_api/docs/
 BuildState*.json

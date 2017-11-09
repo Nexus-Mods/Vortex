@@ -13,7 +13,10 @@ export function installDevelExtensions(): Promise<void> {
   return new Promise<void>((resolved, reject) => {
     if (process.env.NODE_ENV === 'development') {
       const installExtension = require('electron-devtools-installer');
-      const { REACT_DEVELOPER_TOOLS, REACT_PERF } = require('electron-devtools-installer');
+      const {
+        REACT_DEVELOPER_TOOLS,
+        REACT_PERF,
+        REDUX_DEVTOOLS } = require('electron-devtools-installer');
 
       try {
         installExtension.default(REACT_DEVELOPER_TOOLS)
@@ -21,6 +24,10 @@ export function installDevelExtensions(): Promise<void> {
           .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
 
         installExtension.default(REACT_PERF)
+          .then((name) => log('info', 'Added Extension', name))
+          .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
+
+        installExtension.default(REDUX_DEVTOOLS)
           .then((name) => log('info', 'Added Extension', name))
           .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
       } catch (e) {

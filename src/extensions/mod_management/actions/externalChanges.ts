@@ -19,8 +19,8 @@ let curReject;
 function defaultAction(changeType: string): FileAction {
   switch (changeType) {
     case 'refchange': return 'import';
-    case 'valchange': return 'keep';
-    case 'deleted': return 'restore';
+    case 'valchange': return 'nop';
+    case 'deleted': return 'delete';
     case 'srcdeleted': return 'drop';
     default: throw new Error('invalid file change ' + changeType);
   }

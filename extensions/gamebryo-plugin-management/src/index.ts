@@ -1,4 +1,4 @@
-import { setPluginEnabled, setPluginOrder, updateLoadOrder } from './actions/loadOrder';
+import { setPluginEnabled, setPluginOrder } from './actions/loadOrder';
 import { setPluginList } from './actions/plugins';
 import { loadOrderReducer } from './reducers/loadOrder';
 import { pluginsReducer } from './reducers/plugins';
@@ -49,10 +49,6 @@ function isPlugin(fileName: string): boolean {
  * updates the list of known plugins for the managed game
  */
 function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Promise<void> {
-  if (newModList === undefined) {
-    return Promise.resolve();
-  }
-
   const state = store.getState();
 
   const gameMode = selectors.activeGameId(state);
@@ -109,7 +105,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
       .then((fileNames: string[]) => {
         const pluginNames: string[] = fileNames.filter(isPlugin);
         const pluginStates: IPlugins = {};
-        pluginNames.forEach((fileName: string) => {
+        pluginNames.forEach(fileName => {
           const modName = pluginSources[fileName];
           pluginStates[fileName] = {
             modName: modName || '',
@@ -119,7 +115,6 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
           };
         });
         store.dispatch(setPluginList(pluginStates));
-        store.dispatch(updateLoadOrder(pluginNames));
         return Promise.resolve();
       })
       .catch((err: Error) => {
@@ -378,7 +373,8 @@ function testMissingMasters(t: I18next.TranslationFunction,
             masterList: new ESPFile(pluginList[plugin].filePath).masterList,
           };
         } catch (err) {
-          log('warn', 'failed to parse esp file', { name, err: err.message });
+          log('warn', 'failed to parse esp file',
+              { name: pluginList[plugin].filePath, err: err.message });
           return { name: plugin, masterList: [] };
         }
       });

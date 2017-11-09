@@ -142,7 +142,7 @@ function undeploy(api: IExtensionApi,
     return Promise.resolve(callback(null));
   }
 
-  const dataPath = modPaths[mod.type];
+  const dataPath = modPaths[mod.type || ''];
   return loadActivation(api, mod.type, dataPath)
     .then(lastActivation => activator.prepare(dataPath, false, lastActivation))
     .then(() => (mod !== undefined)

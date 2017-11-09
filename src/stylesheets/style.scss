@@ -465,6 +465,52 @@ a[role=menuitem] svg {
   border: 0px;
 }
 
+.center-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+// /generic control rules
+/////////////////////////
+
+///////////////////////////////////
+// icons (based on fontawesome css)
+
+.icon {
+  fill: currentColor;
+  height: 1.2em;
+  width: 1.2em;
+  display: inline-block;
+  vertical-align: text-bottom;
+}
+
+.icon-border {
+  padding: .2em .25em .15em;
+  border: solid .08em $gray-light;
+  border-radius: .1em;
+}
+
+.icon-spin {
+  -webkit-animation: icon-spin 2s infinite linear;
+  animation: icon-spin 2s infinite linear;
+}
+
+.icon-pulse {
+  -webkit-animation: icon-spin 1s infinite steps(8);
+  animation: icon-spin 1s infinite steps(8);
+}
+
+.icon-stroke {
+  stroke: currentColor;
+>>>>>>> origin/master
+}
+
 .panel {
   border: $border-width solid $border-color;
   height: 100%;
@@ -653,6 +699,23 @@ a[role=menuitem] svg {
 .header-action p {
   width: 100%;
   text-align: center;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 50vh;
+
+  // the flex sizing may not be optimal
+  > textarea {
+   width: 100%;
+   resize: none;
+   border: none;
+   flex: 1 1 0%;
+  }
+
+  > div {
+   flex: 1 1 90%;
+  }
 }
 
 // /specific table columns
