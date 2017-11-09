@@ -8,7 +8,7 @@ export const setPluginEnabled = createAction('SET_PLUGIN_ENABLED',
  * are not in this list will be deleted, default entries are created for those
  * that are in the list but not stored
  */
-export const updateLoadOrder = createAction('UPDATE_LOAD_ORDER');
+// export const updateLoadOrder = createAction('UPDATE_LOAD_ORDER');
 
 /**
  * completely replace the load order (not changing the enabled state of plugins)

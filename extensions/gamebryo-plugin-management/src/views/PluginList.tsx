@@ -265,7 +265,41 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     ];
   }
 
+  public emptyPluginParsed(): { [plugin: string]: IPluginParsed } {
+    return Object.keys(this.props.plugins).reduce((prev, key) => {
+      prev[key] = {
+        isMaster: false,
+        parseFailed: false,
+        masterList: [],
+        author: '',
+        description: '',
+      };
+      return prev;
+    }, {});
+  }
+
+  public emptyPluginLOOT(): { [plugin: string]: IPluginLoot } {
+    return Object.keys(this.props.plugins).reduce((prev, key) => {
+      prev[key] = {
+        messages: [],
+        cleanliness: 'clean',
+        tags: { added: [], removed: [], userlistModified: false },
+      };
+      return prev;
+    }, {});
+  }
+
   public componentWillMount() {
+    const { plugins } = this.props;
+    const parsed = this.emptyPluginParsed();
+    const loot = this.emptyPluginLOOT();
+    const combined = this.detailedPlugins(plugins, loot, parsed);
+    this.setState(update(this.state, {
+      pluginsParsed: { $set: parsed },
+      pluginsLoot: { $set: loot },
+      pluginsCombined: { $set: combined },
+    }));
+
     this.updatePlugins(this.props.plugins);
   }
 
@@ -325,8 +359,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const pluginsParsed: { [pluginName: string]: IPluginParsed } = {};
     let pluginsLoot;
 
-    Promise.each(pluginNames, (pluginName: string) => {
-      return new Promise((resolve, reject) => {
+    return Promise.each(pluginNames, (pluginName: string) =>
+      new Promise((resolve, reject) => {
         try {
           const esp = new ESPFile(plugins[pluginName].filePath);
           pluginsParsed[pluginName] = {
@@ -352,8 +386,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           };
         }
         resolve();
-      });
-    })
+      }))
       .then(() => {
         return new Promise((resolve, reject) => {
           this.context.api.events.emit('plugin-details',

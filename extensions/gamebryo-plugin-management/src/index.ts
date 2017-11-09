@@ -115,7 +115,7 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
           };
         });
         store.dispatch(setPluginList(pluginStates));
-        store.dispatch(updateLoadOrder(pluginNames));
+        // store.dispatch(updateLoadOrder(pluginNames));
         return Promise.resolve();
       })
       .catch((err: Error) => {

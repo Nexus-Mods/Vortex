@@ -80,8 +80,8 @@ class ReduxPersistor<T> {
   private handleChange = () => {
     const oldState = this.mPersistedState;
     const newState = this.mStore.getState();
-    this.mPersistedState = newState;
     if (oldState !== newState) {
+      this.mPersistedState = newState;
       this.storeDiffHive(oldState, newState);
     }
   }
