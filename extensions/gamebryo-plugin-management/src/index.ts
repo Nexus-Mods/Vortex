@@ -15,6 +15,7 @@ import LootInterface from './autosort';
 
 import {
   gameSupported,
+  initGameSupport,
   isNativePlugin,
   nativePlugins,
   pluginPath,
@@ -443,7 +444,10 @@ function init(context: IExtensionContextExt) {
     });
   });
 
-  context.once(() => {
+  context
+  // first thing on once, init game support for the previously discovered games
+  .once(() => initGameSupport(context.api.store)
+  .then(() => {
     const store = context.api.store;
 
     ipcRenderer.on('plugin-sync-ret', (event, error: Error) => {
@@ -485,6 +489,15 @@ function init(context: IExtensionContextExt) {
     context.api.onStateChange(['loadOrder'], () => {
       context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
     });
+
+    context.api.onStateChange(
+        ['settings', 'gameMode', 'discovered'], (previous, current) => {
+          if ((previous['fallout4'] !== current['fallout4']) ||
+              (previous['skyrimse'] !== current['skyrimse'])) {
+            log('debug', 'discovery for cc-supported game changed');
+            initGameSupport(store);
+          }
+        });
 
     context.api.events.on('set-plugin-list', (newPlugins: string[]) => {
       replacePluginList(context.api.store, newPlugins);
@@ -564,7 +577,7 @@ function init(context: IExtensionContextExt) {
             .catch(util.ProcessCanceled, () => undefined);
       }
     });
-  });
+  }));
 
   return true;
 }

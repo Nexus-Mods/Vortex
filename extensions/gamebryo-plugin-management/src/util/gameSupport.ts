@@ -1,7 +1,10 @@
 import {PluginFormat} from '../util/PluginPersistor';
 
+import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
+import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import { types } from 'vortex-api';
 
 const app = appIn || remote.app;
 
@@ -23,6 +26,19 @@ const gameSupport = {
       'dawnguard.esm',
       'hearthfires.esm',
       'dragonborn.esm',
+      'ccBGSSSE002-ExoticArrows.esl',
+      'ccBGSSSE003-Zombies.esl',
+      'ccBGSSSE004-RuinsEdge.esl',
+      'ccBGSSSE006-StendarsHammer.esl',
+      'ccBGSSSE007-Chrysamere.esl',
+      'ccBGSSSE010-PetDwarvenArmoredMudcrab.esl',
+      'ccBGSSSE014-SpellPack01.esl',
+      'ccBGSSSE019-StaffofSheogorath.esl',
+      'ccBGSSSE021-LordsMail.esl',
+      'ccMTYSSE001-KnightsoftheNine.esl',
+      'ccQDRSSE001-SurvivalMode.esl',
+      'ccTWBSSE001-PuzzleDungeon.esm',
+      'ccEEJSSE001-Hstead.esl',
     ],
   },
   fallout3: {
@@ -91,6 +107,32 @@ const gameSupport = {
     ],
   },
 };
+
+export function initGameSupport(store: Redux.Store<any>): Promise<void> {
+  let res = Promise.resolve(undefined);
+
+  const state: types.IState = store.getState();
+
+  const {discovered} = state.settings.gameMode;
+  if (discovered['skyrimse'].path !== undefined) {
+    const skyrimsecc = new Set(gameSupport['skyrimse'].nativePlugins);
+    res = res
+      .then(() => fs.readFileAsync(path.join(discovered['skyrimse'].path, 'Skyrim.ccc'))
+        .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
+          plugin => skyrimsecc.add(plugin.toLowerCase())))
+        .then(() => gameSupport['skyrimse'].nativePlugins = Array.from(skyrimsecc)));
+  }
+  if (discovered['fallout4'].path !== undefined) {
+    const fallout4cc = new Set(gameSupport['fallout4'].nativePlugins);
+    res = res
+      .then(() => fs.readFileAsync(path.join(discovered['fallout4'].path, 'Fallout4.ccc'))
+        .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
+          plugin => fallout4cc.add(plugin.toLowerCase())))
+        .then(() => gameSupport['fallout4'].nativePlugins = Array.from(fallout4cc)));
+  }
+
+  return res;
+}
 
 export function pluginPath(gameMode: string): string {
   const gamePath = gameSupport[gameMode].appDataPath;
