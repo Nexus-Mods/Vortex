@@ -90,7 +90,7 @@ function restPost(url: string, args: IRequestArgs): Promise<any> {
       headers: args.headers,
       followRedirect: true,
       timeout: args.requestConfig.timeout,
-      form: args.data,
+      body: JSON.stringify(args.data),
     }, (error, response, body) => {
       handleRestResult(resolve, reject, url, error, response, body);
     });
