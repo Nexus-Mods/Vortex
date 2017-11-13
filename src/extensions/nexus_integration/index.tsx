@@ -33,6 +33,7 @@ import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import submitFeedback from './util/submitFeedback';
 import transformUserInfo from './util/transformUserInfo';
+import DashboardBanner from './views/DashboardBanner';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import LoginDialog from './views/LoginDialog';
@@ -727,6 +728,11 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
+
+  context.registerDashlet('Register or Login', 3, 1, 0, DashboardBanner, undefined, undefined, {
+    fixed: true,
+    closable: false,
+  });
 
   context.registerAttributeExtractor(50, (input: any) => {
     return Promise.resolve(processAttributes(input));

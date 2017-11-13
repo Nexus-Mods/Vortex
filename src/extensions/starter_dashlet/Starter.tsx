@@ -175,6 +175,58 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     );
   }
 
+  private renderAddButton(hidden: StarterInfo[]) {
+    const { t } = this.props;
+    // <IconButton id='add-tool-icon' icon='plus' tooltip={t('Add Tool')} />
+    return (
+      <Dropdown
+        id='add-tool-button'
+        className='btn-add-tool'
+        container={this.mRef}
+      >
+        <Dropdown.Toggle>
+          <Icon name='plus' />
+          <span className='btn-add-tool-text'>{t('Add Tool')}</span>
+        </Dropdown.Toggle>
+        <Dropdown.Menu>
+          {hidden.map(starter => (
+            <MenuItem
+              key={starter.id}
+              eventKey={starter.id}
+              onSelect={this.unhide}
+            >{starter.name}
+            </MenuItem>
+          ))}
+          <MenuItem
+            key='__add'
+            onSelect={this.addNewTool}
+          >
+            {t('New...')}
+          </MenuItem>
+        </Dropdown.Menu>
+      </Dropdown>
+    );
+  }
+
+  private renderGameIcon = (game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element => {
+    if ((game === undefined) && (discoveredGame === undefined)) {
+      // assumption is that this can only happen during startup
+      return <Icon name='spinner' pulse />;
+    } else {
+      const { t } = this.props;
+      return (
+        <GameThumbnail
+          t={t}
+          game={game}
+          active={true}
+          type='launcher'
+          onRefreshGameInfo={this.onRefreshGameInfo}
+          onLaunch={this.startGame}
+        />
+      );
+    }
+  }
+
   private renderTool = (starter: StarterInfo) => {
     const { t, primaryTool } = this.props;
     if (starter === undefined) {
@@ -281,6 +333,18 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     }
   }
 
+  private startGame = () => {
+    const { primaryTool } = this.props;
+    const { tools } = this.state;
+
+    if (primaryTool === undefined) {
+      this.startTool(tools[0]);
+    } else {
+      const info = tools.find(iter => iter.id === primaryTool);
+      this.startTool(info);
+    }
+  }
+
   private startTool = (info: StarterInfo) => {
     const startTool = require('../../util/startTool').default;
     startTool(info, this.context.api.events, this.queryElevate,
@@ -293,60 +357,9 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       ;
   }
 
-  private renderAddButton(hidden: StarterInfo[]) {
-    const { t } = this.props;
-    // <IconButton id='add-tool-icon' icon='plus' tooltip={t('Add Tool')} />
-    return (
-      <Dropdown
-        id='add-tool-button'
-        className='btn-add-tool'
-        container={this.mRef}
-      >
-        <Dropdown.Toggle>
-          <Icon name='plus' />
-          <span className='btn-add-tool-text'>{t('Add Tool')}</span>
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          {hidden.map(starter => (
-            <MenuItem
-              key={starter.id}
-              eventKey={starter.id}
-              onSelect={this.unhide}
-            >{starter.name}
-            </MenuItem>
-          ))}
-          <MenuItem
-            key='__add'
-            onSelect={this.addNewTool}
-          >
-            {t('New...')}
-          </MenuItem>
-        </Dropdown.Menu>
-      </Dropdown>
-    );
-  }
-
   private unhide = (toolId: any) => {
     const { gameMode, onSetToolVisible } = this.props;
     onSetToolVisible(gameMode, toolId, true);
-  }
-
-  private renderGameIcon = (game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element => {
-    if ((game === undefined) && (discoveredGame === undefined)) {
-      // assumption is that this can only happen during startup
-      return <Icon name='spinner' pulse />;
-    } else {
-      const { t } = this.props;
-      return (
-        <GameThumbnail
-          t={t}
-          game={game}
-          active={true}
-          type='managed'
-          onRefreshGameInfo={this.onRefreshGameInfo}
-        />
-      );
-    }
   }
 
   private onRefreshGameInfo = (gameId: string) => {

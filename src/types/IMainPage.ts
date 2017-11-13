@@ -17,6 +17,7 @@ export interface IMainPage {
   propsFunc: () => any;
   visible: () => boolean;
   group: 'global' | 'per-game' | 'support';
+  priority?: number;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;
 }

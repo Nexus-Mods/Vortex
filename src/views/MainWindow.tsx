@@ -15,7 +15,6 @@ import { getSafe } from '../util/storeHelper';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
-import GlobalOverlay from './GlobalOverlay';
 import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
 import NotificationButton from './NotificationButton';
@@ -139,6 +138,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private settingsPage: IMainPage;
   private nextState: IMainWindowState;
+  private globalButtons: IActionDefinition[] = [];
 
   private menuLayer: JSX.Element = null;
 
@@ -185,7 +185,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public componentWillMount() {
     if (this.props.objects.length > 0) {
-      this.setMainPage(this.props.objects[0].title, false);
+      const def = this.props.objects.sort((lhs, rhs) => lhs.priority - rhs.priority)[0];
+      this.setMainPage(def.title, false);
     }
 
     this.updateSize();
@@ -273,13 +274,14 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           group='application-icons'
           staticElements={this.applicationButtons}
         />
-        <IconButton
-          id='btn-open-flyout'
-          icon='dots'
-          rotate={90}
-          tooltip={t('Functions')}
-          onClick={this.toggleOverlay}
-          className='pull-right'
+        <IconBar
+          id='global-icons'
+          className='global-icons'
+          group='global-icons'
+          staticElements={this.globalButtons}
+          buttonType='both'
+          orientation='vertical'
+          collapse
         />
       </FlexLayout.Fixed>
     );
@@ -296,10 +298,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     const sbClass = tabsMinimized ? 'sidebar-compact' : 'sidebar-expanded';
 
-    const globalOverlay = <GlobalOverlay t={t} />;
-
-    const pages = objects.map(obj => this.renderPage(obj, globalOverlay));
-    pages.push(this.renderPage(this.settingsPage, globalOverlay));
+    const pages = objects.map(obj => this.renderPage(obj));
+    pages.push(this.renderPage(this.settingsPage));
 
     const pageGroups = [
       { title: undefined, key: 'dashboard' },
@@ -324,7 +324,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               <Icon name={tabsMinimized ? 'right' : 'left'} />
             </Button>
           </FlexLayout.Fixed>
-          <FlexLayout.Flex id='main-window-pane'>
+          <FlexLayout.Flex fill id='main-window-pane'>
             <DNDContainer style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               {pages}
             </DNDContainer>
@@ -402,7 +402,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     );
   }
 
-  private renderPage(page: IMainPage, globalOverlay: JSX.Element) {
+  private renderPage(page: IMainPage) {
     const { t, mainPage, secondaryPage } = this.props;
     const { loadedPages } = this.state;
 
@@ -529,6 +529,7 @@ function registerMainPage(
     group: options.group,
     badge: options.badge,
     activity: options.activity,
+    priority: options.priority !== undefined ? options.priority : 100,
   };
 }
 

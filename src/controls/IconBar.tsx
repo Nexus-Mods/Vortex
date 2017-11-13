@@ -94,7 +94,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   private buttonRef: JSX.Element;
 
-  constructor(props) {
+  constructor(props: IProps) {
     super(props);
 
     this.state = {

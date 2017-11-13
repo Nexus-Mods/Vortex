@@ -12,7 +12,7 @@ import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
-import { Panel, Popover } from 'react-bootstrap';
+import { Button, Panel, Popover } from 'react-bootstrap';
 
 export interface IProps {
   t: I18next.TranslationFunction;
@@ -22,6 +22,7 @@ export interface IProps {
   type: string;
   getBounds?: () => ClientRect;
   container?: HTMLElement;
+  onLaunch?: () => void;
 }
 
 /**
@@ -41,6 +42,39 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
+    return (
+      <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
+        <img
+          className={'thumbnail-img'}
+          src={logoPath}
+        />
+        <div className='bottom'>
+          <h4 className='name'>{t(game.name)}</h4>
+        </div>
+        <div className='hover-menu'>
+          {type === 'launcher' ? this.renderLaunch() : this.renderMenu()}
+        </div>
+      </Panel>
+    );
+  }
+
+  private renderLaunch(): JSX.Element {
+    const { onLaunch } = this.props;
+    return (
+      <div className='hover-content hover-launcher'>
+        <Button
+          style={{ width: '100%', height: '100%' }}
+          onClick={onLaunch}
+          className='btn-embed'
+        >
+          <Icon name='circle-play'/>
+        </Button>
+      </div>
+    );
+  }
+
+  private renderMenu(): JSX.Element {
+    const { t, container, game, getBounds, onRefreshGameInfo, type } = this.props;
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
         <GameInfoPopover
@@ -53,46 +87,35 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     );
 
     return (
-      <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
-        <img
-          className={'thumbnail-img'}
-          src={logoPath}
+      <div className='hover-content'>
+        <IconBar
+          id={`game-thumbnail-${game.id}`}
+          className='buttons'
+          group={`game-${type}-buttons`}
+          instanceId={game.id}
+          staticElements={[]}
+          collapse={false}
+          buttonType='menu'
+          orientation='vertical'
         />
-        <div className='bottom'>
-          <h4 className='name'>{t(game.name)}</h4>
-        </div>
-        <div className='hover-menu'>
-          <div className='hover-content'>
-            <IconBar
-              id={`game-thumbnail-${game.id}`}
-              className='buttons'
-              group={`game-${type}-buttons`}
-              instanceId={game.id}
-              staticElements={[]}
-              collapse={false}
-              buttonType='menu'
-              orientation='vertical'
-            />
-            <OverlayTrigger
-              overlay={gameInfoPopover}
-              triggerRef={this.setRef}
-              getBounds={getBounds || this.getWindowBounds}
-              container={container}
-              orientation='horizontal'
-              shouldUpdatePosition={true}
-              trigger='click'
-              rootClose={true}
-            >
-              <IconButton
-                id={`btn-info-${game.id}`}
-                icon='alert-circle-i'
-                className='game-thumbnail-info btn-embed'
-                tooltip={t('Show Details')}
-              />
-            </OverlayTrigger>
-          </div>
-        </div>
-      </Panel>
+        <OverlayTrigger
+          overlay={gameInfoPopover}
+          triggerRef={this.setRef}
+          getBounds={getBounds || this.getWindowBounds}
+          container={container}
+          orientation='horizontal'
+          shouldUpdatePosition={true}
+          trigger='click'
+          rootClose={true}
+        >
+          <IconButton
+            id={`btn-info-${game.id}`}
+            icon='alert-circle-i'
+            className='game-thumbnail-info btn-embed'
+            tooltip={t('Show Details')}
+          />
+        </OverlayTrigger>
+      </div>
     );
   }
 

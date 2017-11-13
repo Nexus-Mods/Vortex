@@ -1,5 +1,8 @@
+import Icon from '../../../controls/Icon';
+
 import {} from 'draggabilly';
 import * as React from 'react';
+import { Button } from 'react-bootstrap';
 
 let Draggabilly: any;
 
@@ -9,20 +12,28 @@ export interface IProps {
   height: number;
   totalWidth?: number;
   packery?: any;
+  fixed: boolean;
+  closable: boolean;
 }
 
 class PackeryItem extends React.Component<IProps, {}> {
   private mRef: Element = null;
 
   public componentWillReceiveProps(newProps: IProps) {
-    if (newProps.packery !== this.props.packery) {
+    if (!newProps.fixed && (newProps.packery !== this.props.packery)) {
       this.makeDraggable(newProps);
     }
   }
 
   public render(): JSX.Element {
-    const { height, id, totalWidth, width } = this.props;
+    const { closable, fixed, height, id, totalWidth, width } = this.props;
     const widthPerc = Math.floor((width / totalWidth) * 100);
+
+    const classes = [
+      'packery-item',
+      `packery-height-${height}`,
+    ];
+
     // we need two nested divs. The outer controls the width of
     // the item and it can't have a margin, otherwise the layout
     // would break.
@@ -31,15 +42,33 @@ class PackeryItem extends React.Component<IProps, {}> {
         id={id}
         ref={this.setRef}
         style={{ width: `${widthPerc}%` }}
-        className={`packery-item packery-height-${height}`}
+        className={classes.join(' ')}
       >
         {this.props.children}
+        <div className='packery-buttons'>
+          {!fixed ? <Icon name='expand' className='drag-handle' /> : null}
+          {closable ? (
+            <Button
+              className='btn-embed'
+              onClick={this.dismissWidget}
+            >
+              <Icon name='cross' />
+            </Button>
+          ) : null}
+        </div>
       </div>);
   }
 
+  private dismissWidget = () => {
+    return undefined;
+  }
+
   private setRef = (ref) => {
+    const { fixed } = this.props;
     this.mRef = ref;
-    this.makeDraggable(this.props);
+    if (!fixed) {
+      this.makeDraggable(this.props);
+    }
   }
 
   private makeDraggable(props: IProps) {
@@ -50,7 +79,9 @@ class PackeryItem extends React.Component<IProps, {}> {
     if (Draggabilly === undefined) {
       Draggabilly = require('draggabilly');
     }
-    props.packery.bindDraggabillyEvents(new Draggabilly(this.mRef));
+    props.packery.bindDraggabillyEvents(new Draggabilly(this.mRef, {
+      handle: '.drag-handle',
+    }));
   }
 }
 

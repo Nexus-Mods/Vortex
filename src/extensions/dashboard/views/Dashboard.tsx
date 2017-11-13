@@ -1,4 +1,4 @@
-import {PropsCallback} from '../../../types/IExtensionContext';
+import {PropsCallback, IDashletOptions} from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
@@ -24,6 +24,8 @@ interface IDashletProps {
   component: React.ComponentClass<any>;
   props?: PropsCallback;
   isVisible?: (state: any) => boolean;
+  fixed: boolean;
+  closable: boolean;
 }
 
 interface IConnectedProps {
@@ -101,19 +103,27 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     }
 
     const sorted = objects
+      .filter((dash: IDashletProps) => (dash.isVisible === undefined) || dash.isVisible(state))
       .sort((lhs: IDashletProps, rhs: IDashletProps) =>
         (layoutMap[lhs.title] || lhs.position) - (layoutMap[rhs.title] || rhs.position))
-      .filter((dash: IDashletProps) => (dash.isVisible === undefined) || dash.isVisible(state))
       ;
 
+    const fixed = sorted.filter(dash => dash.fixed);
+    const dynamic = sorted.filter(dash => !dash.fixed);
+
     return (
-      <MainPage>
+      <MainPage id='page-dashboard' className='page-dashboard'>
         <MainPage.Body
-          style={{ height: '100%', overflowY: 'auto', width: '100%', overflowX: 'hidden' }}
+          style={{ display: 'flex', flexDirection: 'column' }}
         >
-          <PackeryGrid totalWidth={3} onChangeLayout={this.onChangeLayout}>
-            {sorted.map(this.renderItem)}
-          </PackeryGrid>
+          <div className='fixed-dashlets'>
+            {fixed.map(this.renderFixedItem)}
+          </div>
+          <div className='dynamic-dashlets'>
+            <PackeryGrid totalWidth={3} onChangeLayout={this.onChangeLayout}>
+              {dynamic.map(this.renderItem)}
+            </PackeryGrid>
+          </div>
         </MainPage.Body>
       </MainPage>
     );
@@ -132,11 +142,29 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     }, UPDATE_FREQUENCY_MS);
   }
 
+  private renderFixedItem = (dash: IDashletProps) => {
+    const { counter } = this.state;
+    const componentProps = dash.props !== undefined ? dash.props() : {};
+
+    return (
+      <div className={`fixed-width-${dash.width} packery-height-${dash.height}`} key={dash.title}>
+        <dash.component t={this.props.t} {...componentProps} counter={counter} />
+      </div>
+    );
+  }
+
   private renderItem = (dash: IDashletProps) => {
     const { counter } = this.state;
     const componentProps = dash.props !== undefined ? dash.props() : {};
     return (
-      <PackeryItem id={dash.title} key={dash.title} width={dash.width} height={dash.height}>
+      <PackeryItem
+        id={dash.title}
+        key={dash.title}
+        width={dash.width}
+        height={dash.height}
+        closable={dash.closable}
+        fixed={dash.fixed}
+      >
         <dash.component t={this.props.t} {...componentProps} counter={counter} />
       </PackeryItem>
     );
@@ -150,8 +178,11 @@ function registerDashlet(instanceProps: IProps,
                          position: number,
                          component: React.ComponentClass<any>,
                          isVisible?: (state) => boolean,
-                         props?: PropsCallback): IDashletProps {
-  return { title, position, width, height, component, isVisible, props };
+                         props?: PropsCallback,
+                         options?: IDashletOptions): IDashletProps {
+  const fixed = options !== undefined ? options.fixed || false : false;
+  const closable = options !== undefined ? options.closable !== false : true;
+  return { title, position, width, height, component, isVisible, props, fixed, closable };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {

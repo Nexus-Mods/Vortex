@@ -14,7 +14,7 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
-import { FormControl } from 'react-bootstrap';
+import { FormControl, Panel } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import {
@@ -115,8 +115,9 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       header = (
         <IconBar
           group='savegames-icons'
-          buttonType='icon'
+          buttonType='both'
           orientation='vertical'
+          className='menubar'
         />
       );
     }
@@ -124,14 +125,16 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     let content = null;
     if (!showTransfer || (importSaves !== undefined)) {
       content = (
-        <Table
-          tableId='savegames'
-          data={showTransfer ? importSaves : saves}
-          actions={saveActions}
-          staticElements={[
-            SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
-            LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
-        />
+        <Panel>
+          <Table
+            tableId='savegames'
+            data={showTransfer ? importSaves : saves}
+            actions={saveActions}
+            staticElements={[
+              SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
+              LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
+          />
+        </Panel>
       );
     } else {
       content = (profileId === undefined)

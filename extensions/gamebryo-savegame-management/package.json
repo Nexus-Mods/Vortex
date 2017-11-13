@@ -9,7 +9,7 @@
     "clear": "rm-local-modules",
     "postinstall": "electron-rebuild -w gamebryo-savegame -t dev,prod",
     "prebuild": "typings prune && typings install",
-    "build": "npm run webpack && copyfiles -f ./node_modules/gamebryo-savegame/build/Release/nbind.node ./dist/savegamelib && copyfiles -f ./node_modules/gamebryo-savegame/dist/liblz4.dll ./dist/savegamelib && extractInfo",
+    "build": "npm run webpack && copyfiles -f ./node_modules/gamebryo-savegame/build/Release/nbind.node ./dist/savegamelib && copyfiles -f ./node_modules/gamebryo-savegame/dist/liblz4.dll ./dist/savegamelib && copyfiles -f src/stylesheets/savegame_management.scss dist && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-savegame-management",
     "buildDev": "npm run build && npm run installDev"
   },

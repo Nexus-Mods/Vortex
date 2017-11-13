@@ -5,6 +5,7 @@ import ExtensionGate from '../ExtensionGate';
 import Icon from '../Icon';
 import IconBar from '../IconBar';
 import {ITableRowAction} from '../Table';
+import ToolbarIcon from '../ToolbarIcon';
 import {Button, IconButton} from '../TooltipControls';
 import VisibilityProxy from '../VisibilityProxy';
 
@@ -12,7 +13,7 @@ import { TD, TR } from './MyTable';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { FormControl, MenuItem, SplitButton } from 'react-bootstrap';
+import { DropdownMenu, FormControl, MenuItem, SplitButton } from 'react-bootstrap';
 
 interface ICellProps {
   language: string;
@@ -209,31 +210,63 @@ class TableRow extends React.Component<IRowProps, {}> {
   private renderRow = (): React.ReactNode => {
     const { actions, attributes, data, domRef, tableId } = this.props;
 
-    let hasActions = false;
     if (actions !== undefined) {
       const rowActions = actions.filter((action) =>
         (action.singleRowAction === undefined) || action.singleRowAction);
-      hasActions = rowActions.length > 0;
     }
 
     const res = attributes.map(this.renderAttribute);
-    if (hasActions) {
+    const sorted = actions
+      .filter(icon => {
+        try {
+          return (icon.condition === undefined)
+            || icon.condition([data.__id]);
+        } catch (err) {
+          return false;
+        }
+      })
+      .sort((lhs, rhs) => lhs.position - rhs.position);
+    if (sorted.length > 0) {
+      const def = sorted[0];
       res.push(
         <TD
           style={{ textAlign: 'center' }}
           key='action-cell'
         >
-          <IconBar
+          <SplitButton
             id={`${tableId}-${data.__id}-action-icons`}
-            group={`${tableId}-action-icons`}
-            instanceId={data.__id}
-            className='table-actions'
-            staticElements={actions}
-            collapse={true}
-          />
+            title={def.title}
+            onSelect={this.selectAction}
+            onClick={this.selectDefaultAction}
+            value={def.title}
+            pullRight
+          >
+            {sorted.map(this.renderActionOption)}
+          </SplitButton>
         </TD>);
     }
     return res;
+  }
+
+  private selectDefaultAction = (event) => {
+    console.log('select',
+      event.currentTarget, event.currentTarget.value, event.currentTarget.title);
+  }
+
+  private selectAction = (eventKey: any) => {
+    const { actions, data } = this.props;
+    const action = actions.find(iter => iter.title === eventKey);
+    action.action([data.__id]);
+  }
+
+  private renderActionOption = (action: ITableRowAction, idx: number) => {
+    const { data, tableId } = this.props;
+    return (
+      <MenuItem key={idx} eventKey={action.title}>
+        <Icon name={action.icon} />
+        <span>{action.title}</span>
+      </MenuItem>
+    );
   }
 
   private renderAttribute = (attribute: ITableAttribute, index: number,

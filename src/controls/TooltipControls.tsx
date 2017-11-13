@@ -10,7 +10,7 @@ import { Button as BootstrapButton, NavItem as BootstrapNavItem,
 
 export interface ITooltipProps {
   tooltip: string | React.ReactElement<any>;
-  id: string;
+  id?: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
   buttonType?: ButtonType;
 }

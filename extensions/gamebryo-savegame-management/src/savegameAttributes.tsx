@@ -110,7 +110,7 @@ export const SCREENSHOT: types.ITableAttribute = {
   icon: ' file-picture-o',
   customRenderer: (savegame: ISavegame) => <ScreenshotCanvas save={savegame} />,
   calc: (savegame: ISavegame) => ((savegame.attributes as any).screenshot),
-  placement: 'detail',
+  placement: 'both',
   isToggleable: false,
   edit: {},
 };

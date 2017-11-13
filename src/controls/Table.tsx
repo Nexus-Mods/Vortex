@@ -319,6 +319,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     return (
       <TH className={`table-${tableId} header-action`}>
+        <div><div className='header-action-label'>{t('Actions')}</div>
         {
           elements.length > 0 ? (
             <IconBar
@@ -329,8 +330,9 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
               instanceId={selected}
               collapse='force'
             />
-          ) : <div><p>{t('Actions')}</p></div>
+          ) : null
         }
+        </div>
       </TH>
       );
   }

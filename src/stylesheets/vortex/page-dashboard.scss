@@ -1,0 +1,25 @@
+#page-dashboard {
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+}
+
+.dynamic-dashlets {
+  padding: $gutter-width;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.fixed-width-1 {
+  width: 33%;
+}
+
+.fixed-width-2 {
+  width: 67%;
+}
+
+.fixed-width-3 {
+  width: 100%;
+}

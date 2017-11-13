@@ -5,7 +5,7 @@ import { IExtensionContext } from '../../types/IExtensionContext';
 import DiagnosticsFilesDialog from './views/DiagnosticsFilesDialog';
 
 function init(context: IExtensionContext): boolean {
-  context.registerAction('help-icons', 190, 'bug', {}, 'Diagnostics Files',
+  context.registerAction('global-icons', 190, 'bug', {}, 'Diagnostics Files',
     () => context.api.store.dispatch(setDialogVisible('diagnostics-files-dialog')));
 
   context.registerDialog('diagnostics-files-dialog', DiagnosticsFilesDialog);

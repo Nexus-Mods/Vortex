@@ -94,6 +94,9 @@ function init(context): boolean {
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
 
+    context.api.setStylesheet('savegame-management',
+                              path.join(__dirname, 'savegame_management.scss'));
+
     context.api.events.on('profile-did-change', (profileId: string) => {
       const profile: types.IProfile =
           util.getSafe(store.getState(),

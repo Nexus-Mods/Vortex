@@ -211,45 +211,6 @@ textarea {
   padding-bottom: 4px;
 }
 
-// nav bars
-.nav > li > a {
-  color: $text-color;
-}
-
-.nav-pills > li > a {
-  color: $text-color;
-  overflow: hidden;
-  white-space: nowrap;
-  padding: 10px 25px 10px 16px;
-  -webkit-user-drag: none;
-} 
-
-.nav > li > a:hover,
-.nav > li > a:focus {
-  background-color: $gray-light;
-}
-
-.nav-pills.nav-stacked > li.active > a,
-.nav-pills.nav-pills.nav-stacked > li.active > a:hover,
-.nav-pills.nav-stacked > li.active > a:focus {
-  background-color: $brand-selected;
-  border-right: 4px solid $brand-clickable;
-}
-
-.nav-pills.nav-stacked > li.secondary > a,
-.nav-pills.nav-pills.nav-stacked > li.secondary > a:hover,
-.nav-pills.nav-stacked > li.secondary > a:focus {
-  background-color: $brand-primary;
-}
-
-.nav-pills>li>a svg {
-  vertical-align: middle;
-}
-
-.react-context-menu-link.disabled {
-  color: $gray-dark;
-}
-
 .inline-form {
   display: flex;
   flex-grow: 1;
@@ -476,6 +437,15 @@ a[role=menuitem] svg {
   right: 0;
 }
 
+#main-toolbar button {
+  margin-top: auto;
+  margin-bottom: auto;
+  &:hover {
+    background-color: transparent;
+    color: $brand-clickable;
+  }
+}
+
 // /generic control rules
 /////////////////////////
 
@@ -508,7 +478,6 @@ a[role=menuitem] svg {
 
 .icon-stroke {
   stroke: currentColor;
->>>>>>> origin/master
 }
 
 .panel {
@@ -536,6 +505,7 @@ a[role=menuitem] svg {
 @import "vortex/layout";
 @import "vortex/main-window";
 @import "vortex/more";
+@import "vortex/navbar";
 @import "vortex/nexusmods-download";
 @import "vortex/notification";
 @import "vortex/quicklaunch";
@@ -550,6 +520,7 @@ a[role=menuitem] svg {
 @import "vortex/toggle";
 
 @import "vortex/page-profile";
+@import "vortex/page-dashboard";
 @import "vortex/page-download";
 @import "vortex/page-game";
 @import "vortex/page-mod";
@@ -716,6 +687,11 @@ a[role=menuitem] svg {
   > div {
    flex: 1 1 90%;
   }
+}
+
+.header-action-label {
+  flex: 1 1 0;
+  text-align: center;
 }
 
 // /specific table columns

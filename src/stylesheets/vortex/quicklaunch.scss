@@ -1,9 +1,10 @@
 .container-quicklaunch {
   margin: auto $half-gutter auto 0;
+  position: relative;
 
   >.btn-group {
     >.btn-quicklaunch {
-      padding: 2px !important;
+      padding: 0px !important;
       display: inline-flex;
       >div {
         display: flex;
@@ -17,9 +18,12 @@
       }
     }
   }
+
   .menu-label {
     flex: 1 1 0;
-    margin: auto 0.25em;
+    margin: auto 2em;
+    text-align: left;
+    font-size: larger;
   }
 
   .tool-icon-container {
@@ -42,5 +46,23 @@
   .item-more-games {
     width: 100%;
     line-height: 40px;
+  }
+
+  a[role=menuitem] {
+    padding: 0px;
+  }
+
+  .dropdown-menu {
+    padding: 0px;
+    margin: 0px;
+    border: 0px;
+  }
+
+  .container-quicklaunch-launch {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
   }
 }

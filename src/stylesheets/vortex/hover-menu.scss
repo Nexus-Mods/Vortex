@@ -21,6 +21,17 @@
       transform: scale(1);
       width: 100%;
       height: 100%;
+
+      &.hover-launcher {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: transparent;
+        .icon {
+          width: 3em;
+          height: 3em;
+        }
+      }
     }
   }
 }

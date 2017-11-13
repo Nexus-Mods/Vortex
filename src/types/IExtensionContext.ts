@@ -63,7 +63,8 @@ export type RegisterFooter =
 export interface IMainPageOptions {
   hotkey?: string;
   visible?: () => boolean;
-  group: 'dashboard' | 'global' | 'per-game' | 'support';
+  group: 'dashboard' | 'global' | 'per-game' | 'support' | 'hidden';
+  priority?: number;
   props?: () => any;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;
@@ -73,10 +74,15 @@ export type RegisterMainPage =
   (icon: string, title: string, element: React.ComponentClass<any> | React.StatelessComponent<any>,
    options: IMainPageOptions) => void;
 
+export interface IDashletOptions {
+  fixed?: boolean;
+  closable?: boolean;
+}
+
 export type RegisterDashlet =
-  (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3, position: number,
+  (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5, position: number,
    component: React.ComponentClass<any>, isVisible?: (state) => boolean,
-   props?: PropsCallback) => void;
+   props?: PropsCallback, options?: IDashletOptions) => void;
 
 export type RegisterDialog =
   (id: string,

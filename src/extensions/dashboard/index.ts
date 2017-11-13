@@ -6,6 +6,7 @@ import settingsReducer from './reducer';
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'interface'], settingsReducer);
   context.registerMainPage('dashboard', 'Dashboard', Dashboard, {
+    priority: 0,
     hotkey: '1',
     group: 'dashboard',
   });

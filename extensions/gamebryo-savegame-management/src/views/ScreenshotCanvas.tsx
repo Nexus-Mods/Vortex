@@ -33,11 +33,10 @@ class ScreenshotCanvas extends React.Component<ICanvasProps, {}> {
     const dim: Dimensions = (save.attributes as any).screenshot;
     return (
       <canvas
-        id='screenshot-canvas'
+        className='screenshot-canvas'
         ref={this.refCanvas}
         width={dim.width}
         height={dim.height}
-        style={{ width: '100%' }}
       />);
   }
 

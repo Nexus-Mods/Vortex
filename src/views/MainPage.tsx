@@ -7,6 +7,8 @@ import Overlay from './MainPageOverlay';
 import * as React from 'react';
 
 export interface IBaseProps {
+  id?: string;
+  className?: string;
   domRef?: (ref: HTMLElement) => void;
 }
 
@@ -18,9 +20,9 @@ class MainPage extends ComponentEx<IProps, {}> {
   public static Overlay = Overlay;
 
   public render(): JSX.Element {
-    const { children, domRef } = this.props;
+    const { children, className, domRef, id } = this.props;
     return (
-      <div ref={domRef} className='main-page-inner'>
+      <div id={id} ref={domRef} className={(className || '') + ' main-page-inner'}>
         {children}
       </div>
     );

@@ -2,8 +2,8 @@ import ToolbarIcon from '../../../controls/ToolbarIcon';
 import asyncRequire, { Placeholder } from '../../../util/asyncRequire';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 
-import AboutDialogT from './AboutDialog';
-let AboutDialog: typeof AboutDialogT = Placeholder;
+import AboutPageT from './AboutPage';
+let AboutPage: typeof AboutPageT = Placeholder;
 
 import * as update from 'immutability-helper';
 import * as React from 'react';
@@ -29,9 +29,9 @@ class AboutButton extends ComponentEx<IProps, IComponentState> {
 
   public componentWillMount() {
     this.mIsMounted = true;
-    asyncRequire('./AboutDialog', __dirname)
-    .then(AboutDialogIn => {
-      AboutDialog = AboutDialogIn.default;
+    asyncRequire('./AboutPage', __dirname)
+    .then(AboutPageIn => {
+      AboutPage = AboutPageIn.default;
       if (this.mIsMounted) {
         this.forceUpdate();
       }
@@ -54,12 +54,7 @@ class AboutButton extends ComponentEx<IProps, IComponentState> {
         placement='top'
         onClick={this.showAboutLayer}
         buttonType={buttonType}
-      >
-        <AboutDialog
-          shown={dialogVisible}
-          onHide={this.hideAboutLayer}
-        />
-      </ToolbarIcon>
+      />
     );
   }
 
@@ -72,9 +67,7 @@ class AboutButton extends ComponentEx<IProps, IComponentState> {
   }
 
   private setDialogVisible(visible: boolean): void {
-    this.setState(update(this.state, {
-      dialogVisible: { $set: visible },
-    }));
+    this.context.api.events.emit('show-main-page', 'About');
   }
 }
 

@@ -60,6 +60,7 @@ class Packery extends React.Component<IProps, {}> {
       itemSelector: '.packery-item',
       gutter: 0,
       percentPosition: false,
+      stamp: '.stamp',
     };
 
     if (ref !== null) {

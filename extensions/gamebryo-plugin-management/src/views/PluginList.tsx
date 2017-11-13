@@ -20,7 +20,7 @@ import * as update from 'immutability-helper';
 import {SimpleMessage} from 'loot';
 import * as path from 'path';
 import * as React from 'react';
-import {Alert, ListGroup, ListGroupItem} from 'react-bootstrap';
+import {Alert, ListGroup, ListGroupItem, Panel} from 'react-bootstrap';
 import {translate} from 'react-i18next';
 import {connect} from 'react-redux';
 import {ComponentEx, FlexLayout, IconBar, ITableRowAction, log, MainPage,
@@ -243,8 +243,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             id: 'btn-autosort-loot',
             key: 'btn-autosort-loot',
             icon: autoSort ? 'lock' : 'unlock',
-            text: autoSort ? t('Autosort enabled (using LOOT)', { ns: 'gamebryo-plugin' })
-                           : t('Autosort disabled (using LOOT)', { ns: 'gamebryo-plugin' }),
+            text: autoSort ? t('Autosort enabled', { ns: 'gamebryo-plugin' })
+                           : t('Autosort disabled', { ns: 'gamebryo-plugin' }),
             state: autoSort,
             onClick: () => onSetAutoSortEnabled(!autoSort),
           };
@@ -323,7 +323,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           <IconBar
             group='gamebryo-plugin-icons'
             staticElements={this.staticButtons}
-            buttonType='icon'
+            buttonType='both'
+            className='menubar'
           />
         </MainPage.Header>
         <MainPage.Body>
@@ -332,12 +333,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
               {lootActivity ? <h4>{lootActivity}</h4> : null}
             </FlexLayout.Fixed>
             <FlexLayout.Flex>
-              <Table
-                tableId='gamebryo-plugins'
-                actions={this.actions}
-                staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
-                data={pluginsCombined}
-              />
+              <Panel>
+                <Table
+                  tableId='gamebryo-plugins'
+                  actions={this.actions}
+                  staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
+                  data={pluginsCombined}
+                />
+              </Panel>
             </FlexLayout.Flex>
           </FlexLayout>
         </MainPage.Body>

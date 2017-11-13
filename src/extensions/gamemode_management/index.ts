@@ -401,7 +401,7 @@ function init(context: IExtensionContext): boolean {
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
-  context.registerDashlet('Game Picker', 2, 2, 0, Dashlet, () =>
+  context.registerDashlet('Game Picker', 2, 3, 0, Dashlet, () =>
     activeGameId(context.api.store.getState()) === undefined);
 
   context.once(() => {

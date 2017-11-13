@@ -7,16 +7,17 @@
 }
 
 .table-selected {
-  background-color: $brand-secondary;
+  background-color: $brand-selected;
 }
 
 .table-highlighted {
-  background-color: $brand-selected;
+  background-color: $brand-secondary;
 }
 
 .table-main-pane {
   overflow-y: auto;
   flex: 1 1 0%;
+  margin-right: $half-gutter;
 
   .xthead {
     .xth {
@@ -55,20 +56,22 @@
   height: 100%;
   overflow-y: auto;
   padding: 0px;
-  min-width: 32px;
   background-color: $brand-menu;
   transition: max-width 300ms;
-  border: 1px solid $border-color;
   border-right-width: 0px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+
   &.open {
-    max-width: 30%;
+    max-width: 50%;
+    border: 1px solid $border-color;
   }
   &.closed {
     // overruled by min-width
     max-width: 0%;
-    // offset the right offset to align the button
-    // with the right border
-    margin-right: -10px;
+    border: 0px;
   }
 
   .form-control-static {

@@ -23,7 +23,7 @@ function init(context: IExtensionContext): boolean {
     extTodos.push({ id, type, props, condition, render, button, priority });
   };
 
-  context.registerDashlet('ToDo', 2, 2, 200, Dashlet, state => {
+  context.registerDashlet('ToDo', 2, 3, 200, Dashlet, state => {
     const allTodos: IToDo[] = [].concat(todos(context.api), extTodos);
     const steps = state.settings.firststeps.steps;
 

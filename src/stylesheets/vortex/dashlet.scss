@@ -33,6 +33,10 @@
   }
 }
 
+.dashlet-starter {
+  padding-right: 50px;
+}
+
 .dashlet-todo {
   li {
     display: flex;
@@ -47,9 +51,66 @@
   }
 }
 
+.dashlet-nexus-login {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: flex-end;
+
+  .nexus-login-text {
+    font-size: larger;
+    font-weight: bold;
+  }
+}
+
+.dashlet-nexus-account {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  padding: $gutter-width;
+  align-items: center;
+  background-color: $brand-menu;
+
+  .nexus-name {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    .nexus-name-account {
+      font-size: larger;
+    }
+  }
+
+  .btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 32px;
+  }
+}
+
+.nexus-name-username,
+.nexus-login-heading {
+  text-transform: uppercase;
+  line-height: 1em;
+  font-size: 56px;
+  font-family: 'BebasNeue';
+  font-weight: 300;
+}
+
 .packery-item {
   padding: 5px;
   overflow: hidden;
+
+  .packery-buttons {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    > * {
+      margin-left: 4px;
+    }
+  }
 }
 
 .packery-drop-placeholder {
@@ -62,13 +123,19 @@
 
 .lodpi, .hidpi {
   .packery-height-1 {
-    height: 190px;
+    height: 120px;
   }
   .packery-height-2 {
-    height: 380px;
+    height: 240px;
   }
   .packery-height-3 {
-    height: 570px;
+    height: 360px;
+  }
+  .packery-height-4 {
+    height: 480px;
+  }
+  .packery-height-5 {
+    height: 600px;
   }
 }
 

@@ -3,7 +3,6 @@
   src: url(assets/fonts/roboto.woff2);
 }
 */
-@import url("https://fonts.googleapis.com/css?family=Roboto:400,500,700,300");
 
 $font-size-large:         1.25em;
 $font-size-small:         0.85em;
@@ -24,7 +23,7 @@ $table-cell-padding:            8px;
 $table-condensed-cell-padding:  2px;
 $table-bg:                      $brand-menu;
 $table-bg-accent:               #e9e9e9;
-$table-bg-hover:                $brand-selected;
+$table-bg-hover:                $brand-highlight;
 $table-bg-active:               $table-bg-hover;
 $table-border-color:            $text-color;
 

@@ -82,14 +82,37 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     return (
       <div className='container-quicklaunch'>
-        <div>
-          {this.renderGameOption(game.id)}
+        <DropdownButton
+          id='dropdown-quicklaunch'
+          className='btn-quicklaunch'
+          title={this.renderGameOption(game.id) as any}
+          key={game.id}
+          onSelect={this.changeGame}
+          noCaret
+        >
+          {
+            Object.keys(gameIconCache)
+              .filter(gameId => gameId !== game.id)
+              .map(gameId => (
+              <MenuItem key={gameId} eventKey={gameId}>
+                {this.renderGameOption(gameId)}
+              </MenuItem>
+              ))
+          }
+        </DropdownButton>
+        <div className='container-quicklaunch-launch'>
+          <IconButton
+            id='btn-quicklaunch-play'
+            onClick={this.start}
+            tooltip={t('Launch')}
+            icon='circle-play'
+          />
         </div>
       </div>
     );
   }
 
-  private renderGameOption = (gameId: string, starter?: StarterInfo) => {
+  private renderGameOption = (gameId: string) => {
     const { t, discoveredGames } = this.props;
     const { gameIconCache } = this.state;
 
@@ -108,16 +131,12 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       || getSafe(discovered, ['name'], getSafe(game, ['name'], undefined));
 
     return (
-      <Button
-        id='btn-quicklaunch-play'
+      <div
         className='tool-icon-container'
         style={{ background: `url('${iconPath}')` }}
-        onClick={this.start}
-        tooltip={t('Launch')}
       >
         <span className='menu-label'>{displayName}</span>
-        <Icon name='circle-play' />
-      </Button>
+      </div>
     );
   }
 
