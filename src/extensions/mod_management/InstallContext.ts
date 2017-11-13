@@ -24,6 +24,7 @@ import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
+import { IExtensionApi } from '../../types/IExtensionContext';
 
 type IOnAddMod = (mod: IMod) => void;
 type IOnAddNotification = (notification: INotification) => void;
@@ -48,7 +49,8 @@ class InstallContext implements IInstallContext {
   private mInstallOutcome: InstallOutcome;
   private mIsEnabled: (modId: string) => boolean;
 
-  constructor(gameMode: string, store: Redux.Store<any>) {
+  constructor(gameMode: string, api: IExtensionApi) {
+    const store: Redux.Store<any> = api.store;
     const dispatch = store.dispatch;
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
     this.mRemoveMod = (modId) => dispatch(removeMod(gameMode, modId));
@@ -72,6 +74,7 @@ class InstallContext implements IInstallContext {
     this.mEnableMod = (modId) => {
       const profile = activeProfile(store.getState());
       dispatch(setModEnabled(profile.id, modId, true));
+      api.events.emit('mods-enabled', [ modId ], true);
     };
     this.mIsEnabled = (modId) => {
       const profile = activeProfile(store.getState());

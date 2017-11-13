@@ -1,5 +1,6 @@
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { INotification } from '../types/INotification';
+import local from '../util/local';
 import {log} from '../util/log';
 import {truthy} from '../util/util';
 
@@ -42,6 +43,8 @@ export const addDialog = safeCreateAction(
  */
 export const dismissDialog = safeCreateAction('DISMISS_MODAL_DIALOG');
 
+const timers = local<{ [id: string]: NodeJS.Timer }>('notification-timers', {});
+
 /**
  * show a notification
  *
@@ -54,22 +57,29 @@ export function addNotification(notification: INotification) {
     const noti = { ...notification };
     if (noti.id === undefined) {
       noti.id = shortid();
+    } else if (timers[noti.id] !== undefined) {
+      // if this notification is replacing an active one with a timeout,
+      // stop that timeout
+      clearTimeout(timers[noti.id]);
+      delete timers[noti.id];
     }
     dispatch(startNotification(noti));
     if (noti.displayMS !== undefined) {
       return new Promise((resolve) => {
-        setTimeout(() =>
+        timers[noti.id] = setTimeout(() =>
           resolve()
           , noti.displayMS);
-      }).then(() =>
-        dispatch(dismissNotification(noti.id)));
+      }).then(() => {
+        delete timers[noti.id];
+        dispatch(dismissNotification(noti.id));
+      });
     }
   };
 }
 
 // singleton holding callbacks for active dialogs. The
 // actual storage is the "global" object so it gets shared between
-// all instances of this module.
+// all instances of this module (across extensions).
 class DialogCallbacks {
   public static instance(): any {
     if ((global as any).__dialogCallbacks === undefined) {

@@ -119,7 +119,7 @@ export function loadActivation(api: IExtensionApi, modType: string,
 
 export function saveActivation(modType: string, instance: string,
                                gamePath: string, activation: IDeployedFile[]) {
-  const typeTag = modType.length > 0 ? modType + '.' : '';
+  const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFile = path.join(gamePath, `vortex.deployment.${typeTag}json`);
   if (activation.length === 0) {
     return fs.removeAsync(tagFile).catch(err => undefined);
