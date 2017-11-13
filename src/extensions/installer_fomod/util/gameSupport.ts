@@ -30,6 +30,7 @@ function stopPatterns(gameMode: string) {
     case 'falloutnv': return [].concat(uniPatterns, gamebryoPatterns, ['nvse'].map(toWordExp));
     case 'fallout4': return [].concat(uniPatterns, gamebryoPatterns, ['f4se'].map(toWordExp));
     case 'oblivion': return [].concat(uniPatterns, gamebryoPatterns, ['obse'].map(toWordExp));
+    case 'morrowind': return [].concat(uniPatterns, gamebryoPatterns, ['mwse'].map(toWordExp));
     case 'skyrim': return [].concat(uniPatterns, gamebryoPatterns,
                                     ['skse', 'SkyProc Patchers'].map(toWordExp));
     case 'skyrimse': return [].concat(uniPatterns, gamebryoPatterns);
@@ -113,6 +114,14 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     pluginPath: 'Data',
     nativePlugins: [
       'falloutnv.esm',
+    ],
+  },
+  morrowind: {
+    iniPath: bethIni('Morrowind', 'Morrowind'),
+    stopPatterns: stopPatterns('morrowind'),
+    pluginPath: 'Data',
+    nativePlugins: [
+      'morrowind.esm',
     ],
   },
   oblivion: {

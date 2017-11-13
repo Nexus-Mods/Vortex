@@ -21,6 +21,7 @@ const app = appIn || remote.app;
 
 function extenderForGame(gameId: string) {
   return {
+    morrowind: 'mwse',
     oblivion: 'obse',
     skyrim: 'skse',
     skyrimse: 'skse64',
