@@ -310,11 +310,9 @@ function checkModVersionsImpl(
         }
 
         const name = modName(mod, { version: true });
-        if (detail.Servermessage !== undefined) {
-          return `${name}:\n${detail.Error}\nServer said: "${detail.Servermessage}"`;
-        } else {
-          return `${name}:\n${detail.Error}`;
-        }
+        return (detail.Servermessage !== undefined)
+          ? `${name}:\n${detail.Error}\nServer said: "${detail.Servermessage}"`
+          : `${name}:\n${detail.Error}`;
       }), { concurrency: 4 })
     .then(errorMessages => errorMessages.filter(msg => msg !== undefined));
 }
@@ -325,7 +323,8 @@ function renderNexusModIdDetail(
   t: I18next.TranslationFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const fileName: string = getSafe(mod.attributes, ['name'], undefined);
-  const gameMode = activeGameId(store.getState());
+  const gameMode = getSafe(mod.attributes, ['downloadGame'], undefined)
+                || activeGameId(store.getState());
   return (
     <NexusModIdDetail
       modId={mod.id}
@@ -354,7 +353,8 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
    || (endorsed === undefined && isNexusMod)) {
     endorsed = 'Undecided';
   }
-  const gameMode = activeGameId(store.getState());
+  const gameMode = getSafe(mod.attributes, ['downloadGame'], undefined)
+                || activeGameId(store.getState());
   if (endorsed !== undefined) {
     return (
       <EndorseModButton

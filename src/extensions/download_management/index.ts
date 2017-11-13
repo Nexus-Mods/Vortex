@@ -68,6 +68,7 @@ function attributeExtractor(input: any) {
     fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
     fileSize: getSafe(input, ['download', 'size'], undefined),
     source: getSafe(input, ['download', 'modInfo', 'source'], undefined),
+    downloadGame: getSafe(input, ['download', 'game'], undefined),
   });
 }
 

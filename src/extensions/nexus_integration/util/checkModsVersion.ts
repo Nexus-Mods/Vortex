@@ -31,7 +31,7 @@ export function checkModVersion(dispatch: Redux.Dispatch<any>, nexus: Nexus,
     return Promise.resolve();
   }
 
-  return nexus.getModFiles(nexusModId, convertGameId(gameId))
+  return nexus.getModFiles(nexusModId, convertGameId(mod.attributes['downloadGame'] || gameId))
       .then(result => updateFileAttributes(dispatch, gameId, mod, result));
 }
 

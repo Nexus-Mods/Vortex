@@ -8,6 +8,7 @@ import { IProfileMod } from '../../profile_management/types/IProfile';
 import { IMod } from '../types/IMod';
 
 import * as React from 'react';
+import { setdefault } from '../../../util/util';
 
 export type IModWithState = IMod & IProfileMod;
 
