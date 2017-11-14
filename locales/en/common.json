@@ -8,5 +8,6 @@
   "{{ count }} week ago_plural": "{{ count }} weeks ago",
   "{{ count }} month ago_plural": "{{ count }} months ago",
   "{{ count }} year ago_plural": "{{ count }} years ago",
-  "{{ count }} error_plural": "{{ count }} errors"
+  "{{ count }} error_plural": "{{ count }} errors",
+  "{{ count }} active mod_plural": "{{ count }} active mods"
 }

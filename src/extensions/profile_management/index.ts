@@ -25,7 +25,7 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 
-import { forgetMod, setProfile } from './actions/profiles';
+import { forgetMod, setProfile, setProfileActivated } from './actions/profiles';
 import { setCurrentProfile, setNextProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
 import { settingsReducer } from './reducers/settings';
@@ -296,7 +296,9 @@ function init(context: IExtensionContextExt): boolean {
                 .then(() => {
                   context.api.store.dispatch(setProgress('profile', 'deploying'));
                   const gameId = profile !== undefined ? profile.gameId : undefined;
-                  return store.dispatch(setCurrentProfile(gameId, current));
+                  store.dispatch(setCurrentProfile(gameId, current));
+                  store.dispatch(setProfileActivated(current));
+                  return null;
                 })
                 .catch((err: Error) => {
                   showError(store.dispatch, 'Failed to set profile', err);

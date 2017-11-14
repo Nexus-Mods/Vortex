@@ -53,7 +53,6 @@ interface IBaseProps {
 }
 
 interface IConnectedProps {
-  lastActiveProfile: { [gameId: string]: string };
   discoveredGames: { [id: string]: IDiscoveryResult };
   profiles: { [profileId: string]: IProfile };
   knownGames: IGameStored[];
@@ -366,7 +365,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     gameMode: activeGameId(state),
-    lastActiveProfile: state.settings.gameMode.lastActiveProfile,
     discoveredGames: state.settings.gameMode.discovered,
     pickerLayout: state.settings.gameMode.pickerLayout || 'list',
     profiles: state.persistent.profiles,

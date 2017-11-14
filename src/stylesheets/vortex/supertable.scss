@@ -67,6 +67,7 @@
   &.open {
     max-width: 50%;
     border: 1px solid $border-color;
+    box-shadow: -2px 0px 4px 1px rgba(0, 0, 0, 0.5);
   }
   &.closed {
     // overruled by min-width

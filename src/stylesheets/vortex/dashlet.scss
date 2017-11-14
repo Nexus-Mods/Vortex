@@ -3,7 +3,7 @@
   background-color: $brand-menu;
   padding: $half-gutter;
   height: 100%;
-  h3 {
+  h2 {
     margin-top: 0;
     text-transform: uppercase;
   }
@@ -62,6 +62,10 @@
   .nexus-login-text {
     font-size: larger;
     font-weight: bold;
+  }
+
+  .btn {
+    margin-top: 0.75em;
   }
 }
 
@@ -145,6 +149,16 @@
   margin: 0px;
   height: 120px;
   line-height: 100px;
+}
+
+.dashlet-recently-managed {
+  .list-recently-managed {
+    display: flex;
+    overflow-x: auto;
+    > * {
+      margin: 0 8px;
+    }
+  }
 }
 
 .dashlet-game-more {

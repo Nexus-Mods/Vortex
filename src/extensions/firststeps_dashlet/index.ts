@@ -6,24 +6,24 @@ import { IToDo } from './IToDo';
 import settingsReducer from './reducers';
 import todos from './todos';
 
+import * as I18next from 'i18next';
+
 const extTodos: IToDo[] = [];
 
 function init(context: IExtensionContext): boolean {
   context.registerToDo = (id: string,
                           type: ToDoType,
                           props: () => any,
-                          condition: (props: any) => boolean,
-                          render: (props: any) => JSX.Element,
-                          button?: () => {
-                            text: string,
-                            icon: string,
-                            onClick: () => void,
-                          },
+                          icon: (props: any) => JSX.Element,
+                          text: (t: I18next.TranslationFunction, props: any) => JSX.Element,
+                          action?: (props: any) => void,
+                          condition?: (props: any) => boolean,
+                          value?: (t: I18next.TranslationFunction, props: any) => JSX.Element,
                           priority?: number) => {
-    extTodos.push({ id, type, props, condition, render, button, priority });
+    extTodos.push({ id, icon, type, props, condition, text, value, action, priority });
   };
 
-  context.registerDashlet('ToDo', 2, 3, 200, Dashlet, state => {
+  context.registerDashlet('ToDo', 2, 2, 150, Dashlet, state => {
     const allTodos: IToDo[] = [].concat(todos(context.api), extTodos);
     const steps = state.settings.firststeps.steps;
 

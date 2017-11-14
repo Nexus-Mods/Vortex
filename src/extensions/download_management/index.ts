@@ -94,8 +94,6 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['persistent', 'downloads'], stateReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
-  context.registerDashlet('Downloads', 1, 3, 300, Dashlet);
-
   context.registerDownloadProtocol = (schema: string, handler: ProtocolHandler) => {
     protocolHandlers[schema] = handler;
   };

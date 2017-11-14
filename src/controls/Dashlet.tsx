@@ -11,7 +11,7 @@ class Dashlet extends React.Component<IDashletProps, {}> {
     const classes = ['dashlet'].concat(className.split(' '));
     return (
       <div className={classes.join(' ')}>
-        <h3>{title}</h3>
+        <h2>{title}</h2>
         {this.props.children}
       </div>
     );

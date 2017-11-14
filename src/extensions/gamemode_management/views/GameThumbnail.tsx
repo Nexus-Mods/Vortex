@@ -2,7 +2,7 @@ import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import OverlayTrigger from '../../../controls/OverlayTrigger';
 import { IconButton } from '../../../controls/TooltipControls';
-import { PureComponentEx } from '../../../util/ComponentEx';
+import { connect, PureComponentEx } from '../../../util/ComponentEx';
 
 import { IGameStored } from '../types/IGameStored';
 
@@ -13,8 +13,11 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel, Popover } from 'react-bootstrap';
+import { IProfile, IState } from '../../../types/IState';
+import { getSafe } from '../../../util/storeHelper';
+import { countIf } from '../../../util/util';
 
-export interface IProps {
+export interface IBaseProps {
   t: I18next.TranslationFunction;
   game: IGameStored;
   active: boolean;
@@ -25,6 +28,12 @@ export interface IProps {
   onLaunch?: () => void;
 }
 
+interface IConnectedProps {
+  profile: IProfile;
+}
+
+type IProps = IBaseProps & IConnectedProps;
+
 /**
  * thumbnail + controls for a single game mode within the game picker
  *
@@ -34,13 +43,17 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private mRef = null;
 
   public render(): JSX.Element {
-    const { t, active, container, game, getBounds, onRefreshGameInfo, type } = this.props;
+    const { t, active, container, game, getBounds, onRefreshGameInfo, profile, type } = this.props;
 
     if (game === undefined) {
       return null;
     }
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
+
+    const modCount = profile !== undefined
+      ? countIf(Object.keys(profile.modState), id => profile.modState[id].enabled)
+      : undefined;
 
     return (
       <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
@@ -49,7 +62,15 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           src={logoPath}
         />
         <div className='bottom'>
-          <h4 className='name'>{t(game.name)}</h4>
+          <div className='name'>{t(game.name)}</div>
+          {
+            modCount !== undefined
+              ? <div className='active-mods'>
+                  <Icon name='settings-tool' />
+                  <span>{t('{{ count }} active mod', { count: modCount })}</span>
+                </div>
+              : null
+          }
         </div>
         <div className='hover-menu'>
           {type === 'launcher' ? this.renderLaunch() : this.renderMenu()}
@@ -142,4 +163,15 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   }
 }
 
-export default GameThumbnail as React.ComponentClass<IProps>;
+function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
+  const profiles = state.persistent.profiles;
+  const lastActiveProfile =
+    getSafe(state.settings.profiles, ['lastActiveProfile', ownProps.game.id], undefined);
+  return {
+    profile: lastActiveProfile !== undefined ? profiles[lastActiveProfile] : undefined,
+  };
+}
+
+export default
+  connect(mapStateToProps)(
+    GameThumbnail) as React.ComponentClass<IBaseProps>;

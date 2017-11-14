@@ -1,3 +1,4 @@
+import Dashlet from '../../controls/Dashlet';
 import Icon from '../../controls/Icon';
 import More from '../../controls/More';
 import { IconButton } from '../../controls/TooltipControls';
@@ -15,6 +16,72 @@ import { Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { Interpolate } from 'react-i18next';
 import * as Redux from 'redux';
 
+interface ITodoProps {
+  t: TranslationFunction;
+  todo: IToDo;
+  extensionProps: any;
+  dismiss: (id: string) => void;
+}
+
+class Todo extends React.PureComponent<ITodoProps, {}> {
+  public render(): JSX.Element {
+    const { t, extensionProps, todo } = this.props;
+    const text: JSX.Element = this.resolveElement(todo.id, todo.text, 'todo-text');
+    const value: JSX.Element = this.resolveElement(todo.id, todo.value, 'todo-value');
+    const icon = typeof (todo.icon) === 'string'
+      ? <Icon name={todo.icon} />
+      : todo.icon(extensionProps);
+
+    return (
+      <div
+        key={todo.id}
+        className={`todo todo-${todo.type}`}
+        onClick={this.action}
+      >
+        {icon}
+        {text}
+        {value}
+        <IconButton
+          id={`btn-dismiss-${todo.id}`}
+          icon='cross'
+          tooltip={t('Dismiss')}
+          className='btn-embed btn-dismiss'
+          value={todo.id}
+          onClick={this.dismiss}
+        />
+      </div>
+    );
+  }
+
+  private action = () => {
+    this.props.todo.action(this.props.extensionProps);
+  }
+
+  private dismiss = () => {
+    this.props.dismiss(this.props.todo.id);
+  }
+
+  private typeToIcon(type: ToDoType): string {
+    return {
+      'settings-review': 'sliders',
+      settings: 'sliders',
+      automation: 'wand',
+      search: 'search',
+    }[type];
+  }
+
+  private resolveElement(id: string,
+                         input: string | ((t: TranslationFunction, props: any) => JSX.Element),
+                         className: string): JSX.Element {
+    const { t, extensionProps } = this.props;
+    return input === undefined
+      ? null
+      : typeof (input) === 'string'
+        ? <span className={className}>{t(input)}</span>
+        : input(t, extensionProps);
+    }
+}
+
 export interface IBaseProps {
   todos: IToDo[];
 }
@@ -31,7 +98,7 @@ interface IActionProps {
 
 type IProps = IBaseProps & IConnectedState & IActionProps & II18NProps;
 
-class Dashlet extends ComponentEx<IProps, {}> {
+class TodoDashlet extends ComponentEx<IProps, {}> {
   constructor(inProps: IProps) {
     super(inProps);
   }
@@ -62,40 +129,18 @@ class Dashlet extends ComponentEx<IProps, {}> {
     visibleSteps.sort((lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100));
 
     return (
-      <div
-        className='dashlet dashlet-todo'
-        style={{ display: 'flex', flexDirection: 'column' }}
-      >
-        <h4>{t('Tasks / Suggestions')}</h4>
-        <div style={{ overflowY: 'auto' }}>
-          <ListGroup style={{ marginBottom: 0 }}>
-            {
-              visibleSteps.map(step => {
-                const props = extensionProps[step.id];
-
-                return (
-                  <ListGroupItem key={step.id} className={`todo-${step.type}`}>
-                    <Icon
-                      className={`icon-todo-type icon-todo-${step.type}`}
-                      name={this.typeToIcon(step.type)}
-                    />
-                    {step.render(t, props)}
-                    {this.renderButton(step.id, step.button)}
-                    <IconButton
-                      id={`btn-dismiss-${step.id}`}
-                      icon='remove'
-                      tooltip={t('Dismiss')}
-                      className='btn-embed'
-                      value={step.id}
-                      onClick={this.dismiss}
-                    />
-                  </ListGroupItem>
-                );
-              })
-            }
-          </ListGroup>
+      <Dashlet title={t('Do you have a second?')} className='dashlet-todo'>
+        <div style={{ overflowY: 'hidden', overflowX: 'auto', display: 'flex' }}>
+          {visibleSteps.map(todo =>
+            <Todo
+              t={t}
+              key={todo.id}
+              todo={todo}
+              extensionProps={extensionProps[todo.id]}
+              dismiss={this.dismiss}
+            />)}
         </div>
-      </div>
+      </Dashlet>
     );
   }
 
@@ -122,18 +167,8 @@ class Dashlet extends ComponentEx<IProps, {}> {
     );
   }
 
-  private typeToIcon(type: ToDoType): string {
-    return {
-      'settings-review': 'sliders',
-      settings: 'sliders',
-      automation: 'wand',
-      search: 'search',
-    }[type];
-  }
-
-  private dismiss = (evt: React.MouseEvent<any>) => {
-    const stepId = evt.currentTarget.value;
-    this.props.onDismissStep(stepId);
+  private dismiss = (id: string) => {
+    this.props.onDismissStep(id);
   }
 }
 
@@ -158,4 +193,4 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default translate(['common'], { wait: true })(
   connect(mapStateToProps, mapDispatchToProps)(
-    Dashlet)) as React.ComponentClass<IBaseProps>;
+    TodoDashlet)) as React.ComponentClass<IBaseProps>;

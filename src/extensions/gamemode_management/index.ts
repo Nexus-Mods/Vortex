@@ -31,10 +31,11 @@ import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IModType } from './types/IModType';
 import queryGameInfo from './util/queryGameInfo';
-import Dashlet from './views/Dashlet';
 import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
+import NoGameDashlet from './views/NoGameDashlet';
 import ProgressFooter from './views/ProgressFooter';
+import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 import {} from './views/Settings';
 
 import GameModeManager from './GameModeManager';
@@ -401,8 +402,11 @@ function init(context: IExtensionContext): boolean {
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
-  context.registerDashlet('Game Picker', 2, 3, 0, Dashlet, () =>
+  context.registerDashlet('Game Picker', 2, 3, 0, NoGameDashlet, () =>
     activeGameId(context.api.store.getState()) === undefined);
+
+  context.registerDashlet('Recently Managed', 2, 2, 175, RecentlyManagedDashlet, () =>
+    activeGameId(context.api.store.getState()) !== undefined);
 
   context.once(() => {
     const store: Redux.Store<IState> = context.api.store;

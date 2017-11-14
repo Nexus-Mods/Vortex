@@ -1,6 +1,10 @@
 ////////////////////////
 // generic control rules
 
+a {
+  color: $brand-clickable;
+}
+
 // button groups
 /*
 .btn-group {
@@ -444,6 +448,10 @@ a[role=menuitem] svg {
     background-color: transparent;
     color: $brand-clickable;
   }
+}
+
+h1, h2, h3 {
+  font-family: 'BebasNeue';
 }
 
 // /generic control rules

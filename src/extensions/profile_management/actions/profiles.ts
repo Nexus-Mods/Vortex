@@ -21,3 +21,5 @@ export const forgetMod = safeCreateAction(
 export const setFeature = safeCreateAction(
   'SET_PROFILE_FEATURE',
   (profileId: string, featureId: string, value: any) => ({profileId, featureId, value}));
+
+export const setProfileActivated = safeCreateAction('SET_PROFILE_ACTIVATED');

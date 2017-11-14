@@ -46,7 +46,7 @@ class PackeryItem extends React.Component<IProps, {}> {
       >
         {this.props.children}
         <div className='packery-buttons'>
-          {!fixed ? <Icon name='expand' className='drag-handle' /> : null}
+          {!fixed ? <Icon name='zoom' className='drag-handle' /> : null}
           {closable ? (
             <Button
               className='btn-embed'

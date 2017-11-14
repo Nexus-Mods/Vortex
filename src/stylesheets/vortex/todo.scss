@@ -1,9 +1,45 @@
-.icon-todo-settings-review,
-.icon-todo-automation {
+.todo-search {
   background-color: $brand-success !important;
 }
 
-.icon-todo-settings,
-.icon-todo-search {
+.todo-settings {
   background-color: $brand-info !important;
+}
+
+.todo-more {
+  background-color: $brand-secondary !important;
+}
+
+.todo {
+  display: flex;
+  flex-direction: column;
+  width: 140px;
+  height: 105px;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin: 0 0.75em;
+
+  > svg {
+    width: 2.5em;
+    height: 2.5em;
+    margin-bottom: 0.5em;
+  }
+
+  .todo-text {
+    font-size: larger;
+    text-align: center;
+  }
+
+  .icon-todo-type {
+    width: 2em;
+    height: 2em;
+  }
+
+  .btn-dismiss {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 0;
+  }
 }

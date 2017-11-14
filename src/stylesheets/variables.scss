@@ -73,7 +73,7 @@ $headings-color:          inherit;
 
 
 //== Base Spacing
-$gutter-width:              40px;
+$gutter-width:              32px;
 
 $padding-base-vertical:     0.4em;
 $padding-base-horizontal:   0.8em;
@@ -101,7 +101,7 @@ $caret-width-large:         8px;
 $expand-sidebar-delay: 300ms;
 
 //== Scrollbar
-$scrollbar-width:        0.75em;
+$scrollbar-width:        8px;
 
 // TODO: for reasons I don't fully understand, the support for touch actions
 // impacts scroll performance quite considerably, even when using the mouse.

@@ -21,7 +21,7 @@ type IProps = IConnectedProps & IActionProps;
 class DashboardBanner extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { userInfo } = this.props;
-    if (userInfo !== undefined) {
+    if ((userInfo !== undefined) && (userInfo !== null)) {
       return this.renderLoggedIn(userInfo);
     } else {
       return this.renderRegister();

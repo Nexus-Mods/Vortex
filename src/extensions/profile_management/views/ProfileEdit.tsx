@@ -39,6 +39,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           gameId: props.gameId,
           modState: {},
           name: '',
+          lastActivated: 0,
         } };
   }
 
