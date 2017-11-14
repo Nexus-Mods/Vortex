@@ -25,6 +25,7 @@ import * as Promise from 'bluebird';
 import {app, BrowserWindow, ipcMain} from 'electron';
 import * as origFS from 'fs';
 import * as fs from 'fs-extra-promise';
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as uuidT from 'uuid';
@@ -136,23 +137,28 @@ class Application {
       app.quit();
       return;
     }
-    const levelup = require('levelup');
+
     const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, 'state');
-    const db = levelup(dbpath);
+    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = getPath.split('.');
 
-    db.get('global_' + pathArray[0], (err, value) => {
-      if (err) {
-        process.stderr.write(err + '\n');
-      } else {
-        const { inspect } = require('util');
-        const { getSafe } = require('../util/storeHelper');
-        process.stdout.write(
-          inspect(getSafe(JSON.parse(value), pathArray.slice(1), '<invalid>')) + '\n');
-      }
-      app.quit();
-    });
+    let persist: LevelPersist;
+
+    return LevelPersist.create(dbpath)
+      .then(persistIn => {
+        persist = persistIn;
+        return persist.getAllKeys();
+      })
+      .then(keys => {
+        const matches = keys
+          .filter(key => _.isEqual(key.slice(0, pathArray.length), pathArray));
+        return Promise.map(matches, match => persist.getItem(match)
+          .then(value => `${match.join('.')} = ${value}`));
+      }).then(output => { process.stdout.write(output.join('\n') + '\n'); })
+      .catch(err => { process.stderr.write(err.message + '\n'); })
+      .finally(() => {
+        app.quit();
+      });
   }
 
   private handleSet(setParameters: string[]): Promise<void> {
@@ -162,38 +168,29 @@ class Application {
       return;
     }
 
-    const levelup = require('levelup');
     const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, 'state');
-    const db = levelup(dbpath);
+    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = setParameters[0].split('.');
 
-    db.get('global_' + pathArray[0], (err, value) => {
-      if (err) {
-        process.stderr.write(err);
-        app.quit();
-      } else {
-        const { getSafe, setSafe } = require('../util/storeHelper');
-        const data = JSON.parse(value);
-        const oldValue = getSafe(data, pathArray.slice(1), undefined);
+    let persist: LevelPersist;
+
+    return LevelPersist.create(dbpath)
+      .then(persistIn => {
+        persist = persistIn;
+        return persist.getItem(pathArray);
+      })
+      .then(oldValue => {
         const newValue = setParameters[1].length === 0
           ? undefined
           : (oldValue === undefined) || (typeof(oldValue) === 'object')
             ? JSON.parse(setParameters[1])
             : oldValue.constructor(setParameters[1]);
-        if (oldValue !== undefined) {
-          const newData = setSafe(data, pathArray.slice(1), newValue);
-          db.put('global_' + pathArray[0], JSON.stringify(newData), (setErr) => {
-            if (setErr) {
-              process.stderr.write(setErr);
-            }
-            app.quit();
-          });
-        } else {
-          app.quit();
-        }
-      }
-    });
+        return persist.setItem(pathArray, newValue);
+      }).then(() => { process.stdout.write('changed\n'); })
+      .catch(err => { process.stderr.write(err.message + '\n'); })
+      .finally(() => {
+        app.quit();
+      });
   }
 
   private createTray(): Promise<void> {

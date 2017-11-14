@@ -292,8 +292,11 @@ class InstallManager {
           ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
           : Promise.resolve();
 
-        prom = prom.then(() =>
-          installContext.finishInstallCB(canceled ? 'canceled' : 'failed'));
+        if (installContext !== undefined) {
+          // context doesn't have to be set if we canceled early
+          prom = prom.then(() => installContext.finishInstallCB(
+                               canceled ? 'canceled' : 'failed'));
+        }
 
         if (err === undefined) {
           return prom.then(() => {
