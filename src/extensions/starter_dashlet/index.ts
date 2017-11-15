@@ -6,7 +6,7 @@ import Starter from './Starter';
 
 function init(context: IExtensionContext): boolean {
   context.registerDashlet('Starter', 2, 2, 100, Starter,
-    (state: any) => activeGameId(state) !== undefined);
+    (state: any) => activeGameId(state) !== undefined, undefined, undefined);
 
   context.registerReducer(['settings', 'interface'], settingsReducer);
 

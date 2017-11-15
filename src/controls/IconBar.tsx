@@ -166,8 +166,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           style={style}
         >
           {moreButton}
-          {unCollapsed.sort(iconSort).map((icon, idx) => (
-            <div key={idx}>{this.renderIcon(icon, idx)}</div>))}
+          {unCollapsed.sort(iconSort).map((iter, idx) => (
+            <div key={idx}>{this.renderIcon(iter, idx)}</div>))}
         </ButtonGroup>
       );
     } else {

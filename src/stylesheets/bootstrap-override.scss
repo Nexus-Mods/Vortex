@@ -79,9 +79,6 @@ a[role=menuitem] svg {
 .tab-pane>div>.panel {
   border-width: 0px;
   background-color: $brand-menu;
-  &:last-child {
-    margin-bottom: 0px;
-  }
 }
 
 .radio, .checkbox {

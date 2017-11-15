@@ -6,7 +6,7 @@
 }
 
 .dynamic-dashlets {
-  padding: $gutter-width;
+  padding: $half-gutter $gutter-width;
   width: 100%;
   height: 100%;
   overflow-y: auto;

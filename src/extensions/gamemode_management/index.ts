@@ -403,10 +403,10 @@ function init(context: IExtensionContext): boolean {
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
   context.registerDashlet('Game Picker', 2, 3, 0, NoGameDashlet, () =>
-    activeGameId(context.api.store.getState()) === undefined);
+    activeGameId(context.api.store.getState()) === undefined, undefined, undefined);
 
   context.registerDashlet('Recently Managed', 2, 2, 175, RecentlyManagedDashlet, () =>
-    activeGameId(context.api.store.getState()) !== undefined);
+    activeGameId(context.api.store.getState()) !== undefined, undefined, undefined);
 
   context.once(() => {
     const store: Redux.Store<IState> = context.api.store;

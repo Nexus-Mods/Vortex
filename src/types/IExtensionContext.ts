@@ -81,8 +81,8 @@ export interface IDashletOptions {
 
 export type RegisterDashlet =
   (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5, position: number,
-   component: React.ComponentClass<any>, isVisible?: (state) => boolean,
-   props?: PropsCallback, options?: IDashletOptions) => void;
+   component: React.ComponentClass<any>, isVisible: (state) => boolean,
+   props: PropsCallback, options: IDashletOptions) => void;
 
 export type RegisterDialog =
   (id: string,

@@ -414,7 +414,7 @@ $list-group-link-heading-color: $gray-dark;
 //== Panels
 
 $panel-bg:                    $brand-bg;
-$panel-body-padding:          $gutter-width / 2 0 $gutter-width / 2 $gutter-width / 2;
+$panel-body-padding:          $gutter-width / 2;
 $panel-heading-padding:       $gutter-width / 3 $gutter-width / 2;
 $panel-footer-padding:        $panel-heading-padding;
 $panel-border-radius:         $border-radius-base;
@@ -535,7 +535,7 @@ $blockquote-border-color:     $gray-lighter;
 $page-header-border-color:    transparent;
 $dl-horizontal-offset:        $component-offset-horizontal;
 $dl-horizontal-breakpoint:    $grid-float-breakpoint;
-$hr-border:                   $gray-lighter;
+$hr-border:                   $gray-dark;
 
 $half-gutter: floor($gutter-width / 2);
 $slim-gutter: floor($gutter-width / 4);

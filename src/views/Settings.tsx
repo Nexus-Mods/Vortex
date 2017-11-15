@@ -83,7 +83,12 @@ class Settings extends ComponentEx<IProps, {}> {
 
   private renderTabElement = (page: ISettingsPage, idx: number): JSX.Element => {
     const props = page.props !== undefined ? page.props() : {};
-    return <Panel key={idx}><page.component {...props} /></Panel>;
+    return (
+      <Panel key={idx}>
+        {idx !== 0 ? <hr style={{ marginTop: 0 }} /> : null}
+        <page.component {...props} />
+      </Panel>
+    );
   }
 
   private setCurrentPage = (page) => {

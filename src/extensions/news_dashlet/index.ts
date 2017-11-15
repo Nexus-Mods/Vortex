@@ -10,18 +10,19 @@ function init(context: IExtensionContext): boolean {
     title: context.api.translate('News'),
     url: 'http://www.nexusmods.com/games/rss/news/',
     maxLength: 400,
-  }));
+  }), undefined);
 
-  context.registerDashlet('New Files', 1, 3, 360, RSSDashlet,
-    state => activeGameId(state) !== undefined,
-    () => {
-      const gameId = convertGameId(activeGameId(context.api.store.getState()));
-      return {
-        title: context.api.translate('New Files'),
-        url: `http://www.nexusmods.com/${gameId}/rss/newtoday/`,
-        maxLength: 400,
-      };
-  });
+  context.registerDashlet(
+      'New Files', 1, 3, 360, RSSDashlet,
+      state => activeGameId(state) !== undefined, () => {
+        const gameId =
+            convertGameId(activeGameId(context.api.store.getState()));
+        return {
+          title: context.api.translate('New Files'),
+          url: `http://www.nexusmods.com/${gameId}/rss/newtoday/`,
+          maxLength: 400,
+        };
+      }, undefined);
 
   return true;
 }

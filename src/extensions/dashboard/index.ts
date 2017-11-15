@@ -1,7 +1,25 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { IDashletOptions, IExtensionContext, PropsCallback } from '../../types/IExtensionContext';
+
+import { IDashletProps } from './types/IDashletProps';
 import Dashboard from './views/Dashboard';
+import Settings from './views/Settings';
 
 import settingsReducer from './reducer';
+
+const dashlets: IDashletProps[] = [];
+
+function registerDashlet(title: string,
+                         width: 1 | 2 | 3,
+                         height: 1 | 2 | 3,
+                         position: number,
+                         component: React.ComponentClass<any>,
+                         isVisible?: (state) => boolean,
+                         props?: PropsCallback,
+                         options?: IDashletOptions) {
+  const fixed = options !== undefined ? options.fixed || false : false;
+  const closable = options !== undefined ? options.closable !== false : true;
+  dashlets.push({ title, position, width, height, component, isVisible, props, fixed, closable });
+}
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'interface'], settingsReducer);
@@ -9,7 +27,12 @@ function init(context: IExtensionContext): boolean {
     priority: 0,
     hotkey: '1',
     group: 'dashboard',
+    props: () => ({ dashlets }),
   });
+
+  context.registerSettings('Interface', Settings, () => ({ dashlets }));
+
+  context.registerDashlet = registerDashlet;
 
   return true;
 }

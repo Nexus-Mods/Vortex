@@ -708,7 +708,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
 
-  context.registerDashlet('Register or Login', 3, 1, 0, DashboardBanner, undefined, undefined, {
+  context.registerDashlet('Nexus Account', 3, 1, 0, DashboardBanner, undefined, undefined, {
     fixed: true,
     closable: false,
   });

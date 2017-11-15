@@ -1,10 +1,9 @@
-import {PropsCallback, IDashletOptions} from '../../../types/IExtensionContext';
-import { IState } from '../../../types/IState';
+import { IDashletSettings, IState } from '../../../types/IState';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
 import MainPage from '../../../views/MainPage';
 
-import { setLayout } from '../actions';
+import { setDashletEnabled, setLayout } from '../actions';
 
 import PackeryGrid from './PackeryGrid';
 import PackeryItem from './PackeryItem';
@@ -13,34 +12,27 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
+import { getSafe } from '../../../util/storeHelper';
+import { IDashletProps } from '../types/IDashletProps';
 
 const UPDATE_FREQUENCY_MS = 1000;
 
-interface IDashletProps {
-  title: string;
-  width: 1 | 2 | 3;
-  height: 1 | 2 | 3;
-  position: number;
-  component: React.ComponentClass<any>;
-  props?: PropsCallback;
-  isVisible?: (state: any) => boolean;
-  fixed: boolean;
-  closable: boolean;
+interface IBaseProps {
+  active: boolean;
+  dashlets: IDashletProps[];
 }
 
 interface IConnectedProps {
   layout: string[];
+  dashletSettings: { [dashletId: string]: IDashletSettings };
 }
 
 interface IActionProps {
   onSetLayout: (items: string[]) => void;
+  onSetDashletEnabled: (dashletId: string, enabled: boolean) => void;
 }
 
-interface IExtensionProps {
-  objects: IDashletProps[];
-}
-
-type IProps = { active: boolean } & IConnectedProps & IActionProps & IExtensionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface IRenderedDash {
   props: IDashletProps;
@@ -93,7 +85,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { objects, layout } = this.props;
+    const { dashletSettings, layout, dashlets } = this.props;
 
     const state = this.context.api.store.getState();
 
@@ -102,8 +94,10 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       layout.forEach((item: string, idx: number) => layoutMap[item] = idx + 1000);
     }
 
-    const sorted = objects
-      .filter((dash: IDashletProps) => (dash.isVisible === undefined) || dash.isVisible(state))
+    const sorted = dashlets
+      .filter((dash: IDashletProps) =>
+        ((dash.isVisible === undefined) || dash.isVisible(state))
+        && getSafe(dashletSettings, [dash.title, 'enabled'], true))
       .sort((lhs: IDashletProps, rhs: IDashletProps) =>
         (layoutMap[lhs.title] || lhs.position) - (layoutMap[rhs.title] || rhs.position))
       ;
@@ -162,42 +156,34 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         key={dash.title}
         width={dash.width}
         height={dash.height}
-        closable={dash.closable}
+        onDismiss={dash.closable ? this.dismissDashlet : undefined}
         fixed={dash.fixed}
       >
         <dash.component t={this.props.t} {...componentProps} counter={counter} />
       </PackeryItem>
     );
   }
-}
 
-function registerDashlet(instanceProps: IProps,
-                         title: string,
-                         width: 1 | 2 | 3,
-                         height: 1 | 2 | 3,
-                         position: number,
-                         component: React.ComponentClass<any>,
-                         isVisible?: (state) => boolean,
-                         props?: PropsCallback,
-                         options?: IDashletOptions): IDashletProps {
-  const fixed = options !== undefined ? options.fixed || false : false;
-  const closable = options !== undefined ? options.closable !== false : true;
-  return { title, position, width, height, component, isVisible, props, fixed, closable };
+  private dismissDashlet = (dashletId: string) => {
+    this.props.onSetDashletEnabled(dashletId, false);
+  }
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     layout: state.settings.interface.dashboardLayout,
+    dashletSettings: state.settings.interface.dashletSettings,
   };
 }
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetLayout: (items: string[]) => dispatch(setLayout(items)),
+    onSetDashletEnabled: (dashletId: string, enabled: boolean) =>
+      dispatch(setDashletEnabled(dashletId, enabled)),
   };
 }
 
 export default translate([ 'common' ], { wait: true })(
-  extend(registerDashlet)(
     connect(mapStateToProps, mapDispatchToProps)(
-      Dashboard))) as React.ComponentClass<{}>;
+      Dashboard)) as React.ComponentClass<{}>;

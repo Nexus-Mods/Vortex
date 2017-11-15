@@ -133,11 +133,16 @@ export interface IStateDownloads {
   files: { [id: string]: IDownload };
 }
 
+export interface IDashletSettings {
+  enabled: boolean;
+}
+
 export interface ISettingsInterface {
   language: string;
   advanced: boolean;
   profilesVisible: boolean;
   dashboardLayout: string[];
+  dashletSettings: { [dashletId: string]: IDashletSettings };
 }
 
 export interface ISettingsProfiles {

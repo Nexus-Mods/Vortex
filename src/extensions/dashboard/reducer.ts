@@ -10,9 +10,12 @@ const settingsReducer: IReducerSpec = {
   reducers: {
     [actions.setLayout as any]:
       (state, payload) => setSafe(state, ['dashboardLayout'], payload),
+    [actions.setDashletEnabled as any]: (state, payload) =>
+      setSafe(state, ['dashletSettings', payload.widgetId, 'enabled'], payload.enabled),
   },
   defaults: {
     dashboardLayout: ['Starter'],
+    dashletSettings: {},
   },
 };
 

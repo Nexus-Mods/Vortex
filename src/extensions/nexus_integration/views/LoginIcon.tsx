@@ -93,7 +93,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
   private showLoginLayer = () => {
     const { userInfo } = this.props;
-    if (userInfo === undefined) {
+    if ((userInfo === undefined) || (userInfo === null)) {
       this.setDialogVisible(true);
     } else {
       opn(`https://rd.nexusmods.com/users/${userInfo.userId}`);

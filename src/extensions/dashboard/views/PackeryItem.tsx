@@ -13,7 +13,7 @@ export interface IProps {
   totalWidth?: number;
   packery?: any;
   fixed: boolean;
-  closable: boolean;
+  onDismiss?: (id: string) => void;
 }
 
 class PackeryItem extends React.Component<IProps, {}> {
@@ -26,7 +26,7 @@ class PackeryItem extends React.Component<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { closable, fixed, height, id, totalWidth, width } = this.props;
+    const { onDismiss, fixed, height, id, totalWidth, width } = this.props;
     const widthPerc = Math.floor((width / totalWidth) * 100);
 
     const classes = [
@@ -47,7 +47,7 @@ class PackeryItem extends React.Component<IProps, {}> {
         {this.props.children}
         <div className='packery-buttons'>
           {!fixed ? <Icon name='zoom' className='drag-handle' /> : null}
-          {closable ? (
+          {(onDismiss !== undefined) ? (
             <Button
               className='btn-embed'
               onClick={this.dismissWidget}
@@ -60,7 +60,7 @@ class PackeryItem extends React.Component<IProps, {}> {
   }
 
   private dismissWidget = () => {
-    return undefined;
+    return this.props.onDismiss(this.props.id);
   }
 
   private setRef = (ref) => {
