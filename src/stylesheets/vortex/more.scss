@@ -1,9 +1,18 @@
 // a little question-mark button that reveals a lenghtier explanation
 // to the context
 .more-link {
-  color: $link-color;
-  &:hover {
-    color: $link-hover-color;
+  margin: 0px 4px;
+  display: inline;
+  vertical-align: text-bottom;
+
+  .btn {
+    @extend .btn-embed;
+    color: currentColor;
+  }
+
+  svg {
+    width: 1em;
+    height: 1em;
   }
 }
 

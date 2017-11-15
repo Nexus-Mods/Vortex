@@ -123,13 +123,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return (
       <form>
         <FormControl.Static componentClass='h4'>{label}</FormControl.Static>
-        <ControlLabel>
-          {t('Paths')}
-          <More id='more-paths' name={t('Paths')} >
-            {getText('paths', t)}
-          </More>
-        </ControlLabel>
         <Panel footer={this.renderFooter()}>
+          <ControlLabel>
+            {t('Paths')}
+            <More id='more-paths' name={t('Paths')} >
+              {getText('paths', t)}
+            </More>
+          </ControlLabel>
           {this.renderPathCtrl(paths, t('Base Path'), 'base')}
           {this.renderPathCtrl(paths, t('Download Path'), 'download')}
           {this.renderPathCtrl(paths, t('Install Path'), 'install')}
@@ -142,13 +142,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             </Modal.Body>
           </Modal>
         </Panel>
-        <ControlLabel>
-          {t('Deployment Method')}
-          <More id='more-deploy' name={t('Deployment')} >
-            {getText('deployment', t)}
-          </More>
-        </ControlLabel>
-        {this.renderActivators(supportedActivators, currentActivator)}
+        <Panel>
+          <ControlLabel>
+            {t('Deployment Method')}
+            <More id='more-deploy' name={t('Deployment')} >
+              {getText('deployment', t)}
+            </More>
+          </ControlLabel>
+          {this.renderActivators(supportedActivators, currentActivator)}
+        </Panel>
       </form>
     );
   }
@@ -344,9 +346,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             placeholder={label}
             onChange={this.mPathChangeCBs[pathKey]}
           />
-          <InputGroup.Button>
+          <InputGroup.Button className='inset-btn'>
             <Button
-              id='move-base-path'
               tooltip={t('Browse')}
               onClick={this.mBrowseCBs[pathKey]}
             >

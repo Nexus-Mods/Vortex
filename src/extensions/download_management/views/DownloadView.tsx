@@ -350,6 +350,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                       accept={['urls', 'files']}
                       drop={this.dropDownload}
                       dialogHint={t('Enter download URL')}
+                      icon='folder-download'
                     />
                   ) : null
               }

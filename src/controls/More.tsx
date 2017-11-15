@@ -1,5 +1,6 @@
 import Icon from './Icon';
 import Overlay from './Overlay';
+import { IconButton } from './TooltipControls';
 
 import * as React from 'react';
 import {Popover} from 'react-bootstrap';
@@ -66,9 +67,9 @@ class More extends React.Component<IProps, IComponentState> {
         >
           {popover}
         </Overlay>
-        <sup className='more-link' ref={this.setRef}>
-          <a onClick={this.toggle}>?</a>
-        </sup>
+        <div className='more-link' ref={this.setRef}>
+          <IconButton tooltip='' onClick={this.toggle} icon='alert-circle-i' />
+        </div>
       </div>
     );
   }

@@ -70,17 +70,6 @@ a[role=menuitem] svg {
   text-transform: uppercase;
 }
 
-.tab-pane>div {
-  border: $border-width solid $nav-tabs-border-color;
-  border-top-width: 0px;
-  background-color: $brand-menu;
-}
-
-.tab-pane>div>.panel {
-  border-width: 0px;
-  background-color: $brand-menu;
-}
-
 .radio, .checkbox {
   margin-top: 0px;
   margin-bottom: 0px;
@@ -175,7 +164,7 @@ textarea {
 }
 
 .form-control, input {
-  border-width: $border-width;
+  // border-width: $border-width;
   @include box-shadow(none);
 
   &:focus {
