@@ -76,7 +76,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
           source={ownLicenseText}
         />
       ) : (
-        <div className='third-party-box'><p><h4>{t('Third-party libraries')}</h4></p>
+        <div className='third-party-box'><div><h4>{t('Third-party libraries')}</h4></div>
         <div className='about-panel'>
           {moduleList.map(this.renderModule)}
         </div>

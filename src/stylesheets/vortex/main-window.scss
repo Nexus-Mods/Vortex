@@ -16,9 +16,19 @@
   }
 }
 
+.window-frame {
+  border: 1px solid $gray;
+}
+
+// when the window titlebar is disabled, make the main toolbar region
+// the area where the user can drag the window around
+.toolbar-app-region {
+  height: 104px;
+  -webkit-app-region: drag;
+}
+
 .application-icons,
 .global-icons {
-  height: 100%;
   margin-left: $half-gutter;
   margin-top: auto;
   margin-bottom: auto;
@@ -215,8 +225,8 @@
 
 .main-page-inner {
   position: absolute;
-  top: $gutter-width;
-  bottom: $gutter-width;
+  top: $half-gutter;
+  bottom: $half-gutter;
   left: $gutter-width;
   right: $gutter-width;
 }
@@ -229,12 +239,9 @@
 #login-control {
   height: 100%;
   display: inline-flex;
+  align-items: center;
 
-  .username {
-    margin-top: 10px;
-  }
   .logout-button {
-    margin-top: -0.5em;
     text-align: right;
   }
   .logout-button a {

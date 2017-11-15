@@ -20,6 +20,7 @@ import MainPageContainer from './MainPageContainer';
 import NotificationButton from './NotificationButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
+import WindowControls from './WindowControls';
 
 import * as I18next from 'i18next';
 import * as update from 'immutability-helper';
@@ -116,6 +117,7 @@ export interface IConnectedProps {
   activeProfileId: string;
   nextProfileId: string;
   progressProfile: { [progressId: string]: IProgress };
+  customTitlebar: boolean;
 }
 
 export interface IActionProps {
@@ -222,15 +224,24 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public render(): JSX.Element {
-    const { activeProfileId, onHideDialog, nextProfileId, visibleDialog } = this.props;
+    const { activeProfileId, customTitlebar, onHideDialog,
+            nextProfileId, visibleDialog } = this.props;
     const { hidpi } = this.state;
 
     if ((activeProfileId !== nextProfileId) && truthy(nextProfileId)) {
       return this.renderWait();
     }
 
+    const classes = [];
+    classes.push(hidpi ? 'hidpi' : 'lodpi');
+    if (customTitlebar) {
+      // a border around the window if the standard os frame is disabled.
+      // this is important to indicate to the user he can resize the window
+      // (even though it's not actually this frame that lets him do it)
+      classes.push('window-frame');
+    }
     return (
-      <div className={hidpi ? 'hidpi' : 'lodpi'}>
+      <div className={classes.join(' ')}>
         <div className='menu-layer' ref={this.setMenuLayer} />
         <FlexLayout type='column'>
           {this.renderToolbar()}
@@ -238,6 +249,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         </FlexLayout>
         <Dialog />
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
+        {customTitlebar ? <WindowControls /> : null}
       </div>
     );
   }
@@ -263,9 +275,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderToolbar() {
-    const { t } = this.props;
+    const { t, customTitlebar } = this.props;
+    const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
     return (
-      <FlexLayout.Fixed id='main-toolbar'>
+      <FlexLayout.Fixed id='main-toolbar' className={className}>
         <QuickLauncher t={t} />
         <div className='flex-fill' />
         <NotificationButton id='notification-button' />
@@ -343,6 +356,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const pages = objects.filter(page => page.group === key);
     if (key === 'global') {
       pages.push(this.settingsPage);
+    }
+
+    if (pages.length === 0) {
+      return null;
     }
 
     const showTitle = !tabsMinimized && (title !== undefined);
@@ -503,6 +520,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     activeProfileId: state.settings.profiles.activeProfileId,
     nextProfileId: state.settings.profiles.nextProfileId,
     progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
+    customTitlebar: state.settings.window.customTitlebar,
   };
 }
 

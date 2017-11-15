@@ -92,8 +92,8 @@ $cursor-disabled:                not-allowed;
 
 
 //== Dropdowns
-$dropdown-bg:                    $brand-secondary;
-$dropdown-border:                rgba(0,0,0,.15);
+$dropdown-bg:                    $brand-bg;
+$dropdown-border:                $border-color;
 $dropdown-fallback-border:       $gray-light;
 $dropdown-divider-bg:            $gray-lighter;
 

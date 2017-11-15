@@ -207,7 +207,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
                 onChange={this.onChangeFontFamily}
                 value={fontFamily}
               >
-              { availableFonts.map(this.renderFontOption) }
+              {availableFonts.map(this.renderFontOption)}
               </FormControl>
             </Col>
           </FormGroup>
@@ -243,7 +243,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
   private renderEntry = (entry: IColorEntry, value: string) => {
     return (
       <Col key={entry.name} sm={4} md={4} lg={4} style={{ display: 'inline-flex' }}>
-        <span style={{ marginRight: 'auto' }}>{ entry.name }</span>
+        <span style={{ marginRight: 'auto' }}>{entry.name}</span>
         <ColorPreview
           name={entry.name}
           color={colorFromHex(value || entry.value)}

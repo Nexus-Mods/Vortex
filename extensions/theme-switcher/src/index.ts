@@ -32,7 +32,7 @@ function applyTheme(api: types.IExtensionApi, theme: string) {
 }
 
 function init(context: types.IExtensionContext) {
-  context.registerSettings('Interface', SettingsTheme);
+  context.registerSettings('Theme', SettingsTheme);
   context.registerReducer(['settings', 'interface'], settingsReducer);
 
   context.once(() => {

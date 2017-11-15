@@ -1,40 +1,6 @@
 ////////////////////////
 // generic control rules
 
-a {
-  color: $brand-clickable;
-}
-
-// button groups
-/*
-.btn-group {
-  position: static;
-  // inside tables we can't use "relative" because then the dropdown overlays the header.
-  // This rule makes the dropdown relative only when it's open. This way it will still overlay
-  // the header but only if the user interacts with it. This still looks slightly broken but it's
-  // actually useful.
-  &.dropdown.open,
-  &.dropup.open {
-    position: relative;
-  }
-
-  .btn {
-    vertical-align: text-bottom;
-  }
-}
-*/
-
-.btn-group-vertical {
-  display: flex;
-  flex-direction: column;
-}
-
-.btn-group > .btn,
-.btn-group-vertical > .btn {
-  position: initial;
-  display: inline-block;
-}
-
 // buttons
 .btn-embed {
   padding: 0px;
@@ -43,15 +9,16 @@ a {
   background-color: transparent;
   &:hover {
     color: $link-hover-color;
-    background-color: initial;
+    background-color: initial !important;
   }
   &:active {
     color: $link-hover-color;
-    background-color: initial;
+    background-color: initial !important;
   }
   &:focus {
     color: $link-hover-color;
-    background-color: initial;
+    background-color: initial !important;
+    outline-width: 0;
   }
 }
 
@@ -109,110 +76,13 @@ a {
 }
 
 // forms
-.form-control, input {
-  border-width: 2px;
-  @include box-shadow(none);
-
-  &:focus {
-    @include box-shadow(none);
-  }
-}
-
-.form-horizontal .has-feedback label ~ .form-control-feedback {
-  top: 0px;
-}
-
 .form-field-compact {
   padding: 2px;
   height: 24px;
 }
 
-textarea {
-  background-color: $brand-bg;
-}
-
 .form-control-feedback {
   z-index: 4;
-}
-
-.has-warning {
-  .help-block,
-  .control-label,
-  .radio,
-  .checkbox,
-  .radio-inline,
-  .checkbox-inline,
-  &.radio label,
-  &.checkbox label,
-  &.radio-inline label,
-  &.checkbox-inline label,
-  .form-control-feedback {
-    color: $brand-warning;
-  }
-
-  .form-control,
-  .form-control:focus {
-    border: 2px solid $brand-warning;
-  }
-
-  .input-group-addon {
-    border-color: $brand-warning;
-  }
-}
-
-.has-error {
-  .help-block,
-  .control-label,
-  .radio,
-  .checkbox,
-  .radio-inline,
-  .checkbox-inline,
-  &.radio label,
-  &.checkbox label,
-  &.radio-inline label,
-  &.checkbox-inline label,
-  .form-control-feedback {
-    color: $brand-danger;
-  }
-
-  .form-control,
-  .form-control:focus {
-    border: 2px solid $brand-danger;
-  }
-
-  .input-group-addon {
-    border-color: $brand-danger;
-  }
-}
-
-.has-success {
-  .help-block,
-  .control-label,
-  .radio,
-  .checkbox,
-  .radio-inline,
-  .checkbox-inline,
-  &.radio label,
-  &.checkbox label,
-  &.radio-inline label,
-  &.checkbox-inline label,
-  .form-control-feedback {
-    color: $brand-success;
-  }
-
-  .form-control,
-  .form-control:focus {
-    border: 2px solid $brand-success;
-  }
-
-  .input-group-addon {
-    border-color: $brand-success;
-  }
-}
-
-.input-group-btn > .btn {
-  border: 0px;
-  padding-bottom: 4px;
 }
 
 .inline-form {
@@ -239,11 +109,6 @@ textarea {
   &:hover {
     color: currentColor;
   }
-}
-
-.radio, .checkbox {
-  margin-top: 0px;
-  margin-bottom: 0px;
 }
 
 .button-group {
@@ -291,52 +156,6 @@ div:hover > .hover-expand {
   display: block;
 }
 
-.select-compact {
-  padding: 0px;
-  height: auto;
-  font-weight: normal;
-
-  .Select-value {
-    margin: 0px;
-    padding: 0px;
-    white-space: nowrap;
-  }
-  .Select-value-icon {
-    padding: 0px 7px;
-  }
-  .Select-control {
-    height: 20px;
-  }
-  .Select-input {
-    margin-top: 0.2em;
-    input {
-      line-height: initial;
-    }
-  }
-  .Select-placeholder {
-    font-weight: normal;
-    padding-top: 0.2em;
-  }
-  .Select--multi {
-    padding: 0px 5px;
-  }
-  .Select.arrow-zone {
-    font-size: 11px;
-  }
-  .Select-menu-outer {
-    margin-top: 0px;
-  }
-}
-
-a[role=menuitem] svg {
-  margin-right: 10px;
-}
-
-.media {
-  overflow: visible;
-  display: flex;
-}
-
 .button-toggle {
   width: 32px !important;
   height: 24px !important;
@@ -345,60 +164,6 @@ a[role=menuitem] svg {
   }
   &.off {
     fill: $gray;
-  }
-}
-
-// the original css to create a tab header that is open on the bottom
-// has a border around the <a>-tag that is colored on three sides and transparent
-// on the bottom. This leaves one pixels in the corners that is 50% transparent.
-//
-// This solution has the border on the <li>-tag (colored on all four sides)
-// and the <a> has only the transparent border on the bottom. It also has a negative
-// margin on the bottom so that this border overlaps the border of the <li>.
-// This way the transparent overlap is one pixel narrower than the border so the
-// pixels in the corner are colored.
-.nav-tabs>li.active {
-  border: 2px solid $nav-tabs-active-link-hover-border-color;
-  margin-right: 0px;
-  margin-top: 0px;
-}
-
-.nav-tabs>li.active>a {
-  &,
-  &:hover,
-  &:focus {
-    border-top-width: 0px;
-    border-left-width: 0px;
-    border-right-width: 0px;
-    border-bottom: 1px solid transparent;
-    margin-right: 0px;
-    margin-bottom: -2px;
-  }
-}
-
-.nav-tabs>li {
-  margin-right: 0px;
-  margin-top: 1px;
-}
-
-.nav-tabs>li>a {
-  border: 1px solid $border-color;
-  border-bottom: 0;
-  margin-right: -1px;
-  text-transform: uppercase;
-}
-
-.tab-pane>div {
-  border: $border-width solid $nav-tabs-border-color;
-  border-top-width: 0px;
-  background-color: $brand-menu;
-}
-
-.tab-pane>div>.panel {
-  border-width: 0px;
-  background-color: $brand-menu;
-  &:last-child {
-    margin-bottom: 0px;
   }
 }
 
@@ -450,10 +215,6 @@ a[role=menuitem] svg {
   }
 }
 
-h1, h2, h3 {
-  font-family: 'BebasNeue';
-}
-
 // /generic control rules
 /////////////////////////
 
@@ -500,6 +261,7 @@ h1, h2, h3 {
 // /generic control rules
 /////////////////////////
 
+@import "bootstrap-override.scss";
 @import "vortex/globals";
 
 @import "vortex/bbcode";
@@ -539,6 +301,8 @@ h1, h2, h3 {
 @import "vortex/dialog-diagnostic-files";
 @import "vortex/dialog-external-change";
 @import "vortex/dialog-fomod";
+
+@import "vortex/window-controls";
 
 ////////////////////
 // single components

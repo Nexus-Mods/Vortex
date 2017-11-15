@@ -329,6 +329,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
               staticElements={elements}
               instanceId={selected}
               collapse='force'
+              icon='cog'
             />
           ) : null
         }

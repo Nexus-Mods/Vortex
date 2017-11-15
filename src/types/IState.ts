@@ -45,6 +45,7 @@ export interface IWindow {
   position?: IPosition;
   size: IDimensions;
   tabsMinimized: boolean;
+  customTitlebar: boolean;
 }
 
 /**

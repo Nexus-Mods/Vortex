@@ -78,7 +78,7 @@ class MainWindow {
     this.mWindow.webContents.send('external-url', url);
   }
 
-  private getWindowSettings(windowMetrics: IWindow) {
+  private getWindowSettings(windowMetrics: IWindow): Electron.BrowserWindowConstructorOptions {
     const {getSafe} = require('../util/storeHelper') as typeof storeHelperT;
     const screenArea = screen.getPrimaryDisplay().workAreaSize;
     const width = Math.max(1024, getSafe(windowMetrics, ['size', 'width'],
@@ -93,6 +93,7 @@ class MainWindow {
       x: getSafe(windowMetrics, ['position', 'x'], undefined),
       y: getSafe(windowMetrics, ['position', 'y'], undefined),
       autoHideMenuBar: true,
+      frame: !getSafe(windowMetrics, ['customTitlebar'], true),
       show: false,
       title: 'Vortex',
     };

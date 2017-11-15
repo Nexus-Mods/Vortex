@@ -1,0 +1,18 @@
+#window-controls {
+  position: absolute;
+  top: 0;
+  right: 0;
+  .window-control {
+    width: 48px;
+    background-color: initial;
+    border-width: 0;
+
+    &:hover {
+      background-color: $gray;
+    }
+  }
+
+  .window-control#window-close:hover {
+    background-color: $brand-danger;
+  }
+}

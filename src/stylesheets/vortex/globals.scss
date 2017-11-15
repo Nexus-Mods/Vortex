@@ -7,6 +7,14 @@ html {
 body {
   touch-action: $touch-action;
   text-rendering: optimizeLegibility;
+
+  // in custom-titlebar-mode, the toolbar region allows dragging the
+  // main window around.
+  // This rule should ensure everything that is clickable
+  // on this region remains clickable
+  a, button, .btn {
+    -webkit-app-region: no-drag;
+  }
 }
 
 #content {

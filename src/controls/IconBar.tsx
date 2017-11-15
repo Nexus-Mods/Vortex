@@ -24,6 +24,7 @@ export interface IBaseProps {
   buttonType?: ButtonType;
   orientation?: 'horizontal' | 'vertical';
   collapse?: boolean | 'force';
+  icon?: string;
 }
 
 export interface IExtensionProps {
@@ -103,14 +104,14 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { collapse, id, instanceId, objects, orientation, className, style } = this.props;
+    const { collapse, icon, id, instanceId, objects, orientation, className, style } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
-    const icons = objects.filter(icon => {
+    const icons = objects.filter(iter => {
       // don't render anything if the condition doesn't match
       try {
-        return (icon.condition === undefined)
-            || icon.condition(instanceIds);
+        return (iter.condition === undefined)
+            || iter.condition(instanceIds);
       } catch (err) {
         return false;
       }
@@ -143,7 +144,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             className='btn-embed'
             onClick={this.toggleCollapsed}
             tooltip={''}
-            icon='dots'
+            icon={icon || 'dots'}
             rotate={90}
             rotateId={`dots-iconbar-${id}`}
             ref={this.setButtonRef}

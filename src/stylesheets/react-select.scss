@@ -20,3 +20,40 @@
 .Select-input {
   margin-top: 0;
 }
+
+.select-compact {
+  padding: 0px;
+  height: auto;
+  font-weight: normal;
+
+  .Select-value {
+    margin: 0px;
+    padding: 0px;
+    white-space: nowrap;
+  }
+  .Select-value-icon {
+    padding: 0px 7px;
+  }
+  .Select-control {
+    height: 20px;
+  }
+  .Select-input {
+    margin-top: 0.2em;
+    input {
+      line-height: initial;
+    }
+  }
+  .Select-placeholder {
+    font-weight: normal;
+    padding-top: 0.2em;
+  }
+  .Select--multi {
+    padding: 0px 5px;
+  }
+  .Select.arrow-zone {
+    font-size: 11px;
+  }
+  .Select-menu-outer {
+    margin-top: 0px;
+  }
+}

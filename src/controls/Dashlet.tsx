@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-interface IDashletProps {
+export interface IDashletProps {
   className: string;
   title: string;
 }

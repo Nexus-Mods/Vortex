@@ -108,11 +108,10 @@ $thumbnail-width: 256px;
 
 .game-thumbnail-img-list {
   max-width: 150px;
-  max-height: 50px;
+  max-height: 70px;
 }
 
 .game-thumbnail-container-list {
-  width: 100px;
   min-width: 50px;
   padding: 0px;
   margin: 0px;
@@ -130,12 +129,8 @@ $thumbnail-width: 256px;
 }
 
 .game-list-item {
-  .media-left {
-    vertical-align: middle;
-  }
-  .media-right {
-    vertical-align: middle;
-    white-space: nowrap;
+  .media-body {
+    justify-content: center;
   }
 }
 

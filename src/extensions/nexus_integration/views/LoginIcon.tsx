@@ -76,7 +76,6 @@ class LoginIcon extends ComponentEx<IProps, {}> {
         id='btn-login'
         tooltip={loggedIn ? t('Show Details') : t('Log in')}
         onClick={this.showLoginLayer}
-        className='pull-right'
       >
         {loggedIn ? (
           <Image
