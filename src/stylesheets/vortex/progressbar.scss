@@ -1,0 +1,31 @@
+// classes for our custom progress bar control (not the bootstrap one)
+
+.progressbar {
+  display: flex;
+  align-items: center;
+
+  .progressbar-container {
+    flex: 1 1 0;
+
+    .progressbar-track {
+      background-color: $gray-dark;
+      border-radius: 4px;
+      .progressbar-progress {
+        background-color: $brand-secondary;
+        height: 4px;
+        border-radius: 4px;
+      }
+    }
+    .progressbar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-style: italic;
+      font-size: smaller;
+    }
+  }
+
+  .progressbar-percentage {
+    padding-left: 0.5em;
+    font-style: italic;
+  }
+}
