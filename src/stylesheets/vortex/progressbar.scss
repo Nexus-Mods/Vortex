@@ -21,6 +21,17 @@
       justify-content: space-between;
       font-style: italic;
       font-size: smaller;
+      > * {
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      > *:first-child {
+        max-width: 60%;
+      }
+      > *:last-child {
+        max-width: 30%;
+      }
     }
   }
 

@@ -215,6 +215,18 @@ div:hover > .hover-expand {
   }
 }
 
+.dropdown {
+  .btn:first-child {
+    padding: 3px 8px;
+    border: 0px;
+    border-right: 2px solid $gray;
+  }
+  .dropdown-toggle {
+    padding: 3px;
+    border: 0px;
+  }
+}
+
 // /generic control rules
 /////////////////////////
 
@@ -427,8 +439,6 @@ div:hover > .hover-expand {
 #dropdown-mods-enabled,
 #dropdown-extensions-enabled {
   padding: 2px 5px;
-  border: 0px;
-  border-left: 1px solid $gray-light;
   min-width: 0px;
 }
 

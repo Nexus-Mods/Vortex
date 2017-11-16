@@ -225,7 +225,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                 <FlexLayout.Fixed>
                   <IconButton
                     id='start-discovery'
-                    icon={discovery.running ? 'stop' : 'search'}
+                    icon={discovery.running ? 'button-stop' : 'search'}
                     tooltip={discovery.running ? t('Stop search') : t('Search for games')}
                     onClick={discovery.running ? this.stopDiscovery : this.startDiscovery}
                   >

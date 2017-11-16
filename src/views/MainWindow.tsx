@@ -15,6 +15,7 @@ import { getSafe } from '../util/storeHelper';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
+import MainFooter from './MainFooter';
 import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
 import NotificationButton from './NotificationButton';
@@ -328,6 +329,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             <div id='main-nav-container' ref={this.setSidebarRef}>
               {pageGroups.map(this.renderPageGroup)}
             </div>
+            <MainFooter slim={tabsMinimized} />
             <Button
               tooltip={tabsMinimized ? t('Restore') : t('Minimize')}
               id='btn-minimize-menu'

@@ -23,6 +23,13 @@ export interface IHeaderProps {
   t: I18next.TranslationFunction;
 }
 
+function nextDirection(direction: SortDirection): SortDirection {
+  switch (direction) {
+    case 'asc': return 'desc';
+    default: return 'asc';
+  }
+}
+
 class HeaderCell extends React.Component<IHeaderProps, {}> {
   public render(): JSX.Element {
     const { t, advancedMode, attribute, className, doFilter } = this.props;
@@ -32,8 +39,12 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
         key={attribute.id}
       >
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className='flex-fill' style={{ display: 'flex', flexDirection: 'row' }}>
-            <p className='flex-fill' style={{ margin: 0 }}>{t(attribute.name)}</p>
+          <div
+            className='flex-fill'
+            style={{ display: 'flex', flexDirection: 'row' }}
+            onClick={this.cycleDirection}
+          >
+            <p style={{ margin: 0 }}>{t(attribute.name)}</p>
             <div style={{ whiteSpace: 'nowrap' }}>
             {attribute.isSortable ? this.renderSortIndicator() : null}
             </div>
@@ -65,6 +76,14 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
         onClick={this.toggleFilter}
       />
     );
+  }
+
+  private cycleDirection = () => {
+    const { attribute, onSetSortDirection, state } = this.props;
+    if (attribute.isSortable) {
+      const direction: SortDirection = getAttr(state, 'sortDirection', 'none') as SortDirection;
+      onSetSortDirection(attribute.id, nextDirection(direction));
+    }
   }
 
   private setDirection = (dir: SortDirection) => {

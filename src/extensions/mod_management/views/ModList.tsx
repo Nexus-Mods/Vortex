@@ -239,14 +239,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           />
         </MainPage.Header>
         <MainPage.Body>
-          <Panel>
-            <Dropzone
-              accept={['files']}
-              drop={this.dropMod}
-              style={{ height: '100%' }}
-              dragOverlay={dragOverlay}
-              clickable={false}
-            >
+          <Dropzone
+            accept={['files']}
+            drop={this.dropMod}
+            style={{ height: '100%' }}
+            dragOverlay={dragOverlay}
+            clickable={false}
+          >
+            <Panel>
               <SuperTable
                 tableId='mods'
                 detailsTitle={t('Mod Attributes')}
@@ -264,8 +264,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               >
               {this.renderMoreMods(modSources)}
               </SuperTable>
-            </Dropzone>
-          </Panel>
+            </Panel>
+          </Dropzone>
         </MainPage.Body>
         <MainPage.Overlay>
           <IconBar

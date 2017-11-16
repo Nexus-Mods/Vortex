@@ -78,7 +78,7 @@ class VisibilityProxy extends React.Component<any, IState> {
     //   act
     //   BUT: having all those controls visible (offscreen) also causes a burden when
     //   relayouting
-    const node: HTMLElement = ReactDOM.findDOMNode(this) as HTMLElement;
+    const node = ReactDOM.findDOMNode(this) as HTMLElement;
     VisibilityProxy.observe(this.props.container, node, (visible: boolean) => {
       if (this.state.visible !== visible) {
         this.setState({ visible });

@@ -1056,7 +1056,7 @@
       </g>
     </g>
   </symbol>
-  <symbol id="icon-select" viewBox="0 0 24 24">
+  <symbol id="icon-arrow-updown" viewBox="0 0 24 24">
     <g>
       <g class="nc-icon-wrapper">
         <path d="M17.156,9.405L12,5.28L6.844,9.405l-1.25-1.562l5.781-4.625c0.365-0.291,0.884-0.291,1.249,0l5.781,4.625 L17.156,9.405z"/>
@@ -1170,6 +1170,20 @@
     <g>
       <g class="nc-icon-wrapper">
         <path d="M256 1408h1280V640H256v768zM1792 288v1216q0 66-47 113t-113 47H160q-66 0-113-47T0 1504V288q0-66 47-113t113-47h1472q66 0 113 47t47 113z"/>
+      </g>
+    </g>
+  </symbol>
+  <symbol id="icon-sort-up" viewBox="0 0 24 24">
+    <g>
+      <g class="nc-icon-wrapper">
+        <path d="M16,15.414l-4-4l-4,4L6.586,14l4.707-4.707c0.391-0.391,1.023-0.391,1.414,0L17.414,14L16,15.414z"/>
+      </g>
+    </g>
+  </symbol>
+  <symbol id="icon-sort-down" viewBox="0 0 24 24">
+    <g>
+      <g class="nc-icon-wrapper">
+        <path d="M12,15c-0.256,0-0.512-0.098-0.707-0.293L6.586,10L8,8.586l4,4l4-4L17.414,10l-4.707,4.707 C12.512,14.902,12.256,15,12,15z"/>
       </g>
     </g>
   </symbol>

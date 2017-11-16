@@ -17,3 +17,11 @@
 #btn-more-mods {
   margin-top: $half-gutter;
 }
+
+.discovery-footer {
+  padding: 16px;
+  .discovery-footer-label {
+    margin-bottom: 8px;
+    font-size: smaller;
+  }
+}

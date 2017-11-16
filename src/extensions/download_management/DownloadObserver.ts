@@ -142,6 +142,7 @@ export class DownloadObserver {
                                  res: IDownloadResult) {
     const filePath = res.filePath;
     this.mStore.dispatch(setDownloadFilePath(id, path.basename(res.filePath)));
+    log('debug', 'unfinished chunks', { chunks: res.unfinishedChunks });
     if (res.unfinishedChunks.length > 0) {
       this.mStore.dispatch(pauseDownload(id, true, res.unfinishedChunks));
     } else if (res.filePath.toLowerCase().endsWith('.html')) {

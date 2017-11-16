@@ -235,7 +235,7 @@ class TableRow extends React.Component<IRowProps, {}> {
         >
           <SplitButton
             id={`${tableId}-${data.__id}-action-icons`}
-            title={def.title}
+            title={this.renderDefault(def)}
             onSelect={this.selectAction}
             onClick={this.selectDefaultAction}
             value={def.title}
@@ -249,14 +249,24 @@ class TableRow extends React.Component<IRowProps, {}> {
   }
 
   private selectDefaultAction = (event) => {
-    console.log('select',
-      event.currentTarget, event.currentTarget.value, event.currentTarget.title);
+    const { actions, data } = this.props;
+    const action = actions.find(iter => iter.title === event.currentTarget.value);
+    action.action([data.__id]);
   }
 
   private selectAction = (eventKey: any) => {
     const { actions, data } = this.props;
     const action = actions.find(iter => iter.title === eventKey);
     action.action([data.__id]);
+  }
+
+  private renderDefault = (action: ITableRowAction) => {
+    return (
+      <div className='table-default-action'>
+        <Icon name={action.icon} />
+        <span>{action.title}</span>
+      </div>
+    );
   }
 
   private renderActionOption = (action: ITableRowAction, idx: number) => {

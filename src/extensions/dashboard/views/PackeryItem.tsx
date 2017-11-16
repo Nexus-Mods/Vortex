@@ -27,7 +27,7 @@ class PackeryItem extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
     const { onDismiss, fixed, height, id, totalWidth, width } = this.props;
-    const widthPerc = Math.floor((width / totalWidth) * 100);
+    const widthPerc = Math.round((width / totalWidth) * 100);
 
     const classes = [
       'packery-item',

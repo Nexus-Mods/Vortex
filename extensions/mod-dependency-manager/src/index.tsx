@@ -352,7 +352,6 @@ function main(context: types.IExtensionContext) {
   context.registerDialog('mod-dependencies-connector', Connector);
   context.registerDialog('mod-dependencies-editor', Editor);
   context.registerDialog('mod-conflict-editor', ConflictEditor);
-  context.registerFooter('conflict-progress', ProgressFooter);
 
   context.once(() => {
     const store = context.api.store;

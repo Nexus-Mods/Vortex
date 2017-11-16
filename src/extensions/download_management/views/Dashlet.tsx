@@ -1,4 +1,5 @@
 import Dashlet from '../../../controls/Dashlet';
+import RadialProgress from '../../../controls/RadialProgress';
 import {IState} from '../../../types/IState';
 import asyncRequire from '../../../util/asyncRequire';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
@@ -6,8 +7,6 @@ import { bytesToString } from '../../../util/util';
 
 import {speedDataPoints} from '../reducers/state';
 import {IDownload} from '../types/IDownload';
-
-import RadialProgress from './RadialProgress';
 
 import * as I18next from 'i18next';
 import * as React from 'react';

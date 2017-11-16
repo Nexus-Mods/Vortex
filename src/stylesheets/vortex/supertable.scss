@@ -6,6 +6,15 @@
   }
 }
 
+.table-default-action {
+  svg {
+    margin-right: 6px;
+    width: 1em;
+    height: 1em;
+    vertical-align: text-top;
+  }
+}
+
 .table-selected {
   background-color: $brand-selected;
 }
@@ -69,6 +78,7 @@
   &.open {
     max-width: 50%;
     border: 1px solid $border-color;
+    border-right-width: 0;
     box-shadow: -2px 0px 4px 1px rgba(0, 0, 0, 0.5);
   }
   &.closed {

@@ -20,3 +20,21 @@
 .download-drop-panel {
   margin-top: $half-gutter;
 }
+
+.active-downloads-slim {
+  font-size: smaller;
+}
+
+.active-downloads-container {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+
+  span {
+    font-size: smaller;
+  }
+
+  .progressbar {
+    margin: 16px 0px;
+  }
+}

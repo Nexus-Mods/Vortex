@@ -183,7 +183,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           tabIndex={0}
           onKeyDown={this.handleKeyDown}
         >
-          <Table condensed hover>
+          <Table hover>
             {this.renderBody(this.mVisibleAttributes)}
             {showHeader === false ? null : <THead
               className='table-header'
