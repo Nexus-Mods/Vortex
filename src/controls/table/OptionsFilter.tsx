@@ -60,7 +60,11 @@ class OptionsFilter implements ITableFilter {
   }
 
   public matches(filter: any, value: any): boolean {
+    if (this.mMulti && (filter !== undefined) && (filter.length === 0)) {
+      return true;
+    }
     const filtUnsane = filter.map(filt => filt === dummy ? undefined : filt);
+
     return (this.mMulti)
       ? filtUnsane.indexOf(value) !== -1
       : filtUnsane === value;
