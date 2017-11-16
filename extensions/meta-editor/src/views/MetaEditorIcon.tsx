@@ -34,7 +34,6 @@ class MetaEditorIcon extends ComponentEx<IProps, {}> {
     const { t, instanceId } = this.props;
     return (
       <ToolbarIcon
-        id='btn-meta-data'
         key={instanceId}
         icon='edit'
         text={t('View Meta Data')}

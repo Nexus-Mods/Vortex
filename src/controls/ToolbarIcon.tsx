@@ -5,7 +5,7 @@ import { Button } from './TooltipControls';
 import * as React from 'react';
 
 export interface IToolbarIconProps {
-  id: string;
+  id?: string;
   instanceId?: string[];
   text: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
@@ -44,7 +44,7 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
           ? <Icon set={iconSet} name={icon} pulse={pulse} />
           : null}
         {['text', 'both'].indexOf(bType) !== -1
-          ? <p className='button-text'>{text}</p>
+          ? <div className='button-text'>{text}</div>
           : null}
         {this.props.children}
       </Button>

@@ -1187,4 +1187,18 @@
       </g>
     </g>
   </symbol>
+  <symbol id="icon-square-add" viewBox="0 0 24 24">
+    <g>
+      <g class="nc-icon-wrapper">
+        <path d="M23,0H1C0.447,0,0,0.448,0,1v22c0,0.552,0.447,1,1,1h22c0.553,0,1-0.448,1-1V1C24,0.448,23.553,0,23,0z M18,13h-5v5h-2v-5H6v-2h5V6h2v5h5V13z"/>
+      </g>
+    </g>
+  </symbol>
+  <symbol id="icon-square-delete" viewBox="0 0 24 24">
+    <g>
+      <g class="nc-icon-wrapper">
+        <path d="M23,0H1C0.447,0,0,0.448,0,1v22c0,0.552,0.447,1,1,1h22c0.553,0,1-0.448,1-1V1C24,0.448,23.553,0,23,0z M18,13H6v-2h12V13z"/>
+      </g>
+    </g>
+  </symbol>
 </svg>

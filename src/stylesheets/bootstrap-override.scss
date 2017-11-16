@@ -201,3 +201,12 @@ textarea {
 .btn:focus, .btn.focus, .btn:active:focus, .btn:active.focus, .btn.active:focus, .btn.active.focus {
   outline-width: 0;
 }
+
+.popover {
+  border-width: $border-width !important;
+}
+
+// due to the slant the arrow comes out a bit thinner than the rest of the border
+.popover.bottom > .arrow:after {
+  top: calc(#{$border-width} + 1px);
+}

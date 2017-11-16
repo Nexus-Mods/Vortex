@@ -5,6 +5,12 @@
 .menubar {
   display: flex;
   flex-direction: row;
+  height: 48px;
+
+  p {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
 
   .btn {
     display: flex;
@@ -21,5 +27,8 @@
     margin-bottom: 0px;
     font-size: xx-small;
     white-space: normal;
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
   }
 }

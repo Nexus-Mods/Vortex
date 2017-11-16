@@ -133,7 +133,8 @@
 }
 
 .menu-separator-line > a {
-  border-top: 1px solid $gray;
+  // border-top: 1px solid $gray;
+  border-top: 0px;
   padding-left: 10px !important;
 }
 
@@ -188,11 +189,6 @@ div:hover > .hover-expand {
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.5);
-}
-
-.popover {
-  contain: content;
-  border: 0px;
 }
 
 .center-content {

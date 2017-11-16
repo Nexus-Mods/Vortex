@@ -94,4 +94,4 @@ class RadialProgress extends React.Component<IProps, {}> {
    }
 }
 
-export default RadialProgress;
+export default RadialProgress as React.ComponentClass<IBaseProps>;

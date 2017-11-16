@@ -115,6 +115,30 @@
   transform-style: preserve-3d;
 }
 
+.table-footer-placeholder {
+  height: 48px;
+}
+
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  background-color: $text-color;
+  color: $brand-clickable;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+
+  .btn {
+    background-color: transparent;
+    color: inherit;
+    &:hover {
+      background-color: $gray-dark;
+    }
+  }
+}
+
 .btn-table-filter {
   @extend .btn-embed;
   height: 100%;
@@ -135,6 +159,12 @@
   flex-direction: row;
   overflow: hidden;
   height: 100%;
+}
+
+.table-container-inner {
+  display:flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .textarea-details {

@@ -19,6 +19,7 @@ import HeaderCell from './table/HeaderCell';
 import { Table, TBody, TH, THead, TR } from './table/MyTable';
 import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
+import ToolbarIcon from './ToolbarIcon';
 
 import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
@@ -28,6 +29,7 @@ import * as ReactDOM from 'react-dom';
 import * as SplitPane from 'react-split-pane';
 import * as Redux from 'redux';
 import { createSelector } from 'reselect';
+import { IconButton } from './TooltipControls';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -177,32 +179,81 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     return (
       <div id={`table-${tableId}`} className='table-container'>
-        <div
-          className='table-main-pane'
-          ref={this.mainPaneRef}
-          tabIndex={0}
-          onKeyDown={this.handleKeyDown}
-        >
-          <Table hover>
-            {this.renderBody(this.mVisibleAttributes)}
-            {showHeader === false ? null : <THead
-              className='table-header'
-              domRef={this.setHeadRef}
-              style={{ transform: 'translate(0, 0)' }}
-            >
-              <TR>
-                {this.mVisibleAttributes.map(this.renderHeaderField)}
-                {actionHeader}
-              </TR>
-            </THead>
-            }
-          </Table>
-          {this.props.children}
+        <div className='table-container-inner'>
+          <div
+            className='table-main-pane'
+            ref={this.mainPaneRef}
+            tabIndex={0}
+            onKeyDown={this.handleKeyDown}
+          >
+            <Table hover>
+              {this.renderBody(this.mVisibleAttributes)}
+              {/* header below body so content in the table can't overlap the header */}
+              {showHeader === false ? null : <THead
+                className='table-header'
+                domRef={this.setHeadRef}
+                style={{ transform: 'translate(0, 0)' }}
+              >
+                <TR>
+                  {this.mVisibleAttributes.map(this.renderHeaderField)}
+                  {actionHeader}
+                </TR>
+              </THead>
+              }
+            </Table>
+            {this.props.children}
+          </div>
+          {this.renderFooter()}
         </div>
         {showDetails === false ? null : (
           <div className={`table-details-pane ${openClass}`}>
             {this.renderDetails(rowIds)}
           </div>)}
+      </div>
+    );
+  }
+
+  private renderFooter(): JSX.Element {
+    const { t, actions } = this.props;
+    const { rowState } = this.state;
+
+    const multiActions = actions.filter(
+      (action) => action.multiRowAction === undefined || action.multiRowAction);
+
+    const selected = Object.keys(rowState).filter(key => rowState[key].selected);
+
+    if ((multiActions.length === 0) || (selected.length < 2)) {
+      return null;
+    }
+
+    // the footer itself (.table-footer) is absolutely positioned so it fills out a surrounding
+    // panel. To ensure the table body isn't overlapped by the footer, insert a placeholder
+    // that needs to be the same size as the footer itself (see css)
+    return (
+      <div className='table-footer-placeholder'>
+        <div className='table-footer'>
+          <IconBar buttonType='both' className='menubar'>
+            {multiActions.map((action, idx) =>
+              <ToolbarIcon
+                key={idx}
+                icon={action.icon}
+                text={action.title}
+                buttonType='both'
+                onClick={action.action}
+              />)}
+          </IconBar>
+
+          <div className='menubar'>
+            <p>{t('{{count}} item selected', { count: selected.length })}</p>
+            <ToolbarIcon
+              key='btn-deselect'
+              icon='square-delete'
+              text={t('Deselect All')}
+              buttonType='both'
+              onClick={this.deselectAll}
+            />
+          </div>
+        </div>
       </div>
     );
   }
@@ -283,17 +334,14 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const {t, actions, objects, tableId} = this.props;
     const {rowState} = this.state;
 
-    const multiActions = actions.filter(
-      (action) => action.multiRowAction === undefined || action.multiRowAction);
-
-    const selected = Object.keys(rowState).filter(key => rowState[key].selected);
-
     let pos = 1;
     const getPos = () => {
       return pos++;
     };
 
-    let elements: ITableRowAction[] = [{
+    const selected = Object.keys(rowState).filter(key => rowState[key].selected);
+
+    const elements: ITableRowAction[] = [{
       icon: null,
       title: t('Toggle Columns'),
       position: getPos(),
@@ -308,14 +356,6 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),
         };
       }));
-
-    if ((multiActions.length > 0) && (selected.length > 0)) {
-      elements = elements.concat([{
-        icon: null,
-        title: t('{{count}} selected', { count: selected.length }),
-        position: getPos(),
-      }], multiActions.map(action => setSafe(action, ['position'], getPos())));
-    }
 
     return (
       <TH className={`table-${tableId} header-action`}>
@@ -835,6 +875,18 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private onRowStateChanged = () => {
     const { rowState } = this.state;
     this.updateDetailIds(Object.keys(rowState).filter(id => rowState[id].selected));
+  }
+
+  private deselectAll = () => {
+    const { rowState } = this.state;
+
+    const newState = {};
+    Object.keys(rowState).forEach(key => {
+      if (rowState[key].selected) {
+        newState[key] = { selected: { $set: false } };
+      }
+    });
+    this.setState(update(this.state, { newState }), this.onRowStateChanged);
   }
 
   private selectAll() {
