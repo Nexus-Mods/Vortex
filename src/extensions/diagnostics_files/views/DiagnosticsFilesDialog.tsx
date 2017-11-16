@@ -207,12 +207,12 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <FlexLayout type='row'>
         {['debug', 'info', 'warning', 'error'].map(type => (
-          <div>
+          <div key={type}>
             <Checkbox
               key={`checkbox-${type}`}
               className={`log-filter-${type}`}
               checked={show[type]}
-              onClick={this.toggleFilter}
+              onChange={this.toggleFilter}
               value={type}
             >
               {t(type.toUpperCase())}

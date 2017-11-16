@@ -2,6 +2,13 @@
   padding-right: $half-gutter;
 }
 
+#games-picker-tabs {
+  .tab-content {
+    // needs to be relative for the placeholder to show properly if a tab is empty
+    position: relative;
+  }
+}
+
 .popover-game-info {
   max-width: 500px;
 }

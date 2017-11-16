@@ -1,7 +1,10 @@
 import Dashlet from '../../../controls/Dashlet';
+import Icon from '../../../controls/Icon';
 import { IDiscoveryState, IProfile, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
+
+import { activeGameId } from '../../profile_management/selectors';
 
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
@@ -10,7 +13,6 @@ import GameThumbnail from './GameThumbnail';
 
 import * as Promise from 'bluebird';
 import * as React from 'react';
-import { activeGameId } from '../../profile_management/selectors';
 
 export interface IBaseProps {
 }
@@ -37,14 +39,23 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
       [getSafe(lastActiveProfile, [id], undefined), 'lastActivated'], 0);
 
     const games: IGameStored[] = knownGames
-      .filter(game =>
-        (game.id !== gameMode)
-        && getSafe(discoveredGames, [game.id, 'path'], undefined) !== undefined)
+      .filter(game => (game.id !== gameMode)
+        && (lastManaged(game.id) !== 0)
+        && (getSafe(discoveredGames, [game.id, 'path'], undefined) !== undefined))
       .sort((lhs, rhs) => lastManaged(rhs.id) - lastManaged(lhs.id))
       .slice(0, 3);
 
-    return (
-      <Dashlet title={t('Recently Managed')} className='dashlet-recently-managed' >
+    let content: JSX.Element;
+    if (games.length === 0) {
+      // nothing recently managed
+      content = (
+        <div className='placeholder'>
+          <Icon name='controller' />
+          <span>{t('You don\'t have any recently managed games')}</span>
+        </div>
+      );
+    } else {
+      content = (
         <div className='list-recently-managed' >
           {games.map(game => (
             <GameThumbnail
@@ -56,6 +67,12 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
               onRefreshGameInfo={this.refreshGameInfo}
             />))}
         </div>
+      );
+    }
+
+    return (
+      <Dashlet title={t('Recently Managed')} className='dashlet-recently-managed' >
+        {content}
       </Dashlet>
     );
   }

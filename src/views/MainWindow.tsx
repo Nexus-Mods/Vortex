@@ -355,7 +355,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderPageGroup = ({ title, key }: { title: string, key: string }): JSX.Element => {
     const { mainPage, objects, tabsMinimized } = this.props;
-    const pages = objects.filter(page => page.group === key);
+    const pages = objects.filter(page => (page.group === key) && page.visible());
     if (key === 'global') {
       pages.push(this.settingsPage);
     }
@@ -403,7 +403,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderPageButton = (page: IMainPage) => {
     const { t, secondaryPage } = this.props;
-    return !page.visible() ? null : (
+    return (
       <NavItem
         id={page.title}
         className={secondaryPage === page.title ? 'secondary' : undefined}

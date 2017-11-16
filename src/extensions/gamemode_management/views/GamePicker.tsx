@@ -1,6 +1,7 @@
 import { DialogActions, DialogType,
          IDialogContent, showDialog } from '../../../actions/notifications';
 import Advanced from '../../../controls/Advanced';
+import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import IconBar, { ButtonType } from '../../../controls/IconBar';
@@ -301,7 +302,28 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGames = (games: IGameStored[], type: string): JSX.Element => {
-    const { gameMode, pickerLayout } = this.props;
+    const { t, gameMode, pickerLayout } = this.props;
+
+    if (games.length === 0) {
+      if (type === 'managed') {
+        return (
+          <EmptyPlaceholder
+            icon='controller'
+            text={t('You haven\'t managed any games yet')}
+            subtext={t('To start managing a game, go to "Discovered" and activate a game there.')}
+          />
+        );
+      } else if (type === 'discovered') {
+        return (
+          <EmptyPlaceholder
+            icon='controller'
+            text={t('No games were discovered')}
+            subtext={t('You can manually add a game from "Supported" or start a full disk scan.')}
+          />
+        );
+      }
+    }
+
     switch (pickerLayout) {
       case 'list': return this.renderGamesList(games, type, gameMode);
       case 'small': return this.renderGamesSmall(games, type, gameMode);
@@ -309,8 +331,9 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private renderGamesList(games: IGameStored[], type: string, gameMode: string) {
+  private renderGamesList(games: IGameStored[], type: string, gameMode: string): JSX.Element {
     const { t, discoveredGames, onRefreshGameInfo } = this.props;
+
     return (
       <ListGroup>
         {games.map(game => (
