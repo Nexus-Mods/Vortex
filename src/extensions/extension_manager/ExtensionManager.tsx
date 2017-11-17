@@ -98,9 +98,15 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     this.staticColumns = getTableAttributes({
       onSetExtensionEnabled:
-        (extId: string, enabled: boolean) => this.props.onSetExtensionEnabled(extId, enabled),
+        (extName: string, enabled: boolean) => {
+          const extId = Object.keys(this.state.extensions)
+            .find(iter => this.state.extensions[iter].name === extName);
+          this.props.onSetExtensionEnabled(extId, enabled);
+        },
       onToggleExtensionEnabled:
-        (extId: string) => {
+        (extName: string) => {
+          const extId = Object.keys(this.state.extensions)
+            .find(iter => this.state.extensions[iter].name === extName);
           const { extensionConfig, onSetExtensionEnabled } = this.props;
           onSetExtensionEnabled(extId, !getSafe(extensionConfig, [extId, 'enabled'], true));
         },

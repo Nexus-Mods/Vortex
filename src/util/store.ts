@@ -50,7 +50,7 @@ export function insertPersistor(hive: string, persistor: IPersistor): Promise<vo
 }
 
 export function allHives(extensions: ExtensionManager): string[] {
-  const hives = ['app', 'settings', 'persistent', 'confidential'];
+  const hives = ['settings', 'persistent', 'confidential'];
   extensions.apply('registerSettingsHive',
                    (hive: string, type: PersistingType) => {
                      if (type === 'global') {

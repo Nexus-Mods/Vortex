@@ -8,8 +8,8 @@ import * as I18next from 'i18next';
 import * as React from 'react';
 
 interface IAttributesContext {
-  onSetExtensionEnabled: (extensionId: string, enabled: boolean) => void;
-  onToggleExtensionEnabled: (extensionId: string) => void;
+  onSetExtensionEnabled: (extensionName: string, enabled: boolean) => void;
+  onToggleExtensionEnabled: (extensionName: string) => void;
 }
 
 function renderLoadFailure(t: I18next.TranslationFunction, fail: IExtensionLoadFailure) {
@@ -43,11 +43,10 @@ function getTableAttributes(context: IAttributesContext):
           { key: 'disabled', text: 'Disabled' },
           { key: 'failed', text: 'Failed', visible: false },
         ],
-        onChangeValue: (extension: IExtensionWithState, value: string) => {
-          return value === undefined
+        onChangeValue: (extension: IExtensionWithState, value: string) =>
+          value === undefined
             ? context.onToggleExtensionEnabled(extension.name)
-            : context.onSetExtensionEnabled(extension.name, value === 'enabled');
-        },
+            : context.onSetExtensionEnabled(extension.name, value === 'enabled'),
       },
       isSortable: false,
     }, {
