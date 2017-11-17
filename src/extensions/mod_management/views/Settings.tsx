@@ -1,4 +1,5 @@
 import { showDialog } from '../../../actions/notifications';
+import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import { Button } from '../../../controls/TooltipControls';
@@ -30,6 +31,7 @@ import {
   HelpBlock, InputGroup, Jumbotron, Modal, Panel,
 } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { Placeholder } from '../../../util/asyncRequire';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -103,12 +105,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     if (game === undefined) {
       return (
-        <Jumbotron>
-          <div style={{ fontSize: 'x-large', margin: '0 1em' }}>
-            {t('Settings on this page are game-specific ' +
-              'so you have to select a game to manage first.')}
-          </div>
-        </Jumbotron>
+        <EmptyPlaceholder
+          icon='sliders'
+          text={t('Please select a game to manage first')}
+          subtext={t('Settings on this page can be set for each game individually.')}
+        />
       );
     }
 

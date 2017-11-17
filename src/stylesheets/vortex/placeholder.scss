@@ -4,12 +4,16 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
   min-height: 300px;
+
+  &.fill-parent {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    min-height: initial;
+  }
 
   .icon {
     width: 112px;
@@ -21,4 +25,9 @@
     font-size: x-large;
     text-transform: uppercase;
   }
+}
+
+.placeholder-container {
+  height: 300px;
+  position: relative;
 }

@@ -1,5 +1,6 @@
 import { showDialog } from '../../../actions/notifications';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
+import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
 import IconBar from '../../../controls/IconBar';
 import InputButton from '../../../controls/InputButton';
@@ -40,6 +41,7 @@ import * as React from 'react';
 import { Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
+import { Placeholder } from '../../../util/asyncRequire';
 
 function objectFilter(obj: any, filter: (key: string, value: any) => boolean) {
   const result = {};
@@ -315,8 +317,21 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, downloads, gameMode, secondary } = this.props;
 
-    return (
-      <MainPage>
+    let content = null;
+
+    if (gameMode === undefined) {
+      content = (
+        <Panel className='placeholder-container'>
+          <EmptyPlaceholder
+            icon='folder-download'
+            text={t('Please select a game to manage first')}
+          />
+        </Panel>
+      );
+    } else if (Object.keys(this.props.downloads).length === 0) {
+      content = this.renderDropzone();
+    } else {
+      content = (
         <FlexLayout type='column'>
           <FlexLayout.Flex>
             <Panel className='download-panel'>
@@ -342,21 +357,17 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             </Panel>
           </FlexLayout.Flex>
           <FlexLayout.Fixed>
-            <Panel className='download-drop-panel'>
-              {
-                ((gameMode !== undefined) && !secondary)
-                  ? (
-                    <Dropzone
-                      accept={['urls', 'files']}
-                      drop={this.dropDownload}
-                      dialogHint={t('Enter download URL')}
-                      icon='folder-download'
-                    />
-                  ) : null
-              }
-              </Panel>
+            {secondary ? null : this.renderDropzone()}
           </FlexLayout.Fixed>
         </FlexLayout>
+      );
+    }
+
+    return (
+      <MainPage>
+        <MainPage.Body>
+          {content}
+        </MainPage.Body>
         <MainPage.Overlay>
           <IconBar
             group='download-icons'
@@ -367,6 +378,20 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
           />
         </MainPage.Overlay>
       </MainPage>
+    );
+  }
+
+  private renderDropzone(): JSX.Element {
+    const { t } = this.props;
+    return (
+      <Panel className='download-drop-panel'>
+        <Dropzone
+          accept={['urls', 'files']}
+          drop={this.dropDownload}
+          dialogHint={t('Enter download URL')}
+          icon='folder-download'
+        />
+      </Panel>
     );
   }
 

@@ -73,17 +73,20 @@ $thumbnail-width: 256px;
       vertical-align: middle;
       padding: 2px 8px;
       &:hover {
-        background-color: $link-hover-color;
+        background-color: $gray-darker;
       }
       &:active {
-        background-color: $link-hover-color;
+        background-color: $gray-darker;
       }
       &:focus {
-        background-color: $link-hover-color;
+        background-color: $gray-darker;
       }
     }
     button {
       @extend .btn-embed;
+    }
+    svg {
+      margin-right: 4px;
     }
   }
 

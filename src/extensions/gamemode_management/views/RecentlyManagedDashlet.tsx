@@ -1,4 +1,5 @@
 import Dashlet from '../../../controls/Dashlet';
+import Placeholder from '../../../controls/EmptyPlaceholder';
 import Icon from '../../../controls/Icon';
 import { IDiscoveryState, IProfile, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -49,10 +50,11 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
     if (games.length === 0) {
       // nothing recently managed
       content = (
-        <div className='placeholder'>
-          <Icon name='controller' />
-          <span>{t('You don\'t have any recently managed games')}</span>
-        </div>
+        <Placeholder
+          icon='controller'
+          text={t('You don\'t have any recently managed games')}
+          fill
+        />
       );
     } else {
       content = (
