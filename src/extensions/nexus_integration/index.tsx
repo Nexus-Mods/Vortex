@@ -710,7 +710,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerDashlet('Nexus Account', 3, 1, 0, DashboardBanner, undefined, undefined, {
     fixed: true,
-    closable: false,
+    closable: true,
   });
 
   context.registerAttributeExtractor(50, (input: any) => {

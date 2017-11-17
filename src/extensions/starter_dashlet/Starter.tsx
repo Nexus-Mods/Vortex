@@ -1,5 +1,7 @@
 import { showDialog } from '../../actions/notifications';
+import Dashlet from '../../controls/Dashlet';
 import Dropdown from '../../controls/Dropdown';
+import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import Icon from '../../controls/Icon';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
@@ -104,18 +106,23 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   public render(): JSX.Element {
-    const { discoveredGames, gameMode, knownGames } = this.props;
+    const { t, discoveredGames, gameMode, knownGames } = this.props;
+
+    let content: JSX.Element;
 
     if (gameMode === undefined) {
-      return null;
-    }
-
-    const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
-    const discoveredGame = discoveredGames[gameMode];
-    const gameName = getSafe(discoveredGame, ['name'], getSafe(game, ['name'], gameMode));
-
-    return (
-      <div className='dashlet dashlet-starter'>
+      content = (
+        <EmptyPlaceholder
+          icon='controller'
+          text={t('When you are managing a game, supported tools will appear here')}
+          fill
+        />
+      );
+    } else {
+      const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
+      const discoveredGame = discoveredGames[gameMode];
+      const gameName = getSafe(discoveredGame, ['name'], getSafe(game, ['name'], gameMode));
+      content = (
         <Media id='starter-dashlet'>
           <Media.Left>
             {this.renderGameIcon(game, discoveredGame)}
@@ -125,7 +132,13 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
             {this.renderToolIcons(game, discoveredGame)}
           </Media.Body>
         </Media>
-      </div>
+      );
+    }
+
+    return (
+      <Dashlet title='' className='dashlet-starter'>
+        {content}
+      </Dashlet>
     );
   }
 

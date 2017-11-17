@@ -6,10 +6,13 @@ import { activeGameId } from '../profile_management/selectors';
 import RSSDashlet from './Dashlet';
 
 function init(context: IExtensionContext): boolean {
-  context.registerDashlet('Game News', 1, 4, 200, RSSDashlet, undefined, () => ({
+  context.registerDashlet('News', 1, 3, 200, RSSDashlet, undefined, () => ({
     title: context.api.translate('News'),
-    url: 'http://www.nexusmods.com/games/rss/news/',
+    url: 'https://rd.nexusmods.com/rss/news/',
     maxLength: 400,
+    extras: [
+      { attribute: 'nexusmods:comments', icon: 'commenting', text: '{{ value }} comments'},
+    ],
   }), undefined);
 
   context.registerDashlet(
@@ -19,8 +22,12 @@ function init(context: IExtensionContext): boolean {
             convertGameId(activeGameId(context.api.store.getState()));
         return {
           title: context.api.translate('New Files'),
-          url: `http://www.nexusmods.com/${gameId}/rss/newtoday/`,
+          url: `https://rd.nexusmods.com/${gameId}/rss/newtoday/`,
           maxLength: 400,
+          extras: [
+            { attribute: 'nexusmods:endorsements', icon: 'thumbs-up', text: '{{ value }}' },
+            { attribute: 'nexusmods:downloads', icon: 'download', text: '{{ value }}' },
+          ],
         };
       }, undefined);
 

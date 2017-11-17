@@ -52,7 +52,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
     const modCount = profile !== undefined
-      ? countIf(Object.keys(profile.modState), id => profile.modState[id].enabled)
+      ? countIf(Object.keys(profile.modState || {}), id => profile.modState[id].enabled)
       : undefined;
 
     return (

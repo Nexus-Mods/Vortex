@@ -105,7 +105,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
             id='btn-quicklaunch-play'
             onClick={this.start}
             tooltip={t('Launch')}
-            icon='circle-play'
+            icon='play-circle-o'
           />
         </div>
       </div>

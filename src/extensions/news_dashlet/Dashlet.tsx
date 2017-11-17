@@ -1,4 +1,5 @@
 import Dashlet from '../../controls/Dashlet';
+import Icon from '../../controls/Icon';
 import bbcode from '../../util/bbcode';
 import { ComponentEx, translate } from '../../util/ComponentEx';
 
@@ -7,11 +8,19 @@ import rss, {IFeedMessage} from './rss';
 import * as opn from 'opn';
 import * as React from 'react';
 import { Alert, ListGroup, ListGroupItem } from 'react-bootstrap';
+import { getSafe } from '../../util/storeHelper';
+
+export interface IExtra {
+  attribute: string;
+  icon: string;
+  text: string;
+}
 
 export interface IBaseProps {
   title: string;
   url: string;
   maxLength: number;
+  extras: IExtra[];
 }
 
 interface IComponentState {
@@ -65,7 +74,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
   private transformMessage(input: IFeedMessage): IFeedMessage {
     const res = { ...input };
     res.titleRendered = bbcode(input.title);
-    res.descriptionRendered = bbcode(input.description);
+    res.descriptionRendered = bbcode(getSafe(input, ['nexusmods:summary', '#'], input.description));
     return res;
   }
 
@@ -78,16 +87,51 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderMessage = (message: IFeedMessage): JSX.Element => {
-    const { t, maxLength } = this.props;
+    const { t, extras, maxLength } = this.props;
     const shortened = message.descriptionRendered[0];
     if (shortened === undefined) {
       return;
     }
+
+    const category = getSafe(message, ['categories', 0], undefined);
+    const image = message.enclosures.find(enc => enc.type.startsWith('image/'));
+
     return (
-      <ListGroupItem key={message.guid}>
+      <ListGroupItem className='rss-item' key={message.guid}>
+        {category ? <div className='rss-category'>{category}</div> : null}
+        <div
+          className='rss-image'
+          style={{ background: image !== undefined ? `url(${image.url})` : undefined }}
+        />
         <h4><a href={message.link} onClick={this.openMore}>{message.titleRendered}</a></h4>
         {shortened}
+        {
+          extras !== undefined
+            ? (
+              <div className='rss-extras'>
+                {extras.map(extra => this.renderExtra(message, extra))}
+              </div>
+            ) : null
+        }
       </ListGroupItem>
+    );
+  }
+
+  private renderExtra = (message: IFeedMessage, extra: IExtra) => {
+    const { t } = this.props;
+    let value = message[extra.attribute];
+    if (value === undefined) {
+      return null;
+    }
+
+    if ((typeof(value) === 'object') && (value['#'] !== undefined)) {
+      value = value['#'];
+    }
+
+    return (
+      <div key={extra.attribute}>
+        <Icon name={extra.icon} />{t(extra.text, { replace: { value } })}
+      </div>
     );
   }
 

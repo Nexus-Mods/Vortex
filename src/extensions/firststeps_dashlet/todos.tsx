@@ -51,7 +51,7 @@ function todos(api: IExtensionApi): IToDo[] {
   return [
     {
       id: 'pick-game',
-      icon: 'gamepad',
+      icon: 'controller',
       type: 'search' as ToDoType,
       props: state => ({ gameMode: selectors.activeGameId(state) }),
       condition: props => props.gameMode === undefined,

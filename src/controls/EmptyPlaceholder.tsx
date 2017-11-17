@@ -5,26 +5,35 @@ import * as React from 'react';
 export interface IEmptyPlaceholderProps {
   icon: string;
   text: string;
-  subtext?: string;
+  subtext?: string | JSX.Element;
   fill?: boolean;
 }
 
-function EmptyPlaceholder(props: IEmptyPlaceholderProps): JSX.Element {
-  const classes = ['placeholder'];
-  if (props.fill) {
-    classes.push('fill-parent');
+class EmptyPlaceholder extends React.PureComponent<IEmptyPlaceholderProps, {}> {
+  constructor(props) {
+    super(props);
   }
-  return (
-    <div className={classes.join(' ')}>
-      <Icon name={props.icon} />
-      <div className='placeholder-text'>{props.text}</div>
-      {
-        props.subtext !== undefined
-          ? <div className='placeholder-subtext'>{props.subtext}</div>
-          : null
-      }
-    </div>
-  );
+
+  public render(): JSX.Element {
+    const { fill, icon, subtext, text } = this.props;
+    const classes = ['placeholder'];
+    if (fill) {
+      classes.push('fill-parent');
+    }
+    return (
+      <div className={classes.join(' ')}>
+        <Icon name={icon} />
+        <div className='placeholder-text'>{text}</div>
+        {
+          subtext !== undefined
+            ? typeof (subtext) === 'string'
+              ? <div className='placeholder-subtext'>{subtext}</div>
+              : subtext
+            : null
+        }
+      </div>
+    );
+  }
 }
 
 export default EmptyPlaceholder;

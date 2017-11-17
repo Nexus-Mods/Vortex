@@ -17,7 +17,7 @@ function registerDashlet(title: string,
                          props?: PropsCallback,
                          options?: IDashletOptions) {
   const fixed = options !== undefined ? options.fixed || false : false;
-  const closable = options !== undefined ? options.closable !== false : true;
+  const closable = options !== undefined ? options.closable : true;
   dashlets.push({ title, position, width, height, component, isVisible, props, fixed, closable });
 }
 

@@ -1,6 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
 import DropdownButton from '../../../controls/DropdownButton';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
+import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
@@ -228,6 +229,47 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     const dragOverlay = <h2>{t('Drop to install')}</h2>;
 
+    let content: JSX.Element;
+
+    if (Object.keys(this.mPrimaryMods).length === 0) {
+      // for some reason I can't use the <Panel> control, it ends up
+      // having no body
+      content = (
+        <div className='panel'>
+          <div className='panel-body'>
+            <EmptyPlaceholder
+              icon='folder-download'
+              fill={true}
+              text={t('You got no mods yet')}
+              subtext={<a onClick={this.getMoreMods}>{t('But don\'t worry, I know a place...')}</a>}
+            />
+          </div>
+        </div>
+      );
+    } else {
+      content = (
+        <Panel>
+          <SuperTable
+            tableId='mods'
+            detailsTitle={t('Mod Attributes')}
+
+            data={this.mPrimaryMods}
+            staticElements={[
+              PICTURE,
+              this.modEnabledAttribute,
+              this.modNameAttribute,
+              this.modVersionAttribute,
+              this.modVersionDetailAttribute,
+              INSTALL_TIME,
+            ]}
+            actions={this.modActions}
+          >
+            {this.renderMoreMods(modSources)}
+          </SuperTable>
+        </Panel>
+      );
+    }
+
     return (
       <MainPage ref={this.setBoundsRef}>
         <MainPage.Header>
@@ -246,25 +288,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             dragOverlay={dragOverlay}
             clickable={false}
           >
-            <Panel>
-              <SuperTable
-                tableId='mods'
-                detailsTitle={t('Mod Attributes')}
-
-                data={this.mPrimaryMods}
-                staticElements={[
-                  PICTURE,
-                  this.modEnabledAttribute,
-                  this.modNameAttribute,
-                  this.modVersionAttribute,
-                  this.modVersionDetailAttribute,
-                  INSTALL_TIME,
-                ]}
-                actions={this.modActions}
-              >
-              {this.renderMoreMods(modSources)}
-              </SuperTable>
-            </Panel>
+            {content}
           </Dropzone>
         </MainPage.Body>
         <MainPage.Overlay>
@@ -314,6 +338,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private renderModSource = (source: IModSource) => {
     return <MenuItem key={source.id} onSelect={source.onBrowse}>{source.name}</MenuItem>;
+  }
+
+  private getMoreMods = () => {
+    if (this.props.modSources.length > 0) {
+      this.props.modSources[0].onBrowse();
+    }
   }
 
   private calcVersion = (mod: IModWithState): string => {

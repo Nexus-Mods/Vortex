@@ -33,7 +33,6 @@ import { IModType } from './types/IModType';
 import queryGameInfo from './util/queryGameInfo';
 import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
-import NoGameDashlet from './views/NoGameDashlet';
 import ProgressFooter from './views/ProgressFooter';
 import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 import {} from './views/Settings';
@@ -401,9 +400,6 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-undiscovered-buttons', 115, 'folder-open', {},
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
-
-  context.registerDashlet('Game Picker', 2, 3, 0, NoGameDashlet, () =>
-    activeGameId(context.api.store.getState()) === undefined, undefined, undefined);
 
   context.registerDashlet('Recently Managed', 2, 2, 175, RecentlyManagedDashlet,
                           undefined, undefined, undefined);

@@ -1,0 +1,35 @@
+.rss-item {
+  background-color: $gray-light !important;
+  padding: 0px;
+  margin-bottom: 8px !important;
+}
+
+.rss-image {
+  height: 50px;
+  background-size: cover !important;
+  background-position-y: 30% !important;
+  min-height: 50px;
+}
+
+.rss-category {
+  position: absolute;
+  top: 0;
+  left: 8px;
+  background-color: $brand-secondary;
+  padding: 0 4px;
+}
+
+.rss-extras {
+  background: $gray-lighter;
+  display: flex;
+  padding: 0px 8px;
+  font-size: smaller;
+
+  svg {
+    margin-right: 4px;
+  }
+
+  > div:not(:first-child) {
+    margin-left: 16px;
+  }
+}
