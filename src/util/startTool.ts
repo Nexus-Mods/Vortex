@@ -4,7 +4,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import StarterInfo from './StarterInfo';
 
 import * as Promise from 'bluebird';
-import { spawn } from 'child_process';
+import { spawn, SpawnOptions } from 'child_process';
 import ipc = require('node-ipc');
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
@@ -89,9 +89,10 @@ function startTool(starter: StarterInfo,
     .then((doStart: boolean) => {
       if (doStart) {
         try {
-          const defaults = {
+          const defaults: SpawnOptions = {
             cwd: starter.workingDirectory,
             env: { ...process.env, ...starter.environment },
+            detached: true,
           };
           const child = spawn(starter.exePath, [], defaults);
 
