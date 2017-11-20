@@ -169,7 +169,7 @@ class InstallManager {
           return Promise.reject(
             new ProcessCanceled('You need to select a game before installing this mod'));
         }
-        installContext = new InstallContext(gameId, api.store);
+        installContext = new InstallContext(gameId, api);
         installContext.startIndicator(baseName);
         return api.lookupModMeta({ filePath: archivePath, gameId });
       })
@@ -292,8 +292,11 @@ class InstallManager {
           ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
           : Promise.resolve();
 
-        prom = prom.then(() =>
-          installContext.finishInstallCB(canceled ? 'canceled' : 'failed'));
+        if (installContext !== undefined) {
+          // context doesn't have to be set if we canceled early
+          prom = prom.then(() => installContext.finishInstallCB(
+                               canceled ? 'canceled' : 'failed'));
+        }
 
         if (err === undefined) {
           return prom.then(() => {

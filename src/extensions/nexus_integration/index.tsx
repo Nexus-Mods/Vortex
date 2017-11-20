@@ -183,7 +183,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         })
         .catch((err) => {
           const errMessage = typeof(err) === 'string' ? err : err.message;
-          const message = processErrorMessage(err.statusCode, errMessage, gameId);
+          const message = processErrorMessage(err.statusCode, errMessage);
           showError(api.store.dispatch,
             'An error occurred retrieving categories', message);
         });
@@ -191,37 +191,39 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
   });
 }
 
+// TODO: the field names in this object will be shown to the user, hence the capitalization
 interface IRequestError {
-  error: string;
-  servermessage?: string;
-  game?: string;
+  Error: string;
+  Servermessage?: string;
+  Game?: string;
   fatal?: boolean;
+  Mod?: number;
+  Version?: string;
 }
 
-function processErrorMessage(
-  statusCode: number, errorMessage: string, gameId: string): IRequestError {
+function processErrorMessage(statusCode: number, errorMessage: string): IRequestError {
   if (statusCode === undefined) {
     if (errorMessage && (errorMessage.indexOf('APIKEY') > -1)) {
-      return { error: 'You are not logged in!' };
+      return { Error: 'You are not logged in!' };
     } else {
-      return { error: errorMessage };
+      return { Error: errorMessage };
     }
   } else if ((statusCode >= 400) && (statusCode < 500)) {
     return {
-      error: 'Server couldn\'t process this request.\nMaybe the locally stored '
+      Error: 'Server couldn\'t process this request.\nMaybe the locally stored '
       + 'info about the mod is wrong\nor the mod was removed from Nexus.',
-      servermessage: errorMessage,
+      Servermessage: errorMessage,
       fatal: errorMessage === undefined,
     };
   } else if ((statusCode >= 500) && (statusCode < 600)) {
     return {
-      error: 'The server reported an internal error. Please try again later.',
-      servermessage: errorMessage,
+      Error: 'The server reported an internal error. Please try again later.',
+      Servermessage: errorMessage,
     };
   } else {
     return {
-      error: 'Unexpected error reported by the server',
-      servermessage: (errorMessage || '') + ' ( Status Code: ' + statusCode + ')',
+      Error: 'Unexpected error reported by the server',
+      Servermessage: (errorMessage || '') + ' ( Status Code: ' + statusCode + ')',
     };
   }
 }
@@ -266,8 +268,18 @@ function endorseModImpl(
     })
     .catch((err) => {
       store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'Undecided'));
-      const detail = processErrorMessage(err.statusCode, err.message, gameId);
-      showError(store.dispatch, 'An error occurred endorsing a mod', detail);
+      if (err.message === 'You must provide a version') {
+        api.sendNotification({
+          type: 'info',
+          message: api.translate('You can\'t endorse a mod that has no version set.'),
+        });
+      } else {
+        const detail = processErrorMessage(err.statusCode, err.message);
+        detail.Game = gameId;
+        detail.Mod = nexusModId;
+        detail.Version = version;
+        showError(store.dispatch, 'An error occurred endorsing a mod', detail);
+      }
     });
 }
 
@@ -289,21 +301,19 @@ function checkModVersionsImpl(
         return Promise.resolve(`${name}:\nRequest timeout`);
       })
       .catch(err => {
-        const detail = processErrorMessage(err.statusCode, err.message, gameId);
+        const detail = processErrorMessage(err.statusCode, err.message);
         if (detail.fatal) {
           return Promise.reject(detail);
         }
 
-        if (detail.error === undefined) {
+        if (detail.Error === undefined) {
           return undefined;
         }
 
         const name = modName(mod, { version: true });
-        if (detail.servermessage !== undefined) {
-          return `${name}:\n${detail.error}\nServer said: "${detail.servermessage}"`;
-        } else {
-          return `${name}:\n${detail.error}`;
-        }
+        return (detail.Servermessage !== undefined)
+          ? `${name}:\n${detail.Error}\nServer said: "${detail.Servermessage}"`
+          : `${name}:\n${detail.Error}`;
       }), { concurrency: 4 })
     .then(errorMessages => errorMessages.filter(msg => msg !== undefined));
 }
@@ -314,7 +324,8 @@ function renderNexusModIdDetail(
   t: I18next.TranslationFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const fileName: string = getSafe(mod.attributes, ['name'], undefined);
-  const gameMode = activeGameId(store.getState());
+  const gameMode = getSafe(mod.attributes, ['downloadGame'], undefined)
+                || activeGameId(store.getState());
   return (
     <NexusModIdDetail
       modId={mod.id}
@@ -343,7 +354,8 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
    || (endorsed === undefined && isNexusMod)) {
     endorsed = 'Undecided';
   }
-  const gameMode = activeGameId(store.getState());
+  const gameMode = getSafe(mod.attributes, ['downloadGame'], undefined)
+                || activeGameId(store.getState());
   if (endorsed !== undefined) {
     return (
       <EndorseModButton

@@ -48,6 +48,12 @@ const gameSupport = {
     ],
     iniFormat: 'winapi',
   },
+  morrowind: {
+    iniFiles: [
+      path.join('{mygames}', 'Morrowind', 'Morrowind.ini'),
+    ],
+    iniFormat: 'winapi',
+  },
 };
 
 export function iniFiles(gameMode: string) {

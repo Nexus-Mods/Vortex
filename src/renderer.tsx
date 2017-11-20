@@ -194,13 +194,9 @@ if (process.env.NODE_ENV === 'development') {
   );
 }
 
-// we're going to re-create the store in a second, we just need it here so we
-// can initialize the ExtensionManager. However, electronEnhancer can't handle
-// being re-initialized, it leads to the main process no longer forwarding actions.
-// Therefore: no enhancer here, should be fine.
-let store: Store<any> = createStore(reducer([]));
-
-const extensions: ExtensionManager = new ExtensionManager(store, eventEmitter);
+// extension manager initialized without store, the information about what
+// extensions are to be loaded has to be retrieved from the main process
+const extensions: ExtensionManager = new ExtensionManager(undefined, eventEmitter);
 const extReducers = extensions.getReducers();
 let tFunc = (input, options) => input;
 
@@ -208,7 +204,7 @@ let tFunc = (input, options) => input;
 // when calling replaceReducer in the renderer
 // (https://github.com/samiskin/redux-electron-store/issues/48)
 // store.replaceReducer(reducer(extReducers));
-store = createStore(reducer(extReducers), enhancer);
+const store: Store<any> = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
 stopTime();

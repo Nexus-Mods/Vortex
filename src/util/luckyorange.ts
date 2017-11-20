@@ -1,4 +1,4 @@
-(window as any).__lo_site_id = 94244;
+(window as any).__lo_site_id = 96354;
 
 function initLuckyOrange() {
   const wa = document.createElement('script');

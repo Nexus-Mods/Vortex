@@ -29,7 +29,7 @@ import StyleManagerT from './StyleManager';
 import { setdefault } from './util';
 
 import * as Promise from 'bluebird';
-import { app as appIn, dialog as dialogIn, remote } from 'electron';
+import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
 import * as fs from 'fs';
 import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
@@ -342,6 +342,11 @@ class ExtensionManager {
           rimraf.sync(path.join(extensionsPath, extId));
           initStore.dispatch(forgetExtension(extId));
         });
+      ipcMain.on('__get_extension_state', event => {
+        event.returnValue = this.mExtensionState;
+      });
+    } else {
+      this.mExtensionState = ipcRenderer.sendSync('__get_extension_state');
     }
     this.mExtensions = this.loadExtensions();
     this.initExtensions();
@@ -385,7 +390,6 @@ class ExtensionManager {
     this.mApi.store = store;
     this.mApi.onStateChange = this.stateChangeHandler;
 
-    const {ipcRenderer} = require('electron');
     ipcRenderer.on('send-notification',
       (event, notification) => this.mApi.sendNotification(notification));
     ipcRenderer.on('show-error-notification',
