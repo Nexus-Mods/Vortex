@@ -12,7 +12,7 @@ body {
   // main window around.
   // This rule should ensure everything that is clickable
   // on this region remains clickable
-  a, button, .btn {
+  a, button, .btn, .Select {
     -webkit-app-region: no-drag;
   }
 }

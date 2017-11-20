@@ -32,6 +32,7 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as nodeUtil from 'util';
 import { actions, log, selectors, types, util } from 'vortex-api';
+import { setCreateRule } from './actions/userlistEdit';
 
 interface IModState {
   enabled: boolean;
@@ -159,6 +160,10 @@ function register(context: IExtensionContextExt) {
   context.registerReducer(['masterlist'], { defaults: {}, reducers: {} });
   context.registerReducer(['settings', 'plugins'], settingsReducer);
   context.registerReducer(['session', 'pluginDependencies'], userlistEditReducer);
+
+  context.registerAction('gamebryo-plugin-icons', 100, 'connect', {}, 'Manage Dependencies', () => {
+    context.api.store.dispatch(setCreateRule());
+  });
 
   context.registerActionCheck('ADD_USERLIST_RULE', (state: any, action: any) => {
     const {pluginId, reference, type} = action.payload;

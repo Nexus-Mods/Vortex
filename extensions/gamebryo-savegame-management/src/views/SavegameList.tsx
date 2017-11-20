@@ -18,8 +18,8 @@ import { FormControl, Panel } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import {
-  actions, ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
-  MainPage, selectors, Table, tooltip, types, util,
+  actions, ComponentEx, FlexLayout, IconBar, ITableRowAction,
+  MainPage, selectors, Spinner, Table, tooltip, types, util,
 } from 'vortex-api';
 
 // current typings know neither the function nor the return value
@@ -139,7 +139,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     } else {
       content = (profileId === undefined)
         ? <h4>{t('Please select a profile to import from')}</h4>
-        : <Icon name='spinner' pulse />;
+        : <Spinner />;
     }
 
     return (
@@ -168,7 +168,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       return (
         <FlexLayout.Fixed>
           <div>
-            <Icon name='spinner' pulse />
+            <Spinner />
             {t(saveGameActivity)}
           </div>
         </FlexLayout.Fixed>
