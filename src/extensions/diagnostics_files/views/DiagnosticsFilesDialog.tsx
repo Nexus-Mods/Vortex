@@ -1,5 +1,5 @@
 import FlexLayout from '../../../controls/FlexLayout';
-import Icon from '../../../controls/Icon';
+import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -104,7 +104,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
       if (logSessions === undefined) {
         body = (
           <Modal.Body id='diagnostics-files'>
-            <Icon name='spinner' pulse/>
+            <Spinner />
           </Modal.Body>
         );
       } else if (logSessions.length > 0) {

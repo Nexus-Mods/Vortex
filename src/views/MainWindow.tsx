@@ -3,6 +3,7 @@ import { setTabsMinimized } from '../actions/window';
 import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import IconBar from '../controls/IconBar';
+import Spinner from '../controls/Spinner';
 import { Button, IconButton, NavItem } from '../controls/TooltipControls';
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IComponentContext } from '../types/IComponentContext';
@@ -89,7 +90,7 @@ class PageButton extends React.Component<IPageButtonProps, {}> {
       return null;
     }
 
-    return <Icon name='spinner' pulse />;
+    return <Spinner />;
   }
 }
 
@@ -260,7 +261,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const progress = getSafe(progressProfile, ['deploying'], undefined);
     const control = progress !== undefined
       ? <ProgressBar label={progress.text} now={progress.percent} style={{ width: '50%' }} />
-      : <Icon name='spinner' pulse style={{ width: 64, height: 64 }} />;
+      : <Spinner style={{ width: 64, height: 64 }} />;
     return (
       <div>
         <div className='center-content'>{control}</div>

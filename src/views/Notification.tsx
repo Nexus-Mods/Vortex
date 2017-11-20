@@ -1,4 +1,5 @@
 import Icon from '../controls/Icon';
+import Spinner from '../controls/Spinner';
 import { INotification, INotificationAction, NotificationType } from '../types/INotification';
 import { ComponentEx } from '../util/ComponentEx';
 
@@ -74,7 +75,7 @@ class Notification extends ComponentEx<IProps, {}> {
 
   private typeToIcon(type: NotificationType): JSX.Element {
     switch (type) {
-      case 'activity': return <Icon name='spinner' pulse />;
+      case 'activity': return <Spinner />;
       case 'success': return <Icon name='square-check' />;
       case 'info': return <Icon name='square-info' />;
       case 'warning': return <Icon name='square-exclamation' />;

@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { Icon } from 'vortex-api';
+import { Spinner } from 'vortex-api';
 
 interface IWebviewProps {
   onLoading: (loading: boolean) => void;
@@ -52,8 +52,8 @@ interface IComponentState {
 }
 
 class DocumentationPage extends React.Component<{}, IComponentState> {
-  constructor() {
-    super();
+  constructor(props: {}) {
+    super(props);
 
     this.state = { loading: false };
   }
@@ -85,9 +85,7 @@ class DocumentationPage extends React.Component<{}, IComponentState> {
 
   private renderWait() {
     return (
-      <Icon
-        name='spinner'
-        pulse
+      <Spinner
         style={{
           width: '64px',
           height: '64px',

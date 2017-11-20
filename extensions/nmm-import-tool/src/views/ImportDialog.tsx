@@ -19,7 +19,7 @@ import { Alert, Button, Checkbox, DropdownButton, InputGroup, MenuItem,
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
-import { ComponentEx, Icon, Modal, selectors, Steps, Table,
+import { ComponentEx, Icon, Modal, selectors, Spinner, Steps, Table,
          Toggle, tooltip, types } from 'vortex-api';
 
 type Step = 'start' | 'setup' | 'working' | 'review';
@@ -200,7 +200,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           </ul>
         </div>
         {sources === undefined
-          ? <Icon name='spinner' pulse />
+          ? <Spinner />
           : sources.length === 0
             ? this.renderNoSources()
             : this.renderSources(sources, selectedSource)

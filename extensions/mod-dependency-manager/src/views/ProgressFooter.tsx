@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
-import { Icon, tooltip, util } from 'vortex-api';
+import { Spinner, tooltip, util } from 'vortex-api';
 
 interface IBaseProps {
   t: ReactI18Next.TranslationFunction;
@@ -23,7 +23,7 @@ const ProgressFooter = (props: IProps) => {
         name='flash'
         tooltip={t('Updating file conflicts')}
       />
-      <Icon name='spinner' pulse />
+      <Spinner />
     </div>
   ) : null;
 };

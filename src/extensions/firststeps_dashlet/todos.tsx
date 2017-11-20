@@ -1,6 +1,7 @@
 import { setSettingsPage } from '../../actions/session';
 import Icon from '../../controls/Icon';
 import More from '../../controls/More';
+import Spinner from '../../controls/Spinner';
 import { IExtensionApi, ToDoType } from '../../types/IExtensionContext';
 import * as selectors from '../../util/selectors';
 
@@ -61,7 +62,7 @@ function todos(api: IExtensionApi): IToDo[] {
     {
       id: 'manual-scan',
       icon: props => props.discoveryRunning
-        ? <Icon name='spinner' pulse />
+        ? <Spinner />
         : <Icon name='search' />,
       type: 'search' as ToDoType,
       props: state => ({

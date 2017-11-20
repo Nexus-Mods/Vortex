@@ -17,8 +17,8 @@ import { Alert, Button, ControlLabel, DropdownButton, FormControl, FormGroup,
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
-import { ComponentEx, Icon, ITableRowAction, log, Modal, selectors, Steps, Table,
-         TableNumericFilter, TableTextFilter, Toggle,
+import { ComponentEx, Icon, ITableRowAction, log, Modal, selectors, Spinner, Steps,
+         Table, TableNumericFilter, TableTextFilter, Toggle,
          tooltip, types, util,
 } from 'vortex-api';
 
@@ -176,7 +176,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   private renderWait(): JSX.Element {
     return (
       <div className='import-wait-container'>
-        <Icon name='spinner' pulse className='page-wait-spinner' />
+        <Spinner className='page-wait-spinner' />
       </div>
     );
   }
@@ -203,7 +203,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           </ul>
         </div>
         {instances === undefined
-          ? <Icon name='spinner' pulse />
+          ? <Spinner />
           : (
             <div>
               {t('Select a MO2 instance...')}

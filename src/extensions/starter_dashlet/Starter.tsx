@@ -3,6 +3,7 @@ import Dashlet from '../../controls/Dashlet';
 import Dropdown from '../../controls/Dropdown';
 import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import Icon from '../../controls/Icon';
+import Spinner from '../../controls/Spinner';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import asyncRequire, { Placeholder } from '../../util/asyncRequire';
@@ -224,7 +225,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   private renderGameIcon = (game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element => {
     if ((game === undefined) && (discoveredGame === undefined)) {
       // assumption is that this can only happen during startup
-      return <Icon name='spinner' pulse />;
+      return <Spinner />;
     } else {
       const { t } = this.props;
       return (

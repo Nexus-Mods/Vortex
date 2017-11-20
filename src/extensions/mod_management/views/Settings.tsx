@@ -2,6 +2,7 @@ import { showDialog } from '../../../actions/notifications';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
+import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { IStatePaths } from '../../../types/IState';
@@ -137,7 +138,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           <Modal show={this.state.busy !== undefined} onHide={nop}>
             <Modal.Body>
               <Jumbotron>
-                <p><Icon name='spinner' pulse style={{ height: '32px', width: '32px' }} />
+                <p><Spinner style={{ height: '32px', width: '32px' }} />
                   {this.state.busy}</p>
               </Jumbotron>
             </Modal.Body>

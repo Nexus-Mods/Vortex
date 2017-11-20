@@ -1,4 +1,4 @@
-import Icon from '../../../controls/Icon';
+import Spinner from '../../../controls/Spinner';
 import { IGameInfoEntry, IState } from '../../../types/IState';
 import { ComponentEx, connect } from '../../../util/ComponentEx';
 import { bytesToString } from '../../../util/util';
@@ -69,7 +69,7 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
       <Table>
         <tbody>
           {keysToRender.map(this.renderGameInfo)}
-          {loading ? <tr><td><Icon name='spinner' pulse /></td></tr> : null}
+          {loading ? <tr><td><Spinner /></td></tr> : null}
         </tbody>
       </Table>
     );

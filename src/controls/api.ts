@@ -7,6 +7,7 @@ import Icon from './Icon';
 import IconBar from './IconBar';
 import Modal from './Modal';
 import More from './More';
+import Spinner from './Spinner';
 import Steps from './Steps';
 import Table, {ChangeDataHandler, ITableRowAction, makeGetSelection} from './Table';
 import TableDateTimeFilter from './table/DateTimeFilter';
@@ -19,4 +20,4 @@ import * as tooltip from './TooltipControls';
 export {Advanced, Dropzone, FlexLayout, FormFeedback, FormInput,
         ChangeDataHandler, Icon, IconBar, ITableRowAction, Modal, More, Table,
         TableDateTimeFilter, TableNumericFilter, TableTextFilter,
-        Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip};
+        Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip};

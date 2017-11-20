@@ -1,4 +1,5 @@
 import Icon from '../../../controls/Icon';
+import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
 
@@ -25,10 +26,7 @@ class EndorseModButton extends ComponentEx<IProps, {}> {
     if (endorsedStatus === 'pending') {
       return (
         <div style={{ textAlign: 'center' }}>
-          <Icon
-            name='spinner'
-            pulse
-          />
+          <Spinner />
         </div>
       );
     }

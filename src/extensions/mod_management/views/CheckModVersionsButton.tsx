@@ -35,7 +35,6 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
           text={t('Checking for mod updates')}
           buttonType={buttonType}
           disabled={true}
-          pulse={true}
         />
       );
     } else {
