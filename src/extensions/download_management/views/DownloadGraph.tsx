@@ -80,7 +80,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
     // TODO: animation disabled because https://github.com/recharts/recharts/issues/375
     return (
       <div className='chart-container download-chart' ref={this.setRef} >
-        <recharts.AreaChart width={this.state.width} height={200} data={data}>
+        <recharts.AreaChart width={this.state.width} height={120} data={data}>
           <recharts.YAxis
             tickFormatter={this.valueFormatter}
             ticks={ticks}

@@ -187,6 +187,11 @@
 // footer
 #main-footer {
   background-color: $brand-bg;
+  max-width: 48px;
+  * {
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .main-page {

@@ -33,7 +33,7 @@ class ProgressFooter extends PureComponentEx<IProps, {}> {
     if (slim) {
       return (
         <div>
-          <div className='discovery-footer-label'>{t('Discovery')}</div>
+          <div className='discovery-footer-label'>{t('Scan')}</div>
           <RadialProgress
             totalRadius={32}
             data={[{ min: 0, max: 100, value: totalProgress, class: 'running' }]}

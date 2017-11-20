@@ -38,7 +38,7 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Panel } from 'react-bootstrap';
+import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { Placeholder } from '../../../util/asyncRequire';
@@ -76,7 +76,7 @@ interface IActionProps {
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
-  dropActive: boolean;
+  viewAll: boolean;
 }
 
 interface IAllGamesButtonProps {
@@ -168,9 +168,9 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
   constructor(props: IProps) {
     super(props);
-    this.state = {
-      dropActive: false,
-    };
+    this.initState({
+      viewAll: false,
+    });
 
     let lang: string;
     let collator: Intl.Collator;
@@ -307,15 +307,18 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     ];
   }
 
-  public shouldComponentUpdate(nextProps: IProps) {
+  public shouldComponentUpdate(nextProps: IProps, nextState: IComponentState) {
     return this.props.downloads !== nextProps.downloads
       || this.props.downloadPath !== nextProps.downloadPath
       || this.props.gameMode !== nextProps.gameMode
-      || this.props.knownGames !== nextProps.knownGames;
+      || this.props.knownGames !== nextProps.knownGames
+      || this.props.secondary !== nextProps.secondary
+      || this.state.viewAll !== nextState.viewAll;
   }
 
   public render(): JSX.Element {
     const { t, downloads, gameMode, secondary } = this.props;
+    const { viewAll } = this.state;
 
     let content = null;
 
@@ -331,6 +334,14 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     } else if (Object.keys(this.props.downloads).length === 0) {
       content = this.renderDropzone();
     } else {
+      const filtered = viewAll
+        ? downloads
+        : Object.keys(downloads)
+            .filter(dlId => downloads[dlId].installed === undefined)
+            .reduce((prev, dlId) => {
+              prev[dlId] = downloads[dlId];
+              return prev;
+            }, {});
       content = (
         <FlexLayout type='column'>
           <FlexLayout.Flex>
@@ -342,7 +353,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                 <FlexLayout.Flex>
                   <SuperTable
                     tableId='downloads'
-                    data={downloads}
+                    data={filtered}
                     staticElements={[
                       FILE_NAME,
                       this.fileTimeColumn,
@@ -353,6 +364,11 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                     actions={this.actions}
                   />
                 </FlexLayout.Flex>
+                <FlexLayout.Fixed style={{ textAlign: 'center' }}>
+                  <Button onClick={this.toggleViewAll} >
+                    {viewAll ? t('View not-yet-installed Downloads') : t('View All Downloads')}
+                  </Button>
+                </FlexLayout.Fixed>
               </FlexLayout>
             </Panel>
           </FlexLayout.Flex>
@@ -393,6 +409,10 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         />
       </Panel>
     );
+  }
+
+  private toggleViewAll = () => {
+    this.nextState.viewAll = !this.state.viewAll;
   }
 
   private getDownload(downloadId: string): IDownload {

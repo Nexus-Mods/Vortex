@@ -55,7 +55,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       <tooltip.Icon
         id={key}
         key={key}
-        name='globe'
+        name='favourite'
         tooltip={t('Master')}
       />);
   }
@@ -88,7 +88,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       <tooltip.Icon
         id={cleanKey}
         key={cleanKey}
-        name='bug'
+        name='spray'
         tooltip={t('Requires cleaning (LOOT)', { ns: 'gamebryo-plugin' })}
       />);
   } else if (plugin.cleanliness === 'do_not_clean') {
