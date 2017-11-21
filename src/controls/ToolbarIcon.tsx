@@ -9,7 +9,6 @@ export interface IToolbarIconProps {
   instanceId?: string[];
   text: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
-  buttonType?: ButtonType;
   iconSet?: string;
   icon: string;
   onClick?: (ids: string[]) => void;
@@ -20,17 +19,8 @@ export interface IToolbarIconProps {
 
 class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
   public render(): JSX.Element {
-    const { buttonType, className, id, text, icon, iconSet, pulse, disabled} = this.props;
-    if (buttonType === 'menu') {
-      return (
-        <div onClick={this.invokeAction}>
-          <Icon set={iconSet} name={icon} pulse={pulse} />
-          {text}
-        </div>
-      );
-    }
+    const { className, id, text, icon, iconSet, pulse, disabled} = this.props;
     const placement = this.props.placement || 'bottom';
-    const bType = buttonType || 'icon';
     return (
       <Button
         tooltip={text}
@@ -40,12 +30,8 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
         disabled={disabled}
         className={className}
       >
-        {['icon', 'both'].indexOf(bType) !== -1
-          ? <Icon set={iconSet} name={icon} pulse={pulse} />
-          : null}
-        {['text', 'both'].indexOf(bType) !== -1
-          ? <div className='button-text'>{text}</div>
-          : null}
+        <Icon set={iconSet} name={icon} pulse={pulse} />
+        <div className='button-text'>{text}</div>
         {this.props.children}
       </Button>
     );

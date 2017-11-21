@@ -115,7 +115,6 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       header = (
         <IconBar
           group='savegames-icons'
-          buttonType='both'
           orientation='vertical'
           className='menubar'
         />
@@ -154,7 +153,6 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         <MainPage.Overlay>
           <IconBar
             group='savegames-icons'
-            buttonType='both'
             orientation='vertical'
           />
         </MainPage.Overlay>

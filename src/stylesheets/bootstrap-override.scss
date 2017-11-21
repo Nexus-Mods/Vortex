@@ -3,6 +3,8 @@
 
 h1, h2, h3 {
   font-family: 'BebasNeue';
+  margin-top: 0.5em;
+  margin-bottom: 0.25em;
 }
 
 .dropdown-menu {
@@ -209,4 +211,12 @@ textarea {
 // due to the slant the arrow comes out a bit thinner than the rest of the border
 .popover.bottom > .arrow:after {
   top: calc(#{$border-width} + 1px);
+}
+
+.modal-header, .modal-footer {
+  margin: 0 32px;
+}
+
+.modal-content {
+  border: $border-width solid $modal-content-border-color;
 }

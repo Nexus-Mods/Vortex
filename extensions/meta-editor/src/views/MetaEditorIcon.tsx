@@ -38,7 +38,6 @@ class MetaEditorIcon extends ComponentEx<IProps, {}> {
         icon='edit'
         text={t('View Meta Data')}
         onClick={this.open}
-        buttonType={this.props.buttonType as any}
       />
     );
   }

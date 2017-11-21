@@ -152,7 +152,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           <IconBar
             group='game-icons'
             staticElements={this.buttons}
-            buttonType='both'
             className='menubar'
           />
           <div className='flex-fill' />
@@ -160,7 +159,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             id='gamepicker-layout-list'
             group='gamepicker-layout-icons'
             staticElements={[]}
-            buttonType='both'
             className='menubar'
           >
             <ToggleButton
@@ -241,7 +239,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           <IconBar
             group='game-icons'
             staticElements={this.buttons}
-            buttonType='both'
             orientation='vertical'
           />
         </MainPage.Overlay>

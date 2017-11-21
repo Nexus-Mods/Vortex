@@ -244,6 +244,8 @@ class TableRow extends React.Component<IRowProps, {}> {
             {sorted.map(this.renderActionOption)}
           </SplitButton>
         </TD>);
+    } else {
+      res.push(<TD />);
     }
     return res;
   }

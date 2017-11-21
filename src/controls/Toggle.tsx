@@ -26,9 +26,11 @@ class Toggle extends React.PureComponent<IProps, {}> {
             className={`toggle toggle-${checked ? 'on' : 'off'}`}
             onClick={disabled === true ? undefined : this.onToggle}
           >
-            <div className='toggle-track' />
-            <div className='toggle-handle'>
+            <div className='toggle-track'>
               <Icon name={checked ? 'check' : 'cross'} />
+            </div>
+            <div className='toggle-handle'>
+              <Icon name='menu-bold' rotate={90} />
             </div>
           </div>
           <div>

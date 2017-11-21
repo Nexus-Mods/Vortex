@@ -28,7 +28,11 @@
 }
 
 .list-game-search {
+  width: 300px;
   .list-group-item {
+    border-width: 1px;
+    padding: 4px 12px;
+    background-color: $brand-bg;
     display: flex;
     >span {
       flex: 1 1 0;

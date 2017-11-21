@@ -307,6 +307,10 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     ];
   }
 
+  public componentWillMount() {
+    this.nextState.viewAll = false;
+  }
+
   public shouldComponentUpdate(nextProps: IProps, nextState: IComponentState) {
     return this.props.downloads !== nextProps.downloads
       || this.props.downloadPath !== nextProps.downloadPath
@@ -389,7 +393,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             group='download-icons'
             staticElements={this.staticButtons}
             style={{ width: '100%', display: 'flex' }}
-            buttonType='both'
             orientation='vertical'
           />
         </MainPage.Overlay>

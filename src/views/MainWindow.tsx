@@ -164,7 +164,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       title: 'Settings',
       group: 'global',
       component: Settings,
-      icon: 'sliders',
+      icon: 'cog',
       propsFunc: () => undefined,
       visible: () => true,
     };
@@ -294,7 +294,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           className='global-icons'
           group='global-icons'
           staticElements={this.globalButtons}
-          buttonType='both'
           orientation='vertical'
           collapse
         />

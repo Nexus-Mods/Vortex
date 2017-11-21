@@ -1,5 +1,8 @@
-.btngroup-collapsed > .btn {
+.btngroup-collapsed .btn {
   @extend .btn-embed;
+  > .button-text {
+    display: none;
+  }
 }
 
 .menubar {

@@ -59,6 +59,18 @@ a, .btn {
 
 .Select-arrow-zone {
   cursor: default;
+  padding-right: 0px;
+  .Select-arrow {
+    top: 3px;
+  }
+}
+
+.is-open {
+  .Select-arrow-zone {
+    .Select-arrow {
+      top: 1px;
+    }
+  }
 }
 
 // in native ui's, there is no text selection on 'label' elements,

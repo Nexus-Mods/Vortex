@@ -8,7 +8,8 @@ import { isNullOrWhitespace } from '../../../util/util';
 import { addSearchPath, removeSearchPath } from '../actions/settings';
 
 import * as React from 'react';
-import { ControlLabel, FormGroup, HelpBlock, ListGroup, ListGroupItem } from 'react-bootstrap';
+import { Button, ControlLabel, FormGroup, HelpBlock,
+         ListGroup, ListGroupItem } from 'react-bootstrap';
 import * as Redux from 'redux';
 
 import { log } from '../../../util/log';
@@ -76,16 +77,13 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
           <ControlLabel>{t('Search Paths')}</ControlLabel>
           <ListGroup className='list-game-search'>
             {searchPaths.sort().map(this.renderPath)}
-            <ListGroupItem>
-              <IconButton
-                className='btn-embed'
-                id='add'
-                tooltip={t('Add')}
-                onClick={this.addSearchPath}
-                icon='plus'
-              />
-            </ListGroupItem>
           </ListGroup>
+          <Button
+            id='add'
+            onClick={this.addSearchPath}
+          >
+            {t('Add Search Directory')}
+          </Button>
           <HelpBlock>{t('Directories to search when looking for games.')}</HelpBlock>
         </FormGroup>
       </form>

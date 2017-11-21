@@ -112,10 +112,10 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <Modal id='import-dialog' show={visible} onHide={this.nop}>
         <Modal.Header>
-          <Modal.Title>{t('Mod Organizer (MO) Migration Tool')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body style={{ height: '60vh', display: 'flex', flexDirection: 'column' }}>
+          <h2>{t('Mod Organizer (MO) Migration Tool')}</h2>
           {this.renderStep(importStep)}
+        </Modal.Header>
+        <Modal.Body>
           {error !== undefined ? <Alert>{error}</Alert> : this.renderContent(importStep)}
         </Modal.Body>
         <Modal.Footer>
@@ -186,12 +186,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const { instances } = this.state;
 
     return (
-      <span
-        style={{
-          display: 'flex', flexDirection: 'column',
-          justifyContent: 'space-around', height: '100%',
-        }}
-      >
+      <span className='start-content'>
         {t('This tool is an easy way of transferring your current '
           + 'MO configuration into Vortex.')}
         <div>
@@ -205,11 +200,15 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         {instances === undefined
           ? <Spinner />
           : (
-            <div>
-              {t('Select a MO2 instance...')}
-              {this.renderInstances(instances)}
-              {t('... or browse for a MO1 or portable MO2 install')}
-              {this.renderBrowse()}
+            <div className='start-pick-instance'>
+              <div>
+                {t('Select a MO2 instance...')}
+                {this.renderInstances(instances)}
+              </div>
+              <div>
+                {t('... or browse for a MO1 or portable MO2 install')}
+                {this.renderBrowse()}
+              </div>
             </div>
           )
         }
@@ -245,7 +244,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const { importPath, importPathInvalid } = this.state;
     return (
-      <FormGroup validationState={importPathInvalid !== undefined ? 'error' : undefined}>
+      <FormGroup
+        validationState={importPathInvalid !== undefined ? 'error' : undefined}
+      >
         <InputGroup>
           <FormControl
             type='text'
@@ -254,6 +255,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           />
           <InputGroup.Button>
             <tooltip.IconButton
+              className='btn-embed'
               tooltip={t('Browse')}
               onClick={this.browse}
               icon='folder-open'

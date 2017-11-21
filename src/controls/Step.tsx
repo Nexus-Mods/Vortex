@@ -20,7 +20,6 @@ class Step extends React.Component<IStepProps, {}> {
         </div>
         <div className='steps-step-main'>
           <div className='steps-step-title'>{title}</div>
-          <div className='steps-step-description'>{description}</div>
         </div>
       </div>
     );

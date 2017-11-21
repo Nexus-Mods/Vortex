@@ -82,9 +82,6 @@ $thumbnail-width: 256px;
         background-color: $gray-darker;
       }
     }
-    button {
-      @extend .btn-embed;
-    }
     svg {
       margin-right: 4px;
     }

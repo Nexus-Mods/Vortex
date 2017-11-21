@@ -323,7 +323,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           <IconBar
             group='gamebryo-plugin-icons'
             staticElements={this.staticButtons}
-            buttonType='both'
             className='menubar'
           />
         </MainPage.Header>
@@ -348,7 +347,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           <IconBar
             group='gamebryo-plugin-icons'
             staticElements={this.staticButtons}
-            buttonType='both'
             orientation='vertical'
           />
         </MainPage.Overlay>

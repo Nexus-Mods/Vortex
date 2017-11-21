@@ -38,7 +38,6 @@ class ActivationButton extends ComponentEx<IProps, {}> {
       icon='chain'
       text={t('Deploy Mods')}
       onClick={this.activate}
-      buttonType={buttonType}
     />
     );
   }

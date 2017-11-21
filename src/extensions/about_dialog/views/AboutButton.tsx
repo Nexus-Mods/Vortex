@@ -25,7 +25,6 @@ class AboutButton extends ComponentEx<IProps, IComponentState> {
         text={t('About')}
         placement='top'
         onClick={this.showAboutLayer}
-        buttonType={buttonType}
       />
     );
   }

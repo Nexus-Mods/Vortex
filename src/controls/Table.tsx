@@ -232,13 +232,12 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     return (
       <div className='table-footer-placeholder'>
         <div className='table-footer'>
-          <IconBar buttonType='both' className='menubar'>
+          <IconBar className='menubar'>
             {multiActions.map((action, idx) =>
               <ToolbarIcon
                 key={idx}
                 icon={action.icon}
                 text={action.title}
-                buttonType='both'
                 onClick={action.action}
               />)}
           </IconBar>
@@ -249,7 +248,6 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
               key='btn-deselect'
               icon='square-delete'
               text={t('Deselect All')}
-              buttonType='both'
               onClick={this.deselectAll}
             />
           </div>

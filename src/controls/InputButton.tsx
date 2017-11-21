@@ -55,7 +55,6 @@ class InputButton extends ComponentEx<IProps, IComponentState> {
           onClick={this.startInput}
           iconSet={iconGroup}
           icon={icon}
-          buttonType={buttonType}
         />
       );
     } else {

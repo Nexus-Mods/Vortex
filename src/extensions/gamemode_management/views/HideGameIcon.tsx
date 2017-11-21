@@ -36,7 +36,6 @@ class HideGameIcon extends ComponentEx<IProps, {}> {
         icon={hidden ? 'eye' : 'eye-slash'}
         text={hidden ? t('Show') : t('Hide')}
         onClick={this.toggleHidden}
-        buttonType={buttonType}
       />
     );
   }

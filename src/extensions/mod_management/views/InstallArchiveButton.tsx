@@ -30,7 +30,6 @@ class InstallButton extends ComponentEx<IProps, {}> {
         icon='plus'
         text={t('Install from file')}
         onClick={this.startInstallFile}
-        buttonType={buttonType}
       />
     );
   }

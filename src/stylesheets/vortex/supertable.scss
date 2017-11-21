@@ -172,3 +172,10 @@
   resize: none;
   min-height: 100px;
 }
+
+.menu-content ul.dropdown-menu .btn {
+  background-color: transparent;
+  border: 0px;
+  display: flex;
+  width: 100%;
+}

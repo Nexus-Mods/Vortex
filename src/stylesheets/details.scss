@@ -1,9 +1,3 @@
-/*@font-face {
-  font-family: 'Roboto';
-  src: url(assets/fonts/roboto.woff2);
-}
-*/
-
 $font-size-large:         1.25em;
 $font-size-small:         0.85em;
 
@@ -341,7 +335,7 @@ $modal-title-padding:         $gutter-width / 2;
 $modal-title-line-height:     1.4em;
 
 $modal-content-bg:                             $brand-menu;
-$modal-content-border-color:                   rgba($gray-lighter,.2);
+$modal-content-border-color:                   $border-color;
 $modal-content-fallback-border-color:          $gray-light;
 
 $modal-backdrop-bg:           #000;

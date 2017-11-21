@@ -276,7 +276,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           <IconBar
             group='mod-icons'
             staticElements={this.staticButtons}
-            buttonType='both'
             className='menubar'
           />
         </MainPage.Header>
@@ -295,7 +294,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           <IconBar
             group='mod-icons'
             staticElements={this.staticButtons}
-            buttonType='both'
             orientation='vertical'
           />
         </MainPage.Overlay>

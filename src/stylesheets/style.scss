@@ -77,8 +77,8 @@
 
 // forms
 .form-field-compact {
-  padding: 2px;
-  height: 24px;
+  padding: 0 2px;
+  height: 22px;
 }
 
 .form-control-feedback {
@@ -215,11 +215,11 @@ div:hover > .hover-expand {
   .btn:first-child {
     padding: 3px 8px;
     border: 0px;
-    border-right: 2px solid $gray;
   }
   .dropdown-toggle {
     padding: 3px;
     border: 0px;
+    border-left: 1px solid $gray;
   }
 }
 
@@ -423,7 +423,6 @@ div:hover > .hover-expand {
 .table-extensions .dropdown > button,
 .table-extensions .dropup > button {
   padding: 2px 10px;
-  border: 0px;
   min-width: 100px;
 }
 

@@ -116,7 +116,6 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           instanceId={game.id}
           staticElements={[]}
           collapse={false}
-          buttonType='menu'
           orientation='vertical'
         />
         <OverlayTrigger

@@ -40,10 +40,20 @@
   border-color: $brand-warning;
 }
 
-.feedback-controls > * {
-  padding: floor(($gutter-width / 2));
+.feedback-instructions {
+  margin-bottom: $half-gutter;
+}
 
-  .toggle-container {
-    margin-top: 4px;
+.feedback-controls {
+  justify-content: space-between;
+
+  >* {
+    .toggle-container {
+      margin-top: 4px;
+    }
   }
+}
+
+#btn-attach-feedback {
+  margin-left: 8px;
 }

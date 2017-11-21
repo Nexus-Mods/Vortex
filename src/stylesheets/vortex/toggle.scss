@@ -1,5 +1,6 @@
 .toggle-container {
   display: flex;
+  margin-top: $half-gutter;
 
   &.toggle-disabled {
     filter: grayscale(80%);
@@ -8,26 +9,35 @@
 
 .toggle {
   position: relative;
-  width: 32px;
+  width: 28px;
   display: flex;
   align-items: center;
   margin-right: 0.33em;
+  height: 12px;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .toggle-track {
   position: absolute;
-  left: 4px;
-  right: 4px;
-  top: 4px;
-  bottom: 4px;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
   border-radius: 8px;
+  line-height: 100%;
+  svg {
+    width: 0.75em;
+    height: 0.75em;
+    vertical-align: middle;
+  }
 }
 
 .toggle-handle {
   position: absolute;
 
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 12px;
 
   border-radius: 8px;
   background-color: $text-color;
@@ -37,24 +47,31 @@
   justify-content: center;
   align-items: center;
   svg {
-    color: $brand-primary;
-    width: 0.75em;
-    height: 0.75em;
+    color: $gray-dark;
+    width: 0.7em;
+    height: 0.7em;
+    margin-left: 2px;
   }
 }
 
 .toggle-off .toggle-track {
-  background-color: $text-color-disabled;
+  background-color: $gray-dark;
+  svg {
+    margin-left: 16px;
+  }
 }
 
 .toggle-off .toggle-handle {
-  left: 0;
+  left: 0px;
 }
 
 .toggle-on .toggle-track {
   background-color: $brand-success;
+  svg {
+    margin-left: 4px;
+  }
 }
 
 .toggle-on .toggle-handle {
-  left: 16px;
+  left: 14px;
 }

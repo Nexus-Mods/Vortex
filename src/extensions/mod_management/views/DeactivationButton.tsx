@@ -38,7 +38,6 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
         icon='chain-broken'
         text={t('Purge Mods')}
         onClick={this.activate}
-        buttonType={buttonType}
       /></Advanced>
     );
   }

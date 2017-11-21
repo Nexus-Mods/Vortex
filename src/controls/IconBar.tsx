@@ -54,6 +54,7 @@ interface IPortalMenuProps {
   target: JSX.Element;
   children?: React.ReactNode[];
   onClose: () => void;
+  onClick: (evt: any) => void;
 }
 
 function PortalMenu(props: IPortalMenuProps, context: any) {
@@ -69,6 +70,7 @@ function PortalMenu(props: IPortalMenuProps, context: any) {
           style={{ display: 'block', position: 'initial' }}
           onClose={props.onClose}
           open={props.open}
+          onClick={props.onClick}
         >
           {props.children}
         </Dropdown.Menu>
@@ -153,6 +155,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             open={this.state.open}
             target={this.buttonRef}
             onClose={this.toggleCollapsed}
+            onClick={this.toggleCollapsed}
           >
             {this.state.open ? collapsed.sort(iconSort).map(this.renderMenuItem) : null}
           </PortalMenu>
@@ -215,7 +218,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   private renderIconInner = (icon: IActionDefinition, index: number,
                              forceButtonType?: ButtonType) => {
-    const { buttonType, instanceId, tooltipPlacement } = this.props;
+    const { instanceId, tooltipPlacement } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
@@ -236,7 +239,6 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           text={icon.title}
           onClick={icon.action}
           placement={tooltipPlacement}
-          buttonType={forceButtonType || buttonType}
         />
       );
     } else {
@@ -258,7 +260,6 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       const staticProps = {
         ...unknownProps,
         key: id,
-        buttonType: forceButtonType || buttonType,
       };
       if (icon.props !== undefined) {
         return (

@@ -34,7 +34,6 @@ class GlobalOverlay extends ComponentEx<IProps, {}> {
         <IconBar
           group='help-icons'
           staticElements={this.buttons}
-          buttonType='both'
           orientation='vertical'
         />
       </div>);

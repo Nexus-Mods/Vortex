@@ -22,7 +22,6 @@ class ShowHiddenButton extends ComponentEx<IBaseProps, {}> {
         text={showHidden ? t('Hide hidden games') : t('Show hidden games')}
         onClick={toggleHidden}
         icon={showHidden ? 'eye-slash' : 'eye'}
-        buttonType={buttonType}
       />
     );
   }

@@ -19,6 +19,8 @@ export type DropType = 'urls' | 'files';
 export interface IBaseProps {
   drop: (type: DropType, paths: string[]) => void;
   accept: DropType[];
+  dropText?: string;
+  clickText?: string;
   icon?: string;
   clickable?: boolean;
   dialogHint?: string;
@@ -98,7 +100,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderContent(): JSX.Element {
-    const { t, accept, icon } = this.props;
+    const { t, accept, clickText, dropText, icon } = this.props;
     const { dropActive } = this.state;
 
     const acceptList = accept.map(mode => {
@@ -116,8 +118,9 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
       <div className='dropzone-content'>
         {(icon !== undefined) ? <Icon name={icon} /> : null}
         {dropActive === 'hover'
-          ? t('Click to {{ clickMode }}', { replace: { clickMode } })
-          : t('Drop {{ accept }}', { replace: { accept: acceptList.join(t(' or ')) } }) }
+          ? t(clickText || 'Click to {{ clickMode }}', { replace: { clickMode } })
+          : t(dropText || 'Drop {{ accept }}',
+              { replace: { accept: acceptList.join(t(' or ')) } }) }
       </div>
     );
   }

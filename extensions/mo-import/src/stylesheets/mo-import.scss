@@ -1,6 +1,12 @@
 #import-dialog {
   .modal-dialog {
     width: 80%;
+
+    .modal-body {
+      height: 50vh;
+      display: flex;
+      flex-direction: column;
+    }
   }
 }
 
@@ -72,5 +78,38 @@
   .page-wait-spinner {
     width: 2em;
     height: 2em;
+  }
+}
+
+.start-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 100%;
+}
+
+.start-pick-instance {
+  display: flex;
+  > * {
+    margin: 0 $half-gutter;
+  }
+
+  .form-group {
+    width: 500px;
+
+    .input-group {
+      width: 100%;
+
+      .input-group-btn {
+        width: initial;
+        &:last-child {
+          .btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+          }
+        }
+      }
+    }
   }
 }
