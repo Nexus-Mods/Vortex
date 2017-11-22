@@ -3,8 +3,9 @@ import Icon from '../controls/Icon';
 import * as React from 'react';
 
 export interface IToggleProps {
+  dataId?: string;
   checked: boolean;
-  onToggle: (newValue: boolean) => void;
+  onToggle: (newValue: boolean, dataId?: string) => void;
   disabled?: boolean;
 }
 
@@ -42,8 +43,8 @@ class Toggle extends React.PureComponent<IProps, {}> {
   }
 
   private onToggle = () => {
-    const { onToggle, checked } = this.props;
-    onToggle(!checked);
+    const { onToggle, checked, dataId } = this.props;
+    onToggle(!checked, dataId);
   }
 }
 

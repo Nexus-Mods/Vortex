@@ -18,7 +18,11 @@ class Action extends React.Component<IActionProps & INotificationAction, {}> {
     return <Button onClick={this.action}>{t(title)}</Button>;
   }
 
-  private action = () => this.props.action(this.props.onDismiss);
+  private action = () => {
+    if (this.props.action !== undefined) {
+      this.props.action(this.props.onDismiss);
+    }
+  }
 }
 
 export interface IProps {
@@ -30,7 +34,7 @@ export interface IProps {
 class Notification extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t } = this.props;
-    const { actions, message, noDismiss, type } = this.props.params;
+    const { actions, message, noDismiss, title, type } = this.props.params;
 
     const lines = message.split('\n');
 
@@ -39,9 +43,12 @@ class Notification extends ComponentEx<IProps, {}> {
     return (
       <div role='alert' className={`notification alert-${styleName}`} >
         {this.typeToIcon(type)}{' '}
-        <p className='hover-expand'>
-          {lines.map((line, idx) => <span key={idx}>{line}</span>)}
-        </p>
+        <div className='notification-textbox'>
+          {title !== undefined ? <div className='notification-title'>{title}</div> : null}
+          <div className='notification-message hover-expand'>
+            {lines.map((line, idx) => <span key={idx}>{line}</span>)}
+          </div>
+        </div>
         <div className='notification-buttons'>
           {actions !== undefined ? actions.map(this.renderAction) : null}
           {!noDismiss ? <Button onClick={this.dismiss}>{t('Dismiss')}</Button> : null}

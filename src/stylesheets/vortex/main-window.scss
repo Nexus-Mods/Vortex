@@ -93,6 +93,9 @@
       min-width: 0px;
       max-width: 48px;
     }
+    #main-footer {
+      max-width: 48px;
+    }
     .menu-label {
       opacity: 0;
       width: 0;
@@ -187,7 +190,6 @@
 // footer
 #main-footer {
   background-color: $brand-bg;
-  max-width: 48px;
   * {
     overflow-x: hidden;
     text-overflow: ellipsis;

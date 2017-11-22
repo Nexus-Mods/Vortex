@@ -119,8 +119,8 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
       api.sendNotification({
         id: url.fileId.toString(),
         type: 'success',
-        message: api.translate('Download finished: {{name}}',
-                               { replace: { name: nexusFileInfo.name } }),
+        title: api.translate('Download finished'),
+        message: nexusFileInfo.name,
         actions: [
           {
             title: 'Install', action: dismiss => {

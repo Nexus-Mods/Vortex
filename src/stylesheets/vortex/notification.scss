@@ -21,17 +21,18 @@
   min-width: 400px;
   display: flex;
   flex-direction: row;
+  align-items: center;
 
-  p {
-    display: inline-block;
+  .notification-textbox {
     flex: 1 1 0;
     margin-left: 10px;
     margin-right: 10px;
+    display: flex;
+    flex-direction: column;
   }
 
-  p, svg, .notification-buttons {
-    margin-top: auto;
-    margin-bottom: auto;
+  .notification-title {
+    font-weight: bold;
   }
 
   .notification-buttons {
