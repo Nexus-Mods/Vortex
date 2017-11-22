@@ -870,6 +870,7 @@ class ExtensionManager {
       'ini_prep',
       'news_dashlet',
       'sticky_mods',
+      'browser',
     ];
 
     require('./extensionRequire').default();

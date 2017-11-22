@@ -35,7 +35,7 @@ class DownloadProgressFilter implements ITableFilter {
   public raw = false;
 
   public matches(filter: any, value: any): boolean {
-    if (isNaN(+value)) {
+    if (typeof(value) === 'string') {
       return filter.toLowerCase() === value.toLowerCase();
     } else {
       return (filter === 'In Progress');

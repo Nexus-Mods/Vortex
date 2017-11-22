@@ -34,12 +34,6 @@ interface IWebView {
   guestinstance?: string;
 }
 
-declare module JSX {
-  interface IntrinsicElements {
-    webview: IWebView,
-  }
-}
-
 declare module 'module' {
   export var _initPaths: () => void;
 }

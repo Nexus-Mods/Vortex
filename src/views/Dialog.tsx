@@ -1,5 +1,6 @@
 import { closeDialog } from '../actions/notifications';
 import Icon from '../controls/Icon';
+import Webview from '../controls/Webview';
 import {
   DialogType, ICheckbox, IDialog,
   IDialogContent, IInput,
@@ -164,7 +165,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.htmlFile !== undefined) {
       controls.push((
         <div key='dialog-content-html'>
-          <webview src={`file://${content.htmlFile}`} />
+          <Webview src={`file://${content.htmlFile}`} />
         </div>
       ));
     } else if (content.bbcode !== undefined) {

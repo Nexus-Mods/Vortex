@@ -1,59 +1,15 @@
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { Icon } from 'vortex-api';
-
-interface IWebviewProps {
-  onLoading: (loading: boolean) => void;
-}
-
-class Webview extends React.Component<IWebviewProps & IWebView, {}> {
-  private mNode: any;
-
-  public componentDidMount() {
-    this.mNode = ReactDOM.findDOMNode(this);
-
-    this.mNode.addEventListener('did-start-loading', this.startLoad);
-    this.mNode.addEventListener('did-stop-loading', this.stopLoad);
-    this.mNode.addEventListener('dom-ready', () => {
-      // this.mNode.insertCSS('body { background-color: red !important }');
-      // this.mNode.openDevTools();
-    });
-  }
-
-  public componentWillUnmount() {
-    this.mNode.removeEventListener('did-start-loading', this.startLoad);
-    this.mNode.removeEventListener('did-stop-loading', this.stopLoad);
-  }
-
-  public render(): JSX.Element {
-    return (
-      <webview {..._.omit(this.props, ['onLoading'])} />
-    );
-  }
-
-  private startLoad = () => {
-    const { onLoading } = this.props;
-    if (onLoading !== undefined) {
-      onLoading(true);
-    }
-  }
-
-  private stopLoad = () => {
-    const { onLoading } = this.props;
-    if (onLoading !== undefined) {
-      onLoading(false);
-    }
-  }
-}
+import { Icon, Spinner, Webview } from 'vortex-api';
 
 interface IComponentState {
   loading: boolean;
 }
 
 class DocumentationPage extends React.Component<{}, IComponentState> {
-  constructor() {
-    super();
+  constructor(props: {}) {
+    super(props);
 
     this.state = { loading: false };
   }

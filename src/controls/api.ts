@@ -15,8 +15,9 @@ import TableTextFilter from './table/TextFilter';
 import Toggle from './Toggle';
 import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
+import Webview from './Webview';
 
 export {Advanced, Dropzone, FlexLayout, FormFeedback, FormInput,
         ChangeDataHandler, Icon, IconBar, ITableRowAction, Modal, More, Table,
         TableDateTimeFilter, TableNumericFilter, TableTextFilter,
-        Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip};
+        Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Webview};
