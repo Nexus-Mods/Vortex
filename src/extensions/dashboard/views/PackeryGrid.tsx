@@ -18,10 +18,6 @@ class Packery extends React.Component<IProps, {}> {
   private mLayoutTimer: NodeJS.Timer;
   private mRefreshTimer: NodeJS.Timer;
 
-  constructor(props: IProps) {
-    super(props);
-  }
-
   public componentDidUpdate() {
     this.scheduleLayout();
   }
