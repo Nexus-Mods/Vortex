@@ -1,4 +1,5 @@
 import { showDialog } from '../../../actions/notifications';
+import Banner from '../../../controls/Banner';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
@@ -349,6 +350,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       content = (
         <FlexLayout type='column'>
           <FlexLayout.Flex>
+            {secondary ? null : <Banner group='downloads' />}
             <Panel className='download-panel'>
               <FlexLayout type='column'>
                 <FlexLayout.Fixed>

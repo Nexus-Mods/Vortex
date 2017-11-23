@@ -4,27 +4,44 @@
   background-color: $brand-bg;
   display: flex;
 
-  button {
+  #btn-quicklaunch-play,
+  .main-toolbar-right .btn {
     background-color: transparent;
     border-width: 0px;
     color: $text-color;
     padding: 8px;
+
+    &:hover {
+      background-color: transparent;
+      color: $brand-clickable;
+    }
+
     >svg {
       width: 24px;
       height: 24px;
+    }
+  }
+
+  .main-toolbar-right {
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-right: 8px;
+  }
+
+  // when the window titlebar is disabled, make the main toolbar region
+  // the area where the user can drag the window around
+  &.toolbar-app-region {
+    height: 104px;
+    -webkit-app-region: drag;
+
+    .main-toolbar-right {
+      margin-bottom: 8px;
     }
   }
 }
 
 .window-frame {
   border: 1px solid $gray;
-}
-
-// when the window titlebar is disabled, make the main toolbar region
-// the area where the user can drag the window around
-.toolbar-app-region {
-  height: 104px;
-  -webkit-app-region: drag;
 }
 
 .application-icons,

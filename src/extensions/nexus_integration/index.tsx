@@ -671,6 +671,10 @@ function once(api: IExtensionApi) {
       updateDebouncer.schedule(undefined, newValue));
 }
 
+function goBuyPremium() {
+  opn('https://rd.nexusmods.com/register/premium');
+}
+
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
@@ -678,6 +682,38 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['settings', 'nexus'], settingsReducer);
   context.registerReducer(['session', 'nexus'], sessionReducer);
   context.registerDialog('login-dialog', LoginDialog, () => ({ nexus }));
+  context.registerBanner('downloads', () => {
+    const t = context.api.translate;
+    return (
+      <div className='nexus-download-banner'>
+        {t('Nexus downloads are capped at 1MB/s - '
+          + 'Go Premium for uncapped download speeds')}
+        <Button onClick={goBuyPremium}>{t('Buy Now')}</Button>
+      </div>);
+  }, {
+    props: {
+      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined),
+    },
+    condition: (props: any): boolean => props.isPremium === false,
+  });
+
+  context.registerBanner('main-toolbar', () => {
+    const t = context.api.translate;
+    return (
+      <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
+        <div>{t('Go Premium')}</div>
+        <div>{t('Uncapped downloads, no adverts')}</div>
+        <div>{t('Support Nexus Mods')}</div>
+        <div className='right-center'>
+          <Button onClick={goBuyPremium}>{context.api.translate('Buy Now')}</Button>
+        </div>
+      </div>);
+  }, {
+    props: {
+      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined),
+    },
+    condition: (props: any): boolean => props.isPremium === false,
+  });
 
   const logInDialog = () => {
     context.api.store.dispatch(setDialogVisible('login-dialog'));

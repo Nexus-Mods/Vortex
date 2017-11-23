@@ -17,6 +17,7 @@ import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
 
 import { IActionOptions } from './IActionDefinition';
+import { IBannerOptions } from './IBannerOptions';
 import { IGame } from './IGame';
 import { INotification } from './INotification';
 import { ITableAttribute } from './ITableAttribute';
@@ -59,6 +60,10 @@ export type RegisterAction =
 
 export type RegisterFooter =
   (id: string, element: React.ComponentClass<any>, props?: PropsCallback) => void;
+
+export type RegisterBanner =
+  (group: string, component: React.ComponentClass<any> | React.StatelessComponent<any>,
+   options: IBannerOptions) => void;
 
 export interface IMainPageOptions {
   hotkey?: string;
@@ -539,6 +544,13 @@ export interface IExtensionContext {
    * again.
    */
   registerToDo: RegisterToDo;
+
+  /**
+   * registers a banner, which is a control that will show in a fixed location with fixed
+   * size (determined by the group). If there are multiple banners in the same spot,
+   * they will cycle.
+   */
+  registerBanner: RegisterBanner;
 
   /**
    * register a source (usually a website) that the mod was retrieved from and that will

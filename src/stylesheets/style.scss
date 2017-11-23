@@ -202,15 +202,6 @@ div:hover > .hover-expand {
   right: 0;
 }
 
-#main-toolbar button {
-  margin-top: auto;
-  margin-bottom: auto;
-  &:hover {
-    background-color: transparent;
-    color: $brand-clickable;
-  }
-}
-
 .dropdown {
   .btn:first-child {
     padding: 3px 8px;
@@ -272,6 +263,7 @@ div:hover > .hover-expand {
 @import "bootstrap-override.scss";
 @import "vortex/globals";
 
+@import "vortex/banner";
 @import "vortex/bbcode";
 @import "vortex/charts";
 @import "vortex/dashlet";

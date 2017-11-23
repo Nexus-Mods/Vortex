@@ -1,5 +1,6 @@
 import { setDialogVisible, setOpenMainPage, setOverlayOpen } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
+import Banner from '../controls/Banner';
 import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import IconBar from '../controls/IconBar';
@@ -282,21 +283,24 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <FlexLayout.Fixed id='main-toolbar' className={className}>
         <QuickLauncher t={t} />
+        <Banner group='main-toolbar' />
         <div className='flex-fill' />
-        <NotificationButton id='notification-button' />
-        <IconBar
-          className='application-icons'
-          group='application-icons'
-          staticElements={this.applicationButtons}
-        />
-        <IconBar
-          id='global-icons'
-          className='global-icons'
-          group='global-icons'
-          staticElements={this.globalButtons}
-          orientation='vertical'
-          collapse
-        />
+        <div className='main-toolbar-right'>
+          <NotificationButton id='notification-button' />
+          <IconBar
+            className='application-icons'
+            group='application-icons'
+            staticElements={this.applicationButtons}
+          />
+          <IconBar
+            id='global-icons'
+            className='global-icons'
+            group='global-icons'
+            staticElements={this.globalButtons}
+            orientation='vertical'
+            collapse
+          />
+        </div>
       </FlexLayout.Fixed>
     );
   }

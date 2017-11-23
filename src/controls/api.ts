@@ -1,4 +1,5 @@
 import Advanced from './Advanced';
+import Banner from './Banner';
 import Dropzone from './Dropzone';
 import FlexLayout from './FlexLayout';
 import FormFeedback from './FormFeedback';
@@ -17,7 +18,7 @@ import Toggle from './Toggle';
 import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
 
-export {Advanced, Dropzone, FlexLayout, FormFeedback, FormInput,
+export {Advanced, Banner, Dropzone, FlexLayout, FormFeedback, FormInput,
         ChangeDataHandler, Icon, IconBar, ITableRowAction, Modal, More, Table,
         TableDateTimeFilter, TableNumericFilter, TableTextFilter,
         Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip};
