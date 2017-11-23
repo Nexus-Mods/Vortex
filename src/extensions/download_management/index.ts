@@ -119,6 +119,7 @@ function init(context: IExtensionContextExt): boolean {
       context.api.events.emit('start-download', [url], {});
     });
 
+    let currentWatch: fs.FSWatcher;
     context.api.events.on('gamemode-activated', () => {
       const currentDownloadPath = selectors.downloadPath(store.getState());
 
@@ -127,13 +128,18 @@ function init(context: IExtensionContextExt): boolean {
       const knownDLs = Object.keys(downloads)
         .filter((dlId: string) => downloads[dlId].game === gameId)
         .map((dlId: string) => downloads[dlId].localPath);
-      const nameIdMap = {};
-      Object.keys(downloads).forEach((dlId: string) => nameIdMap[downloads[dlId].localPath] = dlId);
-      refreshDownloads(currentDownloadPath, knownDLs, (downloadPath: string) => {
-        fs.statAsync(path.join(currentDownloadPath, downloadPath))
+
+      const nameIdMap: { [name: string]: string } = Object.keys(downloads).reduce((prev, value) => {
+        prev[downloads[value].localPath] = value;
+        return prev;
+      }, {});
+
+      refreshDownloads(currentDownloadPath, knownDLs, (fileName: string) => {
+        fs.statAsync(path.join(currentDownloadPath, fileName))
           .then((stats: fs.Stats) => {
             const dlId = shortid();
-            context.api.store.dispatch(addLocalDownload(dlId, gameId, downloadPath, stats.size));
+            context.api.store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+            nameIdMap[fileName] = dlId;
           });
       }, (modNames: string[]) => {
         modNames.forEach((name: string) => {
@@ -142,6 +148,25 @@ function init(context: IExtensionContextExt): boolean {
       })
         .then(() => {
           manager.setDownloadPath(currentDownloadPath);
+          if (currentWatch !== undefined) {
+            currentWatch.close();
+          }
+          currentWatch = fs.watch(currentDownloadPath, {}, (evt: string, fileName: string) => {
+            if (evt === 'rename') {
+              const filePath = path.join(currentDownloadPath, fileName);
+              fs.statAsync(filePath)
+              .then(stats => {
+                const dlId = shortid();
+                context.api.store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+                nameIdMap[fileName] = dlId;
+              })
+              .catch(err => {
+                if (err.code === 'ENOENT') {
+                  context.api.store.dispatch(removeDownload(nameIdMap[fileName]));
+                }
+              });
+            }
+          }) as fs.FSWatcher;
           context.api.events.emit('downloads-refreshed');
         });
     });
