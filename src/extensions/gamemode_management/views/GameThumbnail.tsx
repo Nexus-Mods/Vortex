@@ -130,7 +130,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
         >
           <IconButton
             id={`btn-info-${game.id}`}
-            icon='alert-circle-i'
+            icon='circle-info'
             className='game-thumbnail-info btn-embed'
             tooltip={t('Show Details')}
           />

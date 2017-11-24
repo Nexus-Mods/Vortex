@@ -162,7 +162,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         hotKey: { code: 46 },
       },
       {
-        icon: 'cloud-refresh',
+        icon: 'refresh',
         title: 'Check for update',
         action: this.checkForUpdate,
       },

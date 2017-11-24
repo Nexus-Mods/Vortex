@@ -41,7 +41,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
       return (
         <ToolbarIcon
           id='check-mods-version'
-          icon='cloud-refresh'
+          icon='refresh'
           text={t('Check for mod updates')}
           onClick={this.checkModsVersion}
         />

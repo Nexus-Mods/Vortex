@@ -100,7 +100,7 @@ class GameRow extends ComponentEx<IProps, {}> {
             >
               <IconButton
                 id={`btn-info-${game.id}`}
-                icon='alert-circle-i'
+                icon='circle-info'
                 className='btn-embed'
                 tooltip={t('Show Details')}
               />

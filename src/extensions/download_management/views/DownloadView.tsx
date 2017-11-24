@@ -271,7 +271,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         },
       },
       {
-        icon: 'file-add',
+        icon: 'start-install',
         title: 'Install',
         action: this.install,
         condition: this.installable,

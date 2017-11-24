@@ -1,0 +1,283 @@
+{
+  "variables": {
+    "nucleo": "Nucleo_Glyph",
+    "nucleo_simple": "24px",
+    "nucleo_detail": "64px",
+    "fa": "Font-Awesome-SVG-PNG-master/black/svg"
+  },
+  "icons": {
+    "window-minimize": "{fa}/window-minimize",
+    "window-restore": "{fa}/window-restore",
+    "window-maximize": "{fa}/window-maximize",
+    "sort-up": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_small-up",
+      "rmFill": true
+    },
+    "sort-down": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_small-down",
+      "rmFill": true
+    },
+    "spinner": {
+      "path": "custom/753",
+      "rmFill": true
+    },
+    "nexus": "custom/nexus",
+    "thumbs-up": "{fa}/thumbs-up",
+    "thumbs-down": "{fa}/thumbs-down",
+    "like-maybe": "{fa}/thumbs-o-up",
+    "commenting": {
+      "path": "{fa}/commenting",
+      "rmFill": true
+    },
+    "bolt": "{fa}/bolt",
+    "download": "{fa}/download",
+    "cross": {
+      "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
+      "rmFill": true
+    },
+    "controller": {
+      "path": "{nucleo}/objects/{nucleo_simple}_controller",
+      "rmFill": true
+    },
+    "settings-tool": {
+      "path": "{nucleo}/ui/{nucleo_simple}_settings-tool-66",
+      "rmFill": true
+    },
+    "wrench": {
+      "path": "{nucleo}/ui/{nucleo_simple}_settings-tool-67",
+      "rmFill": true
+    },
+    "bell": {
+      "path": "{nucleo}/holidays/{nucleo_simple}_bell-53",
+      "rmFill": true
+    },
+    "search": {
+      "path": "{nucleo}/ui/16px_zoom-bold",
+      "rmFill": true
+    },
+    "profile": {
+      "path": "{nucleo}/users/{nucleo_simple}_badge-13",
+      "rmFill": true
+    },
+    "save": {
+      "path": "{nucleo}/ui/{nucleo_simple}_disk-2",
+      "rmFill": true
+    },
+    "check": {
+      "path": "{nucleo}/ui/{nucleo_simple}_check-curve",
+      "rmFill": true
+    },
+    "favourite": {
+      "path": "{nucleo}/holidays/{nucleo_simple}_favourite-31",
+      "rmFill": true
+    },
+    "spray": {
+      "path": "{nucleo}/design-development/{nucleo_simple}_spray-2",
+      "rmFill": true
+    },
+    "circle-add": {
+      "path": "{nucleo}/ui/{nucleo_simple}_circle-add",
+      "rmFill": true
+    },
+    "eye-slash": {
+      "path": "{nucleo}/ui/{nucleo_simple}_eye-ban-18",
+      "rmFill": true
+    },
+    "eye": {
+      "path": "{nucleo}/ui/{nucleo_simple}_eye-17",
+      "rmFill": true
+    },
+    "info": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert-i",
+      "rmFill": true
+    },
+    "square-exclamation": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert-square-!",
+      "rmFill": true
+    },
+    "circle-exclamation": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert-circle-!",
+      "rmFill": true
+    },
+    "grid": {
+      "path": "{nucleo}/ui/{nucleo_simple}_grid-48",
+      "rmFill": true
+    },
+    "list": {
+      "path": "{nucleo}/text editing/{nucleo_simple}_list-bullet",
+      "rmFill": true
+    },
+    "dots": {
+      "path": "{nucleo}/ui/{nucleo_simple}_menu-dots",
+      "rmFill": true
+    },
+    "play-circle-o": {
+      "path": "{fa}/play-circle-o",
+      "rmFill": true
+    },
+    "zoom": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_zoom-100",
+      "rmFill": true
+    },
+    "circle-info": {
+      "path": "{nucleo}/travel/{nucleo_simple}_alert-circle-i",
+      "rmFill": true
+    },
+    "folder-open": {
+      "path": "{nucleo}/files-folders/{nucleo_simple}_folder-18",
+      "rmFill": true
+    },
+    "logout": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_logout",
+      "rmFill": true
+    },
+    "cog": {
+      "path": "{nucleo}/ui/{nucleo_simple}_settings-gear-63",
+      "rmFill": true
+    },
+    "plus": {
+      "path": "{nucleo}/ui/{nucleo_simple}_fat-add",
+      "rmFill": true
+    },
+    "circle-play": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_button-circle-play",
+      "rmFill": true
+    },
+    "folder-gallery": {
+      "path": "{nucleo}/files-folders/{nucleo_simple}_folder-gallery",
+      "rmFill": true
+    },
+    "bug": {
+      "path": "{fa}/bug",
+      "rmFill": true
+    },
+    "play": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_button-play",
+      "rmFill": true
+    },
+    "user": {
+      "path": "{nucleo}/users/{nucleo_simple}_circle-08",
+      "rmFill": true
+    },
+    "chain": {
+      "path": "{nucleo}/text editing/{nucleo_simple}_link-69",
+      "rmFill": true
+    },
+    "chain-broken": {
+      "path": "{nucleo}/text editing/{nucleo_simple}_link-broken-70",
+      "rmFill": true
+    },
+    "message": {
+      "path": "{nucleo}/shopping/{nucleo_simple}_newsletter",
+      "rmFill": true
+    },
+    "shapes": {
+      "path": "{nucleo}/design-development/{nucleo_simple}_shapes",
+      "rmFill": true
+    },
+    "dashboard-level": {
+      "path": "{nucleo}/ui/{nucleo_simple}_dashboard-level",
+      "rmFill": true
+    },
+    "import": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_system-update",
+      "rmFill": true
+    },
+    "remove": {
+      "path": "{fa}/trash",
+      "rmFill": true
+    },
+    "clone": {
+      "path": "{nucleo}/design-development/{nucleo_simple}_ungroup",
+      "rmFill": true
+    },
+    "arrow-updown": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_select-84",
+      "rmFill": true
+    },
+    "edit": {
+      "path": "{nucleo}/ui/{nucleo_simple}_edit-72",
+      "rmFill": true
+    },
+    "left": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_skew-left",
+      "rmFill": true
+    },
+    "right": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_skew-right",
+      "rmFill": true
+    },
+    "folder-download": {
+      "path": "{nucleo}/files-folders/{nucleo_simple}_folder-download",
+      "rmFill": true
+    },
+    "open-in-browser": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_open-in-browser",
+      "rmFill": true
+    },
+    "refresh": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_refresh-68",
+      "rmFill": true
+    },
+    "menu-bold": {
+      "path": "{nucleo}/ui/{nucleo_simple}_menu-bold",
+      "rmFill": true
+    },
+    "tag": {
+      "path": "{fa}/tag",
+      "rmFill": true
+    },
+    "circle-in": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_circle-in",
+      "rmFill": true
+    },
+    "square-download": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_square-download",
+      "rmFill": true
+    },
+    "square-check": {
+      "path": "{fa}/check-square-o",
+      "rmFill": true
+    },
+    "square-empty": {
+      "path": "{fa}/square-o",
+      "rmFill": true
+    },
+    "start-install": {
+      "path": "{nucleo}/ui/{nucleo_simple}_square-add-08",
+      "rmFill": true
+    },
+    "folder": {
+      "path": "{nucleo}/files-folders/{nucleo_simple}_folder-18",
+      "rmFill": true
+    },
+    "triangle-alert": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert",
+      "rmFill": true
+    },
+    "square-delete": {
+      "path": "{nucleo}/ui/{nucleo_simple}_square-delete-10",
+      "rmFill": true
+    },
+    "image": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_image-01",
+      "rmFill": true
+    },
+    "sort-amount-asc": {
+      "path": "{fa}/sort-amount-asc",
+      "rmFill": true
+    },
+    "lock": {
+      "path": "{fa}/lock",
+      "rmFill": true
+    },
+    "connect": {
+      "path": "{nucleo}/business-finance/16px_connect",
+      "rmFill": true
+    },
+    "square-info": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert-square-i",
+      "rmFill": true
+    }
+  }
+}
