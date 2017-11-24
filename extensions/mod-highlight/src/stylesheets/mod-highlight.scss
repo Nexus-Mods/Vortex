@@ -48,6 +48,12 @@
   }
 }
 
+.highlight-icons {
+  > .btn:not(:first-child) {
+    margin-left: 4px;
+  }
+}
+
 .textarea-notes {
   width: 100%;
   min-height: 100px;

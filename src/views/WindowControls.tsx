@@ -47,7 +47,7 @@ class WindowControls extends React.Component<{}, {}> {
               id='window-close'
               className='window-control'
               tooltip=''
-              icon='cross'
+              icon='window-close'
               onClick={this.close}
             />
           ) : null

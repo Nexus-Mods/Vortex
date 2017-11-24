@@ -138,7 +138,7 @@ function register(context: IExtensionContextExt) {
   const lootActivity = new util.ReduxProp(context.api, [
     ['session', 'plugins', 'lootActivity'],
   ], (activity: string) => (activity !== undefined) && (activity !== ''));
-  context.registerMainPage('circle-add', 'Plugins', PluginList, {
+  context.registerMainPage('plugins', 'Plugins', PluginList, {
     hotkey: 'E',
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
@@ -162,9 +162,10 @@ function register(context: IExtensionContextExt) {
   context.registerReducer(['settings', 'plugins'], settingsReducer);
   context.registerReducer(['session', 'pluginDependencies'], userlistEditReducer);
 
-  context.registerAction('gamebryo-plugin-icons', 100, 'connect', {}, 'Manage Dependencies', () => {
-    context.api.store.dispatch(setCreateRule());
-  });
+  context.registerAction('gamebryo-plugin-icons', 100, 'connection', {}, 'Manage Dependencies',
+    () => {
+      context.api.store.dispatch(setCreateRule());
+    });
 
   context.registerActionCheck('ADD_USERLIST_RULE', (state: any, action: any) => {
     const {pluginId, reference, type} = action.payload;

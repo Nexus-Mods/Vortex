@@ -731,7 +731,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerToDo('nxm-associated', 'settings', () => ({
     associated: context.api.store.getState().settings.nexus.associateNXM,
-  }), 'chain', 'Handle Nexus Links', associateNXM, undefined, (t, props: any) =>
+  }), 'link', 'Handle Nexus Links', associateNXM, undefined, (t, props: any) =>
     <span>{props.associated ? t('Yes') : t('No')}</span>, undefined);
 
   context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {

@@ -152,7 +152,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['settings', 'profiles'], settingsReducer);
   context.registerReducer(['session', 'profileTransfer'], transferSetupReducer);
 
-  context.registerAction('game-discovered-buttons', 100, 'play', {
+  context.registerAction('game-discovered-buttons', 100, 'activate', {
     noCollapse: true,
   }, 'Manage',
     (instanceIds: string[]) => {
@@ -167,7 +167,7 @@ function init(context: IExtensionContextExt): boolean {
       context.api.store.dispatch(setNextProfile(profileId));
   });
 
-  context.registerAction('game-managed-buttons', 100, 'play', {
+  context.registerAction('game-managed-buttons', 100, 'activate', {
     noCollapse: true,
   }, 'Activate', (instanceIds: string[]) => {
     activateGame(context.api.store, instanceIds[0]);

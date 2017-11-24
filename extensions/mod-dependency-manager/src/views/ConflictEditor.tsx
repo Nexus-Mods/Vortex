@@ -152,7 +152,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
       <tooltip.Icon
         id={`conflict-editor-${rule.reference.fileMD5}`}
         className='pull-right'
-        name='circle-exclamation'
+        name='feedback-info'
         tooltip={t('{{ otherMod }} has a rule referencing {{ thisMod }}',
           { replace: {
               otherMod: renderReference(rule.reference),

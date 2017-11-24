@@ -90,7 +90,7 @@ export const LOCAL: types.ITableAttribute<IModEntry> = {
       <tooltip.Icon
         id={`import-duplicate-${mod.nexusId}`}
         tooltip={t('This mod is already managed by Vortex')}
-        name='triangle-alert'
+        name='feedback-warning'
       />
    ) : null;
   },

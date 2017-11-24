@@ -20,7 +20,7 @@ const ProgressFooter = (props: IProps) => {
     <div style={{ display: 'inline', marginLeft: 5, marginRight: 5 }}>
       <tooltip.Icon
         id='update-file-conflicts'
-        name='flash'
+        name='conflict'
         tooltip={t('Updating file conflicts')}
       />
       <Spinner />

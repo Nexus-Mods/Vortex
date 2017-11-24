@@ -313,13 +313,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   private iconForType(type: DialogType) {
     switch (type) {
       case 'info': return (
-        <Icon name='circle-info' className='icon-info'/>
+        <Icon name='dialog-info' className='icon-info'/>
       );
       case 'error': return (
-        <Icon name='circle-exclamation' className='icon-error'/>
+        <Icon name='dialog-error' className='icon-error'/>
       );
       case 'question': return (
-        <Icon name='circle-question' className='icon-question'/>
+        <Icon name='dialog-question' className='icon-question'/>
       );
       default: return null;
     }

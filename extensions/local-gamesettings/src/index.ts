@@ -115,7 +115,7 @@ function updateLocalGameSettings(featureId: string, oldProfile: types.IProfile,
 
 function init(context): boolean {
   context.registerProfileFeature(
-    'local_game_settings', 'boolean', 'cog', 'This profile has its own game settings',
+    'local_game_settings', 'boolean', 'settings', 'This profile has its own game settings',
     () => gameSupported(selectors.activeGameId(context.api.store.getState())));
 
   context.once(() => {

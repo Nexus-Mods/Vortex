@@ -48,9 +48,9 @@ class FormFeedback extends React.Component<IFormFeedbackProps, {}> {
       return <Spinner style={style} />;
     }
     switch (state) {
-      case 'success': return <Icon name='check' style={style} />;
-      case 'warning': return <Icon name='triangle-alert' style={style} />;
-      case 'error': return <Icon name='cross' style={style} />;
+      case 'success': return <Icon name='feedback-success' style={style} />;
+      case 'warning': return <Icon name='feedback-warning' style={style} />;
+      case 'error': return <Icon name='feedback-error' style={style} />;
       default: return undefined;
     }
   }

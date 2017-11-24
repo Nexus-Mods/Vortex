@@ -119,7 +119,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
           <Table className='profile-details'>
             <TR><TD><TooltipIcon
               id={profile.id}
-              name='wrench'
+              name='mods'
               tooltip={t('Number of Mods enabled')}
             /></TD><TD>{enabledMods}</TD></TR>
 
@@ -155,7 +155,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
 
     const res = [];
     if (!active && available) {
-      res.push({ id: 'enable', icon: 'play', text: t('Enable'), action: this.activate });
+      res.push({ id: 'enable', icon: 'activate', text: t('Enable'), action: this.activate });
     }
     if (available) {
       res.push({ id: 'edit', icon: 'edit', text: t('Edit'), action: this.startEditing });

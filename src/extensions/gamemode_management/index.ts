@@ -305,7 +305,7 @@ function init(context: IExtensionContext): boolean {
     ['session', 'discovery'],
     ], (discovery: any) => discovery.running);
 
-  context.registerMainPage('controller', 'Games', LazyComponent('./views/GamePicker', __dirname), {
+  context.registerMainPage('game', 'Games', LazyComponent('./views/GamePicker', __dirname), {
     hotkey: 'G',
     group: 'global',
     props: () => ({
@@ -385,19 +385,19 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-managed-buttons', 100, HideGameIcon, {});
   context.registerAction('game-discovered-buttons', 100, HideGameIcon, {});
   context.registerAction('game-undiscovered-buttons', 100, HideGameIcon, {});
-  context.registerAction('game-managed-buttons', 105, 'folder', {},
+  context.registerAction('game-managed-buttons', 105, 'open-ext', {},
                          context.api.translate('Open Game Folder'),
                          openGameFolder);
-  context.registerAction('game-discovered-buttons', 105, 'folder', {},
+  context.registerAction('game-discovered-buttons', 105, 'open-ext', {},
                          context.api.translate('Open Game Folder'),
                          openGameFolder);
-  context.registerAction('game-managed-buttons', 110, 'folder-gallery', {},
+  context.registerAction('game-managed-buttons', 110, 'open-ext', {},
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
-  context.registerAction('game-discovered-buttons', 110, 'folder-gallery', {},
+  context.registerAction('game-discovered-buttons', 110, 'open-ext', {},
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
-  context.registerAction('game-undiscovered-buttons', 115, 'folder-open', {},
+  context.registerAction('game-undiscovered-buttons', 115, 'browse', {},
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 

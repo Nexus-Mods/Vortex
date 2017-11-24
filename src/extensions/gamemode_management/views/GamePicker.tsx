@@ -164,8 +164,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             <ToggleButton
               id='gamepicker-layout-list'
               onClick={this.setLayoutList}
-              onIcon='list'
-              offIcon='list'
+              onIcon='layout-list'
+              offIcon='layout-list'
               tooltip={t('List')}
               offTooltip={t('List')}
               state={pickerLayout === 'list'}
@@ -175,8 +175,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             <ToggleButton
               id='gamepicker-layout-grid'
               onClick={this.setLayoutSmall}
-              onIcon='grid'
-              offIcon='grid'
+              onIcon='layout-grid'
+              offIcon='layout-grid'
               tooltip={t('Grid')}
               offTooltip={t('Grid')}
               state={pickerLayout === 'small'}
@@ -305,7 +305,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       if (type === 'managed') {
         return (
           <EmptyPlaceholder
-            icon='controller'
+            icon='game'
             text={t('You haven\'t managed any games yet')}
             subtext={t('To start managing a game, go to "Discovered" and activate a game there.')}
           />
@@ -313,7 +313,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       } else if (type === 'discovered') {
         return (
           <EmptyPlaceholder
-            icon='controller'
+            icon='game'
             text={t('No games were discovered')}
             subtext={t('You can manually add a game from "Supported" or start a full disk scan.')}
           />

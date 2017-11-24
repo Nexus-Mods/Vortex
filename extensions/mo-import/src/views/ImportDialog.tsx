@@ -258,7 +258,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
               className='btn-embed'
               tooltip={t('Browse')}
               onClick={this.browse}
-              icon='folder-open'
+              icon='browse'
             />
           </InputGroup.Button>
         </InputGroup>
@@ -320,8 +320,15 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       <div className='import-working-container'>
         {
           failedImports.length === 0
-            ? <span className='import-success'><Icon name='check' /> {t('Import successful')}</span>
-            : <span className='import-errors'><Icon name='cross' /> {t('There were errors')}</span>
+            ? (
+              <span className='import-success'>
+                <Icon name='feedback-success' /> {t('Import successful')}
+              </span>
+            ) : (
+              <span className='import-errors'>
+                <Icon name='feedback-error' />{t('There were errors')}
+              </span>
+            )
         }
         <span className='import-review-text'>
           {t('You can review the log at')}
@@ -470,7 +477,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   private genActions(): ITableRowAction[] {
     return [
       {
-        icon: 'square-check',
+        icon: 'checkbox-checked',
         title: 'Enable',
         action: (instanceIds: string[]) => {
           instanceIds.forEach(id => this.nextState.importEnabled[id] = true);
@@ -479,7 +486,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         singleRowAction: false,
       },
       {
-        icon: 'square-empty',
+        icon: 'checkbox-unchecked',
         title: 'Disable',
         action: (instanceIds: string[]) => {
           instanceIds.forEach(id => this.nextState.importEnabled[id] = false);
@@ -581,7 +588,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
             <tooltip.Icon
               id={`import-duplicate-${mod.nexusId}`}
               tooltip={t('This mod is already managed by Vortex')}
-              name='triangle-alert'
+              name='feedback-warning'
             />
           ) : null;
         },

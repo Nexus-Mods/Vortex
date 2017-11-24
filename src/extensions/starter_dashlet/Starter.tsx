@@ -114,7 +114,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     if (gameMode === undefined) {
       content = (
         <EmptyPlaceholder
-          icon='controller'
+          icon='game'
           text={t('When you are managing a game, supported tools will appear here')}
           fill
         />
@@ -191,7 +191,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
 
   private renderAddButton(hidden: StarterInfo[]) {
     const { t } = this.props;
-    // <IconButton id='add-tool-icon' icon='plus' tooltip={t('Add Tool')} />
     return (
       <Dropdown
         id='add-tool-button'
@@ -199,7 +198,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
         container={this.mRef}
       >
         <Dropdown.Toggle>
-          <Icon name='plus' />
+          <Icon name='add' />
           <span className='btn-add-tool-text'>{t('Add Tool')}</span>
         </Dropdown.Toggle>
         <Dropdown.Menu>

@@ -16,7 +16,7 @@ class Step extends React.Component<IStepProps, {}> {
     return (
       <div className={`steps-step ${state}`}>
         <div className='steps-step-number'>
-          {state === 'done' ? <Icon name='check'/> : index + 1}
+          {state === 'done' ? <Icon name='feedback-success'/> : index + 1}
         </div>
         <div className='steps-step-main'>
           <div className='steps-step-title'>{title}</div>

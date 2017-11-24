@@ -23,7 +23,7 @@ function registerDashlet(title: string,
 
 function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'interface'], settingsReducer);
-  context.registerMainPage('dashboard-level', 'Dashboard', Dashboard, {
+  context.registerMainPage('dashboard', 'Dashboard', Dashboard, {
     priority: 0,
     hotkey: '1',
     group: 'dashboard',

@@ -180,7 +180,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       id: 'game',
       name: 'Game',
       description: 'The game this download is associated with',
-      icon: 'controller',
+      icon: 'game',
       calc: (attributes: IDownload) => {
         const game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
         return game ? this.props.t(game.shortName || game.name) : attributes.game;
@@ -261,7 +261,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
     this.actions = [
       {
-        icon: 'eye',
+        icon: 'inspect',
         title: 'Inspect',
         action: this.inspect,
         condition: this.inspectable,
@@ -287,7 +287,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         condition: this.pausable,
       },
       {
-        icon: 'play',
+        icon: 'resume',
         title: 'Resume',
         action: this.resume,
         condition: this.resumable,
@@ -349,8 +349,8 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             }, {});
       content = (
         <FlexLayout type='column'>
+          {secondary ? null : <Banner group='downloads' />}
           <FlexLayout.Flex>
-            {secondary ? null : <Banner group='downloads' />}
             <Panel className='download-panel'>
               <FlexLayout type='column'>
                 <FlexLayout.Fixed>

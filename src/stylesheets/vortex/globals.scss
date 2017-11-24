@@ -21,6 +21,10 @@ body {
   background-color: $brand-bg;
 }
 
+.modal-open #content {
+  filter: blur(5px);
+}
+
 ::-webkit-scrollbar {
   width: $scrollbar-width;
   height: $scrollbar-width;

@@ -65,7 +65,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
 
     this.feedbackActions = [
       {
-        icon: 'remove',
+        icon: 'delete',
         title: props.t('Delete'),
         action: this.remove,
       },
@@ -157,7 +157,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
           key={feedbackFiles[feedbackFile].filename}
           tooltip={t('Remove')}
           onClick={this.remove}
-          icon='remove'
+          icon='delete'
         />
       </ListGroupItem>
     );

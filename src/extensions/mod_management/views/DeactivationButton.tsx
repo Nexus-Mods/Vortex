@@ -35,7 +35,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     return (
       <Advanced><ToolbarIcon
         id='deploy-mods'
-        icon='chain-broken'
+        icon='purge'
         text={t('Purge Mods')}
         onClick={this.activate}
       /></Advanced>

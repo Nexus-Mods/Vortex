@@ -66,7 +66,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           {
             modCount !== undefined
               ? <div className='active-mods'>
-                  <Icon name='settings-tool' />
+                  <Icon name='mods' />
                   <span>{t('{{ count }} active mod', { count: modCount })}</span>
                 </div>
               : null
@@ -88,7 +88,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           onClick={onLaunch}
           className='btn-embed'
         >
-          <Icon name='circle-play'/>
+          <Icon name='launch-application'/>
         </Button>
       </div>
     );
@@ -130,7 +130,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
         >
           <IconButton
             id={`btn-info-${game.id}`}
-            icon='circle-info'
+            icon='details'
             className='game-thumbnail-info btn-embed'
             tooltip={t('Show Details')}
           />

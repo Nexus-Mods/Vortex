@@ -572,7 +572,7 @@ function init(context: IExtensionContext): boolean {
     ['session', 'base', 'activity', 'mods'],
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
 
-  context.registerMainPage('wrench', 'Mods',
+  context.registerMainPage('mods', 'Mods',
     LazyComponent('./views/ModList', __dirname), {
     hotkey: 'M',
     group: 'per-game',

@@ -38,7 +38,7 @@ function getCategoryChoices(state: IState) {
 
 function init(context: IExtensionContext): boolean {
   context.registerDialog('categories', CategoryDialog);
-  context.registerAction('mod-icons', 100, 'tag', {}, 'Categories', () => {
+  context.registerAction('mod-icons', 100, 'categories', {}, 'Categories', () => {
     context.api.store.dispatch(showCategoriesDialog(true));
   });
 

@@ -9,6 +9,14 @@
     "window-minimize": "{fa}/window-minimize",
     "window-restore": "{fa}/window-restore",
     "window-maximize": "{fa}/window-maximize",
+    "window-close": {
+      "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
+      "rmFill": true
+    },
+    "sort-none": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_select-84",
+      "rmFill": true
+    },
     "sort-up": {
       "path": "{nucleo}/arrows/{nucleo_simple}_small-up",
       "rmFill": true
@@ -22,32 +30,76 @@
       "rmFill": true
     },
     "nexus": "custom/nexus",
-    "thumbs-up": "{fa}/thumbs-up",
-    "thumbs-down": "{fa}/thumbs-down",
-    "like-maybe": "{fa}/thumbs-o-up",
-    "commenting": {
+    "endorse-yes": "{fa}/thumbs-up",
+    "endorse-no": "{fa}/thumbs-down",
+    "endorse-maybe": "{fa}/thumbs-o-up",
+    "comments": {
       "path": "{fa}/commenting",
       "rmFill": true
     },
-    "bolt": "{fa}/bolt",
+    "conflict": "{fa}/bolt",
     "download": "{fa}/download",
-    "cross": {
+    "close": {
       "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
       "rmFill": true
     },
-    "controller": {
+    "close-slim": {
+      "path": "{nucleo}/ui/{nucleo_simple}_small-remove",
+      "rmFill": true
+    },
+    "toggle-disabled": {
+      "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
+      "rmFill": true
+    },
+    "toggle-enabled": {
+      "path": "{nucleo}/ui/{nucleo_simple}_check-curve",
+      "rmFill": true
+    },
+    "feedback-error": {
+      "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
+      "rmFill": true
+    },
+    "feedback-warning": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert",
+      "rmFill": true
+    },
+    "feedback-info": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert-square-i",
+      "rmFill": true
+    },
+    "feedback-success": {
+      "path": "{nucleo}/ui/{nucleo_simple}_check-curve",
+      "rmFill": true
+    },
+    "dialog-error": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert-circle-!",
+      "rmFill": true
+    },
+    "dialog-question": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert-circle-_",
+      "rmFill": true
+    },
+    "dialog-info": {
+      "path": "{nucleo}/travel/{nucleo_simple}_alert-circle-i",
+      "rmFill": true
+    },
+    "input-confirm": {
+      "path": "{nucleo}/ui/{nucleo_simple}_check-curve",
+      "rmFill": true
+    },
+    "input-cancel": {
+      "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
+      "rmFill": true
+    },
+    "game": {
       "path": "{nucleo}/objects/{nucleo_simple}_controller",
       "rmFill": true
     },
-    "settings-tool": {
-      "path": "{nucleo}/ui/{nucleo_simple}_settings-tool-66",
-      "rmFill": true
-    },
-    "wrench": {
+    "mods": {
       "path": "{nucleo}/ui/{nucleo_simple}_settings-tool-67",
       "rmFill": true
     },
-    "bell": {
+    "notifications": {
       "path": "{nucleo}/holidays/{nucleo_simple}_bell-53",
       "rmFill": true
     },
@@ -59,71 +111,81 @@
       "path": "{nucleo}/users/{nucleo_simple}_badge-13",
       "rmFill": true
     },
-    "save": {
+    "savegame": {
       "path": "{nucleo}/ui/{nucleo_simple}_disk-2",
       "rmFill": true
     },
-    "check": {
-      "path": "{nucleo}/ui/{nucleo_simple}_check-curve",
-      "rmFill": true
-    },
-    "favourite": {
+    "plugin-master": {
       "path": "{nucleo}/holidays/{nucleo_simple}_favourite-31",
       "rmFill": true
     },
-    "spray": {
+    "plugin-clean": {
       "path": "{nucleo}/design-development/{nucleo_simple}_spray-2",
       "rmFill": true
     },
-    "circle-add": {
+    "plugin-native": "{fa}/lock",
+    "plugin-dont-clean": {
+      "path": "{nucleo}/ui/{nucleo_simple}_security",
+      "rmFill": true
+    },
+    "plugins": {
       "path": "{nucleo}/ui/{nucleo_simple}_circle-add",
       "rmFill": true
     },
-    "eye-slash": {
+    "add": {
+      "path": "{nucleo}/ui/{nucleo_simple}_circle-add",
+      "rmFill": true
+    },
+    "remove": {
+      "path": "{nucleo}/ui/{nucleo_simple}_circle-bold-delete",
+      "rmFill": true
+    },
+    "hide": {
       "path": "{nucleo}/ui/{nucleo_simple}_eye-ban-18",
       "rmFill": true
     },
-    "eye": {
+    "show": {
       "path": "{nucleo}/ui/{nucleo_simple}_eye-17",
       "rmFill": true
     },
-    "info": {
+    "inspect": {
+      "path": "{nucleo}/ui/{nucleo_simple}_eye-17",
+      "rmFill": true
+    },
+    "highlight": {
+      "path": "{nucleo}/ui/{nucleo_simple}_eye-17",
+      "rmFill": true
+    },
+    "about": {
       "path": "{nucleo}/ui/{nucleo_simple}_alert-i",
       "rmFill": true
     },
-    "square-exclamation": {
-      "path": "{nucleo}/ui/{nucleo_simple}_alert-square-!",
-      "rmFill": true
-    },
-    "circle-exclamation": {
-      "path": "{nucleo}/ui/{nucleo_simple}_alert-circle-!",
-      "rmFill": true
-    },
-    "grid": {
+    "layout-grid": {
       "path": "{nucleo}/ui/{nucleo_simple}_grid-48",
       "rmFill": true
     },
-    "list": {
+    "layout-list": {
       "path": "{nucleo}/text editing/{nucleo_simple}_list-bullet",
       "rmFill": true
     },
-    "dots": {
+    "menu": {
       "path": "{nucleo}/ui/{nucleo_simple}_menu-dots",
       "rmFill": true
     },
-    "play-circle-o": {
-      "path": "{fa}/play-circle-o",
+    "launch-application": "{fa}/play-circle-o",
+    "launch-simple": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_button-play",
       "rmFill": true
     },
-    "zoom": {
+    "drag-handle": {
       "path": "{nucleo}/arrows/{nucleo_simple}_zoom-100",
       "rmFill": true
     },
-    "circle-info": {
+    "details": {
       "path": "{nucleo}/travel/{nucleo_simple}_alert-circle-i",
       "rmFill": true
     },
-    "folder-open": {
+    "browse": {
       "path": "{nucleo}/files-folders/{nucleo_simple}_folder-18",
       "rmFill": true
     },
@@ -131,27 +193,24 @@
       "path": "{nucleo}/arrows/{nucleo_simple}_logout",
       "rmFill": true
     },
-    "cog": {
+    "settings": {
       "path": "{nucleo}/ui/{nucleo_simple}_settings-gear-63",
       "rmFill": true
     },
-    "plus": {
-      "path": "{nucleo}/ui/{nucleo_simple}_fat-add",
+    "select-install": {
+      "path": "{nucleo}/ui/{nucleo_simple}_square-add-08",
       "rmFill": true
     },
-    "circle-play": {
-      "path": "{nucleo}/multimedia/{nucleo_simple}_button-circle-play",
+    "open-ext": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_launch-11",
       "rmFill": true
     },
-    "folder-gallery": {
-      "path": "{nucleo}/files-folders/{nucleo_simple}_folder-gallery",
+    "bug": "{fa}/bug",
+    "resume": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_button-play",
       "rmFill": true
     },
-    "bug": {
-      "path": "{fa}/bug",
-      "rmFill": true
-    },
-    "play": {
+    "activate": {
       "path": "{nucleo}/multimedia/{nucleo_simple}_button-play",
       "rmFill": true
     },
@@ -159,31 +218,35 @@
       "path": "{nucleo}/users/{nucleo_simple}_circle-08",
       "rmFill": true
     },
-    "chain": {
+    "deploy": {
       "path": "{nucleo}/text editing/{nucleo_simple}_link-69",
       "rmFill": true
     },
-    "chain-broken": {
+    "link": {
+      "path": "{nucleo}/text editing/{nucleo_simple}_link-69",
+      "rmFill": true
+    },
+    "purge": {
       "path": "{nucleo}/text editing/{nucleo_simple}_link-broken-70",
       "rmFill": true
     },
-    "message": {
+    "feedback": {
       "path": "{nucleo}/shopping/{nucleo_simple}_newsletter",
       "rmFill": true
     },
-    "shapes": {
+    "extensions": {
       "path": "{nucleo}/design-development/{nucleo_simple}_shapes",
       "rmFill": true
     },
-    "dashboard-level": {
-      "path": "{nucleo}/ui/{nucleo_simple}_dashboard-level",
+    "dashboard": {
+      "path": "{nucleo}/ui/{nucleo_detail}_dashboard-level",
       "rmFill": true
     },
     "import": {
-      "path": "{nucleo}/arrows/{nucleo_simple}_system-update",
+      "path": "{nucleo}/arrows/{nucleo_simple}_move-down",
       "rmFill": true
     },
-    "remove": {
+    "delete": {
       "path": "{fa}/trash",
       "rmFill": true
     },
@@ -191,19 +254,15 @@
       "path": "{nucleo}/design-development/{nucleo_simple}_ungroup",
       "rmFill": true
     },
-    "arrow-updown": {
-      "path": "{nucleo}/arrows/{nucleo_simple}_select-84",
-      "rmFill": true
-    },
     "edit": {
       "path": "{nucleo}/ui/{nucleo_simple}_edit-72",
       "rmFill": true
     },
-    "left": {
+    "pane-left": {
       "path": "{nucleo}/arrows/{nucleo_simple}_skew-left",
       "rmFill": true
     },
-    "right": {
+    "pane-right": {
       "path": "{nucleo}/arrows/{nucleo_simple}_skew-right",
       "rmFill": true
     },
@@ -219,27 +278,23 @@
       "path": "{nucleo}/arrows/{nucleo_simple}_refresh-68",
       "rmFill": true
     },
-    "menu-bold": {
+    "riffle": {
       "path": "{nucleo}/ui/{nucleo_simple}_menu-bold",
       "rmFill": true
     },
-    "tag": {
+    "categories": {
       "path": "{fa}/tag",
       "rmFill": true
     },
-    "circle-in": {
+    "transfer": {
       "path": "{nucleo}/arrows/{nucleo_simple}_circle-in",
       "rmFill": true
     },
-    "square-download": {
-      "path": "{nucleo}/arrows/{nucleo_simple}_square-download",
-      "rmFill": true
-    },
-    "square-check": {
+    "checkbox-checked": {
       "path": "{fa}/check-square-o",
       "rmFill": true
     },
-    "square-empty": {
+    "checkbox-unchecked": {
       "path": "{fa}/square-o",
       "rmFill": true
     },
@@ -251,32 +306,56 @@
       "path": "{nucleo}/files-folders/{nucleo_simple}_folder-18",
       "rmFill": true
     },
-    "triangle-alert": {
-      "path": "{nucleo}/ui/{nucleo_simple}_alert",
-      "rmFill": true
-    },
-    "square-delete": {
+    "deselect": {
       "path": "{nucleo}/ui/{nucleo_simple}_square-delete-10",
       "rmFill": true
     },
-    "image": {
+    "placeholder-image": {
       "path": "{nucleo}/multimedia/{nucleo_simple}_image-01",
       "rmFill": true
     },
-    "sort-amount-asc": {
+    "loot-sort": {
       "path": "{fa}/sort-amount-asc",
       "rmFill": true
     },
-    "lock": {
+    "locked": {
       "path": "{fa}/lock",
       "rmFill": true
     },
-    "connect": {
+    "unlocked": {
+      "path": "{nucleo}/ui/{nucleo_simple}_lock-open",
+      "rmFill": true
+    },
+    "connection": {
       "path": "{nucleo}/business-finance/16px_connect",
       "rmFill": true
     },
-    "square-info": {
-      "path": "{nucleo}/ui/{nucleo_simple}_alert-square-i",
+    "highlight-temple": {
+      "path": "{nucleo}/travel/{nucleo_simple}_temple-25",
+      "rmFill": true
+    },
+    "highlight-shield": {
+      "path": "{nucleo}/ui/{nucleo_simple}_security",
+      "rmFill": true
+    },
+    "highlight-lab": {
+      "path": "{nucleo}/healthcare-medical/{nucleo_simple}_lab",
+      "rmFill": true
+    },
+    "highlight-map": {
+      "path": "{fa}/map",
+      "rmFill": true
+    },
+    "highlight-flag": {
+      "path": "{nucleo}/maps-location/{nucleo_simple}_flag-complex",
+      "rmFill": true
+    },
+    "highlight-home": {
+      "path": "{nucleo}/ui/{nucleo_simple}_home-51",
+      "rmFill": true
+    },
+    "highlight-bookmark": {
+      "path": "{nucleo}/files-folders/{nucleo_simple}_bookmark-2",
       "rmFill": true
     }
   }

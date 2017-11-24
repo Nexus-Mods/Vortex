@@ -46,13 +46,13 @@ class PackeryItem extends React.Component<IProps, {}> {
       >
         {this.props.children}
         <div className='packery-buttons'>
-          {!fixed ? <Icon name='zoom' className='drag-handle' /> : null}
+          {!fixed ? <Icon name='drag-handle' className='drag-handle' /> : null}
           {(onDismiss !== undefined) ? (
             <Button
               className='btn-embed'
               onClick={this.dismissWidget}
             >
-              <Icon name='cross' />
+              <Icon name='close' />
             </Button>
           ) : null}
         </div>

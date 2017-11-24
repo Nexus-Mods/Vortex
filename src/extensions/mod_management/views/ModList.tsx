@@ -144,19 +144,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     this.modActions = [
       {
-        icon: 'square-check',
+        icon: 'checkbox-checked',
         title: 'Enable',
         action: this.enableSelected,
         singleRowAction: false,
       },
       {
-        icon: 'square-empty',
+        icon: 'checkbox-unchecked',
         title: 'Disable',
         action: this.disableSelected,
         singleRowAction: false,
       },
       {
-        icon: 'remove',
+        icon: 'delete',
         title: 'Remove',
         action: this.removeSelected,
         hotKey: { code: 46 },
@@ -305,20 +305,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     if (sources.length === 1) {
       return (
-        <IconButton
+        <Button
           id='btn-more-mods'
-          tooltip={t('Browse for more mods')}
           onClick={sources[0].onBrowse}
-          icon='plus'
         >
           {t('Get more mods')}
-        </IconButton>
+        </Button>
       );
     }
 
     const title = (
       <div style={{ display: 'inline' }}>
-        <Icon name='plus' />
+        <Icon name='add' />
         {t('Get more mods')}
       </div>
     );

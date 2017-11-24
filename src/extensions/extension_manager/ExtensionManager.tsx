@@ -88,7 +88,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     this.actions = [
       {
-        icon: 'remove',
+        icon: 'delete',
         title: 'Remove',
         action: this.removeExtension,
         condition: (instanceId: string) => !this.state.extensions[instanceId].bundled,

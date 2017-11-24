@@ -75,14 +75,14 @@ class InputButton extends ComponentEx<IProps, IComponentState> {
             tooltip={t('Confirm')}
             onClick={this.confirmInput}
           >
-            <Icon name='check' />
+            <Icon name='input-confirm' />
           </Button>
           <Button
             id='cancel-input'
             tooltip={t('Cancel')}
             onClick={this.closeInput}
           >
-            <Icon name='cross' />
+            <Icon name='input-cancel' />
           </Button>
         </div>
       );

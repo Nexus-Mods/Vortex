@@ -132,8 +132,4 @@ fs.watchFile(configPath, () => {
   refreshIcons();
 });
 
-document.querySelector('#refresh').addEventListener('click', () => {
-  refreshIcons();
-});
-
 refreshIcons();

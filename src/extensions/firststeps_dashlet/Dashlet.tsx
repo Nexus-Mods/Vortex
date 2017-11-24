@@ -43,7 +43,7 @@ class Todo extends React.PureComponent<ITodoProps, {}> {
         {value}
         <IconButton
           id={`btn-dismiss-${todo.id}`}
-          icon='cross'
+          icon='close'
           tooltip={t('Dismiss')}
           className='btn-embed btn-dismiss'
           value={todo.id}

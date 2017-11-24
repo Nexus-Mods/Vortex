@@ -20,7 +20,7 @@ class GlobalOverlay extends ComponentEx<IProps, {}> {
     if (process.env.NODE_ENV === 'development') {
       this.buttons.push(
         {
-          icon: 'wrench',
+          icon: 'mods',
           title: 'Developer',
           action: () => this.context.api.events.emit('show-modal', 'developer'),
         },

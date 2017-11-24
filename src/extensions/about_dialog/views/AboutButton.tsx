@@ -21,7 +21,7 @@ class AboutButton extends ComponentEx<IProps, IComponentState> {
     return (
       <ToolbarIcon
         id='about-btn'
-        icon='info'
+        icon='about'
         text={t('About')}
         placement='top'
         onClick={this.showAboutLayer}

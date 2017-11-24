@@ -35,7 +35,7 @@ class ActivationButton extends ComponentEx<IProps, {}> {
     return (
     <ToolbarIcon
       id='deploy-mods'
-      icon='chain'
+      icon='deploy'
       text={t('Deploy Mods')}
       onClick={this.activate}
     />

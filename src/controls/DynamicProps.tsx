@@ -26,10 +26,6 @@ export interface IBaseProps {
 class DynamicProps extends React.Component<IBaseProps, {}> {
   private mLastProps: any = {};
 
-  constructor(props: IBaseProps) {
-    super(props);
-  }
-
   public componentWillMount() {
     this.mLastProps = this.props.dynamicProps();
   }

@@ -11,7 +11,7 @@ function init(context: IExtensionContext): boolean {
     url: 'https://rd.nexusmods.com/rss/news/',
     maxLength: 400,
     extras: [
-      { attribute: 'nexusmods:comments', icon: 'commenting', text: '{{ value }} comments'},
+      { attribute: 'nexusmods:comments', icon: 'comments', text: '{{ value }} comments'},
     ],
   }), undefined);
 
@@ -25,7 +25,7 @@ function init(context: IExtensionContext): boolean {
           url: `https://rd.nexusmods.com/${gameId}/rss/newtoday/`,
           maxLength: 400,
           extras: [
-            { attribute: 'nexusmods:endorsements', icon: 'thumbs-up', text: '{{ value }}' },
+            { attribute: 'nexusmods:endorsements', icon: 'endorse-yes', text: '{{ value }}' },
             { attribute: 'nexusmods:downloads', icon: 'download', text: '{{ value }}' },
           ],
         };

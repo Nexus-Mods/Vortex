@@ -310,7 +310,7 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
             onClick={onToggleShow}
             className='btn-menu-minimize'
           >
-            <Icon name={show ? 'right' : 'left'} />
+            <Icon name={show ? 'pane-right' : 'pane-left'} />
           </Button>
         </div>
       </div>

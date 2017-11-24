@@ -395,7 +395,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
             className={classes.join(' ')}
             key={`rules-${mod.id}`}
             tooltip={t('Drag to another mod to define dependency')}
-            icon='connect'
+            icon='connection'
             ref={this.setRef}
             onClick={this.toggleOverlay}
           />
@@ -450,7 +450,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         className={classes.join(' ')}
         key={`conflicts-${mod.id}`}
         tooltip={tip}
-        icon='flash'
+        icon='conflict'
         onClick={this.openConflictDialog}
       />
     );

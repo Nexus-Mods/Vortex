@@ -52,7 +52,7 @@ function todos(api: IExtensionApi): IToDo[] {
   return [
     {
       id: 'pick-game',
-      icon: 'controller',
+      icon: 'game',
       type: 'search' as ToDoType,
       props: state => ({ gameMode: selectors.activeGameId(state) }),
       condition: props => props.gameMode === undefined,
@@ -87,7 +87,7 @@ function todos(api: IExtensionApi): IToDo[] {
     },
     {
       id: 'advanced-settings',
-      icon: 'cog',
+      icon: 'settings',
       type: 'more' as ToDoType,
       props: () => ({}),
       text: 'View Advanced Settings',

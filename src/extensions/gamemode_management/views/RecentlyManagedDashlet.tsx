@@ -51,7 +51,7 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
       // nothing recently managed
       content = (
         <Placeholder
-          icon='controller'
+          icon='game'
           text={t('You don\'t have any recently managed games')}
           fill
         />

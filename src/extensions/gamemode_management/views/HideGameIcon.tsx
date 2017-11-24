@@ -33,7 +33,7 @@ class HideGameIcon extends ComponentEx<IProps, {}> {
     return (
       <ToolbarIcon
         id={`hide-${instanceId}`}
-        icon={hidden ? 'eye' : 'eye-slash'}
+        icon={hidden ? 'show' : 'hide'}
         text={hidden ? t('Show') : t('Hide')}
         onClick={this.toggleHidden}
       />

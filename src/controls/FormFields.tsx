@@ -116,7 +116,7 @@ export class FormPathItem extends React.Component<IFormPathProps, {}> {
                 id='change-tool-path'
                 tooltip={t('Change')}
                 onClick={this.handleChangePath}
-                icon='folder-open'
+                icon='browse'
               />
             </InputGroup.Button>
           </InputGroup>

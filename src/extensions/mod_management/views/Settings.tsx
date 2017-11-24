@@ -353,7 +353,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               tooltip={t('Browse')}
               onClick={this.mBrowseCBs[pathKey]}
             >
-              <Icon name='folder-open' />
+              <Icon name='browse' />
             </Button>
           </InputGroup.Button>
         </InputGroup>

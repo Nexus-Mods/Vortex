@@ -214,7 +214,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
     return (
       <span className='import-errors'>
-        <Icon name='cross' />
+        <Icon name='feedback-error' />
         {' '}
         {t('No NMM install found with mods for this game. ' +
           'Please note that only NMM >= 0.63 is supported.')}
@@ -302,8 +302,15 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       <div className='import-working-container'>
         {
           failedImports.length === 0
-            ? <span className='import-success'><Icon name='check' /> {t('Import successful')}</span>
-            : <span className='import-errors'><Icon name='cross' /> {t('There were errors')}</span>
+            ? (
+              <span className='import-success'>
+                <Icon name='feedback-success' /> {t('Import successful')}
+              </span>
+            ) : (
+              <span className='import-errors'>
+                <Icon name='feedback-error' /> {t('There were errors')}
+              </span>
+            )
         }
         <span className='import-review-text'>
           {t('You can review the log at')}

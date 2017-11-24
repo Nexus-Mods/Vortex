@@ -84,7 +84,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
 
     this.savegameActions = [
       {
-        icon: 'remove',
+        icon: 'delete',
         title: props.t('Delete'),
         action: this.remove,
       },

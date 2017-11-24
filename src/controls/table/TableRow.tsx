@@ -98,7 +98,7 @@ class TableCell extends React.Component<ICellProps, {}> {
             className='btn-embed'
             id={`toggle-${rowId}-${attribute.id}`}
             tooltip={attribute.name}
-            icon={data ? 'square-check' : 'square-remove'}
+            icon={data ? 'checkbox-checked' : 'square-remove'}
             onClick={this.toggle}
           />
         );
@@ -245,7 +245,7 @@ class TableRow extends React.Component<IRowProps, {}> {
           </SplitButton>
         </TD>);
     } else {
-      res.push(<TD />);
+      res.push(<TD key='no-action' />);
     }
     return res;
   }

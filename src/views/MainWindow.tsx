@@ -165,7 +165,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       title: 'Settings',
       group: 'global',
       component: Settings,
-      icon: 'cog',
+      icon: 'settings',
       propsFunc: () => undefined,
       visible: () => true,
     };
@@ -340,7 +340,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
               onClick={this.toggleMenu}
               className='btn-menu-minimize'
             >
-              <Icon name={tabsMinimized ? 'right' : 'left'} />
+              <Icon name={tabsMinimized ? 'pane-right' : 'pane-left'} />
             </Button>
           </FlexLayout.Fixed>
           <FlexLayout.Flex fill id='main-window-pane'>

@@ -246,7 +246,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
             <p>{t('{{count}} item selected', { count: selected.length })}</p>
             <ToolbarIcon
               key='btn-deselect'
-              icon='square-delete'
+              icon='deselect'
               text={t('Deselect All')}
               onClick={this.deselectAll}
             />
@@ -348,7 +348,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       .map(attr => {
         const attributeState = this.getAttributeState(attr);
         return {
-          icon: attributeState.enabled ? 'square-check' : 'square-empty',
+          icon: attributeState.enabled ? 'checkbox-checked' : 'checkbox-unchecked',
           title: attr.name,
           position: getPos(),
           action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),
@@ -367,7 +367,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
               staticElements={elements}
               instanceId={selected}
               collapse='force'
-              icon='cog'
+              icon='settings'
             />
           ) : null
         }

@@ -146,7 +146,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             className='btn-embed'
             onClick={this.toggleCollapsed}
             tooltip={''}
-            icon={icon || 'dots'}
+            icon={icon || 'menu'}
             rotate={90}
             rotateId={`dots-iconbar-${id}`}
             ref={this.setButtonRef}

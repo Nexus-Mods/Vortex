@@ -68,7 +68,7 @@ class More extends React.Component<IProps, IComponentState> {
           {popover}
         </Overlay>
         <div className='more-link' ref={this.setRef}>
-          <IconButton tooltip='' onClick={this.toggle} icon='circle-info' />
+          <IconButton tooltip='' onClick={this.toggle} icon='details' />
         </div>
       </div>
     );

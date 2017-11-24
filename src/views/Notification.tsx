@@ -83,10 +83,10 @@ class Notification extends ComponentEx<IProps, {}> {
   private typeToIcon(type: NotificationType): JSX.Element {
     switch (type) {
       case 'activity': return <Spinner />;
-      case 'success': return <Icon name='square-check' />;
-      case 'info': return <Icon name='square-info' />;
-      case 'warning': return <Icon name='square-exclamation' />;
-      case 'error': return <Icon name='triangle-alert' />;
+      case 'success': return <Icon name='feedback-success' />;
+      case 'info': return <Icon name='feedback-info' />;
+      case 'warning': return <Icon name='feedback-warning' />;
+      case 'error': return <Icon name='feedback-error' />;
       default: return null;
     }
   }

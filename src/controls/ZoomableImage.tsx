@@ -46,7 +46,7 @@ class ZoomableImage extends React.Component<IZoomableImageProps, { showOverlay: 
       <div className={className}>
         { (url !== undefined)
           ? <Image className='zoomable-image' src={url} onClick={this.toggleOverlay} />
-          : <Icon name='image' />
+          : <Icon name='placeholder-image' />
         }
         {showOverlay ? (
           <Portal
