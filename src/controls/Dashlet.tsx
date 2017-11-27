@@ -1,3 +1,5 @@
+import { truthy } from '../util/util';
+
 import * as React from 'react';
 
 export interface IDashletProps {
@@ -11,7 +13,7 @@ class Dashlet extends React.Component<IDashletProps, {}> {
     const classes = ['dashlet'].concat(className.split(' '));
     return (
       <div className={classes.join(' ')}>
-        <h2>{title}</h2>
+        {truthy(title) ? <h2>{title}</h2> : null}
         {this.props.children}
       </div>
     );

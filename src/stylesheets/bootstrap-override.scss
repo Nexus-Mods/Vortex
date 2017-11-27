@@ -9,6 +9,13 @@ h1, h2, h3 {
 
 .dropdown-menu {
   border: $border-width solid $border-color;
+  > li > a {
+    display: flex;
+    > .btn {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
 }
 
 .margin {
@@ -29,6 +36,7 @@ a[role=menuitem] svg {
     display: flex;
     flex-direction: column;
     flex: 1 1 0;
+    width: initial;
   }
 }
 
@@ -70,7 +78,13 @@ a[role=menuitem] svg {
   border-bottom: 0;
   margin-right: -1px;
   text-transform: uppercase;
+  display: flex;
+  align-items: baseline;
+  padding: 6px 32px;
+  font-family: BebasNeue;
+  font-size: large;
 }
+
 
 .tab-pane>div {
   border: $border-width solid $nav-tabs-border-color;

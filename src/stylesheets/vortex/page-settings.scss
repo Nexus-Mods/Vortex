@@ -41,16 +41,6 @@
 }
 
 #settings-tab-pane-Mods {
-  .inset-btn {
-    position: absolute;
-    top: 6px;
-    right: 4px;
-
-    .btn {
-      @extend .btn-embed;
-    }
-  }
-
   .input-group-btn {
     width: initial;
     padding-left: 4px;

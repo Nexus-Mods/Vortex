@@ -52,7 +52,7 @@ class PackeryItem extends React.Component<IProps, {}> {
               className='btn-embed'
               onClick={this.dismissWidget}
             >
-              <Icon name='close' />
+              <Icon name='close-slim' />
             </Button>
           ) : null}
         </div>

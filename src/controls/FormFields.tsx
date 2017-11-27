@@ -111,7 +111,7 @@ export class FormPathItem extends React.Component<IFormPathProps, {}> {
         <Col sm={9}>
           <InputGroup>
             <FormControl type='text' value={value} placeholder={placeholder} readOnly />
-            <InputGroup.Button>
+            <InputGroup.Button className='inset-btn'>
               <IconButton
                 id='change-tool-path'
                 tooltip={t('Change')}

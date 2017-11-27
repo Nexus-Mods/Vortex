@@ -67,9 +67,11 @@
 }
 
 #notifications-button {
-  margin-top: auto;
-  margin-bottom: auto;
   position: relative;
+  .svg {
+    width: 2.5em;
+    height: 2.5em;
+  }
   .badge {
     padding: 1px 3px;
     font-size: $font-size-small;

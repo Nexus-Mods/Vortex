@@ -43,7 +43,7 @@ class Todo extends React.PureComponent<ITodoProps, {}> {
         {value}
         <IconButton
           id={`btn-dismiss-${todo.id}`}
-          icon='close'
+          icon='close-slim'
           tooltip={t('Dismiss')}
           className='btn-embed btn-dismiss'
           value={todo.id}
@@ -130,7 +130,7 @@ class TodoDashlet extends ComponentEx<IProps, {}> {
 
     return (
       <Dashlet title={t('Do you have a second?')} className='dashlet-todo'>
-        <div style={{ overflowY: 'hidden', overflowX: 'auto', display: 'flex' }}>
+        <div>
           {visibleSteps.map(todo =>
             <Todo
               t={t}

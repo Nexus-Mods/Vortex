@@ -191,7 +191,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     }
 
     return (
-      <Modal show={true} onHide={onClose}>
+      <Modal show={true} onHide={onClose} id='tool-edit-dialog'>
         <Modal.Header>
           <Modal.Title>
             {realName}

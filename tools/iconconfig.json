@@ -38,13 +38,16 @@
       "rmFill": true
     },
     "conflict": "{fa}/bolt",
-    "download": "{fa}/download",
+    "download": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_square-download",
+      "rmFill": true
+    },
     "close": {
       "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
       "rmFill": true
     },
     "close-slim": {
-      "path": "{nucleo}/ui/{nucleo_simple}_small-remove",
+      "path": "{nucleo}/ui/{nucleo_simple}_simple-remove",
       "rmFill": true
     },
     "toggle-disabled": {
@@ -55,6 +58,7 @@
       "path": "{nucleo}/ui/{nucleo_simple}_check-curve",
       "rmFill": true
     },
+    "toggle-uninstalled": "{fa}/trash",
     "feedback-error": {
       "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
       "rmFill": true
@@ -104,7 +108,7 @@
       "rmFill": true
     },
     "search": {
-      "path": "{nucleo}/ui/16px_zoom-bold",
+      "path": "{nucleo}/ui/16px_zoom-2",
       "rmFill": true
     },
     "profile": {
@@ -202,7 +206,7 @@
       "rmFill": true
     },
     "open-ext": {
-      "path": "{nucleo}/arrows/{nucleo_simple}_launch-11",
+      "path": "{nucleo}/files-folders/{nucleo_simple}_folder-15",
       "rmFill": true
     },
     "bug": "{fa}/bug",
@@ -211,7 +215,7 @@
       "rmFill": true
     },
     "activate": {
-      "path": "{nucleo}/multimedia/{nucleo_simple}_button-play",
+      "path": "{nucleo}/ui/{nucleo_simple}_check-curve",
       "rmFill": true
     },
     "user": {
@@ -246,10 +250,7 @@
       "path": "{nucleo}/arrows/{nucleo_simple}_move-down",
       "rmFill": true
     },
-    "delete": {
-      "path": "{fa}/trash",
-      "rmFill": true
-    },
+    "delete": "{fa}/trash",
     "clone": {
       "path": "{nucleo}/design-development/{nucleo_simple}_ungroup",
       "rmFill": true
@@ -286,10 +287,6 @@
       "path": "{fa}/tag",
       "rmFill": true
     },
-    "transfer": {
-      "path": "{nucleo}/arrows/{nucleo_simple}_circle-in",
-      "rmFill": true
-    },
     "checkbox-checked": {
       "path": "{fa}/check-square-o",
       "rmFill": true
@@ -300,10 +297,6 @@
     },
     "start-install": {
       "path": "{nucleo}/ui/{nucleo_simple}_square-add-08",
-      "rmFill": true
-    },
-    "folder": {
-      "path": "{nucleo}/files-folders/{nucleo_simple}_folder-18",
       "rmFill": true
     },
     "deselect": {
@@ -330,6 +323,10 @@
       "path": "{nucleo}/business-finance/16px_connect",
       "rmFill": true
     },
+    "bookmark": {
+      "path": "{nucleo}/files-folders/{nucleo_simple}_bookmark-2",
+      "rmFill": true
+    },
     "highlight-temple": {
       "path": "{nucleo}/travel/{nucleo_simple}_temple-25",
       "rmFill": true
@@ -354,8 +351,8 @@
       "path": "{nucleo}/ui/{nucleo_simple}_home-51",
       "rmFill": true
     },
-    "highlight-bookmark": {
-      "path": "{nucleo}/files-folders/{nucleo_simple}_bookmark-2",
+    "transfer": {
+      "path": "{nucleo}/files-folders/{nucleo_simple}_replace",
       "rmFill": true
     }
   }

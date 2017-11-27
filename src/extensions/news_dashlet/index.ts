@@ -7,7 +7,7 @@ import RSSDashlet from './Dashlet';
 
 function init(context: IExtensionContext): boolean {
   context.registerDashlet('News', 1, 3, 200, RSSDashlet, undefined, () => ({
-    title: context.api.translate('News'),
+    title: context.api.translate('Latest News'),
     url: 'https://rd.nexusmods.com/rss/news/',
     maxLength: 400,
     extras: [
@@ -16,7 +16,7 @@ function init(context: IExtensionContext): boolean {
   }), undefined);
 
   context.registerDashlet(
-      'New Files', 1, 3, 360, RSSDashlet,
+      'Latest Mods', 1, 3, 360, RSSDashlet,
       state => activeGameId(state) !== undefined, () => {
         const gameId =
             convertGameId(activeGameId(context.api.store.getState()));

@@ -472,9 +472,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       edit: {
         inline: true,
         choices: () => [
-          { key: 'enabled', text: 'Enabled' },
-          { key: 'disabled', text: 'Disabled' },
-          { key: 'uninstalled', text: 'Uninstalled' },
+          { key: 'enabled', text: 'Enabled', icon: 'toggle-enabled' },
+          { key: 'disabled', text: 'Disabled', icon: 'toggle-disabled' },
+          { key: 'uninstalled', text: 'Uninstalled', icon: 'toggle-uninstalled' },
           { key: 'installing', text: 'Installing', visible: false },
         ],
         onChangeValue: this.changeModEnabled,

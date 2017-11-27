@@ -257,6 +257,30 @@ div:hover > .hover-expand {
   }
 }
 
+.inset-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: initial;
+
+  .btn {
+    @extend .btn-embed;
+  }
+}
+
+.nav-title {
+  display: flex;
+  align-items: baseline;
+  .nav-title-count {
+    margin-left: 4px;
+    font-size: initial;
+  }
+}
+
+.dropdown svg {
+  margin-right: 8px;
+}
+
 // /generic control rules
 /////////////////////////
 

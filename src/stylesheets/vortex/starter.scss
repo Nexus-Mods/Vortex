@@ -3,6 +3,11 @@
   margin: 0;
   height: 100%;
 
+  .media-left {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+
   .row>div {
     padding-top: $slim-gutter;
     padding-bottom: $slim-gutter;
@@ -17,6 +22,7 @@
   .media-body {
     overflow: visible;
     vertical-align: middle;
+    flex-direction: row;
   }
 }
 
@@ -38,7 +44,8 @@
   background-color: $brand-bg;
   display: flex;
   flex-direction: row;
-  padding: 7px;
+  padding: 8px;
+  min-width: 128px;
 
   button {
     @extend .btn-embed;
@@ -62,34 +69,62 @@
 
 .tool-bookmark {
   // balance the padding of the tool button
-  margin-top: floor(($gutter-width / -3));
+  margin-top: -9px;
+}
+
+#add-tool-button {
+  padding: $gutter-width * 2 $half-gutter $half-gutter;
+  height: 100%;
+
+  display: flex !important;
+  background-color: $brand-bg;
+
+  &:hover {
+    background-color: $brand-clickable;
+  }
+
+  span {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+  .btn-add-tool-text {
+    flex: 1 1 0;
+  }
+  svg {
+    width: 2.5em;
+    height: 2.5em;
+    position: absolute;
+    top: 32px;
+    left: 50%;
+    margin-left: -1.25em;
+    }
+}
+
+.tool-icon-box {
+  display: flex;
+  flex-flow: row wrap;
+  overflow-y: auto;
+  justify-content: center;
+  align-items: center;
+  > * {
+    flex: 0 1 30%;
+    min-width: 150px;
+    margin: 8px;
+  }
 }
 
 .btn-add-tool {
-  width: 100%;
-  button {
-    width: 100%;
-
-    padding: $half-gutter;
-    background-color: $brand-menu;
-    display: flex !important;
-
-    span {
-      margin-top: auto;
-      margin-bottom: auto;
-    }
-    .btn-add-tool-text {
-      flex: 1 1 0;
-    }
-    svg {
-      width: 24px;
-      height: 24px;
-    }
-  }
+  margin: $half-gutter 0;
 }
 
 .env-edit-buttons {
   position: absolute;
   top: 3px;
   right: 3px;
+}
+
+#tool-edit-dialog {
+  .input-group {
+    width: 100%;
+  }
 }

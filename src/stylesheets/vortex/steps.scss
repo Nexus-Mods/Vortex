@@ -24,13 +24,18 @@
     font-size: 0.9em;
   }
 
-  .steps-step.current {
-    .steps-step-number {
-      background-color: $brand-secondary;
-    }
-  }
+  .steps-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 
-  .steps-step.future {
-    color: $text-color-disabled;
+    &.current {
+      .steps-step-number {
+        background-color: $brand-secondary;
+      }
+    }
+    &.future {
+      color: $text-color-disabled;
+    }
   }
 }

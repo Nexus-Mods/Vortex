@@ -74,6 +74,8 @@ class TableCell extends React.Component<ICellProps, {}> {
               onSelect={this.changeCell}
               tooltip={attribute.description}
             >
+            {((currentChoice !== undefined) && (currentChoice.icon !== undefined))
+                ? <Icon name={currentChoice.icon} /> : null}
             {currentChoice !== undefined ? t(currentChoice.text) : ''}
             </Button>
             <Dropdown.Toggle
@@ -131,6 +133,7 @@ class TableCell extends React.Component<ICellProps, {}> {
         key={choice.key}
         className={`option-${tableId}-${attribute.id}-${choice.key}`}
       >
+        {choice.icon ? <Icon name={choice.icon} /> : null}
         {t(choice.text)}
       </MenuItem>
     );

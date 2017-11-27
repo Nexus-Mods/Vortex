@@ -119,9 +119,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       <Modal id='import-dialog' show={importStep !== undefined} onHide={this.nop}>
         <Modal.Header>
           <Modal.Title>{t('Nexus Mod Manager (NMM) Import Tool')}</Modal.Title>
+          {this.renderStep(importStep)}
         </Modal.Header>
         <Modal.Body style={{ height: '60vh', display: 'flex', flexDirection: 'column' }}>
-          {this.renderStep(importStep)}
           {error !== undefined ? <Alert>{error}</Alert> : this.renderContent(importStep)}
         </Modal.Body>
         <Modal.Footer>

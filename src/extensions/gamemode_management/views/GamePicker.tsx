@@ -146,6 +146,15 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     });
 
+    const title = (text: string, count: number) => {
+      return (
+        <div className='nav-title'>
+        <div className='nav-title-title'>{text}</div>
+        <div className='nav-title-count'>({count})</div>
+      </div>
+      );
+    };
+
     return (
       <MainPage domRef={this.setRef}>
         <MainPage.Header>
@@ -192,21 +201,19 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                 <Tabs defaultActiveKey='managed' id='games-picker-tabs'>
                   <Tab
                     eventKey='managed'
-                    title={t('Managed ({{ num }})', { replace: { num: managedGameList.length } })}
+                    title={title(t('Managed'), managedGameList.length)}
                   >
                     {this.renderGames(managedGameList, 'managed')}
                   </Tab>
                   <Tab
                     eventKey='discovered'
-                    title={t('Discovered ({{ num }})', {
-                      replace: { num: discoveredGameList.length } })}
+                    title={title(t('Discovered'), discoveredGameList.length)}
                   >
                     {this.renderGames(discoveredGameList, 'discovered')}
                   </Tab>
                   <Tab
                     eventKey='supported'
-                    title={t('Supported ({{ num }})', {
-                      replace: { num: supportedGameList.length } })}
+                    title={title(t('Supported'), supportedGameList.length)}
                   >
                     {this.renderGames(supportedGameList, 'undiscovered')}
                   </Tab>

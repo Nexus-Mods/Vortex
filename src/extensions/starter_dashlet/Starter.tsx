@@ -131,6 +131,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           </Media.Left>
           <Media.Body>
             {this.renderToolIcons(game, discoveredGame)}
+            {this.renderAddButton()}
           </Media.Body>
         </Media>
       );
@@ -155,47 +156,31 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     const knownTools: IToolStored[] = getSafe(game, ['supportedTools'], []);
     const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
 
-    const hidden = tools.filter(starter =>
-      (discoveredTools[starter.id] !== undefined)
-      && (discoveredTools[starter.id].hidden === true));
-
     const visible = tools.filter(starter =>
       starter.isGame
       || (discoveredTools[starter.id] === undefined)
       || (discoveredTools[starter.id].hidden !== true));
 
-    visible.push(null);
-
-    const split: StarterInfo[][] = visible.reduce((prev, value, idx) => {
-      if ((idx % 4) === 0) {
-        prev.push([]);
-      }
-      prev[Math.floor(idx / 4)].push(value);
-      return prev;
-    }, []);
-
     return (
-      <div style={{ height: '100%' }}>
-        <Grid fluid>
-          <Row>{
-            visible.map((col, colIdx) => (
-              <Col key={colIdx} md={6} lg={4} >
-                {col !== null ? this.renderTool(col) : this.renderAddButton(hidden)}
-              </Col>
-            ))
-          }</Row>
-        </Grid>
+      <div className='tool-icon-box'>
+        {visible.map((vis, idx) => <div key={idx}>{this.renderTool(vis)}</div>)}
       </div>
     );
   }
 
-  private renderAddButton(hidden: StarterInfo[]) {
-    const { t } = this.props;
+  private renderAddButton() {
+    const { t, discoveredTools } = this.props;
+    const { tools } = this.state;
+
+    const hidden = tools.filter(starter =>
+      (discoveredTools[starter.id] !== undefined)
+      && (discoveredTools[starter.id].hidden === true));
+
     return (
       <Dropdown
         id='add-tool-button'
         className='btn-add-tool'
-        container={this.mRef}
+        // container={this.mRef}
       >
         <Dropdown.Toggle>
           <Icon name='add' />

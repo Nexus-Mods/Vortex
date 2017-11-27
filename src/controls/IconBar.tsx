@@ -79,6 +79,33 @@ function PortalMenu(props: IPortalMenuProps, context: any) {
   );
 }
 
+interface IMenuActionProps {
+  id: string;
+  icon: IActionDefinition;
+  instanceId: string | string[];
+}
+
+class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
+  public render(): JSX.Element {
+    const { icon, id } = this.props;
+    return (
+      <MenuItem key={id} eventKey={id} onSelect={this.trigger}>
+          {/*this.renderIconInner(icon, index, 'menu')*/}
+          <Icon name={icon.icon} />
+          <div className='button-text'>{icon.title}</div>
+        </MenuItem>
+    );
+  }
+
+  private trigger = () => {
+    const { icon, instanceId } = this.props;
+
+    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+
+    icon.action(instanceIds);
+  }
+}
+
 /**
  * represents an extensible row of icons/buttons
  * In the simplest form this is simply a bunch of buttons that will run
@@ -201,11 +228,15 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       );
     }
 
-    return (
-      <MenuItem key={id} eventKey={id}>
-        {this.renderIconInner(icon, index, 'menu')}
-      </MenuItem>
-    );
+    if (icon.icon !== undefined) {
+      return <MenuAction key={id} id={id} icon={icon} instanceId={instanceId} />;
+    } else {
+      return (
+        <MenuItem key={id} eventKey={id}>
+          {this.renderCustomIcon(id, icon)}
+        </MenuItem>
+      );
+    }
   }
 
   private renderIcon = (icon: IActionDefinition, index: number) => {
@@ -242,37 +273,41 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         />
       );
     } else {
-      // custom case. the caller can pass properties via the props() function and by
-      // passing the prop to the iconbar. the props on the iconbar that we don't handle are
-      // passed on
-      const knownProps = [ 'condition', 'className', 'group', 't', 'i18nLoadedAt',
-                           'objects', 'children' ];
-      const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
-        if (knownProps.indexOf(current) === -1) {
-          return {
-            ...prev,
-            [current]: this.props[current],
-          };
-        } else {
-          return prev;
-        }
-      }, {});
-      const staticProps = {
-        ...unknownProps,
-        key: id,
-      };
-      if (icon.props !== undefined) {
-        return (
-          <DynamicProps
-            key={id}
-            dynamicProps={icon.props}
-            staticProps={staticProps}
-            component={icon.component}
-          />
-        );
+      return this.renderCustomIcon(id, icon);
+    }
+  }
+
+  private renderCustomIcon(id: string, icon: IActionDefinition) {
+    // custom case. the caller can pass properties via the props() function and by
+    // passing the prop to the iconbar. the props on the iconbar that we don't handle are
+    // passed on
+    const knownProps = ['condition', 'className', 'group', 't', 'i18nLoadedAt',
+      'objects', 'children'];
+    const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
+      if (knownProps.indexOf(current) === -1) {
+        return {
+          ...prev,
+          [current]: this.props[current],
+        };
       } else {
-        return <icon.component {...staticProps} />;
+        return prev;
       }
+    }, {});
+    const staticProps = {
+      ...unknownProps,
+      key: id,
+    };
+    if (icon.props !== undefined) {
+      return (
+        <DynamicProps
+          key={id}
+          dynamicProps={icon.props}
+          staticProps={staticProps}
+          component={icon.component}
+        />
+      );
+    } else {
+      return <icon.component {...staticProps} />;
     }
   }
 

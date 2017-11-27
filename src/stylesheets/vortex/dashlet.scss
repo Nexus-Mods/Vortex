@@ -35,11 +35,20 @@
 
 .dashlet-starter {
   padding-right: 50px;
+  display: flex;
+  align-items: center;
 }
 
 .dashlet-todo {
   li {
     display: flex;
+  }
+
+  div {
+    overflow-y: hidden;
+    overflow-x: auto;
+    display: flex;
+    margin-top: $half-gutter;
   }
 }
 
@@ -90,6 +99,7 @@
     width: 48px;
     height: 48px;
     border-radius: 32px;
+    padding: 0;
   }
 }
 
@@ -103,8 +113,8 @@
 }
 
 .packery-item {
-  padding: 5px;
-  overflow: hidden;
+  padding: floor(($half-gutter / 2));
+  // overflow: hidden;
 
   .packery-buttons {
     position: absolute;
@@ -114,6 +124,9 @@
     > * {
       margin-left: 4px;
     }
+  }
+  .drag-handle:hover {
+    color: $brand-clickable;
   }
 }
 
