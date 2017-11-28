@@ -11,7 +11,7 @@ import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { ButtonGroup, Dropdown, DropdownButton, MenuItem } from 'react-bootstrap';
+import { ButtonGroup, Dropdown, DropdownButton, MenuItem, SplitButton } from 'react-bootstrap';
 import { Overlay } from 'react-overlays';
 
 export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
@@ -24,6 +24,7 @@ export interface IBaseProps {
   buttonType?: ButtonType;
   orientation?: 'horizontal' | 'vertical';
   collapse?: boolean | 'force';
+  dropdown?: boolean;
   icon?: string;
 }
 
@@ -89,7 +90,7 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
   public render(): JSX.Element {
     const { icon, id } = this.props;
     return (
-      <MenuItem key={id} eventKey={id} onSelect={this.trigger}>
+      <MenuItem eventKey={id} onSelect={this.trigger}>
           {/*this.renderIconInner(icon, index, 'menu')*/}
           <Icon name={icon.icon} />
           <div className='button-text'>{icon.title}</div>
@@ -133,7 +134,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { collapse, icon, id, instanceId, objects, orientation, className, style } = this.props;
+    const { collapse, dropdown, icon, id, instanceId,
+            objects, orientation, className, style } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
     const icons = objects.filter(iter => {
@@ -151,7 +153,24 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       classes.push(className);
     }
 
-    if (collapse) {
+    if (dropdown) {
+      const sorted = icons.sort(iconSort);
+      return (
+        <SplitButton
+          id={`${id}-menu`}
+          title={(
+            <div data-value={sorted[0].title} onClick={this.triggerDefault}>
+              <Icon name={sorted[0].icon} />
+              {sorted[0].title}
+            </div>
+          )}
+        >
+          {sorted.slice(1).map((iter, idx) => (
+            <MenuAction key={idx} id={iter.title} icon={iter} instanceId={instanceId} />
+          ))}
+        </SplitButton>
+      );
+    } else if (collapse) {
       classes.push('btngroup-collapsed');
 
       const collapsed: IActionDefinition[] = [];
@@ -308,6 +327,17 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       );
     } else {
       return <icon.component {...staticProps} />;
+    }
+  }
+
+  private triggerDefault = (evt: React.MouseEvent<any>) => {
+    const { instanceId, objects } = this.props;
+    const title = evt.currentTarget.attributes.getNamedItem('data-value').value;
+    const action = objects.find(iter =>
+      iter.title === evt.currentTarget.attributes.getNamedItem('data-value').value);
+    if (action !== undefined) {
+      const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+      action.action(instanceIds);
     }
   }
 

@@ -25,6 +25,14 @@
       "path": "{nucleo}/arrows/{nucleo_simple}_small-down",
       "rmFill": true
     },
+    "search-up": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_small-up",
+      "rmFill": true
+    },
+    "search-down": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_small-down",
+      "rmFill": true
+    },
     "spinner": {
       "path": "custom/753",
       "rmFill": true
@@ -353,6 +361,18 @@
     },
     "transfer": {
       "path": "{nucleo}/files-folders/{nucleo_simple}_replace",
+      "rmFill": true
+    },
+    "collapse-all": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_centralize",
+      "rmFill": true
+    },
+    "expand-all": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_disperse",
+      "rmFill": true
+    },
+    "folder-add": {
+      "path": "{nucleo}/files-folders/{nucleo_simple}_folder-add",
       "rmFill": true
     }
   }
