@@ -1,7 +1,7 @@
 #fomod-installer-dialog {
   .modal-dialog {
-    width: 80%;
-    height: 80%;
+    width: 60%;
+    height: 60%;
   }
 
   .modal-content {
@@ -14,7 +14,7 @@
   .modal-body {
     flex: 1 0%;
     display: flex;
-    padding: 10px;
+    padding: $half-gutter $gutter-width;
   }
 
   .modal-footer {
@@ -27,6 +27,12 @@
     width: 200px;
     height: 16px;
     margin-bottom: 0px;
+    background-color: $gray-dark;
+    height: 4px;
+    border-radius: 4px;
+    .progress-bar {
+      background-color: $brand-secondary;
+    }
   }
 
   .pager {
@@ -39,8 +45,21 @@
   .description {
     padding: 15px;
     margin: 15px;
-    background-color: $brand-bg;
     overflow-y: auto;
+  }
+
+  .fomod-nav-buttons {
+    display: flex;
+    > * {
+      flex: 1 1 0;
+      text-align: center;
+      &:first-child {
+        text-align: left;
+      }
+      &:last-child {
+        text-align: right;
+      }
+    }
   }
 }
 

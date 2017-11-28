@@ -121,8 +121,9 @@
 
 .close-button {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: $half-gutter;
+  right: $half-gutter;
+  padding: 0;
   color: currentColor;
   background-color: transparent;
   border-width: 0px;

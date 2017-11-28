@@ -80,7 +80,7 @@ a[role=menuitem] svg {
   text-transform: uppercase;
   display: flex;
   align-items: baseline;
-  padding: 6px 32px;
+  padding: 6px $gutter-width;
   font-family: BebasNeue;
   font-size: large;
 }
@@ -233,4 +233,8 @@ textarea {
 
 .modal-content {
   border: $border-width solid $modal-content-border-color;
+}
+
+.pager li > a {
+  padding: 4px $gutter-width;
 }

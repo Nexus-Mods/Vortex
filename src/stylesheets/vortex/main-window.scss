@@ -40,6 +40,10 @@
   }
 }
 
+.modal-open #main-toolbar.toolbar-app-region {
+  -webkit-app-region: no-drag;
+}
+
 .window-frame {
   border: 1px solid $gray;
 }

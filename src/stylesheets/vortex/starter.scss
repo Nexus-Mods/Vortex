@@ -104,7 +104,7 @@
   display: flex;
   flex-flow: row wrap;
   overflow-y: auto;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   > * {
     flex: 0 1 30%;

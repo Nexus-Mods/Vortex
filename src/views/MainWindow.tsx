@@ -246,7 +246,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <div className={classes.join(' ')}>
         <div className='menu-layer' ref={this.setMenuLayer} />
-        <FlexLayout type='column'>
+        <FlexLayout id='main-window-content' type='column'>
           {this.renderToolbar()}
           {this.renderBody()}
         </FlexLayout>

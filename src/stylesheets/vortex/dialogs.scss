@@ -38,7 +38,7 @@
   .modal-body {
     flex: 1 0%;
     display: flex;
-    padding: 10px;
+    padding: $half-gutter $gutter-width;
 
     div {
       display: flex;
