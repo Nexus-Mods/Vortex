@@ -747,12 +747,15 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
         return (removeMods ? this.removeMods(modIds) : Promise.resolve())
           .then(() => modIds.forEach(key => {
-            const archiveId = this.mModsWithState[key].archiveId;
             if (removeMods) {
               onRemoveMod(gameMode, key);
             }
-            if (removeArchive) {
-              this.context.api.events.emit('remove-download', archiveId);
+
+            if (removeArchive && (this.mModsWithState[key] !== undefined)) {
+              const archiveId = this.mModsWithState[key].archiveId;
+              if (removeArchive) {
+                this.context.api.events.emit('remove-download', archiveId);
+              }
             }
           }));
       });

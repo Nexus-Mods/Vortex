@@ -162,8 +162,8 @@ process.on('uncaughtException' as any, (error: any) => {
   if (getMessageString(error).match(ignoredExceptions)) {
     return;
   } else if ((error.stack !== undefined)
-          && (error.stack.indexOf('clickstream.js') !== -1)
-          && (error.stack.indexOf('cloudfront.net/w.js') !== -1)) {
+          && ((error.stack.indexOf('clickstream.js') !== -1)
+              || (error.stack.indexOf('cloudfront.net/w.js') !== -1))) {
     // ignore errors from clickstream
     return;
   }

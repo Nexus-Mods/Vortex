@@ -313,10 +313,12 @@ class InstallManager {
         } else if (err instanceof ArchiveBrokenError) {
           return prom
             .then(() => {
-              installContext.reportError(
-                'Installation failed',
-                `The archive ${path.basename(archivePath)} is damaged and couldn't be installed. `
-                + 'This is most likely fixed by re-downloading the file.', false);
+              if (installContext !== undefined) {
+                installContext.reportError(
+                  'Installation failed',
+                  `The archive ${path.basename(archivePath)} is damaged and couldn't be installed. `
+                  + 'This is most likely fixed by re-downloading the file.', false);
+              }
             });
         } else {
           const { genHash } = require('modmeta-db');
@@ -326,9 +328,11 @@ class InstallManager {
             .then(() => genHash(archivePath))
             .then((hashResult: IHashResult) => {
               const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
-              installContext.reportError(
-                'Installation failed',
-                `The installer "${id}" failed: ${errMessage}`);
+              if (installContext !== undefined) {
+                installContext.reportError(
+                    'Installation failed',
+                    `The installer "${id}" failed: ${errMessage}`);
+              }
               if (callback !== undefined) {
                 callback(err, modId);
               }
