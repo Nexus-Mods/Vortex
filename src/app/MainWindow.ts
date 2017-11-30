@@ -17,14 +17,19 @@ class MainWindow {
 
   constructor(store: Redux.Store<IState>) {
     this.mResizeDebouncer = new Debouncer(() => {
-      const size: number[] = this.mWindow.getSize();
-      store.dispatch(setWindowSize({width: size[0], height: size[1]}));
+      if (this.mWindow !== null) {
+        const size: number[] = this.mWindow.getSize();
+        store.dispatch(setWindowSize({width: size[0], height: size[1]}));
+      }
       return null;
     }, 500);
 
     this.mMoveDebouncer = new Debouncer(() => {
-      const pos: number[] = this.mWindow.getPosition();
-      store.dispatch(setWindowPosition({x: pos[0], y: pos[1]}));
+      if (this.mWindow !== null) {
+        const pos: number[] = this.mWindow.getPosition();
+        store.dispatch(setWindowPosition({x: pos[0], y: pos[1]}));
+        return null;
+      }
       return null;
     }, 500);
   }
@@ -78,7 +83,7 @@ class MainWindow {
     this.mWindow.webContents.send('external-url', url);
   }
 
-  private getWindowSettings(windowMetrics: IWindow) {
+  private getWindowSettings(windowMetrics: IWindow): Electron.BrowserWindowConstructorOptions {
     const {getSafe} = require('../util/storeHelper') as typeof storeHelperT;
     const screenArea = screen.getPrimaryDisplay().workAreaSize;
     const width = Math.max(1024, getSafe(windowMetrics, ['size', 'width'],
@@ -95,6 +100,9 @@ class MainWindow {
       autoHideMenuBar: true,
       show: false,
       title: 'Vortex',
+      webPreferences: {
+        nodeIntegrationInWorker: true,
+      },
     };
   }
 
