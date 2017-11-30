@@ -1,10 +1,8 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
-import getFileList from '../../util/getFileList';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
 import * as selectors from '../../util/selectors';
-import walk from '../../util/walk';
 
 import {
   IDeployedFile,
@@ -18,6 +16,7 @@ import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
+import turbowalk from 'turbowalk';
 
 interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -210,36 +209,33 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   public activate(sourcePath: string, sourceName: string, dataPath: string,
                   blackList: Set<string>): Promise<void> {
-    return getFileList(sourcePath)
-        .then(fileEntries => {
-          fileEntries.forEach(entry => {
-            const relPath: string = path.relative(sourcePath, entry.filePath);
-            if (!entry.stats.isDirectory() && !blackList.has(relPath)) {
-              // mods are activated in order of ascending priority so
-              // overwriting is fine here
-              this.mNewDeployment[this.mNormalize(relPath)] = {
-                relPath,
-                source: sourceName,
-                time: entry.stats.mtime.getTime(),
-              };
-            }
-          });
-          return Promise.resolve();
-        })
-        .then(() => undefined);
+    return turbowalk(sourcePath, entries => {
+      entries.forEach(entry => {
+        const relPath: string = path.relative(sourcePath, entry.filePath);
+        if (!entry.isDirectory && !blackList.has(relPath)) {
+          // mods are activated in order of ascending priority so
+          // overwriting is fine here
+          this.mNewDeployment[this.mNormalize(relPath)] = {
+            relPath,
+            source: sourceName,
+            time: entry.mtime * 1000,
+          };
+        }
+      });
+    });
   }
 
   public deactivate(installPath: string, dataPath: string,
                     mod: IMod): Promise<void> {
     const sourceBase = path.join(installPath, mod.installationPath);
-    return walk(sourceBase, (iterPath: string, stats: fs.Stats) => {
-             if (!stats.isDirectory()) {
-               const relPath: string = path.relative(sourceBase, iterPath);
-               delete this.mNewDeployment[this.mNormalize(relPath)];
-             }
-             return Promise.resolve();
-           }).then(() => undefined)
-            .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
+    return turbowalk(sourceBase, entries => {
+      entries.forEach(entry => {
+        if (!entry.isDirectory) {
+          const relPath: string = path.relative(sourceBase, entry.filePath);
+          delete this.mNewDeployment[this.mNormalize(relPath)];
+        }
+      });
+    });
   }
 
   public purge(installPath: string, dataPath: string): Promise<void> {
@@ -376,50 +372,47 @@ abstract class LinkingActivator implements IDeploymentMethod {
   private postPurge(baseDir: string, doRemove: boolean): Promise<boolean> {
     // recursively go through directories and remove empty ones !if! we encountered a
     // __delete_if_empty file in the hierarchy so far
-    return fs.readdirAsync(baseDir)
-        .then(files => {
-          doRemove = doRemove || (files.indexOf(LinkingActivator.TAG_NAME) !== -1);
-          let empty = true;
-          // stat all files
-          return Promise.map(files,
-                             file => fs.statAsync(path.join(baseDir, file))
-                                         .then(stat => ({file, stat})))
-              .then(stats =>
-                Promise.map(stats, stat => {
-                  // recurse into directories
-                  if (stat.stat.isDirectory()) {
-                    return this.postPurge(path.join(baseDir, stat.file), doRemove)
-                        .then(removed => {
-                          // if the subdir wasn't removed, this dir isn't empty either
-                          if (!removed) {
-                            empty = false;
-                          }
-                        });
-                  } else if (stat.file !== LinkingActivator.TAG_NAME) {
-                    // if there are any files (other than the tag file), this dir isn't
-                    // empty
-                    empty = false;
-
-                    if (stat.file.endsWith(BACKUP_TAG)) {
-                      const fullPath = path.join(baseDir, stat.file);
-                      return fs.renameAsync(fullPath,
-                        fullPath.substr(0, fullPath.length - BACKUP_TAG.length));
-                    }
-                  }
-                  return Promise.resolve();
-                }))
-              .then(() => empty);
-        })
-        .then(isEmpty => {
-          if (isEmpty && doRemove) {
-            return fs.unlinkAsync(path.join(baseDir, LinkingActivator.TAG_NAME))
+    let empty = true;
+    let queue = Promise.resolve();
+    return turbowalk(baseDir, entries => {
+      doRemove = doRemove ||
+        (entries.find(entry =>
+          !entry.isDirectory
+          && path.basename(entry.filePath) === LinkingActivator.TAG_NAME) !== undefined);
+      const dirs = entries.filter(entry => entry.isDirectory);
+      // recurse into subdirectories
+      queue = queue.then(() =>
+        Promise.map(dirs, dir => this.postPurge(dir.filePath, doRemove)
+          .then(removed => {
+            if (!removed) { empty = false; }
+          }))
+        .then(() => {
+          // then check files. if there are any, this isn't empty. plus we
+          // restore backups here
+          const files = entries.filter(entry => !entry.isDirectory &&
+                                      path.basename(entry.filePath) !==
+                                          LinkingActivator.TAG_NAME);
+          if (files.length > 0) {
+            empty = false;
+            return Promise.map(
+                files.filter(entry =>
+                                 path.extname(entry.filePath) === BACKUP_TAG),
+                entry => fs.renameAsync(
+                    entry.filePath,
+                    entry.filePath.substr(
+                        0, entry.filePath.length - BACKUP_TAG.length)));
+          } else {
+            return Promise.resolve();
+          }
+        }));
+    }, { recurse: false })
+    .then(() => queue)
+        .then(() => (empty && doRemove)
+          ? fs.unlinkAsync(path.join(baseDir, LinkingActivator.TAG_NAME))
                 .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
                 .then(() => fs.rmdirAsync(baseDir))
-                .then(() => true);
-          } else {
-            return Promise.resolve(false);
-          }
-        });
+                .then(() => true)
+          : Promise.resolve(false));
   }
 }
 

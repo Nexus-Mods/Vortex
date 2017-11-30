@@ -7,16 +7,14 @@ import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { installPath } from '../mod_management/selectors';
-import { IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
-
-import walk from '../../util/walk';
+import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
 import * as fsOrig from 'fs';
 import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
-
+import turbowalk from 'turbowalk';
 import * as util from 'util';
 
 export class FileFound extends Error {
@@ -27,6 +25,8 @@ export class FileFound extends Error {
 }
 
 class DeploymentMethod extends LinkingDeployment {
+  private mDirCache: Set<string>;
+
   constructor(api: IExtensionApi) {
     super(
         'hardlink_activator', 'Hardlink deployment',
@@ -92,28 +92,51 @@ class DeploymentMethod extends LinkingDeployment {
     return undefined;
   }
 
+  public finalize(dataPath: string,
+                  progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
+    this.mDirCache = new Set<string>();
+    return super.finalize(dataPath, progressCB)
+    .then(files => {
+      this.mDirCache = undefined;
+      return files;
+    });
+  }
+
   protected purgeLinks(installationPath: string, dataPath: string): Promise<void> {
     const inos = new Set<number>();
     const deleteIfEmpty: string[] = [];
 
     // find ids of all files in our mods directory
-    return walk(installationPath,
-                (iterPath: string, stats: fs.Stats) => {
-                  if (stats.nlink > 1) {
-                    inos.add(stats.ino);
-                  }
-                  return Promise.resolve();
-                })
+    return turbowalk(installationPath,
+                     entries => {
+                       entries.forEach(entry => {
+                         if (entry.linkCount > 1) {
+                           inos.add(entry.id);
+                         }
+                       });
+                     },
+                     {
+                       details: true,
+                     })
         // now remove all files in the game directory that have the same id
-        .then(() => walk(dataPath,
-                         (iterPath: string, stats: fs.Stats) =>
-                             ((stats.nlink > 1) && inos.has(stats.ino)) ?
-                                 fs.unlinkAsync(iterPath) :
-                                 Promise.resolve()));
+        .then(() => {
+          let queue = Promise.resolve();
+          return turbowalk(dataPath, entries => {
+            queue = queue
+              .then(() => Promise.map(entries,
+                entry => (entry.linkCount > 1) && inos.has(entry.id)
+                  ? fs.unlinkAsync(entry.filePath)
+                    .catch(err =>
+                      log('warn', 'failed to remove', entry.filePath))
+                  : Promise.resolve())
+              .then(() => undefined));
+          }, {details: true})
+          .then(() => queue);
+        });
   }
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
-    return fs.ensureDirAsync(path.dirname(linkPath))
+    return this.ensureDir(path.dirname(linkPath))
         .then((created: any) => {
           let tagDir: Promise<void>;
           if (created !== null) {
@@ -125,9 +148,8 @@ class DeploymentMethod extends LinkingDeployment {
             tagDir = Promise.resolve();
           }
           return tagDir.then(() => fs.linkAsync(sourcePath, linkPath))
-              .catch((err) => {
+              .catch(err => {
                 if (err.code !== 'EEXIST') {
-                  log('debug', 'failed to hard-link because file exists', { linkPath });
                   throw err;
                 }
               });
@@ -147,6 +169,12 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected canRestore(): boolean {
     return true;
+  }
+
+  private ensureDir(dirPath: string): Promise<void> {
+    return (this.mDirCache === undefined) || !this.mDirCache.has(dirPath)
+      ? fs.ensureDirAsync(dirPath).then(created => { this.mDirCache.add(dirPath); return created; })
+      : Promise.resolve(null);
   }
 }
 

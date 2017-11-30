@@ -61,7 +61,16 @@
       "path": "lib/cpp/icon-extract",
       "sources": ["src/*", "binding.gyp", "*.json", "index.*"],
       "module": "icon-extract"
-    },
+    }
+  ], [
+    {
+      "type": "install-module",
+      "name": "turbowalk",
+      "path": "lib/cpp/turbowalk",
+      "sources": ["src/*", "binding.gyp", "*.json", "index.*"],
+      "module": "turbowalk"
+    }
+  ], [
     {
       "type": "build-copy",
       "name": "gamebryo-plugin-management",
@@ -313,6 +322,13 @@
       "name": "libxmljs-rebuild",
       "module": "libxmljs",
       "sources": ["node_modules/libxmljs/build/Release/xmljs.node"]
+    }
+  ], [
+    {
+      "type": "electron-rebuild",
+      "name": "turbowalk-rebuild",
+      "module": "turbowalk",
+      "sources": ["node_modules/turbowalk/build/Release/turbowalk.node"]
     }
   ]
 ]

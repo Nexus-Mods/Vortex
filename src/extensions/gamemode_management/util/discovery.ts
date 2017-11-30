@@ -14,6 +14,7 @@ import Progress from './Progress';
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import turbowalk from 'turbowalk';
 
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
 export type DiscoveredToolCB = (toolId: string, result: IDiscoveredTool) => void;
@@ -156,7 +157,6 @@ export function quickDiscovery(knownGames: IGame[],
  *
  * @param {string} searchPath
  * @param {Set<string>} matchList
- * @param {Set<string>} blackList
  * @param {(path: string) => void} resultCB
  * @param {Progress} progress
  * @param {Normalize} normalize a function to normalize a filename for the
@@ -168,83 +168,58 @@ export function quickDiscovery(knownGames: IGame[],
  */
 function walk(searchPath: string,
               matchList: Set<string>,
-              exclude: RegExp,
               resultCB: (path: string) => void,
               progress: Progress,
-              normalize: Normalize) {
-  if (!searchPath.endsWith(path.sep)) {
-    searchPath += path.sep;
-  }
-
-  if (exclude.test(searchPath)) {
-    return null;
-  }
-
-  const statPaths: string[] = [];
-
-  return fs.readdirAsync(searchPath)
-    .then((fileNames: string[]) => {
-      for (const fileName of fileNames) {
-        const filePath = path.join(searchPath, fileName);
-        if (matchList.has(normalize(fileName))) {
-          log('info', 'potential match', fileName);
-          // notify that a searched file was found. If the CB says so
-          // we stop looking at this directory
-          resultCB(filePath);
-        } else {
-          statPaths.push(filePath);
-        }
-      }
-
-      return Promise.map(statPaths, (statPath: string) => {
-        return fs.statAsync(statPath).reflect();
-      });
-    }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
-      // use the stats results to generate a list of paths of the directories
-      // in the searched directory
-      const dirIdxs: number[] = res.reduce(
-        (prev, cur: Promise.Inspection<fs.Stats>, idx: number) => {
-          if (cur.isFulfilled() && cur.value().isDirectory()) {
-            return prev.concat(idx);
-          } else if (!cur.isFulfilled()) {
-            if ([ 'EPERM', 'ENOENT', 'EBUSY' ].indexOf(cur.reason().code) === -1) {
-              log('warn', 'stat failed',
-                  { path: cur.reason().path, error: cur.reason().code,
-                    type: typeof(cur.reason().code) });
+              normalize: Normalize): Promise<void> {
+  // we can't actually know the progress percentage because for
+  // that we'd need to search the disk twice, first to know the number of directories
+  // just so we can show progress for the second run.
+  // So instead we start with an extremely high directory total and gradually converge
+  // towards the number of directories we know about so that the progress bar
+  // jumps back less and doesn't slow down so much over time.
+  let estimatedDirectories: number = Math.pow(2, 24);
+  const seenTL = new Set<string>();
+  let processedTL: number = 0;
+  let seenDirectories: number = 0;
+  let isTL = true;
+  return turbowalk(searchPath, entries => {
+      let doneCount = 0;
+      let lastCompleted;
+      entries.forEach(entry => {
+        if (entry.isTerminator) {
+          if (seenTL.has(entry.filePath)) {
+            ++processedTL;
+            estimatedDirectories = (
+              estimatedDirectories +
+              seenDirectories * (seenTL.size / processedTL)
+            ) / 2;
+          }
+          ++doneCount;
+          lastCompleted = entry.filePath;
+        } else if (entry.isDirectory) {
+          ++seenDirectories;
+          if (isTL) {
+            if (path.relative(searchPath, entry.filePath).indexOf(path.sep) !==
+                -1) {
+              isTL = false;
             } else {
-              log('debug', 'failed to access',
-                  { path: cur.reason().path, error: cur.reason().code });
+              seenTL.add(entry.filePath);
             }
           }
-          return prev;
-        }, []);
-      if (progress) {
-        // count number of directories to be used as the step counter in the progress bar
-        progress.setStepCount(dirIdxs.length);
-      }
-      // allow the gc to drop the stats results
-      res = [];
-      if (dirIdxs === undefined) {
-        return undefined;
-      }
-      return Promise.mapSeries(dirIdxs, idx => {
-        let subProgress;
-        if (truthy(progress)) {
-          subProgress = progress.derive();
-          progress.completed(statPaths[idx]);
+        } else if (matchList.has(normalize(path.basename(entry.filePath)))) {
+          log('info', 'potential match', entry.filePath);
+          // notify that a searched file was found. If the CB says so
+          // we stop looking at this directory
+          resultCB(entry.filePath);
         }
-        return walk(statPaths[idx], matchList, exclude, resultCB,
-         subProgress, normalize);
       });
-    }).catch(err => {
-      if ([ 'EPERM' ].indexOf(err.code) !== -1) {
-        // TODO: this can happen if the recursion hits a junction point and I
-        // couldn't figure out how to recognize a junction point in node.js
-        log('info', 'walk failed', { msg: err.message });
-      } else {
-        log('warn', 'walk failed', { msg: err.message });
+      if (progress) {
+        const perc = processedTL / seenTL.size;
+        // count number of directories to be used as the step counter in the progress bar
+        progress.setStepCount(estimatedDirectories);
+        progress.completed(lastCompleted, doneCount);
       }
-    });
+    }, { terminators: true });
 }
 
 function verifyToolDir(tool: ITool, testPath: string): Promise<void> {
@@ -279,12 +254,6 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
       log('info', 'invalid', {game: application.id, path: testPath});
     });
 }
-
-const blackList = [
-  String.raw`.:\\\$Recycle.Bin\\.*`,
-  String.raw`.:\\\$\$PendingFiles\\.*`,
-  String.raw`C:\\windows`,
-];
 
 /**
  * run the "search"-discovery based on required files as specified by the game extension
@@ -321,7 +290,7 @@ export function searchDiscovery(
         if (getSafe(discoveredGames, [knownGame.id, 'tools', supportedTool.id, 'path'], undefined)
             === undefined) {
           for (const required of supportedTool.requiredFiles) {
-            files.push({fileName: required, gameId: knownGame.id, application: supportedTool});
+            files.push({ fileName: required, gameId: knownGame.id, application: supportedTool });
           }
         }
       });
@@ -332,8 +301,6 @@ export function searchDiscovery(
   // at the last path component of a file
   const matchList: string[] = files.map(entry => path.basename(entry.fileName));
 
-  const blExp = new RegExp(blackList.join('|'));
-
   return Promise.map(searchPaths,
       (searchPath: string, index: number) => {
         log('info', 'searching for games & tools', { searchPath });
@@ -341,11 +308,11 @@ export function searchDiscovery(
           progressCB(index, percent, label));
         // recurse through the search path and look for known files. use the appropriate file name
         // normalization
-        return getNormalizeFunc(searchPath)
+        return getNormalizeFunc(searchPath, { separators: false, unicode: false, relative: false })
           .then((normalize: Normalize) => {
             const matchListNorm = new Set(matchList.map(normalize));
             return walk(
-                searchPath, matchListNorm, blExp, (foundPath: string) => {
+                searchPath, matchListNorm, (foundPath: string) => {
                   const matches: IFileEntry[] =
                       files.filter((entry: IFileEntry) => {
                         return normalize(foundPath)

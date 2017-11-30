@@ -276,6 +276,7 @@
     "simple-vdf": "^1.1.0",
     "string-template": "^1.0.0",
     "tmp": "0.0.33",
+    "turbowalk": "file:lib/cpp/turbowalk",
     "typescript": "2.5.3",
     "uuid": "^3.1.0",
     "vortex-api": "file:api",
