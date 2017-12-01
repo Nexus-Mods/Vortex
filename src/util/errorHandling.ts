@@ -140,7 +140,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
     true,
     hash,
     referenceId,
-  ).then(() => opn(`http://rd.nexusmods.com/crash-report/?key=${referenceId}`));
+  ).then(() => opn(`http://www.nexusmods.com/crash-report/?key=${referenceId}`));
 }
 
 export function sendReport(fileName: string): Promise<void> {
