@@ -175,8 +175,7 @@ function walk(searchPath: string,
   // that we'd need to search the disk twice, first to know the number of directories
   // just so we can show progress for the second run.
   // So instead we start with an extremely high directory total and gradually converge
-  // towards the number of directories we know about so that the progress bar
-  // jumps back less and doesn't slow down so much over time.
+  // towards an extrapolation based on progress so far, to get a smoother progress.
   let estimatedDirectories: number = Math.pow(2, 24);
   const seenTL = new Set<string>();
   let processedTL: number = 0;
@@ -189,10 +188,13 @@ function walk(searchPath: string,
         if (entry.isTerminator) {
           if (seenTL.has(entry.filePath)) {
             ++processedTL;
+            // 80% of previous estimate plus 30% of new estimate
+            // this will estimate a bit more than it mathematically should,
+            // so the progress doesn't hang at 100%
             estimatedDirectories = (
-              estimatedDirectories +
-              seenDirectories * (seenTL.size / processedTL)
-            ) / 2;
+              estimatedDirectories * 0.8 +
+              seenDirectories * (seenTL.size / processedTL) * 0.3
+            );
           }
           ++doneCount;
           lastCompleted = entry.filePath;
@@ -214,7 +216,6 @@ function walk(searchPath: string,
         }
       });
       if (progress) {
-        const perc = processedTL / seenTL.size;
         // count number of directories to be used as the step counter in the progress bar
         progress.setStepCount(estimatedDirectories);
         progress.completed(lastCompleted, doneCount);
@@ -301,37 +302,40 @@ export function searchDiscovery(
   // at the last path component of a file
   const matchList: string[] = files.map(entry => path.basename(entry.fileName));
 
-  return Promise.map(searchPaths,
-      (searchPath: string, index: number) => {
-        log('info', 'searching for games & tools', { searchPath });
-        const progressObj = new Progress(0, 100, (percent, label) =>
-          progressCB(index, percent, label));
-        // recurse through the search path and look for known files. use the appropriate file name
-        // normalization
-        return getNormalizeFunc(searchPath, { separators: false, unicode: false, relative: false })
-          .then((normalize: Normalize) => {
-            const matchListNorm = new Set(matchList.map(normalize));
-            return walk(
-                searchPath, matchListNorm, (foundPath: string) => {
-                  const matches: IFileEntry[] =
-                      files.filter((entry: IFileEntry) => {
-                        return normalize(foundPath)
-                            .endsWith(normalize(entry.fileName));
-                      });
+  return Promise.map(
+    // the node.js path module has a few bugs related to windows paths, replacing c: with c:\\ fixes
+    // at least this one: https://github.com/nodejs/node/issues/17413
+    searchPaths.map(searchPath => searchPath.endsWith(':') ? searchPath + path.sep : searchPath),
+    (searchPath: string, index: number) => {
+      log('info', 'searching for games & tools', { searchPath });
+      const progressObj = new Progress(0, 100, (percent, label) =>
+        progressCB(index, percent, label));
+      // recurse through the search path and look for known files. use the appropriate file name
+      // normalization
+      return getNormalizeFunc(searchPath, { separators: false, unicode: false, relative: false })
+        .then((normalize: Normalize) => {
+          const matchListNorm = new Set(matchList.map(normalize));
+          return walk(
+              searchPath, matchListNorm, (foundPath: string) => {
+                const matches: IFileEntry[] =
+                    files.filter((entry: IFileEntry) => {
+                      return normalize(foundPath)
+                          .endsWith(normalize(entry.fileName));
+                    });
 
-                  for (const match of matches) {
-                    const testPath: string = foundPath.substring(
-                        0, foundPath.length - match.fileName.length);
-                    const application: ITool = match.application;
-                    testApplicationDirValid(application, testPath, match.gameId,
-                                            onDiscoveredGame, onDiscoveredTool);
-                  }
-                  return false;
-                }, progressObj, normalize);
-          })
-          .then(() => {
-            progressObj.completed(searchPath);
-            return null;
-          });
-      });
+                for (const match of matches) {
+                  const testPath: string = foundPath.substring(
+                      0, foundPath.length - match.fileName.length);
+                  const application: ITool = match.application;
+                  testApplicationDirValid(application, testPath, match.gameId,
+                                          onDiscoveredGame, onDiscoveredTool);
+                }
+                return false;
+              }, progressObj, normalize);
+        })
+        .then(() => {
+          progressObj.completed(searchPath);
+          return null;
+        });
+    });
 }

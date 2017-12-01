@@ -124,6 +124,7 @@ NAN_METHOD(walku8) {
     options.terminators = get(optionsIn, "terminators", false);
     options.threshold = get(optionsIn, "threshold", 1024);
     options.recurse = get(optionsIn, "recurse", true);
+    options.skipHidden = get(optionsIn, "skipHidden", true);
   }
 
   std::wstring walkPath = toWC(*basePath, CodePage::UTF8, strlen(*basePath));
