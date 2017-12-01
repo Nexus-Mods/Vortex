@@ -188,12 +188,12 @@ function walk(searchPath: string,
         if (entry.isTerminator) {
           if (seenTL.has(entry.filePath)) {
             ++processedTL;
-            // 80% of previous estimate plus 30% of new estimate
+            // 80% of previous estimate plus a bit more than 20% of new estimate.
             // this will estimate a bit more than it mathematically should,
             // so the progress doesn't hang at 100%
             estimatedDirectories = (
               estimatedDirectories * 0.8 +
-              seenDirectories * (seenTL.size / processedTL) * 0.3
+              seenDirectories * (seenTL.size / processedTL) * 0.202
             );
           }
           ++doneCount;

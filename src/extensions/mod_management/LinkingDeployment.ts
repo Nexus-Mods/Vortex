@@ -193,13 +193,16 @@ abstract class LinkingActivator implements IDeploymentMethod {
                           }).then(() => progress()), { concurrency: 100 }))
         .then(() => {
           if (errorCount > 0) {
-            addNotification({
+            this.mApi.store.dispatch(addNotification({
               type: 'error',
               title: this.mApi.translate('Deployment failed'),
               message: this.mApi.translate(
-                  '{{count}} files were not correctly deployed (see log for details)',
+                  '{{count}} files were not correctly deployed (see log for details).\n'
+                  + 'The most likely reason is that files were locked by external applications '
+                  + 'so please ensure no other application has a mod file open, then repeat '
+                  + 'deployment.',
                   {replace: {count: errorCount}}),
-            });
+            }));
           }
 
           return Object.keys(previousDeployment)
