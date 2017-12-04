@@ -177,7 +177,9 @@ class DownloadWorker {
     if (this.mEnded) {
       return false;
     }
-    this.mRequest.abort();
+    if (this.mRequest !== undefined) {
+      this.mRequest.abort();
+    }
     this.mEnded = true;
     this.mFinishCB(paused);
     return true;
@@ -582,7 +584,8 @@ class DownloadManager {
           // otherwise the url may have expired. There is no way to know how long the
           // url remains valid, not even with the nexus api (at least not currently)
           if ((this.mSlowWorkers[workerId] > 15)
-              && ((new Date().getTime() - download.started.getTime()) < 15 * 60 * 1000)) {
+              && (download.started !== undefined)
+              && ((Date.now() - download.started.getTime()) < 15 * 60 * 1000)) {
             log('debug', 'restarting slow worker', { workerId });
             this.mBusyWorkers[workerId].restart();
             delete this.mSlowWorkers[workerId];
@@ -606,11 +609,13 @@ class DownloadManager {
 
     const remainingSize = size - this.mMinChunkSize;
 
+    const maxChunks = Math.min(this.mMaxChunks, this.mMaxWorkers);
+
     if (size > this.mMinChunkSize) {
       // download the file in chunks. We use a fixed number of variable size chunks.
       // Since the download link may expire we need to start all threads asap
       const chunkSize = Math.min(remainingSize,
-          Math.max(this.mMinChunkSize, Math.ceil(remainingSize / this.mMaxChunks)));
+          Math.max(this.mMinChunkSize, Math.ceil(remainingSize / maxChunks)));
 
       let offset = this.mMinChunkSize + 1;
       while (offset < size) {
@@ -624,7 +629,7 @@ class DownloadManager {
         offset += chunkSize;
       }
       log('debug', 'downloading file in chunks',
-        { size: chunkSize, count: download.chunks.length, max: this.mMaxChunks, total: size });
+        { size: chunkSize, count: download.chunks.length, max: maxChunks, total: size });
       this.tickQueue();
     } else {
       log('debug', 'file is too small to be chunked',
