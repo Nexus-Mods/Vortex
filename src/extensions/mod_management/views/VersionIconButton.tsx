@@ -50,7 +50,7 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
     );
   }
 
-  private getStateTooltip(state) {
+  private getStateTooltip(state: UpdateState) {
     const { t, mod } = this.props;
 
     const newVersion = getSafe(mod.attributes, ['newestVersion'], '?');
@@ -72,7 +72,7 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
     }
   }
 
-  private getStateIcon(state) {
+  private getStateIcon(state: UpdateState) {
     switch (state) {
       case 'bug-update': return 'bug';
       case 'bug-disable': return 'ban';

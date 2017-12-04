@@ -146,7 +146,7 @@ function todos(api: IExtensionApi): IToDo[] {
           const settingsLink = (
             <a onClick={openGameSettings} >
               <Icon name='sliders' />
-              {searchPaths.sort().join(', ')}
+              {(searchPaths || []).sort().join(', ')}
             </a>
           );
 

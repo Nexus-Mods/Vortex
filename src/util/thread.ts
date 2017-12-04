@@ -29,11 +29,20 @@ function writeProgram(func: (...args: any[]) => any, moduleBase: string, args?: 
         let moduleRoot = '${projectRoot}';\n
         let baseDir = '${moduleBase.replace(/\\/g, '/')}';\n
       `;
+  args.forEach(arg => {
+    if (arg instanceof Function) {
+      prog += arg.toString() + '\n';
+    }
+  });
 
   prog += `
         let main = ${func.toString()};\n
         ${mainBody}\n
-        const res = main(${args !== undefined ? args.map(arg => JSON.stringify(arg)) : ''});\n
+        const res = main(${args !== undefined
+          ? args.filter(arg => !(arg instanceof Function))
+                .map(arg => JSON.stringify(arg))
+                .join(', ')
+          : ''});\n
         postMessage(res, undefined);\n
         close();\n
       `;

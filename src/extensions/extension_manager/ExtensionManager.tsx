@@ -157,31 +157,36 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 
   private dropExtension = (type: DropType, extPaths: string[]) => {
-    if (type === 'files') {
-      Promise.map(extPaths, extPath => installExtension(extPath).catch(err => {
-        this.context.api.showErrorNotification('Failed to install extension', err);
-      }))
-      .then(() => {
-        this.nextState.reloadNecessary = true;
-        this.readExtensions();
-      });
-    } else {
-      const { downloads } = this.props;
-      Promise.map(extPaths, url => new Promise((resolve, reject) => {
+    const { downloads } = this.props;
+    let success = false;
+    const prop = (type === 'files')
+      ? Promise.map(extPaths, extPath =>
+        installExtension(extPath)
+        .then(() => success = true)
+          .catch(err => {
+            this.context.api.showErrorNotification('Failed to install extension', err);
+          }))
+      : Promise.map(extPaths, url => new Promise((resolve, reject) => {
         this.context.api.events.emit('start-download', {}, (error: Error, id: string) => {
           const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
           installExtension(dlPath)
+          .then(() => {
+            success = true;
+          })
           .catch(err => {
             this.context.api.showErrorNotification('Failed to install extension', err);
           })
-          .then(() => resolve());
+          .finally(() => {
+            resolve();
+          });
         });
-      }))
-      .then(() => {
+      }));
+    prop.then(() => {
+      if (success) {
         this.nextState.reloadNecessary = true;
-        this.readExtensions();
-      });
-    }
+      }
+      this.readExtensions();
+    });
   }
 
   private renderReload(): JSX.Element {
