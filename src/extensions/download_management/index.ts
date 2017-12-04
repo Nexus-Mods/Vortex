@@ -32,6 +32,7 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import {createSelector} from 'reselect';
 import {generate as shortid} from 'shortid';
+import { delayed } from '../../util/delayed';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -156,12 +157,29 @@ function init(context: IExtensionContextExt): boolean {
               const filePath = path.join(currentDownloadPath, fileName);
               fs.statAsync(filePath)
               .then(stats => {
-                const dlId = shortid();
-                context.api.store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
-                nameIdMap[fileName] = dlId;
+                // if the file was added, wait a moment, then add it to the store if it doesn't
+                // exist yet. This is necessary because we can't know if it wasn't vortex
+                // itself that added the file
+                delayed(200)
+                .then(() => {
+                  const state: IState = context.api.store.getState();
+                  const existingId: string = Object.keys(state.persistent.downloads.files)
+                    .find(iterId =>
+                      state.persistent.downloads.files[iterId].localPath === fileName);
+                  if (existingId === undefined) {
+                    const dlId = shortid();
+                    context.api.store.dispatch(
+                      addLocalDownload(dlId, gameId, fileName, stats.size));
+                    nameIdMap[fileName] = dlId;
+                  } else {
+                    nameIdMap[fileName] = existingId;
+                  }
+                });
               })
               .catch(err => {
                 if (err.code === 'ENOENT') {
+                  // if the file was deleted, remove it from state. This does nothing if
+                  // the download was already removed so that's fine
                   context.api.store.dispatch(removeDownload(nameIdMap[fileName]));
                 }
               });

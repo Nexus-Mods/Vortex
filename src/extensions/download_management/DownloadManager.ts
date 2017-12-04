@@ -36,7 +36,7 @@ export class DownloadIsHTML extends Error {
 function isHTMLHeader(headers: http.IncomingHttpHeaders) {
   const type: string = headers['content-type'].toString();
   return (type !== undefined)
-    && (type.startsWith('text/html') || type.startsWith('application/json'));
+    && (type.startsWith('text/html'));
 }
 
 interface IHTTP {
@@ -210,7 +210,7 @@ class DownloadWorker {
     // download.
     if (response.statusCode >= 300) {
       if (response.statusCode === 302) {
-        this.mJob.url = response.headers['location'] as string;
+        this.mJob.url = url.resolve(this.mJob.url, response.headers['location'] as string);
         this.assignJob(this.mJob);
       } else {
         this.handleError({
@@ -366,6 +366,7 @@ class DownloadManager {
     if (urls.length === 0) {
       return Promise.reject(new Error('No download urls'));
     }
+    log('info', 'queueing download from', urls);
     const nameTemplate: string = decodeURI(path.basename(url.parse(urls[0]).pathname));
     const destPath = destinationPath || this.mDownloadPath;
     return fs.ensureDirAsync(destPath)
