@@ -142,10 +142,10 @@ export interface ISettingsInterface {
 export interface ISettingsProfiles {
   activeProfileId: string;
   nextProfileId: string;
+  lastActiveProfile: { [gameId: string]: string };
 }
 
 export interface ISettingsGameMode {
-  lastActiveProfile: { [gameId: string]: string };
   discovered: { [id: string]: IDiscoveryResult };
   searchPaths: string[];
   pickerLayout: 'list' | 'small' | 'large';

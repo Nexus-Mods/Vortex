@@ -69,9 +69,12 @@ function updatePluginList(store: Redux.Store<any>, newModList: IModStates): Prom
   const enabledModIds = Object.keys(gameMods).filter(
       modId => util.getSafe(newModList, [modId, 'enabled'], false));
 
-  return Promise.map(enabledModIds,
-           (modId: string) => {
+  return Promise.map(enabledModIds, (modId: string) => {
              const mod = gameMods[modId];
+             if (mod === undefined) {
+               log('error', 'mod not found', { gameMode, modId });
+               return;
+             }
              return fs.readdirAsync(path.join(selectors.installPath(state),
                                               mod.installationPath))
                  .then((fileNames: string[]) => {
@@ -532,6 +535,10 @@ function init(context: IExtensionContextExt) {
       const currentProfile = selectors.activeProfile(state);
       if ((profileId === currentProfile.id) && gameSupported(currentProfile.gameId)) {
         const mod: types.IMod = state.persistent.mods[currentProfile.gameId][modId];
+        if (mod === undefined) {
+          log('error', 'newly activated mod not found', { profileId, modId });
+          return;
+        }
         fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
             .catch(err => {
               if (err.code === 'ENOENT') {
