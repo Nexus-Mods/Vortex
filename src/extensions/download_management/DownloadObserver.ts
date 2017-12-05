@@ -4,6 +4,7 @@ import {showError} from '../../util/message';
 import * as selectors from '../../util/selectors';
 import { truthy } from '../../util/util';
 
+import { showURL } from '../browser/actions';
 import resolvePath from '../mod_management/util/resolvePath';
 
 import {
@@ -21,7 +22,7 @@ import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 
-import DownloadManager from './DownloadManager';
+import DownloadManager, { DownloadIsHTML } from './DownloadManager';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -32,6 +33,8 @@ import {generate as shortid} from 'shortid';
 
 import * as nodeURL from 'url';
 import * as util from 'util';
+import { IState } from '../../types/IState';
+import { getSafe } from '../../util/storeHelper';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], filePath?: string) {
@@ -119,6 +122,20 @@ export class DownloadObserver {
           log('debug', 'download finished', { file: res.filePath });
           this.handleDownloadFinished(id, callback, res);
         })
+        .catch(DownloadIsHTML, err => {
+          const state: IState = this.mStore.getState();
+          const fileName: string =
+            getSafe(state.persistent.downloads.files, [id, 'localPath'], undefined);
+
+          this.mStore.dispatch(removeDownload(id));
+          this.mStore.dispatch(showURL(urls[0]));
+          if (callback !== undefined) {
+            callback(err, id);
+          }
+          if (fileName !== undefined) {
+            fs.removeAsync(path.join(downloadPath, fileName));
+          }
+        })
         .catch((err) => {
           let message = err.message;
           if (err.http_headers !== undefined) {
@@ -141,6 +158,7 @@ export class DownloadObserver {
                                  callback: (error: Error, id: string) => void,
                                  res: IDownloadResult) {
     const filePath = res.filePath;
+    this.mStore.dispatch(downloadProgress(id, res.size, res.size, []));
     this.mStore.dispatch(setDownloadFilePath(id, path.basename(res.filePath)));
     log('debug', 'unfinished chunks', { chunks: res.unfinishedChunks });
     if (res.unfinishedChunks.length > 0) {

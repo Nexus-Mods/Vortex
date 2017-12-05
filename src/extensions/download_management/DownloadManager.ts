@@ -1,4 +1,5 @@
 import Debouncer from '../../util/Debouncer';
+import { log } from '../../util/log';
 import { countIf, setdefault, truthy } from '../../util/util';
 import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
@@ -11,13 +12,32 @@ import SpeedCalculator from './SpeedCalculator';
 import * as Promise from 'bluebird';
 import contentDisposition = require('content-disposition');
 import contentType = require('content-type');
+import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 import * as url from 'url';
 
-import { log } from '../../util/log';
+export class HTTPError extends Error {
+  constructor(response: http.ServerResponse) {
+    super(`HTTP Status ${response.statusCode}: ${response.statusMessage}`);
+    this.name = this.constructor.name;
+  }
+}
+
+export class DownloadIsHTML extends Error {
+  constructor() {
+    super('');
+    this.name = this.constructor.name;
+  }
+}
+
+function isHTMLHeader(headers: http.IncomingHttpHeaders) {
+  const type: string = headers['content-type'].toString();
+  return (type !== undefined)
+    && (type.startsWith('text/html') || type.startsWith('application/json'));
+}
 
 interface IHTTP {
   request: (options: https.RequestOptions | string | URL,
@@ -88,51 +108,47 @@ class DownloadWorker {
 
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 
-    this.mRequest = lib.request({
-      method: 'GET',
-      protocol: parsed.protocol,
-      port: parsed.port,
-      hostname: parsed.hostname,
-      path: parsed.path,
-      headers: {
-        Range: `bytes=${job.offset}-${job.offset + job.size}`,
-        'User-Agent': this.mUserAgent,
-      },
-      agent: new lib.Agent(),
-    }, (res) => {
-      this.mResponse = res;
-      this.handleResponse(res);
-      res
-        .on('data', (data: Buffer) => {
-          this.handleData(data);
-        })
-        .on('end', () => {
-          this.handleComplete();
-          this.mRequest.abort();
-        });
-    });
+    remote.getCurrentWebContents().session.cookies.get({ url: job.url }, (cookieErr, cookies) => {
+      this.mRequest = lib.request({
+        method: 'GET',
+        protocol: parsed.protocol,
+        port: parsed.port,
+        hostname: parsed.hostname,
+        path: parsed.path,
+        headers: {
+          Range: `bytes=${job.offset}-${job.offset + job.size}`,
+          'User-Agent': this.mUserAgent,
+          Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
+        },
+        agent: new lib.Agent(),
+      }, (res) => {
+        this.mResponse = res;
+        this.handleResponse(res);
+        res
+          .on('data', (data: Buffer) => {
+            this.handleData(data);
+          })
+          .on('end', () => {
+            this.handleComplete();
+            this.mRequest.abort();
+          });
+      });
 
-    this.mRequest
-      .on('error', (err) => this.handleError(err))
-      .end();
+      this.mRequest
+        .on('error', (err) => this.handleError(err))
+        .end();
+     });
   }
 
   public cancel() {
-    if (!this.mEnded) {
-      this.mRequest.abort();
-      this.mEnded = true;
-      this.mFinishCB(false);
-    }
+    this.abort(false);
   }
 
   public pause() {
-    if (!this.mEnded) {
+    if (this.abort(true)) {
       if (this.mResponse !== undefined) {
         this.mResponse.pause();
       }
-      this.mRequest.abort();
-      this.mEnded = true;
-      this.mFinishCB(true);
     }
   }
 
@@ -146,7 +162,7 @@ class DownloadWorker {
     if (this.mJob.errorCB !== undefined) {
       this.mJob.errorCB(err);
     }
-    if (!this.mEnded) {
+    if (this.mEnded) {
       this.mRequest.abort();
       if ((err.code === 'ESOCKETTIMEDOUT') && (this.mDataHistory.length > 0)) {
         this.assignJob(this.mJob);
@@ -155,6 +171,21 @@ class DownloadWorker {
         this.mFinishCB(false);
       }
     }
+  }
+
+  private abort(paused: boolean): boolean {
+    if (this.mEnded) {
+      return false;
+    }
+    this.mRequest.abort();
+    this.mEnded = true;
+    this.mFinishCB(paused);
+    return true;
+  }
+
+  private handleHTML() {
+    this.abort(false);
+    this.mJob.errorCB(new DownloadIsHTML());
   }
 
   private handleComplete() {
@@ -167,11 +198,7 @@ class DownloadWorker {
         if (this.mJob.completionCB !== undefined) {
           this.mJob.completionCB();
         }
-        if (!this.mEnded) {
-          this.mRequest.abort();
-          this.mFinishCB(false);
-          this.mEnded = true;
-        }
+        this.abort(false);
     });
   }
 
@@ -182,14 +209,24 @@ class DownloadWorker {
     // it. If it contains any redirect, the browser window will follow it and initiate a
     // download.
     if (response.statusCode >= 300) {
-      this.handleError({
-        message: response.statusMessage,
-        http_headers: JSON.stringify(response.headers),
-      });
+      if (response.statusCode === 302) {
+        this.mJob.url = response.headers['location'] as string;
+        this.assignJob(this.mJob);
+      } else {
+        this.handleError({
+          message: response.statusMessage,
+          http_headers: JSON.stringify(response.headers),
+        });
+      }
       return;
     }
 
     this.mHeadersCB(response.headers);
+
+    if (isHTMLHeader(response.headers)) {
+      this.handleHTML();
+      return;
+    }
 
     log('debug', 'retrieving range',
         { id: this.mJob.workerId, range: response.headers['content-range'] });
@@ -201,6 +238,10 @@ class DownloadWorker {
         if (sizeMatch.length > 1) {
           size = parseInt(sizeMatch[3], 10);
         }
+      } else {
+        log('debug', 'download doesn\'t support partial requests');
+        this.mJob.offset = 0;
+        size = -1;
       }
       if (size < this.mJob.size + this.mJob.offset) {
         // on the first request it's possible we requested more than the file size if
@@ -460,7 +501,7 @@ class DownloadManager {
     };
   }
 
-  private cancelDownload(download: IRunningDownload, err) {
+  private cancelDownload(download: IRunningDownload, err: Error) {
     for (const chunk of download.chunks) {
       if (chunk.state === 'running') {
         this.mBusyWorkers[chunk.workerId].cancel();
@@ -660,6 +701,7 @@ class DownloadManager {
             headers: download.headers,
             unfinishedChunks,
             hadErrors: download.error,
+            size: Math.max(download.size, download.received),
           });
         });
     }

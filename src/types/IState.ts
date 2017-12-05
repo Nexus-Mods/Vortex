@@ -206,6 +206,10 @@ export interface IStateGameMode {
   };
 }
 
+export interface IBrowserState {
+  url: string;
+}
+
 /**
  * interface for the top-level state object
  * this should precisely mirror the reducer structure
@@ -224,6 +228,7 @@ export interface IState {
     gameMode: ISessionGameMode,
     discovery: IDiscoveryState,
     notifications: INotificationState;
+    browser: IBrowserState;
   };
   settings: ISettings;
   persistent: {
