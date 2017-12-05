@@ -72,12 +72,16 @@ class InstallContext implements IInstallContext {
     this.mSetModType = (id, modType) =>
       dispatch(setModType(gameMode, id, modType));
     this.mEnableMod = (modId) => {
-      const profile = activeProfile(store.getState());
-      dispatch(setModEnabled(profile.id, modId, true));
+      const state: IState = store.getState();
+      const profileId = state.settings.profiles.lastActiveProfile[this.mGameId];
+      dispatch(setModEnabled(profileId, modId, true));
       api.events.emit('mods-enabled', [ modId ], true);
     };
     this.mIsEnabled = (modId) => {
-      const profile = activeProfile(store.getState());
+      const state: IState = store.getState();
+
+      const profileId = state.settings.profiles.lastActiveProfile[this.mGameId];
+      const profile = state.persistent.profiles[profileId];
       return getSafe(profile, ['modState', modId, 'enabled'], false);
     };
     this.mSetDownloadInstalled = (archiveId, gameId, modId) => {

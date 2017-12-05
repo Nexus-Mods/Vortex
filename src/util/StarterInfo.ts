@@ -143,7 +143,7 @@ class StarterInfo implements IStarterInfo {
       this.exePath = toolDiscovery.path;
       this.commandLine = getSafe(toolDiscovery, ['parameters'], getSafe(tool, ['parameters'], []));
       this.environment =
-        getSafe(toolDiscovery, ['environment'], getSafe(tool, ['environment'], {}));
+        getSafe(toolDiscovery, ['environment'], getSafe(tool, ['environment'], {})) || {};
       this.mLogoName = getSafe(toolDiscovery, ['logo'], getSafe(tool, ['logo'], undefined));
       this.workingDirectory = toolDiscovery.workingDirectory !== undefined
         ? toolDiscovery.workingDirectory
@@ -154,7 +154,7 @@ class StarterInfo implements IStarterInfo {
       this.exePath = '';
       this.commandLine = tool.parameters;
       this.workingDirectory = '';
-      this.environment = tool.environment;
+      this.environment = tool.environment || {};
       this.mLogoName = tool.logo;
     }
     this.iconOutPath = StarterInfo.toolIconRW(gameId, this.id);

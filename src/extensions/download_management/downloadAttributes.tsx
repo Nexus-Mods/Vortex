@@ -45,7 +45,9 @@ export const FILE_NAME: ITableAttribute = {
 
 function progress(props) {
   const {t, download} = props;
-  const {state, received, size} = download;
+  const {state} = download;
+  const received = download.received || 0;
+  const size = download.size || 1;
 
   switch (state) {
     case 'init': return <span>{t('Pending')}</span>;
@@ -67,7 +69,7 @@ function calc(props) {
   const {state, received, size} = download;
 
   if (state === 'init') {
-    return (received / size);
+    return (received / Math.max(size, 1));
   } else {
     return state;
   }

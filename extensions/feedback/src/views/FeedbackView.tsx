@@ -32,7 +32,8 @@ interface IActionProps {
   onRemoveFeedbackFile: (feedbackFileId: string) => void;
   onShowDialog: (type: types.DialogType, title: string, content: types.IDialogContent,
                  actions: types.DialogActions) => void;
-  onShowError: (message: string, details?: string | Error, notificationId?: string) => void;
+  onShowError: (message: string, details?: string | Error,
+                notificationId?: string, allowReport?: boolean) => void;
   onClearFeedbackFiles: () => void;
   onAddFeedbackFile: (feedbackFile: IFeedbackFile) => void;
 }
@@ -358,9 +359,9 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
       if (err !== null) {
         if ((err as any).body !== undefined) {
           onShowError('Failed to send feedback', `${err.message} - ${(err as any).body}`,
-                      notificationId);
+                      notificationId, false);
         }
-        onShowError('Failed to send feedback', err, notificationId);
+        onShowError('Failed to send feedback', err, notificationId, false);
         return;
       }
 
@@ -400,8 +401,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(removeFeedbackFile(feedbackFileId)),
     onShowDialog: (type, title, content, dialogActions) =>
       dispatch(actions.showDialog(type, title, content, dialogActions)),
-    onShowError: (message: string, details?: string | Error, notificationId?: string) =>
-      util.showError(dispatch, message, details, false, notificationId),
+    onShowError: (message: string, details?: string | Error,
+                  notificationId?: string, allowReport?: boolean) =>
+      util.showError(dispatch, message, details, false, notificationId, allowReport),
     onDismissNotification: (id: string) => dispatch(actions.dismissNotification(id)),
     onClearFeedbackFiles: () => dispatch(clearFeedbackFiles()),
     onAddFeedbackFile: (feedbackFile) => dispatch(addFeedbackFile(feedbackFile)),

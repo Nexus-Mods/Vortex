@@ -306,7 +306,12 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
 
               newAction = typeActions[(idx + 1) % typeActions.length].key as FileAction;
             }
-            source.filePaths.forEach(filePath => onChangeAction([filePath], newAction));
+            // TODO: the way source is created, filePaths should never be undefined and
+            //   I wasn't able to reproduce a case where it was, but we did get a crash
+            //   report where it was.
+            if (source.filePaths !== undefined) {
+              source.filePaths.forEach(filePath => onChangeAction([filePath], newAction));
+            }
           },
         },
       },

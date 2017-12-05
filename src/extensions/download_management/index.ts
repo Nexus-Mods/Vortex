@@ -32,6 +32,7 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import {createSelector} from 'reselect';
 import {generate as shortid} from 'shortid';
+import { delayed } from '../../util/delayed';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -117,6 +118,7 @@ function init(context: IExtensionContextExt): boolean {
       context.api.events.emit('start-download', [url], {});
     });
 
+    let currentWatch: fs.FSWatcher;
     context.api.events.on('gamemode-activated', () => {
       const currentDownloadPath = selectors.downloadPath(store.getState());
 
@@ -125,13 +127,18 @@ function init(context: IExtensionContextExt): boolean {
       const knownDLs = Object.keys(downloads)
         .filter((dlId: string) => downloads[dlId].game === gameId)
         .map((dlId: string) => downloads[dlId].localPath);
-      const nameIdMap = {};
-      Object.keys(downloads).forEach((dlId: string) => nameIdMap[downloads[dlId].localPath] = dlId);
-      refreshDownloads(currentDownloadPath, knownDLs, (downloadPath: string) => {
-        fs.statAsync(path.join(currentDownloadPath, downloadPath))
+
+      const nameIdMap: { [name: string]: string } = Object.keys(downloads).reduce((prev, value) => {
+        prev[downloads[value].localPath] = value;
+        return prev;
+      }, {});
+
+      refreshDownloads(currentDownloadPath, knownDLs, (fileName: string) => {
+        fs.statAsync(path.join(currentDownloadPath, fileName))
           .then((stats: fs.Stats) => {
             const dlId = shortid();
-            context.api.store.dispatch(addLocalDownload(dlId, gameId, downloadPath, stats.size));
+            context.api.store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+            nameIdMap[fileName] = dlId;
           });
       }, (modNames: string[]) => {
         modNames.forEach((name: string) => {
@@ -140,6 +147,42 @@ function init(context: IExtensionContextExt): boolean {
       })
         .then(() => {
           manager.setDownloadPath(currentDownloadPath);
+          if (currentWatch !== undefined) {
+            currentWatch.close();
+          }
+          currentWatch = fs.watch(currentDownloadPath, {}, (evt: string, fileName: string) => {
+            if (evt === 'rename') {
+              const filePath = path.join(currentDownloadPath, fileName);
+              fs.statAsync(filePath)
+              .then(stats => {
+                // if the file was added, wait a moment, then add it to the store if it doesn't
+                // exist yet. This is necessary because we can't know if it wasn't vortex
+                // itself that added the file
+                delayed(200)
+                .then(() => {
+                  const state: IState = context.api.store.getState();
+                  const existingId: string = Object.keys(state.persistent.downloads.files)
+                    .find(iterId =>
+                      state.persistent.downloads.files[iterId].localPath === fileName);
+                  if (existingId === undefined) {
+                    const dlId = shortid();
+                    context.api.store.dispatch(
+                      addLocalDownload(dlId, gameId, fileName, stats.size));
+                    nameIdMap[fileName] = dlId;
+                  } else {
+                    nameIdMap[fileName] = existingId;
+                  }
+                });
+              })
+              .catch(err => {
+                if (err.code === 'ENOENT') {
+                  // if the file was deleted, remove it from state. This does nothing if
+                  // the download was already removed so that's fine
+                  context.api.store.dispatch(removeDownload(nameIdMap[fileName]));
+                }
+              });
+            }
+          }) as fs.FSWatcher;
           context.api.events.emit('downloads-refreshed');
         });
     });

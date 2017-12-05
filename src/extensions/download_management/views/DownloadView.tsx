@@ -25,7 +25,7 @@ import MainPage from '../../../views/MainPage';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { downloadPath as downloadPathSelector } from '../../mod_management/selectors';
 
-import { finishDownload, initDownload,
+import { addLocalDownload, downloadProgress, finishDownload, initDownload,
          removeDownload, setDownloadFilePath } from '../actions/state';
 import { IDownload } from '../types/IDownload';
 
@@ -71,6 +71,7 @@ interface IActionProps {
                  actions: DialogActions) => Promise<IDialogResult>;
   onStartMove: (id: string, filePath: string, game: string) => void;
   onFinishMove: (id: string) => void;
+  onSetFileSize: (id: string, size: number) => void;
   onMoveFailed: (id: string) => void;
 }
 
@@ -491,7 +492,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   private removable = (downloadIds: string[]) => {
-    const match = ['finished', 'failed'];
+    const match = ['finished', 'failed', undefined];
     return downloadIds.find((downloadId: string) => (
       match.indexOf(this.getDownload(downloadId).state) >= 0
     )) !== undefined;
@@ -554,11 +555,15 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     return [ 'failed', 'redirect' ].indexOf(download.state) >= 0;
   }
 
-  private move(source: string, destination: string) {
-    const { gameMode, onStartMove, onFinishMove, onMoveFailed } = this.props;
+  private move(source: string, destination: string): Promise<void> {
+    const { gameMode, onStartMove, onFinishMove, onMoveFailed, onSetFileSize } = this.props;
     const id = shortid();
     onStartMove(id, destination, gameMode);
-    fs.copyAsync(source, destination)
+    return fs.copyAsync(source, destination)
+      .then(() => fs.statAsync(destination))
+      .then(stats => {
+        onSetFileSize(id, stats.size);
+      })
       .then(() => onFinishMove(id))
       .catch(err => {
         log('info', 'failed to copy', { err });
@@ -572,7 +577,8 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     } else {
       const { downloadPath, gameMode } = this.props;
       dlPaths.forEach(dlPath => {
-        const destination = path.join(downloadPath, path.basename(dlPath));
+        const fileName = path.basename(dlPath);
+        const destination = path.join(downloadPath, fileName);
         this.move(dlPath, destination);
       });
     }
@@ -596,6 +602,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(initDownload(id, [], {}, game));
       dispatch(setDownloadFilePath(id, path.basename(filePath)));
     },
+    onSetFileSize: (id: string, size: number) =>
+      dispatch(downloadProgress(id, size, size, [])),
     onFinishMove: (id: string) => dispatch(finishDownload(id, 'finished')),
     onMoveFailed: (id: string) => dispatch(removeDownload(id)),
   };

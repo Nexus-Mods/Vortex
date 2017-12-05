@@ -50,13 +50,10 @@ function fallbackPurge(basePath: string,
                        files: IDeployedFile[]): Promise<void> {
   return Promise.map(files, file => {
     const fullPath = path.join(basePath, file.relPath);
-    return fs.statAsync(fullPath).then(stats => {
-      if (stats.mtime.getTime() === file.time) {
-        return fs.unlinkAsync(fullPath);
-      } else {
-        return Promise.resolve();
-      }
-    })
+    return fs.statAsync(fullPath).then(
+      stats => (stats.mtime.getTime() === file.time)
+        ? fs.unlinkAsync(fullPath)
+        : Promise.resolve())
     .catch(err => {
       if (err.code !== 'ENOENT') {
         return Promise.reject(err);
@@ -87,7 +84,13 @@ function queryPurge(api: IExtensionApi,
   }, [ { label: 'Cancel' }, { label: 'Purge' } ]))
     .then(result => {
       if (result.action === 'Purge') {
-        return fallbackPurge(basePath, files);
+        return fallbackPurge(basePath, files)
+          .catch(err => {
+            api.showErrorNotification('Purging failed', err, {
+              allowReport: false,
+            });
+            return Promise.reject(new UserCanceled());
+          });
       } else {
         return Promise.reject(new UserCanceled());
       }

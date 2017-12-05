@@ -3,19 +3,77 @@ import { log } from '../util/log';
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import { getSafe } from './storeHelper';
 
 export type Normalize = (input: string) => string;
 
-function CaseSensitiveNormalize(input: string) {
-  if (path.sep !== '/') {
-    return path.normalize(input).replace('/', path.sep).normalize().replace(/\\$/, '');
+function genNormalizeSeparator(func: (input: string) => string): (input: string) => string {
+  const sepRE = /\//g;
+  return (input: string) => func(input).replace(sepRE, path.sep);
+}
+
+function genNormalizeUnicode(func: (input: string) => string): (input: string) => string {
+  return (input: string) => func(input).normalize();
+}
+
+function genNormalizeRelative(func: (input: string) => string): (input: string) => string {
+  return (input: string) => path.normalize(func(input));
+}
+
+function genNormalizeCase(): (input: string) => string {
+  return (input: string) => input.toUpperCase();
+}
+
+export interface INormalizeParameters {
+  separators?: boolean;
+  unicode?: boolean;
+  relative?: boolean;
+}
+
+function isCaseSensitiveFailed(testPath: string): Promise<boolean> {
+  const parentPath = path.dirname(testPath);
+  if (parentPath === testPath) {
+    log('warn', 'failed to determine case sensitivity', {testPath});
+    // on windows, assume case insensitive, everywhere else: case sensitive
+    return Promise.resolve(process.platform !== 'win32');
   } else {
-    return path.normalize(input).normalize().replace(/\/$/, '');
+    return isCaseSensitive(parentPath);
   }
 }
 
-function CaseInsensitiveNormalize(input: string) {
-  return CaseSensitiveNormalize(input).toUpperCase().normalize();
+function isCaseSensitive(testPath: string): Promise<boolean> {
+  return fs.readdirAsync(testPath)
+    .then(files => {
+      // we need a filename that contains letters with case variants, otherwise we can't
+      // determine case sensitivity
+      const fileName: string = files.find(file =>
+        file !== file.toLowerCase() || file !== file.toUpperCase());
+
+      if (fileName === undefined) {
+        return null;
+      }
+
+      // to find out if case sensitive, stat the file itself and the upper and lower case variants.
+      // if they are all the same file, it's case insensitive
+      return Promise.map([fileName, fileName.toLowerCase(), fileName.toUpperCase()],
+        file => fs.statAsync(path.join(testPath, file)).reflect());
+    })
+    .then((stats: Array<Promise.Inspection<fs.Stats>>) => {
+      if (stats === null) {
+        return isCaseSensitiveFailed(testPath);
+      }
+
+      if (stats[1].isFulfilled()
+          && stats[2].isFulfilled()
+          && (stats[0].value().ino === stats[1].value().ino)
+          && (stats[0].value().ino === stats[2].value().ino)) {
+        log('debug', 'file system case-insensitive', { testPath });
+        return false;
+      } else {
+        log('debug', 'file system case-sensitive', { testPath });
+        return true;
+      }
+    });
 }
 
 /**
@@ -25,46 +83,23 @@ function CaseInsensitiveNormalize(input: string) {
  * @param {string} path
  * @returns {Promise<Normalize>}
  */
-function getNormalizeFunc(testPath: string): Promise<Normalize> {
-  return fs.readdirAsync(testPath)
-    .then((files: string[]) => {
-      // we need a filename that contains letters with case variants, otherwise we can't
-      // determine case sensitivity
-      const fileName: string = files.find((file: string) => {
-        return file !== file.toLowerCase() || file !== file.toUpperCase();
-      });
+function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): Promise<Normalize> {
+  return isCaseSensitive(testPath)
+    .then(caseSensitive => {
+      let funcOut = caseSensitive
+        ? (input: string) => input
+        : genNormalizeCase();
 
-      if (fileName === undefined) {
-        return null;
+      if (getSafe(parameters, ['separators'], true) && (process.platform === 'win32')) {
+        funcOut = genNormalizeSeparator(funcOut);
       }
-
-      return Promise.map([fileName, fileName.toLowerCase(), fileName.toUpperCase()], file =>
-        fs.statAsync(path.join(testPath, file)).reflect());
-    })
-    .then((stats: Array<Promise.Inspection<fs.Stats>>) => {
-      if (stats === null) {
-        const parent = path.dirname(testPath);
-        if (parent === testPath) {
-          log('warn', 'failed to determine case sensitivity', {testPath});
-          return process.platform === 'win32'
-            ? CaseInsensitiveNormalize
-            : CaseSensitiveNormalize;
-        } else {
-          return getNormalizeFunc(parent);
-        }
+      if (getSafe(parameters, ['unicode'], true)) {
+        funcOut = genNormalizeUnicode(funcOut);
       }
-
-      // we stated the original file name, the lower case variant and the upper case variant.
-      // if they all returned the same file, this should be a case insensitive drive
-      if ((stats[1].isFulfilled()) && (stats[2].isFulfilled()) &&
-          (stats[0].value().ino === stats[1].value().ino) &&
-          (stats[0].value().ino === stats[2].value().ino)) {
-        log('debug', 'file system case-insensitive', { testPath });
-        return CaseInsensitiveNormalize;
-      } else {
-        log('debug', 'file system case-sensitive', { testPath });
-        return CaseSensitiveNormalize;
+      if (getSafe(parameters, ['relative'], true)) {
+        funcOut = genNormalizeRelative(funcOut);
       }
+      return funcOut;
     })
     .catch(err => {
       if (err.code === 'ENOENT') {

@@ -36,7 +36,7 @@ export class DownloadIsHTML extends Error {
 function isHTMLHeader(headers: http.IncomingHttpHeaders) {
   const type: string = headers['content-type'].toString();
   return (type !== undefined)
-    && (type.startsWith('text/html') || type.startsWith('application/json'));
+    && (type.startsWith('text/html'));
 }
 
 interface IHTTP {
@@ -177,7 +177,9 @@ class DownloadWorker {
     if (this.mEnded) {
       return false;
     }
-    this.mRequest.abort();
+    if (this.mRequest !== undefined) {
+      this.mRequest.abort();
+    }
     this.mEnded = true;
     this.mFinishCB(paused);
     return true;
@@ -210,7 +212,7 @@ class DownloadWorker {
     // download.
     if (response.statusCode >= 300) {
       if (response.statusCode === 302) {
-        this.mJob.url = response.headers['location'] as string;
+        this.mJob.url = url.resolve(this.mJob.url, response.headers['location'] as string);
         this.assignJob(this.mJob);
       } else {
         this.handleError({
@@ -366,6 +368,7 @@ class DownloadManager {
     if (urls.length === 0) {
       return Promise.reject(new Error('No download urls'));
     }
+    log('info', 'queueing download from', urls);
     const nameTemplate: string = decodeURI(path.basename(url.parse(urls[0]).pathname));
     const destPath = destinationPath || this.mDownloadPath;
     return fs.ensureDirAsync(destPath)
@@ -581,7 +584,8 @@ class DownloadManager {
           // otherwise the url may have expired. There is no way to know how long the
           // url remains valid, not even with the nexus api (at least not currently)
           if ((this.mSlowWorkers[workerId] > 15)
-              && ((new Date().getTime() - download.started.getTime()) < 15 * 60 * 1000)) {
+              && (download.started !== undefined)
+              && ((Date.now() - download.started.getTime()) < 15 * 60 * 1000)) {
             log('debug', 'restarting slow worker', { workerId });
             this.mBusyWorkers[workerId].restart();
             delete this.mSlowWorkers[workerId];
@@ -605,11 +609,13 @@ class DownloadManager {
 
     const remainingSize = size - this.mMinChunkSize;
 
+    const maxChunks = Math.min(this.mMaxChunks, this.mMaxWorkers);
+
     if (size > this.mMinChunkSize) {
       // download the file in chunks. We use a fixed number of variable size chunks.
       // Since the download link may expire we need to start all threads asap
       const chunkSize = Math.min(remainingSize,
-          Math.max(this.mMinChunkSize, Math.ceil(remainingSize / this.mMaxChunks)));
+          Math.max(this.mMinChunkSize, Math.ceil(remainingSize / maxChunks)));
 
       let offset = this.mMinChunkSize + 1;
       while (offset < size) {
@@ -623,7 +629,7 @@ class DownloadManager {
         offset += chunkSize;
       }
       log('debug', 'downloading file in chunks',
-        { size: chunkSize, count: download.chunks.length, max: this.mMaxChunks, total: size });
+        { size: chunkSize, count: download.chunks.length, max: maxChunks, total: size });
       this.tickQueue();
     } else {
       log('debug', 'file is too small to be chunked',

@@ -12,6 +12,8 @@ class Progress {
   private mCallback: (percent: number, label: string) => void;
   private mDepth: number;
   private mIdx: number;
+  private mLastProgress: number = 0;
+  private mLastProgressTime: number = Date.now();
 
   constructor(baseValue: number, magnitude: number,
               callback: (percent: number, label: string) => void, depth: number = 0) {
@@ -44,9 +46,13 @@ class Progress {
    *
    * @memberOf Progress
    */
-  public completed(label: string): void {
-    this.mStepsCompleted += 1;
-    this.mCallback(this.currentProgress(), label);
+  public completed(label: string, steps: number = 1): void {
+    this.mStepsCompleted += steps;
+    const now = Date.now();
+    if (now - this.mLastProgressTime > 1000) {
+      this.mCallback(this.currentProgress(), label);
+      this.mLastProgressTime = now;
+    }
   }
 
   /**
@@ -66,7 +72,13 @@ class Progress {
   }
 
   private currentProgress() {
-    return this.mBaseValue + (this.mMagnitude * this.mStepsCompleted) / this.mStepCount;
+    const newProgress = Math.min(
+        Math.max(this.mBaseValue +
+                     (this.mMagnitude * this.mStepsCompleted) / this.mStepCount,
+                 this.mLastProgress),
+        this.mMagnitude);
+    this.mLastProgress = newProgress;
+    return newProgress;
   }
 }
 

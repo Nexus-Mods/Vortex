@@ -27,6 +27,7 @@ import makeReactive from './makeReactive';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import Steam, { ISteamEntry } from './Steam';
+import runThreaded from './thread';
 import { bytesToString, copyFileAtomic, isNullOrWhitespace,
          removePersistent, setdefault } from './util';
 import walk from './walk';
@@ -57,6 +58,7 @@ export {
   removePersistent,
   renderModName,
   runElevated,
+  runThreaded,
   setdefault,
   sortMods,
   Steam,

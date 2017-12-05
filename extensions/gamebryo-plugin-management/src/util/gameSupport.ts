@@ -4,7 +4,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { types } from 'vortex-api';
+import { types, util } from 'vortex-api';
 
 const app = appIn || remote.app;
 
@@ -114,7 +114,7 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
   const state: types.IState = store.getState();
 
   const {discovered} = state.settings.gameMode;
-  if (discovered['skyrimse'].path !== undefined) {
+  if (util.getSafe(discovered, ['skyrimse', 'path'], undefined) !== undefined) {
     const skyrimsecc = new Set(gameSupport['skyrimse'].nativePlugins);
     res = res
       .then(() => fs.readFileAsync(path.join(discovered['skyrimse'].path, 'Skyrim.ccc'))
@@ -122,7 +122,7 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
           plugin => skyrimsecc.add(plugin.toLowerCase())))
         .then(() => gameSupport['skyrimse'].nativePlugins = Array.from(skyrimsecc)));
   }
-  if (discovered['fallout4'].path !== undefined) {
+  if (util.getSafe(discovered, ['fallout4', 'path'], undefined) !== undefined) {
     const fallout4cc = new Set(gameSupport['fallout4'].nativePlugins);
     res = res
       .then(() => fs.readFileAsync(path.join(discovered['fallout4'].path, 'Fallout4.ccc'))

@@ -20,12 +20,13 @@ function installExtension(archivePath: string): Promise<void> {
 
   return extractor.extractFull(archivePath, tempPath, {ssc: false}, () => undefined,
                         () => undefined)
-      .then(() => Promise.all([
-        fs.statAsync(path.join(tempPath, 'info.json')),
-        fs.statAsync(path.join(tempPath, 'info.json')),
-      ]))
+      .then(() => fs.statAsync(path.join(tempPath, 'info.json')))
+      .catch(err => Promise.reject(new Error('not an extension, info.json missing')))
+      .then(() => fs.removeAsync(destPath))
       .then(() => fs.renameAsync(tempPath, destPath))
-      .catch(() => rimrafAsync(tempPath, { glob: false }));
+      .catch(err =>
+        rimrafAsync(tempPath, { glob: false })
+        .then(() => Promise.reject(err)));
 }
 
 export default installExtension;
