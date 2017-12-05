@@ -1,6 +1,7 @@
 import { IBannerOptions } from '../types/IBannerOptions';
 import { connect } from '../util/ComponentEx';
 import { extend, IExtensibleProps } from '../util/ExtensionProvider';
+import { truthy } from '../util/util';
 
 import * as React from 'react';
 import { setInterval } from 'timers';
@@ -65,7 +66,7 @@ class Banner extends React.Component<IProps, {}> {
   }
 
   private cycle = () => {
-    if (this.mRef !== null) {
+    if (truthy(this.mRef)) {
       this.mRef.childNodes.item(this.mCurrentBanner).attributes.removeNamedItem('class');
       this.mCurrentBanner = (this.mCurrentBanner + 1) % this.mBanners.length;
       const attr = document.createAttribute('class');

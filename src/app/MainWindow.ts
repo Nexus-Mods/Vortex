@@ -96,6 +96,9 @@ class MainWindow {
       frame: !getSafe(windowMetrics, ['customTitlebar'], true),
       show: false,
       title: 'Vortex',
+      webPreferences: {
+        nodeIntegrationInWorker: true,
+      },
     };
   }
 

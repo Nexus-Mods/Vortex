@@ -335,6 +335,7 @@
       "path": "{nucleo}/files-folders/{nucleo_simple}_bookmark-2",
       "rmFill": true
     },
+    "highlight-conflict": "{fa}/bolt",
     "highlight-temple": {
       "path": "{nucleo}/travel/{nucleo_simple}_temple-25",
       "rmFill": true

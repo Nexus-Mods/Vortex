@@ -50,7 +50,7 @@ a[role=menuitem] svg {
 // This way the transparent overlap is one pixel narrower than the border so the
 // pixels in the corner are colored.
 .nav-tabs>li.active {
-  border: 2px solid $nav-tabs-active-link-hover-border-color;
+  border: $border-width solid $nav-tabs-active-link-hover-border-color;
   margin-right: 0px;
   margin-top: 0px;
 }
@@ -119,7 +119,7 @@ a[role=menuitem] svg {
 
   .form-control,
   .form-control:focus {
-    border: 2px solid $brand-danger;
+    border: $border-width solid $brand-danger;
   }
 
   .input-group-addon {
@@ -144,7 +144,7 @@ a[role=menuitem] svg {
 
   .form-control,
   .form-control:focus {
-    border: 2px solid $brand-warning;
+    border: $border-width solid $brand-warning;
   }
 
   .input-group-addon {
@@ -169,7 +169,7 @@ a[role=menuitem] svg {
 
   .form-control,
   .form-control:focus {
-    border: 2px solid $brand-success;
+    border: $border-width solid $brand-success;
   }
 
   .input-group-addon {
@@ -237,4 +237,12 @@ textarea {
 
 .pager li > a {
   padding: 4px $gutter-width;
+}
+
+.btn-primary {
+  margin: 0 5px;
+}
+
+.input-group-btn:last-child > .btn-primary {
+  margin-left: 5px;
 }

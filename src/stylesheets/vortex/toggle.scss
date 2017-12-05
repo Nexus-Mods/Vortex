@@ -26,10 +26,11 @@
   bottom: 0;
   border-radius: 8px;
   line-height: 100%;
-  svg {
+  display: flex;
+  align-items: center;
+  .icon {
     width: 0.75em;
     height: 0.75em;
-    vertical-align: middle;
   }
 }
 

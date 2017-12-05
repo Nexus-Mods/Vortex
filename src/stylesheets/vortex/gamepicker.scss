@@ -30,7 +30,7 @@ $thumbnail-width: 256px;
 }
 
 .game-thumbnail-primary {
-  border-color: $brand-selected;
+  border-color: $border-color;
 }
 
 .game-thumbnail-default {
@@ -130,7 +130,7 @@ $thumbnail-width: 256px;
 }
 
 .game-list-selected {
-  background-color: $brand-selected;
+  background-color: $table-bg-active;
 }
 
 .game-list-item {

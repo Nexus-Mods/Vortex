@@ -7,37 +7,58 @@
 }
 
 .highlight-1 {
-  background-color: #ff0000;
+  background-color: $highlight1;
   &:hover, &:active, &:focus {
-    background-color: #ff0000;
+    background-color: $highlight1;
   }
 }
 
 .highlight-2 {
-  background-color: #03a9f4;
+  background-color: $highlight2;
   &:hover, &:active, &:focus {
-    background-color: #03a9f4;
+    background-color: $highlight2;
   }
 }
 
 .highlight-3 {
-  background-color: #4caf50;
+  background-color: $highlight3;
   &:hover, &:active, &:focus {
-    background-color: #4caf50;
+    background-color: $highlight3;
   }
 }
 
 .highlight-4 {
-  background-color: #cddc39;
+  background-color: $highlight4;
   &:hover, &:active, &:focus {
-    background-color: #cddc39;
+    background-color: $highlight4;
   }
 }
 
 .highlight-5 {
-  background-color: #ff9800;
+  background-color: $highlight5;
   &:hover, &:active, &:focus {
-    background-color: #ff9800;
+    background-color: $highlight5;
+  }
+}
+
+.highlight-6 {
+  background-color: $highlight6;
+  &:hover, &:active, &:focus {
+    background-color: $highlight6;
+  }
+}
+
+.highlight-7 {
+  background-color: $highlight7;
+  &:hover, &:active, &:focus {
+    background-color: $highlight7;
+  }
+}
+
+.highlight-8 {
+  background-color: $highlight8;
+  &:hover, &:active, &:focus {
+    background-color: $highlight8;
   }
 }
 

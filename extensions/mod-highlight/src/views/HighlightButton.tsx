@@ -10,6 +10,9 @@ const cssHighlightList: string[] = [
   'highlight-3',
   'highlight-4',
   'highlight-5',
+  'highlight-6',
+  'highlight-7',
+  'highlight-8',
   'highlight-default',
 ];
 

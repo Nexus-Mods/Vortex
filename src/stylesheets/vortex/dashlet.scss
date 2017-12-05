@@ -44,11 +44,10 @@
     display: flex;
   }
 
-  div {
+  > div {
     overflow-y: hidden;
     overflow-x: auto;
     display: flex;
-    margin-top: $half-gutter;
   }
 }
 
@@ -121,6 +120,7 @@
     top: 15px;
     right: 15px;
     display: flex;
+    align-items: center;
     > * {
       margin-left: 4px;
     }

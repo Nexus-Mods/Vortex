@@ -1,9 +1,12 @@
+import * as fs from 'fs-extra-promise';
 import { TranslationFunction } from 'i18next';
+import * as opn from 'opn';
+import * as path from 'path';
 import * as React from 'react';
 import { Button, Col, ControlLabel, Form, FormControl, FormGroup,
   Grid, OverlayTrigger, Popover, Row } from 'react-bootstrap';
 import { ChromePicker, Color } from 'react-color';
-import { ComponentEx } from 'vortex-api';
+import { ComponentEx, More, Toggle } from 'vortex-api';
 
 interface IColor {
   r: number;
@@ -96,6 +99,7 @@ interface IColorEntry {
 export interface IBaseProps {
   t: TranslationFunction;
   availableFonts: string[];
+  themePath: string;
   theme: { [name: string]: string };
   onApply: (updatedTheme: { [name: string]: string }) => void;
 }
@@ -123,6 +127,8 @@ interface IComponentState {
   fontSize: number;
   hidpiScale: number;
   colors: { [key: string]: string };
+  margin: number;
+  dark: boolean;
 }
 
 class ThemeEditor extends ComponentEx<IProps, IComponentState> {
@@ -133,9 +139,11 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
 
     this.initState({
       colors: {},
-      fontSize: 13,
+      fontSize: 12,
       fontFamily: 'Arial',
       hidpiScale: 100,
+      margin: 30,
+      dark: false,
     });
 
   }
@@ -145,6 +153,8 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     this.setFontSize(this.props.theme);
     this.setHiDPIScale(this.props.theme);
     this.setFontFamily(this.props.theme);
+    this.setMargin(this.props.theme);
+    this.setDark(this.props.theme);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -153,12 +163,14 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
       this.setFontSize(newProps.theme);
       this.setHiDPIScale(newProps.theme);
       this.setFontFamily(newProps.theme);
+      this.setMargin(newProps.theme);
+      this.setDark(newProps.theme);
     }
   }
 
   public render(): JSX.Element {
     const { t, availableFonts } = this.props;
-    const { colors, fontFamily, fontSize, hidpiScale } = this.state;
+    const { colors, dark, fontFamily, fontSize, hidpiScale, margin } = this.state;
     const buckets: IColorEntry[][] = colorDefaults.reduce((prev, value, idx) => {
       if (idx < ThemeEditor.BUCKETS) {
         prev[idx % ThemeEditor.BUCKETS] = [];
@@ -183,6 +195,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
               />
             </Col>
           </FormGroup>
+          {/*
           <FormGroup>
             <Col sm={4}>
               <ControlLabel>{t('HiDPI Scale:')} {hidpiScale}%</ControlLabel>
@@ -194,6 +207,21 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
                 min={50}
                 max={300}
                 onChange={this.onChangeHiDPIScale}
+              />
+            </Col>
+          </FormGroup>
+          */}
+          <FormGroup>
+            <Col sm={4}>
+              <ControlLabel>{t('Margins:')}</ControlLabel>
+            </Col>
+            <Col sm={8}>
+              <FormControl
+                type='range'
+                value={margin}
+                min={0}
+                max={80}
+                onChange={this.onChangeMargin}
               />
             </Col>
           </FormGroup>
@@ -232,9 +260,19 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
             );
           })}
         </Grid>
+        <Toggle checked={dark} onToggle={this.onChangeDark}>
+          {t('Dark Theme')}
+          <More id='more-dark-theme' name={t('Dark Theme')}>
+            {t('When this is enabled, grays are essentially inverted, so a light gray becomes '
+              + 'a dark gray and vice versa.\n'
+              + 'If your theme is mostly light foreground colors on dark background, this '
+              + 'will produce better contrast.')}
+          </More>
+        </Toggle>
+        <a onClick={this.editManually}>{t('Edit CSS manually...')}</a>
         <div className='pull-right'>
-          <Button onClick={this.revert}>{t('Revert')}</Button>
-          <Button onClick={this.apply}>{t('Apply')}</Button>
+          <Button bsStyle='primary' onClick={this.revert}>{t('Revert')}</Button>
+          <Button bsStyle='primary' onClick={this.apply}>{t('Apply')}</Button>
         </div>
       </div>
     );
@@ -261,6 +299,14 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private editManually = () => {
+    const stylePath = path.join(this.props.themePath, 'style.scss');
+    (fs as any).ensureFileAsync(stylePath)
+    .then(() => {
+      opn(stylePath);
+    });
+  }
+
   private revert = () => {
     this.setColors(this.props.theme);
   }
@@ -271,6 +317,8 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
       'font-size-base': this.state.fontSize.toString() + 'px',
       'hidpi-scale-factor': this.state.hidpiScale.toString() + '%',
       'font-family-base': '"' + this.state.fontFamily + '"',
+      'gutter-width': this.state.margin.toString() + 'px',
+      'dark-theme': this.state.dark ? 'true' : 'false',
     };
 
     this.props.onApply(theme);
@@ -292,6 +340,14 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     this.nextState.fontFamily = evt.currentTarget.value;
   }
 
+  private onChangeMargin = evt => {
+    this.nextState.margin = evt.currentTarget.value;
+  }
+
+  private onChangeDark = newValue => {
+    this.nextState.dark = newValue;
+  }
+
   private setFontSize(theme: { [name: string]: string }) {
     if (theme['font-size-base'] !== undefined) {
       this.nextState.fontSize = parseInt(theme['font-size-base'], 10);
@@ -308,6 +364,18 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     if (theme['font-family-base'] !== undefined) {
       const fontFamily = theme['font-family-base'] || '';
       this.nextState.fontFamily = fontFamily.replace(/^"|"$/g, '');
+    }
+  }
+
+  private setMargin(theme: { [name: string]: string }) {
+    if (theme['gutter-width'] !== undefined) {
+      this.nextState.margin = parseInt(theme['gutter-widtgh'], 30);
+    }
+  }
+
+  private setDark(theme: { [name: string]: string }) {
+    if (theme['dark-theme'] !== undefined) {
+      this.nextState.dark = theme['dark-theme'] === 'true';
     }
   }
 

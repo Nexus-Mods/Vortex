@@ -206,6 +206,9 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   private changeImage = () => {
     this.context.api.selectFile({ filters: [{ name: 'Image', extensions: ['jpg', 'gif', 'png'] }] })
     .then(file => {
+      if (file === undefined) {
+        return;
+      }
       const img = nativeImage.createFromPath(file);
       // TODO: could resize here to save some disc space
       return fs.writeFileAsync(this.imagePath, img.toPNG())
