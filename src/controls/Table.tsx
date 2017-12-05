@@ -884,7 +884,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         newState[key] = { selected: { $set: false } };
       }
     });
-    this.setState(update(this.state, { newState }), this.onRowStateChanged);
+    this.setState(update(this.state, { rowState: newState }), this.onRowStateChanged);
   }
 
   private selectAll() {
