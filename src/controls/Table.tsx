@@ -238,6 +238,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
                 key={idx}
                 icon={action.icon}
                 text={action.title}
+                instanceId={selected}
                 onClick={action.action}
               />)}
           </IconBar>

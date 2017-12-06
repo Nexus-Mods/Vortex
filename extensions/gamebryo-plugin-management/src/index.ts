@@ -297,7 +297,7 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
         }
         refreshTimer = setTimeout(() => {
           updateCurrentProfile(store)
-              .then(() => api.events.emit('autosort-plugins'));
+              .then(() => api.events.emit('autosort-plugins', false));
           refreshTimer = undefined;
         }, 500);
       });
@@ -489,7 +489,7 @@ function init(context: IExtensionContextExt) {
             if (oldProfile !== newProfile) {
               updatePluginList(store, newProfile.modState)
                 .then(() => {
-                  context.api.events.emit('autosort-plugins');
+                  context.api.events.emit('autosort-plugins', false);
                 });
             }
           });
@@ -532,7 +532,7 @@ function init(context: IExtensionContextExt) {
       if ((newProfile !== undefined) && gameSupported(newProfile.gameId)) {
         updatePluginList(store, newProfile.modState)
             .then(() => startSync(context.api))
-            .then(() => context.api.events.emit('autosort-plugins'));
+            .then(() => context.api.events.emit('autosort-plugins', false));
       }
     });
 

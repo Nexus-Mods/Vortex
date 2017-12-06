@@ -53,8 +53,9 @@ class LootInterface {
     });
 
     // on demand, re-sort the plugin list
-    context.api.events.on('autosort-plugins', () => {
-      if (store.getState().settings.plugins.autoSort && (this.mLoot !== undefined)) {
+    context.api.events.on('autosort-plugins', (manual: boolean) => {
+      if ((manual || store.getState().settings.plugins.autoSort)
+          && (this.mLoot !== undefined)) {
         const t = this.mExtensionApi.translate;
         const state = store.getState();
         const gameMode = selectors.activeGameId(state);
@@ -152,9 +153,12 @@ class LootInterface {
   private init(gameMode: GameId, gamePath: string): Promise<void> {
     const t = this.mExtensionApi.translate;
     const localPath = pluginPath(gameMode);
+    console.log('init', localPath);
     return fs.ensureDirAsync(localPath)
       .then(() => {
+        console.log('gm', gameMode, gamePath, localPath);
         this.mLoot = new LootDatabase(gameMode, gamePath, localPath);
+        console.log('gm2', this.mLoot);
         this.mLootGame = gameMode;
         this.promisify();
 

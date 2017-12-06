@@ -320,7 +320,7 @@
       "rmFill": true
     },
     "locked": {
-      "path": "{fa}/lock",
+      "path": "{nucleo}/ui/{nucleo_simple}_lock",
       "rmFill": true
     },
     "unlocked": {
@@ -374,6 +374,11 @@
     },
     "folder-add": {
       "path": "{nucleo}/files-folders/{nucleo_simple}_folder-add",
+      "rmFill": true
+    },
+    "filter": "{fa}/filter",
+    "swap": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_direction-53",
       "rmFill": true
     }
   }

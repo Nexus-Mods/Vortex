@@ -224,7 +224,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     return (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <Button className='profile-add' onClick={this.editNewProfile}>
+      <Button bsStyle='ghost' className='profile-add' onClick={this.editNewProfile}>
         {t('Add "{{ name }}" Profile', { replace: { name: gameName } })}
       </Button>
       </div>

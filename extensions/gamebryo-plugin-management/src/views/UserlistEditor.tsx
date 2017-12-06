@@ -33,7 +33,7 @@ class RuleEntry extends React.Component<IRuleEntryProps, {}> {
         {reference}
         <tooltip.IconButton
           className='btn-embed'
-          icon='trash-round'
+          icon='remove'
           tooltip=''
           onClick={this.click}
         />
@@ -110,7 +110,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     return (
       <Modal show={dialog !== undefined} onHide={this.close}>
         <ModalHeader>
-          {t('Set Dependencies')}
+          <h3>{t('Set Dependencies')}</h3>
         </ModalHeader>
         {dialog !== undefined
           ? (
@@ -120,6 +120,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                 placeholder={<div><Icon name='filter' /> {t('Filter by plugin')}</div>}
                 value={filter}
                 onChange={this.setFilter}
+                style={{ maxWidth: '50%' }}
               />
               <ListGroup className='userlist-existing-rules'>
               {userlist.filter(this.filterList).map(this.renderRules)}
@@ -141,6 +142,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                     ]}
                     value={dialog.type}
                     clearable={false}
+                    onChange={this.selectType}
                   />
                   <Select
                     options={pluginOptions}
@@ -150,7 +152,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
                     onChange={this.selectReference}
                   />
                   <tooltip.IconButton
-                    icon='direction'
+                    icon='swap'
                     tooltip=''
                     title={t('Swap')}
                     onClick={this.swapPlugins}
@@ -229,6 +231,10 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 
   private selectPlugin = (newValue: { label: string, value: string }) => {
     this.nextState.dialog.pluginId = newValue.value;
+  }
+
+  private selectType = (newValue: { label: string, value: string }) => {
+    this.nextState.dialog.type = newValue.value as RuleType;
   }
 
   private selectReference = (newValue: { label: string, value: string }) => {

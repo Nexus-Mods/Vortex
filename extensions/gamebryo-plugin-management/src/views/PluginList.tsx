@@ -258,7 +258,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             key: 'btn-sort',
             icon: 'loot-sort',
             text: t('Sort now', { ns: 'gamebryo-plugin' }),
-            onClick: () => this.context.api.events.emit('autosort-plugins'),
+            onClick: () => this.context.api.events.emit('autosort-plugins', true),
           };
         },
       },
