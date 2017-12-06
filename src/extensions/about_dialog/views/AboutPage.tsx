@@ -129,17 +129,16 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     const licenseFile = mod.licenseFile !== undefined
       ? path.join(remote.app.getAppPath(), mod.licenseFile)
       : path.join(remote.app.getAppPath(), 'assets', 'licenses', license + '.md');
-    fs.readFileAsync(licenseFile)
-      .then((licenseText: NodeBuffer) => {
+    fs.readFileAsync(licenseFile, { })
+      .then(licenseText => {
         if (this.mMounted) {
           this.nextState.licenseText = licenseText.toString();
         }
       })
-      .catch((err) => {
+      .catch(err => {
         this.nextState.licenseText = t('Missing license {{licenseFile}}',
           { replace: { licenseFile } });
-      })
-      ;
+      });
   }
 
   private renderModule = (mod: ILicense) => {
