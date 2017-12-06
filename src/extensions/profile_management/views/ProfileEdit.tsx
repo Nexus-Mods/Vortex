@@ -63,10 +63,10 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
         <ListGroupItem key={profileId}>
           <div className='inline-form'>
           {inputControl}
-          <Button id='__accept' tooltip={t('Accept')} onClick={this.saveEdit}>
+          <Button bsStyle='primary' id='__accept' tooltip={t('Accept')} onClick={this.saveEdit}>
             {t('Save')}
           </Button>
-          <Button id='__cancel' tooltip={t('Cancel')} onClick={onCancelEdit}>
+          <Button bsStyle='secondary' id='__cancel' tooltip={t('Cancel')} onClick={onCancelEdit}>
             {t('Cancel')}
           </Button>
           </div>

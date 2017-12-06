@@ -30,9 +30,17 @@ import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Badge, ControlLabel, FormGroup, Modal, Nav, ProgressBar } from 'react-bootstrap';
+import { Badge, Button as ReactButton, ControlLabel, FormGroup,
+         Modal, Nav, ProgressBar } from 'react-bootstrap';
+// tslint:disable-next-line:no-submodule-imports
+import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
 import { truthy } from '../util/util';
+
+addStyle(ReactButton, 'secondary');
+addStyle(ReactButton, 'ad');
+addStyle(ReactButton, 'ghost');
+addStyle(ReactButton, 'inverted');
 
 interface IPageButtonProps {
   t: I18next.TranslationFunction;

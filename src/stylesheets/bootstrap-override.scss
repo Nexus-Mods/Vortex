@@ -240,7 +240,40 @@ textarea {
 }
 
 .btn-primary {
-  margin: 0 5px;
+  margin: 0 10px;
+}
+
+.btn-ghost {
+  border: 2px solid $brand-primary;
+  color: $brand-primary;
+  background-color: transparent;
+
+  &:hover {
+    color: $text-color;
+    background-color: $brand-primary;
+  }
+}
+
+.btn-secondary,
+.btn-inverted {
+  background-color: white;
+  color: $brand-primary;
+
+  &:hover {
+    background-color: $brand-primary;
+    color: $text-color;
+  }
+}
+
+.btn-ad {
+  background-color: white;
+  color: $brand-primary;
+  font-weight: bold;
+
+  &:hover {
+    background-color: $brand-primary;
+    color: $text-color;
+  }
 }
 
 .input-group-btn:last-child > .btn-primary {

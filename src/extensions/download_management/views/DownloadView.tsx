@@ -372,7 +372,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                   />
                 </FlexLayout.Flex>
                 <FlexLayout.Fixed style={{ textAlign: 'center' }}>
-                  <Button onClick={this.toggleViewAll} >
+                  <Button bsStyle='ghost' onClick={this.toggleViewAll} >
                     {viewAll ? t('View not-yet-installed Downloads') : t('View All Downloads')}
                   </Button>
                 </FlexLayout.Fixed>
