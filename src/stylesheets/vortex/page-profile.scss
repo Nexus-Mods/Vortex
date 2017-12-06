@@ -49,6 +49,9 @@
     &.active {
       background-color: $table-bg-active;
     }
+    &.disabled {
+      background-color: $gray-dark;
+    }
   }
 
   .profile-name {

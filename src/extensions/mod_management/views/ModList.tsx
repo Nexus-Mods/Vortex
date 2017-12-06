@@ -308,6 +308,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         <Button
           id='btn-more-mods'
           onClick={sources[0].onBrowse}
+          bsStyle='ghost'
         >
           {t('Get more mods')}
         </Button>

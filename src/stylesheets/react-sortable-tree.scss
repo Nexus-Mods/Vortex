@@ -2,6 +2,10 @@
   border: 1px solid $border-color;
 }
 
+.rst__nodeContent {
+  right: $gutter-width;
+}
+
 .rst__rowContents {
   background-color: initial;
   border: 0;

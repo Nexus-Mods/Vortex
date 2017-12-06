@@ -380,6 +380,10 @@
     "swap": {
       "path": "{nucleo}/arrows/{nucleo_simple}_direction-53",
       "rmFill": true
+    },
+    "recover": {
+      "path": "{nucleo}/design-development/{nucleo_simple}_patch-34",
+      "rmFill": true
     }
   }
 }
