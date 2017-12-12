@@ -3,16 +3,16 @@
   top: 12px;
   right: 16px;
   .window-control {
-    width: 48px;
+    width: 38px;
     background-color: initial;
     border-width: 0;
 
     &:hover {
-      background-color: $gray;
+      color: $brand-primary;
     }
   }
 
   .window-control#window-close:hover {
-    background-color: $brand-danger;
+    color: $brand-primary;
   }
 }

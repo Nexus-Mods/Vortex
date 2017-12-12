@@ -88,6 +88,10 @@ a.btn {
   @include button-variant($btn-danger-color, $btn-danger-bg, $btn-danger-border);
 }
 
+.btn-white {
+  @include button-variant($btn-white-color, $btn-white-bg, $btn-white-border);
+}
+
 
 // Link buttons
 // -------------------------

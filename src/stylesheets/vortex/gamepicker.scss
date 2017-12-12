@@ -20,6 +20,7 @@ $thumbnail-width: 256px;
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 0 10px;
   .popover {
     max-width: 600px;
   }
@@ -106,9 +107,9 @@ $thumbnail-width: 256px;
 }
 
 @media (max-width: 1280px) {
-  .game-thumbnail-body .thumbnail-img {
-    max-width: 128px;
-  }
+  // .game-thumbnail-body .thumbnail-img {
+  //   max-width: 128px;
+  // }
 }
 
 .game-thumbnail-img-list {
