@@ -41,6 +41,10 @@ body {
   background-color: $brand-secondary;
 }
 
+::-webkit-scrollbar-thumb:hover {
+  background: darken( $gray-darker, 10% );
+}
+
 ::-webkit-input-placeholder {
   color: darken($text-color, 20%) !important;
   font-style: italic;

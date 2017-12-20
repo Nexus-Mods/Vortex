@@ -28,7 +28,7 @@
 
 .tool-icon {
   width: auto;
-  height: 40px;
+  height: 30px;
 
   &.invalid {
     filter: grayscale(100%);
@@ -52,7 +52,7 @@
   }
   span {
     flex: 1 1 0;
-    margin: auto 1em;
+    margin: auto 0.5em;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow-x: hidden;

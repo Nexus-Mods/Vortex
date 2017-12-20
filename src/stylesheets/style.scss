@@ -211,7 +211,7 @@ div:hover > .hover-expand {
   .dropdown-toggle {
     padding: 3px;
     border: 0px;
-    border-left: 1px solid $gray;
+    border-left: 1px solid darken( $brand-primary, 10% );
   }
 }
 
