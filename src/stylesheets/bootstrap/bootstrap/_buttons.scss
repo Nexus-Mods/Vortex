@@ -51,6 +51,12 @@
     @include box-shadow(none);
   }
 
+  $.disabled & {
+    &:hover {
+      background: #808080;
+    }
+  }
+
   // [converter] extracted a& to a.btn
 }
 
