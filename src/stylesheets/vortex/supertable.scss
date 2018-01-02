@@ -179,3 +179,10 @@
   display: flex;
   width: 100%;
 }
+
+.xtable .cell-actions {
+  display: inline-flex;
+  .dropdown-toggle {
+    min-width: initial;
+  }
+}

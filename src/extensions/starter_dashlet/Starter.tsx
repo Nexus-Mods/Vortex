@@ -31,7 +31,7 @@ import { setPrimaryTool } from './actions';
 
 import ToolButton from './ToolButton';
 import ToolEditDialogT from './ToolEditDialog';
-let ToolEditDialog: typeof ToolEditDialogT = Placeholder;
+let ToolEditDialog: typeof ToolEditDialogT = Placeholder as any;
 
 import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
@@ -131,8 +131,10 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           </Media.Left>
           <Media.Body>
             {this.renderToolIcons(game, discoveredGame)}
-            {this.renderAddButton()}
           </Media.Body>
+          <Media.Right>
+            {this.renderAddButton()}
+          </Media.Right>
         </Media>
       );
     }

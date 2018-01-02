@@ -235,6 +235,7 @@ class TableRow extends React.Component<IRowProps, {}> {
         <TD
           style={{ textAlign: 'center' }}
           key='action-cell'
+          className={`table-${tableId} cell-actions`}
         >
           <IconBar
             id={`${tableId}-${data.__id}-action-icons`}

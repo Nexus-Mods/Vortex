@@ -1,7 +1,7 @@
 #starter-dashlet {
-  overflow: visible;
   margin: 0;
   height: 100%;
+  width: 100%;
 
   .media-left {
     margin-top: auto;
@@ -20,9 +20,13 @@
   }
 
   .media-body {
-    overflow: visible;
     vertical-align: middle;
     flex-direction: row;
+  }
+  
+  .media-right {
+    display: flex;
+    align-items: center;
   }
 }
 
