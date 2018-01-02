@@ -91,7 +91,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
 
     const game = getGame(profile.gameId);
 
-    let logo = hasProfileImage
+    let logo = hasProfileImage || (game === undefined)
       ? this.imagePath
       : path.join(game.extensionPath, game.logo);
 

@@ -8,19 +8,26 @@ import { activeGameId } from '../../profile_management/selectors';
 
 import * as React from 'react';
 import Select from 'react-select';
+import { IMod } from '../../mod_management/types/IMod';
 
 interface IConnectedProps {
   categories: ICategoryDictionary;
+  mods: { [modId: string]: IMod };
 }
 
 type IProps = IFilterProps & IConnectedProps;
 
 class CategoryFilterComponent extends React.Component<IProps, {}> {
   public render(): JSX.Element {
-    const { filter, categories } = this.props;
+    const { filter, categories, mods } = this.props;
 
-    const options = Object.keys(categories || {}).map(id => ({
-      value: id,
+    const usedCategories = new Set(
+        Object.keys(mods)
+          .map(modId => mods[modId].attributes['category'])
+          .filter(category => category !== undefined));
+
+    const options = Array.from(usedCategories).map(id => ({
+      value: id.toString(),
       label: categories[id].name,
     })).sort((lhs, rhs) => lhs.label.localeCompare(rhs.label));
 
@@ -45,6 +52,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   const gameId = activeGameId(state);
   return {
     categories: state.persistent.categories[gameId],
+    mods: state.persistent.mods[gameId],
   };
 }
 
@@ -56,22 +64,22 @@ class CategoryFilter implements ITableFilter {
   public raw = 'attributes';
 
   public matches(filter: any, value: any, state: IState): boolean {
-    const filtList = filter as string[];
+    const filtList = new Set<string>(filter);
     const allCategories = (value !== undefined)
       ? this.categoryChain(value.toString(), state)
-      : new Set<string>();
+      : [];
 
-    return (filtList.length === 0)
-      || (filtList.find(filt => allCategories.has(filt)) !== undefined);
+    return (filtList.size === 0)
+      || (allCategories.find(cat => filtList.has(cat)) !== undefined);
   }
 
-  private categoryChain(category: string, state: IState): Set<string> {
+  private categoryChain(category: string, state: IState): string[] {
     const gameId = activeGameId(state);
     const categories = state.persistent.categories[gameId];
-    const result = new Set<string>();
+    const result: string[] = [];
     let iter = category;
     while (truthy(iter) && (categories[iter] !== undefined)) {
-      result.add(iter);
+      result.push(iter);
       iter = categories[iter].parentCategory;
     }
     return result;
