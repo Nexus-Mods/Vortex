@@ -19,6 +19,7 @@ export interface IProps {
 
 export interface IState {
   visible: boolean;
+  visibleTime: number;
 }
 
 /**
@@ -69,19 +70,24 @@ class VisibilityProxy extends React.Component<any, IState> {
     super(props);
     this.state = {
       visible: props.startVisible,
+      visibleTime: 0,
     };
   }
 
   public componentDidMount() {
-    // TODO: right now this proxy only switches from invisible to visible, mostly
-    //   because in our use case, switching the control visible is a serious performance
-    //   act
-    //   BUT: having all those controls visible (offscreen) also causes a burden when
-    //   relayouting
     const node = ReactDOM.findDOMNode(this) as HTMLElement;
     VisibilityProxy.observe(this.props.container, node, (visible: boolean) => {
-      if (this.state.visible !== visible) {
-        this.setState({ visible });
+      const now = Date.now();
+      // workaround: There is the situation where when an element becomes visible it
+      //   changes the layout around it which in turn pushes the element somwhere where it
+      //   _isn't_ visible anymore, triggering an endless loop of the element switching
+      //   between visible and invisible. Hence we don't turn items invisible if it
+      //   became visible less than a second ago. Since the observer is flank triggered
+      //   this may cause items to be rendered even though they don't have to but this
+      //   is a performance optimisation anyway, nothing breaks.
+      if ((this.state.visible !== visible) &&
+          (visible || (now - this.state.visibleTime) > 1000.0)) {
+        this.setState({ visible, visibleTime: now });
       }
     });
   }
