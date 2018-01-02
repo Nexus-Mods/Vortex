@@ -28,6 +28,7 @@ function extenderForGame(gameId: string) {
     fallout3: 'fose',
     falloutnv: 'nvse',
     fallout4: 'f4se',
+    fallout4vr: 'f4se',
   }[gameId];
 }
 

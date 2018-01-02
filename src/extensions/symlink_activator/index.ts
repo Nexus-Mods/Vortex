@@ -80,6 +80,7 @@ class DeploymendMethod extends LinkingDeployment {
     } catch (err) {
       return err.message;
     }
+    return undefined;
   }
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
@@ -157,7 +158,7 @@ class DeploymendMethod extends LinkingDeployment {
   private isGamebryoGame(gameId: string): boolean {
     return [
       'morrowind', 'oblivion', 'skyrim', 'skyrimse',
-      'fallout3', 'fallout4', 'falloutnv',
+      'fallout3', 'fallout4', 'fallout4vr', 'falloutnv',
     ].indexOf(gameId) !== -1;
   }
 

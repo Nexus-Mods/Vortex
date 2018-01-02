@@ -12,6 +12,8 @@ export function convertGameId(input: string): string {
     return 'skyrimspecialedition';
   } else if (inputL === 'falloutnv') {
     return 'newvegas';
+  } else if (inputL === 'fallout4vr') {
+    return 'fallout4';
   } else {
     return input;
   }
@@ -21,6 +23,8 @@ export function toNXMId(input: string): string {
   const inputL = input.toLowerCase();
   if (inputL === 'skyrimse') {
     return 'SkyrimSE';
+  } else if (inputL === 'fallout4vr') {
+    return 'fallout4';
   } else {
     return input;
   }
