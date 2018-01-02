@@ -18,6 +18,10 @@ function init(context: types.IExtensionContext) {
     return fs.statAsync(modPath)
       .then(() => opn(modPath))
       .catch(err => opn(installPath));
+  }, instanceIds => {
+    const state: types.IState = context.api.store.getState();
+    const gameMode = selectors.activeGameId(state);
+    return state.persistent.mods[gameMode][instanceIds[0]] !== undefined;
   });
 
   context.registerAction('download-icons', 300, 'open-ext', {},

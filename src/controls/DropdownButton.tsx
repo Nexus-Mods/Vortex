@@ -1,9 +1,10 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { DropdownButton } from 'react-bootstrap';
+import { DropdownButton, SplitButton } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
 export interface IBaseProps {
+  split?: boolean;
   container?: Element;
 }
 
@@ -17,7 +18,7 @@ export type IProps = IBaseProps & typeof DropdownButton.prototype.props;
  * @class MyDropdownButton
  * @extends {React.Component<IProps, { up: boolean }>}
  */
-class MyDropdownButton extends React.Component<IProps, { up: boolean }> {
+class MyDropdownButton extends React.Component<IProps, { up: boolean, right: boolean }> {
   private mNode: Element;
 
   constructor(props: IProps) {
@@ -25,6 +26,7 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean }> {
 
     this.state = {
       up: false,
+      right: false,
     };
   }
 
@@ -33,8 +35,10 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean }> {
   }
 
   public render(): JSX.Element {
-    const relayProps: any = _.omit(this.props, ['container', 'dropup', 'onToggle']);
-    return <DropdownButton dropup={this.state.up} onToggle={this.onToggle} {...relayProps} />;
+    const { up, right } = this.state;
+    const relayProps: any = _.omit(this.props, ['container', 'dropup', 'onToggle', 'split']);
+    const Comp = this.props.split ? SplitButton : DropdownButton;
+    return <Comp dropup={up} pullRight={right} onToggle={this.onToggle} {...relayProps} />;
   }
 
   private get bounds(): ClientRect {
@@ -53,9 +57,11 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean }> {
   private onToggle = (isOpen: boolean) => {
     if (isOpen) {
       const bounds = this.bounds;
-      const newUp = this.mNode.getBoundingClientRect().bottom > (bounds.top + bounds.height / 2);
-      if (newUp !== this.state.up) {
-        this.setState({ up: newUp });
+      const nodeBounds = this.mNode.getBoundingClientRect();
+      const newUp = nodeBounds.bottom > (bounds.top + bounds.height / 2);
+      const newRight = nodeBounds.right > (bounds.left + bounds.width / 2);
+      if ((newUp !== this.state.up) || (newRight !== this.state.right)) {
+        this.setState({ up: newUp, right: newRight });
       }
     }
 

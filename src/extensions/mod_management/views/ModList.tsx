@@ -165,6 +165,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         icon: 'refresh',
         title: 'Check for update',
         action: this.checkForUpdate,
+        condition: instanceId => {
+          const { mods } = this.props;
+          if (typeof(instanceId) === 'string') {
+            return mods[instanceId] !== undefined;
+          } else {
+            return instanceId.find(id => mods[id] !== undefined) !== undefined;
+          }
+        },
       },
     ];
 

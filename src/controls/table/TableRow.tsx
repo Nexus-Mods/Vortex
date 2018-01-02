@@ -236,16 +236,16 @@ class TableRow extends React.Component<IRowProps, {}> {
           style={{ textAlign: 'center' }}
           key='action-cell'
         >
-          <SplitButton
+          <IconBar
             id={`${tableId}-${data.__id}-action-icons`}
-            title={this.renderDefault(def)}
-            onSelect={this.selectAction}
-            onClick={this.selectDefaultAction}
-            value={def.title}
+            group={`${tableId}-action-icons`}
+            instanceId={data.__id}
+            className='table-actions'
+            staticElements={actions}
+            collapse
+            dropdown
             pullRight
-          >
-            {sorted.map(this.renderActionOption)}
-          </SplitButton>
+          />
         </TD>);
     } else {
       res.push(<TD key='no-action' />);

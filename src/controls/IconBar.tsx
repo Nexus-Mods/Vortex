@@ -2,6 +2,8 @@ import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
 import { extend, IExtensibleProps } from '../util/ExtensionProvider';
 import { truthy } from '../util/util';
 
+import Dropdown from './Dropdown';
+import DropdownButton from './DropdownButton';
 import DynamicProps from './DynamicProps';
 import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
@@ -11,7 +13,7 @@ import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { ButtonGroup, Dropdown, DropdownButton, MenuItem, SplitButton } from 'react-bootstrap';
+import { ButtonGroup, MenuItem } from 'react-bootstrap';
 import { Overlay } from 'react-overlays';
 
 export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
@@ -155,20 +157,22 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
     if (dropdown) {
       const sorted = icons.sort(iconSort);
+      const title: any = (
+        <div data-value={sorted[0].title} onClick={this.triggerDefault}>
+          <Icon name={sorted[0].icon} />
+          {sorted[0].title}
+        </div>
+      );
       return (
-        <SplitButton
+        <DropdownButton
           id={`${id}-menu`}
-          title={(
-            <div data-value={sorted[0].title} onClick={this.triggerDefault}>
-              <Icon name={sorted[0].icon} />
-              {sorted[0].title}
-            </div>
-          )}
+          split
+          title={title}
         >
           {sorted.slice(1).map((iter, idx) => (
             <MenuAction key={idx} id={iter.title} icon={iter} instanceId={instanceId} />
           ))}
-        </SplitButton>
+        </DropdownButton>
       );
     } else if (collapse) {
       classes.push('btngroup-collapsed');
