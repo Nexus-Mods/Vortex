@@ -92,6 +92,14 @@ const gameSupport = {
       'cceejfo4001-decorationpack.esl',
     ],
   },
+  fallout4vr: {
+    appDataPath: 'Fallout4VR',
+    pluginTXTFormat: 'fallout4',
+    nativePlugins: [
+      'fallout4.esm',
+      'fallout4_vr.esm',
+    ],
+  },
   falloutnv: {
     appDataPath: 'falloutnv',
     pluginTXTFormat: 'original',

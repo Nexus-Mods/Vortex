@@ -45,6 +45,13 @@ function main() {
     app.commandLine.appendSwitch('remote-debugging-port', '9222');
   }
 
+  /* allow application controlled scaling
+  if (process.platform === 'win32') {
+    app.commandLine.appendSwitch('high-dpi-support', 'true');
+    app.commandLine.appendSwitch('force-device-scale-factor', '1');
+  }
+  */
+
   process.on('uncaughtException' as any, (error: any) => {
     let details: IError;
 

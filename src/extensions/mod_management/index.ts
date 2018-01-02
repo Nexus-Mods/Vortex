@@ -416,8 +416,11 @@ function genValidActivatorCheck(api: IExtensionApi) {
     }
 
     const gameId = activeGameId(state);
-    const modPaths = getGame(gameId)
-      .getModPaths(currentGameDiscovery(state).path);
+    const game = getGame(gameId);
+    if (game === undefined) {
+      return resolve(undefined);
+    }
+    const modPaths = game.getModPaths(currentGameDiscovery(state).path);
 
     const messages = activators.map((activator) => {
       const supported = allTypesSupported(activator, state, gameId, Object.keys(modPaths));

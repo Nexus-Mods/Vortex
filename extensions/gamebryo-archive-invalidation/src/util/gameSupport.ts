@@ -24,6 +24,12 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
       && path.extname(fileName).toLowerCase() === '.ba2',
     targetAge: new Date(2008, 10, 1),
   },
+  fallout4vr: {
+    fileFilter: (fileName: string) =>
+      (fileName.startsWith('Fallout4 - ') || (fileName.startsWith('Fallout4_VR - ')))
+      && path.extname(fileName).toLowerCase() === '.ba2',
+    targetAge: new Date(2008, 10, 1),
+  },
 };
 
 export function isSupported(gameId: string): boolean {

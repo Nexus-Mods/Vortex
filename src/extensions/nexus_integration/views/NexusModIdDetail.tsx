@@ -12,7 +12,8 @@ import { Button, ControlLabel, FormControl, FormGroup, InputGroup } from 'react-
 import * as Redux from 'redux';
 
 export interface IProps {
-  gameId: string;
+  activeGameId: string;
+  fileGameId: string;
   modId: string;
   readOnly?: boolean;
   isDownload: boolean;
@@ -65,25 +66,25 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
   }
 
   private guessNexusId = () => {
-    const { fileName, gameId, modId, store } = this.props;
+    const { fileName, activeGameId, modId, store } = this.props;
     const match = fileName.match(/-([0-9]+)-/);
     if (match !== null) {
-      store.dispatch(setModAttribute(gameId, modId, 'modId', match[1]));
+      store.dispatch(setModAttribute(activeGameId, modId, 'modId', match[1]));
     }
   }
 
   private updateNexusModId = (newValue) => {
-    const { gameId, isDownload, modId, store } = this.props;
+    const { activeGameId, isDownload, modId, store } = this.props;
     if (isDownload) {
       store.dispatch(setDownloadModInfo(modId, 'nexus.ids.modId', newValue));
     } else {
-      store.dispatch(setModAttribute(gameId, modId, 'modId', newValue));
+      store.dispatch(setModAttribute(activeGameId, modId, 'modId', newValue));
     }
   }
 
   private openPage = () => {
-    const { gameId, nexusModId } = this.props;
-    this.context.api.events.emit('open-mod-page', gameId, nexusModId);
+    const { fileGameId, nexusModId } = this.props;
+    this.context.api.events.emit('open-mod-page', fileGameId, nexusModId);
   }
 }
 

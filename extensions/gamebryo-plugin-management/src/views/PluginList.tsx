@@ -394,7 +394,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             pluginsLoot = resolved;
             resolve();
           });
-        }))
+      }))
       .then(() => {
         const pluginsCombined = this.detailedPlugins(plugins, pluginsLoot,
           pluginsParsed);

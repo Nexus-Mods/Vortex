@@ -106,7 +106,7 @@ class LootInterface {
       this.init(gameMode as GameId, gamePath)
         .then(() => null)
         .catch(err => {
-          context.api.showErrorNotification('Failed to initialize LOOT', err);
+          context.api.showErrorNotification('Failed to initialize LOOT', err.message);
           this.mLoot = undefined;
         });
     } else {

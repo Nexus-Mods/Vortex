@@ -29,6 +29,7 @@ function stopPatterns(gameMode: string) {
     case 'fallout3': return [].concat(uniPatterns, gamebryoPatterns, ['fose'].map(toWordExp));
     case 'falloutnv': return [].concat(uniPatterns, gamebryoPatterns, ['nvse'].map(toWordExp));
     case 'fallout4': return [].concat(uniPatterns, gamebryoPatterns, ['f4se'].map(toWordExp));
+    case 'fallout4vr': return [].concat(uniPatterns, gamebryoPatterns, ['f4se'].map(toWordExp));
     case 'oblivion': return [].concat(uniPatterns, gamebryoPatterns, ['obse'].map(toWordExp));
     case 'morrowind': return [].concat(uniPatterns, gamebryoPatterns, ['mwse'].map(toWordExp));
     case 'skyrim': return [].concat(uniPatterns, gamebryoPatterns,
@@ -94,6 +95,21 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
       'ccfsvfo4002-midcenturymodern.esl',
       'ccfrsfo4001-handmadeshotgun.esl',
       'cceejfo4001-decorationpack.esl',
+    ],
+  },
+  fallout4vr: {
+    iniPath: bethIni('Fallout4VR', 'Fallout4Custom'),
+    stopPatterns: stopPatterns('fallout4'),
+    pluginPath: 'Data',
+    nativePlugins: [
+      'fallout4.esm',
+      'dlcrobot.esm',
+      'dlcworkshop01.esm',
+      'dlccoast.esm',
+      'dlcultrahighresolution.esm',
+      'dlcworkshop02.esm',
+      'dlcworkshop03.esm',
+      'dlcnukaworld.esm',
     ],
   },
   fallout3: {

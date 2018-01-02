@@ -69,7 +69,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[]): Promise<void> {
-    return getNormalizeFunc(dataPath)
+    return getNormalizeFunc(dataPath, { unicode: false, separators: false, relative: false })
       .then(func => {
         this.mNormalize = func;
         this.mPreviousDeployment = {};
@@ -260,8 +260,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
     const nonLinks: IFileChange[] = [];
 
     return Promise.map(activation, fileEntry => {
-      const fileDataPath = path.join(dataPath, fileEntry.relPath);
-      const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
+      const fileDataPath = [dataPath, fileEntry.relPath].join(path.sep);
+      const fileModPath = [installPath, fileEntry.source, fileEntry.relPath].join(path.sep);
       let sourceDeleted: boolean = false;
       let destDeleted: boolean = false;
       let destTime: Date;
@@ -272,8 +272,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           sourceDeleted = true;
           return Promise.resolve();
         })
-        .then(sourceStats =>
-          fs.lstatAsync(fileDataPath))
+        .then(() => fs.lstatAsync(fileDataPath))
         .catch(err => {
           // can't stat destination, probably the file was deleted
           destDeleted = true;
@@ -317,7 +316,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
           return Promise.resolve(undefined);
         });
-      }).then(() => Promise.resolve(nonLinks));
+      }, { concurrency: 20 }).then(() => Promise.resolve(nonLinks));
   }
 
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;

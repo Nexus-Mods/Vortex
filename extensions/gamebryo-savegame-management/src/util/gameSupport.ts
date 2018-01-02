@@ -20,6 +20,10 @@ const gameSupport = {
     mygamesPath: 'Fallout4',
     iniName: 'Fallout4.ini',
   },
+  fallout4vr: {
+    mygamesPath: 'Fallout4VR',
+    iniName: 'Fallout4Custom.ini',
+  },
   falloutnv: {
     mygamesPath: 'FalloutNV',
     iniName: 'Fallout.ini',
