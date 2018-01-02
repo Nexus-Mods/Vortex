@@ -9,7 +9,7 @@ import * as fs from 'fs-extra-promise';
 import {GameId, LootDatabase} from 'loot';
 import * as path from 'path';
 import * as ReduxThunk from 'redux-thunk';
-import {actions, log, selectors, types} from 'vortex-api';
+import {actions, log, selectors, types, util} from 'vortex-api';
 
 class LootInterface {
   private mLoot: LootDatabase;
@@ -38,19 +38,16 @@ class LootInterface {
     this.mExtensionApi = context.api;
 
     // when the game changes, we need to re-initialize loot for that game
-    context.api.events.on('gamemode-activated', (gameMode: string) => {
-      const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
-      if (gameSupported(gameMode)) {
-        this.init(gameMode as GameId, gamePath)
-          .then(() => null)
-          .catch(err => {
-            context.api.showErrorNotification('Failed to initialize LOOT', err);
-            this.mLoot = undefined;
-          });
-      } else {
-        this.mLoot = undefined;
+    context.api.events.on('gamemode-activated',
+      gameMode => this.onGameModeChanged(context, gameMode));
+
+    { // in case the initial gamemode-activated event was already sent,
+      // initialize right away
+      const gameMode = selectors.activeGameId(store.getState());
+      if (gameMode) {
+        this.onGameModeChanged(context, gameMode);
       }
-    });
+    }
 
     // on demand, re-sort the plugin list
     context.api.events.on('autosort-plugins', (manual: boolean) => {
@@ -102,9 +99,25 @@ class LootInterface {
     });
   }
 
+  private onGameModeChanged = (context: types.IExtensionContext, gameMode: string) => {
+    const store = context.api.store;
+    const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
+    if (gameSupported(gameMode)) {
+      this.init(gameMode as GameId, gamePath)
+        .then(() => null)
+        .catch(err => {
+          context.api.showErrorNotification('Failed to initialize LOOT', err);
+          this.mLoot = undefined;
+        });
+    } else {
+      this.mLoot = undefined;
+    }
+  }
+
   private pluginDetails =
       (plugins: string[], callback: (result: IPluginsLoot) => void) => {
         if (this.mLoot === undefined) {
+          callback({});
           return;
         }
         const t = this.mExtensionApi.translate;
@@ -153,12 +166,9 @@ class LootInterface {
   private init(gameMode: GameId, gamePath: string): Promise<void> {
     const t = this.mExtensionApi.translate;
     const localPath = pluginPath(gameMode);
-    console.log('init', localPath);
     return fs.ensureDirAsync(localPath)
       .then(() => {
-        console.log('gm', gameMode, gamePath, localPath);
         this.mLoot = new LootDatabase(gameMode, gamePath, localPath);
-        console.log('gm2', this.mLoot);
         this.mLootGame = gameMode;
         this.promisify();
 

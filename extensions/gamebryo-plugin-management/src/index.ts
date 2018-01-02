@@ -537,6 +537,8 @@ function init(context: IExtensionContextExt) {
     });
 
     context.api.events.on('mod-enabled', (profileId: string, modId: string) => {
+      /* when enabling a mod we automatically enable its plugin, if there is (exactly) one.
+       * if there are more the user gets a notification if he wants to enable all. */
       const state: types.IState = context.api.store.getState();
       const currentProfile = selectors.activeProfile(state);
       if ((profileId === currentProfile.id) && gameSupported(currentProfile.gameId)) {

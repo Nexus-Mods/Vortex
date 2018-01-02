@@ -388,15 +388,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         }
         resolve();
       }))
-      .then(() => {
-        return new Promise((resolve, reject) => {
-          this.context.api.events.emit('plugin-details',
-            pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
-              pluginsLoot = resolved;
-              resolve();
-            });
-        });
-      })
+      .then(() => new Promise((resolve, reject) => {
+        this.context.api.events.emit('plugin-details',
+          pluginNames, (resolved: { [name: string]: IPluginLoot }) => {
+            pluginsLoot = resolved;
+            resolve();
+          });
+        }))
       .then(() => {
         const pluginsCombined = this.detailedPlugins(plugins, pluginsLoot,
           pluginsParsed);

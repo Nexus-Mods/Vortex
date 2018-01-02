@@ -33,7 +33,8 @@ function stopPatterns(gameMode: string) {
     case 'morrowind': return [].concat(uniPatterns, gamebryoPatterns, ['mwse'].map(toWordExp));
     case 'skyrim': return [].concat(uniPatterns, gamebryoPatterns,
                                     ['skse', 'SkyProc Patchers'].map(toWordExp));
-    case 'skyrimse': return [].concat(uniPatterns, gamebryoPatterns);
+    case 'skyrimse': return [].concat(uniPatterns, gamebryoPatterns,
+                                      ['skse'].map(toWordExp));
     case 'dragonsdogma': return ['movie', 'rom', 'sa', 'sound', 'system', 'tgs',
                                  'usershader', 'usertexture'].map(toWordExp).concat(uniPatterns);
     case 'stateofdecay': return ['characters', 'dialog', 'Entities', 'languages',

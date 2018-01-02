@@ -10,6 +10,7 @@ import { connect } from 'react-redux';
 import Select from 'react-select';
 import { actions, ComponentEx, Icon, tooltip, types } from 'vortex-api';
 import { ILoadOrder } from '../types/ILoadOrder';
+import { IPlugins } from '../types/IPlugins';
 
 type RuleType = 'after' | 'requires' | 'incompatible';
 
@@ -66,7 +67,7 @@ interface IDialog {
 interface IConnectedProps {
   dialog: IDialog;
   userlist: ILOOTPlugin[];
-  plugins: { [pluginId: string]: ILoadOrder };
+  plugins: IPlugins;
 }
 
 interface IActionProps {
@@ -105,7 +106,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const { dialog, filter } = this.state;
 
     const pluginNames: string[] = Object.keys(plugins);
-    const pluginOptions = pluginNames.map((input: string) => ({ value: input, label: input }));
+    const pluginOptions = pluginNames.map(input => ({ value: input, label: input }));
 
     return (
       <Modal show={dialog !== undefined} onHide={this.close}>
@@ -278,11 +279,11 @@ type IState = types.IState & {
   userlist: any;
 };
 
-function mapStateToProps(state: IState): IConnectedProps {
+function mapStateToProps(state: any): IConnectedProps {
   const dialog: IDialog = state.session.pluginDependencies.dialog;
   return {
     dialog,
-    plugins: state.loadOrder,
+    plugins: state.session.plugins.pluginList,
     userlist: state.userlist.plugins,
   };
 }

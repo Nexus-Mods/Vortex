@@ -1,6 +1,7 @@
 import { IState } from '../../../types/IState';
 import { IFilterProps, ITableFilter } from '../../../types/ITableAttribute';
 import { connect } from '../../../util/ComponentEx';
+import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 
 import { ICategoryDictionary } from '../../category_management/types/ICategoryDictionary';
@@ -26,10 +27,12 @@ class CategoryFilterComponent extends React.Component<IProps, {}> {
           .map(modId => mods[modId].attributes['category'])
           .filter(category => category !== undefined));
 
-    const options = Array.from(usedCategories).map(id => ({
-      value: id.toString(),
-      label: categories[id].name,
-    })).sort((lhs, rhs) => lhs.label.localeCompare(rhs.label));
+    const options = Array.from(usedCategories)
+      .filter(id => categories[id] !== undefined)
+      .map(id => ({
+        value: id.toString(),
+        label: getSafe(categories, [id, 'name'], undefined),
+      })).sort((lhs, rhs) => lhs.label.localeCompare(rhs.label));
 
     return (
       <Select
