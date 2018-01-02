@@ -51,12 +51,6 @@
     @include box-shadow(none);
   }
 
-  $.disabled & {
-    &:hover {
-      background: #808080;
-    }
-  }
-
   // [converter] extracted a& to a.btn
 }
 
@@ -93,11 +87,6 @@ a.btn {
 .btn-danger {
   @include button-variant($btn-danger-color, $btn-danger-bg, $btn-danger-border);
 }
-
-.btn-white {
-  @include button-variant($btn-white-color, $btn-white-bg, $btn-white-border);
-}
-
 
 // Link buttons
 // -------------------------

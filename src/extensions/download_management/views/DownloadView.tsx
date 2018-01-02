@@ -282,7 +282,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         },
       },
       {
-        icon: 'button-pause',
+        icon: 'pause',
         title: 'Pause',
         action: this.pause,
         condition: this.pausable,
@@ -301,7 +301,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         hotKey: { code: 46 },
       },
       {
-        icon: 'button-stop',
+        icon: 'stop',
         title: 'Cancel',
         action: this.remove,
         condition: this.cancelable,

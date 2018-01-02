@@ -14,6 +14,8 @@ app/bundledPlugins
 # auto generated
 auto.gypi
 auto-top.gypi
+npm-debug.log*
+.DS_Store
 
 # temporary fonts directory used during font-svg generation
 /fonts/

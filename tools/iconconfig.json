@@ -222,6 +222,14 @@
       "path": "{nucleo}/multimedia/{nucleo_simple}_button-play",
       "rmFill": true
     },
+    "pause": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_button-pause",
+      "rmFill": true
+    },
+    "stop": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_button-stop",
+      "rmFill": true
+    },
     "activate": {
       "path": "{nucleo}/ui/{nucleo_simple}_check-curve",
       "rmFill": true
@@ -383,6 +391,14 @@
     },
     "recover": {
       "path": "{nucleo}/design-development/{nucleo_simple}_patch-34",
+      "rmFill": true
+    },
+    "changelog": {
+      "path": "{nucleo}/files-folders/{nucleo_simple}_single-content-03",
+      "rmFill": true
+    },
+    "download-speed": {
+      "path": "{fa}/tachometer",
       "rmFill": true
     }
   }

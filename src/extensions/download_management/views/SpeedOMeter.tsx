@@ -33,7 +33,7 @@ class SpeedOMeter extends PureComponentEx<IProps, {}> {
     if (slim) {
       return (
         <span className='active-downloads-slim'>
-          <Icon name='tachometer' />{' '}{bytesToString(speed)}/s
+          <Icon name='download-speed' />{' '}{bytesToString(speed)}/s
         </span>
       );
     } else {
@@ -41,7 +41,7 @@ class SpeedOMeter extends PureComponentEx<IProps, {}> {
         <div className='active-downloads-container'>
           <span>{t('Active Downloads')}</span>
           {activeDownloads.map(this.renderDownload)}
-          <span><Icon name='tachometer' />{' '}{bytesToString(speed)}/s</span>
+          <span><Icon name='download-speed' />{' '}{bytesToString(speed)}/s</span>
         </div>
       );
     }
