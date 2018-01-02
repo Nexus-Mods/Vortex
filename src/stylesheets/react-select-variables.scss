@@ -4,7 +4,7 @@ $select-input-border-color:         $input-border !default;
 $select-input-border-radius:        $input-border-radius !default;
 $select-input-border-focus:         $input-border-focus !default;
 $select-input-border-width:         1px !default;
-$select-input-height:               auto !default;
+$select-input-height:               25px !default;
 $select-input-internal-height:      ($select-input-height - ($select-input-border-width * 2)) !default;
 $select-input-placeholder:          $gray-light !default;
 $select-text-color:                 $text-color !default;
@@ -28,7 +28,7 @@ $select-option-disabled-color:      lighten($select-text-color, 60%) !default;
 $select-noresults-color:            lighten($select-text-color, 40%) !default;
 
 // clear "x" button
-$select-clear-size:                 auto !default;
+$select-clear-size:                 floor(($select-input-height / 2)) !default;
 $select-clear-color:                $gray-light;
 $select-clear-hover-color:          $table-bg-hover;
 $select-clear-width:                ($select-input-internal-height / 2) !default;

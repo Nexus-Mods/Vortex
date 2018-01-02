@@ -15,10 +15,16 @@
   margin-right: 3em;
   display: flex;
   align-items: center;
+  padding-left: $padding-base-horizontal;
 }
 
 .Select-input {
   margin-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+  > input {
+    padding: $padding-base-vertical $padding-base-horizontal;
+  }
 }
 
 .select-compact {
@@ -38,7 +44,8 @@
     height: 20px;
   }
   .Select-input {
-    margin-top: 0.2em;
+    height: 20px;
+    margin-top: 0;
     input {
       line-height: initial;
     }
