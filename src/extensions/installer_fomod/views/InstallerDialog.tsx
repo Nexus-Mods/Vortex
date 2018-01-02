@@ -168,8 +168,9 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
           <Checkbox
             id={'checkbox-' + id}
             key={plugin.id}
-            checked={plugin.type !== 'NotUsable'}
+            checked={isSelected}
             data-value={plugin.id}
+            disabled={true}
           >
             {content}
           </Checkbox>
