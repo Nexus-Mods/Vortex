@@ -100,7 +100,8 @@ class StyleManager {
       },
         (err, output) => {
           if (err !== null) {
-            reject(err);
+            // the error has its own class and it's message is missing relevant information
+            reject(new Error(err.formatted));
           } else {
             // remove utf8-bom if it's there
             const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])

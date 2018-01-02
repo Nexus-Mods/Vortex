@@ -1,4 +1,8 @@
-import {IDeploymentMethod} from '../extensions/mod_management/types/IDeploymentMethod';
+import {
+  IDeployedFile,
+  IDeploymentMethod,
+  IFileChange,
+} from '../extensions/mod_management/types/IDeploymentMethod';
 import {
   IInstallResult,
   IInstruction,
@@ -28,8 +32,8 @@ import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
 
-export { TestSupported, IInstallResult, IInstruction, IDeploymentMethod,
-         InstallFunc, ISupportedResult, ProgressDelegate };
+export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
+         IFileChange, InstallFunc, ISupportedResult, ProgressDelegate };
 
 export type PropsCallback = () => any;
 

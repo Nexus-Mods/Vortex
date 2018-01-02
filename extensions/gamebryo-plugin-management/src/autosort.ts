@@ -44,7 +44,7 @@ class LootInterface {
         this.init(gameMode as GameId, gamePath)
           .then(() => null)
           .catch(err => {
-            context.api.showErrorNotification('Failed to initialize LOOT', err);
+            context.api.showErrorNotification('Failed to initialize LOOT', err.message);
             this.mLoot = undefined;
           });
       } else {
@@ -104,6 +104,7 @@ class LootInterface {
   private pluginDetails =
       (plugins: string[], callback: (result: IPluginsLoot) => void) => {
         if (this.mLoot === undefined) {
+          callback({});
           return;
         }
         const t = this.mExtensionApi.translate;

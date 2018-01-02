@@ -209,6 +209,7 @@ class InstallManager {
             .then((action: string) => {
               if (action === 'Install') {
                 enable = enable || wasEnabled;
+                console.log('install alongside', wasEnabled, currentProfile.id, oldMod.id);
                 if (wasEnabled) {
                   setModEnabled(currentProfile.id, oldMod.id, false);
                 }
@@ -701,6 +702,7 @@ class InstallManager {
             'An older version of this mod is already installed.' +
             'You can replace the existing one or install this one alongside it. ' +
             'If you have other profiles they will continue using the old version.',
+            options: { wrap: true },
           },
           [
             { label: 'Cancel' },

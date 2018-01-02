@@ -70,7 +70,6 @@ function merge(filePath, mergeDir) {
           ? fs.readFileAsync(addinsPath())
           : Promise.reject(err))
       .then(addinsData => new Promise((resolve, reject) => {
-        console.log('base', addinsData);
         resolve(parseXmlString(addinsData));
       }))
       .then(addins => {

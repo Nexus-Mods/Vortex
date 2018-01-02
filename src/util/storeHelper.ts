@@ -19,7 +19,7 @@ import * as Redux from 'redux';
 export function getSafe<T>(state: any, path: Array<(string | number)>, fallback: T): T {
   let current = state;
   for (const segment of path) {
-    if ((current === undefined) || !current.hasOwnProperty(segment)) {
+    if ((current === undefined) || (current === null) || !current.hasOwnProperty(segment)) {
       return fallback;
     } else {
       current = current[segment];

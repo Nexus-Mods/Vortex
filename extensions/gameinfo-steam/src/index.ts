@@ -36,7 +36,7 @@ function findLocalInfo(
   let normalize: (input: string) => string;
 
   if (game.path === undefined) {
-    if (game.details['steamAppId']) {
+    if ((game.details !== undefined) && (game.details['steamAppId'])) {
       return Promise.resolve({
         appid: game.details['steamAppId'],
         lastUpdated: null,

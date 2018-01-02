@@ -323,13 +323,15 @@ function renderNexusModIdDetail(
   t: I18next.TranslationFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const fileName: string = getSafe(mod.attributes, ['name'], undefined);
-  const gameMode = getSafe(mod.attributes, ['downloadGame'], undefined)
-                || activeGameId(store.getState());
+  const gameMode = activeGameId(store.getState());
+  const fileGameId = getSafe(mod.attributes, ['downloadGame'], undefined)
+                  || gameMode;
   return (
     <NexusModIdDetail
       modId={mod.id}
       nexusModId={nexusModId}
-      gameId={gameMode}
+      activeGameId={gameMode}
+      fileGameId={fileGameId}
       fileName={fileName}
       isDownload={mod.state === 'downloaded'}
       t={t}
