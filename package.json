@@ -127,6 +127,7 @@
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.16",
+    "@types/classnames": "^2.2.3",
     "@types/commander": "^2.11.0",
     "@types/content-disposition": "^0.5.2",
     "@types/content-type": "^1.1.1",

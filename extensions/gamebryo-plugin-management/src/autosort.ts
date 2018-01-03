@@ -100,13 +100,20 @@ class LootInterface {
   }
 
   private onGameModeChanged = (context: types.IExtensionContext, gameMode: string) => {
+    if (gameMode === this.mLootGame) {
+      return;
+    }
     const store = context.api.store;
     const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
     if (gameSupported(gameMode)) {
       this.init(gameMode as GameId, gamePath)
         .then(() => null)
         .catch(err => {
-          context.api.showErrorNotification('Failed to initialize LOOT', err.message);
+          context.api.showErrorNotification('Failed to initialize LOOT', {
+            message: err.message,
+            game: gameMode,
+            path: gamePath,
+          });
           this.mLoot = undefined;
         });
     } else {
@@ -166,10 +173,10 @@ class LootInterface {
   private init(gameMode: GameId, gamePath: string): Promise<void> {
     const t = this.mExtensionApi.translate;
     const localPath = pluginPath(gameMode);
+    this.mLootGame = gameMode;
     return fs.ensureDirAsync(localPath)
       .then(() => {
         this.mLoot = new LootDatabase(gameMode, gamePath, localPath);
-        this.mLootGame = gameMode;
         this.promisify();
 
         // little bit of hackery: If tasks are queued before the game mode is activated

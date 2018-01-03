@@ -1,4 +1,4 @@
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import LazyComponent from '../../util/LazyComponent';
 import ReduxProp from '../../util/ReduxProp';
@@ -24,7 +24,7 @@ import {} from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';
 
 import DownloadManager from './DownloadManager';
-import observe from './DownloadObserver';
+import observe, { DownloadObserver } from './DownloadObserver';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
@@ -36,7 +36,9 @@ import { delayed } from '../../util/delayed';
 
 const app = remote !== undefined ? remote.app : appIn;
 
-let observer;
+let observer: DownloadObserver;
+let manager: DownloadManager;
+
 const protocolHandlers: IProtocolHandlers = {};
 
 function refreshDownloads(downloadPath: string, knownDLs: string[],
@@ -73,6 +75,91 @@ function attributeExtractor(input: any) {
   });
 }
 
+function genDownloadChangeHandler(store: Redux.Store<any>,
+                                  nameIdMap: { [name: string]: string }) {
+  const currentDownloadPath = selectors.downloadPath(store.getState());
+  const gameId: string = selectors.activeGameId(store.getState());
+  return (evt: string, fileName: string) => {
+    if (evt === 'rename') {
+      const filePath = path.join(currentDownloadPath, fileName);
+      fs.statAsync(filePath)
+      .then(stats => {
+        // if the file was added, wait a moment, then add it to the store if it doesn't
+        // exist yet. This is necessary because we can't know if it wasn't vortex
+        // itself that added the file
+        delayed(200)
+        .then(() => {
+          const state: IState = store.getState();
+          const existingId: string = Object.keys(state.persistent.downloads.files)
+            .find(iterId =>
+              state.persistent.downloads.files[iterId].localPath === fileName);
+          if (existingId === undefined) {
+            const dlId = shortid();
+            store.dispatch(
+              addLocalDownload(dlId, gameId, fileName, stats.size));
+            nameIdMap[fileName] = dlId;
+          } else {
+            nameIdMap[fileName] = existingId;
+          }
+        });
+      })
+      .catch(err => {
+        if (err.code === 'ENOENT') {
+          // if the file was deleted, remove it from state. This does nothing if
+          // the download was already removed so that's fine
+          store.dispatch(removeDownload(nameIdMap[fileName]));
+        }
+      });
+    }
+  };
+}
+
+function genGameModeActivated(api: IExtensionApi) {
+  const store = api.store;
+  let currentWatch: fs.FSWatcher;
+  return () => {
+    const currentDownloadPath = selectors.downloadPath(store.getState());
+
+    const downloads: { [id: string]: IDownload } = store.getState().persistent.downloads.files;
+    const gameId: string = selectors.activeGameId(store.getState());
+    const knownDLs = Object.keys(downloads)
+      .filter((dlId: string) => downloads[dlId].game === gameId)
+      .map((dlId: string) => downloads[dlId].localPath);
+
+    const nameIdMap: { [name: string]: string } = Object.keys(downloads).reduce((prev, value) => {
+      prev[downloads[value].localPath] = value;
+      return prev;
+    }, {});
+
+    refreshDownloads(currentDownloadPath, knownDLs, (fileName: string) => {
+      fs.statAsync(path.join(currentDownloadPath, fileName))
+        .then((stats: fs.Stats) => {
+          const dlId = shortid();
+          api.store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+          nameIdMap[fileName] = dlId;
+        });
+    }, (modNames: string[]) => {
+      modNames.forEach((name: string) => {
+        api.store.dispatch(removeDownload(nameIdMap[name]));
+      });
+    })
+      .then(() => {
+        manager.setDownloadPath(currentDownloadPath);
+        if (currentWatch !== undefined) {
+          currentWatch.close();
+        }
+        try {
+          currentWatch =
+            fs.watch(currentDownloadPath, {},
+                      genDownloadChangeHandler(api.store, nameIdMap)) as fs.FSWatcher;
+        } catch (err) {
+          api.showErrorNotification('failed to watch download directory', err);
+        }
+        api.events.emit('downloads-refreshed');
+      });
+  };
+}
+
 function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
@@ -82,7 +169,7 @@ function init(context: IExtensionContextExt): boolean {
       return count > 0 ? count : undefined;
     });
 
-  context.registerMainPage('download', 'Download',
+  context.registerMainPage('download', 'Downloads',
                            LazyComponent('./views/DownloadView', __dirname), {
                              hotkey: 'D',
                              group: 'global',
@@ -108,8 +195,6 @@ function init(context: IExtensionContextExt): boolean {
 
     const store = context.api.store;
 
-    let manager: DownloadManager;
-
     context.api.registerProtocol('http', url => {
       context.api.events.emit('start-download', [url], {});
     });
@@ -118,74 +203,7 @@ function init(context: IExtensionContextExt): boolean {
       context.api.events.emit('start-download', [url], {});
     });
 
-    let currentWatch: fs.FSWatcher;
-    context.api.events.on('gamemode-activated', () => {
-      const currentDownloadPath = selectors.downloadPath(store.getState());
-
-      const downloads: { [id: string]: IDownload } = store.getState().persistent.downloads.files;
-      const gameId: string = selectors.activeGameId(store.getState());
-      const knownDLs = Object.keys(downloads)
-        .filter((dlId: string) => downloads[dlId].game === gameId)
-        .map((dlId: string) => downloads[dlId].localPath);
-
-      const nameIdMap: { [name: string]: string } = Object.keys(downloads).reduce((prev, value) => {
-        prev[downloads[value].localPath] = value;
-        return prev;
-      }, {});
-
-      refreshDownloads(currentDownloadPath, knownDLs, (fileName: string) => {
-        fs.statAsync(path.join(currentDownloadPath, fileName))
-          .then((stats: fs.Stats) => {
-            const dlId = shortid();
-            context.api.store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
-            nameIdMap[fileName] = dlId;
-          });
-      }, (modNames: string[]) => {
-        modNames.forEach((name: string) => {
-          context.api.store.dispatch(removeDownload(nameIdMap[name]));
-        });
-      })
-        .then(() => {
-          manager.setDownloadPath(currentDownloadPath);
-          if (currentWatch !== undefined) {
-            currentWatch.close();
-          }
-          currentWatch = fs.watch(currentDownloadPath, {}, (evt: string, fileName: string) => {
-            if (evt === 'rename') {
-              const filePath = path.join(currentDownloadPath, fileName);
-              fs.statAsync(filePath)
-              .then(stats => {
-                // if the file was added, wait a moment, then add it to the store if it doesn't
-                // exist yet. This is necessary because we can't know if it wasn't vortex
-                // itself that added the file
-                delayed(200)
-                .then(() => {
-                  const state: IState = context.api.store.getState();
-                  const existingId: string = Object.keys(state.persistent.downloads.files)
-                    .find(iterId =>
-                      state.persistent.downloads.files[iterId].localPath === fileName);
-                  if (existingId === undefined) {
-                    const dlId = shortid();
-                    context.api.store.dispatch(
-                      addLocalDownload(dlId, gameId, fileName, stats.size));
-                    nameIdMap[fileName] = dlId;
-                  } else {
-                    nameIdMap[fileName] = existingId;
-                  }
-                });
-              })
-              .catch(err => {
-                if (err.code === 'ENOENT') {
-                  // if the file was deleted, remove it from state. This does nothing if
-                  // the download was already removed so that's fine
-                  context.api.store.dispatch(removeDownload(nameIdMap[fileName]));
-                }
-              });
-            }
-          }) as fs.FSWatcher;
-          context.api.events.emit('downloads-refreshed');
-        });
-    });
+    context.api.events.on('gamemode-activated', genGameModeActivated(context.api));
 
     context.api.events.on('filehash-calculated',
       (filePath: string, fileMD5: string, fileSize: number) => {
