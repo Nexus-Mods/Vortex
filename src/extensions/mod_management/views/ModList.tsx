@@ -129,8 +129,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modVersionAttribute: ITableAttribute;
   private modVersionDetailAttribute: ITableAttribute;
   private mModsWithState: { [id: string]: IModWithState };
-  private mGroupedMods: { [id: string]: IModWithState[] };
-  private mPrimaryMods: { [id: string]: IModWithState };
+  private mGroupedMods: { [id: string]: IModWithState[] } = {};
+  private mPrimaryMods: { [id: string]: IModWithState } = {};
   private mUpdateDebouncer: Debouncer;
   private mLastUpdateProps: IModProps = { mods: {}, modState: {}, downloads: {} };
   private mIsMounted: boolean = false;
@@ -590,8 +590,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
         // if the new mod list is a subset of the old one (including the empty set)
         // the above check wouldn't notice that change
-        if (!changed
-          && ((this.mModsWithState === undefined)
+        if (!changed && ((this.mModsWithState === undefined)
             || !_.isEqual(Object.keys(newModsWithState), Object.keys(this.mModsWithState)))) {
           changed = true;
         }
@@ -673,14 +672,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const modList = Object.keys(modsWithState).map(key => modsWithState[key]);
     const grouped = groupMods(modList, { groupBy: 'file', multipleEnabled: false });
 
-    const groupedMods = grouped.reduce((prev: { [id: string]: IModWithState[] }, value) =>
-      setSafe(prev, [value[0].id], value)
-      , {});
+    const groupedMods = grouped.reduce((prev: { [id: string]: IModWithState[] }, value) => {
+      prev[value[0].id] = value;
+      return prev;
+    }, {});
 
     this.mPrimaryMods = Object.keys(groupedMods).reduce(
       (prev: { [id: string]: IModWithState }, value) => {
         const prim = groupedMods[value][0];
-        return setSafe(prev, [ value ], prim);
+        prev[value] = prim;
+        return prev;
       }, {});
 
     // assign after primary mods are calculated so that in case of an error the two don't become

@@ -400,6 +400,10 @@
     "download-speed": {
       "path": "{fa}/tachometer",
       "rmFill": true
+    },
+    "auto-update": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_cloud-download-95",
+      "rmFill": true
     }
   }
 }

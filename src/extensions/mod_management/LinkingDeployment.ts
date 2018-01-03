@@ -316,7 +316,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
           return Promise.resolve(undefined);
         });
-      }, { concurrency: 20 }).then(() => Promise.resolve(nonLinks));
+      }, { concurrency: 200 }).then(() => Promise.resolve(nonLinks));
   }
 
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;
