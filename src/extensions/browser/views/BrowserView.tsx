@@ -1,8 +1,11 @@
 import Icon from '../../../controls/Icon';
 import Webview from '../../../controls/Webview';
+import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import {log} from '../../../util/log';
 import MainPage from '../../../views/MainPage';
+
+import { closeBrowser } from '../actions';
 
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
@@ -10,8 +13,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { Modal } from 'react-bootstrap';
 import * as ReactMarkdown from 'react-markdown';
-import { IState } from '../../../types/IState';
-import { closeBrowser } from '../actions';
+import * as Redux from 'redux';
 
 export interface IBaseProps {
   visible: boolean;

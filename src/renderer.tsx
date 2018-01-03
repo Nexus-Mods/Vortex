@@ -265,7 +265,7 @@ function renderer() {
     .then(() => extensions.renderStyle()
         .catch(err => {
           terminate({
-            message: 'failed to parse UI theme: ' + process.cwd(),
+            message: 'failed to parse UI theme',
             details: err,
           });
         }))

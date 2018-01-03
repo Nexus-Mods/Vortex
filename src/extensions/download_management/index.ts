@@ -30,6 +30,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import * as Redux from 'redux';
 import {createSelector} from 'reselect';
 import {generate as shortid} from 'shortid';
 import { delayed } from '../../util/delayed';

@@ -626,6 +626,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private setModState(profileId: string, modId: string, value: string) {
     const { gameMode, onSetModEnabled } = this.props;
+    if (this.mModsWithState[modId] === undefined) {
+      return;
+    }
     // direct selection
     if (value === 'uninstalled') {
       // selected "not installed"
