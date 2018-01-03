@@ -148,6 +148,7 @@ class TableCell extends React.Component<ICellProps, {}> {
 
 export interface IRowProps {
   t: I18next.TranslationFunction;
+  id: string;
   tableId: string;
   data: any;
   rawData: any;

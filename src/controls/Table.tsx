@@ -393,6 +393,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       <TableRow
         t={t}
         tableId={tableId}
+        id={data.id}
         key={data.id}
         data={calculatedValues[data.id]}
         rawData={data.data}
@@ -485,7 +486,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       evt.preventDefault();
       const newItem = this.selectRelative(offset);
       if (this.mRowRefs[newItem] !== undefined) {
-        this.scrollToItem(this.mRowRefs[newItem], Math.abs(offset) > 1);
+        this.scrollToItem(
+          ReactDOM.findDOMNode(this.mRowRefs[newItem]) as HTMLElement, Math.abs(offset) > 1);
       }
     } else {
       const action = this.props.actions.find(iter =>
@@ -560,7 +562,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   private setRowRef = (ref: any) => {
     if (ref !== null) {
-      this.mRowRefs[ref.id] = ref;
+      this.mRowRefs[ref.props.id] = ref;
     }
   }
 
