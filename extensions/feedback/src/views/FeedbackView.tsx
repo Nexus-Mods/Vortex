@@ -188,7 +188,9 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     }
 
     if (type === 'files') {
-      this.attachFile(feedbackFilePaths[0]).then(() => null);
+      Promise.map(feedbackFilePaths, filePath => {
+        this.attachFile(filePath);
+      }).then(() => null);
     }
   }
 
