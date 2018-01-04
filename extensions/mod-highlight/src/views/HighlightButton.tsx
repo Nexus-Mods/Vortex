@@ -40,7 +40,7 @@ interface IComponentState {
  * @class HighlightButton
  */
 class HighlightButton extends ComponentEx<IProps, IComponentState> {
-  private mRef: JSX.Element;
+  private mRef: tooltip.IconButton;
 
   constructor(props: IProps) {
     super(props);
@@ -153,7 +153,7 @@ class HighlightButton extends ComponentEx<IProps, IComponentState> {
     onSetModAttribute(gameMode, mod.id, 'color', color.currentTarget.value);
   }
 
-  private setRef = (ref: JSX.Element) => {
+  private setRef = (ref: tooltip.IconButton) => {
     this.mRef = ref;
   }
 

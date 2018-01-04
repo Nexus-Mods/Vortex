@@ -209,7 +209,6 @@ class InstallManager {
             .then((action: string) => {
               if (action === 'Install') {
                 enable = enable || wasEnabled;
-                console.log('install alongside', wasEnabled, currentProfile.id, oldMod.id);
                 if (wasEnabled) {
                   setModEnabled(currentProfile.id, oldMod.id, false);
                 }

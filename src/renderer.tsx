@@ -185,7 +185,7 @@ if (process.env.NODE_ENV === 'development') {
   enhancer = compose(
     applyMiddleware(...middleware),
     electronEnhancer({ filter }),
-    (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__()
+    (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__(),
   );
 } else {
   enhancer = compose(
