@@ -5,7 +5,7 @@
 }
 
 .rss-image {
-  height: 50px;
+  height: 80px;
   background-size: cover !important;
   background-position-y: 30% !important;
   min-height: 50px;
@@ -22,8 +22,9 @@
 .rss-extras {
   background: $gray-lighter;
   display: flex;
-  padding: 0px 8px;
+  padding: 8px;
   font-size: smaller;
+  margin: 10px 0;
 
   svg {
     margin-right: 4px;
