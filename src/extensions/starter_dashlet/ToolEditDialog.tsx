@@ -218,7 +218,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 placeholder={t('Target')}
                 stateKey='target'
                 value={tool.exePath}
-                readOnly
+                readOnly={tool.isGame}
               />
             ) : (
                 <FormPathItem

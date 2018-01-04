@@ -95,7 +95,7 @@ export interface IFormPathProps extends IFormItemProps {
 
 export class FormPathItem extends React.Component<IFormPathProps, {}> {
   public render(): JSX.Element {
-    const { t, controlId, label, placeholder, style, value } = this.props;
+    const { t, controlId, label, placeholder, readOnly, style, value } = this.props;
 
     const validation = value !== undefined ? this.validationState() : undefined;
     const validationState = validation === undefined
@@ -110,15 +110,23 @@ export class FormPathItem extends React.Component<IFormPathProps, {}> {
         </Col>
         <Col sm={9}>
           <InputGroup>
-            <FormControl type='text' value={value} placeholder={placeholder} readOnly />
-            <InputGroup.Button className='inset-btn'>
-              <IconButton
-                id='change-tool-path'
-                tooltip={t('Change')}
-                onClick={this.handleChangePath}
-                icon='browse'
-              />
-            </InputGroup.Button>
+            <FormControl
+              type='text'
+              value={value}
+              placeholder={placeholder}
+              readOnly={readOnly}
+              onChange={this.handleTypePath}
+            />
+            {readOnly ? null : (
+              <InputGroup.Button className='inset-btn'>
+                <IconButton
+                  id='change-tool-path'
+                  tooltip={t('Change')}
+                  onClick={this.handleChangePath}
+                  icon='browse'
+                />
+              </InputGroup.Button>
+            )}
           </InputGroup>
           {validation ? <ControlLabel>{validation}</ControlLabel> : null}
         </Col>
@@ -132,6 +140,11 @@ export class FormPathItem extends React.Component<IFormPathProps, {}> {
       return undefined;
     }
     return validator(value);
+  }
+
+  private handleTypePath = (evt: any) => {
+    const { onChangeValue, stateKey } = this.props;
+    onChangeValue(stateKey, evt.target.value);
   }
 
   private handleChangePath = () => {
