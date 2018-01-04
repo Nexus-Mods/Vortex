@@ -138,7 +138,6 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   public render(): JSX.Element {
     const { collapse, dropdown, icon, id, instanceId,
             objects, orientation, className, style } = this.props;
-
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
     const icons = objects.filter(iter => {
       // don't render anything if the condition doesn't match
@@ -169,9 +168,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           split
           title={title}
         >
-          {sorted.slice(1).map((iter, idx) => (
-            <MenuAction key={idx} id={iter.title} icon={iter} instanceId={instanceId} />
-          ))}
+          {sorted.slice(1).map((iter, idx) => this.renderMenuItem(iter, idx))}
         </DropdownButton>
       );
     } else if (collapse) {

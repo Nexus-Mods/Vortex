@@ -85,6 +85,10 @@
   z-index: 4;
 }
 
+.has-feedback label ~ .form-control-feedback {
+  top: ($line-height-computed + 0.4) * 1rem;
+}
+
 .inline-form {
   display: flex;
   flex-grow: 1;
