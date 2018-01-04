@@ -127,7 +127,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
                 {t('or')}{this.renderAttachButton()}
               </FlexLayout.Fixed>
               <FlexLayout.Fixed>
-                <ListGroup>
+                <ListGroup className='feedback-files'>
                   {Object.keys(feedbackFiles).map(this.renderFeedbackFile)}
                 </ListGroup>
                 {this.renderFilesArea()}
