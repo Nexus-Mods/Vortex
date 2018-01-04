@@ -237,3 +237,27 @@ export function bytesToString(bytes: number): string {
     return '???';
   }
 }
+
+let convertDiv: HTMLDivElement;
+
+export function encodeHTML(input: string): string {
+  if (input === undefined) {
+    return undefined;
+  }
+  if (convertDiv === undefined) {
+    convertDiv = document.createElement('div');
+  }
+  convertDiv.innerText = input;
+  return convertDiv.innerHTML;
+}
+
+export function decodeHTML(input: string): string {
+  if (input === undefined) {
+    return undefined;
+  }
+  if (convertDiv === undefined) {
+    convertDiv = document.createElement('div');
+  }
+  convertDiv.innerHTML = input;
+  return convertDiv.innerText;
+}

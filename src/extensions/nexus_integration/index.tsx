@@ -11,7 +11,7 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
-import { truthy } from '../../util/util';
+import { decodeHTML, truthy } from '../../util/util';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
@@ -403,8 +403,8 @@ function processAttributes(input: any) {
                               'fileInfo', 'category_name'], undefined),
     isPrimary: getSafe(input, ['download', 'modInfo', 'nexus',
                                'fileInfo', 'is_primary'], undefined),
-    logicalFileName: getSafe(input, ['download', 'modInfo', 'nexus',
-                                     'fileInfo', 'name'], undefined),
+    logicalFileName: decodeHTML(getSafe(input, ['download', 'modInfo', 'nexus',
+                                                'fileInfo', 'name'], undefined)),
     changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
     uploadedTimestamp: getSafe(input, ['download', 'modInfo', 'nexus',
                                        'fileInfo', 'uploaded_timestamp'], undefined),
