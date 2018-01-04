@@ -88,7 +88,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         })
         .catch(err => {
           log('warn', 'invalid MO directory', { error: err.messag });
-          this.nextState.importPathInvalid = t('No valid MO installation found at this location');
+          this.nextState.importPathInvalid =
+            t('No valid MO installation found at this location: {{error}}',
+              { replace: { error: err.message } });
         });
     }, 500);
 
