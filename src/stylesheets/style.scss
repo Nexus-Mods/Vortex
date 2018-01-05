@@ -408,18 +408,41 @@ div:hover > .hover-expand {
 .btn-extensions-enabled-enabled, .toggle-extensions-enabled-enabled {
   background-color: $brand-success;
 }
+.btn-mods-enabled-enabled:hover {
+  background-color: darken($brand-success, 10%);
+}
+.toggle-mods-enabled-enabled{
+  background-color: darken($brand-success, 10%);
+}
 
 .btn-mods-enabled-disabled, .toggle-mods-enabled-disabled,
 .btn-extensions-enabled-disabled, .toggle-extensions-enabled-disabled {
   background-color: $gray;
 }
-
+.btn-mods-enabled-disabled:hover {
+  background-color: darken($gray, 10%);
+}
+.toggle-mods-enabled-disabled:hover{
+  background-color: darken($gray, 10%);
+}
 .btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled {
   background-color: $brand-info;
+}
+.btn-mods-enabled-uninstalled:hover {
+  background-color: darken($brand-info, 10%);
+}
+.toggle-mods-enabled-uninstalled:hover{
+  background-color: darken($brand-info, 10%);
 }
 
 .btn-mods-enabled-installing, .toggle-mods-enabled-installing {
   background-color: $gray;
+}
+.btn-mods-enabled-installing:hover {
+  background-color: darken($gray, 10%);
+}
+.toggle-mods-enabled-installing:hover{
+  background-color: darken($gray, 10%);
 }
 
 .option-mods-enabled-uninstalled {
