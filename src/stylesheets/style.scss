@@ -548,3 +548,6 @@ div:hover > .hover-expand {
   width: 137px;
   object-fit: cover;
 }
+.container-quicklaunch .tool-icon-container:hover {
+  filter: brightness(70%);
+}
