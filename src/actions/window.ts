@@ -20,3 +20,5 @@ export const setWindowPosition = safeCreateAction('STORE_WINDOW_POSITION');
 export const setMaximized = safeCreateAction('SET_MAXIMIZED');
 
 export const setTabsMinimized = safeCreateAction('SET_TABS_MINIMIZED');
+
+export const setCustomTitlebar = safeCreateAction('SET_CUSTOM_TITLEBAR');

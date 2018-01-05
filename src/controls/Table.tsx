@@ -19,6 +19,7 @@ import HeaderCell from './table/HeaderCell';
 import { Table, TBody, TH, THead, TR } from './table/MyTable';
 import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
+import ToolbarIcon from './ToolbarIcon';
 
 import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
@@ -28,6 +29,7 @@ import * as ReactDOM from 'react-dom';
 import * as SplitPane from 'react-split-pane';
 import * as Redux from 'redux';
 import { createSelector } from 'reselect';
+import { IconButton } from './TooltipControls';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -103,6 +105,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private mSplitDebouncer: Debouncer;
   private mSplitContainer: any;
   private mHeadRef: HTMLElement;
+  private mBodyRef: HTMLElement;
   private mScrollRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
   private mLastSelectOnly: number = 0;
@@ -139,12 +142,15 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(newProps: IProps) {
-    if (newProps.attributeState !== this.props.attributeState) {
+    if ((newProps.attributeState !== this.props.attributeState)
+        || (newProps.objects !== this.props.objects)) {
       const { attributeState, objects } = newProps;
       this.mVisibleAttributes = this.visibleAttributes(objects, attributeState);
     }
 
-    if ((newProps.data !== this.props.data) || (newProps.dataId !== this.props.dataId)) {
+    if ((newProps.data !== this.props.data)
+        || (newProps.dataId !== this.props.dataId)
+        || (newProps.objects !== this.props.objects)) {
       this.updateCalculatedValues(this.props.data, newProps)
       .then(() => {
         this.refreshSorted(newProps);
@@ -176,32 +182,80 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     return (
       <div id={`table-${tableId}`} className='table-container'>
-        <div
-          className='table-main-pane'
-          ref={this.mainPaneRef}
-          tabIndex={0}
-          onKeyDown={this.handleKeyDown}
-        >
-          <Table condensed hover>
-            {showHeader === false ? null : <THead
-              className='table-header'
-              domRef={this.setHeadRef}
-              style={{ transform: 'translate(0, 0)' }}
-            >
-              <TR>
-                {this.mVisibleAttributes.map(this.renderHeaderField)}
-                {actionHeader}
-              </TR>
-            </THead>
-            }
-            {this.renderBody(this.mVisibleAttributes)}
-          </Table>
-          {this.props.children}
+        <div className='table-container-inner'>
+          <div
+            className='table-main-pane'
+            ref={this.mainPaneRef}
+            tabIndex={0}
+            onKeyDown={this.handleKeyDown}
+          >
+            <Table hover>
+              {this.renderBody(this.mVisibleAttributes)}
+              {/* header below body so content in the table can't overlap the header */}
+              {showHeader === false ? null : <THead
+                className='table-header'
+                domRef={this.setHeadRef}
+                style={{ transform: 'translate(0, 0)' }}
+              >
+                <TR>
+                  {this.mVisibleAttributes.map(this.renderHeaderField)}
+                  {actionHeader}
+                </TR>
+              </THead>
+              }
+            </Table>
+            {this.props.children}
+          </div>
+          {this.renderFooter()}
         </div>
         {showDetails === false ? null : (
           <div className={`table-details-pane ${openClass}`}>
             {this.renderDetails(rowIds)}
           </div>)}
+      </div>
+    );
+  }
+
+  private renderFooter(): JSX.Element {
+    const { t, actions } = this.props;
+    const { rowState } = this.state;
+
+    const multiActions = actions.filter(
+      (action) => action.multiRowAction === undefined || action.multiRowAction);
+
+    const selected = Object.keys(rowState).filter(key => rowState[key].selected);
+
+    if ((multiActions.length === 0) || (selected.length < 2)) {
+      return null;
+    }
+
+    // the footer itself (.table-footer) is absolutely positioned so it fills out a surrounding
+    // panel. To ensure the table body isn't overlapped by the footer, insert a placeholder
+    // that needs to be the same size as the footer itself (see css)
+    return (
+      <div className='table-footer-placeholder'>
+        <div className='table-footer'>
+          <IconBar className='menubar'>
+            {multiActions.map((action, idx) =>
+              <ToolbarIcon
+                key={idx}
+                icon={action.icon}
+                text={action.title}
+                instanceId={selected}
+                onClick={action.action}
+              />)}
+          </IconBar>
+
+          <div className='menubar'>
+            <p>{t('{{count}} item selected', { count: selected.length })}</p>
+            <ToolbarIcon
+              key='btn-deselect'
+              icon='deselect'
+              text={t('Deselect All')}
+              onClick={this.deselectAll}
+            />
+          </div>
+        </div>
       </div>
     );
   }
@@ -218,7 +272,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     //   to know the size without rendering
 
     return (
-      <TBody>
+      <TBody domRef={this.setBodyRef}>
         {sortedRows.map((row, idx) => this.renderRow(row, idx < 40, visibleAttributes))}
       </TBody>
     );
@@ -282,17 +336,14 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const {t, actions, objects, tableId} = this.props;
     const {rowState} = this.state;
 
-    const multiActions = actions.filter(
-      (action) => action.multiRowAction === undefined || action.multiRowAction);
-
-    const selected = Object.keys(rowState).filter(key => rowState[key].selected);
-
     let pos = 1;
     const getPos = () => {
       return pos++;
     };
 
-    let elements: ITableRowAction[] = [{
+    const selected = Object.keys(rowState).filter(key => rowState[key].selected);
+
+    const elements: ITableRowAction[] = [{
       icon: null,
       title: t('Toggle Columns'),
       position: getPos(),
@@ -301,23 +352,16 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       .map(attr => {
         const attributeState = this.getAttributeState(attr);
         return {
-          icon: attributeState.enabled ? 'square-check' : 'square-empty',
+          icon: attributeState.enabled ? 'checkbox-checked' : 'checkbox-unchecked',
           title: attr.name,
           position: getPos(),
           action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),
         };
       }));
 
-    if ((multiActions.length > 0) && (selected.length > 0)) {
-      elements = elements.concat([{
-        icon: null,
-        title: t('{{count}} selected', { count: selected.length }),
-        position: getPos(),
-      }], multiActions.map(action => setSafe(action, ['position'], getPos())));
-    }
-
     return (
       <TH className={`table-${tableId} header-action`}>
+        <div><div className='header-action-label'>{t('Actions')}</div>
         {
           elements.length > 0 ? (
             <IconBar
@@ -327,9 +371,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
               staticElements={elements}
               instanceId={selected}
               collapse='force'
+              icon='settings'
             />
-          ) : <div><p>{t('Actions')}</p></div>
+          ) : null
         }
+        </div>
       </TH>
       );
   }
@@ -350,6 +396,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       <TableRow
         t={t}
         tableId={tableId}
+        id={data.id}
         key={data.id}
         data={calculatedValues[data.id]}
         rawData={data.data}
@@ -383,7 +430,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           key={attribute.id}
           attribute={attribute}
           state={attributeState}
-          doFilter={filt !== undefined}
+          doFilter={advancedMode}
           onSetSortDirection={this.setSortDirection}
           onSetFilter={this.setFilter}
           advancedMode={advancedMode}
@@ -442,7 +489,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       evt.preventDefault();
       const newItem = this.selectRelative(offset);
       if (this.mRowRefs[newItem] !== undefined) {
-        this.scrollToItem(this.mRowRefs[newItem], Math.abs(offset) > 1);
+        this.scrollToItem(
+          ReactDOM.findDOMNode(this.mRowRefs[newItem]) as HTMLElement, Math.abs(offset) > 1);
       }
     } else {
       const action = this.props.actions.find(iter =>
@@ -511,9 +559,13 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     this.mHeadRef = ref;
   }
 
+  private setBodyRef = ref => {
+    this.mBodyRef = ref;
+  }
+
   private setRowRef = (ref: any) => {
     if (ref !== null) {
-      this.mRowRefs[ref.id] = ref;
+      this.mRowRefs[ref.props.id] = ref;
     }
   }
 
@@ -827,6 +879,18 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private onRowStateChanged = () => {
     const { rowState } = this.state;
     this.updateDetailIds(Object.keys(rowState).filter(id => rowState[id].selected));
+  }
+
+  private deselectAll = () => {
+    const { rowState } = this.state;
+
+    const newState = {};
+    Object.keys(rowState).forEach(key => {
+      if (rowState[key].selected) {
+        newState[key] = { selected: { $set: false } };
+      }
+    });
+    this.setState(update(this.state, { rowState: newState }), this.onRowStateChanged);
   }
 
   private selectAll() {

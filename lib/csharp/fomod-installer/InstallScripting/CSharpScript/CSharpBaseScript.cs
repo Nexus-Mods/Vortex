@@ -177,6 +177,17 @@ namespace FomodInstaller.Scripting.CSharpScript
         }
 
         /// <summary>
+        /// Installs the specified file from the mod to the specified location on the file system.
+        /// </summary>
+        /// <param name="p_strFrom">The path of the file in the mod to install.</param>
+        /// <param name="p_strTo">The path on the file system where the file is to be created.</param>
+        /// <returns><c>true</c> if the file was written; <c>false</c> otherwise.</returns>
+        public static bool InstallFileFromFomod(string p_strFrom, string p_strTo)
+        {
+            return InstallFileFromMod(p_strFrom, p_strTo);
+        }
+
+        /// <summary>
         /// Installs the speified file from the mod to the file system.
         /// </summary>
         /// <param name="p_strFile">The path of the file to install.</param>

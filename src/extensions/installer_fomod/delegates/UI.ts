@@ -76,7 +76,7 @@ class UI extends DelegateBase {
     log('debug', 'reportError', inspect(parameters, null));
     try {
       this.api.showErrorNotification(
-        parameters.title, parameters.message + '\n' + parameters.details);
+        parameters.title, parameters.message + '\n' + parameters.details, { isHTML: true });
     } catch (err) {
       showError(this.api.store.dispatch,
         'failed to display error message from installer', err);

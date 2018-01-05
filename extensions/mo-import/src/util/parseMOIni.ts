@@ -42,6 +42,8 @@ function determineGame(games: {[gameId: string]: types.IDiscoveryResult},
     });
     if (gameId !== undefined) {
       return gameId;
+    } else {
+      return path.basename(gamePath).toLowerCase();
     }
   }
 
@@ -60,12 +62,16 @@ function parseMOIni(games: {[gameId: string]: types.IDiscoveryResult},
         let downloadPath = path.join(basePath, 'downloads');
         let modPath = path.join(basePath, 'mods');
         try {
-          downloadPath = file.data.Settings.download_directory;
+          if (file.data.Settings.download_directory) {
+            downloadPath = file.data.Settings.download_directory;
+          }
         } catch (err) {
           // nop
         }
         try {
-          modPath = file.data.Settings.mod_directory;
+          if (file.data.Settings.mod_directory) {
+            modPath = file.data.Settings.mod_directory;
+          }
         } catch (err) {
           // nop
         }
@@ -81,7 +87,7 @@ function parseMOIni(games: {[gameId: string]: types.IDiscoveryResult},
         }
       })
       .catch(err => {
-        log('warn', 'invalid mo inifile', { err });
+        log('warn', 'invalid mo inifile', { err: err.message });
         return Promise.reject(err);
       });
 }

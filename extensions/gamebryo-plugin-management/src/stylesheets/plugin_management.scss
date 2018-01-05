@@ -35,3 +35,17 @@
 .rule-readonly {
   font-style: italic;
 }
+
+.userlist-existing-rules {
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.userlist-add-controls {
+  display: flex;
+  justify-content: space-between;
+
+  > .Select {
+    width: 150px;
+  }
+}

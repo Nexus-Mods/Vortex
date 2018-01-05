@@ -1,6 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
 import DropdownButton from '../../../controls/DropdownButton';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
+import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
@@ -49,7 +50,7 @@ import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, ButtonGroup, Jumbotron, MenuItem } from 'react-bootstrap';
+import { Button, ButtonGroup, Jumbotron, MenuItem, Panel } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import * as semver from 'semver';
@@ -128,8 +129,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modVersionAttribute: ITableAttribute;
   private modVersionDetailAttribute: ITableAttribute;
   private mModsWithState: { [id: string]: IModWithState };
-  private mGroupedMods: { [id: string]: IModWithState[] };
-  private mPrimaryMods: { [id: string]: IModWithState };
+  private mGroupedMods: { [id: string]: IModWithState[] } = {};
+  private mPrimaryMods: { [id: string]: IModWithState } = {};
   private mUpdateDebouncer: Debouncer;
   private mLastUpdateProps: IModProps = { mods: {}, modState: {}, downloads: {} };
   private mIsMounted: boolean = false;
@@ -143,27 +144,55 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     this.modActions = [
       {
-        icon: 'square-check',
+        icon: 'checkbox-checked',
         title: 'Enable',
         action: this.enableSelected,
         singleRowAction: false,
       },
       {
-        icon: 'square-empty',
+        icon: 'checkbox-unchecked',
         title: 'Disable',
         action: this.disableSelected,
         singleRowAction: false,
       },
       {
-        icon: 'remove',
+        icon: 'delete',
         title: 'Remove',
         action: this.removeSelected,
         hotKey: { code: 46 },
       },
       {
-        icon: 'cloud-refresh',
+        icon: 'refresh',
         title: 'Check for update',
         action: this.checkForUpdate,
+        condition: instanceId => {
+          const { mods } = this.props;
+          if (typeof(instanceId) === 'string') {
+            return mods[instanceId] !== undefined;
+          } else {
+            return instanceId.find(id => mods[id] !== undefined) !== undefined;
+          }
+        },
+      },
+      {
+        icon: 'start-install',
+        title: 'Install',
+        action: this.install,
+        condition: (instanceId: string) => this.props.mods[instanceId] === undefined,
+        position: 50,
+      },
+      {
+        icon: 'start-install',
+        title: 'Reinstall',
+        action: this.reinstall,
+        condition: (instanceId: string) => {
+          if (this.props.mods[instanceId] === undefined) {
+            return false;
+          }
+          return (this.props.mods[instanceId].archiveId !== undefined)
+                ? true : this.props.t('No associated archive.');
+        },
+        singleRowAction: true,
       },
     ];
 
@@ -228,13 +257,54 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     const dragOverlay = <h2>{t('Drop to install')}</h2>;
 
+    let content: JSX.Element;
+
+    if (Object.keys(this.mPrimaryMods).length === 0) {
+      // for some reason I can't use the <Panel> control, it ends up
+      // having no body
+      content = (
+        <div className='panel'>
+          <div className='panel-body'>
+            <EmptyPlaceholder
+              icon='folder-download'
+              fill={true}
+              text={t('You got no mods yet')}
+              subtext={<a onClick={this.getMoreMods}>{t('But don\'t worry, I know a place...')}</a>}
+            />
+          </div>
+        </div>
+      );
+    } else {
+      content = (
+        <Panel>
+          <SuperTable
+            tableId='mods'
+            detailsTitle={t('Mod Attributes')}
+
+            data={this.mPrimaryMods}
+            staticElements={[
+              PICTURE,
+              this.modEnabledAttribute,
+              this.modNameAttribute,
+              this.modVersionAttribute,
+              this.modVersionDetailAttribute,
+              INSTALL_TIME,
+            ]}
+            actions={this.modActions}
+          >
+            {this.renderMoreMods(modSources)}
+          </SuperTable>
+        </Panel>
+      );
+    }
+
     return (
       <MainPage ref={this.setBoundsRef}>
         <MainPage.Header>
           <IconBar
             group='mod-icons'
             staticElements={this.staticButtons}
-            buttonType='icon'
+            className='menubar'
           />
         </MainPage.Header>
         <MainPage.Body>
@@ -245,30 +315,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             dragOverlay={dragOverlay}
             clickable={false}
           >
-            <SuperTable
-              tableId='mods'
-              detailsTitle={t('Mod Attributes')}
-
-              data={this.mPrimaryMods}
-              staticElements={[
-                PICTURE,
-                this.modEnabledAttribute,
-                this.modNameAttribute,
-                this.modVersionAttribute,
-                this.modVersionDetailAttribute,
-                INSTALL_TIME,
-              ]}
-              actions={this.modActions}
-            >
-            {this.renderMoreMods(modSources)}
-            </SuperTable>
+            {content}
           </Dropzone>
         </MainPage.Body>
         <MainPage.Overlay>
           <IconBar
             group='mod-icons'
             staticElements={this.staticButtons}
-            buttonType='both'
             orientation='vertical'
           />
         </MainPage.Overlay>
@@ -280,20 +333,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     if (sources.length === 1) {
       return (
-        <IconButton
+        <Button
           id='btn-more-mods'
-          tooltip={t('Browse for more mods')}
           onClick={sources[0].onBrowse}
-          icon='plus'
+          bsStyle='ghost'
         >
           {t('Get more mods')}
-        </IconButton>
+        </Button>
       );
     }
 
     const title = (
       <div style={{ display: 'inline' }}>
-        <Icon name='plus' />
+        <Icon name='add' />
         {t('Get more mods')}
       </div>
     );
@@ -311,6 +363,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private renderModSource = (source: IModSource) => {
     return <MenuItem key={source.id} onSelect={source.onBrowse}>{source.name}</MenuItem>;
+  }
+
+  private getMoreMods = () => {
+    if (this.props.modSources.length > 0) {
+      this.props.modSources[0].onBrowse();
+    }
   }
 
   private calcVersion = (mod: IModWithState): string => {
@@ -443,9 +501,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       edit: {
         inline: true,
         choices: () => [
-          { key: 'enabled', text: 'Enabled' },
-          { key: 'disabled', text: 'Disabled' },
-          { key: 'uninstalled', text: 'Uninstalled' },
+          { key: 'enabled', text: 'Enabled', icon: 'toggle-enabled' },
+          { key: 'disabled', text: 'Disabled', icon: 'toggle-disabled' },
+          { key: 'uninstalled', text: 'Uninstalled', icon: 'toggle-uninstalled' },
           { key: 'installing', text: 'Installing', visible: false },
         ],
         onChangeValue: this.changeModEnabled,
@@ -552,8 +610,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
         // if the new mod list is a subset of the old one (including the empty set)
         // the above check wouldn't notice that change
-        if (!changed
-          && ((this.mModsWithState === undefined)
+        if (!changed && ((this.mModsWithState === undefined)
             || !_.isEqual(Object.keys(newModsWithState), Object.keys(this.mModsWithState)))) {
           changed = true;
         }
@@ -589,6 +646,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private setModState(profileId: string, modId: string, value: string) {
     const { gameMode, onSetModEnabled } = this.props;
+    if (this.mModsWithState[modId] === undefined) {
+      return;
+    }
     // direct selection
     if (value === 'uninstalled') {
       // selected "not installed"
@@ -635,14 +695,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const modList = Object.keys(modsWithState).map(key => modsWithState[key]);
     const grouped = groupMods(modList, { groupBy: 'file', multipleEnabled: false });
 
-    const groupedMods = grouped.reduce((prev: { [id: string]: IModWithState[] }, value) =>
-      setSafe(prev, [value[0].id], value)
-      , {});
+    const groupedMods = grouped.reduce((prev: { [id: string]: IModWithState[] }, value) => {
+      prev[value[0].id] = value;
+      return prev;
+    }, {});
 
     this.mPrimaryMods = Object.keys(groupedMods).reduce(
       (prev: { [id: string]: IModWithState }, value) => {
         const prim = groupedMods[value][0];
-        return setSafe(prev, [ value ], prim);
+        prev[value] = prim;
+        return prev;
       }, {});
 
     // assign after primary mods are calculated so that in case of an error the two don't become
@@ -759,6 +821,15 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             }
           }));
       });
+  }
+
+  private install = (archiveId: string) => {
+    this.context.api.events.emit('start-install-download', archiveId);
+  }
+
+  private reinstall = (modId: string) => {
+    const { mods } = this.props;
+    this.context.api.events.emit('start-install-download', mods[modId].archiveId);
   }
 
   private checkForUpdate = (modIds: string[]) => {

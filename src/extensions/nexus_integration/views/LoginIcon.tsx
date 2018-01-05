@@ -11,6 +11,7 @@ import LoginDialog from './LoginDialog';
 
 import * as update from 'immutability-helper';
 import Nexus from 'nexus-api';
+import * as opn from 'opn';
 import * as React from 'react';
 import { ControlLabel, Form, FormGroup, Image } from 'react-bootstrap';
 import * as Redux from 'redux';
@@ -51,14 +52,14 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     if ((APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null)) {
       return (
-        <FormGroup>
+        <div>
           <div className='username'>
             {userInfo.name}
           </div>
           <div className='logout-button'>
             <a onClick={this.logOut}>{t('Log out')}</a>
           </div>
-        </FormGroup>
+        </div>
       );
     } else {
       return null;
@@ -75,7 +76,6 @@ class LoginIcon extends ComponentEx<IProps, {}> {
         id='btn-login'
         tooltip={loggedIn ? t('Show Details') : t('Log in')}
         onClick={this.showLoginLayer}
-        className='pull-right'
       >
         {loggedIn ? (
           <Image
@@ -92,7 +92,12 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private showLoginLayer = () => {
-    this.setDialogVisible(true);
+    const { userInfo } = this.props;
+    if ((userInfo === undefined) || (userInfo === null)) {
+      this.setDialogVisible(true);
+    } else {
+      opn(`https://rd.nexusmods.com/users/${userInfo.userId}`);
+    }
   }
 
   private hideLoginLayer = () => {

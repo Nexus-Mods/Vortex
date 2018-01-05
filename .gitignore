@@ -14,6 +14,8 @@ app/bundledPlugins
 # auto generated
 auto.gypi
 auto-top.gypi
+npm-debug.log*
+.DS_Store
 
 # temporary fonts directory used during font-svg generation
 /fonts/
@@ -29,4 +31,9 @@ bld/
 [Oo]bj/
 lib/cpp/loot/loot/
 lib/cpp/loot/loot_api/docs/
+icons/Font-Awesome-SVG-PNG-master/
+icons/Nucleo_Colored/
+icons/Nucleo_Glyph/
+icons/Nucleo_Outline/
+icons/nucleo-standard-license.txt
 BuildState*.json

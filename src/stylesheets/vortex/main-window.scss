@@ -1,0 +1,287 @@
+// the topmost button bar
+// (containing the quick launcher, login control, game-specific action buttons)
+#main-toolbar {
+  background-color: $brand-bg;
+  display: flex;
+
+  #btn-quicklaunch-play,
+  .main-toolbar-right .btn {
+    background-color: transparent;
+    border-width: 0px;
+    color: $text-color;
+    padding: 8px;
+
+    &:hover {
+      background-color: transparent;
+      color: $brand-clickable;
+    }
+
+    >svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .main-toolbar-right {
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-right: 8px;
+  }
+
+  // when the window titlebar is disabled, make the main toolbar region
+  // the area where the user can drag the window around
+  &.toolbar-app-region {
+    height: 104px;
+    -webkit-app-region: drag;
+
+    .main-toolbar-right {
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.modal-open #main-toolbar.toolbar-app-region {
+  -webkit-app-region: no-drag;
+}
+
+.window-frame {
+  border: 1px solid $gray;
+}
+
+.application-icons,
+.global-icons {
+  margin-left: $half-gutter;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+// the naviation buttons on the left
+#main-nav-sidebar {
+  background-color: $brand-menu;
+  display: flex;
+  flex-direction: column;
+
+  // inside the main nav sidebar
+  // (contains everything except the minimize/maximize button)
+  #main-nav-container {
+    flex-direction: column;
+    transition: max-width $expand-sidebar-delay, min-width $expand-sidebar-delay;
+    height: 100%;
+    display: flex;
+    overflow-y: auto;
+    flex: 1 1 0;
+    >:not(:last-child) {
+      box-shadow: 0 3px 0 0 rgba(221, 221, 221, 0.18);
+      margin-bottom: 3px;
+    }
+  }
+
+  .main-nav-group-title {
+    font-size: $font-size-small;
+    margin-left: 10px;
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+
+  .menu-label {
+    transition: opacity $expand-sidebar-delay, margin-left $expand-sidebar-delay;
+    vertical-align: middle;
+    font-size: $font-size-h6;
+    margin-left: 10px;
+    text-transform: uppercase;
+  }
+
+  &.sidebar-expanded {
+    #main-nav-container {
+      max-width: 500px;
+    }
+
+    .menu-label {
+      opacity: 1;
+    }
+    .badge {
+      margin-left: 5px;
+      transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
+    }
+    .icon-spinner {
+      margin-left: 5px;
+      transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
+    }
+  }
+
+  &.sidebar-compact {
+    #main-nav-container {
+      min-width: 0px;
+      max-width: 48px;
+    }
+    #main-footer {
+      max-width: 48px;
+    }
+    .menu-label {
+      opacity: 0;
+      width: 0;
+      overflow-x: visible;
+      min-width: 0;
+      display: inline-block;
+    }
+    .badge {
+      padding: 3px;
+      font-size: $font-size-small;
+      margin-left: -18px !important;
+      transition: margin-left $expand-sidebar-delay, padding $expand-sidebar-delay, font-size $expand-sidebar-delay;
+    }
+    .icon-spinner {
+      margin-left: -12px;
+      height: 12px;
+      transition: margin-left $expand-sidebar-delay, height $expand-sidebar-delay;
+    }
+  }
+}
+
+// main window area
+#main-window-pane {
+  background: url('assets/images/bg.png');
+  background-size: cover;
+  color: $text-color;
+
+  .overlay {
+    position: absolute;
+    height: 100%;
+    z-index: $zindex-navbar-fixed;
+    top: 0px;
+    right: 0px;
+    max-width: 0%;
+    background: $brand-menu;
+    border-style: solid;
+    border-color: lighten($brand-menu, 30%);
+    border-width: 0px;
+    transition: max-width 300ms cubic-bezier(0, 1, 1, 1), border-width 0ms 300ms;
+    display: flex;
+    flex-direction: column;
+    &.in {
+      max-width: 30%;
+      border-width: 2px;
+      transition: max-width 300ms cubic-bezier(1, 0, 1, 1), border-width 0ms 0ms;
+    }
+  }
+}
+
+// animation for switching between main pages
+.mainpage-enter {
+  opacity: 0;
+  &.mainpage-enter-active {
+    opacity: 1;
+    transition: opacity 250ms ease-in;
+  }
+}
+
+.mainpage-leave {
+  opacity: 1;
+  &.mainpage-leave-active {
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+  }
+}
+
+.mainpage-header {
+  flex: 1 1 0%;
+  display: flex;
+  border: $brand-secondary solid;
+  border-width: 0;
+  height: 100%;
+  padding: 5px;
+  >div {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+.mainpage-header-container {
+  background-color: $brand-clickable;
+  >div {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.mainpage-body-container {
+  flex: 1 1 0;
+  position: relative;
+}
+
+// footer
+#main-footer {
+  background-color: $brand-bg;
+  * {
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.main-page {
+  transition: opacity 500ms;
+  flex: 1 1 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  &.current {
+    opacity: 1;
+    z-index: 1000;
+    transition-delay: 0s;
+  }
+
+  &.page-hidden {
+    transition: visibility 0s 500ms, opacity 500ms;
+    opacity: 0;
+    z-index: 0;
+    visibility: hidden;
+
+    // hack to make sure the page can fade out without looking
+    // too broken while not displacing the visible page
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  &.secondary {
+    // make secondary page always show at the bottom
+    order: 1;
+  }
+}
+
+.main-page-inner {
+  position: absolute;
+  top: $half-gutter;
+  bottom: $half-gutter;
+  left: $half-gutter;
+  right: $half-gutter;
+}
+
+.main-page-body {
+  width: 100%;
+  height: 100%;
+}
+
+#login-control {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+
+  .logout-button {
+    text-align: right;
+  }
+  .logout-button a {
+    font-size: 11px;
+  }
+}
+
+.btn-menu-minimize {
+  border: 0px;
+  padding: 1px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}

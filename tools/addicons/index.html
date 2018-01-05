@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html style='height: 100%'>
+  <head>
+    <meta charset="UTF-8">
+    <title>Icons</title>
+  </head>
+  <body style='height: 100%; margin: 0'>
+    <div style='width: 100%; height: 100%; display: flex; flex-direction: column'>
+      <ul id='icons' style='overflow-y: auto; flex: 1 1 0'>
+      </ul>
+      <div style='display: flex;'>
+        <div id='dropzone' style='border: 1px solid black; height: 200px; width: 200px'>
+          Drop Icons here
+        </div>
+        <div>
+          <button id='generate'>Generate</button>
+          <button id='deploy'>Deploy</button>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+      require('./renderer.js');
+  </script>
+</html>

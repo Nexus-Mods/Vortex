@@ -1,0 +1,37 @@
+.nav > li > a {
+  color: $text-color;
+}
+
+.nav-pills > li > a {
+  color: $text-color;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 10px 25px 10px 16px;
+  -webkit-user-drag: none;
+} 
+
+.nav > li > a:hover,
+.nav > li > a:focus {
+  background-color: $gray-lighter;
+}
+
+.nav-pills.nav-stacked > li.active {
+  background-color: $brand-bg;
+  a,
+  a:hover,
+  a:focus {
+    background: url('assets/images/bg.png');
+    border-right: 4px solid $brand-clickable;
+  }
+}
+
+.nav-pills.nav-stacked > li.secondary > a,
+.nav-pills.nav-pills.nav-stacked > li.secondary > a:hover,
+.nav-pills.nav-stacked > li.secondary > a:focus {
+  background-color: $brand-bg;
+}
+
+.nav-pills>li>a svg {
+  vertical-align: middle;
+}
+

@@ -1,5 +1,6 @@
 import { showDialog } from '../actions/notifications';
-import { IconButton } from '../controls/TooltipControls';
+import Icon from '../controls/Icon';
+import { Button, IconButton } from '../controls/TooltipControls';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
@@ -16,6 +17,7 @@ import { getSafe } from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
+import * as path from 'path';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
@@ -78,50 +80,50 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    // TODO: this leaves out manually added games
-
     return (
       <div className='container-quicklaunch'>
         <DropdownButton
           id='dropdown-quicklaunch'
           className='btn-quicklaunch'
-          title={this.renderGameOption(game.id, starter) as any}
+          title={this.renderGameOption(game.id) as any}
           key={game.id}
           onSelect={this.changeGame}
+          noCaret
         >
           {
-            Object.keys(gameIconCache).map(gameId => (
+            Object.keys(gameIconCache)
+              .filter(gameId => gameId !== game.id)
+              .map(gameId => (
               <MenuItem key={gameId} eventKey={gameId}>
                 {this.renderGameOption(gameId)}
               </MenuItem>
               ))
           }
-          <MenuItem key='__more' eventKey='__more' className='item-more-games'>
-            {t('More...')}
-          </MenuItem>
         </DropdownButton>
-        <IconButton
-          id='btn-quicklaunch-play'
-          icon='circle-play'
-          tooltip={t('Launch')}
-          onClick={this.start}
-        />
+        <div className='container-quicklaunch-launch'>
+          <IconButton
+            id='btn-quicklaunch-play'
+            onClick={this.start}
+            tooltip={t('Launch')}
+            icon='launch-application'
+          />
+        </div>
       </div>
     );
   }
 
-  private renderGameOption = (gameId: string, starter?: StarterInfo) => {
-    const { discoveredGames } = this.props;
+  private renderGameOption = (gameId: string) => {
+    const { t, discoveredGames } = this.props;
     const { gameIconCache } = this.state;
 
-    if (gameIconCache[gameId] === undefined) {
+    if ((gameIconCache === undefined) || (gameIconCache[gameId] === undefined)) {
       log('error', 'failed to access game icon', { gameId });
       return null;
     }
 
     const discovered = discoveredGames[gameId];
 
-    const iconPath = gameIconCache[gameId].icon;
+    const iconPath = gameIconCache[gameId].icon.replace(/\\/g, '/');
     const game = gameIconCache[gameId].game;
 
     const displayName =
@@ -129,10 +131,10 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       || getSafe(discovered, ['name'], getSafe(game, ['name'], undefined));
 
     return (
-      <div style={{ display: 'flex' }}>
-        <div className='tool-icon-container'>
-          <ToolIcon imageId={42} imageUrl={iconPath} valid={true} />
-        </div>
+      <div
+        className='tool-icon-container'
+        style={{ background: `url('${iconPath}')` }}
+      >
         <span className='menu-label'>{displayName}</span>
       </div>
     );

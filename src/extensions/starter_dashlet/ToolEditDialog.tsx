@@ -73,7 +73,7 @@ class EnvButton extends ComponentEx<IEnvButtonProps, IEnvButtonState> {
           <InputGroup.Button>
             <IconButton
               id={`btn-apply-${key}`}
-              icon='check'
+              icon='input-confirm'
               tooltip={t('Apply')}
               onClick={this.apply}
             />
@@ -85,7 +85,7 @@ class EnvButton extends ComponentEx<IEnvButtonProps, IEnvButtonState> {
         return (
           <IconButton
             id='btn-add-env'
-            icon='plus'
+            icon='add'
             tooltip={t('Add')}
             onClick={this.open}
           />
@@ -191,7 +191,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     }
 
     return (
-      <Modal show={true} onHide={onClose}>
+      <Modal show={true} onHide={onClose} id='tool-edit-dialog'>
         <Modal.Header>
           <Modal.Title>
             {realName}
@@ -218,7 +218,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 placeholder={t('Target')}
                 stateKey='target'
                 value={tool.exePath}
-                readOnly
+                readOnly={tool.isGame}
               />
             ) : (
                 <FormPathItem

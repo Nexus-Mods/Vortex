@@ -1,4 +1,5 @@
 import Icon from '../../../controls/Icon';
+import Toggle from '../../../controls/Toggle';
 import {Button} from '../../../controls/TooltipControls';
 import {ComponentEx} from '../../../util/ComponentEx';
 import {getSafe, setSafe} from '../../../util/storeHelper';
@@ -8,7 +9,7 @@ import {IProfileFeature} from '../types/IProfileFeature';
 
 import * as update from 'immutability-helper';
 import * as React from 'react';
-import {Checkbox, FormControl, ListGroupItem} from 'react-bootstrap';
+import {Checkbox, FormControl, ListGroupItem, Panel} from 'react-bootstrap';
 
 export interface IEditState {
   edit: IProfile;
@@ -39,11 +40,12 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           gameId: props.gameId,
           modState: {},
           name: '',
+          lastActivated: 0,
         } };
   }
 
   public render(): JSX.Element {
-    const { t, features, profileId, onCancelEdit } = this.props;
+    const { t, features, onCancelEdit, profile, profileId } = this.props;
     const { edit } = this.state;
     const inputControl = (
       <FormControl
@@ -56,20 +58,23 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
       />
     );
     return (
-      <ListGroupItem key={profileId}>
-        <div className='inline-form'>
-        {inputControl}
-        <Button id='__accept' tooltip={t('Accept')} onClick={this.saveEdit}>
-          <Icon name='check' />
-        </Button>
-        <Button id='__cancel' tooltip={t('Cancel')} onClick={onCancelEdit}>
-          <Icon name='cross' />
-        </Button>
-        </div>
-        <div>
-        {features.map(this.renderFeature)}
-        </div>
-      </ListGroupItem>
+      <Panel className='profile-edit-panel'>
+        {profile === undefined ? t('Create a new profile') : t('Edit profile')}
+        <ListGroupItem key={profileId}>
+          <div className='inline-form'>
+          {inputControl}
+          <Button bsStyle='primary' id='__accept' tooltip={t('Accept')} onClick={this.saveEdit}>
+            {t('Save')}
+          </Button>
+          <Button bsStyle='secondary' id='__cancel' tooltip={t('Cancel')} onClick={onCancelEdit}>
+            {t('Cancel')}
+          </Button>
+          </div>
+          <div>
+          {features.map(this.renderFeature)}
+          </div>
+        </ListGroupItem>
+      </Panel>
     );
   }
 
@@ -78,23 +83,19 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
     const { edit } = this.state;
     if (feature.type === 'boolean') {
       return (
-        <Checkbox
-          id={feature.id}
-          key={feature.id}
+        <Toggle
           checked={getSafe(edit, ['features', feature.id], false)}
-          onChange={this.toggleCheckbox}
+          dataId={feature.id}
+          onToggle={this.toggleCheckbox}
         >
           {t(feature.description)}
-        </Checkbox>
+        </Toggle>
       );
     }
   }
 
-  private toggleCheckbox = (evt: React.MouseEvent<any>) => {
-    const featureId = evt.currentTarget.id;
-    const ticked = evt.currentTarget.checked;
-
-    this.setState(setSafe(this.state, ['edit', 'features', featureId], ticked));
+  private toggleCheckbox = (ticked: boolean, dataId: string) => {
+    this.setState(setSafe(this.state, ['edit', 'features', dataId], ticked));
   }
 
   private handleKeypress = (evt: React.KeyboardEvent<any>) => {

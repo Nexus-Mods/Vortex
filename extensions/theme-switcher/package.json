@@ -16,7 +16,7 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/fs-extra-promise": "^1.0.1",
-    "@types/react": "^0.14.55",
+    "@types/react": "16.0.9",
     "@types/react-bootstrap": "^0.0.50",
     "@types/react-color": "2.11.2",
     "@types/react-redux": "4.4.35",

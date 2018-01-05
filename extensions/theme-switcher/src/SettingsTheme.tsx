@@ -12,7 +12,7 @@ import { Button, ControlLabel, FormControl, FormGroup, InputGroup } from 'react-
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
-import { actions, ComponentEx, log, types } from 'vortex-api';
+import { actions, ComponentEx, log, tooltip, types } from 'vortex-api';
 
 interface IConnectedProps {
   currentTheme: string;
@@ -86,34 +86,47 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
     const { t, currentTheme } = this.props;
     const { availableFonts, editable, variables } = this.state;
     return (
-      <div>
-      <form>
-        <FormGroup controlId='themeSelect'>
-            <ControlLabel>{t('Theme')}</ControlLabel>
-          <InputGroup style={{ width: 300 }}>
-            <FormControl
-              componentClass='select'
-              onChange={this.selectTheme}
-              value={currentTheme}
-            >
-              {this.state.themes.map(theme => this.renderTheme(theme, theme))}
-            </FormControl>
-            <InputGroup.Button>
-              <Button onClick={this.clone} >{t('Clone')}</Button>
-              {editable ? <Button onClick={this.remove}>{t('Remove')}</Button> : null}
-            </InputGroup.Button>
-          </InputGroup>
-        </FormGroup>
-      </form>
-      { editable
-          ? (
-            <ThemeEditor
-              t={t}
-              theme={variables}
-              onApply={this.saveTheme}
-              availableFonts={availableFonts}
-            />
-          ) : null }
+      <div style={{ position: 'relative' }}>
+        <form>
+          <FormGroup controlId='themeSelect'>
+              <ControlLabel>{t('Theme')}</ControlLabel>
+            <InputGroup style={{ width: 300 }}>
+              <FormControl
+                componentClass='select'
+                onChange={this.selectTheme}
+                value={currentTheme}
+              >
+                {this.state.themes.map(theme => this.renderTheme(theme, theme))}
+              </FormControl>
+              <InputGroup.Button>
+                <Button bsStyle='primary' onClick={this.clone} >{t('Clone')}</Button>
+                {editable
+                  ? <Button bsStyle='primary' onClick={this.remove}>{t('Remove')}</Button>
+                  : null}
+              </InputGroup.Button>
+            </InputGroup>
+          </FormGroup>
+        </form>
+        { editable
+            ? (
+              <ThemeEditor
+                t={t}
+                themePath={path.join(themePath(), this.props.currentTheme)}
+                theme={variables}
+                onApply={this.saveTheme}
+                availableFonts={availableFonts}
+              />
+            ) : null }
+        { editable
+            ? (
+              <tooltip.IconButton
+                style={{ position: 'absolute', top: 20, right: 20 }}
+                className='btn-embed'
+                icon='refresh'
+                tooltip={t('Reload')}
+                onClick={this.refresh}
+              />
+            ) : null }
       </div>
     );
   }
@@ -123,6 +136,10 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
       ? name.substr(2)
       : name;
     return <option key={key} value={key}>{renderName}</option>;
+  }
+
+  private refresh = () => {
+    this.context.api.events.emit('select-theme', this.props.currentTheme);
   }
 
   private readThemes(basePath: string): Promise<string[]> {

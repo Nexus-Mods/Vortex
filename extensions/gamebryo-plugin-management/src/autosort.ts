@@ -9,7 +9,7 @@ import * as fs from 'fs-extra-promise';
 import {GameId, LootDatabase} from 'loot';
 import * as path from 'path';
 import * as ReduxThunk from 'redux-thunk';
-import {actions, log, selectors, types} from 'vortex-api';
+import {actions, log, selectors, types, util} from 'vortex-api';
 
 class LootInterface {
   private mLoot: LootDatabase;
@@ -38,23 +38,21 @@ class LootInterface {
     this.mExtensionApi = context.api;
 
     // when the game changes, we need to re-initialize loot for that game
-    context.api.events.on('gamemode-activated', (gameMode: string) => {
-      const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
-      if (gameSupported(gameMode)) {
-        this.init(gameMode as GameId, gamePath)
-          .then(() => null)
-          .catch(err => {
-            context.api.showErrorNotification('Failed to initialize LOOT', err.message);
-            this.mLoot = undefined;
-          });
-      } else {
-        this.mLoot = undefined;
+    context.api.events.on('gamemode-activated',
+      gameMode => this.onGameModeChanged(context, gameMode));
+
+    { // in case the initial gamemode-activated event was already sent,
+      // initialize right away
+      const gameMode = selectors.activeGameId(store.getState());
+      if (gameMode) {
+        this.onGameModeChanged(context, gameMode);
       }
-    });
+    }
 
     // on demand, re-sort the plugin list
-    context.api.events.on('autosort-plugins', () => {
-      if (store.getState().settings.plugins.autoSort && (this.mLoot !== undefined)) {
+    context.api.events.on('autosort-plugins', (manual: boolean) => {
+      if ((manual || store.getState().settings.plugins.autoSort)
+          && (this.mLoot !== undefined)) {
         const t = this.mExtensionApi.translate;
         const state = store.getState();
         const gameMode = selectors.activeGameId(state);
@@ -99,6 +97,28 @@ class LootInterface {
         return Promise.resolve();
       });
     });
+  }
+
+  private onGameModeChanged = (context: types.IExtensionContext, gameMode: string) => {
+    if (gameMode === this.mLootGame) {
+      return;
+    }
+    const store = context.api.store;
+    const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
+    if (gameSupported(gameMode)) {
+      this.init(gameMode as GameId, gamePath)
+        .then(() => null)
+        .catch(err => {
+          context.api.showErrorNotification('Failed to initialize LOOT', {
+            message: err.message,
+            game: gameMode,
+            path: gamePath,
+          });
+          this.mLoot = undefined;
+        });
+    } else {
+      this.mLoot = undefined;
+    }
   }
 
   private pluginDetails =
@@ -153,10 +173,10 @@ class LootInterface {
   private init(gameMode: GameId, gamePath: string): Promise<void> {
     const t = this.mExtensionApi.translate;
     const localPath = pluginPath(gameMode);
+    this.mLootGame = gameMode;
     return fs.ensureDirAsync(localPath)
       .then(() => {
         this.mLoot = new LootDatabase(gameMode, gamePath, localPath);
-        this.mLootGame = gameMode;
         this.promisify();
 
         // little bit of hackery: If tasks are queued before the game mode is activated

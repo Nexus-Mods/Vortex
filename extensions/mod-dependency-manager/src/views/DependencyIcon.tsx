@@ -207,18 +207,18 @@ const dependencySource: __ReactDnd.DragSourceSpec<IProps> = {
     clearTimeout(cursorPosUpdater);
     cursorPosUpdater = undefined;
 
-    const source: string = (monitor.getItem() as any).id;
-    props.onSetSource(source, undefined);
+    const sourceId: string = (monitor.getItem() as any).id;
+    props.onSetSource(sourceId, undefined);
 
     if (monitor.getDropResult() === null) {
       return;
     }
 
-    const dest: string = (monitor.getDropResult() as any).id;
+    const destId: string = (monitor.getDropResult() as any).id;
     const reference: IReference = (monitor.getDropResult() as any).reference;
 
-    if (source !== dest) {
-      props.onEditDialog(props.gameId, source, reference, 'before');
+    if (sourceId !== destId) {
+      props.onEditDialog(props.gameId, sourceId, reference, 'before');
     }
   },
 };
@@ -395,7 +395,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
             className={classes.join(' ')}
             key={`rules-${mod.id}`}
             tooltip={t('Drag to another mod to define dependency')}
-            icon='connect'
+            icon='connection'
             ref={this.setRef}
             onClick={this.toggleOverlay}
           />
@@ -450,7 +450,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         className={classes.join(' ')}
         key={`conflicts-${mod.id}`}
         tooltip={tip}
-        icon='flash'
+        icon='conflict'
         onClick={this.openConflictDialog}
       />
     );

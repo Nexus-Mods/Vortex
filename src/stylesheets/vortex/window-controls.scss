@@ -1,0 +1,18 @@
+#window-controls {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  .window-control {
+    width: 38px;
+    background-color: initial;
+    border-width: 0;
+
+    &:hover {
+      color: $brand-primary;
+    }
+  }
+
+  .window-control#window-close:hover {
+    color: $brand-primary;
+  }
+}

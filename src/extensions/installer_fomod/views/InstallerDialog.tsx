@@ -17,7 +17,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import {
-  Checkbox, ControlLabel, Form, FormGroup, Pager,
+  Button, Checkbox, ControlLabel, Form, FormGroup, Pager,
   ProgressBar, Radio,
 } from 'react-bootstrap';
 
@@ -168,8 +168,9 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
           <Checkbox
             id={'checkbox-' + id}
             key={plugin.id}
-            checked={plugin.type !== 'NotUsable'}
+            checked={isSelected}
             data-value={plugin.id}
+            disabled={true}
           >
             {content}
           </Checkbox>
@@ -333,7 +334,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
             id='fomod-cancel'
             className='close-button'
             tooltip={t('Cancel')}
-            icon='cross'
+            icon='close'
             onClick={this.cancel}
           />
         </Modal.Header>
@@ -360,31 +361,31 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
           </FlexLayout>
         </Modal.Body>
         <Modal.Footer>
-          <Pager>
-            {
+          <div className='fomod-nav-buttons'>
+            <div>{
               lastVisible !== undefined
                 ? (
-                  <Pager.Item draggable={false} previous onClick={this.prev}>
+                  <Button onClick={this.prev}>
                     {lastVisible.name || t('Previous')}
-                  </Pager.Item>
+                  </Button>
                 ) : null
-            }
-            <li>
+            }</div>
+            <div className='fomod-progress'>
               <ProgressBar now={idx} max={steps.length} />
-            </li>
-            {
+            </div>
+            <div>{
               nextVisible !== undefined
                 ? (
-                  <Pager.Item draggable={false} next disabled={nextDisabled} onClick={this.next}>
+                  <Button disabled={nextDisabled} onClick={this.next}>
                     {nextVisible.name || t('Next')}
-                  </Pager.Item>
+                  </Button>
                 ) : (
-                  <Pager.Item draggable={false} next disabled={nextDisabled} onClick={this.next}>
+                  <Button disabled={nextDisabled} onClick={this.next}>
                     {t('Finish')}
-                  </Pager.Item>
+                  </Button>
                 )
-            }
-          </Pager>
+            }</div>
+          </div>
         </Modal.Footer>
       </Modal>
     );

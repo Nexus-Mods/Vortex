@@ -75,7 +75,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
               </FormControl.Static>
               <IconButton
                 id='btn-swap-profiles'
-                icon='swap-horizontal'
+                icon='swap'
                 tooltip={t('Swap profiles')}
                 onClick={this.swapProfiles}
               />

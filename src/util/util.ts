@@ -227,7 +227,7 @@ const labels = [ 'B', 'KB', 'MB', 'GB', 'TB' ];
 
 export function bytesToString(bytes: number): string {
   let labelIdx = 0;
-  while (bytes > 1024) {
+  while (bytes >= 1024) {
     ++labelIdx;
     bytes /= 1024;
   }
@@ -236,4 +236,28 @@ export function bytesToString(bytes: number): string {
   } catch (err) {
     return '???';
   }
+}
+
+let convertDiv: HTMLDivElement;
+
+export function encodeHTML(input: string): string {
+  if (input === undefined) {
+    return undefined;
+  }
+  if (convertDiv === undefined) {
+    convertDiv = document.createElement('div');
+  }
+  convertDiv.innerText = input;
+  return convertDiv.innerHTML;
+}
+
+export function decodeHTML(input: string): string {
+  if (input === undefined) {
+    return undefined;
+  }
+  if (convertDiv === undefined) {
+    convertDiv = document.createElement('div');
+  }
+  convertDiv.innerHTML = input;
+  return convertDiv.innerText;
 }

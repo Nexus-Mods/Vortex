@@ -10,7 +10,7 @@ export interface IBar {
 
 export interface IBaseProps {
   data: IBar[];
-  gap: number;
+  gap?: number;
   totalRadius: number;
   offset?: number;
   maxWidth?: number;
@@ -36,7 +36,7 @@ class RadialProgress extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
     const { data, offset, style, totalRadius } = this.props;
-    const sideLength = (totalRadius + offset) * 2;
+    const sideLength = (totalRadius + (offset || 0)) * 2;
     return (
       <svg viewBox={`0 0 ${sideLength} ${sideLength}`} style={style}>
         {data.map(this.renderArc)}
@@ -49,7 +49,10 @@ class RadialProgress extends React.Component<IProps, {}> {
   private renderArc = (bar: IBar, idx: number, arr: IBar[]): JSX.Element => {
     const { offset, totalRadius } = this.props;
     return (
-      <g key={idx} transform={`translate(${totalRadius + offset}, ${totalRadius + offset})`}>
+      <g
+        key={idx}
+        transform={`translate(${totalRadius + (offset || 0)}, ${totalRadius + (offset || 0)})`}
+      >
         <path
           className={`radial-progress radial-progress-${bar.class}`}
           d={this.mArcGen(bar, idx, arr.length)}
@@ -64,13 +67,14 @@ class RadialProgress extends React.Component<IProps, {}> {
   }
 
   private updateArcGen(props: IProps) {
-    const { data, gap, maxWidth, totalRadius } = props;
+    const { data, maxWidth, totalRadius } = props;
     this.mWidthPerArc = totalRadius / (data.length + 1);
     if (maxWidth !== undefined) {
       this.mWidthPerArc = Math.min(this.mWidthPerArc, maxWidth);
     }
 
     const offset = this.props.offset || 0;
+    const gap = this.props.gap || 1;
 
     this.mArcGen = d3.arc<any, IBar>()
       .startAngle(0)
@@ -78,7 +82,7 @@ class RadialProgress extends React.Component<IProps, {}> {
       .innerRadius((item: IBar, idx: number, count: number) =>
         offset + this.mWidthPerArc * (idx + 1))
       .outerRadius((item: IBar, idx: number, count: number) =>
-        offset + this.mWidthPerArc * (idx + 2) - gap);
+        offset + this.mWidthPerArc * (idx + 2) - (gap || 1));
 
     this.mRestArcGen = d3.arc<any, IBar>()
       .startAngle((item: IBar) => this.perc(item) * 2 * Math.PI)
@@ -90,4 +94,4 @@ class RadialProgress extends React.Component<IProps, {}> {
    }
 }
 
-export default RadialProgress;
+export default RadialProgress as React.ComponentClass<IBaseProps>;

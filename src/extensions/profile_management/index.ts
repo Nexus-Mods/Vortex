@@ -25,7 +25,7 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 
-import { forgetMod, setProfile } from './actions/profiles';
+import { forgetMod, setProfile, setProfileActivated } from './actions/profiles';
 import { setCurrentProfile, setNextProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
 import { settingsReducer } from './reducers/settings';
@@ -140,7 +140,7 @@ export interface IExtensionContextExt extends IExtensionContext {
 }
 
 function init(context: IExtensionContextExt): boolean {
-  context.registerMainPage('layers', 'Profiles', ProfileView, {
+  context.registerMainPage('profile', 'Profiles', ProfileView, {
     hotkey: 'P',
     group: 'global',
     visible: () => (activeGameId(context.api.store.getState()) !== undefined)
@@ -152,7 +152,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['settings', 'profiles'], settingsReducer);
   context.registerReducer(['session', 'profileTransfer'], transferSetupReducer);
 
-  context.registerAction('game-discovered-buttons', 100, 'play', {
+  context.registerAction('game-discovered-buttons', 100, 'activate', {
     noCollapse: true,
   }, 'Manage',
     (instanceIds: string[]) => {
@@ -167,7 +167,7 @@ function init(context: IExtensionContextExt): boolean {
       context.api.store.dispatch(setNextProfile(profileId));
   });
 
-  context.registerAction('game-managed-buttons', 100, 'play', {
+  context.registerAction('game-managed-buttons', 100, 'activate', {
     noCollapse: true,
   }, 'Activate', (instanceIds: string[]) => {
     activateGame(context.api.store, instanceIds[0]);
@@ -296,7 +296,9 @@ function init(context: IExtensionContextExt): boolean {
                 .then(() => {
                   context.api.store.dispatch(setProgress('profile', 'deploying'));
                   const gameId = profile !== undefined ? profile.gameId : undefined;
-                  return store.dispatch(setCurrentProfile(gameId, current));
+                  store.dispatch(setCurrentProfile(gameId, current));
+                  store.dispatch(setProfileActivated(current));
+                  return null;
                 })
                 .catch((err: Error) => {
                   showError(store.dispatch, 'Failed to set profile', err);

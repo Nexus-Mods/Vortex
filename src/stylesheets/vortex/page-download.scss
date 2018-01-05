@@ -1,0 +1,44 @@
+#downloads-action-icons .btn {
+  @extend .btn-embed;
+}
+
+.download-panel {
+  height: 100%;
+  background-color: $brand-bg;
+  > .panel-body {
+    height: 100%;
+  }
+}
+
+#table-downloads {
+  padding-top: $half-gutter;
+  .header-game {
+    min-width: 80px;
+  }
+}
+
+.download-drop-panel {
+  margin-top: $half-gutter;
+}
+
+.active-downloads-slim {
+  font-size: smaller;
+}
+
+.active-downloads-container {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+
+  span {
+    font-size: small;
+  }
+
+  .progressbar {
+    margin: 8px 0px;
+  }
+}
+
+.main-page-body > .download-drop-panel {
+  height: auto;
+}

@@ -1,0 +1,62 @@
+.nexusmods-action-button {
+  display: inline;
+  background: #57a5cc;
+  padding: 10px 9px;
+  margin: 0 8px;
+  > svg {
+    margin-right: 5px;
+    use {
+      .st0,
+      .st1 {
+        fill: #57a5cc !important;
+        fill-opacity: 0 !important;
+      }
+    }
+  }
+
+  >.nexusmods-fake-link {
+    color: #ffffff;
+    font-size: 12px;
+    text-transform: uppercase;
+    text-decoration: none;
+    line-height: 1.3;
+  }
+}
+
+.nexus-download-banner {
+  background-color: $brand-info;
+  text-align: center;
+  padding: 4px 0;
+  border: $border-width solid $border-color;
+  border-bottom: 0;
+  .btn {
+    margin-left: 8px;
+  }
+}
+
+.nexus-main-banner {
+  background-size: cover !important;
+  padding: 10px;
+  width: 320px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  
+  div:first-child {
+    font-weight: bold;
+    margin-bottom: 4px;
+    font-family: 'BebasNeue';
+    font-size: 2.5em;
+  }
+
+  .right-center {
+    position: absolute;
+    right: 16px;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}

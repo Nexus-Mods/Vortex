@@ -11,7 +11,7 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
-import { truthy } from '../../util/util';
+import { decodeHTML, truthy } from '../../util/util';
 
 import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
@@ -33,6 +33,7 @@ import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import submitFeedback from './util/submitFeedback';
 import transformUserInfo from './util/transformUserInfo';
+import DashboardBanner from './views/DashboardBanner';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import LoginDialog from './views/LoginDialog';
@@ -118,8 +119,8 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
       api.sendNotification({
         id: url.fileId.toString(),
         type: 'success',
-        message: api.translate('Download finished: {{name}}',
-                               { replace: { name: nexusFileInfo.name } }),
+        title: api.translate('Download finished'),
+        message: nexusFileInfo.name,
         actions: [
           {
             title: 'Install', action: dismiss => {
@@ -181,6 +182,14 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
           api.events.emit('retrieve-categories', gameId, categories, isUpdate);
         })
         .catch((err) => {
+          if (err.code === 'ESOCKETTIMEOUT') {
+            api.sendNotification({
+              type: 'warning',
+              message: 'Timeout retrieving categories from server, please try again later.',
+            });
+            return;
+          }
+
           const errMessage = typeof(err) === 'string' ? err : err.message;
           const message = processErrorMessage(err.statusCode, errMessage);
           showError(api.store.dispatch,
@@ -394,8 +403,8 @@ function processAttributes(input: any) {
                               'fileInfo', 'category_name'], undefined),
     isPrimary: getSafe(input, ['download', 'modInfo', 'nexus',
                                'fileInfo', 'is_primary'], undefined),
-    logicalFileName: getSafe(input, ['download', 'modInfo', 'nexus',
-                                     'fileInfo', 'name'], undefined),
+    logicalFileName: decodeHTML(getSafe(input, ['download', 'modInfo', 'nexus',
+                                                'fileInfo', 'name'], undefined)),
     changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
     uploadedTimestamp: getSafe(input, ['download', 'modInfo', 'nexus',
                                        'fileInfo', 'uploaded_timestamp'], undefined),
@@ -672,6 +681,10 @@ function once(api: IExtensionApi) {
       updateDebouncer.schedule(undefined, newValue));
 }
 
+function goBuyPremium() {
+  opn('https://rd.nexusmods.com/register/premium');
+}
+
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
@@ -679,13 +692,46 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['settings', 'nexus'], settingsReducer);
   context.registerReducer(['session', 'nexus'], sessionReducer);
   context.registerDialog('login-dialog', LoginDialog, () => ({ nexus }));
+  context.registerBanner('downloads', () => {
+    const t = context.api.translate;
+    return (
+      <div className='nexus-download-banner'>
+        {t('Nexus downloads are capped at 1MB/s - '
+          + 'Go Premium for uncapped download speeds')}
+        <Button bsStyle='ad' onClick={goBuyPremium}>{t('Buy Now')}</Button>
+      </div>);
+  }, {
+    props: {
+      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined),
+    },
+    condition: (props: any): boolean => props.isPremium === false,
+  });
+
+  context.registerBanner('main-toolbar', () => {
+    const t = context.api.translate;
+    return (
+      <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
+        <div>{t('Go Premium')}</div>
+        <div>{t('Uncapped downloads, no adverts')}</div>
+        <div>{t('Support Nexus Mods')}</div>
+        <div className='right-center'>
+          <Button bsStyle='ad' onClick={goBuyPremium}>{context.api.translate('Buy Now')}</Button>
+        </div>
+      </div>);
+  }, {
+    props: {
+      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined),
+    },
+    condition: (props: any): boolean => props.isPremium === false,
+  });
 
   const logInDialog = () => {
     context.api.store.dispatch(setDialogVisible('login-dialog'));
   };
 
   const associateNXM = () => {
-    context.api.store.dispatch(setAssociatedWithNXMURLs(true));
+    const state: any = context.api.store.getState();
+    context.api.store.dispatch(setAssociatedWithNXMURLs(!state.settings.nexus.associateNXM));
   };
 
   context.registerModSource('nexus', 'Nexus Mods', () => {
@@ -693,32 +739,10 @@ function init(context: IExtensionContextExt): boolean {
     opn(`http://www.nexusmods.com/${convertGameId(gameMode)}`);
   });
 
-  context.registerToDo('nxm-login', 'settings', () => ({
-    APIKey: context.api.store.getState().confidential.account.nexus.APIKey,
-  }), (props: { APIKey: string }) => props.APIKey === undefined, () => {
-    const t = context.api.translate;
-
-    return (<span>{t('You\'re not logged in on Nexus Mods.')}</span>);
-  }, () => ({
-    icon: 'key',
-    text: context.api.translate('Log in'),
-    onClick: logInDialog,
-  }), 50);
-
   context.registerToDo('nxm-associated', 'settings', () => ({
     associated: context.api.store.getState().settings.nexus.associateNXM,
-  }), (props: { associated: boolean }) => !props.associated, () => {
-    const t = context.api.translate;
-    return (
-      <span>
-        {t('Do you want Vortex to handle download links on Nexus?')}
-      </span>
-    );
-  }, () => ({
-    icon: 'chain',
-    text: context.api.translate('Associate'),
-    onClick: associateNXM,
-  }));
+  }), 'link', 'Handle Nexus Links', associateNXM, undefined, (t, props: any) =>
+    <span>{props.associated ? t('Yes') : t('No')}</span>, undefined);
 
   context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {
     const nxm: NXMUrl = new NXMUrl(nxmurl);
@@ -741,6 +765,11 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
+
+  context.registerDashlet('Nexus Account', 3, 1, 0, DashboardBanner, undefined, undefined, {
+    fixed: true,
+    closable: true,
+  });
 
   context.registerAttributeExtractor(50, (input: any) => {
     return Promise.resolve(processAttributes(input));

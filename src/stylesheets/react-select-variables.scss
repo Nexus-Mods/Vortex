@@ -3,10 +3,9 @@ $select-input-bg-disabled:          $input-bg-disabled !default;
 $select-input-border-color:         $input-border !default;
 $select-input-border-radius:        $input-border-radius !default;
 $select-input-border-focus:         $input-border-focus !default;
-$select-input-border-width:         2px !default;
-$select-input-height:               35px !default;
-$select-input-internal-height:      $line-height-computed !default;
-//$select-input-internal-height:      ($select-input-height - ($select-input-border-width * 2)) !default;
+$select-input-border-width:         1px !default;
+$select-input-height:               25px !default;
+$select-input-internal-height:      ($select-input-height - ($select-input-border-width * 2)) !default;
 $select-input-placeholder:          $gray-light !default;
 $select-text-color:                 $text-color !default;
 $select-link-hover-color:           $link-hover-color !default;
@@ -37,7 +36,7 @@ $select-clear-width:                ($select-input-internal-height / 2) !default
 // arrow indicator
 $select-arrow-color:                $gray !default;
 $select-arrow-color-hover:          $gray-dark !default;
-$select-arrow-width:                0.5em !default;
+$select-arrow-width:                5px !default;
 
 // loading indicator
 $select-loading-size:               16px !default;

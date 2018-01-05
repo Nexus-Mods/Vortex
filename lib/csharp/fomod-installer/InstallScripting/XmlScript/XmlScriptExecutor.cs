@@ -172,7 +172,9 @@ namespace FomodInstaller.Scripting.XmlScript
                 foreach (Option option in group.Options)
                 {
                     OptionType type = resolveOptionType(option);
-                    if ((type == OptionType.Required) || (type == OptionType.Recommended))
+                    if ((type == OptionType.Required)
+                        || (type == OptionType.Recommended)
+                        || (group.Type == OptionGroupType.SelectAll))
                     {
                         enableOption(option);
                         setFirst = false;

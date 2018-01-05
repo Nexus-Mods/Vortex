@@ -1,3 +1,4 @@
+import ProgressBar from '../../controls/ProgressBar';
 import TextFilter from '../../controls/table/TextFilter';
 
 import { ITableAttribute } from '../../types/ITableAttribute';
@@ -11,7 +12,6 @@ import { IDownload } from './types/IDownload';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
-import {ProgressBar} from 'react-bootstrap';
 import * as url from 'url';
 
 function nameFromUrl(input: string) {
@@ -58,7 +58,7 @@ function progress(props) {
     default: {
       const label = ((received * 100) / size).toFixed(0);
       return (
-        <ProgressBar now={received} max={size} label={`${label} %`} />
+        <ProgressBar now={received} max={size} showPercentage />
       );
     }
   }

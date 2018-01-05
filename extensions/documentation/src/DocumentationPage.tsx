@@ -41,9 +41,7 @@ class DocumentationPage extends React.Component<{}, IComponentState> {
 
   private renderWait() {
     return (
-      <Icon
-        name='spinner'
-        pulse
+      <Spinner
         style={{
           width: '64px',
           height: '64px',

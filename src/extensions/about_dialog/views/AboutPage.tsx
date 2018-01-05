@@ -1,6 +1,7 @@
 import Icon from '../../../controls/Icon';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import {log} from '../../../util/log';
+import MainPage from '../../../views/MainPage';
 
 import { ILicense } from '../types/ILicense';
 
@@ -8,7 +9,7 @@ import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, Image, Media, Modal } from 'react-bootstrap';
+import { Button, Image, Media, Modal, Panel } from 'react-bootstrap';
 import * as ReactMarkdown from 'react-markdown';
 
 let modules = {};
@@ -37,7 +38,7 @@ interface IComponentState {
 
 type IProps = IBaseProps;
 
-class AboutDialog extends ComponentEx<IProps, IComponentState> {
+class AboutPage extends ComponentEx<IProps, IComponentState> {
   private mMounted: boolean;
   constructor(props) {
     super(props);
@@ -67,28 +68,28 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
 
     let body = null;
 
-    if (shown) {
-      const licenseBox = ownLicense
-        ? (
-          <ReactMarkdown
-            className='license-text-own'
-            disallowedTypes={['Link']}
-            source={ownLicenseText}
-          />
-        ) : (
-          <div style={{ marginTop: 5 }}><p><strong>{t('Third-party libraries')}</strong></p>
-          <div className='about-panel'>
-            {moduleList.map(this.renderModule)}
-          </div>
+    const licenseBox = ownLicense
+      ? (
+        <ReactMarkdown
+          className='license-text-own'
+          disallowedTypes={['Link']}
+          source={ownLicenseText}
+        />
+      ) : (
+        <div className='third-party-box'><div><h4>{t('Third-party libraries')}</h4></div>
+        <div className='about-panel'>
+          {moduleList.map(this.renderModule)}
         </div>
-        );
+      </div>
+      );
 
-      body = (
-        <Modal.Body id='about-dialog'>
-          <Media style={{ marginBottom: 5 }}>
+    body = (
+      <MainPage.Body id='about-dialog'>
+        <Panel>
+          <Media style={{ marginBottom: 5, display: 'block' }}>
             <Media.Left><Image src={imgPath} /></Media.Left>
             <Media.Body>
-              <Media.Heading>Vortex {remote.app.getVersion()}</Media.Heading>
+              <h2 className='media-heading'>Vortex {remote.app.getVersion()}</h2>
               <p>&#169;2017 Black Tree Gaming Ltd.</p>
               <p>{t('Released under')} <a onClick={this.showOwnLicense}>GPL-3</a> {t('License')}</p>
             </Media.Body>
@@ -97,27 +98,14 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
           <p><strong>Node</strong> {process.versions.node}</p>
           <p><strong>Chrome</strong> {(process.versions as any).chrome}</p>
           {licenseBox}
-        </Modal.Body>
-      );
-    }
+        </Panel>
+      </MainPage.Body>
+    );
 
     return (
-      <Modal show={shown} onHide={this.props.onHide}>
-        <Modal.Header>
-          <Modal.Title>
-            Vortex
-          </Modal.Title>
-        </Modal.Header>
+      <MainPage>
         {body}
-        <Modal.Footer>
-          <Button
-            id='close'
-            onClick={this.props.onHide}
-          >
-            {t('Close')}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      </MainPage>
     );
   }
 
@@ -141,17 +129,16 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
     const licenseFile = mod.licenseFile !== undefined
       ? path.join(remote.app.getAppPath(), mod.licenseFile)
       : path.join(remote.app.getAppPath(), 'assets', 'licenses', license + '.md');
-    fs.readFileAsync(licenseFile)
-      .then((licenseText: NodeBuffer) => {
+    fs.readFileAsync(licenseFile, { })
+      .then(licenseText => {
         if (this.mMounted) {
           this.nextState.licenseText = licenseText.toString();
         }
       })
-      .catch((err) => {
+      .catch(err => {
         this.nextState.licenseText = t('Missing license {{licenseFile}}',
           { replace: { licenseFile } });
-      })
-      ;
+      });
   }
 
   private renderModule = (mod: ILicense) => {
@@ -183,4 +170,4 @@ class AboutDialog extends ComponentEx<IProps, IComponentState> {
 
 export default
   translate(['common'], { wait: false })(
-    AboutDialog) as React.ComponentClass<IBaseProps>;
+    AboutPage) as React.ComponentClass<IBaseProps>;

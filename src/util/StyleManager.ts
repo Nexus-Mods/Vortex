@@ -5,6 +5,7 @@ import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import * as sass from 'node-sass';
 import * as path from 'path';
+import { IExtensionApi } from '../types/IExtensionContext';
 
 const app = appIn || remote.app;
 
@@ -16,7 +17,8 @@ class StyleManager {
   private static RENDER_DELAY = 200;
   private mPartials: Array<{ key: string, file: string }>;
   private mRenderDebouncer: Debouncer;
-  constructor() {
+
+  constructor(api: IExtensionApi) {
     this.mPartials = [
       { key: '__functions',  file: 'functions' },
       { key: '__variables',  file: 'variables' },
@@ -29,7 +31,14 @@ class StyleManager {
       { key: 'style',        file: undefined },
     ];
 
-    this.mRenderDebouncer = new Debouncer(() => this.render(), StyleManager.RENDER_DELAY);
+    this.mRenderDebouncer = new Debouncer(() => {
+      return this.render()
+        .catch(err => {
+          api.showErrorNotification('Style failed to compile', err, {
+            allowReport: false,
+          });
+        });
+    }, StyleManager.RENDER_DELAY);
   }
 
   /**
@@ -72,7 +81,7 @@ class StyleManager {
     });
   }
 
-  private render() {
+  private render(): Promise<void> {
     const stylesheets: string[] = this.mPartials
       .filter(partial => partial.file !== undefined)
       .map(partial => path.isAbsolute(partial.file)

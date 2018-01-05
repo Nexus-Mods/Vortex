@@ -1,0 +1,52 @@
+// menu that fills its parent control and becomes visible on hover
+.hover-menu {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .hover-content {
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity ease 300ms, transform ease 300ms;
+    background-color: rgba(215, 143, 70, 0.86);
+    .buttons .btn {
+      background-color: $text-color;
+      color: $brand-clickable;
+      border: 0px;
+      display: flex;
+      width: 100%;
+      margin: 4px;
+      &:hover {
+        background-color: darken($brand-primary, 10%);
+        color: $gray-darker;
+      }
+      svg {
+        margin: auto 4px;
+      }
+    }
+  }
+
+  &:hover {
+    .hover-content {
+      opacity: 1;
+      transform: scale(1);
+      width: 100%;
+      height: 100%;
+
+      &.hover-launcher {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: transparent;
+        .icon {
+          width: 3em;
+          height: 3em;
+        }
+      }
+    }
+  }
+}

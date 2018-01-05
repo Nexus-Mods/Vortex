@@ -55,6 +55,7 @@ interface IConnectedProps {
 
 interface IComponentState {
   treeData: ICategoriesTree[];
+  expandedTreeData: ICategoriesTree[];
   expanded: string[];
   showEmpty: boolean;
   searchString: string;
@@ -76,6 +77,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     super(props);
     this.initState({
       treeData: [],
+      expandedTreeData: [],
       expanded: [],
       showEmpty: true,
       searchString: '',
@@ -88,19 +90,19 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     this.mButtons = [
       {
         title: t('Expand All'),
-        icon: 'expand',
+        icon: 'expand-all',
         action: this.expandAll,
       }, {
         title: t('Collapse All'),
-        icon: 'compress',
+        icon: 'collapse-all',
         action: this.collapseAll,
       }, {
         title: t('Add Root Category'),
         icon: 'folder-add',
         action: this.addRootCategory,
       }, {
-        title: t('Show/Hide empty categories'),
-        icon: 'eye-slash',
+        title: t('Toggle empty categories'),
+        icon: 'hide',
         action: this.toggleShowEmpty,
       },
     ];
@@ -118,23 +120,20 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t } = this.props;
-    const { expanded, searchString, searchFocusIndex,
-            searchFoundCount, showEmpty, treeData } = this.state;
+    const { expandedTreeData, searchString, searchFocusIndex,
+            searchFoundCount } = this.state;
 
     const Tree = tree.SortableTreeWithoutDndContext;
-    if (treeData !== undefined && treeData.length > 0) {
-
-      const expandedTreeData =
-        this.applyExpand(treeData, showEmpty, new Set(expanded));
-
+    if ((expandedTreeData !== undefined) && (expandedTreeData.length > 0)) {
       return (
-        <div style={{ height: 500 }}>
+        <div className='categories-dialog'>
           <IconBar
             group='categories-icons'
             staticElements={this.mButtons}
+            className='menubar categories-icons'
           />
           <div className='search-category-box'>
-            <div style={{ display: 'inline-block' }}>
+            <div style={{ display: 'inline-block', position: 'relative' }}>
               <FormControl
                 id='search-category-input'
                 type='text'
@@ -142,6 +141,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
                 value={searchString || ''}
                 onChange={this.startSearch}
               />
+              <Icon className='search-icon' name='search' />
               <span className='search-position' >
                 {t('{{ pos }} of {{ total }}', {
                   replace: {
@@ -154,7 +154,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             <IconButton
               id='btn-search-category-prev'
               className='btn-embed'
-              icon='up'
+              icon='search-up'
               tooltip={t('Prev')}
               type='button'
               disabled={!searchFoundCount}
@@ -163,7 +163,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             <IconButton
               id='btn-search-category-next'
               className='btn-embed'
-              icon='down'
+              icon='search-down'
               tooltip={t('Next')}
               type='button'
               disabled={!searchFoundCount}
@@ -176,6 +176,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             onVisibilityToggle={this.toggleVisibility}
             onMoveNode={this.moveNode}
             style={{ height: '95%' }}
+            searchMethod={this.searchMethod}
             searchQuery={searchString}
             searchFocusOffset={searchFocusIndex}
             searchFinishCallback={this.searchFinishCallback}
@@ -201,6 +202,20 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
         </div>
       );
     }
+  }
+
+  // tslint:disable-next-line:no-shadowed-variable
+  private searchMethod = ({ node, path, treeIndex, searchQuery }:
+    { node: ICategoriesTree, path: number[] | string[],
+      treeIndex: number, searchQuery: any }) => {
+    return (searchQuery.length > 0) &&
+      (node.title.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1);
+  }
+
+  private updateExpandedTreeData = () => {
+    const { expanded, showEmpty, treeData } = this.nextState;
+    this.nextState.expandedTreeData =
+      this.applyExpand(treeData, showEmpty, new Set(expanded));
   }
 
   private getNonEmptyCategories(treeData: ICategoriesTree[], ancestry: string[]): string[] {
@@ -247,6 +262,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       const newTree = createTreeDataObject(t, categories, mods);
       this.nextState.treeData = newTree;
       this.nextState.showEmpty = !showEmpty;
+      this.updateExpandedTreeData();
     } catch (err) {
       onShowError('An error occurred hiding/showing the empty categories', err);
     }
@@ -255,16 +271,17 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   private expandAll = () => {
     const { categories } = this.props;
     this.nextState.expanded = Object.keys(categories);
+    this.updateExpandedTreeData();
   }
 
   private collapseAll = () => {
     this.nextState.expanded = [];
+    this.updateExpandedTreeData();
   }
 
-  private renameCategory = (evt: React.MouseEvent<any>) => {
+  private renameCategory = (categoryId: string) => {
     const {categories, gameMode, onShowDialog, onRenameCategory} = this.props;
 
-    const categoryId = evt.currentTarget.value;
     const category = categories[categoryId];
 
     onShowDialog('info', 'Rename Category', {
@@ -277,10 +294,9 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private addCategory = (evt: React.MouseEvent<any>) => {
+  private addCategory = (parentId: string) => {
     const {categories, gameMode, onSetCategory, onShowDialog, onShowError} = this.props;
     const lastIndex = this.searchLastRootId(categories);
-    const parentId = evt.currentTarget.value;
 
     onShowDialog('question', 'Add Child Category', {
       input: [
@@ -374,8 +390,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
     if (categories !== undefined) {
       if (Object.keys(categories).length !== 0) {
-        this.nextState.treeData =
-          createTreeDataObject(t, categories, mods);
+        this.nextState.treeData = createTreeDataObject(t, categories, mods);
+        this.updateExpandedTreeData();
       } else {
         const globalPersistentPath = path.join(remote.app.getPath('userData'), 'state');
         onShowError('An error occurred loading the categories.',
@@ -404,54 +420,42 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private removeCategoryId = (id: string) => {
+  private removeCategory = (id: string) => {
     const { categories, gameMode, onRemoveCategory } = this.props;
     Object.keys(categories)
       .filter(iterId => categories[iterId].parentCategory === id)
-      .forEach(iterId => this.removeCategoryId(iterId));
+      .forEach(iterId => this.removeCategory(iterId));
     onRemoveCategory(gameMode, id);
-  }
-
-  private removeCategory = (evt: React.MouseEvent<any>) => {
-    this.removeCategoryId(evt.currentTarget.value);
   }
 
   private generateNodeProps = (rowInfo: SortableTreeT.ExtendedNodeData) => {
     const {t} = this.props;
+    const actions: IActionDefinition[] = [
+      {
+        icon: 'edit',
+        title: t('Rename'),
+        action: this.renameCategory,
+      },
+      {
+        icon: 'folder-add',
+        title: t('Add Child'),
+        action: this.addCategory,
+      },
+      {
+        icon: 'remove',
+        title: t('Remove'),
+        action: this.removeCategory,
+      },
+    ];
     return {
       buttons: [
         (
-          <Button
-            id='rename-category'
-            className='btn-embed'
-            tooltip={t('Rename Category')}
-            value={rowInfo.node.categoryId}
-            onClick={this.renameCategory}
-          >
-            <Icon name='pencil' />
-          </Button>
-        ),
-        (
-          <Button
-            id='add-category'
-            className='btn-embed'
-            tooltip={t('Add Child Category')}
-            value={rowInfo.node.categoryId}
-            onClick={this.addCategory}
-          >
-            <Icon name='folder-add' />
-          </Button>
-        ),
-        (
-          <Button
-            id='remove-category'
-            className='btn-embed'
-            tooltip={t('Remove Category')}
-            value={rowInfo.node.categoryId}
-            onClick={this.removeCategory}
-          >
-            <Icon name='remove' />
-          </Button>
+          <IconBar
+            group='category-icons'
+            staticElements={actions}
+            instanceId={rowInfo.node.categoryId}
+            dropdown
+          />
         ),
       ],
     };
@@ -468,6 +472,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     } else {
       this.nextState.expanded.splice(this.nextState.expanded.indexOf(args.node.categoryId));
     }
+
+    this.updateExpandedTreeData();
   }
 
   private moveNode =

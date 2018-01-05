@@ -98,6 +98,7 @@ class MainWindow {
       x: getSafe(windowMetrics, ['position', 'x'], undefined),
       y: getSafe(windowMetrics, ['position', 'y'], undefined),
       autoHideMenuBar: true,
+      frame: !getSafe(windowMetrics, ['customTitlebar'], true),
       show: false,
       title: 'Vortex',
       webPreferences: {

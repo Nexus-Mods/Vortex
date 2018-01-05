@@ -215,7 +215,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
             className={classes.join(' ')}
             key={`rules-${profile.id}`}
             tooltip={t('Drag to another profile to transfer settings')}
-            icon='import'
+            icon='connection'
             ref={this.setRef}
             onClick={this.toggleOverlay}
           />

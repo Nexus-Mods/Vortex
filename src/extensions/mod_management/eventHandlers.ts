@@ -163,8 +163,15 @@ export function onRemoveMod(api: IExtensionApi,
 
   // we need to remove the mod from activation, otherwise me might leave orphaned
   // links in the mod directory
-  const profileId =
-    getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameMode], undefined);
+  let profileId: string;
+  const lastActive = getSafe(state,
+    ['settings', 'profiles', 'lastActiveProfile', gameMode], undefined);
+  if (lastActive !== undefined) {
+    profileId = (typeof(lastActive) === 'string')
+      ? lastActive
+      : lastActive.profileId;
+  }
+
   const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
 
   const wasEnabled = getSafe(profile, ['modState', modId, 'enabled'], false);

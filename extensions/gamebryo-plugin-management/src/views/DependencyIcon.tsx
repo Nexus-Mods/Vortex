@@ -206,7 +206,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
           className='quickedit-close'
           tooltip={t('Close')}
           onClick={this.closeQuickEdit}
-          icon='check'
+          icon='input-confirm'
         />
       </div>
     );
@@ -224,8 +224,8 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       <div style={{ textAlign: 'center', width: '100%' }}>
         <tooltip.ToggleButton
           id={`quick-edit-${quickEdit.plugin}`}
-          onIcon='square-check'
-          offIcon='square-empty'
+          onIcon='checkbox-checked'
+          offIcon='checkbox-unchecked'
           state={thisEnabled}
           disabled={masterEnabled}
           onClick={this.toggleQuick}
@@ -324,7 +324,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
             className={classes.join(' ')}
             key={`rules-${plugin.name}`}
             tooltip={t('Drag to another plugin to set userlist rule', { ns: 'gamebryo-plugin' })}
-            icon='connect'
+            icon='connection'
             ref={this.setRef}
             onClick={this.toggleOverlay}
           />

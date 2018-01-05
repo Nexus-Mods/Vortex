@@ -76,11 +76,11 @@ function updateSaves(store: Redux.Store<any>,
 }
 
 function init(context): boolean {
-  context.registerAction('savegames-icons', 200, 'circle-in', {}, 'Transfer Savegames', () => {
+  context.registerAction('savegames-icons', 200, 'transfer', {}, 'Transfer Savegames', () => {
     context.api.store.dispatch(showTransferDialog(true));
   });
 
-  context.registerMainPage('save', 'Save Games', SavegameList, {
+  context.registerMainPage('savegame', 'Save Games', SavegameList, {
     hotkey: 'A',
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
@@ -88,11 +88,14 @@ function init(context): boolean {
 
   context.registerReducer(['session', 'saves'], sessionReducer);
   context.registerProfileFeature(
-      'local_saves', 'boolean', 'save', 'This profile has its own save games',
+      'local_saves', 'boolean', 'savegame', 'This profile has its own save games',
       () => gameSupported(selectors.activeGameId(context.api.store.getState())));
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
+
+    context.api.setStylesheet('savegame-management',
+                              path.join(__dirname, 'savegame_management.scss'));
 
     context.api.events.on('profile-did-change', (profileId: string) => {
       const profile: types.IProfile =

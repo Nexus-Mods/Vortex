@@ -17,8 +17,8 @@ import { Alert, Button, ControlLabel, DropdownButton, FormControl, FormGroup,
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
-import { ComponentEx, Icon, ITableRowAction, log, Modal, selectors, Steps, Table,
-         TableNumericFilter, TableTextFilter, Toggle,
+import { ComponentEx, Icon, ITableRowAction, log, Modal, selectors, Spinner, Steps,
+         Table, TableNumericFilter, TableTextFilter, Toggle,
          tooltip, types, util,
 } from 'vortex-api';
 
@@ -88,7 +88,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         })
         .catch(err => {
           log('warn', 'invalid MO directory', { error: err.messag });
-          this.nextState.importPathInvalid = t('No valid MO installation found at this location');
+          this.nextState.importPathInvalid =
+            t('No valid MO installation found at this location: {{error}}',
+              { replace: { error: err.message } });
         });
     }, 500);
 
@@ -112,10 +114,10 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <Modal id='import-dialog' show={visible} onHide={this.nop}>
         <Modal.Header>
-          <Modal.Title>{t('Mod Organizer (MO) Migration Tool')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body style={{ height: '60vh', display: 'flex', flexDirection: 'column' }}>
+          <h2>{t('Mod Organizer (MO) Migration Tool')}</h2>
           {this.renderStep(importStep)}
+        </Modal.Header>
+        <Modal.Body>
           {error !== undefined ? <Alert>{error}</Alert> : this.renderContent(importStep)}
         </Modal.Body>
         <Modal.Footer>
@@ -176,7 +178,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   private renderWait(): JSX.Element {
     return (
       <div className='import-wait-container'>
-        <Icon name='spinner' pulse className='page-wait-spinner' />
+        <Spinner className='page-wait-spinner' />
       </div>
     );
   }
@@ -186,12 +188,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const { instances } = this.state;
 
     return (
-      <span
-        style={{
-          display: 'flex', flexDirection: 'column',
-          justifyContent: 'space-around', height: '100%',
-        }}
-      >
+      <span className='start-content'>
         {t('This tool is an easy way of transferring your current '
           + 'MO configuration into Vortex.')}
         <div>
@@ -203,13 +200,17 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           </ul>
         </div>
         {instances === undefined
-          ? <Icon name='spinner' pulse />
+          ? <Spinner />
           : (
-            <div>
-              {t('Select a MO2 instance...')}
-              {this.renderInstances(instances)}
-              {t('... or browse for a MO1 or portable MO2 install')}
-              {this.renderBrowse()}
+            <div className='start-pick-instance'>
+              <div>
+                {t('Select a MO2 instance...')}
+                {this.renderInstances(instances)}
+              </div>
+              <div>
+                {t('... or browse for a MO1 or portable MO2 install')}
+                {this.renderBrowse()}
+              </div>
             </div>
           )
         }
@@ -245,7 +246,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     const { importPath, importPathInvalid } = this.state;
     return (
-      <FormGroup validationState={importPathInvalid !== undefined ? 'error' : undefined}>
+      <FormGroup
+        validationState={importPathInvalid !== undefined ? 'error' : undefined}
+      >
         <InputGroup>
           <FormControl
             type='text'
@@ -254,9 +257,10 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           />
           <InputGroup.Button>
             <tooltip.IconButton
+              className='btn-embed'
               tooltip={t('Browse')}
               onClick={this.browse}
-              icon='folder-open'
+              icon='browse'
             />
           </InputGroup.Button>
         </InputGroup>
@@ -318,8 +322,15 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       <div className='import-working-container'>
         {
           failedImports.length === 0
-            ? <span className='import-success'><Icon name='check' /> {t('Import successful')}</span>
-            : <span className='import-errors'><Icon name='cross' /> {t('There were errors')}</span>
+            ? (
+              <span className='import-success'>
+                <Icon name='feedback-success' /> {t('Import successful')}
+              </span>
+            ) : (
+              <span className='import-errors'>
+                <Icon name='feedback-error' />{t('There were errors')}
+              </span>
+            )
         }
         <span className='import-review-text'>
           {t('You can review the log at')}
@@ -468,7 +479,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   private genActions(): ITableRowAction[] {
     return [
       {
-        icon: 'square-check',
+        icon: 'checkbox-checked',
         title: 'Enable',
         action: (instanceIds: string[]) => {
           instanceIds.forEach(id => this.nextState.importEnabled[id] = true);
@@ -477,7 +488,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         singleRowAction: false,
       },
       {
-        icon: 'square-empty',
+        icon: 'checkbox-unchecked',
         title: 'Disable',
         action: (instanceIds: string[]) => {
           instanceIds.forEach(id => this.nextState.importEnabled[id] = false);
@@ -579,7 +590,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
             <tooltip.Icon
               id={`import-duplicate-${mod.nexusId}`}
               tooltip={t('This mod is already managed by Vortex')}
-              name='triangle-alert'
+              name='feedback-warning'
             />
           ) : null;
         },

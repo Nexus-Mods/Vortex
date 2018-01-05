@@ -11,7 +11,6 @@ export interface IBaseProps {
   active: boolean;
   secondary: boolean;
   overlayPortal: () => HTMLElement;
-  headerPortal: () => HTMLElement;
 }
 
 export interface IMainPageContext {
@@ -25,17 +24,19 @@ const nop = () => undefined;
 class MainPageContainer extends ComponentEx<IBaseProps, {}> {
   public static childContextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
-    headerPortal: PropTypes.func,
     overlayPortal: PropTypes.func,
+    headerPortal: PropTypes.func,
     page: PropTypes.string,
   };
 
+  private headerRef: HTMLElement;
+
   public getChildContext() {
-    const { active, headerPortal, overlayPortal, page } = this.props;
+    const { active, overlayPortal, page } = this.props;
     return {
       api: this.context.api,
       overlayPortal: this.props.overlayPortal,
-      headerPortal: this.props.headerPortal,
+      headerPortal: () => this.headerRef,
       page: page.title,
     };
   }
@@ -54,7 +55,10 @@ class MainPageContainer extends ComponentEx<IBaseProps, {}> {
 
       return (
         <div className={classes.join(' ')}>
-          <page.component active={active} secondary={secondary} {...props} />
+          <div className='mainpage-header-container' ref={this.setHeaderRef} />
+          <div className='mainpage-body-container'>
+            <page.component active={active} secondary={secondary} {...props} />
+          </div>
         </div>
       );
     } catch (err) {
@@ -65,6 +69,10 @@ class MainPageContainer extends ComponentEx<IBaseProps, {}> {
         </div>
       );
     }
+  }
+
+  private setHeaderRef = ref => {
+    this.headerRef = ref;
   }
 }
 

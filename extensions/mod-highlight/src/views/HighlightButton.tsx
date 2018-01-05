@@ -10,6 +10,9 @@ const cssHighlightList: string[] = [
   'highlight-3',
   'highlight-4',
   'highlight-5',
+  'highlight-6',
+  'highlight-7',
+  'highlight-8',
   'highlight-default',
 ];
 
@@ -37,7 +40,7 @@ interface IComponentState {
  * @class HighlightButton
  */
 class HighlightButton extends ComponentEx<IProps, IComponentState> {
-  private mRef: JSX.Element;
+  private mRef: tooltip.IconButton;
 
   constructor(props: IProps) {
     super(props);
@@ -55,8 +58,15 @@ class HighlightButton extends ComponentEx<IProps, IComponentState> {
     const color = util.getSafe(mod.attributes, ['color'], '');
     const icon = util.getSafe(mod.attributes, ['icon'], '');
 
-    const modIcon: string[] = ['bomb', 'map', 'shield', 'flask',
-      'flag', 'hotel', 'flash', 'home', 'eye'];
+    const modIcon: string[] = [
+      'highlight-conflict',
+      'highlight-shield',
+      'highlight-map',
+      'highlight-lab',
+      'highlight-flag',
+      'highlight-temple',
+      'highlight-home',
+      'highlight'];
 
     const popoverBottom = (
       <Popover
@@ -73,7 +83,7 @@ class HighlightButton extends ComponentEx<IProps, IComponentState> {
           </div>
           <ControlLabel>{t('Select mod icon')}
           </ControlLabel>
-          <div>
+          <div className='highlight-icons'>
             {modIcon.map(this.renderIcons)}
           </div>
         </FormGroup>
@@ -94,7 +104,7 @@ class HighlightButton extends ComponentEx<IProps, IComponentState> {
         <tooltip.IconButton
           ref={this.setRef}
           className={'highlight-base ' + (color !== '' ? color : 'highlight-default')}
-          icon={icon !== '' ? icon : 'eye'}
+          icon={icon !== '' ? icon : 'highlight'}
           id={mod.id}
           tooltip={t('Change Icon')}
           onClick={this.toggleOverlay}
@@ -113,7 +123,7 @@ class HighlightButton extends ComponentEx<IProps, IComponentState> {
         value={highlightColor}
         onClick={this.toggleColors}
       >
-        <Icon name={highlightColor === 'highlight-default' ? 'minus-circle' : 'plus-circle'} />
+        <Icon name={highlightColor === 'highlight-default' ? 'remove' : 'add'} />
       </Button>
     );
   }
@@ -143,7 +153,7 @@ class HighlightButton extends ComponentEx<IProps, IComponentState> {
     onSetModAttribute(gameMode, mod.id, 'color', color.currentTarget.value);
   }
 
-  private setRef = (ref: JSX.Element) => {
+  private setRef = (ref: tooltip.IconButton) => {
     this.mRef = ref;
   }
 

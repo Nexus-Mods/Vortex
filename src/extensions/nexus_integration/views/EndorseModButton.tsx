@@ -1,4 +1,5 @@
 import Icon from '../../../controls/Icon';
+import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
 
@@ -25,18 +26,15 @@ class EndorseModButton extends ComponentEx<IProps, {}> {
     if (endorsedStatus === 'pending') {
       return (
         <div style={{ textAlign: 'center' }}>
-          <Icon
-            name='spinner'
-            pulse
-          />
+          <Spinner />
         </div>
       );
     }
 
     const { icon, tooltip } = {
-      Undecided: { icon: 'like-maybe', tooltip: t('Undecided') },
-      Abstained: { icon: 'like-no', tooltip: t('Abstained') },
-      Endorsed: { icon: 'like', tooltip: t('Endorsed') },
+      Undecided: { icon: 'endorse-maybe', tooltip: t('Undecided') },
+      Abstained: { icon: 'endorse-no', tooltip: t('Abstained') },
+      Endorsed: { icon: 'endorse-yes', tooltip: t('Endorsed') },
     }[endorsedStatus] || { icon: 'like-maybe', tooltip: t('Undecided') };
 
     return (

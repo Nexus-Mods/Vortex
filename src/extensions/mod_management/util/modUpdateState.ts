@@ -8,7 +8,7 @@ import * as path from 'path';
 
 export type UpdateState =
   'bug-update' | 'bug-update-site' | 'bug-disable' |
-  'update' | 'update-site' | 'current';
+  'update' | 'update-site' | 'current' | 'install';
 
 function updateState(mod: IModWithState, downloadPath: string, mods: {}): UpdateState {
   const fileId: string = getSafe(mod.attributes, ['fileId'], undefined);

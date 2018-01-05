@@ -1,6 +1,8 @@
 import { showDialog } from '../../../actions/notifications';
+import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
+import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { IStatePaths } from '../../../types/IState';
@@ -30,6 +32,7 @@ import {
   HelpBlock, InputGroup, Jumbotron, Modal, Panel,
 } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { Placeholder } from '../../../util/asyncRequire';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -103,12 +106,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     if (game === undefined) {
       return (
-        <Jumbotron>
-          <div style={{ fontSize: 'x-large', margin: '0 1em' }}>
-            {t('Settings on this page are game-specific ' +
-              'so you have to select a game to manage first.')}
-          </div>
-        </Jumbotron>
+        <EmptyPlaceholder
+          icon='sliders'
+          text={t('Please select a game to manage first')}
+          subtext={t('Settings on this page can be set for each game individually.')}
+        />
       );
     }
 
@@ -123,32 +125,34 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return (
       <form>
         <FormControl.Static componentClass='h4'>{label}</FormControl.Static>
-        <ControlLabel>
-          {t('Paths')}
-          <More id='more-paths' name={t('Paths')} >
-            {getText('paths', t)}
-          </More>
-        </ControlLabel>
         <Panel footer={this.renderFooter()}>
+          <ControlLabel>
+            {t('Paths')}
+            <More id='more-paths' name={t('Paths')} >
+              {getText('paths', t)}
+            </More>
+          </ControlLabel>
           {this.renderPathCtrl(paths, t('Base Path'), 'base')}
           {this.renderPathCtrl(paths, t('Download Path'), 'download')}
           {this.renderPathCtrl(paths, t('Install Path'), 'install')}
           <Modal show={this.state.busy !== undefined} onHide={nop}>
             <Modal.Body>
               <Jumbotron>
-                <p><Icon name='spinner' pulse style={{ height: '32px', width: '32px' }} />
+                <p><Spinner style={{ height: '32px', width: '32px' }} />
                   {this.state.busy}</p>
               </Jumbotron>
             </Modal.Body>
           </Modal>
         </Panel>
-        <ControlLabel>
-          {t('Deployment Method')}
-          <More id='more-deploy' name={t('Deployment')} >
-            {getText('deployment', t)}
-          </More>
-        </ControlLabel>
-        {this.renderActivators(supportedActivators, currentActivator)}
+        <Panel>
+          <ControlLabel>
+            {t('Deployment Method')}
+            <More id='more-deploy' name={t('Deployment')} >
+              {getText('deployment', t)}
+            </More>
+          </ControlLabel>
+          {this.renderActivators(supportedActivators, currentActivator)}
+        </Panel>
       </form>
     );
   }
@@ -344,13 +348,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             placeholder={label}
             onChange={this.mPathChangeCBs[pathKey]}
           />
-          <InputGroup.Button>
+          <InputGroup.Button className='inset-btn'>
             <Button
-              id='move-base-path'
               tooltip={t('Browse')}
               onClick={this.mBrowseCBs[pathKey]}
             >
-              <Icon name='folder-open' />
+              <Icon name='browse' />
             </Button>
           </InputGroup.Button>
         </InputGroup>

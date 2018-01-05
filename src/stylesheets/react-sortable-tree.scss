@@ -1,9 +1,22 @@
+.rst__row {
+  border: 1px solid $border-color;
+}
+
+.rst__nodeContent {
+  right: $gutter-width;
+}
+
 .rst__rowContents {
-  background-color: $brand-bg;
+  background-color: initial;
+  border: 0;
+  box-shadow: initial;
 }
 
 .rst__moveHandle {
-  background-color: $brand-secondary;
+  background-color: initial;
+  background-size: 32px 32px;
+  border: 0;
+  box-shadow: initial;
 }
 
 .rst__lineChildren:after {

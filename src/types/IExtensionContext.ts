@@ -21,6 +21,7 @@ import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
 
 import { IActionOptions } from './IActionDefinition';
+import { IBannerOptions } from './IBannerOptions';
 import { IGame } from './IGame';
 import { INotification } from './INotification';
 import { ITableAttribute } from './ITableAttribute';
@@ -64,10 +65,15 @@ export type RegisterAction =
 export type RegisterFooter =
   (id: string, element: React.ComponentClass<any>, props?: PropsCallback) => void;
 
+export type RegisterBanner =
+  (group: string, component: React.ComponentClass<any> | React.StatelessComponent<any>,
+   options: IBannerOptions) => void;
+
 export interface IMainPageOptions {
   hotkey?: string;
   visible?: () => boolean;
-  group: 'global' | 'per-game' | 'support';
+  group: 'dashboard' | 'global' | 'per-game' | 'support' | 'hidden';
+  priority?: number;
   props?: () => any;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;
@@ -77,17 +83,22 @@ export type RegisterMainPage =
   (icon: string, title: string, element: React.ComponentClass<any> | React.StatelessComponent<any>,
    options: IMainPageOptions) => void;
 
+export interface IDashletOptions {
+  fixed?: boolean;
+  closable?: boolean;
+}
+
 export type RegisterDashlet =
-  (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3, position: number,
-   component: React.ComponentClass<any>, isVisible?: (state) => boolean,
-   props?: PropsCallback) => void;
+  (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5, position: number,
+   component: React.ComponentClass<any>, isVisible: (state) => boolean,
+   props: PropsCallback, options: IDashletOptions) => void;
 
 export type RegisterDialog =
   (id: string,
    element: React.ComponentClass<any> | React.StatelessComponent<any>,
    props?: PropsCallback) => void;
 
-export type ToDoType = 'settings' | 'settings-review' | 'search' | 'automation';
+export type ToDoType = 'settings' | 'search' | 'more';
 
 export interface IToDoButton {
   text: string;
@@ -96,8 +107,15 @@ export interface IToDoButton {
 }
 
 export type RegisterToDo =
-    (id: string, type: ToDoType, props: () => any, condition: (props: any) => boolean,
-     render: (props: any) => JSX.Element, button: () => IToDoButton, priority?: number) => void;
+    (id: string,
+     type: ToDoType,
+     props: () => any,
+     icon: ((props: any) => JSX.Element) | string,
+     text: ((t: I18next.TranslationFunction, props: any) => JSX.Element) | string,
+     action: (props: any) => void,
+     condition: (props: any) => boolean,
+     value: ((t: I18next.TranslationFunction, props: any) => JSX.Element) | string,
+     priority: number) => void;
 
 export interface IRegisterProtocol {
   (protocol: string, callback: (url: string) => void);
@@ -435,6 +453,9 @@ export interface IReducerSpec {
  *    Please note that a call to a register function has no immediate effect, those calls are
  *    stored and evaluated once all extensions have been initialised.
  *    An extension can add new register functions by simply assigning to the context object.
+ *    There is one limitation though: Due to the way those functions are called you can't have
+ *    optional parameters in register functions, the caller always have to provide the exact number
+ *    of arguments to get the function to be called correctly.
  *    These functions are then available to all other extensions, the order in which extensions
  *    are loaded is irrelevant (and can't be controlled).
  *    If an extension uses a register function from another extension it becomes implicitly
@@ -527,6 +548,13 @@ export interface IExtensionContext {
    * again.
    */
   registerToDo: RegisterToDo;
+
+  /**
+   * registers a banner, which is a control that will show in a fixed location with fixed
+   * size (determined by the group). If there are multiple banners in the same spot,
+   * they will cycle.
+   */
+  registerBanner: RegisterBanner;
 
   /**
    * register a source (usually a website) that the mod was retrieved from and that will

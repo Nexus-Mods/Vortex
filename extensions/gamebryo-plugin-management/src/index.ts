@@ -33,6 +33,7 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as nodeUtil from 'util';
 import { actions, log, selectors, types, util } from 'vortex-api';
+import { setCreateRule } from './actions/userlistEdit';
 
 interface IModState {
   enabled: boolean;
@@ -140,7 +141,7 @@ function register(context: IExtensionContextExt) {
   const lootActivity = new util.ReduxProp(context.api, [
     ['session', 'plugins', 'lootActivity'],
   ], (activity: string) => (activity !== undefined) && (activity !== ''));
-  context.registerMainPage('puzzle', 'Plugins', PluginList, {
+  context.registerMainPage('plugins', 'Plugins', PluginList, {
     hotkey: 'E',
     group: 'per-game',
     visible: () => gameSupported(selectors.activeGameId(context.api.store.getState())),
@@ -163,6 +164,11 @@ function register(context: IExtensionContextExt) {
   context.registerReducer(['masterlist'], { defaults: {}, reducers: {} });
   context.registerReducer(['settings', 'plugins'], settingsReducer);
   context.registerReducer(['session', 'pluginDependencies'], userlistEditReducer);
+
+  context.registerAction('gamebryo-plugin-icons', 100, 'connection', {}, 'Manage Dependencies',
+    () => {
+      context.api.store.dispatch(setCreateRule());
+    });
 
   context.registerActionCheck('ADD_USERLIST_RULE', (state: any, action: any) => {
     const {pluginId, reference, type} = action.payload;
@@ -291,7 +297,7 @@ function startSyncRemote(api: types.IExtensionApi): Promise<void> {
         }
         refreshTimer = setTimeout(() => {
           updateCurrentProfile(store)
-              .then(() => api.events.emit('autosort-plugins'));
+              .then(() => api.events.emit('autosort-plugins', false));
           refreshTimer = undefined;
         }, 500);
       });
@@ -483,7 +489,7 @@ function init(context: IExtensionContextExt) {
             if (oldProfile !== newProfile) {
               updatePluginList(store, newProfile.modState)
                 .then(() => {
-                  context.api.events.emit('autosort-plugins');
+                  context.api.events.emit('autosort-plugins', false);
                 });
             }
           });
@@ -526,11 +532,13 @@ function init(context: IExtensionContextExt) {
       if ((newProfile !== undefined) && gameSupported(newProfile.gameId)) {
         updatePluginList(store, newProfile.modState)
             .then(() => startSync(context.api))
-            .then(() => context.api.events.emit('autosort-plugins'));
+            .then(() => context.api.events.emit('autosort-plugins', false));
       }
     });
 
     context.api.events.on('mod-enabled', (profileId: string, modId: string) => {
+      /* when enabling a mod we automatically enable its plugin, if there is (exactly) one.
+       * if there are more the user gets a notification if he wants to enable all. */
       const state: types.IState = context.api.store.getState();
       const currentProfile = selectors.activeProfile(state);
       if ((profileId === currentProfile.id) && gameSupported(currentProfile.gameId)) {

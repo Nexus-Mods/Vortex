@@ -1,0 +1,188 @@
+.table-actions {
+  display: inline-flex;
+  .btn {
+    @extend .btn-embed;
+    @extend .hcenter;
+  }
+}
+
+.table-default-action {
+  svg {
+    margin-right: 6px;
+    width: 0.75em;
+    height: 0.75em;
+    vertical-align: baseline;
+  }
+}
+
+.table-selected {
+  background-color: $table-bg-active;
+}
+
+.table-highlighted {
+  background-color: $brand-secondary;
+}
+
+.table-main-pane {
+  overflow-y: auto;
+  flex: 1 1 0%;
+  margin-right: $half-gutter;
+
+  .xthead {
+    .xth {
+      padding: $table-header-border-width 0px $table-header-border-width !important;
+      height: 100%;
+
+      &:first-child {
+        padding-left: $table-header-border-width !important;
+      }
+
+      &:last-child {
+        padding-right: $table-header-border-width !important;
+      }
+
+      > div {
+        height: 100%;
+        // min-height: 48px;
+        display: flex;
+        justify-content: center;
+        flex-direction: row;
+        padding: 4px 4px;
+      }
+    }
+  }
+
+  .xtbody {
+    background-color: $brand-menu;
+    .xtr {
+      > div {
+        padding: 4px 0px;
+      }
+    }
+  }
+}
+
+.table-details-pane {
+  contain: content;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0px;
+  background-color: $brand-menu;
+  transition: max-width 300ms;
+  border-right-width: 0px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+
+  &.open {
+    max-width: 50%;
+    border: 1px solid $border-color;
+    border-right-width: 0;
+    box-shadow: -2px 0px 4px 1px rgba(0, 0, 0, 0.5);
+  }
+  &.closed {
+    // overruled by min-width
+    max-width: 0%;
+    border: 0px;
+  }
+
+  .form-control-static {
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: 0;
+  }
+}
+
+.table-layout {
+  margin: 10px;
+}
+
+.table-form-details {
+  flex: 1 1 0%;
+  padding: 5px;
+  min-width: 250px;
+  &.table-form-details-show {
+    overflow-y: auto;
+  }
+  &.table-form-details-hide {
+    overflow-y: hidden;
+  }
+}
+
+.table-header {
+  margin-right: $scrollbar-width;
+  transform-style: preserve-3d;
+}
+
+.table-footer-placeholder {
+  height: 48px;
+}
+
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  background-color: $text-color;
+  color: $brand-clickable;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+
+  .btn {
+    background-color: transparent;
+    color: inherit;
+    &:hover {
+      background-color: $gray-dark;
+    }
+  }
+}
+
+.btn-table-filter {
+  @extend .btn-embed;
+  height: 100%;
+}
+
+.group-addon-btn {
+  padding: 0px 3px;
+  width: 26px;
+
+  button {
+    padding: 0px;
+    width: 100%;
+  }
+}
+
+.table-container {
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  height: 100%;
+}
+
+.table-container-inner {
+  display:flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.textarea-details {
+  width: 100%;
+  resize: none;
+  min-height: 100px;
+}
+
+.menu-content ul.dropdown-menu .btn {
+  background-color: transparent;
+  border: 0px;
+  display: flex;
+  width: 100%;
+}
+
+.xtable .cell-actions {
+  display: inline-flex;
+  .dropdown-toggle {
+    min-width: initial;
+  }
+}

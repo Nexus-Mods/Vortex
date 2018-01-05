@@ -5,6 +5,7 @@ import ExtensionGate from '../ExtensionGate';
 import Icon from '../Icon';
 import IconBar from '../IconBar';
 import {ITableRowAction} from '../Table';
+import ToolbarIcon from '../ToolbarIcon';
 import {Button, IconButton} from '../TooltipControls';
 import VisibilityProxy from '../VisibilityProxy';
 
@@ -12,7 +13,7 @@ import { TD, TR } from './MyTable';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { FormControl, MenuItem, SplitButton } from 'react-bootstrap';
+import { DropdownMenu, FormControl, MenuItem, SplitButton } from 'react-bootstrap';
 
 interface ICellProps {
   language: string;
@@ -73,6 +74,8 @@ class TableCell extends React.Component<ICellProps, {}> {
               onSelect={this.changeCell}
               tooltip={attribute.description}
             >
+            {((currentChoice !== undefined) && (currentChoice.icon !== undefined))
+                ? <Icon name={currentChoice.icon} /> : null}
             {currentChoice !== undefined ? t(currentChoice.text) : ''}
             </Button>
             <Dropdown.Toggle
@@ -97,7 +100,7 @@ class TableCell extends React.Component<ICellProps, {}> {
             className='btn-embed'
             id={`toggle-${rowId}-${attribute.id}`}
             tooltip={attribute.name}
-            icon={data ? 'square-check' : 'square-remove'}
+            icon={data ? 'checkbox-checked' : 'square-remove'}
             onClick={this.toggle}
           />
         );
@@ -130,6 +133,7 @@ class TableCell extends React.Component<ICellProps, {}> {
         key={choice.key}
         className={`option-${tableId}-${attribute.id}-${choice.key}`}
       >
+        {choice.icon ? <Icon name={choice.icon} /> : null}
         {t(choice.text)}
       </MenuItem>
     );
@@ -144,6 +148,7 @@ class TableCell extends React.Component<ICellProps, {}> {
 
 export interface IRowProps {
   t: I18next.TranslationFunction;
+  id: string;
   tableId: string;
   data: any;
   rawData: any;
@@ -209,19 +214,29 @@ class TableRow extends React.Component<IRowProps, {}> {
   private renderRow = (): React.ReactNode => {
     const { actions, attributes, data, domRef, tableId } = this.props;
 
-    let hasActions = false;
     if (actions !== undefined) {
       const rowActions = actions.filter((action) =>
         (action.singleRowAction === undefined) || action.singleRowAction);
-      hasActions = rowActions.length > 0;
     }
 
     const res = attributes.map(this.renderAttribute);
-    if (hasActions) {
+    const sorted = actions
+      .filter(icon => {
+        try {
+          return (icon.condition === undefined)
+            || icon.condition([data.__id]);
+        } catch (err) {
+          return false;
+        }
+      })
+      .sort((lhs, rhs) => lhs.position - rhs.position);
+    if (sorted.length > 0) {
+      const def = sorted[0];
       res.push(
         <TD
           style={{ textAlign: 'center' }}
           key='action-cell'
+          className={`table-${tableId} cell-actions`}
         >
           <IconBar
             id={`${tableId}-${data.__id}-action-icons`}
@@ -229,11 +244,46 @@ class TableRow extends React.Component<IRowProps, {}> {
             instanceId={data.__id}
             className='table-actions'
             staticElements={actions}
-            collapse={true}
+            collapse
+            dropdown
+            pullRight
           />
         </TD>);
+    } else {
+      res.push(<TD key='no-action' />);
     }
     return res;
+  }
+
+  private selectDefaultAction = (event) => {
+    const { actions, data } = this.props;
+    const action = actions.find(iter => iter.title === event.currentTarget.value);
+    action.action([data.__id]);
+  }
+
+  private selectAction = (eventKey: any) => {
+    const { actions, data } = this.props;
+    const action = actions.find(iter => iter.title === eventKey);
+    action.action([data.__id]);
+  }
+
+  private renderDefault = (action: ITableRowAction) => {
+    return (
+      <div className='table-default-action'>
+        <Icon name={action.icon} />
+        <span>{action.title}</span>
+      </div>
+    );
+  }
+
+  private renderActionOption = (action: ITableRowAction, idx: number) => {
+    const { data, tableId } = this.props;
+    return (
+      <MenuItem key={idx} eventKey={action.title}>
+        <Icon name={action.icon} />
+        <span>{action.title}</span>
+      </MenuItem>
+    );
   }
 
   private renderAttribute = (attribute: ITableAttribute, index: number,

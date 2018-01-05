@@ -1,6 +1,6 @@
 import { removeSavegame, showTransferDialog } from '../actions/session';
 import { ISavegame } from '../types/ISavegame';
-import { mygamesPath } from '../util/gameSupport';
+import { mygamesPath, saveFiles } from '../util/gameSupport';
 import refreshSavegames from '../util/refreshSavegames';
 import restoreSavegamePlugins, { MissingPluginsError } from '../util/restoreSavegamePlugins';
 import transferSavegames from '../util/transferSavegames';
@@ -14,12 +14,12 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
-import { FormControl } from 'react-bootstrap';
+import { FormControl, Panel } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import {
-  actions, ComponentEx, FlexLayout, Icon, IconBar, ITableRowAction,
-  MainPage, selectors, Table, tooltip, types, util,
+  actions, ComponentEx, FlexLayout, IconBar, ITableRowAction,
+  MainPage, selectors, Spinner, Table, tooltip, types, util,
 } from 'vortex-api';
 
 // current typings know neither the function nor the return value
@@ -84,12 +84,12 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
 
     this.savegameActions = [
       {
-        icon: 'remove',
+        icon: 'delete',
         title: props.t('Delete'),
         action: this.remove,
       },
       {
-        icon: 'copy',
+        icon: 'recover',
         title: props.t('Restore savegame\'s plugins'),
         action: this.restore,
         multiRowAction: false,
@@ -115,8 +115,8 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       header = (
         <IconBar
           group='savegames-icons'
-          buttonType='icon'
           orientation='vertical'
+          className='menubar'
         />
       );
     }
@@ -124,19 +124,21 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
     let content = null;
     if (!showTransfer || (importSaves !== undefined)) {
       content = (
-        <Table
-          tableId='savegames'
-          data={showTransfer ? importSaves : saves}
-          actions={saveActions}
-          staticElements={[
-            SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
-            LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
-        />
+        <Panel>
+          <Table
+            tableId='savegames'
+            data={showTransfer ? importSaves : saves}
+            actions={saveActions}
+            staticElements={[
+              SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
+              LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
+          />
+        </Panel>
       );
     } else {
       content = (profileId === undefined)
         ? <h4>{t('Please select a profile to import from')}</h4>
-        : <Icon name='spinner' pulse />;
+        : <Spinner />;
     }
 
     return (
@@ -151,7 +153,6 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         <MainPage.Overlay>
           <IconBar
             group='savegames-icons'
-            buttonType='both'
             orientation='vertical'
           />
         </MainPage.Overlay>
@@ -165,7 +166,7 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
       return (
         <FlexLayout.Fixed>
           <div>
-            <Icon name='spinner' pulse />
+            <Spinner />
             {t(saveGameActivity)}
           </div>
         </FlexLayout.Fixed>
@@ -336,10 +337,13 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         doRemoveSavegame = result.action === 'Delete';
         if (doRemoveSavegame) {
           return Promise.map(instanceIds, id => !!id
-            ? fs.removeAsync(path.join(mygamesPath(currentProfile.gameId), savesPath, id))
-              .then(() => {
-                onRemoveSavegame(id);
-              })
+            ? Promise.map(saveFiles(currentProfile.gameId, id), filePath =>
+              fs.removeAsync(path.join(mygamesPath(currentProfile.gameId), savesPath, filePath))
+                .catch(err => (err.code === 'ENOENT')
+                    ? Promise.resolve() : Promise.reject(err))
+                .then(() => {
+                  onRemoveSavegame(id);
+                }))
             : Promise.reject(new Error('invalid savegame id')))
             .then(() => undefined);
         } else {

@@ -7,5 +7,6 @@ export interface IProfile {
   gameId: string;
   name: string;
   modState: { [id: string]: IProfileMod };
+  lastActivated: number;
   features?: { [featureId: string]: any };
 }

@@ -60,11 +60,13 @@ function nativeCrashCheck(context: types.IExtensionContext): Promise<types.ITest
 }
 
 function init(context: types.IExtensionContext) {
-
-  context.registerMainPage('message', 'Feedback', FeedbackView, {
+  context.registerMainPage('', 'Feedback', FeedbackView, {
     hotkey: 'F',
-    group: 'support',
+    group: 'hidden',
   });
+
+  context.registerAction('global-icons', 100, 'feedback', {}, 'Send Feedback', () =>
+    context.api.events.emit('show-main-page', 'Feedback'));
 
   context.registerReducer(['session', 'feedback'], sessionReducer);
 

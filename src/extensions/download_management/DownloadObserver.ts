@@ -146,7 +146,8 @@ export class DownloadObserver {
             }
           }
           log('warn', 'download failed', {message, err: util.inspect(err)});
-          showError(this.mStore.dispatch, 'Download failed', message);
+          showError(this.mStore.dispatch, 'Download failed', message,
+                    false, undefined, false);
           this.mStore.dispatch(finishDownload(id, 'failed', {message}));
           if (callback !== undefined) {
             callback(err, id);
@@ -160,6 +161,7 @@ export class DownloadObserver {
     const filePath = res.filePath;
     this.mStore.dispatch(downloadProgress(id, res.size, res.size, []));
     this.mStore.dispatch(setDownloadFilePath(id, path.basename(res.filePath)));
+    log('debug', 'unfinished chunks', { chunks: res.unfinishedChunks });
     if (res.unfinishedChunks.length > 0) {
       this.mStore.dispatch(pauseDownload(id, true, res.unfinishedChunks));
     } else if (res.filePath.toLowerCase().endsWith('.html')) {

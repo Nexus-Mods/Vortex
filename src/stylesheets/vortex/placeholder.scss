@@ -1,0 +1,33 @@
+.placeholder {
+  color: $text-color-disabled;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+
+  &.fill-parent {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    min-height: initial;
+  }
+
+  .icon {
+    width: 92px;
+    height: 92px;
+  }
+
+  .placeholder-text {
+    font-family: 'BebasNeue';
+    font-size: x-large;
+    text-transform: uppercase;
+  }
+}
+
+.placeholder-container {
+  height: 300px;
+  position: relative;
+}

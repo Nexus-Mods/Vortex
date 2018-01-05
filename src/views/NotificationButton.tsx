@@ -66,7 +66,7 @@ class NotificationButton extends ComponentEx<IProps, {}> {
         shouldUpdatePosition={true}
       >
         <Button id='notifications-button'>
-          <Icon name='bell' />
+          <Icon name='notifications' />
           {items.length === 0 ? null : <Badge>{items.length}</Badge>}
         </Button>
       </MyOverlayTrigger>

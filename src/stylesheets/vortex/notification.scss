@@ -1,0 +1,83 @@
+// the notification container (invisible)
+#notifications {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  z-index: $zindex-notifications;
+
+  -webkit-scrollbar {
+    display: none;
+  }
+}
+
+// notification
+.notification {
+  margin-bottom: 1px;
+  padding: 5px;
+  min-height: 32px;
+  min-width: 400px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  .notification-textbox {
+    flex: 1 1 0;
+    margin-left: 10px;
+    margin-right: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .notification-title {
+    font-weight: bold;
+  }
+
+  .notification-buttons {
+    white-space: nowrap;
+    button {
+      padding: 0px 2px;
+      margin: 0px 2px;
+    }
+  }
+}
+
+.notification-enter {
+  opacity: 0;
+
+  .notification-enter-active {
+    opacity: 1;
+    transition: opacity 500ms ease-in;
+  }
+}
+
+.notification-leave {
+  opacity: 1;
+  .notification-leave-active {
+    opacity: 0;
+    transition: opacity 300ms ease-in;
+  }
+}
+
+#notifications-popover {
+  min-width: 200px;
+  max-width: 50%;
+  z-index: $zindex-notifications;
+}
+
+#notifications-button {
+  position: relative;
+  .svg {
+    width: 2.5em;
+    height: 2.5em;
+  }
+  .badge {
+    padding: 1px 3px;
+    font-size: $font-size-small;
+    position: absolute;
+    right: 8px;
+    top: 8px;
+  }
+}

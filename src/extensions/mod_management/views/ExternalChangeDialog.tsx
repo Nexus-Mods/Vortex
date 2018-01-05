@@ -285,7 +285,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         name: 'File Count',
         description: 'Number of files in this mod that were changed',
         calc: (source: ISourceEntry, t: I18next.TranslationFunction) =>
-          t('{{count}} files', { count: source.filePaths.length }),
+          t('{{count}} file', { count: source.filePaths.length }),
         placement: 'table',
         edit: {},
       }, {

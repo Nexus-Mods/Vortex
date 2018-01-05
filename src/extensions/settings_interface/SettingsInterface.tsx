@@ -1,10 +1,12 @@
 import { showDialog } from '../../actions/notifications';
+import { setCustomTitlebar } from '../../actions/window';
 
 import More from '../../controls/More';
 import Toggle from '../../controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
+import { spawnSelf } from '../../util/util';
 
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
@@ -15,11 +17,13 @@ import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
 import * as Promise from 'bluebird';
-import { readdir } from 'fs';
+import { remote } from 'electron';
+import { readdirAsync } from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { Checkbox, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
+import { Alert, Button, Checkbox, ControlLabel,
+         FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
 
 interface ILanguage {
@@ -33,6 +37,7 @@ interface IConnectedProps {
   profilesVisible: boolean;
   autoDeployment: boolean;
   advanced: boolean;
+  customTitlebar: boolean;
 }
 
 interface IActionProps {
@@ -42,6 +47,7 @@ interface IActionProps {
   onSetAdvancedMode: (advanced: boolean) => void;
   onShowDialog: (type: DialogType, title: string,
                  content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
+  onSetCustomTitlebar: (enable: boolean) => void;
 }
 
 interface IState {
@@ -51,23 +57,23 @@ interface IState {
 type IProps = IActionProps & IConnectedProps;
 
 class SettingsInterface extends ComponentEx<IProps, IState> {
+  private mInitialTitlebar: boolean;
 
-  constructor(props) {
+  constructor(props: IProps) {
     super(props);
 
     this.state = {
       languages: [],
     };
+    this.mInitialTitlebar = props.customTitlebar;
+  }
 
+  public componentDidMount() {
     const localesPath = path.normalize(path.join(__dirname, '..', '..', '..', 'locales'));
 
-    readdir(localesPath, (err, files) => {
-      if (err) {
-        log('warn', 'failed to read locales', err);
-        return;
-      }
-
-      const locales = files.map((key) => {
+    readdirAsync(localesPath)
+    .then(files => {
+      const locales = files.map(key => {
         let language;
         let country;
 
@@ -83,11 +89,26 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
       this.setState(update(this.state, {
         languages: { $set: locales },
       }));
+    })
+    .catch(err => {
+      log('warn', 'failed to read locales', err);
     });
   }
 
   public render(): JSX.Element {
-    const { t, advanced, autoDeployment, currentLanguage, profilesVisible } = this.props;
+    const { t, advanced, autoDeployment, currentLanguage,
+            customTitlebar, profilesVisible } = this.props;
+
+    const needRestart = customTitlebar !== this.mInitialTitlebar;
+
+    const restartNotification = needRestart ? (
+      <HelpBlock>
+        <Alert>
+          {t('You need to restart Vortex to activate this change')}
+          <Button onClick={this.restart} style={{ marginLeft: '1em' }}>{t('Restart now')}</Button>
+        </Alert>
+      </HelpBlock>
+    ) : null;
 
     return (
       <form>
@@ -100,6 +121,19 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
           >
             {this.state.languages.map((language) => this.renderLanguage(language))}
           </FormControl>
+        </FormGroup>
+        <FormGroup controlId='customization'>
+          <ControlLabel>{t('Customization')}</ControlLabel>
+          <div>
+            <div>
+              <Toggle
+                checked={customTitlebar}
+                onToggle={this.toggleCustomTitlebar}
+              >
+                {t('Custom Window Titlebar')}
+              </Toggle>
+            </div>
+          </div>
         </FormGroup>
         <FormGroup controlId='advanced'>
           <ControlLabel>{t('Advanced')}</ControlLabel>
@@ -142,6 +176,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
             </Toggle>
           </div>
         </FormGroup>
+        {restartNotification}
       </form>
     );
   }
@@ -188,9 +223,19 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
     }
   }
 
+  private toggleCustomTitlebar = () => {
+    const { customTitlebar, onSetCustomTitlebar } = this.props;
+    onSetCustomTitlebar(!customTitlebar);
+  }
+
   private toggleAdvanced = () => {
     const { advanced, onSetAdvancedMode } = this.props;
     onSetAdvancedMode(!advanced);
+  }
+
+  private restart = () => {
+    spawnSelf(['--wait']);
+    remote.app.exit(0);
   }
 }
 
@@ -200,6 +245,7 @@ function mapStateToProps(state: any): IConnectedProps {
     profilesVisible: state.settings.interface.profilesVisible,
     advanced: state.settings.interface.advanced,
     autoDeployment: state.settings.automation.deploy,
+    customTitlebar: state.settings.window.customTitlebar,
   };
 }
 
@@ -219,6 +265,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
+    onSetCustomTitlebar: (enable: boolean) =>
+      dispatch(setCustomTitlebar(enable)),
   };
 }
 

@@ -55,7 +55,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       <tooltip.Icon
         id={key}
         key={key}
-        name='globe'
+        name='plugin-master'
         tooltip={t('Master')}
       />);
   }
@@ -77,7 +77,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       <tooltip.Icon
         id={key}
         key={key}
-        name='lock'
+        name='plugin-native'
         tooltip={t('Loaded by the engine, can\'t be configured', { ns: 'gamebryo-plugin' })}
       />);
   }
@@ -88,7 +88,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       <tooltip.Icon
         id={cleanKey}
         key={cleanKey}
-        name='bug'
+        name='plugin-clean'
         tooltip={t('Requires cleaning (LOOT)', { ns: 'gamebryo-plugin' })}
       />);
   } else if (plugin.cleanliness === 'do_not_clean') {
@@ -96,7 +96,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       <tooltip.Icon
         id={cleanKey}
         key={cleanKey}
-        name='shield'
+        name='plugin-dont-clean'
         tooltip={t('Must not be cleaned (LOOT)', { ns: 'gamebryo-plugin' })}
       />);
   }

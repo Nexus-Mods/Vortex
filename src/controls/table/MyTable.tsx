@@ -43,12 +43,14 @@ export function THead(props: DProps<HTMLTableSectionElement>
   );
 }
 
-export function TBody(props: DProps<HTMLTableSectionElement>) {
+export function TBody(props: DProps<HTMLTableSectionElement>
+                              & { domRef?: ((instance: any | null) => any) }) {
   const classes = ['xtbody'].concat((props.className || '').split(' '));
   return (
     <div
       style={{ ...props.style, display: 'table-row-group' }}
       className={classes.join(' ')}
+      ref={props.domRef}
     >
       {props.children}
     </div>

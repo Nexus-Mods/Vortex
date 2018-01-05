@@ -1,0 +1,37 @@
+.game-page {
+  padding-right: $half-gutter;
+}
+
+#games-picker-tabs {
+  .tab-content {
+    // needs to be relative for the placeholder to show properly if a tab is empty
+    position: relative;
+  }
+}
+
+.popover-game-info {
+  max-width: 500px;
+}
+
+.mod-installing {
+  background-color: $gray-dark;
+}
+
+.mod-installed {
+  background-color: $table-bg;
+}
+
+#btn-more-mods {
+  margin-top: $half-gutter;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.discovery-footer {
+  padding: 16px;
+  .discovery-footer-label {
+    margin-bottom: 8px;
+    font-size: smaller;
+  }
+}

@@ -19,7 +19,7 @@ import { Alert, Button, Checkbox, DropdownButton, InputGroup, MenuItem,
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
-import { ComponentEx, Icon, Modal, selectors, Steps, Table,
+import { ComponentEx, Icon, Modal, selectors, Spinner, Steps, Table,
          Toggle, tooltip, types } from 'vortex-api';
 
 type Step = 'start' | 'setup' | 'working' | 'review';
@@ -119,9 +119,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       <Modal id='import-dialog' show={importStep !== undefined} onHide={this.nop}>
         <Modal.Header>
           <Modal.Title>{t('Nexus Mod Manager (NMM) Import Tool')}</Modal.Title>
+          {this.renderStep(importStep)}
         </Modal.Header>
         <Modal.Body style={{ height: '60vh', display: 'flex', flexDirection: 'column' }}>
-          {this.renderStep(importStep)}
           {error !== undefined ? <Alert>{error}</Alert> : this.renderContent(importStep)}
         </Modal.Body>
         <Modal.Footer>
@@ -200,7 +200,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           </ul>
         </div>
         {sources === undefined
-          ? <Icon name='spinner' pulse />
+          ? <Spinner />
           : sources.length === 0
             ? this.renderNoSources()
             : this.renderSources(sources, selectedSource)
@@ -214,7 +214,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
 
     return (
       <span className='import-errors'>
-        <Icon name='cross' />
+        <Icon name='feedback-error' />
         {' '}
         {t('No NMM install found with mods for this game. ' +
           'Please note that only NMM >= 0.63 is supported.')}
@@ -302,8 +302,15 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       <div className='import-working-container'>
         {
           failedImports.length === 0
-            ? <span className='import-success'><Icon name='check' /> {t('Import successful')}</span>
-            : <span className='import-errors'><Icon name='cross' /> {t('There were errors')}</span>
+            ? (
+              <span className='import-success'>
+                <Icon name='feedback-success' /> {t('Import successful')}
+              </span>
+            ) : (
+              <span className='import-errors'>
+                <Icon name='feedback-error' /> {t('There were errors')}
+              </span>
+            )
         }
         <span className='import-review-text'>
           {t('You can review the log at')}

@@ -57,6 +57,22 @@ a, .btn {
   cursor: default;
 }
 
+.Select-arrow-zone {
+  cursor: default;
+  padding-right: 0px;
+  .Select-arrow {
+    top: 3px;
+  }
+}
+
+.is-open {
+  .Select-arrow-zone {
+    .Select-arrow {
+      top: 1px;
+    }
+  }
+}
+
 // in native ui's, there is no text selection on 'label' elements,
 // only on elements that expect user input
 :not(input):not(textarea), :not(input):not(textarea)::after, :not(input):not(textarea)::before {

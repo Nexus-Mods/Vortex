@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "0.11.1",
+  "version": "0.12.3",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -81,6 +81,7 @@
     "simple-vdf": "^1.1.0",
     "string-template": "^1.0.0",
     "tmp": "0.0.33",
+    "turbowalk": "file:../lib/cpp/turbowalk",
     "uuid": "^3.1.0",
     "vortex-parse-ini": "file:../lib/js/vortex-parse-ini",
     "winreg": "^1.2.4",

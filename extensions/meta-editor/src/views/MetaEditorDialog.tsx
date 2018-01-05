@@ -104,7 +104,7 @@ class MetaEditorDialog extends ComponentEx<IProps, IComponentState> {
                   id='add-rule'
                   onClick={this.showRuleEditor}
                 >
-                  <Icon name='plus' />
+                  <Icon name='add' />
                 </tooltip.Button>
               </ControlLabel>
               <ListGroup>

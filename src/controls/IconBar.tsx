@@ -2,6 +2,8 @@ import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
 import { extend, IExtensibleProps } from '../util/ExtensionProvider';
 import { truthy } from '../util/util';
 
+import Dropdown from './Dropdown';
+import DropdownButton from './DropdownButton';
 import DynamicProps from './DynamicProps';
 import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
@@ -11,7 +13,7 @@ import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { ButtonGroup, Dropdown, DropdownButton, MenuItem } from 'react-bootstrap';
+import { ButtonGroup, MenuItem } from 'react-bootstrap';
 import { Overlay } from 'react-overlays';
 
 export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
@@ -24,6 +26,8 @@ export interface IBaseProps {
   buttonType?: ButtonType;
   orientation?: 'horizontal' | 'vertical';
   collapse?: boolean | 'force';
+  dropdown?: boolean;
+  icon?: string;
 }
 
 export interface IExtensionProps {
@@ -53,6 +57,7 @@ interface IPortalMenuProps {
   target: JSX.Element;
   children?: React.ReactNode[];
   onClose: () => void;
+  onClick: (evt: any) => void;
 }
 
 function PortalMenu(props: IPortalMenuProps, context: any) {
@@ -68,12 +73,55 @@ function PortalMenu(props: IPortalMenuProps, context: any) {
           style={{ display: 'block', position: 'initial' }}
           onClose={props.onClose}
           open={props.open}
+          onClick={props.onClick}
         >
           {props.children}
         </Dropdown.Menu>
       </Positioner>
     </Overlay>
   );
+}
+
+function genTooltip(show: boolean | string): string {
+  return typeof (show) === 'string'
+    ? show
+    : undefined;
+}
+
+interface IMenuActionProps {
+  id: string;
+  action: IActionDefinition & { show: boolean | string };
+  instanceId: string | string[];
+}
+
+class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
+  public render(): JSX.Element {
+    const { action, id } = this.props;
+    return (
+      <MenuItem
+        eventKey={id}
+        onSelect={this.trigger}
+        disabled={action.show !== true}
+        title={genTooltip(action.show)}
+      >
+        {/*this.renderIconInner(icon, index, 'menu')*/}
+        <Icon name={action.icon} />
+        <div className='button-text'>{action.title}</div>
+      </MenuItem>
+    );
+  }
+
+  private trigger = () => {
+    const { action, instanceId } = this.props;
+
+    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+
+    action.action(instanceIds);
+  }
+}
+
+function arrayType<T>(x: T[]): T {
+  return null;
 }
 
 /**
@@ -94,7 +142,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   private buttonRef: JSX.Element;
 
-  constructor(props) {
+  constructor(props: IProps) {
     super(props);
 
     this.state = {
@@ -103,27 +151,45 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { collapse, id, instanceId, objects, orientation, className, style } = this.props;
-
+    const { collapse, dropdown, icon, id, instanceId,
+            objects, orientation, className, style } = this.props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
-    const icons = objects.filter(icon => {
-      // don't render anything if the condition doesn't match
-      try {
-        return (icon.condition === undefined)
-            || icon.condition(instanceIds);
-      } catch (err) {
-        return false;
-      }
-    });
+
+    const icons = this.iconsToShow();
 
     const classes: string[] = [];
     if (className) {
       classes.push(className);
     }
 
-    classes.push('btngroup-collapsed');
+    if (dropdown) {
+      const sorted = icons.sort(iconSort);
+      const title: any = (
+        <div
+          data-value={sorted[0].title}
+          onClick={sorted[0].show ? this.triggerDefault : undefined}
+        >
+          <Icon name={sorted[0].icon} />
+          <a
+            className='fake-link'
+            title={genTooltip(sorted[0].show)}
+          >
+            {sorted[0].title}
+          </a>
+        </div>
+      );
+      return (
+        <DropdownButton
+          id={`${id}-menu`}
+          split
+          title={title}
+        >
+          {sorted.slice(1).map((iter, idx) => this.renderMenuItem(iter, idx))}
+        </DropdownButton>
+      );
+    } else if (collapse) {
+      classes.push('btngroup-collapsed');
 
-    if (collapse) {
       const collapsed: IActionDefinition[] = [];
       const unCollapsed: IActionDefinition[] = [];
 
@@ -143,7 +209,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             className='btn-embed'
             onClick={this.toggleCollapsed}
             tooltip={''}
-            icon='dots'
+            icon={icon || 'menu'}
             rotate={90}
             rotateId={`dots-iconbar-${id}`}
             ref={this.setButtonRef}
@@ -152,6 +218,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             open={this.state.open}
             target={this.buttonRef}
             onClose={this.toggleCollapsed}
+            onClick={this.toggleCollapsed}
           >
             {this.state.open ? collapsed.sort(iconSort).map(this.renderMenuItem) : null}
           </PortalMenu>
@@ -165,15 +232,15 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           style={style}
         >
           {moreButton}
-          {unCollapsed.sort(iconSort).map((icon, idx) => (
-            <div key={idx}>{this.renderIcon(icon, idx)}</div>))}
+          {unCollapsed.sort(iconSort).map((iter, idx) => (
+            <div key={idx}>{this.renderIcon(iter, idx)}</div>))}
         </ButtonGroup>
       );
     } else {
       return (
         <ButtonGroup
           id={id}
-          className={className}
+          className={classes.join(' ')}
           style={style}
           vertical={orientation === 'vertical'}
         >
@@ -184,7 +251,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     }
   }
 
-  private renderMenuItem = (icon: IActionDefinition, index: number) => {
+  private renderMenuItem =
+    (icon: IActionDefinition & { show: boolean | string }, index: number) => {
     const { instanceId } = this.props;
 
     const id = `${instanceId || '1'}_${index}`;
@@ -197,11 +265,20 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       );
     }
 
-    return (
-      <MenuItem key={id} eventKey={id}>
-        {this.renderIconInner(icon, index, 'menu')}
-      </MenuItem>
-    );
+    if (icon.icon !== undefined) {
+      return <MenuAction key={id} id={id} action={icon} instanceId={instanceId} />;
+    } else {
+      return (
+        <MenuItem
+          key={id}
+          eventKey={id}
+          disabled={icon.show !== true}
+          title={genTooltip(icon.show)}
+        >
+          {this.renderCustomIcon(id, icon)}
+        </MenuItem>
+      );
+    }
   }
 
   private renderIcon = (icon: IActionDefinition, index: number) => {
@@ -214,7 +291,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   private renderIconInner = (icon: IActionDefinition, index: number,
                              forceButtonType?: ButtonType) => {
-    const { buttonType, instanceId, tooltipPlacement } = this.props;
+    const { instanceId, tooltipPlacement } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
@@ -235,42 +312,77 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           text={icon.title}
           onClick={icon.action}
           placement={tooltipPlacement}
-          buttonType={forceButtonType || buttonType}
         />
       );
     } else {
-      // custom case. the caller can pass properties via the props() function and by
-      // passing the prop to the iconbar. the props on the iconbar that we don't handle are
-      // passed on
-      const knownProps = [ 'condition', 'className', 'group', 't', 'i18nLoadedAt',
-                           'objects', 'children' ];
-      const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
-        if (knownProps.indexOf(current) === -1) {
-          return {
-            ...prev,
-            [current]: this.props[current],
-          };
-        } else {
-          return prev;
-        }
-      }, {});
-      const staticProps = {
-        ...unknownProps,
-        key: id,
-        buttonType: forceButtonType || buttonType,
-      };
-      if (icon.props !== undefined) {
-        return (
-          <DynamicProps
-            key={id}
-            dynamicProps={icon.props}
-            staticProps={staticProps}
-            component={icon.component}
-          />
-        );
+      return this.renderCustomIcon(id, icon);
+    }
+  }
+
+  private renderCustomIcon(id: string, icon: IActionDefinition) {
+    // custom case. the caller can pass properties via the props() function and by
+    // passing the prop to the iconbar. the props on the iconbar that we don't handle are
+    // passed on
+    const knownProps = ['condition', 'className', 'group', 't', 'i18nLoadedAt',
+      'objects', 'children'];
+    const unknownProps = Object.keys(this.props).reduce((prev: any, current: string) => {
+      if (knownProps.indexOf(current) === -1) {
+        return {
+          ...prev,
+          [current]: this.props[current],
+        };
       } else {
-        return <icon.component {...staticProps} />;
+        return prev;
       }
+    }, {});
+    const staticProps = {
+      ...unknownProps,
+      key: id,
+    };
+    if (icon.props !== undefined) {
+      return (
+        <DynamicProps
+          key={id}
+          dynamicProps={icon.props}
+          staticProps={staticProps}
+          component={icon.component}
+        />
+      );
+    } else {
+      return <icon.component {...staticProps} />;
+    }
+  }
+
+  private iconsToShow(): Array<IActionDefinition & { show: boolean | string }> {
+    const { instanceId, objects } = this.props;
+    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+    const checkCondition = (def: IActionDefinition): boolean | string => {
+      if (def.condition === undefined) {
+        return true;
+      }
+      try {
+        return def.condition(instanceIds);
+      } catch (err) {
+        return `Error: ${err.message}`;
+      }
+    };
+
+    return objects
+      .map((iter): IActionDefinition & { show: boolean | string } => ({
+          ...iter,
+          show: checkCondition(iter),
+        }))
+      .filter(iter => iter.show !== false);
+  }
+
+  private triggerDefault = (evt: React.MouseEvent<any>) => {
+    const { instanceId, objects } = this.props;
+    const title = evt.currentTarget.attributes.getNamedItem('data-value').value;
+    const action = objects.find(iter =>
+      iter.title === evt.currentTarget.attributes.getNamedItem('data-value').value);
+    if (action !== undefined) {
+      const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+      action.action(instanceIds);
     }
   }
 
@@ -306,7 +418,7 @@ function registerAction(instanceProps: IBaseProps,
                         options: IActionOptions,
                         titleOrProps?: string | (() => any),
                         actionOrCondition?: (instanceIds?: string[]) => void | boolean,
-                        condition?: () => boolean,
+                        condition?: () => boolean | string,
                         ): any {
   if (instanceProps.group === group) {
     if (typeof(iconOrComponent) === 'string') {

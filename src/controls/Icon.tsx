@@ -1,8 +1,12 @@
+import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
 import { log } from '../util/log';
+
+const debugMissingIcons = process.env.NODE_ENV === 'development';
+const debugReported = new Set<string>();
 
 interface IAttr {
   [key: string]: string;
@@ -78,14 +82,12 @@ function convertAttrs(attrs: IAttrMap): IAttrMap {
 export interface IIconProps {
   className?: string;
   style?: { [key: string]: string | number };
-  size?: number;
   set?: string;
   name: string;
   spin?: boolean;
   pulse?: boolean;
   stroke?: boolean;
   border?: boolean;
-  inverse?: boolean;
   flip?: 'horizontal' | 'vertical';
   rotate?: number;
   rotateId?: string;
@@ -111,7 +113,6 @@ class Icon extends React.Component<IIconProps, {}> {
 
   public render(): JSX.Element {
     const { name, style, svgStyle } = this.props;
-    const set = this.props.set || 'vortex';
 
     let classes = ['icon', `icon-${name}`];
     // avoid using css for transforms. For one thing this is more flexible but more importantly
@@ -183,22 +184,37 @@ class Icon extends React.Component<IIconProps, {}> {
   }
 
   private setIcon(props: IIconProps) {
-    this.loadSet(props.set || 'vortex');
+    const set = props.set || 'icons';
+    this.loadSet(set)
+    .then(() => {
+      if (debugMissingIcons
+          && (sets[set] !== null)
+          && !sets[set].has('icon-' + props.name)
+          && !debugReported.has(props.name)) {
+        // tslint:disable-next-line:no-console
+        console.log('icon missing', props.name);
+        debugReported.add(props.name);
+      }
+    });
 
     if (props.rotate && (props.rotateId !== undefined) && (this.mCurrentSize === undefined)) {
       this.mCurrentSize = Icon.sCache[props.rotateId];
     }
   }
 
-  private loadSet(set: string) {
-
+  private loadSet(set: string): Promise<void> {
     if (sets[set] === undefined) {
+      sets[set] = null;
       // different extensions don't share the sets global so check in the dom
       // to see if the iconset is already loaded after all
       const existing = document.getElementById('iconset-' + set);
       if (existing !== null) {
-        sets[set] = null;
-        return;
+        const newSymbols = existing.querySelectorAll('symbol');
+        sets[set] = new Set<string>();
+        newSymbols.forEach(ele => {
+          sets[set].add(ele.id);
+        });
+        return Promise.resolve();
       }
 
       // make sure that no other icon instance tries to render this icon
@@ -209,16 +225,17 @@ class Icon extends React.Component<IIconProps, {}> {
       const fontPath = path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg');
       log('info', 'read font', fontPath);
       // TODO: this does not support adding icons from extensions yet
-      fs.readFileAsync(fontPath, {})
+      return fs.readFileAsync(fontPath, {})
         .then(data => {
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(data.toString(), 'text/xml');
-          const ids = Array.from(xmlDoc.getElementsByTagName('symbol'))
-            .map(ele => ele.getAttribute('id'));
-
           newset.innerHTML = data.toString();
-          sets[set] = new Set<string>(ids);
+          const newSymbols = newset.querySelectorAll('symbol');
+          sets[set] = new Set<string>();
+          newSymbols.forEach(ele => {
+            sets[set].add(ele.id);
+          });
         });
+    } else {
+      return Promise.resolve();
     }
   }
 }

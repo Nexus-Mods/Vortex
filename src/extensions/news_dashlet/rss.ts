@@ -3,6 +3,12 @@ import { HTTPError } from '../../util/CustomErrors';
 import * as FeedParser from 'feedparser';
 import * as RequestT from 'request';
 
+export interface IEnclosure {
+  length: string;
+  type: string;
+  url: string;
+}
+
 export interface IFeedMessage {
   guid: string;
   title: string;
@@ -11,6 +17,11 @@ export interface IFeedMessage {
   link: string;
   titleRendered?: React.ReactChild[];
   descriptionRendered?: React.ReactChild[];
+  enclosures: IEnclosure[];
+  'nexusmods:downloads'?: { '#': string };
+  'nexusmods:endorsements'?: { '#': string };
+  'nexusmods:comments'?: { '#': string };
+  'nexusmods:summary'?: { '#': string };
 }
 
 function retrieve(url: string): Promise<IFeedMessage[]> {

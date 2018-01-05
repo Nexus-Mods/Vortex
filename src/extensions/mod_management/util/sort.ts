@@ -9,6 +9,7 @@ import { alg, Graph } from 'graphlib';
 import * as minimatch from 'minimatch';
 import { ILookupResult, IReference, IRule, RuleType } from 'modmeta-db';
 import * as semver from 'semvish';
+import { truthy } from '../../../util/util';
 
 interface IBiRule {
   subject: string;
@@ -31,8 +32,9 @@ function testRef(mod: IMod, ref: IReference): boolean {
     return false;
   }
 
-  // right version?
-  if ((ref.versionMatch !== undefined)
+  // right version? If no version is set we assume it's the right one,
+  // otherwise a no-version mod could never match
+  if ((ref.versionMatch !== undefined) && truthy(attr.version)
       && !semver.satisfies(attr.version, ref.versionMatch)) {
     return false;
   }

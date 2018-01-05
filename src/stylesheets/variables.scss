@@ -6,46 +6,65 @@
 // single reference to a gray color
 $dark-theme: true;
 
-$gray-base:              #000;
-$gray-darker:            lighten($gray-base, 17%);
-$gray-dark:              lighten($gray-base, 33%);
-$gray:                   lighten($gray-base, 50%);
-$gray-light:             lighten($gray-base, 66%);
-$gray-lighter:           lighten($gray-base, 83%);
+$gray-lighter:           #DEE2E6;
+$gray-light:             #DDDDDD;
+$gray:                   #CED4DA;
+$gray-dark:              #4C4C4C;
+$gray-darker:            #2A2C2B;
 
 @if $dark-theme {
-  $gray-base:    invert($gray-base);
-  $gray-darker:  invert($gray-darker);
-  $gray-dark:    invert($gray-dark);
-  $gray:         invert($gray);
-  $gray-light:   invert($gray-light);
-  $gray-lighter: invert($gray-lighter);
+  $temp: $gray-darker;
+  $gray-darker: $gray-lighter;
+  $gray-lighter: $temp;
+
+  $temp: $gray-dark;
+  $gray-dark: $gray-light;
+  $gray-light: $temp;
 }
 
-$brand-primary:         #2C3E50;
-$brand-highlight:       #428BCA;
-$brand-success:         #5DB85C;
-$brand-info:            #3498DB;
-$brand-warning:         #F1AE4E;
-$brand-danger:          #D95450;
+//$brand-primary:         #2C3E50;
+// $brand-highlight:       #428BCA;
+$brand-primary:         #D78F46;
+$brand-highlight:       #00c1FF;
+$brand-success:         #86B951;
+$brand-info:            #00C1FF;
+$brand-warning:         #FFB126;
+$brand-danger:          #FF1C38;
 
-$brand-bg:              #192431;
-$brand-menu:            #202c3d;
-$brand-secondary:       #0c5886;
-$brand-selected:        #4c5663;
+//$brand-bg:              #192431;
+//$brand-menu:            #202c3d;
+//$brand-secondary:       #0c5886;
+$brand-bg:              $gray-lighter;
+$brand-menu:            $gray-light;
+$brand-clickable:       $brand-primary;
+$brand-secondary:       $brand-primary;
 
-$table-header-border-width: 2px;
-$table-header-border-color: #145076;
+$highlight1: #6610f2; 
+$highlight2: #9f0dff;
+$highlight3: #ff00ba;
+$highlight4: #dcff0d;
+$highlight5: #13c8c4;
+$highlight6: #FF1C38;
+$highlight7: #26FF41;
+$highlight8: #262AFF;
+
+$border-color: rgb(128, 128, 128);
+$border-width: 1px;
+
+$table-header-border-width: $border-width;
+$table-header-border-color: $border-color;
+$table-row-gap: 0px;
+$table-header-separator: 1px;
 
 $body-bg:               $brand-menu;
 $text-color:            #eeeeee;
-$text-color-disabled:   darken(#eeeeee, 15%);
+$text-color-disabled:   darken($text-color, 15%);
 
-$link-color:            $brand-info;
-$link-hover-color:      $link-color;
+$link-color:            $brand-clickable;
+$link-hover-color:      darken($link-color, 15%);
 $link-hover-decoration: underline;
 
-$component-active-color:    $text-color;
+$component-active-color:    white;
 $component-active-bg:       $brand-primary;
 
 //== Base fonts
@@ -53,11 +72,12 @@ $font-family-sans-serif:  "Roboto", sans-serif;
 $font-family-serif:       Georgia, "Times New Roman", Times, serif;
 $font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace;
 $font-family-base:        "Roboto";
+$font-family-headings:    'BebasNeue', sans-serif, arial, helvetica;
 
-$font-size-base:          13px;
+$font-size-base:          12px;
 $hidpi-scale-factor:      100%;
 
-$headings-font-weight:    400;
+$headings-font-weight:    500;
 $headings-line-height:    1.5;
 $headings-color:          inherit;
 
@@ -65,8 +85,8 @@ $headings-color:          inherit;
 //== Base Spacing
 $gutter-width:              30px;
 
-$padding-base-vertical:     0.4em;
-$padding-base-horizontal:   0.8em;
+$padding-base-vertical:     0.2em;
+$padding-base-horizontal:   1.5em;
 
 $padding-large-vertical:    1em;
 $padding-large-horizontal:  1.8em;
@@ -77,21 +97,21 @@ $padding-small-horizontal:  0.5em;
 $padding-xs-vertical:       0.1em;
 $padding-xs-horizontal:     0.4em;
 
-$line-height-large:         1.3333333;
+$line-height-large:         1.5;
 $line-height-small:         1.5;
 
-$border-radius-base:        0px;
-$border-radius-large:       0px;
-$border-radius-small:       0px;
+$border-radius-base:        0;
+$border-radius-large:       0;
+$border-radius-small:       0;
 
-$caret-width-base:          6px;
-$caret-width-large:         8px;
+$caret-width-base:          0.3em;
+$caret-width-large:         0.3em;
 
 //== Animation
 $expand-sidebar-delay: 300ms;
 
 //== Scrollbar
-$scrollbar-width:        0.75em;
+$scrollbar-width:        8px;
 
 // TODO: for reasons I don't fully understand, the support for touch actions
 // impacts scroll performance quite considerably, even when using the mouse.

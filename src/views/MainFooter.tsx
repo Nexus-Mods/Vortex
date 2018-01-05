@@ -2,9 +2,9 @@ import { PropsCallback } from '../types/IExtensionContext';
 import { ComponentEx, extend, translate } from '../util/ComponentEx';
 
 import * as React from 'react';
-import { Well } from 'react-bootstrap';
 
 export interface IBaseProps {
+  slim: boolean;
 }
 
 interface IFooter {
@@ -24,22 +24,19 @@ type IProps = IBaseProps & IExtendedProps;
  * @class MainFooter
  */
 class MainFooter extends ComponentEx<IProps, {}> {
-  constructor(props) {
-    super(props);
-  }
-
   public render(): JSX.Element {
     const { objects } = this.props;
     return (
-      <Well id='main-footer' bsStyle='slim'>
+      <div id='main-footer'>
         {objects.map(this.renderFooter)}
-      </Well>
+      </div>
     );
   }
 
-  private renderFooter(footer: IFooter): JSX.Element {
+  private renderFooter = (footer: IFooter): JSX.Element => {
+    const { slim } = this.props;
     const props = footer.props !== undefined ? footer.props() : {};
-    return <footer.component key={footer.id} {...props} />;
+    return <footer.component key={footer.id} slim={slim} {...props} />;
   }
 }
 

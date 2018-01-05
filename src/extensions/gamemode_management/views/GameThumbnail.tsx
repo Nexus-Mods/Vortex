@@ -2,7 +2,7 @@ import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import OverlayTrigger from '../../../controls/OverlayTrigger';
 import { IconButton } from '../../../controls/TooltipControls';
-import { PureComponentEx } from '../../../util/ComponentEx';
+import { connect, PureComponentEx } from '../../../util/ComponentEx';
 
 import { IGameStored } from '../types/IGameStored';
 
@@ -12,9 +12,12 @@ import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
-import { Panel, Popover } from 'react-bootstrap';
+import { Button, Panel, Popover } from 'react-bootstrap';
+import { IProfile, IState } from '../../../types/IState';
+import { getSafe } from '../../../util/storeHelper';
+import { countIf } from '../../../util/util';
 
-export interface IProps {
+export interface IBaseProps {
   t: I18next.TranslationFunction;
   game: IGameStored;
   active: boolean;
@@ -22,7 +25,14 @@ export interface IProps {
   type: string;
   getBounds?: () => ClientRect;
   container?: HTMLElement;
+  onLaunch?: () => void;
 }
+
+interface IConnectedProps {
+  profile: IProfile;
+}
+
+type IProps = IBaseProps & IConnectedProps;
 
 /**
  * thumbnail + controls for a single game mode within the game picker
@@ -33,7 +43,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private mRef = null;
 
   public render(): JSX.Element {
-    const { t, active, container, game, getBounds, onRefreshGameInfo, type } = this.props;
+    const { t, active, container, game, getBounds, onRefreshGameInfo, profile, type } = this.props;
 
     if (game === undefined) {
       return null;
@@ -41,6 +51,51 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
+    const modCount = profile !== undefined
+      ? countIf(Object.keys(profile.modState || {}), id => profile.modState[id].enabled)
+      : undefined;
+
+    return (
+      <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
+        <img
+          className={'thumbnail-img'}
+          src={logoPath}
+        />
+        <div className='bottom'>
+          <div className='name'>{t(game.name)}</div>
+          {
+            modCount !== undefined
+              ? <div className='active-mods'>
+                  <Icon name='mods' />
+                  <span>{t('{{ count }} active mod', { count: modCount })}</span>
+                </div>
+              : null
+          }
+        </div>
+        <div className='hover-menu'>
+          {type === 'launcher' ? this.renderLaunch() : this.renderMenu()}
+        </div>
+      </Panel>
+    );
+  }
+
+  private renderLaunch(): JSX.Element {
+    const { onLaunch } = this.props;
+    return (
+      <div className='hover-content hover-launcher'>
+        <Button
+          style={{ width: '100%', height: '100%' }}
+          onClick={onLaunch}
+          className='btn-embed'
+        >
+          <Icon name='launch-application'/>
+        </Button>
+      </div>
+    );
+  }
+
+  private renderMenu(): JSX.Element {
+    const { t, container, game, getBounds, onRefreshGameInfo, type } = this.props;
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
         <GameInfoPopover
@@ -53,22 +108,16 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     );
 
     return (
-      <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
-        <img
-          className={'thumbnail-img'}
-          src={logoPath}
+      <div className='hover-content'>
+        <IconBar
+          id={`game-thumbnail-${game.id}`}
+          className='buttons'
+          group={`game-${type}-buttons`}
+          instanceId={game.id}
+          staticElements={[]}
+          collapse={false}
+          orientation='vertical'
         />
-        <div className='bottom'>
-          <span className='name'>{t(game.name)}</span>
-          <IconBar
-            id={`game-thumbnail-${game.id}`}
-            className='buttons'
-            group={`game-${type}-buttons`}
-            instanceId={game.id}
-            staticElements={[]}
-            collapse={true}
-          />
-        </div>
         <OverlayTrigger
           overlay={gameInfoPopover}
           triggerRef={this.setRef}
@@ -81,12 +130,12 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
         >
           <IconButton
             id={`btn-info-${game.id}`}
-            icon='alert-circle-i'
+            icon='details'
             className='game-thumbnail-info btn-embed'
             tooltip={t('Show Details')}
           />
         </OverlayTrigger>
-      </Panel>
+      </div>
     );
   }
 
@@ -113,4 +162,15 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   }
 }
 
-export default GameThumbnail as React.ComponentClass<IProps>;
+function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
+  const profiles = state.persistent.profiles;
+  const lastActiveProfile =
+    getSafe(state.settings.profiles, ['lastActiveProfile', ownProps.game.id], undefined);
+  return {
+    profile: lastActiveProfile !== undefined ? profiles[lastActiveProfile] : undefined,
+  };
+}
+
+export default
+  connect(mapStateToProps)(
+    GameThumbnail) as React.ComponentClass<IBaseProps>;

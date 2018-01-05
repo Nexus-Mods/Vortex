@@ -31,10 +31,10 @@ import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IModType } from './types/IModType';
 import queryGameInfo from './util/queryGameInfo';
-import Dashlet from './views/Dashlet';
 import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
 import ProgressFooter from './views/ProgressFooter';
+import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 import {} from './views/Settings';
 
 import GameModeManager from './GameModeManager';
@@ -305,7 +305,7 @@ function init(context: IExtensionContext): boolean {
     ['session', 'discovery'],
     ], (discovery: any) => discovery.running);
 
-  context.registerMainPage('controller', 'Games', LazyComponent('./views/GamePicker', __dirname), {
+  context.registerMainPage('game', 'Games', LazyComponent('./views/GamePicker', __dirname), {
     hotkey: 'G',
     group: 'global',
     props: () => ({
@@ -385,24 +385,24 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-managed-buttons', 100, HideGameIcon, {});
   context.registerAction('game-discovered-buttons', 100, HideGameIcon, {});
   context.registerAction('game-undiscovered-buttons', 100, HideGameIcon, {});
-  context.registerAction('game-managed-buttons', 105, 'folder', {},
+  context.registerAction('game-managed-buttons', 105, 'open-ext', {},
                          context.api.translate('Open Game Folder'),
                          openGameFolder);
-  context.registerAction('game-discovered-buttons', 105, 'folder', {},
+  context.registerAction('game-discovered-buttons', 105, 'open-ext', {},
                          context.api.translate('Open Game Folder'),
                          openGameFolder);
-  context.registerAction('game-managed-buttons', 110, 'folder-gallery', {},
+  context.registerAction('game-managed-buttons', 110, 'open-ext', {},
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
-  context.registerAction('game-discovered-buttons', 110, 'folder-gallery', {},
+  context.registerAction('game-discovered-buttons', 110, 'open-ext', {},
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
-  context.registerAction('game-undiscovered-buttons', 115, 'folder-open', {},
+  context.registerAction('game-undiscovered-buttons', 115, 'browse', {},
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
-  context.registerDashlet('Game Picker', 2, 2, 0, Dashlet, () =>
-    activeGameId(context.api.store.getState()) === undefined);
+  context.registerDashlet('Recently Managed', 2, 2, 175, RecentlyManagedDashlet,
+                          undefined, undefined, undefined);
 
   context.once(() => {
     const store: Redux.Store<IState> = context.api.store;

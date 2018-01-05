@@ -4,7 +4,7 @@ import {IState} from '../../types/IState';
 import ExtensionManager from './ExtensionManager';
 
 function init(context: IExtensionContext) {
-  context.registerMainPage('shapes', 'Extensions', ExtensionManager, {
+  context.registerMainPage('extensions', 'Extensions', ExtensionManager, {
     hotkey: 'X',
     group: 'global',
     visible: () => context.api.store.getState().settings.interface.advanced,

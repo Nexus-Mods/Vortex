@@ -3,8 +3,9 @@ import Icon from '../controls/Icon';
 import * as React from 'react';
 
 export interface IToggleProps {
+  dataId?: string;
   checked: boolean;
-  onToggle: (newValue: boolean) => void;
+  onToggle: (newValue: boolean, dataId?: string) => void;
   disabled?: boolean;
 }
 
@@ -26,9 +27,11 @@ class Toggle extends React.PureComponent<IProps, {}> {
             className={`toggle toggle-${checked ? 'on' : 'off'}`}
             onClick={disabled === true ? undefined : this.onToggle}
           >
-            <div className='toggle-track' />
+            <div className='toggle-track'>
+              <Icon name={checked ? 'toggle-enabled' : 'toggle-disabled'} />
+            </div>
             <div className='toggle-handle'>
-              <Icon name={checked ? 'check' : 'cross'} />
+              <Icon name='riffle' rotate={90} />
             </div>
           </div>
           <div>
@@ -40,8 +43,8 @@ class Toggle extends React.PureComponent<IProps, {}> {
   }
 
   private onToggle = () => {
-    const { onToggle, checked } = this.props;
-    onToggle(!checked);
+    const { onToggle, checked, dataId } = this.props;
+    onToggle(!checked, dataId);
   }
 }
 

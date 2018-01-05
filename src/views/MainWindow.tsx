@@ -1,8 +1,10 @@
 import { setDialogVisible, setOpenMainPage, setOverlayOpen } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
+import Banner from '../controls/Banner';
 import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import IconBar from '../controls/IconBar';
+import Spinner from '../controls/Spinner';
 import { Button, IconButton, NavItem } from '../controls/TooltipControls';
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IComponentContext } from '../types/IComponentContext';
@@ -15,22 +17,30 @@ import { getSafe } from '../util/storeHelper';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
-import GlobalOverlay from './GlobalOverlay';
 import MainFooter from './MainFooter';
 import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
 import NotificationButton from './NotificationButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
+import WindowControls from './WindowControls';
 
 import * as I18next from 'i18next';
 import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Badge, ControlLabel, FormGroup, Modal, Nav, ProgressBar } from 'react-bootstrap';
+import { Badge, Button as ReactButton, ControlLabel, FormGroup,
+         Modal, Nav, ProgressBar } from 'react-bootstrap';
+// tslint:disable-next-line:no-submodule-imports
+import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
 import { truthy } from '../util/util';
+
+addStyle(ReactButton, 'secondary');
+addStyle(ReactButton, 'ad');
+addStyle(ReactButton, 'ghost');
+addStyle(ReactButton, 'inverted');
 
 interface IPageButtonProps {
   t: I18next.TranslationFunction;
@@ -89,7 +99,7 @@ class PageButton extends React.Component<IPageButtonProps, {}> {
       return null;
     }
 
-    return <Icon name='spinner' pulse />;
+    return <Spinner />;
   }
 }
 
@@ -118,6 +128,7 @@ export interface IConnectedProps {
   activeProfileId: string;
   nextProfileId: string;
   progressProfile: { [progressId: string]: IProgress };
+  customTitlebar: boolean;
 }
 
 export interface IActionProps {
@@ -140,6 +151,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private settingsPage: IMainPage;
   private nextState: IMainWindowState;
+  private globalButtons: IActionDefinition[] = [];
 
   private menuLayer: JSX.Element = null;
 
@@ -161,7 +173,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       title: 'Settings',
       group: 'global',
       component: Settings,
-      icon: 'sliders',
+      icon: 'settings',
       propsFunc: () => undefined,
       visible: () => true,
     };
@@ -186,7 +198,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public componentWillMount() {
     if (this.props.objects.length > 0) {
-      this.setMainPage(this.props.objects[0].title, false);
+      const def = this.props.objects.sort((lhs, rhs) => lhs.priority - rhs.priority)[0];
+      this.setMainPage(def.title, false);
     }
 
     this.updateSize();
@@ -222,23 +235,32 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public render(): JSX.Element {
-    const { activeProfileId, onHideDialog, nextProfileId, visibleDialog } = this.props;
+    const { activeProfileId, customTitlebar, onHideDialog,
+            nextProfileId, visibleDialog } = this.props;
     const { hidpi } = this.state;
 
     if ((activeProfileId !== nextProfileId) && truthy(nextProfileId)) {
       return this.renderWait();
     }
 
+    const classes = [];
+    classes.push(hidpi ? 'hidpi' : 'lodpi');
+    if (customTitlebar) {
+      // a border around the window if the standard os frame is disabled.
+      // this is important to indicate to the user he can resize the window
+      // (even though it's not actually this frame that lets him do it)
+      classes.push('window-frame');
+    }
     return (
-      <div className={hidpi ? 'hidpi' : 'lodpi'}>
+      <div className={classes.join(' ')}>
         <div className='menu-layer' ref={this.setMenuLayer} />
-        <FlexLayout type='column'>
+        <FlexLayout id='main-window-content' type='column'>
           {this.renderToolbar()}
           {this.renderBody()}
-          {this.renderFooter()}
         </FlexLayout>
         <Dialog />
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
+        {customTitlebar ? <WindowControls /> : null}
       </div>
     );
   }
@@ -248,7 +270,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const progress = getSafe(progressProfile, ['deploying'], undefined);
     const control = progress !== undefined
       ? <ProgressBar label={progress.text} now={progress.percent} style={{ width: '50%' }} />
-      : <Icon name='spinner' pulse style={{ width: 64, height: 64 }} />;
+      : <Spinner style={{ width: 64, height: 64 }} />;
     return (
       <div>
         <div className='center-content'>{control}</div>
@@ -264,25 +286,29 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderToolbar() {
-    const { t } = this.props;
+    const { t, customTitlebar } = this.props;
+    const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
     return (
-      <FlexLayout.Fixed id='main-toolbar'>
+      <FlexLayout.Fixed id='main-toolbar' className={className}>
         <QuickLauncher t={t} />
-        <NotificationButton id='notification-button' />
-        <div className='mainpage-header-container' ref={this.setHeaderRef} />
-        <IconBar
-          className='application-icons'
-          group='application-icons'
-          staticElements={this.applicationButtons}
-        />
-        <IconButton
-          id='btn-open-flyout'
-          icon='dots'
-          rotate={90}
-          tooltip={t('Functions')}
-          onClick={this.toggleOverlay}
-          className='pull-right'
-        />
+        <Banner group='main-toolbar' />
+        <div className='flex-fill' />
+        <div className='main-toolbar-right'>
+          <NotificationButton id='notification-button' />
+          <IconBar
+            className='application-icons'
+            group='application-icons'
+            staticElements={this.applicationButtons}
+          />
+          <IconBar
+            id='global-icons'
+            className='global-icons'
+            group='global-icons'
+            staticElements={this.globalButtons}
+            orientation='vertical'
+            collapse
+          />
+        </div>
       </FlexLayout.Fixed>
     );
   }
@@ -294,60 +320,38 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderBody() {
-    const { t, mainPage, objects, overlayOpen, tabsMinimized } = this.props;
-
-    const globalPages = objects.filter(page => page.group === 'global');
-    const perGamePages = objects.filter(page => page.group === 'per-game');
-    const supportPages = objects.filter(page => page.group === 'support');
+    const { t, objects, overlayOpen, tabsMinimized } = this.props;
 
     const sbClass = tabsMinimized ? 'sidebar-compact' : 'sidebar-expanded';
 
-    const globalOverlay = <GlobalOverlay t={t} />;
+    const pages = objects.map(obj => this.renderPage(obj));
+    pages.push(this.renderPage(this.settingsPage));
 
-    const pages = objects.map(obj => this.renderPage(obj, globalOverlay));
-    pages.push(this.renderPage(this.settingsPage, globalOverlay));
+    const pageGroups = [
+      { title: undefined, key: 'dashboard' },
+      { title: 'General', key: 'global' },
+      { title: 'Mods', key: 'per-game' },
+      { title: 'About', key: 'support' },
+    ];
 
     return (
       <FlexLayout.Flex>
         <FlexLayout type='row' style={{ overflow: 'hidden' }}>
           <FlexLayout.Fixed id='main-nav-sidebar' className={sbClass}>
             <div id='main-nav-container' ref={this.setSidebarRef}>
-              <Nav
-                bsStyle='pills'
-                stacked
-                activeKey={mainPage}
-                style={{ flexGrow: 1 }}
-              >
-                {globalPages.map(this.renderPageButton)}
-                {this.renderPageButton(this.settingsPage)}
-              </Nav>
-              <Nav
-                bsStyle='pills'
-                stacked
-                activeKey={mainPage}
-                style={{ flexGrow: 1 }}
-              >
-                {perGamePages.map(this.renderPageButton)}
-              </Nav>
-              <Nav
-                bsStyle='pills'
-                stacked
-                activeKey={mainPage}
-                style={{ flexGrow: 1 }}
-              >
-                {supportPages.map(this.renderPageButton)}
-              </Nav>
+              {pageGroups.map(this.renderPageGroup)}
             </div>
+            <MainFooter slim={tabsMinimized} />
             <Button
               tooltip={tabsMinimized ? t('Restore') : t('Minimize')}
               id='btn-minimize-menu'
               onClick={this.toggleMenu}
               className='btn-menu-minimize'
             >
-              <Icon name={tabsMinimized ? 'right' : 'left'} />
+              <Icon name={tabsMinimized ? 'pane-right' : 'pane-left'} />
             </Button>
           </FlexLayout.Fixed>
-          <FlexLayout.Flex id='main-window-pane'>
+          <FlexLayout.Flex fill id='main-window-pane'>
             <DNDContainer style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               {pages}
             </DNDContainer>
@@ -358,6 +362,34 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           </FlexLayout.Flex>
         </FlexLayout>
       </FlexLayout.Flex>
+    );
+  }
+
+  private renderPageGroup = ({ title, key }: { title: string, key: string }): JSX.Element => {
+    const { mainPage, objects, tabsMinimized } = this.props;
+    const pages = objects.filter(page => (page.group === key) && page.visible());
+    if (key === 'global') {
+      pages.push(this.settingsPage);
+    }
+
+    if (pages.length === 0) {
+      return null;
+    }
+
+    const showTitle = !tabsMinimized && (title !== undefined);
+
+    return (
+      <div key={key}>
+        {showTitle ? <p className='main-nav-group-title'>{title}</p> : null}
+        <Nav
+          bsStyle='pills'
+          stacked
+          activeKey={mainPage}
+          className='main-nav-group'
+        >
+          {pages.map(this.renderPageButton)}
+        </Nav>
+      </div>
     );
   }
 
@@ -381,17 +413,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
   }
 
-  private renderFooter() {
-    return (
-      <FlexLayout.Fixed>
-        <MainFooter />
-      </FlexLayout.Fixed>
-    );
-  }
-
   private renderPageButton = (page: IMainPage) => {
     const { t, secondaryPage } = this.props;
-    return !page.visible() ? null : (
+    return (
       <NavItem
         id={page.title}
         className={secondaryPage === page.title ? 'secondary' : undefined}
@@ -409,7 +433,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     );
   }
 
-  private renderPage(page: IMainPage, globalOverlay: JSX.Element) {
+  private renderPage(page: IMainPage) {
     const { t, mainPage, secondaryPage } = this.props;
     const { loadedPages } = this.state;
 
@@ -427,7 +451,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         active={active}
         secondary={secondaryPage === page.title}
         overlayPortal={this.getOverlayRef}
-        headerPortal={this.getHeaderRef}
       />
     );
   }
@@ -511,6 +534,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     activeProfileId: state.settings.profiles.activeProfileId,
     nextProfileId: state.settings.profiles.nextProfileId,
     progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
+    customTitlebar: state.settings.window.customTitlebar,
   };
 }
 
@@ -537,6 +561,7 @@ function registerMainPage(
     group: options.group,
     badge: options.badge,
     activity: options.activity,
+    priority: options.priority !== undefined ? options.priority : 100,
   };
 }
 

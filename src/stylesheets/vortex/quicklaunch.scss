@@ -1,0 +1,77 @@
+.container-quicklaunch {
+  margin: auto 0;
+  position: relative;
+
+  >.btn-group {
+    >.btn-quicklaunch {
+      padding: 0px !important;
+      display: inline-flex;
+      >div {
+        display: flex;
+        img {
+          width: auto;
+          height: auto;
+        }
+      }
+      >.caret {
+        margin: auto 0;
+      }
+    }
+  }
+
+  .menu-label {
+    flex: 1 1 0;
+    margin: auto 2em;
+    text-align: left;
+    font-size: larger;
+  }
+
+  .tool-icon-container {
+    width: 200px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    background-size: cover !important;
+
+    &:hover {
+      filter: brightness(150%);
+    }
+
+    .tool-icon {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+    }
+  }
+  .item-more-games {
+    width: 100%;
+    line-height: 40px;
+  }
+
+  a[role=menuitem] {
+    padding: 0px;
+  }
+
+  .dropdown-menu {
+    padding: 0px;
+    margin: 0px;
+    border: 0px;
+  }
+
+  .container-quicklaunch-launch {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+  }
+}
+
+.toolbar-app-region .container-quicklaunch .tool-icon-container {
+  width: 260px;
+  height: 104px;
+}
+
+#dropdown-quicklaunch {
+  border: 0;
+}

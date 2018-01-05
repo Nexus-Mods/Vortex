@@ -1,4 +1,5 @@
 import Advanced from './Advanced';
+import Banner from './Banner';
 import Dropzone from './Dropzone';
 import FlexLayout from './FlexLayout';
 import FormFeedback from './FormFeedback';
@@ -7,6 +8,7 @@ import Icon from './Icon';
 import IconBar from './IconBar';
 import Modal from './Modal';
 import More from './More';
+import Spinner from './Spinner';
 import Steps from './Steps';
 import Table, {ChangeDataHandler, ITableRowAction, makeGetSelection} from './Table';
 import TableDateTimeFilter from './table/DateTimeFilter';
@@ -17,7 +19,7 @@ import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
 import Webview from './Webview';
 
-export {Advanced, Dropzone, FlexLayout, FormFeedback, FormInput,
+export {Advanced, Banner, Dropzone, FlexLayout, FormFeedback, FormInput,
         ChangeDataHandler, Icon, IconBar, ITableRowAction, Modal, More, Table,
         TableDateTimeFilter, TableNumericFilter, TableTextFilter,
-        Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Webview};
+        Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Webview};

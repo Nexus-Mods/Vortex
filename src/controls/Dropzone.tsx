@@ -6,6 +6,8 @@ import { log } from '../util/log';
 import { activeGameId, downloadPath } from '../util/selectors';
 import { getSafe } from '../util/storeHelper';
 
+import Icon from './Icon';
+
 import * as Promise from 'bluebird';
 
 import * as PropTypes from 'prop-types';
@@ -17,6 +19,9 @@ export type DropType = 'urls' | 'files';
 export interface IBaseProps {
   drop: (type: DropType, paths: string[]) => void;
   accept: DropType[];
+  dropText?: string;
+  clickText?: string;
+  icon?: string;
   clickable?: boolean;
   dialogHint?: string;
   dialogDefault?: string;
@@ -57,7 +62,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, accept, clickable, dragOverlay, style } = this.props;
+    const { t, clickable, dragOverlay, style } = this.props;
 
     const classes = [ 'dropzone' ];
     if (!this.mWrapperMode) {
@@ -71,17 +76,6 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
     } else if (['no', 'invalid'].indexOf(this.state.dropActive) === -1) {
       classes.push('hover-valid');
     }
-
-    const clickMode = accept[0] === 'urls'
-      ? t('enter URL')
-      : t('browse for file');
-
-    const acceptList = accept.map(mode => {
-      return {
-        urls: t('URL'),
-        files: t('File'),
-      }[mode];
-    });
 
     return (
       <div
@@ -97,12 +91,36 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
       >
         {React.Children.count(this.props.children) > 0
           ? this.props.children
-          : this.state.dropActive === 'hover'
-            ? t('Click to {{clickMode}}', { replace: { clickMode } })
-            : t('Drop {{accept}}', { replace: { accept: acceptList.join(t(' or ')) } })}
+          : this.renderContent()}
         {(dragOverlay !== undefined) && (['no', 'invalid'].indexOf(this.state.dropActive) === -1)
           ? <div className='drag-overlay'>{dragOverlay}</div>
           : null}
+      </div>
+    );
+  }
+
+  private renderContent(): JSX.Element {
+    const { t, accept, clickText, dropText, icon } = this.props;
+    const { dropActive } = this.state;
+
+    const acceptList = accept.map(mode => {
+      return {
+        urls: t('URL'),
+        files: t('File'),
+      }[mode];
+    });
+
+    const clickMode = accept[0] === 'urls'
+      ? t('enter URL')
+      : t('browse for file');
+
+    return (
+      <div className='dropzone-content'>
+        {(icon !== undefined) ? <Icon name={icon} /> : null}
+        {dropActive === 'hover'
+          ? t(clickText || 'Click to {{ clickMode }}', { replace: { clickMode } })
+          : t(dropText || 'Drop {{ accept }}',
+              { replace: { accept: acceptList.join(t(' or ')) } }) }
       </div>
     );
   }

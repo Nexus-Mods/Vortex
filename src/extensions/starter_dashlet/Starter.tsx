@@ -1,6 +1,9 @@
 import { showDialog } from '../../actions/notifications';
+import Dashlet from '../../controls/Dashlet';
 import Dropdown from '../../controls/Dropdown';
+import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import Icon from '../../controls/Icon';
+import Spinner from '../../controls/Spinner';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import asyncRequire, { Placeholder } from '../../util/asyncRequire';
@@ -28,7 +31,7 @@ import { setPrimaryTool } from './actions';
 
 import ToolButton from './ToolButton';
 import ToolEditDialogT from './ToolEditDialog';
-let ToolEditDialog: typeof ToolEditDialogT = Placeholder;
+let ToolEditDialog: typeof ToolEditDialogT = Placeholder as any;
 
 import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
@@ -104,26 +107,42 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   public render(): JSX.Element {
-    const { discoveredGames, gameMode, knownGames } = this.props;
+    const { t, discoveredGames, gameMode, knownGames } = this.props;
+
+    let content: JSX.Element;
 
     if (gameMode === undefined) {
-      return null;
+      content = (
+        <EmptyPlaceholder
+          icon='game'
+          text={t('When you are managing a game, supported tools will appear here')}
+          fill
+        />
+      );
+    } else {
+      const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
+      const discoveredGame = discoveredGames[gameMode];
+      const gameName = getSafe(discoveredGame, ['name'], getSafe(game, ['name'], gameMode));
+      content = (
+        <Media id='starter-dashlet'>
+          <Media.Left>
+            {this.renderGameIcon(game, discoveredGame)}
+            {this.renderEditToolDialog()}
+          </Media.Left>
+          <Media.Body>
+            {this.renderToolIcons(game, discoveredGame)}
+          </Media.Body>
+          <Media.Right>
+            {this.renderAddButton()}
+          </Media.Right>
+        </Media>
+      );
     }
 
-    const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
-    const discoveredGame = discoveredGames[gameMode];
-    const gameName = getSafe(discoveredGame, ['name'], getSafe(game, ['name'], gameMode));
-
     return (
-      <Media id='starter-dashlet'>
-        <Media.Left>
-          {this.renderGameIcon(game, discoveredGame)}
-          {this.renderEditToolDialog()}
-        </Media.Left>
-        <Media.Body>
-          {this.renderToolIcons(game, discoveredGame)}
-        </Media.Body>
-      </Media>
+      <Dashlet title='' className='dashlet-starter'>
+        {content}
+      </Dashlet>
     );
   }
 
@@ -139,38 +158,73 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     const knownTools: IToolStored[] = getSafe(game, ['supportedTools'], []);
     const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
 
-    const hidden = tools.filter(starter =>
-      (discoveredTools[starter.id] !== undefined)
-      && (discoveredTools[starter.id].hidden === true));
-
     const visible = tools.filter(starter =>
       starter.isGame
       || (discoveredTools[starter.id] === undefined)
       || (discoveredTools[starter.id].hidden !== true));
 
-    visible.push(null);
-
-    const split: StarterInfo[][] = visible.reduce((prev, value, idx) => {
-      if ((idx % 4) === 0) {
-        prev.push([]);
-      }
-      prev[Math.floor(idx / 4)].push(value);
-      return prev;
-    }, []);
-
     return (
-      <div>
-        <Grid fluid>
-          <Row>{
-            visible.map((col, colIdx) => (
-              <Col key={colIdx} md={6} lg={4} >
-                {col !== null ? this.renderTool(col) : this.renderAddButton(hidden)}
-              </Col>
-            ))
-          }</Row>
-        </Grid>
+      <div className='tool-icon-box'>
+        {visible.map((vis, idx) => <div key={idx}>{this.renderTool(vis)}</div>)}
       </div>
     );
+  }
+
+  private renderAddButton() {
+    const { t, discoveredTools } = this.props;
+    const { tools } = this.state;
+
+    const hidden = tools.filter(starter =>
+      (discoveredTools[starter.id] !== undefined)
+      && (discoveredTools[starter.id].hidden === true));
+
+    return (
+      <Dropdown
+        id='add-tool-button'
+        className='btn-add-tool'
+        // container={this.mRef}
+      >
+        <Dropdown.Toggle>
+          <Icon name='add' />
+          <span className='btn-add-tool-text'>{t('Add Tool')}</span>
+        </Dropdown.Toggle>
+        <Dropdown.Menu>
+          {hidden.map(starter => (
+            <MenuItem
+              key={starter.id}
+              eventKey={starter.id}
+              onSelect={this.unhide}
+            >{starter.name}
+            </MenuItem>
+          ))}
+          <MenuItem
+            key='__add'
+            onSelect={this.addNewTool}
+          >
+            {t('New...')}
+          </MenuItem>
+        </Dropdown.Menu>
+      </Dropdown>
+    );
+  }
+
+  private renderGameIcon = (game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element => {
+    if ((game === undefined) && (discoveredGame === undefined)) {
+      // assumption is that this can only happen during startup
+      return <Spinner />;
+    } else {
+      const { t } = this.props;
+      return (
+        <GameThumbnail
+          t={t}
+          game={game}
+          active={true}
+          type='launcher'
+          onRefreshGameInfo={this.onRefreshGameInfo}
+          onLaunch={this.startGame}
+        />
+      );
+    }
   }
 
   private renderTool = (starter: StarterInfo) => {
@@ -279,6 +333,18 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     }
   }
 
+  private startGame = () => {
+    const { primaryTool } = this.props;
+    const { tools } = this.state;
+
+    if (primaryTool === undefined) {
+      this.startTool(tools[0]);
+    } else {
+      const info = tools.find(iter => iter.id === primaryTool);
+      this.startTool(info);
+    }
+  }
+
   private startTool = (info: StarterInfo) => {
     const startTool = require('../../util/startTool').default;
     startTool(info, this.context.api.events, this.queryElevate,
@@ -291,60 +357,9 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       ;
   }
 
-  private renderAddButton(hidden: StarterInfo[]) {
-    const { t } = this.props;
-    // <IconButton id='add-tool-icon' icon='plus' tooltip={t('Add Tool')} />
-    return (
-      <Dropdown
-        id='add-tool-button'
-        className='btn-add-tool'
-        container={this.mRef}
-      >
-        <Dropdown.Toggle>
-          <Icon name='plus' />
-          <span className='btn-add-tool-text'>{t('Add Tool')}</span>
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          {hidden.map(starter => (
-            <MenuItem
-              key={starter.id}
-              eventKey={starter.id}
-              onSelect={this.unhide}
-            >{starter.name}
-            </MenuItem>
-          ))}
-          <MenuItem
-            key='__add'
-            onSelect={this.addNewTool}
-          >
-            {t('New...')}
-          </MenuItem>
-        </Dropdown.Menu>
-      </Dropdown>
-    );
-  }
-
   private unhide = (toolId: any) => {
     const { gameMode, onSetToolVisible } = this.props;
     onSetToolVisible(gameMode, toolId, true);
-  }
-
-  private renderGameIcon = (game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element => {
-    if ((game === undefined) && (discoveredGame === undefined)) {
-      // assumption is that this can only happen during startup
-      return <Icon name='spinner' pulse />;
-    } else {
-      const { t } = this.props;
-      return (
-        <GameThumbnail
-          t={t}
-          game={game}
-          active={true}
-          type='managed'
-          onRefreshGameInfo={this.onRefreshGameInfo}
-        />
-      );
-    }
   }
 
   private onRefreshGameInfo = (gameId: string) => {

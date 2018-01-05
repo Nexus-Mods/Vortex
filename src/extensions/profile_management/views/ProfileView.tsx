@@ -23,7 +23,7 @@ import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { Collapse, ListGroup, ListGroupItem } from 'react-bootstrap';
+import { Button, Collapse, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
 import { generate as shortid } from 'shortid';
 
 export interface IBaseProps {
@@ -101,18 +101,23 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     return (
       <MainPage>
         <MainPage.Body style={{ overflowY: 'auto' }}>
-          {gameName}
-          <ListGroup className='profile-list'>
+          <div className='profile-list'>
             {currentGameProfilesSorted.map(
               profileId => this.renderProfile(profileId, supportedFeatures))}
-            {this.renderAddOrEdit(edit)}
-          </ListGroup>
-          {t('Other Games')} <a onClick={this.toggleOther}>{showOther ? t('Hide') : t('Show')}</a>
-          <Collapse in={showOther}>
-          <ListGroup className='profile-list'>
-            {otherProfilesSorted.map(
-              profileId => this.renderProfile(profileId, supportedFeatures))}
-          </ListGroup>
+          </div>
+          {this.renderAddOrEdit(edit)}
+          <div>
+            {t('Other Games')}
+            {' '}
+            <a onClick={this.toggleOther}>{showOther ? t('Hide') : t('Show')}</a>
+          </div>
+          <Collapse in={showOther} >
+            <div>
+              <div className='profile-list'>
+                {otherProfilesSorted.map(
+                  profileId => this.renderProfile(profileId, supportedFeatures))}
+              </div>
+            </div>
           </Collapse>
         </MainPage.Body>
       </MainPage>
@@ -218,13 +223,11 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
 
     return (
-      <ListGroupItem
-        key='__add'
-        header={<Icon name='plus' />}
-        onClick={this.editNewProfile}
-      >
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <Button bsStyle='ghost' className='profile-add' onClick={this.editNewProfile}>
         {t('Add "{{ name }}" Profile', { replace: { name: gameName } })}
-      </ListGroupItem>
+      </Button>
+      </div>
     );
   }
 

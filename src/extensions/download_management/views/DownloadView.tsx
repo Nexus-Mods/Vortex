@@ -1,5 +1,7 @@
 import { showDialog } from '../../../actions/notifications';
+import Banner from '../../../controls/Banner';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
+import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
 import IconBar from '../../../controls/IconBar';
 import InputButton from '../../../controls/InputButton';
@@ -37,8 +39,10 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
+import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
+import { Placeholder } from '../../../util/asyncRequire';
 
 function objectFilter(obj: any, filter: (key: string, value: any) => boolean) {
   const result = {};
@@ -74,7 +78,7 @@ interface IActionProps {
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
-  dropActive: boolean;
+  viewAll: boolean;
 }
 
 interface IAllGamesButtonProps {
@@ -166,9 +170,9 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
   constructor(props: IProps) {
     super(props);
-    this.state = {
-      dropActive: false,
-    };
+    this.initState({
+      viewAll: false,
+    });
 
     let lang: string;
     let collator: Intl.Collator;
@@ -177,7 +181,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       id: 'game',
       name: 'Game',
       description: 'The game this download is associated with',
-      icon: 'controller',
+      icon: 'game',
       calc: (attributes: IDownload) => {
         const game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
         return game ? this.props.t(game.shortName || game.name) : attributes.game;
@@ -258,7 +262,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
     this.actions = [
       {
-        icon: 'eye',
+        icon: 'inspect',
         title: 'Inspect',
         action: this.inspect,
         condition: this.inspectable,
@@ -268,7 +272,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         },
       },
       {
-        icon: 'file-add',
+        icon: 'start-install',
         title: 'Install',
         action: this.install,
         condition: this.installable,
@@ -278,13 +282,13 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         },
       },
       {
-        icon: 'button-pause',
+        icon: 'pause',
         title: 'Pause',
         action: this.pause,
         condition: this.pausable,
       },
       {
-        icon: 'play',
+        icon: 'resume',
         title: 'Resume',
         action: this.resume,
         condition: this.resumable,
@@ -297,7 +301,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         hotKey: { code: 46 },
       },
       {
-        icon: 'button-stop',
+        icon: 'stop',
         title: 'Cancel',
         action: this.remove,
         condition: this.cancelable,
@@ -305,60 +309,116 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     ];
   }
 
-  public shouldComponentUpdate(nextProps: IProps) {
+  public componentWillMount() {
+    this.nextState.viewAll = false;
+  }
+
+  public shouldComponentUpdate(nextProps: IProps, nextState: IComponentState) {
     return this.props.downloads !== nextProps.downloads
       || this.props.downloadPath !== nextProps.downloadPath
       || this.props.gameMode !== nextProps.gameMode
-      || this.props.knownGames !== nextProps.knownGames;
+      || this.props.knownGames !== nextProps.knownGames
+      || this.props.secondary !== nextProps.secondary
+      || this.state.viewAll !== nextState.viewAll;
   }
 
   public render(): JSX.Element {
     const { t, downloads, gameMode, secondary } = this.props;
+    const { viewAll } = this.state;
+
+    let content = null;
+
+    if (gameMode === undefined) {
+      content = (
+        <Panel className='placeholder-container'>
+          <EmptyPlaceholder
+            icon='folder-download'
+            text={t('Please select a game to manage first')}
+          />
+        </Panel>
+      );
+    } else if (Object.keys(this.props.downloads).length === 0) {
+      content = this.renderDropzone();
+    } else {
+      const filtered = viewAll
+        ? downloads
+        : Object.keys(downloads)
+            .filter(dlId => downloads[dlId].installed === undefined)
+            .reduce((prev, dlId) => {
+              prev[dlId] = downloads[dlId];
+              return prev;
+            }, {});
+      content = (
+        <FlexLayout type='column'>
+          {secondary ? null : <Banner group='downloads' />}
+          <FlexLayout.Flex>
+            <Panel className='download-panel'>
+              <FlexLayout type='column'>
+                <FlexLayout.Fixed>
+                  {secondary ? null : <DownloadGraph />}
+                </FlexLayout.Fixed>
+                <FlexLayout.Flex>
+                  <SuperTable
+                    tableId='downloads'
+                    data={filtered}
+                    staticElements={[
+                      FILE_NAME,
+                      this.fileTimeColumn,
+                      this.gameColumn,
+                      FILE_SIZE,
+                      PROGRESS,
+                    ]}
+                    actions={this.actions}
+                  />
+                </FlexLayout.Flex>
+                <FlexLayout.Fixed style={{ textAlign: 'center' }}>
+                  <Button bsStyle='ghost' onClick={this.toggleViewAll} >
+                    {viewAll ? t('View not-yet-installed Downloads') : t('View All Downloads')}
+                  </Button>
+                </FlexLayout.Fixed>
+              </FlexLayout>
+            </Panel>
+          </FlexLayout.Flex>
+          <FlexLayout.Fixed>
+            {secondary ? null : this.renderDropzone()}
+          </FlexLayout.Fixed>
+        </FlexLayout>
+      );
+    }
 
     return (
       <MainPage>
-        <FlexLayout type='column'>
-          <FlexLayout.Fixed>
-            {secondary ? null : <DownloadGraph />}
-          </FlexLayout.Fixed>
-          <FlexLayout.Flex>
-            <SuperTable
-              tableId='downloads'
-              data={downloads}
-              staticElements={[
-                FILE_NAME,
-                this.fileTimeColumn,
-                this.gameColumn,
-                FILE_SIZE,
-                PROGRESS,
-              ]}
-              actions={this.actions}
-            />
-          </FlexLayout.Flex>
-          <FlexLayout.Fixed>
-            {
-              ((gameMode !== undefined) && !secondary)
-                ? (
-                  <Dropzone
-                    accept={['urls', 'files']}
-                    drop={this.dropDownload}
-                    dialogHint={t('Enter download URL')}
-                  />
-                ) : null
-            }
-          </FlexLayout.Fixed>
-        </FlexLayout>
+        <MainPage.Body>
+          {content}
+        </MainPage.Body>
         <MainPage.Overlay>
           <IconBar
             group='download-icons'
             staticElements={this.staticButtons}
             style={{ width: '100%', display: 'flex' }}
-            buttonType='both'
             orientation='vertical'
           />
         </MainPage.Overlay>
       </MainPage>
     );
+  }
+
+  private renderDropzone(): JSX.Element {
+    const { t } = this.props;
+    return (
+      <Panel className='download-drop-panel'>
+        <Dropzone
+          accept={['urls', 'files']}
+          drop={this.dropDownload}
+          dialogHint={t('Enter download URL')}
+          icon='folder-download'
+        />
+      </Panel>
+    );
+  }
+
+  private toggleViewAll = () => {
+    this.nextState.viewAll = !this.state.viewAll;
   }
 
   private getDownload(downloadId: string): IDownload {

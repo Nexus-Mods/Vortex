@@ -128,6 +128,7 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
       .then(() => fs.readFileAsync(path.join(discovered['skyrimse'].path, 'Skyrim.ccc'))
         .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
           plugin => skyrimsecc.add(plugin.toLowerCase())))
+        .catch(err => undefined)
         .then(() => gameSupport['skyrimse'].nativePlugins = Array.from(skyrimsecc)));
   }
   if (util.getSafe(discovered, ['fallout4', 'path'], undefined) !== undefined) {
@@ -136,6 +137,7 @@ export function initGameSupport(store: Redux.Store<any>): Promise<void> {
       .then(() => fs.readFileAsync(path.join(discovered['fallout4'].path, 'Fallout4.ccc'))
         .then(data => data.toString().split('\r\n').filter(plugin => plugin !== '').forEach(
           plugin => fallout4cc.add(plugin.toLowerCase())))
+        .catch(err => undefined)
         .then(() => gameSupport['fallout4'].nativePlugins = Array.from(fallout4cc)));
   }
 

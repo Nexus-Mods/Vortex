@@ -1,11 +1,12 @@
 import { DialogActions, DialogType,
          IDialogContent, showDialog } from '../../../actions/notifications';
 import Advanced from '../../../controls/Advanced';
+import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import IconBar, { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
-import { Button, IconButton } from '../../../controls/TooltipControls';
+import { Button, IconButton, ToggleButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IDiscoveryPhase, IDiscoveryState, IState } from '../../../types/IState';
@@ -30,7 +31,7 @@ import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { ListGroup, ProgressBar } from 'react-bootstrap';
+import { ListGroup, ProgressBar, Tab, Tabs } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
@@ -145,48 +146,78 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     });
 
+    const title = (text: string, count: number) => {
+      return (
+        <div className='nav-title'>
+        <div className='nav-title-title'>{text}</div>
+        <div className='nav-title-count'>({count})</div>
+      </div>
+      );
+    };
+
     return (
       <MainPage domRef={this.setRef}>
         <MainPage.Header>
           <IconBar
-            className='flex-fill'
             group='game-icons'
             staticElements={this.buttons}
-            buttonType='icon'
+            className='menubar'
           />
-          <div id='gamepicker-layout'>
-            <IconButton
+          <div className='flex-fill' />
+          <IconBar
+            id='gamepicker-layout-list'
+            group='gamepicker-layout-icons'
+            staticElements={[]}
+            className='menubar'
+          >
+            <ToggleButton
               id='gamepicker-layout-list'
-              className={pickerLayout === 'list' ? 'btn-toggle-on' : 'btn-toggle-off'}
               onClick={this.setLayoutList}
-              icon='list'
+              onIcon='layout-list'
+              offIcon='layout-list'
               tooltip={t('List')}
-            />
-            <IconButton
+              offTooltip={t('List')}
+              state={pickerLayout === 'list'}
+            >
+              <span className='button-text'>{t('List View')}</span>
+            </ToggleButton>
+            <ToggleButton
               id='gamepicker-layout-grid'
-              className={pickerLayout === 'small' ? 'btn-toggle-on' : 'btn-toggle-off'}
               onClick={this.setLayoutSmall}
-              icon='grid'
-              tooltip={t('Small Icons')}
-            />
-          </div>
+              onIcon='layout-grid'
+              offIcon='layout-grid'
+              tooltip={t('Grid')}
+              offTooltip={t('Grid')}
+              state={pickerLayout === 'small'}
+            >
+              <span className='button-text'>{t('Grid View')}</span>
+            </ToggleButton>
+          </IconBar>
         </MainPage.Header>
         <MainPage.Body>
           <FlexLayout type='column' className='game-page'>
             <FlexLayout.Flex>
               <div ref={this.setScrollRef} className='gamepicker-body'>
-                <span style={{ display: 'table' }}>
-                  <h3>{t('Managed')}</h3>
-                  {this.renderGames(managedGameList, 'managed')}
-                </span>
-                <span style={{ display: 'table' }}>
-                  <h3>{t('Discovered')}</h3>
-                  {this.renderGames(discoveredGameList, 'discovered')}
-                </span>
-                <span style={{ display: 'table' }}>
-                  <h3>{t('Supported')}</h3>
-                  {this.renderGames(supportedGameList, 'undiscovered')}
-                </span>
+                <Tabs defaultActiveKey='managed' id='games-picker-tabs'>
+                  <Tab
+                    eventKey='managed'
+                    title={title(t('Managed'), managedGameList.length)}
+                  >
+                    {this.renderGames(managedGameList, 'managed')}
+                  </Tab>
+                  <Tab
+                    eventKey='discovered'
+                    title={title(t('Discovered'), discoveredGameList.length)}
+                  >
+                    {this.renderGames(discoveredGameList, 'discovered')}
+                  </Tab>
+                  <Tab
+                    eventKey='supported'
+                    title={title(t('Supported'), supportedGameList.length)}
+                  >
+                    {this.renderGames(supportedGameList, 'undiscovered')}
+                  </Tab>
+                </Tabs>
               </div>
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
@@ -200,11 +231,11 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                 <FlexLayout.Fixed>
                   <IconButton
                     id='start-discovery'
-                    icon={discovery.running ? 'stop' : 'search'}
+                    icon={discovery.running ? 'button-stop' : 'search'}
                     tooltip={discovery.running ? t('Stop search') : t('Search for games')}
                     onClick={discovery.running ? this.stopDiscovery : this.startDiscovery}
                   >
-                    {t('Search for games')}
+                    {discovery.running ? t('Stop search') : t('Search for games')}
                   </IconButton>
                 </FlexLayout.Fixed>
               </div>
@@ -215,7 +246,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           <IconBar
             group='game-icons'
             staticElements={this.buttons}
-            buttonType='both'
             orientation='vertical'
           />
         </MainPage.Overlay>
@@ -276,7 +306,28 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGames = (games: IGameStored[], type: string): JSX.Element => {
-    const { gameMode, pickerLayout } = this.props;
+    const { t, gameMode, pickerLayout } = this.props;
+
+    if (games.length === 0) {
+      if (type === 'managed') {
+        return (
+          <EmptyPlaceholder
+            icon='game'
+            text={t('You haven\'t managed any games yet')}
+            subtext={t('To start managing a game, go to "Discovered" and activate a game there.')}
+          />
+        );
+      } else if (type === 'discovered') {
+        return (
+          <EmptyPlaceholder
+            icon='game'
+            text={t('No games were discovered')}
+            subtext={t('You can manually add a game from "Supported" or start a full disk scan.')}
+          />
+        );
+      }
+    }
+
     switch (pickerLayout) {
       case 'list': return this.renderGamesList(games, type, gameMode);
       case 'small': return this.renderGamesSmall(games, type, gameMode);
@@ -284,8 +335,9 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private renderGamesList(games: IGameStored[], type: string, gameMode: string) {
+  private renderGamesList(games: IGameStored[], type: string, gameMode: string): JSX.Element {
     const { t, discoveredGames, onRefreshGameInfo } = this.props;
+
     return (
       <ListGroup>
         {games.map(game => (
@@ -310,6 +362,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const { t, onRefreshGameInfo } = this.props;
     return (
       <div>
+      <div className='game-group'>
         {games.map(game => (
           <GameThumbnail
             t={t}
@@ -322,6 +375,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             container={this.mScrollRef}
           />))
         }
+      </div>
       </div>
     );
   }

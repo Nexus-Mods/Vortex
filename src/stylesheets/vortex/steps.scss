@@ -1,0 +1,41 @@
+.steps {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  hr {
+    height: 1px;
+    margin: 15px 5px;
+    background-color: $gray;
+    width: 64px;
+  }
+  .steps-step-number {
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 32px;
+    width: 32px;
+    line-height: 30px;
+    text-align: center;
+  }
+  .steps-step-title {
+    font-size: 1.2em;
+  }
+
+  .steps-step-description {
+    font-size: 0.9em;
+  }
+
+  .steps-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    &.current {
+      .steps-step-number {
+        background-color: $brand-secondary;
+      }
+    }
+    &.future {
+      color: $text-color-disabled;
+    }
+  }
+}

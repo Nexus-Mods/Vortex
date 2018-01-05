@@ -1,4 +1,5 @@
 import Icon from './Icon';
+import Spinner from './Spinner';
 
 import classNames = require('classnames');
 import * as _ from 'lodash';
@@ -44,12 +45,12 @@ class FormFeedback extends React.Component<IFormFeedbackProps, {}> {
   private icon(state: string, pending: boolean): JSX.Element {
     const style = { verticalAlign: 'baseline' };
     if (pending) {
-      return <Icon name='spinner' pulse style={style} />;
+      return <Spinner style={style} />;
     }
     switch (state) {
-      case 'success': return <Icon name='check' style={style} />;
-      case 'warning': return <Icon name='triangle-alert' style={style} />;
-      case 'error': return <Icon name='cross' style={style} />;
+      case 'success': return <Icon name='feedback-success' style={style} />;
+      case 'warning': return <Icon name='feedback-warning' style={style} />;
+      case 'error': return <Icon name='feedback-error' style={style} />;
       default: return undefined;
     }
   }

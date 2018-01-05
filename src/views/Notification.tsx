@@ -1,4 +1,5 @@
 import Icon from '../controls/Icon';
+import Spinner from '../controls/Spinner';
 import { INotification, INotificationAction, NotificationType } from '../types/INotification';
 import { ComponentEx } from '../util/ComponentEx';
 
@@ -17,7 +18,11 @@ class Action extends React.Component<IActionProps & INotificationAction, {}> {
     return <Button onClick={this.action}>{t(title)}</Button>;
   }
 
-  private action = () => this.props.action(this.props.onDismiss);
+  private action = () => {
+    if (this.props.action !== undefined) {
+      this.props.action(this.props.onDismiss);
+    }
+  }
 }
 
 export interface IProps {
@@ -29,7 +34,7 @@ export interface IProps {
 class Notification extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t } = this.props;
-    const { actions, message, noDismiss, type } = this.props.params;
+    const { actions, message, noDismiss, title, type } = this.props.params;
 
     const lines = message.split('\n');
 
@@ -38,9 +43,12 @@ class Notification extends ComponentEx<IProps, {}> {
     return (
       <div role='alert' className={`notification alert-${styleName}`} >
         {this.typeToIcon(type)}{' '}
-        <p className='hover-expand'>
-          {lines.map((line, idx) => <span key={idx}>{line}</span>)}
-        </p>
+        <div className='notification-textbox'>
+          {title !== undefined ? <div className='notification-title'>{title}</div> : null}
+          <div className='notification-message hover-expand'>
+            {lines.map((line, idx) => <span key={idx}>{line}</span>)}
+          </div>
+        </div>
         <div className='notification-buttons'>
           {actions !== undefined ? actions.map(this.renderAction) : null}
           {!noDismiss ? <Button onClick={this.dismiss}>{t('Dismiss')}</Button> : null}
@@ -74,11 +82,11 @@ class Notification extends ComponentEx<IProps, {}> {
 
   private typeToIcon(type: NotificationType): JSX.Element {
     switch (type) {
-      case 'activity': return <Icon name='spinner' pulse />;
-      case 'success': return <Icon name='square-check' />;
-      case 'info': return <Icon name='square-info' />;
-      case 'warning': return <Icon name='square-exclamation' />;
-      case 'error': return <Icon name='triangle-alert' />;
+      case 'activity': return <Spinner />;
+      case 'success': return <Icon name='feedback-success' />;
+      case 'info': return <Icon name='feedback-info' />;
+      case 'warning': return <Icon name='feedback-warning' />;
+      case 'error': return <Icon name='feedback-error' />;
       default: return null;
     }
   }

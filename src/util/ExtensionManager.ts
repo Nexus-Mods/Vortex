@@ -217,6 +217,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerDialog: undefined,
       registerSettings: undefined,
       registerAction: undefined,
+      registerBanner: undefined,
       registerDeploymentMethod: undefined,
       registerInstaller: undefined,
       registerFooter: undefined,
@@ -619,7 +620,7 @@ class ExtensionManager {
         // log this only once so we don't spam the log file with this
         log('info', 'init extension', {name: ext.name});
         const StyleManager = require('./StyleManager').default;
-        this.mStyleManager = new StyleManager();
+        this.mStyleManager = new StyleManager(this.mApi);
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {

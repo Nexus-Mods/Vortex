@@ -15,11 +15,14 @@ export const windowReducer: IReducerSpec = {
       setSafe(state, ['maximized'], payload),
     [actions.setTabsMinimized as any]: (state, payload) =>
       setSafe(state, ['tabsMinimized'], payload),
+    [actions.setCustomTitlebar as any]: (state, payload) =>
+      setSafe(state, ['customTitlebar'], payload),
   },
   defaults: {
     maximized: false,
     position: { x: 0, y: 0 },
     size: {},
     tabsMinimized: false,
+    customTitlebar: true,
   },
 };

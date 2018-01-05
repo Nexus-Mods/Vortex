@@ -15,13 +15,25 @@ export const pathDefaults = {
     install: path.join('{base}', 'mods'),
   };
 
+let userData;
+
 function resolvePath(key: PathKey, paths: {[gameId: string]: IStatePaths},
                      gameMode: string): string {
   if (gameMode === undefined) {
     return undefined;
   }
+
+  if (userData === undefined) {
+    // if called in the renderer process, app.getPath requires an ipc.
+    // since this function may be called a lot and userData does't change after
+    // startup, caching it makes sense.
+    // (userData _may_ change during startup though so caching during inital loading of this
+    //  module would be unsafe!)
+    userData = app.getPath('userData');
+  }
+
   const formatKeys = {
-    USERDATA: app.getPath('userData'),
+    USERDATA: userData,
     GAME: gameMode,
     base: undefined,
   };
