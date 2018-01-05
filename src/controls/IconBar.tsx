@@ -82,31 +82,46 @@ function PortalMenu(props: IPortalMenuProps, context: any) {
   );
 }
 
+function genTooltip(show: boolean | string): string {
+  return typeof (show) === 'string'
+    ? show
+    : undefined;
+}
+
 interface IMenuActionProps {
   id: string;
-  icon: IActionDefinition;
+  action: IActionDefinition & { show: boolean | string };
   instanceId: string | string[];
 }
 
 class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
   public render(): JSX.Element {
-    const { icon, id } = this.props;
+    const { action, id } = this.props;
     return (
-      <MenuItem eventKey={id} onSelect={this.trigger}>
-          {/*this.renderIconInner(icon, index, 'menu')*/}
-          <Icon name={icon.icon} />
-          <div className='button-text'>{icon.title}</div>
-        </MenuItem>
+      <MenuItem
+        eventKey={id}
+        onSelect={this.trigger}
+        disabled={action.show !== true}
+        title={genTooltip(action.show)}
+      >
+        {/*this.renderIconInner(icon, index, 'menu')*/}
+        <Icon name={action.icon} />
+        <div className='button-text'>{action.title}</div>
+      </MenuItem>
     );
   }
 
   private trigger = () => {
-    const { icon, instanceId } = this.props;
+    const { action, instanceId } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
-    icon.action(instanceIds);
+    action.action(instanceIds);
   }
+}
+
+function arrayType<T>(x: T[]): T {
+  return null;
 }
 
 /**
@@ -139,15 +154,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     const { collapse, dropdown, icon, id, instanceId,
             objects, orientation, className, style } = this.props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
-    const icons = objects.filter(iter => {
-      // don't render anything if the condition doesn't match
-      try {
-        return (iter.condition === undefined)
-            || iter.condition(instanceIds);
-      } catch (err) {
-        return false;
-      }
-    });
+
+    const icons = this.iconsToShow();
 
     const classes: string[] = [];
     if (className) {
@@ -157,9 +165,17 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     if (dropdown) {
       const sorted = icons.sort(iconSort);
       const title: any = (
-        <div data-value={sorted[0].title} onClick={this.triggerDefault}>
+        <div
+          data-value={sorted[0].title}
+          onClick={sorted[0].show ? this.triggerDefault : undefined}
+        >
           <Icon name={sorted[0].icon} />
-          {sorted[0].title}
+          <a
+            className='fake-link'
+            title={genTooltip(sorted[0].show)}
+          >
+            {sorted[0].title}
+          </a>
         </div>
       );
       return (
@@ -235,7 +251,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     }
   }
 
-  private renderMenuItem = (icon: IActionDefinition, index: number) => {
+  private renderMenuItem =
+    (icon: IActionDefinition & { show: boolean | string }, index: number) => {
     const { instanceId } = this.props;
 
     const id = `${instanceId || '1'}_${index}`;
@@ -249,10 +266,15 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     }
 
     if (icon.icon !== undefined) {
-      return <MenuAction key={id} id={id} icon={icon} instanceId={instanceId} />;
+      return <MenuAction key={id} id={id} action={icon} instanceId={instanceId} />;
     } else {
       return (
-        <MenuItem key={id} eventKey={id}>
+        <MenuItem
+          key={id}
+          eventKey={id}
+          disabled={icon.show !== true}
+          title={genTooltip(icon.show)}
+        >
           {this.renderCustomIcon(id, icon)}
         </MenuItem>
       );
@@ -331,6 +353,28 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     }
   }
 
+  private iconsToShow(): Array<IActionDefinition & { show: boolean | string }> {
+    const { instanceId, objects } = this.props;
+    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+    const checkCondition = (def: IActionDefinition): boolean | string => {
+      if (def.condition === undefined) {
+        return true;
+      }
+      try {
+        return def.condition(instanceIds);
+      } catch (err) {
+        return `Error: ${err.message}`;
+      }
+    };
+
+    return objects
+      .map((iter): IActionDefinition & { show: boolean | string } => ({
+          ...iter,
+          show: checkCondition(iter),
+        }))
+      .filter(iter => iter.show !== false);
+  }
+
   private triggerDefault = (evt: React.MouseEvent<any>) => {
     const { instanceId, objects } = this.props;
     const title = evt.currentTarget.attributes.getNamedItem('data-value').value;
@@ -374,7 +418,7 @@ function registerAction(instanceProps: IBaseProps,
                         options: IActionOptions,
                         titleOrProps?: string | (() => any),
                         actionOrCondition?: (instanceIds?: string[]) => void | boolean,
-                        condition?: () => boolean,
+                        condition?: () => boolean | string,
                         ): any {
   if (instanceProps.group === group) {
     if (typeof(iconOrComponent) === 'string') {
