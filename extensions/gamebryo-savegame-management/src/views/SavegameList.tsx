@@ -1,6 +1,6 @@
 import { removeSavegame, showTransferDialog } from '../actions/session';
 import { ISavegame } from '../types/ISavegame';
-import { mygamesPath } from '../util/gameSupport';
+import { mygamesPath, saveFiles } from '../util/gameSupport';
 import refreshSavegames from '../util/refreshSavegames';
 import restoreSavegamePlugins, { MissingPluginsError } from '../util/restoreSavegamePlugins';
 import transferSavegames from '../util/transferSavegames';
@@ -337,10 +337,13 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
         doRemoveSavegame = result.action === 'Delete';
         if (doRemoveSavegame) {
           return Promise.map(instanceIds, id => !!id
-            ? fs.removeAsync(path.join(mygamesPath(currentProfile.gameId), savesPath, id))
-              .then(() => {
-                onRemoveSavegame(id);
-              })
+            ? Promise.map(saveFiles(currentProfile.gameId, id), filePath =>
+              fs.removeAsync(path.join(mygamesPath(currentProfile.gameId), savesPath, filePath))
+                .catch(err => (err.code === 'ENOENT')
+                    ? Promise.resolve() : Promise.reject(err))
+                .then(() => {
+                  onRemoveSavegame(id);
+                }))
             : Promise.reject(new Error('invalid savegame id')))
             .then(() => undefined);
         } else {
