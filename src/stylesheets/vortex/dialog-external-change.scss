@@ -41,6 +41,12 @@
   width: 100%;
 }
 
+.xtd.table-external-change-refchange.cell-file_count,
+.xtd.table-external-change-valchange.cell-file_count,
+.xtd.table-external-change-deleted.cell-file_count {
+  white-space: nowrap;
+}
+
 .table-external-change-refchange .dropdown > button,
 .table-external-change-refchange .dropup > button,
 .table-external-change-valchange .dropdown > button,

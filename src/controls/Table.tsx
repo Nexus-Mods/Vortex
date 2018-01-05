@@ -142,12 +142,15 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(newProps: IProps) {
-    if (newProps.attributeState !== this.props.attributeState) {
+    if ((newProps.attributeState !== this.props.attributeState)
+        || (newProps.objects !== this.props.objects)) {
       const { attributeState, objects } = newProps;
       this.mVisibleAttributes = this.visibleAttributes(objects, attributeState);
     }
 
-    if ((newProps.data !== this.props.data) || (newProps.dataId !== this.props.dataId)) {
+    if ((newProps.data !== this.props.data)
+        || (newProps.dataId !== this.props.dataId)
+        || (newProps.objects !== this.props.objects)) {
       this.updateCalculatedValues(this.props.data, newProps)
       .then(() => {
         this.refreshSorted(newProps);

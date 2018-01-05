@@ -8,6 +8,12 @@ import * as actions from './actions';
 const sessionReducer: types.IReducerSpec = {
   reducers: {
     [actions.setSource as any]: (state, payload) => {
+      if ((payload.id === util.getSafe(state, ['connection', 'source', 'id'], undefined))
+          && (payload.pos !== undefined)) {
+        // unchanged
+        return state;
+      }
+
       if (payload.pos !== undefined) {
         return util.setSafe(state, ['connection', 'source'], payload);
       } else if (payload.id === util.getSafe(state, ['connection', 'source', 'id'], undefined)) {

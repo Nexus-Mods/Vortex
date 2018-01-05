@@ -5,7 +5,7 @@ export interface IActionOptions {
 }
 
 /**
- * interface of an icon within one of the icon bars
+ * interface of an action within one of the icon bars
  *
  * @export
  * @interface IActionDefinition
@@ -16,7 +16,13 @@ export interface IActionDefinition {
   component?: React.ComponentClass<any> | React.StatelessComponent<any>;
   props?: () => any;
   action?: (instanceId: string | string[]) => void;
-  condition?: (instanceId: string | string[]) => boolean;
+  // condition under which the action is displayed.
+  // returning false hides the action entirely. Returning a string shows
+  // the action disabled and grayed out, with the returned string as a tooltip
+  // so you can explain to the user why it's unavailable.
+  // Please use that second option unless you're absolutely sure the user
+  // will understand from context why the action is unavailable in this case.
+  condition?: (instanceId: string | string[]) => boolean | string;
   position?: number;
   options?: IActionOptions;
 }

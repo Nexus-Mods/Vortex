@@ -174,6 +174,26 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           }
         },
       },
+      {
+        icon: 'start-install',
+        title: 'Install',
+        action: this.install,
+        condition: (instanceId: string) => this.props.mods[instanceId] === undefined,
+        position: 50,
+      },
+      {
+        icon: 'start-install',
+        title: 'Reinstall',
+        action: this.reinstall,
+        condition: (instanceId: string) => {
+          if (this.props.mods[instanceId] === undefined) {
+            return false;
+          }
+          return (this.props.mods[instanceId].archiveId !== undefined)
+                ? true : this.props.t('No associated archive.');
+        },
+        singleRowAction: true,
+      },
     ];
 
     this.staticButtons = [
@@ -801,6 +821,15 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             }
           }));
       });
+  }
+
+  private install = (archiveId: string) => {
+    this.context.api.events.emit('start-install-download', archiveId);
+  }
+
+  private reinstall = (modId: string) => {
+    const { mods } = this.props;
+    this.context.api.events.emit('start-install-download', mods[modId].archiveId);
   }
 
   private checkForUpdate = (modIds: string[]) => {

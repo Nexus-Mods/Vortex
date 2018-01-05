@@ -255,6 +255,7 @@
     "react-select": "1.0.0-rc.10",
     "react-sortable-tree": "^1.4.0",
     "react-split-pane": "^0.1.66",
+    "react-transition-group": "^2.2.1",
     "recharts": "^1.0.0-beta.0",
     "redux": "^3.7.2",
     "redux-act": "1.4.1",

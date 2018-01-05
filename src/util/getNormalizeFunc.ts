@@ -17,7 +17,7 @@ function genNormalizeUnicode(func: (input: string) => string): (input: string) =
 }
 
 function genNormalizeRelative(func: (input: string) => string): (input: string) => string {
-  return (input: string) => path.normalize(func(input));
+  return (input: string) => path.normalize(func(input)).replace(/[\\/]$/, '');
 }
 
 function genNormalizeCase(): (input: string) => string {
@@ -25,8 +25,11 @@ function genNormalizeCase(): (input: string) => string {
 }
 
 export interface INormalizeParameters {
+  // normalize path separators (only on windows, transforms forward slashes to backslashes)
   separators?: boolean;
+  // normalize unicode symbols that can have multiple equivalent representations
   unicode?: boolean;
+  // reduce "..", remove ".", remove redundant slashes
   relative?: boolean;
 }
 
@@ -77,8 +80,12 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
 }
 
 /**
- * determine the function to normalize file names for the
- * file system in the specified path
+ * determine a function to normalize file names for the
+ * file system in the specified path.
+ * The second parameter can be used to specify how strict the normalization is.
+ * Ideally you want everything but that makes the function slower and this function may
+ * be called a lot. Oftentimes the source of the input path already guarantees some
+ * normalization anyway.
  *
  * @param {string} path
  * @returns {Promise<Normalize>}

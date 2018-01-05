@@ -146,7 +146,8 @@ export class DownloadObserver {
             }
           }
           log('warn', 'download failed', {message, err: util.inspect(err)});
-          showError(this.mStore.dispatch, 'Download failed', message);
+          showError(this.mStore.dispatch, 'Download failed', message,
+                    false, undefined, false);
           this.mStore.dispatch(finishDownload(id, 'failed', {message}));
           if (callback !== undefined) {
             callback(err, id);
