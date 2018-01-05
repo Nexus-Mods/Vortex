@@ -10,6 +10,16 @@
   background-color: $brand-secondary !important;
 }
 
+.todo-search:hover{
+  background-color: darken($brand-success, 10%) !important;
+}
+.todo-settings:hover{
+  background-color: darken($brand-info, 10%) !important;
+}
+.todo-more:hover {
+  background-color: darken($brand-secondary, 10%) !important;
+}
+
 .todo {
   display: flex;
   flex-direction: column;
@@ -18,21 +28,23 @@
   justify-content: center;
   align-items: center;
   position: relative;
-  margin: 0 0.75em;
+  margin: 0.2em 0.5em;
   text-align: center;
   padding: 10px 5px;
   max-width: 140px;
   min-width: 110px;
 
   > svg {
-    width: 2.5em;
-    height: 2.5em;
-    margin-bottom: 0.5em;
+    width: 2em;
+    height: 2em;
+    margin-bottom: 0.7em;
   }
 
   .todo-text {
     font-size: larger;
     text-align: center;
+    padding: 0 5px;
+  line-height: 1.2;
   }
 
   .icon-todo-type {
@@ -45,5 +57,6 @@
     top: 0;
     right: 0;
     margin: 0;
+    padding: 2px;
   }
 }
