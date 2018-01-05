@@ -78,7 +78,7 @@ class Todo extends React.PureComponent<ITodoProps, {}> {
       ? null
       : typeof (input) === 'string'
         ? <span className={className}>{t(input)}</span>
-        : input(t, extensionProps);
+        : <div className={className}>{input(t, extensionProps)}</div>;
     }
 }
 
