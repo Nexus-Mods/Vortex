@@ -21,7 +21,8 @@
       width: 100%;
       margin: 4px;
       &:hover {
-        background-color: $text-color-disabled;
+        background-color: darken($brand-primary, 10%);
+        color: $gray-darker;
       }
       svg {
         margin: auto 4px;
