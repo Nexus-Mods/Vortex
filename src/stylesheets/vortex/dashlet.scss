@@ -6,6 +6,7 @@
   h2 {
     margin-top: 0;
     text-transform: uppercase;
+    font-family: 'bebasNeue';
   }
   li {
     border: 0px;
@@ -19,6 +20,7 @@
       padding: 0.5em;
       width: 2.2em;
       height: 2.2em;
+      border-bottom: $border-width solid $border-color;
     }
     span {
       flex: 1 1 0;
@@ -57,6 +59,7 @@
   flex-direction: column;
   ul {
     margin-bottom: 0;
+    padding: 0 10px;
   }
 }
 
