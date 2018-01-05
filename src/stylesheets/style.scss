@@ -537,3 +537,14 @@ div:hover > .hover-expand {
 
 // /HIDPI
 /////////
+
+// ---------------------------------------
+// SAVE GAMES
+// ---------------------------------------
+
+// Force screenshots to same size
+
+.cell-screenshot .screenshot-canvas {
+  width: 137px;
+  object-fit: cover;
+}
