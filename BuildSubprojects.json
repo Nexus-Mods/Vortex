@@ -1,32 +1,6 @@
 [
   [
     {
-      "type": "install-module",
-      "name": "modmeta-db",
-      "path": "external/modmeta-db",
-      "sources": ["src/*.ts"],
-      "build": true,
-      "module": "modmeta-db"
-    },
-    {
-      "type": "install-module",
-      "name": "vortex-parse-ini",
-      "path": "lib/js/vortex-parse-ini",
-      "sources": ["src/*.ts"],
-      "build": true,
-      "module": "vortex-parse-ini"
-    }
-  ],
-  [
-    {
-      "type": "install-module",
-      "name": "nexus-api",
-      "path": "lib/js/nexus-api",
-      "sources": ["src/*.ts"],
-      "build": true,
-      "module": "nexus-api"
-    },
-    {
       "type": "build-copy",
       "condition": "buildType === 'out'",
       "name": "modinstaller (for development)",
@@ -45,30 +19,6 @@
       "build": "build",
       "depth": 4,
       "copyTo": "{BUILD_DIR}/lib/modinstaller"
-    }
-  ], [
-    {
-      "type": "install-module",
-      "name": "exe-version",
-      "path": "lib/cpp/exe-version",
-      "sources": ["src/*", "binding.gyp", "*.json", "index.*"],
-      "module": "exe-version"
-    }
-  ], [
-    {
-      "type": "install-module",
-      "name": "icon-extract",
-      "path": "lib/cpp/icon-extract",
-      "sources": ["src/*", "binding.gyp", "*.json", "index.*"],
-      "module": "icon-extract"
-    }
-  ], [
-    {
-      "type": "install-module",
-      "name": "turbowalk",
-      "path": "lib/cpp/turbowalk",
-      "sources": ["src/*", "binding.gyp", "*.json", "index.*"],
-      "module": "turbowalk"
     }
   ], [
     {
@@ -258,77 +208,6 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/open-directory"
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "name": "exe-version-rebuild",
-      "module": "exe-version",
-      "sources": ["node_modules/exe-version/src/*", "node_modules/exe-version/binding.gyp", "node_modules/exe-version/*.js",
-                  "node_modules/exe-version/package.json"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "name": "icon-extract-rebuild",
-      "module": "icon-extract",
-      "sources": ["node_modules/icon-extract/build/Release/IconExtractor.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "name": "ffi-rebuild",
-      "module": "ffi",
-      "sources": ["node_modules/ffi/src/*", "node_modules/ffi/package.json"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "name": "ref-rebuild",
-      "module": "ref",
-      "sources": ["node_modules/ref/src/*", "node_modules/ref/package.json"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "name": "node-sass-rebuild",
-      "module": "node-sass",
-      "sources": ["node_modules/node-sass/build/Release/binding.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "name": "edge-rebuild",
-      "module": "edge",
-      "sources": ["node_modules/edge/build/Release/binding.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "name": "leveldown-rebuild",
-      "module": "leveldown",
-      "sources": ["node_modules/leveldown/build/Release/leveldown.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "name": "drivelist-rebuild",
-      "module": "drivelist",
-      "sources": ["node_modules/drivelist/build/Release/drivelist.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "name": "libxmljs-rebuild",
-      "module": "libxmljs",
-      "sources": ["node_modules/libxmljs/build/Release/xmljs.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "name": "turbowalk-rebuild",
-      "module": "turbowalk",
-      "sources": ["node_modules/turbowalk/build/Release/turbowalk.node"]
     }
   ]
 ]

@@ -14,7 +14,7 @@ import {
 } from 'electron';
 import * as fs from 'fs-extra-promise';
 import NexusT from 'nexus-api';
-import * as opn from 'opn';
+import opn = require('opn');
 import * as path from 'path';
 import {} from 'uuid';
 
@@ -140,7 +140,10 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
     true,
     hash,
     referenceId,
-  ).then(() => opn(`http://www.nexusmods.com/crash-report/?key=${referenceId}`));
+  ).then(() => {
+    opn(`http://www.nexusmods.com/crash-report/?key=${referenceId}`);
+    return Promise.resolve();
+  });
 }
 
 export function sendReport(fileName: string): Promise<void> {

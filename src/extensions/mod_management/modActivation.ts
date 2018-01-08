@@ -2,7 +2,6 @@ import { IExtensionApi } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
-import { setdefault } from '../../util/util';
 
 import { IProfileMod } from '../profile_management/types/IProfile';
 

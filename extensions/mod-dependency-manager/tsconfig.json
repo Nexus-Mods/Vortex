@@ -16,7 +16,6 @@
       "node_modules"
     ],
   "files": [
-    "typings/index.d.ts",
     "typings.custom/index.d.ts",
     "src/index.tsx"
   ]

@@ -15,7 +15,6 @@
         "jsx":"react"
     },
     "files": [
-      "typings/index.d.ts",
       "typings.custom/index.d.ts",
       "src/main.ts",
       "src/index.ts",

@@ -1,6 +1,6 @@
 import * as fs from 'fs-extra-promise';
 import { TranslationFunction } from 'i18next';
-import * as opn from 'opn';
+import opn = require('opn');
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Col, ControlLabel, Form, FormControl, FormGroup,

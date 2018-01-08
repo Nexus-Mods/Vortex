@@ -7,7 +7,6 @@
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "postinstall": "electron-rebuild -w font-manager -t prod,dev",
-    "prebuild": "typings prune && typings install",
     "copy_lib": "copyfiles -u 4 node_modules/font-manager/build/Release/fontmanager.node dist",
     "copy_themes": "copyfiles themes/**/* dist",
     "build": "npm run tsc && npm run webpack && npm run copy_lib && npm run copy_themes && extractInfo"
@@ -16,7 +15,7 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/fs-extra-promise": "^1.0.1",
-    "@types/react": "16.0.9",
+    "@types/react": "16.0.34",
     "@types/react-bootstrap": "^0.0.50",
     "@types/react-color": "2.11.2",
     "@types/react-redux": "4.4.35",

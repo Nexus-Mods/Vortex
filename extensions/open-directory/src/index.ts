@@ -1,5 +1,5 @@
 import * as fs from 'fs-extra-promise';
-import * as opn from 'opn';
+import opn = require('opn');
 import * as path from 'path';
 import { selectors, types } from 'vortex-api';
 
@@ -15,9 +15,10 @@ function init(context: types.IExtensionContext) {
     const store = context.api.store;
     const installPath = selectors.installPath(store.getState());
     const modPath = path.join(installPath, instanceIds[0]);
-    return fs.statAsync(modPath)
+    fs.statAsync(modPath)
       .then(() => opn(modPath))
-      .catch(err => opn(installPath));
+      .catch(err => opn(installPath))
+      .then(() => null);
   }, instanceIds => {
     const state: types.IState = context.api.store.getState();
     const gameMode = selectors.activeGameId(state);

@@ -9,7 +9,6 @@
     "clear": "rm-local-modules",
     "postinstall": "electron-rebuild -w ba2tk -t dev,prod",
     "copy_ba2tk": "copyfiles -f ./node_modules/ba2tk/build/Release/nbind.node ./dist/ba2tk",
-    "prebuild": "typings prune && typings install",
     "build": "npm run tsc && npm run webpack && npm run copy_ba2tk && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-ba2-support",
     "buildDev": "npm run build && npm run installDev"

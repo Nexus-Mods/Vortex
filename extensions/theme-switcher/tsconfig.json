@@ -17,7 +17,6 @@
       "node_modules"
     ],
   "files": [
-    "typings/index.d.ts",
     "src/font-manager.d.ts",
     "src/index.ts"
   ]

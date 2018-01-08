@@ -68,9 +68,10 @@ function parseModEntries(
         'The selected folder contains an empty VirtualModConfig.xml file.'));
   }
 
-  return Promise.map(Array.from(modInfoList), modInfo => {
-    const res: any = {
+  return Promise.map(Array.from(modInfoList), (modInfo: Element): Promise<IModEntry> => {
+    const res: IModEntry = {
       nexusId: modInfo.getAttribute('modId'),
+      vortexId: undefined,
       downloadId: parseInt(modInfo.getAttribute('downloadId'), 10),
       modName: modInfo.getAttribute('modName'),
       modFilename: modInfo.getAttribute('modFileName'),
@@ -79,6 +80,7 @@ function parseModEntries(
       importFlag: true,
       fileEntries: [],
       archiveMD5: null,
+      isAlreadyManaged: false,
     };
 
     const archiveName =
@@ -91,7 +93,7 @@ function parseModEntries(
     // NMM has a crazy workaround where it will use an install path based on
     // the download id or the archive name, whatever is available
     const adjustRealPath = (input: string): string => {
-      return path.join(useOldPath ? archiveName : res.downloadId,
+      return path.join(useOldPath ? archiveName : res.downloadId.toString(),
                        ...input.split(path.sep).slice(1));
     };
 
@@ -122,7 +124,7 @@ function parseModEntries(
           res.archiveMD5 = hashResult.md5sum;
         })
         .catch(() => { res.archiveMD5 = null; })
-        .then(() => res as IModEntry);
+        .then(() => res);
   });
 }
 

@@ -9,7 +9,6 @@
     "clear": "rm-local-modules",
     "postinstall": "electron-rebuild -w bsatk -t dev,prod",
     "copy_bsatk": "copyfiles -f ./node_modules/bsatk/build/Release/nbind.node ./dist/bsatk",
-    "prebuild": "typings prune && typings install",
     "build": "npm run tsc && npm run webpack && npm run copy_bsatk && extractInfo",
     "installDev": "copyfiles -u 1 dist/**/* ../../out/bundledPlugins/gamebryo-bsa-support",
     "buildDev": "npm run build && npm run installDev"

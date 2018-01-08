@@ -15,10 +15,10 @@ function findInstances(games: {[gameId: string]: types.IDiscoveryResult},
                        gameId: string): Promise<string[]> {
   const base = instancesPath();
   return fs.readdirAsync(base)
-    .filter(fileName => fs.statAsync(path.join(base, fileName))
+    .filter((fileName: string) => fs.statAsync(path.join(base, fileName))
                             .then(stat => stat.isDirectory())
                             .catch(FileAccessError, () => false))
-    .filter(dirName => parseMOIni(games, path.join(base, dirName))
+    .filter((dirName: string) => parseMOIni(games, path.join(base, dirName))
                             .then(moConfig => moConfig.game === gameId)
                             .catch(err => false))
     .then((instances: string[]) => instances)

@@ -48,7 +48,7 @@ import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import NexusT, { IDownloadURL, IFileInfo, IModInfo, NexusError as NexusErrorT } from 'nexus-api';
-import * as opn from 'opn';
+import opn = require('opn');
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -141,6 +141,7 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
         displayMS: 2000,
       });
       log('warn', 'failed to get mod info', { err: util.inspect(err) });
+      return undefined;
     });
 }
 
@@ -296,7 +297,7 @@ function checkModVersionsImpl(
   gameId: string,
   mods: { [modId: string]: IMod }): Promise<string[]> {
 
-  const modsList = Object.keys(mods)
+  const modsList: IMod[] = Object.keys(mods)
     .map(modId => mods[modId])
     .filter(mod => mod.attributes.source === 'nexus');
 
@@ -323,7 +324,7 @@ function checkModVersionsImpl(
           ? `${name}:\n${detail.Error}\nServer said: "${detail.Servermessage}"`
           : `${name}:\n${detail.Error}`;
       }), { concurrency: 4 })
-    .then(errorMessages => errorMessages.filter(msg => msg !== undefined));
+    .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
 }
 
 function renderNexusModIdDetail(

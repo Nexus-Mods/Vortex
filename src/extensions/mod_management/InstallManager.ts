@@ -217,19 +217,19 @@ class InstallManager {
                 // we need to remove the old mod before continuing. This ensures
                 // the mod is deactivated and undeployed (as to not leave dangling
                 // links) and it ensures we do a clean install of the mod
-                return new Promise((resolve, reject) => {
+                return new Promise<void>((resolve, reject) => {
                   api.events.emit('remove-mod', currentProfile.gameId, oldMod.id,
-                    (error: Error) => {
-                      if (error !== null) {
-                        reject(error);
-                      } else {
-                        // use the same mod id as the old version so that all profiles
-                        // keep using it.
-                        modId = oldMod.id;
-                        enable = enable || wasEnabled;
-                        resolve();
-                      }
-                    });
+                                  (error: Error) => {
+                    if (error !== null) {
+                      reject(error);
+                    } else {
+                      // use the same mod id as the old version so that all profiles
+                      // keep using it.
+                      modId = oldMod.id;
+                      enable = enable || wasEnabled;
+                      resolve();
+                    }
+                  });
                 });
               }
             });

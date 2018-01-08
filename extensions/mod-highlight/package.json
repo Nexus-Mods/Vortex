@@ -6,14 +6,13 @@
   "scripts": {
     "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
-    "prebuild": "typings prune && typings install",
     "build": "npm run tsc && npm run webpack && copyfiles -f src/stylesheets/mod-highlight.scss dist && extractInfo"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
     "@types/i18next": "^8.4.0",
-    "@types/react": "16.0.9",
+    "@types/react": "16.0.34",
     "@types/react-bootstrap": "^0.0.37",
     "@types/react-redux": "4.4.35",
     "vortex-api": "file:../../api",

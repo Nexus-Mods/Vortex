@@ -8,7 +8,7 @@ import TraceImport from '../util/TraceImport';
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as I18next from 'i18next';
-import * as opn from 'opn';
+import opn = require('opn');
 import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, ControlLabel, DropdownButton, FormControl, FormGroup,

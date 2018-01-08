@@ -1,6 +1,6 @@
 import Debouncer from '../../util/Debouncer';
 import { log } from '../../util/log';
-import { countIf, setdefault, truthy } from '../../util/util';
+import { countIf, truthy } from '../../util/util';
 import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';

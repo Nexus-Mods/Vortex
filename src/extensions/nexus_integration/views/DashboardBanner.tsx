@@ -3,7 +3,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import * as opn from 'opn';
+import opn = require('opn');
 import * as React from 'react';
 import { Button, Image } from 'react-bootstrap';
 import * as Redux from 'redux';

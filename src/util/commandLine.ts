@@ -28,8 +28,6 @@ function parseCommandline(argv: string[]): IParameters {
                                       + 'lose data', assign)
     .option('--wait', 'If another instance of Vortex is running, wait for it to end.')
     .option('--report [path]', 'Send an error report. For internal use')
-    // apparently I now need to specify parameters even when they are interpreted by electron itself
-    // .option('--inspect', 'Allow debugging')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
     .parse(argv || []) as IParameters;

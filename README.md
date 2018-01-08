@@ -1,17 +1,19 @@
 # Usage
 
 - Install node.js (version doesn't matter much, latest tls should be fine)
+- run _"npm global add yarn"_
 - Download git from https://git-scm.com and install (all default settings should be fine)
 - Run Powershell as Administrator
-  - Run _"npm install --global --production windows-build-tools"_
+  - Run _"yarn global add windows-build-tools"_
     * This installs python and visual studio compiler for c++ and C# modules. It can take a while
-  - Run _"npm config set msvs_version 2015 --global"_
+  - Run _"yarn config set msvs_version 2015 --global"_
     * This makes the node package manager use the correct visual studio build tools.
   - Close Powershell, open a new cmd.exe to run the remaining commands
-- Check out the repository. Remember to switch to the appropriate branch if necessary.
-- Call _"npm run installex"_ to install and build all dependencies. This may take a bit
-- Run _"npm run start"_ to build & run
-- Run _"npm run package"_ to create a distribution
+- Check out the repository.
+- Switch to the appropriate branch if necessary.
+- Call _"yarn run installex"_ to install and build all dependencies. This may take a bit.
+- Run _"yarn run start"_ to build & run.
+- Run _"yarn run package"_ to create a distribution.
 
 # Further Information
 

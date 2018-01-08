@@ -384,10 +384,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
       const dirs = entries.filter(entry => entry.isDirectory);
       // recurse into subdirectories
       queue = queue.then(() =>
-        Promise.map(dirs, dir => this.postPurge(dir.filePath, doRemove)
-          .then(removed => {
-            if (!removed) { empty = false; }
-          }))
+        Promise.each(dirs, dir => this.postPurge(dir.filePath, doRemove)
+                                    .then(removed => {
+                                      if (!removed) { empty = false; }
+                                    }))
         .then(() => {
           // then check files. if there are any, this isn't empty. plus we
           // restore backups here
@@ -402,7 +402,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
                 entry => fs.renameAsync(
                     entry.filePath,
                     entry.filePath.substr(
-                        0, entry.filePath.length - BACKUP_TAG.length)));
+                        0, entry.filePath.length - BACKUP_TAG.length)))
+              .then(() => undefined);
           } else {
             return Promise.resolve();
           }

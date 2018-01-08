@@ -7,7 +7,6 @@
   "scripts": {
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
     "installDev": "copyfiles -f dist/* ../../out/bundledPlugins/mo-import",
-    "prebuild": "typings prune && typings install",
     "build": "npm run webpack && copyfiles -f src/stylesheets/mo-import.scss dist && extractInfo",
     "buildDev": "npm run build && npm run installDev"
   },
@@ -20,9 +19,9 @@
   },
   "devDependencies": {
     "@types/immutability-helper": "^2.0.15",
-    "@types/react": "16.0.9",
+    "@types/react": "16.0.34",
     "@types/react-bootstrap": "^0.0.37",
-    "@types/react-dom": "16.0.0",
+    "@types/react-dom": "16.0.3",
     "@types/react-i18next": "^1.7.5",
     "@types/react-redux": "4.4.35",
     "@types/react-router": "^2.0.41",

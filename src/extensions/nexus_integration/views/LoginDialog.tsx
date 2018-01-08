@@ -12,7 +12,7 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 import getText from '../texts';
 
 import * as update from 'immutability-helper';
-import * as opn from 'opn';
+import opn = require('opn');
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, HelpBlock, Image, Modal } from 'react-bootstrap';
 import * as Redux from 'redux';

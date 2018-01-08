@@ -1,7 +1,9 @@
+import { IState } from '../../types/IState';
 import {ProcessCanceled} from '../../util/CustomErrors';
 import {log} from '../../util/log';
 import {showError} from '../../util/message';
 import * as selectors from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
 import { showURL } from '../browser/actions';
@@ -33,8 +35,6 @@ import {generate as shortid} from 'shortid';
 
 import * as nodeURL from 'url';
 import * as util from 'util';
-import { IState } from '../../types/IState';
-import { getSafe } from '../../util/storeHelper';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], filePath?: string) {

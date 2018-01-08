@@ -47,11 +47,11 @@ function dirsOnly(filePath: string): Promise<boolean> {
 function readModEntries(basePath: string,
                         mods: { [modId: string]: types.IMod }): Promise<IModEntry[]> {
   return fs.readdirAsync(basePath)
-    .filter(fileName => dirsOnly(path.join(basePath, fileName)))
-    .map(modPath => parseMetaIni(path.join(basePath, modPath))
-      .then(metaInfo => ({
+    .filter((fileName: string) => dirsOnly(path.join(basePath, fileName)))
+    .map((modPath: string) => parseMetaIni(path.join(basePath, modPath))
+      .then((metaInfo: IMetaInfo): IModEntry => ({
         vortexId: modPath,
-        nexusId: metaInfo.modid,
+        nexusId: metaInfo.modid.toString(),
         downloadId: metaInfo.fileid,
         modName: modPath,
         archiveName: metaInfo.installationFile,
@@ -67,6 +67,7 @@ function readModEntries(basePath: string,
     .filter(entry => entry !== undefined)
     .catch(err => {
       log('warn', 'failed to read MO base path', { basePath, err: err.message });
+      return undefined;
     });
 }
 

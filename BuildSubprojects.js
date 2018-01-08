@@ -14,6 +14,11 @@ const projectGroups = fs.readJSONSync('./BuildSubprojects.json');
 const packageJSON = fs.readJSONSync('./package.json');
 
 const npmcli = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+const yarncli = process.platform === 'win32' ? 'yarn.cmd' : 'yarn';
+
+const useYarn = true;
+
 //const rebuild = path.join('node_modules', '.bin', process.platform === 'win32' ? 'electron-rebuild.cmd' : 'electron-rebuild');
 const globOptions = { };
 
@@ -74,7 +79,6 @@ function spawnAsync(exe, args, options, out) {
   return new Promise((resolve, reject) => {
     let desc = `${options.cwd || '.'}/${exe} ${args.join(' ')}`;
     out.log('started: ' + desc);
-    console.log('started', desc, new Date().toLocaleTimeString());
     try {
       let proc = spawn(exe, args, options);
       proc.stdout.on('data', (data) => out.log(data.toString()));
@@ -100,14 +104,17 @@ function getId() {
   return nextId++;
 }
 
-function npm(args, options, out) {
-  return spawnAsync(npmcli, args, options, out)
+function npm(command, args, options, out) {
+  if (useYarn && (command === 'install') && (args.length > 0)) {
+    command = 'add';
+  }
+  return spawnAsync(useYarn ? yarncli : npmcli, [command, ...args], options, out)
   .catch((err) => {
     // npm is so f***ing unreliable and random,
     // a simple retry may help...
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        spawnAsync(npmcli, args, options, out)
+        spawnAsync(useYarn ? yarncli : npmcli, [command, ...args], options, out)
         .then(resolve)
         .catch(reject)
         ;
@@ -150,31 +157,45 @@ function processModule(project, buildType, feedback) {
   }
 
   let build = project.build !== undefined && project.build !== false
-    ? npm(['install'], { cwd: project.path }, feedback)
-      .then(() => npm(['run', typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback))
+    ? npm('install', [], { cwd: project.path }, feedback)
+      .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback))
     : Promise.resolve();
 
   return build
     .then(() => rimrafAsync(modulePath))
-    .then(() => npm(['install', project.module], options, feedback));
+    .then(() => npm('install', [project.module], options, feedback));
 }
 
-function removeModules(project) {
+function updateLock(modulePath, feedback) {
+  if (useYarn) {
+    // with yarn we can update the lock file ...
+    return spawnAsync(yarncli, ['install', '--check-files'], {
+      cwd: modulePath,
+    }, feedback);
+  } else {
+    // ... but npm has totally fucked it up again. As usual. I think there is a fix in the current
+    // npm version but since we're using npm from the node bundle and don't want to strictly
+    // enforce a node version we can't expect it to be available
+    return fs.removeAsync(path.join(modulePath));
+  }
+}
+
+function removeModules(project, feedback) {
   if (project.removeModules === undefined) {
     return Promise.resolve();
   }
-  console.log(`removing from ${project.path}`, project.removeModules.join(', '));
 
   return Promise.map(project.removeModules,
                      (mod) => rimrafAsync(path.join(__dirname, project.path,
-                                                    'node_modules', mod)));
+                                                    'node_modules', mod)))
+    .then(() => updateLock(path.join(__dirname, project.path), feedback));
 }
 
 function processCustom(project, buildType, feedback) {
   let res =
-    removeModules(project)
-      .then(() => npm(['install'], { cwd: project.path }, feedback))
-      .then(() => npm(['run', typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback));
+    removeModules(project, feedback)
+      .then(() => npm('install', [], { cwd: project.path }, feedback))
+      .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback));
   if (project.copyTo !== undefined) {
     const source = path.join(project.path, 'dist', '**', '*');
     const output = format(project.copyTo, { BUILD_DIR: buildType });
@@ -199,11 +220,11 @@ function processRebuild(project, buildType, feedback) {
   })
     .then(() => {
       if (project.name !== undefined) {
-        console.log('electron-rebuild process finished: ' + project.name)
+        feedback.log('electron-rebuild process finished: ' + project.name);
       }
     })
     .catch((err) => {
-        console.error('An error occurred during the electron-rebuild process: ' + err);
+        feedback.err('An error occurred during the electron-rebuild process: ' + err);
     });
 }
 

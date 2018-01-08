@@ -7,7 +7,7 @@ import { IGameStored } from '../types/IGameStored';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import * as opn from 'opn';
+import opn = require('opn');
 import * as React from 'react';
 import { Table } from 'react-bootstrap';
 

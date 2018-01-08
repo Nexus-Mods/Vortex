@@ -158,17 +158,16 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private dropExtension = (type: DropType, extPaths: string[]) => {
+  private dropExtension = (type: DropType, extPaths: string[]): void => {
     const { downloads } = this.props;
     let success = false;
-    const prop = (type === 'files')
-      ? Promise.map(extPaths, extPath =>
-        installExtension(extPath)
-        .then(() => success = true)
+    const prop: Promise<void[]> = (type === 'files')
+      ? Promise.map(extPaths, extPath => installExtension(extPath)
+          .then(() => { success = true; })
           .catch(err => {
             this.context.api.showErrorNotification('Failed to install extension', err);
           }))
-      : Promise.map(extPaths, url => new Promise((resolve, reject) => {
+      : Promise.map(extPaths, url => new Promise<void>((resolve, reject) => {
         this.context.api.events.emit('start-download', {}, (error: Error, id: string) => {
           const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
           installExtension(dlPath)

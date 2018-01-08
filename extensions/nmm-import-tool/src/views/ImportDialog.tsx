@@ -10,7 +10,7 @@ import {
   FILENAME, FILES, LOCAL, MOD_ID, MOD_NAME, MOD_VERSION,
 } from '../importedModAttributes';
 
-import * as opn from 'opn';
+import opn = require('opn');
 import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, Checkbox, DropdownButton, InputGroup, MenuItem,

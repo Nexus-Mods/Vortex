@@ -5,7 +5,7 @@ import { ComponentEx, translate } from '../../util/ComponentEx';
 
 import rss, {IFeedMessage} from './rss';
 
-import * as opn from 'opn';
+import opn = require('opn');
 import * as React from 'react';
 import { Alert, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { getSafe } from '../../util/storeHelper';
