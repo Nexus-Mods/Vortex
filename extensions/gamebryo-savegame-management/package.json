@@ -30,6 +30,8 @@
     "@types/react-i18next": "^1.7.5",
     "@types/react-redux": "4.4.35",
     "@types/react-router": "^2.0.41",
+    "@types/redux": "3.6.0",
+    "@types/redux-thunk": "2.1.0",
     "babel-core": "^6.14.0",
     "babel-loader": "^6.2.5",
     "babel-polyfill": "^6.13.0",
@@ -53,5 +55,8 @@
     "redux-act": "^1.1.0",
     "rm-local-modules": "^0.0.2",
     "webpack": "^3.8.1"
+  },
+  "dependencies": {
+    "redux": "3.7.2"
   }
 }

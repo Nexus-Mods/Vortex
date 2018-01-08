@@ -14,6 +14,8 @@
         "declaration": true
     },
     "files": [
+        "src/types.ts",
+        "src/Nexus.ts",
         "src/index.ts"
     ]
 }

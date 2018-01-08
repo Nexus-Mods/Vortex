@@ -26,7 +26,8 @@ import * as I18next from 'i18next';
 import { ILookupResult, IModInfo, IReference, IRule, RuleType } from 'modmeta-db';
 import * as path from 'path';
 import * as React from 'react';
-import thunkMiddleware from 'redux-thunk';
+import * as Redux from 'redux';
+import {} from 'redux-thunk';
 import { actions, ComponentEx, log, selectors, types, util } from 'vortex-api';
 
 function makeReference(mod: IModInfo): IReference {

@@ -8,7 +8,8 @@ import { remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import {GameId, LootDatabase} from 'loot';
 import * as path from 'path';
-import * as ReduxThunk from 'redux-thunk';
+import * as Redux from 'redux';
+import {} from 'redux-thunk';
 import {actions, log, selectors, types, util} from 'vortex-api';
 
 class LootInterface {

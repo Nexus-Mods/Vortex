@@ -17,6 +17,8 @@ import * as React from 'react';
 import { FormControl, Panel } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import * as Redux from 'redux';
+import {} from 'redux-thunk';
 import {
   actions, ComponentEx, FlexLayout, IconBar, ITableRowAction,
   MainPage, selectors, Spinner, Table, tooltip, types, util,

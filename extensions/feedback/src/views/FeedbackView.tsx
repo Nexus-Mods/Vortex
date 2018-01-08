@@ -13,6 +13,8 @@ import { Col, ControlLabel, DropdownButton, FormGroup, Grid,
 } from 'react-bootstrap';
 import { Trans, translate } from 'react-i18next';
 import { connect } from 'react-redux';
+import * as Redux from 'redux';
+import {} from 'redux-thunk';
 import { dir as tmpDir, file as tmpFile } from 'tmp';
 import {
   actions, ComponentEx, Dropzone, FlexLayout, Icon, IconBar, ITableRowAction,
