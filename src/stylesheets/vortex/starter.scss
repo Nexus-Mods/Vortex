@@ -51,6 +51,10 @@
   padding: 8px;
   min-width: 128px;
 
+  &:hover {
+    background-color: $brand-primary;
+  }
+
   button {
     @extend .btn-embed;
   }

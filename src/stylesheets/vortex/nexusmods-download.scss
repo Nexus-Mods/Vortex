@@ -58,5 +58,10 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+
+    &.btn.btn-default:hover {
+      background-color: $brand-primary;
+      color: $gray-darker;
+    }
   }
 }
