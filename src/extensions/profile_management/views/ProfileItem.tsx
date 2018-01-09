@@ -117,11 +117,14 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
           />
           <h3 className='profile-name'>{`${gameName} - ${profile.name}`}</h3>
           <Table className='profile-details'>
-            <TR><TD><TooltipIcon
-              id={profile.id}
-              name='mods'
-              tooltip={t('Number of Mods enabled')}
-            /></TD><TD>{enabledMods}</TD></TR>
+            {this.renderFeature({
+              id: profile.id + 'mods',
+              label: t('Mods Installed'),
+              icon: 'mods',
+              type: 'number',
+              supported: () => true,
+              description: t('Number of Mods enabled'),
+            }, enabledMods)}
 
             {features.map(this.renderFeature)}
           </Table>
@@ -175,22 +178,17 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     ));
   }
 
-  private renderFeature = (feature: IProfileFeature): JSX.Element => {
+  private renderFeature = (feature: IProfileFeature, value: any): JSX.Element => {
     const { t, profile } = this.props;
     const id = `icon-profilefeature-${profile.id}-${feature.id}`;
     return (
       <TR key={id}>
         <TD>
-        <TooltipIcon
-          id={id}
-          className='icon-profile-feature'
-          tooltip={t(feature.description)}
-          name={feature.icon}
-        />
+          {feature.label}
         </TD>
         <TD>{
           this.renderFeatureValue(feature.type,
-                                  getSafe(profile, ['features', feature.id], undefined))
+            value !== undefined ? value : getSafe(profile, ['features', feature.id], undefined))
         }</TD>
       </TR>
     );
@@ -200,6 +198,8 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     if (type === 'boolean') {
       return value === true ? t('yes') : t('no');
+    } else {
+      return value;
     }
   }
 

@@ -135,8 +135,8 @@ function activateGame(store: Redux.Store<IState>, gameId: string) {
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerProfileFile: (gameId: string, filePath: string) => void;
-  registerProfileFeature: (featureId: string, type: string, icon: string, description: string,
-                           supported: () => boolean) => void;
+  registerProfileFeature: (featureId: string, type: string, icon: string, label: string,
+                           description: string, supported: () => boolean) => void;
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -183,12 +183,13 @@ function init(context: IExtensionContextExt): boolean {
   };
 
   context.registerProfileFeature =
-      (featureId: string, type: string, icon: string, description: string,
+      (featureId: string, type: string, icon: string, label: string, description: string,
        supported: () => boolean) => {
         profileFeatures.push({
           id: featureId,
           type,
           icon,
+          label,
           description,
           supported,
         });
