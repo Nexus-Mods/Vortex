@@ -219,6 +219,18 @@ div:hover > .hover-expand {
   }
 }
 
+.nexus-orange {
+  fill: #D78F46;
+}
+
+.nexus-orange-darker {
+  fill: darken(#D78F46, 15%);
+}
+
+.nexus-outline {
+  fill: black;
+}
+
 // /generic control rules
 /////////////////////////
 
@@ -335,6 +347,7 @@ div:hover > .hover-expand {
 @import "vortex/dialog-diagnostic-files";
 @import "vortex/dialog-external-change";
 @import "vortex/dialog-fomod";
+@import "vortex/dialog-login";
 
 @import "vortex/window-controls";
 

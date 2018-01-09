@@ -54,7 +54,9 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { Interpolate } from 'react-i18next';
 import * as Redux from 'redux';
+import { generate as shortid } from 'shortid';
 import * as util from 'util';
+import * as WebSocket from 'ws';
 
 type IModWithState = IMod & IProfileMod;
 
@@ -621,6 +623,25 @@ function once(api: IExtensionApi) {
     opn(['http://www.nexusmods.com',
       convertGameId(gameId), 'mods', modId,
     ].join('/'));
+  });
+
+  api.events.on('request-nexus-login', (callback: (err: Error) => void) => {
+    const id = shortid();
+    const connection = new WebSocket('ws://api.nexusmods.com:46124');
+    connection.on('open', () => {
+      connection.send(JSON.stringify({
+        id, appid: 'Vortex',
+      }));
+      opn(`https://www.nexusmods.com/sso?id=${id}`);
+    });
+    connection.on('message', data => {
+      if (data.toString() !== 'Oh, Hi!') {
+        connection.close();
+        api.store.dispatch(setUserAPIKey(data.toString()));
+        remote.getCurrentWindow().show();
+        callback(null);
+      }
+    });
   });
 
   api.onStateChange(['settings', 'nexus', 'associateNXM'],

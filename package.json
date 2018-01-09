@@ -181,6 +181,7 @@
     "@types/webpack": "^3.0.13",
     "@types/winreg": "1.2.30",
     "@types/winston": "2.3.7",
+    "@types/ws": "3.2.1",
     "babel-core": "^6.26.0",
     "babel-jest": "^22.0.4",
     "bootstrap-sass": "^3.3.7",
@@ -297,6 +298,7 @@
     "webpack": "^3.8.1",
     "winreg": "^1.2.4",
     "winston": "^2.4.0",
+    "ws": "^4.0.0",
     "xml2js": "^0.4.19"
   }
 }

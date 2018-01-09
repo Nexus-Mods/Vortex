@@ -14,10 +14,15 @@ function commandLine() {
 }
 
 function applyTransforms(svg, cfg) {
+  if (svg.$ === undefined) {
+    return svg;
+  }
   if (cfg.rmFill) {
     delete svg.$.fill;
   }
-  delete svg.$['data-color'];
+  if (svg.$['data-color'] !== undefined) {
+    delete svg.$['data-color'];
+  }
   return svg;
 }
 
@@ -80,7 +85,7 @@ function main() {
   const params = commandLine();
   return fs.readFile(params.config || 'iconconfig.json')
     .then(data => processConfig(params.base || '../icons', JSON.parse(data.toString())))
-    .catch(err => console.error('failed', err.message));
+    .catch(err => console.error('failed', require('util').inspect(err)));
 }
 
 main().then(exitCode => process.exit(exitCode));

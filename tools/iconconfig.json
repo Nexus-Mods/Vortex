@@ -38,6 +38,7 @@
       "rmFill": true
     },
     "nexus": "custom/nexus",
+    "nexus-header": "custom/nexus-header",
     "endorse-yes": "{fa}/thumbs-up",
     "endorse-no": "{fa}/thumbs-down",
     "endorse-maybe": "{fa}/thumbs-o-up",
