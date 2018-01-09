@@ -52,6 +52,9 @@
     &.disabled {
       background-color: $gray-dark;
     }
+    &:hover {
+      background-color: darken($gray-light, 10%);
+    }
   }
 
   .profile-name {
