@@ -1,25 +1,40 @@
 # Usage
 
-- Install node.js (version doesn't matter much, latest tls should be fine)
-- run _"npm global add yarn"_
-- Download git from https://git-scm.com and install (all default settings should be fine)
-- Run Powershell as Administrator
-  - Run _"yarn global add windows-build-tools"_
-    * This installs python and visual studio compiler for c++ and C# modules. It can take a while
-  - Run _"yarn config set msvs_version 2015 --global"_
-    * This makes the node package manager use the correct visual studio build tools.
-  - Close Powershell, open a new cmd.exe to run the remaining commands
-- Check out the repository.
-- Switch to the appropriate branch if necessary.
-- Call _"yarn run installex"_ to install and build all dependencies. This may take a bit.
-- Run _"yarn run start"_ to build & run.
-- Run _"yarn run package"_ to create a distribution.
+- Before you can build vortex you need to download and install a couple of dependencies.
+  - node.js
+    * download installer from https://nodejs.org and run
+    * version doesn't matter much, latest tls should be fine
+  - yarn
+    * install through npm _"npm install --global yarn"_
+  - git
+    * download installer (64-bit) from https://git-scm.com and run
+    * default settings are fine
+  - python 2.7
+    * download installer (2.7.*, 64-bit) from https://www.python.org/downloads/ and run
+    * defaults are fine, you can disable samples and documentation if you want
+  - c++ build tools 2015
+    * download installer from http://landinghub.visualstudio.com/visual-cpp-build-tools and run
+    * default settings are fine
+    * Note: I'm fairly certain any newer version will also work but it's untested
+  - Call _"yarn config set msvs_version 2015 --global"_
+    * This sets up yarn to use the c++ build tools we just installed
+    * If you downloaded a newer version, change the version accordingly
+- Check out the repository
+  * _git clone https://github.com/Nexus-Mods/Vortex-Private.git vortex_
+- Switch to the appropriate branch if necessary
+  * _git checkout somebranch_
+- For development
+  * _"yarn run installex"_ to build (this will take a while)
+  * _"yarn run start"_ to run.
+- For production
+  * _"yarn dist"_ to build (this will take a while)
+  * Find the installer and an alread unpacked version in dist
 
 # Further Information
 
 - see structure.md for an overview of how the project is organized
 - see the wiki for a description of the extension api
-- run "npm run doc" the create an html page from code documentation
+- run "yarn run doc" the create an html page from code documentation
 
 # Reporting bugs
 
