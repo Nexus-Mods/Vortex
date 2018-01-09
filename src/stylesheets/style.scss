@@ -48,6 +48,10 @@
   color: $badge-color;
   background-color: $badge-bg;
 }
+.btn-default .badge:hover{
+  color: $brand-primary;
+  background-color: $white;
+}
 
 .btn:not(.btn-embed) svg {
   margin-right: 0.5em;
