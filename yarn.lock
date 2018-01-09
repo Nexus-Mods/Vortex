@@ -2610,9 +2610,9 @@ electron-rebuild@^1.6.0:
     spawn-rx "^2.0.10"
     yargs "^7.0.2"
 
-electron-updater@^2.16.1:
-  version "2.18.2"
-  resolved "https://registry.yarnpkg.com/electron-updater/-/electron-updater-2.18.2.tgz#776b50389b849535425e9e2893d7943ee61e8e3f"
+electron-updater@^2.18.2:
+  version "2.18.3"
+  resolved "https://registry.yarnpkg.com/electron-updater/-/electron-updater-2.18.3.tgz#238e4f5187b9f1b883c2fbb5b97f84562dda8f7f"
   dependencies:
     bluebird-lst "^1.0.5"
     builder-util-runtime "~4.0.0"
