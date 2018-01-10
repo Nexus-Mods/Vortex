@@ -84,7 +84,7 @@ class DashboardBanner extends ComponentEx<IProps, {}> {
 
   private openProfile = () => {
     const { userInfo } = this.props;
-    opn(`https://rd.nexusmods.com/users/${userInfo.userId}`);
+    opn(`https://www.nexusmods.com/users/${userInfo.userId}`);
   }
 
   private logout = () => {

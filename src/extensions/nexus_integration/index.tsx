@@ -704,7 +704,7 @@ function once(api: IExtensionApi) {
 }
 
 function goBuyPremium() {
-  opn('https://rd.nexusmods.com/register/premium');
+  opn('https://www.nexusmods.com/register/premium');
 }
 
 function init(context: IExtensionContextExt): boolean {
