@@ -90,5 +90,6 @@ git clone https://github.com/Nexus-Mods/Vortex-Private.git vortex
 Write-Output "Build vortex"
 & yarn config set msvs_version 2015 --global
 cd vortex
-& yarn run installex
+& yarn install
+& yarn run build
 

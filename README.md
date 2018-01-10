@@ -1,5 +1,14 @@
 # Usage
 
+To build from source you have two choices.
+
+Automatic (mosty):
+- download _bootstrap.ps1_ and run as a powershell script
+  - in the dialog that shows up, select a build directory (should be a clean/new one)
+  - this script will try to download and install all dependencies, then check out and build vortex
+  - the dependencies are not installed headless so you have to click through the dialogs but it's only guaranteed to work if you keep the defaults
+
+Manual:
 - Before you can build vortex you need to download and install a couple of dependencies.
   - node.js
     * download installer from https://nodejs.org and run
@@ -24,11 +33,18 @@
 - Switch to the appropriate branch if necessary
   * _git checkout somebranch_
 - For development
-  * _"yarn run installex"_ to build (this will take a while)
-  * _"yarn run start"_ to run.
+  * _"yarn run install"_ followed by _"yarn run build"_ to build
+  * _"yarn run start"_ to run
 - For production
   * _"yarn dist"_ to build (this will take a while)
   * Find the installer and an alread unpacked version in dist
+
+### If something goes wrong:
+
+The build tools are unfortunately not particularly stable or robust, so the build may break for various reasons (i.e. network problems, dependencies that changed remotely, ...) and leave the checkout in an inconsistent state.
+In that case you will have to see if the error is something that needs to be fixed, then restart from the last step that failed.
+
+The automatic variant will skip dependency download and install if the download was installed previously. If a dependency install failed for some reason or you cancelled it, you will have to manually install that package (see the downloads directory).
 
 # Further Information
 
