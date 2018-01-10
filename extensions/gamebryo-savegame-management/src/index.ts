@@ -88,7 +88,7 @@ function init(context): boolean {
 
   context.registerReducer(['session', 'saves'], sessionReducer);
   context.registerProfileFeature(
-      'local_saves', 'boolean', 'savegame', 'This profile has its own save games',
+      'local_saves', 'boolean', 'savegame', 'Save Games', 'This profile has its own save games',
       () => gameSupported(selectors.activeGameId(context.api.store.getState())));
 
   context.once(() => {

@@ -7,6 +7,7 @@ import opn = require('opn');
 import * as React from 'react';
 import { Button, Image } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { setDialogVisible } from '../../../actions/session';
 
 interface IConnectedProps {
   userInfo: IValidateKeyData;
@@ -14,6 +15,7 @@ interface IConnectedProps {
 
 interface IActionProps {
   onSetAPIKey: (APIKey: string) => void;
+  onSetDialogVisible: (id: string) => void;
 }
 
 type IProps = IConnectedProps & IActionProps;
@@ -37,7 +39,7 @@ class DashboardBanner extends ComponentEx<IProps, {}> {
           {t('To get the best experience out of Vortex we suggest that '
              + 'you Log In or Register to NexusMods.com.')}
         </div>
-        <Button>
+        <Button onClick={this.login}>
           {t('Log In or Register')}
         </Button>
       </div>
@@ -76,6 +78,10 @@ class DashboardBanner extends ComponentEx<IProps, {}> {
     );
   }
 
+  private login = () => {
+    this.props.onSetDialogVisible('login-dialog');
+  }
+
   private openProfile = () => {
     const { userInfo } = this.props;
     opn(`https://rd.nexusmods.com/users/${userInfo.userId}`);
@@ -96,6 +102,7 @@ function mapStateToProps(state: any): IConnectedProps {
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
+    onSetDialogVisible: (id: string) => dispatch(setDialogVisible(id)),
   };
 }
 

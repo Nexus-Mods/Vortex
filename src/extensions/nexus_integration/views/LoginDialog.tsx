@@ -1,7 +1,8 @@
 import { showDialog } from '../../../actions/notifications';
 import FormFeedback from '../../../controls/FormFeedback';
+import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
-import { Button } from '../../../controls/TooltipControls';
+import { Button, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
@@ -11,6 +12,7 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import getText from '../texts';
 
+import { remote } from 'electron';
 import * as update from 'immutability-helper';
 import opn = require('opn');
 import * as React from 'react';
@@ -58,22 +60,32 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
   public render(): JSX.Element {
     const { t, APIKey, visible, onHide, userInfo } = this.props;
     return (
-      <Modal show={visible} onHide={onHide}>
-        <Modal.Header>
-          <Modal.Title>
-          {!truthy(userInfo) ? t('API Key') : t('User Info')}
-          {!truthy(userInfo) ? <More id='more-api-key' name={t('API Key')}>
-            {getText('apikey', t)}
-          </More> : null}
-          </Modal.Title>
-        </Modal.Header>
+      <Modal id='login-dialog' show={visible} onHide={onHide}>
         <Modal.Body>
-          {this.renderLoginForm()}
+          <IconButton
+            className='close-button'
+            id='btn-close-login'
+            onClick={onHide}
+            tooltip={t('Close')}
+            icon='close'
+          />
+          <div className='login-content'>
+            <Icon
+              className='nexus-header'
+              name='nexus-header'
+              svgStyle='#login-dialog path { fill: black }'
+            />
+            <div className='login-instructions'>
+              {t('Please log in or register on the Nexus Mods website to log in on vortex!')}
+            </div>
+            <Button
+              onClick={this.login}
+              tooltip={t('Opens the Nexus Mods page in your default browser')}
+            >
+              {t('Log In On Website')}
+            </Button>
+          </div>
         </Modal.Body>
-        <Modal.Footer>
-          {this.renderSubmitButton()}
-          <Button id='btn-close-login' onClick={onHide} tooltip={t('Close')}>{t('Close')}</Button>
-        </Modal.Footer>
       </Modal>
     );
   }
@@ -110,24 +122,9 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
 
     const validation: IValidationState = this.validationState();
     return (
-      <FormGroup
-        controlId='formAPIKeyValidation'
-        validationState={validation.state}
-      >
-        <ControlLabel>{validation.reason}</ControlLabel>
-        <textarea
-          name='APIKey'
-          style={{ resize: 'none', width: '100%', paddingRight: '2em' }}
-          rows={4}
-          value={APIKey}
-          placeholder={t('Create an API key and paste it here')}
-          onChange={this.handleChangeAPIKey}
-        />
-        <HelpBlock>
-          <a onClick={this.openAPIKeyPage}>{t('Click here to create an API key')}</a>
-        </HelpBlock>
-        <FormFeedback pending={validation.pending} />
-      </FormGroup>
+      <Button onClick={this.login} tooltip={t('Log in')}>
+        {t('Log in')}
+      </Button>
     );
   }
 
@@ -165,6 +162,16 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
         </div>
       </FormGroup>
     );
+  }
+
+  private login = () => {
+    const { onHide } = this.props;
+    this.context.api.events.emit('request-nexus-login', (err: Error) => {
+      if (err !== null) {
+        this.context.api.showErrorNotification('Failed to get access key', err);
+      }
+      onHide();
+    });
   }
 
   private openAPIKeyPage = evt => {

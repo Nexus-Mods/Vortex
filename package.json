@@ -17,16 +17,15 @@
     "_install_app": "cd app && yarn install && yarn upgrade",
     "build_api": "cd api && yarn run build && cd .. && yarn add ./api",
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run _build_subprojects_out",
-    "prepackage": "yarn run build_api && yarn run _clean_app && yarn run _install_app && yarn run _build_subprojects_app && yarn run _assets_app && yarn ayy 7zip-bin",
+    "predist": "yarn run build_api && yarn run _clean_app && yarn run _install_app && yarn run _build_subprojects_app && yarn run _assets_app && yarn add 7zip-bin",
     "webpack_main_unused": "webpack --config build/webpack.main.config.js --display-error-details --progress --profile --color",
     "webpack_renderer_unused": "webpack --config build/webpack.renderer.config.js --display-error-details --progress --profile --color",
-    "package": "build",
+    "dist": "electron-builder",
     "prestart": "yarn run build",
     "start": "cross-env NODE_ENV=development electron .",
-    "preinstallex": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
-    "installex": "yarn install && yarn run build",
+    "preinstallex": "yarn add rm-local-modules && rm-local-modules",
+    "installex": "yarn install --check-files && yarn run build",
     "preinstall": "git submodule update --init --recursive",
-    "postinstall": "electron-builder install-app-deps",
     "test": "jest --no-cache",
     "doc": "typedoc --out doc src",
     "build": "tsc -p . && yarn run build_rest",
@@ -181,6 +180,7 @@
     "@types/webpack": "^3.0.13",
     "@types/winreg": "1.2.30",
     "@types/winston": "2.3.7",
+    "@types/ws": "3.2.1",
     "babel-core": "^6.26.0",
     "babel-jest": "^22.0.4",
     "bootstrap-sass": "^3.3.7",
@@ -217,6 +217,7 @@
     "typedoc": "^0.9.0"
   },
   "dependencies": {
+    "7zip-bin": "^2.3.4",
     "bbcode-to-react": "^0.2.6",
     "bluebird": "3.5.1",
     "classnames": "^2.2.5",
@@ -229,7 +230,7 @@
     "drivelist": "^5.2.6",
     "edge": "^7.10.1",
     "electron-devtools-installer": "^2.2.1",
-    "electron-updater": "^2.16.1",
+    "electron-updater": "^2.18.2",
     "exe-version": "file:lib/cpp/exe-version",
     "feedparser": "^2.2.2",
     "ffi": "^2.2.0",
@@ -297,6 +298,7 @@
     "webpack": "^3.8.1",
     "winreg": "^1.2.4",
     "winston": "^2.4.0",
+    "ws": "^4.0.0",
     "xml2js": "^0.4.19"
   }
 }

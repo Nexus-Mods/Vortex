@@ -1,36 +1,51 @@
 {
-    "version": "0.1.0",
-    "command": "npm",
-    "isShellCommand": true,
-    "showOutput": "always",
-    "suppressTaskName": true,
+    "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "install",
+            "label": "install",
+            "type": "shell",
+            "command": "yarn",
             "args": ["install"]
         },
         {
-            "taskName": "prestart",
+            "label": "prestart",
+            "type": "shell",
+            "command": "yarn",
             "args": ["run", "prestart"]
         },
         {
-            "taskName": "start",
+            "label": "start",
+            "type": "shell",
+            "command": "yarn",
             "args": ["run", "start"]
         },
         {
-            "taskName": "update",
+            "label": "update",
+            "type": "shell",
+            "command": "yarn",
             "args": ["update"]
         },
         {
-            "taskName": "test",
+            "label": "test",
+            "type": "shell",
+            "command": "yarn",
             "args": ["run", "test"],
-            "isTestCommand": true
+            "group": "test"
         },
         {
-          "taskName": "buildwatch",
+          "label": "buildwatch",
+          "type": "shell",
+          "command": "yarn",
+          "isBackground": true,
+          "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "dedicated"
+          },
           "args": ["run", "buildwatch"],
           "problemMatcher": "$tsc",
-          "isBuildCommand": true
+          "group": "build"
         }
     ]
 }
