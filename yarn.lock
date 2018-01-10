@@ -7712,7 +7712,7 @@ void-elements@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-2.0.1.tgz#c066afb582bb1cb4128d60ea92392e94d5e9dbec"
 
-vortex-api@./api:
+"vortex-api@file:./api":
   version "0.0.1"
 
 "vortex-parse-ini@file:lib/js/vortex-parse-ini":
