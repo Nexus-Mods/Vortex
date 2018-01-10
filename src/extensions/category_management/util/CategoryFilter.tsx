@@ -23,7 +23,7 @@ class CategoryFilterComponent extends React.Component<IProps, {}> {
     const { filter, categories, mods } = this.props;
 
     const usedCategories = new Set(
-        Object.keys(mods)
+        Object.keys(mods || {})
           .map(modId => mods[modId].attributes['category'])
           .filter(category => category !== undefined));
 
