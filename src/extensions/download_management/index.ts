@@ -63,6 +63,10 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
 export type ProtocolHandler = (inputUrl: string) => Promise<string[]>;
 
 export interface IExtensionContextExt extends IExtensionContext {
+  // register a download protocol handler
+  // TODO: these kinds of handlers are rather limited as they can only return
+  // ftp/http/https urls that can be downloaded directly, you can't add
+  // meta information about the file.
   registerDownloadProtocol: (schema: string, handler: ProtocolHandler) => void;
 }
 
