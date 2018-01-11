@@ -268,7 +268,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             <EmptyPlaceholder
               icon='folder-download'
               fill={true}
-              text={t('You don't have any installed mods)}
+              text={t('You don\'t have any installed mods')}
               subtext={<a onClick={this.getMoreMods}>{t('But don\'t worry, I know a place...')}</a>}
             />
           </div>

@@ -21,7 +21,6 @@
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
     "preinstall": "git submodule update --init --recursive",
-    "postinstall": "electron-rebuild -o node-sass",
     "test": "jest --no-cache",
     "doc": "typedoc --out doc src",
     "build": "yarn run build_rest && tsc -p .",
