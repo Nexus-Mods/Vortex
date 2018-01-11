@@ -29,7 +29,8 @@ import * as path from 'path';
  * @returns {Promise<void>}
  */
 export function activateMods(api: IExtensionApi,
-                             modBasePath: string,
+                             gameId: string,
+                             installationPath: string,
                              destinationPath: string,
                              mods: IMod[],
                              method: IDeploymentMethod,
@@ -44,19 +45,19 @@ export function activateMods(api: IExtensionApi,
         if (progressCB !== undefined) {
           progressCB(renderModName(mod), Math.round((idx * 50) / length));
         }
-        return method.activate(path.join(modBasePath, mod.installationPath),
+        return method.activate(path.join(installationPath, mod.installationPath),
                               mod.installationPath, destinationPath, merged);
       } catch (err) {
         log('error', 'failed to deploy mod', {err: err.message, id: mod.id});
       }
     }))
-    .then(() => method.activate(path.join(modBasePath, MERGED_PATH) + '.' + typeId,
+    .then(() => method.activate(path.join(installationPath, MERGED_PATH) + '.' + typeId,
                                 MERGED_PATH + '.' + typeId, destinationPath, new Set<string>()))
     .then(() => {
       const cb = progressCB === undefined
         ? undefined
         : (files: number, total: number) =>
             progressCB(`${files}/${total} files`, 50 + (files * 50) / total);
-      return method.finalize(destinationPath, cb);
+      return method.finalize(gameId, destinationPath, installationPath, cb);
     });
 }

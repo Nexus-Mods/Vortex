@@ -132,7 +132,9 @@ export interface IDeploymentMethod {
    *
    * @memberOf IModActivator
    */
-  finalize: (dataPath: string,
+  finalize: (gameId: string,
+             dataPath: string,
+             installationPath: string,
              progressCB?: (files: number, total: number) => void) => Promise<IDeployedFile[]>;
 
   /**
@@ -174,7 +176,7 @@ export interface IDeploymentMethod {
    *
    * @memberOf IModActivator
    */
-  externalChanges: (installPath: string, dataPath: string,
+  externalChanges: (gameId: string, installPath: string, dataPath: string,
                     activation: IDeployedFile[]) => Promise<IFileChange[]>;
 
   /**

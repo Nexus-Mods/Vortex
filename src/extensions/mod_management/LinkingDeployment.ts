@@ -2,7 +2,6 @@ import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
-import * as selectors from '../../util/selectors';
 
 import {
   IDeployedFile,
@@ -17,6 +16,7 @@ import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
+import { getSafe } from '../../util/storeHelper';
 
 interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -84,10 +84,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
       });
   }
 
-  public finalize(dataPath: string,
+  public finalize(gameId: string,
+                  dataPath: string,
+                  installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
     const state = this.mApi.store.getState();
-    const gameId = selectors.activeGameId(state);
 
     let added: string[];
     let removed: string[];
@@ -95,8 +96,6 @@ abstract class LinkingActivator implements IDeploymentMethod {
     let contentChanged: string[];
 
     let errorCount: number = 0;
-
-    const installPathStr = selectors.installPath(state);
 
     const newDeployment = this.mNewDeployment;
     const previousDeployment = this.mPreviousDeployment;
@@ -168,7 +167,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         // then, (re-)link all files that were added
         .then(() => Promise.map(
                   added,
-                  key => this.deployFile(key, installPathStr, dataPath, false)
+                  key => this.deployFile(key, installationPath, dataPath, false)
                              .catch(err => {
                                log('warn', 'failed to link', {
                                  link: newDeployment[key].relPath,
@@ -182,7 +181,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         .then(() => Promise.map(
                   [].concat(sourceChanged, contentChanged),
                   (key: string) =>
-                      this.deployFile(key, installPathStr, dataPath, true)
+                      this.deployFile(key, installationPath, dataPath, true)
                           .catch(err => {
                             log('warn', 'failed to link', {
                               link: newDeployment[key].relPath,
@@ -252,10 +251,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return false;
   }
 
-  public externalChanges(installPath: string, dataPath: string,
+  public externalChanges(gameId: string,
+                         installPath: string,
+                         dataPath: string,
                          activation: IDeployedFile[]): Promise<IFileChange[]> {
     const state = this.mApi.store.getState();
-    const gameId = selectors.activeGameId(state);
 
     const nonLinks: IFileChange[] = [];
 

@@ -16,9 +16,9 @@ export function genHash(filePath: string): Promise<IHashResult> {
   return new Promise<IHashResult>((resolve, reject) => {
     try {
       const { createHash } = require('crypto');
-      let hash = createHash('md5');
+      const hash = createHash('md5');
       let size = 0;
-      let stream = fs.createReadStream(filePath);
+      const stream = fs.createReadStream(filePath);
       stream.on('data', (data) => {
         hash.update(data);
         size += data.length;

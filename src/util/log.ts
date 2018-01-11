@@ -16,9 +16,15 @@ if ((process as any).type === 'renderer') {
   const { remote } = require('electron');
   logger = remote.getGlobal('logger');
 } else {
-  // tslint:disable-next-line:no-var-requires
-  logger = require('winston');
-  (global as any).logger = logger;
+  // when being required from extensions, don't re-require the winston module
+  // because the "singleton" is implemented abusing the require-cache
+  if ((global as any).logger === undefined) {
+    // tslint:disable-next-line:no-var-requires
+    logger = require('winston');
+    (global as any).logger = logger;
+  } else {
+    logger = (global as any).logger;
+  }
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';

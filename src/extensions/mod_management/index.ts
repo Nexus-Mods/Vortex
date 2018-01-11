@@ -308,7 +308,7 @@ function genUpdateModDeployment() {
         log('debug', 'determine external changes');
         progress('Checking for external changes', 5);
         return Promise.each(Object.keys(modPaths),
-          typeId => activator.externalChanges(instPath, modPaths[typeId],
+          typeId => activator.externalChanges(profile.gameId, instPath, modPaths[typeId],
             lastDeployment[typeId]).then(fileChanges => {
               if (fileChanges.length > 0) {
                 changes[typeId] = fileChanges;
@@ -355,11 +355,12 @@ function genUpdateModDeployment() {
               (name, percent) => progress(t('Deploying: ') + name, 50 + percent / 2);
             return Promise.each(Object.keys(modPaths),
                 typeId => activateMods(api,
-                                      instPath, modPaths[typeId],
-                                      sortedModList.filter(mod => (mod.type || '') === typeId),
-                                      activator, lastDeployment[typeId],
-                                      typeId, new Set(mergedFileMap[typeId]),
-                                      deployProgress)
+                                       game.id,
+                                       instPath, modPaths[typeId],
+                                       sortedModList.filter(mod => (mod.type || '') === typeId),
+                                       activator, lastDeployment[typeId],
+                                       typeId, new Set(mergedFileMap[typeId]),
+                                       deployProgress)
               .then(newActivation =>
                 saveActivation(typeId, state.app.instanceId, modPaths[typeId], newActivation)));
           })

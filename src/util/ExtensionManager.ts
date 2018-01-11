@@ -151,7 +151,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
     };
 
     this.getCalls('requireExtension').forEach(call => {
-      testValid(call.extension, ...call.arguments);
+      (testValid as any)(call.extension, ...call.arguments);
     });
 
     if (Object.keys(incompatibleExtensions).length > 0) {

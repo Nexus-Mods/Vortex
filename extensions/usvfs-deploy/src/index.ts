@@ -36,7 +36,9 @@ class USVFSDeploymentMethod implements types.IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public finalize(dataPath: string,
+  public finalize(gameId: string,
+                  dataPath: string,
+                  installationPath: string,
                   progressCB?: (files: number, total: number) => void):
       Promise<types.IDeployedFile[]> {
     return Promise.resolve([]);
@@ -56,7 +58,7 @@ class USVFSDeploymentMethod implements types.IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public externalChanges(installPath: string, dataPath: string,
+  public externalChanges(gameId: string, installPath: string, dataPath: string,
                          activation: types.IDeployedFile[]):
       Promise<types.IFileChange[]> {
     return Promise.resolve([]);

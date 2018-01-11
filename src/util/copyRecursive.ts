@@ -80,7 +80,7 @@ function copyDir(sourcePath: string, destinationPath: string, relPath: string,
  * @param {string} destination destination path to copy to
  */
 function copyRecursive(source: string, destination: string): Promise<void> {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const queue = {
       dir: [],
       file: [],

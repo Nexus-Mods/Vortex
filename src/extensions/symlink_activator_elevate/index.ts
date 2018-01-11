@@ -85,11 +85,11 @@ class DeploymentMethod extends LinkingDeployment {
     return super.prepare(dataPath, clean, lastActivation);
   }
 
-  public finalize(dataPath: string): Promise<IDeployedFile[]> {
+  public finalize(gameId: string, dataPath: string,
+                  installationPath: string): Promise<IDeployedFile[]> {
     return this.startElevated()
-        .then(() => super.finalize(dataPath))
-        .then(result => this.stopElevated()
-            .then(() => result));
+        .then(() => super.finalize(gameId, dataPath, installationPath))
+        .then(result => this.stopElevated().then(() => result));
   }
 
   public isSupported(state: any, gameId?: string): string {
