@@ -57,6 +57,10 @@
   margin-right: 0.5em;
 }
 
+.dropdown .btn-group, .btn-group-vertical {
+  display: flex;
+}
+
 // tables
 .table {
   margin-bottom: 0px;
@@ -301,6 +305,9 @@ div:hover > .hover-expand {
 .dropdown svg,
 .dropup svg {
   margin-right: 8px;
+}
+.Select-placeholder, .Select--single>.Select-control .Select-value {
+  color: $gray;
 }
 
 // /generic control rules

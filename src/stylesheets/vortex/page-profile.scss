@@ -12,7 +12,7 @@
 
 .profile-actions {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
   margin: $half-gutter;
 
@@ -58,6 +58,9 @@
 
   .profile-name {
     margin: $half-gutter;
+  }
+  h3.profile-name{
+    font-family: $font-family-headings;
   }
 
   .profile-image {

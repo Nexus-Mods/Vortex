@@ -369,7 +369,7 @@ function genUpdateModDeployment() {
           }));
       })
       .catch(UserCanceled, () => undefined)
-      .catch(err => api.showErrorNotification('failed to deploy mods', err))
+      .catch(err => api.showErrorNotification('Failed to deploy mods', err))
       .finally(() => api.dismissNotification(notificationId));
   };
 }
