@@ -1,6 +1,7 @@
 import Toggle from '../../controls/Toggle';
 import { IState } from '../../types/IState';
 import { ComponentEx, connect, PureComponentEx, translate } from '../../util/ComponentEx';
+import * as fs from '../../util/fs';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
@@ -10,7 +11,6 @@ import { installPath } from '../mod_management/selectors';
 import { IMod } from '../mod_management/types/IMod';
 import { activeGameId } from '../profile_management/selectors';
 
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';

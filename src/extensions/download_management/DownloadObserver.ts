@@ -1,5 +1,6 @@
 import { IState } from '../../types/IState';
 import {ProcessCanceled} from '../../util/CustomErrors';
+import * as fs from '../../util/fs';
 import {log} from '../../util/log';
 import {showError} from '../../util/message';
 import * as selectors from '../../util/selectors';
@@ -27,7 +28,6 @@ import { IProtocolHandlers } from './types/ProtocolHandlers';
 import DownloadManager, { DownloadIsHTML, URLFunc } from './DownloadManager';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import {IHashResult} from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';

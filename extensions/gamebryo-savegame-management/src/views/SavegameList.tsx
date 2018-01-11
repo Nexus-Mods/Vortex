@@ -11,7 +11,6 @@ import {
 } from '../savegameAttributes';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
 import { FormControl, Panel } from 'react-bootstrap';
@@ -20,7 +19,7 @@ import { connect } from 'react-redux';
 import * as Redux from 'redux';
 import {} from 'redux-thunk';
 import {
-  actions, ComponentEx, FlexLayout, IconBar, ITableRowAction,
+  actions, ComponentEx, FlexLayout, fs, IconBar, ITableRowAction,
   MainPage, selectors, Spinner, Table, tooltip, types, util,
 } from 'vortex-api';
 

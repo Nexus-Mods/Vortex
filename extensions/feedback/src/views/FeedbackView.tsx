@@ -3,7 +3,6 @@ import { IFeedbackFile } from '../types/IFeedbackFile';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as os from 'os';
 import * as path from 'path';
@@ -17,7 +16,7 @@ import * as Redux from 'redux';
 import {} from 'redux-thunk';
 import { dir as tmpDir, file as tmpFile } from 'tmp';
 import {
-  actions, ComponentEx, Dropzone, FlexLayout, Icon, IconBar, ITableRowAction,
+  actions, ComponentEx, Dropzone, FlexLayout, fs, Icon, IconBar, ITableRowAction,
   log, MainPage, Table, Toggle, tooltip, types, util,
 } from 'vortex-api';
 

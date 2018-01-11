@@ -1,5 +1,6 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
+import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 
@@ -14,14 +15,13 @@ import { MERGED_PATH } from './modMerging';
 
 import * as Promise from 'bluebird';
 import * as crypto from 'crypto';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 /**
  * activate a list of mod
  *
  * @export
- * @param {string} modBasePath the path where mods are installed
+ * @param {string} installationPath the path where mods are installed
  * @param {string} destinationPath the game mod path
  * @param {IMod[]} mods list of mods to activate (sorted from lowest to highest
  * priority)

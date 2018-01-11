@@ -1,5 +1,6 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
@@ -28,7 +29,6 @@ import observe, { DownloadObserver } from './DownloadObserver';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {createSelector} from 'reselect';

@@ -3,6 +3,7 @@ import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 
@@ -11,7 +12,6 @@ import { loadVortexLogs } from '../util/loadVortexLogs';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';

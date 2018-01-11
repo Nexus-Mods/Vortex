@@ -4,8 +4,8 @@ import { Button, IconButton } from '../../controls/TooltipControls';
 import { IComponentContext } from '../../types/IComponentContext';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import * as fs from '../../util/fs';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
-
 import { getSafe } from '../../util/storeHelper';
 
 import { addDiscoveredTool, setGameParameters } from '../gamemode_management/actions/settings';
@@ -13,7 +13,6 @@ import { addDiscoveredTool, setGameParameters } from '../gamemode_management/act
 import ToolIcon from './ToolIcon';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import { extractIconToFile } from 'icon-extract';
 import * as path from 'path';

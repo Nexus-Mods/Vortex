@@ -1,12 +1,12 @@
 import Icon from '../../../controls/Icon';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
+import * as fs from '../../../util/fs';
 import {log} from '../../../util/log';
 import MainPage from '../../../views/MainPage';
 
 import { ILicense } from '../types/ILicense';
 
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Image, Media, Modal, Panel } from 'react-bootstrap';

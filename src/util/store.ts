@@ -5,6 +5,7 @@ import { IStorage } from '../types/IStorage';
 
 import {terminate} from './errorHandling';
 import ExtensionManager from './ExtensionManager';
+import * as fs from './fs';
 import LevelPersist from './LevelPersist';
 import LevelStorage from './LevelStorage';
 import { log } from './log';
@@ -14,7 +15,6 @@ import StorageLogger from './StorageLogger';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import levelup = require('levelup');
 import * as path from 'path';
 import * as Redux from 'redux';

@@ -2,6 +2,7 @@ import {showDialog} from '../../../actions/notifications';
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {IState} from '../../../types/IState';
 import {UserCanceled} from '../../../util/CustomErrors';
+import * as fs from '../../../util/fs';
 
 import {IDeploymentManifest, ManifestFormat} from '../types/IDeploymentManifest';
 import {IDeployedFile} from '../types/IDeploymentMethod';
@@ -9,7 +10,6 @@ import {IDeployedFile} from '../types/IDeploymentMethod';
 import format_1 from './manifest_formats/format_1';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 const CURRENT_VERSION = 1;

@@ -4,6 +4,7 @@ import IconBar from '../../../controls/IconBar';
 import OverlayTrigger from '../../../controls/OverlayTrigger';
 import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
+import * as fs from '../../../util/fs';
 
 import { IMod } from '../../mod_management/types/IMod';
 
@@ -14,7 +15,6 @@ import GameInfoPopover from './GameInfoPopover';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';

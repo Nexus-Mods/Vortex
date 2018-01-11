@@ -1,17 +1,16 @@
 import { IFileEntry, IModEntry, ParseError } from '../types/nmmEntries';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as modmetaT from 'modmeta-db';
 import * as path from 'path';
-import { log, types, util } from 'vortex-api';
+import { fs, log, types, util } from 'vortex-api';
 const modmeta = util.lazyRequire<typeof modmetaT>('modmeta-db');
 
 interface IModMap {
   [modId: string]: types.IMod;
 }
 
-export function parseNMMConfigFile(nmmFilePath: string, mods: IModMap): Promise<any> {
+export function parseNMMConfigFile(nmmFilePath: string, mods: IModMap): Promise<IModEntry[]> {
   return fs.readFileAsync(nmmFilePath)
       .catch(
           err => Promise.reject(new ParseError(

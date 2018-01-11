@@ -7,9 +7,8 @@ import refreshSavegames from './util/refreshSavegames';
 import SavegameList from './views/SavegameList';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { selectors, types, util } from 'vortex-api';
+import { fs, selectors, types, util } from 'vortex-api';
 import IniParser, {IniFile, WinapiFormat} from 'vortex-parse-ini';
 
 const parser = new IniParser(new WinapiFormat());

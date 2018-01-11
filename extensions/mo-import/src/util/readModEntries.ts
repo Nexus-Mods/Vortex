@@ -2,9 +2,8 @@ import {IModEntry} from '../types/moEntries';
 
 import * as Promise from 'bluebird';
 import { FileAccessError } from 'core-error-predicates';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { log, types } from 'vortex-api';
+import { fs, log, types } from 'vortex-api';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
 
 const parser: IniParser = new IniParser(new WinapiFormat());

@@ -3,6 +3,7 @@ import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
 import {ProcessCanceled} from '../../util/CustomErrors';
+import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 
 import {
@@ -20,7 +21,6 @@ import Progress from './util/Progress';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
 

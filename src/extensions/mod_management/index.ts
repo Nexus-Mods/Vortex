@@ -11,6 +11,7 @@ import { ITableAttribute, Placement } from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
 import { UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
+import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -68,7 +69,6 @@ import mergeMods, { MERGED_PATH } from './modMerging';
 import getText from './texts';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import { genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';

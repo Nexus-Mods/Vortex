@@ -6,13 +6,12 @@ import toVortexMod from './toVortexMod';
 import TraceImport from './TraceImport';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import { genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
-import { actions, selectors, types } from 'vortex-api';
+import { actions, fs, selectors, types } from 'vortex-api';
 
 function getInner(ele: Element): string {
   if ((ele !== undefined) && (ele !== null)) {

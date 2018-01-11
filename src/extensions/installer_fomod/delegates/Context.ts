@@ -1,5 +1,6 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {IGame} from '../../../types/IGame';
+import * as fs from '../../../util/fs';
 import {log} from '../../../util/log';
 import {getSafe} from '../../../util/storeHelper';
 import {isNullOrWhitespace} from '../../../util/util';
@@ -13,7 +14,6 @@ import DelegateBase from './DelegateBase';
 import * as Promise from 'bluebird';
 import { app as appIn, remote} from 'electron';
 import getVersion from 'exe-version';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as util from 'util';
 

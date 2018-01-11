@@ -2,31 +2,9 @@
 # yarn lockfile v1
 
 
-"@types/bluebird@*":
-  version "3.5.19"
-  resolved "https://registry.yarnpkg.com/@types/bluebird/-/bluebird-3.5.19.tgz#1a47308819ac2d1d6d1ca4f5d800ac84924100de"
-
-"@types/fs-extra-promise@^0.0.31":
-  version "0.0.31"
-  resolved "https://registry.yarnpkg.com/@types/fs-extra-promise/-/fs-extra-promise-0.0.31.tgz#35c735cc061df9ddbf7009c16b90f871488285a3"
-  dependencies:
-    "@types/bluebird" "*"
-    "@types/fs-extra" "*"
-    "@types/node" "*"
-
-"@types/fs-extra@*":
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/@types/fs-extra/-/fs-extra-5.0.0.tgz#d3e225b35eb5c6d3a5a782c28219df365c781413"
-  dependencies:
-    "@types/node" "*"
-
 "@types/i18next@^8.4.0":
   version "8.4.2"
   resolved "https://registry.yarnpkg.com/@types/i18next/-/i18next-8.4.2.tgz#9f809c4a9d3687f7643254cde85b1127db616180"
-
-"@types/node@*":
-  version "8.5.7"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.5.7.tgz#9c498c35af354dcfbca3790fb2e81129e93cf0e2"
 
 "@types/rimraf@^0.0.28":
   version "0.0.28"

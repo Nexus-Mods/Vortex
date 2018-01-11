@@ -6,6 +6,7 @@ import {} from '../util/delayed';
 import * as develT from '../util/devel';
 import {} from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
+import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
 import LevelPersist from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
@@ -23,8 +24,6 @@ import TrayIconT from './TrayIcon';
 
 import * as Promise from 'bluebird';
 import {app, BrowserWindow, ipcMain} from 'electron';
-import * as origFS from 'fs';
-import * as fs from 'fs-extra-promise';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -133,7 +132,7 @@ class Application {
 
   private handleGet(getPath: string | boolean): Promise<void> {
     if (typeof(getPath) === 'boolean') {
-      origFS.writeSync(1, 'Usage: vortex --get <path>\n');
+      fs.writeSync(1, 'Usage: vortex --get <path>\n');
       app.quit();
       return;
     }

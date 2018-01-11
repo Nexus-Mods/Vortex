@@ -1,9 +1,9 @@
+import * as fs from '../../../util/fs';
 import { getSafe } from '../../../util/storeHelper';
 import { IModWithState } from '../types/IModProps';
 
 import versionClean from './versionClean';
 
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 export type UpdateState =

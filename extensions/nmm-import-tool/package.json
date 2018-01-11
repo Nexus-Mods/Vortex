@@ -19,7 +19,6 @@
   },
   "devDependencies": {
     "@types/bluebird": "3.5.19",
-    "@types/fs-extra-promise": "1.0.4",
     "@types/i18next": "^8.4.0",
     "@types/immutability-helper":  "^2.0.15",
     "@types/opn": "^3.0.28",
@@ -36,7 +35,6 @@
     "babel-polyfill": "^6.13.0",
     "bluebird": "^3.4.6",
     "copyfiles": "^1.0.0",
-    "fs-extra-promise": "^1.0.1",
     "i18next": "^3.5.1",
     "immutability-helper": "^2.2.2",
     "json-loader": "^0.5.4",

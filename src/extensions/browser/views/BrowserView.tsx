@@ -2,13 +2,13 @@ import Icon from '../../../controls/Icon';
 import Webview from '../../../controls/Webview';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import * as fs from '../../../util/fs';
 import {log} from '../../../util/log';
 import MainPage from '../../../views/MainPage';
 
 import { closeBrowser } from '../actions';
 
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
 import { Modal } from 'react-bootstrap';

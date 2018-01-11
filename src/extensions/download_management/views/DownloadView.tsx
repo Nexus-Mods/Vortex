@@ -15,6 +15,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
+import * as fs from '../../../util/fs';
 import { getCurrentLanguage } from '../../../util/i18n';
 import { log } from '../../../util/log';
 import relativeTime from '../../../util/relativeTime';
@@ -34,7 +35,6 @@ import { FILE_NAME, FILE_SIZE, PROGRESS } from '../downloadAttributes';
 import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';

@@ -6,6 +6,7 @@ import {
 } from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
 import { UserCanceled } from '../../util/CustomErrors';
+import * as fs from '../../util/fs';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import {truthy} from '../../util/util';
@@ -24,7 +25,6 @@ import InstallerDialog from './views/InstallerDialog';
 import * as Promise from 'bluebird';
 import * as edgeT from 'edge';
 const edge = lazyRequire<typeof edgeT>('edge');
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as util from 'util';
 

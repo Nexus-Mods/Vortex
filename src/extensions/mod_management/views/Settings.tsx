@@ -7,6 +7,7 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import * as fs from '../../../util/fs';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
@@ -22,7 +23,6 @@ import getSupportedActivators from '../util/supportedActivators';
 import getText from '../texts';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as path from 'path';

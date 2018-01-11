@@ -14,7 +14,6 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/fs-extra-promise": "^1.0.1",
     "@types/react": "16.0.34",
     "@types/react-bootstrap": "^0.0.50",
     "@types/react-color": "2.11.2",
@@ -27,7 +26,6 @@
   },
   "dependencies": {
     "font-manager": "^0.2.2",
-    "fs-extra-promise": "^1.0.1",
     "vortex-api": "file:../../api",
     "react-bootstrap": "^0.31.0",
     "react-color": "^2.12.1",

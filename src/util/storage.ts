@@ -1,6 +1,7 @@
+import * as fs from './fs';
+
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 const app = appIn || remote.app;
@@ -16,12 +17,12 @@ function storagePath(gameId: string, key: string): string {
 }
 
 export function loadData(gameId: string, key: string, def?: any): Promise<any> {
-  return fs.readFileAsync(storagePath(gameId, key))
+  return fs.readFile(storagePath(gameId, key))
   .then((text: NodeBuffer) => JSON.parse(text.toString('utf-8')))
   .catch(() => def)
   ;
 }
 
 export function saveData(gameId: string, key: string, data: any): Promise<void> {
-  return fs.writeFileAsync(storagePath(gameId, key), JSON.stringify(data));
+  return fs.writeFile(storagePath(gameId, key), JSON.stringify(data));
 }

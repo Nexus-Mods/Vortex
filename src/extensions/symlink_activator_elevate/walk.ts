@@ -1,5 +1,6 @@
+import * as fs from '../../util/fs';
+
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 function walk(target: string,

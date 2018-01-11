@@ -2,6 +2,7 @@ import Icon from '../../../controls/Icon';
 import { Table, TD, TR } from '../../../controls/table/MyTable';
 import { Icon as TooltipIcon, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
+import * as fs from '../../../util/fs';
 import { getSafe } from '../../../util/storeHelper';
 
 import { getGame } from '../../gamemode_management/index';
@@ -12,7 +13,6 @@ import { IProfileFeature } from '../types/IProfileFeature';
 import TransferIcon from './TransferIcon';
 
 import { nativeImage, remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';

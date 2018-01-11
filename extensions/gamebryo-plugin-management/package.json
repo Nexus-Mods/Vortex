@@ -40,7 +40,6 @@
     "copyfiles": "^1.0.0",
     "electron-rebuild": "^1.4.0",
     "esptk": "file:../../lib/cpp/esptk",
-    "fs-extra-promise": "^0.4.1",
     "i18next": "^8.4.3",
     "iconv-lite": "^0.4.15",
     "immutability-helper": "^2.2.2",

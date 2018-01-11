@@ -1,7 +1,6 @@
-import * as fs from 'fs-extra-promise';
 import opn = require('opn');
 import * as path from 'path';
-import { selectors, types } from 'vortex-api';
+import { fs, selectors, types } from 'vortex-api';
 
 function init(context: types.IExtensionContext) {
   context.registerAction('mod-icons', 300, 'open-ext', {},

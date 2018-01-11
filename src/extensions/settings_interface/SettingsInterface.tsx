@@ -5,6 +5,7 @@ import More from '../../controls/More';
 import Toggle from '../../controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { readdirAsync } from '../../util/fs';
 import { log } from '../../util/log';
 import { spawnSelf } from '../../util/util';
 
@@ -18,7 +19,6 @@ import getText from './texts';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import { readdirAsync } from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';

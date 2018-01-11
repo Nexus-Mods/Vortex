@@ -1,9 +1,7 @@
-const { log, util } = require('vortex-api');
-
 const Promise = require('bluebird');
 const { remote } = require('electron');
-const fs = require('fs-extra-promise');
 const path = require('path');
+const { fs, log, util } = require('vortex-api');
 
 function findGame() {
   let steam = new util.Steam();

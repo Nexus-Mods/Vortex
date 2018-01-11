@@ -1,12 +1,12 @@
 import {IGameDetail} from '../../../types/IExtensionContext';
 import {IGame} from '../../../types/IGame';
+import * as fs from '../../../util/fs';
 import {log} from '../../../util/log';
 import walk from '../../../util/walk';
 
 import {IDiscoveryResult} from '../types/IDiscoveryResult';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 
 function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]: IGameDetail }> {
   if (game.path === undefined) {

@@ -20,14 +20,12 @@
     ]
   },
   "devDependencies": {
-    "@types/fs-extra-promise": "^0.0.31",
     "@types/i18next": "^8.4.0",
     "babel-core": "^6.14.0",
     "babel-loader": "^6.2.5",
     "babel-polyfill": "^6.13.0",
     "bluebird": "^3.4.6",
     "copyfiles": "^1.0.0",
-    "fs-extra-promise": "^0.4.1",
     "i18next": "^3.5.1",
     "immutability-helper": "^2.2.2",
     "json-loader": "^0.5.4",

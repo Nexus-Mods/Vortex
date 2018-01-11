@@ -1,6 +1,6 @@
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import { fs } from 'vortex-api';
 
 /**
  * copy or move a list of savegame files

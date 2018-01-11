@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import { fs } from 'vortex-api';
 
 function convertGameId(input: string): string {
   if (input === 'skyrimse') {

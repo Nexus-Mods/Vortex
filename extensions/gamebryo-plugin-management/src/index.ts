@@ -28,11 +28,10 @@ import * as Promise from 'bluebird';
 import { ipcMain, ipcRenderer, remote } from 'electron';
 import ESPFile from 'esptk';
 import { access, constants } from 'fs';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as nodeUtil from 'util';
-import { actions, log, selectors, types, util } from 'vortex-api';
+import { actions, fs, log, selectors, types, util } from 'vortex-api';
 import { setCreateRule } from './actions/userlistEdit';
 
 interface IModState {

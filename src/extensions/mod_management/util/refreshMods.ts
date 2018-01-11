@@ -1,7 +1,8 @@
+import * as fs from '../../../util/fs';
+
 import {IMod} from '../types/IMod';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 /**

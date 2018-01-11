@@ -1,5 +1,6 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IDiscoveryResult, IState, IStatePaths} from '../../types/IState';
+import * as fs from '../../util/fs';
 import {showError} from '../../util/message';
 import {getSafe} from '../../util/storeHelper';
 import {truthy} from '../../util/util';
@@ -26,7 +27,6 @@ import InstallManager from './InstallManager';
 import {currentActivator, installPath} from './selectors';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 export function onGameModeActivated(
@@ -148,7 +148,7 @@ function undeploy(api: IExtensionApi,
     .then(() => (mod !== undefined)
       ? activator.deactivate(installationPath, dataPath, mod)
       : Promise.resolve())
-    .then(() => activator.finalize(dataPath))
+    .then(() => activator.finalize(gameMode, dataPath, installationPath))
     .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation))
     .catch(err => callback(err));
 }

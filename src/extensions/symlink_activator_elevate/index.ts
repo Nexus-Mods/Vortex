@@ -1,6 +1,7 @@
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {UserCanceled} from '../../util/CustomErrors';
 import * as elevatedT from '../../util/elevated';
+import * as fs from '../../util/fs';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
@@ -14,7 +15,6 @@ import {
 import walk from './walk';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import ipc = require('node-ipc');
 import * as path from 'path';

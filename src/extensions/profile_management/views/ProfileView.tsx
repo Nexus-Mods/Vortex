@@ -3,6 +3,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult,
 import Icon from '../../../controls/Icon';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import * as fs from '../../../util/fs';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
@@ -19,7 +20,6 @@ import ProfileEdit from './ProfileEdit';
 import ProfileItem from './ProfileItem';
 
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';

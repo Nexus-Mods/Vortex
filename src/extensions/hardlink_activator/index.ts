@@ -1,5 +1,6 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
+import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { activeGameId } from '../../util/selectors';
 
@@ -10,8 +11,6 @@ import { installPath } from '../mod_management/selectors';
 import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
-import * as fsOrig from 'fs';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
@@ -66,7 +65,7 @@ class DeploymentMethod extends LinkingDeployment {
     const modPaths = game.getModPaths(discovery.path);
 
     try {
-      fsOrig.accessSync(modPaths[typeId], fsOrig.constants.W_OK);
+      fs.accessSync(modPaths[typeId], fs.constants.W_OK);
     } catch (err) {
       log('info', 'hardlink activator not supported due to lack of write access',
           { typeId, path: modPaths[typeId] });
@@ -92,10 +91,12 @@ class DeploymentMethod extends LinkingDeployment {
     return undefined;
   }
 
-  public finalize(dataPath: string,
+  public finalize(gameId: string,
+                  dataPath: string,
+                  installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
     this.mDirCache = new Set<string>();
-    return super.finalize(dataPath, progressCB)
+    return super.finalize(gameId, dataPath, installationPath, progressCB)
     .then(files => {
       this.mDirCache = undefined;
       return files;

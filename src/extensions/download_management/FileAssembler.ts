@@ -1,8 +1,8 @@
 import { ProcessCanceled } from '../../util/CustomErrors';
+import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 
 /**
  * assembles a file received in chunks.

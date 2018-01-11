@@ -1,4 +1,5 @@
 import Debouncer from '../../util/Debouncer';
+import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, truthy } from '../../util/util';
 import { IChunk } from './types/IChunk';
@@ -13,7 +14,6 @@ import * as Promise from 'bluebird';
 import contentDisposition = require('content-disposition');
 import contentType = require('content-type');
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';

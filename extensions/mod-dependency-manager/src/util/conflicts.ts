@@ -4,9 +4,8 @@ import { IModLookupInfo } from '../types/IModLookupInfo';
 import isBlacklisted from './blacklist';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { types, util } from 'vortex-api';
+import { fs, types, util } from 'vortex-api';
 
 interface IFileMap {
   [filePath: string]: types.IMod[];

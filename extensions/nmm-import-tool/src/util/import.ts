@@ -5,10 +5,9 @@ import TraceImport from './TraceImport';
 import { addMods, createProfile } from './vortexImports';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
-import { actions, selectors, types } from 'vortex-api';
+import { actions, fs, selectors, types } from 'vortex-api';
 
 function getInner(ele: Element): string {
   if ((ele !== undefined) && (ele !== null)) {

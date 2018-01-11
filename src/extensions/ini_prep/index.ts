@@ -1,4 +1,5 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
+import * as fs from '../../util/fs';
 import {log} from '../../util/log';
 import {getSafe} from '../../util/storeHelper';
 import {objDiff, setdefault} from '../../util/util';
@@ -14,7 +15,6 @@ import {iniFiles, iniFormat} from './gameSupport';
 import renderINITweaks from './TweakList';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import IniParser, {IniFile, WinapiFormat} from 'vortex-parse-ini';
 

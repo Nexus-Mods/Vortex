@@ -1,4 +1,3 @@
-import * as fs from 'fs-extra-promise';
 import { TranslationFunction } from 'i18next';
 import opn = require('opn');
 import * as path from 'path';
@@ -6,7 +5,7 @@ import * as React from 'react';
 import { Button, Col, ControlLabel, Form, FormControl, FormGroup,
   Grid, OverlayTrigger, Popover, Row } from 'react-bootstrap';
 import { ChromePicker, Color } from 'react-color';
-import { ComponentEx, More, Toggle } from 'vortex-api';
+import { ComponentEx, fs, More, Toggle } from 'vortex-api';
 
 interface IColor {
   r: number;

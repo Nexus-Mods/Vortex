@@ -1,8 +1,8 @@
+import * as fs from '../../util/fs';
 import {log} from '../../util/log';
 import {copyFileAtomic} from '../../util/util';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 export function syncToProfile(

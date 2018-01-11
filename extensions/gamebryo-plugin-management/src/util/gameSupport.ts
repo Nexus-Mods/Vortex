@@ -2,9 +2,8 @@ import {PluginFormat} from '../util/PluginPersistor';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { types, util } from 'vortex-api';
+import { fs, types, util } from 'vortex-api';
 
 const app = appIn || remote.app;
 

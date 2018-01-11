@@ -1,10 +1,10 @@
+import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 
 import chromePath from './chromePath';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 /**

@@ -1,5 +1,6 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
+import * as fs from '../../util/fs';
 import getFileList, { IFileEntry } from '../../util/getFileList';
 import {setdefault} from '../../util/util';
 import walk from '../../util/walk';
@@ -11,7 +12,6 @@ import {BACKUP_TAG} from './LinkingDeployment';
 
 import * as Promise from 'bluebird';
 import * as crypto from 'crypto';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 export const MERGED_PATH = '__merged';

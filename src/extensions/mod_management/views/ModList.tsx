@@ -15,6 +15,7 @@ import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
+import * as fs from '../../../util/fs';
 import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
@@ -45,7 +46,6 @@ import CheckModVersionsButton from './CheckModVersionsButton';
 import InstallArchiveButton from './InstallArchiveButton';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';

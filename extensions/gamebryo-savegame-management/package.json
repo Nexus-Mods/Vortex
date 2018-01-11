@@ -20,7 +20,6 @@
     ]
   },
   "devDependencies": {
-    "@types/fs-extra-promise": "^0.0.31",
     "@types/i18next": "^8.4.0",
     "@types/iconv-lite": "^0.0.1",
     "@types/immutability-helper": "^2.0.15",
@@ -38,7 +37,6 @@
     "bluebird": "^3.4.6",
     "copyfiles": "^1.0.0",
     "electron-rebuild": "^1.4.0",
-    "fs-extra-promise": "^0.4.1",
     "gamebryo-savegame": "file:../../lib/cpp/gamebryo-savegame",
     "i18next": "^3.5.1",
     "iconv-lite": "^0.4.15",

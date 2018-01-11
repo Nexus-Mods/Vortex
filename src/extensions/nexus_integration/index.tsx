@@ -6,6 +6,7 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import Debouncer from '../../util/Debouncer';
+import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -45,7 +46,6 @@ import NXMUrl from './NXMUrl';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import NexusT, { IDownloadURL, IFileInfo, IModInfo, NexusError as NexusErrorT } from 'nexus-api';
 import opn = require('opn');

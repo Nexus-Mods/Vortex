@@ -3,9 +3,8 @@ import parseMOIni from './parseMOIni';
 import * as Promise from 'bluebird';
 import { FileAccessError } from 'core-error-predicates';
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { types } from 'vortex-api';
+import { fs, types } from 'vortex-api';
 
 export function instancesPath(): string {
   return path.resolve(remote.app.getPath('appData'), '..', 'local', 'ModOrganizer');

@@ -7,11 +7,10 @@ import {
 } from '../util/gameSupport';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import {decode, encode} from 'iconv-lite';
 import * as _ from 'lodash';
 import * as path from 'path';
-import {log, types, util} from 'vortex-api';
+import {fs, log, types, util} from 'vortex-api';
 
 export type PluginFormat = 'original' | 'fallout4';
 

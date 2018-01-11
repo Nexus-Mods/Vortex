@@ -8,6 +8,7 @@ import {
 import {IGame} from '../../types/IGame';
 import { IState } from '../../types/IState';
 import {ProcessCanceled} from '../../util/CustomErrors';
+import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
 import { log } from '../../util/log';
@@ -42,7 +43,6 @@ import { currentGame, currentGameDiscovery } from './selectors';
 
 import * as Promise from 'bluebird';
 import { remote, shell } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
 

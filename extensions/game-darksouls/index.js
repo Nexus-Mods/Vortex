@@ -1,9 +1,8 @@
 const Promise = require('bluebird');
-const fs = require('fs-extra-promise');
 const opn = require('opn');
 const path = require('path');
 const thunk = require('redux-thunk');
-const { actions, log, util } = require('vortex-api');
+const { actions, fs, log, util } = require('vortex-api');
 
 class DarkSouls {
   constructor(context) {

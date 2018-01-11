@@ -1,7 +1,8 @@
 import { log } from '../util/log';
 
+import * as fs from './fs';
+
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import { getSafe } from './storeHelper';
 

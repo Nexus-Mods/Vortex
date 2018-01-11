@@ -3,9 +3,9 @@ import { ISavegame } from '../types/ISavegame';
 import { log, util } from 'vortex-api';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import savegameLibInit from 'gamebryo-savegame';
 import * as path from 'path';
+import { fs } from 'vortex-api';
 
 const savegameLib = savegameLibInit('savegameLib');
 

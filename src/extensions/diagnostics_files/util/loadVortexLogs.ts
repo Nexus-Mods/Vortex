@@ -1,10 +1,10 @@
+import * as fs from '../../../util/fs';
 import {LogLevel} from '../../../util/log';
 
 import { ILog, ISession } from '../types/ISession';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 const lineRE = /^([^-]*) - ([a-z]*): (.*)\r?$/;

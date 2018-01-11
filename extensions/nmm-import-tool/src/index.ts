@@ -3,9 +3,8 @@ import { sessionReducer } from './reducers/session';
 import ImportDialog from './views/ImportDialog';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { selectors, types, util } from 'vortex-api';
+import { fs, selectors, types, util } from 'vortex-api';
 
 function init(context: types.IExtensionContext): boolean {
   if (process.platform !== 'win32') {

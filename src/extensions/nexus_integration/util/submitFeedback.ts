@@ -1,7 +1,7 @@
+import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import Nexus from 'nexus-api';
 import ZipT = require('node-7z');
 import { tmpName } from 'tmp';

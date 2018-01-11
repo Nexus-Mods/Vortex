@@ -1,7 +1,5 @@
-const { log, util } = require('vortex-api');
-
-const fs = require('fs-extra-promise');
 const path = require('path');
+const { fs, log, util } = require('vortex-api');
 
 function findGame() {
   let steam = new util.Steam();

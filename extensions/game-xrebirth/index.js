@@ -1,8 +1,7 @@
 const Promise = require('bluebird');
-const fs = require('fs-extra-promise');
 const { parseXmlString } = require('libxmljs');
 const path = require('path');
-const { log, util } = require('vortex-api');
+const { fs, log, util } = require('vortex-api');
 
 function findGame() {
   let steam = new util.Steam();

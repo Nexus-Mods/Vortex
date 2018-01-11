@@ -2,8 +2,8 @@ import {ArcGame} from './types';
 
 import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import { fs } from 'vortex-api';
 
 export interface IARCOptions {
   compression?: boolean;

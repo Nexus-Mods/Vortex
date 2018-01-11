@@ -21,6 +21,7 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import { setProgress } from '../../actions/session';
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
@@ -41,7 +42,6 @@ import { syncFromProfile, syncToProfile } from './sync';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';

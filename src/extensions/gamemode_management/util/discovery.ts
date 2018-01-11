@@ -1,6 +1,7 @@
 import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 import { IGame } from '../../../types/IGame';
 import { ITool } from '../../../types/ITool';
+import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
@@ -12,7 +13,6 @@ import getNormalizeFunc, { Normalize } from '../../../util/getNormalizeFunc';
 import Progress from './Progress';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
 

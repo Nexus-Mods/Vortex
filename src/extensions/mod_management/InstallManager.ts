@@ -4,6 +4,7 @@ import { IExtensionApi } from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { createErrorReport } from '../../util/errorHandling';
+import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
 import { activeGameId, activeProfile, downloadPath, gameName } from '../../util/selectors';
@@ -31,7 +32,6 @@ import InstallContext from './InstallContext';
 import deriveModInstallName from './modIdManager';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import ZipT = require('node-7z');

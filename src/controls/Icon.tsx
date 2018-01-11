@@ -1,9 +1,10 @@
+import * as fs from '../util/fs';
+import { log } from '../util/log';
+
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as React from 'react';
-import { log } from '../util/log';
 
 const debugMissingIcons = process.env.NODE_ENV === 'development';
 const debugReported = new Set<string>();

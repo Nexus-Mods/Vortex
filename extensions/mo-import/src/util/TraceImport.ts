@@ -1,8 +1,8 @@
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import { inspect } from 'util';
+import { fs } from 'vortex-api';
 
 class TraceImport {
   private mPath: string;

@@ -4,10 +4,9 @@ import {gameSupported} from './gameSupport';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as fs from 'fs-extra-promise';
 import { safeDump, safeLoad } from 'js-yaml';
 import * as path from 'path';
-import { log, types, util } from 'vortex-api';
+import { fs, log, types, util } from 'vortex-api';
 
 const app = appIn || remote.app;
 

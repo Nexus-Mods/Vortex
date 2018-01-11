@@ -1,8 +1,6 @@
+import * as fs from './fs';
+
 import * as Promise from 'bluebird';
-// use the standard fs-module for api-visible types so we don't force fs-extra-promise
-// on everyone using the api.
-import * as fsT from 'fs';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 /**
@@ -16,7 +14,7 @@ import * as path from 'path';
  * @returns {Promise<void>} a promise that is resolved once the search is complete
  */
 function walk(target: string,
-              callback: (iterPath: string, stats: fsT.Stats) => Promise<any>): Promise<void> {
+              callback: (iterPath: string, stats: fs.Stats) => Promise<any>): Promise<void> {
   let allFileNames: string[];
 
   return fs.readdirAsync(target)
@@ -24,7 +22,7 @@ function walk(target: string,
       allFileNames = fileNames;
       return Promise.map(fileNames, (statPath: string) =>
                          fs.lstatAsync(path.join(target, statPath)).reflect(), { concurrency: 50 });
-    }).then((res: Array<Promise.Inspection<fsT.Stats>>) => {
+    }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
       const subDirs: string[] = [];

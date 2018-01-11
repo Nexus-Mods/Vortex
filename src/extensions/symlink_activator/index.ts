@@ -1,5 +1,6 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
+import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
 import walk from '../../util/walk';
@@ -11,8 +12,6 @@ import { IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as fsOrig from 'fs';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
 
@@ -73,7 +72,7 @@ class DeploymendMethod extends LinkingDeployment {
     const modPaths = game.getModPaths(discovery.path);
 
     try {
-      fsOrig.accessSync(modPaths[typeId], fsOrig.constants.W_OK);
+      fs.accessSync(modPaths[typeId], fs.constants.W_OK);
       if (!this.ensureAdmin()) {
         return 'Requires admin rights on windows';
       }

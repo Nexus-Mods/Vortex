@@ -1,10 +1,10 @@
 import * as Promise from 'bluebird';
 import Registry = require('winreg');
 
+import * as fs from './fs';
 import { log } from './log';
 import { getSafe } from './storeHelper';
 
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 
 import { app as appIn, remote } from 'electron';
