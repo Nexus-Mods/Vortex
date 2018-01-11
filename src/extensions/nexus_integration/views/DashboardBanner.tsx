@@ -36,8 +36,7 @@ class DashboardBanner extends ComponentEx<IProps, {}> {
       <div className='dashlet-nexus-login'>
         <div className='nexus-login-heading'>{t('Register or Log In')}</div>
         <div className='nexus-login-text'>
-          {t('To get the best experience out of Vortex we suggest that '
-             + 'you Log In or Register to NexusMods.com.')}
+          {t('Log In usuing your Nexus Mods account or register a new account on the Nexus Mods website to get the best experience!')}
         </div>
         <Button onClick={this.login}>
           {t('Log In or Register')}
