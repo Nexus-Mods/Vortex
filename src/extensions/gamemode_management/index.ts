@@ -358,9 +358,9 @@ function init(context: IExtensionContext): boolean {
 
   const openModFolder = (instanceIds: string[]) => {
     const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
-    const modPath = getSafe(discoveredGames, [instanceIds[0], 'modPath'], undefined);
-    if (modPath !== undefined) {
-      shell.openItem(modPath);
+    const discovered = getSafe(discoveredGames, [instanceIds[0]], undefined);
+    if (discovered !== undefined) {
+      shell.openItem(getGame(instanceIds[0]).getModPaths(discovered.path)['']);
     }
   };
 

@@ -8,7 +8,7 @@ import RSSDashlet from './Dashlet';
 function init(context: IExtensionContext): boolean {
   context.registerDashlet('News', 1, 3, 200, RSSDashlet, undefined, () => ({
     title: context.api.translate('Latest News'),
-    url: 'https://rd.nexusmods.com/rss/news/',
+    url: 'https://www.nexusmods.com/rss/news/',
     maxLength: 400,
     extras: [
       { attribute: 'nexusmods:comments', icon: 'comments', text: '{{ value }} comments'},
@@ -22,7 +22,7 @@ function init(context: IExtensionContext): boolean {
             convertGameId(activeGameId(context.api.store.getState()));
         return {
           title: context.api.translate('New Files'),
-          url: `https://rd.nexusmods.com/${gameId}/rss/newtoday/`,
+          url: `https://www.nexusmods.com/${gameId}/rss/newtoday/`,
           maxLength: 400,
           extras: [
             { attribute: 'nexusmods:endorsements', icon: 'endorse-yes', text: '{{ value }}' },

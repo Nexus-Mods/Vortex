@@ -803,7 +803,7 @@ class InstallManager {
     sourceURI: string,
     api: IExtensionApi): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      if (!api.events.emit('start-download', [sourceURI], {},
+      if (!api.events.emit('start-download', [sourceURI], {}, undefined,
         (error, id) => {
           if (error === null) {
             resolve(id);

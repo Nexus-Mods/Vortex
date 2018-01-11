@@ -24,7 +24,7 @@ import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 
-import DownloadManager, { DownloadIsHTML } from './DownloadManager';
+import DownloadManager, { DownloadIsHTML, URLFunc } from './DownloadManager';
 
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
@@ -75,29 +75,45 @@ export class DownloadObserver {
     events.on('resume-download',
               (downloadId, callback?) => this.handleResumeDownload(downloadId, callback));
     events.on('start-download',
-              (urls, modInfo, callback?) =>
-                  this.handleStartDownload(urls, modInfo, events, callback));
+              (urls, modInfo, fileName?, callback?) =>
+                  this.handleStartDownload(urls, modInfo, fileName, events, callback));
   }
 
-  private transformURLS(urls: string[]): Promise<string[]> {
-    return Promise.all(urls.map((inputUrl: string) => {
-                    const protocol = nodeURL.parse(inputUrl).protocol;
-                    const handler = this.mProtocolHandlers[protocol];
-                    if (handler !== undefined) {
-                      return handler(inputUrl);
-                    } else {
-                      return Promise.resolve([inputUrl]);
-                    }
-                  }))
-        .reduce((prev: string[], current: string[]) =>
-          prev.concat(current), []);
+  private transformURLS(urls: string[] | URLFunc): Promise<string[] | URLFunc> {
+    const transform = (input: string[]) => Promise.all(input.map((inputUrl: string) => {
+      const protocol = nodeURL.parse(inputUrl).protocol;
+      const handler = this.mProtocolHandlers[protocol];
+      return (handler !== undefined)
+        ? handler(inputUrl)
+        : Promise.resolve([inputUrl]);
+    }))
+    .reduce((prev: string[], current: string[]) => prev.concat(current), []);
+
+    if (typeof(urls) === 'function') {
+      return Promise.resolve(() => {
+        return urls()
+        .then(resolved => transform(resolved)); });
+    } else {
+      return transform(urls);
+    }
   }
 
-  private handleStartDownload(urls: string[],
+  private handleStartDownload(urls: string[] | URLFunc,
                               modInfo: any,
+                              fileName: string,
                               events: NodeJS.EventEmitter,
                               callback?: (error: Error, id?: string) => void) {
     const id = shortid();
+    if (typeof(urls) !== 'function') {
+      urls = urls.filter(url =>
+          ['ftp', 'http', 'https'].indexOf(nodeURL.parse(url).protocol) !== -1);
+      if (urls.length === 0) {
+        if (callback !== undefined) {
+          callback(new ProcessCanceled('URL not usable, only ftp, http and https are supported.'));
+        }
+        return;
+      }
+    }
     const gameMode = modInfo.game || selectors.activeGameId(this.mStore.getState());
 
     if (gameMode === undefined) {
@@ -116,7 +132,7 @@ export class DownloadObserver {
     const processCB = this.genProgressCB(id);
 
     return this.transformURLS(urls)
-        .then(derivedUrls => this.mManager.enqueue(id, derivedUrls, processCB,
+        .then(derivedUrls => this.mManager.enqueue(id, derivedUrls, fileName, processCB,
                                                    downloadPath))
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { file: res.filePath });
@@ -124,7 +140,7 @@ export class DownloadObserver {
         })
         .catch(DownloadIsHTML, err => {
           const state: IState = this.mStore.getState();
-          const fileName: string =
+          const filePath: string =
             getSafe(state.persistent.downloads.files, [id, 'localPath'], undefined);
 
           this.mStore.dispatch(removeDownload(id));
@@ -132,8 +148,8 @@ export class DownloadObserver {
           if (callback !== undefined) {
             callback(err, id);
           }
-          if (fileName !== undefined) {
-            fs.removeAsync(path.join(downloadPath, fileName));
+          if (filePath !== undefined) {
+            fs.removeAsync(path.join(downloadPath, filePath));
           }
         })
         .catch((err) => {

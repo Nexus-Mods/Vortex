@@ -168,7 +168,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
             this.context.api.showErrorNotification('Failed to install extension', err);
           }))
       : Promise.map(extPaths, url => new Promise<void>((resolve, reject) => {
-        this.context.api.events.emit('start-download', {}, (error: Error, id: string) => {
+        this.context.api.events.emit('start-download', {}, undefined,
+                                     (error: Error, id: string) => {
           const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
           installExtension(dlPath)
           .then(() => {

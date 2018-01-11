@@ -426,7 +426,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   private startDownload = (url: string) => {
-    this.context.api.events.emit('start-download', [url], {}, (err) => {
+    this.context.api.events.emit('start-download', [url], {}, undefined, (err) => {
       if (err !== undefined) {
         if (err instanceof UserCanceled) {
           // nop
@@ -573,7 +573,14 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
   private dropDownload = (type: DropType, dlPaths: string[]) => {
     if (type === 'urls') {
-      dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}));
+      dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
+        (error: Error) => {
+        if (error !== null) {
+          this.context.api.showErrorNotification('Failed to start download', error, {
+            allowReport: !(error instanceof ProcessCanceled),
+          });
+        }
+      }));
     } else {
       const { downloadPath, gameMode } = this.props;
       dlPaths.forEach(dlPath => {

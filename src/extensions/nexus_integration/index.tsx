@@ -91,16 +91,10 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
         message: fileInfo.name,
         displayMS: 4000,
       });
-      return nexus.getDownloadURLs(url.modId, url.fileId, gameId);
-    })
-    .then((urls: IDownloadURL[]) => {
-      if (urls === null) {
-        throw { message: 'No download locations (yet)' };
-      }
-      const uris: string[] = urls.map((item: IDownloadURL) => item.URI);
-      log('debug', 'got download urls', { uris });
       return new Promise<string>((resolve, reject) => {
-        api.events.emit('start-download', uris, {
+        api.events.emit('start-download',
+          () => nexus.getDownloadURLs(url.modId, url.fileId, gameId)
+                    .map((res: IDownloadURL) => res.URI), {
           game: url.gameId.toLowerCase(),
           source: 'nexus',
           name: nexusFileInfo.name,
@@ -109,7 +103,9 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
             modInfo: nexusModInfo,
             fileInfo: nexusFileInfo,
           },
-        }, (err, downloadId) => {
+        },
+        nexusFileInfo.file_name,
+        (err, downloadId) => {
           if (err) {
             return reject(err);
           }
@@ -704,7 +700,7 @@ function once(api: IExtensionApi) {
 }
 
 function goBuyPremium() {
-  opn('https://rd.nexusmods.com/register/premium');
+  opn('https://www.nexusmods.com/register/premium');
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -765,12 +761,6 @@ function init(context: IExtensionContextExt): boolean {
     associated: context.api.store.getState().settings.nexus.associateNXM,
   }), 'link', 'Handle Nexus Links', associateNXM, undefined, (t, props: any) =>
     <span>{props.associated ? t('Yes') : t('No')}</span>, undefined);
-
-  context.registerDownloadProtocol('nxm:', (nxmurl: string): Promise<string[]> => {
-    const nxm: NXMUrl = new NXMUrl(nxmurl);
-    return nexus.getDownloadURLs(nxm.modId, nxm.fileId, convertGameId(nxm.gameId))
-      .map((url: IDownloadURL): string => url.URI);
-  });
 
   context.registerAction('download-icons', 100, InputButton, {},
     () => ({

@@ -33,6 +33,8 @@ export class DownloadIsHTML extends Error {
   }
 }
 
+export type URLFunc = () => Promise<string[]>;
+
 function isHTMLHeader(headers: http.IncomingHttpHeaders) {
   const type: string = headers['content-type'].toString();
   return (type !== undefined)
@@ -49,7 +51,7 @@ interface IRunningDownload {
   id: string;
   fd?: number;
   error: boolean;
-  urls: string[];
+  urls: string[] | URLFunc;
   origName: string;
   tempName: string;
   finalName?: Promise<string>;
@@ -363,16 +365,21 @@ class DownloadManager {
    *
    * @memberOf DownloadManager
    */
-  public enqueue(id: string, urls: string[], progressCB: ProgressCallback,
+  public enqueue(id: string, urls: string[] | URLFunc,
+                 fileName: string,
+                 progressCB: ProgressCallback,
                  destinationPath?: string): Promise<IDownloadResult> {
-    if (urls.length === 0) {
+    const deferredURL = typeof(urls) === 'function';
+    if (!deferredURL && (urls.length === 0)) {
       return Promise.reject(new Error('No download urls'));
     }
-    log('info', 'queueing download from', urls);
-    const nameTemplate: string = decodeURI(path.basename(url.parse(urls[0]).pathname));
+    log('info', 'queueing download', id);
+    const nameTemplate: string = deferredURL
+      ? fileName
+      : decodeURI(path.basename(url.parse(urls[0]).pathname));
     const destPath = destinationPath || this.mDownloadPath;
     return fs.ensureDirAsync(destPath)
-      .then(() => this.unusedName(destPath, nameTemplate))
+      .then(() => this.unusedName(destPath, nameTemplate || 'deferred'))
       .then((filePath: string) =>
         new Promise<IDownloadResult>((resolve, reject) => {
           const download: IRunningDownload = {
@@ -493,7 +500,7 @@ class DownloadManager {
 
   private initChunk(download: IRunningDownload): IDownloadJob {
     return {
-      url: download.urls[0],
+      url: typeof(download.urls) === 'function' ? undefined : download.urls[0],
       offset: 0,
       state: 'init',
       received: 0,
@@ -535,10 +542,25 @@ class DownloadManager {
   private startWorker(download: IRunningDownload) {
     const workerId: number = this.mNextId++;
     this.mSpeedCalculator.initCounter(workerId);
+
     const job: IDownloadJob = download.chunks.find(ele => ele.state === 'init');
     job.state = 'running';
     job.workerId = workerId;
 
+    if (job.url === undefined) {
+      // actual urls have to be resolved first
+      (download.urls as URLFunc)()
+      .then(urls => {
+        download.urls = urls;
+        job.url = download.urls[0];
+        this.startJob(download, job);
+      });
+    } else {
+      this.startJob(download, job);
+    }
+  }
+
+  private startJob(download: IRunningDownload, job: IDownloadJob) {
     if (download.assembler === undefined) {
       try {
         download.assembler = new FileAssembler(download.tempName);
@@ -554,7 +576,7 @@ class DownloadManager {
       }
     }
     log('debug', 'start download worker',
-      { name: download.tempName, workerId, size: job.size });
+      { name: download.tempName, workerId: job.workerId, size: job.size });
     job.dataCB = (offset: number, data: Buffer) => {
       if (isNaN(download.received)) {
         download.received = 0;
@@ -575,23 +597,23 @@ class DownloadManager {
         });
     };
 
-    this.mBusyWorkers[workerId] = new DownloadWorker(job,
+    this.mBusyWorkers[job.workerId] = new DownloadWorker(job,
       (bytes) => {
-        const starving = this.mSpeedCalculator.addMeasure(workerId, bytes);
+        const starving = this.mSpeedCalculator.addMeasure(job.workerId, bytes);
         if (starving) {
-          this.mSlowWorkers[workerId] = (this.mSlowWorkers[workerId] || 0) + 1;
+          this.mSlowWorkers[job.workerId] = (this.mSlowWorkers[job.workerId] || 0) + 1;
           // only restart slow workers within 15 minutes after starting the download,
           // otherwise the url may have expired. There is no way to know how long the
           // url remains valid, not even with the nexus api (at least not currently)
-          if ((this.mSlowWorkers[workerId] > 15)
+          if ((this.mSlowWorkers[job.workerId] > 15)
               && (download.started !== undefined)
               && ((Date.now() - download.started.getTime()) < 15 * 60 * 1000)) {
-            log('debug', 'restarting slow worker', { workerId });
-            this.mBusyWorkers[workerId].restart();
-            delete this.mSlowWorkers[workerId];
+            log('debug', 'restarting slow worker', { workerId: job.workerId });
+            this.mBusyWorkers[job.workerId].restart();
+            delete this.mSlowWorkers[job.workerId];
           }
         } else if (starving === false) {
-          delete this.mSlowWorkers[workerId];
+          delete this.mSlowWorkers[job.workerId];
         }
       },
       (pause) => this.finishChunk(download, job, pause),

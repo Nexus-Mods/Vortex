@@ -168,14 +168,10 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         <div
           data-value={sorted[0].title}
           onClick={sorted[0].show ? this.triggerDefault : undefined}
+          title={genTooltip(sorted[0].show)}
         >
           <Icon name={sorted[0].icon} />
-          <a
-            className='fake-link'
-            title={genTooltip(sorted[0].show)}
-          >
-            {sorted[0].title}
-          </a>
+          {sorted[0].title}
         </div>
       );
       return (
