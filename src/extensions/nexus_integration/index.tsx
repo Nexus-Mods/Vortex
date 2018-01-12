@@ -716,7 +716,7 @@ function init(context: IExtensionContextExt): boolean {
       <div className='nexus-download-banner'>
         {t('Nexus downloads are capped at 1MB/s - '
           + 'Go Premium for uncapped download speeds')}
-        <Button bsStyle='ad' onClick={goBuyPremium}>{t('Buy Now')}</Button>
+        <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
       </div>);
   }, {
     props: {
@@ -733,7 +733,7 @@ function init(context: IExtensionContextExt): boolean {
         <div>{t('Uncapped downloads, no adverts')}</div>
         <div>{t('Support Nexus Mods')}</div>
         <div className='right-center'>
-          <Button bsStyle='ad' onClick={goBuyPremium}>{context.api.translate('Buy Now')}</Button>
+          <Button bsStyle='ad' onClick={goBuyPremium}>{context.api.translate('Go Premium')}</Button>
         </div>
       </div>);
   }, {

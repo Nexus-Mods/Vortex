@@ -575,3 +575,9 @@ div:hover > .hover-expand {
 .container-quicklaunch .tool-icon-container:hover {
   filter: brightness(70%);
 }
+
+// Make axis labels easily readable on download graph
+
+.recharts-text.recharts-cartesian-axis-tick-value {
+  fill: $gray;
+}
