@@ -26,6 +26,7 @@ import * as Promise from 'bluebird';
 import {app, BrowserWindow, ipcMain} from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
+import { allow } from 'permissions';
 import * as Redux from 'redux';
 import * as uuidT from 'uuid';
 
@@ -55,7 +56,8 @@ class Application {
     this.mBasePath = app.getPath('userData');
     fs.ensureDirSync(this.mBasePath);
 
-    app.setPath('temp', path.join(app.getPath('userData'), 'temp'));
+    const tempPath = path.join(app.getPath('userData'), 'temp');
+    app.setPath('temp', tempPath);
 
     this.setupAppEvents(args);
   }
@@ -228,7 +230,10 @@ class Application {
           : app.getPath('userData');
         app.setPath('userData', dataPath);
         this.mBasePath = dataPath;
-        fs.ensureDirSync(dataPath);
+        const created = fs.ensureDirSync(dataPath);
+        if (multiUser && created) {
+          allow(dataPath, 'group', 'rwx');
+        }
 
         log('info', `using ${dataPath} as the storage directory`);
         if (multiUser) {

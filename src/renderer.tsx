@@ -60,11 +60,13 @@ log('debug', 'renderer process started', { pid: process.pid });
 
 stopTime();
 
-remote.app.setPath('temp', path.join(remote.app.getPath('userData'), 'temp'));
+const tempPath = path.join(remote.app.getPath('userData'), 'temp');
+remote.app.setPath('temp', tempPath);
+
 crashReporter.start({
   productName: 'Vortex',
   companyName: 'Black Tree Gaming Ltd.',
-  submitURL: 'https://localhost',
+  submitURL: 'http://localhost',
   uploadToServer: false,
 });
 

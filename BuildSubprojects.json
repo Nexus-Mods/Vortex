@@ -280,5 +280,12 @@
       "module": "turbowalk",
       "sources": ["node_modules/turbowalk/build/Release/turbowalk.node"]
     }
+  ], [
+    {
+      "type": "electron-rebuild",
+      "name": "permissions-rebuild",
+      "module": "permissions",
+      "sources": ["node_modules/permissions/build/Release/permissions.node"]
+    }
   ]
 ]
