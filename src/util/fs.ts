@@ -57,6 +57,10 @@ const NUM_RETRIES = 3;
 const RETRY_DELAY_MS = 100;
 const RETRY_ERRORS = new Set(['EPERM', 'EBUSY']);
 
+export function ensureFileAsync(filePath: string): Promise<void> {
+  return (fs as any).ensureFileAsync(filePath);
+}
+
 export function copyAsync(src: string, dest: string,
                           options?: RegExp |
                               ((src: string, dest: string) => boolean) |

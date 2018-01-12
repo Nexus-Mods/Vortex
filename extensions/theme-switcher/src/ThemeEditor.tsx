@@ -300,7 +300,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
 
   private editManually = () => {
     const stylePath = path.join(this.props.themePath, 'style.scss');
-    (fs as any).ensureFileAsync(stylePath)
+    fs.ensureFileAsync(stylePath)
     .then(() => {
       opn(stylePath);
     });
