@@ -14,10 +14,11 @@
     flex: 1 1 0%;
     display: flex;
     flex-direction: column;
+    width: 100%;
     .about-panel {
       flex: 1 1 0%;
       overflow-y: auto;
-      border: $border-width solid $border-color;
+      border: $border-width*2 solid $border-color;
       padding: 10px;
     }
   }

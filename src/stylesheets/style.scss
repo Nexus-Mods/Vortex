@@ -562,11 +562,7 @@ div:hover > .hover-expand {
 // /HIDPI
 /////////
 
-// ---------------------------------------
-// SAVE GAMES
-// ---------------------------------------
-
-// Force screenshots to same size
+// Force savegame screenshots to same size
 
 .cell-screenshot .screenshot-canvas {
   width: 137px;
@@ -580,4 +576,10 @@ div:hover > .hover-expand {
 
 .recharts-text.recharts-cartesian-axis-tick-value {
   fill: $gray;
+}
+
+// make dividing line between button and dropdown element white
+
+.dropdown .dropdown-toggle {
+  border-left: solid $border-width $white;
 }
