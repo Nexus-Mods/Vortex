@@ -3637,14 +3637,6 @@
     "version": "0.2.3",
     "licenseFile": "node_modules\\scss-tokenizer\\LICENSE"
   },
-  "segfault-handler@1.0.0": {
-    "licenses": "WTFPL*",
-    "repository": "https://github.com/ddopson/node-segfault-handler",
-    "publisher": "Dave Dopson",
-    "email": "ddopson@gmail.com",
-    "name": "segfault-handler",
-    "version": "1.0.0"
-  },
   "semver@4.3.6": {
     "licenses": "ISC",
     "repository": "https://github.com/npm/node-semver",
