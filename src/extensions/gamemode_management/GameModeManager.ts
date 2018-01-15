@@ -147,6 +147,10 @@ class GameModeManager {
 
     const searchPaths = this.mStore.getState().settings.gameMode.searchPaths;
 
+    if (!Array.isArray(searchPaths)) {
+      throw new Error('invalid search paths: ' + require('util').inspect(searchPaths));
+    }
+
     this.mStore.dispatch(setPhaseCount(searchPaths.length));
 
     this.mActiveSearch = searchDiscovery(

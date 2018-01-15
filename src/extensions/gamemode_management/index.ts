@@ -300,6 +300,34 @@ function removeDisapearedGames(api: IExtensionApi): Promise<void> {
     }).then(() => undefined);
 }
 
+function resetSearchPaths(api: IExtensionApi) {
+  const store = api.store;
+
+  store.dispatch(clearSearchPaths());
+  const {list} = require('drivelist');
+  list((error, disks) => {
+    if (error) {
+      api.showErrorNotification(
+          'Failed to determine list of disk drives. ' +
+              'Please review the settings before scanning for games.',
+          error);
+      store.dispatch(addSearchPath('C:'));
+      return;
+    }
+    for (const disk of disks.sort()) {
+      // 'system' drives are the non-removable ones
+      if (disk.system) {
+        if (disk.mountpoints) {
+          disk.mountpoints.forEach(
+              mp => { store.dispatch(addSearchPath(mp.path)); });
+        } else {
+          store.dispatch(addSearchPath(disk.mountpoint));
+        }
+      }
+    }
+  });
+}
+
 function init(context: IExtensionContext): boolean {
   const activity = new ReduxProp(context.api, [
     ['session', 'discovery'],
@@ -314,7 +342,9 @@ function init(context: IExtensionContext): boolean {
     }),
     activity,
   });
-  context.registerSettings('Games', LazyComponent('./views/Settings', __dirname));
+  context.registerSettings('Games', LazyComponent('./views/Settings', __dirname), () => ({
+    onResetSearchPaths: () => resetSearchPaths(context.api),
+  }));
   context.registerReducer(['session', 'discovery'], discoveryReducer);
   context.registerReducer(['session', 'gameMode'], sessionReducer);
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
@@ -441,28 +471,7 @@ function init(context: IExtensionContext): boolean {
     }
 
     if (searchPaths === undefined) {
-      const {list} = require('drivelist');
-      list((error, disks) => {
-        if (error) {
-          context.api.showErrorNotification('Failed to determine list of disk drives. ' +
-            'Please review the settings before scanning for games.',
-            error);
-          store.dispatch(addSearchPath('C:'));
-          return;
-        }
-        for (const disk of disks.sort()) {
-          // 'system' drives are the non-removable ones
-          if (disk.system) {
-            if (disk.mountpoints) {
-              disk.mountpoints.forEach(mp => {
-                store.dispatch(addSearchPath(mp.path));
-              });
-            } else {
-              store.dispatch(addSearchPath(disk.mountpoint));
-            }
-          }
-        }
-      });
+      resetSearchPaths(context.api);
     }
 
     const changeGameMode = (oldGameId: string, newGameId: string,

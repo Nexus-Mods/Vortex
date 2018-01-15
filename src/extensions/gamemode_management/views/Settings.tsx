@@ -49,6 +49,10 @@ class SearchPathEntry extends ComponentEx<IPathProps, {}> {
   }
 }
 
+interface IBaseProps {
+  onResetSearchPaths: () => void;
+}
+
 interface IConnectedProps {
   searchPaths: string[];
 }
@@ -58,6 +62,8 @@ interface IActionProps {
   onRemovePath: (path: string) => void;
 }
 
+type IProps = IBaseProps & IActionProps & IConnectedProps;
+
 /**
  * settings dialog for game modes
  * Contains the list of paths to search when looking for installed games
@@ -65,7 +71,7 @@ interface IActionProps {
  * @class Settings
  * @extends {(ComponentEx<IActionProps & IConnectedProps, {}>)}
  */
-class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
+class Settings extends ComponentEx<IProps, {}> {
   public context: IComponentContext;
 
   public render(): JSX.Element {
@@ -73,16 +79,16 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
 
     return (
       <form>
-        <FormGroup>
+        <FormGroup id='search-paths'>
           <ControlLabel>{t('Search Paths')}</ControlLabel>
           <ListGroup className='list-game-search'>
             {searchPaths.sort().map(this.renderPath)}
           </ListGroup>
-          <Button
-            id='add'
-            onClick={this.addSearchPath}
-          >
+          <Button onClick={this.addSearchPath}>
             {t('Add Search Directory')}
+          </Button>
+          <Button onClick={this.resetSearchPaths}>
+            {t('Reset')}
           </Button>
           <HelpBlock>{t('Directories to search when looking for games.')}</HelpBlock>
         </FormGroup>
@@ -100,6 +106,10 @@ class Settings extends ComponentEx<IActionProps & IConnectedProps, {}> {
     .catch((err) => {
       log('info', 'search path selection cancelled', { err });
     });
+  }
+
+  private resetSearchPaths = () => {
+    this.props.onResetSearchPaths();
   }
 
   private renderPath = (searchPath: string) => {
