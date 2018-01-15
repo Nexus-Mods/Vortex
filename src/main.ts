@@ -19,12 +19,14 @@ import * as path from 'path';
 
 stopTime();
 
+/*
 crashReporter.start({
   productName: 'Vortex',
   companyName: 'Black Tree Gaming Ltd.',
   submitURL: 'https://localhost',
   uploadToServer: false,
 });
+*/
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 

@@ -1,4 +1,4 @@
-import { addFeedbackFile, clearFeedbackFiles, removeFeedbackFile } from './actions/session';
+import { addFeedbackFile } from './actions/session';
 import { sessionReducer } from './reducers/session';
 import { IFeedbackFile } from './types/IFeedbackFile';
 
@@ -9,51 +9,46 @@ import { remote } from 'electron';
 import * as path from 'path';
 import { fs, selectors, tooltip, types, util } from 'vortex-api';
 
-function checkNativeCrashFile() {
-  const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'Vortex Crashes');
+function findCrashDumps() {
+  const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'dumps');
 
   return fs.readdirAsync(nativeCrashesPath)
-    .then((nativeCrashFiles) => {
-      const nativeCrashFile = nativeCrashFiles.find((file) => path.extname(file) === '.dmp');
-      return Promise.resolve(nativeCrashFile);
-    });
+    .filter((filePath: string) => path.extname(filePath) === '.dmp')
+    .map((iterPath: string) => path.join(nativeCrashesPath, iterPath));
 }
 
-function nativeCrashCheck(context: types.IExtensionContext): Promise<types.ITestResult> {
-  return checkNativeCrashFile()
-    .then((nativeCrashFile: string) => {
-      if (nativeCrashFile !== undefined) {
+function nativeCrashCheck(context: types.IExtensionContext): Promise<void> {
+  return findCrashDumps()
+    .then(crashDumps => {
+      if (crashDumps.length > 0) {
+        context.api.sendNotification({
+          type: 'error',
+          title: 'Vortex Crashed!',
+          message: 'It appears the last session of vortex crashed (You probably noticed...)',
+          actions: [
+            {
+              title: 'Send Report',
+              action: dismiss => {
+                return Promise.map(crashDumps,
+                  dump => fs.statAsync(dump).then(stats => ({ filePath: dump, stats })))
+                  .each((iter: { filePath: string, stats: fs.Stats }) => {
+                    const feedbackFile: IFeedbackFile = {
+                      filename: path.basename(iter.filePath),
+                      filePath: iter.filePath,
+                      size: iter.stats.size,
+                      type: 'Dump',
+                    };
 
-        const nativeCrashesPath = path.join(remote.app.getPath('userData'),
-          'temp', 'Vortex Crashes');
-        nativeCrashFile = path.join(nativeCrashesPath, nativeCrashFile);
-
-        return Promise.resolve({
-          description: {
-            short: 'A native crash occurred.',
-            long: 'Click FIX to open the feedback page, then submit the crash file.',
-          },
-          severity: 'error',
-          automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
-            fs.statAsync(nativeCrashFile)
-              .then((stats) => {
-                const fileSize = stats.size / 1024 !== 0 ? Math.round(stats.size / 1024) : 1;
-                const feedbackFile: IFeedbackFile = {
-                  filename: path.basename(nativeCrashFile),
-                  filePath: nativeCrashFile,
-                  size: fileSize,
-                  type: 'Dump',
-                };
-
-                context.api.store.dispatch(addFeedbackFile(feedbackFile));
-              });
-
-            context.api.events.emit('show-main-page', 'Feedback');
-            fixResolve();
-          }),
+                    context.api.store.dispatch(addFeedbackFile(feedbackFile));
+                  })
+                  .then(() => {
+                    context.api.events.emit('show-main-page', 'Feedback');
+                    dismiss();
+                  });
+              },
+            },
+          ],
         });
-      } else {
-        return Promise.resolve(undefined);
       }
     });
 }
@@ -68,8 +63,6 @@ function init(context: types.IExtensionContext) {
     context.api.events.emit('show-main-page', 'Feedback'));
 
   context.registerReducer(['session', 'feedback'], sessionReducer);
-
-  context.registerTest('native-crash', 'startup', () => nativeCrashCheck(context));
 
   context.once(() => {
     context.api.setStylesheet('feedback', path.join(__dirname, 'feedback.scss'));
@@ -90,6 +83,8 @@ function init(context: types.IExtensionContext) {
           });
         context.api.events.emit('show-main-page', 'Feedback');
       });
+
+    nativeCrashCheck(context);
   });
 
   return true;

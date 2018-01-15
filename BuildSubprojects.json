@@ -287,5 +287,12 @@
       "module": "permissions",
       "sources": ["node_modules/permissions/build/Release/permissions.node"]
     }
+  ], [
+    {
+      "type": "electron-rebuild",
+      "name": "crash-dump-rebuild",
+      "module": "crash-dump",
+      "sources": ["node_modules/crash-dump/build/Release/crash-dump.node"]
+    }
   ]
 ]

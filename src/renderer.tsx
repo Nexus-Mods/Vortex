@@ -54,6 +54,8 @@ import { applyMiddleware, compose, createStore, Store } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 import thunkMiddleware from 'redux-thunk';
 
+import crashDump from 'crash-dump';
+
 import luckyOrange from './util/luckyorange';
 
 // ensures tsc includes this dependency
@@ -66,12 +68,17 @@ stopTime();
 const tempPath = path.join(remote.app.getPath('userData'), 'temp');
 remote.app.setPath('temp', tempPath);
 
+/*
+doesn't work atm, see https://github.com/electron/electron/issues/11626
+
 crashReporter.start({
   productName: 'Vortex',
   companyName: 'Black Tree Gaming Ltd.',
   submitURL: 'http://localhost',
   uploadToServer: false,
-});
+});*/
+
+crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
 
 // allow promises to be cancelled.
 Promise.config({

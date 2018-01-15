@@ -1,0 +1,16 @@
+{
+  "name": "crash-dump",
+  "version": "1.0.0",
+  "description": "Create a mini dump when the application crashes.",
+  "main": "index.js",
+  "scripts": {
+    "install": "autogypi && node-gyp configure build"
+  },
+  "author": "Black Tree Gaming Ltd",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "autogypi": "^0.2.2",
+    "nan": "^2.8.0",
+    "node-gyp": "^3.6.2"
+  }
+}

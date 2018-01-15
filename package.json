@@ -219,6 +219,7 @@
     "commander": "^2.11.0",
     "content-disposition": "^0.5.2",
     "content-type": "^1.0.4",
+    "crash-dump": "file:lib/cpp/crash-dump",
     "d3": "4.11.0",
     "dnd-core": "^2.5.4",
     "draggabilly": "^2.1.1",

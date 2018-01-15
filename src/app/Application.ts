@@ -23,6 +23,7 @@ import SplashScreenT from './SplashScreen';
 import TrayIconT from './TrayIcon';
 
 import * as Promise from 'bluebird';
+import crashDump from 'crash-dump';
 import {app, BrowserWindow, ipcMain} from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -58,6 +59,9 @@ class Application {
 
     const tempPath = path.join(app.getPath('userData'), 'temp');
     app.setPath('temp', tempPath);
+    fs.ensureDirSync(path.join(tempPath, 'dumps'));
+
+    crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
 
     this.setupAppEvents(args);
   }
