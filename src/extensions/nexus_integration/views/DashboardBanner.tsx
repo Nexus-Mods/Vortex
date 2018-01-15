@@ -79,7 +79,12 @@ class DashboardBanner extends ComponentEx<IProps, {}> {
   }
 
   private login = () => {
-    this.props.onSetDialogVisible('login-dialog');
+    this.context.api.events.emit('request-nexus-login', (err: Error) => {
+      if (err !== null) {
+        this.context.api.showErrorNotification('Failed to get access key', err);
+      }
+    });
+    // this.props.onSetDialogVisible('login-dialog');
   }
 
   private openProfile = () => {
