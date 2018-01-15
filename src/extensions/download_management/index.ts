@@ -119,49 +119,70 @@ function genDownloadChangeHandler(store: Redux.Store<any>,
   };
 }
 
+let currentWatch: fs.FSWatcher;
+
+function watchDownloads(api: IExtensionApi, downloadPath: string,
+                        onChange: (evt: string, fileName: string) => void) {
+  const { store } = api;
+  if (currentWatch !== undefined) {
+    currentWatch.close();
+  }
+
+  try {
+    currentWatch = fs.watch(downloadPath, {}, onChange) as fs.FSWatcher;
+    currentWatch.on('error', error => {
+      // these may happen when the download path gets moved.
+    });
+  } catch (err) {
+    api.showErrorNotification('failed to watch download directory', err);
+  }
+}
+
+function updateDownloadPath(api: IExtensionApi) {
+  const { store } = api;
+
+  const currentDownloadPath = selectors.downloadPath(store.getState());
+
+  const downloads: {[id: string]: IDownload} =
+      store.getState().persistent.downloads.files;
+  const gameId: string = selectors.activeGameId(store.getState());
+  const knownDLs =
+      Object.keys(downloads)
+          .filter((dlId: string) => downloads[dlId].game === gameId)
+          .map((dlId: string) => downloads[dlId].localPath);
+
+  const nameIdMap: {[name: string]: string} =
+      Object.keys(downloads).reduce((prev, value) => {
+        prev[downloads[value].localPath] = value;
+        return prev;
+      }, {});
+
+  const downloadChangeHandler = genDownloadChangeHandler(api.store, nameIdMap);
+  refreshDownloads(currentDownloadPath, knownDLs,
+                   (fileName: string) => {
+                     fs.statAsync(path.join(currentDownloadPath, fileName))
+                         .then((stats: fs.Stats) => {
+                           const dlId = shortid();
+                           api.store.dispatch(addLocalDownload(
+                               dlId, gameId, fileName, stats.size));
+                           nameIdMap[fileName] = dlId;
+                         });
+                   },
+                   (modNames: string[]) => {
+                     modNames.forEach((name: string) => {
+                       api.store.dispatch(removeDownload(nameIdMap[name]));
+                     });
+                   })
+    .then(() => {
+      manager.setDownloadPath(currentDownloadPath);
+      watchDownloads(api, currentDownloadPath, downloadChangeHandler);
+      api.events.emit('downloads-refreshed');
+    });
+}
+
 function genGameModeActivated(api: IExtensionApi) {
-  const store = api.store;
-  let currentWatch: fs.FSWatcher;
   return () => {
-    const currentDownloadPath = selectors.downloadPath(store.getState());
-
-    const downloads: { [id: string]: IDownload } = store.getState().persistent.downloads.files;
-    const gameId: string = selectors.activeGameId(store.getState());
-    const knownDLs = Object.keys(downloads)
-      .filter((dlId: string) => downloads[dlId].game === gameId)
-      .map((dlId: string) => downloads[dlId].localPath);
-
-    const nameIdMap: { [name: string]: string } = Object.keys(downloads).reduce((prev, value) => {
-      prev[downloads[value].localPath] = value;
-      return prev;
-    }, {});
-
-    refreshDownloads(currentDownloadPath, knownDLs, (fileName: string) => {
-      fs.statAsync(path.join(currentDownloadPath, fileName))
-        .then((stats: fs.Stats) => {
-          const dlId = shortid();
-          api.store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
-          nameIdMap[fileName] = dlId;
-        });
-    }, (modNames: string[]) => {
-      modNames.forEach((name: string) => {
-        api.store.dispatch(removeDownload(nameIdMap[name]));
-      });
-    })
-      .then(() => {
-        manager.setDownloadPath(currentDownloadPath);
-        if (currentWatch !== undefined) {
-          currentWatch.close();
-        }
-        try {
-          currentWatch =
-            fs.watch(currentDownloadPath, {},
-                      genDownloadChangeHandler(api.store, nameIdMap)) as fs.FSWatcher;
-        } catch (err) {
-          api.showErrorNotification('failed to watch download directory', err);
-        }
-        api.events.emit('downloads-refreshed');
-      });
+    updateDownloadPath(api);
   };
 }
 
@@ -206,6 +227,14 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.registerProtocol('https', url => {
       context.api.events.emit('start-download', [url], {});
+    });
+
+    const state: IState = store.getState();
+    context.api.onStateChange(['settings', 'mods', 'paths'], (prev, cur) => {
+      if ((prev['base'] !== cur['base']) ||
+          (prev['downloads'] !== cur['downloads'])) {
+        updateDownloadPath(context.api);
+      }
     });
 
     context.api.events.on('gamemode-activated', genGameModeActivated(context.api));
