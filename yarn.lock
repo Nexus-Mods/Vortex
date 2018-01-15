@@ -2895,7 +2895,6 @@ evp_bytestokey@^1.0.0, evp_bytestokey@^1.0.3:
     autogypi "^0.2.2"
     nan "^2.8.0"
     node-gyp "^3.4.0"
-    segfault-handler "^1.0.0"
 
 exec-sh@^0.2.0:
   version "0.2.1"
@@ -3674,7 +3673,6 @@ i18next@^10.0.3:
     autogypi "^0.2.2"
     nan "^2.4.0"
     node-gyp "^3.4.0"
-    segfault-handler "^1.0.0"
 
 iconv-lite@0.4, iconv-lite@0.4.19, iconv-lite@^0.4.19, iconv-lite@~0.4.13:
   version "0.4.19"
@@ -6755,13 +6753,6 @@ scss-tokenizer@^0.2.3:
     js-base64 "^2.1.8"
     source-map "^0.4.2"
 
-segfault-handler@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/segfault-handler/-/segfault-handler-1.0.0.tgz#9de52bc4cb54169350f0f4295772fc245288f193"
-  dependencies:
-    bindings "^1.2.1"
-    nan "^2.0.9"
-
 semver-diff@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/semver-diff/-/semver-diff-2.1.0.tgz#4bbb8437c8d37e4b0cf1a68fd726ec6d645d6d36"
@@ -7484,7 +7475,6 @@ tunnel-agent@~0.4.1:
     autogypi "^0.2.2"
     nan "^2.8.0"
     node-gyp "^3.4.0"
-    segfault-handler "^1.0.0"
 
 tweetnacl@^0.14.3, tweetnacl@~0.14.0:
   version "0.14.5"

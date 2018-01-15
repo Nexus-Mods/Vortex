@@ -29,11 +29,14 @@ Manual:
     * This sets up yarn to use the c++ build tools we just installed
     * If you downloaded a newer version, change the version accordingly
 - Check out the repository
+  * create and _cd_ to an appropriate directory (i.e. c:\projects)
   * _git clone https://github.com/Nexus-Mods/Vortex-Private.git vortex_
+    * this creates a new directory _vortex_ below the current working directory
+  * _cd vortex_
 - Switch to the appropriate branch if necessary
   * _git checkout somebranch_
 - For development
-  * _"yarn run install"_ followed by _"yarn run build"_ to build
+  * _"yarn install"_ followed by _"yarn run build"_ to build
   * _"yarn run start"_ to run
 - For production
   * _"yarn dist"_ to build (this will take a while)

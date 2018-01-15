@@ -415,8 +415,8 @@ class ModDB {
                                 }
                               })
                               .catch(err => {
-                                this.mLog('warn', 'failed to query', {
-                                  server: server.url, key, gameId, error: err.message,
+                                this.mLog('warn', 'failed to query by key', {
+                                  server: server.url, key, gameId, error: err.message.toString(),
                                 });
                                 this.mBlacklist.add(JSON.stringify({ key, gameId }));
                               });
@@ -470,8 +470,9 @@ class ModDB {
                                 }
                               })
                               .catch(err => {
-                                this.mLog('warn', 'failed to query', {
-                                  server: server.url, logicalName, versionMatch, error: err.message,
+                                this.mLog('warn', 'failed to query by logical name', {
+                                  server: server.url, logicalName, versionMatch,
+                                  error: err.message.toString(),
                                 });
                                 this.mBlacklist.add(JSON.stringify({ logicalName, versionMatch }));
                               });
@@ -520,8 +521,9 @@ class ModDB {
                                 }
                               })
                               .catch(err => {
-                                this.mLog('warn', 'failed to query', {
-                                  server: server.url, expression, versionMatch, error: err.message,
+                                this.mLog('warn', 'failed to query by expression', {
+                                  server: server.url, expression, versionMatch,
+                                  error: err.message.toString(),
                                 });
                                 this.mBlacklist.add(JSON.stringify({ expression, versionMatch }));
                               });

@@ -20,6 +20,9 @@ if (process.env.NODE_ENV === 'production') {
     require.cache[require.resolve('react/dist/react.min.js')];
 
   process.env = JSON.parse(JSON.stringify(process.env));
+} else {
+  // development environment
+  process.traceProcessWarnings = true;
 }
 
 process.env.SASS_BINARY_PATH = path.resolve(
