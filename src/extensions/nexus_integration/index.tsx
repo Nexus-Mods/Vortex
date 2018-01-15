@@ -634,7 +634,9 @@ function once(api: IExtensionApi) {
       if (data.toString() !== 'Oh, Hi!') {
         connection.close();
         api.store.dispatch(setUserAPIKey(data.toString()));
+        remote.getCurrentWindow().setAlwaysOnTop(true);
         remote.getCurrentWindow().show();
+        remote.getCurrentWindow().setAlwaysOnTop(false);
         callback(null);
       }
     });
