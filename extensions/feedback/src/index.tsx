@@ -7,7 +7,7 @@ import FeedbackView from './views/FeedbackView';
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
-import { fs, selectors, tooltip, types, util } from 'vortex-api';
+import { fs, log, selectors, tooltip, types, util } from 'vortex-api';
 
 function findCrashDumps() {
   const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'dumps');
@@ -24,7 +24,8 @@ function nativeCrashCheck(context: types.IExtensionContext): Promise<void> {
         context.api.sendNotification({
           type: 'error',
           title: 'Vortex Crashed!',
-          message: 'It appears the last session of vortex crashed (You probably noticed...)',
+          message: 'It appears the last session of Vortex crashed (You probably noticed...)',
+          noDismiss: true,
           actions: [
             {
               title: 'Send Report',
@@ -43,6 +44,16 @@ function nativeCrashCheck(context: types.IExtensionContext): Promise<void> {
                   })
                   .then(() => {
                     context.api.events.emit('show-main-page', 'Feedback');
+                    dismiss();
+                  });
+              },
+            },
+            {
+              title: 'Dismiss',
+              action: dismiss => {
+                Promise.map(crashDumps, dump => fs.removeAsync(dump))
+                  .then(() => {
+                    log('info', 'crash dumps dismissed');
                     dismiss();
                   });
               },
