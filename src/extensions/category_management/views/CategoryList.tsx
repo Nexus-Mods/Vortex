@@ -298,12 +298,17 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const {categories, gameMode, onSetCategory, onShowDialog, onShowError} = this.props;
     const lastIndex = this.searchLastRootId(categories);
 
+    if (Array.isArray(parentId)) {
+      parentId = parentId[0];
+    }
+
     onShowDialog('question', 'Add Child Category', {
       input: [
         { id: 'newCategory', value: '', label: 'Category Name' },
         {
-         id: 'newCategoryId', value: lastIndex.toString(),
-         label: 'Category ID',
+          id: 'newCategoryId',
+          value: lastIndex.toString(),
+          label: 'Category ID',
         },
       ],
     }, [{ label: 'Cancel' }, { label: 'Add' }])
@@ -321,6 +326,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
               parentCategory: parentId,
               order: 0,
             });
+            this.updateExpandedTreeData();
           }
         }
       });
