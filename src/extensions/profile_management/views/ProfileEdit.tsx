@@ -71,7 +71,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           </Button>
           </div>
           <div>
-          {features.map(this.renderFeature)}
+            {features.map(this.renderFeature)}
           </div>
         </ListGroupItem>
       </Panel>
@@ -87,6 +87,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           checked={getSafe(edit, ['features', feature.id], false)}
           dataId={feature.id}
           onToggle={this.toggleCheckbox}
+          key={feature.id}
         >
           {t(feature.description)}
         </Toggle>

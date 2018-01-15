@@ -13,12 +13,21 @@ function commandLine() {
     .parse(process.argv || []);
 }
 
+function rmFill(node) {
+  Object.keys(node).forEach(n => {
+    delete node[n].fill;
+    if (n !== '$') {
+      rmFill(node[n]);
+    }
+  });
+}
+
 function applyTransforms(svg, cfg) {
   if (svg.$ === undefined) {
     return svg;
   }
   if (cfg.rmFill) {
-    delete svg.$.fill;
+    rmFill(svg);
   }
   if (svg.$['data-color'] !== undefined) {
     delete svg.$['data-color'];

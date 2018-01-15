@@ -204,7 +204,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     return <div className='dialog-container'>{controls}</div>;
   }
 
-  private renderInput = (input: IInput) => {
+  private renderInput = (input: IInput, idx: number) => {
     const { t } = this.props;
     return (
       <FormGroup key={input.id}>
@@ -218,6 +218,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         label={input.label}
         placeholder={input.placeholder}
         onChange={this.changeInput}
+        ref={idx === 0 ? this.focusMe : undefined}
       />
       </FormGroup>
     );
@@ -251,6 +252,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         {t(checkbox.text)}
       </Radio>
     );
+  }
+
+  private focusMe = (ref: React.ReactInstance) => {
+    if (ref !== null) {
+      const ele = ReactDOM.findDOMNode(ref) as HTMLElement;
+      setTimeout(() => ele.focus(), 100);
+    }
   }
 
   private changeInput = evt => {
