@@ -27,6 +27,7 @@ export interface IFeedMessage {
 function retrieve(url: string): Promise<IFeedMessage[]> {
   return new Promise<IFeedMessage[]>((resolve, reject) => {
     const req: RequestT.Request = require('request')(url);
+    req.setHeader('cookie', 'rd=true');
     const parser = new FeedParser();
 
     const result: IFeedMessage[] = [];
