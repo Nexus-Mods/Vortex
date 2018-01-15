@@ -2,6 +2,7 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { IState } from '../../types/IState';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
+import { log } from '../../util/log';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -132,6 +133,7 @@ function watchDownloads(api: IExtensionApi, downloadPath: string,
     currentWatch = fs.watch(downloadPath, {}, onChange) as fs.FSWatcher;
     currentWatch.on('error', error => {
       // these may happen when the download path gets moved.
+        log('warn', 'failed to watch mod directory', { downloadPath, error });
     });
   } catch (err) {
     api.showErrorNotification('failed to watch download directory', err);
