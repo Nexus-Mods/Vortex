@@ -23,8 +23,8 @@ function nativeCrashCheck(context: types.IExtensionContext): Promise<void> {
       if (crashDumps.length > 0) {
         context.api.sendNotification({
           type: 'error',
-          title: 'Vortex Crashed!',
-          message: 'It appears the last session of Vortex crashed (You probably noticed...)',
+          title: 'Exception!',
+          message: 'The last session of Vortex logged an exception (You probably noticed...)',
           noDismiss: true,
           actions: [
             {
@@ -33,14 +33,18 @@ function nativeCrashCheck(context: types.IExtensionContext): Promise<void> {
                 return Promise.map(crashDumps,
                   dump => fs.statAsync(dump).then(stats => ({ filePath: dump, stats })))
                   .each((iter: { filePath: string, stats: fs.Stats }) => {
-                    const feedbackFile: IFeedbackFile = {
+                    context.api.store.dispatch(addFeedbackFile({
                       filename: path.basename(iter.filePath),
                       filePath: iter.filePath,
                       size: iter.stats.size,
                       type: 'Dump',
-                    };
-
-                    context.api.store.dispatch(addFeedbackFile(feedbackFile));
+                    }));
+                    context.api.store.dispatch(addFeedbackFile({
+                      filename: path.basename(iter.filePath) + '.log',
+                      filePath: iter.filePath + '.log',
+                      size: iter.stats.size,
+                      type: 'Dump',
+                    }));
                   })
                   .then(() => {
                     context.api.events.emit('show-main-page', 'Feedback');
@@ -51,7 +55,8 @@ function nativeCrashCheck(context: types.IExtensionContext): Promise<void> {
             {
               title: 'Dismiss',
               action: dismiss => {
-                Promise.map(crashDumps, dump => fs.removeAsync(dump))
+                Promise.map(crashDumps,
+                            dump => fs.removeAsync(dump).then(() => fs.removeAsync(dump + '.log')))
                   .then(() => {
                     log('info', 'crash dumps dismissed');
                     dismiss();
