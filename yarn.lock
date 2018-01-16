@@ -1783,6 +1783,13 @@ cpx@^1.5.0:
     shell-quote "^1.6.1"
     subarg "^1.0.0"
 
+"crash-dump@file:lib/cpp/crash-dump":
+  version "1.0.0"
+  dependencies:
+    autogypi "^0.2.2"
+    nan "^2.8.0"
+    node-gyp "^3.6.2"
+
 create-ecdh@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/create-ecdh/-/create-ecdh-4.0.0.tgz#888c723596cdf7612f6498233eebd7a35301737d"

@@ -67,7 +67,7 @@ private:
     static auto sPermissions = std::vector<std::pair<char, DWORD>>({
         std::make_pair('r', FILE_GENERIC_READ),
         std::make_pair('w', FILE_WRITE_DATA | FILE_WRITE_ATTRIBUTES |
-                                FILE_WRITE_EA | FILE_APPEND_DATA | SYNCHRONIZE),
+                                FILE_WRITE_EA | FILE_APPEND_DATA | SYNCHRONIZE | DELETE),
         std::make_pair('x', FILE_GENERIC_READ | FILE_GENERIC_EXECUTE),
     });
 
