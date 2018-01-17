@@ -78,6 +78,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     const { feedbackFiles, t } = this.props;
 
     const T: any = Trans;
+    const PanelX: any = Panel;
     return (
       <MainPage>
         <FlexLayout type='column'>
@@ -107,33 +108,35 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
           </FlexLayout.Fixed>
           <FlexLayout.Flex>
           <Panel>
-            <FlexLayout type='column'>
-              <FlexLayout.Fixed>
-                {t('Your Message')}
-              </FlexLayout.Fixed>
-              <FlexLayout.Flex fill>
-                {this.renderMessageArea()}
-              </FlexLayout.Flex>
-              <FlexLayout.Fixed>
-                <Dropzone
-                  accept={['files']}
-                  icon='folder-download'
-                  drop={this.dropFeedback}
-                  dropText='Drop files to attach'
-                  clickText='Click to browse for files to attach'
-                  dialogHint={t('Select file to attach')}
-                />
-              </FlexLayout.Fixed>
-              <FlexLayout.Fixed>
-                {t('or')}{this.renderAttachButton()}
-              </FlexLayout.Fixed>
-              <FlexLayout.Fixed>
-                <ListGroup className='feedback-files'>
-                  {Object.keys(feedbackFiles).map(this.renderFeedbackFile)}
-                </ListGroup>
-                {this.renderFilesArea()}
-              </FlexLayout.Fixed>
-            </FlexLayout>
+            <PanelX.Body>
+              <FlexLayout type='column'>
+                <FlexLayout.Fixed>
+                  {t('Your Message')}
+                </FlexLayout.Fixed>
+                <FlexLayout.Flex fill>
+                  {this.renderMessageArea()}
+                </FlexLayout.Flex>
+                <FlexLayout.Fixed>
+                  <Dropzone
+                    accept={['files']}
+                    icon='folder-download'
+                    drop={this.dropFeedback}
+                    dropText='Drop files to attach'
+                    clickText='Click to browse for files to attach'
+                    dialogHint={t('Select file to attach')}
+                  />
+                </FlexLayout.Fixed>
+                <FlexLayout.Fixed>
+                  {t('or')}{this.renderAttachButton()}
+                </FlexLayout.Fixed>
+                <FlexLayout.Fixed>
+                  <ListGroup className='feedback-files'>
+                    {Object.keys(feedbackFiles).map(this.renderFeedbackFile)}
+                  </ListGroup>
+                  {this.renderFilesArea()}
+                </FlexLayout.Fixed>
+              </FlexLayout>
+            </PanelX.Body>
           </Panel>
           </FlexLayout.Flex>
         </FlexLayout>

@@ -122,36 +122,42 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       },
     });
 
+    const PanelX: any = Panel;
+
     return (
       <form>
         <FormControl.Static componentClass='h4'>{label}</FormControl.Static>
         <Panel footer={this.renderFooter()}>
-          <ControlLabel>
-            {t('Paths')}
-            <More id='more-paths' name={t('Paths')} >
-              {getText('paths', t)}
-            </More>
-          </ControlLabel>
-          {this.renderPathCtrl(paths, t('Base Path'), 'base')}
-          {this.renderPathCtrl(paths, t('Download Path'), 'download')}
-          {this.renderPathCtrl(paths, t('Install Path'), 'install')}
-          <Modal show={this.state.busy !== undefined} onHide={nop}>
-            <Modal.Body>
-              <Jumbotron>
-                <p><Spinner style={{ height: '32px', width: '32px' }} />
-                  {this.state.busy}</p>
-              </Jumbotron>
-            </Modal.Body>
-          </Modal>
+          <PanelX.Body>
+            <ControlLabel>
+              {t('Paths')}
+              <More id='more-paths' name={t('Paths')} >
+                {getText('paths', t)}
+              </More>
+            </ControlLabel>
+            {this.renderPathCtrl(paths, t('Base Path'), 'base')}
+            {this.renderPathCtrl(paths, t('Download Path'), 'download')}
+            {this.renderPathCtrl(paths, t('Install Path'), 'install')}
+            <Modal show={this.state.busy !== undefined} onHide={nop}>
+              <Modal.Body>
+                <Jumbotron>
+                  <p><Spinner style={{ height: '32px', width: '32px' }} />
+                    {this.state.busy}</p>
+                </Jumbotron>
+              </Modal.Body>
+            </Modal>
+          </PanelX.Body>
         </Panel>
         <Panel>
-          <ControlLabel>
-            {t('Deployment Method')}
-            <More id='more-deploy' name={t('Deployment')} >
-              {getText('deployment', t)}
-            </More>
-          </ControlLabel>
-          {this.renderActivators(supportedActivators, currentActivator)}
+          <PanelX.Body>
+            <ControlLabel>
+              {t('Deployment Method')}
+              <More id='more-deploy' name={t('Deployment')} >
+                {getText('deployment', t)}
+              </More>
+            </ControlLabel>
+            {this.renderActivators(supportedActivators, currentActivator)}
+          </PanelX.Body>
         </Panel>
       </form>
     );

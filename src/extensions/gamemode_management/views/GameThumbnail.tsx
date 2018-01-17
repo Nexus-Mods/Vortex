@@ -55,26 +55,29 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       ? countIf(Object.keys(profile.modState || {}), id => profile.modState[id].enabled)
       : undefined;
 
+    const PanelX: any = Panel;
     return (
       <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
-        <img
-          className={'thumbnail-img'}
-          src={logoPath}
-        />
-        <div className='bottom'>
-          <div className='name'>{t(game.name)}</div>
-          {
-            modCount !== undefined
-              ? <div className='active-mods'>
-                  <Icon name='mods' />
-                  <span>{t('{{ count }} active mod', { count: modCount })}</span>
-                </div>
-              : null
-          }
-        </div>
-        <div className='hover-menu'>
-          {type === 'launcher' ? this.renderLaunch() : this.renderMenu()}
-        </div>
+        <PanelX.Body>
+          <img
+            className={'thumbnail-img'}
+            src={logoPath}
+          />
+          <div className='bottom'>
+            <div className='name'>{t(game.name)}</div>
+            {
+              modCount !== undefined
+                ? <div className='active-mods'>
+                    <Icon name='mods' />
+                    <span>{t('{{ count }} active mod', { count: modCount })}</span>
+                  </div>
+                : null
+            }
+          </div>
+          <div className='hover-menu'>
+            {type === 'launcher' ? this.renderLaunch() : this.renderMenu()}
+          </div>
+        </PanelX.Body>
       </Panel>
     );
   }

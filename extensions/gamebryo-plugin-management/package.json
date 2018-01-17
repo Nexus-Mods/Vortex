@@ -46,12 +46,6 @@
     "json-loader": "^0.5.4",
     "loot": "file:../../lib/cpp/loot",
     "vortex-api": "file:../../api",
-    "react": "^15.3.2",
-    "react-bootstrap": "^0.30.6",
-    "react-dom": "^15.3.2",
-    "react-i18next": "^1.10.1",
-    "react-select": "^1.0.0-rc.10",
-    "redux-act": "^1.1.0",
     "webpack": "^3.5.5",
     "js-yaml": "^3.8.2",
     "ts-loader": "2.3.4"

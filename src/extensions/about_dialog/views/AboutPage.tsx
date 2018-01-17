@@ -83,21 +83,28 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       </div>
       );
 
+    const PanelX: any = Panel;
     body = (
       <MainPage.Body id='about-dialog'>
         <Panel>
-          <Media style={{ marginBottom: 5, display: 'block' }}>
-            <Media.Left><Image src={imgPath} /></Media.Left>
-            <Media.Body>
-              <h2 className='media-heading'>Vortex {remote.app.getVersion()}</h2>
-              <p>&#169;2017 Black Tree Gaming Ltd.</p>
-              <p>{t('Released under')} <a onClick={this.showOwnLicense}>GPL-3</a> {t('License')}</p>
-            </Media.Body>
-          </Media>
-          <p><strong>Electron</strong> {(process.versions as any).electron}</p>
-          <p><strong>Node</strong> {process.versions.node}</p>
-          <p><strong>Chrome</strong> {(process.versions as any).chrome}</p>
-          {licenseBox}
+          <PanelX.Body>
+            <Media style={{ marginBottom: 5, display: 'block' }}>
+              <Media.Left><Image src={imgPath} /></Media.Left>
+              <Media.Body>
+                <h2 className='media-heading'>Vortex {remote.app.getVersion()}</h2>
+                <p>&#169;2017 Black Tree Gaming Ltd.</p>
+                <p>
+                  {t('Released under')}
+                  <a onClick={this.showOwnLicense}>GPL-3</a>
+                  {t('License')}
+                </p>
+              </Media.Body>
+            </Media>
+            <p><strong>Electron</strong> {(process.versions as any).electron}</p>
+            <p><strong>Node</strong> {process.versions.node}</p>
+            <p><strong>Chrome</strong> {(process.versions as any).chrome}</p>
+            {licenseBox}
+          </PanelX.Body>
         </Panel>
       </MainPage.Body>
     );

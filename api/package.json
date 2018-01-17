@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "bin": { "extractInfo": "./bin/extractInfo.js" },
   "scripts": {
-    "build": "tsc -p ."
+    "build": "tsc -p . -d"
   },
   "typings": "lib/index",
   "files": [

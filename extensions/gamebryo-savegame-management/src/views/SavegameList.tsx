@@ -124,16 +124,19 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
 
     let content = null;
     if (!showTransfer || (importSaves !== undefined)) {
+      const PanelX: any = Panel;
       content = (
         <Panel>
-          <Table
-            tableId='savegames'
-            data={showTransfer ? importSaves : saves}
-            actions={saveActions}
-            staticElements={[
-              SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
-              LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
-          />
+          <PanelX.Body>
+            <Table
+              tableId='savegames'
+              data={showTransfer ? importSaves : saves}
+              actions={saveActions}
+              staticElements={[
+                SCREENSHOT, SAVEGAME_ID, CHARACTER_NAME, LEVEL,
+                LOCATION, FILENAME, CREATION_TIME, PLUGINS]}
+            />
+          </PanelX.Body>
         </Panel>
       );
     } else {

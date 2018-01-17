@@ -7,6 +7,7 @@ import * as path from 'path';
 const app = appIn || remote.app;
 
 const extensionsPath = path.join(app.getPath('userData'), 'plugins');
+import * as api from '../index';
 
 /**
  * require wrapper to allow extensions to load modules from
@@ -17,6 +18,9 @@ const extensionsPath = path.join(app.getPath('userData'), 'plugins');
 function extensionRequire(orig) {
   const extensionPaths = ExtensionManager.getExtensionPaths();
   return function(id) {
+    if (id === 'vortex-api') {
+      return api;
+    }
     if (extensionPaths.find(iter => this.filename.startsWith(iter)) !== undefined) {
       let res;
       try {

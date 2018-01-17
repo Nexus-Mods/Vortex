@@ -32,7 +32,7 @@ const Flex = (props: IFlexProps & React.HTMLAttributes<HTMLDivElement>) => {
     <div className='layout-flex'>
       <div
         className={appendClasses(props.className, classes)}
-        {..._.omit(props, ['className'])}
+        {..._.omit(props, ['className', 'fill'])}
       >
         {props.children}
       </div>

@@ -5,7 +5,6 @@ import ExtensionGate from '../ExtensionGate';
 import Icon from '../Icon';
 import IconBar from '../IconBar';
 import {ITableRowAction} from '../Table';
-import ToolbarIcon from '../ToolbarIcon';
 import {Button, IconButton} from '../TooltipControls';
 import VisibilityProxy from '../VisibilityProxy';
 
@@ -74,18 +73,18 @@ class TableCell extends React.Component<ICellProps, {}> {
               onSelect={this.changeCell}
               tooltip={attribute.description}
             >
-            {((currentChoice !== undefined) && (currentChoice.icon !== undefined))
+              {((currentChoice !== undefined) && (currentChoice.icon !== undefined))
                 ? <Icon name={currentChoice.icon} /> : null}
-            {currentChoice !== undefined ? t(currentChoice.text) : ''}
+              {currentChoice !== undefined ? t(currentChoice.text) : ''}
             </Button>
             <Dropdown.Toggle
               className={`toggle-${tableId}-${attribute.id} `
-                       + `toggle-${tableId}-${attribute.id}-${key}`}
+                + `toggle-${tableId}-${attribute.id}-${key}`}
             />
             <Dropdown.Menu
               onSelect={this.changeCell}
             >
-            {choices.filter(choice => choice.visible !== false).map(this.renderChoice)}
+              {choices.filter(choice => choice.visible !== false).map(this.renderChoice)}
             </Dropdown.Menu>
           </Dropdown>
         );

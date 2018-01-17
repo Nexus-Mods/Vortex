@@ -14,7 +14,7 @@
     "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files && yarn upgrade",
     "subprojects": "yarn run _update_submodules && node BuildSubprojects.js out",
     "subprojects_app": "yarn run _update_submodules && node BuildSubprojects.js app",
-    "build_api": "cd api && yarn run build && yarn link && cd .. && yarn link vortex-api",
+    "build_api": "cd api && yarn run build",
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
     "dist": "electron-builder",
@@ -27,7 +27,7 @@
     "buildwatch": "yarn run build_rest && tsc -p . -w"
   },
   "engines": {
-    "electron": "1.7.9"
+    "electron": "1.7.10"
   },
   "jest": {
     "transform": {
@@ -184,7 +184,7 @@
     "copyfiles": "^1.2.0",
     "cross-env": "^5.1.0",
     "devtron": "^1.4.0",
-    "electron": "1.7.9",
+    "electron": "1.7.10",
     "electron-builder": "^19.40.0",
     "electron-debug": "^1.4.0",
     "electron-download-tf": "^4.3.4",
@@ -251,11 +251,11 @@
     "packery": "^2.1.1",
     "permissions": "file:lib\\cpp\\permissions",
     "prop-types": "^15.6.0",
-    "react": "^15.3.0",
-    "react-bootstrap": "^0.31.3",
+    "react": "^16.2.0",
+    "react-bootstrap": "^0.32.0",
     "react-dnd": "^2.5.4",
     "react-dnd-html5-backend": "^2.5.4",
-    "react-dom": "^15.3.0",
+    "react-dom": "^16.2.0",
     "react-i18next": "^6.0.6",
     "react-markdown": "^2.5.0",
     "react-overlays": "^0.8.3",
@@ -290,7 +290,6 @@
     "turbowalk": "file:lib/cpp/turbowalk",
     "typescript": "2.6.2",
     "uuid": "^3.1.0",
-    "vortex-api": "./api",
     "vortex-parse-ini": "file:lib/js/vortex-parse-ini",
     "webpack": "^3.8.1",
     "winreg": "^1.2.4",

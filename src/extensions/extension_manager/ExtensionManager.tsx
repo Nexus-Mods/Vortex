@@ -123,35 +123,39 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     const extensionsWithState = this.mergeExt(extensions, extensionConfig);
 
+    const PanelX: any = Panel;
+
     return (
       <MainPage>
         <MainPage.Body>
           <Panel>
-            <FlexLayout type='column'>
-              <FlexLayout.Fixed>
-                {
-                  reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
-                    ? this.renderReload()
-                    : null
-                }
-              </FlexLayout.Fixed>
-              <FlexLayout.Flex>
-                <Table
-                  tableId='extensions'
-                  data={extensionsWithState}
-                  actions={this.actions}
-                  staticElements={this.staticColumns}
-                  multiSelect={false}
-                />
-              </FlexLayout.Flex>
-              <FlexLayout.Fixed>
-                <Dropzone
-                  accept={['files', 'urls']}
-                  drop={this.dropExtension}
-                  dialogHint={t('Select extension file')}
-                />
-              </FlexLayout.Fixed>
-            </FlexLayout>
+            <PanelX.Body>
+              <FlexLayout type='column'>
+                <FlexLayout.Fixed>
+                  {
+                    reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
+                      ? this.renderReload()
+                      : null
+                  }
+                </FlexLayout.Fixed>
+                <FlexLayout.Flex>
+                  <Table
+                    tableId='extensions'
+                    data={extensionsWithState}
+                    actions={this.actions}
+                    staticElements={this.staticColumns}
+                    multiSelect={false}
+                  />
+                </FlexLayout.Flex>
+                <FlexLayout.Fixed>
+                  <Dropzone
+                    accept={['files', 'urls']}
+                    drop={this.dropExtension}
+                    dialogHint={t('Select extension file')}
+                  />
+                </FlexLayout.Fixed>
+              </FlexLayout>
+            </PanelX.Body>
           </Panel>
         </MainPage.Body>
       </MainPage>

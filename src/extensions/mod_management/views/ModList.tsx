@@ -275,25 +275,28 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         </div>
       );
     } else {
+      const PanelX: any = Panel;
       content = (
         <Panel>
-          <SuperTable
-            tableId='mods'
-            detailsTitle={t('Mod Attributes')}
+          <PanelX.Body>
+            <SuperTable
+              tableId='mods'
+              detailsTitle={t('Mod Attributes')}
 
-            data={this.mPrimaryMods}
-            staticElements={[
-              PICTURE,
-              this.modEnabledAttribute,
-              this.modNameAttribute,
-              this.modVersionAttribute,
-              this.modVersionDetailAttribute,
-              INSTALL_TIME,
-            ]}
-            actions={this.modActions}
-          >
-            {this.renderMoreMods(modSources)}
-          </SuperTable>
+              data={this.mPrimaryMods}
+              staticElements={[
+                PICTURE,
+                this.modEnabledAttribute,
+                this.modNameAttribute,
+                this.modVersionAttribute,
+                this.modVersionDetailAttribute,
+                INSTALL_TIME,
+              ]}
+              actions={this.modActions}
+            >
+              {this.renderMoreMods(modSources)}
+            </SuperTable>
+          </PanelX.Body>
         </Panel>
       );
     }

@@ -43,6 +43,7 @@ namespace FomodInstaller.ModInstaller
                 } catch (UnsupportedException)
                 {
                     RequiredFiles = new List<string>();
+                    // files without an installer script are still supported by this
                 }
 
             }
@@ -79,7 +80,7 @@ namespace FomodInstaller.ModInstaller
             }
             catch (UnsupportedException)
             {
-                // Currently this does nothing.
+                // not an error, this can handle mods without an installer script (see BasicModInstall)
             }
             IScriptType ScriptType = await GetScriptType(modArchiveFileList);
             Mod modToInstall = new Mod(modArchiveFileList, stopPatterns, ScriptFilePath, scriptPath, ScriptType);

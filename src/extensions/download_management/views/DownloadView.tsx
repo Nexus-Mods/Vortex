@@ -44,6 +44,8 @@ import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { Placeholder } from '../../../util/asyncRequire';
 
+const PanelX: any = Panel;
+
 function objectFilter(obj: any, filter: (key: string, value: any) => boolean) {
   const result = {};
   for (const key in obj) {
@@ -331,10 +333,12 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     if (gameMode === undefined) {
       content = (
         <Panel className='placeholder-container'>
-          <EmptyPlaceholder
-            icon='folder-download'
-            text={t('Please select a game to manage first')}
-          />
+          <PanelX.Body>
+            <EmptyPlaceholder
+              icon='folder-download'
+              text={t('Please select a game to manage first')}
+            />
+          </PanelX.Body>
         </Panel>
       );
     } else if (Object.keys(this.props.downloads).length === 0) {
@@ -353,30 +357,32 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
           {secondary ? null : <Banner group='downloads' />}
           <FlexLayout.Flex>
             <Panel className='download-panel'>
-              <FlexLayout type='column'>
-                <FlexLayout.Fixed>
-                  {secondary ? null : <DownloadGraph />}
-                </FlexLayout.Fixed>
-                <FlexLayout.Flex>
-                  <SuperTable
-                    tableId='downloads'
-                    data={filtered}
-                    staticElements={[
-                      FILE_NAME,
-                      this.fileTimeColumn,
-                      this.gameColumn,
-                      FILE_SIZE,
-                      PROGRESS,
-                    ]}
-                    actions={this.actions}
-                  />
-                </FlexLayout.Flex>
-                <FlexLayout.Fixed style={{ textAlign: 'center' }}>
-                  <Button bsStyle='ghost' onClick={this.toggleViewAll} >
-                    {viewAll ? t('View not-yet-installed Downloads') : t('View All Downloads')}
-                  </Button>
-                </FlexLayout.Fixed>
-              </FlexLayout>
+              <PanelX.Body>
+                <FlexLayout type='column'>
+                  <FlexLayout.Fixed>
+                    {secondary ? null : <DownloadGraph />}
+                  </FlexLayout.Fixed>
+                  <FlexLayout.Flex>
+                    <SuperTable
+                      tableId='downloads'
+                      data={filtered}
+                      staticElements={[
+                        FILE_NAME,
+                        this.fileTimeColumn,
+                        this.gameColumn,
+                        FILE_SIZE,
+                        PROGRESS,
+                      ]}
+                      actions={this.actions}
+                    />
+                  </FlexLayout.Flex>
+                  <FlexLayout.Fixed style={{ textAlign: 'center' }}>
+                    <Button bsStyle='ghost' onClick={this.toggleViewAll} >
+                      {viewAll ? t('View not-yet-installed Downloads') : t('View All Downloads')}
+                    </Button>
+                  </FlexLayout.Fixed>
+                </FlexLayout>
+              </PanelX.Body>
             </Panel>
           </FlexLayout.Flex>
           <FlexLayout.Fixed>
@@ -407,12 +413,14 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
     return (
       <Panel className='download-drop-panel'>
-        <Dropzone
-          accept={['urls', 'files']}
-          drop={this.dropDownload}
-          dialogHint={t('Enter download URL')}
-          icon='folder-download'
-        />
+        <PanelX.Body>
+          <Dropzone
+            accept={['urls', 'files']}
+            drop={this.dropDownload}
+            dialogHint={t('Enter download URL')}
+            icon='folder-download'
+          />
+        </PanelX.Body>
       </Panel>
     );
   }

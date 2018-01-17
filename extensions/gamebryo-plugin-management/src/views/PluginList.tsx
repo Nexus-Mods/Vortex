@@ -317,6 +317,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const { t, lootActivity } = this.props;
     const { pluginsCombined } = this.state;
 
+    const PanelX: any = Panel;
     return (
       <MainPage>
         <MainPage.Header>
@@ -333,12 +334,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
             </FlexLayout.Fixed>
             <FlexLayout.Flex>
               <Panel>
-                <Table
-                  tableId='gamebryo-plugins'
-                  actions={this.actions}
-                  staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
-                  data={pluginsCombined}
-                />
+                <PanelX.Body>
+                  <Table
+                    tableId='gamebryo-plugins'
+                    actions={this.actions}
+                    staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
+                    data={pluginsCombined}
+                  />
+                </PanelX.Body>
               </Panel>
             </FlexLayout.Flex>
           </FlexLayout>
