@@ -33,7 +33,7 @@ class SpeedOMeter extends PureComponentEx<IProps, {}> {
     if (slim) {
       return (
         <span className='active-downloads-slim'>
-          <Icon name='download-speed' />{' '}{bytesToString(speed)}/s
+          <Icon name='download-speed' />{' '}{bytesToString(speed)}
         </span>
       );
     } else {

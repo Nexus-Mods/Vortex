@@ -1,4 +1,4 @@
-import {setPluginEnabled, setPluginOrder} from '../actions/loadOrder';
+import {setPluginEnabled} from '../actions/loadOrder';
 import {setAutoSortEnabled} from '../actions/settings';
 import {ILoadOrder} from '../types/ILoadOrder';
 import {
@@ -46,7 +46,6 @@ interface IConnectedProps {
 interface IActionProps {
   onSetPluginEnabled: (pluginName: string, enabled: boolean) => void;
   onSetAutoSortEnabled: (enabled: boolean) => void;
-  onSetPluginOrder: (pluginOrder: string[]) => void;
 }
 
 interface IComponentState {
@@ -584,9 +583,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(setPluginEnabled(pluginName, enabled)),
     onSetAutoSortEnabled: (enabled: boolean) => {
       dispatch(setAutoSortEnabled(enabled));
-    },
-    onSetPluginOrder: (newOrder: string[]) => {
-      dispatch(setPluginOrder(newOrder));
     },
   };
 }

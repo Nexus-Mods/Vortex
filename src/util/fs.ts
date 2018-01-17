@@ -55,7 +55,7 @@ export {
 
 const NUM_RETRIES = 3;
 const RETRY_DELAY_MS = 100;
-const RETRY_ERRORS = new Set(['EPERM', 'EBUSY']);
+const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EUNKNOWN']);
 
 export function ensureFileAsync(filePath: string): Promise<void> {
   return (fs as any).ensureFileAsync(filePath);
