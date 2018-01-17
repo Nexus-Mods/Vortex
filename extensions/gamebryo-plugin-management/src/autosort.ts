@@ -262,8 +262,10 @@ class LootInterface {
   private enqueue(description: string, step: () => Promise<void>): void {
     this.mLootQueue = this.mLootQueue.then(() => {
       this.mOnSetLootActivity(description);
+      log('info', 'loot', description);
       return step()
       .catch((err: Error) => {
+        log('info', 'loot failed', { step: description, error: err.message });
         if (err.message.startsWith('Cyclic interaction')) {
           this.reportCycle(err);
         } else if (err.message.endsWith('is not a valid plugin')) {

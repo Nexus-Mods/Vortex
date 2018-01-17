@@ -458,143 +458,144 @@ function init(context: IExtensionContextExt) {
   context
   // first thing on once, init game support for the previously discovered games
   .once(() => initGameSupport(context.api.store)
-  .then(() => {
-    const store = context.api.store;
+    .then(() => {
+      const store = context.api.store;
 
-    ipcRenderer.on('plugin-sync-ret', (event, error: Error) => {
-      if (remotePromise !== undefined) {
-        if (error !== null) {
-          remotePromise.reject(error);
-        } else {
-          remotePromise.resolve();
+      ipcRenderer.on('plugin-sync-ret', (event, error: Error) => {
+        if (remotePromise !== undefined) {
+          if (error !== null) {
+            remotePromise.reject(error);
+          } else {
+            remotePromise.resolve();
+          }
+          remotePromise = undefined;
         }
-        remotePromise = undefined;
-      }
-    });
-
-    context.api.setStylesheet('plugin-management', path.join(__dirname, 'plugin_management.scss'));
-
-    loot = new LootInterface(context);
-
-    Object.keys(store.getState().persistent.profiles)
-      .forEach((gameId: string) => {
-        if (!gameSupported(gameId)) {
-          return;
-        }
-        // this handles the case that the content of a profile changes
-        context.api.onStateChange(
-          ['persistent', 'profiles', gameId], (oldProfiles, newProfiles) => {
-            const activeProfileId = selectors.activeProfile(store.getState()).id;
-            const oldProfile = oldProfiles[activeProfileId];
-            const newProfile = newProfiles[activeProfileId];
-
-            if (oldProfile !== newProfile) {
-              updatePluginList(store, newProfile.modState)
-                .then(() => {
-                  context.api.events.emit('autosort-plugins', false);
-                });
-            }
-          });
       });
 
-    context.api.onStateChange(['loadOrder'], () => {
-      context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
-    });
+      context.api.setStylesheet('plugin-management',
+                                path.join(__dirname, 'plugin_management.scss'));
 
-    context.api.onStateChange(
-        ['settings', 'gameMode', 'discovered'], (previous, current) => {
-          if ((previous['fallout4'] !== current['fallout4']) ||
-              (previous['skyrimse'] !== current['skyrimse'])) {
-            log('debug', 'discovery for cc-supported game changed');
-            initGameSupport(store);
+      loot = new LootInterface(context);
+
+      Object.keys(store.getState().persistent.profiles)
+        .forEach((gameId: string) => {
+          if (!gameSupported(gameId)) {
+            return;
           }
+          // this handles the case that the content of a profile changes
+          context.api.onStateChange(
+            ['persistent', 'profiles', gameId], (oldProfiles, newProfiles) => {
+              const activeProfileId = selectors.activeProfile(store.getState()).id;
+              const oldProfile = oldProfiles[activeProfileId];
+              const newProfile = newProfiles[activeProfileId];
+
+              if (oldProfile !== newProfile) {
+                updatePluginList(store, newProfile.modState)
+                  .then(() => {
+                    context.api.events.emit('autosort-plugins', false);
+                  });
+              }
+            });
         });
 
-    context.api.events.on('set-plugin-list', (newPlugins: string[]) => {
-      replacePluginList(context.api.store, newPlugins);
-      store.dispatch(setPluginOrder(newPlugins));
-    });
+      context.api.onStateChange(['loadOrder'], () => {
+        context.api.events.emit('trigger-test-run', 'plugins-changed', 500);
+      });
 
-    context.api.events.on(
-        'profile-will-change',
-        (nextProfileId: string, enqueue: (cb: () => Promise<void>) => void) => {
-          enqueue(() => {
-            return stopSync()
-              .then(() => userlistPersistor.disable())
-              .then(() => masterlistPersistor.disable())
-              .then(() => loot.wait());
+      context.api.onStateChange(
+          ['settings', 'gameMode', 'discovered'], (previous, current) => {
+            if ((previous['fallout4'] !== current['fallout4']) ||
+                (previous['skyrimse'] !== current['skyrimse'])) {
+              log('debug', 'discovery for cc-supported game changed');
+              initGameSupport(store);
+            }
           });
-        });
 
-    context.api.events.on('profile-did-change', (newProfileId: string) => {
-      const newProfile =
-          util.getSafe(store.getState(),
-                       ['persistent', 'profiles', newProfileId], undefined);
+      context.api.events.on('set-plugin-list', (newPlugins: string[]) => {
+        replacePluginList(context.api.store, newPlugins);
+        store.dispatch(setPluginOrder(newPlugins));
+      });
 
-      if ((newProfile !== undefined) && gameSupported(newProfile.gameId)) {
-        updatePluginList(store, newProfile.modState)
-            .then(() => startSync(context.api))
-            .then(() => context.api.events.emit('autosort-plugins', false));
-      }
-    });
+      context.api.events.on(
+          'profile-will-change',
+          (nextProfileId: string, enqueue: (cb: () => Promise<void>) => void) => {
+            enqueue(() => {
+              return stopSync()
+                .then(() => userlistPersistor.disable())
+                .then(() => masterlistPersistor.disable())
+                .then(() => loot.wait());
+            });
+          });
 
-    context.api.events.on('mod-enabled', (profileId: string, modId: string) => {
-      /* when enabling a mod we automatically enable its plugin, if there is (exactly) one.
-       * if there are more the user gets a notification if he wants to enable all. */
-      const state: types.IState = context.api.store.getState();
-      const currentProfile = selectors.activeProfile(state);
-      if ((profileId === currentProfile.id) && gameSupported(currentProfile.gameId)) {
-        const mod: types.IMod = state.persistent.mods[currentProfile.gameId][modId];
-        if (mod === undefined) {
-          log('error', 'newly activated mod not found', { profileId, modId });
-          return;
+      context.api.events.on('profile-did-change', (newProfileId: string) => {
+        const newProfile =
+            util.getSafe(store.getState(),
+                        ['persistent', 'profiles', newProfileId], undefined);
+
+        if ((newProfile !== undefined) && gameSupported(newProfile.gameId)) {
+          updatePluginList(store, newProfile.modState)
+              .then(() => startSync(context.api))
+              .then(() => context.api.events.emit('autosort-plugins', false));
         }
-        fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
-            .catch(err => {
-              if (err.code === 'ENOENT') {
-                context.api.showErrorNotification(
-                  'A mod could no longer be found on disk. Please don\'t delete mods manually '
-                  + 'but uninstall them through Vortex.', { id: mod.id }, { allowReport: false });
-                context.api.store.dispatch(actions.removeMod(currentProfile.gameId, modId));
-                return Promise.reject(new util.ProcessCanceled('mod was deleted'));
-              } else {
-                return Promise.reject(err);
-              }
-            })
-            .then(files => {
-              const plugins = files.filter(
-                  fileName => ['.esp', '.esm', '.esl'].indexOf(
-                                  path.extname(fileName).toLowerCase()) !== -1);
-              if (plugins.length === 1) {
-                context.api.store.dispatch(setPluginEnabled(plugins[0], true));
-              } else if (plugins.length > 1) {
-                const t = context.api.translate;
-                context.api.sendNotification({
-                  type: 'info',
-                  message: t('The mod {{ modName }} contains multiple plugins',
-                             {
-                               replace: {
-                                 modName: util.renderModName(mod),
-                               },
-                               ns: 'gamebryo-plugin',
-                             }),
-                  actions: [
-                    {
-                      title: 'Enable all',
-                      action: dismiss => {
-                        plugins.forEach(plugin => context.api.store.dispatch(
-                                            setPluginEnabled(plugin, true)));
-                        dismiss();
+      });
+
+      context.api.events.on('mod-enabled', (profileId: string, modId: string) => {
+        /* when enabling a mod we automatically enable its plugin, if there is (exactly) one.
+        * if there are more the user gets a notification if he wants to enable all. */
+        const state: types.IState = context.api.store.getState();
+        const currentProfile = selectors.activeProfile(state);
+        if ((profileId === currentProfile.id) && gameSupported(currentProfile.gameId)) {
+          const mod: types.IMod = state.persistent.mods[currentProfile.gameId][modId];
+          if (mod === undefined) {
+            log('error', 'newly activated mod not found', { profileId, modId });
+            return;
+          }
+          fs.readdirAsync(path.join(selectors.installPath(state), mod.installationPath))
+              .catch(err => {
+                if (err.code === 'ENOENT') {
+                  context.api.showErrorNotification(
+                    'A mod could no longer be found on disk. Please don\'t delete mods manually '
+                    + 'but uninstall them through Vortex.', { id: mod.id }, { allowReport: false });
+                  context.api.store.dispatch(actions.removeMod(currentProfile.gameId, modId));
+                  return Promise.reject(new util.ProcessCanceled('mod was deleted'));
+                } else {
+                  return Promise.reject(err);
+                }
+              })
+              .then(files => {
+                const plugins = files.filter(
+                    fileName => ['.esp', '.esm', '.esl'].indexOf(
+                                    path.extname(fileName).toLowerCase()) !== -1);
+                if (plugins.length === 1) {
+                  context.api.store.dispatch(setPluginEnabled(plugins[0], true));
+                } else if (plugins.length > 1) {
+                  const t = context.api.translate;
+                  context.api.sendNotification({
+                    type: 'info',
+                    message: t('The mod {{ modName }} contains multiple plugins',
+                              {
+                                replace: {
+                                  modName: util.renderModName(mod),
+                                },
+                                ns: 'gamebryo-plugin',
+                              }),
+                    actions: [
+                      {
+                        title: 'Enable all',
+                        action: dismiss => {
+                          plugins.forEach(plugin => context.api.store.dispatch(
+                                              setPluginEnabled(plugin, true)));
+                          dismiss();
+                        },
                       },
-                    },
-                  ],
-                });
-              }
-            })
-            .catch(util.ProcessCanceled, () => undefined);
-      }
-    });
-  }));
+                    ],
+                  });
+                }
+              })
+              .catch(util.ProcessCanceled, () => undefined);
+        }
+      });
+    }));
 
   return true;
 }

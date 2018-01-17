@@ -128,6 +128,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       edit: {},
       isSortable: true,
       calc: (plugin: IPluginCombined) => {
+        if (!plugin.enabled && !plugin.isNative) {
+          return undefined;
+        }
         if (plugin.eslIndex === undefined) {
           return toHex(plugin.modIndex);
         } else {

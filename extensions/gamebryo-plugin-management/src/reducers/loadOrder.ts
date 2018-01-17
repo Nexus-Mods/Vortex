@@ -16,9 +16,12 @@ export const loadOrderReducer: types.IReducerSpec = {
         (state, payload) => util.setSafe(state, [payload.pluginName, 'enabled'],
                                          payload.enabled),
     [actions.setPluginOrder as any]: (state, payload) => {
-      let result = state;
+      const result = {};
       payload.forEach((pluginName: string, idx: number) => {
-        result = util.setSafe(result, [pluginName, 'loadOrder'], idx);
+        result[pluginName] = {
+          enabled: util.getSafe(state, [pluginName, 'enabled'], true),
+          loadOrder: idx,
+        };
       });
       return result;
     },
