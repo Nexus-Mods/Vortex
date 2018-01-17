@@ -2,6 +2,11 @@
  * entry point for the main process
  */
 
+import rebuildRequire from './util/requireRebuild';
+if (process.env.NODE_ENV === 'development') {
+  rebuildRequire();
+}
+
 import timeRequire from './util/timeRequire';
 const stopTime = timeRequire();
 

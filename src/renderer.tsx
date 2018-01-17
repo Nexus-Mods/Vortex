@@ -2,11 +2,13 @@
  * entry point for the renderer process(es)
  */
 
+import rebuildRequire from './util/requireRebuild';
+if (process.env.NODE_ENV === 'development') {
+  rebuildRequire();
+}
+
 import timeRequire from './util/timeRequire';
 let stopTime = timeRequire();
-
-import * as path from 'path';
-import * as ReactDOM from 'react-dom';
 
 if (process.env.NODE_ENV === 'production') {
   // TODO: the following hacks should, supposedly increase react
@@ -24,6 +26,8 @@ if (process.env.NODE_ENV === 'production') {
   // development environment
   process.traceProcessWarnings = true;
 }
+
+import * as path from 'path';
 
 process.env.SASS_BINARY_PATH = path.resolve(
   path.dirname(path.dirname(require.resolve('node-sass'))), 'bin',
@@ -48,6 +52,7 @@ import { crashReporter, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
 import { changeLanguage } from 'i18next';
 import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { applyMiddleware, compose, createStore, Store } from 'redux';
