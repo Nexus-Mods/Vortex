@@ -9,8 +9,7 @@
   ],
   "description": "API for the Nexus Mods page",
   "scripts": {
-    "build": "tsc -p .",
-    "install": "tsc -p ."
+    "build": "tsc -p ."
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "LGPL-3.0",
