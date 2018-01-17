@@ -129,7 +129,7 @@ class TodoDashlet extends ComponentEx<IProps, {}> {
     visibleSteps.sort((lhs, rhs) => (lhs.priority || 100) - (rhs.priority || 100));
 
     return (
-      <Dashlet title={t('Do you have a second?')} className='dashlet-todo'>
+      <Dashlet title={t('Let&apos;s get you set up')} className='dashlet-todo'>
         <div>
           {visibleSteps.map(todo =>
             <Todo

@@ -583,3 +583,19 @@ div:hover > .hover-expand {
 .dropdown .dropdown-toggle {
   border-left: solid $border-width $white;
 }
+
+.progress {
+  overflow: hidden;
+  height: 1.5;
+  margin-bottom: 1.5;
+  background-color: #909090;
+  border-radius: 0;
+  -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  white-space: nowrap;
+  padding: 0 10px;
+}
+
+.tool-icon-box {
+  align-content: center;
+}
