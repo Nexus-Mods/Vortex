@@ -112,6 +112,9 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private mPlaceholder: JSX.Element;
   private mLastDetailIds: string[] = [];
   private mDetailTimer: NodeJS.Timer = null;
+  private mLastUpdateState: IProps = undefined;
+  private mNextUpdateState: IProps = undefined;
+  private mUpdateInProgress: boolean = false;
 
   constructor(props: IProps) {
     super(props);
@@ -125,9 +128,12 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       rowIdsDelayed: [],
     };
     this.mVisibleAttributes = this.visibleAttributes(props.objects, props.attributeState);
-    this.updateCalculatedValues({}, props)
-    .then(() => {
-      this.refreshSorted(props);
+    this.updateCalculatedValues(props)
+    .then(run => {
+      if (run) {
+        this.refreshSorted(this.mNextUpdateState);
+        this.updateSelection(this.mNextUpdateState);
+      }
       return null;
     });
 
@@ -151,10 +157,12 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     if ((newProps.data !== this.props.data)
         || (newProps.dataId !== this.props.dataId)
         || (newProps.objects !== this.props.objects)) {
-      this.updateCalculatedValues(this.props.data, newProps)
-      .then(() => {
-        this.refreshSorted(newProps);
-        this.updateSelection(newProps);
+      this.updateCalculatedValues(newProps)
+      .then(run => {
+        if (run) {
+          this.refreshSorted(this.mNextUpdateState);
+          this.updateSelection(this.mNextUpdateState);
+        }
         return null;
       });
     } else if ((newProps.attributeState !== this.props.attributeState)
@@ -514,6 +522,9 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   private refreshSorted(props: IProps) {
     const { data, language } = props;
+    if (this.state.calculatedValues === undefined) {
+      return;
+    }
     const filtered: { [key: string]: any } =
       this.filteredRows(props, this.mVisibleAttributes, data);
 
@@ -629,35 +640,36 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     }
   }
 
-  private updateCalculatedValues(oldData: any, props): Promise<void> {
+  private updateCalculatedValues(props): Promise<boolean> {
+    this.mNextUpdateState = props;
+    if (this.mUpdateInProgress) {
+      return Promise.resolve(true);
+    }
+    this.mUpdateInProgress = true;
+
     const { t, data, objects } = props;
 
+    const oldData = this.mLastUpdateState || {};
     let newValues: ILookupCalculated = this.state.calculatedValues || {};
 
     // recalculate each attribute in each row
     return Promise.map(Object.keys(data), (rowId: string) => {
       const delta: any = {};
 
-      if (newValues[rowId] === undefined) {
-        delta.__id = rowId;
-      }
       return Promise.map(objects, (attribute: ITableAttribute) => {
-        if ((attribute.isVolatile === true) || (oldData[rowId] !== data[rowId])) {
-          return Promise.resolve(attribute.calc(data[rowId], t))
-            .then(newValue => {
-              if (!_.isEqual(newValue, getSafe(newValues, [rowId, attribute.id], undefined))) {
-                if (delta[rowId] === undefined) {
-                  delta[rowId] = {};
-                }
-                delta[attribute.id] = newValue;
-              }
-              return null;
-            });
-        } else {
+        if (!attribute.isVolatile && (oldData[rowId] === data[rowId])) {
           return Promise.resolve();
         }
+        return Promise.resolve(attribute.calc(data[rowId], t))
+          .then(newValue => {
+            if (!_.isEqual(newValue, getSafe(newValues, [rowId, attribute.id], undefined))) {
+              delta[attribute.id] = newValue;
+            }
+            return null;
+          });
       }).then(() => {
         if (Object.keys(delta).length > 0) {
+          delta.__id = rowId;
           newValues = (newValues[rowId] === undefined)
             ? update(newValues, { [rowId]: { $set: delta } })
             : update(newValues, { [rowId]: { $merge: delta } });
@@ -669,7 +681,21 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         this.setState(update(this.state, {
           calculatedValues: { $set: newValues },
         }), () => resolve());
-      }));
+      }))
+    .then(() => {
+      this.mUpdateInProgress = false;
+      this.mLastUpdateState = props;
+      if (this.mNextUpdateState !== this.mLastUpdateState) {
+        // another update was queued while this was active
+        return this.updateCalculatedValues(this.mNextUpdateState);
+      } else {
+        return Promise.resolve(true);
+      }
+    })
+    .catch(err => {
+      this.mUpdateInProgress = false;
+      return Promise.reject(err);
+    });
   }
 
   private updateSelection(props: IProps) {
