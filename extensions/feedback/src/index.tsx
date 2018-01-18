@@ -12,7 +12,8 @@ import { fs, log, selectors, tooltip, types, util } from 'vortex-api';
 function findCrashDumps() {
   const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp', 'dumps');
 
-  return fs.readdirAsync(nativeCrashesPath)
+  return fs.ensureDirAsync(nativeCrashesPath)
+    .then(() => fs.readdirAsync(nativeCrashesPath))
     .filter((filePath: string) => path.extname(filePath) === '.dmp')
     .map((iterPath: string) => path.join(nativeCrashesPath, iterPath));
 }

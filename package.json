@@ -11,7 +11,7 @@
     "_assets_out": "node InstallAssets.js out",
     "_assets_app": "node InstallAssets.js app",
     "_update_submodules": "git submodule foreach git pull origin master || exit /b 0",
-    "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files && yarn upgrade",
+    "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files",
     "subprojects": "yarn run _update_submodules && node BuildSubprojects.js out",
     "subprojects_app": "yarn run _update_submodules && node BuildSubprojects.js app",
     "build_api": "cd api && yarn run build",
@@ -109,7 +109,9 @@
       "!**/node_modules/recharts/node_modules/d3-scale/img",
       "!**/node_modules/recharts/node_modules/d3-shape/img",
       "!**/node_modules/d3-geo/img"
-    ]
+    ],
+    "buildDependenciesFromSource": false,
+    "npmRebuild": false
   },
   "parserOptions": {
     "ecmaFeatures": {

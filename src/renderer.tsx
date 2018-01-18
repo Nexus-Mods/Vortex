@@ -2,8 +2,9 @@
  * entry point for the renderer process(es)
  */
 
-import rebuildRequire from './util/requireRebuild';
 if (process.env.NODE_ENV === 'development') {
+  // tslint:disable-next-line:no-var-requires
+  const rebuildRequire = require('./util/requireRebuild');
   rebuildRequire();
 }
 
