@@ -2,7 +2,7 @@
 // through variables
 
 h1, h2, h3 {
-  font-family: 'BebasNeue';
+  font-family: $font-family-headings;
   margin-top: 0.5em;
   margin-bottom: 0.25em;
 }
@@ -81,7 +81,7 @@ a[role=menuitem] svg {
   display: flex;
   align-items: baseline;
   padding: 6px $gutter-width;
-  font-family: BebasNeue;
+  font-family: $font-family-headings;
   font-size: large;
 }
 

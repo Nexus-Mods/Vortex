@@ -3,7 +3,7 @@ import opn = require('opn');
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Col, ControlLabel, Form, FormControl, FormGroup,
-  Grid, OverlayTrigger, Popover, Row } from 'react-bootstrap';
+  Grid, OverlayTrigger, Panel, Popover, Row } from 'react-bootstrap';
 import { ChromePicker, Color } from 'react-color';
 import { ComponentEx, fs, More, Toggle } from 'vortex-api';
 
@@ -106,23 +106,24 @@ export interface IBaseProps {
 type IProps = IBaseProps;
 
 const colorDefaults: IColorEntry[] = [
-  { name: 'brand-primary', value: '#2c3e50' },
-  { name: 'brand-highlight', value: '#428BCA' },
-  { name: 'brand-success', value: '#5DB85C' },
-  { name: 'brand-info', value: '#3498DB' },
-  { name: 'brand-warning', value: '#F1AE4E' },
-  { name: 'brand-danger', value: '#D95450' },
-  { name: 'brand-bg', value: '#192431' },
-  { name: 'brand-menu', value: '#202C3D' },
-  { name: 'brand-secondary', value: '#0c5886' },
-  { name: 'brand-selected', value: '#4c5663' },
+  { name: 'brand-primary', value: '#D78F46' },
+  { name: 'brand-highlight', value: '#00C1FF' },
+  { name: 'brand-success', value: '#86B951' },
+  { name: 'brand-info', value: '#00C1FF' },
+  { name: 'brand-warning', value: '#FFB126' },
+  { name: 'brand-danger', value: '#FF1C38' },
+  { name: 'brand-bg', value: '#2A2C2B' },
+  { name: 'brand-menu', value: '#4C4C4C' },
+  { name: 'brand-secondary', value: '#D78F46' },
+  { name: 'brand-clickable', value: '#D78F46' },
   { name: 'text-color', value: '#eeeeee' },
   { name: 'text-color-disabled', value: '#bbbbbb' },
-  { name: 'link-color', value: '#3498DB' },
+  { name: 'link-color', value: '#D78F46' },
 ];
 
 interface IComponentState {
   fontFamily: string;
+  fontFamilyHeadings: string;
   fontSize: number;
   hidpiScale: number;
   colors: { [key: string]: string };
@@ -139,7 +140,8 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     this.initState({
       colors: {},
       fontSize: 12,
-      fontFamily: 'Arial',
+      fontFamily: 'Roboto',
+      fontFamilyHeadings: 'BebasNeue',
       hidpiScale: 100,
       margin: 30,
       dark: false,
@@ -152,6 +154,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     this.setFontSize(this.props.theme);
     this.setHiDPIScale(this.props.theme);
     this.setFontFamily(this.props.theme);
+    this.setFontFamilyHeadings(this.props.theme);
     this.setMargin(this.props.theme);
     this.setDark(this.props.theme);
   }
@@ -162,6 +165,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
       this.setFontSize(newProps.theme);
       this.setHiDPIScale(newProps.theme);
       this.setFontFamily(newProps.theme);
+      this.setFontFamilyHeadings(newProps.theme);
       this.setMargin(newProps.theme);
       this.setDark(newProps.theme);
     }
@@ -169,7 +173,8 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, availableFonts } = this.props;
-    const { colors, dark, fontFamily, fontSize, hidpiScale, margin } = this.state;
+    const { colors, dark, fontFamily, fontFamilyHeadings,
+            fontSize, hidpiScale, margin } = this.state;
     const buckets: IColorEntry[][] = colorDefaults.reduce((prev, value, idx) => {
       if (idx < ThemeEditor.BUCKETS) {
         prev[idx % ThemeEditor.BUCKETS] = [];
@@ -245,20 +250,51 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
               </FormControl.Static>
             </Col>
           </FormGroup>
+          <FormGroup>
+            <Col sm={4}>
+              <ControlLabel>{t('Font Family (Headings):')}</ControlLabel>
+            </Col>
+            <Col sm={8}>
+              <FormControl
+                componentClass='select'
+                onChange={this.onChangeFontFamilyHeadings}
+                value={fontFamilyHeadings}
+              >
+              {availableFonts.map(this.renderFontOption)}
+              </FormControl>
+            </Col>
+          </FormGroup>
+          <FormGroup>
+            <Col smOffset={4} sm={8}>
+              <FormControl.Static
+                style={{
+                  fontFamilyHeadings,
+                  fontSize: fontSize.toString() + 'px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                The quick brown fox jumps over the lazy dog
+              </FormControl.Static>
+            </Col>
+          </FormGroup>
         </Form>
 
-        <Grid style={{ width: '100%' }}>
-          {buckets[0].map((value, idx) => {
-            return (
-              <Row key={idx}>
-                {buckets.map(bucket =>
-                  bucket[idx] !== undefined
-                    ? this.renderEntry(bucket[idx], colors[bucket[idx].name])
-                    : null)}
-              </Row>
-            );
-          })}
-        </Grid>
+        <Panel>
+          <div className='panel-body'>
+            <Grid style={{ width: '100%' }}>
+              {buckets[0].map((value, idx) => {
+                return (
+                  <Row key={idx}>
+                    {buckets.map(bucket =>
+                      bucket[idx] !== undefined
+                        ? this.renderEntry(bucket[idx], colors[bucket[idx].name])
+                        : null)}
+                  </Row>
+                );
+              })}
+            </Grid>
+          </div>
+        </Panel>
         <Toggle checked={dark} onToggle={this.onChangeDark}>
           {t('Dark Theme')}
           <More id='more-dark-theme' name={t('Dark Theme')}>
@@ -316,6 +352,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
       'font-size-base': this.state.fontSize.toString() + 'px',
       'hidpi-scale-factor': this.state.hidpiScale.toString() + '%',
       'font-family-base': '"' + this.state.fontFamily + '"',
+      'font-family-headings': '"' + this.state.fontFamilyHeadings + '"',
       'gutter-width': this.state.margin.toString() + 'px',
       'dark-theme': this.state.dark ? 'true' : 'false',
     };
@@ -337,6 +374,10 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
 
   private onChangeFontFamily = (evt) => {
     this.nextState.fontFamily = evt.currentTarget.value;
+  }
+
+  private onChangeFontFamilyHeadings = (evt) => {
+    this.nextState.fontFamilyHeadings = evt.currentTarget.value;
   }
 
   private onChangeMargin = evt => {
@@ -366,9 +407,16 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  private setFontFamilyHeadings(theme: { [name: string]: string }) {
+    if (theme['font-family-headings'] !== undefined) {
+      const fontFamily = theme['font-family-headings'] || '';
+      this.nextState.fontFamilyHeadings = fontFamily.replace(/^"|"$/g, '');
+    }
+  }
+
   private setMargin(theme: { [name: string]: string }) {
     if (theme['gutter-width'] !== undefined) {
-      this.nextState.margin = parseInt(theme['gutter-widtgh'], 30);
+      this.nextState.margin = parseInt(theme['gutter-width'], 30);
     }
   }
 

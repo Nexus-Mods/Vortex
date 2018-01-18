@@ -65,7 +65,12 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
 
         return new Promise<string[]>((resolve, reject) => {
           fontManager.getAvailableFonts((fonts) => {
-            resolve(Array.from(new Set<string>(fonts.map(font => font.family))).sort());
+            resolve(Array.from(new Set<string>(
+              [
+                'Roboto',
+                'BebasNeue',
+                ...fonts.map(font => font.family).sort(),
+              ])));
           });
         });
       })
@@ -98,7 +103,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
                 {this.state.themes.map(theme => this.renderTheme(theme, theme))}
               </FormControl>
               <InputGroup.Button>
-                <Button bsStyle='primary' onClick={this.clone} >{t('Clone')}</Button>
+                <Button bsStyle='primary' onClick={this.onClone} >{t('Clone')}</Button>
                 {editable
                   ? <Button bsStyle='primary' onClick={this.remove}>{t('Remove')}</Button>
                   : null}
@@ -194,8 +199,12 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private clone = () => {
-    const { currentTheme, onShowDialog } = this.props;
+  private onClone = () => {
+    this.clone();
+  }
+
+  private clone = (error?: string) => {
+    const { t, currentTheme, onShowDialog } = this.props;
     const { themes } = this.state;
 
     const theme = currentTheme.startsWith('__')
@@ -203,6 +212,7 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
       : currentTheme;
 
     onShowDialog('question', 'Enter a name', {
+      bbcode: error !== undefined ? `[color=red]${error}[/color]` : undefined,
       input: [ {
           id: 'name',
           placeholder: 'Theme Name',
@@ -219,6 +229,8 @@ class SettingsTheme extends ComponentEx<IProps, IComponentState> {
             this.nextState.themes.push(res.input.name);
             this.selectThemeImpl(res.input.name);
           });
+        } else {
+          this.clone(t('Name already used.'));
         }
       }
       return Promise.resolve();

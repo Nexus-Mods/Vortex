@@ -23,8 +23,6 @@ $gray-darker:            #2A2C2B;
   $gray-light: $temp;
 }
 
-//$brand-primary:         #2C3E50;
-// $brand-highlight:       #428BCA;
 $brand-primary:         #D78F46;
 $brand-highlight:       #00c1FF;
 $brand-success:         #86B951;
@@ -32,9 +30,6 @@ $brand-info:            #00C1FF;
 $brand-warning:         #FFB126;
 $brand-danger:          #FF1C38;
 
-//$brand-bg:              #192431;
-//$brand-menu:            #202c3d;
-//$brand-secondary:       #0c5886;
 $brand-bg:              $gray-lighter;
 $brand-menu:            $gray-light;
 $brand-clickable:       $brand-primary;

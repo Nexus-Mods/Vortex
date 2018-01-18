@@ -170,16 +170,18 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ));
     }
 
+    if (content.bbcode !== undefined) {
+      controls.push((
+        <div key='dialog-content-bbcode'>
+          {bbcode(content.bbcode)}
+        </div>
+      ));
+    }
+
     if (content.htmlFile !== undefined) {
       controls.push((
         <div key='dialog-content-html'>
           <Webview src={`file://${content.htmlFile}`} />
-        </div>
-      ));
-    } else if (content.bbcode !== undefined) {
-      controls.push((
-        <div key='dialog-content-bbcode'>
-          {bbcode(content.bbcode)}
         </div>
       ));
     } else if (content.htmlText !== undefined) {
