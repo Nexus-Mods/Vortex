@@ -568,6 +568,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           || (oldProps.modState[modId] !== newProps.modState[modId])) {
         newModsWithState[modId] = {
           ...newProps.mods[modId],
+          enabled: false, // ensure we have an enabled-state even when no state is stored
+                          // for the mod
           ...newProps.modState[modId],
         };
         changed = true;
