@@ -381,7 +381,7 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
 }
 
 function openNexusPage(games: string[]) {
-  opn(`http://www.nexusmods.com/${convertGameId(games[0])}`);
+  opn(`https://www.nexusmods.com/${convertGameId(games[0])}`);
 }
 
 function processAttributes(input: any) {
@@ -616,7 +616,7 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('open-mod-page', (gameId, modId) => {
-    opn(['http://www.nexusmods.com',
+    opn(['https://www.nexusmods.com',
       convertGameId(gameId), 'mods', modId,
     ].join('/'));
   });
@@ -756,7 +756,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerModSource('nexus', 'Nexus Mods', () => {
     const gameMode = activeGameId(context.api.store.getState());
-    opn(`http://www.nexusmods.com/${convertGameId(gameMode)}`);
+    opn(`https://www.nexusmods.com/${convertGameId(gameMode)}`);
   });
 
   context.registerToDo('nxm-associated', 'settings', () => ({

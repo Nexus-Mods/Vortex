@@ -337,7 +337,7 @@ class ModDB {
         ];
 
         const page =
-            `http://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
+            `https://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
         return {
           key:
               `hash:${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,

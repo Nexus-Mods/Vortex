@@ -28,7 +28,7 @@ class DocumentationPage extends React.Component<{}, IComponentState> {
         {loading ? this.renderWait() : null}
         <Webview
           style={{ width: '100%', height: '100%' }}
-          src='http://help.nexusmods.com'
+          src='https://help.nexusmods.com'
           onLoading={this.onLoading}
         />
       </div>
