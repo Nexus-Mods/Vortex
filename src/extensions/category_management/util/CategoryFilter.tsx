@@ -67,13 +67,17 @@ class CategoryFilter implements ITableFilter {
   public raw = 'attributes';
 
   public matches(filter: any, value: any, state: IState): boolean {
+    if (filter.length === 0) {
+      // no filter category set
+      return true;
+    }
+
     const filtList = new Set<string>(filter);
     const allCategories = (value !== undefined)
       ? this.categoryChain(value.toString(), state)
       : [];
 
-    return (filtList.size === 0)
-      || (allCategories.find(cat => filtList.has(cat)) !== undefined);
+    return allCategories.find(cat => filtList.has(cat)) !== undefined;
   }
 
   private categoryChain(category: string, state: IState): string[] {

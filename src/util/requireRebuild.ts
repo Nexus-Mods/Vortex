@@ -11,7 +11,7 @@ import reqResolve = require('resolve');
 
 const app = appIn || remote.app;
 
-const packageJSON = fs.readJSONSync('./package.json');
+const packageJSON = fs.readJSONSync(path.resolve(__dirname, '..', '..', 'package.json'));
 const cachePath = path.join(app.getPath('temp'), 'native_cache');
 fs.ensureDirSync(cachePath);
 
