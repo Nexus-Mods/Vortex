@@ -30,6 +30,7 @@ import { setdefault } from './util';
 
 import * as Promise from 'bluebird';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
+import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
@@ -246,6 +247,23 @@ class ContextProxyHandler implements ProxyHandler<any> {
   }
 }
 
+class EventProxy extends EventEmitter {
+  private mTarget: Electron.WebContents;
+
+  constructor(target: Electron.WebContents) {
+    super();
+    this.mTarget = target;
+  }
+
+  public emit(eventName: string, ...args) {
+    if (this.mTarget !== undefined) {
+      this.mTarget.send('relay-event', eventName, ...args);
+      return true;
+    }
+    return false;
+  }
+}
+
 const UNDEFINED = {};
 
 /**
@@ -428,6 +446,7 @@ class ExtensionManager {
         };
     this.mApi.store = store;
     this.mApi.onStateChange = this.stateChangeHandler;
+    this.mApi.events = new EventProxy(ipc);
   }
 
   /**

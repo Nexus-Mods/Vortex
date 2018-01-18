@@ -201,6 +201,7 @@ class Application {
   private createTray(): Promise<void> {
     const TrayIcon = require('./TrayIcon').default;
     this.mTray = new TrayIcon();
+    this.mTray.setApi(this.mExtensions.getApi());
     return Promise.resolve();
   }
 

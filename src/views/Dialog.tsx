@@ -9,6 +9,7 @@ import { IState } from '../types/IState';
 import bbcode from '../util/bbcode';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
+import { remote } from 'electron';
 import * as I18next from 'i18next';
 import * as update from 'immutability-helper';
 import * as React from 'react';
@@ -87,6 +88,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         currentDialogId: { $set: newProps.dialogs[0].id },
         dialogState: { $set: newProps.dialogs[0].content },
       }));
+      const window = remote.getCurrentWindow();
+      if (window.isMinimized()) {
+        window.restore();
+      }
+      window.setAlwaysOnTop(true);
+      window.show();
+      window.setAlwaysOnTop(false);
     }
   }
 

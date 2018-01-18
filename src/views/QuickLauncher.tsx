@@ -58,6 +58,12 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     this.initState({ starter: this.makeStarter(props), gameIconCache: this.genGameIconCache() });
   }
 
+  public componentDidMount() {
+    this.context.api.events.on('quick-launch', () => {
+      this.start();
+    });
+  }
+
   public componentWillReceiveProps(nextProps: IProps) {
     // { discoveredTools, game, gameDiscovery, primaryTool }
     if ((nextProps.discoveredTools !== this.props.discoveredTools)

@@ -745,6 +745,9 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
         const dataId = attribute.filter.dataId || attribute.id;
 
+        // raw can be true, false or a string that specifies an attribute that is
+        // different from the one for which the filter is set. The raw value of that
+        // attribute is then used for the filter
         const value = attribute.filter.raw !== false
           ? attribute.filter.raw === true
             ? data[rowId][dataId]
