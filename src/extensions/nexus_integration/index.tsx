@@ -37,6 +37,7 @@ import transformUserInfo from './util/transformUserInfo';
 import DashboardBanner from './views/DashboardBanner';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
+import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
 import NexusModIdDetail from './views/NexusModIdDetail';
@@ -735,7 +736,7 @@ function init(context: IExtensionContextExt): boolean {
         <div>{t('Uncapped downloads, no adverts')}</div>
         <div>{t('Support Nexus Mods')}</div>
         <div className='right-center'>
-          <Button bsStyle='ad' onClick={goBuyPremium}>{context.api.translate('Go Premium')}</Button>
+          <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
         </div>
       </div>);
   }, {
@@ -783,6 +784,12 @@ function init(context: IExtensionContextExt): boolean {
   context.registerDashlet('Nexus Account', 3, 1, 0, DashboardBanner, undefined, undefined, {
     fixed: true,
     closable: true,
+  });
+
+  context.registerDashlet('Go Premium', 1, 2, 185, GoPremiumDashlet, (state: IState) =>
+    getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined) === false, undefined, {
+    fixed: false,
+    closable: false,
   });
 
   context.registerAttributeExtractor(50, (input: any) => {

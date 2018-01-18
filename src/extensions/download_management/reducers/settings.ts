@@ -15,6 +15,6 @@ export const settingsReducer: IReducerSpec = {
   defaults: {
     minChunkSize: 1024 * 1024,
     maxChunks: 4,
-    maxParallelDownloads: 2,
+    maxParallelDownloads: 1,
   },
 };
