@@ -112,7 +112,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
         <div style={{ flex: '1 1 0' }}>
           <div
             className={imageClass.join(' ')}
-            style={{ background: `url(file://${logo}?${counter})` }}
+            style={{ background: `url('file://${logo}?${counter}')` }}
             onClick={this.changeImage}
           />
           <h3 className='profile-name'>{`${gameName} - ${profile.name}`}</h3>
