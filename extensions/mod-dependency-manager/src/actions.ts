@@ -17,6 +17,8 @@ export const closeDialog = createAction('CLOSE_MOD_DEPENDENCY_DIALOG', () => ({}
 
 export const setType = createAction<RuleType, {}>('SET_MOD_RULE_TYPE');
 
+export const highlightConflictIcon = createAction<boolean, {}>('HIGHLIGHT_CONFLICT_ICON');
+
 export const setConflictInfo = createAction<any, {}>('SET_CONFLICT_INFO');
 
 export const setConflictDialog = createAction('SET_CONFLICT_DIALOG',

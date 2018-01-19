@@ -145,6 +145,12 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   public componentWillMount() {
     this.updateSelection(this.props);
+    this.context.api.events.on(this.props.tableId + '-scroll-to', (id) => {
+      const node = ReactDOM.findDOMNode(this.mRowRefs[id]) as HTMLElement;
+      if (node !== null) {
+        this.scrollToItem(node, false);
+      }
+    });
   }
 
   public componentWillReceiveProps(newProps: IProps) {

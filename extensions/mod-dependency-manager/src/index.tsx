@@ -17,7 +17,7 @@ import DependencyIcon, { ILocalState } from './views/DependencyIcon';
 import Editor from './views/Editor';
 import ProgressFooter from './views/ProgressFooter';
 
-import { setConflictInfo } from './actions';
+import { highlightConflictIcon, setConflictInfo } from './actions';
 import connectionReducer from './reducers';
 import { enabledModKeys } from './selectors';
 
@@ -124,11 +124,7 @@ let loadOrder: ILoadOrderState = {};
 
 function findRule(ref: IModLookupInfo): IBiDirRule {
   return dependencyState.modRules.find(rule => {
-    const res = matchReference(rule.reference, ref);
-    if (res) {
-      console.log('match', rule.reference, ref);
-    }
-    return res;
+    return matchReference(rule.reference, ref);
   });
 }
 
@@ -145,7 +141,6 @@ function updateConflictInfo(api: types.IExtensionApi,
 
   const mapEnc = (lhs: string, rhs: string) => [lhs, rhs].sort().join(':');
 
-  console.log('dependency state', dependencyState);
   // see if there is a mod that has conflicts for which there are no rules
   Object.keys(conflicts).forEach(modId => {
     const filtered = conflicts[modId].filter(conflict =>
@@ -158,12 +153,7 @@ function updateConflictInfo(api: types.IExtensionApi,
         encountered.add(mapEnc(modId, conflict.otherMod.id));
       });
     }
-    else {
-      console.log('all solved', modId, conflicts[modId]);
-    }
   });
-
-  console.log('unsolved', conflicts, unsolved);
 
   if (Object.keys(unsolved).length === 0) {
     store.dispatch(actions.dismissNotification('mod-file-conflict'));
@@ -193,6 +183,13 @@ function updateConflictInfo(api: types.IExtensionApi,
           { label: 'Show', action: () => {
             store.dispatch(actions.setAttributeVisible('mods', 'dependencies', true));
             api.events.emit('show-main-page', 'Mods');
+            setTimeout(() => {
+              store.dispatch(highlightConflictIcon(true));
+              api.events.emit('mods-scroll-to', Object.keys(unsolved)[0]);
+            }, 1000);
+            setTimeout(() => {
+              store.dispatch(highlightConflictIcon(false));
+            }, 3000);
           } },
       ]));
     };
@@ -287,7 +284,6 @@ function checkRulesFulfilled(api: types.IExtensionApi): Promise<void> {
 }
 
 function checkConflictsAndRules(api: types.IExtensionApi): Promise<void> {
-  console.log('check conflicts and rules');
   const store = api.store;
   const state = store.getState();
   const modPath = selectors.installPath(state);

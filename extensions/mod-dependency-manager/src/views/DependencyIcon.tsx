@@ -130,6 +130,7 @@ interface IConnectedProps {
   conflicts: { [modId: string]: IConflict[] };
   enabledMods: IModLookupInfo[];
   source: { id: string, pos: any };
+  highlightConflict: boolean;
 }
 
 interface IActionProps {
@@ -317,7 +318,9 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
         || this.props.mod !== nextProps.mod
         || this.props.localState.modRules !== nextProps.localState.modRules
         || this.props.source !== nextProps.source
-        || this.state !== nextState;
+        || this.props.highlightConflict !== nextProps.highlightConflict
+        || this.state !== nextState
+      ;
   }
 
   public render(): JSX.Element {
@@ -419,7 +422,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderConflictIcon(mod: types.IMod) {
-    const { t, conflicts } = this.props;
+    const { t, conflicts, highlightConflict } = this.props;
     if (conflicts[mod.id] === undefined) {
       return null;
     }
@@ -435,6 +438,10 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
       classes.push('btn-conflict-unsolved');
     } else {
       classes.push('btn-conflict-allsolved');
+    }
+
+    if (highlightConflict) {
+      classes.push('btn-conflict-highlight');
     }
 
     const tip = t('Conflicts with: {{conflicts}}', {
@@ -534,6 +541,8 @@ function mapStateToProps(state): IConnectedProps {
     conflicts: state.session.dependencies.conflicts,
     enabledMods: enabledModKeys(state),
     source: util.getSafe(state, ['session', 'dependencies', 'connection', 'source'], undefined),
+    highlightConflict:
+      util.getSafe(state, ['session', 'dependencies', 'highlightConflicts'], false),
   };
 }
 

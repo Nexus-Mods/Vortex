@@ -40,6 +40,8 @@
 
 .btn-conflict {
   @extend .btn-embed;
+
+  transition: box-shadow 1s;
 }
 
 .btn-conflict-unsolved svg {
@@ -48,6 +50,10 @@
 
 .btn-conflict-allsolved svg {
   fill: $brand-success;
+}
+
+.btn-conflict-highlight {
+  box-shadow: inset 0 0 2px 2px $brand-highlight;
 }
 
 .btn-unfulfilled {
