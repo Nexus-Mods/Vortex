@@ -55,6 +55,8 @@
 .dialog-container {
   width: 100%;
   min-height: 300px;
+  max-height: 60vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 

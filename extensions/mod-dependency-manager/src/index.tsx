@@ -88,7 +88,13 @@ function updateMetaRules(api: types.IExtensionApi,
   let rules: IBiDirRule[] = [];
   return Promise.map(Object.keys(mods || {}), modId => {
     const mod = mods[modId];
-    rules = rules.concat(mapRules(makeModReference(mod), mod.rules));
+    const ref = makeModReference(mod);
+    if ((ref.fileExpression === undefined)
+       && (ref.fileMD5 === undefined)
+       && (ref.logicalFileName === undefined)) {
+      return;
+    }
+    rules = rules.concat(mapRules(ref, mod.rules));
     return api.lookupModMeta({
       fileMD5: mod.attributes['fileMD5'],
       fileSize: mod.attributes['fileSize'],
@@ -119,6 +125,9 @@ let loadOrder: ILoadOrderState = {};
 function findRule(ref: IModLookupInfo): IBiDirRule {
   return dependencyState.modRules.find(rule => {
     const res = matchReference(rule.reference, ref);
+    if (res) {
+      console.log('match', rule.reference, ref);
+    }
     return res;
   });
 }
@@ -136,6 +145,7 @@ function updateConflictInfo(api: types.IExtensionApi,
 
   const mapEnc = (lhs: string, rhs: string) => [lhs, rhs].sort().join(':');
 
+  console.log('dependency state', dependencyState);
   // see if there is a mod that has conflicts for which there are no rules
   Object.keys(conflicts).forEach(modId => {
     const filtered = conflicts[modId].filter(conflict =>
@@ -148,7 +158,12 @@ function updateConflictInfo(api: types.IExtensionApi,
         encountered.add(mapEnc(modId, conflict.otherMod.id));
       });
     }
+    else {
+      console.log('all solved', modId, conflicts[modId]);
+    }
   });
+
+  console.log('unsolved', conflicts, unsolved);
 
   if (Object.keys(unsolved).length === 0) {
     store.dispatch(actions.dismissNotification('mod-file-conflict'));
@@ -272,6 +287,7 @@ function checkRulesFulfilled(api: types.IExtensionApi): Promise<void> {
 }
 
 function checkConflictsAndRules(api: types.IExtensionApi): Promise<void> {
+  console.log('check conflicts and rules');
   const store = api.store;
   const state = store.getState();
   const modPath = selectors.installPath(state);
