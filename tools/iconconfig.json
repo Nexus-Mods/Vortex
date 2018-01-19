@@ -405,6 +405,10 @@
     "auto-update": {
       "path": "{nucleo}/arrows/{nucleo_simple}_cloud-download-95",
       "rmFill": true
+    },
+    "sad": {
+      "path": "{nucleo}/emoticons/{nucleo_simple}_cry-15",
+      "rmFill": true
     }
   }
 }

@@ -8,6 +8,8 @@ import { types, util } from 'vortex-api';
  */
 export const sessionReducer: types.IReducerSpec = {
   reducers: {
+    [actions.setFeedbackMessage as any]: (state, payload) =>
+      util.setSafe(state, ['feedbackMessage'], payload),
     [actions.addFeedbackFile as any]: (state, payload) => {
       const { feedbackFile } = payload;
       return util.setSafe(state, ['feedbackFiles', feedbackFile.filename], feedbackFile);
@@ -20,6 +22,7 @@ export const sessionReducer: types.IReducerSpec = {
       update(state, { feedbackFiles: { $set: {} } }),
   },
   defaults: {
+    feedbackMessage: '',
     feedbackFiles: {},
   },
 };

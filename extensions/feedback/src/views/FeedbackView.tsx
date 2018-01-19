@@ -23,6 +23,7 @@ import {
 type ControlMode = 'urls' | 'files';
 
 interface IConnectedProps {
+  feedbackMessage: string;
   feedbackFiles: { [fileId: string]: IFeedbackFile };
   APIKey: string;
 }
@@ -39,7 +40,7 @@ interface IActionProps {
   onAddFeedbackFile: (feedbackFile: IFeedbackFile) => void;
 }
 
-type Props = IConnectedProps & IActionProps;
+type IProps = IConnectedProps & IActionProps;
 
 interface IComponentState {
   feedbackMessage: string;
@@ -53,14 +54,14 @@ const SAMPLE_REPORT = 'E.g.:\n' +
   'Actual Results: Nothing happens.\n' +
   'Steps to reproduce: Download a mod, then click Install inside the Actions menu.';
 
-class FeedbackPage extends ComponentEx<Props, IComponentState> {
+class FeedbackPage extends ComponentEx<IProps, IComponentState> {
   private feedbackActions: ITableRowAction[];
 
-  constructor(props) {
+  constructor(props: IProps) {
     super(props);
 
     this.initState({
-      feedbackMessage: '',
+      feedbackMessage: props.feedbackMessage,
       anonymous: false,
       sending: false,
     });
@@ -68,10 +69,16 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     this.feedbackActions = [
       {
         icon: 'delete',
-        title: props.t('Delete'),
+        title: this.props.t('Delete'),
         action: this.remove,
       },
     ];
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if (this.props.feedbackMessage !== newProps.feedbackMessage) {
+      this.nextState.feedbackMessage = newProps.feedbackMessage;
+    }
   }
 
   public render(): JSX.Element {
@@ -209,7 +216,7 @@ class FeedbackPage extends ComponentEx<Props, IComponentState> {
     const { feedbackMessage } = this.state;
     return (
       <textarea
-        value={feedbackMessage}
+        value={feedbackMessage || ''}
         id='textarea-feedback'
         className='textarea-feedback'
         onChange={this.handleChange}
@@ -418,6 +425,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
+    feedbackMessage: state.session.feedback.feedbackMessage,
     feedbackFiles: state.session.feedback.feedbackFiles,
     APIKey: state.confidential.account.nexus.APIKey,
   };
