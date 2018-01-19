@@ -17,7 +17,7 @@ import * as Promise from 'bluebird';
 import ESPFile from 'esptk';
 import * as I18next from 'i18next';
 import * as update from 'immutability-helper';
-import {SimpleMessage} from 'loot';
+import { Message } from 'loot';
 import * as path from 'path';
 import * as React from 'react';
 import {Alert, ListGroup, ListGroupItem, Panel} from 'react-bootstrap';
@@ -77,7 +77,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private pluginEnabledAttribute: types.ITableAttribute;
   private actions: ITableRowAction[];
 
-  private pluginAttributes: types.ITableAttribute[] = [
+  private pluginAttributes: Array<types.ITableAttribute<IPluginCombined>> = [
     {
       id: 'name',
       name: 'Name',
@@ -138,6 +138,18 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         }
       },
       placement: 'table',
+    },
+    {
+      id: 'priority',
+      name: 'Priority',
+      description: 'Loot priority',
+      icon: 'sort-down',
+      placement: 'both',
+      calc: plugin => plugin.globalPriority !== undefined ? plugin.globalPriority.value : 0,
+      edit: {},
+      isToggleable: true,
+      isDefaultVisible: false,
+      isSortable: true,
     },
     {
       id: 'dependencies',
@@ -284,8 +296,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return Object.keys(this.props.plugins).reduce((prev, key) => {
       prev[key] = {
         messages: [],
-        cleanliness: 'clean',
-        tags: { added: [], removed: [], userlistModified: false },
+        cleanliness: [],
+        dirtyness: [],
+        globalPriority: { value: 0 },
+        tags: [],
       };
       return prev;
     }, {});
@@ -541,12 +555,11 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }));
   }
 
-  private translateLootMessageType(input: string) {
+  private translateLootMessageType(input: number) {
     return {
-      say: 'info',
-      warn: 'warning',
-      error: 'danger',
-      unknown: 'warning',
+      0: 'info',
+      1: 'warning',
+      2: 'error',
     }[input];
   }
 
@@ -558,9 +571,9 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     return (
       <ListGroup>
         {
-          plugin.messages.map((msg: SimpleMessage, idx: number) => (
+          plugin.messages.map((msg: Message, idx: number) => (
             <ListGroupItem key={idx}>
-              <Alert bsStyle={this.translateLootMessageType(msg.type)}>{msg.text}</Alert>
+              <Alert bsStyle={this.translateLootMessageType(msg.type)}>{msg.value}</Alert>
             </ListGroupItem>
           ))
         }

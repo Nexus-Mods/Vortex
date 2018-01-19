@@ -4,11 +4,16 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include "nbind/nbind.h"
 
-
-const char *toIsoLanguage(loot::LanguageCode code);
-loot::LanguageCode fromIsoLanguage(const char *code);
+// bound unwrapped
+using loot::Tag;
+using loot::MessageContent;
+using loot::PluginCleaningData;
+using loot::Priority;
+using loot::File;
+using loot::Location;
 
 struct MasterlistInfo : public loot::MasterlistInfo {
   MasterlistInfo() {}
@@ -21,47 +26,90 @@ struct MasterlistInfo : public loot::MasterlistInfo {
   bool getIsModified() const;
 };
 
-/**
- * wrapper for loot::SimpleMessage translating to standard datatypes
- */
-struct SimpleMessage : public loot::SimpleMessage {
-  SimpleMessage(const loot::SimpleMessage &input);
- 
-  void toJS(nbind::cbOutput output) const;
-
-  std::string getType() const;
-  std::string getLanguage() const;
-  std::string getText() const;
-};
-
-struct PluginTags {
-  PluginTags() {}
-
-  PluginTags(const loot::PluginTags &input)
-    : added(input.added.begin(), input.added.end())
-    , removed(input.removed.begin(), input.removed.end())
-    , userlist_modified(input.userlist_modified)
-  { }
-
-  void toJS(nbind::cbOutput output) const {
-    output(added, removed, userlist_modified);
+class Message : public loot::Message {
+public:
+  Message() : loot::Message() {}
+  Message(const loot::Message &reference)
+    : loot::Message(reference)
+  {
   }
 
-  std::vector<std::string> getAdded() const { return added; }
-  std::vector<std::string> getRemoved() const { return removed; }
-  bool getUserlistModified() const { return userlist_modified; }
+  unsigned int type() {
+    return static_cast<unsigned int>(GetType());
+  }
 
-private:
-  std::vector<std::string> added;
-  std::vector<std::string> removed;
-  bool userlist_modified;
+  std::string value(const std::string &language) const {
+    return GetContent(language).GetText();
+  }
 };
 
-class LootDatabase {
+struct PluginMetadata : public loot::PluginMetadata {
+  PluginMetadata(const loot::PluginMetadata &input);
+
+  void toJS(nbind::cbOutput output) const;
+
+  std::vector<Tag> tags() const {
+    std::set<loot::Tag> tags = GetTags();
+    std::vector<Tag> result(tags.size());
+    std::copy(tags.begin(), tags.end(), result.begin());
+    return result;
+  }
+
+  std::vector<Message> messages() const {
+    std::vector<loot::Message> messages = GetMessages();
+    std::vector<Message> result(messages.size());
+    std::copy(messages.begin(), messages.end(), result.begin());
+    return result;
+  }
+
+  std::vector<loot::File> requirements() const {
+    std::set<loot::File> files = GetRequirements();
+    std::vector<loot::File> result(files.size());
+    std::copy(files.begin(), files.end(), result.begin());
+    return result;
+  }
+ 
+  std::vector<loot::File> incompatibilities() const {
+    std::set<loot::File> files = GetIncompatibilities();
+    std::vector<loot::File> result(files.size());
+    std::copy(files.begin(), files.end(), result.begin());
+    return result;
+  } 
+
+  std::vector<loot::File> loadAfterFiles() const {
+    std::set<loot::File> files = GetLoadAfterFiles();
+    std::vector<loot::File> result(files.size());
+    std::copy(files.begin(), files.end(), result.begin());
+    return result;
+  }
+
+  std::vector<loot::PluginCleaningData> cleanInfo() const {
+    std::set<loot::PluginCleaningData> data = GetCleanInfo();
+    std::vector<loot::PluginCleaningData> result(data.size());
+    std::copy(data.begin(), data.end(), result.begin());
+    return result;
+  }
+
+  std::vector<loot::PluginCleaningData> dirtyInfo() const {
+    std::set<loot::PluginCleaningData> data = GetDirtyInfo();
+    std::vector<loot::PluginCleaningData> result(data.size());
+    std::copy(data.begin(), data.end(), result.begin());
+    return result;
+  }
+
+  std::vector<loot::Location> locations() const {
+    std::set<loot::Location> data = GetLocations();
+    std::vector<loot::Location> result(data.size());
+    std::copy(data.begin(), data.end(), result.begin());
+    return result;
+  }
+};
+
+class Loot {
 
 public:
 
-  LootDatabase(std::string gameId, std::string gamePath, std::string gameLocalPath);
+  Loot(std::string gameId, std::string gamePath, std::string gameLocalPath);
 
   void updateMasterlist(std::string masterlistPath, std::string remoteUrl, std::string remoteBranch,
     nbind::cbFunction &callback);
@@ -69,18 +117,8 @@ public:
   MasterlistInfo getMasterlistRevision(std::string masterlistPath, bool getShortId) const;
 
   void loadLists(std::string masterlistPath, std::string userlistPath, nbind::cbFunction &callback);
-  void evalLists(nbind::cbFunction &callback);
 
-  /**
-   * get messages for a plugin.
-   * @param plugin name of the plugin
-   * @param languageCode iso code for the language in which to retrieve the message. This supports either
-   *                     a iso-639-1 code like "de" for german or a iso-639-1 language code combined with
-   *                     a iso-3166 country code, i.e. "de_DE". Falls back to english if language is missing
-   */
-  std::vector<SimpleMessage> getPluginMessages(std::string plugin, std::string languageCode);
-  std::string getPluginCleanliness(std::string plugin);
-  PluginTags getPluginTags(std::string plugin);
+  PluginMetadata getPluginMetadata(std::string plugin);
 
   void sortPlugins(std::vector<std::string> input, nbind::cbFunction &callback);
 
@@ -92,10 +130,9 @@ private:
 private:
 
   bool m_Busy{false};
-  std::shared_ptr<loot::DatabaseInterface> m_Database;
+  std::shared_ptr<loot::GameInterface> m_Game;
 
 };
-
 
 NBIND_CLASS(MasterlistInfo) {
   getter(getRevisionId);
@@ -103,27 +140,67 @@ NBIND_CLASS(MasterlistInfo) {
   getter(getIsModified);
 }
 
-NBIND_CLASS(SimpleMessage) {
-  getter(getType);
-  getter(getLanguage);
-  getter(getText);
+NBIND_CLASS(MessageContent) {
+  getter(GetText);
+  getter(GetLanguage);
 }
 
-NBIND_CLASS(PluginTags) {
-  getter(getAdded);
-  getter(getRemoved);
-  getter(getUserlistModified);
+NBIND_CLASS(Tag) {
+  getter(IsAddition);
+  getter(GetName);
 }
 
-NBIND_CLASS(LootDatabase) {
+NBIND_CLASS(Priority) {
+  getter(GetValue);
+  getter(IsExplicit);
+}
+
+NBIND_CLASS(Message) {
+  getter(type);
+  method(value);
+}
+
+NBIND_CLASS(File) {
+  getter(GetName);
+  getter(GetDisplayName);
+}
+
+NBIND_CLASS(PluginMetadata) {
+  getter(messages);
+  getter(GetName);
+  getter(tags);
+  getter(cleanInfo);
+  getter(dirtyInfo);
+  getter(GetGlobalPriority);
+  getter(incompatibilities);
+  getter(loadAfterFiles);
+  getter(GetLocalPriority);
+  getter(locations);
+  getter(requirements);
+  getter(messages);
+  getter(IsEnabled);
+}
+ 
+NBIND_CLASS(PluginCleaningData) {
+  getter(GetCRC);
+  getter(GetITMCount);
+  getter(GetDeletedReferenceCount);
+  getter(GetDeletedNavmeshCount);
+  getter(GetCleaningUtility);
+  getter(GetInfo);
+}
+
+NBIND_CLASS(Location) {
+  getter(GetURL);
+  getter(GetName);
+}
+
+NBIND_CLASS(Loot) {
   construct<std::string, std::string, std::string>();
   method(updateMasterlist);
   method(getMasterlistRevision);
   method(loadLists);
-  method(evalLists);
-  method(getPluginMessages);
-  method(getPluginCleanliness);
-  method(getPluginTags);
+  method(getPluginMetadata);
   method(sortPlugins);
 }
 

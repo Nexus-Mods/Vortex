@@ -22,27 +22,23 @@ along with LOOT.  If not, see
 <https://www.gnu.org/licenses/>.
 */
 
-#ifndef LOOT_GAME_TYPE
-#define LOOT_GAME_TYPE
+#ifndef LOOT_LOG_LEVEL
+#define LOOT_LOG_LEVEL
 
 /**
  * The namespace used by the LOOT API.
  */
 namespace loot {
-/** @brief Codes used to create database handles for specific games. */
-enum struct GameType : unsigned int {
-  /** The Elder Scrolls IV: Oblivion */
-  tes4,
-  /** The Elder Scrolls V: Skyrim */
-  tes5,
-  /** Fallout 3 */
-  fo3,
-  /** Fallout: New Vegas */
-  fonv,
-  /** Fallout 4 */
-  fo4,
-  /** The Elder Scrolls V: Skyrim Special Edition */
-  tes5se,
+/**
+ * @brief Codes used to specify different levels of API logging.
+ */
+enum struct LogLevel : unsigned int {
+  trace,
+  debug,
+  info,
+  warning,
+  error,
+  fatal
 };
 }
 

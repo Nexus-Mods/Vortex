@@ -30,15 +30,15 @@
    that use this header do not need to define anything to import the symbols
    properly. */
 #if defined(_WIN32)
-#   ifdef LOOT_STATIC
-#       define LOOT_API
-#   elif defined LOOT_EXPORT
-#       define LOOT_API __declspec(dllexport)
-#   else
-#       define LOOT_API __declspec(dllimport)
-#   endif
+#ifdef LOOT_STATIC
+#define LOOT_API
+#elif defined LOOT_EXPORT
+#define LOOT_API __declspec(dllexport)
 #else
-#   define LOOT_API
+#define LOOT_API __declspec(dllimport)
+#endif
+#else
+#define LOOT_API
 #endif
 
 #endif

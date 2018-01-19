@@ -5,14 +5,14 @@ import {gameSupported, lootAppPath, pluginPath} from './util/gameSupport';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import {GameId, LootDatabase} from 'loot';
+import {Loot} from 'loot';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
 
 class LootInterface {
-  private mLoot: LootDatabase;
+  private mLoot: Loot;
   private mLootGame: string;
   private mLootQueue: Promise<void>;
   private mOnSetLootActivity: (activity: string) => void;
@@ -24,7 +24,6 @@ class LootInterface {
   private sortAsync;
   private loadListsAsync;
   private updateAsync;
-  private evalListsAsync;
 
   constructor(context: types.IExtensionContext) {
     const store = context.api.store;
@@ -59,7 +58,7 @@ class LootInterface {
         if (!gameSupported(gameMode)) {
           return;
         }
-        this.readLists(gameMode as GameId);
+        this.readLists(gameMode);
         const id = require('shortid').generate();
         this.enqueue(t('Sorting plugins'), () => {
           if (gameMode !== this.mLootGame) {
@@ -106,7 +105,7 @@ class LootInterface {
     const store = context.api.store;
     const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
     if (gameSupported(gameMode)) {
-      this.init(gameMode as GameId, gamePath)
+      this.init(gameMode, gamePath)
         .then(() => null)
         .catch(err => {
           context.api.showErrorNotification('Failed to initialize LOOT', {
@@ -131,10 +130,13 @@ class LootInterface {
         this.enqueue(t('Reading Plugin Details'), () => {
           const result: IPluginsLoot = {};
           plugins.forEach((pluginName: string) => {
+            const meta = this.mLoot.getPluginMetadata(pluginName);
             result[pluginName] = {
-              messages: this.mLoot.getPluginMessages(pluginName, 'en'),
-              tags: this.mLoot.getPluginTags(pluginName),
-              cleanliness: this.mLoot.getPluginCleanliness(pluginName),
+              messages: meta.messages,
+              tags: meta.tags,
+              cleanliness: meta.cleanInfo,
+              dirtyness: meta.dirtyInfo,
+              globalPriority: meta.globalPriority,
             };
           });
           callback(result);
@@ -142,7 +144,7 @@ class LootInterface {
         });
       }
 
-  private readLists(gameMode: GameId) {
+  private readLists(gameMode: string) {
     const t = this.mExtensionApi.translate;
 
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
@@ -158,10 +160,17 @@ class LootInterface {
           if ((mtime !== null) &&
               ((this.mUserlistTime === undefined) ||
                (this.mUserlistTime.getTime() !== mtime.getTime()))) {
-            log('info', '(re-)loading loot lists', { mtime, last: this.mUserlistTime });
+            log('info', '(re-)loading loot lists', {
+              mtime,
+              masterlistPath,
+              userlistPath,
+              last: this.mUserlistTime,
+            });
             return this.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '')
-              .then(() => this.evalListsAsync())
-              .then(() => this.mUserlistTime = mtime);
+              .then(() => {
+                log('info', 'loaded loot lists');
+                this.mUserlistTime = mtime;
+              });
           } else {
             return Promise.resolve();
           }
@@ -170,13 +179,13 @@ class LootInterface {
     });
   }
 
-  private init(gameMode: GameId, gamePath: string): Promise<void> {
+  private init(gameMode: string, gamePath: string): Promise<void> {
     const t = this.mExtensionApi.translate;
     const localPath = pluginPath(gameMode);
     this.mLootGame = gameMode;
     return fs.ensureDirAsync(localPath)
       .then(() => {
-        this.mLoot = new LootDatabase(gameMode, gamePath, localPath);
+        this.mLoot = new Loot(gameMode, gamePath, localPath);
         this.promisify();
 
         // little bit of hackery: If tasks are queued before the game mode is activated
@@ -196,6 +205,7 @@ class LootInterface {
               this.updateAsync(masterlistPath,
                 `https://github.com/loot/${gameMode}.git`,
                 'v0.10')
+                .then(updated => log('info', 'updated loot masterlist', updated))
                 .catch(err => {
                   this.mExtensionApi.showErrorNotification(
                     'failed to update masterlist', err);
@@ -227,8 +237,6 @@ class LootInterface {
       Promise.promisify(this.mLoot.loadLists, { context: this.mLoot });
     this.updateAsync = Promise.promisify(this.mLoot.updateMasterlist,
       { context: this.mLoot });
-    this.evalListsAsync =
-      Promise.promisify(this.mLoot.evalLists, { context: this.mLoot });
   }
 
   private reportCycle(err: Error) {

@@ -28,18 +28,8 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
     result.push(t('Native'));
   }
 
-  switch (plugin.cleanliness) {
-    case 'dirty':
-      {
-        result.push(t('Dirty'));
-      }
-      break;
-    case 'do_not_clean':
-      {
-        result.push(t('Don\'t clean'));
-      }
-      break;
-    default: break;
+  if (plugin.dirtyness.length > 0) {
+    result.push(t('Dirty'));
   }
   return result;
 }
@@ -83,7 +73,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
   }
 
   const cleanKey = `ico-clean-${plugin.name}`;
-  if (plugin.cleanliness === 'dirty') {
+  if (plugin.dirtyness.length > 0) {
     flags.push(
       <tooltip.Icon
         id={cleanKey}
@@ -91,7 +81,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         name='plugin-clean'
         tooltip={t('Requires cleaning (LOOT)', { ns: 'gamebryo-plugin' })}
       />);
-  } else if (plugin.cleanliness === 'do_not_clean') {
+  }/* else if (plugin.cleanliness === 'do_not_clean') {
     flags.push(
       <tooltip.Icon
         id={cleanKey}
@@ -99,7 +89,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
         name='plugin-dont-clean'
         tooltip={t('Must not be cleaned (LOOT)', { ns: 'gamebryo-plugin' })}
       />);
-  }
+  }*/
 
   return (
     <div>

@@ -25,25 +25,47 @@
 #ifndef LOOT_API_H
 #define LOOT_API_H
 
-#include <string>
+#include <functional>
 #include <memory>
+#include <string>
 
 #include "loot/api_decorator.h"
-#include "loot/database_interface.h"
-#include "loot/exception/error_categories.h"
+#include "loot/enum/game_type.h"
+#include "loot/enum/log_level.h"
 #include "loot/exception/condition_syntax_error.h"
 #include "loot/exception/cyclic_interaction_error.h"
+#include "loot/exception/error_categories.h"
 #include "loot/exception/file_access_error.h"
-#include "loot/exception/game_detection_error.h"
 #include "loot/exception/git_state_error.h"
-#include "loot/enum/game_type.h"
+#include "loot/game_interface.h"
 #include "loot/loot_version.h"
 
 namespace loot {
 /**@}*/
-/**********************************************************************//**
- *  @name Version Functions
- *************************************************************************/
+/**********************************************************************/ /**
+                                                                          *  @name
+                                                                          *Logging
+                                                                          *Functions
+                                                                          *************************************************************************/
+/**@{*/
+
+/**
+ * @brief Set the callback function that is called when logging.
+ * @details If this function is not called, the default behaviour is to
+ *          print messages to the console.
+ * @param callback
+ *        The function called when logging. The first parameter is the
+ *        level of the message being logged, and the second is the message.
+ */
+LOOT_API void SetLoggingCallback(
+    std::function<void(LogLevel, const char*)> callback);
+
+/**@}*/
+/**********************************************************************/ /**
+                                                                          *  @name
+                                                                          *Version
+                                                                          *Functions
+                                                                          *************************************************************************/
 /**@{*/
 
 /**
@@ -64,15 +86,27 @@ LOOT_API bool IsCompatible(const unsigned int major,
                            const unsigned int patch);
 
 /**@}*/
-/**********************************************************************//**
- *  @name Lifecycle Management Functions
- *************************************************************************/
+/**********************************************************************/ /**
+                                                                          *  @name
+                                                                          *Lifecycle
+                                                                          *Management
+                                                                          *Functions
+                                                                          *************************************************************************/
 /**@{*/
 
 /**
- *  @brief Initialise a new database handle.
- *  @details Creates a handle for a database, which is then used by all
- *           database functions.
+ * Initialise the current global locale using the given ID.
+ *
+ * This sets the global locale up so that the library's UTF-8 support can
+ * function.
+ * @param id A locale ID.
+ */
+LOOT_API void InitialiseLocale(const std::string& id);
+
+/**
+ *  @brief Initialise a new game handle.
+ *  @details Creates a handle for a game, which is then used by all
+ *           game-specific functions.
  *  @param game
  *         A game code for which to create the handle.
  *  @param game_path
@@ -82,15 +116,16 @@ LOOT_API bool IsCompatible(const unsigned int major,
  *         sibling Data folder and by searching for the game's Registry entry.
  *  @param game_local_path
  *         The relative or absolute path to the game's folder in
- *         `%%LOCALAPPDATA%` or an empty string. If an empty string, the API will
- *         attempt to look up the path that `%%LOCALAPPDATA%` corresponds to.
- *         This parameter is provided so that systems lacking that environmental
+ *         `%%LOCALAPPDATA%` or an empty string. If an empty string, the API
+ * will attempt to look up the path that `%%LOCALAPPDATA%` corresponds to. This
+ * parameter is provided so that systems lacking that environmental
  *         variable (eg. Linux) can still use the API.
- *  @returns The new database handle.
+ *  @returns The new game handle.
  */
-LOOT_API std::shared_ptr<DatabaseInterface> CreateDatabase(const GameType game,
-                                                           const std::string& game_path = "",
-                                                           const std::string& game_local_path = "");
+LOOT_API std::shared_ptr<GameInterface> CreateGameHandle(
+    const GameType game,
+    const std::string& game_path = "",
+    const std::string& game_local_path = "");
 }
 
 #endif

@@ -13,54 +13,6 @@ struct BusyException : public std::runtime_error {
   BusyException() : std::runtime_error("Loot connection is busy") {}
 };
 
-const char *toIsoLanguage(loot::LanguageCode code) {
-  switch (code) {
-  case loot::LanguageCode::brazilian_portuguese: return "pt_BR";
-  case loot::LanguageCode::chinese: return "ch";
-  case loot::LanguageCode::danish: return "da";
-  case loot::LanguageCode::english: return "en";
-  case loot::LanguageCode::finnish: return "fi";
-  case loot::LanguageCode::french: return "fr";
-  case loot::LanguageCode::german: return "de";
-  case loot::LanguageCode::korean: return "ko";
-  case loot::LanguageCode::polish: return "pl";
-  case loot::LanguageCode::russian: return "ru";
-  case loot::LanguageCode::spanish: return "es";
-  case loot::LanguageCode::swedish: return "sv";
-  }
-  Nan::ThrowError("unsupported language code");
-  return "";
-}
-
-loot::LanguageCode fromIsoLanguage(const char *code) {
-  const std::map<std::string, loot::LanguageCode> langMap {
-    { "ch",loot::LanguageCode::chinese },
-    { "da",loot::LanguageCode::danish },
-    { "en",loot::LanguageCode::english },
-    { "fi",loot::LanguageCode::finnish },
-    { "fr",loot::LanguageCode::french },
-    { "de",loot::LanguageCode::german },
-    { "ko",loot::LanguageCode::korean },
-    { "pl",loot::LanguageCode::polish },
-    { "ru",loot::LanguageCode::russian },
-    { "es",loot::LanguageCode::spanish },
-    { "sv",loot::LanguageCode::swedish }
-  };
-
-  const std::map<std::string, loot::LanguageCode> langCountryMap{
-    { "pt_BR", loot::LanguageCode::brazilian_portuguese }
-  };
-
-  // first, see if we have a lang+country code
-  auto iter = langCountryMap.find(code);
-  if (iter != langCountryMap.end()) {
-    return iter->second;
-  }
-  // if not, try again looking for just the language
-  iter = langMap.find(std::string(code, 2));
-  return iter != langMap.end() ? iter->second : loot::LanguageCode::english;
-}
-
 template <typename T> v8::Local<v8::Value> ToV8(const T &value) {
   return Nan::New(value);
 }
@@ -156,105 +108,71 @@ private:
   std::function<void()> m_IntCallback;
 };
 
-LootDatabase::LootDatabase(std::string gameId, std::string gamePath, std::string gameLocalPath)
+Loot::Loot(std::string gameId, std::string gamePath, std::string gameLocalPath)
 {
   try {
-    m_Database = loot::CreateDatabase(convertGameId(gameId), gamePath, gameLocalPath);
+    loot::InitialiseLocale("en_US");
+    m_Game = loot::CreateGameHandle(convertGameId(gameId), gamePath, gameLocalPath);
   }
   catch (const std::exception &e) {
     Nan::ThrowError(e.what());
   }
 }
 
-void LootDatabase::assertNotBusy() const {
+void Loot::assertNotBusy() const {
   if (m_Busy) {
     // TODO Fails with an error I don't understand
     Nan::ThrowError("Can't be used while asynchronous api is working");
   }
 }
 
-void LootDatabase::updateMasterlist(std::string masterlistPath, std::string remoteUrl, std::string remoteBranch,
+void Loot::updateMasterlist(std::string masterlistPath, std::string remoteUrl, std::string remoteBranch,
   nbind::cbFunction &callback) {
   assertNotBusy();
   m_Busy = true;
   Nan::AsyncQueueWorker(
     new Worker<bool>(
-      [=]() { return m_Database->UpdateMasterlist(masterlistPath, remoteUrl, remoteBranch); },
+      [=]() { return m_Game->GetDatabase()->UpdateMasterlist(masterlistPath, remoteUrl, remoteBranch); },
       new Nan::Callback(callback.getJsFunction()),
       [this]() -> void { this->m_Busy = false; }
   ));
 }
 
-void LootDatabase::loadLists(std::string masterlistPath, std::string userlistPath, nbind::cbFunction &callback)
+void Loot::loadLists(std::string masterlistPath, std::string userlistPath, nbind::cbFunction &callback)
 {
   assertNotBusy();
   m_Busy = true;
   Nan::AsyncQueueWorker(
     new Worker<void>(
-      [=]() { m_Database->LoadLists(masterlistPath, userlistPath); },
+      [=]() { m_Game->GetDatabase()->LoadLists(masterlistPath, userlistPath); },
       new Nan::Callback(callback.getJsFunction()),
       [this]() -> void { this->m_Busy = false; }));
 }
 
-void LootDatabase::evalLists(nbind::cbFunction &callback)
+PluginMetadata Loot::getPluginMetadata(std::string plugin)
 {
   assertNotBusy();
-  m_Busy = true;
-  Nan::AsyncQueueWorker(
-    new Worker<void>(
-      [this]() { m_Database->EvalLists(); },
-      new Nan::Callback(callback.getJsFunction()),
-    [this]() -> void {
-    this->m_Busy = false;
-  }));
+  return m_Game->GetDatabase()->GetPluginMetadata(plugin, true, true);
 }
 
-std::vector<SimpleMessage> LootDatabase::getPluginMessages(std::string plugin, std::string languageCode)
-{
+MasterlistInfo Loot::getMasterlistRevision(std::string masterlistPath, bool getShortId) const {
   assertNotBusy();
-  std::vector<SimpleMessage> res;
-  auto input = m_Database->GetPluginMessages(plugin, fromIsoLanguage(languageCode.c_str()));
-  std::transform(input.begin(), input.end(), std::back_inserter(res),
-    [](const loot::SimpleMessage &in) -> SimpleMessage { return SimpleMessage(in); }
-  );
-  return res;
+  return m_Game->GetDatabase()->GetMasterlistRevision(masterlistPath, getShortId);
 }
 
-std::string LootDatabase::getPluginCleanliness(std::string plugin)
-{
-  assertNotBusy();
-  switch (m_Database->GetPluginCleanliness(plugin)) {
-  case loot::PluginCleanliness::clean: return "clean";
-  case loot::PluginCleanliness::dirty: return "dirty";
-  case loot::PluginCleanliness::do_not_clean: return "do_not_clean";
-  default: return "unknown";
-  }
-}
-
-PluginTags LootDatabase::getPluginTags(std::string plugin)
-{
-  assertNotBusy();
-  return m_Database->GetPluginTags(plugin);
-}
-
-MasterlistInfo LootDatabase::getMasterlistRevision(std::string masterlistPath, bool getShortId) const {
-  assertNotBusy();
-  return m_Database->GetMasterlistRevision(masterlistPath, getShortId);
-}
-
-void LootDatabase::sortPlugins(std::vector<std::string> input, nbind::cbFunction &callback)
+void Loot::sortPlugins(std::vector<std::string> input, nbind::cbFunction &callback)
 {
   assertNotBusy();
   Nan::AsyncQueueWorker(
     new Worker<std::vector<std::string>>(
-      [this, input]() { return m_Database->SortPlugins(input); },
+      [this, input]() { return m_Game->SortPlugins(input); },
       new Nan::Callback(callback.getJsFunction()),
     [this]() -> void {
     this->m_Busy = false;
   }));
 }
 
-loot::GameType LootDatabase::convertGameId(const std::string &gameId) const {
+loot::GameType Loot::convertGameId(const std::string &gameId) const {
   std::map<std::string, loot::GameType> gameMap{
     { "oblivion", loot::GameType::tes4 },
     { "skyrim", loot::GameType::tes5 },
@@ -271,33 +189,13 @@ loot::GameType LootDatabase::convertGameId(const std::string &gameId) const {
   return iter->second;
 }
 
-inline SimpleMessage::SimpleMessage(const loot::SimpleMessage & input)
-  : loot::SimpleMessage()
+PluginMetadata::PluginMetadata(const loot::PluginMetadata &reference)
+  : loot::PluginMetadata(reference)
 {
-  this->type = input.type;
-  this->language = input.language;
-  this->text = input.text;
 }
 
-inline void SimpleMessage::toJS(nbind::cbOutput output) const {
-  output(type, language, text);
-}
-
-inline std::string SimpleMessage::getType() const {
-  switch (this->type) {
-  case loot::MessageType::say: return "say";
-  case loot::MessageType::warn: return "warn";
-  case loot::MessageType::error: return "error";
-  default: return "unknown";
-  }
-}
-
-inline std::string SimpleMessage::getLanguage() const {
-  return toIsoLanguage(this->language);
-}
-
-inline std::string SimpleMessage::getText() const {
-  return this->text;
+void PluginMetadata::toJS(nbind::cbOutput output) const {
+  output(this->GetName());
 }
 
 inline MasterlistInfo::MasterlistInfo(loot::MasterlistInfo info)

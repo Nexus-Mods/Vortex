@@ -1,6 +1,6 @@
 import {ILoadOrder} from './ILoadOrder';
 
-import {Cleanliness, PluginTags, SimpleMessage} from 'loot';
+import {Message, PluginCleaningData, Priority, Tag} from 'loot';
 
 /**
  * generic information about a plugin
@@ -46,9 +46,11 @@ export interface IPluginParsed {
 }
 
 export interface IPluginLoot {
-  messages: SimpleMessage[];
-  cleanliness: Cleanliness;
-  tags: PluginTags;
+  messages: Message[];
+  cleanliness: PluginCleaningData[];
+  dirtyness: PluginCleaningData[];
+  tags: Tag[];
+  globalPriority: Priority;
 }
 
 export interface IPluginsLoot { [fileName: string]: IPluginLoot; }
