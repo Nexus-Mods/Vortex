@@ -4,7 +4,7 @@
 
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
-  const rebuildRequire = require('./util/requireRebuild');
+  const rebuildRequire = require('./util/requireRebuild').default;
   rebuildRequire();
 }
 

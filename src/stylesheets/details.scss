@@ -75,7 +75,7 @@ $input-height-base:              ($line-height-computed + ($padding-base-vertica
 $input-height-large:             (ceil($font-size-large * $line-height-large) + ($padding-large-vertical * 2) + 0.3);
 $input-height-small:             (floor($font-size-small * $line-height-small) + ($padding-small-vertical * 2) + 0.3);
 
-$form-group-margin-bottom:       floor((strip-unit($gutter-width) / 2)) unit($gutter-width);
+$form-group-margin-bottom:       floor($gutter-width / 2);
 
 $legend-color:                   $text-color;
 $legend-border-color:            transparent;
