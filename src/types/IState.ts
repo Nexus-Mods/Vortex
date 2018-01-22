@@ -210,6 +210,12 @@ export interface IBrowserState {
   url: string;
 }
 
+export interface IModTable {
+  [gameId: string]: {
+    [modId: string]: IMod;
+  };
+}
+
 /**
  * interface for the top-level state object
  * this should precisely mirror the reducer structure
@@ -233,7 +239,7 @@ export interface IState {
   settings: ISettings;
   persistent: {
     profiles: { [profileId: string]: IProfile },
-    mods: { [gameId: string]: { [modId: string]: IMod } },
+    mods: IModTable,
     downloads: IStateDownloads,
     categories: { [gameId: string]: ICategoryDictionary },
     gameMode: IStateGameMode,

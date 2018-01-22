@@ -22,12 +22,24 @@ function rmFill(node) {
   });
 }
 
+function rmStroke(node) {
+  Object.keys(node).forEach(n => {
+    delete node[n].stroke;
+    if (n !== '$') {
+      rmStroke(node[n]);
+    }
+  });
+}
+
 function applyTransforms(svg, cfg) {
   if (svg.$ === undefined) {
     return svg;
   }
   if (cfg.rmFill) {
     rmFill(svg);
+  }
+  if (cfg.rmStroke) {
+    rmStroke(svg);
   }
   if (svg.$['data-color'] !== undefined) {
     delete svg.$['data-color'];

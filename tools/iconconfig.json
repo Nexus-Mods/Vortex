@@ -181,10 +181,6 @@
       "path": "{nucleo}/text editing/{nucleo_simple}_list-bullet",
       "rmFill": true
     },
-    "menu": {
-      "path": "{nucleo}/ui/{nucleo_simple}_menu-dots",
-      "rmFill": true
-    },
     "launch-application": "{fa}/play-circle-o",
     "launch-simple": {
       "path": "{nucleo}/multimedia/{nucleo_simple}_button-play",
@@ -409,6 +405,11 @@
     "sad": {
       "path": "{nucleo}/emoticons/{nucleo_simple}_cry-15",
       "rmFill": true
+    },
+    "menu": {
+      "path": "Nucleo_Outline/interactive icons/32px_dots-to-close-2",
+      "rmFill": true,
+      "rmStroke": true
     }
   }
 }

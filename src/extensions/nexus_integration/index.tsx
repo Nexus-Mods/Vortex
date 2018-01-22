@@ -3,7 +3,7 @@ import { setDialogVisible } from '../../actions/session';
 import Icon from '../../controls/Icon';
 import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
-import { IState } from '../../types/IState';
+import { IModTable, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
@@ -624,14 +624,15 @@ function once(api: IExtensionApi) {
 
   api.events.on('request-nexus-login', (callback: (err: Error) => void) => {
     const id = shortid();
-    const connection = new WebSocket('ws://api.nexusmods.com:46124');
-    connection.on('open', () => {
+    const connection =
+      new WebSocket('ws://api.nexusmods.com:46124')
+        .on('open', () => {
       connection.send(JSON.stringify({
         id, appid: 'Vortex',
       }));
       opn(`https://www.nexusmods.com/sso?id=${id}`);
-    });
-    connection.on('message', data => {
+    })
+    .on('message', data => {
       if (data.toString() !== 'Oh, Hi!') {
         connection.close();
         api.store.dispatch(setUserAPIKey(data.toString()));
@@ -640,7 +641,12 @@ function once(api: IExtensionApi) {
         remote.getCurrentWindow().setAlwaysOnTop(false);
         callback(null);
       }
-    });
+    })
+    .on('error', error => {
+      api.showErrorNotification('Failed to connect to nexusmods', error, {
+        allowReport: false,
+      });
+     });
   });
 
   api.onStateChange(['settings', 'nexus', 'associateNXM'],
@@ -661,12 +667,6 @@ function once(api: IExtensionApi) {
         validateKey(api, newValue);
       }
     });
-
-  interface IModTable {
-    [gameId: string]: {
-      [modId: string]: IMod,
-    };
-  }
 
   let lastModTable = api.store.getState().persistent.mods;
   let lastGameMode = activeGameId(api.store.getState());

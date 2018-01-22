@@ -36,3 +36,7 @@
     align-items: center;
   }
 }
+
+.icon-menu-positioner {
+  z-index: $zindex-menu-layer;
+}

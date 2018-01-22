@@ -162,7 +162,7 @@ function updateConflictInfo(api: types.IExtensionApi,
       t('There are unsolved file conflicts. Such conflicts are not necessarily '
         + 'a problem but you should set up a rule to decide the priorities between '
         + 'these mods, otherwise it will be random (not really but it might as well be).\n'),
-      '[table]',
+      '[table][tbody]',
     ].concat(Object.keys(unsolved).map(modId =>
       '[tr]' + t('[td]{{modName}}[/td]'
                 + '[td][color="red"][svg]flash[/svg][/color][/td]'
@@ -171,7 +171,7 @@ function updateConflictInfo(api: types.IExtensionApi,
             modName: renderModName(mods[modId]),
             conflicts: unsolved[modId].map(
               conflict => '[*] ' + renderModLookup(conflict.otherMod)),
-      }})), '[/table]');
+      }})), '[/tbody][/table]');
     const showDetails = () => {
       store.dispatch(actions.showDialog(
         'info',

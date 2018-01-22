@@ -46,7 +46,10 @@ function Positioner(props: any): JSX.Element {
   const { children, positionLeft, positionTop } = props;
 
   return (
-    <div style={{ top: positionTop, left: positionLeft, position: 'absolute' }}>
+    <div
+      className={props.className}
+      style={{ top: positionTop, left: positionLeft, position: 'absolute' }}
+    >
       <div className='menu-content'>{children}</div>
     </div>
   );
@@ -68,7 +71,7 @@ function PortalMenu(props: IPortalMenuProps, context: any) {
       placement='bottom'
       target={props.target}
     >
-      <Positioner>
+      <Positioner className='icon-menu-positioner'>
         <Dropdown.Menu
           style={{ display: 'block', position: 'initial' }}
           onClose={props.onClose}
@@ -206,7 +209,6 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             onClick={this.toggleCollapsed}
             tooltip={''}
             icon={icon || 'menu'}
-            rotate={90}
             rotateId={`dots-iconbar-${id}`}
             ref={this.setButtonRef}
           />

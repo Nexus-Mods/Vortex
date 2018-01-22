@@ -129,12 +129,12 @@ $screen-md-max:              ($screen-lg-min - 1);
 $zindex-navbar:            1000;
 $zindex-dropdown:          1000;
 $zindex-navbar-fixed:      1030;
-$zindex-menu-layer:        1035;
 // notifications need to be below the modal because clicking the
 // button on a notification often opens the modal and we then can't have the modal covered by
 // the notifications that opened it. We also don't want the user to be able to invoke further
 // dialogs while one is being shown.
-$zindex-notifications:     1037;
+$zindex-notifications:     1033;
+$zindex-menu-layer:        1035;
 $zindex-modal-background:  1040;
 $zindex-modal:             1050;
 $zindex-popover:           1060;

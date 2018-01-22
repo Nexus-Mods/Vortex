@@ -416,7 +416,7 @@ class ThemeEditor extends ComponentEx<IProps, IComponentState> {
 
   private setMargin(theme: { [name: string]: string }) {
     if (theme['gutter-width'] !== undefined) {
-      this.nextState.margin = parseInt(theme['gutter-width'], 30);
+      this.nextState.margin = parseInt(theme['gutter-width'], 10);
     }
   }
 

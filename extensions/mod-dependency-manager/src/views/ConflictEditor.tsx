@@ -191,6 +191,9 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
     const { conflicts, gameId, modId, modRules, mods, onAddRule, onRemoveRule } = this.props;
     const { ruleType } = this.state;
     Object.keys(ruleType).forEach(otherId => {
+      if (mods[otherId] === undefined) {
+        return;
+      }
       if (ruleType[otherId] !== undefined) {
         onAddRule(gameId, modId, {
           reference: this.makeReference(mods[otherId]),
