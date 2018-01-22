@@ -124,10 +124,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     const PanelX: any = Panel;
 
+    const footer = this.renderFooter();
+
     return (
       <form>
         <FormControl.Static componentClass='h4'>{label}</FormControl.Static>
-        <Panel footer={this.renderFooter()}>
+        <Panel>
           <PanelX.Body>
             <ControlLabel>
               {t('Paths')}
@@ -147,7 +149,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </Modal.Body>
             </Modal>
           </PanelX.Body>
+          {footer !== null ? (
+            <PanelX.Footer style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ flex: '1 1 0' }}>
+                {t('Applying changes will cause files to be moved to the new location.')}
+              </div>
+              {footer}
+            </PanelX.Footer>)
+            : null}
         </Panel>
+        <hr />
         <Panel>
           <PanelX.Body>
             <ControlLabel>
@@ -175,7 +186,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private pathsChanged() {
     const { gameMode } = this.props;
-    return !_.isEqual(this.props.paths[gameMode], this.state.paths[gameMode]);
+    return (resolvePath('download', this.props.paths, gameMode)
+            !== resolvePath('download', this.state.paths, gameMode))
+      || (resolvePath('install', this.props.paths, gameMode)
+          !== resolvePath('install', this.state.paths, gameMode));
   }
 
   private pathsAbsolute() {
