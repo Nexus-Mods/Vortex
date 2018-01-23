@@ -40,7 +40,7 @@ interface IConnectedProps {
   plugins: IPlugins;
   loadOrder: { [name: string]: ILoadOrder };
   autoSort: boolean;
-  lootActivity: string;
+  activity: string[];
 }
 
 interface IActionProps {
@@ -267,10 +267,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       {
         component: ToolbarIcon,
         props: () => {
+          const {activity} = this.props;
+          const sorting = (activity || []).indexOf('sorting') !== -1;
           return {
             id: 'btn-sort',
             key: 'btn-sort',
-            icon: 'loot-sort',
+            icon: sorting ? 'spinner' : 'loot-sort',
             text: t('Sort now', { ns: 'gamebryo-plugin' }),
             onClick: () => this.context.api.events.emit('autosort-plugins', true),
           };
@@ -330,7 +332,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, lootActivity } = this.props;
+    const { t } = this.props;
     const { pluginsCombined } = this.state;
 
     const PanelX: any = Panel;
@@ -344,23 +346,16 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           />
         </MainPage.Header>
         <MainPage.Body>
-          <FlexLayout type='column'>
-            <FlexLayout.Fixed>
-              {lootActivity ? <h4>{lootActivity}</h4> : null}
-            </FlexLayout.Fixed>
-            <FlexLayout.Flex>
-              <Panel>
-                <PanelX.Body>
-                  <Table
-                    tableId='gamebryo-plugins'
-                    actions={this.actions}
-                    staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
-                    data={pluginsCombined}
-                  />
-                </PanelX.Body>
-              </Panel>
-            </FlexLayout.Flex>
-          </FlexLayout>
+          <Panel>
+            <PanelX.Body>
+              <Table
+                tableId='gamebryo-plugins'
+                actions={this.actions}
+                staticElements={[this.pluginEnabledAttribute, ...this.pluginAttributes]}
+                data={pluginsCombined}
+              />
+            </PanelX.Body>
+          </Panel>
         </MainPage.Body>
         <MainPage.Overlay>
           <IconBar
@@ -533,12 +528,12 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     const updateSet = {};
     const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
-    pluginsFlat.forEach(plugin => {
+    pluginsFlat.forEach((plugin, idx) => {
       const lo = loadOrder[plugin.name] || {
         enabled: false,
         loadOrder: undefined,
       };
-      pluginsFlat[plugin.name] = lo;
+      Object.assign(pluginsFlat[idx], lo);
       updateSet[plugin.name] = {
         enabled: { $set: lo.enabled },
         loadOrder: { $set: lo.loadOrder },
@@ -587,9 +582,9 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     gameMode: profile !== undefined ? profile.gameId : undefined,
     plugins: state.session.plugins.pluginList,
-    lootActivity: state.session.plugins.lootActivity,
     loadOrder: state.loadOrder,
     autoSort: state.settings.plugins.autoSort,
+    activity: state.session.base.activity['plugins'],
   };
 }
 

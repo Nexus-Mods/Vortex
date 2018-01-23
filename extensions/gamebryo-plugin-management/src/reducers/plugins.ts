@@ -10,12 +10,8 @@ export const pluginsReducer: types.IReducerSpec = {
     [actions.setPluginList as any]: (state, payload) =>
       util.setSafe(state, ['pluginList'], payload.plugins)
     ,
-    [actions.setLootActivity as any]: (state, payload) =>
-      util.setSafe(state, ['lootActivity'], payload)
-    ,
   },
   defaults: {
     pluginList: [],
-    lootActivity: undefined,
   },
 };

@@ -1,5 +1,4 @@
 import {setPluginOrder} from './actions/loadOrder';
-import {setLootActivity} from './actions/plugins';
 import {IPluginsLoot} from './types/IPlugins';
 import {gameSupported, lootAppPath, pluginPath} from './util/gameSupport';
 
@@ -48,7 +47,6 @@ function updateAsync(loot: LootT, masterlistPath: string,
 
 class LootInterface {
   private mExtensionApi: types.IExtensionApi;
-  private mOnSetLootActivity: (activity: string) => void;
   private mInitPromise: Bluebird<{ game: string, loot: LootT }> =
     Bluebird.resolve({ game: undefined, loot: undefined });
   private mSortPromise: Bluebird<string[]> = Bluebird.resolve([]);
@@ -76,10 +74,6 @@ class LootInterface {
     context.api.events.on('autosort-plugins', this.onSort);
 
     context.api.events.on('plugin-details', this.pluginDetails);
-
-    this.mOnSetLootActivity = (activity: string) => {
-      store.dispatch(setLootActivity(activity));
-    };
   }
 
   public async wait(): Promise<void> {
@@ -114,8 +108,12 @@ class LootInterface {
       } catch (err) {}
 
       try {
-        this.mSortPromise = sortAsync(loot, pluginNames);
+        store.dispatch(actions.startActivity('plugins', 'sorting'));
+        this.mSortPromise =
+          this.readLists(gameMode, loot)
+          .then(() => sortAsync(loot, pluginNames));
         const sorted: string[] = await this.mSortPromise;
+        store.dispatch(actions.stopActivity('plugins', 'sorting'));
         store.dispatch(setPluginOrder(sorted));
       } catch (err) {
         log('info', 'loot failed', { error: err.message });
@@ -183,9 +181,9 @@ class LootInterface {
     callback(result);
   }
 
-  private async readLists(gameMode: string, loot: LootT) {
+  // tslint:disable-next-line:member-ordering
+  private readLists = Bluebird.method(async (gameMode: string, loot: LootT) => {
     const t = this.mExtensionApi.translate;
-
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
     const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
 
@@ -211,7 +209,7 @@ class LootInterface {
       log('info', 'loaded loot lists');
       this.mUserlistTime = mtime;
     }
-  }
+  });
 
   // tslint:disable-next-line:member-ordering
   private init = Bluebird.method(async (gameMode: string, gamePath: string) => {
@@ -234,7 +232,6 @@ class LootInterface {
         'failed to update masterlist', err);
     }
 
-    await this.readLists(gameMode, loot);
     return { game: gameMode, loot };
   });
 

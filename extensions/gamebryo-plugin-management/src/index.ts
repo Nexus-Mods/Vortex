@@ -137,9 +137,10 @@ let loot: LootInterface;
 let refreshTimer: NodeJS.Timer;
 
 function register(context: IExtensionContextExt) {
-  const lootActivity = new util.ReduxProp(context.api, [
-    ['session', 'plugins', 'lootActivity'],
-  ], (activity: string) => (activity !== undefined) && (activity !== ''));
+  const pluginActivity = new util.ReduxProp(context.api, [
+    ['session', 'base', 'activity', 'plugins'],
+  ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
+
   context.registerMainPage('plugins', 'Plugins', PluginList, {
     hotkey: 'E',
     group: 'per-game',
@@ -149,7 +150,7 @@ function register(context: IExtensionContextExt) {
         ? nativePlugins(selectors.activeGameId(context.api.store.getState()))
         : [],
     }),
-    activity: lootActivity,
+    activity: pluginActivity,
   });
 
   for (const game of supportedGames()) {
