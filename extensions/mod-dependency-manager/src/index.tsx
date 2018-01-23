@@ -40,6 +40,15 @@ function makeReference(mod: IModInfo): IReference {
 }
 
 function makeModReference(mod: types.IMod): IReference {
+  if ((mod.attributes['fileMD5'] === undefined)
+      && (mod.attributes['logicalFileName'] === undefined)
+      && (mod.attributes['fileName'] === undefined)) {
+    // if none of the usual markers are available, use just the mod name
+    return {
+      fileExpression: mod.attributes['name'],
+    };
+  }
+
   return {
     fileExpression: mod.attributes['fileName'],
     fileMD5: mod.attributes['fileMD5'],
