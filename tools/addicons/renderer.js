@@ -38,6 +38,7 @@ const locations = [
   '{nucleo}/travel/{nucleo_simple}_',
   '{nucleo}/users/{nucleo_simple}_',
   '{nucleo}/weather/{nucleo_simple}_',
+  'Nucleo_Outline/interactive icons/32px_',
   '{fa}/',
 ];
 

@@ -38,6 +38,26 @@ process.env.Path = process.env.Path + path.delimiter + __dirname;
 
 let application: Application;
 
+const handleError = (error: any) => {
+  let details: IError;
+
+  switch (typeof error) {
+    case 'object': {
+      details = (error.message === undefined) && (error.stack === undefined) ?
+                    {message: require('util').inspect(error)} :
+                    {message: error.message, stack: error.stack};
+                 } break;
+    case 'string': {
+      details = {message: error as string};
+                 } break;
+    default: {
+      details = {message: error};
+           } break;
+  }
+
+  terminate(details);
+};
+
 function main() {
   const mainArgs = commandLine(process.argv);
 
@@ -60,23 +80,8 @@ function main() {
   }
   */
 
-  process.on('uncaughtException' as any, (error: any) => {
-    let details: IError;
-
-    switch (typeof error) {
-      case 'object': {
-        details = (error.message === undefined) && (error.stack === undefined)
-        ? { message: require('util').inspect(error) }
-        : { message: error.message, stack: error.stack };
-      }              break;
-      case 'string': {
-        details = {message: error as string};
-      }              break;
-      default: { details = {message: error}; } break;
-    }
-
-    terminate(details);
-  });
+  process.on('uncaughtException', handleError);
+  process.on('unhandledRejection', handleError);
 }
 
 main();

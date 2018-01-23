@@ -14,6 +14,7 @@ import { IMainPage } from '../types/IMainPage';
 import { IProgress, IState } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
 import { getSafe } from '../util/storeHelper';
+import { truthy } from '../util/util';
 import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
@@ -21,6 +22,7 @@ import MainFooter from './MainFooter';
 import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
 import NotificationButton from './NotificationButton';
+import PageButton from './PageButton';
 import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import WindowControls from './WindowControls';
@@ -35,73 +37,11 @@ import { Badge, Button as ReactButton, ControlLabel, FormGroup,
 // tslint:disable-next-line:no-submodule-imports
 import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
-import { truthy } from '../util/util';
 
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
 addStyle(ReactButton, 'ghost');
 addStyle(ReactButton, 'inverted');
-
-interface IPageButtonProps {
-  t: I18next.TranslationFunction;
-  page: IMainPage;
-}
-
-class PageButton extends React.Component<IPageButtonProps, {}> {
-  public componentWillMount() {
-    const { page } = this.props;
-    if (page.badge) {
-      page.badge.attach(this);
-    }
-    if (page.activity) {
-      page.activity.attach(this);
-    }
-  }
-
-  public componentWillUnmount() {
-    const { page } = this.props;
-    if (page.badge) {
-      page.badge.detach(this);
-    }
-    if (page.activity) {
-      page.activity.detach(this);
-    }
-  }
-
-  public render() {
-    const { t, page } = this.props;
-    return (
-      <div>
-        <Icon name={page.icon} />
-        <span className='menu-label'>
-          {t(page.title)}
-        </span>
-        {this.renderBadge()}
-        {this.renderActivity()}
-      </div>
-    );
-  }
-
-  private renderBadge() {
-    const { page } = this.props;
-
-    if (page.badge === undefined) {
-      return null;
-    }
-
-    return <Badge>{page.badge.calculate()}</Badge>;
-  }
-
-  private renderActivity() {
-    const { page } = this.props;
-
-    if ((page.activity === undefined) || !page.activity.calculate()) {
-      return null;
-    }
-
-    return <Spinner />;
-  }
-}
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;
