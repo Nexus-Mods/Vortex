@@ -210,6 +210,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
             tooltip={''}
             icon={icon || 'menu'}
             rotateId={`dots-iconbar-${id}`}
+            stroke
             ref={this.setButtonRef}
           />
           <PortalMenu
