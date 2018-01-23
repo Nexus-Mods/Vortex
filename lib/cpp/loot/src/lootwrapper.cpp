@@ -4,6 +4,7 @@
 #include <map>
 #include <future>
 #include <nan.h>
+#include <sstream>
 
 struct UnsupportedGame : public std::runtime_error {
   UnsupportedGame() : std::runtime_error("game not supported") {}
@@ -42,6 +43,9 @@ public:
     }
     catch (const std::exception &e) {
       SetErrorMessage(e.what());
+    }
+    catch (...) {
+      SetErrorMessage("unknown exception");
     }
   }
 
@@ -85,6 +89,9 @@ public:
     catch (const std::exception &e) {
       SetErrorMessage(e.what());
     }
+    catch (...) {
+      SetErrorMessage("unknown exception");
+    }
   }
 
   void HandleOKCallback() {
@@ -117,58 +124,78 @@ Loot::Loot(std::string gameId, std::string gamePath, std::string gameLocalPath)
   catch (const std::exception &e) {
     Nan::ThrowError(e.what());
   }
+  catch (...) {
+    Nan::ThrowError("unknown exception");
+  }
 }
 
-void Loot::assertNotBusy() const {
-  if (m_Busy) {
-    // TODO Fails with an error I don't understand
-    Nan::ThrowError("Can't be used while asynchronous api is working");
+void Loot::assertNotBusy(const char *call) const {
+  if (m_Busy.length() > 0) {
+    std::ostringstream str;
+    str << call << " called while asynchronous " << m_Busy << " is still running";
+    Nan::ThrowError(str.str().c_str());
   }
 }
 
 void Loot::updateMasterlist(std::string masterlistPath, std::string remoteUrl, std::string remoteBranch,
   nbind::cbFunction &callback) {
-  assertNotBusy();
-  m_Busy = true;
+  assertNotBusy(__func__);
+  m_Busy = __func__;
   Nan::AsyncQueueWorker(
     new Worker<bool>(
       [=]() { return m_Game->GetDatabase()->UpdateMasterlist(masterlistPath, remoteUrl, remoteBranch); },
       new Nan::Callback(callback.getJsFunction()),
-      [this]() -> void { this->m_Busy = false; }
+      [this]() -> void { this->m_Busy = ""; }
   ));
 }
 
 void Loot::loadLists(std::string masterlistPath, std::string userlistPath, nbind::cbFunction &callback)
 {
-  assertNotBusy();
-  m_Busy = true;
+  assertNotBusy(__func__);
+  m_Busy = __func__;
   Nan::AsyncQueueWorker(
     new Worker<void>(
       [=]() { m_Game->GetDatabase()->LoadLists(masterlistPath, userlistPath); },
       new Nan::Callback(callback.getJsFunction()),
-      [this]() -> void { this->m_Busy = false; }));
+      [this]() -> void { this->m_Busy = ""; }));
 }
 
 PluginMetadata Loot::getPluginMetadata(std::string plugin)
 {
-  assertNotBusy();
-  return m_Game->GetDatabase()->GetPluginMetadata(plugin, true, true);
+  assertNotBusy(__func__);
+  try {
+    return m_Game->GetDatabase()->GetPluginMetadata(plugin, true, true);
+  } catch (const std::exception &e) {
+    NBIND_ERR(e.what());
+  } catch (...) {
+    NBIND_ERR("unknown exception");
+  }
+  return loot::PluginMetadata();
 }
 
 MasterlistInfo Loot::getMasterlistRevision(std::string masterlistPath, bool getShortId) const {
-  assertNotBusy();
-  return m_Game->GetDatabase()->GetMasterlistRevision(masterlistPath, getShortId);
+  assertNotBusy(__func__);
+  try {
+    return m_Game->GetDatabase()->GetMasterlistRevision(masterlistPath, getShortId);
+  } catch (const std::exception &e) {
+    NBIND_ERR(e.what());
+  } catch (...) {
+    NBIND_ERR("unknown exception");
+  }
+  return loot::MasterlistInfo();
 }
 
 void Loot::sortPlugins(std::vector<std::string> input, nbind::cbFunction &callback)
 {
-  assertNotBusy();
+  assertNotBusy(__func__);
+  m_Busy = __func__;
+
   Nan::AsyncQueueWorker(
     new Worker<std::vector<std::string>>(
       [this, input]() { return m_Game->SortPlugins(input); },
       new Nan::Callback(callback.getJsFunction()),
     [this]() -> void {
-    this->m_Busy = false;
+    this->m_Busy = "";
   }));
 }
 

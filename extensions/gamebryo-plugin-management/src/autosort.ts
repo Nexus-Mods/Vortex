@@ -3,36 +3,60 @@ import {setLootActivity} from './actions/plugins';
 import {IPluginsLoot} from './types/IPlugins';
 import {gameSupported, lootAppPath, pluginPath} from './util/gameSupport';
 
-import * as Promise from 'bluebird';
+import * as Bluebird from 'bluebird';
 import { remote } from 'electron';
-import {Loot} from 'loot';
+import {Loot as LootT} from 'loot';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
+import userlist from './reducers/userlist';
+
+function sortAsync(loot: LootT, input: string[]) {
+  return new Bluebird<string[]>((resolve, reject) => {
+    loot.sortPlugins(input, (err, sorted) => {
+      if (err !== null) {
+        return reject(err);
+      }
+      return resolve(sorted);
+    });
+  });
+}
+
+function loadListsAsync(loot: LootT, masterlistPath: string, userlistPath: string) {
+  return new Bluebird<void>((resolve, reject) => {
+    loot.loadLists(masterlistPath, userlistPath, (err) => {
+      if (err !== null) {
+        return reject(err);
+      }
+      return resolve();
+    });
+  });
+}
+
+function updateAsync(loot: LootT, masterlistPath: string,
+                     repoUrl: string, repoBranch: string) {
+  return new Bluebird<boolean>((resolve, reject) => {
+    loot.updateMasterlist(masterlistPath, repoUrl, repoBranch, (err, didUpdate) => {
+      if (err !== null) {
+        return reject(err);
+      }
+      return resolve(didUpdate);
+    });
+  });
+}
 
 class LootInterface {
-  private mLoot: Loot;
-  private mLootGame: string;
-  private mLootQueue: Promise<void>;
-  private mOnSetLootActivity: (activity: string) => void;
   private mExtensionApi: types.IExtensionApi;
-  private mOnFirstInit: () => void = null;
+  private mOnSetLootActivity: (activity: string) => void;
+  private mInitPromise: Bluebird<{ game: string, loot: LootT }> =
+    Bluebird.resolve({ game: undefined, loot: undefined });
+  private mSortPromise: Bluebird<string[]> = Bluebird.resolve([]);
 
   private mUserlistTime: Date;
 
-  private sortAsync;
-  private loadListsAsync;
-  private updateAsync;
-
   constructor(context: types.IExtensionContext) {
     const store = context.api.store;
-
-    this.mLootQueue = new Promise<void>((resolve, reject) => {
-      this.mOnFirstInit = () => {
-        resolve();
-      };
-    });
 
     this.mExtensionApi = context.api;
 
@@ -49,34 +73,7 @@ class LootInterface {
     }
 
     // on demand, re-sort the plugin list
-    context.api.events.on('autosort-plugins', (manual: boolean) => {
-      if ((manual || store.getState().settings.plugins.autoSort)
-          && (this.mLoot !== undefined)) {
-        const t = this.mExtensionApi.translate;
-        const state = store.getState();
-        const gameMode = selectors.activeGameId(state);
-        if (!gameSupported(gameMode)) {
-          return;
-        }
-        this.readLists(gameMode);
-        const id = require('shortid').generate();
-        this.enqueue(t('Sorting plugins'), () => {
-          if (gameMode !== this.mLootGame) {
-            // game mode has been switched
-            return Promise.resolve();
-          }
-          let pluginNames: string[] = Object.keys(state.loadOrder);
-          pluginNames = pluginNames.filter((name: string) =>
-            (state.session.plugins.pluginList[name] !== undefined)
-            // TODO: current loot doesn't support esl yet
-            && (path.extname(name) !== '.esl'),
-          );
-          return this.sortAsync(pluginNames)
-            .then((sorted: string[]) => store.dispatch(setPluginOrder(sorted)));
-        });
-      }
-      return Promise.resolve();
-    });
+    context.api.events.on('autosort-plugins', this.onSort);
 
     context.api.events.on('plugin-details', this.pluginDetails);
 
@@ -85,159 +82,161 @@ class LootInterface {
     };
   }
 
-  public wait(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      if (this.mOnFirstInit !== null) {
-        // if the first initialisation hasn't happened yet there is no queue to wait on
-        return resolve();
-      }
-      this.enqueue('', () => {
-        resolve();
-        return Promise.resolve();
-      });
-    });
+  public async wait(): Promise<void> {
+    await this.mInitPromise;
+    await this.mSortPromise;
   }
 
-  private onGameModeChanged = (context: types.IExtensionContext, gameMode: string) => {
-    if (gameMode === this.mLootGame) {
+  private onSort = async (manual: boolean) => {
+    const { translate, store } = this.mExtensionApi;
+    if (manual || store.getState().settings.plugins.autoSort) {
+      const t = translate;
+
+      // ensure initialisation is done
+      const { game, loot } = await this.mInitPromise;
+
+      const state = store.getState();
+      const gameMode = selectors.activeGameId(state);
+      if ((gameMode !== game) || !gameSupported(gameMode)) {
+        return;
+      }
+
+      const id = require('shortid').generate();
+
+      const pluginNames: string[] = Object
+        .keys(state.loadOrder)
+        .filter((name: string) => (state.session.plugins.pluginList[name] !== undefined));
+
+      // ensure no other sort is in progress
+      try {
+        await this.mSortPromise;
+      // tslint:disable-next-line:no-empty
+      } catch (err) {}
+
+      try {
+        this.mSortPromise = sortAsync(loot, pluginNames);
+        const sorted: string[] = await this.mSortPromise;
+        store.dispatch(setPluginOrder(sorted));
+      } catch (err) {
+        log('info', 'loot failed', { error: err.message });
+        if (err.message.startsWith('Cyclic interaction')) {
+          this.reportCycle(err);
+        } else if (err.message.endsWith('is not a valid plugin')) {
+          this.mExtensionApi.sendNotification({
+            id: 'loot-failed',
+            type: 'warning',
+            message: this.mExtensionApi.translate('Not sorted because: {{msg}}',
+              { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
+          });
+        } else {
+          this.mExtensionApi.showErrorNotification('LOOT operation failed',
+                                                   err, { id: 'loot-failed' });
+        }
+      }
+
+    }
+    return Promise.resolve();
+  }
+
+  private onGameModeChanged = async (context: types.IExtensionContext, gameMode: string) => {
+    const { game, loot } = await this.mInitPromise;
+    if (gameMode === game) {
+      // no change
       return;
     }
     const store = context.api.store;
     const gamePath: string = selectors.currentGameDiscovery(store.getState()).path;
     if (gameSupported(gameMode)) {
-      this.init(gameMode, gamePath)
-        .then(() => null)
-        .catch(err => {
-          context.api.showErrorNotification('Failed to initialize LOOT', {
-            message: err.message,
-            game: gameMode,
-            path: gamePath,
-          });
-          this.mLoot = undefined;
+      try {
+        this.mInitPromise = this.init(gameMode, gamePath);
+      } catch (err) {
+        context.api.showErrorNotification('Failed to initialize LOOT', {
+          message: err.message,
+          game: gameMode,
+          path: gamePath,
         });
+        this.mInitPromise = Bluebird.resolve({ game: gameMode, loot: undefined });
+      }
     } else {
-      this.mLoot = undefined;
+      this.mInitPromise = Bluebird.resolve({ game: gameMode, loot: undefined });
     }
   }
 
-  private pluginDetails =
-      (plugins: string[], callback: (result: IPluginsLoot) => void) => {
-        if (this.mLoot === undefined) {
-          callback({});
-          return;
-        }
-        const t = this.mExtensionApi.translate;
-        this.enqueue(t('Reading Plugin Details'), () => {
-          const result: IPluginsLoot = {};
-          plugins.forEach((pluginName: string) => {
-            const meta = this.mLoot.getPluginMetadata(pluginName);
-            result[pluginName] = {
-              messages: meta.messages,
-              tags: meta.tags,
-              cleanliness: meta.cleanInfo,
-              dirtyness: meta.dirtyInfo,
-              globalPriority: meta.globalPriority,
-            };
-          });
-          callback(result);
-          return Promise.resolve();
-        });
-      }
+  private pluginDetails = async (plugins: string[], callback: (result: IPluginsLoot) => void) => {
+    const { game, loot } = await this.mInitPromise;
+    if (loot === undefined) {
+      callback({});
+      return;
+    }
+    const t = this.mExtensionApi.translate;
+    const result: IPluginsLoot = {};
+    plugins.forEach((pluginName: string) => {
+      const meta = loot.getPluginMetadata(pluginName);
+      result[pluginName] = {
+        messages: meta.messages,
+        tags: meta.tags,
+        cleanliness: meta.cleanInfo,
+        dirtyness: meta.dirtyInfo,
+        globalPriority: meta.globalPriority,
+      };
+    });
+    callback(result);
+  }
 
-  private readLists(gameMode: string) {
+  private async readLists(gameMode: string, loot: LootT) {
     const t = this.mExtensionApi.translate;
 
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
     const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
 
-    this.enqueue(t('Load Lists', { ns: 'gamebryo-plugin' }), () => {
-      return fs.statAsync(userlistPath)
-        .then((stat: fs.Stats) => Promise.resolve(stat.mtime))
-        .catch(() => Promise.resolve(null))
-        .then(mtime => {
-          // load & evaluate lists first time we need them and whenever
-          // the userlist has changed
-          if ((mtime !== null) &&
-              ((this.mUserlistTime === undefined) ||
-               (this.mUserlistTime.getTime() !== mtime.getTime()))) {
-            log('info', '(re-)loading loot lists', {
-              mtime,
-              masterlistPath,
-              userlistPath,
-              last: this.mUserlistTime,
-            });
-            return this.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '')
-              .then(() => {
-                log('info', 'loaded loot lists');
-                this.mUserlistTime = mtime;
-              });
-          } else {
-            return Promise.resolve();
-          }
-        })
-        ;
-    });
+    let mtime: Date;
+    try {
+      mtime = (await fs.statAsync(userlistPath)).mtime;
+    } catch (err) {
+      mtime = null;
+    }
+
+    // load & evaluate lists first time we need them and whenever
+    // the userlist has changed
+    if ((mtime !== null) &&
+        ((this.mUserlistTime === undefined) ||
+          (this.mUserlistTime.getTime() !== mtime.getTime()))) {
+      log('info', '(re-)loading loot lists', {
+        mtime,
+        masterlistPath,
+        userlistPath,
+        last: this.mUserlistTime,
+      });
+      await loadListsAsync(loot, masterlistPath, mtime !== null ? userlistPath : '');
+      log('info', 'loaded loot lists');
+      this.mUserlistTime = mtime;
+    }
   }
 
-  private init(gameMode: string, gamePath: string): Promise<void> {
+  // tslint:disable-next-line:member-ordering
+  private init = Bluebird.method(async (gameMode: string, gamePath: string) => {
     const t = this.mExtensionApi.translate;
     const localPath = pluginPath(gameMode);
-    this.mLootGame = gameMode;
-    return fs.ensureDirAsync(localPath)
-      .then(() => {
-        this.mLoot = new Loot(gameMode, gamePath, localPath);
-        this.promisify();
+    await fs.ensureDirAsync(localPath);
 
-        // little bit of hackery: If tasks are queued before the game mode is activated
-        // we assume they are intended for the first active game mode.
-        // In that case those tasks were blocked behind a promise that resolves on the
-        // mOnFirstInit call. But we have to do our initialisation first!
-        let preInitQueue: Promise<void>;
-        if (this.mOnFirstInit !== null) {
-          preInitQueue = this.mLootQueue;
-          this.mLootQueue = Promise.resolve();
-        }
+    const {Loot} = require('loot');
+    const loot: LootT = new Loot(gameMode, gamePath, localPath);
 
-        const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
-        this.enqueue(t('Update Masterlist', { ns: 'gamebryo-plugin' }), () => {
-          return fs.ensureDirAsync(path.dirname(masterlistPath))
-            .then(() =>
-              this.updateAsync(masterlistPath,
-                `https://github.com/loot/${gameMode}.git`,
-                'v0.10')
-                .then(updated => log('info', 'updated loot masterlist', updated))
-                .catch(err => {
-                  this.mExtensionApi.showErrorNotification(
-                    'failed to update masterlist', err);
-                }));
-        });
-        this.readLists(gameMode);
-        if (preInitQueue) {
-          // there were tasks enqueued before the game mode was activated. Now we can run them.
-          // enqueue a new promise that resolves once those pre-init tasks are done and unblock
-          // them.
-          this.enqueue(t('Init Queue'), () => {
-            if (this.mOnFirstInit !== null) {
-              this.mOnFirstInit();
-              this.mOnFirstInit = null;
-            }
-            return new Promise<void>((resolve, reject) => {
-              preInitQueue.then(() => resolve());
-            });
-          });
-        }
-        return null;
-      });
-  }
+    const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
+    try {
+      await fs.ensureDirAsync(path.dirname(masterlistPath));
+      const updated = await updateAsync(loot, masterlistPath,
+        `https://github.com/loot/${gameMode}.git`,
+        'v0.10');
+      log('info', 'updated loot masterlist', updated);
+    } catch (err) {
+      this.mExtensionApi.showErrorNotification(
+        'failed to update masterlist', err);
+    }
 
-  private promisify() {
-    this.sortAsync = Promise.promisify(this.mLoot.sortPlugins,
-      { context: this.mLoot });
-    this.loadListsAsync =
-      Promise.promisify(this.mLoot.loadLists, { context: this.mLoot });
-    this.updateAsync = Promise.promisify(this.mLoot.updateMasterlist,
-      { context: this.mLoot });
-  }
+    await this.readLists(gameMode, loot);
+    return { game: gameMode, loot };
+  });
 
   private reportCycle(err: Error) {
     this.mExtensionApi.sendNotification({
@@ -264,33 +263,6 @@ class LootInterface {
           },
         },
       ],
-    });
-  }
-
-  private enqueue(description: string, step: () => Promise<void>): void {
-    this.mLootQueue = this.mLootQueue.then(() => {
-      this.mOnSetLootActivity(description);
-      log('info', 'loot', description);
-      return step()
-      .catch((err: Error) => {
-        log('info', 'loot failed', { step: description, error: err.message });
-        if (err.message.startsWith('Cyclic interaction')) {
-          this.reportCycle(err);
-        } else if (err.message.endsWith('is not a valid plugin')) {
-          this.mExtensionApi.sendNotification({
-            id: 'loot-failed',
-            type: 'warning',
-            message: this.mExtensionApi.translate('Not sorted because: {{msg}}',
-              { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
-          });
-        } else {
-          this.mExtensionApi.showErrorNotification('LOOT operation failed',
-                                                   err, { id: 'loot-failed' });
-        }
-      })
-      .finally(() => {
-        this.mOnSetLootActivity('');
-      });
     });
   }
 }

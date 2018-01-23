@@ -28,7 +28,7 @@ export function getPluginFlags(plugin: IPluginCombined, t: I18next.TranslationFu
     result.push(t('Native'));
   }
 
-  if (plugin.dirtyness.length > 0) {
+  if ((plugin.dirtyness !== undefined) && (plugin.dirtyness.length > 0)) {
     result.push(t('Dirty'));
   }
   return result;
@@ -73,7 +73,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
   }
 
   const cleanKey = `ico-clean-${plugin.name}`;
-  if (plugin.dirtyness.length > 0) {
+  if ((plugin.dirtyness !== undefined) && (plugin.dirtyness.length > 0)) {
     flags.push(
       <tooltip.Icon
         id={cleanKey}

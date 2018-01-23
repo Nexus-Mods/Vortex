@@ -124,12 +124,12 @@ public:
 
 private:
 
-  void assertNotBusy() const;
+  void assertNotBusy(const char *call) const;
   loot::GameType convertGameId(const std::string &gameId) const;
 
 private:
 
-  bool m_Busy{false};
+  std::string m_Busy = "";
   std::shared_ptr<loot::GameInterface> m_Game;
 
 };
