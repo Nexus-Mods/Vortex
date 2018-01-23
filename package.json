@@ -27,7 +27,7 @@
     "buildwatch": "yarn run build_rest && tsc -p . -w"
   },
   "engines": {
-    "electron": "1.7.10"
+    "electron": "1.7.11"
   },
   "jest": {
     "transform": {
@@ -186,7 +186,7 @@
     "copyfiles": "^1.2.0",
     "cross-env": "^5.1.0",
     "devtron": "^1.4.0",
-    "electron": "1.7.10",
+    "electron": "1.7.11",
     "electron-builder": "^19.40.0",
     "electron-debug": "^1.4.0",
     "electron-download-tf": "^4.3.4",
