@@ -21,4 +21,9 @@ export const appReducer: IReducerSpec = {
     version: '',
     extensions: {},
   },
+  verifiers: {
+    instanceId: { type: 'string' },
+    version: { type: 'string' },
+    extensions: { noUndefined: true },
+  },
 };

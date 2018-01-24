@@ -9,4 +9,7 @@ export const userReducer: IReducerSpec = {
   defaults: {
     multiUser: false,
   },
+  verifiers: {
+    multiUser: { type: 'boolean' },
+  },
 };

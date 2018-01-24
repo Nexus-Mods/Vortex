@@ -424,6 +424,13 @@ export interface IExtensionApi {
   setStylesheet: (key: string, filePath: string) => void;
 }
 
+export interface IStateVerifier {
+  type?: 'map' | 'string' | 'boolean' | 'number' | 'object';
+  noUndefined?: boolean;
+  elements?: { [key: string]: IStateVerifier };
+  required?: boolean;
+}
+
 /**
  * specification a reducer registration has to follow.
  * defaults must be an object with the same keys as
@@ -435,6 +442,7 @@ export interface IExtensionApi {
 export interface IReducerSpec {
   reducers: { [key: string]: (state: any, payload: any) => any };
   defaults: { [key: string]: any };
+  verifiers?: { [key: string]: IStateVerifier };
 }
 
 /**

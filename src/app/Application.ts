@@ -269,13 +269,15 @@ class Application {
         // mark as imported first, otherwise we risk importing again overwriting data.
         // this way we risk not importing but since the old state is still there, that
         // can be repaired
-        return markImported(this.mBasePath)
-          .then(() => {
-            newStore.dispatch({
-              type: '__hydrate',
-              payload: oldState,
-            });
-          });
+        return oldState !== undefined ?
+                   markImported(this.mBasePath)
+                       .then(() => {
+                         newStore.dispatch({
+                           type: '__hydrate',
+                           payload: oldState,
+                         });
+                       }) :
+                   Promise.resolve();
       })
       .then(() => {
         this.mStore = newStore;
