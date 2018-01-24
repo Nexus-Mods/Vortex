@@ -19,33 +19,28 @@ export class Location extends NBindBase {
 }
 
 export class Loot extends NBindBase {
-	/** Loot(std::string, std::string, std::string); */
-	constructor(p0: string, p1: string, p2: string);
+	constructor(gameId: string, gamePath: string, gameLocalPath: string, language: string);
 
-	/** void updateMasterlist(std::string, std::string, std::string, cbFunction &); */
-	updateMasterlist(masterlistPath: string, repoUrl: string, repoBranch: string, callback: (err: Error, didUpdate: boolean) => any): void;
-
-	/** MasterlistInfo getMasterlistRevision(std::string, bool); */
+	updateMasterlist(masterlistPath: string, repoUrl: string, repoBranch: string): boolean;
 	getMasterlistRevision(masterlistPath: string, getShortId: boolean): MasterlistInfo;
-
-	/** void loadLists(std::string, std::string, cbFunction &); */
-	loadLists(masterlistPath: string, userlistPath: string, callback: (...args: any[]) => any): void;
-
-	/** PluginMetadata getPluginMetadata(std::string); */
+	loadLists(masterlistPath: string, userlistPath: string): void;
 	getPluginMetadata(pluginName: string): PluginMetadata;
-
-	/** void sortPlugins(std::vector<std::string>, cbFunction &); */
-	sortPlugins(pluginNames: string[], callback: (...args: any[]) => any): void;
+	sortPlugins(pluginNames: string[]): string[];
 }
 
+export class LootAsync {
+  static create(gameId: string, gamePath: string, gameLocalPath: string, language: string): LootAsync;
+
+  updateMasterlist(masterlistPath: string, repoUrl: string, repoBranch: string, callback: (err: Error, didUpdate: boolean) => void): void;
+  getMasterlistRevision(masterlistPath: string, getShortId: boolean, callback: (err: Error, info: MasterlistInfo) => void): void;
+  loadLists(masterlistPath: string, userlistPath: string, callback: (err: Error) => void): void;
+  getPluginMetadata(pluginName: string, callback: (err: Error, meta: PluginMetadata) => void): void;
+  sortPlugins(pluginNames: string[], callback: (err: Error, sorted: string[]) => void): void;
+};
+
 export class MasterlistInfo extends NBindBase {
-	/** std::string revisionId; -- Read-only */
 	revisionId: string;
-
-	/** std::string revisionDate; -- Read-only */
 	revisionDate: string;
-
-	/** bool isModified; -- Read-only */
 	isModified: boolean;
 }
 

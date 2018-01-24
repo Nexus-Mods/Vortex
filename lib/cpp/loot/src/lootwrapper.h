@@ -7,13 +7,24 @@
 #include <set>
 #include "nbind/nbind.h"
 
-// bound unwrapped
-using loot::Tag;
-using loot::MessageContent;
-using loot::PluginCleaningData;
-using loot::Priority;
-using loot::File;
-using loot::Location;
+template <typename T, typename LootT> std::vector<T> transform(const std::vector<LootT> &input) {
+  std::vector<T> result;
+  for (const auto &ele : input) {
+    result.push_back(ele);
+  }
+  // std::copy(input.begin(), input.end(), result.begin());
+  return result;
+}
+
+template <typename T, typename LootT> std::vector<T> transform(const std::set<LootT> &input) {
+  // std::vector<T> result(input.size());
+  // std::copy(input.begin(), input.end(), result.begin());
+  std::vector<T> result;
+  for (const auto &ele : input) {
+    result.push_back(ele);
+  }
+  return result;
+}
 
 struct MasterlistInfo : public loot::MasterlistInfo {
   MasterlistInfo() {}
@@ -26,110 +37,171 @@ struct MasterlistInfo : public loot::MasterlistInfo {
   bool getIsModified() const;
 };
 
+class File : public loot::File {
+public:
+  File(const loot::File &reference) : loot::File(reference) {}
+
+  void toJS(nbind::cbOutput output) const {
+    output(GetName(), GetDisplayName());
+  }
+};
+
+class Priority : public loot::Priority {
+public:
+  Priority(const loot::Priority &reference) : loot::Priority(reference) {}
+
+  void toJS(nbind::cbOutput output) const {
+    output(GetValue(), IsExplicit());
+  }
+};
+
+class Tag : public loot::Tag {
+public:
+  Tag(const loot::Tag &reference) : loot::Tag(reference) {}
+
+  void toJS(nbind::cbOutput output) const {
+    output(this->GetName(), this->IsAddition(), this->IsConditional(), this->GetCondition());
+  }
+};
+
+class MessageContent : public loot::MessageContent {
+public:
+  MessageContent(const loot::MessageContent &reference) : loot::MessageContent(reference) {}
+
+  void toJS(nbind::cbOutput output) const {
+    output(GetText());
+  }
+};
+
+class Location : public loot::Location {
+public:
+  Location(const loot::Location &reference) : loot::Location(reference) {}
+
+  void toJS(nbind::cbOutput output) const {
+    output(this->GetName(), this->GetURL());
+  }
+};
+
+class PluginCleaningData : public loot::PluginCleaningData {
+public:
+  PluginCleaningData(const loot::PluginCleaningData &reference) : loot::PluginCleaningData(reference) {}
+
+  void toJS(nbind::cbOutput output) const {
+    output(GetCleaningUtility(), GetCRC(), GetDeletedNavmeshCount(), GetDeletedReferenceCount(),
+           GetITMCount(), transform<MessageContent>(GetInfo()));
+  }
+};
+
 class Message : public loot::Message {
 public:
   Message() : loot::Message() {}
-  Message(const loot::Message &reference)
-    : loot::Message(reference)
+  Message(const loot::Message &reference, const std::string &language)
+    : loot::Message(reference), m_Language(language)
   {
   }
 
-  unsigned int type() {
+  void toJS(nbind::cbOutput output) const {
+    output(type(), value(m_Language));
+  }
+
+  unsigned int type() const {
     return static_cast<unsigned int>(GetType());
   }
 
   std::string value(const std::string &language) const {
     return GetContent(language).GetText();
   }
+private:
+  std::string m_Language;
 };
 
-struct PluginMetadata : public loot::PluginMetadata {
-  PluginMetadata(const loot::PluginMetadata &input);
+class PluginMetadata {
+public:
+  PluginMetadata(const loot::PluginMetadata &input, const std::string &language);
 
   void toJS(nbind::cbOutput output) const;
 
-  std::vector<Tag> tags() const {
-    std::set<loot::Tag> tags = GetTags();
-    std::vector<Tag> result(tags.size());
-    std::copy(tags.begin(), tags.end(), result.begin());
+  std::string GetName() const {
+    return m_Wrapped.GetName();
+  }
+
+  bool IsEnabled() const {
+    return m_Wrapped.IsEnabled();
+  }
+
+  Priority GetGlobalPriority() const {
+    return m_Wrapped.GetGlobalPriority();
+  }
+
+  Priority GetLocalPriority() const {
+    return m_Wrapped.GetLocalPriority();
+  }
+
+  std::vector<Tag> GetTags() const {
+    return transform<Tag>(m_Wrapped.GetTags());
+  }
+
+  std::vector<Message> GetMessages() const {
+    const std::vector<loot::Message> messages = m_Wrapped.GetMessages();
+    std::vector<Message> result;
+    for (auto msg : messages) {
+      result.push_back(Message(msg, m_Language));
+    }
     return result;
   }
 
-  std::vector<Message> messages() const {
-    std::vector<loot::Message> messages = GetMessages();
-    std::vector<Message> result(messages.size());
-    std::copy(messages.begin(), messages.end(), result.begin());
-    return result;
-  }
-
-  std::vector<loot::File> requirements() const {
-    std::set<loot::File> files = GetRequirements();
-    std::vector<loot::File> result(files.size());
-    std::copy(files.begin(), files.end(), result.begin());
-    return result;
+  std::vector<File> GetRequirements() const {
+    return transform<File>(m_Wrapped.GetRequirements());
   }
  
-  std::vector<loot::File> incompatibilities() const {
-    std::set<loot::File> files = GetIncompatibilities();
-    std::vector<loot::File> result(files.size());
-    std::copy(files.begin(), files.end(), result.begin());
-    return result;
+  std::vector<File> GetIncompatibilities() const {
+    return transform<File>(m_Wrapped.GetIncompatibilities());
+
   } 
 
-  std::vector<loot::File> loadAfterFiles() const {
-    std::set<loot::File> files = GetLoadAfterFiles();
-    std::vector<loot::File> result(files.size());
-    std::copy(files.begin(), files.end(), result.begin());
-    return result;
+  std::vector<File> GetLoadAfterFiles() const {
+    return transform<File>(m_Wrapped.GetLoadAfterFiles());
   }
 
-  std::vector<loot::PluginCleaningData> cleanInfo() const {
-    std::set<loot::PluginCleaningData> data = GetCleanInfo();
-    std::vector<loot::PluginCleaningData> result(data.size());
-    std::copy(data.begin(), data.end(), result.begin());
-    return result;
+  std::vector<PluginCleaningData> GetCleanInfo() const {
+    return transform<PluginCleaningData>(m_Wrapped.GetCleanInfo());
   }
 
-  std::vector<loot::PluginCleaningData> dirtyInfo() const {
-    std::set<loot::PluginCleaningData> data = GetDirtyInfo();
-    std::vector<loot::PluginCleaningData> result(data.size());
-    std::copy(data.begin(), data.end(), result.begin());
-    return result;
+  std::vector<PluginCleaningData> GetDirtyInfo() const {
+    return transform<PluginCleaningData>(m_Wrapped.GetDirtyInfo());
   }
 
-  std::vector<loot::Location> locations() const {
-    std::set<loot::Location> data = GetLocations();
-    std::vector<loot::Location> result(data.size());
-    std::copy(data.begin(), data.end(), result.begin());
-    return result;
+  std::vector<Location> GetLocations() const {
+    return transform<Location>(m_Wrapped.GetLocations());
   }
+private:
+  loot::PluginMetadata m_Wrapped;
+  std::string m_Language;
 };
 
 class Loot {
 
 public:
 
-  Loot(std::string gameId, std::string gamePath, std::string gameLocalPath);
+  Loot(std::string gameId, std::string gamePath, std::string gameLocalPath, std::string language);
 
-  void updateMasterlist(std::string masterlistPath, std::string remoteUrl, std::string remoteBranch,
-    nbind::cbFunction &callback);
+  bool updateMasterlist(std::string masterlistPath, std::string remoteUrl, std::string remoteBranch);
 
   MasterlistInfo getMasterlistRevision(std::string masterlistPath, bool getShortId) const;
 
-  void loadLists(std::string masterlistPath, std::string userlistPath, nbind::cbFunction &callback);
+  void loadLists(std::string masterlistPath, std::string userlistPath);
 
   PluginMetadata getPluginMetadata(std::string plugin);
 
-  void sortPlugins(std::vector<std::string> input, nbind::cbFunction &callback);
+  std::vector<std::string> sortPlugins(std::vector<std::string> input);
 
 private:
 
-  void assertNotBusy(const char *call) const;
   loot::GameType convertGameId(const std::string &gameId) const;
 
 private:
 
-  std::string m_Busy = "";
+  std::string m_Language;
   std::shared_ptr<loot::GameInterface> m_Game;
 
 };
@@ -153,6 +225,7 @@ NBIND_CLASS(Tag) {
 NBIND_CLASS(Priority) {
   getter(GetValue);
   getter(IsExplicit);
+  method(toJS);
 }
 
 NBIND_CLASS(Message) {
@@ -166,18 +239,17 @@ NBIND_CLASS(File) {
 }
 
 NBIND_CLASS(PluginMetadata) {
-  getter(messages);
   getter(GetName);
-  getter(tags);
-  getter(cleanInfo);
-  getter(dirtyInfo);
+  getter(GetTags);
+  getter(GetCleanInfo);
+  getter(GetDirtyInfo);
   getter(GetGlobalPriority);
-  getter(incompatibilities);
-  getter(loadAfterFiles);
+  getter(GetIncompatibilities);
+  getter(GetLoadAfterFiles);
   getter(GetLocalPriority);
-  getter(locations);
-  getter(requirements);
-  getter(messages);
+  getter(GetLocations);
+  getter(GetRequirements);
+  getter(GetMessages);
   getter(IsEnabled);
 }
  
@@ -196,7 +268,7 @@ NBIND_CLASS(Location) {
 }
 
 NBIND_CLASS(Loot) {
-  construct<std::string, std::string, std::string>();
+  construct<std::string, std::string, std::string, std::string>();
   method(updateMasterlist);
   method(getMasterlistRevision);
   method(loadLists);

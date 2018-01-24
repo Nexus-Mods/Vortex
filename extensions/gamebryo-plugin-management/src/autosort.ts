@@ -4,50 +4,18 @@ import {gameSupported, lootAppPath, pluginPath} from './util/gameSupport';
 
 import * as Bluebird from 'bluebird';
 import { remote } from 'electron';
-import {Loot as LootT} from 'loot';
+import { LootAsync } from 'loot';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {} from 'redux-thunk';
 import {actions, fs, log, selectors, types, util} from 'vortex-api';
 import userlist from './reducers/userlist';
 
-function sortAsync(loot: LootT, input: string[]) {
-  return new Bluebird<string[]>((resolve, reject) => {
-    loot.sortPlugins(input, (err, sorted) => {
-      if (err !== null) {
-        return reject(err);
-      }
-      return resolve(sorted);
-    });
-  });
-}
-
-function loadListsAsync(loot: LootT, masterlistPath: string, userlistPath: string) {
-  return new Bluebird<void>((resolve, reject) => {
-    loot.loadLists(masterlistPath, userlistPath, (err) => {
-      if (err !== null) {
-        return reject(err);
-      }
-      return resolve();
-    });
-  });
-}
-
-function updateAsync(loot: LootT, masterlistPath: string,
-                     repoUrl: string, repoBranch: string) {
-  return new Bluebird<boolean>((resolve, reject) => {
-    loot.updateMasterlist(masterlistPath, repoUrl, repoBranch, (err, didUpdate) => {
-      if (err !== null) {
-        return reject(err);
-      }
-      return resolve(didUpdate);
-    });
-  });
-}
+const LootProm: any = Bluebird.promisifyAll(LootAsync);
 
 class LootInterface {
   private mExtensionApi: types.IExtensionApi;
-  private mInitPromise: Bluebird<{ game: string, loot: LootT }> =
+  private mInitPromise: Bluebird<{ game: string, loot: typeof LootProm }> =
     Bluebird.resolve({ game: undefined, loot: undefined });
   private mSortPromise: Bluebird<string[]> = Bluebird.resolve([]);
 
@@ -109,9 +77,8 @@ class LootInterface {
 
       try {
         store.dispatch(actions.startActivity('plugins', 'sorting'));
-        this.mSortPromise =
-          this.readLists(gameMode, loot)
-          .then(() => sortAsync(loot, pluginNames));
+        this.mSortPromise = this.readLists(gameMode, loot)
+          .then(() => loot.sortPluginsAsync(pluginNames));
         const sorted: string[] = await this.mSortPromise;
         store.dispatch(actions.stopActivity('plugins', 'sorting'));
         store.dispatch(setPluginOrder(sorted));
@@ -168,21 +135,24 @@ class LootInterface {
     }
     const t = this.mExtensionApi.translate;
     const result: IPluginsLoot = {};
-    plugins.forEach((pluginName: string) => {
-      const meta = loot.getPluginMetadata(pluginName);
-      result[pluginName] = {
-        messages: meta.messages,
-        tags: meta.tags,
-        cleanliness: meta.cleanInfo,
-        dirtyness: meta.dirtyInfo,
-        globalPriority: meta.globalPriority,
-      };
+    Bluebird.map(plugins, (pluginName: string) =>
+      loot.getPluginMetadataAsync(pluginName)
+      .then(meta => {
+        result[pluginName] = {
+          messages: meta.messages,
+          tags: meta.tags,
+          cleanliness: meta.cleanInfo,
+          dirtyness: meta.dirtyInfo,
+          globalPriority: meta.globalPriority,
+        };
+      }))
+    .then(() => {
+      callback(result);
     });
-    callback(result);
   }
 
   // tslint:disable-next-line:member-ordering
-  private readLists = Bluebird.method(async (gameMode: string, loot: LootT) => {
+  private readLists = Bluebird.method(async (gameMode: string, loot: typeof LootProm) => {
     const t = this.mExtensionApi.translate;
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
     const userlistPath = path.join(remote.app.getPath('userData'), gameMode, 'userlist.yaml');
@@ -205,7 +175,7 @@ class LootInterface {
         userlistPath,
         last: this.mUserlistTime,
       });
-      await loadListsAsync(loot, masterlistPath, mtime !== null ? userlistPath : '');
+      await loot.loadListsAsync(masterlistPath, mtime !== null ? userlistPath : '');
       log('info', 'loaded loot lists');
       this.mUserlistTime = mtime;
     }
@@ -217,15 +187,13 @@ class LootInterface {
     const localPath = pluginPath(gameMode);
     await fs.ensureDirAsync(localPath);
 
-    const {Loot} = require('loot');
-    const loot: LootT = new Loot(gameMode, gamePath, localPath);
-
+    const loot: any =
+      Bluebird.promisifyAll(await LootProm.createAsync(gameMode, gamePath, localPath, 'en'));
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
     try {
       await fs.ensureDirAsync(path.dirname(masterlistPath));
-      const updated = await updateAsync(loot, masterlistPath,
-        `https://github.com/loot/${gameMode}.git`,
-        'v0.10');
+      const updated = await loot.updateMasterlistAsync(
+          masterlistPath, `https://github.com/loot/${gameMode}.git`, 'v0.10');
       log('info', 'updated loot masterlist', updated);
     } catch (err) {
       this.mExtensionApi.showErrorNotification(

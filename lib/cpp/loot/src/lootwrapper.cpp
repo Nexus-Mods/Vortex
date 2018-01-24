@@ -115,10 +115,11 @@ private:
   std::function<void()> m_IntCallback;
 };
 
-Loot::Loot(std::string gameId, std::string gamePath, std::string gameLocalPath)
+Loot::Loot(std::string gameId, std::string gamePath, std::string gameLocalPath, std::string language)
+  : m_Language(language)
 {
   try {
-    loot::InitialiseLocale("en_US");
+    loot::InitialiseLocale(language);
     m_Game = loot::CreateGameHandle(convertGameId(gameId), gamePath, gameLocalPath);
   }
   catch (const std::exception &e) {
@@ -129,74 +130,49 @@ Loot::Loot(std::string gameId, std::string gamePath, std::string gameLocalPath)
   }
 }
 
-void Loot::assertNotBusy(const char *call) const {
-  if (m_Busy.length() > 0) {
-    std::ostringstream str;
-    str << call << " called while asynchronous " << m_Busy << " is still running";
-    Nan::ThrowError(str.str().c_str());
+bool Loot::updateMasterlist(std::string masterlistPath, std::string remoteUrl, std::string remoteBranch) {
+  try {
+    return m_Game->GetDatabase()->UpdateMasterlist(masterlistPath, remoteUrl, remoteBranch);
+  }
+  catch (const std::exception &e) {
+    NBIND_ERR(e.what());
+    return false;
   }
 }
 
-void Loot::updateMasterlist(std::string masterlistPath, std::string remoteUrl, std::string remoteBranch,
-  nbind::cbFunction &callback) {
-  assertNotBusy(__func__);
-  m_Busy = __func__;
-  Nan::AsyncQueueWorker(
-    new Worker<bool>(
-      [=]() { return m_Game->GetDatabase()->UpdateMasterlist(masterlistPath, remoteUrl, remoteBranch); },
-      new Nan::Callback(callback.getJsFunction()),
-      [this]() -> void { this->m_Busy = ""; }
-  ));
-}
-
-void Loot::loadLists(std::string masterlistPath, std::string userlistPath, nbind::cbFunction &callback)
+void Loot::loadLists(std::string masterlistPath, std::string userlistPath)
 {
-  assertNotBusy(__func__);
-  m_Busy = __func__;
-  Nan::AsyncQueueWorker(
-    new Worker<void>(
-      [=]() { m_Game->GetDatabase()->LoadLists(masterlistPath, userlistPath); },
-      new Nan::Callback(callback.getJsFunction()),
-      [this]() -> void { this->m_Busy = ""; }));
+  try {
+    m_Game->GetDatabase()->LoadLists(masterlistPath, userlistPath);
+  }
+  catch (const std::exception &e) {
+    NBIND_ERR(e.what());
+  }
 }
 
 PluginMetadata Loot::getPluginMetadata(std::string plugin)
 {
-  assertNotBusy(__func__);
   try {
-    return m_Game->GetDatabase()->GetPluginMetadata(plugin, true, true);
-  } catch (const std::exception &e) {
-    NBIND_ERR(e.what());
-  } catch (...) {
-    NBIND_ERR("unknown exception");
+    return PluginMetadata(m_Game->GetDatabase()->GetPluginMetadata(plugin, true, true), m_Language);
   }
-  return loot::PluginMetadata();
+  catch (const std::exception &e) {
+    NBIND_ERR(e.what());
+    return PluginMetadata(loot::PluginMetadata(), m_Language);
+  }
 }
 
 MasterlistInfo Loot::getMasterlistRevision(std::string masterlistPath, bool getShortId) const {
-  assertNotBusy(__func__);
   try {
     return m_Game->GetDatabase()->GetMasterlistRevision(masterlistPath, getShortId);
   } catch (const std::exception &e) {
     NBIND_ERR(e.what());
-  } catch (...) {
-    NBIND_ERR("unknown exception");
+    return loot::MasterlistInfo();
   }
-  return loot::MasterlistInfo();
 }
 
-void Loot::sortPlugins(std::vector<std::string> input, nbind::cbFunction &callback)
+std::vector<std::string> Loot::sortPlugins(std::vector<std::string> input)
 {
-  assertNotBusy(__func__);
-  m_Busy = __func__;
-
-  Nan::AsyncQueueWorker(
-    new Worker<std::vector<std::string>>(
-      [this, input]() { return m_Game->SortPlugins(input); },
-      new Nan::Callback(callback.getJsFunction()),
-    [this]() -> void {
-    this->m_Busy = "";
-  }));
+  return m_Game->SortPlugins(input);
 }
 
 loot::GameType Loot::convertGameId(const std::string &gameId) const {
@@ -216,13 +192,16 @@ loot::GameType Loot::convertGameId(const std::string &gameId) const {
   return iter->second;
 }
 
-PluginMetadata::PluginMetadata(const loot::PluginMetadata &reference)
-  : loot::PluginMetadata(reference)
+PluginMetadata::PluginMetadata(const loot::PluginMetadata &reference, const std::string &language)
+  : m_Wrapped(reference), m_Language(language)
 {
 }
 
 void PluginMetadata::toJS(nbind::cbOutput output) const {
-  output(this->GetName());
+  output(GetName(), GetMessages(), GetTags(), GetCleanInfo(), GetDirtyInfo(),
+    std::vector<Priority>{ GetGlobalPriority() }, std::vector<Priority>{GetLocalPriority()},
+    GetIncompatibilities(), GetLoadAfterFiles(), GetLocations(), GetRequirements(),
+    IsEnabled());
 }
 
 inline MasterlistInfo::MasterlistInfo(loot::MasterlistInfo info)
