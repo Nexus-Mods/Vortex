@@ -152,6 +152,7 @@ export interface IRowProps {
   data: any;
   rawData: any;
   attributes: ITableAttribute[];
+  sortAttribute: string;
   actions: ITableRowAction[];
   language: string;
   onClick: React.MouseEventHandler<any>;
@@ -164,7 +165,6 @@ export interface IRowProps {
 }
 
 class TableRow extends React.Component<IRowProps, {}> {
-
   public shouldComponentUpdate(nextProps: IRowProps) {
     return (this.props.data !== nextProps.data)
       || (this.props.rawData !== nextProps.rawData)
@@ -287,10 +287,19 @@ class TableRow extends React.Component<IRowProps, {}> {
 
   private renderAttribute = (attribute: ITableAttribute, index: number,
                              arr: ITableAttribute[]): JSX.Element => {
-    const { t, data, rawData, tableId } = this.props;
+    const { t, data, rawData, sortAttribute, tableId } = this.props;
+    const classes = [
+      `table-${tableId}`,
+      `cell-${attribute.id}`,
+    ];
+
+    if (attribute.id === sortAttribute) {
+      classes.push('table-sort-column');
+    }
+
     return (
       <TD
-        className={`table-${tableId} cell-${attribute.id}`}
+        className={classes.join(' ')}
         key={attribute.id}
       >
         {this.renderCell(attribute, rawData, data[attribute.id], t,

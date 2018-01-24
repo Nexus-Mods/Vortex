@@ -394,14 +394,25 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       );
   }
 
+  private isSortColumn(attributeState: IAttributeState) {
+    return (attributeState !== undefined)
+      && (attributeState.sortDirection !== undefined)
+      && (attributeState.sortDirection !== 'none');
+  }
+
   private renderRow(data: any, initVisible: boolean,
                     visibleAttributes: ITableAttribute[]): JSX.Element {
-    const { t, actions, language, tableId } = this.props;
+    const { t, actions, attributeState, language, tableId } = this.props;
     const { calculatedValues, rowState } = this.state;
 
     if (calculatedValues[data.id] === undefined) {
       return null;
     }
+
+    const attributes = this.mVisibleAttributes;
+
+    const sortAttribute: ITableAttribute = attributes.find(attribute =>
+      this.isSortColumn(attributeState[attribute.id]));
 
     const rowActions = actions.filter(
       (action) => (action.singleRowAction === undefined) || action.singleRowAction);
@@ -415,6 +426,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         data={calculatedValues[data.id]}
         rawData={data.data}
         attributes={visibleAttributes}
+        sortAttribute={sortAttribute.id}
         actions={rowActions}
         language={language}
         onClick={this.selectRow}
@@ -438,9 +450,16 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       : undefined;
 
     if (attributeState.enabled) {
+      const classes = [
+        `table-${tableId}`,
+        `header-${attribute.id}`,
+      ];
+      if (this.isSortColumn(attributeState)) {
+        classes.push('table-sort-column');
+      }
       return (
         <HeaderCell
-          className={`table-${tableId} header-${attribute.id}`}
+          className={classes.join(' ')}
           key={attribute.id}
           attribute={attribute}
           state={attributeState}
