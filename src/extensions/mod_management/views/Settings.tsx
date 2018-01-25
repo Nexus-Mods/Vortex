@@ -260,7 +260,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .then(() => {
         if (oldDownloadPath !== newDownloadPath) {
           this.setState(setSafe(this.state, ['busy'], t('Moving download directory')));
-          return this.transferPath('download');
+          this.context.api.events.emit('enable-download-watch', false);
+          return this.transferPath('download')
+            .then(() => {
+              this.context.api.events.emit('enable-download-watch', true);
+            });
         } else {
           return Promise.resolve();
         }

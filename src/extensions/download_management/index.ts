@@ -35,6 +35,7 @@ import * as Redux from 'redux';
 import {createSelector} from 'reselect';
 import {generate as shortid} from 'shortid';
 import { delayed } from '../../util/delayed';
+import { activeGameId } from '../../util/selectors';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -86,6 +87,9 @@ function genDownloadChangeHandler(store: Redux.Store<any>,
   const currentDownloadPath = selectors.downloadPath(store.getState());
   const gameId: string = selectors.activeGameId(store.getState());
   return (evt: string, fileName: string) => {
+    if (!watchEnabled) {
+      return;
+    }
     if (evt === 'rename') {
       const filePath = path.join(currentDownloadPath, fileName);
       fs.statAsync(filePath)
@@ -121,6 +125,7 @@ function genDownloadChangeHandler(store: Redux.Store<any>,
 }
 
 let currentWatch: fs.FSWatcher;
+let watchEnabled: boolean = true;
 
 function watchDownloads(api: IExtensionApi, downloadPath: string,
                         onChange: (evt: string, fileName: string) => void) {
@@ -231,10 +236,12 @@ function init(context: IExtensionContextExt): boolean {
       context.api.events.emit('start-download', [url], {});
     });
 
-    const state: IState = store.getState();
     context.api.onStateChange(['settings', 'mods', 'paths'], (prev, cur) => {
-      if ((prev['base'] !== cur['base']) ||
-          (prev['downloads'] !== cur['downloads'])) {
+      const gameMode = activeGameId(store.getState());
+      if ((getSafe(prev, [gameMode, 'base'], undefined)
+           !== getSafe(cur, [gameMode, 'base'], undefined))
+          || (getSafe(prev, [gameMode, 'download'], undefined)
+           !== getSafe(cur, [gameMode, 'download'], undefined))) {
         updateDownloadPath(context.api);
       }
     });
@@ -246,6 +253,10 @@ function init(context: IExtensionContextExt): boolean {
         context.api.store.dispatch(setDownloadHashByFile(path.basename(filePath),
                                    fileMD5, fileSize));
       });
+
+    context.api.events.on('enable-download-watch', (enabled: boolean) => {
+      watchEnabled = enabled;
+    });
 
     {
       manager = new DownloadManagerImpl(
