@@ -13,7 +13,7 @@ import { Button, FormControl, ListGroup, ListGroupItem,
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as ReduxThunk from 'redux-thunk';
-import { actions as nmmActions, ComponentEx, tooltip, types } from 'vortex-api';
+import { actions as nmmActions, ComponentEx, tooltip, types, util } from 'vortex-api';
 
 interface IConnectedProps {
   gameId: string;
@@ -216,13 +216,12 @@ const emptyObj = {};
 const emptyArr = [];
 
 function mapStateToProps(state): IConnectedProps {
-  const dialog = state.session.dependencies.conflictDialog || {};
+  const dialog = state.session.dependencies.conflictDialog || emptyObj;
   return {
     gameId: dialog.gameId,
     modId: dialog.modId,
-    conflicts: dialog.modId !== undefined
-      ? state.session.dependencies.conflicts[dialog.modId]
-      : emptyArr,
+    conflicts:
+      util.getSafe(state, ['session', 'dependencies', 'conflicts', dialog.modId], emptyArr),
     mods: dialog.gameId !== undefined ? state.persistent.mods[dialog.gameId] : emptyObj,
     modRules: dialog.modRules,
   };

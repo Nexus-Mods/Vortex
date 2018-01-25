@@ -1044,11 +1044,13 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 }
 
+const emptyObj = {};
+
 function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedProps {
   return {
     language: state.settings.interface.language,
     attributeState:
-      getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], undefined),
+      getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], emptyObj),
     splitPos: getSafe(state, ['settings', 'tables', ownProps.tableId, 'splitPos'], 200),
     filter: getSafe(state, ['settings', 'tables', ownProps.tableId, 'filter'], undefined),
     advancedMode: state.settings.interface.advanced,
