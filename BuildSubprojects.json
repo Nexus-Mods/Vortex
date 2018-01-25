@@ -253,7 +253,6 @@
   ], [
     {
       "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
       "name": "edge-rebuild",
       "module": "edge",
       "sources": ["node_modules/edge/build/Release/binding.node"]
