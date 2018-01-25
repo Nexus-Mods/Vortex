@@ -426,7 +426,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         data={calculatedValues[data.id]}
         rawData={data.data}
         attributes={visibleAttributes}
-        sortAttribute={sortAttribute.id}
+        sortAttribute={sortAttribute !== undefined ? sortAttribute.id : undefined}
         actions={rowActions}
         language={language}
         onClick={this.selectRow}
