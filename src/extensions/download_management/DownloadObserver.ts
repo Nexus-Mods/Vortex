@@ -175,12 +175,12 @@ export class DownloadObserver {
                                  callback: (error: Error, id: string) => void,
                                  res: IDownloadResult) {
     const filePath = res.filePath;
-    this.mStore.dispatch(downloadProgress(id, res.size, res.size, []));
     this.mStore.dispatch(setDownloadFilePath(id, path.basename(res.filePath)));
     log('debug', 'unfinished chunks', { chunks: res.unfinishedChunks });
     if (res.unfinishedChunks.length > 0) {
       this.mStore.dispatch(pauseDownload(id, true, res.unfinishedChunks));
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
+      this.mStore.dispatch(downloadProgress(id, res.size, res.size, []));
       this.mStore.dispatch(
           finishDownload(id, 'redirect', {htmlFile: res.filePath}));
       if (callback !== undefined) {

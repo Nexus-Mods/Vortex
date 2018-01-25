@@ -456,9 +456,19 @@ class DownloadManager {
     }
     log('info', 'stopping download', { id });
 
+    // first, make sure not-yet-started chungs are paused, otherwise
+    // they might get started as we stop running chunks as that frees
+    // space in the queue
+    download.chunks.forEach((value: IDownloadJob) => {
+      if (value.state === 'init') {
+        value.state = 'finished';
+      }
+    });
+
     // stop running workers
     download.chunks.forEach((value: IDownloadJob) => {
-      if (value.state === 'running') {
+      if ((value.state === 'running')
+          && (this.mBusyWorkers[value.workerId] !== undefined)) {
         this.mBusyWorkers[value.workerId].cancel();
       }
     });
@@ -477,6 +487,15 @@ class DownloadManager {
     log('info', 'pause download', { id });
 
     const unfinishedChunks: IChunk[] = [];
+
+    // first, make sure not-yet-started chungs are paused, otherwise
+    // they might get started as we stop running chunks as that frees
+    // space in the queue
+    download.chunks.forEach((value: IDownloadJob) => {
+      if (value.state === 'init') {
+        value.state = 'paused';
+      }
+    });
 
     // stop running workers
     download.chunks.forEach((value: IDownloadJob) => {
