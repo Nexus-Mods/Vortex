@@ -45,7 +45,9 @@ class GlobalNotifications {
         currentNotification = this.mKnownNotifications[0];
         if (currentNotification !== undefined) {
           log('info', 'new notification', { id: currentNotification.id });
-          this.showNotification(currentNotification);
+          // Notification api broken as of electron 1.7.11
+          // this.showNotification(currentNotification);
+          api.events.emit('show-balloon', currentNotification.title, currentNotification.message);
         }
       }
     });

@@ -33,7 +33,7 @@ class Notifications extends ComponentEx<IProps & IActionProps & IConnectedProps,
           transitionEnterTimeout={500}
           transitionLeaveTimeout={300}
         >
-          { items }
+          {items}
         </CSSTransitionGroup>
       </div>
     );

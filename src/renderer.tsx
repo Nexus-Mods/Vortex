@@ -263,6 +263,10 @@ ipcRenderer.on('relay-event', (sender, event, ...args) => {
   eventEmitter.emit(event, ...args);
 });
 
+ipcRenderer.on('register-relay-listener', (sender, event, ...noArgs) => {
+  eventEmitter.on(event, (...args) => ipcRenderer.send('relay-event', event, ...args));
+});
+
 let currentLanguage: string = store.getState().settings.interface.language;
 store.subscribe(() => {
   const newLanguage: string = store.getState().settings.interface.language;

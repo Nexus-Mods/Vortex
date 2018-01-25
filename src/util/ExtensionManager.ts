@@ -253,10 +253,29 @@ class EventProxy extends EventEmitter {
   constructor(target: Electron.WebContents) {
     super();
     this.mTarget = target;
+    // any listener attached to this proxy will be attached to
+    // the event handler in the target process as well so those events
+    // get relayed to here
+    this.on('newListener', (event, listener) => {
+      // TODO: workaround: instead of two parameters I get one array with two elements.
+      //   this differs from the documentation of newListener so I assume it'a a bug?
+      if (Array.isArray(event)) {
+        event = event[0];
+      }
+      this.mTarget.send('register-relay-listener', event);
+    });
+    // TODO: support removeListener
+    ipcMain.on('relay-event', (event, eventName, ...args) => {
+      if (event.sender === this.mTarget) {
+        super.emit(eventName, ...args);
+      }
+    });
   }
 
   public emit(eventName: string, ...args) {
-    if (this.mTarget !== undefined) {
+    if (!super.emit(eventName, args) && (this.mTarget !== undefined)) {
+      // relay all events this process didn't handle itself to the connected
+      // process
       this.mTarget.send('relay-event', eventName, ...args);
       return true;
     }

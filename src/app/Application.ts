@@ -122,9 +122,9 @@ class Application {
           splash = splashIn;
           return this.createStore();
         })
-        .then(() => this.createTray())
         .then(() => this.initDevel())
         .then(() => this.startUi())
+        .then(() => this.createTray())
         // end initialization
         .then(() => splash.fadeOut())
         .catch((err) => {
@@ -200,8 +200,7 @@ class Application {
 
   private createTray(): Promise<void> {
     const TrayIcon = require('./TrayIcon').default;
-    this.mTray = new TrayIcon();
-    this.mTray.setApi(this.mExtensions.getApi());
+    this.mTray = new TrayIcon(this.mExtensions.getApi());
     return Promise.resolve();
   }
 
