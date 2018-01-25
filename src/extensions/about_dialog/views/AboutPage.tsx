@@ -95,7 +95,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
                 <p>&#169;2017 Black Tree Gaming Ltd.</p>
                 <p>
                   {t('Released under')}
-                  <a onClick={this.showOwnLicense}>GPL-3</a>
+                  {' '}<a onClick={this.showOwnLicense}>GPL-3</a>{' '}
                   {t('License')}
                 </p>
               </Media.Body>
