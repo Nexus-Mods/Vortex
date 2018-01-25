@@ -597,9 +597,15 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('mod-update', (gameId, modId, fileId) => {
+    const state: IState = api.store.getState();
+    if (!getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false)) {
+      // nexusmods can't let users download files directly from client, without
+      // showing ads
+      opn(['https://www.nexusmods.com', convertGameId(gameId), 'mods', modId].join('/'));
+      return;
+    }
     // TODO: Need some way to identify if this request is actually for a nexus mod
     const url = `nxm://${toNXMId(gameId)}/mods/${modId}/files/${fileId}`;
-    const state: IState = api.store.getState();
     const downloads = state.persistent.downloads.files;
 
     // check if the file is already downloaded. If not, download before starting the install
@@ -786,7 +792,7 @@ function init(context: IExtensionContextExt): boolean {
     closable: true,
   });
 
-  context.registerDashlet('Go Premium', 1, 2, 185, GoPremiumDashlet, (state: IState) =>
+  context.registerDashlet('Go Premium', 1, 2, 200, GoPremiumDashlet, (state: IState) =>
     getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined) === false, undefined, {
     fixed: false,
     closable: false,
