@@ -153,6 +153,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     });
   }
 
+  public componentWillUnmount() {
+    this.context.api.events.removeAllListeners(this.props.tableId + '-scroll-to');
+  }
+
   public componentWillReceiveProps(newProps: IProps) {
     if ((newProps.attributeState !== this.props.attributeState)
         || (newProps.objects !== this.props.objects)) {
