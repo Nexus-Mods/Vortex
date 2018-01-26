@@ -165,9 +165,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       name: 'Global Priority',
       description: 'Priority used to sort unrelated plugins (no record conflict, no rules).',
       placement: 'detail',
-      calc: plugin => {
-        return (plugin.globalPriority || { value: 0 }).value;
-      },
+      calc: plugin => util.getSafe(plugin, ['globalPriority', 'value'], 0),
       edit: {
         validate: input => {
           const prio = parseInt(input, 10);
@@ -187,7 +185,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       description: 'Priority used to sort plugins that conflict on records but neither '
                  + 'specifies the other as master and neither has a rule.',
       placement: 'detail',
-      calc: plugin => (plugin.localPriority || { value: 0 }).value,
+      calc: plugin => util.getSafe(plugin, ['localPriority', 'value'], 0),
       edit: {
         validate: input => {
           const prio = parseInt(input, 10);
