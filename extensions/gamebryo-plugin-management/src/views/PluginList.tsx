@@ -1,6 +1,8 @@
 import {setPluginEnabled} from '../actions/loadOrder';
 import {setAutoSortEnabled} from '../actions/settings';
+import { setGlobalPriority, setLocalPriority } from '../actions/userlist';
 import {ILoadOrder} from '../types/ILoadOrder';
+import { ILOOTList, ILOOTPlugin } from '../types/ILOOTList';
 import {
   IPluginCombined,
   IPluginLoot,
@@ -41,11 +43,14 @@ interface IConnectedProps {
   loadOrder: { [name: string]: ILoadOrder };
   autoSort: boolean;
   activity: string[];
+  userlist: ILOOTList;
 }
 
 interface IActionProps {
   onSetPluginEnabled: (pluginName: string, enabled: boolean) => void;
   onSetAutoSortEnabled: (enabled: boolean) => void;
+  onSetLocalPriority: (pluginName: string, priority: number) => void;
+  onSetGlobalPriority: (pluginName: string, priority: number) => void;
 }
 
 interface IComponentState {
@@ -96,7 +101,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       edit: {},
       isSortable: true,
       customRenderer: (plugin: IPluginCombined, detail: boolean, t: I18next.TranslationFunction) =>
-        <PluginFlags plugin={plugin} t={t} />,
+          (<PluginFlags plugin={plugin} t={t} />),
       calc: (plugin: IPluginCombined, t) => getPluginFlags(plugin, t),
       sortFunc: (lhs: string[], rhs: string[]) => lhs.length - rhs.length,
       filter: new PluginFlagsFilter(),
@@ -144,12 +149,56 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       name: 'Priority',
       description: 'Loot priority',
       icon: 'sort-down',
-      placement: 'both',
-      calc: plugin => plugin.globalPriority !== undefined ? plugin.globalPriority.value : 0,
+      placement: 'table',
+      calc: plugin => {
+        const global = (plugin.globalPriority || { value: 0 }).value;
+        const local = (plugin.localPriority || { value: 0 }).value;
+        return `${global} / ${local}`;
+      },
       edit: {},
       isToggleable: true,
       isDefaultVisible: false,
       isSortable: true,
+    },
+    {
+      id: 'global_priority',
+      name: 'Global Priority',
+      description: 'Priority used to sort unrelated plugins (no record conflict, no rules).',
+      placement: 'detail',
+      calc: plugin => {
+        return (plugin.globalPriority || { value: 0 }).value;
+      },
+      edit: {
+        validate: input => {
+          const prio = parseInt(input, 10);
+          return ((prio < -127) || (prio > 127))
+            ? 'error' : 'success';
+        },
+        onChangeValue: (plugin: IPluginCombined, input: string) => {
+          const prio = parseInt(input, 10);
+          this.props.onSetGlobalPriority(plugin.name, prio);
+        },
+      },
+      isVolatile: true,
+    },
+    {
+      id: 'local_priority',
+      name: 'Local Priority',
+      description: 'Priority used to sort plugins that conflict on records but neither '
+                 + 'specifies the other as master and neither has a rule.',
+      placement: 'detail',
+      calc: plugin => (plugin.localPriority || { value: 0 }).value,
+      edit: {
+        validate: input => {
+          const prio = parseInt(input, 10);
+          return ((prio < -127) || (prio > 127))
+            ? 'error' : 'success';
+        },
+        onChangeValue: (plugin: IPluginCombined, input: string) => {
+          const prio = parseInt(input, 10);
+          this.props.onSetLocalPriority(plugin.name, prio);
+        },
+      },
     },
     {
       id: 'dependencies',
@@ -318,7 +367,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       pluginsCombined: { $set: combined },
     }));
 
-    this.updatePlugins(this.props.plugins);
+    this.updatePlugins(this.props.plugins)
+      .then(() => this.applyUserlist(this.props.userlist.plugins));
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
@@ -328,6 +378,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
     if (this.props.loadOrder !== nextProps.loadOrder) {
       this.applyLoadOrder(nextProps.loadOrder);
+    }
+
+    if (this.props.userlist !== nextProps.userlist) {
+      this.applyUserlist(nextProps.userlist.plugins);
     }
   }
 
@@ -497,12 +551,13 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
                           pluginsLoot: { [pluginId: string]: IPluginLoot },
                           pluginsParsed: { [pluginId: string]: IPluginParsed },
                           ): { [id: string]: IPluginCombined } {
-    const { loadOrder } = this.props;
+    const { loadOrder, userlist } = this.props;
 
     const pluginNames = Object.keys(plugins);
 
-    const pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) =>
-      ({
+    const pluginObjects: IPluginCombined[] = pluginNames.map((pluginName: string) => {
+      const userlistEntry = userlist.plugins.find(entry => entry.name === pluginName);
+      const res = {
         name: pluginName,
         modIndex: -1,
         enabled: plugins[pluginName].isNative ? undefined : false,
@@ -510,7 +565,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         ...loadOrder[pluginName],
         ...pluginsLoot[pluginName],
         ...pluginsParsed[pluginName],
-      }));
+      };
+
+      if ((userlistEntry !== undefined) && (userlistEntry.global_priority !== undefined)) {
+        res['globalPriority'] = {
+          IsExplicit: true,
+          value: userlistEntry.global_priority,
+        };
+      }
+
+      return res;
+    });
 
     const modIndices = this.modIndices(pluginObjects);
     const result: { [id: string]: IPluginCombined } = {};
@@ -543,6 +608,33 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     Object.keys(modIndices).forEach(pluginId => {
       updateSet[pluginId].modIndex = { $set: modIndices[pluginId].modIndex };
       updateSet[pluginId].eslIndex = { $set: modIndices[pluginId].eslIndex };
+    });
+
+    this.setState(update(this.state, {
+      pluginsCombined: updateSet,
+    }));
+  }
+
+  private applyUserlist(userlist: ILOOTPlugin[]) {
+    const { pluginsCombined } = this.state;
+
+    const updateSet = {};
+    const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
+    userlist.forEach(plugin => {
+      updateSet[plugin.name] = {};
+
+      if (plugin.global_priority !== undefined) {
+        updateSet[plugin.name]['globalPriority'] = { $set: {
+          IsExplicit: true,
+          value: plugin.global_priority,
+        } };
+      }
+      if (plugin.priority !== undefined) {
+        updateSet[plugin.name]['localPriority'] = { $set: {
+          IsExplicit: true,
+          value: plugin.priority,
+        } };
+      }
     });
 
     this.setState(update(this.state, {
@@ -583,6 +675,7 @@ function mapStateToProps(state: any): IConnectedProps {
     gameMode: profile !== undefined ? profile.gameId : undefined,
     plugins: state.session.plugins.pluginList,
     loadOrder: state.loadOrder,
+    userlist: state.userlist,
     autoSort: state.settings.plugins.autoSort,
     activity: state.session.base.activity['plugins'],
   };
@@ -592,9 +685,12 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetPluginEnabled: (pluginName: string, enabled: boolean) =>
       dispatch(setPluginEnabled(pluginName, enabled)),
-    onSetAutoSortEnabled: (enabled: boolean) => {
-      dispatch(setAutoSortEnabled(enabled));
-    },
+    onSetAutoSortEnabled: (enabled: boolean) =>
+      dispatch(setAutoSortEnabled(enabled)),
+    onSetLocalPriority: (pluginName: string, priority: number) =>
+      dispatch(setLocalPriority(pluginName, priority)),
+    onSetGlobalPriority: (pluginName: string, priority: number) =>
+      dispatch(setGlobalPriority(pluginName, priority)),
   };
 }
 

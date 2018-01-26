@@ -50,12 +50,19 @@ export interface IPluginLoot {
   cleanliness: PluginCleaningData[];
   dirtyness: PluginCleaningData[];
   tags: Tag[];
+  localPriority: Priority;
   globalPriority: Priority;
+}
+
+export interface IPluginUserlist {
+  localPriority?: Priority;
+  globalPriority?: Priority;
 }
 
 export interface IPluginsLoot { [fileName: string]: IPluginLoot; }
 
-export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed & IPluginLoot & {
+export type IPluginCombined = IPlugin & ILoadOrder & IPluginParsed
+                            & IPluginLoot & IPluginUserlist & {
   /**
    * file name of the plugin
    *

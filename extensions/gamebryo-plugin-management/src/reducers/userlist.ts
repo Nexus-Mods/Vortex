@@ -52,6 +52,34 @@ const userlistReducer: types.IReducerSpec = {
         return state;
       }
     },
+    [actions.setLocalPriority as any]: (state, payload) => {
+      let existing: number = -1;
+      if (state.plugins !== undefined) {
+        existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
+      }
+      if (existing !== -1) {
+        return util.setSafe(state, ['plugins', existing, 'priority'],  payload.priority);
+      } else {
+        return util.pushSafe(state, ['plugins'], {
+          name: payload.pluginId,
+          priority: payload.priority,
+        });
+      }
+    },
+    [actions.setGlobalPriority as any]: (state, payload) => {
+      let existing: number = -1;
+      if (state.plugins !== undefined) {
+        existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
+      }
+      if (existing !== -1) {
+        return util.setSafe(state, ['plugins', existing, 'global_priority'],  payload.priority);
+      } else {
+        return util.pushSafe(state, ['plugins'], {
+          name: payload.pluginId,
+          global_priority: payload.priority,
+        });
+      }
+    },
   },
   defaults: {
   },

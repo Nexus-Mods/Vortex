@@ -39,6 +39,7 @@ export interface ILOOTPlugin {
   name: string;
   enabled?: boolean;
   priority?: number;
+  global_priority?: number;
   after?: Array<string | ILootReference>;
   req?: Array<string | ILootReference>;
   inc?: Array<string | ILootReference>;

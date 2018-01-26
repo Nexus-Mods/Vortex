@@ -143,6 +143,7 @@ class LootInterface {
           tags: meta.tags,
           cleanliness: meta.cleanInfo,
           dirtyness: meta.dirtyInfo,
+          localPriority: meta.localPriority,
           globalPriority: meta.globalPriority,
         };
       }))
