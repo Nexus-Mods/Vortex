@@ -151,8 +151,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       icon: 'sort-down',
       placement: 'table',
       calc: plugin => {
-        const global = (plugin.globalPriority || { value: 0 }).value;
-        const local = (plugin.localPriority || { value: 0 }).value;
+        const global = util.getSafe(plugin, ['globalPriority', 'value'], 0);
+        const local = util.getSafe(plugin, ['localPriority', 'value'], 0);
         return `${global} / ${local}`;
       },
       edit: {},
@@ -565,7 +565,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         ...pluginsParsed[pluginName],
       };
 
-      if ((userlistEntry !== undefined) && (userlistEntry.global_priority !== undefined)) {
+      if ((userlistEntry !== undefined)
+          && (userlistEntry.global_priority !== undefined)) {
         res['globalPriority'] = {
           IsExplicit: true,
           value: userlistEntry.global_priority,
@@ -619,6 +620,10 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     const updateSet = {};
     const pluginsFlat = Object.keys(pluginsCombined).map(pluginId => pluginsCombined[pluginId]);
     userlist.forEach(plugin => {
+      if (pluginsCombined[plugin.name] === undefined) {
+        return;
+      }
+
       updateSet[plugin.name] = {};
 
       if (plugin.global_priority !== undefined) {

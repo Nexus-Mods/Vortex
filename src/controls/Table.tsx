@@ -812,7 +812,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     // return unsorted if no sorting column was selected or if the values
     // haven't been calculated yet
     if (sortAttribute === undefined) {
-      return Object.keys(data).map(idsToRows);
+      return Object.keys(data)
+        .map(idsToRows)
+        // catch cases where input data was broken. Code is usually not
+        // equipped to deal with undefined row data
+        .filter(row => row.data !== undefined);
     }
 
     let sortFunction = sortAttribute.sortFunc;
