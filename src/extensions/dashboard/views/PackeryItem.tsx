@@ -27,7 +27,9 @@ class PackeryItem extends React.Component<IProps, {}> {
 
   public render(): JSX.Element {
     const { onDismiss, fixed, height, id, totalWidth, width } = this.props;
-    const widthPerc = Math.round((width / totalWidth) * 100);
+    // round to 2 positions after decimal point. It's fairly noticable if
+    // widgets don't align even by a few pixels
+    const widthPerc = Math.round(((width * 10000) / totalWidth)) / 100;
 
     const classes = [
       'packery-item',
