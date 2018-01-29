@@ -487,19 +487,23 @@ div:hover > .hover-expand {
   }
 }
 
-.table-mods .dropdown > button,
-.table-mods .dropup > button,
-.table-extensions .dropdown > button,
-.table-extensions .dropup > button {
-  padding: 2px 10px;
-  min-width: 100px;
-}
-
-.table-mods .dropdown,
-.table-mods .dropup,
-.table-extensions .dropdown,
-.table-extensions .dropup {
+.xtd .dropdown,
+.xtd .dropup {
   display: inline-flex;
+  width: 100%;
+  > .btn {
+    padding: 2px 10px;
+    border: 0px;
+    &:first-child {
+      flex: 1 1 0;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
+  }
+  > .dropdown-toggle {
+    border-left: 1px solid $gray-light;
+  }
 }
 
 #dropdown-mods-enabled,
