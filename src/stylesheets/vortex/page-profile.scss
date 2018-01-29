@@ -47,6 +47,7 @@
 
     &.active {
       background-color: $table-bg-active;
+      outline: $border-width*2 solid $brand-primary;
     }
     &.disabled {
       background-color: $gray-dark;
