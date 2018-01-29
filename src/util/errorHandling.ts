@@ -134,12 +134,12 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
 
   const referenceId = require('uuid').v4();
   const nexus = new Nexus(undefined, '');
-  return nexus.sendFeedback(
+  return Promise.resolve(nexus.sendFeedback(
     createReport(type, error, app.getVersion()),
     undefined,
     true,
     hash,
-    referenceId)
+    referenceId))
   .then(() => opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`))
   .then(() => undefined);
 }

@@ -61,6 +61,8 @@ import * as WebSocket from 'ws';
 
 type IModWithState = IMod & IProfileMod;
 
+const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
+
 let nexus: NexusT;
 let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
 
@@ -78,7 +80,7 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
 
   const gameId = convertGameId(url.gameId);
 
-  return nexus.getModInfo(url.modId, gameId)
+  return Promise.resolve(nexus.getModInfo(url.modId, gameId))
     .then((modInfo: IModInfo) => {
       nexusModInfo = modInfo;
       return nexus.getFileInfo(url.modId, url.fileId, gameId);
@@ -94,7 +96,7 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
       });
       return new Promise<string>((resolve, reject) => {
         api.events.emit('start-download',
-          () => nexus.getDownloadURLs(url.modId, url.fileId, gameId)
+          () => Promise.resolve(nexus.getDownloadURLs(url.modId, url.fileId, gameId))
                     .map((res: IDownloadURL) => res.URI), {
           game: url.gameId.toLowerCase(),
           source: 'nexus',
@@ -296,14 +298,22 @@ function checkModVersionsImpl(
   gameId: string,
   mods: { [modId: string]: IMod }): Promise<string[]> {
 
+  const now = Date.now();
+
   const modsList: IMod[] = Object.keys(mods)
     .map(modId => mods[modId])
-    .filter(mod => mod.attributes.source === 'nexus');
+    .filter(mod => mod.attributes.source === 'nexus')
+    .filter(mod => (now - (mod.attributes.lastUpdateTime || 0)) > UPDATE_CHECK_DELAY)
+    ;
 
+  log('info', 'checking mods for update (nexus)', { count: modsList.length });
   const {TimeoutError} = require('nexus-api');
 
   return Promise.map(modsList, mod =>
     checkModVersion(store.dispatch, nexus, gameId, mod)
+      .then(() => {
+        store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
+      })
       .catch(TimeoutError, err => {
         const name = modName(mod, { version: true });
         return Promise.resolve(`${name}:\nRequest timeout`);
@@ -470,7 +480,7 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
   const state = api.store.getState();
   const { NexusError, TimeoutError } = require('nexus-api');
 
-  return nexus.validateKey(key)
+  return Promise.resolve(nexus.validateKey(key))
     .then(userInfo =>
       api.store.dispatch(setUserInfo(transformUserInfo(userInfo))))
     .catch(TimeoutError, err => {
@@ -793,7 +803,7 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerDashlet('Go Premium', 1, 2, 200, GoPremiumDashlet, (state: IState) =>
-    getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined) === false, undefined, {
+    getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined) !== true, undefined, {
     fixed: false,
     closable: false,
   });

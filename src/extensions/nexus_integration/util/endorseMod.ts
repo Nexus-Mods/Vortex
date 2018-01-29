@@ -21,7 +21,7 @@ function endorseMod(nexus: Nexus, gameId: string, nexusModId: number,
     endorseStatus = 'abstain';
   }
 
-  return nexus.endorseMod(nexusModId, version, endorseStatus, gameId)
+  return Promise.resolve(nexus.endorseMod(nexusModId, version, endorseStatus, gameId))
       .then(result => result.status);
 }
 
