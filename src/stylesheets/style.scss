@@ -630,3 +630,77 @@ div:hover > .hover-expand {
     }
   }
 }
+.notification-buttons {
+  white-space: nowrap;
+  button {
+    padding: 0px 2px;
+    margin: 0px 2px;
+    background-color: #ffffff;
+    color: $brand-primary;
+    border: $border-width solid #ffffff;
+  }
+}
+#notifications-button:hover .badge{
+  color: $brand-primary;
+  background-color: #ffffff;
+}
+// To make hover and focus states on extensions screen match button colours
+
+.btn-extensions-enabled-enabled:hover {
+  background-color: darken($brand-success, 10%);
+}
+.toggle-extensions-enabled:hover {
+  background-color: darken($brand-success, 10%);
+}
+.btn-extensions-enabled-disabled:hover {
+  background-color: darken($gray, 10%)
+}
+.toggle-extensions-enabled.toggle-extensions-enabled-disabled.dropdown-toggle.btn.btn-default{
+  background-color: darken($gray, 10%);
+}
+
+// To make the plugin buttons hover and focus states match the button colour
+
+#dropdown-gamebryo-plugins-enabled {
+  border-left: $border-width solid darken($brand-success, 10%);
+}
+#dropdown-gamebryo-plugins-enabled:hover {
+  background: darken($brand-success, 10%);
+}
+#dropdown-gamebryo-plugins-enabled:focus {
+  background: darken($brand-success, 10%);
+}
+.btn-gamebryo-plugins-enabled-enabled:hover {
+  background: darken($brand-success, 10%) !important;
+}
+.toggle-gamebryo-plugins-enabled .toggle-gamebryo-plugins-enabled-disabled .dropdown-toggle .btn .btn-default:hover {
+  background: darken($gray, 10%) !important;
+}
+.btn-gamebryo-plugins-enabled-disabled:hover {
+  background: darken($gray, 10%) !important;
+}
+.toggle-gamebryo-plugins-enabled .toggle-gamebryo-plugins-enabled-disabled .dropdown-toggle .btn .btn-default:focus {
+  background: darken($gray, 10%) !important;
+}
+
+// Make games screen games hover state legible
+
+.hover-menu .hover-content .buttons .btn:hover{
+  transition-property: background-color;
+   
+   }
+ .hover-menu .hover-content .buttons .btn:hover{
+ background-color: darken($brand-primary, 20%);
+ color: $gray-darker;
+ transition-duration:  2ms;
+ }
+
+//  Hover on games list view
+
+ .game-list-item.list-group-item:hover {
+  background-color: #2a2c2b;
+}
+
+.nexusmods-action-button {
+  background: #D78F46;
+}
