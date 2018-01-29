@@ -193,7 +193,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       hasActions = rowActions.length > 0;
     }
 
-    const actionHeader = this.renderTableActions();
+    const actionHeader = this.renderTableActions(hasActions);
     const openClass = detailsOpen ? 'open' : 'closed';
 
     const rowIds = Object.keys(rowState).filter(rowId => rowState[rowId].selected);
@@ -350,7 +350,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderTableActions(): JSX.Element {
+  private renderTableActions(hasActions: boolean): JSX.Element {
     const {t, actions, objects, tableId} = this.props;
     const {rowState} = this.state;
 
@@ -379,7 +379,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     return (
       <TH className={`table-${tableId} header-action`}>
-        <div><div className='header-action-label'>{t('Actions')}</div>
+        <div>
+        {hasActions ? <div className='header-action-label'>{t('Actions')}</div> : null}
         {
           elements.length > 0 ? (
             <IconBar
@@ -455,7 +456,6 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     if (attributeState.enabled) {
       const classes = [
-        `table-${tableId}`,
         `header-${attribute.id}`,
       ];
       if (this.isSortColumn(attributeState)) {

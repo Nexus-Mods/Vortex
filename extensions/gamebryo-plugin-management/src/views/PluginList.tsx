@@ -276,8 +276,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       edit: {
         inline: true,
         choices: () => [
-          { key: 'enabled', text: 'Enabled' },
-          { key: 'disabled', text: 'Disabled' },
+          { key: 'enabled', text: 'Enabled', icon: 'toggle-enabled' },
+          { key: 'disabled', text: 'Disabled', icon: 'toggle-disabled' },
         ],
         onChangeValue: (plugin: IPluginCombined, value: any) => {
           if (plugin.isNative) {
