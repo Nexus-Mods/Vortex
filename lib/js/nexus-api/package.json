@@ -14,7 +14,6 @@
   "author": "Black Tree Gaming Ltd.",
   "license": "LGPL-3.0",
   "devDependencies": {
-    "@types/bluebird": "3.5.19",
     "@types/form-data": "^0.0.32",
     "@types/node": "^6.0.45",
     "@types/ref": "^0.0.28",
@@ -24,7 +23,6 @@
     "typescript": "2.6.2"
   },
   "dependencies": {
-    "bluebird": "3.5.1",
     "string-template": "^1.0.0"
   }
 }

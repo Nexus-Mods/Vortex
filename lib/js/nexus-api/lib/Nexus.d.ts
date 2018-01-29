@@ -1,6 +1,4 @@
-/// <reference types="bluebird" />
 import * as types from './types';
-import * as Promise from 'bluebird';
 export declare class NexusError extends Error {
     private mStatusCode;
     constructor(message: string, statusCode: number);
@@ -17,6 +15,7 @@ export declare class HTTPError extends Error {
 declare class Nexus {
     private mBaseData;
     private mBaseURL;
+    private mQuota;
     constructor(game: string, apiKey: string, timeout?: number);
     setGame(gameId: string): void;
     setKey(apiKey: string): void;

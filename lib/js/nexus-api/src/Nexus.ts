@@ -1,6 +1,5 @@
 import * as types from './types';
 
-import * as Promise from 'bluebird';
 import * as fs from 'fs';
 import request = require('request');
 import format = require('string-template');
@@ -103,6 +102,34 @@ function rest(url: string, args: IRequestArgs): Promise<any> {
     : restGet(url, args);
 }
 
+class Quota {
+  private mCount: number;
+  private mMaximum: number;
+  private mMSPerIncrement: number;
+  private mLastCheck: number = Date.now();
+
+  constructor(init: number, max: number, msPerIncrement: number) {
+    this.mCount = init;
+    this.mMaximum = max;
+    this.mMSPerIncrement = msPerIncrement;
+  }
+
+  public wait(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const now = Date.now();
+      const recovered = Math.floor((now - this.mLastCheck) / this.mMSPerIncrement);
+      this.mCount = Math.min(this.mCount + recovered, this.mMaximum);
+      this.mLastCheck = now;
+      --this.mCount;
+      if (this.mCount >= 0) {
+        return resolve();
+      } else {
+        setTimeout(resolve, this.mCount * this.mMSPerIncrement * -1);
+      }
+    });
+  }
+}
+
 /**
  * implements the Nexus API
  *
@@ -112,6 +139,7 @@ class Nexus {
   private mBaseData: IRequestArgs;
 
   private mBaseURL = 'https://api.nexusmods.com/v1';
+  private mQuota;
 
   constructor(game: string, apiKey: string, timeout?: number) {
     this.mBaseData = {
@@ -130,6 +158,8 @@ class Nexus {
         timeout: timeout || 5000,
       },
     };
+
+    this.mQuota = new Quota(10, 50, 200);
   }
 
   public setGame(gameId: string): void {
@@ -140,61 +170,70 @@ class Nexus {
     this.mBaseData.headers.APIKEY = apiKey;
   }
 
-  public validateKey(key?: string): Promise<types.IValidateKeyResponse> {
+  public async validateKey(key?: string): Promise<types.IValidateKeyResponse> {
+    await this.mQuota.wait();
     return rest(this.mBaseURL + '/users/validate',
                 this.args({ headers: this.filter({ APIKEY: key }) }));
   }
 
-  public endorseMod(modId: number, modVersion: string,
-                    endorseStatus: string, gameId?: string): Promise<any> {
+  public async endorseMod(modId: number, modVersion: string,
+                          endorseStatus: string, gameId?: string): Promise<any> {
+    await this.mQuota.wait();
     return rest(this.mBaseURL + '/games/{gameId}/mods/{modId}/{endorseStatus}', this.args({
       path: this.filter({ gameId, modId, endorseStatus }),
       data: this.filter({ Version: modVersion }),
     }));
   }
 
-  public getGames(): Promise<types.IGameListEntry[]> {
+  public async getGames(): Promise<types.IGameListEntry[]> {
+    await this.mQuota.wait();
     return rest(this.mBaseURL + '/games', this.args({}));
   }
 
-  public getGameInfo(gameId?: string): Promise<types.IGameInfo> {
+  public async getGameInfo(gameId?: string): Promise<types.IGameInfo> {
+    await this.mQuota.wait();
     return rest(this.mBaseURL + '/games/{gameId}', this.args({
       path: this.filter({ gameId }),
     }));
   }
 
-  public getModInfo(modId: number, gameId?: string): Promise<types.IModInfo> {
+  public async getModInfo(modId: number, gameId?: string): Promise<types.IModInfo> {
+    await this.mQuota.wait();
     return rest(this.mBaseURL + '/games/{gameId}/mods/{modId}', this.args({
       path: this.filter({ modId, gameId }),
     }));
   }
 
-  public getModFiles(modId: number, gameId?: string): Promise<types.IModFiles> {
+  public async getModFiles(modId: number, gameId?: string): Promise<types.IModFiles> {
+    await this.mQuota.wait();
     return rest(this.mBaseURL + '/games/{gameId}/mods/{modId}/files', this.args({
       path: this.filter({ modId, gameId }),
     }));
   }
 
-  public getFileInfo(modId: number,
-                     fileId: number,
-                     gameId?: string): Promise<types.IFileInfo> {
+  public async getFileInfo(modId: number,
+                           fileId: number,
+                           gameId?: string): Promise<types.IFileInfo> {
+    await this.mQuota.wait();
     return rest(this.mBaseURL + '/games/{gameId}/mods/{modId}/files/{fileId}', this.args({
       path: this.filter({ modId, fileId, gameId }),
     }));
   }
 
-  public getDownloadURLs(modId: number,
-                         fileId: number,
-                         gameId?: string): Promise<types.IDownloadURL[]> {
+  public async getDownloadURLs(modId: number,
+                               fileId: number,
+                               gameId?: string): Promise<types.IDownloadURL[]> {
+    await this.mQuota.wait();
     return rest(this.mBaseURL + '/games/{gameId}/mods/{modId}/files/{fileId}/download_link',
                 this.args({ path: this.filter({ modId, fileId, gameId }) }));
   }
 
-  public sendFeedback(message: string,
-                      fileBundle: string,
-                      anonymous: boolean,
-                      groupingKey?: string,
-                      id?: string) {
+  public async sendFeedback(message: string,
+                            fileBundle: string,
+                            anonymous: boolean,
+                            groupingKey?: string,
+                            id?: string) {
+    await this.mQuota.wait();
     return new Promise<void>((resolve, reject) => {
       const formData = {
         feedback_text: message,

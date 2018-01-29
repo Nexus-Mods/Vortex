@@ -2,10 +2,6 @@
 # yarn lockfile v1
 
 
-"@types/bluebird@3.5.19":
-  version "3.5.19"
-  resolved "https://registry.yarnpkg.com/@types/bluebird/-/bluebird-3.5.19.tgz#1a47308819ac2d1d6d1ca4f5d800ac84924100de"
-
 "@types/form-data@^0.0.32":
   version "0.0.32"
   resolved "https://registry.yarnpkg.com/@types/form-data/-/form-data-0.0.32.tgz#218134515d38929524ff562ba1c6ce93981f3a45"
@@ -41,10 +37,6 @@
   resolved "https://registry.yarnpkg.com/@types/typescript/-/typescript-2.0.0.tgz#c433539c98bae28682b307eaa7a0fd2115b83c28"
   dependencies:
     typescript "*"
-
-bluebird@3.5.1:
-  version "3.5.1"
-  resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.5.1.tgz#d9551f9de98f1fcda1e683d17ee91a0602ee2eb9"
 
 string-template@^1.0.0:
   version "1.0.0"
