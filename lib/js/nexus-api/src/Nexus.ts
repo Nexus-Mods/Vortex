@@ -1,3 +1,4 @@
+import * as param from './parameters';
 import * as types from './types';
 
 import * as fs from 'fs';
@@ -128,6 +129,10 @@ class Quota {
       }
     });
   }
+
+  public setMax(newMax: number) {
+    this.mMaximum = newMax;
+  }
 }
 
 /**
@@ -138,28 +143,29 @@ class Quota {
 class Nexus {
   private mBaseData: IRequestArgs;
 
-  private mBaseURL = 'https://api.nexusmods.com/v1';
+  private mBaseURL = param.API_URL;
   private mQuota;
 
   constructor(game: string, apiKey: string, timeout?: number) {
     this.mBaseData = {
       headers: {
         'Content-Type': 'application/json',
-        APIKEY: apiKey,
+        APIKEY: undefined,
       },
       path: {
         gameId: game,
       },
       requestConfig: {
-        timeout: timeout || 5000,
+        timeout: timeout || param.DEFAULT_TIMEOUT_MS,
         noDelay: true,
       },
       responseConfig: {
-        timeout: timeout || 5000,
+        timeout: timeout || param.DEFAULT_TIMEOUT_MS,
       },
     };
 
-    this.mQuota = new Quota(10, 50, 200);
+    this.mQuota = new Quota(param.QUOTA_MAX, param.QUOTA_MAX, param.QUOTA_RATE_MS);
+    this.setKey(apiKey);
   }
 
   public setGame(gameId: string): void {
@@ -168,6 +174,16 @@ class Nexus {
 
   public setKey(apiKey: string): void {
     this.mBaseData.headers.APIKEY = apiKey;
+    if (apiKey !== undefined) {
+      this.validateKey(apiKey)
+        .then(res => {
+          if (this.mBaseData.headers.APIKEY === apiKey) {
+            this.mQuota.setMax(res['is_premium?'] ? param.QUOTA_MAX_PREMIUM : param.QUOTA_MAX);
+          }
+        });
+    } else {
+      this.mQuota.setMax(param.QUOTA_MAX);
+    }
   }
 
   public async validateKey(key?: string): Promise<types.IValidateKeyResponse> {
