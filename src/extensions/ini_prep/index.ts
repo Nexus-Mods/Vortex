@@ -17,9 +17,11 @@ import renderINITweaks from './TweakList';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import IniParser, {IniFile, WinapiFormat} from 'vortex-parse-ini';
+import { IState } from '../../types/IState';
+import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 
-function ensureIniBackups(gameMode: string): Promise<void> {
-  return Promise.map(iniFiles(gameMode), file => {
+function ensureIniBackups(gameMode: string, discovery: IDiscoveryResult): Promise<void> {
+  return Promise.map(iniFiles(gameMode, discovery), file => {
     const backupFile = file + '.base';
     const bakedFile = file + '.baked';
     return Promise.map([backupFile, bakedFile],
@@ -60,7 +62,7 @@ function applyDelta(data: any, delta: any) {
   });
 }
 
-function discoverSettingsChanges(gameMode: string): Promise<void> {
+function discoverSettingsChanges(gameMode: string, discovery: IDiscoveryResult): Promise<void> {
   const format = iniFormat(gameMode);
   if (format === undefined) {
     return Promise.resolve();
@@ -68,7 +70,7 @@ function discoverSettingsChanges(gameMode: string): Promise<void> {
 
   const parser = new IniParser(genIniFormat(format));
 
-  return Promise.map(iniFiles(gameMode), iniFileName => {
+  return Promise.map(iniFiles(gameMode, discovery), iniFileName => {
     let newContent: any;
     let oldContent: any;
     return parser.read(iniFileName)
@@ -98,7 +100,8 @@ function getBaseFile(input: string): string {
   }
 }
 
-function bakeSettings(gameMode: string, mods: IMod[], paths: any): Promise<void> {
+function bakeSettings(gameMode: string, discovery: IDiscoveryResult,
+                      mods: IMod[], paths: any): Promise<void> {
   const modsPath = resolvePath('install', paths, gameMode);
   const format = iniFormat(gameMode);
   if (format === undefined) {
@@ -107,7 +110,7 @@ function bakeSettings(gameMode: string, mods: IMod[], paths: any): Promise<void>
 
   const enabledTweaks: { [baseFile: string]: string[] } = {};
 
-  const baseFiles = iniFiles(gameMode);
+  const baseFiles = iniFiles(gameMode, discovery);
   const baseFileNames = baseFiles.map(name => path.basename(name).toLowerCase());
   const parser = new IniParser(genIniFormat(format));
 
@@ -144,9 +147,9 @@ function bakeSettings(gameMode: string, mods: IMod[], paths: any): Promise<void>
   .then(() => undefined);
 }
 
-function purgeChanges(gameMode: string) {
+function purgeChanges(gameMode: string, discovery: IDiscoveryResult) {
   return Promise.map(
-      iniFiles(gameMode),
+      iniFiles(gameMode, discovery),
       iniFileName =>
           fs.copyAsync(iniFileName + '.base', iniFileName + '.baked')
               .then(() => fs.copyAsync(iniFileName + '.base', iniFileName)));
@@ -166,7 +169,8 @@ function main(context: IExtensionContext) {
     let deactivated: boolean = false;
 
     context.api.events.on('gamemode-activated', (gameMode: string) => {
-      ensureIniBackups(gameMode)
+      const state: IState = context.api.store.getState();
+      ensureIniBackups(gameMode, state.settings.gameMode.discovered[gameMode])
       .catch(err => {
         context.api.showErrorNotification(
           'Failed to create backups of the ini files for this game.',
@@ -185,9 +189,11 @@ function main(context: IExtensionContext) {
       if (deactivated) {
         return;
       }
-      const paths = context.api.store.getState().settings.mods.paths;
-      discoverSettingsChanges(gameId)
-        .then(() => bakeSettings(gameId, mods, paths))
+      const state: IState = context.api.store.getState();
+      const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
+      const paths = state.settings.mods.paths;
+      discoverSettingsChanges(gameId, discovery)
+        .then(() => bakeSettings(gameId, discovery, mods, paths))
         .then(() => callback(null))
         .catch(err => callback(err));
     });
@@ -196,9 +202,11 @@ function main(context: IExtensionContext) {
       if (deactivated) {
         return;
       }
-      const gameMode = activeGameId(context.api.store.getState());
-      discoverSettingsChanges(gameMode)
-        .then(() => purgeChanges(gameMode));
+      const state: IState = context.api.store.getState();
+      const gameMode = activeGameId(state);
+      const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameMode];
+      discoverSettingsChanges(gameMode, discovery)
+        .then(() => purgeChanges(gameMode, discovery));
     });
   });
 }

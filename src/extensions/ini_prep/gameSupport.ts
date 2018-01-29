@@ -3,6 +3,8 @@ import { getSafe } from '../../util/storeHelper';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import format = require('string-template');
+import { IState } from '../../types/IState';
+import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 
 const app = appIn || remote.app;
 
@@ -58,16 +60,17 @@ const gameSupport = {
   },
   morrowind: {
     iniFiles: [
-      path.join('{mygames}', 'Morrowind', 'Morrowind.ini'),
+      path.join('{game}', 'Morrowind.ini'),
     ],
     iniFormat: 'winapi',
   },
 };
 
-export function iniFiles(gameMode: string) {
+export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
   const mygames = path.join(app.getPath('documents'), 'My Games');
+
   return getSafe(gameSupport, [gameMode, 'iniFiles'], []).map(file => format(file, {
-    mygames }));
+    mygames, game: discovery.path }));
 }
 
 export function iniFormat(gameMode: string) {

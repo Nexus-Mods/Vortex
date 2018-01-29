@@ -35,7 +35,7 @@ const gameSupport = {
   },
   morrowind: {
     mygamesPath: 'Morrowind',
-    gameSettingsFiles: ['Morrowind.ini'],
+    gameSettingsFiles: [],
   },
 };
 

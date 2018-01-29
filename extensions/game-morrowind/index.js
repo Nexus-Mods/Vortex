@@ -1,4 +1,5 @@
 const Promise = require('bluebird');
+const { util } = require('vortex-api');
 const Registry = require('winreg');
 
 function findGame() {
@@ -9,7 +10,9 @@ function findGame() {
 
   let regKey = new Registry({
     hive: Registry.HKLM,
-    key: '\\Software\\Wow6432Node\\Bethesda Softworks\\Morrowind',
+    // Morrowind, being an old application, has its registry accesses
+    // redirected post Vista (?)
+    key: '\\Software\\Classes\\VirtualStore\\MACHINE\\SOFTWARE\\Wow6432Node\\bethesda softworks\\Morrowind',
   });
 
   return new Promise((resolve, reject) => {
@@ -19,6 +22,25 @@ function findGame() {
       } else {
         resolve(result.value);
       }
+    });
+  })
+  .catch(err => {
+    // on my system Installed Path is not set, even though the internet says it should.
+    // try Steam as well
+    let steam = new util.Steam();
+    return steam.allGames()
+    .then((games) => {
+      console.log('games', games.map(game => game.name));
+      let morrowind = games.find((entry) => entry.name === 'The Elder Scrolls III: Morrowind');
+      console.log('mw', morrowind);
+      if (morrowind !== undefined) {
+        return morrowind.gamePath;
+      }
+      return null;
+    })
+    .catch((err) => {
+      log('debug', 'no steam installed?', { err: err.message });
+      return null;
     });
   });
 }
@@ -33,7 +55,7 @@ function main(context) {
     mergeMods: true,
     queryPath: findGame,
     supportedTools: tools,
-    queryModPath: () => 'data',
+    queryModPath: () => 'Data Files',
     logo: 'gameart.png',
     executable: () => 'morrowind.exe',
     requiredFiles: [
