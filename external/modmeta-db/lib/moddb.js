@@ -18,7 +18,7 @@ class ModDB {
                 'files',
                 nexusObj.file_details.file_id,
             ];
-            const page = `http://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
+            const page = `https://www.nexusmods.com/${nexusObj.mod.game_domain}/mods/${nexusObj.mod.mod_id}/`;
             return {
                 key: `hash:${nexusObj.file_details.md5}:${nexusObj.file_details.size}:${gameId}:`,
                 value: {
@@ -252,8 +252,8 @@ class ModDB {
                     }
                 })
                     .catch(err => {
-                    this.mLog('warn', 'failed to query', {
-                        server: server.url, key, gameId, error: err.message,
+                    this.mLog('warn', 'failed to query by key', {
+                        server: server.url, key, gameId, error: err.message.toString(),
                     });
                     this.mBlacklist.add(JSON.stringify({ key, gameId }));
                 });
@@ -297,8 +297,9 @@ class ModDB {
                     }
                 })
                     .catch(err => {
-                    this.mLog('warn', 'failed to query', {
-                        server: server.url, logicalName, versionMatch, error: err.message,
+                    this.mLog('warn', 'failed to query by logical name', {
+                        server: server.url, logicalName, versionMatch,
+                        error: err.message.toString(),
                     });
                     this.mBlacklist.add(JSON.stringify({ logicalName, versionMatch }));
                 });
@@ -337,8 +338,9 @@ class ModDB {
                     }
                 })
                     .catch(err => {
-                    this.mLog('warn', 'failed to query', {
-                        server: server.url, expression, versionMatch, error: err.message,
+                    this.mLog('warn', 'failed to query by expression', {
+                        server: server.url, expression, versionMatch,
+                        error: err.message.toString(),
                     });
                     this.mBlacklist.add(JSON.stringify({ expression, versionMatch }));
                 });
