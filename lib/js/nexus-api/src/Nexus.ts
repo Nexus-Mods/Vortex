@@ -270,8 +270,8 @@ class Nexus {
       }
 
       const url = anonymous
-        ? 'https://api.nexusmods.com/v1/feedbacks/anonymous'
-        : 'https://api.nexusmods.com/v1/feedbacks';
+        ? `${param.API_URL}/feedbacks/anonymous`
+        : `${param.API_URL}/feedbacks`;
 
       request.post({
         headers,

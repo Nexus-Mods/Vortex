@@ -110,6 +110,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     };
 
     this.settingsPage = {
+      id: 'application_settings',
       title: 'Settings',
       group: 'global',
       component: Settings,
@@ -120,8 +121,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     this.applicationButtons = [];
 
-    this.props.api.events.on('show-main-page', title => {
-      this.setMainPage(title, false);
+    this.props.api.events.on('show-main-page', pageId => {
+      this.setMainPage(pageId, false);
     });
 
     this.props.api.events.on('show-modal', id => {
@@ -353,14 +354,14 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
   }
 
-  private renderPageButton = (page: IMainPage) => {
+  private renderPageButton = (page: IMainPage, idx: number) => {
     const { t, secondaryPage } = this.props;
     return (
       <NavItem
-        id={page.title}
-        className={secondaryPage === page.title ? 'secondary' : undefined}
-        key={page.title}
-        eventKey={page.title}
+        id={page.id}
+        className={secondaryPage === page.id ? 'secondary' : undefined}
+        key={page.id}
+        eventKey={page.id}
         tooltip={t(page.title)}
         placement='right'
         onClick={this.handleClickPage}
@@ -377,19 +378,19 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const { t, mainPage, secondaryPage } = this.props;
     const { loadedPages } = this.state;
 
-    if (loadedPages.indexOf(page.title) === -1) {
+    if (loadedPages.indexOf(page.id) === -1) {
       // don't render pages that have never been opened
       return null;
     }
 
-    const active = [mainPage, secondaryPage].indexOf(page.title) !== -1;
+    const active = [mainPage, secondaryPage].indexOf(page.id) !== -1;
 
     return (
       <MainPageContainer
-        key={page.title}
+        key={page.id}
         page={page}
         active={active}
-        secondary={secondaryPage === page.title}
+        secondary={secondaryPage === page.id}
         overlayPortal={this.getOverlayRef}
       />
     );
@@ -416,21 +417,23 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.updateState({ showLayer: { $set: layer } });
   }
 
-  private setMainPage = (title: string, secondary: boolean) => {
-    if (this.props.mainPage !== title) {
+  private setMainPage = (pageId: string, secondary: boolean) => {
+    if (this.props.mainPage !== pageId) {
       this.props.onSetOverlayOpen(false);
     }
     // set the page as "loaded", set it as the shown page next frame.
     // this way it gets rendered as hidden once and can then "transition"
     // to visible
-    this.updateState({
-      loadedPages: { $push: [title] },
-    });
+    if (this.state.loadedPages.indexOf(pageId) === -1) {
+      this.updateState({
+        loadedPages: { $push: [pageId] },
+      });
+    }
     setImmediate(() => {
-      if (secondary && (title === this.props.secondaryPage)) {
+      if (secondary && (pageId === this.props.secondaryPage)) {
         this.props.onSetOpenMainPage('', secondary);
       } else {
-        this.props.onSetOpenMainPage(title, secondary);
+        this.props.onSetOpenMainPage(pageId, secondary);
       }
     });
   }
@@ -493,9 +496,12 @@ function registerMainPage(
   icon: string,
   title: string,
   component: React.ComponentClass<any> | React.StatelessComponent<any>,
-  options: IMainPageOptions) {
+  options: IMainPageOptions): IMainPage {
   return {
-    icon, title, component,
+    id: options.id || title,
+    icon,
+    title,
+    component,
     propsFunc: options.props || emptyFunc,
     visible: options.visible || trueFunc,
     group: options.group,

@@ -206,6 +206,7 @@
     "react-fontawesome": "^1.6.1",
     "react-shallow-testutils": "^3.0.0",
     "react-transition-group": "^2.2.1",
+    "redux-freeze": "^0.1.5",
     "rm-local-modules": "^0.0.2",
     "rollup-plugin-typescript": "^0.8.1",
     "ts-jest": "^21.1.3",

@@ -62,10 +62,9 @@ import thunkMiddleware from 'redux-thunk';
 
 import crashDump from 'crash-dump';
 
-import luckyOrange from './util/luckyorange';
-
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
+import { getSafe } from './util/storeHelper';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -92,10 +91,6 @@ Promise.config({
   // long stack traces would be sooo nice but the performance cost in some places is ridiculous
   longStackTraces: false,
 });
-
-if (process.env.NODE_ENV !== 'development') {
-  luckyOrange();
-}
 
 // set up store. Through the electronEnhancer this is automatically
 // synchronized with the main process store
@@ -190,11 +185,11 @@ process.on('uncaughtException' as any, (error: any) => {
 });
 */
 window.addEventListener('error', (evt: any) => {
-  terminateFromError(evt.reason || evt.detail.reason);
+  terminateFromError(evt.reason || getSafe(evt, ['detail', 'reason'], evt.message));
 });
 
 window.addEventListener('unhandledrejection', (evt: any) => {
-  terminateFromError(evt.reason || evt.detail.reason);
+  terminateFromError(evt.reason || getSafe(evt, ['detail', 'reason'], evt.message));
 });
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
@@ -205,8 +200,9 @@ let enhancer = null;
 
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
+  const freeze = require('redux-freeze');
   enhancer = compose(
-    applyMiddleware(...middleware),
+    applyMiddleware(...middleware, freeze),
     electronEnhancer({ filter }),
     (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__(),
   );

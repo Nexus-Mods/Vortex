@@ -32,7 +32,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         label: title,
         accelerator: options.hotkey !== undefined ? 'CmdOrCtrl+Shift+' + options.hotkey : undefined,
         click(item, focusedWindow) {
-          extensions.getApi().events.emit('show-main-page', title);
+          extensions.getApi().events.emit('show-main-page', options.id || title);
         },
       });
   });

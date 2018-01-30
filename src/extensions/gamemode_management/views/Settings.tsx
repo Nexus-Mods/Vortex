@@ -82,7 +82,7 @@ class Settings extends ComponentEx<IProps, {}> {
         <FormGroup id='search-paths'>
           <ControlLabel>{t('Search Paths')}</ControlLabel>
           <ListGroup className='list-game-search'>
-            {searchPaths.sort().map(this.renderPath)}
+            {[].concat(searchPaths).sort().map(this.renderPath)}
           </ListGroup>
           <Button onClick={this.addSearchPath}>
             {t('Add Search Directory')}

@@ -79,7 +79,7 @@ type FinishCallback = (paused: boolean) => void;
 class DownloadWorker {
   private static BUFFER_SIZE = 256 * 1024;
   private mJob: IDownloadJob;
-  private mRequest: https.ClientRequest;
+  private mRequest: http.ClientRequest;
   private mProgressCB: (bytes: number) => void;
   private mFinishCB: FinishCallback;
   private mHeadersCB: (headers: any) => void;

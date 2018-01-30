@@ -11,12 +11,13 @@ import * as React from 'react';
  * @interface IMainPage
  */
 export interface IMainPage {
+  id: string;
   icon: string;
   title: string;
-  component: React.ComponentClass<any>;
+  component: React.ComponentClass<any> | React.StatelessComponent<any>;
   propsFunc: () => any;
   visible: () => boolean;
-  group: 'global' | 'per-game' | 'support';
+  group: 'global' | 'per-game' | 'support' | 'hidden' | 'dashboard';
   priority?: number;
   badge?: ReduxProp<any>;
   activity?: ReduxProp<boolean>;

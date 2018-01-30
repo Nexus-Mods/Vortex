@@ -70,6 +70,11 @@ export type RegisterBanner =
    options: IBannerOptions) => void;
 
 export interface IMainPageOptions {
+  /**
+   * id for this page. If none is specified the page title is used. Use the id to avoid
+   * name collisions if another extension is already using the same title.
+   */
+  id?: string;
   hotkey?: string;
   visible?: () => boolean;
   group: 'dashboard' | 'global' | 'per-game' | 'support' | 'hidden';
