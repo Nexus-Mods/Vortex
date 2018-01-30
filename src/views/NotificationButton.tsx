@@ -76,7 +76,11 @@ class NotificationButton extends ComponentEx<IProps, {}> {
   private setRef = ref => {
     this.mRef = ref;
     if (ref !== null) {
-      this.mRef.show();
+      if (this.props.notifications.length > 0) {
+        this.mRef.show();
+      } else {
+        this.mRef.hide();
+      }
     }
   }
 
