@@ -205,7 +205,7 @@ bluebird-lst@^1.0.5:
   dependencies:
     bluebird "^3.5.1"
 
-bluebird@3.5.1, bluebird@^3.4.0, bluebird@^3.4.7, bluebird@^3.5.0, bluebird@^3.5.1:
+bluebird@^3.4.0, bluebird@^3.4.7, bluebird@^3.5.0, bluebird@^3.5.1:
   version "3.5.1"
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.5.1.tgz#d9551f9de98f1fcda1e683d17ee91a0602ee2eb9"
 
@@ -2034,7 +2034,6 @@ negotiator@0.6.1:
 "nexus-api@file:../lib/js/nexus-api":
   version "0.2.1"
   dependencies:
-    bluebird "3.5.1"
     string-template "^1.0.0"
 
 node-7z@Nexus-Mods/node-7z:
