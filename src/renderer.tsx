@@ -185,11 +185,15 @@ process.on('uncaughtException' as any, (error: any) => {
 });
 */
 window.addEventListener('error', (evt: any) => {
-  terminateFromError(evt.reason || getSafe(evt, ['detail', 'reason'], evt.message));
+  terminateFromError(evt.reason
+    || ((evt.detail !== undefined) ? evt.detail.reason : undefined)
+    || evt.message);
 });
 
 window.addEventListener('unhandledrejection', (evt: any) => {
-  terminateFromError(evt.reason || getSafe(evt, ['detail', 'reason'], evt.message));
+  terminateFromError(evt.reason
+    || ((evt.detail !== undefined) ? evt.detail.reason : undefined)
+    || evt.message);
 });
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();

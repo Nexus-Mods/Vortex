@@ -4,7 +4,7 @@ import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
 import {} from '../util/delayed';
 import * as develT from '../util/devel';
-import {} from '../util/errorHandling';
+import { terminate } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
@@ -128,7 +128,7 @@ class Application {
         // end initialization
         .then(() => splash.fadeOut())
         .catch((err) => {
-          require('../util/errorHandling').terminate({
+          terminate({
             message: 'Startup failed',
             details: err.message,
             stack: err.stack,

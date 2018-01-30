@@ -49,18 +49,26 @@ export function setLogPath(basePath: string) {
  * @export
  */
 export function setupLogging(basePath: string, useConsole: boolean): void {
-  logger.add(logger.transports['File'], {
-    filename: path.join(basePath, 'vortex.log'),
-    json: false,
-    level: 'debug',
-    maxsize: 1024 * 1024,
-    maxFiles: 5,
-    tailable: true,
-    timestamp: () => new Date().toUTCString(),
-  });
+  try {
+    logger.add(logger.transports['File'], {
+      filename: path.join(basePath, 'vortex.log'),
+      json: false,
+      level: 'debug',
+      maxsize: 1024 * 1024,
+      maxFiles: 5,
+      tailable: true,
+      timestamp: () => new Date().toUTCString(),
+    });
 
-  if (!useConsole) {
-    logger.remove(logger.transports['Console']);
+    if (!useConsole) {
+      logger.remove(logger.transports['Console']);
+    }
+  } catch (err) {
+    // logger.add dynamically calls requires('./transport/file'). For some reason that
+    // fails when this exe is called from chrome as a protocol handler. I've debugged as
+    // far as I can, it fails in a stat call to asar. The parameter is fine, the file
+    // exists and it worked in past versions so it appears to be a bug in electron
+    logger.log('error', 'Failed to set up logging to file', {error: err.message});
   }
 }
 
