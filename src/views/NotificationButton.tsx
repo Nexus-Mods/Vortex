@@ -46,7 +46,7 @@ class NotificationButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, id, notifications } = this.props;
 
-    const items = notifications.sort(this.inverseSort).map(this.renderNotification);
+    const items = [].concat(notifications).sort(this.inverseSort).map(this.renderNotification);
 
     const popover = (
       <Popover id='notifications-popover' arrowOffsetLeft={64}>

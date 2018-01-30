@@ -180,6 +180,9 @@ class Nexus {
           if (this.mBaseData.headers.APIKEY === apiKey) {
             this.mQuota.setMax(res['is_premium?'] ? param.QUOTA_MAX_PREMIUM : param.QUOTA_MAX);
           }
+        })
+        .catch(err => {
+          this.mQuota.setMax(param.QUOTA_MAX);
         });
     } else {
       this.mQuota.setMax(param.QUOTA_MAX);
