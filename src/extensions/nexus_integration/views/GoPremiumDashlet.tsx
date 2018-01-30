@@ -10,9 +10,9 @@ class GoPremiumDashlet extends ComponentEx<{}, {}> {
     const { t } = this.props;
     return (
       <Dashlet title='' className='dashlet-go-premium nexus-main-banner'>
-        <div class="gopremium-widget-text">{t('Go Premium')}</div>
-        <div class="gopremium-widget-text">{t('Uncapped downloads, no adverts')}</div>
-        <div class="gopremium-widget-text">{t('Support Nexus Mods')}</div>
+        <div className='gopremium-widget-text'>{t('Go Premium')}</div>
+        <div className='gopremium-widget-text'>{t('Uncapped downloads, no adverts')}</div>
+        <div className='gopremium-widget-text'>{t('Support Nexus Mods')}</div>
         <div className='right-center'>
           <Button bsStyle='ad' onClick={this.goBuyPremium}>{t('Go Premium')}</Button>
         </div>
