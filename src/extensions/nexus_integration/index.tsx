@@ -641,7 +641,7 @@ function once(api: IExtensionApi) {
   api.events.on('request-nexus-login', (callback: (err: Error) => void) => {
     const id = shortid();
     const connection =
-      new WebSocket('ws://api.nexusmods.com:46124')
+      new WebSocket('ws://sso.nexusmods.com:46124')
         .on('open', () => {
       connection.send(JSON.stringify({
         id, appid: 'Vortex',
