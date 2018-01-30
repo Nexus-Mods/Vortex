@@ -73,7 +73,13 @@ export interface IExtensionContextExt extends IExtensionContext {
 }
 
 function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
-  const url: NXMUrl = new NXMUrl(nxmurl);
+  let url: NXMUrl;
+
+  try {
+    url = new NXMUrl(nxmurl);
+  } catch (err) {
+    return Promise.reject(err);
+  }
 
   let nexusModInfo: IModInfo;
   let nexusFileInfo: IFileInfo;
@@ -522,7 +528,10 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
 function once(api: IExtensionApi) {
   const registerFunc = () => {
     api.registerProtocol('nxm', (url: string) => {
-      startDownload(api, url);
+      startDownload(api, url)
+      .catch(err => {
+        api.showErrorNotification('Failed to start download', err);
+      });
     });
   };
 
@@ -628,6 +637,9 @@ function once(api: IExtensionApi) {
       startDownload(api, url)
         .then(downloadId => {
           api.events.emit('start-install-download', downloadId);
+        })
+        .catch(err => {
+          api.showErrorNotification('failed to start download', err);
         });
     }
   });

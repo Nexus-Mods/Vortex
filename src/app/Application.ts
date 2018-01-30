@@ -2,6 +2,7 @@ import {setInstanceId} from '../actions/app';
 import {} from '../reducers/index';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
+import { ProcessCanceled } from '../util/CustomErrors';
 import {} from '../util/delayed';
 import * as develT from '../util/devel';
 import { terminate } from '../util/errorHandling';
@@ -127,6 +128,7 @@ class Application {
         .then(() => this.createTray())
         // end initialization
         .then(() => splash.fadeOut())
+        .catch(ProcessCanceled, () => undefined)
         .catch((err) => {
           terminate({
             message: 'Startup failed',
@@ -326,6 +328,7 @@ class Application {
         return require('../util/delayed').delayed(100).then(() => this.testShouldQuit(retries - 1));
       }
       app.quit();
+      return Promise.reject(new ProcessCanceled('should quit'));
     }
 
     return Promise.resolve();
