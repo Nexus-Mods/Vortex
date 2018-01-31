@@ -69,6 +69,7 @@ export interface IConnectedProps {
   nextProfileId: string;
   progressProfile: { [progressId: string]: IProgress };
   customTitlebar: boolean;
+  userInfo: any;
 }
 
 export interface IActionProps {
@@ -165,6 +166,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.props.progressProfile !== nextProps.progressProfile
       || this.state.showLayer !== nextState.showLayer
       || this.state.hidpi !== nextState.hidpi
+      || this.props.userInfo !== nextProps.userInfo
       ;
   }
 
@@ -177,8 +179,28 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public render(): JSX.Element {
     const { activeProfileId, customTitlebar, onHideDialog,
-            nextProfileId, visibleDialog } = this.props;
+            nextProfileId, userInfo, visibleDialog } = this.props;
     const { hidpi } = this.state;
+
+    if (!truthy(userInfo)) {
+      return (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <h3>This is a pre-release version of Vortex. It requires a valid login to nexusmods.</h3>
+          <ReactButton onClick={this.login}>
+            Log In or Register
+          </ReactButton>
+        </div>
+      );
+    }
 
     if ((activeProfileId !== nextProfileId) && truthy(nextProfileId)) {
       return this.renderWait();
@@ -204,6 +226,14 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         {customTitlebar ? <WindowControls /> : null}
       </div>
     );
+  }
+
+  private login = () => {
+    this.props.api.events.emit('request-nexus-login', (err: Error) => {
+      if (err !== null) {
+        this.props.api.showErrorNotification('Failed to get access key', err);
+      }
+    });
   }
 
   private renderWait() {
@@ -478,6 +508,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     nextProfileId: state.settings.profiles.nextProfileId,
     progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
     customTitlebar: state.settings.window.customTitlebar,
+    userInfo: getSafe(state, ['session', 'nexus', 'userInfo'], undefined),
   };
 }
 
