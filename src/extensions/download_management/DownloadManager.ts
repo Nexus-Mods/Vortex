@@ -551,7 +551,9 @@ class DownloadManager {
           --unstartedChunks;
           --freeSpots;
         } catch (err) {
-          this.mQueue[idx].failedCB(err);
+          if (this.mQueue[idx] !== undefined) {
+            this.mQueue[idx].failedCB(err);
+          }
           this.mQueue.splice(idx, 1);
         }
       }
