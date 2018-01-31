@@ -135,7 +135,7 @@ function purgeMods(api: IExtensionApi): Promise<void> {
   const activator = getActivator(state);
 
   if (activator === undefined) {
-    return Promise.reject(new Error('can\t purge without deployment method selected'));
+    return Promise.reject(new Error('can\'t purge without deployment method selected'));
   }
 
   const notificationId = api.sendNotification({
@@ -440,7 +440,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
       },
       severity: 'error',
       automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
-        api.events.emit('show-main-page', 'Settings');
+        api.events.emit('show-main-page', 'application_settings');
         api.store.dispatch(setSettingsPage('Mods'));
         api.events.on('hide-modal', (modal) => {
           if (modal === 'settings') {
@@ -527,8 +527,11 @@ function once(api: IExtensionApi) {
     deploymentTimer.schedule(callback, false, profileId, progressCB);
   });
 
-  api.events.on('purge-mods',
-                (callback: (err: Error) => void) => { purgeMods(api); });
+  api.events.on('purge-mods', (callback: (err: Error) => void) => {
+    purgeMods(api)
+      .then(() => callback(null))
+      .catch(err => callback(err));
+  });
 
   api.events.on('await-activation', (callback: (err: Error) => void) => {
     deploymentTimer.wait(callback);
