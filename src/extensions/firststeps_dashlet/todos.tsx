@@ -22,22 +22,22 @@ function todos(api: IExtensionApi): IToDo[] {
   };
 
   const openGameSettings = () => {
-    api.events.emit('show-main-page', 'Settings');
+    api.events.emit('show-main-page', 'application_settings');
     onSetSettingsPage('Games');
   };
 
   const openModsSettings = () => {
-    api.events.emit('show-main-page', 'Settings');
+    api.events.emit('show-main-page', 'application_settings');
     onSetSettingsPage('Mods');
   };
 
   const openInterfaceSettings = () => {
-    api.events.emit('show-main-page', 'Settings');
+    api.events.emit('show-main-page', 'application_settings');
     onSetSettingsPage('Interface');
   };
 
   const openVortexSettings = () => {
-    api.events.emit('show-main-page', 'Settings');
+    api.events.emit('show-main-page', 'application_settings');
     onSetSettingsPage('Vortex');
   };
 

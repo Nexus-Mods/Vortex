@@ -41,7 +41,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     label: 'Settings',
     accelerator: 'CmdOrCtrl+Shift+S',
     click(item, focusedWindow) {
-      extensions.getApi().events.emit('show-main-page', 'Settings');
+      extensions.getApi().events.emit('show-main-page', 'application_settings');
     },
   });
 
