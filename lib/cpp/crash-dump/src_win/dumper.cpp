@@ -58,12 +58,17 @@ void createMiniDump(std::ofstream &logFile, PEXCEPTION_POINTERS exceptionPtrs)
   }
 }
 
+bool DoIgnore(DWORD code) {
+  return (code == 0x80010012) // some COM error about RPC server being disconnected. certainly not our problem
+      || (code == 0xe06d7363)  // cpp exception
+      || (code == 0xe0434352)  // c# exception
+  ;
+}
 
 LONG WINAPI VEHandler(PEXCEPTION_POINTERS exceptionPtrs)
 {
   if (   (exceptionPtrs->ExceptionRecord->ExceptionCode  < 0x80000000)      // non-critical
-      || (exceptionPtrs->ExceptionRecord->ExceptionCode == 0xe06d7363)      // cpp exception
-      || (exceptionPtrs->ExceptionRecord->ExceptionCode == 0xe0434352)) {   // c# exception
+      || DoIgnore(excetpionPtrs->ExceptionRecord->ExceptionCode)) {   // c# exception
     // don't report non-critical exceptions
     return EXCEPTION_CONTINUE_SEARCH;
   }

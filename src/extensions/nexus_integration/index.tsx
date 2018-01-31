@@ -196,6 +196,12 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
               message: 'Timeout retrieving categories from server, please try again later.',
             });
             return;
+          } else if (err.code === 'ECONNRESET') {
+            api.sendNotification({
+              type: 'warning',
+              message: 'The server reset the connection, please try again later.',
+            });
+            return;
           }
 
           const errMessage = typeof(err) === 'string' ? err : err.message;

@@ -28,6 +28,7 @@ import {currentActivator, installPath} from './selectors';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
+import { ProcessCanceled } from '../../util/api';
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
@@ -134,6 +135,10 @@ function undeploy(api: IExtensionApi,
   const activator: IDeploymentMethod = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
     : activators.find(act => allTypesSupported(act, state, gameMode, modTypes) === undefined);
+
+  if (activator === undefined) {
+    return Promise.reject(new ProcessCanceled('no activator'));
+  }
 
   const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
 
