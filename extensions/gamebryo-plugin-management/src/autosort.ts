@@ -182,14 +182,22 @@ class LootInterface {
     }
   });
 
+  private convertGameId(gameMode: string) {
+    if (gameMode === 'fallout4vr') {
+      return 'fallout4';
+    } else {
+      return gameMode;
+    }
+  }
+
   // tslint:disable-next-line:member-ordering
   private init = Bluebird.method(async (gameMode: string, gamePath: string) => {
     const t = this.mExtensionApi.translate;
     const localPath = pluginPath(gameMode);
     await fs.ensureDirAsync(localPath);
 
-    const loot: any =
-      Bluebird.promisifyAll(await LootProm.createAsync(gameMode, gamePath, localPath, 'en'));
+    const loot: any = Bluebird.promisifyAll(
+        await LootProm.createAsync(this.convertGameId(gameMode), gamePath, localPath, 'en'));
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
     try {
       await fs.ensureDirAsync(path.dirname(masterlistPath));
