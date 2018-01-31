@@ -62,7 +62,7 @@ function handleRestResult(resolve, reject, url: string, error: any,
     const data = JSON.parse(body);
 
     if ((response.statusCode < 200) || (response.statusCode >= 300)) {
-      reject(new NexusError(data.message || data.error, response.statusCode));
+      return reject(new NexusError(data.message || data.error, response.statusCode));
     }
 
     resolve(data);
