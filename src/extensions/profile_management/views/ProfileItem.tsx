@@ -117,7 +117,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
           />
           <h3 className='profile-name'>{`${gameName} - ${profile.name}`}</h3>
           <Table className='profile-details'>
-            {this.renderFeature({
+            {this.renderFeatureWithValue({
               id: profile.id + 'mods',
               label: t('Mods Installed'),
               icon: 'mods',
@@ -178,18 +178,23 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     ));
   }
 
-  private renderFeature = (feature: IProfileFeature, value: any): JSX.Element => {
+  private renderFeature = (feature: IProfileFeature): JSX.Element => {
     const { t, profile } = this.props;
+    const value = getSafe(profile, ['features', feature.id], undefined);
+    return this.renderFeatureWithValue(feature, value);
+  }
+
+  private renderFeatureWithValue(feature: IProfileFeature, value: any): JSX.Element {
+    const { profile } = this.props;
     const id = `icon-profilefeature-${profile.id}-${feature.id}`;
     return (
       <TR key={id}>
         <TD>
           {feature.label}
         </TD>
-        <TD>{
-          this.renderFeatureValue(feature.type,
-            value !== undefined ? value : getSafe(profile, ['features', feature.id], undefined))
-        }</TD>
+        <TD>
+          {this.renderFeatureValue(feature.type, value)}
+        </TD>
       </TR>
     );
   }
