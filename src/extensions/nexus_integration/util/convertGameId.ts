@@ -14,6 +14,8 @@ export function convertGameId(input: string): string {
     return 'newvegas';
   } else if (inputL === 'fallout4vr') {
     return 'fallout4';
+  } else if (inputL === 'teso') {
+    return 'elderscrollsonline';
   } else {
     return input;
   }
