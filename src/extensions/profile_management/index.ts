@@ -88,10 +88,12 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
         }
         if (direction === 'import') {
           return syncToProfile(currentProfilePath, profileFiles[gameId],
-            (error, detail) => showError(store.dispatch, error, detail));
+            (error, detail, allowReport) =>
+              showError(store.dispatch, error, detail, false, undefined, allowReport));
         } else {
           return syncFromProfile(currentProfilePath, profileFiles[gameId],
-            (error, detail) => showError(store.dispatch, error, detail));
+            (error, detail, allowReport) =>
+              showError(store.dispatch, error, detail, false, undefined, allowReport));
         }
       })
       .catch((err: Error) => {

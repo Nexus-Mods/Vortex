@@ -7,7 +7,7 @@ import * as path from 'path';
 
 export function syncToProfile(
   profilePath: string, sourceFiles: string[],
-  onError: (error: string, details: string | Error) => void): Promise<void> {
+  onError: (error: string, details: string | Error, allowReport?: boolean) => void): Promise<void> {
   log('debug', 'sync to profile', { profilePath, sourceFiles });
   return fs.ensureDirAsync(profilePath)
     .then(() =>
@@ -31,13 +31,16 @@ export function syncToProfile(
 
 export function syncFromProfile(
   profilePath: string, sourceFiles: string[],
-  onError: (error: string, details: string | Error) => void): Promise<void> {
+  onError: (error: string, details: string | Error, allowReport?: boolean) => void): Promise<void> {
   log('debug', 'sync from profile', { profilePath, sourceFiles });
   return Promise.map(sourceFiles, (filePath: string) => {
     const srcPath = path.join(profilePath, path.basename(filePath));
     return copyFileAtomic(srcPath, filePath)
     .catch(err => {
-      if (err.code !== 'ENOENT') {
+      if (err.code === 'EPERM') {
+        onError('failed to sync from profile',
+                `${filePath} is write protected`, false);
+      } else if (err.code !== 'ENOENT') {
         onError('failed to sync from profile', err);
       }
     });
