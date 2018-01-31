@@ -63,10 +63,10 @@ function readModEntries(basePath: string,
         log('warn', 'failed to read MO mod', { modPath, err: err.message });
         return undefined;
       }))
-    .filter(entry => entry !== undefined)
+    .filter<IModEntry>(entry => entry !== undefined)
     .catch(err => {
       log('warn', 'failed to read MO base path', { basePath, err: err.message });
-      return undefined;
+      return [];
     });
 }
 
