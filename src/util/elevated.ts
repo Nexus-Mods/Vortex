@@ -183,7 +183,11 @@ function runElevated(ipcPath: string, func: (ipc: any) => void,
           if (execErr) {
             reject(execErr);
           } else {
-            resolve(res);
+            if (res) {
+              resolve(res);
+            } else {
+              reject(new Error(`ShellExecute failed, errorcode ${res}`));
+            }
           }
         });
       });

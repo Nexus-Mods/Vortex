@@ -1,5 +1,6 @@
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {UserCanceled} from '../../util/CustomErrors';
+import { delayed } from '../../util/delayed';
 import * as elevatedT from '../../util/elevated';
 import * as fs from '../../util/fs';
 import lazyRequire from '../../util/lazyRequire';
@@ -162,34 +163,45 @@ class DeploymentMethod extends LinkingDeployment {
   private startElevated(): Promise<void> {
     this.mOutstanding = [];
     this.mDone = null;
-    const ipcPath: string = 'nmm_elevate_symlink';
+    const ipcPath: string = 'vortex_elevate_symlink';
 
     return new Promise<void>((resolve, reject) => {
-          if (this.mQuitTimer !== undefined) {
-            // if there is already an elevated process, just keep it around a bit longer
-            clearTimeout(this.mQuitTimer);
-            return resolve();
-          }
-          ipc.serve(ipcPath, () => undefined);
-          ipc.server.start();
-          ipc.server.on('initialised', (data, socket) => {
-            this.mElevatedClient = socket;
-            resolve();
-          });
-          ipc.server.on('finished', (modPath: string) => {
-            this.mOutstanding.splice(this.mOutstanding.indexOf(modPath), 1);
-            if ((this.mOutstanding.length === 0) && (this.mDone !== null)) {
-              this.finish();
-            }
-          });
-          ipc.server.on('socket.disconnected', () => {
+      let connected: boolean = false;
+      if (this.mQuitTimer !== undefined) {
+        // if there is already an elevated process, just keep it around a bit longer
+        clearTimeout(this.mQuitTimer);
+        return resolve();
+      }
+      ipc.serve(ipcPath, () => undefined);
+      ipc.server.start();
+      ipc.server.on('initialised', (data, socket) => {
+        this.mElevatedClient = socket;
+        connected = true;
+        resolve();
+      });
+      ipc.server.on('finished', (modPath: string) => {
+        this.mOutstanding.splice(this.mOutstanding.indexOf(modPath), 1);
+        if ((this.mOutstanding.length === 0) && (this.mDone !== null)) {
+          this.finish();
+        }
+      });
+      ipc.server.on('socket.disconnected', () => {
+        ipc.server.stop();
+      });
+      ipc.server.on('log', (data: any) => {
+        log(data.level, data.message, data.meta);
+      });
+      return elevated.default(ipcPath, remoteCode, {}, __dirname)
+        .then(() => delayed(5000))
+        .then(() => {
+          if (!connected) {
+            // still no connection, something must have gone wrong
             ipc.server.stop();
-          });
-          ipc.server.on('log', (data: any) => {
-            log(data.level, data.message, data.meta);
-          });
-          return elevated.default(ipcPath, remoteCode, {}, __dirname);
-        });
+            reject(new Error('failed to run deployment helper'));
+          }
+        })
+        .catch(reject);
+    });
   }
 
   private stopElevated() {
