@@ -193,11 +193,18 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             justifyContent: 'center',
             alignItems: 'center',
           }}
+          className='lock-screen'
         >
           <h3>This is a pre-release version of Vortex. It requires a valid login to nexusmods.</h3>
+          <div>
+          <ReactButton onClick={() => require('electron').remote.app.exit()}>
+            Quit
+          </ReactButton>
+          {' '}
           <ReactButton onClick={this.login}>
             Log In or Register
           </ReactButton>
+          </div>
         </div>
       );
     }
