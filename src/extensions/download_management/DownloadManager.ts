@@ -18,6 +18,7 @@ import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 import * as url from 'url';
+import { ProcessCanceled } from '../../util/CustomErrors';
 
 export class HTTPError extends Error {
   constructor(response: http.ServerResponse) {
@@ -567,6 +568,9 @@ class DownloadManager {
     job.workerId = workerId;
 
     if (job.url === undefined) {
+      if (download.urls === undefined) {
+        throw new ProcessCanceled('no download urls');
+      }
       // actual urls have to be resolved first
       (download.urls as URLFunc)()
       .then(urls => {
