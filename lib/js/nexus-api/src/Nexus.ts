@@ -67,7 +67,7 @@ function handleRestResult(resolve, reject, url: string, error: any,
 
     resolve(data);
   } catch (err) {
-    reject(new Error('failed to parse server response'));
+    reject(new Error('failed to parse server response: ' + err.message));
   }
 }
 

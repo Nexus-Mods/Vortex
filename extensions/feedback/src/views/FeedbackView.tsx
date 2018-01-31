@@ -295,10 +295,10 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
       case 'state': {
         onShowDialog('question', t('Confirm'), {
           message:
-          t('This will attach your Vortex state to the report. This includes things like ' +
-            'your downloaded and installed mods, games, profiles and categories. ' +
+          t('This will attach your Vortex state to the report. This includes information about ' +
+            'things like your downloaded and installed mods, games, profiles and categories. ' +
             'These could be very useful for understanding your feedback but you have ' +
-            'decide if you are willing to share this informaiton. ' +
+            'to decide if you are willing to share this information. ' +
             'We will, of course, treat your information as confidential.'),
           options: { wrap: true },
         }, [
