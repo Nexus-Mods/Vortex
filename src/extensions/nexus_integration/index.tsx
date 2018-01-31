@@ -671,7 +671,7 @@ function once(api: IExtensionApi) {
       }
     })
     .on('error', error => {
-      api.showErrorNotification('Failed to connect to www.nexusmods.com', error, {
+      api.showErrorNotification('Failed to connect to nexusmods.com', error, {
         allowReport: false,
       });
      });

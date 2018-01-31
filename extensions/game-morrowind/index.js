@@ -30,9 +30,7 @@ function findGame() {
     let steam = new util.Steam();
     return steam.allGames()
     .then((games) => {
-      console.log('games', games.map(game => game.name));
       let morrowind = games.find((entry) => entry.name === 'The Elder Scrolls III: Morrowind');
-      console.log('mw', morrowind);
       if (morrowind !== undefined) {
         return morrowind.gamePath;
       }

@@ -101,7 +101,8 @@ class PluginPersistor implements types.IPersistor {
 
   public removeItem(key: string[]): Promise<void> {
     this.mPlugins = util.deleteOrNop(this.mPlugins, key);
-    if (Object.keys(this.mPlugins[key[0]]).length === 0) {
+    if ((this.mPlugins[key[0]] !== undefined)
+        && (Object.keys(this.mPlugins[key[0]]).length === 0)) {
       delete this.mPlugins[key[0]];
     }
     return this.serialize();

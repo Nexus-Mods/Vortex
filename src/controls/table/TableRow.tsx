@@ -275,16 +275,6 @@ class TableRow extends React.Component<IRowProps, {}> {
     );
   }
 
-  private renderActionOption = (action: ITableRowAction, idx: number) => {
-    const { data, tableId } = this.props;
-    return (
-      <MenuItem key={idx} eventKey={action.title}>
-        <Icon name={action.icon} />
-        <span>{action.title}</span>
-      </MenuItem>
-    );
-  }
-
   private renderAttribute = (attribute: ITableAttribute, index: number,
                              arr: ITableAttribute[]): JSX.Element => {
     const { t, data, rawData, sortAttribute, tableId } = this.props;

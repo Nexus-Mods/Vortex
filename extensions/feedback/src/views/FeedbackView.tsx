@@ -98,12 +98,12 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
             <T i18nKey='feedback-instructions' className='feedback-instructions'>
               Please<br/>
               <ul>
-                <li>use punctuation and linebreaks</li>
+                <li>use punctuation and linebreaks,</li>
                 <li>be precise and to the point. You don't have to form sentences.
-                  A bug report is a technical document, not prose.</li>
-                <li>report only one issue per message</li>
+                  A bug report is a technical document, not prose,</li>
+                <li>report only one issue per message,</li>
                 <li>avoid making assumptions or your own conclusions, just report what you saw
-                  and what you expected to see</li>
+                  and what you expected to see,</li>
                 <li>include an example of how to reproduce the error if you can.
                   Even if its a general problem ("fomods using feature x zig when they should
                   zag") include one sequence of actions that expose the problem.</li>
