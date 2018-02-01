@@ -59,10 +59,11 @@ function handleRestResult(resolve, reject, url: string, error: any,
   }
 
   try {
-    const data = JSON.parse(body);
+    const data = JSON.parse(body || '{}');
 
     if ((response.statusCode < 200) || (response.statusCode >= 300)) {
-      return reject(new NexusError(data.message || data.error, response.statusCode));
+      return reject(new NexusError(data.message || data.error || response.statusMessage,
+                                   response.statusCode));
     }
 
     resolve(data);

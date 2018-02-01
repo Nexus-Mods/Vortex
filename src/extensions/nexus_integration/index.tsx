@@ -206,8 +206,8 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
 
           const errMessage = typeof(err) === 'string' ? err : err.message;
           const message = processErrorMessage(err.statusCode, errMessage);
-          showError(api.store.dispatch,
-            'An error occurred retrieving categories', message);
+          showError(api.store.dispatch, 'An error occurred retrieving categories', message,
+                    false, undefined, message.Servermessage === undefined);
         });
     }
   });
@@ -300,7 +300,8 @@ function endorseModImpl(
         detail.Game = gameId;
         detail.Mod = nexusModId;
         detail.Version = version;
-        showError(store.dispatch, 'An error occurred endorsing a mod', detail);
+        showError(store.dispatch, 'An error occurred endorsing a mod', detail,
+                  false, undefined, detail.Servermessage === undefined);
       }
     });
 }
