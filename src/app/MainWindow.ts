@@ -61,6 +61,13 @@ class MainWindow {
           }));
         });
 
+    this.mWindow.webContents.on('new-window', (event, url, frameName, disposition, options,
+                                               additionalFeatures) => {
+      if (disposition === 'background-tab') {
+        event.preventDefault();
+      }
+    });
+
     this.initEventHandlers(store);
 
     return new Promise<Electron.WebContents>((resolve, reject) => {
