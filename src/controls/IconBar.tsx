@@ -63,26 +63,43 @@ interface IPortalMenuProps {
   onClick: (evt: any) => void;
 }
 
-function PortalMenu(props: IPortalMenuProps, context: any) {
-  return (
-    <Overlay
-      show={props.open}
-      container={context.menuLayer}
-      placement='bottom'
-      target={props.target}
-    >
-      <Positioner className='icon-menu-positioner'>
-        <Dropdown.Menu
-          style={{ display: 'block', position: 'initial' }}
-          onClose={props.onClose}
-          open={props.open}
-          onClick={props.onClick}
-        >
-          {props.children}
-        </Dropdown.Menu>
-      </Positioner>
-    </Overlay>
-  );
+interface IPortalMenuProps {
+  open: boolean;
+  target: JSX.Element;
+  onClick: (evt) => void;
+  onClose: () => void;
+}
+
+class PortalMenu extends React.Component<IPortalMenuProps, {}> {
+  public static contextTypes: React.ValidationMap<any> = {
+    menuLayer: PropTypes.object,
+  };
+
+  public context: { menuLayer: JSX.Element };
+
+  public render() {
+    const { onClick, onClose, open, target } = this.props;
+
+    return (
+      <Overlay
+        show={open}
+        container={this.context.menuLayer}
+        placement='bottom'
+        target={target}
+      >
+        <Positioner className='icon-menu-positioner'>
+          <Dropdown.Menu
+            style={{ display: 'block', position: 'initial' }}
+            onClose={onClose}
+            open={open}
+            onClick={onClick}
+          >
+            {this.props.children}
+          </Dropdown.Menu>
+        </Positioner>
+      </Overlay>
+    );
+  }
 }
 
 function genTooltip(show: boolean | string): string {

@@ -7,7 +7,7 @@ import { TableDateTimeFilter, TableNumericFilter,
 
 export const MOD_ID: types.ITableAttribute = {
   id: 'id',
-  name: 'Mod id',
+  name: 'Mod Id',
   description: 'Nexus id of the mod',
   icon: 'id-badge',
   calc: (mod: IModEntry) => mod.nexusId,
@@ -20,7 +20,7 @@ export const MOD_ID: types.ITableAttribute = {
 
 export const MOD_NAME: types.ITableAttribute = {
   id: 'name',
-  name: 'Mod name',
+  name: 'Mod Name',
   description: 'The Name of the mod',
   icon: 'quote-left',
   calc: (mod: IModEntry) => mod.modName,
@@ -66,7 +66,7 @@ export const FILENAME: types.ITableAttribute = {
 
 export const FILES: types.ITableAttribute = {
   id: 'files',
-  name: 'Mod files',
+  name: 'Mod Files',
   description: 'The number of files installed by this mod',
   icon: 'level-up',
   calc: (mod: IModEntry) => mod.fileEntries.length,

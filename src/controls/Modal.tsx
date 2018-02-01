@@ -21,8 +21,10 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
   public render(): JSX.Element {
     return (
       <div className='modal-container'>
-        <div className='menu-layer' ref={this.setMenuLayer}/>
-        <Modal {...this.props} />
+        <Modal {...this.props}>
+          <div className='menu-layer' ref={this.setMenuLayer}/>
+          {this.props.children}
+        </Modal>
       </div>
     );
   }

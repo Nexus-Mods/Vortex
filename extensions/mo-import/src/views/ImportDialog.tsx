@@ -527,7 +527,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       },
       {
         id: 'id',
-        name: 'Mod id',
+        name: 'Mod Id',
         description: 'Nexus id of the mod',
         icon: 'id-badge',
         calc: (mod: IModEntry) => mod.nexusId,
@@ -539,7 +539,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       },
       {
         id: 'name',
-        name: 'Mod name',
+        name: 'Mod Name',
         description: 'The Name of the mod',
         icon: 'quote-left',
         calc: (mod: IModEntry) => mod.modName,
