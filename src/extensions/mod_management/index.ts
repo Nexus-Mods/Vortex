@@ -51,6 +51,7 @@ import {TestSupported} from './types/TestSupported';
 import { loadActivation, saveActivation } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
+import { NoDeployment } from './util/exceptions';
 import { registerAttributeExtractor } from './util/filterModInfo';
 import resolvePath from './util/resolvePath';
 import sortMods from './util/sort';
@@ -111,18 +112,27 @@ function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
 function getActivator(state: IState, gameMode?: string): IDeploymentMethod {
   const gameId = gameMode || activeGameId(state);
   const activatorId = state.settings.mods.activator[gameId];
+
   let activator: IDeploymentMethod;
   if (activatorId !== undefined) {
     activator = activators.find((act: IDeploymentMethod) => act.id === activatorId);
   }
+
+  const gameDiscovery =
+    getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
+  const types = Object.keys(getGame(gameId)
+    .getModPaths(gameDiscovery.path));
+
+  if (allTypesSupported(activator, state, gameId, types) !== undefined) {
+    // if the selected activator is no longer supported, don't use it
+    activator = undefined;
+  }
+
   if (activator === undefined) {
-    const gameDiscovery =
-      getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
-    const types = Object.keys(getGame(gameId)
-      .getModPaths(gameDiscovery.path));
     activator = activators.find(act =>
       allTypesSupported(act, state, gameId, types) === undefined);
   }
+
   return activator;
 }
 
@@ -135,7 +145,7 @@ function purgeMods(api: IExtensionApi): Promise<void> {
   const activator = getActivator(state);
 
   if (activator === undefined) {
-    return Promise.reject(new Error('can\'t purge without deployment method selected'));
+    return Promise.reject(new NoDeployment());
   }
 
   const notificationId = api.sendNotification({
@@ -258,7 +268,7 @@ function genUpdateModDeployment() {
     if (activator === undefined) {
       // this situation (no supported activator) should already be reported
       // elsewhere
-      return Promise.resolve();
+      return Promise.reject(new NoDeployment());
     }
 
     lastGameDiscovery = gameDiscovery;
