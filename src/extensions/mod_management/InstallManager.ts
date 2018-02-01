@@ -747,7 +747,7 @@ class InstallManager {
           if (result.action === 'Cancel') {
             reject(new UserCanceled());
           } else if (result.action === 'Rename') {
-            resolve({ name: result.input, enable: false });
+            resolve({ name: result.input.newName, enable: false });
           } else if (result.action === 'Replace') {
             const currentProfile = activeProfile(api.store.getState());
             const wasEnabled = (currentProfile !== undefined) && (currentProfile.gameId === gameId)
