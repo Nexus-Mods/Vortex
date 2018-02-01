@@ -505,7 +505,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     // accurate under the assumption all lines have the same height
     let visibleLineCount = 0;
     if (this.mRowRefs[lastSelected] !== undefined) {
-      visibleLineCount = this.mScrollRef.clientHeight / this.mRowRefs[lastSelected].clientHeight;
+      const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected]);
+      visibleLineCount = this.mScrollRef.clientHeight / selectedNode.clientHeight;
       // account for the header. quite inaccurate.
       visibleLineCount -= 2;
     }
