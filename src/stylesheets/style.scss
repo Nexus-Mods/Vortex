@@ -450,7 +450,8 @@ div:hover > .hover-expand {
 .toggle-mods-enabled-disabled:hover{
   background-color: darken($gray, 10%);
 }
-.btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled {
+.btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled,
+.btn-mods-enabled-neverinstalled, .toggle-mods-enabled-neverinstalled {
   background-color: $brand-info;
 }
 .btn-mods-enabled-uninstalled:hover {

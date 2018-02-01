@@ -71,10 +71,6 @@ interface IConnectedProps {
 interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
-  onStartMove: (id: string, filePath: string, game: string) => void;
-  onFinishMove: (id: string) => void;
-  onSetFileSize: (id: string, size: number) => void;
-  onMoveFailed: (id: string) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -563,22 +559,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     return [ 'failed', 'redirect' ].indexOf(download.state) >= 0;
   }
 
-  private move(source: string, destination: string): Promise<void> {
-    const { gameMode, onStartMove, onFinishMove, onMoveFailed, onSetFileSize } = this.props;
-    const id = shortid();
-    onStartMove(id, destination, gameMode);
-    return fs.copyAsync(source, destination)
-      .then(() => fs.statAsync(destination))
-      .then(stats => {
-        onSetFileSize(id, stats.size);
-      })
-      .then(() => onFinishMove(id))
-      .catch(err => {
-        log('info', 'failed to copy', { err });
-        onMoveFailed(id);
-      });
-  }
-
   private dropDownload = (type: DropType, dlPaths: string[]) => {
     if (type === 'urls') {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
@@ -590,12 +570,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         }
       }));
     } else {
-      const { downloadPath, gameMode } = this.props;
-      dlPaths.forEach(dlPath => {
-        const fileName = path.basename(dlPath);
-        const destination = path.join(downloadPath, fileName);
-        this.move(dlPath, destination);
-      });
+      this.context.api.events.emit('import-downloads', dlPaths);
     }
   }
 }
@@ -613,14 +588,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onStartMove: (id: string, filePath: string, game: string) => {
-      dispatch(initDownload(id, [], {}, game));
-      dispatch(setDownloadFilePath(id, path.basename(filePath)));
-    },
-    onSetFileSize: (id: string, size: number) =>
-      dispatch(downloadProgress(id, size, size, [])),
-    onFinishMove: (id: string) => dispatch(finishDownload(id, 'finished')),
-    onMoveFailed: (id: string) => dispatch(removeDownload(id)),
   };
 }
 

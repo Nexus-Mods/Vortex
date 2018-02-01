@@ -8,10 +8,16 @@ import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { sum } from '../../util/util';
 
+import { downloadPath as downloadPathSelector } from '../mod_management/selectors';
+
 import {
   addLocalDownload,
+  downloadProgress,
+  finishDownload,
+  initDownload,
   pauseDownload,
   removeDownload,
+  setDownloadFilePath,
   setDownloadHashByFile,
   setDownloadInterrupted,
   setDownloadSpeed,
@@ -193,6 +199,30 @@ function genGameModeActivated(api: IExtensionApi) {
   };
 }
 
+function move(api: IExtensionApi, source: string, destination: string): Promise<void> {
+  /*const {gameMode, onStartMove, onFinishMove, onMoveFailed, onSetFileSize} =
+      this.props;*/
+
+  const store = api.store;
+  const gameMode = activeGameId(store.getState());
+
+  const id = shortid();
+  store.dispatch(initDownload(id, [], {}, gameMode));
+  store.dispatch(setDownloadFilePath(id, path.basename(destination)));
+  return fs.copyAsync(source, destination)
+    .then(() => fs.statAsync(destination))
+    .then(stats => {
+      store.dispatch(downloadProgress(id, stats.size, stats.size, []));
+    })
+    .then(() => {
+      store.dispatch(finishDownload(id, 'finished'));
+    })
+    .catch(err => {
+      log('info', 'failed to copy', {err});
+      store.dispatch(removeDownload(id));
+    });
+}
+
 function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
@@ -256,6 +286,16 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('enable-download-watch', (enabled: boolean) => {
       watchEnabled = enabled;
+    });
+
+    context.api.events.on('import-downloads', (downloadPaths: string[]) => {
+      const downloadPath = downloadPathSelector(context.api.store.getState());
+      downloadPaths.forEach(dlPath => {
+        const fileName = path.basename(dlPath);
+        const destination = path.join(downloadPath, fileName);
+        move(context.api, dlPath, destination)
+          .then(() => log('info', 'imported archives', { count: downloadPaths.length }));
+      });
     });
 
     {

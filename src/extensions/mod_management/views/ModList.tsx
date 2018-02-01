@@ -54,6 +54,9 @@ import { Button, ButtonGroup, Jumbotron, MenuItem, Panel } from 'react-bootstrap
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import * as semver from 'semver';
+import { FlexLayout } from '../../../index';
+
+const PanelX: any = Panel;
 
 type IModWithState = IMod & IProfileMod;
 
@@ -255,8 +258,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    const dragOverlay = <h2>{t('Drop to install')}</h2>;
-
     let content: JSX.Element;
 
     if (Object.keys(this.mPrimaryMods).length === 0) {
@@ -275,7 +276,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         </div>
       );
     } else {
-      const PanelX: any = Panel;
       content = (
         <Panel>
           <PanelX.Body>
@@ -311,15 +311,23 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           />
         </MainPage.Header>
         <MainPage.Body>
-          <Dropzone
-            accept={['files']}
-            drop={this.dropMod}
-            style={{ height: '100%' }}
-            dragOverlay={dragOverlay}
-            clickable={false}
-          >
-            {content}
-          </Dropzone>
+          <FlexLayout type='column'>
+            <FlexLayout.Flex>
+              {content}
+            </FlexLayout.Flex>
+            <FlexLayout.Fixed>
+            <Panel className='mod-drop-panel'>
+              <PanelX.Body>
+              <Dropzone
+                accept={['files']}
+                drop={this.dropMod}
+                icon='folder-download'
+                clickable={false}
+              />
+              </PanelX.Body>
+            </Panel>
+            </FlexLayout.Fixed>
+          </FlexLayout>
         </MainPage.Body>
         <MainPage.Overlay>
           <IconBar
@@ -493,7 +501,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       icon: 'check-o',
       calc: (mod: IModWithState) => {
         if (mod.state === 'downloaded') {
-          return 'Uninstalled';
+          return (mod.attributes.wasInstalled)
+            ? 'Uninstalled'
+            : 'Never Installed';
         } else if (mod.state === 'installing') {
           return 'Installing';
         }
@@ -507,6 +517,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           { key: 'enabled', text: 'Enabled', icon: 'toggle-enabled' },
           { key: 'disabled', text: 'Disabled', icon: 'toggle-disabled' },
           { key: 'uninstalled', text: 'Uninstalled', icon: 'toggle-uninstalled' },
+          { key: 'neverinstalled', text: 'Never Installed',
+            icon: 'toggle-uninstalled', visible: false },
           { key: 'installing', text: 'Installing', icon: 'spinner', visible: false },
         ],
         onChangeValue: this.changeModEnabled,
@@ -598,6 +610,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     })
       .then((modAttributes: Array<{ archiveId: string, info: any }>) => {
         modAttributes.filter(attribute => attribute !== undefined).forEach(mod => {
+          const download = newProps.downloads[mod.archiveId];
           // complete attributes that we don't otherwise find for downloads
           newModsWithState[mod.archiveId] = {
             ...mod.info,
@@ -606,8 +619,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             archiveId: mod.archiveId,
             attributes: {
               ...mod.info,
-              customFileName: mod.info.fileName || newProps.downloads[mod.archiveId].localPath,
-              installTime: newProps.downloads[mod.archiveId].fileTime,
+              customFileName: mod.info.fileName || download.localPath,
+              installTime: download.fileTime,
+              wasInstalled: download.installed !== undefined,
             },
           };
           changed = true;
@@ -844,8 +858,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private dropMod = (type: DropType, values: string[]) => {
-    values.forEach(value =>
-      this.context.api.events.emit('start-install', value));
+    this.context.api.events.emit('import-downloads', values);
   }
 }
 
