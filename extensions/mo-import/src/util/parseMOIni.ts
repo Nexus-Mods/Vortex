@@ -59,6 +59,11 @@ function parseMOIni(games: {[gameId: string]: types.IDiscoveryResult},
                       return parser.read(path.join(basePath, 'ModOrganizer.ini'));
                     })
       .then((file: IniFile<IIniSpec>) => {
+        if (Object.keys(file.data).length === 0) {
+          return Promise.reject(new Error(
+            'This doesn\'t look like a portable MO install, '
+            + 'please check in the instances to the left.'));
+        }
         let downloadPath = path.join(basePath, 'downloads');
         let modPath = path.join(basePath, 'mods');
         try {

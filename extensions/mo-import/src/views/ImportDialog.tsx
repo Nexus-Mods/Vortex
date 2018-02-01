@@ -122,9 +122,9 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
         </Modal.Body>
         <Modal.Footer>
           {canCancel ? <Button onClick={this.cancel}>{t('Cancel')}</Button> : null}
-          { nextLabel ? (
+          {nextLabel ? (
             <Button disabled={this.nextDisabled()} onClick={this.next}>{nextLabel}</Button>
-           ) : null }
+           ) : null}
         </Modal.Footer>
       </Modal>
     );
@@ -405,7 +405,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectSource = eventKey => {
-    this.nextState.importPath = path.join(instancesPath(), eventKey);
+    this.setImportPath(path.join(instancesPath(), eventKey));
   }
 
   private nop = () => undefined;
