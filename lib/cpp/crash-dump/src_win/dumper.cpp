@@ -68,7 +68,7 @@ bool DoIgnore(DWORD code) {
 LONG WINAPI VEHandler(PEXCEPTION_POINTERS exceptionPtrs)
 {
   if (   (exceptionPtrs->ExceptionRecord->ExceptionCode  < 0x80000000)      // non-critical
-      || DoIgnore(excetpionPtrs->ExceptionRecord->ExceptionCode)) {   // c# exception
+      || DoIgnore(exceptionPtrs->ExceptionRecord->ExceptionCode)) {   // c# exception
     // don't report non-critical exceptions
     return EXCEPTION_CONTINUE_SEARCH;
   }
