@@ -200,26 +200,17 @@ function genGameModeActivated(api: IExtensionApi) {
 }
 
 function move(api: IExtensionApi, source: string, destination: string): Promise<void> {
-  /*const {gameMode, onStartMove, onFinishMove, onMoveFailed, onSetFileSize} =
-      this.props;*/
-
   const store = api.store;
   const gameMode = activeGameId(store.getState());
 
-  const id = shortid();
-  store.dispatch(initDownload(id, [], {}, gameMode));
-  store.dispatch(setDownloadFilePath(id, path.basename(destination)));
   return fs.copyAsync(source, destination)
     .then(() => fs.statAsync(destination))
     .then(stats => {
-      store.dispatch(downloadProgress(id, stats.size, stats.size, []));
-    })
-    .then(() => {
-      store.dispatch(finishDownload(id, 'finished'));
+      const id = shortid();
+      addLocalDownload(id, gameMode, path.basename(destination), stats.size);
     })
     .catch(err => {
       log('info', 'failed to copy', {err});
-      store.dispatch(removeDownload(id));
     });
 }
 

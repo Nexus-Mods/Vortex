@@ -26,8 +26,6 @@ import MainPage from '../../../views/MainPage';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { downloadPath as downloadPathSelector } from '../../mod_management/selectors';
 
-import { addLocalDownload, downloadProgress, finishDownload, initDownload,
-         removeDownload, setDownloadFilePath } from '../actions/state';
 import { IDownload } from '../types/IDownload';
 
 import { FILE_NAME, FILE_SIZE, PROGRESS } from '../downloadAttributes';
