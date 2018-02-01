@@ -267,8 +267,8 @@ function genUpdateModDeployment() {
 
     if (activator === undefined) {
       // this situation (no supported activator) should already be reported
-      // elsewhere
-      return Promise.reject(new NoDeployment());
+      // elsewhere.
+      return Promise.resolve();
     }
 
     lastGameDiscovery = gameDiscovery;
