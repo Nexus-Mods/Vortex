@@ -5,11 +5,11 @@ import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 
 import { ICategoryDictionary } from '../../category_management/types/ICategoryDictionary';
+import { IMod } from '../../mod_management/types/IMod';
 import { activeGameId } from '../../profile_management/selectors';
 
 import * as React from 'react';
 import Select from 'react-select';
-import { IMod } from '../../mod_management/types/IMod';
 
 interface IConnectedProps {
   categories: ICategoryDictionary;

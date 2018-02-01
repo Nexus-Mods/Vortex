@@ -113,12 +113,14 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
         body = (
           <Modal.Body id='diagnostics-files'>
-            <FlexLayout.Fixed>
+            <FlexLayout.Flex>
               <ListGroup className='diagnostics-files-sessions-panel'>
                 {sessionsSorted.map(this.renderSession)}
               </ListGroup>
-            </FlexLayout.Fixed>
-            {this.renderLog()}
+            </FlexLayout.Flex>
+            <FlexLayout.Flex>
+              {this.renderLog()}
+            </FlexLayout.Flex>
           </Modal.Body>
         );
       } else {
