@@ -59,7 +59,9 @@ void createMiniDump(std::ofstream &logFile, PEXCEPTION_POINTERS exceptionPtrs)
 }
 
 bool DoIgnore(DWORD code) {
-  return (code == 0x80010012) // some COM error about RPC server being disconnected. certainly not our problem
+  return (code == 0x80010012)  // some COM errors, seem to be windows internal
+      || (code == 0x80010108)
+      || (code == 0x8001010d)
       || (code == 0xe06d7363)  // cpp exception
       || (code == 0xe0434352)  // c# exception
   ;
