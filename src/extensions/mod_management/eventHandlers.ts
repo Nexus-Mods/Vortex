@@ -137,7 +137,7 @@ function undeploy(api: IExtensionApi,
     : activators.find(act => allTypesSupported(act, state, gameMode, modTypes) === undefined);
 
   if (activator === undefined) {
-    return Promise.reject(new ProcessCanceled('no activator'));
+    return Promise.reject(callback(new ProcessCanceled('no activator')));
   }
 
   const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);

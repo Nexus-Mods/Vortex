@@ -16,6 +16,11 @@ function testArchivesAge(store: Redux.Store<types.IState>) {
       store.getState(),
       ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined);
 
+  if (gamePath === undefined) {
+    // TODO: happened in testing, but how does one get here with no path configured?
+    return Promise.resolve(undefined);
+  }
+
   const game = util.getGame(gameId);
   const dataPath = game.getModPaths(gamePath)[''];
 
