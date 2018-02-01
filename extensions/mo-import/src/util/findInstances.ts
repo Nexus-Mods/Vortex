@@ -10,6 +10,14 @@ export function instancesPath(): string {
   return path.resolve(remote.app.getPath('appData'), '..', 'local', 'ModOrganizer');
 }
 
+export function convertGameId(input: string): string {
+  if (input === 'skyrimse') {
+    return 'skyrim special edition';
+  } else {
+    return input;
+  }
+}
+
 function findInstances(games: {[gameId: string]: types.IDiscoveryResult},
                        gameId: string): Promise<string[]> {
   const base = instancesPath();
@@ -18,7 +26,7 @@ function findInstances(games: {[gameId: string]: types.IDiscoveryResult},
                             .then(stat => stat.isDirectory())
                             .catch(FileAccessError, () => false))
     .filter((dirName: string) => parseMOIni(games, path.join(base, dirName))
-                            .then(moConfig => moConfig.game === gameId)
+                            .then(moConfig => moConfig.game === convertGameId(gameId))
                             .catch(err => false))
     .then((instances: string[]) => instances)
     .catch(err => {

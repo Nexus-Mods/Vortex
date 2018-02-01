@@ -1,5 +1,5 @@
 import { IModEntry } from '../types/moEntries';
-import findInstances, { instancesPath } from '../util/findInstances';
+import findInstances, { convertGameId, instancesPath } from '../util/findInstances';
 import importMods from '../util/import';
 import parseMOIni, { IMOConfig } from '../util/parseMOIni';
 import readModEntries from '../util/readModEntries';
@@ -81,7 +81,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
       const { importPath, importPathInvalid } = this.state;
       return parseMOIni(discovered, importPath)
         .then(moconfig => {
-          this.nextState.importPathInvalid = (moconfig.game === gameId)
+          this.nextState.importPathInvalid = (moconfig.game === convertGameId(gameId))
             ? undefined
             : t('Can\'t import mods from different game: {{gameId}}',
               { replace: { gameId: moconfig.game } });
@@ -224,7 +224,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     if (instances.length === 0) {
       return (
         <div style={{ marginBottom: 15 }}>
-          <span>{t('No global instances')}</span>
+          <span>{t('No global instances for this this game')}</span>
         </div>
       );
     }
