@@ -32,11 +32,12 @@ import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Badge, Button as ReactButton, ControlLabel, FormGroup,
-         Modal, Nav, ProgressBar } from 'react-bootstrap';
+import { Alert, Badge, Button as ReactButton, ControlLabel, FormGroup,
+         ListGroup, ListGroupItem, Modal, Nav, ProgressBar } from 'react-bootstrap';
 // tslint:disable-next-line:no-submodule-imports
 import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
+import { INotification } from '../types/INotification';
 
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
@@ -70,6 +71,8 @@ export interface IConnectedProps {
   progressProfile: { [progressId: string]: IProgress };
   customTitlebar: boolean;
   userInfo: any;
+  notifications: INotification[];
+  APIKey: string;
 }
 
 export interface IActionProps {
@@ -178,8 +181,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public render(): JSX.Element {
-    const { activeProfileId, customTitlebar, onHideDialog,
-            nextProfileId, userInfo, visibleDialog } = this.props;
+    const { activeProfileId, APIKey, customTitlebar, onHideDialog,
+            nextProfileId, notifications, userInfo, visibleDialog } = this.props;
     const { hidpi } = this.state;
 
     if (!truthy(userInfo)) {
@@ -195,7 +198,20 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           }}
           className='lock-screen'
         >
-          <h3>This is a pre-release version of Vortex. It requires a valid login to nexusmods.</h3>
+          <ListGroup>
+            {notifications.filter(noti => noti.type === 'error')
+              .map(noti => (
+                <ListGroupItem key={noti.id}>
+                  <Alert bsStyle='danger'>{noti.message}</Alert>
+                </ListGroupItem>
+              ))}
+          </ListGroup>
+          {APIKey !== undefined
+            ? <Icon style={{ width: '5em', height: '5em' }} name='spinner' />
+            : null}
+          <h3>
+            This is a pre-release version of Vortex. It requires a valid login to nexusmods.
+          </h3>
           <div>
           <ReactButton onClick={() => require('electron').remote.app.exit()}>
             Quit
@@ -516,6 +532,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
     customTitlebar: state.settings.window.customTitlebar,
     userInfo: getSafe(state, ['session', 'nexus', 'userInfo'], undefined),
+    APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''),
+    notifications: state.session.notifications.notifications,
   };
 }
 
