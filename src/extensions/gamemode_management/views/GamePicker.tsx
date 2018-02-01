@@ -31,7 +31,7 @@ import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { ListGroup, ProgressBar, Tab, Tabs } from 'react-bootstrap';
+import { Alert, ListGroup, ProgressBar, Tab, Tabs } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
@@ -221,6 +221,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
               </div>
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
+              <Alert bsStyle='warning'>Bug: Search can't be cancelled once started</Alert>
               <div className='discovery-progress-container'>
                 <FlexLayout.Flex>
                   <ProgressBar>
@@ -231,9 +232,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                 <FlexLayout.Fixed>
                   <IconButton
                     id='start-discovery'
-                    icon={discovery.running ? 'button-stop' : 'search'}
+                    icon={discovery.running ? 'stop' : 'search'}
                     tooltip={discovery.running ? t('Stop search') : t('Search for games')}
                     onClick={discovery.running ? this.stopDiscovery : this.startDiscovery}
+                    disabled={discovery.running}
                   >
                     {discovery.running ? t('Stop search') : t('Search for games')}
                   </IconButton>
