@@ -106,7 +106,8 @@ export class DownloadObserver {
     const id = shortid();
     if (typeof(urls) !== 'function') {
       urls = urls.filter(url =>
-          ['ftp', 'http', 'https'].indexOf(nodeURL.parse(url).protocol) !== -1);
+          (url !== undefined)
+          && (['ftp', 'http', 'https'].indexOf(nodeURL.parse(url).protocol) !== -1));
       if (urls.length === 0) {
         if (callback !== undefined) {
           callback(new ProcessCanceled('URL not usable, only ftp, http and https are supported.'));
