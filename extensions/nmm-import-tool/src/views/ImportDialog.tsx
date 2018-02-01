@@ -59,7 +59,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
     this.initState({
       sources: undefined,
       importArchives: false,
-      modsToImport: {},
+      modsToImport: undefined,
       selectedSource: [],
       error: undefined,
       importEnabled: {},
@@ -254,8 +254,16 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   private renderSelectMods(): JSX.Element {
     const { t } = this.props;
     const { counter, importArchives, modsToImport } = this.state;
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+    const content = (modsToImport === undefined)
+      ? (
+        <div
+          style={{ flex: '1 1 0', display: 'flex',
+                   justifyContent: 'center', alignItems: 'center' }}
+        >
+            <Icon style={{ width: '5em', height: '5em' }} name='spinner' />
+        </div>
+      ) : (
         <Table
           tableId='mods-to-import'
           data={modsToImport}
@@ -264,6 +272,11 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           staticElements={[
             this.mStatus, MOD_ID, MOD_NAME, MOD_VERSION, FILENAME, FILES, LOCAL]}
         />
+      );
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        {content}
         <Toggle
           checked={importArchives}
           onToggle={this.toggleArchiveImport}
@@ -276,7 +289,8 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
             {t('Import archives')}
           </a>
         </Toggle>
-      </div>);
+      </div>
+    );
   }
 
   private renderWorking(): JSX.Element {
