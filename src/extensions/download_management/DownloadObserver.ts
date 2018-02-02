@@ -37,13 +37,13 @@ import * as nodeURL from 'url';
 import * as util from 'util';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
-                        total: number, chunks: IChunk[], filePath?: string) {
+                        total: number, chunks: IChunk[], urls: string[], filePath?: string) {
   if (store.getState().persistent.downloads.files[dlId] === undefined) {
     // progress for a download that's no longer active
     return;
   }
   if ((total !== 0) || (chunks !== undefined)) {
-    store.dispatch(downloadProgress(dlId, received, total, chunks));
+    store.dispatch(downloadProgress(dlId, received, total, chunks, urls));
   }
   if ((filePath !== undefined) &&
       (path.basename(filePath) !==
@@ -181,7 +181,7 @@ export class DownloadObserver {
     if (res.unfinishedChunks.length > 0) {
       this.mStore.dispatch(pauseDownload(id, true, res.unfinishedChunks));
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
-      this.mStore.dispatch(downloadProgress(id, res.size, res.size, []));
+      this.mStore.dispatch(downloadProgress(id, res.size, res.size, [], undefined));
       this.mStore.dispatch(
           finishDownload(id, 'redirect', {htmlFile: res.filePath}));
       if (callback !== undefined) {
@@ -207,7 +207,8 @@ export class DownloadObserver {
   private genProgressCB(id: string): ProgressCallback {
     let lastUpdateTick = 0;
     let lastUpdatePerc = 0;
-    return (received: number, total: number, chunks: IChunk[], updatedFilePath?: string) => {
+    return (received: number, total: number, chunks: IChunk[],
+            urls?: string[], updatedFilePath?: string) => {
       // avoid updating too frequently because it causes ui updates
       const now = new Date().getTime();
       const newPerc = Math.floor((received * 100) / total);
@@ -217,7 +218,7 @@ export class DownloadObserver {
       }
       lastUpdateTick = now;
       lastUpdatePerc = newPerc;
-      progressUpdate(this.mStore, id, received, total, chunks, updatedFilePath);
+      progressUpdate(this.mStore, id, received, total, chunks, urls, updatedFilePath);
     };
   }
 
@@ -279,6 +280,11 @@ export class DownloadObserver {
           .then(res => {
             log('debug', 'download finished (resumed)', { file: res.filePath });
             this.handleDownloadFinished(downloadId, callback, res);
+          })
+          .catch(err => {
+            if (callback !== undefined) {
+              callback(err, null);
+            }
           });
     }
   }

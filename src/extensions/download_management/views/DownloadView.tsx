@@ -13,11 +13,13 @@ import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ITableAttribute } from '../../../types/ITableAttribute';
+import { Placeholder } from '../../../util/asyncRequire';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { getCurrentLanguage } from '../../../util/i18n';
 import { log } from '../../../util/log';
+import { showError } from '../../../util/message';
 import relativeTime from '../../../util/relativeTime';
 import { activeGameId } from '../../../util/selectors';
 import { setSafe } from '../../../util/storeHelper';
@@ -40,7 +42,6 @@ import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
-import { Placeholder } from '../../../util/asyncRequire';
 
 const PanelX: any = Panel;
 
@@ -69,6 +70,8 @@ interface IConnectedProps {
 interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
+  onShowError: (message: string, details?: string | Error,
+                notificationId?: string, allowReport?: boolean) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -458,7 +461,15 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
   private resume = (downloadIds: string[]) => {
     downloadIds.forEach((downloadId: string) => {
-      this.context.api.events.emit('resume-download', downloadId);
+      this.context.api.events.emit('resume-download', downloadId, (err) => {
+        if (err !== null) {
+          if (err.message === 'Moved Permanently') {
+            this.props.onShowError('Failed to resume download', 'The url is no longer valid',
+              undefined, false);
+          }
+          this.props.onShowError('Failed to resume download', err);
+        }
+      });
     });
   }
 
@@ -586,6 +597,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
+    onShowError: (message: string, details?: string | Error,
+                  notificationId?: string, allowReport?: boolean) =>
+      showError(dispatch, message, details, false, notificationId, allowReport),
   };
 }
 

@@ -17,8 +17,8 @@ export const initDownload = safeCreateAction('INIT_DOWNLOAD',
  * set download progress (in percent)
  */
 export const downloadProgress = safeCreateAction('DOWNLOAD_PROGRESS',
-  (id: string, received: number, total: number, chunks: IChunk[]) =>
-    ({ id, received, total, chunks }));
+  (id: string, received: number, total: number, chunks: IChunk[], urls: string[]) =>
+    ({ id, received, total, chunks, urls }));
 
 /**
  * set/change the file path

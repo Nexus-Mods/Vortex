@@ -6,7 +6,7 @@ import { log } from '../../util/log';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { sum } from '../../util/util';
+import { sum, truthy } from '../../util/util';
 
 import { downloadPath as downloadPathSelector } from '../mod_management/selectors';
 
@@ -301,17 +301,29 @@ function init(context: IExtensionContextExt): boolean {
       observer =
           observeImpl(context.api.events, store, manager, protocolHandlers);
 
-      const downloads = store.getState().persistent.downloads.files;
+      const downloads = (store.getState() as IState).persistent.downloads.files;
       const interruptedDownloads = Object.keys(downloads)
-        .filter(id => ['init', 'started'].indexOf(downloads[id].state) !== -1);
+        .filter(id => ['init', 'started', 'pending'].indexOf(downloads[id].state) !== -1);
       interruptedDownloads.forEach(id => {
-        let realSize = (downloads[id].size !== 0)
-            ? downloads[id].size - sum(downloads[id].chunks.map(chunk => chunk.size))
-            : 0;
-        if (isNaN(realSize)) {
-          realSize = 0;
+        if (!truthy(downloads[id].urls)) {
+          // download was interrupted before receiving urls, has to be canceled
+          log('info', 'download removed because urls were never retrieved', { id });
+          const downloadPath = downloadPathSelector(context.api.store.getState());
+          fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
+          .then(() => {
+            store.dispatch(removeDownload(id));
+          });
+        } else {
+          let realSize =
+              (downloads[id].size !== 0) ?
+                  downloads[id].size -
+                      sum(downloads[id].chunks.map(chunk => chunk.size)) :
+                  0;
+          if (isNaN(realSize)) {
+            realSize = 0;
+          }
+          store.dispatch(setDownloadInterrupted(id, realSize));
         }
-        store.dispatch(setDownloadInterrupted(id, realSize));
       });
     }
   });

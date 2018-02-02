@@ -49,6 +49,9 @@ export const stateReducer: IReducerSpec = {
       if (payload.chunks !== undefined) {
         update['chunks'] = payload.chunks;
       }
+      if (payload.urls !== undefined) {
+        update['urls'] = payload.urls;
+      }
       return merge(state, [ 'files', payload.id ], update);
     },
     [action.setDownloadFilePath as any]: (state, payload) =>

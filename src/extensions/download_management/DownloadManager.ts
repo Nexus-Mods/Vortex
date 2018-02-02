@@ -106,6 +106,11 @@ class DownloadWorker {
   public assignJob(job: IDownloadJob) {
     this.mDataHistory = [];
     log('debug', 'requesting range', { id: job.workerId, offset: job.offset, size: job.size });
+    if (job.size <= 0) {
+      // early out if the job status didn't match the range
+      this.handleComplete();
+      return;
+    }
 
     const parsed = url.parse(job.url);
 
@@ -190,7 +195,9 @@ class DownloadWorker {
 
   private handleHTML() {
     this.abort(false);
-    this.mJob.errorCB(new DownloadIsHTML());
+    if (this.mJob.errorCB !== undefined) {
+      this.mJob.errorCB(new DownloadIsHTML());
+    }
   }
 
   private handleComplete() {
@@ -403,7 +410,7 @@ class DownloadManager {
           download.chunks.push(this.initChunk(download));
           this.mQueue.push(download);
           progressCB(0, undefined,
-                     download.chunks.map(this.toStoredChunk), filePath);
+                     download.chunks.map(this.toStoredChunk), undefined, filePath);
           this.tickQueue();
         }));
   }
@@ -436,6 +443,9 @@ class DownloadManager {
         promises: [],
       };
       download.chunks = chunks.map(chunk => this.toJob(download, chunk));
+      if (download.chunks.length > 0) {
+        download.chunks[0].errorCB = (err) => { this.cancelDownload(download, err); };
+      }
       this.mQueue.push(download);
       this.tickQueue();
     });
@@ -547,8 +557,8 @@ class DownloadManager {
       let unstartedChunks = countIf(this.mQueue[idx].chunks, value => value.state === 'init');
       while ((freeSpots > 0) && (unstartedChunks > 0)) {
         try {
-          this.startWorker(this.mQueue[idx]);
           --unstartedChunks;
+          this.startWorker(this.mQueue[idx]);
           --freeSpots;
         } catch (err) {
           if (this.mQueue[idx] !== undefined) {
@@ -570,16 +580,16 @@ class DownloadManager {
     job.workerId = workerId;
 
     if (job.url === undefined) {
-      if (download.urls === undefined) {
+      if (!truthy(download.urls)) {
         throw new ProcessCanceled('no download urls');
       }
       // actual urls have to be resolved first
       (download.urls as URLFunc)()
-      .then(urls => {
-        download.urls = urls;
-        job.url = download.urls[0];
-        this.startJob(download, job);
-      });
+        .then(urls => {
+          download.urls = urls;
+          job.url = download.urls[0];
+          this.startJob(download, job);
+        });
     } else {
       this.startJob(download, job);
     }
@@ -611,12 +621,14 @@ class DownloadManager {
       const receivedNow = download.received;
       return download.assembler.addChunk(offset, data)
         .then((synced: boolean) => {
+          const urls: string[] = Array.isArray(download.urls) ? download.urls : undefined;
           download.received += data.byteLength;
           download.progressCB(
               receivedNow, download.size,
               synced
                 ? download.chunks.map(this.toStoredChunk)
                 : undefined,
+              urls,
               download.tempName);
           return synced;
         });
