@@ -466,8 +466,9 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
           if (err.message === 'Moved Permanently') {
             this.props.onShowError('Failed to resume download', 'The url is no longer valid',
               undefined, false);
+          } else {
+            this.props.onShowError('Failed to resume download', err);
           }
-          this.props.onShowError('Failed to resume download', err);
         }
       });
     });
