@@ -220,11 +220,22 @@ export function onStartInstallDownload(api: IExtensionApi,
   const state = store.getState();
   const download: IDownload = state.persistent.downloads.files[downloadId];
   if (download === undefined) {
-    api.showErrorNotification('unknown download', { downloadId });
+    api.showErrorNotification('Unknown Download',
+      'Sorry, I was unable to identify the archive this mod was installed from. '
+      + 'Please reinstall by installing the file from the downloads tab.', {
+        allowReport: false,
+      });
     return;
   }
   const inPaths = state.settings.mods.paths;
   const downloadPath: string = resolvePath('download', inPaths, download.game);
+  if (downloadPath === undefined) {
+    api.showErrorNotification('Unknown Game',
+      'Failed to determine installation directory. This shouldn\'t have happened', {
+        allowReport: true,
+      });
+    return;
+  }
   const fullPath: string = path.join(downloadPath, download.localPath);
   installManager.install(downloadId, fullPath, download.game, api,
     { download }, true, false, callback);
