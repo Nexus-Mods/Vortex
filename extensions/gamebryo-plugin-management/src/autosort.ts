@@ -94,8 +94,11 @@ class LootInterface {
               { replace: { msg: err.message }, ns: 'gamebryo-plugin' }),
           });
         } else {
-          this.mExtensionApi.showErrorNotification('LOOT operation failed',
-                                                   err, { id: 'loot-failed' });
+          this.mExtensionApi.showErrorNotification('LOOT operation failed', {
+            message: err.message,
+            note: t('This is a LOOT error message, you may find help on https://loot.github.io/'),
+          }, {
+            id: 'loot-failed', allowReport: false });
         }
       }
 
