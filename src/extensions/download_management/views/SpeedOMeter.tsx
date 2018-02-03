@@ -40,7 +40,8 @@ class SpeedOMeter extends PureComponentEx<IProps, {}> {
       return (
         <div className='active-downloads-container'>
           <span>{t('Active Downloads')}</span>
-          {activeDownloads.map(this.renderDownload)}
+          {activeDownloads.slice(0, 2).map(this.renderDownload)}
+          {(activeDownloads.length > 2) ? t('More...') : null}
           <span><Icon name='download-speed' />{' '}{bytesToString(speed)}/s</span>
         </div>
       );
