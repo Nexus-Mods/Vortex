@@ -420,7 +420,7 @@ class ExtensionManager {
       showError(store.dispatch, message, details,
         (options !== undefined) && (options.isHTML === true),
         (options !== undefined) ? options.id : undefined,
-        (options !== undefined) && (options.allowReport !== false));
+        (options === undefined) || (options.allowReport !== false));
     };
     this.mApi.dismissNotification = (id: string) => {
       store.dispatch(dismissNotification(id));
