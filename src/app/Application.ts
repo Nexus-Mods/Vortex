@@ -3,7 +3,7 @@ import {} from '../reducers/index';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
 import { ProcessCanceled } from '../util/CustomErrors';
-import {} from '../util/delayed';
+import { } from '../util/delayed';
 import * as develT from '../util/devel';
 import { terminate } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
@@ -25,7 +25,7 @@ import TrayIconT from './TrayIcon';
 
 import * as Promise from 'bluebird';
 import crashDump from 'crash-dump';
-import {app, BrowserWindow, ipcMain} from 'electron';
+import {app, BrowserWindow, dialog, ipcMain} from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { allow } from 'permissions';
@@ -72,7 +72,7 @@ class Application {
     this.mMainWindow = new MainWindow(this.mStore);
     return this.mMainWindow.create(this.mStore).then(webContents => {
       this.mExtensions.setupApiMain(this.mStore, webContents);
-      this.applyArguments(this.mArgs);
+      return this.applyArguments(this.mArgs);
     });
   }
 
@@ -336,7 +336,21 @@ class Application {
 
   private applyArguments(args: IParameters) {
     if (args.download) {
-      this.mMainWindow.sendExternalURL(args.download);
+      const prom: Promise<void> = (this.mMainWindow === undefined)
+        // give the main instance a moment to fully start up
+        ? require('../util/delayed').delayed(2000)
+        : Promise.resolve(undefined);
+
+      prom.then(() => {
+        if (this.mMainWindow !== undefined) {
+          this.mMainWindow.sendExternalURL(args.download);
+        } else {
+          // TODO: this instructions aren't very correct because we know Vortex doesn't have
+          // a UI and needs to be shut down from the task manager
+          dialog.showErrorBox('Vortex unresponsive',
+            'Vortex appears to frozen, please close Vortex and try again');
+        }
+      });
     }
   }
 }
