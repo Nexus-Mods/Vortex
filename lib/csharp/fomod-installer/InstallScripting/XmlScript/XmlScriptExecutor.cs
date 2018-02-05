@@ -105,22 +105,7 @@ namespace FomodInstaller.Scripting.XmlScript
                         stepIdx = findPrevIdx(lstSteps, stepIdx);
                     }
 
-                    if (stepIdx == -1)
-                    {
-                        m_Delegates.ui.EndDialog();
-                        XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
-                        IEnumerable<InstallableFile> FilesToInstall = new List<InstallableFile>();
-                        foreach (IEnumerable<InstallableFile> files in m_SelectedOptions.Select(option => option.Files))
-                        {
-                            FilesToInstall = FilesToInstall.Union(files);
-                        }
-                        Source.SetResult(xsiInstaller.Install(xscScript, m_csmState, m_Delegates, FilesToInstall, PluginsToActivate));
-                    }
-                    else
-                    {
-                        preselectOptions(lstSteps[stepIdx]);
-                        sendState(lstSteps, ModArchive.Prefix, stepIdx);
-                    }
+                    processStep(lstSteps, stepIdx, Source, xscScript, PluginsToActivate);
                 });
             };
             Action cancel = () => {
@@ -138,10 +123,30 @@ namespace FomodInstaller.Scripting.XmlScript
                 new HeaderImage(bannerPath, hifHeaderInfo.ShowFade, hifHeaderInfo.Height),
                 select, cont, cancel);
 
-            preselectOptions(lstSteps[stepIdx]);
-            sendState(lstSteps, ModArchive.Prefix, stepIdx);
+            processStep(lstSteps, stepIdx, Source, xscScript, PluginsToActivate);
 
             return await Source.Task;
+        }
+
+        private void processStep(IList<InstallStep> lstSteps, int stepIdx, TaskCompletionSource<IList<Instruction>> Source,
+                                 XmlScript xscScript, List<InstallableFile> PluginsToActivate)
+        {
+            if (stepIdx == -1)
+            {
+                m_Delegates.ui.EndDialog();
+                XmlScriptInstaller xsiInstaller = new XmlScriptInstaller(ModArchive);
+                IEnumerable<InstallableFile> FilesToInstall = new List<InstallableFile>();
+                foreach (IEnumerable<InstallableFile> files in m_SelectedOptions.Select(option => option.Files))
+                {
+                    FilesToInstall = FilesToInstall.Union(files);
+                }
+                Source.SetResult(xsiInstaller.Install(xscScript, m_csmState, m_Delegates, FilesToInstall, PluginsToActivate));
+            }
+            else
+            {
+                preselectOptions(lstSteps[stepIdx]);
+                sendState(lstSteps, ModArchive.Prefix, stepIdx);
+            }
         }
 
         private void enableOption(Option option)
