@@ -589,6 +589,9 @@ class DownloadManager {
           download.urls = urls;
           job.url = download.urls[0];
           this.startJob(download, job);
+        })
+        .catch(err => {
+          download.failedCB(err);
         });
     } else {
       this.startJob(download, job);

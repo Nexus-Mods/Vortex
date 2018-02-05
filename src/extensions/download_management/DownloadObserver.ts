@@ -154,18 +154,23 @@ export class DownloadObserver {
           }
         })
         .catch((err) => {
-          let message = err.message;
+          const details: any = {
+            message: err.message,
+          };
           if (err.http_headers !== undefined) {
             if (err.http_headers.nexuserror !== undefined) {
-              message = err.http_headers.nexuserrorinfo;
+              details.message = err.http_headers.nexuserrorinfo;
             } else if (err.http_headers.status !== undefined) {
-              message = err.http_headers.status;
+              details.message = err.http_headers.status;
             }
           }
-          log('warn', 'download failed', {message, err: util.inspect(err)});
-          showError(this.mStore.dispatch, 'Download failed', message,
-                    false, undefined, false);
-          this.mStore.dispatch(finishDownload(id, 'failed', {message}));
+
+          if (err.request !== undefined) {
+            details.url = err.request;
+          }
+          log('warn', 'download failed', {message: details.message, err: util.inspect(err)});
+          showError(this.mStore.dispatch, 'Download failed', details, false, undefined, false);
+          this.mStore.dispatch(finishDownload(id, 'failed', {message: details.message}));
           if (callback !== undefined) {
             callback(err, id);
           }
