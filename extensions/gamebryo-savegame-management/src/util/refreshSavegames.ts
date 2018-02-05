@@ -1,11 +1,9 @@
 import { ISavegame } from '../types/ISavegame';
 
-import { log, util } from 'vortex-api';
-
 import * as Promise from 'bluebird';
 import savegameLibInit from 'gamebryo-savegame';
 import * as path from 'path';
-import { fs } from 'vortex-api';
+import { fs, log, util } from 'vortex-api';
 
 const savegameLib = savegameLibInit('savegameLib');
 
@@ -31,7 +29,8 @@ function refreshSavegames(savesPath: string,
     .catch(err => (err.code === 'ENOENT')
       ? Promise.resolve([])
       : Promise.reject(err))
-    .filter((savePath: string) => ['.ess', 'fos'].indexOf(path.extname(savePath)) !== -1)
+    .filter((savePath: string) =>
+      ['.ess', '.fos'].indexOf(path.extname(savePath).toLowerCase()) !== -1)
     .then((savegameNames: string[]) =>
       Promise.each(savegameNames, (savegameName: string) => {
         const savegamePath = path.join(savesPath, savegameName);
