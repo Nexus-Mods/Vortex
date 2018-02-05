@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as path from 'path';
 import * as webpack from 'webpack';
 
@@ -64,8 +65,14 @@ export function loaders(): webpack.Rule[] {
 }
 
 export default function config(moduleName: string, basePath: string): webpack.Configuration {
+  let tsx = true;
+  try {
+    fs.statSync('./src/index.tsx');
+  } catch (err) {
+    tsx = false;
+  }
   return {
-    entry: './src/index.ts',
+    entry: tsx ? './src/index.tsx' : './src/index.ts',
     target: 'electron-renderer',
     node: {__filename: false, __dirname: false},
     output: output(moduleName, basePath),
