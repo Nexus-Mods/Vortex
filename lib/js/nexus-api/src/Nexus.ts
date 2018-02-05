@@ -20,13 +20,19 @@ interface IRequestArgs {
 
 export class NexusError extends Error {
   private mStatusCode: number;
-  constructor(message: string, statusCode: number) {
+  private mRequest: string;
+  constructor(message: string, statusCode: number, url: string) {
     super(message);
     this.mStatusCode = statusCode;
+    this.mRequest = url;
   }
 
   public get statusCode() {
     return this.mStatusCode;
+  }
+
+  public get request() {
+    return this.mRequest;
   }
 }
 
@@ -63,7 +69,7 @@ function handleRestResult(resolve, reject, url: string, error: any,
 
     if ((response.statusCode < 200) || (response.statusCode >= 300)) {
       return reject(new NexusError(data.message || data.error || response.statusMessage,
-                                   response.statusCode));
+                                   response.statusCode, url));
     }
 
     resolve(data);
@@ -302,18 +308,6 @@ class Nexus {
       }
     });
     return result;
-  }
-
-  private handleResult(data, response, resolve, reject) {
-    if ((response.statusCode >= 200) && (response.statusCode < 300)) {
-      try {
-        resolve(data);
-      } catch (err) {
-        reject(new Error('failed to parse server response: ' + err.message));
-      }
-    } else {
-      reject(new NexusError(data.message, response.statusCode));
-    }
   }
 
   private args(customArgs: IRequestArgs) {

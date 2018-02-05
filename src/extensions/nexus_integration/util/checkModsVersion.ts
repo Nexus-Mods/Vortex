@@ -135,11 +135,11 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
 
 function errorFromNexus(err: NexusError): Error {
   if (err.statusCode >= 500) {
-    return new Error(`Internal server error (${err.statusCode}):` + err.message);
+    return new Error(`Internal server error (${err.statusCode}, ${err.request}):` + err.message);
   } else if (err.statusCode >= 400) {
-    return new Error(`Not found (${err.statusCode}): ` + err.message);
+    return new Error(`Not found (${err.statusCode}, ${err.request}): ` + err.message);
   } else {
-    return new Error(err.message);
+    return new Error(`${err.message} (${err.statusCode}, ${err.request})`);
   }
 }
 

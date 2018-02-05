@@ -65,6 +65,7 @@ import crashDump from 'crash-dump';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
 import { getSafe } from './util/storeHelper';
+import { truthy } from './util/util';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -129,15 +130,32 @@ function findExtensionName(stack: string): string {
   return extension;
 }
 
+function makeDetails(error: any): IError {
+  const result: IError = {
+    message: 'Unknown',
+    extension: findExtensionName(error.stack),
+  };
+
+  if ((error.message === undefined) && (error.stack === undefined)) {
+    // no Error object
+    result.message = require('util').inspect(error);
+  } else {
+    result.message = error.message;
+    if (truthy(error.URL)) {
+      result.message += `(request: ${error.URL})`;
+    }
+    result.stack = error.stack;
+  }
+
+  return result;
+}
+
 const terminateFromError = (error: any) => {
   let details: IError;
 
   switch (typeof error) {
     case 'object': {
-      const extension = findExtensionName(error.stack);
-      details = (error.message === undefined) && (error.stack === undefined)
-        ? { message: require('util').inspect(error), extension }
-        : { message: error.message, stack: error.stack, extension };
+      details = makeDetails(error);
       break;
     }
     case 'string': {

@@ -204,8 +204,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
             return;
           }
 
-          const errMessage = typeof(err) === 'string' ? err : err.message;
-          const message = processErrorMessage(err.statusCode, errMessage);
+          const message = processErrorMessage(err);
           showError(api.store.dispatch, 'An error occurred retrieving categories', message,
                     false, undefined, message.Servermessage === undefined);
         });
@@ -217,35 +216,40 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
 interface IRequestError {
   Error: string;
   Servermessage?: string;
+  URL?: string;
   Game?: string;
   fatal?: boolean;
   Mod?: number;
   Version?: string;
 }
 
-function processErrorMessage(statusCode: number, errorMessage: string): IRequestError {
-  if (statusCode === undefined) {
+function processErrorMessage(err: NexusErrorT): IRequestError {
+  const errorMessage = typeof(err) === 'string' ? err : err.message;
+  if (err.statusCode === undefined) {
     if (errorMessage && (errorMessage.indexOf('APIKEY') > -1)) {
       return { Error: 'You are not logged in!' };
     } else {
       return { Error: errorMessage };
     }
-  } else if ((statusCode >= 400) && (statusCode < 500)) {
+  } else if ((err.statusCode >= 400) && (err.statusCode < 500)) {
     return {
       Error: 'Server couldn\'t process this request.\nMaybe the locally stored '
       + 'info about the mod is wrong\nor the mod was removed from Nexus.',
       Servermessage: errorMessage,
+      URL: err.request,
       fatal: errorMessage === undefined,
     };
-  } else if ((statusCode >= 500) && (statusCode < 600)) {
+  } else if ((err.statusCode >= 500) && (err.statusCode < 600)) {
     return {
       Error: 'The server reported an internal error. Please try again later.',
       Servermessage: errorMessage,
+      URL: err.request,
     };
   } else {
     return {
       Error: 'Unexpected error reported by the server',
-      Servermessage: (errorMessage || '') + ' ( Status Code: ' + statusCode + ')',
+      Servermessage: (errorMessage || '') + ' ( Status Code: ' + err.statusCode + ')',
+      URL: err.request,
     };
   }
 }
@@ -296,7 +300,7 @@ function endorseModImpl(
           message: api.translate('You can\'t endorse a mod that has no version set.'),
         });
       } else {
-        const detail = processErrorMessage(err.statusCode, err.message);
+        const detail = processErrorMessage(err);
         detail.Game = gameId;
         detail.Mod = nexusModId;
         detail.Version = version;
@@ -332,7 +336,7 @@ function checkModVersionsImpl(
         return Promise.resolve(`${name}:\nRequest timeout`);
       })
       .catch(err => {
-        const detail = processErrorMessage(err.statusCode, err.message);
+        const detail = processErrorMessage(err);
         if (detail.fatal) {
           return Promise.reject(detail);
         }

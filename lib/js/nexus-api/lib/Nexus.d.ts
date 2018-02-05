@@ -1,8 +1,10 @@
 import * as types from './types';
 export declare class NexusError extends Error {
     private mStatusCode;
-    constructor(message: string, statusCode: number);
+    private mRequest;
+    constructor(message: string, statusCode: number, url: string);
     readonly statusCode: number;
+    readonly request: string;
 }
 export declare class TimeoutError extends Error {
     constructor(message: any);
@@ -29,7 +31,6 @@ declare class Nexus {
     getDownloadURLs(modId: number, fileId: number, gameId?: string): Promise<types.IDownloadURL[]>;
     sendFeedback(message: string, fileBundle: string, anonymous: boolean, groupingKey?: string, id?: string): Promise<void>;
     private filter(obj);
-    private handleResult(data, response, resolve, reject);
     private args(customArgs);
 }
 export default Nexus;
