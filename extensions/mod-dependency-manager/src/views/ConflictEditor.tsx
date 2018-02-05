@@ -100,7 +100,7 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
         className='conflict-popover'
         id={`conflict-popover-${conflict.otherMod}`}
       >
-        {conflict.files.sort().map(fileName => <p key={fileName}>{fileName}</p>)}
+        {conflict.files.slice(0).sort().map(fileName => <p key={fileName}>{fileName}</p>)}
       </Popover>
     );
 

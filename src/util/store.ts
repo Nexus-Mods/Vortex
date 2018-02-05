@@ -3,7 +3,6 @@ import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { IStorage } from '../types/IStorage';
 
-import {terminate} from './errorHandling';
 import ExtensionManager from './ExtensionManager';
 import * as fs from './fs';
 import LevelPersist from './LevelPersist';

@@ -248,7 +248,7 @@ function Step(props: IStepProps) {
     groupsSorted = props.step.optionalFileGroups.group;
   } else {
     const sortFunc = getGroupSortFunc(props.step.optionalFileGroups.order);
-    groupsSorted = props.step.optionalFileGroups.group.sort(sortFunc);
+    groupsSorted = props.step.optionalFileGroups.group.slice(0).sort(sortFunc);
   }
 
   return (

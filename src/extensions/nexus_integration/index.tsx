@@ -114,12 +114,9 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
           },
         },
         nexusFileInfo.file_name,
-        (err, downloadId) => {
-          if (err) {
-            return reject(err);
-          }
-          return resolve(downloadId);
-        });
+        (err, downloadId) => (truthy(err)
+          ? reject(err)
+          : resolve(downloadId)));
       });
     })
     .then(downloadId => {
