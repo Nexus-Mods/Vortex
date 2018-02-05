@@ -89,7 +89,8 @@ class DetailCell extends React.Component<ICellProps, {}> {
       ) : null;
     } else {
       const values = rowIds.map(id => rowData[id][attribute.id]);
-      const readOnly = getSafe(attribute, ['edit', 'readOnly'], (val: any) => false)(rawData);
+      const readOnlyFunc = getSafe(attribute, ['edit', 'readOnly'], (val: any) => false);
+      const readOnly = readOnlyFunc(rawData[rowIds[0]]);
 
       if (attribute.edit.onChangeValue !== undefined) {
         content = (attribute.edit.choices !== undefined)
