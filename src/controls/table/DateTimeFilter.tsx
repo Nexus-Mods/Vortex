@@ -103,7 +103,7 @@ class DateTimeFilter implements ITableFilter {
       return true;
     }
 
-    if (input === undefined) {
+    if (!truthy(input)) {
       return false;
     }
 
