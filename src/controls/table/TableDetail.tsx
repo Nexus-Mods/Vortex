@@ -287,7 +287,7 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
 
     const detailList = attributes
       .filter(obj =>
-        (rowData[rowIds[0]][obj.id] !== undefined)
+        (obj.isVolatile || (rowData[rowIds[0]][obj.id] !== undefined))
         && ((rowIds.length === 1)
           || obj.supportsMultiple));
 
