@@ -309,10 +309,14 @@ function init(context: IExtensionContextExt): boolean {
           // download was interrupted before receiving urls, has to be canceled
           log('info', 'download removed because urls were never retrieved', { id });
           const downloadPath = downloadPathSelector(context.api.store.getState());
-          fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
-          .then(() => {
+          if ((downloadPath !== undefined) && (downloads[id].localPath !== undefined)) {
+            fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
+              .then(() => {
+                store.dispatch(removeDownload(id));
+              });
+          } else {
             store.dispatch(removeDownload(id));
-          });
+          }
         } else {
           let realSize =
               (downloads[id].size !== 0) ?
