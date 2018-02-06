@@ -5,24 +5,23 @@ class SplashScreen {
 
   public fadeOut() {
     // apparently we can't prevent the user from closing the splash with alt-f4...
-    if ((this.mWindow !== null) || this.mWindow.isDestroyed()) {
-      // ensure the splash screen remains visible
-      this.mWindow.setAlwaysOnTop(true);
-
-      // don't fade out immediately, otherwise the it looks odd
-      // as the main window appears at the same time
-      return delayed(200)
-          .then(() => this.mWindow.webContents.send('fade-out'))
-          // wait for the fade out animation to finish before destroying
-          // the window
-          .then(() => delayed(500))
-          .then(() => {
-            this.mWindow.close();
-            this.mWindow = null;
-          });
-    } else {
+    if ((this.mWindow === null) || this.mWindow.isDestroyed()) {
       return Promise.resolve();
     }
+    // ensure the splash screen remains visible
+    this.mWindow.setAlwaysOnTop(true);
+
+    // don't fade out immediately, otherwise the it looks odd
+    // as the main window appears at the same time
+    return delayed(200)
+        .then(() => this.mWindow.webContents.send('fade-out'))
+        // wait for the fade out animation to finish before destroying
+        // the window
+        .then(() => delayed(500))
+        .then(() => {
+          this.mWindow.close();
+          this.mWindow = null;
+        });
   }
 
   public create(): Promise<void> {
