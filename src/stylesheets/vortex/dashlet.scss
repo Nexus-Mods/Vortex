@@ -87,6 +87,7 @@
   padding: $gutter-width;
   align-items: center;
   background-color: $brand-menu;
+  border-bottom: $border-color solid $border-width;
 
   .nexus-name {
     display: flex;

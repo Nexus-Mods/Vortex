@@ -588,7 +588,7 @@ div:hover > .hover-expand {
 // make dividing line between button and dropdown element white
 
 .dropdown .dropdown-toggle {
-  border-left: solid $border-width $white;
+  border-left: solid $border-width transparentize($white, 50%);
 }
 
 .progress {
