@@ -55,6 +55,7 @@ import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import { FlexLayout } from '../../../index';
+import { UserCanceled } from '../../../util/CustomErrors';
 
 const PanelX: any = Panel;
 
@@ -674,7 +675,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       if (this.mModsWithState[modId].state !== 'downloaded') {
         this.context.api.events.emit('remove-mod', gameMode, modId, (err) => {
           if (err !== null) {
-            return this.context.api.showErrorNotification('Failed to remove mod', err);
+            if (err instanceof UserCanceled) {
+              // the user knows that he cancelled, no need to notify
+              return;
+            } else {
+              return this.context.api.showErrorNotification('Failed to remove mod', err);
+            }
           }
           this.context.api.events.emit('mods-enabled', [modId], value);
         });
