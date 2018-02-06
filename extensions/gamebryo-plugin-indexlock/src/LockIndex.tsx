@@ -2,6 +2,7 @@ import { lockPluginIndex } from './actions';
 import { IPlugin } from './types';
 
 import * as React from 'react';
+import { FormControl } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import { ComponentEx, selectors, Toggle, types, util } from 'vortex-api';
@@ -36,15 +37,29 @@ class LockIndex extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, lockedIndex } = this.props;
     const title = (lockedIndex !== undefined)
-      ? t('Locked to Index {{lockedIndex}}', { replace: { lockedIndex: toHex(lockedIndex) } })
+      ? t('Locked to Index', { replace: { lockedIndex: toHex(lockedIndex) } })
       : t('Sorted automatically');
     return (
       <Toggle
         checked={lockedIndex !== undefined}
         onToggle={this.onToggle}
       >
-        {title}
+        <div style={{ display: 'flex' }}>
+          {title}
+          {(lockedIndex === undefined) ? null : this.renderIndex()}
+        </div>
       </ Toggle>
+    );
+  }
+
+  private renderIndex(): JSX.Element {
+    const { lockedIndex } = this.props;
+    return (
+      <FormControl
+        type='text'
+        value={toHex(lockedIndex)}
+        onChange={this.setIndex}
+      />
     );
   }
 
@@ -52,6 +67,14 @@ class LockIndex extends ComponentEx<IProps, {}> {
     const { gameMode, onLockPluginIndex, plugin } = this.props;
     onLockPluginIndex(gameMode, plugin.name, newValue ? plugin.modIndex : undefined);
     this.forceUpdate();
+  }
+
+  private setIndex = (evt) => {
+    const { gameMode, onLockPluginIndex, plugin } = this.props;
+    const newValue = Number.parseInt(evt.currentTarget.value, 16);
+    if (!isNaN(newValue) && (newValue <= 0xFF)) {
+      onLockPluginIndex(gameMode, plugin.name, newValue);
+    }
   }
 }
 

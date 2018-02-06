@@ -12,6 +12,14 @@ function genAttribute(api: types.IExtensionApi): types.ITableAttribute<IPlugin> 
     id: 'lockIndex',
     name: 'Lock Mod Index',
     icon: 'locked',
+    help: api.translate('Use this to directly control the mod index of a plugin.\n'
+      + 'This will completely override the order generated automatically and is '
+      + 'only intended as a temporary measure or during mod development.\n\n'
+      + 'Please note that if the index you choose is not possible because it\'s too low '
+      + 'or too high, the plugin is prepended/appended to the list and will not have the expected '
+      + 'mod index.\n\n'
+      + 'Further note: This lets you place non-master esps before masters but the game '
+      + 'will not load them in this order.'),
     customRenderer:
         (plugin: IPlugin, detail, t: I18next.TranslationFunction) => (
           <LockIndex
@@ -59,15 +67,33 @@ function init(context: types.IExtensionContext) {
         .sort((lhs, rhs) => newState[lhs].loadOrder - newState[rhs].loadOrder);
 
       // locked index -> locked plugin
-      const toInsert = Object.keys(fixed).reduce((prev, key) => {
+      const toInsert: { [idx: number]: string } = Object.keys(fixed).reduce((prev, key) => {
         prev[fixed[key]] = key;
         return prev;
       }, {});
 
-      let currentModIndex: number = Object.keys(plugins).filter(
+      let currentIndex: number = Object.keys(plugins).filter(
         key => plugins[key].isNative && (path.extname(key) !== '.esl')).length;
+
+      // insert the plugins where the locked index is too low at the beginning
+      // TODO: This is rather inefficient but it should also not run too often
+      const prependOffset = 0;
+      while (true) {
+        const lowIdx =
+          Object.keys(toInsert)
+                .map(idx => parseInt(idx, 10))
+                .sort()
+                .find(idx => (idx <= currentIndex));
+        if (lowIdx === undefined) {
+          break;
+        }
+        sorted.splice(prependOffset, 0, toInsert[lowIdx]);
+        delete toInsert[lowIdx];
+        ++currentIndex;
+      }
+
       // tslint:disable-next-line:prefer-for-of
-      for (let idx = 0; idx < sorted.length; ++idx) {
+      for (let idx = 0; (idx < sorted.length) && (Object.keys(toInsert).length > 0); ++idx) {
         if (!newState[sorted[idx]].enabled) {
           continue;
         }
@@ -75,11 +101,15 @@ function init(context: types.IExtensionContext) {
           continue;
         }
 
-        ++currentModIndex;
-        if (toInsert[currentModIndex] !== undefined) {
-          sorted.splice(idx + 1, 0, toInsert[currentModIndex]);
+        ++currentIndex;
+        if (toInsert[currentIndex] !== undefined) {
+          sorted.splice(idx + 1, 0, toInsert[currentIndex]);
+          delete toInsert[currentIndex];
         }
       }
+      Object.keys(toInsert).forEach(idx => {
+        sorted.push(toInsert[idx]);
+      });
       try {
         updating = true;
         // TODO: bit of a hack. We can't use the react-act action from

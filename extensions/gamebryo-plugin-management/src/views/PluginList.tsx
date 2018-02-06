@@ -529,9 +529,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     byLO.forEach((plugin: IPluginCombined) => {
       if (!plugin.enabled && !plugin.isNative) {
         res[plugin.name] = { modIndex: -1 };
-      }
-
-      if (path.extname(plugin.name) === '.esl') {
+      } else if (path.extname(plugin.name) === '.esl') {
         res[plugin.name] = {
           modIndex: 0xFE,
           eslIndex: eslIndex++,
