@@ -3,6 +3,7 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 
 import * as Promise from 'bluebird';
+import * as path from 'path';
 
 /**
  * assembles a file received in chunks.
@@ -29,6 +30,7 @@ class FileAssembler {
     } catch (err) {
       this.mTotalSize = 0;
     }
+    fs.ensureDirSync(path.dirname(fileName));
     this.mFD = fs.openSync(fileName, exists ? 'r+' : 'w');
   }
 
