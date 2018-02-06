@@ -107,7 +107,7 @@ export class DownloadObserver {
     if (typeof(urls) !== 'function') {
       urls = urls.filter(url =>
           (url !== undefined)
-          && (['ftp', 'http', 'https'].indexOf(nodeURL.parse(url).protocol) !== -1));
+          && (['ftp:', 'http:', 'https:'].indexOf(nodeURL.parse(url).protocol) !== -1));
       if (urls.length === 0) {
         if (callback !== undefined) {
           callback(new ProcessCanceled('URL not usable, only ftp, http and https are supported.'));
