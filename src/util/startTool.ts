@@ -85,6 +85,10 @@ function startTool(starter: StarterInfo,
                    queryDeploy: () => Promise<DeployResult>,
                    onShowError: (message: string, details?: any) => void,
                    ): Promise<void> {
+  if (starter.exePath === undefined) {
+    onShowError('Tool not configured', 'Configuration for this tool is incomplete');
+    return Promise.resolve();
+  }
   return startDeploy(queryDeploy, events)
     .then((doStart: boolean) => {
       if (doStart) {
