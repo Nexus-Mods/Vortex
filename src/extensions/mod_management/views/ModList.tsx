@@ -852,9 +852,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.context.api.events.emit('start-install-download', archiveId);
   }
 
-  private reinstall = (modId: string) => {
+  private reinstall = (modIds: string | string[]) => {
     const { mods } = this.props;
-    this.context.api.events.emit('start-install-download', mods[modId].archiveId);
+    if (Array.isArray(modIds)) {
+      modIds.forEach(modId =>
+        this.context.api.events.emit('start-install-download', mods[modId].archiveId));
+    } else {
+      this.context.api.events.emit('start-install-download', mods[modIds].archiveId);
+    }
   }
 
   private checkForUpdate = (modIds: string[]) => {
