@@ -546,9 +546,7 @@ namespace FomodInstaller.Interface
         /// contains the current index of a plugin. This array must contain all current indices.</param>
         protected void DoSetLoadOrder(int[] p_intPlugins)
         {
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("DoSetLoadOrder");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            // nop. It's not the job of a mod installer to control users load order
         }
 
         /// <summary>
@@ -562,9 +560,7 @@ namespace FomodInstaller.Interface
         /// contains the current index of a plugin. This array must contain all current indices.</param>
         public void SetLoadOrder(int[] p_intPlugins)
         {
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("SetLoadOrder");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            // nop. It's not the job of a mod installer to control users load order
         }
 
         /// <summary>
@@ -582,9 +578,7 @@ namespace FomodInstaller.Interface
         /// plugins.</param>
         protected void DoSetLoadOrder(int[] p_intPlugins, int p_intPosition)
         {
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("DoSetLoadOrder");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            // nop. It's not the job of a mod installer to control users load order
         }
 
         /// <summary>
@@ -602,9 +596,7 @@ namespace FomodInstaller.Interface
         /// plugins.</param>
         public void SetLoadOrder(int[] p_intPlugins, int p_intPosition)
         {
-            Instruction UnsupportedFunction = Instruction.UnsupportedFunctionalityWarning("SetLoadOrder");
-            if (!modInstallInstructions.Contains(UnsupportedFunction))
-                modInstallInstructions.Add(UnsupportedFunction);
+            // nop. It's not the job of a mod installer to control users load order
         }
 
         /// <summary>
