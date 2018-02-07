@@ -228,7 +228,8 @@ export function onStartInstallDownload(api: IExtensionApi,
     return;
   }
   const inPaths = state.settings.mods.paths;
-  const downloadPath: string = resolvePath('download', inPaths, download.game);
+  const gameId = download.game || activeGameId(state);
+  const downloadPath: string = resolvePath('download', inPaths, gameId);
   if (downloadPath === undefined) {
     api.showErrorNotification('Unknown Game',
       'Failed to determine installation directory. This shouldn\'t have happened', {
