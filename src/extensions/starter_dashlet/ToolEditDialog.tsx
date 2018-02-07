@@ -4,6 +4,7 @@ import { Button, IconButton } from '../../controls/TooltipControls';
 import { IComponentContext } from '../../types/IComponentContext';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { getSafe } from '../../util/storeHelper';
@@ -21,6 +22,7 @@ import * as React from 'react';
 import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ProcessCanceled } from '../../util/CustomErrors';
 
 interface IEnvButtonProps {
   t: I18next.TranslationFunction;
@@ -172,6 +174,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   };
 
   public context: IComponentContext;
+  private mUpdateImageDebouncer: Debouncer;
 
   constructor(props: IProps) {
     super(props);
@@ -179,6 +182,9 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       tool: { ...props.tool },
       imageId: new Date().getTime(),
     });
+    this.mUpdateImageDebouncer = new Debouncer((imagePath: string) => {
+      return this.useImage(imagePath);
+    }, 2000);
   }
 
   public render(): JSX.Element {
@@ -373,7 +379,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     if (!this.state.tool.workingDirectory) {
       this.handleChange('workingDirectory', path.dirname(filePath));
     }
-    this.useImage(filePath);
+    this.mUpdateImageDebouncer.schedule(undefined, filePath);
   }
 
   private handleChangeIcon = () => {
@@ -399,7 +405,9 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     const { tool } = this.props;
     const destPath = tool.iconOutPath;
 
-    return fs.ensureDirAsync(path.dirname(destPath))
+    return fs.statAsync(filePath)
+      .catch(err => Promise.reject(new ProcessCanceled('invalid file')))
+      .then(() => fs.ensureDirAsync(path.dirname(destPath)))
       .then(() => (path.extname(filePath) === '.exe')
         ? new Promise<void>((resolve, reject) => {
           extractIconToFile(filePath, destPath, (err) => {
@@ -416,7 +424,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
         this.forceUpdate();
       })
       .catch((err) => {
-        if (err !== null) {
+        if ((err !== null) && !(err instanceof ProcessCanceled)) {
           this.context.api.showErrorNotification('failed to change tool icon', err.message);
         }
       });
