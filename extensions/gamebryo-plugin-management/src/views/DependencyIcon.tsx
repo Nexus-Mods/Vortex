@@ -11,7 +11,7 @@ import { DragSource, DropTarget } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
 import { connect } from 'react-redux';
-import { Advanced, ComponentEx, selectors, tooltip, util } from 'vortex-api';
+import { Advanced, ComponentEx, log, selectors, tooltip, util } from 'vortex-api';
 
 function splitOnce(input: string, separator: string): string[] {
   const idx = input.indexOf(separator);
@@ -64,11 +64,15 @@ interface IDragInfo {
 }
 
 function componentCenter(component: React.Component<any, any>) {
-  const box = findDOMNode(component).getBoundingClientRect();
-  return {
-    x: box.left + box.width / 2,
-    y: box.top + box.height / 2,
-  };
+  try {
+    const box = findDOMNode(component).getBoundingClientRect();
+    return {
+      x: box.left + box.width / 2,
+      y: box.top + box.height / 2,
+    };
+  } catch (err) {
+    log('error', 'failed to find component', { error: err.message });
+  }
 }
 
 // what a hack... :(

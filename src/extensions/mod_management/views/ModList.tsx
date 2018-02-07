@@ -226,8 +226,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   public setBoundsRef = ref => {
-    this.mRef = ReactDOM.findDOMNode(ref);
-    this.forceUpdate();
+    if (ref !== null) {
+      this.mRef = ReactDOM.findDOMNode(ref);
+      this.forceUpdate();
+    }
   }
 
   public componentWillUnmount() {

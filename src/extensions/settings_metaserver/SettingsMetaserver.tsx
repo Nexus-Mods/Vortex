@@ -3,7 +3,8 @@ import InputButton from '../../controls/InputButton';
 import More from '../../controls/More';
 import { Button } from '../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import {setSafe} from '../../util/storeHelper';
+import { log } from '../../util/log';
+import { setSafe } from '../../util/storeHelper';
 import DNDContainer from '../../views/DNDContainer';
 
 import { addMetaserver, removeMetaserver, setPriorities } from './actions';
@@ -64,9 +65,13 @@ const serverTarget: __ReactDnd.DropTargetSpec<any> = {
 
     if ((source !== target) && (target !== undefined)) {
       const cursorPos = monitor.getClientOffset();
-      const box = findDOMNode(component).getBoundingClientRect();
+      try {
+        const box = findDOMNode(component).getBoundingClientRect();
 
-      props.onHover(source, target, cursorPos.y > box.top + box.height / 2);
+        props.onHover(source, target, cursorPos.y > box.top + box.height / 2);
+      } catch (err) {
+        log('warn', 'failed to determine component bounds', { error: err.message });
+      }
     }
   },
 };
