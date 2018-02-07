@@ -410,6 +410,10 @@
       "path": "Nucleo_Outline/interactive icons/32px_dots-to-close-2",
       "rmFill": true,
       "rmStroke": true
+    },
+    "parse-failed": {
+      "path": "{nucleo}/ui/{nucleo_simple}_ban-bold",
+      "rmFill": true
     }
   }
 }

@@ -401,7 +401,6 @@ function testMissingMasters(t: I18next.TranslationFunction,
     const missing = plugin.masterList.filter(
       (requiredMaster) => !masters.has(requiredMaster.toLowerCase()));
     if (missing.length > 0) {
-      log('info', 'missing masters', { plugin: plugin.name, missing: missing.join(', ') });
       prev[plugin.name] = missing;
     }
     return prev;

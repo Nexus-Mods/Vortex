@@ -56,7 +56,7 @@ const PluginFlags = (props: IProps): JSX.Element => {
       <tooltip.Icon
         id={key}
         key={key}
-        name='ban-bold'
+        name='parse-failed'
         tooltip={t('Failed to parse this plugin', { ns: 'gamebryo-plugin' })}
       />);
   }
