@@ -236,7 +236,10 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     if (profile.id === '__new') {
       const newId: string = shortid();
       const newProf: IProfile = update(profile, { id: { $set: newId } });
-      onAddProfile(newProf);
+      fs.ensureDirAsync(profilePath(newProf))
+      .then(() => {
+        onAddProfile(newProf);
+      });
     } else {
       onAddProfile(profile);
     }
@@ -259,7 +262,8 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const { onAddProfile, profiles } = this.props;
     const newProfile = { ...profiles[profileId] };
     newProfile.id = shortid();
-    fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile))
+    fs.ensureDirAsync(profilePath(profiles[profileId]))
+    .then(() => fs.copyAsync(profilePath(profiles[profileId]), profilePath(newProfile)))
     .then(() => {
       onAddProfile(newProfile);
       this.editExistingProfile(newProfile.id);
