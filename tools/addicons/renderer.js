@@ -123,7 +123,7 @@ document.querySelector('#generate').addEventListener('click', () => {
 
 document.querySelector('#deploy').addEventListener('click', () => {
   console.log('run npm', path.resolve(__dirname, '..', '..'));
-  const exe = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const exe = process.platform === 'win32' ? 'yarn.cmd' : 'yarn';
   spawn(exe, ['run', '_assets_out'], {
     cwd: path.resolve(__dirname, '..', '..'),
   });
