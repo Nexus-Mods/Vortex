@@ -79,11 +79,27 @@ function startDeploy(queryDeploy: () => Promise<DeployResult>,
   });
 }
 
+type ShowError = (message: string, details?: any, allowReport?: boolean) => void;
+
+function reportError(onShowError: ShowError, err: any, executable: string) {
+  if (err.errno === 'ENOENT') {
+    onShowError('failed to run executable', {
+      executable,
+      error: 'Executable doesn\'t exist, please check the configuration for this tool.',
+    }, false);
+  } else {
+    onShowError('Failed to run executable', {
+      executable,
+      error: err.stack,
+    });
+  }
+}
+
 function startTool(starter: StarterInfo,
                    events: NodeJS.EventEmitter,
                    queryElevate: (name: string) => Promise<boolean>,
                    queryDeploy: () => Promise<DeployResult>,
-                   onShowError: (message: string, details?: any) => void,
+                   onShowError: ShowError,
                    ): Promise<void> {
   if (starter.exePath === undefined) {
     onShowError('Tool not configured', 'Configuration for this tool is incomplete');
@@ -100,8 +116,7 @@ function startTool(starter: StarterInfo,
           };
           const child = spawn(starter.exePath, [], defaults);
 
-          child.on('error',
-                   (err) => { onShowError('Failed to run executable', err); });
+          child.on('error', err => reportError(onShowError, err, starter.exePath));
 
           child.on('close', (code) => {
             if (code !== 0) {
@@ -112,22 +127,19 @@ function startTool(starter: StarterInfo,
             }
           });
         } catch (err) {
-        if (err.errno === 'EACCES') {
-          queryElevate(starter.name)
-          .then(shouldElevate => {
-            if (shouldElevate) {
-              runToolElevated(starter, onShowError);
-            }
-          });
-        } else {
-          onShowError('failed to run executable', {
-            executable: starter.exePath,
-            error: err.message,
-          });
+          if (err.errno === 'EACCES') {
+            queryElevate(starter.name)
+            .then(shouldElevate => {
+              if (shouldElevate) {
+                runToolElevated(starter, onShowError);
+              }
+            });
+          } else {
+            reportError(onShowError, err, starter.exePath);
+          }
         }
       }
-    }
-  });
+    });
 }
 
 export default startTool;

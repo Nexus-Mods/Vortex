@@ -51,7 +51,7 @@ interface IWelcomeScreenState {
 interface IActionProps {
   onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => void;
   onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => void;
-  onShowError: (message: string, details?: string | Error) => void;
+  onShowError: (message: string, details?: string | Error, allowReport?: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onMakePrimary: (gameId: string, toolId: string) => void;
@@ -449,7 +449,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => {
       dispatch(setToolVisible(gameId, toolId, visible));
     },
-    onShowError: (message: string, details?: any) => showError(dispatch, message, details),
+    onShowError: (message: string, details?: any, allowReport?: boolean) =>
+      showError(dispatch, message, details, false, undefined, allowReport),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
     onMakePrimary: (gameId: string, toolId: string) => dispatch(setPrimaryTool(gameId, toolId)),
