@@ -857,9 +857,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private reinstall = (modIds: string | string[]) => {
     const { mods } = this.props;
     if (Array.isArray(modIds)) {
-      modIds.forEach(modId =>
+      modIds.filter(modId => mods[modId] !== undefined).forEach(modId =>
         this.context.api.events.emit('start-install-download', mods[modId].archiveId));
-    } else {
+    } else if (mods[modIds] !== undefined) {
       this.context.api.events.emit('start-install-download', mods[modIds].archiveId);
     }
   }
