@@ -44,7 +44,8 @@ function enhance(sourcePath: string, input: IModEntry): Promise<IModEntry> {
         ...input,
         categoryId,
       };
-    });
+    })
+    .catch(err => input);
 }
 
 function importMods(api: types.IExtensionApi,
