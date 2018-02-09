@@ -57,7 +57,7 @@ interface IActionProps {
     content: types.IDialogContent,
     actions: types.DialogActions) => Promise<types.IDialogResult>;
   onShowActivity: (message: string, id?: string) => void;
-  onShowError: (message: string, details: any, id?: string) => void;
+  onShowError: (message: string, details: any, id?: string, allowReport?: boolean) => void;
   onShowSuccess: (message: string, id?: string) => void;
   onDismissNotification: (id: string) => void;
 }
@@ -326,7 +326,8 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
   }
 
   private remove = (instanceIds: string[]) => {
-    const { t, currentProfile, onRemoveSavegame, onShowDialog, savesPath } = this.props;
+    const { t, currentProfile, onRemoveSavegame, onShowDialog,
+            onShowError, savesPath } = this.props;
 
     let doRemoveSavegame = true;
 
@@ -343,8 +344,17 @@ class SavegameList extends ComponentEx<Props, IComponentState> {
           return Promise.map(instanceIds, id => !!id
             ? Promise.map(saveFiles(currentProfile.gameId, id), filePath =>
               fs.removeAsync(path.join(mygamesPath(currentProfile.gameId), savesPath, filePath))
-                .catch(err => (err.code === 'ENOENT')
-                    ? Promise.resolve() : Promise.reject(err))
+                .catch(err => {
+                  if (err.code === 'ENOENT') {
+                    return Promise.resolve();
+                  } else if (err.code === 'EPERM') {
+                    onShowError('Failed to delete Savegame',
+                                'The file is write protected.',
+                                undefined, false);
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(err);
+                })
                 .then(() => {
                   onRemoveSavegame(id);
                 }))
@@ -427,8 +437,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onHideTransfer: () => dispatch(showTransferDialog(false)),
     onShowActivity: (message: string, id?: string) =>
       util.showActivity(dispatch, message, id),
-    onShowError: (message: string, details: any, id?: string) =>
-      util.showError(dispatch, message, details, false, id),
+    onShowError: (message: string, details: any, id?: string, allowReport?: boolean) =>
+      util.showError(dispatch, message, details, false, id,  allowReport),
     onShowSuccess: (message: string, id?: string) =>
       util.showSuccess(dispatch, message, id),
     onDismissNotification: (id: string) => dispatch(actions.dismissNotification(id)),
