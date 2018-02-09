@@ -42,6 +42,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   public componentWillReceiveProps(newProps: IProps) {
     if ((newProps.value !== this.props.value)
         && (this.mLastCommitted !== newProps.value)) {
+      this.mLastCommitted = newProps.value;
       this.setState({ cachedValue: newProps.value });
     }
   }

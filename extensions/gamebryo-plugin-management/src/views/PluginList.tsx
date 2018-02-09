@@ -172,12 +172,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           return ((prio < -127) || (prio > 127))
             ? 'error' : 'success';
         },
-        onChangeValue: (plugin: IPluginCombined, input: string) => {
+        onChangeValue: (plugins: IPluginCombined[], input: string) => {
           const prio = parseInt(input, 10);
-          this.props.onSetGlobalPriority(plugin.name, prio);
+          plugins.forEach(plugin => {
+            this.props.onSetGlobalPriority(plugin.name, prio);
+          });
         },
       },
       isVolatile: true,
+      supportsMultiple: true,
     },
     {
       id: 'local_priority',
@@ -192,11 +195,14 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           return ((prio < -127) || (prio > 127))
             ? 'error' : 'success';
         },
-        onChangeValue: (plugin: IPluginCombined, input: string) => {
+        onChangeValue: (plugins: IPluginCombined[], input: string) => {
           const prio = parseInt(input, 10);
-          this.props.onSetLocalPriority(plugin.name, prio);
+          plugins.forEach(plugin => {
+            this.props.onSetLocalPriority(plugin.name, prio);
+          });
         },
       },
+      supportsMultiple: true,
     },
     {
       id: 'dependencies',

@@ -68,12 +68,12 @@ const userlistReducer: types.IReducerSpec = {
     },
     [actions.setGlobalPriority as any]: (state, payload) => {
       let existing: number = -1;
-      if (state.plugins !== undefined) {
+      if ((state.plugins !== undefined) && !!payload.pluginId) {
         existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
       }
       if (existing !== -1) {
-        return util.setSafe(state, ['plugins', existing, 'global_priority'],  payload.priority);
-      } else {
+        return util.setSafe(state, ['plugins', existing, 'global_priority'], payload.priority);
+      } else if (payload.pluginId) {
         return util.pushSafe(state, ['plugins'], {
           name: payload.pluginId,
           global_priority: payload.priority,
