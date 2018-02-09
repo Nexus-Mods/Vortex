@@ -50,12 +50,10 @@ function initTypes() {
   SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
 }
 
-function execInfo(scriptPath: string, parameters?: string[]) {
+function execInfo(scriptPath: string) {
   const ref = require('ref');
 
   const instApp = ref.alloc(voidPtr);
-
-  const paramStr = parameters !== undefined ? ' ' + parameters.join(' ') : '';
 
   return new SHELLEXECUTEINFO({
     cbSize: SHELLEXECUTEINFO.size,
@@ -63,9 +61,8 @@ function execInfo(scriptPath: string, parameters?: string[]) {
     hwnd: null,
     lpVerb: 'runas',
     lpFile: process.execPath,
-    //    lpFile: 'node.exe',
-    lpParameters: scriptPath + paramStr,
-    lpDirectory: __dirname,
+    lpParameters: `--run ${scriptPath}`,
+    lpDirectory: path.dirname(process.execPath),
     nShow: 0x01,
     hInstApp: instApp,
     lpIDList: null,
@@ -139,7 +136,9 @@ function runElevated(ipcPath: string, func: (ipc: any) => void,
         return reject(err);
       }
 
-      const projectRoot = path.resolve(__dirname, '../../node_modules').split('\\').join('/');
+      const projectRoot = process.env.NODE_ENV === 'development'
+        ? path.resolve(__dirname, '../../node_modules').split('\\').join('/')
+        : path.resolve(__dirname, '../node_modules').split('\\').join('/');
       if (moduleBase === undefined) {
         moduleBase = __dirname;
       }

@@ -7,6 +7,7 @@ export interface IParameters {
   wait?: boolean;
   get?: string;
   set?: string[];
+  run?: string;
 }
 
 function assign(input: string): string[] {
@@ -27,6 +28,7 @@ function parseCommandline(argv: string[]): IParameters {
                                       + 'with this, incorrect use will break Vortex and you may '
                                       + 'lose data', assign)
     .option('--wait', 'If another instance of Vortex is running, wait for it to end.')
+    .option('--run [path]', 'Execute the js program instead of Vortex itself.')
     .option('--report [path]', 'Send an error report. For internal use')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()

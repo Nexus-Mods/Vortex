@@ -20,7 +20,7 @@ import { sendReport, terminate } from './util/errorHandling';
 import {} from './util/extensionRequire';
 import { log } from './util/log';
 
-import { app, crashReporter } from 'electron';
+import { app, crashReporter, dialog } from 'electron';
 import * as path from 'path';
 
 stopTime();
@@ -64,6 +64,26 @@ function main() {
   if (mainArgs.report) {
     return sendReport(mainArgs.report)
     .then(() => app.quit());
+  }
+
+  if (mainArgs.run !== undefined) {
+    // Vortex here acts only as a trampoline (probably elevated) to start
+    // some other process
+    const { spawn } = require('child_process');
+    spawn(process.execPath, [ mainArgs.run ], {
+      env: {
+        ...process.env,
+        ELECTRON_RUN_AS_NODE: '1',
+      },
+      detached: true,
+    })
+    .on('error', err => {
+      // TODO: In practice we have practically no information about what we're running
+      //       at this point
+      dialog.showErrorBox('Failed to run script', err.message);
+    });
+    app.quit();
+    return;
   }
 
   application = new Application(mainArgs);
