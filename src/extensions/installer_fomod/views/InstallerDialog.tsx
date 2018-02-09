@@ -371,7 +371,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
                 ) : null
             }</div>
             <div className='fomod-progress'>
-              <ProgressBar now={idx} max={steps.length} />
+              <ProgressBar now={idx} max={steps.length - 1} />
             </div>
             <div>{
               nextVisible !== undefined
