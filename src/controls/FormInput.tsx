@@ -36,7 +36,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       this.mLastCommitted = newValue;
       this.props.onChange(newValue);
       return null;
-    }, 250);
+    }, 1000);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
