@@ -184,7 +184,10 @@ class LootInterface {
     }
   });
 
-  private convertGameId(gameMode: string) {
+  private convertGameId(gameMode: string, masterlist: boolean) {
+    if (masterlist && (gameMode === 'fallout4vr')) {
+      return 'fallout4';
+    }
     return gameMode;
   }
 
@@ -195,12 +198,14 @@ class LootInterface {
     await fs.ensureDirAsync(localPath);
 
     const loot: any = Bluebird.promisifyAll(
-        await LootProm.createAsync(this.convertGameId(gameMode), gamePath, localPath, 'en'));
+        await LootProm.createAsync(this.convertGameId(gameMode, false), gamePath, localPath, 'en'));
     const masterlistPath = path.join(lootAppPath(gameMode), 'masterlist.yaml');
     try {
       await fs.ensureDirAsync(path.dirname(masterlistPath));
       const updated = await loot.updateMasterlistAsync(
-          masterlistPath, `https://github.com/loot/${gameMode}.git`, 'v0.10');
+          masterlistPath,
+          `https://github.com/loot/${this.convertGameId(gameMode, true)}.git`,
+          'v0.10');
       log('info', 'updated loot masterlist', updated);
     } catch (err) {
       this.mExtensionApi.showErrorNotification(

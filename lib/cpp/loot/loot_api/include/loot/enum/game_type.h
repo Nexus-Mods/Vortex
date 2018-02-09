@@ -43,6 +43,8 @@ enum struct GameType : unsigned int {
   fo4,
   /** The Elder Scrolls V: Skyrim Special Edition */
   tes5se,
+  /** Fallout 4 VR */
+  fo4vr,
 };
 }
 

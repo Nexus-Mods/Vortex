@@ -182,7 +182,8 @@ loot::GameType Loot::convertGameId(const std::string &gameId) const {
     { "skyrimse", loot::GameType::tes5se },
     { "fallout3", loot::GameType::fo3 },
     { "falloutnv", loot::GameType::fonv },
-    { "fallout4", loot::GameType::fo4 }
+    { "fallout4", loot::GameType::fo4 },
+    { "fallout4vr", loot::GameType::fo4vr }
   };
 
   auto iter = gameMap.find(gameId);
