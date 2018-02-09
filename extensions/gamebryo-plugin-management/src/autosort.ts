@@ -80,7 +80,6 @@ class LootInterface {
         this.mSortPromise = this.readLists(gameMode, loot)
           .then(() => loot.sortPluginsAsync(pluginNames));
         const sorted: string[] = await this.mSortPromise;
-        store.dispatch(actions.stopActivity('plugins', 'sorting'));
         store.dispatch(setPluginOrder(sorted));
       } catch (err) {
         log('info', 'loot failed', { error: err.message });
@@ -96,12 +95,12 @@ class LootInterface {
         } else {
           this.mExtensionApi.showErrorNotification('LOOT operation failed', {
             message: err.message,
-            note: t('This is a LOOT error message, you may find help on https://loot.github.io/'),
           }, {
-            id: 'loot-failed', allowReport: false });
+            id: 'loot-failed', allowReport: true });
         }
+      } finally {
+        store.dispatch(actions.stopActivity('plugins', 'sorting'));
       }
-
     }
     return Promise.resolve();
   }
@@ -186,11 +185,7 @@ class LootInterface {
   });
 
   private convertGameId(gameMode: string) {
-    if (gameMode === 'fallout4vr') {
-      return 'fallout4';
-    } else {
-      return gameMode;
-    }
+    return gameMode;
   }
 
   // tslint:disable-next-line:member-ordering
