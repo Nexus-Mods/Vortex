@@ -281,11 +281,30 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('import-downloads', (downloadPaths: string[]) => {
       const downloadPath = downloadPathSelector(context.api.store.getState());
-      downloadPaths.forEach(dlPath => {
+      let hadDirs = false;
+      Promise.map(downloadPaths, dlPath => {
         const fileName = path.basename(dlPath);
         const destination = path.join(downloadPath, fileName);
-        move(context.api, dlPath, destination)
-          .then(() => log('info', 'imported archives', { count: downloadPaths.length }));
+        fs.statAsync(dlPath)
+            .then(stats => {
+              if (stats.isDirectory()) {
+                hadDirs = true;
+                return Promise.resolve();
+              } else {
+                return move(context.api, dlPath, destination);
+              }
+            })
+            .then(() => {
+              if (hadDirs) {
+                context.api.sendNotification({
+                  type: 'warning',
+                  title: 'Can\'t import directories',
+                  message:
+                      'You can drag mod archives here, directories are not supported',
+                });
+              }
+              log('info', 'imported archives', {count: downloadPaths.length});
+            });
       });
     });
 
