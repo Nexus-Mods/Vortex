@@ -80,6 +80,7 @@ class InstructionGroups {
   public unsupported: IInstruction[] = [];
   public attribute: IInstruction[] = [];
   public setmodtype: IInstruction[] = [];
+  public error: IInstruction[] = [];
 }
 
 export const INI_TWEAKS_PATH = 'Ini Tweaks';
@@ -284,6 +285,7 @@ class InstallManager {
         // TODO: make this nicer. especially: The first check doesn't recognize UserCanceled
         //   exceptions from extensions, hence we have to do the string check (last one)
         const canceled = (err instanceof UserCanceled)
+                         || (err instanceof ProcessCanceled)
                          || (err === null)
                          || (err.message === 'Canceled')
                          || ((err.stack !== undefined)
@@ -657,6 +659,16 @@ class InstallManager {
     }
 
     const instructionGroups = this.transformInstructions(result.instructions);
+
+    if (instructionGroups.error.length > 0) {
+      api.showErrorNotification('Installer failed',
+        instructionGroups.error.map(err => err.source).join('\n'), {
+          allowReport: false,
+        },
+      );
+      return Promise.reject(new ProcessCanceled('Installer failed'));
+    }
+
     log('debug', 'installer instructions', instructionGroups);
     this.reportUnsupported(api, instructionGroups.unsupported, archivePath);
 

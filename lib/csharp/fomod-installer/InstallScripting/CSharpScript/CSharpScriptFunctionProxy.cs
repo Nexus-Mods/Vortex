@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Drawing;
 using FomodInstaller.Interface;
+using System.Security;
+using System.Windows.Forms;
+using System.Security.Permissions;
 
 namespace FomodInstaller.Scripting.CSharpScript
 {
@@ -44,6 +47,52 @@ namespace FomodInstaller.Scripting.CSharpScript
         #endregion
 
         #region UI
+
+        /// <summary>
+        /// Shows a message box with the given message.
+        /// </summary>
+        /// <param name="p_strMessage">The message to display in the message box.</param>
+        public void MessageBox(string p_strMessage)
+        {
+            ShowMessageBox(p_strMessage, string.Empty, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        /// <summary>
+        /// Shows a message box with the given message, title, and buttons.
+        /// </summary>
+        /// <param name="p_strMessage">The message to display in the message box.</param>
+        /// <param name="p_strTitle">The message box's title, display in the title bar.</param>
+        /// <param name="p_mbbButtons">The buttons to show in the message box.</param>
+        public void MessageBox(string p_strMessage, string p_strTitle)
+        {
+            ShowMessageBox(p_strMessage, p_strTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        ///// <summary>
+        ///// Shows a message box with the given message, title, buttons, and icon.
+        ///// </summary>
+        ///// <param name="p_strMessage">The message to display in the message box.</param>
+        ///// <param name="p_strTitle">The message box's title, display in the title bar.</param>
+        ///// <param name="p_mbbButtons">The buttons to show in the message box.</param>
+        ///// <param name="p_mdiIcon">The icon to display in the message box.</param>
+        public DialogResult MessageBox(string p_strMessage, string p_strTitle, MessageBoxButtons p_mbbButtons)
+        {
+            return ShowMessageBox(p_strMessage, p_strTitle, p_mbbButtons, MessageBoxIcon.Information);
+        }
+
+        /// <summary>
+        /// Shows a message box with the given message, title, buttons, and icon.
+        /// </summary>
+        /// <param name="p_strMessage">The message to display in the message box.</param>
+        /// <param name="p_strTitle">The message box's title, display in the title bar.</param>
+        /// <param name="p_mbbButtons">The buttons to show in the message box.</param>
+        /// <param name="p_mdiIcon">The icon to display in the message box.</param>
+        public DialogResult MessageBox(string p_strMessage, string p_strTitle, MessageBoxButtons p_mbbButtons, MessageBoxIcon p_mdiIcon)
+        {
+            return ShowMessageBox(p_strMessage, p_strTitle, p_mbbButtons, p_mdiIcon);
+        }
+
+
 
         #region Select
 
@@ -149,6 +198,21 @@ namespace FomodInstaller.Scripting.CSharpScript
 
         #endregion
 
+
+        private DialogResult ShowMessageBox(string p_strMessage, string p_strCaption, MessageBoxButtons p_mbbButtons, MessageBoxIcon p_mbiIcon)
+        {
+            DialogResult drsResult = DialogResult.None;
+            try
+            {
+                new PermissionSet(PermissionState.Unrestricted).Assert();
+                return System.Windows.Forms.MessageBox.Show(p_strMessage, p_strCaption, p_mbbButtons, p_mbiIcon, MessageBoxDefaultButton.Button1, MessageBoxOptions.DefaultDesktopOnly);
+            }
+            finally
+            {
+                PermissionSet.RevertAssert();
+            }
+            return drsResult;
+        }
         #endregion
     }
 }

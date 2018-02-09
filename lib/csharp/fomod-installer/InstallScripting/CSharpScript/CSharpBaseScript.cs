@@ -316,7 +316,7 @@ namespace FomodInstaller.Scripting.CSharpScript
         /// <param name="p_mbbButtons">The buttons to show in the message box.</param>
         public static DialogResult MessageBox(string p_strMessage, string p_strTitle, MessageBoxButtons p_mbbButtons)
         {
-            return (DialogResult)ExecuteMethod(() => Functions.MessageBox(p_strMessage, p_strTitle));
+            return (DialogResult)ExecuteMethod(() => Functions.MessageBox(p_strMessage, p_strTitle, p_mbbButtons));
         }
 
         #endregion
