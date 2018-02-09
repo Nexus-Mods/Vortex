@@ -16,7 +16,7 @@ class ScreenshotCanvas extends React.Component<ICanvasProps, {}> {
   public componentDidMount() {
     const ctx: CanvasRenderingContext2D = this.screenshotCanvas.getContext('2d');
     const imgData: ImageData = ctx.createImageData(
-      this.screenshotCanvas.width, this.screenshotCanvas.height);
+      Math.max(this.screenshotCanvas.width, 1), Math.max(this.screenshotCanvas.height, 1));
 
     this.props.save.savegameBind.screenshot(imgData.data);
     createImageBitmap(imgData)
