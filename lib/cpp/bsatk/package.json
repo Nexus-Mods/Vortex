@@ -5,7 +5,7 @@
   "scripts": {
     "autogypi": "autogypi",
     "node-gyp": "node-gyp",
-    "install": "autogypi && node-gyp configure build"
+    "install": "autogypi && node-gyp configure --msvs_version=2015 build"
   },
   "author": "Black Tree Gaming Ltd.",
   "license": "GPL-3.0",

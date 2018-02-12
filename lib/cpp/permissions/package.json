@@ -4,7 +4,7 @@
   "description": "File permission management. When appropriate (windows) uses ACLs instead of file attributes.",
   "main": "index.js",
   "scripts": {
-    "install": "autogypi && node-gyp configure build"
+    "install": "autogypi && node-gyp configure --msvs_version=2015 build"
   },
   "author": "Black Tree Gaming Ltd",
   "license": "GPL-3.0",

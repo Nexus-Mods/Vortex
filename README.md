@@ -24,7 +24,7 @@ Manual:
   - c++ build tools 2015
     * download installer from http://landinghub.visualstudio.com/visual-cpp-build-tools and run
     * default settings are fine
-    * Note: I'm fairly certain any newer version will also work but it's untested
+    * Note: Do _not_ install VS 2017. A compiler error keeps nbind from building at the moment.
   - Call _"yarn config set msvs_version 2015 --global"_
     * This sets up yarn to use the c++ build tools we just installed
     * If you downloaded a newer version, change the version accordingly

@@ -10,7 +10,7 @@
     "emcc-path": "emcc-path",
     "copyasm": "copyasm",
     "prebuild": "gulp download-lz4",
-    "build": "autogypi && node-gyp configure build",
+    "build": "autogypi && node-gyp configure --msvs_version=2015 build",
     "install": "npm run build && copyasm build dist && copyfiles -f ./lz4/dll/liblz4.dll dist"
   },
   "author": "",

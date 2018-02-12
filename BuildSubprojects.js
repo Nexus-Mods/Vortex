@@ -259,6 +259,11 @@ function main(args) {
     return;
   }
 
+  // TODO: vs 2017 has trouble building nbind atm (Feb 2018)
+  process.env['GYP_MSVS_VERSION'] = '2015';
+  const globalFeedback = new ProcessFeedback('global');
+  npm('config', ['set', 'msvs_version', '2015'], {}, globalFeedback);
+
   const buildType = args._[0];
   const buildStateName = `./BuildState_${buildType}.json`;
   let buildState;
