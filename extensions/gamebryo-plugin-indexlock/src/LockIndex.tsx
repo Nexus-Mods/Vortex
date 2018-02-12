@@ -37,15 +37,15 @@ class LockIndex extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, lockedIndex } = this.props;
     const title = (lockedIndex !== undefined)
-      ? t('Locked to Index', { replace: { lockedIndex: toHex(lockedIndex) } })
+      ? t('Locked to index', { replace: { lockedIndex: toHex(lockedIndex) } })
       : t('Sorted automatically');
     return (
       <Toggle
         checked={lockedIndex !== undefined}
         onToggle={this.onToggle}
       >
-        <div style={{ display: 'flex' }}>
-          {title}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ whiteSpace: 'nowrap', marginRight: 4 }}>{title}</div>
           {(lockedIndex === undefined) ? null : this.renderIndex()}
         </div>
       </ Toggle>
