@@ -1,6 +1,7 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 
 import { IMod } from '../types/IMod';
 
@@ -9,7 +10,6 @@ import { alg, Graph } from 'graphlib';
 import * as minimatch from 'minimatch';
 import { ILookupResult, IReference, IRule, RuleType } from 'modmeta-db';
 import * as semver from 'semvish';
-import { truthy } from '../../../util/util';
 
 interface IBiRule {
   subject: string;
@@ -34,9 +34,15 @@ function testRef(mod: IMod, ref: IReference): boolean {
 
   // right version? If no version is set we assume it's the right one,
   // otherwise a no-version mod could never match
-  if ((ref.versionMatch !== undefined) && truthy(attr.version)
-      && !semver.satisfies(attr.version, ref.versionMatch)) {
-    return false;
+  try {
+    if ((ref.versionMatch !== undefined) && truthy(attr.version) &&
+        !semver.satisfies(attr.version, ref.versionMatch)) {
+      return false;
+    }
+  } catch (err) {
+    // nop. This exception is definitively thrown by satisfies and this
+    // happens if the mod has no version specified or the versionMatch is
+    // invalid. Either way, it's safer to assume the rule does apply than not
   }
 
   return true;
