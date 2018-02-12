@@ -248,8 +248,10 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     // TODO: this is quite inefficient...
     const lootRules: { name: string, ro: ILOOTPlugin, rw: ILOOTPlugin } = {
       name: plugin.name,
-      ro: (masterlist || []).find(rule => rule.name === plugin.name) || { name: plugin.name },
-      rw: (userlist || []).find(rule => rule.name === plugin.name) || { name: plugin.name },
+      ro: (masterlist || []).find(rule =>
+        new RegExp(rule.name).test(plugin.name)) || { name: plugin.name },
+      rw: (userlist || []).find(rule =>
+        new RegExp(rule.name).test(plugin.name)) || { name: plugin.name },
     };
 
     const popoverBlocks = [];
