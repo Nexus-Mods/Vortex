@@ -631,6 +631,7 @@ class ExtensionManager {
           log('error', 'state change handler failed', {
             message: err.message,
             stack: err.stack,
+            key,
           });
         }
       });
