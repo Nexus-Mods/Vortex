@@ -1,5 +1,6 @@
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
+import * as os from 'os';
 import * as path from 'path';
 import { inspect } from 'util';
 import { fs } from 'vortex-api';
@@ -15,12 +16,12 @@ class TraceImport {
   }
 
   public get logFilePath(): string {
-    return path.join(this.mPath, 'nmm_import.log');
+    return path.join(this.mPath, 'migration.log');
   }
 
   public initDirectory(importPath: string): Promise<void> {
     return fs.mkdirAsync(this.mPath)
-      .then(() => fs.createWriteStream(path.join(this.mPath, 'nmm_import.log')))
+      .then(() => fs.createWriteStream(this.logFilePath))
       .then(stream => {
         this.mLogFile = stream;
         return fs.copyAsync(
@@ -39,7 +40,7 @@ class TraceImport {
     if (extra !== undefined) {
       fullMessage += ' (' + inspect(extra, { depth: null }) + ')';
     }
-    this.mLogFile.write(fullMessage + '\n');
+    this.mLogFile.write(fullMessage + os.EOL);
   }
 
   public writeFile(name: string, content: string): Promise<void> {

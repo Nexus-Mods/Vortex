@@ -13,6 +13,7 @@ import { loadVortexLogs } from '../util/loadVortexLogs';
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as update from 'immutability-helper';
+import * as os from 'os';
 import * as path from 'path';
 import * as React from 'react';
 import {
@@ -308,7 +309,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const filteredLog = logSessions[sessionIdx].logs
       .filter(line => enabledLevels.has(line.type))
       .map(line => `${line.time} - ${line.type}: ${line.text}`)
-      .join('\n');
+      .join(os.EOL);
     remote.clipboard.writeText(filteredLog);
   }
 
@@ -319,7 +320,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp');
     const fullLog: string = logSessions[sessionIdx].logs
       .map(line => `${line.time} - ${line.type}: ${line.text}`)
-      .join('\n');
+      .join(os.EOL);
 
     this.props.onHide();
     const logPath = path.join(nativeCrashesPath, 'session.log');

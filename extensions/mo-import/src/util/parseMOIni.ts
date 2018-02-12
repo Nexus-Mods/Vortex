@@ -54,10 +54,10 @@ function parseMOIni(games: {[gameId: string]: types.IDiscoveryResult},
                     basePath: string): Promise<IMOConfig> {
   let normalize: (input: string) => string;
   return util.getNormalizeFunc(basePath)
-                    .then(normalizeFunc => {
-                      normalize = normalizeFunc;
-                      return parser.read(path.join(basePath, 'ModOrganizer.ini'));
-                    })
+      .then(normalizeFunc => {
+        normalize = normalizeFunc;
+        return parser.read(path.join(basePath, 'ModOrganizer.ini'));
+      })
       .then((file: IniFile<IIniSpec>) => {
         if (Object.keys(file.data).length === 0) {
           return Promise.reject(new Error(

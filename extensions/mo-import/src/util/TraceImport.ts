@@ -1,5 +1,6 @@
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
+import * as os from 'os';
 import * as path from 'path';
 import { inspect } from 'util';
 import { fs } from 'vortex-api';
@@ -10,7 +11,7 @@ class TraceImport {
 
   constructor() {
     const now = new Date();
-    const name = `migration-${now.getTime()}`;
+    const name = `mo_import-${now.getTime()}`;
     this.mPath = path.join(remote.app.getPath('userData'), name);
   }
 
@@ -20,7 +21,7 @@ class TraceImport {
 
   public initDirectory(importPath: string): Promise<void> {
     return fs.mkdirAsync(this.mPath)
-      .then(() => fs.createWriteStream(path.join(this.mPath, 'migration.log')))
+      .then(() => fs.createWriteStream(this.logFilePath))
       .then(stream => {
         this.mLogFile = stream;
         return fs.copyAsync(
@@ -39,7 +40,7 @@ class TraceImport {
     if (extra !== undefined) {
       fullMessage += ' (' + inspect(extra, { depth: null }) + ')';
     }
-    this.mLogFile.write(fullMessage + '\n');
+    this.mLogFile.write(fullMessage + os.EOL);
   }
 
   public writeFile(name: string, content: string): Promise<void> {
