@@ -7,7 +7,7 @@ export class EndorsementFilterComponent extends React.Component<IFilterProps, {}
   public render(): JSX.Element {
     const { filter } = this.props;
 
-    const selectionFilters = [ 'Endorsed', 'Abstained', 'Undecided'];
+    const selectionFilters = [ 'Endorsed', 'Abstained', 'Undecided', 'N/A'];
 
     const currentFilters = selectionFilters.map(current => ({
       label: current,
@@ -36,9 +36,11 @@ class EndorsementFilter implements ITableFilter {
 
   public matches(filter: any, value: any): boolean {
     if (value === '') {
-        return (filter === 'Undecided');
+      return (filter === 'Undecided');
+    } else if (value === undefined) {
+      return (filter === 'N/A');
     } else {
-        return (filter === value);
+      return (filter === value);
     }
   }
 }
