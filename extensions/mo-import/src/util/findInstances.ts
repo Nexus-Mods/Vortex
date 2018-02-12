@@ -13,6 +13,8 @@ export function instancesPath(): string {
 export function convertGameId(input: string): string {
   if (input === 'skyrimse') {
     return 'skyrim special edition';
+  } else if (input === 'falloutnv') {
+    return 'new vegas';
   } else {
     return input;
   }

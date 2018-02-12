@@ -430,7 +430,7 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private setup(): Promise<void> {
-    const { discovered, mods } = this.props;
+    const { discovered, mods, t } = this.props;
     const { importPath } = this.state;
     return parseMOIni(discovered, importPath)
       .then(moConfig => {
@@ -444,6 +444,13 @@ class ImportDialog extends ComponentEx<IProps, IComponentState> {
           prev[value.modName] = value;
           return prev;
         }, {});
+      })
+      .catch(err => {
+        log('warn', 'invalid MO directory', { error: err.messag });
+        this.nextState.importPathInvalid =
+          t('No valid MO installation found at this location: {{error}}',
+            { replace: { error: err.message } });
+        this.setStep('start');
       });
   }
 
