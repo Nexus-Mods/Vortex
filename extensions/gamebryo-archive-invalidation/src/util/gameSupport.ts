@@ -7,9 +7,15 @@ interface IGameSupport {
 
 const gameSupport: { [gameId: string]: IGameSupport } = {
   skyrim: {
-    fileFilter: (fileName: string) =>
-      fileName.startsWith('Skyrim - ')
-      && path.extname(fileName).toLowerCase() === '.bsa',
+    fileFilter: (fileName: string) => {
+      const fileNameL = fileName.toLowerCase();
+      return (path.extname(fileNameL) === '.bsa')
+        && (fileNameL.startsWith('skyrim - ')
+            || (fileNameL.startsWith('hearthfires'))
+            || (fileNameL.startsWith('dragonborn'))
+            || (fileNameL.startsWith('highrestexturepack'))
+          );
+    },
     targetAge: new Date(2008, 10, 1),
   },
   skyrimse: {
@@ -19,9 +25,16 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     targetAge: new Date(2008, 10, 1),
   },
   fallout4: {
-    fileFilter: (fileName: string) =>
-      fileName.startsWith('Fallout4 - ')
-      && path.extname(fileName).toLowerCase() === '.ba2',
+    fileFilter: (fileName: string) => {
+      const fileNameL = fileName.toLowerCase();
+      return path.extname(fileNameL) === '.ba2'
+          && (fileNameL.startsWith('fallout4 - ')
+              || fileNameL.startsWith('dlccoast - ')
+              || fileNameL.startsWith('dlcrobot - ')
+              || fileNameL.startsWith('dlcworkshop')
+              || fileNameL.startsWith('dlcnukaworld - ')
+        );
+      },
     targetAge: new Date(2008, 10, 1),
   },
   fallout4vr: {

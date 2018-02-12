@@ -37,8 +37,8 @@ function testArchivesAge(store: Redux.Store<types.IState>) {
             short: 'Loose files may not get loaded',
             long:
                 'Due to oddities in the game engine, some loose files will not ' +
-                    'get loaded unless we change the filetime on the vanilla BSA files. ' +
-                    'There is no drawback to doing this.',
+                'get loaded unless we change the filetime on the vanilla BSA files. ' +
+                'There is no drawback to doing this.',
           },
           severity: 'warning',
           automaticFix: () => new Promise<void>(
