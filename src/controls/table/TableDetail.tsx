@@ -1,4 +1,4 @@
-import {IEditChoice, ITableAttribute} from '../../types/ITableAttribute';
+import {IEditChoice, ITableAttribute, ValidationState} from '../../types/ITableAttribute';
 import {ComponentEx} from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
@@ -126,7 +126,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
   private renderSelect(values: any[], readOnly: boolean): JSX.Element {
     const { t, attribute, rowIds } = this.props;
 
-    const various = values.find(iter => iter !== values[0]) !== undefined;
+    const various = values.find(iter => !Object.is(iter, values[0])) !== undefined;
 
     const choices = attribute.edit.choices();
     let currentChoice: IEditChoice;
@@ -157,32 +157,26 @@ class DetailCell extends React.Component<ICellProps, {}> {
   private renderValidation(values: any[], readOnly: boolean): JSX.Element {
     const { t, attribute } = this.props;
 
-    const various = values.find(iter => iter !== values[0]) !== undefined;
-
-    const validationState = various
-      ? 'warning'
-      : attribute.edit.validate(values[0]);
+    const various = values.find(iter => !Object.is(iter, values[0])) !== undefined;
 
     return (
-      <FormGroup
-        validationState={validationState}
-      >
-        <FormInput
-          id={attribute.id}
-          label={t(attribute.name)}
-          value={various ? t('Various') : this.renderCell(values[0])}
-          onChange={this.changeCell}
-          readOnly={readOnly}
-        />
-        {readOnly ? null : <FormFeedback />}
-      </FormGroup>
+      <FormInput
+        id={attribute.id}
+        label={t(attribute.name)}
+        value={various ? t('Various') : this.renderCell(values[0])}
+        onChange={this.changeCell}
+        readOnly={readOnly}
+        validate={various ? this.warning : attribute.edit.validate}
+      />
     );
   }
+
+  private warning = (): ValidationState => 'warning';
 
   private renderInput(values: any[], readOnly: boolean): JSX.Element {
     const { t, attribute } = this.props;
 
-    const various = values.find(iter => iter !== values[0]) !== undefined;
+    const various = values.find(iter => !Object.is(iter, values[0])) !== undefined;
 
     return (
       <FormInput
@@ -199,7 +193,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
   private renderRO(values: any[]): JSX.Element {
     const { t, attribute } = this.props;
 
-    const various = values.find(iter => iter !== values[0]) !== undefined;
+    const various = values.find(iter => !Object.is(iter, values[0])) !== undefined;
     const value = various ? t('Various') : values[0];
 
     if (Array.isArray(value)) {

@@ -168,8 +168,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       calc: plugin => util.getSafe(plugin, ['globalPriority', 'value'], 0),
       edit: {
         validate: input => {
-          const prio = parseInt(input, 10);
-          return ((prio < -127) || (prio > 127))
+          const prio = Number.parseInt(input, 10);
+          return (isNaN(prio) || (prio < -127) || (prio > 127))
             ? 'error' : 'success';
         },
         onChangeValue: (plugins: IPluginCombined[], input: string) => {
@@ -191,8 +191,8 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       calc: plugin => util.getSafe(plugin, ['localPriority', 'value'], 0),
       edit: {
         validate: input => {
-          const prio = parseInt(input, 10);
-          return ((prio < -127) || (prio > 127))
+          const prio = Number.parseInt(input, 10);
+          return (isNaN(prio) || (prio < -127) || (prio > 127))
             ? 'error' : 'success';
         },
         onChangeValue: (plugins: IPluginCombined[], input: string) => {
@@ -663,7 +663,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     }
 
     return (
-      <ListGroup>
+      <ListGroup className='loot-message-list'>
         {
           plugin.messages.map((msg: Message, idx: number) => (
             <ListGroupItem key={idx}>

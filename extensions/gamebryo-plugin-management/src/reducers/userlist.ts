@@ -12,6 +12,14 @@ function listForType(type: string) {
   }
 }
 
+function isValidPriority(input): boolean {
+  return !(
+    (input === null)
+    || isNaN(input)
+    || (input < -127)
+    || (input > 127));
+}
+
 /**
  * reducer for changes to settings regarding mods
  */
@@ -53,6 +61,10 @@ const userlistReducer: types.IReducerSpec = {
       }
     },
     [actions.setLocalPriority as any]: (state, payload) => {
+      if (!isValidPriority(payload.priority)) {
+        return state;
+      }
+
       let existing: number = -1;
       if (state.plugins !== undefined) {
         existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);
@@ -67,6 +79,10 @@ const userlistReducer: types.IReducerSpec = {
       }
     },
     [actions.setGlobalPriority as any]: (state, payload) => {
+      if (!isValidPriority(payload.priority)) {
+        return state;
+      }
+
       let existing: number = -1;
       if ((state.plugins !== undefined) && !!payload.pluginId) {
         existing = state.plugins.findIndex(plug => plug.name === payload.pluginId);

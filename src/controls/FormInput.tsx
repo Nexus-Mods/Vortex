@@ -1,6 +1,9 @@
+import { ValidationState } from '../types/ITableAttribute';
 import Debouncer from '../util/Debouncer';
 
 import * as React from 'react';
+import { FormGroup } from 'react-bootstrap';
+import FormFeedback from './FormFeedback';
 
 export interface IProps {
   value: string;
@@ -9,6 +12,7 @@ export interface IProps {
   label?: string;
   readOnly?: boolean;
   placeholder?: string;
+  validate?: (value: any) => ValidationState;
 }
 
 export interface IComponentState {
@@ -33,8 +37,12 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       cachedValue: props.value,
     };
     this.mDebouncer = new Debouncer(newValue => {
+      const { onChange, validate } = this.props;
       this.mLastCommitted = newValue;
-      this.props.onChange(newValue);
+      if ((validate === undefined)
+          || (validate(newValue) === 'success')) {
+        this.props.onChange(newValue);
+      }
       return null;
     }, 1000);
   }
@@ -48,9 +56,9 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { id, label, placeholder, readOnly } = this.props;
+    const { id, label, placeholder, readOnly, validate } = this.props;
     const { cachedValue } = this.state;
-    return (
+    const content = (
       <input
         className='form-control'
         type='text'
@@ -62,6 +70,21 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
         placeholder={placeholder}
       />
     );
+
+    if (validate) {
+      const validationState = validate(cachedValue);
+
+      return (
+        <FormGroup
+          validationState={validationState}
+        >
+          {content}
+          {readOnly ? null : <FormFeedback />}
+        </FormGroup>
+      );
+    } else {
+      return content;
+    }
   }
 
   private onChange = (evt: React.FormEvent<HTMLInputElement>) => {
