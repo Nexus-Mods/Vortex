@@ -147,6 +147,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       this.setMainPage(def.title, false);
     }
 
+    if (this.props.customTitlebar) {
+      document.body.classList.add('custom-titlebar-body');
+    }
+
     this.updateSize();
   }
 
@@ -242,6 +246,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <div className='menu-layer' ref={this.setMenuLayer} />
         <FlexLayout id='main-window-content' type='column'>
           {this.renderToolbar()}
+          {customTitlebar ? <div className='dragbar'/> : null}
           {this.renderBody()}
         </FlexLayout>
         <Dialog />

@@ -6,7 +6,6 @@ const app = remote.app;
 const window = remote.getCurrentWindow();
 
 class WindowControls extends React.Component<{}, {}> {
-
   public componentWillMount() {
     window.on('maximize', () => {
       this.forceUpdate();
