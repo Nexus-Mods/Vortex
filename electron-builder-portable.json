@@ -1,4 +1,7 @@
 {
+  "directories": {
+    "output": "dist_portable"
+  },
   "asar": true,
   "asarUnpack": [
     "7z.exe",
@@ -13,7 +16,7 @@
   ],
   "appId": "com.nexusmods.vortex",
   "win": {
-    "target": "nsis",
+    "target": "portable",
     "publish": [
       {
         "provider": "github",
@@ -22,11 +25,6 @@
     ],
     "forceCodeSigning": true,
     "publisherName": "Black Tree Gaming Limited"
-  },
-  "nsis": {
-    "perMachine": true,
-    "runAfterFinish": true,
-    "menuCategory": true
   },
   "extraResources": [
     "locales"
