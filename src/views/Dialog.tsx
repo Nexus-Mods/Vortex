@@ -158,6 +158,14 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     const controls: JSX.Element[] = [];
 
+    if (content.text) {
+      controls.push((
+        <div key='dialog-content-text' className='dialog-content-text'>
+          {t(content.text)}
+        </div>
+      ));
+    }
+
     if (content.message !== undefined) {
       const wrap = (content.options && (content.options.wrap === true)) ? 'on' : 'off';
       controls.push((

@@ -109,6 +109,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
       wrap: false,
     },
   } : {
+    text: err.text,
     message: err.message,
     options: {
       wrap: err.wrap,
@@ -156,10 +157,6 @@ function renderNodeError(err: Error): string {
     err = err[0];
   }
 
-  if (err.message) {
-    res.push(err.message);
-  }
-
   if (err.stack) {
     res.push(err.stack);
   }
@@ -177,11 +174,11 @@ function renderCustomError(err: any): string {
       .join('\n');
 }
 
-function renderError(err: string | Error | any): { message: string, wrap: boolean } {
+function renderError(err: string | Error | any): { message: string, text?: string, wrap: boolean } {
   if (typeof(err) === 'string') {
     return { message: err, wrap: true };
   } else if (err instanceof Error) {
-    return { message: renderNodeError(err), wrap: false };
+    return { text: err.message, message: renderNodeError(err), wrap: false };
   } else {
     return { message: renderCustomError(err), wrap: false };
   }
