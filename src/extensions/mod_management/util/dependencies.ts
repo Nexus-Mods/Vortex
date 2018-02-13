@@ -47,7 +47,7 @@ function gatherDependencies(
         .then((details: ILookupResult[]) => {
           lookupDetails = details;
 
-          if (details.length === 0) {
+          if ((details.length === 0) || (details[0].value === undefined)) {
             throw new Error('reference not found: ' + rule.reference);
           }
 

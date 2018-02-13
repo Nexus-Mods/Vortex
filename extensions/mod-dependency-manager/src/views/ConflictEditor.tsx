@@ -79,6 +79,10 @@ class ConflictEditor extends ComponentEx<IProps, IComponentState> {
                        mods: { [modId: string]: types.IMod },
                        conflicts: IConflict[]) {
     const res: { [modId: string]: RuleChoice } = {};
+    if (mods[modId] === undefined) {
+      // can this even happen?
+      return res;
+    }
 
     conflicts.forEach(conflict => {
       const existingRule = (mods[modId].rules || [])

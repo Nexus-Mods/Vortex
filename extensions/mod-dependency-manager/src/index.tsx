@@ -110,7 +110,7 @@ function updateMetaRules(api: types.IExtensionApi,
       gameId,
     })
       .then((meta: ILookupResult[]) => {
-        if (meta.length > 0) {
+        if ((meta.length > 0) && (meta[0].value !== undefined)) {
           rules = rules.concat(mapRules(makeReference(meta[0].value), meta[0].value.rules));
         }
       })
@@ -242,7 +242,7 @@ function checkRulesFulfilled(api: types.IExtensionApi): Promise<void> {
     })
       .then((meta: ILookupResult[]) => {
         const rules: IRule[] = [].concat(
-          meta.length > 0 ? meta[0].value.rules || [] : [],
+          ((meta.length > 0) && (meta[0].value !== undefined)) ? meta[0].value.rules || [] : [],
           util.getSafe(mods[modLookup.id], ['rules'], []),
         );
         const rulesUnfulfilled = rules.filter(rule => ruleFulfilled(enabledMods, rule) === false);
