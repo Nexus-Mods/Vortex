@@ -1,6 +1,6 @@
 import opn = require('opn');
 import * as path from 'path';
-import { fs, selectors, types } from 'vortex-api';
+import { fs, selectors, types, util } from 'vortex-api';
 
 function init(context: types.IExtensionContext) {
   context.registerAction('mod-icons', 300, 'open-ext', {},
@@ -21,7 +21,7 @@ function init(context: types.IExtensionContext) {
   }, instanceIds => {
     const state: types.IState = context.api.store.getState();
     const gameMode = selectors.activeGameId(state);
-    return state.persistent.mods[gameMode][instanceIds[0]] !== undefined;
+    return util.getSafe(state.persistent.mods, [gameMode, instanceIds[0]], undefined) !== undefined;
   });
 
   context.registerAction('download-icons', 300, 'open-ext', {},
