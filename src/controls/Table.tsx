@@ -9,6 +9,7 @@ import {SortDirection} from '../types/SortDirection';
 import {connect, extend, PureComponentEx, translate} from '../util/ComponentEx';
 import Debouncer from '../util/Debouncer';
 import {IExtensibleProps} from '../util/ExtensionProvider';
+import { log } from '../util/log';
 import smoothScroll from '../util/smoothScroll';
 import { getSafe, merge, setSafe } from '../util/storeHelper';
 import {truthy} from '../util/util';
@@ -145,12 +146,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   public componentWillMount() {
     this.updateSelection(this.props);
-    this.context.api.events.on(this.props.tableId + '-scroll-to', (id) => {
-      const node = ReactDOM.findDOMNode(this.mRowRefs[id]) as HTMLElement;
-      if (node !== null) {
-        this.scrollToItem(node, false);
-      }
-    });
+    this.context.api.events.on(this.props.tableId + '-scroll-to', this.scrollTo);
   }
 
   public componentWillUnmount() {
@@ -294,6 +290,26 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         {sortedRows.map((row, idx) => this.renderRow(row, idx < 40, visibleAttributes))}
       </TBody>
     );
+  }
+
+  private scrollTo = (id: string, mayRetry?: boolean) => {
+    try {
+      const node = ReactDOM.findDOMNode(this.mRowRefs[id]) as HTMLElement;
+      if (node !== null) {
+        this.scrollToItem(node, false);
+      }
+    } catch (err) {
+      // nop. I think this can happen if the event is emitted before the window has
+      // been activated
+      if (mayRetry !== false) {
+        setTimeout(() => {
+          this.scrollTo(id, false);
+        }, 2000);
+      } else {
+        log('warn', 'failed to scroll to item',
+          { id, tableId: this.props.tableId, error: err.message });
+      }
+    }
   }
 
   private toggleDetails = () => {
