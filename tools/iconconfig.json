@@ -414,6 +414,10 @@
     "parse-failed": {
       "path": "{nucleo}/ui/{nucleo_simple}_ban-bold",
       "rmFill": true
+    },
+    "executable": {
+      "path": "{nucleo}/files-folders/32px_exe",
+      "rmFill": true
     }
   }
 }

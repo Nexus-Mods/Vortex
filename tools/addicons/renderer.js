@@ -20,6 +20,7 @@ const locations = [
   '{nucleo}/emoticons/{nucleo_simple}_',
   '{nucleo}/energy-environment/{nucleo_simple}_',
   '{nucleo}/files-folders/{nucleo_simple}_',
+  '{nucleo}/files-folders/32px_',
   '{nucleo}/food/{nucleo_simple}_',
   '{nucleo}/furniture/{nucleo_simple}_',
   '{nucleo}/healthcare-medical/{nucleo_simple}_',
