@@ -23,7 +23,7 @@ const gameSupport = {
   },
   fallout4vr: {
     mygamesPath: 'Fallout4VR',
-    gameSettingsFiles: ['Fallout4Custom.ini', 'Fallout4Prefs.ini', 'Fallout4VrCustom.ini'],
+    gameSettingsFiles: ['Fallout4Custom.ini', 'Fallout4Prefs.ini'],
   },
   falloutnv: {
     mygamesPath: 'FalloutNV',

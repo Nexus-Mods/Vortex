@@ -41,7 +41,6 @@ const gameSupport = {
     iniFiles: [
       path.join('{mygames}', 'Fallout4VR', 'Fallout4Custom.ini'),
       path.join('{mygames}', 'Fallout4VR', 'Fallout4Prefs.ini'),
-      path.join('{mygames}', 'Fallout4VR', 'Fallout4VrCustom.ini'),
     ],
     iniFormat: 'winapi',
   },
