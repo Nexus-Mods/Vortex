@@ -6,6 +6,7 @@
 export * from './message';
 export * from './storeHelper';
 
+import { resolveCategoryName, resolveCategoryPath } from '../extensions/category_management';
 import { getGame, getGames } from '../extensions/gamemode_management';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import renderModName from '../extensions/mod_management/util/modName';
@@ -57,6 +58,8 @@ export {
   relativeTime,
   removePersistent,
   renderModName,
+  resolveCategoryName,
+  resolveCategoryPath,
   runElevated,
   runThreaded,
   setdefault,

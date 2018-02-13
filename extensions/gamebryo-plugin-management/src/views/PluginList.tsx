@@ -44,6 +44,7 @@ interface IConnectedProps {
   autoSort: boolean;
   activity: string[];
   userlist: ILOOTList;
+  mods: { [id: string]: types.IMod };
 }
 
 interface IActionProps {
@@ -92,6 +93,33 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       calc: (plugin: IPluginCombined) => plugin.name,
       placement: 'both',
       filter: new TableTextFilter(true),
+    },
+    {
+      id: 'mod_name',
+      name: 'Mod',
+      edit: {},
+      calc: plugin => plugin.modName,
+      placement: 'detail',
+    },
+    {
+      id: 'category',
+      name: 'Category',
+      edit: {},
+      calc: plugin => util.resolveCategoryName(
+        util.getSafe(this.props.mods, [plugin.modName, 'attributes', 'category'], undefined),
+        this.context.api.store.getState()),
+      placement: 'both',
+      isDefaultVisible: false,
+      isSortable: true,
+      isToggleable: true,
+    },
+    {
+      id: 'author',
+      name: 'Author',
+      description: 'Author of the plugin',
+      placement: 'detail',
+      calc: (plugin: IPluginCombined) => plugin.author,
+      edit: {},
     },
     {
       id: 'flags',
@@ -216,14 +244,6 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       edit: {},
       isSortable: false,
-    },
-    {
-      id: 'author',
-      name: 'Author',
-      description: 'Author of the plugin',
-      placement: 'detail',
-      calc: (plugin: IPluginCombined) => plugin.author,
-      edit: {},
     },
     {
       id: 'masters',
@@ -678,13 +698,15 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   const profile = selectors.activeProfile(state);
+  const gameMode = profile !== undefined ? profile.gameId : undefined;
   return {
-    gameMode: profile !== undefined ? profile.gameId : undefined,
+    gameMode,
     plugins: state.session.plugins.pluginList,
     loadOrder: state.loadOrder,
     userlist: state.userlist,
     autoSort: state.settings.plugins.autoSort,
     activity: state.session.base.activity['plugins'],
+    mods: profile !== undefined ? (state as types.IState).persistent.mods[gameMode] : {},
   };
 }
 

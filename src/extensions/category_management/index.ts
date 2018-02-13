@@ -16,10 +16,13 @@ import { allCategories } from './selectors';
 import { ICategoryDictionary } from './types/IcategoryDictionary';
 import { ICategoriesTree } from './types/ITrees';
 import CategoryFilter from './util/CategoryFilter';
-import { retrieveCategory, retrieveCategoryDetail } from './util/retrieveCategoryPath';
+import { resolveCategoryName, resolveCategoryPath } from './util/retrieveCategoryPath';
 import CategoryDialog from './views/CategoryDialog';
 
 import * as Redux from 'redux';
+
+// export for api
+export { resolveCategoryName, resolveCategoryPath };
 
 function getModCategory(mod: IModWithState) {
   return mod.attributes['category'];
@@ -32,7 +35,7 @@ function getCategoryChoices(state: IState) {
 
   return [ {key: '', text: ''} ].concat(
     Object.keys(categories)
-      .map(id => ({ key: id, text: retrieveCategoryDetail(id, state) }))
+      .map(id => ({ key: id, text: resolveCategoryPath(id, state) }))
       .sort((lhs, rhs) => categories[lhs.key].order - categories[rhs.key].order));
 }
 
@@ -52,7 +55,7 @@ function init(context: IExtensionContext): boolean {
     icon: 'sitemap',
     placement: 'table',
     calc: (mod: IModWithState) =>
-      retrieveCategory(getModCategory(mod), context.api.store.getState()),
+      resolveCategoryName(getModCategory(mod), context.api.store.getState()),
     isToggleable: true,
     edit: {},
     isSortable: true,
@@ -66,7 +69,7 @@ function init(context: IExtensionContext): boolean {
     icon: 'sitemap',
     supportsMultiple: true,
     calc: (mod: IModWithState) =>
-      retrieveCategoryDetail(getModCategory(mod), context.api.store.getState()),
+      resolveCategoryPath(getModCategory(mod), context.api.store.getState()),
     edit: {
       readOnly: (mod: IModWithState) => mod.state === 'downloaded',
       choices: () => getCategoryChoices(context.api.store.getState()),

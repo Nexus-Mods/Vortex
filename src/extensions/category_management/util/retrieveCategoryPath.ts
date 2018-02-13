@@ -28,7 +28,7 @@ function createCategoryDetailPath(categories: any, category: string,
  * @param {number} category
  * @param {Redux.Store<any>} store
  */
-export function retrieveCategoryDetail(category: string, state: IState) {
+export function resolveCategoryPath(category: string, state: IState) {
   if (category === undefined) {
     return null;
   }
@@ -49,7 +49,7 @@ export function retrieveCategoryDetail(category: string, state: IState) {
  * @param {number} category
  * @param {Redux.Store<any>} store
  */
-export function retrieveCategory(category: string, state: IState) {
+export function resolveCategoryName(category: string, state: IState) {
   if (category === undefined) {
     return null;
   }

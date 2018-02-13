@@ -6,6 +6,10 @@
   text-align: center;
 }
 
+.cell-category {
+  white-space: nowrap;
+}
+
 #table-gamebryo-plugins {
   // prevent word wrap
   .table-header-cell {
