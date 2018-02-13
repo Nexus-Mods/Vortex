@@ -850,8 +850,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private install = (archiveId: string) => {
-    this.context.api.events.emit('start-install-download', archiveId);
+  private install = (archiveIds: string[]) => {
+    if (Array.isArray(archiveIds)) {
+      archiveIds.forEach(archiveId =>
+        this.context.api.events.emit('start-install-download', archiveId));
+    } else {
+      this.context.api.events.emit('start-install-download', archiveIds);
+    }
   }
 
   private reinstall = (modIds: string | string[]) => {
