@@ -105,9 +105,14 @@ export function loadActivation(api: IExtensionApi, modType: string,
   const instanceId = state.app.instanceId;
   return fs.readFileAsync(tagFile, 'utf8')
       .then(data => readManifest(data))
-      .catch(err => (err.code === 'ENOENT')
-        ? emptyManifest(instanceId)
-        : Promise.reject(err))
+      .catch(err => {
+        if (err.code === 'ENOENT') {
+          return emptyManifest(instanceId);
+        }
+        return Promise.reject(
+          new Error(`${err.message}.\nIf you report this, `
+                    + `please include the file "${tagFile}"`));
+      })
       .then(tagObject => {
         if (tagObject === undefined) {
           tagObject = emptyManifest(instanceId);
