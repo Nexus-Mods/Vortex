@@ -100,4 +100,21 @@ export const modsReducer: IReducerSpec = {
   },
   defaults: {
   },
+  /*
+  verifiers: {
+    _: {
+      elements: {
+        _: {
+          elements: {
+            archiveId: {
+              type: 'string',
+              // fixes a problem where we stored [archiveId] instead of just the archiveId
+              repair: (input) => Array.isArray(input) ? input[0] : '',
+            },
+          },
+        },
+      },
+    },
+  },
+  */
 };

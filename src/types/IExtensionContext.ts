@@ -434,6 +434,7 @@ export interface IStateVerifier {
   noUndefined?: boolean;
   elements?: { [key: string]: IStateVerifier };
   required?: boolean;
+  repair?: (input: any, def: any) => any;
 }
 
 /**

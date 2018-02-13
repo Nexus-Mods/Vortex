@@ -9,7 +9,7 @@ import { IExtensionReducer } from '../types/Extension';
 import { IReducerSpec, IStateVerifier } from '../types/IExtensionContext';
 import deepMerge from '../util/deepMerge';
 import { log } from '../util/log';
-import { getSafe, rehydrate } from '../util/storeHelper';
+import { getSafe, rehydrate, setSafe } from '../util/storeHelper';
 
 import { appReducer } from './app';
 import { notificationsReducer } from './notifications';
@@ -68,13 +68,16 @@ function verify(path: string, verifiers: { [key: string]: IStateVerifier },
       Object.keys(res).forEach(mapKey => {
         const sane = verify(path, verifiers[key].elements, res[mapKey], {});
         if (sane !== res[mapKey]) {
-          res = update(res, { mapKey: { $set: sane } });
+          res = update(res, { [mapKey]: { $set: sane } });
         }
       });
     } else if ((verifiers[key].required || input.hasOwnProperty(key))
                && !verifyElement(verifiers[key], input[key])) {
       log('warn', 'invalid state', { path, input, key, ver: verifiers[key] });
-      res = update(res, { key: { $set: defaults[key] } });
+      res = update(res, { [key]: { $set:
+        (verifiers[key].repair !== undefined)
+        ? verifiers[key].repair(input[key], defaults[key])
+        : defaults[key] } });
     }
   });
   return res;
@@ -123,7 +126,7 @@ function deriveReducer(path: string, ele: any): Reducer<any> {
             if (sanitized !== input) {
               const decision = decideSanitize();
               if (decision === Decision.SANITIZE) {
-                payload = sanitized;
+                payload = setSafe(payload, pathArray, sanitized);
               } else if (decision === Decision.QUIT) {
                 process.exit();
               } // in case of ignore we just continue with the original payload
