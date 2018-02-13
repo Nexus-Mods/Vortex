@@ -17,7 +17,7 @@
     "build_api": "cd api && yarn run build",
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
-    "dist": "electron-builder",
+    "dist": "electron-builder --config electron-builder-oneclick.json && electron-builder --config electron-builder-advanced.json",
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
     "preinstall": "git submodule update --init --recursive",
@@ -49,70 +49,6 @@
       "tsx"
     ],
     "collectCoverage": true
-  },
-  "build": {
-    "asar": true,
-    "asarUnpack": [
-      "7z.exe",
-      "LICENSE.md",
-      "bundledPlugins",
-      "lib/modinstaller",
-      "node_modules/7z-bin",
-      "node_modules/nbind",
-      "node_modules/bootstrap-sass/assets/stylesheets",
-      "node_modules/react-select/scss",
-      "assets/css/**"
-    ],
-    "appId": "com.nexusmods.vortex",
-    "win": {
-      "target": "nsis",
-      "publish": [
-        {
-          "provider": "github",
-          "token": "008e0c7bfa1a9a2f14df6370dfdac9340ec828a",
-          "private": true
-        }
-      ]
-    },
-    "nsis": {
-      "perMachine": true,
-      "runAfterFinish": true,
-      "menuCategory": true
-    },
-    "extraResources": [
-      "locales"
-    ],
-    "files": [
-      "**/*",
-      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,test,__tests__,tests,powered-test,example,examples,*.d.ts}",
-      "!**/node_modules/.bin${/*}",
-      "!**/*.{o,hprof,orig,pyc,pyo,rbc}",
-      "!**/*.js.map",
-      "!**/._*",
-      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,thumbs.db,.gitignore,.gitattributes,.editorconfig,.flowconfig,.yarn-metadata.json,.idea,appveyor.yml,.travis.yml,circle.yml,npm-debug.log,.nyc_output,yarn.lock,.yarn-integrity}",
-      "!**/*.{pdb,lib,VC.db,exp,gypi,d.ts}",
-      "!**/build/Debug${/*}",
-      "!**/build/Release/obj${/*}",
-      "!**/build/.vs${/*}",
-      "!**/autogypi.json",
-      "!**/binding.gyp",
-      "!**/binding.map",
-      "!**/build/src/Release/obj${/*}",
-      "!**/node_modules/edge/lib/native${/*}",
-      "!**/node_modules/edge/src${/*}",
-      "!**/node_modules/leveldown/deps${/*}",
-      "!**/node_modules/node-sass/{build,src,vendor}${/*}",
-      "!**/node_modules/react-layout-pane/{demo,docs}${/*}",
-      "!**/node_modules/recharts/umd${/*}",
-      "!**/node_modules/ffi/deps",
-      "!**/Release/*.map",
-      "!**/node_modules/bootstrap-sass/assets/fonts",
-      "!**/node_modules/recharts/node_modules/d3-scale/img",
-      "!**/node_modules/recharts/node_modules/d3-shape/img",
-      "!**/node_modules/d3-geo/img"
-    ],
-    "buildDependenciesFromSource": false,
-    "npmRebuild": false
   },
   "parserOptions": {
     "ecmaFeatures": {
@@ -188,7 +124,7 @@
     "cross-env": "^5.1.0",
     "devtron": "^1.4.0",
     "electron": "1.7.11",
-    "electron-builder": "^19.40.0",
+    "electron-builder": "^20.0.4",
     "electron-debug": "^1.4.0",
     "electron-download-tf": "^4.3.4",
     "electron-rebuild": "^1.6.0",
@@ -230,7 +166,7 @@
     "drivelist": "^5.2.6",
     "edge": "^7.10.1",
     "electron-devtools-installer": "^2.2.1",
-    "electron-updater": "^2.18.2",
+    "electron-updater": "^2.20.1",
     "exe-version": "file:lib/cpp/exe-version",
     "feedparser": "^2.2.2",
     "ffi": "^2.2.0",

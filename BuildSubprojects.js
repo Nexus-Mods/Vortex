@@ -262,7 +262,6 @@ function main(args) {
   // TODO: vs 2017 has trouble building nbind atm (Feb 2018)
   process.env['GYP_MSVS_VERSION'] = '2015';
   const globalFeedback = new ProcessFeedback('global');
-  npm('config', ['set', 'msvs_version', '2015'], {}, globalFeedback);
 
   const buildType = args._[0];
   const buildStateName = `./BuildState_${buildType}.json`;
@@ -276,7 +275,8 @@ function main(args) {
 
   // the projects file contains groups of projects
   // each group is processed in parallel
-  Promise.each(projectGroups, (projects) => Promise.map(projects, (project) => {
+  npm('config', ['set', 'msvs_version', '2015'], {}, globalFeedback)
+  .then(() => Promise.each(projectGroups, (projects) => Promise.map(projects, (project) => {
     let feedback = new ProcessFeedback(project.name);
     return changes(project.path || '.', project.sources, args.f || (buildState[project.name] === undefined))
         .then((lastChange) => {
@@ -299,7 +299,7 @@ function main(args) {
           }
         })
         ;
-  }));
+  })));
 }
 
 main(minimist(process.argv.slice(2)));

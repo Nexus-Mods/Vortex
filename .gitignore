@@ -1,6 +1,7 @@
 node_modules
 typings
 dist
+dist_custom
 out
 doc
 coverage
