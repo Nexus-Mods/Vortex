@@ -62,6 +62,16 @@ const tools = [
     requiredFiles: [
       'GenerateFNISForUsers.exe',
     ],
+    relative: true,
+  },
+  {
+    id: 'skse64',
+    name: 'SKSE64',
+    executable: () => 'skse64_loader.exe',
+    requiredFiles: [
+      'skse64_loader.exe',
+    ],
+    relative: true,
   },
 ];
 

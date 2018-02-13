@@ -35,6 +35,15 @@ let tools = [
     requiredFiles: [
       'loot.exe',
     ],
+  },
+  {
+    id: 'fose',
+    name: 'FOSE',
+    executable: () => 'fose_loader.exe',
+    requiredFiles: [
+      'fose_loader.exe',
+    ],
+    relative: true,
   }
 ];
 

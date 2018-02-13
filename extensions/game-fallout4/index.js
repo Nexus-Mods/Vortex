@@ -53,6 +53,16 @@ let tools = [
     requiredFiles: [
       'GenerateFNISForUsers.exe',
     ],
+    relative: true,
+  },
+  {
+    id: 'f4se',
+    name: 'F4SE',
+    executable: () => 'f4se_loader.exe',
+    requiredFiles: [
+      'f4se_loader.exe',
+    ],
+    relative: true,
   },
 ];
 

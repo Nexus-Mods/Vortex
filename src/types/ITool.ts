@@ -109,4 +109,10 @@ export interface ITool {
    * (and replacing) existing variables that would be passed automatically.
    */
   environment?: { [key: string]: string };
+
+  /**
+   * if true, the tool is expected to be installed relative to the game directory. Otherwise
+   * the tool will be detected anywhere on the disk.
+   */
+  relative?: boolean;
 }

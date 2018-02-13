@@ -62,6 +62,16 @@ let tools = [
     requiredFiles: [
       'GenerateFNISForUsers.exe',
     ],
+    relative: true,
+  },
+  {
+    id: 'skse',
+    name: 'SKSE',
+    executable: () => 'skse_loader.exe',
+    requiredFiles: [
+      'skse_loader.exe',
+    ],
+    relative: true,
   },
 ];
 

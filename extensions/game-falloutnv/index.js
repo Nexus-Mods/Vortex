@@ -36,6 +36,15 @@ let tools = [
       'loot.exe',
     ],
   },
+  {
+    id: 'nvse',
+    name: 'NVSE',
+    executable: () => 'nvse_loader.exe',
+    requiredFiles: [
+      'nvse_loader.exe',
+    ],
+    relative: true,
+  }
 ];
 
 function main(context) {

@@ -2,6 +2,7 @@ import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
+import { getNormalizeFunc } from '../../util/api';
 import {ProcessCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
@@ -16,7 +17,7 @@ import { addDiscoveredGame, addDiscoveredTool } from './actions/settings';
 import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IToolStored } from './types/IToolStored';
-import { quickDiscovery, searchDiscovery } from './util/discovery';
+import { discoverRelativeTools, quickDiscovery, searchDiscovery } from './util/discovery';
 import Progress from './util/Progress';
 
 import * as Promise from 'bluebird';
@@ -86,6 +87,9 @@ class GameModeManager {
       modPath = path.resolve(gameDiscovery.path, modPath);
     }
     return fs.statAsync(modPath)
+      .then(() => getNormalizeFunc(gameDiscovery.path))
+      .then(normalize =>
+        discoverRelativeTools(game, gameDiscovery.path, this.onDiscoveredTool, normalize))
       .then(() => {
         log('info', 'changed game mode', {oldMode, newMode});
         this.mOnGameModeActivated(newMode);
