@@ -599,8 +599,10 @@ div:hover > .hover-expand {
   border-radius: 0;
   -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-  white-space: nowrap;
-  padding: 0 10px;
+  .progress-bar {
+    white-space: nowrap;
+    overflow-x: hidden;
+  }
 }
 
 .tool-icon-box {
