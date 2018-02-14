@@ -3,7 +3,7 @@ import {IModEntry} from '../types/moEntries';
 import * as Promise from 'bluebird';
 import { FileAccessError } from 'core-error-predicates';
 import * as path from 'path';
-import { fs, log, types } from 'vortex-api';
+import { fs, log, types, util } from 'vortex-api';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
 
 const parser: IniParser = new IniParser(new WinapiFormat());
@@ -56,7 +56,7 @@ function readModEntries(basePath: string,
         archiveName: metaInfo.installationFile,
         modVersion: metaInfo.version,
         importFlag: true,
-        isAlreadyManaged: mods[modPath] !== undefined,
+        isAlreadyManaged: util.getSafe(mods, [modPath], undefined) !== undefined,
         categoryId: metaInfo.categoryIds[0],
       }))
       .catch(err => {
