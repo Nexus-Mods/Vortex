@@ -189,46 +189,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             nextProfileId, notifications, userInfo, visibleDialog } = this.props;
     const { hidpi } = this.state;
 
-    if (!truthy(userInfo)) {
-      return (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          className='lock-screen'
-        >
-          <ListGroup>
-            {notifications.filter(noti => noti.type === 'error')
-              .map(noti => (
-                <ListGroupItem key={noti.id}>
-                  <Alert bsStyle='danger'>{noti.message}</Alert>
-                </ListGroupItem>
-              ))}
-          </ListGroup>
-          {APIKey !== undefined
-            ? <Icon style={{ width: '5em', height: '5em' }} name='spinner' />
-            : null}
-          <h3>
-            This is a pre-release version of Vortex. It requires a valid login to nexusmods.
-          </h3>
-          <div>
-          <ReactButton onClick={() => require('electron').remote.app.exit()}>
-            Quit
-          </ReactButton>
-          {' '}
-          <ReactButton onClick={this.login}>
-            Log In or Register
-          </ReactButton>
-          </div>
-        </div>
-      );
-    }
-
     if ((activeProfileId !== nextProfileId) && truthy(nextProfileId)) {
       return this.renderWait();
     }
