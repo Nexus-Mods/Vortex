@@ -2,8 +2,6 @@ import * as Promise from 'bluebird';
 import * as request from 'request';
 import { log, types, util } from 'vortex-api';
 
-let steam: util.Steam;
-
 export class NotFound extends Error {
   constructor() {
     super('not found');
@@ -49,10 +47,7 @@ function findLocalInfo(
   return util.getNormalizeFunc(game.path)
       .then(normalizeFunc => {
         normalize = normalizeFunc;
-        if (steam === undefined) {
-          steam = new util.Steam();
-        }
-        return steam.allGames();
+        return util.steam.allGames();
       })
       .then(entries => {
         const searchPath = normalize(game.path);

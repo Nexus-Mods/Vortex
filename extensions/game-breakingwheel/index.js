@@ -3,19 +3,8 @@ const { log, util } = require('vortex-api');
 const path = require('path');
 
 function findGame() {
-  let steam = new util.Steam();
-  return steam.allGames()
-  .then((games) => {
-    let breakingwheel = games.find((entry) => entry.name === 'Breaking Wheel');
-    if (breakingwheel !== undefined) {
-      return breakingwheel.gamePath;
-    }
-    return null;
-  })
-  .catch((err) => {
-    log('debug', 'no steam installed?', { err: err.message });
-    return null;
-  });
+  return util.steam.findByName('Breaking Wheel')
+    .then(game => game.gamePath);
 }
 
 function main(context) {

@@ -3,19 +3,8 @@ const path = require('path');
 const { fs, log, util } = require('vortex-api');
 
 function findGame() {
-  let steam = new util.Steam();
-  return steam.allGames()
-  .then((games) => {
-    let starbound = games.find((entry) => entry.name === 'Starbound');
-    if (starbound !== undefined) {
-      return starbound.gamePath;
-    }
-    return null;
-  })
-  .catch((err) => {
-    log('debug', 'no steam installed?', { err: err.message });
-    return null;
-  });
+  return util.steam.findByName('Starbound')
+      .then(game => game.gamePath);
 }
 
 function gameExecutable() {

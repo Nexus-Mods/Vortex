@@ -2,19 +2,8 @@ const path = require('path');
 const { fs, log, util } = require('vortex-api');
 
 function findGame() {
-  let steam = new util.Steam();
-  return steam.allGames()
-  .then((games) => {
-    let game = games.find((entry) => entry.name === 'Dragon\'s Dogma: Dark Arisen');
-    if (game !== undefined) {
-      return game.gamePath;
-    }
-    return null;
-  })
-  .catch((err) => {
-    log('debug', 'no steam installed?', { err: err.message });
-    return null;
-  });
+  return util.steam.findByName('Dragon\'s Dogma: Dark Arisen')
+      .then(game => game.gamePath);
 }
 
 function main(context) {

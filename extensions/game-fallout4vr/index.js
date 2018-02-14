@@ -20,7 +20,11 @@ function findGame() {
         resolve(result.value);
       }
     });
-  });
+  })
+  .catch(err =>
+    util.Steam.findByName('Fallout 4 VR')
+      .then(game => game.gamePath)
+  );
 }
 
 let tools = [

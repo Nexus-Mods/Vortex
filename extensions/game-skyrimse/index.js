@@ -20,7 +20,11 @@ function findGame() {
         resolve(result.value);
       }
     });
-  });
+  })
+  .catch(err =>
+    util.Steam.findByName('The Elder Scrolls V: Skyrim Special Edition')
+      .then(game => game.gamePath)
+  );
 }
 
 const tools = [

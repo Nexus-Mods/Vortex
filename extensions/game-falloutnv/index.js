@@ -1,5 +1,6 @@
 const Promise = require('bluebird');
 const Registry = require('winreg');
+const { util } = require('vortex-api');
 
 function findGame() {
   if (Registry === undefined) {
@@ -20,7 +21,11 @@ function findGame() {
         resolve(result.value);
       }
     });
-  });
+  })
+  .catch(err =>
+    util.Steam.findByName('Fallout: New Vegas')
+      .then(game => game.gamePath)
+  );
 }
 
 let tools = [

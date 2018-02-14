@@ -20,7 +20,11 @@ function findGame() {
         resolve(result.value);
       }
     });
-  });
+  })
+  .catch(err =>
+    util.Steam.findByName('The Elder Scrolls IV: Oblivion')
+      .then(game => game.gamePath)
+  );
 }
 
 let tools = [

@@ -4,19 +4,8 @@ const path = require('path');
 const { fs, log, util } = require('vortex-api');
 
 function findGame() {
-  let steam = new util.Steam();
-  return steam.allGames()
-  .then((games) => {
-    let xrebirth = games.find((entry) => entry.name === 'X Rebirth');
-    if (xrebirth !== undefined) {
-      return xrebirth.gamePath;
-    }
-    return null;
-  })
-  .catch((err) => {
-    log('debug', 'no steam installed?', { err: err.message });
-    return null;
-  });
+  return util.steam.findByName('X Rebirth')
+      .then(game => game.gamePath);
 }
 
 function testSupported(files, gameId) {

@@ -24,23 +24,8 @@ function findGame() {
       }
     });
   })
-  .catch(err => {
-    // on my system Installed Path is not set, even though the internet says it should.
-    // try Steam as well
-    let steam = new util.Steam();
-    return steam.allGames()
-    .then((games) => {
-      let morrowind = games.find((entry) => entry.name === 'The Elder Scrolls III: Morrowind');
-      if (morrowind !== undefined) {
-        return morrowind.gamePath;
-      }
-      return null;
-    })
-    .catch((err) => {
-      log('debug', 'no steam installed?', { err: err.message });
-      return null;
-    });
-  });
+  .catch(err => util.steam.findByName('The Elder Scrolls III: Morrowind')
+        .then(game => game.gamePath));
 }
 
 let tools = [

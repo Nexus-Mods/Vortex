@@ -20,13 +20,29 @@ export interface ISteamEntry {
   lastUpdated: Date;
 }
 
+export class GameNotFound extends Error {
+  constructor(search: string) {
+    super(`game not found: ${search}`);
+    Error.captureStackTrace(this, this.constructor);
+
+    this.name = this.constructor.name;
+  }
+}
+
+export interface ISteam {
+  findByName(namePattern: string): Promise<ISteamEntry>;
+  findByAppId(appId: string | string[]): Promise<ISteamEntry>;
+  allGames(): Promise<ISteamEntry[]>;
+}
+
 /**
  * base class to interact with local steam installation
  *
  * @class Steam
  */
-class Steam {
+class Steam implements ISteam {
   private mBaseFolder: Promise<string>;
+  private mCache: ISteamEntry[];
 
   constructor() {
     if (process.platform === 'win32') {
@@ -50,7 +66,51 @@ class Steam {
     }
   }
 
+  /**
+   * find the first game that matches the specified name pattern
+   */
+  public findByName(namePattern: string): Promise<ISteamEntry> {
+    const re = new RegExp(namePattern);
+    return this.allGames()
+      .then(entries => entries.find(entry => re.test(entry.name)))
+      .then(entry => {
+        if (entry === undefined) {
+          return Promise.reject(new GameNotFound(namePattern));
+        } else {
+          return Promise.resolve(entry);
+        }
+      });
+  }
+
+  /**
+   * find the first game with the specified appid or one of the specified appids
+   */
+  public findByAppId(appId: string | string[]): Promise<ISteamEntry> {
+    // support searching for one app id or one out of a list (when there are multiple
+    // variants of a game)
+    const matcher = Array.isArray(appId)
+      ? entry => appId.indexOf(entry.appid) !== -1
+      : entry => entry.appid === appId;
+
+    return this.allGames()
+      .then(entries => entries.find(matcher))
+      .then(entry => {
+        if (entry === undefined) {
+          return Promise.reject(new GameNotFound(name));
+        } else {
+          return Promise.resolve(entry);
+        }
+      });
+  }
+
   public allGames(): Promise<ISteamEntry[]> {
+    if (this.mCache !== undefined) {
+      return Promise.resolve(this.mCache);
+    }
+    return this.parseManifests().tap(entries => { this.mCache = entries; });
+  }
+
+  private parseManifests(): Promise<ISteamEntry[]> {
     const steamPaths: string[] = [];
     return this.mBaseFolder
       .then((basePath: string) => {
@@ -96,4 +156,6 @@ class Steam {
   }
 }
 
-export default Steam;
+const instance: ISteam = new Steam();
+
+export default instance;

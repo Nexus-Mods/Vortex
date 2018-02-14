@@ -2,19 +2,8 @@ const path = require('path');
 const { log, util } = require('vortex-api');
 
 function findGame() {
-  let steam = new util.Steam();
-  return steam.allGames()
-  .then((games) => {
-    let stateofdecay = games.find((entry) => entry.name === 'State of Decay');
-    if (stateofdecay !== undefined) {
-      return stateofdecay.gamePath;
-    }
-    return null;
-  })
-  .catch((err) => {
-    log('debug', 'no steam installed?', { err: err.message });
-    return null;
-  });
+  return util.steam.findByName('State of Decay')
+      .then(game => game.gamePath);
 }
 
 function main(context) {

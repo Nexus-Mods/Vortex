@@ -14,19 +14,12 @@ class DarkSouls2 {
   }
 
   queryPath() {
-    let steam = new util.Steam();
-    return steam.allGames()
-        .then((games) => {
-          let game = games.find((entry) => ['236430', '335300'].indexOf(entry.appid) !== -1);
-          if ((game !== undefined) && (game.appid === '335300')) {
+    return util.steam.findByAppId(['236430', '335300'])
+        .then(game => {
+          if (game.appid === '335300') {
             this.details.steamAppId = game.appid;
           }
-
-          return (game !== undefined) ? game.gamePath : null;
-        })
-        .catch((err) => {
-          log('debug', 'no steam installed?', { err: err.message });
-          return null;
+          return game.gamePath;
         });
   }
 

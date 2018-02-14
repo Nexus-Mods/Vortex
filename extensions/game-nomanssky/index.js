@@ -3,19 +3,8 @@ const { log, util } = require('vortex-api');
 const path = require('path');
 
 function findGame() {
-  let steam = new util.Steam();
-  return steam.allGames()
-  .then((games) => {
-    let nomanssky = games.find((entry) => entry.name === 'No Man\'s Sky');
-    if (nomanssky !== undefined) {
-      return nomanssky.gamePath;
-    }
-    return null;
-  })
-  .catch((err) => {
-    log('debug', 'no steam installed?', { err: err.message });
-    return null;
-  });
+  return util.steam.findByName('No Man\'s Sky')
+      .then(game => game.gamePath);
 }
 
 function main(context) {

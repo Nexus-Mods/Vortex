@@ -18,16 +18,8 @@ class DarkSouls {
   }
 
   queryPath() {
-    let steam = new util.Steam();
-    return steam.allGames()
-        .then((games) => {
-          let game = games.find((entry) => entry.appid === '211420');
-          return (game !== undefined) ? game.gamePath : null;
-        })
-        .catch((err) => {
-          log('debug', 'no steam installed?', { err: err.message });
-          return null;
-        });
+    return util.steam.findByAppId('211420')
+        .then(game => game.gamePath);
   }
 
   queryModPath() {
