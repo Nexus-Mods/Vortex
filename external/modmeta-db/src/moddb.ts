@@ -280,7 +280,12 @@ class ModDB {
                                  this.translateFromNexus(nexusObj, gameId));
                 // and return to caller
                 resolve(result);
+              } else if (response.statusCode === 521) {
+                reject(new Error('API offline'));
+                // data contains an html page from cloudflare -> useless
               } else {
+                // TODO not sure what data contains at this point. If the api is working
+                // correct it _should_ be a json object containing an error message
                 reject(new Error(util.inspect(data)));
               }
             });

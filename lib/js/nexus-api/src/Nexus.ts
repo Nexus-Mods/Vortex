@@ -65,6 +65,11 @@ function handleRestResult(resolve, reject, url: string, error: any,
   }
 
   try {
+    if (response.statusCode === 521) {
+      // in this case the body isn't something the api sent so it probably can't be parsed
+      return reject(new NexusError('API currently offline', response.statusCode, url));
+    }
+
     const data = JSON.parse(body || '{}');
 
     if ((response.statusCode < 200) || (response.statusCode >= 300)) {
