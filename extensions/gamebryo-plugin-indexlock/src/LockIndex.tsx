@@ -44,7 +44,7 @@ class LockIndex extends ComponentEx<IProps, {}> {
         checked={lockedIndex !== undefined}
         onToggle={this.onToggle}
       >
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', width: 150 }}>
           <div style={{ whiteSpace: 'nowrap', marginRight: 4 }}>{title}</div>
           {(lockedIndex === undefined) ? null : this.renderIndex()}
         </div>

@@ -96,7 +96,7 @@ class Steam implements ISteam {
       .then(entries => entries.find(matcher))
       .then(entry => {
         if (entry === undefined) {
-          return Promise.reject(new GameNotFound(name));
+          return Promise.reject(new GameNotFound(Array.isArray(appId) ? appId.join(', ') : appId));
         } else {
           return Promise.resolve(entry);
         }
