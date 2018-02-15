@@ -1,12 +1,3 @@
-[submodule "lib/cpp/bsatk/bsatk"]
-	path = lib/cpp/bsatk/bsatk
-	url = https://github.com/TanninOne/modorganizer-bsatk
-	branch = noboost
-[submodule "lib/cpp/esptk/esptk"]
-	path = lib/cpp/esptk/esptk
-	url = https://github.com/TanninOne/modorganizer-esptk
-	branch = noboost
-[submodule "lib/cpp/ba2tk/ba2tk"]
-	path = lib/cpp/ba2tk/ba2tk
-	url = https://github.com/Nexus-Mods/ba2tk
-  branch = master
+[submodule "extensions\\games"]
+	path = extensions\\games
+	url = https://github.com/Nexus-Mods/vortex-games.git

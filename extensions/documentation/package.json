@@ -14,7 +14,7 @@
     "@types/i18next": "^8.4.0",
     "@types/react": "16.0.34",
     "@types/react-redux": "4.4.35",
-    "vortex-api": "file:../../api",
+    "vortex-api": "Nexus-Mods/vortex-api",
     "webpack": "^1.13.2"
   }
 }

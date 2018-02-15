@@ -105,7 +105,7 @@
       ]
     },
     {
-      "srcPath": "extensions/game-*/*",
+      "srcPath": "extensions/games/*",
       "outPath": "bundledPlugins",
       "skipPaths": 1,
       "target": [

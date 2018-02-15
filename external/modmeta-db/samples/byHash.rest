@@ -1,2 +1,0 @@
-GET http://localhost:51666/api/byHash/2465
-Content-Type: application/json

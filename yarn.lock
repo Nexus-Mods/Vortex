@@ -1823,8 +1823,9 @@ cpx@^1.5.0:
     shell-quote "^1.6.1"
     subarg "^1.0.0"
 
-"crash-dump@file:lib/cpp/crash-dump":
+crash-dump@Nexus-Mods/node-crash-dump:
   version "1.0.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/7b9ad642a379e71782e502d9c205fe6420ae328b"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.8.0"
@@ -2934,8 +2935,9 @@ evp_bytestokey@^1.0.0, evp_bytestokey@^1.0.3:
     md5.js "^1.3.4"
     safe-buffer "^5.1.1"
 
-"exe-version@file:lib/cpp/exe-version":
+exe-version@Nexus-Mods/node-exe-version:
   version "1.0.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/ce39faff66515223dbef71d57c517c0cc6e3bcb4"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.8.0"
@@ -3712,8 +3714,9 @@ i18next@^10.0.3:
   version "10.2.2"
   resolved "https://registry.yarnpkg.com/i18next/-/i18next-10.2.2.tgz#1f2dc55ca2e8d7e071f7aff9f78654ef7f003c0e"
 
-"icon-extract@file:lib/cpp/icon-extract":
+icon-extract@Nexus-Mods/node-icon-extract:
   version "1.0.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-icon-extract/tar.gz/5820e9d48df8cae6a4523753fbb88a663a04111d"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.4.0"
@@ -5190,8 +5193,9 @@ next-tick@1:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
 
-"nexus-api@file:lib/js/nexus-api":
+nexus-api@Nexus-Mods/node-nexus-api:
   version "0.2.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6405d9fbbf607051f59c56986c56739a0eeefbe1"
   dependencies:
     string-template "^1.0.0"
 
@@ -5743,8 +5747,9 @@ performance-now@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
 
-"permissions@file:lib/cpp/permissions":
+permissions@Nexus-Mods/node-permissions:
   version "1.0.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/f219fcf7451606ff5d35ea12e367b842378546f4"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.14"
@@ -7526,8 +7531,9 @@ tunnel-agent@~0.4.1:
   version "0.4.3"
   resolved "https://registry.yarnpkg.com/tunnel-agent/-/tunnel-agent-0.4.3.tgz#6373db76909fe570e08d73583365ed828a74eeeb"
 
-"turbowalk@file:lib/cpp/turbowalk":
+turbowalk@Nexus-Mods/node-turbowalk:
   version "1.0.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/d9e673df0ded0e091b8c813b8a7517bc82fb1706"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.8.0"
@@ -7766,8 +7772,9 @@ void-elements@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-2.0.1.tgz#c066afb582bb1cb4128d60ea92392e94d5e9dbec"
 
-"vortex-parse-ini@file:lib/js/vortex-parse-ini":
+vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/037cee575daa3b0894c811928063d2b4ffe66e80"
   dependencies:
     bluebird "^3.5.0"
     ffi "^2.2.0"

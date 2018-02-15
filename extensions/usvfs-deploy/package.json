@@ -18,6 +18,6 @@
   },
   "dependencies": {
     "usvfs": "file:../../lib/cpp/usvfs",
-    "vortex-api": "file:../../api"
+    "vortex-api": "Nexus-Mods/vortex-api"
   }
 }
