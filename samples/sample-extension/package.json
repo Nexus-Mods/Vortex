@@ -5,9 +5,8 @@
   "main": "./out/index.js",
   "repository": "",
   "scripts": {
-    "tsc": "tsc -p .",
     "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
-    "build": "npm run tsc && npm run webpack"
+    "build": "npm run webpack && extractInfo"
   },
   "author": "",
   "license": "GPL-3.0",
@@ -18,24 +17,13 @@
   },
   "devDependencies": {
     "@types/i18next": "^8.4.0",
-    "@types/immutability-helper": "^2.0.15",
-    "@types/react": "16.0.34",
-    "@types/react-bootstrap": "^0.0.37",
-    "@types/react-dom": "16.0.3",
-    "@types/react-i18next": "^1.7.5",
-    "@types/react-redux": "^4.4.35",
-    "@types/react-router": "^2.0.41",
-    "babel-core": "^6.14.0",
-    "babel-loader": "^6.2.5",
-    "babel-polyfill": "^6.13.0",
-    "bluebird": "^3.4.6",
-    "i18next": "^3.5.1",
-    "immutability-helper": "^2.2.2",
+    "@types/redux": "^3.6.0",
+    "@types/redux-thunk": "^2.1.0",
+    "babel-loader": "^7.1.1",
+    "bluebird": "^3.5.0",
+    "i18next": "^8.4.3",
+    "ts-loader": "2.3.4",
     "vortex-api": "Nexus-Mods/vortex-api",
-    "react": "^15.3.2",
-    "react-bootstrap": "^0.30.6",
-    "react-dom": "^15.3.2",
-    "react-i18next": "^1.10.1",
-    "webpack": "3.10.0"
+    "webpack": "^3.1.0"
   }
 }
