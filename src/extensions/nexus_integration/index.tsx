@@ -173,7 +173,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
     if (APIKEY === '') {
       showError(api.store.dispatch,
         'An error occurred retrieving categories',
-        'You are not logged in!');
+        'You are not logged in to Nexus Mods!', undefined, undefined, false);
     } else {
 
       let gameId;
@@ -201,9 +201,14 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
             return;
           }
 
-          const message = processErrorMessage(err);
-          showError(api.store.dispatch, 'An error occurred retrieving categories', message,
-                    false, undefined, message.Servermessage === undefined);
+          const detail = processErrorMessage(err);
+          let allowReport = detail.Servermessage === undefined;
+          if (detail.noReport) {
+            allowReport = false;
+            delete detail.noReport;
+          }
+          showError(api.store.dispatch, 'An error occurred retrieving categories', detail,
+                    false, undefined, allowReport);
         });
     }
   });
@@ -218,13 +223,16 @@ interface IRequestError {
   fatal?: boolean;
   Mod?: number;
   Version?: string;
+  noReport?: boolean;
 }
 
 function processErrorMessage(err: NexusErrorT): IRequestError {
   const errorMessage = typeof(err) === 'string' ? err : err.message;
   if (err.statusCode === undefined) {
-    if (errorMessage && (errorMessage.indexOf('APIKEY') > -1)) {
-      return { Error: 'You are not logged in!' };
+    if (errorMessage
+      && ((errorMessage.indexOf('APIKEY') > -1)
+          || (errorMessage.indexOf('API Key')))) {
+      return { Error: 'You are not logged in to Nexus Mods!', noReport: true };
     } else {
       return { Error: errorMessage };
     }
@@ -269,7 +277,7 @@ function endorseModImpl(
   if (APIKEY === '') {
     showError(store.dispatch,
       'An error occurred endorsing a mod',
-      'You are not logged in!');
+      'You are not logged in to Nexus Mods!', undefined, undefined, false);
     return;
   }
 
@@ -301,8 +309,13 @@ function endorseModImpl(
         detail.Game = gameId;
         detail.Mod = nexusModId;
         detail.Version = version;
+        let allowReport = detail.Servermessage === undefined;
+        if (detail.noReport) {
+          allowReport = false;
+          delete detail.noReport;
+        }
         showError(store.dispatch, 'An error occurred endorsing a mod', detail,
-                  false, undefined, detail.Servermessage === undefined);
+                  false, undefined, allowReport);
       }
     });
 }
@@ -577,7 +590,7 @@ function once(api: IExtensionApi) {
     if (APIKEY === '') {
       showError(api.store.dispatch,
         'An error occurred checking for mod updates',
-        'You are not logged in!');
+        'You are not logged in to Nexus Mods!', undefined, undefined, false);
     } else {
       api.store.dispatch(setUpdatingMods(gameId, true));
       checkModVersionsImpl(api.store, gameId, mods)
@@ -605,7 +618,7 @@ function once(api: IExtensionApi) {
     if (APIKEY === '') {
       showError(api.store.dispatch,
         'An error occurred endorsing a mod',
-        'You are not logged in!');
+        'You are not logged in to Nexus Mods!', undefined, undefined, false);
     } else {
       endorseModImpl(api, gameId, modId, endorsedStatus);
     }
