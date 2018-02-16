@@ -28,7 +28,7 @@ class CategoryFilterComponent extends React.Component<IProps, {}> {
           .filter(category => category !== undefined));
 
     const options = Array.from(usedCategories)
-      .filter(id => categories[id] !== undefined)
+      .filter(id => getSafe(categories, [id], undefined) !== undefined)
       .map(id => ({
         value: id.toString(),
         label: getSafe(categories, [id, 'name'], undefined),
