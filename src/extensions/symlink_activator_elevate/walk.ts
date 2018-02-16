@@ -29,10 +29,9 @@ function walk(target: string,
           subDirs.push(fullPath);
         }
       });
-      return Promise.all(cbPromises.concat(Promise.mapSeries(subDirs, (subDir) => {
-        return walk(subDir, callback);
-      })));
-    });
+      return Promise.all(
+        cbPromises.concat(Promise.mapSeries(subDirs, (subDir) => walk(subDir, callback))));
+    }).then(() => null);
 }
 
 export default walk;

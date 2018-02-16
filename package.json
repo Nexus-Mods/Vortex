@@ -170,6 +170,7 @@
     "exe-version": "Nexus-Mods/node-exe-version",
     "feedparser": "^2.2.2",
     "ffi": "^2.2.0",
+    "fomod-installer": "Nexus-Mods/fomod-installer",
     "font-awesome": "^4.7.0",
     "fs-extra-promise": "^1.0.1",
     "graphlib": "^2.1.1",

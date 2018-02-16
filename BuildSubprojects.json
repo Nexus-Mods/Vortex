@@ -2,27 +2,6 @@
   [
     {
       "type": "build-copy",
-      "condition": "buildType === 'out'",
-      "name": "modinstaller (for development)",
-      "path": "lib/csharp/fomod-installer",
-      "sources": ["**/*.cs", "**/*.csproj", "src/FomodInstaller.sln"],
-      "build": "buildDev",
-      "depth": 4,
-      "copyTo": "{BUILD_DIR}/lib/modinstaller"
-    },
-    {
-      "type": "build-copy",
-      "condition": "buildType !== 'out'",
-      "name": "modinstaller (for distribution)",
-      "path": "lib/csharp/fomod-installer",
-      "sources": ["**/*.cs", "**/*.csproj", "src/FomodInstaller.sln"],
-      "build": "build",
-      "depth": 4,
-      "copyTo": "{BUILD_DIR}/lib/modinstaller"
-    }
-  ], [
-    {
-      "type": "build-copy",
       "name": "gamebryo-plugin-management",
       "path": "extensions/gamebryo-plugin-management",
       "removeModules": ["vortex-api", "nexus-api"],
