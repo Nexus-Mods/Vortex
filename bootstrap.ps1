@@ -85,7 +85,7 @@ $wc.DownloadFile("https://raw.githubusercontent.com/chocolatey/chocolatey/master
 Write-Output "Cloning vortex repo"
 
 Remove-Item vortex -Recurse -Force -ErrorAction SilentlyContinue
-git clone https://github.com/Nexus-Mods/Vortex-Private.git vortex
+git clone https://github.com/Nexus-Mods/Vortex.git vortex
 
 Write-Output "Build vortex"
 & yarn config set msvs_version 2015 --global

@@ -30,7 +30,7 @@ Manual:
     * If you downloaded a newer version, change the version accordingly
 - Check out the repository
   * create and _cd_ to an appropriate directory (i.e. c:\projects)
-  * _git clone https://github.com/Nexus-Mods/Vortex-Private.git vortex_
+  * _git clone https://github.com/Nexus-Mods/Vortex.git vortex_
     * this creates a new directory _vortex_ below the current working directory
   * _cd vortex_
 - Switch to the appropriate branch if necessary

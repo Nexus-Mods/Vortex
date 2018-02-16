@@ -4167,14 +4167,6 @@
     "version": "1.3.6",
     "licenseFile": "node_modules\\verror\\LICENSE"
   },
-  "vortex@0.7.0": {
-    "licenses": "GPL-3.0",
-    "repository": "https://github.com/Nexus-Mods/Vortex-Private",
-    "publisher": "Black Tree Gaming Ltd.",
-    "name": "vortex",
-    "version": "0.7.0",
-    "licenseFile": "LICENSE.md"
-  },
   "warning@3.0.0": {
     "licenses": "BSD-3-Clause",
     "repository": "https://github.com/BerkeleyTrue/warning",

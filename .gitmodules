@@ -35,35 +35,35 @@
 	path = extensions/meta-editor
 	url = https://github.com/Nexus-Mods/extension-metaeditor.git
 [submodule "extensions\\mo-import"]
-	path = extensions\\mo-import
+	path = extensions/mo-import
 	url = https://github.com/Nexus-Mods/extension-mo-import.git
 [submodule "extensions\\mod-dependencies"]
-	path = extensions\\mod-dependencies
+	path = extensions/mod-dependencies
 	url = https://github.com/Nexus-Mods/extension-mod-dependencies.git
 [submodule "extensions\\mod-highlights"]
-	path = extensions\\mod-highlights
+	path = extensions/mod-highlights
 	url = https://github.com/Nexus-Mods/extension-mod-highlights.git
 [submodule "extensions\\modtype-dinput"]
-	path = extensions\\modtype-dinput
+	path = extensions/modtype-dinput
 	url = https://github.com/Nexus-Mods/extension-modtype-dinput.git
 [submodule "extensions\\modtype-dazip"]
-	path = extensions\\modtype-dazip
+	path = extensions/modtype-dazip
 	url = https://github.com/Nexus-Mods/extension-modtype-dazip.git
 [submodule "extensions\\modtype-enb"]
-	path = extensions\\modtype-enb
+	path = extensions/modtype-enb
 	url = https://github.com/Nexus-Mods/extension-modtype-enb.git
 [submodule "extensions\\modtype-gedosato"]
-	path = extensions\\modtype-gedosato
+	path = extensions/modtype-gedosato
 	url = https://github.com/Nexus-Mods/extension-modtype-gedosato.git
 [submodule "extensions\\mtframework-arc-support"]
-	path = extensions\\mtframework-arc-support
+	path = extensions/mtframework-arc-support
 	url = https://github.com/Nexus-Mods/extension-arc-support.git
 [submodule "extensions\\nmm-import"]
-	path = extensions\\nmm-import
+	path = extensions/nmm-import
 	url = https://github.com/Nexus-Mods/extension-nmm-import.git
 [submodule "extensions\\open-directory"]
-	path = extensions\\open-directory
+	path = extensions/open-directory
 	url = https://github.com/Nexus-Mods/extension-open-directory.git
 [submodule "extensions\\theme-switcher"]
-	path = extensions\\theme-switcher
+	path = extensions/theme-switcher
 	url = https://github.com/Nexus-Mods/extension-theme-switcher.git

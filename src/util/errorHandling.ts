@@ -19,7 +19,7 @@ import * as path from 'path';
 import {} from 'uuid';
 
 // could be a bit more dynamic but how often is this going to change?
-const repo = 'Nexus-Mods/Vortex-Private';
+const repo = 'Nexus-Mods/Vortex';
 const repoURL = 'https://github.com/' + repo;
 
 function createTitle(type: string, error: IError, hash: string) {

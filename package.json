@@ -5,7 +5,7 @@
   "main": "out/main.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Nexus-Mods/Vortex-Private"
+    "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",

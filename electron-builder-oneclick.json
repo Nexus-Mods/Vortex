@@ -17,7 +17,7 @@
     "publish": [
       {
         "provider": "github",
-        "private": true
+        "private": false
       }
     ],
     "forceCodeSigning": true,
