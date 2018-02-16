@@ -46,21 +46,27 @@ class Steam implements ISteam {
 
   constructor() {
     if (process.platform === 'win32') {
-      // windows
-      const regKey = new Registry({
-        hive: Registry.HKCU,
-        key: '\\Software\\Valve\\Steam',
-      });
-
-      this.mBaseFolder = new Promise<string>((resolve, reject) => {
-        regKey.get('SteamPath', (err: Error, result: Registry.RegistryItem) => {
-          if (err !== null) {
-            reject(new Error(err.message));
-          } else {
-            resolve(result.value);
-          }
+        // windows
+        const regKey = new Registry({
+          hive: Registry.HKCU,
+          key: '\\Software\\Valve\\Steam',
         });
-      });
+
+        this.mBaseFolder = new Promise<string>((resolve, reject) => {
+          regKey.get('SteamPath',
+                    (err: Error, result: Registry.RegistryItem) => {
+                      if (err !== null) {
+                        // hrm, if we notify the user about this, users without Steam will be
+                        // annoyed. If we don't, the lack of steam functionality may confuse
+                        // those who do have it. Well, it's their own fault for breaking
+                        // the registry keys really...
+                        log('info', 'steam not found', { error: err.message });
+                        resolve(undefined);
+                      } else {
+                        resolve(result.value);
+                      }
+                    });
+        });
     } else {
       this.mBaseFolder = Promise.resolve(path.resolve(app.getPath('home'), '.steam', 'steam'));
     }
@@ -114,10 +120,16 @@ class Steam implements ISteam {
     const steamPaths: string[] = [];
     return this.mBaseFolder
       .then((basePath: string) => {
+        if (basePath === undefined) {
+          return Promise.resolve(undefined);
+        }
         steamPaths.push(basePath);
         return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'));
       })
       .then((data: NodeBuffer) => {
+        if (data === undefined) {
+          return Promise.resolve([]);
+        }
         const configObj: any = parse(data.toString());
 
         let counter = 1;
