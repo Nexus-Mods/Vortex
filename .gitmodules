@@ -1,3 +1,69 @@
 [submodule "extensions\\games"]
-	path = extensions\\games
+	path = extensions/games
 	url = https://github.com/Nexus-Mods/vortex-games.git
+[submodule "extensions\\gamebryo-plugin-management"]
+	path = extensions/gamebryo-plugin-management
+	url = https://github.com/Nexus-Mods/extension-plugin-management.git
+[submodule "extensions\\feedback"]
+	path = extensions/feedback
+	url = https://github.com/Nexus-Mods/extension-feedback.git
+[submodule "extensions\\gamebryo-archive-invalidation"]
+	path = extensions/gamebryo-archive-invalidation
+	url = https://github.com/Nexus-Mods/extension-archive-invalidation.git
+[submodule "extensions\\gamebryo-ba2-support"]
+	path = extensions/gamebryo-ba2-support
+	url = https://github.com/Nexus-Mods/extension-ba2-support.git
+[submodule "extensions\\gamebryo-bsa-support"]
+	path = extensions/gamebryo-bsa-support
+	url = https://github.com/Nexus-Mods/extension-bsa-support.git
+[submodule "extensions\\gamebryo-plugin-indexlock"]
+	path = extensions/gamebryo-plugin-indexlock
+	url = https://github.com/Nexus-Mods/extension-plugin-indexlock.git
+[submodule "extensions\\gamebryo-savegame-management"]
+	path = extensions/gamebryo-savegame-management
+	url = https://github.com/Nexus-Mods/extension-gamebryo-savegames.git
+[submodule "extensions\\gamebryo-test-settings"]
+	path = extensions/gamebryo-test-settings
+	url = https://github.com/Nexus-Mods/extension-gamebryo-testsettings.git
+[submodule "extensions\\gameinfo-steam"]
+	path = extensions/gameinfo-steam
+	url = https://github.com/Nexus-Mods/extension-gameinfo-steam.git
+[submodule "extensions\\local-gamesettings"]
+	path = extensions/local-gamesettings
+	url = https://github.com/Nexus-Mods/extension-local-gamesettings.git
+[submodule "extensions\\meta-editor"]
+	path = extensions/meta-editor
+	url = https://github.com/Nexus-Mods/extension-metaeditor.git
+[submodule "extensions\\mo-import"]
+	path = extensions\\mo-import
+	url = https://github.com/Nexus-Mods/extension-mo-import.git
+[submodule "extensions\\mod-dependencies"]
+	path = extensions\\mod-dependencies
+	url = https://github.com/Nexus-Mods/extension-mod-dependencies.git
+[submodule "extensions\\mod-highlights"]
+	path = extensions\\mod-highlights
+	url = https://github.com/Nexus-Mods/extension-mod-highlights.git
+[submodule "extensions\\modtype-dinput"]
+	path = extensions\\modtype-dinput
+	url = https://github.com/Nexus-Mods/extension-modtype-dinput.git
+[submodule "extensions\\modtype-dazip"]
+	path = extensions\\modtype-dazip
+	url = https://github.com/Nexus-Mods/extension-modtype-dazip.git
+[submodule "extensions\\modtype-enb"]
+	path = extensions\\modtype-enb
+	url = https://github.com/Nexus-Mods/extension-modtype-enb.git
+[submodule "extensions\\modtype-gedosato"]
+	path = extensions\\modtype-gedosato
+	url = https://github.com/Nexus-Mods/extension-modtype-gedosato.git
+[submodule "extensions\\mtframework-arc-support"]
+	path = extensions\\mtframework-arc-support
+	url = https://github.com/Nexus-Mods/extension-arc-support.git
+[submodule "extensions\\nmm-import"]
+	path = extensions\\nmm-import
+	url = https://github.com/Nexus-Mods/extension-nmm-import.git
+[submodule "extensions\\open-directory"]
+	path = extensions\\open-directory
+	url = https://github.com/Nexus-Mods/extension-open-directory.git
+[submodule "extensions\\theme-switcher"]
+	path = extensions\\theme-switcher
+	url = https://github.com/Nexus-Mods/extension-theme-switcher.git

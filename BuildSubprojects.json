@@ -195,7 +195,7 @@
     {
       "type": "build-copy",
       "name": "modtype-dragonage",
-      "path": "extensions/modtype-dragonage",
+      "path": "extensions/modtype-dazip",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-dragonage"

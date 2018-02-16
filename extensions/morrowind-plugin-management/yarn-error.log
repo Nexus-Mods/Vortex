@@ -1,0 +1,67 @@
+Arguments: 
+  C:\Program Files\nodejs\node.exe C:\Program Files (x86)\Yarn\bin\yarn.js install
+
+PATH: 
+  C:\Program Files\ConEmu\ConEmu\Scripts;C:\Program Files\ConEmu;C:\Program Files\ConEmu\ConEmu;C:\Python27\;C:\Python27\Scripts;C:\Python35\Scripts\;C:\Python35\;C:\ProgramData\Oracle\Java\javapath;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files\Intel\Intel(R) Management Engine Components\DAL;C:\Program Files (x86)\Intel\Intel(R) Management Engine Components\DAL;C:\Program Files\Intel\Intel(R) Management Engine Components\IPT;C:\Program Files (x86)\Intel\Intel(R) Management Engine Components\IPT;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files\Microsoft DNX\Dnvm\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\ProgramData\chocolatey\bin;D:\vim\vim80;D:\GitExtensions\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\;C:\Program Files\Microsoft SQL Server\130\Tools\Binn\;C:\Program Files\dotnet\;C:\Program Files (x86)\Skype\Phone\;C:\Program Files\Git\cmd;D:\nvm;C:\Program Files\nodejs;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\Program Files (x86)\Yarn\bin;D:\nodejs\;C:\Users\Tannin\.cargo\bin;C:\Program Files (x86)\Conan\conan;D:\StrawberryPerl\perl\bin;d:\LLVM\bin;C:\Program Files (x86)\CMake\bin;C:\Users\Tannin\AppData\Local\atom\bin;C:\Users\Tannin\AppData\Local\Microsoft\WindowsApps;D:\nvm;C:\Program Files\nodejs;C:\Users\Tannin\AppData\Local\Yarn\bin;C:\Users\Tannin\AppData\Roaming\npm
+
+Yarn version: 
+  1.3.2
+
+Node version: 
+  7.9.0
+
+Platform: 
+  win32 x64
+
+npm manifest: 
+  {
+    "name": "morrowind-plugin-management",
+    "version": "0.1.0",
+    "description": "Management for morrowind plugins",
+    "main": "./out/index.js",
+    "repository": "",
+    "scripts": {
+      "webpack": "webpack --config webpack.config.js --display-error-details --progress --profile --color",
+      "build": "npm run webpack && copyfiles -f src/stylesheets/plugin_management.scss dist && extractInfo",
+    },
+    "author": "Black Tree Gaming Ltd.",
+    "license": "GPL-3.0",
+    "babel": {
+      "presets": [
+        "es2015"
+      ]
+    },
+    "devDependencies": {
+      "@types/i18next": "^8.4.0",
+      "@types/immutability-helper" : "^2.0.15",
+      "@types/react": "16.0.34",
+      "@types/react-bootstrap": "0.31.4",
+      "@types/react-dom": "16.0.3",
+      "@types/react-i18next": "^1.7.5",
+      "@types/react-redux": "4.4.35",
+      "@types/react-router": "^2.0.41",
+      "@types/redux": "3.6.0",
+      "@types/redux-thunk": "2.1.0",
+      "bluebird": "^3.4.6",
+      "copyfiles": "^1.0.0",
+      "i18next": "^8.4.3",
+      "immutability-helper": "^2.2.2",
+      "vortex-api": "Nexus-Mods/vortex-api",
+      "webpack": "^3.5.5",
+      "ts-loader": "2.3.4"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
+
+Trace: 
+  SyntaxError: c:\Work\vortex\extensions\morrowind-plugins-management\package.json: Unexpected token } in JSON at position 396
+      at JSON.parse (<anonymous>)
+      at C:\Program Files (x86)\Yarn\lib\cli.js:770:59
+      at Generator.next (<anonymous>)
+      at step (C:\Program Files (x86)\Yarn\lib\cli.js:92:30)
+      at C:\Program Files (x86)\Yarn\lib\cli.js:103:13

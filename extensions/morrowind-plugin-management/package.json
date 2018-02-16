@@ -1,0 +1,38 @@
+{
+  "name": "morrowind-plugin-management",
+  "version": "0.1.0",
+  "description": "Management for morrowind plugins",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "webpack --config webpack.config.js --display-error-details --progress --profile --color",
+    "build": "npm run webpack && copyfiles -f src/stylesheets/plugin_management.scss dist && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd.",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@types/i18next": "^8.4.0",
+    "@types/immutability-helper" : "^2.0.15",
+    "@types/react": "16.0.34",
+    "@types/react-bootstrap": "^0.32.1",
+    "@types/react-dom": "16.0.3",
+    "@types/react-i18next": "^1.7.5",
+    "@types/react-redux": "4.4.35",
+    "@types/react-router": "^2.0.41",
+    "@types/redux": "3.6.0",
+    "@types/redux-thunk": "2.1.0",
+    "bluebird": "^3.4.6",
+    "copyfiles": "^1.0.0",
+    "i18next": "^8.4.3",
+    "immutability-helper": "^2.2.2",
+    "vortex-api": "Nexus-Mods/vortex-api",
+    "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
+    "webpack": "^3.5.5",
+    "ts-loader": "2.3.4"
+  }
+}
