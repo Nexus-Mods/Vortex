@@ -4,7 +4,7 @@
       "type": "build-copy",
       "name": "gamebryo-plugin-management",
       "path": "extensions/gamebryo-plugin-management",
-      "removeModules": ["vortex-api", "nexus-api"],
+      "removeModules": ["vortex-api", "nexus-api", "esptk", "loot"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-plugin-management"
     }

@@ -107,7 +107,7 @@
     {
       "srcPath": "extensions/games/*",
       "outPath": "bundledPlugins",
-      "skipPaths": 1,
+      "skipPaths": 2,
       "target": [
         "out",
         "app"
