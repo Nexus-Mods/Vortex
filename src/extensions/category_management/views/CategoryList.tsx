@@ -502,12 +502,14 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 }
 
+const emptyObj = {};
+
 function mapStateToProps(state: IState): IConnectedProps {
   const gameMode = activeGameId(state);
   return {
     gameMode,
     language: state.settings.interface.language,
-    categories: state.persistent.categories[gameMode],
+    categories: state.persistent.categories[gameMode] || emptyObj,
     mods: state.persistent.mods[gameMode],
   };
 }

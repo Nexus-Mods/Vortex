@@ -35,7 +35,7 @@ export function resolveCategoryPath(category: string, state: IState) {
   let completePath: string = '';
   const gameId: string = activeGameId(state);
 
-  const categories: any = getSafe(state, ['persistent', 'categories', gameId], '');
+  const categories: any = getSafe(state, ['persistent', 'categories', gameId], {});
   if (categories[category] !== undefined) {
     completePath = createCategoryDetailPath(categories, category, '');
   }
@@ -56,7 +56,5 @@ export function resolveCategoryName(category: string, state: IState) {
 
   const gameId: string = activeGameId(state);
 
-  const categories: any = getSafe(state, ['persistent', 'categories',
-    gameId], '');
-  return categories[category] !== undefined ? categories[category].name : '';
+  return getSafe(state, ['persistent', 'categories', gameId, category, 'name'], {});
 }
