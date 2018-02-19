@@ -32,7 +32,6 @@ export {
   linkAsync,
   linkSync,
   lstatAsync,
-  mkdirAsync,
   moveAsync,
   openSync,
   openAsync,
@@ -46,7 +45,6 @@ export {
   statAsync,
   statSync,
   symlinkAsync,
-  utimesAsync,
   watch,
   writeAsync,
   writeFileAsync,
@@ -56,6 +54,25 @@ export {
 const NUM_RETRIES = 3;
 const RETRY_DELAY_MS = 100;
 const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EUNKNOWN']);
+
+function genWrapperAsync<T extends (...args) => any>(func: T): T {
+  const res = (...args) => {
+    const stack = new Error().stack;
+    return func(...args)
+      .catch(err => {
+        err.stack = stack;
+        throw err;
+      });
+  };
+  return res as T;
+}
+
+const mkdirAsync = genWrapperAsync(fs.mkdirAsync);
+const utimesAsync = genWrapperAsync(fs.utimesAsync);
+export {
+  mkdirAsync,
+  utimesAsync,
+};
 
 export function ensureFileAsync(filePath: string): Promise<void> {
   return (fs as any).ensureFileAsync(filePath);
