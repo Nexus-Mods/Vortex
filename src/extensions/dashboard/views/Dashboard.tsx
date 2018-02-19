@@ -8,6 +8,7 @@ import { setDashletEnabled, setLayout } from '../actions';
 import PackeryGrid from './PackeryGrid';
 import PackeryItem from './PackeryItem';
 
+import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -130,8 +131,12 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   private startUpdateCycle = () => {
     // TODO: this is a hack needed so dashlets get updated even if they get props passed in
     //   in a way that doesn't properly signal for an update.
+    //   it should be possible to make this unnecessary with makeReactive, but that requires
+    //   testing
     this.mUpdateTimer = setTimeout(() => {
-      this.nextState.counter++;
+      if (remote.getCurrentWindow().isFocused()) {
+        this.nextState.counter++;
+      }
       this.startUpdateCycle();
     }, UPDATE_FREQUENCY_MS);
   }

@@ -70,11 +70,13 @@ class SpeedCalculator {
 
   private moveHorizon() {
     const time = this.now();
-    for (let i = 0; i < time - this.mMeasureTime; ++i) {
-      this.mTimeSlices.shift();
-      Object.keys(this.mCounters).forEach(counterId => {
-        this.mCounters[counterId].timeSlices.shift();
-      });
+    if (this.mTimeSlices.length > 0) {
+      for (let i = 0; i < time - this.mMeasureTime; ++i) {
+        this.mTimeSlices.shift();
+        Object.keys(this.mCounters)
+            .forEach(
+                counterId => { this.mCounters[counterId].timeSlices.shift(); });
+      }
     }
     this.mMeasureTime = time;
   }

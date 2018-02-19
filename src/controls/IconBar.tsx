@@ -356,14 +356,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       key: id,
     };
     if (icon.props !== undefined) {
-      return (
-        <DynamicProps
-          key={id}
-          dynamicProps={icon.props}
-          staticProps={staticProps}
-          component={icon.component}
-        />
-      );
+      const addProps = icon.props();
+      return <icon.component {...staticProps} {...addProps} />;
     } else {
       return <icon.component {...staticProps} />;
     }
