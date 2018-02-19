@@ -297,9 +297,11 @@ class ExtensionManager {
   }
 
   public static getExtensionPaths(): string[] {
+    // only the first extension with a specific name is loaded, so
+    // load the bundled ones last so a user can replace them
     return [
-      asarUnpacked(path.resolve(__dirname, '..', 'bundledPlugins')),
       path.join(app.getPath('userData'), 'plugins'),
+      asarUnpacked(path.resolve(__dirname, '..', 'bundledPlugins')),
     ];
   }
 
@@ -850,7 +852,8 @@ class ExtensionManager {
     }
   }
 
-  private loadDynamicExtensions(extensionsPath: string): IRegisteredExtension[] {
+  private loadDynamicExtensions(extensionsPath: string,
+                                loadedExtensions: Set<string>): IRegisteredExtension[] {
     if (!fs.existsSync(extensionsPath)) {
       log('info', 'failed to load dynamic extensions, path doesn\'t exist', extensionsPath);
       fs.mkdirSync(extensionsPath);
@@ -858,10 +861,16 @@ class ExtensionManager {
     }
 
     const res = fs.readdirSync(extensionsPath)
+      .filter(name => !loadedExtensions.has(name))
       .filter(name => getSafe(this.mExtensionState, [name, 'enabled'], true))
       .filter(name => fs.statSync(path.join(extensionsPath, name)).isDirectory())
       .map(name => {
         try {
+          // first, mark this extension as loaded. If this is a user extension and there is an
+          // extension with the same name in the bundle we could otherwise end up loading the
+          // bundled one if this one fails to load which could be convenient but also massively
+          // confusing.
+          loadedExtensions.add(name);
           const before = new Date().getTime();
           const ext = this.loadDynamicExtension(path.join(extensionsPath, name));
           const loadTime = new Date().getTime() - before;
@@ -916,6 +925,7 @@ class ExtensionManager {
     require('./extensionRequire').default();
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
+    const loadedExtensions = new Set<string>();
     return staticExtensions
       .filter(ext => getSafe(this.mExtensionState, [ext, 'enabled'], true))
       .map((name: string) => ({
@@ -923,7 +933,7 @@ class ExtensionManager {
           path: path.join(extensionPaths[0], name),
           initFunc: require(`../extensions/${name}/index`).default,
         }))
-      .concat(...extensionPaths.map(ext => this.loadDynamicExtensions(ext)));
+      .concat(...extensionPaths.map(ext => this.loadDynamicExtensions(ext, loadedExtensions)));
   }
 }
 
