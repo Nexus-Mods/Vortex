@@ -15,6 +15,7 @@ import getText from '../texts';
 import * as React from 'react';
 import { Checkbox, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { addNotification } from '../../../actions';
 
 function nop() {
   // nop
@@ -41,6 +42,7 @@ interface IActionProps {
   onDialog: (type: DialogType, title: string,
              content: IDialogContent, actions: DialogActions) => void;
   onShowError: (message: string, details: string | Error) => void;
+  onShowInfo: (message: string) => void;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
@@ -107,7 +109,12 @@ class Settings extends ComponentEx<IProps, {}> {
   }
 
   private associate = (enabled: boolean) => {
-    const { onAssociate } = this.props;
+    const { onAssociate, onShowInfo } = this.props;
+    if (!enabled) {
+      onShowInfo('Nexus Mods Links are now unhandled.\n'
+        + 'To have another application handle those links you have to go to that\n'
+        + 'application and enable handling of NXM links there.');
+    }
     onAssociate(enabled);
   }
 }
@@ -130,6 +137,10 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowError: (message: string, details: string | Error) => {
       showError(dispatch, message, details);
     },
+    onShowInfo: (message: string) => dispatch(addNotification({
+      type: 'info',
+      message,
+    })),
   };
 }
 
