@@ -61,7 +61,9 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
         if (result.automaticFix !== undefined) {
           actions.push({
             title: 'Fix',
-            action: () => result.automaticFix().then(() => runCheck(api, check)),
+            action: () => result.automaticFix()
+              .then(() => runCheck(api, check))
+              .catch(err => api.showErrorNotification('Failed to run automatic fix', err)),
           });
         }
         api.sendNotification({
