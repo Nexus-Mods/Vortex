@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "0.13.2",
+  "version": "0.13.3",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -25,6 +25,7 @@
     "exe-version": "Nexus-Mods/node-exe-version",
     "feedparser": "^2.2.2",
     "ffi": "^2.2.0",
+    "fomod-installer": "Nexus-Mods/fomod-installer",
     "fs-extra-promise": "^1.0.1",
     "graphlib": "^2.1.1",
     "i18next": "^10.0.3",

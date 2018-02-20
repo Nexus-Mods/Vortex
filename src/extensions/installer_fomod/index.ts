@@ -35,6 +35,10 @@ function dirname() {
   return __dirname.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
 
+const basePath = process.env.NODE_ENV === 'development'
+      ? path.resolve(dirname(), '..', '..', '..', 'node_modules', 'fomod-installer', 'dist')
+      : path.resolve(dirname(), '..', '..', 'node_modules', 'fomod-installer', 'dist');
+
 function transformError(err: any): Error {
   if (typeof(err) === 'string') {
     // I hope these errors aren't localised or something...
@@ -52,8 +56,7 @@ function transformError(err: any): Error {
 function testSupported(files: string[]): Promise<ISupportedResult> {
   if (testSupportedLib === undefined) {
     testSupportedLib = edge.func({
-      assemblyFile: path.resolve(dirname(), '..', '..', 'lib', 'ModInstaller',
-                                 'ModInstaller.dll'),
+      assemblyFile: path.join(basePath, 'ModInstaller.dll'),
       typeName: 'FomodInstaller.ModInstaller.InstallerProxy',
       methodName: 'TestSupported',
     });
@@ -80,8 +83,7 @@ function install(files: string[],
                  coreDelegates: Core): Promise<IInstallResult> {
   if (installLib === undefined) {
     installLib = edge.func({
-      assemblyFile: path.resolve(dirname(), '..', '..', 'lib', 'ModInstaller',
-                                 'ModInstaller.dll'),
+      assemblyFile: path.join(basePath, 'ModInstaller.dll'),
       typeName: 'FomodInstaller.ModInstaller.InstallerProxy',
       methodName: 'Install',
     });
