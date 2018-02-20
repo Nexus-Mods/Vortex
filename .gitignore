@@ -2,6 +2,8 @@ node_modules
 typings
 dist
 dist_custom
+dist_portable
+dist_web
 out
 doc
 coverage
