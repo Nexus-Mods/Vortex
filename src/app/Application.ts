@@ -282,6 +282,7 @@ class Application {
       })
       .then(() => {
         this.mStore = newStore;
+        this.mExtensions.setStore(newStore);
         return extendStore(newStore, this.mExtensions);
       })
       .then(() => this.mExtensions.doOnce());

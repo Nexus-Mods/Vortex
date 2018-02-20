@@ -37,6 +37,7 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
           >
             <option value='stable'>{t('Stable')}</option>
             <option value='beta'>{t('Beta')}</option>
+            <option value='none'>{t('None')}</option>
           </FormControl>
         </FormGroup>
       </form>

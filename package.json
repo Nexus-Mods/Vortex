@@ -56,6 +56,9 @@
       "modules": true
     }
   },
+  "publish": {
+    "provider": "github"
+  },
   "devDependencies": {
     "@types/babel-core": "6.25.3",
     "@types/babel-template": "6.25.0",

@@ -430,12 +430,14 @@ class ExtensionManager {
     this.mApi.store = store;
     this.mApi.onStateChange = this.stateChangeHandler;
 
-    ipcRenderer.on('send-notification',
-      (event, notification) => this.mApi.sendNotification(notification));
-    ipcRenderer.on('show-error-notification',
-      (event, message, details) => this.mApi.showErrorNotification(message, details));
+    if (ipcRenderer !== undefined) {
+      ipcRenderer.on('send-notification',
+        (event, notification) => this.mApi.sendNotification(notification));
+      ipcRenderer.on('show-error-notification',
+        (event, message, details) => this.mApi.showErrorNotification(message, details));
 
-    store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
+      store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
+    }
   }
 
   /**
@@ -448,15 +450,6 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public setupApiMain<S>(store: Redux.Store<S>, ipc: Electron.WebContents) {
-    this.mApi.sendNotification = (notification: INotification) => {
-      const noti = { ...notification };
-      if (noti.id === undefined) {
-        noti.id = shortid();
-      }
-
-      ipc.emit('send-notification', notification);
-      return noti.id;
-    };
     this.mApi.showErrorNotification =
         (message: string, details: string | Error) => {
           // unfortunately it appears we can't send an error object via ipc
@@ -465,8 +458,6 @@ class ExtensionManager {
             : details.message + '\n' + details.stack;
           ipc.send('show-error-notification', message, errMessage);
         };
-    this.mApi.store = store;
-    this.mApi.onStateChange = this.stateChangeHandler;
     this.mApi.events = new EventProxy(ipc);
   }
 
