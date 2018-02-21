@@ -203,6 +203,13 @@ process.on('uncaughtException' as any, (error: any) => {
 });
 */
 window.addEventListener('error', (evt: any) => {
+  const {error} = evt;
+  if ((error !== undefined)
+      && (error.stack !== undefined)
+      && (error.stack.indexOf('invokeGuardedCallbackDev') !== -1)) {
+    return true;
+  }
+
   terminateFromError(evt.reason
     || evt.error
     || ((evt.detail !== undefined) ? evt.detail.reason : undefined)
