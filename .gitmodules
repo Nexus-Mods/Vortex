@@ -67,3 +67,6 @@
 [submodule "extensions\\theme-switcher"]
 	path = extensions/theme-switcher
 	url = https://github.com/Nexus-Mods/extension-theme-switcher.git
+[submodule "api"]
+	path = api
+	url = https://github.com/Nexus-Mods/vortex-api
