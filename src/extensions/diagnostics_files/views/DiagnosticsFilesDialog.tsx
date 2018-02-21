@@ -253,7 +253,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
   private renderLog() {
     const { logSessions, sessionIdx, show } = this.state;
 
-    if (sessionIdx === -1) {
+    if ((sessionIdx === -1) || (logSessions[sessionIdx] === undefined)) {
       return null;
     }
 
@@ -332,16 +332,6 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         onShowError('Failed to write log session file', err.message);
       })
       .then(() => null);
-  }
-
-  private showSession = (evt) => {
-    const { logSessions } = this.state;
-    const key = evt.currentTarget.id;
-
-    this.setState(update(this.state, {
-      activeSession: { $set: key },
-      textLog: { $set: logSessions[key].logs },
-    }));
   }
 }
 
