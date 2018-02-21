@@ -96,7 +96,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     if ((userInfo === undefined) || (userInfo === null)) {
       this.setDialogVisible(true);
     } else {
-      opn(`https://www.nexusmods.com/users/${userInfo.userId}`);
+      opn(`https://www.nexusmods.com/users/${userInfo.userId}`).catch(err => undefined);
     }
   }
 

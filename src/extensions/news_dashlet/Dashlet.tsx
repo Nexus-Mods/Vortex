@@ -137,7 +137,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
 
   private openMore = (evt: React.MouseEvent<any>) => {
     evt.preventDefault();
-    opn(evt.currentTarget.href);
+    opn(evt.currentTarget.href).catch(err => undefined);
   }
 }
 

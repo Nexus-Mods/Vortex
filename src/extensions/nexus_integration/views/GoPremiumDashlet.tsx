@@ -22,7 +22,7 @@ class GoPremiumDashlet extends ComponentEx<{}, {}> {
   }
 
   private goBuyPremium = () => {
-    opn('https://www.nexusmods.com/register/premium');
+    opn('https://www.nexusmods.com/register/premium').catch(err => undefined);
   }
 }
 

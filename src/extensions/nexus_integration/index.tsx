@@ -419,7 +419,7 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
 }
 
 function openNexusPage(games: string[]) {
-  opn(`https://www.nexusmods.com/${convertGameId(games[0])}`);
+  opn(`https://www.nexusmods.com/${convertGameId(games[0])}`).catch(err => undefined);
 }
 
 function processAttributes(input: any) {
@@ -641,7 +641,8 @@ function once(api: IExtensionApi) {
     if (!getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
-      opn(['https://www.nexusmods.com', convertGameId(gameId), 'mods', modId].join('/'));
+      opn(['https://www.nexusmods.com', convertGameId(gameId), 'mods', modId].join('/'))
+        .catch(err => undefined);
       return;
     }
     // TODO: Need some way to identify if this request is actually for a nexus mod
@@ -668,7 +669,7 @@ function once(api: IExtensionApi) {
   api.events.on('open-mod-page', (gameId, modId) => {
     opn(['https://www.nexusmods.com',
       convertGameId(gameId), 'mods', modId,
-    ].join('/'));
+    ].join('/')).catch(err => undefined);
   });
 
   api.events.on('request-nexus-login', (callback: (err: Error) => void) => {
@@ -679,7 +680,7 @@ function once(api: IExtensionApi) {
       connection.send(JSON.stringify({
         id, appid: 'Vortex',
       }));
-      opn(`https://www.nexusmods.com/sso?id=${id}`);
+      opn(`https://www.nexusmods.com/sso?id=${id}`).catch(err => undefined);
     })
     .on('message', data => {
       if (data.toString() !== 'Oh, Hi!') {
@@ -752,7 +753,7 @@ function once(api: IExtensionApi) {
 }
 
 function goBuyPremium() {
-  opn('https://www.nexusmods.com/register/premium');
+  opn('https://www.nexusmods.com/register/premium').catch(err => undefined);
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -806,7 +807,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerModSource('nexus', 'Nexus Mods', () => {
     const gameMode = activeGameId(context.api.store.getState());
-    opn(`https://www.nexusmods.com/${convertGameId(gameMode)}`);
+    opn(`https://www.nexusmods.com/${convertGameId(gameMode)}`).catch(err => undefined);
   });
 
   context.registerToDo('nxm-associated', 'settings', () => ({

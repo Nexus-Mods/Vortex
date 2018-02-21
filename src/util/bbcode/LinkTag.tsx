@@ -42,7 +42,7 @@ class LinkTag extends Tag {
 
   private clicked = (evt: React.MouseEvent<any>) => {
     evt.preventDefault();
-    opn(evt.currentTarget.href);
+    opn(evt.currentTarget.href).catch(err => undefined);
   }
 }
 

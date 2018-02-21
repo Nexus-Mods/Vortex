@@ -140,7 +140,8 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
     true,
     hash,
     referenceId))
-  .then(() => opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`))
+  .then(() =>
+    opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`).catch(err => undefined))
   .then(() => undefined);
 }
 

@@ -55,7 +55,7 @@ class Settings extends ComponentEx<IProps, {}> {
   }
 
   private goBuyPremium = () => {
-    opn('https://www.nexusmods.com/register/premium');
+    opn('https://www.nexusmods.com/register/premium').catch(err => undefined);
   }
 
   private onChangeParallelDownloads = (evt) => {

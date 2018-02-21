@@ -176,7 +176,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
 
   private openAPIKeyPage = evt => {
     evt.preventDefault();
-    opn('https://www.nexusmods.com/users/myaccount?tab=api+access');
+    opn('https://www.nexusmods.com/users/myaccount?tab=api+access').catch(err => undefined);
   }
 
   private validationState(): IValidationState {
