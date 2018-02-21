@@ -172,7 +172,9 @@ class DownloadWorker {
     }
     if (this.mEnded) {
       this.mRequest.abort();
-      if ((err.code === 'ESOCKETTIMEDOUT') && (this.mDataHistory.length > 0)) {
+      if ((['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1)
+          && (this.mDataHistory.length > 0)) {
+        // as long as we made progress on this chunk, retry
         this.assignJob(this.mJob);
       } else {
         this.mEnded = true;
