@@ -204,12 +204,14 @@ process.on('uncaughtException' as any, (error: any) => {
 */
 window.addEventListener('error', (evt: any) => {
   terminateFromError(evt.reason
+    || evt.error
     || ((evt.detail !== undefined) ? evt.detail.reason : undefined)
     || evt.message);
 });
 
 window.addEventListener('unhandledrejection', (evt: any) => {
   terminateFromError(evt.reason
+    || evt.error
     || ((evt.detail !== undefined) ? evt.detail.reason : undefined)
     || evt.message);
 });

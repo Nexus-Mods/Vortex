@@ -710,6 +710,17 @@ div:hover > .hover-expand {
   background: #D78F46;
 }
 
-.lock-screen {
-  -webkit-app-region: drag;
+.errorboundary-dialog {
+  position: absolute;
+  top: 30%;
+  left: 30%;
+  bottom: 30%;
+  right: 30%;
+
+  .error-boundary-close {
+    @extend .btn-embed;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+  }
 }

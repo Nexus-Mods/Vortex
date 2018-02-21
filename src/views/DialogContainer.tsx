@@ -1,3 +1,4 @@
+import ErrorBoundary from '../controls/ErrorBoundary';
 import {PropsCallback} from '../types/IExtensionContext';
 import {extend} from '../util/ComponentEx';
 
@@ -33,12 +34,18 @@ class DialogContainer extends React.Component<IProps, {}> {
     const { onHideDialog, visibleDialog } = this.props;
     const props = dialog.props !== undefined ? dialog.props() : {};
     return (
-      <dialog.component
-        key={dialog.id}
+      <ErrorBoundary
+        className='errorboundary-dialog'
         visible={dialog.id === visibleDialog}
         onHide={onHideDialog}
-        {...props}
-      />
+      >
+        <dialog.component
+          key={dialog.id}
+          visible={dialog.id === visibleDialog}
+          onHide={onHideDialog}
+          {...props}
+        />
+      </ErrorBoundary>
     );
   }
 }
