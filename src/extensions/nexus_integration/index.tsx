@@ -23,7 +23,7 @@ import modName from '../mod_management/util/modName';
 import { IProfileMod } from '../profile_management/types/IProfile';
 
 import { setUserAPIKey } from './actions/account';
-import { setUserInfo } from './actions/session';
+import { setNewestVersion, setUserInfo } from './actions/session';
 import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { sessionReducer } from './reducers/session';
@@ -750,6 +750,10 @@ function once(api: IExtensionApi) {
   api.onStateChange(['persistent', 'mods'],
     (oldValue: IModTable, newValue: IModTable) =>
       updateDebouncer.schedule(undefined, newValue));
+  nexus.getModInfo(1, 'site')
+    .then(info => {
+      api.store.dispatch(setNewestVersion(info.version));
+    });
 }
 
 function goBuyPremium() {

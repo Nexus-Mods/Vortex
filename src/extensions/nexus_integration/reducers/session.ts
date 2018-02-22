@@ -1,6 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 
-import { setUserInfo } from '../actions/session';
+import * as actions from '../actions/session';
 
 import * as update from 'immutability-helper';
 
@@ -9,9 +9,13 @@ import * as update from 'immutability-helper';
  */
 export const sessionReducer: IReducerSpec = {
   reducers: {
-    [setUserInfo as any]: (state, payload) => update(state, { userInfo: { $set: payload } }),
+    [actions.setUserInfo as any]: (state, payload) =>
+      update(state, { userInfo: { $set: payload } }),
+    [actions.setNewestVersion as any]: (state, payload) =>
+      update(state, { newestVersion: { $set: payload } }),
   },
   defaults: {
     userInfo: undefined,
+    newestVersion: undefined,
   },
 };
