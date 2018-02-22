@@ -56,5 +56,5 @@ export function resolveCategoryName(category: string, state: IState) {
 
   const gameId: string = activeGameId(state);
 
-  return getSafe(state, ['persistent', 'categories', gameId, category, 'name'], {});
+  return getSafe(state, ['persistent', 'categories', gameId, category, 'name'], '');
 }
