@@ -22,12 +22,11 @@
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
     "preinstall": "git submodule update --init --recursive",
     "test": "jest --no-cache",
-    "doc": "typedoc --out doc src",
     "build": "yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . -w"
   },
   "engines": {
-    "electron": "1.7.11"
+    "electron": "1.8.2"
   },
   "jest": {
     "transform": {
@@ -126,7 +125,7 @@
     "copyfiles": "^1.2.0",
     "cross-env": "^5.1.0",
     "devtron": "^1.4.0",
-    "electron": "1.7.11",
+    "electron": "1.8.2",
     "electron-builder": "^20.0.4",
     "electron-debug": "^1.4.0",
     "electron-download-tf": "^4.3.4",
@@ -151,8 +150,7 @@
     "ts-jest": "^21.1.3",
     "tslint": "^5.8.0",
     "tslint-eslint-rules": "^4.1.1",
-    "tslint-react": "^3.2.0",
-    "typedoc": "^0.9.0"
+    "tslint-react": "^3.2.0"
   },
   "dependencies": {
     "7zip-bin": "^2.3.4",
