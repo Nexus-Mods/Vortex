@@ -799,7 +799,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       .then(() => Promise.map(modIds, key =>
         ((mods[key] !== undefined) && truthy(mods[key].installationPath))
           ? fs.removeAsync(path.join(installPath, mods[key].installationPath))
-          : Promise.resolve())
+              .catch(err => {
+                this.context.api.showErrorNotification('Failed to remove mod', err);
+              })
+            : Promise.resolve())
         .then(() => undefined));
   }
 

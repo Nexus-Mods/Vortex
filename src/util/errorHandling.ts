@@ -170,13 +170,17 @@ export function terminate(error: IError) {
   log('error', 'unrecoverable error', error);
 
   try {
+    let detail = (error.stack || 'No stack');
+    if (error.details) {
+      detail = error.details + '\n' + detail;
+    }
     let action = dialog.showMessageBox(null, {
       type: 'error',
       buttons: ['Ignore', 'Quit', 'Report and Quit'],
       defaultId: 2,
       title: 'An unrecoverable error occured',
       message: error.message,
-      detail: error.details + '\n' + (error.stack || 'No stack'),
+      detail,
       noLink: true,
     });
 

@@ -191,11 +191,19 @@ export function onRemoveMod(api: IExtensionApi,
     const mods = state.persistent.mods[gameMode];
     mod = mods[modId];
   } catch (err) {
-    return callback(err);
+    if (callback !== undefined) {
+      callback(err);
+    } else {
+      api.showErrorNotification('Failed to remove mod', err);
+    }
+    return;
   }
 
   if (mod === undefined) {
-    return callback(null);
+    if (callback !== undefined) {
+      callback(null);
+    }
+    return;
   }
 
   // remove from state first, otherwise if the deletion takes some time it will appear as if nothing
@@ -208,7 +216,16 @@ export function onRemoveMod(api: IExtensionApi,
         .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
     : Promise.resolve())
   .then(() => {
-    callback(null);
+    if (callback !== undefined) {
+      callback(null);
+    }
+  })
+  .catch(err => {
+    if (callback !== undefined) {
+      callback(err);
+    } else {
+      api.showErrorNotification('Failed to remove mod', err);
+    }
   });
 }
 

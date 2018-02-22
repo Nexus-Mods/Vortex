@@ -178,7 +178,18 @@ function renderError(err: string | Error | any): { message: string, text?: strin
   if (typeof(err) === 'string') {
     return { message: err, wrap: true };
   } else if (err instanceof Error) {
-    return { text: err.message, message: renderNodeError(err), wrap: false };
+    if ((err as any).code === 'EPERM') {
+      return {
+        text: 'A file Vortex needs to access is write protected.\n'
+            + 'When you configure directories and access rights you need to ensure Vortex can '
+            + 'still access data directories.\n'
+            + 'This is usually not a bug in Vortex.',
+        message: (err as any).path + '\n' + err.stack,
+        wrap: false,
+      };
+    } else {
+      return { text: err.message, message: renderNodeError(err), wrap: false };
+    }
   } else {
     return { message: renderCustomError(err), wrap: false };
   }
