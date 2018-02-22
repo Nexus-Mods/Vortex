@@ -3,6 +3,7 @@ import { IGame } from '../../types/IGame';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 
 import { IProfileMod } from '../profile_management/types/IProfile';
 
@@ -51,8 +52,13 @@ export function activateMods(api: IExtensionApi,
         log('error', 'failed to deploy mod', {err: err.message, id: mod.id});
       }
     }))
-    .then(() => method.activate(path.join(installationPath, MERGED_PATH) + '.' + typeId,
-                                MERGED_PATH + '.' + typeId, destinationPath, new Set<string>()))
+    .then(() => {
+      const mergePath = truthy(typeId)
+        ? MERGED_PATH + '.' + typeId
+        : MERGED_PATH;
+      return method.activate(path.join(installationPath, mergePath),
+                             mergePath, destinationPath, new Set<string>());
+    })
     .then(() => {
       const cb = progressCB === undefined
         ? undefined

@@ -283,7 +283,7 @@ function genUpdateModDeployment() {
     const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
 
     const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
-      const match = merge.test(game);
+      const match = merge.test(game, gameDiscovery);
       if (match !== undefined) {
         prev.push({match, merge: merge.merge, modType: merge.modType});
       }
@@ -350,7 +350,13 @@ function genUpdateModDeployment() {
         progress('Merging mods', 35);
         // merge mods
         return Promise.mapSeries(Object.keys(modPaths),
-            typeId => removePersistent(api.store, path.join(instPath, MERGED_PATH) + '.' + typeId))
+            typeId => {
+              const mergePath = truthy(typeId)
+                ? MERGED_PATH + '.' + typeId
+                : MERGED_PATH;
+
+              return removePersistent(api.store, path.join(instPath, mergePath));
+            })
           .then(() => Promise.each(Object.keys(modPaths),
             typeId => mergeMods(api, game, instPath, modPaths[typeId],
                                 sortedModList.filter(mod => (mod.type || '') === typeId),

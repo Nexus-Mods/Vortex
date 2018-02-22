@@ -24,6 +24,7 @@ import { IActionOptions } from './IActionDefinition';
 import { IBannerOptions } from './IBannerOptions';
 import { IGame } from './IGame';
 import { INotification } from './INotification';
+import { IDiscoveryResult } from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
@@ -241,7 +242,7 @@ export interface IMergeFilter {
  * callback to determine if a merge function applies to a game. If true, return an
  * object that describes what files to merge
  */
-export type MergeTest = (game: IGame) => IMergeFilter;
+export type MergeTest = (game: IGame, gameDiscovery: IDiscoveryResult) => IMergeFilter;
 /**
  * callback to do the actual merging
  */
@@ -748,7 +749,9 @@ export interface IExtensionContext {
 
   /**
    * register a file merge that needs to happen during deployment.
-   * modType is the type with which the merged file(s) should be deployed
+   * modType is the type with which the merged file(s) should be deployed. This needs to be an
+   * existing mod type (see registerModType), otherwise the merged file won't be used. Use an empty
+   * string for the default mod type
    */
   registerMerge: (test: MergeTest, merge: MergeFunc, modType: string) => void;
 

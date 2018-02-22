@@ -2,7 +2,7 @@ import {IExtensionApi} from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import * as fs from '../../util/fs';
 import getFileList, { IFileEntry } from '../../util/getFileList';
-import {setdefault} from '../../util/util';
+import {setdefault, truthy} from '../../util/util';
 import walk from '../../util/walk';
 
 import {IMod} from './types/IMod';
@@ -146,10 +146,14 @@ function mergeMods(api: IExtensionApi,
         } else {
           const merger = mergers.find(iter => iter.match.filter(fileEntry.filePath));
           if (merger !== undefined) {
-            const realDest = mergeDest + '.' + merger.modType;
+            const realDest = truthy(merger.modType)
+              ? mergeDest + '.' + merger.modType
+              : mergeDest;
             const relPath = path.relative(modPath, fileEntry.filePath);
             mergedFiles.push(relPath);
             return fs.ensureDirAsync(realDest)
+              .then(() => Promise.map(merger.match.baseFiles,
+                                    file => fs.copyAsync(file.in, path.join(realDest, file.out))))
               .then(() => merger.merge(fileEntry.filePath, realDest));
           }
         }
