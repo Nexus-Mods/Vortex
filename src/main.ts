@@ -2,6 +2,8 @@
  * entry point for the main process
  */
 
+import {} from './util/requireRebuild';
+
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
   const rebuildRequire = require('./util/requireRebuild').default;

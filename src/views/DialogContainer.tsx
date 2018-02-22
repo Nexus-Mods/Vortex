@@ -35,12 +35,12 @@ class DialogContainer extends React.Component<IProps, {}> {
     const props = dialog.props !== undefined ? dialog.props() : {};
     return (
       <ErrorBoundary
+        key={dialog.id}
         className='errorboundary-dialog'
         visible={dialog.id === visibleDialog}
         onHide={onHideDialog}
       >
         <dialog.component
-          key={dialog.id}
           visible={dialog.id === visibleDialog}
           onHide={onHideDialog}
           {...props}
