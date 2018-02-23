@@ -337,15 +337,15 @@ abstract class LinkingActivator implements IDeploymentMethod {
     const fullOutputPath =
         path.join(dataPath, this.mNewDeployment[key].relPath);
 
-    const backupProm = replace
-      ? Promise.resolve()
+    const backupProm: Promise<void> = replace
+      ? Promise.resolve(undefined)
       : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG)
         .catch(err => {
           // if the backup fails because there is nothing to backup, that's great,
           // that's the most common outcome. Otherwise we failed to backup an existing
           // file, so continuing could cause data loss
           if (err.code === 'ENOENT') {
-            return undefined;
+            return Promise.resolve(undefined);
           } else if (err.code === 'EBUSY') {
             return Promise.delay(100).then(
               () => fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG));
@@ -354,9 +354,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
         });
 
-    return backupProm.then(() => this.linkFile(fullOutputPath, fullPath)
-                                     .then(() => this.mPreviousDeployment[key] =
-                                               this.mNewDeployment[key]));
+    return backupProm
+      .then(() => this.linkFile(fullOutputPath, fullPath))
+      .then(() => {
+        this.mPreviousDeployment[key] =
+                this.mNewDeployment[key];
+        return this.mNewDeployment[key];
+      });
   }
 
   private diffActivation(before: IDeployment, after: IDeployment) {

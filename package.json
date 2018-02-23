@@ -3,6 +3,7 @@
   "name": "vortex_devel",
   "version": "0.0.1",
   "main": "out/main.js",
+  "author": "Black Tree Gaming Ltd.",
   "repository": {
     "type": "git",
     "url": "https://github.com/Nexus-Mods/Vortex"

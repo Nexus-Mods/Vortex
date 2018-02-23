@@ -333,7 +333,7 @@ class InstallManager {
               if (installContext !== undefined) {
                 installContext.reportError(
                     'Installation failed',
-                    `The installer "${id}" failed: ${errMessage}`);
+                    `The installer "${id}" failed: ${errMessage}`, err.code !== 'EPERM');
               }
               if (callback !== undefined) {
                 callback(err, modId);
