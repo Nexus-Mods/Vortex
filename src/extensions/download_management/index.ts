@@ -98,26 +98,25 @@ function genDownloadChangeHandler(store: Redux.Store<any>,
     }
     if (evt === 'rename') {
       const filePath = path.join(currentDownloadPath, fileName);
-      fs.statAsync(filePath)
+      // if the file was added, wait a moment, then add it to the store if it doesn't
+      // exist yet. This is necessary because we can't know if it wasn't vortex
+      // itself that added the file.
+      // The file may also be empty atm
+      Promise.delay(1000)
+      .then(() => fs.statAsync(filePath))
       .then(stats => {
-        // if the file was added, wait a moment, then add it to the store if it doesn't
-        // exist yet. This is necessary because we can't know if it wasn't vortex
-        // itself that added the file
-        delayed(200)
-        .then(() => {
-          const state: IState = store.getState();
-          const existingId: string = Object.keys(state.persistent.downloads.files)
-            .find(iterId =>
-              state.persistent.downloads.files[iterId].localPath === fileName);
-          if (existingId === undefined) {
-            const dlId = shortid();
-            store.dispatch(
-              addLocalDownload(dlId, gameId, fileName, stats.size));
-            nameIdMap[fileName] = dlId;
-          } else {
-            nameIdMap[fileName] = existingId;
-          }
-        });
+        const state: IState = store.getState();
+        const existingId: string = Object.keys(state.persistent.downloads.files)
+          .find(iterId =>
+            state.persistent.downloads.files[iterId].localPath === fileName);
+        if (existingId === undefined) {
+          const dlId = shortid();
+          store.dispatch(
+            addLocalDownload(dlId, gameId, fileName, stats.size));
+          nameIdMap[fileName] = dlId;
+        } else {
+          nameIdMap[fileName] = existingId;
+        }
       })
       .catch(err => {
         if (err.code === 'ENOENT') {
