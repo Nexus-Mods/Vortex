@@ -186,6 +186,8 @@ export interface IArchiveOptions {
   // give a hint to the archive handler what format the archive is. Usually a file should identify
   // its format but you can never know. Can also be very useful when creating a new archive
   version?: string;
+  // if set, (re-)create the archive
+  create?: boolean;
 }
 
 /**
@@ -199,6 +201,7 @@ export interface IArchiveHandler {
   readFile?(filePath: string): NodeJS.ReadableStream;
   extractFile?(filePath: string, outputPath: string): Promise<void>;
   extractAll(outputPath: string): Promise<void>;
+  addFile?(filePath: string, sourcePath: string): Promise<void>;
   create?(sourcePath: string): Promise<void>;
 }
 

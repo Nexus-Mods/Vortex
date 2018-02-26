@@ -59,4 +59,13 @@ export class Archive {
       ? (sourcePath: string) => this.mHandler.create(sourcePath)
       : undefined;
   }
+
+  /**
+   * add a single file to the archive
+   */
+  public get addFile(): (filePath: string, sourcePath: string) => Promise<void> {
+    return (this.mHandler.addFile !== undefined)
+      ? (filePath: string, sourcePath: string) => this.mHandler.addFile(filePath, sourcePath)
+      : undefined;
+  }
 }
