@@ -62,7 +62,7 @@ import {} from './views/ExternalChangeDialog';
 import {} from './views/ModList';
 import {} from './views/Settings';
 
-import { onGameModeActivated, onPathsChanged,
+import { onAddMod, onGameModeActivated, onPathsChanged,
          onRemoveMod, onStartInstallDownload } from './eventHandlers';
 import InstallManager from './InstallManager';
 import { activateMods } from './modActivation';
@@ -585,6 +585,11 @@ function once(api: IExtensionApi) {
       'remove-mod',
       (gameMode: string, modId: string, callback?: (error: Error) => void) =>
           onRemoveMod(api, activators, gameMode, modId, callback));
+
+  api.events.on('create-mod',
+      (gameMode: string, mod: IMod, callback: (error: Error) => void) => {
+        onAddMod(api, gameMode, mod, callback);
+      });
 
   cleanupIncompleteInstalls(api);
 

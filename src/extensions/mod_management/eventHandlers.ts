@@ -229,6 +229,21 @@ export function onRemoveMod(api: IExtensionApi,
   });
 }
 
+export function onAddMod(api: IExtensionApi, gameId: string,
+                         mod: IMod, callback: (err: Error) => void) {
+  const store = api.store;
+  const state: IState = store.getState();
+
+  const installationPath = resolvePath('install', state.settings.mods.paths, gameId);
+
+  store.dispatch(addMod(gameId, mod));
+  fs.mkdirAsync(path.join(installationPath, mod.id))
+  .then(() => {
+    callback(null);
+  })
+  .catch(callback);
+}
+
 export function onStartInstallDownload(api: IExtensionApi,
                                        installManager: InstallManager,
                                        downloadId: string,
