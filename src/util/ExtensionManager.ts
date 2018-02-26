@@ -825,9 +825,7 @@ class ExtensionManager {
       return Promise.reject(new Error('unsupported archive format ' + ext));
     }
     return creator(archivePath, options || {})
-      .then((handler: IArchiveHandler) => {
-        return Promise.resolve(new Archive(handler));
-      });
+      .then((handler: IArchiveHandler) => Promise.resolve(new Archive(handler)));
   }
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {

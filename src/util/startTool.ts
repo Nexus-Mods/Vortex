@@ -83,12 +83,19 @@ type ShowError = (message: string, details?: any, allowReport?: boolean) => void
 
 function reportError(onShowError: ShowError, err: any, executable: string) {
   if (err.errno === 'ENOENT') {
-    onShowError('failed to run executable', {
+    onShowError('Failed to run tool', {
       executable,
       error: 'Executable doesn\'t exist, please check the configuration for this tool.',
     }, false);
+  } else if (err.errno === 'UNKNOWN') {
+    // this sucks but node.js doesn't give us too much information about what went wrong
+    // and we can't have users misconfigure their tools and then report the error they
+    // get as feedback
+    onShowError('Failed to run tool', {
+      error: 'File is not executable, please check the configuration for this tool.',
+    }, false);
   } else {
-    onShowError('Failed to run executable', {
+    onShowError('Failed to run tool', {
       executable,
       error: err.stack,
     });
@@ -134,6 +141,8 @@ function startTool(starter: StarterInfo,
                 runToolElevated(starter, onShowError);
               }
             });
+          } else if (err.errno === 'EUNKNOWN') {
+            reportError(onShowError, err, starter.exePath);
           } else {
             reportError(onShowError, err, starter.exePath);
           }
