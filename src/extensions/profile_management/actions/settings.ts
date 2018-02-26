@@ -1,5 +1,7 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 
+import * as reduxAct from 'redux-act';
+
 /**
  * sets a profile to be activated
  */

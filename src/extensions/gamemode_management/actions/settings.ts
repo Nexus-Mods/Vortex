@@ -3,6 +3,10 @@ import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 
+import * as reduxAct from 'redux-act';
+
+const identity = input => input;
+
 /**
  * add info about a discovered game
  */
@@ -45,14 +49,15 @@ export const setGameHidden = safeCreateAction('SET_GAME_HIDDEN',
 /**
  * add a search path (path that is searched for game installations)
  */
-export const addSearchPath = safeCreateAction('ADD_SEARCH_PATH');
+export const addSearchPath = safeCreateAction('ADD_SEARCH_PATH',
+  identity);
 
 export const clearSearchPaths = safeCreateAction('CLEAR_SEARCH_PATHS');
 
 /**
  * remove a search path
  */
-export const removeSearchPath = safeCreateAction('REMOVE_SEARCH_PATH');
+export const removeSearchPath = safeCreateAction('REMOVE_SEARCH_PATH', identity);
 
 export const setPickerLayout = safeCreateAction('SET_GAMEPICKER_LAYOUT',
   (layout: 'list' | 'small' | 'large') => ({ layout }));

@@ -1,9 +1,11 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 
+import * as reduxAct from 'redux-act';
+
 /**
  * change the user interface language
  */
-export const setLanguage = safeCreateAction('SET_USER_LANGUAGE');
+export const setLanguage = safeCreateAction('SET_USER_LANGUAGE', lang => lang);
 
 /**
  * enable or disable advanced mode

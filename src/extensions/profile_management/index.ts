@@ -297,7 +297,8 @@ function init(context: IExtensionContextExt): boolean {
                     });
                 }))
                 .then(() => {
-                  context.api.store.dispatch(setProgress('profile', 'deploying'));
+                  context.api.store.dispatch(
+                    setProgress('profile', 'deploying', undefined, undefined));
                   const gameId = profile !== undefined ? profile.gameId : undefined;
                   store.dispatch(setCurrentProfile(gameId, current));
                   store.dispatch(setProfileActivated(current));

@@ -508,8 +508,9 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
   const { NexusError, TimeoutError } = require('nexus-api');
 
   return Promise.resolve(nexus.validateKey(key))
-    .then(userInfo =>
-      api.store.dispatch(setUserInfo(transformUserInfo(userInfo))))
+    .then(userInfo => {
+      api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+    })
     .catch(TimeoutError, err => {
       showError(api.store.dispatch,
         'API Key validation timed out',
@@ -731,9 +732,10 @@ function once(api: IExtensionApi) {
       && (lastModTable[lastGameMode] !== undefined)
       && (newModTable[gameMode] !== undefined)) {
       Object.keys(newModTable[gameMode]).forEach(modId => {
-        if ((lastModTable[lastGameMode][modId] !== undefined)
-          && (lastModTable[lastGameMode][modId].attributes['modId']
-            !== newModTable[gameMode][modId].attributes['modId'])) {
+        const lastPath = [lastGameMode, modId, 'attributes', 'modId'];
+        const newPath = [gameMode, modId, 'attributes', 'modId'];
+        if (getSafe(lastModTable, lastPath, undefined)
+            !== getSafe(newModTable, newPath, undefined)) {
           return retrieveModInfo(nexus, api.store,
             gameMode, newModTable[gameMode][modId], api.translate)
             .then(() => {

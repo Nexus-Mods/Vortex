@@ -1,5 +1,7 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 
+import * as reduxAct from 'redux-act';
+
 /**
  * change a path (base, download or installation) for
  * storing things. Supports placeholders

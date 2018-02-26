@@ -1,6 +1,8 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 import {ICategory, ICategoryDictionary} from '../types/ICategoryDictionary';
 
+import * as reduxAct from 'redux-act';
+
 export const loadCategories = safeCreateAction('LOAD_CATEGORIES',
   (gameId: string, gameCategories: ICategoryDictionary) =>
     ({ gameId, gameCategories }));

@@ -493,7 +493,7 @@ function init(context: IExtensionContext): boolean {
             showError(store.dispatch, 'Failed to set game mode', err);
           }
           // unset profile
-          return store.dispatch(setNextProfile(undefined));
+          store.dispatch(setNextProfile(undefined));
         });
     };
 

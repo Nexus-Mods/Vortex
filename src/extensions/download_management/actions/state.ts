@@ -1,6 +1,8 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 import { IChunk } from '../types/IChunk';
 
+import * as reduxAct from 'redux-act';
+
 export interface IDictionary {
   [key: string]: any;
 }
@@ -36,7 +38,7 @@ export const startDownload = safeCreateAction('START_DOWNLOAD',
  * mark download as finished
  */
 export const finishDownload = safeCreateAction('FINISH_DOWNLOAD',
-  (id: string, state: 'finished' | 'failed' | 'redirect', failCause?: any) =>
+  (id: string, state: 'finished' | 'failed' | 'redirect', failCause: any) =>
     ({ id, state, failCause }));
 
 export const setDownloadHash = safeCreateAction('SET_DOWNLOAD_HASH',
@@ -49,7 +51,7 @@ export const setDownloadHashByFile = safeCreateAction('SET_DOWNLOAD_HASH_BY_FILE
  * mark download paused
  */
 export const pauseDownload = safeCreateAction('PAUSE_DOWNLOAD',
-  (id: string, paused: boolean, chunks?: IChunk[]) => ({ id, paused, chunks }));
+  (id: string, paused: boolean, chunks: IChunk[]) => ({ id, paused, chunks }));
 
 export const setDownloadInterrupted = safeCreateAction('SET_DOWNLOAD_INTERRUPTED',
   (id: string, realReceived: number) => ({ id, realReceived }));
@@ -63,7 +65,7 @@ export const removeDownload = safeCreateAction('REMOVE_DOWNLOAD',
 /**
  * sets the current download speed in bytes/second
  */
-export const setDownloadSpeed = safeCreateAction('SET_DOWNLOAD_SPEED');
+export const setDownloadSpeed = safeCreateAction('SET_DOWNLOAD_SPEED', speed => speed);
 
 /**
  * add a file that has been found on disk but where we weren't involved

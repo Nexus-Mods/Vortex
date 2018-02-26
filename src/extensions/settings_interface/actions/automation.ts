@@ -1,3 +1,5 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 
-export const setAutoDeployment = safeCreateAction('SET_AUTO_DEPLOYMENT');
+import * as reduxAct from 'redux-act';
+
+export const setAutoDeployment = safeCreateAction('SET_AUTO_DEPLOYMENT', deploy => deploy);

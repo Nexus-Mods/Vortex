@@ -8,7 +8,7 @@ import {FileAction, IFileEntry} from '../types/IFileEntry';
  * stores info about files that were changed outside the control of Vortex. The user
  * will be asked how to deal with them
  */
-export const setExternalChanges = safeCreateAction('SET_EXTERNAL_CHANGES');
+export const setExternalChanges = safeCreateAction('SET_EXTERNAL_CHANGES', entries => entries);
 
 export const setExternalChangeAction = safeCreateAction('SET_EXTERNAL_CHANGE_ACTION',
   (filePaths: string[], action: string) => ({ filePaths, action }));

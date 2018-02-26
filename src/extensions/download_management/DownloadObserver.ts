@@ -125,7 +125,8 @@ export class DownloadObserver {
       return;
     }
 
-    this.mStore.dispatch(initDownload(id, urls, modInfo, gameMode));
+    this.mStore.dispatch(
+      initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameMode));
 
     const downloadPath = resolvePath('download',
       this.mStore.getState().settings.mods.paths, gameMode);
@@ -200,7 +201,7 @@ export class DownloadObserver {
           })
           .catch(err => callback(err, id))
           .finally(() => {
-            this.mStore.dispatch(finishDownload(id, 'finished'));
+            this.mStore.dispatch(finishDownload(id, 'finished', undefined));
 
             if (callback !== undefined) {
               callback(null, id);
@@ -278,7 +279,7 @@ export class DownloadObserver {
         this.mStore.getState().settings.mods.paths, gameMode);
 
       const fullPath = path.join(downloadPath, download.localPath);
-      this.mStore.dispatch(pauseDownload(downloadId, false));
+      this.mStore.dispatch(pauseDownload(downloadId, false, undefined));
       this.mManager.resume(downloadId, fullPath, download.urls,
                            download.received, download.size, download.startTime, download.chunks,
                            this.genProgressCB(downloadId))

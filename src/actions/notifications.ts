@@ -7,21 +7,25 @@ import {truthy} from '../util/util';
 import safeCreateAction from './safeCreateAction';
 
 import * as Promise from 'bluebird';
+import * as reduxAct from 'redux-act';
+
 import { generate as shortid } from 'shortid';
 
 export * from '../types/IDialog';
+
+const identity = input => input;
 
 /**
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
  * left unset, in that case one will be generated
  * TODO: this stores a function into the store which seems to work but isn't supported
  */
-export const startNotification = safeCreateAction('ADD_NOTIFICATION');
+export const startNotification = safeCreateAction('ADD_NOTIFICATION', identity);
 
 /**
  * dismiss a notification. Takes the id of the notification
  */
-export const dismissNotification = safeCreateAction('DISMISS_NOTIFICATION');
+export const dismissNotification = safeCreateAction('DISMISS_NOTIFICATION', identity);
 
 /**
  * show a modal dialog to the user
@@ -41,7 +45,7 @@ export const addDialog = safeCreateAction(
  * you leak (a tiny amount of) memory and the action callbacks aren't called.
  * Use closeDialog instead
  */
-export const dismissDialog = safeCreateAction('DISMISS_MODAL_DIALOG');
+export const dismissDialog = safeCreateAction('DISMISS_MODAL_DIALOG', identity);
 
 const timers = local<{ [id: string]: NodeJS.Timer }>('notification-timers', {});
 
