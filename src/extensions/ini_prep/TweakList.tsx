@@ -77,6 +77,7 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
     const { mod, modsPath } = this.props;
 
     if ((mod !== undefined) && (mod.installationPath !== undefined)) {
+      // TODO: cache this!
       fs.readdirAsync(path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH))
         .then((files: string[]) => {
           this.nextState.tweaks = files;

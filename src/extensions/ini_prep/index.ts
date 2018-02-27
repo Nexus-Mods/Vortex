@@ -1,15 +1,17 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
+import { IState } from '../../types/IState';
+import deepMerge from '../../util/deepMerge';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
 import {getSafe} from '../../util/storeHelper';
 import {objDiff, setdefault} from '../../util/util';
 
-import {activeGameId} from '../profile_management/selectors';
-
+import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import {INI_TWEAKS_PATH} from '../mod_management/InstallManager';
 import {IMod} from '../mod_management/types/IMod';
 import {IModWithState} from '../mod_management/types/IModProps';
 import resolvePath from '../mod_management/util/resolvePath';
+import {activeGameId} from '../profile_management/selectors';
 
 import {iniFiles, iniFormat} from './gameSupport';
 import renderINITweaks from './TweakList';
@@ -17,8 +19,6 @@ import renderINITweaks from './TweakList';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import IniParser, {IniFile, WinapiFormat} from 'vortex-parse-ini';
-import { IState } from '../../types/IState';
-import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 
 function ensureIniBackups(gameMode: string, discovery: IDiscoveryResult): Promise<void> {
   return Promise.map(iniFiles(gameMode, discovery), file => {
@@ -118,7 +118,7 @@ function bakeSettings(gameMode: string, discovery: IDiscoveryResult,
   return Promise.each(mods, mod => {
     const tweaksPath =
         path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
-    const modTweaks = getSafe(mod, ['enabledINITweaks'], []);
+    const modTweaks = getSafe(mod, ['enabledINITweaks'], []).map(name => name.toLowerCase());
     return fs.readdirAsync(tweaksPath)
         .then(files => {
           files.map(file => file.toLowerCase())
@@ -138,7 +138,7 @@ function bakeSettings(gameMode: string, discovery: IDiscoveryResult,
         .then(() => parser.read(iniFileName + '.baked'))
         .then(ini => Promise.each(enabledTweaks[baseName] || [],
                                   tweak => parser.read(tweak).then(patchIni => {
-                                    Object.assign(ini.data, patchIni.data);
+                                    ini.data = deepMerge(ini.data, patchIni.data);
                                   }))
                          .then(() => parser.write(iniFileName + '.baked', ini))
                          .then(() => fs.copyAsync(iniFileName + '.baked',
