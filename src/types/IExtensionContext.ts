@@ -104,7 +104,7 @@ export type RegisterDialog =
    element: React.ComponentClass<any> | React.StatelessComponent<any>,
    props?: PropsCallback) => void;
 
-export type ToDoType = 'settings' | 'search' | 'more';
+export type ToDoType = 'settings' | 'search' | 'workaround' | 'more';
 
 export interface IToDoButton {
   text: string;
@@ -115,7 +115,7 @@ export interface IToDoButton {
 export type RegisterToDo =
     (id: string,
      type: ToDoType,
-     props: () => any,
+     props: (state: any) => any,
      icon: ((props: any) => JSX.Element) | string,
      text: ((t: I18next.TranslationFunction, props: any) => JSX.Element) | string,
      action: (props: any) => void,

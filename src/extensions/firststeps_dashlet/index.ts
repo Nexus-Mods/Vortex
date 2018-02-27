@@ -13,7 +13,7 @@ const extTodos: IToDo[] = [];
 function init(context: IExtensionContext): boolean {
   context.registerToDo = (id: string,
                           type: ToDoType,
-                          props: () => any,
+                          props: (state: any) => any,
                           icon: (props: any) => JSX.Element,
                           text: (t: I18next.TranslationFunction, props: any) => JSX.Element,
                           action?: (props: any) => void,

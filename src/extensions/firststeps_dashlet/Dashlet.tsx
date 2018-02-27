@@ -63,10 +63,10 @@ class Todo extends React.PureComponent<ITodoProps, {}> {
 
   private typeToIcon(type: ToDoType): string {
     return {
-      'settings-review': 'sliders',
       settings: 'sliders',
       automation: 'wand',
       search: 'search',
+      workaround: 'workaround',
     }[type];
   }
 
