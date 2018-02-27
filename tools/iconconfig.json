@@ -390,6 +390,10 @@
       "path": "{nucleo}/design-development/{nucleo_simple}_patch-34",
       "rmFill": true
     },
+    "workaround": {
+      "path": "{nucleo}/design-development/{nucleo_simple}_patch-34",
+      "rmFill": true
+    },
     "changelog": {
       "path": "{nucleo}/files-folders/{nucleo_simple}_single-content-03",
       "rmFill": true
