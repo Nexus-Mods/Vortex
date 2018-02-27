@@ -40,7 +40,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       const { onChange, validate } = this.props;
       this.mLastCommitted = newValue;
       if ((validate === undefined)
-          || (validate(newValue) === 'success')) {
+    || (validate(newValue) !== 'error')) {
         this.props.onChange(newValue);
       }
       return null;
