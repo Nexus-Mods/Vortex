@@ -19,8 +19,8 @@ export interface IMod {
   type: string;
   // id of the corresponding download
   archiveId?: string;
-  // path to the installed mod
-  installationPath?: string;
+  // path to the installed mod (will usually be the same as id)
+  installationPath: string;
   // dictionary of extended information fields
   attributes: { [id: string]: any };
   // list of custom rules for this mod instance

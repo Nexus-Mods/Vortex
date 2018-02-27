@@ -237,11 +237,13 @@ export function onAddMod(api: IExtensionApi, gameId: string,
   const installationPath = resolvePath('install', state.settings.mods.paths, gameId);
 
   store.dispatch(addMod(gameId, mod));
-  fs.mkdirAsync(path.join(installationPath, mod.id))
+  fs.mkdirAsync(path.join(installationPath, mod.installationPath))
   .then(() => {
     callback(null);
   })
-  .catch(callback);
+  .catch(err => {
+    callback(err);
+  });
 }
 
 export function onStartInstallDownload(api: IExtensionApi,

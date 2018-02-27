@@ -1,23 +1,33 @@
 .todo-search {
-  background-color: $brand-success !important;
+  background-color: $brand-success;
 }
 
 .todo-settings {
-  background-color: $brand-info !important;
+  background-color: $brand-info;
 }
 
 .todo-more {
-  background-color: $brand-secondary !important;
+  background-color: $brand-secondary;
+}
+
+.todo-workaround {
+  background-color: $brand-warning;
 }
 
 .todo-search:hover{
-  background-color: darken($brand-success, 10%) !important;
+  background-color: darken($brand-success, 10%);
 }
+
 .todo-settings:hover{
-  background-color: darken($brand-info, 10%) !important;
+  background-color: darken($brand-info, 10%);
 }
+
 .todo-more:hover {
-  background-color: darken($brand-secondary, 10%) !important;
+  background-color: darken($brand-secondary, 10%);
+}
+
+.todo-workaround {
+  background-color: darken($brand-warning, 10%);
 }
 
 .todo {
