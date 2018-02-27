@@ -68,4 +68,10 @@ export class Archive {
       ? (filePath: string, sourcePath: string) => this.mHandler.addFile(filePath, sourcePath)
       : undefined;
   }
+
+  public get write(): () => Promise<void> {
+    return (this.mHandler.write !== undefined)
+      ? () => this.mHandler.write()
+      : undefined;
+  }
 }

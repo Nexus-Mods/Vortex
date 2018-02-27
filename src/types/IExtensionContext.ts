@@ -203,6 +203,7 @@ export interface IArchiveHandler {
   extractAll(outputPath: string): Promise<void>;
   addFile?(filePath: string, sourcePath: string): Promise<void>;
   create?(sourcePath: string): Promise<void>;
+  write?(): Promise<void>;
 }
 
 export type ArchiveHandlerCreator =
