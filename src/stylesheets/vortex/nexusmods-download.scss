@@ -1,6 +1,6 @@
 .nexusmods-action-button {
   display: inline;
-  background: #57a5cc;
+  background: $brand-primary;
   padding: 10px 9px;
   margin: 0 8px;
   > svg {
@@ -15,7 +15,7 @@
   }
 
   >.nexusmods-fake-link {
-    color: #ffffff;
+    color: $white;
     font-size: 12px;
     text-transform: uppercase;
     text-decoration: none;

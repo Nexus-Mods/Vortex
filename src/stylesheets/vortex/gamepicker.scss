@@ -138,6 +138,10 @@ $thumbnail-width: 256px;
   .media-body {
     justify-content: center;
   }
+
+  .list-group-item:hover {
+    background-color: $gray-lighter;
+  }
 }
 
 .btngroup-game-list {

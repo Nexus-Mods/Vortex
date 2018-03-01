@@ -240,6 +240,61 @@ div:hover > .hover-expand {
   fill: black;
 }
 
+.progress {
+  overflow: hidden;
+  height: 1.5;
+  margin-bottom: 1.5;
+  background-color: #909090;
+  border-radius: 0;
+  -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  .progress-bar {
+    white-space: nowrap;
+    overflow-x: hidden;
+  }
+}
+
+.render-failure {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .render-failure-icon {
+    width: 5em;
+    height: 5em;
+  }
+
+  .render-failure-text {
+    font-size: larger;
+    margin: $gutter-width 0;
+  }
+
+  .render-failure-buttons {
+    display: flex;
+    flex-direction: row;
+    > .btn {
+      margin: 0 $half-gutter;
+    }
+  }
+}
+
+.errorboundary-dialog {
+  position: absolute;
+  top: 30%;
+  left: 30%;
+  bottom: 30%;
+  right: 30%;
+
+  .error-boundary-close {
+    @extend .btn-embed;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+  }
+}
+
 // /generic control rules
 /////////////////////////
 
@@ -433,33 +488,28 @@ div:hover > .hover-expand {
 .btn-mods-enabled-enabled, .toggle-mods-enabled-enabled,
 .btn-extensions-enabled-enabled, .toggle-extensions-enabled-enabled {
   background-color: $brand-success;
-}
-.btn-mods-enabled-enabled:hover {
-  background-color: darken($brand-success, 10%);
-}
-.toggle-mods-enabled-enabled{
-  background-color: darken($brand-success, 10%);
+
+  &:hover, &:focus {
+    background-color: darken($brand-success, 10%);
+  }
 }
 
 .btn-mods-enabled-disabled, .toggle-mods-enabled-disabled,
 .btn-extensions-enabled-disabled, .toggle-extensions-enabled-disabled {
   background-color: $gray;
+
+  &:hover, &:focus {
+    background-color: darken($gray, 10%);
+  }
 }
-.btn-mods-enabled-disabled:hover {
-  background-color: darken($gray, 10%);
-}
-.toggle-mods-enabled-disabled:hover{
-  background-color: darken($gray, 10%);
-}
+
 .btn-mods-enabled-uninstalled, .toggle-mods-enabled-uninstalled,
 .btn-mods-enabled-neverinstalled, .toggle-mods-enabled-neverinstalled {
   background-color: $brand-info;
-}
-.btn-mods-enabled-uninstalled:hover {
-  background-color: darken($brand-info, 10%);
-}
-.toggle-mods-enabled-uninstalled:hover{
-  background-color: darken($brand-info, 10%);
+
+  &:hover, &:focus {
+    background-color: darken($brand-info, 10%);
+  }
 }
 
 .btn-mods-enabled-installing, .toggle-mods-enabled-installing {
@@ -505,7 +555,7 @@ div:hover > .hover-expand {
     }
   }
   > .dropdown-toggle {
-    border-left: 1px solid $gray-light;
+    border-left: $border-width solid transparentize($white, 0.5);
   }
 }
 
@@ -568,159 +618,3 @@ div:hover > .hover-expand {
 
 // /HIDPI
 /////////
-
-// Force savegame screenshots to same size
-
-.cell-screenshot .screenshot-canvas {
-  width: 137px;
-  object-fit: cover;
-}
-.container-quicklaunch .tool-icon-container:hover {
-  filter: brightness(70%);
-}
-
-// Make axis labels easily readable on download graph
-
-.recharts-text.recharts-cartesian-axis-tick-value {
-  fill: $gray;
-}
-
-// make dividing line between button and dropdown element white
-
-.dropdown .dropdown-toggle {
-  border-left: solid $border-width transparentize($white, 0.5);
-}
-
-.progress {
-  overflow: hidden;
-  height: 1.5;
-  margin-bottom: 1.5;
-  background-color: #909090;
-  border-radius: 0;
-  -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-  .progress-bar {
-    white-space: nowrap;
-    overflow-x: hidden;
-  }
-}
-
-.tool-icon-box {
-  align-content: center;
-  margin: 0;
-}
-
-.render-failure {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  .render-failure-icon {
-    width: 5em;
-    height: 5em;
-  }
-
-  .render-failure-text {
-    font-size: larger;
-    margin: $gutter-width 0;
-  }
-
-  .render-failure-buttons {
-    display: flex;
-    flex-direction: row;
-    > .btn {
-      margin: 0 $half-gutter;
-    }
-  }
-}
-.notification-buttons {
-  white-space: nowrap;
-  button {
-    padding: 0px 2px;
-    margin: 0px 2px;
-    background-color: #ffffff;
-    color: $brand-primary;
-    border: $border-width solid #ffffff;
-  }
-}
-#notifications-button:hover .badge{
-  color: $brand-primary;
-  background-color: #ffffff;
-}
-// To make hover and focus states on extensions screen match button colours
-
-.btn-extensions-enabled-enabled:hover {
-  background-color: darken($brand-success, 10%);
-}
-.toggle-extensions-enabled:hover {
-  background-color: darken($brand-success, 10%);
-}
-.btn-extensions-enabled-disabled:hover {
-  background-color: darken($gray, 10%)
-}
-.toggle-extensions-enabled.toggle-extensions-enabled-disabled.dropdown-toggle.btn.btn-default{
-  background-color: darken($gray, 10%);
-}
-
-// To make the plugin buttons hover and focus states match the button colour
-
-#dropdown-gamebryo-plugins-enabled {
-  border-left: $border-width solid darken($brand-success, 10%);
-}
-#dropdown-gamebryo-plugins-enabled:hover {
-  background: darken($brand-success, 10%);
-}
-#dropdown-gamebryo-plugins-enabled:focus {
-  background: darken($brand-success, 10%);
-}
-.btn-gamebryo-plugins-enabled-enabled:hover {
-  background: darken($brand-success, 10%) !important;
-}
-.toggle-gamebryo-plugins-enabled .toggle-gamebryo-plugins-enabled-disabled .dropdown-toggle .btn .btn-default:hover {
-  background: darken($gray, 10%) !important;
-}
-.btn-gamebryo-plugins-enabled-disabled:hover {
-  background: darken($gray, 10%) !important;
-}
-.toggle-gamebryo-plugins-enabled .toggle-gamebryo-plugins-enabled-disabled .dropdown-toggle .btn .btn-default:focus {
-  background: darken($gray, 10%) !important;
-}
-
-// Make games screen games hover state legible
-
-.hover-menu .hover-content .buttons .btn:hover{
-  transition-property: background-color;
-   
-   }
- .hover-menu .hover-content .buttons .btn:hover{
- background-color: darken($brand-primary, 20%);
- color: $gray-darker;
- transition-duration:  2ms;
- }
-
-//  Hover on games list view
-
- .game-list-item.list-group-item:hover {
-  background-color: #2a2c2b;
-}
-
-.nexusmods-action-button {
-  background: #D78F46;
-}
-
-.errorboundary-dialog {
-  position: absolute;
-  top: 30%;
-  left: 30%;
-  bottom: 30%;
-  right: 30%;
-
-  .error-boundary-close {
-    @extend .btn-embed;
-    position: absolute;
-    top: 5px;
-    right: 5px;
-  }
-}

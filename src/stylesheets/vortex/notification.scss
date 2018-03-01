@@ -38,7 +38,7 @@
   .notification-buttons {
     white-space: nowrap;
     button {
-      padding: 0px 5px;
+      padding: 0px 2px;
       margin: 0px 2px;
       background-color: $white;
       color: $brand-primary;
@@ -82,5 +82,12 @@
     position: absolute;
     right: 8px;
     top: 8px;
+  }
+
+  &:hover {
+    .badge {
+      color: $brand-primary;
+      background-color: $text-color;
+    }
   }
 }

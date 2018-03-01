@@ -14,11 +14,11 @@
   background-color: $brand-warning;
 }
 
-.todo-search:hover{
+.todo-search:hover {
   background-color: darken($brand-success, 10%);
 }
 
-.todo-settings:hover{
+.todo-settings:hover {
   background-color: darken($brand-info, 10%);
 }
 
@@ -26,7 +26,7 @@
   background-color: darken($brand-secondary, 10%);
 }
 
-.todo-workaround {
+.todo-workaround:hover {
   background-color: darken($brand-warning, 10%);
 }
 

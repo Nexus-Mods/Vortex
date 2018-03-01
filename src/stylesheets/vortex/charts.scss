@@ -8,6 +8,10 @@
   border: $border-width solid $border-color;
 }
 
+.recharts-text.recharts-cartesian-axis-tick-value {
+  fill: $gray;
+}
+
 .download-chart .recharts-area {
   // unfortunately stroke and area are two separate groups that
   // are indistinguishable by class/id so we have to rely on their order

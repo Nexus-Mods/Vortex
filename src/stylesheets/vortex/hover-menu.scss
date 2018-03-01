@@ -49,6 +49,16 @@
           height: 3em;
         }
       }
+
+      .buttons {
+        .btn {
+          transition: background-color 100ms;
+          &:hover {
+            background-color: darken($brand-primary, 20%);
+            color: $gray-darker;
+          }
+        }
+      }
     }
   }
 }
