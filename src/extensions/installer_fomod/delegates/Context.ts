@@ -90,8 +90,11 @@ export class Context extends DelegateBase {
         log('debug', 'checkIfFileExists called', util.inspect(fileName));
         const state = this.api.store.getState();
 
-        const fullFilePath = path.join(
-          this.gameInfo.queryModPath(this.gameDiscovery.path), fileName);
+        let modPath = this.gameInfo.queryModPath(this.gameDiscovery.path);
+        if (!path.isAbsolute(modPath)) {
+          modPath = path.join(this.gameDiscovery.path, modPath);
+        }
+        const fullFilePath = path.join(modPath, fileName);
 
         fs.statAsync(fullFilePath)
             .reflect()
