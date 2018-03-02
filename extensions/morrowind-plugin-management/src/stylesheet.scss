@@ -1,0 +1,15 @@
+#morrowind-plugin-panel {
+  .list-group {
+    border: $border-width solid $border-color;
+    margin: $half-gutter;
+    min-height: $gutter-width;
+  }
+  .plugin-entry {
+    background-color: $brand-bg;
+    margin: 4px;
+
+    &.dragging {
+      opacity: 0;
+    }
+  }
+}

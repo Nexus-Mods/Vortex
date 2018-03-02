@@ -26,7 +26,6 @@ import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
-import Dashlet from './views/Dashlet';
 import {} from './views/DownloadView';
 import {} from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';

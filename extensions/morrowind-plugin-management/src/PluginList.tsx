@@ -1,48 +1,54 @@
+import DraggableList from './DraggableList';
 import PluginEntry from './PluginEntry';
 
 import * as React from 'react';
 import { ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
 import { DragSource, DropTarget } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
-import { ComponentEx, MainPage } from 'vortex-api';
+import { translate } from 'react-i18next';
+import { ComponentEx, DNDContainer, FlexLayout, MainPage } from 'vortex-api';
 
 const PanelX: any = Panel;
 
 export interface IPluginListProps {
   knownPlugins: string[];
   pluginOrder: string[];
+
+  onSetPluginOrder: (enabled: string[]) => void;
 }
 
-interface IPluginListState {
-  enabledPlugins: string[];
-  disabledPlugins: string[];
-}
-
-class PluginList extends ComponentEx<IPluginListProps, IPluginListState> {
-  constructor(props: IPluginListProps) {
-    super(props);
-    this.state = this.genPluginState(props);
-  }
-
-  public componentWillReceiveProps(newProps: IPluginListProps) {
-    this.setState(this.genPluginState(newProps));
-  }
-
+class PluginList extends ComponentEx<IPluginListProps, {}> {
   public render(): JSX.Element {
-    const { disabledPlugins, enabledPlugins } = this.state;
+    const { t, knownPlugins, pluginOrder } = this.props;
+    const disabledPlugins = knownPlugins.filter(plugin => pluginOrder.indexOf(plugin) === -1);
+
     return (
       <MainPage>
         <MainPage.Body>
-          <Panel>
+          <Panel id='morrowind-plugin-panel'>
             <PanelX.Body>
-              <ListGroup>
-                {enabledPlugins.map((plugin, idx) =>
-                  <PluginEntry index={idx} key={plugin} plugin={plugin} />)}
-              </ListGroup>
-              <ListGroup>
-                {disabledPlugins.map((plugin, idx) =>
-                  <PluginEntry index={idx} key={plugin} plugin={plugin} />)}
-              </ListGroup>
+              <DNDContainer>
+                <FlexLayout type='row'>
+                  <FlexLayout.Flex>
+                    <h4>{t('Enabled')}</h4>
+                    <DraggableList
+                      id='enabled'
+                      items={pluginOrder}
+                      itemRenderer={PluginEntry}
+                      apply={this.applyEnabled}
+                    />
+                  </FlexLayout.Flex>
+                  <FlexLayout.Flex>
+                    <h4>{t('Disabled')}</h4>
+                    <DraggableList
+                      id='disabled'
+                      items={disabledPlugins}
+                      itemRenderer={PluginEntry}
+                      apply={this.applyDisabled}
+                    />
+                  </FlexLayout.Flex>
+                </FlexLayout>
+              </DNDContainer>
             </PanelX.Body>
           </Panel>
         </MainPage.Body>
@@ -50,13 +56,13 @@ class PluginList extends ComponentEx<IPluginListProps, IPluginListState> {
     );
   }
 
-  private genPluginState(props: IPluginListProps) {
-    const { knownPlugins, pluginOrder } = this.props;
-    return {
-      enabledPlugins: pluginOrder,
-      disabledPlugins: knownPlugins.filter(plugin => pluginOrder.indexOf(plugin) === -1),
-    };
+  private applyEnabled = (ordered: string[]) => {
+    this.props.onSetPluginOrder(ordered);
+  }
+
+  private applyDisabled = (ordered: string[]) => {
+    // this event doesn't really matter, does it?
   }
 }
 
-export default PluginList;
+export default translate(['common', 'morrowind-plugins'], { wait: false })(PluginList);

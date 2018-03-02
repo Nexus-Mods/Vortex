@@ -2131,11 +2131,13 @@ vm-browserify@0.0.4:
   dependencies:
     indexof "0.0.1"
 
-"vortex-api@file:../../api":
-  version "0.0.1"
+vortex-api@Nexus-Mods/vortex-api:
+  version "0.0.3"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/1effb6282f40223d1e8b4950e41620d829f3d717"
 
-"vortex-parse-ini@file:../../lib/js/vortex-parse-ini":
+vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/1db90e516e7fad7c6f1bb7c5949495b74009fed6"
   dependencies:
     bluebird "^3.5.0"
     ffi "^2.2.0"

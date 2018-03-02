@@ -31,17 +31,30 @@ function startWatch(state: types.IState) {
 }
 
 function stopWatch() {
-  watcher.close();
-  watcher = undefined;
+  if (watcher !== undefined) {
+    watcher.close();
+    watcher = undefined;
+  }
 }
 
 function readGameFiles(iniFilePath: string): Promise<string[]> {
   const parser = new IniParser(new WinapiFormat());
   return parser.read(iniFilePath)
     .then(ini => {
-      console.log('ini file', ini);
       const files = ini.data['Game Files'];
       return Object.keys(files).map(key => files[key]);
+    });
+}
+
+function updatePluginOrder(iniFilePath: string, plugins: string[]) {
+  const parser = new IniParser(new WinapiFormat());
+  return parser.read(iniFilePath)
+    .then(ini => {
+      ini.data['Game Files'] = plugins.reduce((prev, plugin, idx) => {
+        prev[`GameFile${idx}`] = plugin;
+        return prev;
+      }, {});
+      parser.write(iniFilePath, ini);
     });
 }
 
@@ -70,6 +83,12 @@ function init(context: types.IExtensionContext) {
     props: () => ({
       knownPlugins,
       pluginOrder,
+      onSetPluginOrder: (plugins: string[]) => {
+        const state = context.api.store.getState();
+        const discovery = state.settings.gameMode.discovered['morrowind'];
+        const iniFilePath = path.join(discovery.path, 'Morrowind.ini');
+        updatePluginOrder(iniFilePath, plugins);
+      }
     }),
   });
 
@@ -82,10 +101,15 @@ function init(context: types.IExtensionContext) {
         stopWatch();
       }
     });
+
+    context.api.setStylesheet('morrowind-plugin-management',
+                              path.join(__dirname, 'stylesheet.scss'));
+
     refresher = new util.Debouncer(() => {
       return refreshPlugins(context.api);
     }, 2000);
     refresher.schedule();
+
   });
 }
 

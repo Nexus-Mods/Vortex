@@ -4,6 +4,8 @@
  * TODO: This works only as one function because our internal id so
  *   far coincides with the nxm link format except for upper/lower case.
  *   This should be two functions!
+ * TODO: Actually, since game support is in extensions, this shouldn't happen
+ *   here at all
  */
 
 export function convertGameId(input: string): string {
