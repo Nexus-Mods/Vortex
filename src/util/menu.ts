@@ -17,7 +17,10 @@ const { Menu, clipboard } = remote;
 export function initApplicationMenu(extensions: ExtensionManager) {
   const fileMenu: Electron.MenuItemConstructorOptions[] = [
     {
-      role: 'close',
+      label: 'Close',
+      click() {
+        remote.app.quit();
+      },
     },
   ];
 
