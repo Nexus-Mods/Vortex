@@ -11,10 +11,18 @@
  * - ignoring ENOENT error when deleting a file.
  */
 
-import {delayed} from './delayed';
+import { delayed } from './delayed';
+import runElevated from './elevated';
 
 import * as Promise from 'bluebird';
+import { dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
+import ipc = require('node-ipc');
+import * as path from 'path';
+import { getUserId } from 'permissions';
+import { generate as shortid } from 'shortid';
+
+const dialog = dialogIn || remote.dialog;
 
 export { constants, FSWatcher, Stats, WriteStream } from 'fs';
 
@@ -60,7 +68,7 @@ function genWrapperAsync<T extends (...args) => any>(func: T): T {
     const stack = new Error().stack;
     return func(...args)
       .catch(err => {
-        err.stack = stack;
+        err.stack = err.message + '\n' + stack;
         throw err;
       });
   };
@@ -96,7 +104,7 @@ function copyInt(
           return delayed(RETRY_DELAY_MS)
             .then(() => copyInt(src, dest, options, stack, tries - 1));
         }
-        err.stack = stack;
+        err.stack = err.message + '\n' + stack;
         throw err;
       });
 }
@@ -115,7 +123,7 @@ function removeInt(dirPath: string, stack: string, tries: number): Promise<void>
           return delayed(RETRY_DELAY_MS)
             .then(() => removeInt(dirPath, stack, tries - 1));
       }
-      err.stack = stack;
+      err.stack = err.message + '\n' + stack;
       throw err;
     });
 }
@@ -134,7 +142,7 @@ function unlinkInt(dirPath: string, stack: string, tries: number): Promise<void>
           return delayed(RETRY_DELAY_MS)
             .then(() => unlinkInt(dirPath, stack, tries - 1));
       }
-      err.stack = stack;
+      err.stack = err.message + '\n' + stack;
       throw err;
     });
 }
@@ -153,7 +161,52 @@ function rmdirInt(dirPath: string, stack: string, tries: number): Promise<void> 
           return delayed(RETRY_DELAY_MS)
             .then(() => rmdirInt(dirPath, stack, tries - 1));
       }
-      err.stack = stack;
+      err.stack = err.message + '\n' + stack;
       throw err;
+    });
+}
+
+export function ensureDirWritableAsync(dirPath: string,
+                                       confirm: () => Promise<void>): Promise<void> {
+  return fs.ensureDirAsync(dirPath)
+    .then(() => {
+      const canary = path.join(dirPath, '__vortex_canary');
+      return (fs as any).ensureFileAsync(canary)
+                    .then(() => fs.removeAsync(canary));
+    })
+    .catch(err => {
+      if (err.code === 'EPERM') {
+        return confirm()
+          .then(() => new Promise<void>((resolve, reject) => {
+              const id = shortid();
+              const userId = getUserId();
+              ipc.serve(`__fs_elevated_${id}`, () => undefined);
+              ipc.server.start();
+              ipc.server.on('socket.disconnected', () => {
+                ipc.server.stop();
+                resolve();
+              });
+              ipc.server.on('error', ipcErr => {
+                reject(ipcErr);
+              });
+              ipc.server.on('disconnect', () => {
+                ipc.server.stop();
+                resolve();
+              });
+
+              runElevated(`__fs_elevated_${id}`, (ipcClient) => {
+                // tslint:disable-next-line:no-shadowed-variable
+                const fs = require('fs-extra-promise');
+                const { allow } = require('permissions');
+                return fs.ensureDirAsync(dirPath)
+                  .then(() => {
+                    return allow(dirPath, userId, 'rwx');
+                  });
+              }, { dirPath, userId })
+              .catch(reject);
+          }));
+      } else {
+        return Promise.reject(err);
+      }
     });
 }

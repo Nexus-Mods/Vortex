@@ -90,12 +90,19 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string, main
   newRequire.requireActual = newRequire;
   require = newRequire;
   (module as any).paths.push(moduleRoot);
+  // tslint:disable-next-line:no-shadowed-variable
   const ipc = require('node-ipc');
   ipc.connectTo(ipcPath, ipcPath, () => {
     ipc.of[ipcPath].on('quit', () => {
       process.exit(0);
     });
-    main(ipc.of[ipcPath]);
+    Promise.resolve().then(() => main(ipc.of[ipcPath]))
+    .catch(error => {
+      ipc.of[ipcPath].emit('error', error);
+    })
+    .then(() => {
+      ipc.disconnect(ipcPath);
+    });
   });
 }
 
