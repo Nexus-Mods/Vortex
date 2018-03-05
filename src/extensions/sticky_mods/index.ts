@@ -36,6 +36,9 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     context.api.onStateChange(['persistent', 'profiles'],
       (previous: { [profileId: string]: IProfile }, current: { [profileId: string]: IProfile }) => {
+        if ((previous === undefined) || (current === undefined)) {
+          return;
+        }
         Object.keys(previous).forEach(profileId => {
           if ((previous[profileId] !== current[profileId]) && (current[profileId] !== undefined)) {
             testModSticky(context.api, previous[profileId], current[profileId]);

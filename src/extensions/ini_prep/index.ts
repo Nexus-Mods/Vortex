@@ -135,6 +135,17 @@ function bakeSettings(gameMode: string, discovery: IDiscoveryResult,
     // the ini tweaks
     const baseName = path.basename(iniFileName).toLowerCase();
     return fs.copyAsync(iniFileName + '.base', iniFileName + '.baked')
+        .catch(err => {
+          if (err.code === 'ENOENT') {
+            // source file missing isn't really a big deal, treat as empty
+            return Promise.join([
+              fs.ensureFileAsync(iniFileName + '.base'),
+              fs.ensureFileAsync(iniFileName + '.baked'),
+            ]);
+          } else {
+            return Promise.reject(err);
+          }
+        })
         .then(() => parser.read(iniFileName + '.baked'))
         .then(ini => Promise.each(enabledTweaks[baseName] || [],
                                   tweak => parser.read(tweak).then(patchIni => {

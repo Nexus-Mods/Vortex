@@ -755,6 +755,9 @@ function once(api: IExtensionApi) {
   nexus.getModInfo(1, 'site')
     .then(info => {
       api.store.dispatch(setNewestVersion(info.version));
+    })
+    .catch(err => {
+      log('warn', 'failed to determine newest Vortex version');
     });
 }
 
