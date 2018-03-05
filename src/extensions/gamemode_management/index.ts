@@ -7,7 +7,7 @@ import {
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import { IState } from '../../types/IState';
-import {ProcessCanceled} from '../../util/CustomErrors';
+import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
@@ -486,7 +486,9 @@ function init(context: IExtensionContext): boolean {
       return $.gameModeManager.setupGameMode(newGameId)
         .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId))
         .catch((err) => {
-          if (err instanceof ProcessCanceled) {
+          if (err instanceof UserCanceled) {
+            // nop
+          } else if (err instanceof ProcessCanceled) {
             showError(store.dispatch, 'Failed to set game mode',
                       err.message, false, undefined, false);
           } else {

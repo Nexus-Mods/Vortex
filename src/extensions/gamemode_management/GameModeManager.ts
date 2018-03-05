@@ -1,9 +1,10 @@
+import { showDialog } from '../../actions/notifications';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
 import { getNormalizeFunc } from '../../util/api';
-import {ProcessCanceled} from '../../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 
@@ -87,6 +88,7 @@ class GameModeManager {
       modPath = path.resolve(gameDiscovery.path, modPath);
     }
     return fs.statAsync(modPath)
+      .then(() => this.ensureWritable(modPath))
       .then(() => getNormalizeFunc(gameDiscovery.path))
       .then(normalize =>
         discoverRelativeTools(game, gameDiscovery.path, this.onDiscoveredTool, normalize))
@@ -177,6 +179,19 @@ class GameModeManager {
   public stopSearchDiscovery(): void {
     log('info', 'stop search', { prom: this.mActiveSearch });
     this.mActiveSearch.cancel();
+  }
+
+  private ensureWritable(modPath: string): Promise<void> {
+    return fs.ensureDirWritableAsync(modPath, () => new Promise<void>((resolve, reject) => {
+      this.mStore.dispatch(showDialog('question', 'Access Denied', {
+        text: 'The mod directory for this game is not writable to your user account.\n'
+            + 'If you have admin rights on this system, Vortex can change the permissions '
+            + 'to allow it write access.',
+      }, [
+        { label: 'Cancel', action: () => reject(new UserCanceled()) },
+        { label: 'Allow access', action: () => resolve() },
+      ]));
+    }));
   }
 
   private storeGame = (game: IGame): IGameStored => {

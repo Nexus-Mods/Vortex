@@ -4,9 +4,10 @@ import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
-import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
+import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
@@ -32,7 +33,6 @@ import {
   HelpBlock, InputGroup, Jumbotron, Modal, Panel,
 } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { Placeholder } from '../../../util/asyncRequire';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -55,7 +55,7 @@ interface IActionProps {
     title: string,
     content: IDialogContent,
     actions: DialogActions,
-  ) => void;
+  ) => Promise<IDialogResult>;
   onShowError: (message: string, details: string | Error, allowReport: boolean) => void;
 }
 
@@ -206,15 +206,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return Promise.join(fs.statAsync(oldPath), fs.statAsync(newPath),
       (statOld: fs.Stats, statNew: fs.Stats) =>
         Promise.resolve(statOld.dev === statNew.dev))
-      .then((sameVolume: boolean) => sameVolume
-        // in the move case we have to ensure the parent directory exists
-        // and the directory itself doesn't, otherwise the move will fail
-        ? fs.ensureDirAsync(path.dirname(newPath))
-            .then(() => fs.removeAsync(newPath))
-            .then(() => fs.renameAsync(oldPath, newPath))
-        // in the copy case, just copy, then remove the original
-        : fs.copyAsync(oldPath, newPath)
-            .then(() => fs.removeAsync(oldPath)));
+      .then((sameVolume: boolean) => {
+        const func = sameVolume ? fs.renameAsync : fs.copyAsync;
+        return fs.readdirAsync(oldPath)
+          .map((file: string) => func(path.join(oldPath, file), path.join(newPath, file)))
+          .then(() => fs.removeAsync(oldPath));
+      });
   }
 
   private applyPaths = () => {
@@ -231,8 +228,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     this.setState(setSafe(this.state, ['busy'], t('Moving')));
     return purgePromise
-      .then(() => Promise.join(fs.ensureDirAsync(newInstallPath),
-                               fs.ensureDirAsync(newDownloadPath)))
+      .then(() => Promise.join(fs.ensureDirWritableAsync(newInstallPath, this.confirmElevate),
+                               fs.ensureDirWritableAsync(newDownloadPath, this.confirmElevate)))
       .then(() => {
         let queue = Promise.resolve();
         let fileCount = 0;
@@ -282,6 +279,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onSetPath(gameMode, 'download', this.state.paths[gameMode].download);
         onSetPath(gameMode, 'install', this.state.paths[gameMode].install);
       })
+      .catch(UserCanceled, () => null)
       .catch((err) => {
         if (err !== null) {
           if (err.code === 'EPERM') {
@@ -294,6 +292,21 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .finally(() => {
         this.setState(setSafe(this.state, ['busy'], undefined));
       });
+  }
+
+  private confirmElevate = (): Promise<void> => {
+    const { t, onShowDialog } = this.props;
+    return onShowDialog('question', 'Access denied', {
+      text: 'This directory is not writable to the current windows user account. '
+          + 'Vortex can try to create the directory as administrator but it will '
+          + 'then have to give access to it to all logged in users.',
+    }, [
+      { label: 'Cancel' },
+      { label: 'Create as Administrator' },
+    ])
+    .then(result => (result.action === 'Cancel')
+      ? Promise.reject(new UserCanceled())
+      : Promise.resolve());
   }
 
   private purgeActivation(): Promise<void> {
@@ -497,9 +510,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onSetActivator: (gameMode: string, id: string): void => {
       dispatch(setActivator(gameMode, id));
     },
-    onShowDialog: (type, title, content, actions): void => {
-      dispatch(showDialog(type, title, content, actions));
-    },
+    onShowDialog: (type, title, content, actions) =>
+      dispatch(showDialog(type, title, content, actions)),
     onShowError: (message: string, details: string | Error, allowReport): void => {
       showError(dispatch, message, details, false, undefined, allowReport);
     },
