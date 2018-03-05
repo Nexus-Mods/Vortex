@@ -138,7 +138,7 @@
     "json-loader": "^0.5.7",
     "license-checker": "^15.0.0",
     "minimist": "^1.2.0",
-    "nbind": "^0.3.13",
+    "nbind": "^0.3.15",
     "react-addons-perf": "^15.4.2",
     "react-addons-shallow-compare": "^15.6.2",
     "react-addons-test-utils": "^15.6.2",
