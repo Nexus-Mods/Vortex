@@ -11,6 +11,7 @@ import format_1 from './manifest_formats/format_1';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
+import { truthy } from '../../../util/util';
 
 const CURRENT_VERSION = 1;
 
@@ -24,6 +25,31 @@ function emptyManifest(instance: string): IDeploymentManifest {
     instance,
     files: [],
   };
+}
+
+/**
+ * since the manifest is read from disc, it could have been modified by the user.
+ * Check it for correctness
+ */
+function repairManifest(input: IDeploymentManifest): IDeploymentManifest {
+  if (!truthy(input.version)) {
+    input.version = CURRENT_VERSION;
+  }
+
+  if (!truthy(input.instance)) {
+    input.instance = '';
+  }
+
+  input.files = input.files.reduce((prev: IDeployedFile[], file: IDeployedFile) => {
+    if ((file.relPath !== undefined) && (file.relPath !== null)
+      && (file.source !== undefined) && (file.source !== null)
+      && (file.time !== undefined) && (file.time !== null)) {
+        prev.push(file);
+    }
+    return prev;
+  }, [] as IDeployedFile[]);
+
+  return input;
 }
 
 function readManifest(data: string): IDeploymentManifest {
@@ -43,7 +69,7 @@ function readManifest(data: string): IDeploymentManifest {
   if (parsed.files === undefined) {
     parsed.files = [];
   }
-  return parsed;
+  return repairManifest(parsed);
 }
 
 function fallbackPurge(basePath: string,
