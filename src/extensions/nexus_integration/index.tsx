@@ -230,8 +230,8 @@ function processErrorMessage(err: NexusErrorT): IRequestError {
   const errorMessage = typeof(err) === 'string' ? err : err.message;
   if (err.statusCode === undefined) {
     if (errorMessage
-      && ((errorMessage.indexOf('APIKEY') > -1)
-          || (errorMessage.indexOf('API Key')))) {
+      && ((errorMessage.indexOf('APIKEY') !== -1)
+          || (errorMessage.indexOf('API Key') !== -1))) {
       return { Error: 'You are not logged in to Nexus Mods!', noReport: true };
     } else {
       return { Error: errorMessage };
