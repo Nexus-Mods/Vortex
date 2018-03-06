@@ -7,6 +7,7 @@ import walk from '../../../util/walk';
 import {IDiscoveryResult} from '../types/IDiscoveryResult';
 
 import * as Promise from 'bluebird';
+import * as path from 'path';
 
 function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]: IGameDetail }> {
   if (game.path === undefined) {
@@ -26,7 +27,7 @@ function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]:
   })
   .then(() => {
     return {
-      path: {title: 'Path', value: game.path, type: 'url'},
+      path: {title: 'Path', value: path.normalize(game.path), type: 'url'},
       size: {title: 'Space Used', value: totalSize, type: 'bytes'},
       size_nolinks: {
         title: 'Space Used (without links)',
