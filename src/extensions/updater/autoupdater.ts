@@ -25,7 +25,6 @@ function setupAutoUpdate(api: IExtensionApi) {
                    api.sendNotification({
                      type: 'success',
                      message: 'Update available',
-                     displayMS: 10000,
                      actions: [
                        {
                          title: 'Restart & Install',
