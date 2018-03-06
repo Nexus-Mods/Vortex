@@ -77,7 +77,13 @@ function execInfo(scriptPath: string) {
   });
 }
 
-function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string, main: (ipc) => void) {
+function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
+                      main: (ipc) => Promise<void>) {
+  const handleError = (error: any) => {
+    require('electron').dialog.showErrorBox('Elevated code failed', error.stack);
+  };
+  process.on('uncaughtException', handleError);
+  process.on('unhandledRejection', handleError);
   const elevatedPath = require('path');
   const requireOrig = require;
   const newRequire: any = (id: string): any => {
