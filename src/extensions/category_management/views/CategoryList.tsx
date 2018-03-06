@@ -124,52 +124,52 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             searchFoundCount } = this.state;
 
     const Tree = tree.SortableTreeWithoutDndContext;
-    if ((expandedTreeData !== undefined) && (expandedTreeData.length > 0)) {
-      return (
-        <div className='categories-dialog'>
-          <IconBar
-            group='categories-icons'
-            staticElements={this.mButtons}
-            className='menubar categories-icons'
-          />
-          <div className='search-category-box'>
-            <div style={{ display: 'inline-block', position: 'relative' }}>
-              <FormControl
-                id='search-category-input'
-                type='text'
-                placeholder={t('Search')}
-                value={searchString || ''}
-                onChange={this.startSearch}
-              />
-              <Icon className='search-icon' name='search' />
-              <span className='search-position' >
-                {t('{{ pos }} of {{ total }}', {
-                  replace: {
-                    pos: searchFoundCount > 0 ? (searchFocusIndex + 1) : 0,
-                    total: searchFoundCount || 0,
-                  },
-                })}
-              </span>
-            </div>
-            <IconButton
-              id='btn-search-category-prev'
-              className='btn-embed'
-              icon='search-up'
-              tooltip={t('Prev')}
-              type='button'
-              disabled={!searchFoundCount}
-              onClick={this.selectPrevMatch}
+    return (
+      <div className='categories-dialog'>
+        <IconBar
+          group='categories-icons'
+          staticElements={this.mButtons}
+          className='menubar categories-icons'
+        />
+        <div className='search-category-box'>
+          <div style={{ display: 'inline-block', position: 'relative' }}>
+            <FormControl
+              id='search-category-input'
+              type='text'
+              placeholder={t('Search')}
+              value={searchString || ''}
+              onChange={this.startSearch}
             />
-            <IconButton
-              id='btn-search-category-next'
-              className='btn-embed'
-              icon='search-down'
-              tooltip={t('Next')}
-              type='button'
-              disabled={!searchFoundCount}
-              onClick={this.selectNextMatch}
-            />
+            <Icon className='search-icon' name='search' />
+            <span className='search-position' >
+              {t('{{ pos }} of {{ total }}', {
+                replace: {
+                  pos: searchFoundCount > 0 ? (searchFocusIndex + 1) : 0,
+                  total: searchFoundCount || 0,
+                },
+              })}
+            </span>
           </div>
+          <IconButton
+            id='btn-search-category-prev'
+            className='btn-embed'
+            icon='search-up'
+            tooltip={t('Prev')}
+            type='button'
+            disabled={!searchFoundCount}
+            onClick={this.selectPrevMatch}
+          />
+          <IconButton
+            id='btn-search-category-next'
+            className='btn-embed'
+            icon='search-down'
+            tooltip={t('Next')}
+            type='button'
+            disabled={!searchFoundCount}
+            onClick={this.selectNextMatch}
+          />
+        </div>
+        {((expandedTreeData || []).length > 0) ? (
           <Tree
             treeData={expandedTreeData}
             onChange={nop}
@@ -183,25 +183,9 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             getNodeKey={this.getNodeKey}
             generateNodeProps={this.generateNodeProps}
           />
-        </div>
-      );
-    } else {
-      return (
-        <div style={{ height: '90%' }}>
-          <Button
-            id='add-category'
-            tooltip={t('Add Root Category')}
-            onClick={this.addRootCategory}
-          >
-            <Icon name='folder-add' />
-          </Button>
-          <IconBar
-            group='categories-icons'
-            staticElements={null}
-          />
-        </div>
-      );
-    }
+        ) : null}
+      </div>
+    );
   }
 
   // tslint:disable-next-line:no-shadowed-variable
@@ -212,10 +196,10 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       (node.title.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1);
   }
 
-  private updateExpandedTreeData = () => {
+  private updateExpandedTreeData = (categories: ICategoryDictionary) => {
     const { expanded, showEmpty, treeData } = this.nextState;
     this.nextState.expandedTreeData =
-      this.applyExpand(treeData, showEmpty, new Set(expanded));
+      this.applyExpand(treeData, showEmpty, new Set(expanded), categories);
   }
 
   private getNonEmptyCategories(treeData: ICategoriesTree[], ancestry: string[]): string[] {
@@ -232,10 +216,10 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 
   private applyExpand(treeData: ICategoriesTree[], showEmpty: boolean,
-                      expanded: Set<string>): ICategoriesTree[] {
+                      expanded: Set<string>,
+                      categories: ICategoryDictionary): ICategoriesTree[] {
     let filtered: Set<string>;
     if (showEmpty) {
-      const { categories } = this.props;
       filtered = new Set(Object.keys(categories));
     } else {
       filtered = new Set(this.getNonEmptyCategories(treeData, []));
@@ -247,7 +231,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       }
       const copy: ICategoriesTree = { ...obj };
       copy.expanded = expanded.has(copy.categoryId);
-      copy.children = this.applyExpand(copy.children, showEmpty, expanded);
+      copy.children = this.applyExpand(copy.children, showEmpty, expanded, categories);
       return copy;
     })
     .filter(obj => obj !== undefined)
@@ -262,7 +246,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       const newTree = createTreeDataObject(t, categories, mods);
       this.nextState.treeData = newTree;
       this.nextState.showEmpty = !showEmpty;
-      this.updateExpandedTreeData();
+      this.updateExpandedTreeData(categories);
     } catch (err) {
       onShowError('An error occurred hiding/showing the empty categories', err);
     }
@@ -271,12 +255,12 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   private expandAll = () => {
     const { categories } = this.props;
     this.nextState.expanded = Object.keys(categories);
-    this.updateExpandedTreeData();
+    this.updateExpandedTreeData(categories);
   }
 
   private collapseAll = () => {
     this.nextState.expanded = [];
-    this.updateExpandedTreeData();
+    this.updateExpandedTreeData(this.props.categories);
   }
 
   private renameCategory = (categoryId: string) => {
@@ -326,7 +310,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
               parentCategory: parentId,
               order: 0,
             });
-            this.updateExpandedTreeData();
+            this.updateExpandedTreeData(categories);
           }
         }
       });
@@ -345,7 +329,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           label: 'Category ID',
         },
       ],
-    }, [{ label: 'Cancel' }, { label: 'Add' }])
+    }, [{ label: 'Cancel' }, { label: 'Add', default: true }])
       .then((result: IDialogResult) => {
         addCategory = result.action === 'Add';
         if (addCategory) {
@@ -397,13 +381,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     if (categories !== undefined) {
       if (Object.keys(categories).length !== 0) {
         this.nextState.treeData = createTreeDataObject(t, categories, mods);
-        this.updateExpandedTreeData();
-      } else {
-        const globalPersistentPath = path.join(remote.app.getPath('userData'), 'state');
-        onShowError('An error occurred loading the categories.',
-          'Can\'t read local categories. If you manually edited global_persistent you probably ' +
-          'damaged the file. If you did\'t, please report a bug and include the ' +
-          'global_persistent file. You can find it here:' + globalPersistentPath);
+        this.updateExpandedTreeData(categories);
       }
     }
   }
@@ -479,7 +457,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       this.nextState.expanded.splice(this.nextState.expanded.indexOf(args.node.categoryId));
     }
 
-    this.updateExpandedTreeData();
+    this.updateExpandedTreeData(this.props.categories);
   }
 
   private moveNode =
