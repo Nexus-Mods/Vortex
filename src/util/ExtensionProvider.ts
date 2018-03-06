@@ -57,6 +57,7 @@ export function extend(registerFunc: (...args) => void) {
 
       public context: IExtensionProps;
       private mExtensions: any[];
+      private mObjects: any[];
 
       public componentWillMount(): void {
         this.mExtensions = [];
@@ -71,6 +72,7 @@ export function extend(registerFunc: (...args) => void) {
       public componentWillReceiveProps(nextProps: any) {
         if (this.props.group !== nextProps.group) {
           this.mExtensions = [];
+          this.mObjects = undefined;
           this.context.extensions.apply(registerFunc.name, (...args) => {
             const res = registerFunc(nextProps, ...args);
             if (res !== undefined) {
@@ -83,9 +85,13 @@ export function extend(registerFunc: (...args) => void) {
       public render(): JSX.Element {
         const { children, staticElements } = this.props;
 
+        if (this.mObjects === undefined) {
+          this.mObjects = [].concat(staticElements || [], this.mExtensions || []);
+        }
+
         const wrapProps: any = {
           ...(this.props as any),
-          objects: [].concat(staticElements || [], this.mExtensions || []),
+          objects: this.mObjects,
         };
         delete wrapProps.staticElements;
         delete wrapProps.group;
