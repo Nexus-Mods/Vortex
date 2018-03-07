@@ -61,7 +61,7 @@ function updatePluginOrder(iniFilePath: string, plugins: string[]) {
 function refreshPlugins(api: types.IExtensionApi): Promise<void> {
   const state = api.store.getState();
   const discovery = state.settings.gameMode.discovered['morrowind'];
-  if (discovery === undefined) {
+  if ((discovery === undefined) || (discovery.path === undefined)) {
     return Promise.resolve();
   }
 
