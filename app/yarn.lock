@@ -175,9 +175,9 @@ base16@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/base16/-/base16-1.0.0.tgz#e297f60d7ec1014a7a971a39ebc8a98c0b681e70"
 
-bbcode-to-react@^0.2.6:
-  version "0.2.7"
-  resolved "https://registry.yarnpkg.com/bbcode-to-react/-/bbcode-to-react-0.2.7.tgz#bd6e39b02c27051e3acf7f60737b3da159ec7378"
+bbcode-to-react@TanninOne/bbcode-to-react:
+  version "0.2.8"
+  resolved "https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/fb9fb07d069e0cf0793a1db5824a8b4888bbf7b4"
 
 bcrypt-pbkdf@^1.0.0:
   version "1.0.1"
@@ -2059,9 +2059,13 @@ msbuild@^1.0.1:
     colors "*"
     events "*"
 
-nan@2, nan@^2.0.9, nan@^2.3.2, nan@^2.4.0, nan@^2.7.0, nan@^2.8.0:
+nan@2, nan@^2.0.9, nan@^2.3.2, nan@^2.4.0, nan@^2.8.0:
   version "2.8.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.8.0.tgz#ed715f3fe9de02b57a5e6252d90a96675e1f085a"
+
+nan@^2.9.2:
+  version "2.9.2"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.9.2.tgz#f564d75f5f8f36a6d9456cca7a6c4fe488ab7866"
 
 nan@~2.5.0:
   version "2.5.1"
@@ -2071,13 +2075,13 @@ nan@~2.6.1:
   version "2.6.2"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.6.2.tgz#e4ff34e6c95fdfb5aecc08de6596f43605a7db45"
 
-nbind@^0.3.13, nbind@^0.3.14:
-  version "0.3.14"
-  resolved "https://registry.yarnpkg.com/nbind/-/nbind-0.3.14.tgz#ea85b685ae86801012509062f6ce4d639a19b864"
+nbind@^0.3.15:
+  version "0.3.15"
+  resolved "https://registry.yarnpkg.com/nbind/-/nbind-0.3.15.tgz#20c74d77d54e28627ab8268c2767f7e40aef8c53"
   dependencies:
     emscripten-library-decorator "~0.2.2"
     mkdirp "~0.5.1"
-    nan "^2.7.0"
+    nan "^2.9.2"
 
 negotiator@0.6.1:
   version "0.6.1"
@@ -2346,11 +2350,11 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
 
 permissions@Nexus-Mods/node-permissions:
-  version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/f219fcf7451606ff5d35ea12e367b842378546f4"
+  version "1.1.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/46836e32f4328d6ca9549e7d031342ef5c445cb5"
   dependencies:
     autogypi "^0.2.2"
-    nbind "^0.3.14"
+    nbind "^0.3.15"
     node-gyp "^3.6.2"
 
 pify@^2.0.0:
@@ -2832,9 +2836,9 @@ reduce-function-call@^1.0.1:
   dependencies:
     balanced-match "^0.4.2"
 
-redux-act@^1.4.1:
-  version "1.5.1"
-  resolved "https://registry.yarnpkg.com/redux-act/-/redux-act-1.5.1.tgz#9eaffa6880dc668730b0524e74f24a60273fe423"
+redux-act@^1.7.3:
+  version "1.7.3"
+  resolved "https://registry.yarnpkg.com/redux-act/-/redux-act-1.7.3.tgz#08897a2158df28f5c95c400110d8b0ae795e908c"
 
 redux-devtools-dispatch@^2.2.1:
   version "2.2.1"
