@@ -261,3 +261,27 @@ export function decodeHTML(input: string): string {
   convertDiv.innerHTML = input;
   return convertDiv.innerText;
 }
+
+/**
+ * test if a directory is a sub-directory of another one
+ * @param child path of the presumed sub-directory
+ * @param parent path of the presumed parent directory
+ */
+export function isChildPath(child: string, parent: string): boolean {
+  // TODO: should be using a FS-specific normalize function but then
+  //   this would have to be asynchronous.
+  const normalize = (input) => process.platform === 'win32'
+    ? path.normalize(input.toLowerCase())
+    : path.normalize(input);
+
+  const childNorm = normalize(child);
+  const parentNorm = normalize(parent);
+  if (child === parent) {
+    return false;
+  }
+
+  const tokens = parentNorm.split(path.sep).filter(token => token.length > 0);
+  const childTokens = childNorm.split(path.sep).filter(token => token.length > 0);
+
+  return tokens.every((token: string, idx: number) => childTokens[idx] === token);
+}

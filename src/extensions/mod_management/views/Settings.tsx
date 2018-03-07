@@ -24,6 +24,7 @@ import getSupportedActivators from '../util/supportedActivators';
 import getText from '../texts';
 
 import * as Promise from 'bluebird';
+import { remote } from 'electron';
 import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -33,6 +34,7 @@ import {
   HelpBlock, InputGroup, Jumbotron, Modal, Panel,
 } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { isChildPath } from '../../../util/util';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -215,12 +217,21 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private applyPaths = () => {
-    const { t, gameMode, onSetPath, onShowError } = this.props;
+    const { t, gameMode, onSetPath, onShowDialog, onShowError } = this.props;
     const newInstallPath: string = resolvePath('install', this.state.paths, gameMode);
     const newDownloadPath: string = resolvePath('download', this.state.paths, gameMode);
 
     const oldInstallPath = resolvePath('install', this.props.paths, gameMode);
     const oldDownloadPath = resolvePath('download', this.props.paths, gameMode);
+
+    const vortexPath = remote.app.getAppPath();
+    if (isChildPath(newInstallPath, vortexPath) || isChildPath(newDownloadPath, vortexPath)) {
+      return onShowDialog('error', 'Invalid paths selected', {
+                  text: 'You can not put mods and downloads into the vortex application directory. '
+                  + 'This directory gets removed during updates so you would lose all your '
+                  + 'files on the next update.',
+      }, [ { label: 'Close' } ]);
+    }
 
     const purgePromise = oldInstallPath !== newInstallPath
       ? this.purgeActivation()
