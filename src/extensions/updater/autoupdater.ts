@@ -1,9 +1,11 @@
+import { showDialog } from '../../actions';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { log } from '../../util/log';
+import { spawnSelf } from '../../util/util';
 
-import {ipcMain} from 'electron';
-import {autoUpdater as AUType} from 'electron-updater';
+import {app, ipcMain} from 'electron';
+import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
 
 function setupAutoUpdate(api: IExtensionApi) {
   const autoUpdater: typeof AUType = require('electron-updater').autoUpdater;
@@ -19,16 +21,27 @@ function setupAutoUpdate(api: IExtensionApi) {
   autoUpdater.on('update-not-available', () => {
                  log('info', 'no update available'); });
   autoUpdater.on('update-downloaded',
-                 (event, releaseNotes, releaseName, releaseDate, updateUrl,
-                  quitAndUpdate) => {
+                 (info: UpdateInfo) => {
                    log('info', 'update installed');
                    api.sendNotification({
                      type: 'success',
                      message: 'Update available',
                      actions: [
                        {
+                         title: 'Changelog',
+                         action: () => {
+                           api.store.dispatch(showDialog('info', `Changelog ${info.version}`, {
+                             htmlText: info.releaseNotes as string,
+                           }, [
+                             { label: 'Close' },
+                           ]));
+                         },
+                       },
+                       {
                          title: 'Restart & Install',
-                         action: () => { quitAndUpdate(); },
+                         action: () => {
+                           autoUpdater.quitAndInstall();
+                         },
                        },
                      ],
                    });
