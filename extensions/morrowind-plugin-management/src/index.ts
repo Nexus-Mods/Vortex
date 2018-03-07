@@ -61,6 +61,9 @@ function updatePluginOrder(iniFilePath: string, plugins: string[]) {
 function refreshPlugins(api: types.IExtensionApi): Promise<void> {
   const state = api.store.getState();
   const discovery = state.settings.gameMode.discovered['morrowind'];
+  if (discovery === undefined) {
+    return Promise.resolve();
+  }
 
   return fs.readdirAsync(path.join(discovery.path, 'Data Files'))
     .filter((fileName: string) =>
@@ -88,7 +91,7 @@ function init(context: types.IExtensionContext) {
         const discovery = state.settings.gameMode.discovered['morrowind'];
         const iniFilePath = path.join(discovery.path, 'Morrowind.ini');
         updatePluginOrder(iniFilePath, plugins);
-      }
+      },
     }),
   });
 
@@ -105,9 +108,8 @@ function init(context: types.IExtensionContext) {
     context.api.setStylesheet('morrowind-plugin-management',
                               path.join(__dirname, 'stylesheet.scss'));
 
-    refresher = new util.Debouncer(() => {
-      return refreshPlugins(context.api);
-    }, 2000);
+    refresher = new util.Debouncer(() =>
+      refreshPlugins(context.api), 2000);
     refresher.schedule();
 
   });
