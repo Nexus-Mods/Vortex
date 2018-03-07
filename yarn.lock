@@ -1650,9 +1650,9 @@ base64-js@^1.0.2:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/base64-js/-/base64-js-1.2.1.tgz#a91947da1f4a516ea38e5b4ec0ec3773675e0886"
 
-bbcode-to-react@^0.2.6:
-  version "0.2.7"
-  resolved "https://registry.yarnpkg.com/bbcode-to-react/-/bbcode-to-react-0.2.7.tgz#bd6e39b02c27051e3acf7f60737b3da159ec7378"
+bbcode-to-react@TanninOne/bbcode-to-react:
+  version "0.2.8"
+  resolved "https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/fb9fb07d069e0cf0793a1db5824a8b4888bbf7b4"
 
 bcrypt-pbkdf@^1.0.0:
   version "1.0.1"

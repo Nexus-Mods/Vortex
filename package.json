@@ -153,7 +153,7 @@
   },
   "dependencies": {
     "7zip-bin": "^2.3.4",
-    "bbcode-to-react": "^0.2.6",
+    "bbcode-to-react": "TanninOne/bbcode-to-react",
     "bluebird": "3.5.1",
     "classnames": "^2.2.5",
     "commander": "^2.11.0",
