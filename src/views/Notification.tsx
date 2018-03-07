@@ -1,33 +1,37 @@
 import Icon from '../controls/Icon';
 import Spinner from '../controls/Spinner';
-import { INotification, INotificationAction, NotificationType } from '../types/INotification';
+import { INotification, NotificationType } from '../types/INotification';
 import { ComponentEx } from '../util/ComponentEx';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
+import { fireNotificationAction } from '../actions';
 
 interface IActionProps {
   t: I18next.TranslationFunction;
+  notificationId: string;
+  notificationProcess: string;
+  title: string;
+  action: number;
   onDismiss: () => void;
 }
 
-class Action extends React.Component<IActionProps & INotificationAction, {}> {
+class Action extends React.Component<IActionProps, {}> {
   public render(): JSX.Element {
     const { t, title } = this.props;
-    return <Button onClick={this.action}>{t(title)}</Button>;
+    return <Button onClick={this.trigger}>{t(title)}</Button>;
   }
 
-  private action = () => {
-    if (this.props.action !== undefined) {
-      this.props.action(this.props.onDismiss);
-    }
+  private trigger = () => {
+    const { action, notificationId, notificationProcess, onDismiss } = this.props;
+    fireNotificationAction(notificationId, notificationProcess, action, onDismiss);
   }
 }
 
 export interface IProps {
   t: I18next.TranslationFunction;
-  params: INotification;
+  params: INotification & { process?: string };
   onDismiss: (id: string) => void;
 }
 
@@ -57,13 +61,15 @@ class Notification extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderAction = (action) => {
+  private renderAction = (action, idx) => {
     return (
       <Action
         key={action.title}
         t={this.props.t}
         title={action.title}
-        action={action.action}
+        notificationId={this.props.params.id}
+        notificationProcess={this.props.params.process}
+        action={idx}
         onDismiss={this.dismiss}
       />
     );

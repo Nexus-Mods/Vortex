@@ -1,5 +1,5 @@
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
-import { INotification } from '../types/INotification';
+import { INotification, NotificationDismiss } from '../types/INotification';
 import local from '../util/local';
 import {log} from '../util/log';
 import {truthy} from '../util/util';
@@ -7,6 +7,7 @@ import {truthy} from '../util/util';
 import safeCreateAction from './safeCreateAction';
 
 import * as Promise from 'bluebird';
+import { ipcMain, ipcRenderer } from 'electron';
 import * as reduxAct from 'redux-act';
 
 import { generate as shortid } from 'shortid';
@@ -18,14 +19,13 @@ const identity = input => input;
 /**
  * adds a notification to be displayed. Takes one parameter of type INotification. The id may be
  * left unset, in that case one will be generated
- * TODO: this stores a function into the store which seems to work but isn't supported
  */
 export const startNotification = safeCreateAction('ADD_NOTIFICATION', identity);
 
 /**
  * dismiss a notification. Takes the id of the notification
  */
-export const dismissNotification = safeCreateAction('DISMISS_NOTIFICATION', identity);
+export const stopNotification = safeCreateAction('STOP_NOTIFICATION', identity);
 
 /**
  * show a modal dialog to the user
@@ -49,6 +49,39 @@ export const dismissDialog = safeCreateAction('DISMISS_MODAL_DIALOG', identity);
 
 const timers = local<{ [id: string]: NodeJS.Timer }>('notification-timers', {});
 
+type NotificationFunc = (dismiss: NotificationDismiss) => void;
+const notificationActions = local<{ [id: string]: NotificationFunc[] }>('notification-actions', {});
+
+export function fireNotificationAction(notiId: string, notiProcess: string,
+                                       action: number, dismiss: NotificationDismiss) {
+  if (notiProcess === process.type) {
+    const func = notificationActions[notiId][action];
+    if (func !== undefined) {
+      func(dismiss);
+    }
+  } else {
+    // assumption is that notification actions are only triggered by the ui
+    // TODO: have to send synchronously because we need to know if we should dismiss
+    const res: boolean = ipcRenderer.sendSync('fire-notification-action', notiId, action);
+    if (res) {
+      dismiss();
+    }
+  }
+}
+
+if (ipcMain !== undefined) {
+  ipcMain.on('fire-notification-action',
+             (event: Electron.Event, notiId: string, action: number) => {
+    event.returnValue = false;
+    const func = notificationActions[notiId][action];
+    if (func !== undefined) {
+      func(() => {
+        event.returnValue = true;
+      });
+    }
+  });
+}
+
 /**
  * show a notification
  *
@@ -66,19 +99,37 @@ export function addNotification(notification: INotification) {
       // stop that timeout
       clearTimeout(timers[noti.id]);
       delete timers[noti.id];
+      delete notificationActions[noti.id];
     }
-    dispatch(startNotification(noti));
+
+    notificationActions[noti.id] = noti.actions === undefined
+      ? []
+      : noti.actions.map(action => action.action);
+
+    const storeNoti: any = JSON.parse(JSON.stringify(noti));
+    storeNoti.process = process.type;
+    storeNoti.actions = storeNoti.actions.map(action => ({ title: action.title })) as any;
+
+    dispatch(startNotification(storeNoti));
     if (noti.displayMS !== undefined) {
       return new Promise((resolve) => {
         timers[noti.id] = setTimeout(() =>
           resolve()
           , noti.displayMS);
       }).then(() => {
-        delete timers[noti.id];
         dispatch(dismissNotification(noti.id));
       });
     }
   };
+}
+
+export function dismissNotification(id: string) {
+  return dispatch => new Promise<void>((resolve, reject) => {
+    delete timers[id];
+    delete notificationActions[id];
+    dispatch(stopNotification(id));
+    resolve();
+  });
 }
 
 // singleton holding callbacks for active dialogs. The

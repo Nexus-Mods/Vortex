@@ -21,7 +21,7 @@ export const notificationsReducer: IReducerSpec = {
       }
       return pushSafe(temp, statePath, payload);
     },
-    [actions.dismissNotification as any]: (state, payload) => {
+    [actions.stopNotification as any]: (state, payload) => {
       return removeValueIf(removeValueIf(state, ['notifications'], (noti) => noti.id === payload),
         ['global_notifications'], (noti) => noti.id === payload);
     },
