@@ -108,7 +108,7 @@ export function addNotification(notification: INotification) {
 
     const storeNoti: any = JSON.parse(JSON.stringify(noti));
     storeNoti.process = process.type;
-    storeNoti.actions = storeNoti.actions.map(action => ({ title: action.title })) as any;
+    storeNoti.actions = (storeNoti.actions || []).map(action => ({ title: action.title })) as any;
 
     dispatch(startNotification(storeNoti));
     if (noti.displayMS !== undefined) {
