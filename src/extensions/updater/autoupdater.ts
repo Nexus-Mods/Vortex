@@ -53,7 +53,12 @@ function setupAutoUpdate(api: IExtensionApi) {
       const { channel } = state.settings.update;
       if ((channel !== 'none') && (process.env.NODE_ENV !== 'development')) {
         autoUpdater.allowPrerelease = channel === 'beta';
-        autoUpdater.checkForUpdates();
+        autoUpdater.checkForUpdates()
+        .catch(err => {
+          api.showErrorNotification('checking for update failed', err, {
+            allowReport: false,
+          });
+        });
       }
     } catch (err) {
       api.showErrorNotification('checking for update failed', err);
