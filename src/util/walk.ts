@@ -3,6 +3,10 @@ import * as fs from './fs';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 
+export interface IWalkOptions {
+  ignoreErrors?: string[] | true;
+}
+
 /**
  * recursively walk the target directory
  *
@@ -14,7 +18,9 @@ import * as path from 'path';
  * @returns {Promise<void>} a promise that is resolved once the search is complete
  */
 function walk(target: string,
-              callback: (iterPath: string, stats: fs.Stats) => Promise<any>): Promise<void> {
+              callback: (iterPath: string, stats: fs.Stats) => Promise<any>,
+              options?: IWalkOptions): Promise<void> {
+  const opt = options || {};
   let allFileNames: string[];
 
   return fs.readdirAsync(target)
@@ -39,6 +45,15 @@ function walk(target: string,
       });
       return Promise.all(cbPromises.concat(Promise.mapSeries(subDirs, (subDir) =>
         walk(subDir, callback))));
+    })
+    .catch(err => {
+      if ((opt.ignoreErrors !== undefined)
+          && ((opt.ignoreErrors === true)
+              || (opt.ignoreErrors.indexOf(err.code) !== -1))) {
+        return Promise.resolve();
+      } else {
+        return Promise.reject(err);
+      }
     })
     .then(() => undefined);
 }
