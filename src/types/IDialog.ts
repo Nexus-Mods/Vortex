@@ -32,6 +32,12 @@ export interface IInput {
   placeholder?: string;
 }
 
+export interface ILink {
+  label: string;
+  id?: string;
+  action?: (dismiss: () => void, id: string) => void;
+}
+
 export interface IDialogContent {
   htmlFile?: string;
   /**
@@ -58,6 +64,10 @@ export interface IDialogContent {
   checkboxes?: ICheckbox[];
   choices?: ICheckbox[];
   input?: IInput[];
+  /**
+   * list of clickable entries that don't (necessarily) cause the dialog to close
+   */
+  links?: ILink[];
   parameters?: any;
   options?: {
     translated?: boolean;

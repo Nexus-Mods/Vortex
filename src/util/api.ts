@@ -11,6 +11,7 @@ import { getGame, getGames } from '../extensions/gamemode_management';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import renderModName from '../extensions/mod_management/util/modName';
 import sortMods from '../extensions/mod_management/util/sort';
+import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
 import AsyncComponent from './AsyncComponent';
 import copyRecursive from './copyRecursive';
@@ -67,6 +68,7 @@ export {
   steam,
   ISteamEntry,
   terminate,
+  testModReference,
   UserCanceled,
   walk,
 };

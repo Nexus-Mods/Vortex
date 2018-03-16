@@ -19,6 +19,7 @@ import {
 } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
+import { ILink, triggerDialogLink } from '../actions';
 
 const nop = () => undefined;
 
@@ -217,6 +218,12 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         {content.input.map(this.renderInput)}
       </div>
       ));
+    } else if (content.links !== undefined) {
+      controls.push((
+        <div key='dialog-form-links'>
+          {content.links.map(this.renderLink)}
+        </div>
+      ));
     }
 
     return <div className='dialog-container'>{controls}</div>;
@@ -240,7 +247,17 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       />
       </FormGroup>
     );
+  }
 
+  private renderLink = (link: ILink, idx: number) => {
+    return (
+      <a key={idx} onClick={this.triggerLink} data-linkidx={idx}>{link.label}</a>
+    );
+  }
+
+  private triggerLink = (evt: React.MouseEvent<any>) => {
+    evt.preventDefault();
+    triggerDialogLink(this.props.dialogs[0].id, evt.currentTarget.getAttribute('data-linkidx'));
   }
 
   private renderCheckbox = (checkbox: ICheckbox) => {

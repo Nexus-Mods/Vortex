@@ -170,6 +170,9 @@ export function showDialog(type: DialogType, title: string,
         }
         resolve({ action: actionKey, input });
       };
+      DialogCallbacks.instance()[`__link-${id}`] = (idx: string) => {
+        content.links[idx].action(() => { dispatch(dismissDialog(id)); }, content.links[idx].id);
+      };
     });
   };
 }
@@ -178,7 +181,7 @@ export function closeDialog(id: string, actionKey: string, input: any) {
   return (dispatch) => {
     dispatch(dismissDialog(id));
     try {
-      if (DialogCallbacks.instance()[id] !== null) {
+      if (DialogCallbacks.instance()[id] !== undefined) {
         DialogCallbacks.instance()[id](actionKey, input);
       }
     } catch (err) {
@@ -187,4 +190,11 @@ export function closeDialog(id: string, actionKey: string, input: any) {
       delete DialogCallbacks.instance()[id];
     }
   };
+}
+
+export function triggerDialogLink(id: string, idx: number) {
+  const cbId = `__link-${id}`;
+  if (DialogCallbacks.instance()[cbId] !== undefined) {
+    DialogCallbacks.instance()[cbId](idx);
+  }
 }
