@@ -45,6 +45,8 @@ function stopPatterns(gameMode: string) {
                               'engine', 'environment', 'environment_levels', 'fx',
                               'game', 'globals', 'items', 'junk', 'levels', 'reactions',
                               'speedtree', 'templates', 'tests'].map(toWordExp).concat(uniPatterns);
+    case 'kingdomcomedeliverance':
+      return ['[^/]*\\.pak$'].concat(['mod.manifest'].map(toWordExp), uniPatterns);
     default: return [].concat(uniPatterns);
   }
 }
@@ -172,6 +174,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   witcher2: {
     stopPatterns: stopPatterns('witcher2'),
+  },
+  kingdomcomedeliverance: {
+    stopPatterns: stopPatterns('kingdomcomedeliverance'),
   },
 };
 
