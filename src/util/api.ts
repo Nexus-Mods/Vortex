@@ -10,6 +10,7 @@ import { resolveCategoryName, resolveCategoryPath } from '../extensions/category
 import { getGame, getGames } from '../extensions/gamemode_management';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import renderModName from '../extensions/mod_management/util/modName';
+import resolvePath from '../extensions/mod_management/util/resolvePath';
 import sortMods from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
@@ -61,6 +62,7 @@ export {
   renderModName,
   resolveCategoryName,
   resolveCategoryPath,
+  resolvePath,
   runElevated,
   runThreaded,
   setdefault,
