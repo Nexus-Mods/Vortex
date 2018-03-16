@@ -193,8 +193,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           if (this.props.mods[instanceId] === undefined) {
             return false;
           }
-          return (this.props.mods[instanceId].archiveId !== undefined)
-                ? true : this.props.t('No associated archive.');
+          return truthy(this.props.mods[instanceId].archiveId)
+               || this.props.t('No associated archive.');
         },
         singleRowAction: true,
       },
