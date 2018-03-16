@@ -1,4 +1,5 @@
 import { IStatePaths } from '../../../types/IState';
+import makeCI from '../../../util/makeCaseInsensitive';
 import { getSafe } from '../../../util/storeHelper';
 
 import { app as appIn, remote } from 'electron';
@@ -32,11 +33,11 @@ function resolvePath(key: PathKey, paths: {[gameId: string]: IStatePaths},
     userData = app.getPath('userData');
   }
 
-  const formatKeys = {
-    USERDATA: userData,
-    GAME: gameMode,
+  const formatKeys = makeCI({
+    userdata: userData,
+    game: gameMode,
     base: undefined,
-  };
+  });
   if (key !== 'base') {
     formatKeys.base = resolvePath('base', paths, gameMode);
   }
