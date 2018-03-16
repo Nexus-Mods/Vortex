@@ -882,7 +882,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   private selectRow = (evt: React.MouseEvent<any>) => {
     let iter = evt.target as any;
-    while ((iter !== null)
+    while (((iter !== null) && (iter !== undefined))
           && (iter.tagName !== 'BUTTON')
           && (this.getClasses(iter).split(' ').indexOf('xtd') === -1)) {
       iter = iter.parentNode;
