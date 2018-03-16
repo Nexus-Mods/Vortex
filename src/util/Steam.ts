@@ -53,19 +53,24 @@ class Steam implements ISteam {
         });
 
         this.mBaseFolder = new Promise<string>((resolve, reject) => {
-          regKey.get('SteamPath',
-                    (err: Error, result: Registry.RegistryItem) => {
-                      if (err !== null) {
-                        // hrm, if we notify the user about this, users without Steam will be
-                        // annoyed. If we don't, the lack of steam functionality may confuse
-                        // those who do have it. Well, it's their own fault for breaking
-                        // the registry keys really...
-                        log('info', 'steam not found', { error: err.message });
-                        resolve(undefined);
-                      } else {
-                        resolve(result.value);
-                      }
-                    });
+          try {
+            regKey.get('SteamPath',
+              (err: Error, result: Registry.RegistryItem) => {
+                if (err !== null) {
+                  // hrm, if we notify the user about this, users without Steam will be
+                  // annoyed. If we don't, the lack of steam functionality may confuse
+                  // those who do have it. Well, it's their own fault for breaking
+                  // the registry keys really...
+                  log('info', 'steam not found', { error: err.message });
+                  resolve(undefined);
+                } else {
+                  resolve(result.value);
+                }
+              });
+          } catch (err) {
+            log('warn', 'steam not found', { error: err.message });
+            resolve(undefined);
+          }
         });
     } else {
       this.mBaseFolder = Promise.resolve(path.resolve(app.getPath('home'), '.steam', 'steam'));
