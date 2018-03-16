@@ -1,5 +1,6 @@
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
+import * as path from 'path';
 import * as usvfs from 'usvfs';
 import { types, util } from 'vortex-api';
 
@@ -10,6 +11,7 @@ class USVFSDeploymentMethod implements types.IDeploymentMethod {
                              + 'applications started from Vortex';
 
   private mAPI: types.IExtensionApi;
+  private mDataPath: string;
 
   constructor(api: types.IExtensionApi) {
     this.mAPI = api;
@@ -33,6 +35,7 @@ class USVFSDeploymentMethod implements types.IDeploymentMethod {
     if (clean) {
       usvfs.clearMappings();
     }
+    this.mDataPath = dataPath;
     return Promise.resolve();
   }
 
@@ -46,7 +49,7 @@ class USVFSDeploymentMethod implements types.IDeploymentMethod {
 
   public activate(sourcePath: string, sourceName: string, dataPath: string,
                   blackList: Set<string>): Promise<void> {
-    usvfs.linkDirectory(sourcePath, dataPath, { recursive: true });
+    usvfs.linkDirectory(sourcePath, path.join(this.mDataPath, dataPath), { recursive: true });
     return Promise.resolve();
   }
 

@@ -200,7 +200,6 @@ class GameModeManager {
       shortName: game.shortName,
       id: game.id,
       logo: game.logo,
-      mergeMods: game.mergeMods,
       extensionPath: game.extensionPath,
       requiredFiles: game.requiredFiles,
       supportedTools: game.supportedTools !== undefined

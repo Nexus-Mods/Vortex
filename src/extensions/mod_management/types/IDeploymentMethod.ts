@@ -42,6 +42,11 @@ export interface IDeployedFile {
    */
   source: string;
   /**
+   * the output directory for the file. This will be empty for games that put all mods
+   * in the same directory (mergeMods is true).
+   */
+  target?: string;
+  /**
    * the last-modified time of the file. This can be used to determine if the file
    * was changed after deployment
    */

@@ -220,6 +220,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           this.mNewDeployment[this.mNormalize(relPath)] = {
             relPath,
             source: sourceName,
+            target: dataPath,
             time: entry.mtime * 1000,
           };
         }
@@ -335,7 +336,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
     const fullPath = path.join(installPathStr, this.mNewDeployment[key].source,
                                this.mNewDeployment[key].relPath);
     const fullOutputPath =
-        path.join(dataPath, this.mNewDeployment[key].relPath);
+        path.join(dataPath, this.mNewDeployment[key].target || '',
+                  this.mNewDeployment[key].relPath);
 
     const backupProm: Promise<void> = replace
       ? Promise.resolve(undefined)

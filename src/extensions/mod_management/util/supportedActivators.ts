@@ -1,6 +1,5 @@
 import {IState} from '../../../types/IState';
 import { getGame } from '../../gamemode_management';
-import { currentGameDiscovery } from '../../gamemode_management/selectors';
 import { activeGameId } from '../../profile_management/selectors';
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 

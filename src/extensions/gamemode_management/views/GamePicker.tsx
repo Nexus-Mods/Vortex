@@ -40,7 +40,6 @@ function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStore
     name: discovered.name,
     shortName: discovered.shortName,
     executable: discovered.executable,
-    mergeMods: discovered.mergeMods,
     extensionPath: discovered.extensionPath,
     logo: discovered.logo,
     requiredFiles: [],

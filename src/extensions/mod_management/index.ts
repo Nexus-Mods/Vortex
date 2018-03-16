@@ -65,7 +65,7 @@ import {} from './views/Settings';
 import { onAddMod, onGameModeActivated, onPathsChanged,
          onRemoveMod, onStartInstallDownload } from './eventHandlers';
 import InstallManager from './InstallManager';
-import { activateMods } from './modActivation';
+import deployMods from './modActivation';
 import mergeMods, { MERGED_PATH } from './modMerging';
 import getText from './texts';
 
@@ -238,6 +238,16 @@ function bakeSettings(api: IExtensionApi, gameMode: string, sortedModList: IMod[
   });
 }
 
+function genSubDirFunc(game: IGame): (mod: IMod) => string {
+  if (typeof(game.mergeMods) === 'boolean') {
+    return game.mergeMods
+      ? () => ''
+      : (mod: IMod) => mod.id;
+  } else {
+    return game.mergeMods;
+  }
+}
+
 function genUpdateModDeployment() {
   let lastActivatedState: { [modId: string]: IProfileMod };
   let lastGameDiscovery: IDiscoveryResult;
@@ -370,13 +380,14 @@ function genUpdateModDeployment() {
             const deployProgress =
               (name, percent) => progress(t('Deploying: ') + name, 50 + percent / 2);
             return Promise.each(Object.keys(modPaths),
-                typeId => activateMods(api,
-                                       game.id,
-                                       instPath, modPaths[typeId],
-                                       sortedModList.filter(mod => (mod.type || '') === typeId),
-                                       activator, lastDeployment[typeId],
-                                       typeId, new Set(mergedFileMap[typeId]),
-                                       deployProgress)
+                typeId => deployMods(api,
+                                     game.id,
+                                     instPath, modPaths[typeId],
+                                     sortedModList.filter(mod => (mod.type || '') === typeId),
+                                     activator, lastDeployment[typeId],
+                                     typeId, new Set(mergedFileMap[typeId]),
+                                     genSubDirFunc(game),
+                                     deployProgress)
               .then(newActivation =>
                 saveActivation(typeId, state.app.instanceId, modPaths[typeId], newActivation)));
           })

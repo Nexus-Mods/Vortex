@@ -15,7 +15,6 @@ import { BACKUP_TAG } from './LinkingDeployment';
 import { MERGED_PATH } from './modMerging';
 
 import * as Promise from 'bluebird';
-import * as crypto from 'crypto';
 import * as path from 'path';
 
 /**
@@ -29,17 +28,18 @@ import * as path from 'path';
  * @param {IDeploymentMethod} method the activator to use
  * @returns {Promise<void>}
  */
-export function activateMods(api: IExtensionApi,
-                             gameId: string,
-                             installationPath: string,
-                             destinationPath: string,
-                             mods: IMod[],
-                             method: IDeploymentMethod,
-                             lastActivation: IDeployedFile[],
-                             typeId: string,
-                             merged: Set<string>,
-                             progressCB?: (name: string, progress: number) => void,
-                            ): Promise<IDeployedFile[]> {
+function deployMods(api: IExtensionApi,
+                    gameId: string,
+                    installationPath: string,
+                    destinationPath: string,
+                    mods: IMod[],
+                    method: IDeploymentMethod,
+                    lastActivation: IDeployedFile[],
+                    typeId: string,
+                    merged: Set<string>,
+                    subDir: (mod: IMod) => string,
+                    progressCB?: (name: string, progress: number) => void,
+                   ): Promise<IDeployedFile[]> {
   return method.prepare(destinationPath, true, lastActivation)
     .then(() => Promise.each(mods, (mod, idx, length) => {
       try {
@@ -47,7 +47,7 @@ export function activateMods(api: IExtensionApi,
           progressCB(renderModName(mod), Math.round((idx * 50) / length));
         }
         return method.activate(path.join(installationPath, mod.installationPath),
-                              mod.installationPath, destinationPath, merged);
+                               mod.installationPath, subDir(mod), merged);
       } catch (err) {
         log('error', 'failed to deploy mod', {err: err.message, id: mod.id});
       }
@@ -57,7 +57,7 @@ export function activateMods(api: IExtensionApi,
         ? MERGED_PATH + '.' + typeId
         : MERGED_PATH;
       return method.activate(path.join(installationPath, mergePath),
-                             mergePath, destinationPath, new Set<string>());
+                             mergePath, '', new Set<string>());
     })
     .then(() => {
       const cb = progressCB === undefined
@@ -67,3 +67,5 @@ export function activateMods(api: IExtensionApi,
       return method.finalize(gameId, destinationPath, installationPath, cb);
     });
 }
+
+export default deployMods;
