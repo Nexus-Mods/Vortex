@@ -585,16 +585,21 @@ class DownloadManager {
       if (!truthy(download.urls)) {
         throw new ProcessCanceled('no download urls');
       }
-      // actual urls have to be resolved first
-      (download.urls as URLFunc)()
-        .then(urls => {
-          download.urls = urls;
-          job.url = download.urls[0];
-          this.startJob(download, job);
-        })
-        .catch(err => {
-          download.failedCB(err);
-        });
+      if (Array.isArray(download.urls)) {
+        job.url = download.urls[0];
+        this.startJob(download, job);
+      } else {
+        // actual urls may have to be resolved first
+        (download.urls as URLFunc)()
+          .then(urls => {
+            download.urls = urls;
+            job.url = download.urls[0];
+            this.startJob(download, job);
+          })
+          .catch(err => {
+            download.failedCB(err);
+          });
+      }
     } else {
       this.startJob(download, job);
     }
