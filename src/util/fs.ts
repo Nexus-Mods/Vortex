@@ -22,7 +22,7 @@ import * as path from 'path';
 import { getUserId } from 'permissions';
 import { generate as shortid } from 'shortid';
 
-const dialog = dialogIn || remote.dialog;
+const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
 export { constants, FSWatcher, Stats, WriteStream } from 'fs';
 

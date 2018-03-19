@@ -9,11 +9,11 @@ import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
 
 interface IConnectedProps {
-  updateChannel: 'stable' | 'beta';
+  updateChannel: 'stable' | 'beta' | 'none';
 }
 
 interface IActionProps {
-  onSetUpdateChannel: (channel: 'stable' | 'beta') => void;
+  onSetUpdateChannel: (channel: 'stable' | 'beta' | 'none') => void;
 }
 
 type IProps = IActionProps & IConnectedProps;
@@ -46,10 +46,10 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
 
   private selectChannel = (evt) => {
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    switch (target.value) {
-      case 'stable': this.props.onSetUpdateChannel('stable'); break;
-      case 'beta': this.props.onSetUpdateChannel('beta'); break;
-      default: log('error', 'invalid channel', target.value);
+    if (['stable', 'beta', 'none'].indexOf(target.value) !== -1) {
+      this.props.onSetUpdateChannel(target.value as any);
+    } else {
+      log('error', 'invalid channel', target.value);
     }
   }
 }
