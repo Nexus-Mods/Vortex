@@ -3487,8 +3487,8 @@ void-elements@^2.0.1:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-2.0.1.tgz#c066afb582bb1cb4128d60ea92392e94d5e9dbec"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
-  version "0.0.1"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/037cee575daa3b0894c811928063d2b4ffe66e80"
+  version "0.1.1"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/d51e51dc7afd45cc176ed27d51fd2987480a659f"
   dependencies:
     bluebird "^3.5.0"
     ffi "^2.2.0"
