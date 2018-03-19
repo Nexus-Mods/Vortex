@@ -11,7 +11,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "dependencies": {
-    "bbcode-to-react": "^0.2.6",
+    "bbcode-to-react": "TanninOne/bbcode-to-react",
     "bluebird": "^3.5.1",
     "bootstrap-sass": "^3.3.7",
     "content-disposition": "^0.5.2",

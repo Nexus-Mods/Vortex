@@ -2,7 +2,7 @@ jest.mock('../src/util/ExtensionProvider');
 
 import { MainWindow } from '../src/views/MainWindow';
 import React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 import { findAll, findWithType, findWithClass } from 'react-shallow-testutils';
 
 import { Label, Modal } from 'react-bootstrap';
