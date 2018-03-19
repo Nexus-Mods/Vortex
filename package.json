@@ -8,6 +8,9 @@
     "type": "git",
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
+  "vortex": {
+    "electron": "1.8.2"
+  },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
     "_assets_app": "node InstallAssets.js app",

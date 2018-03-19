@@ -213,7 +213,7 @@ function processRebuild(project, buildType, feedback) {
 
   return rebuild({
     buildPath: moduleDir,
-    electronVersion: packageJSON.engines.electron,
+    electronVersion: packageJSON.vortex.electron,
     arch: process.arch,
     onlyModules: [project.module],
     force: true,

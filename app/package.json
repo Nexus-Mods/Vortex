@@ -10,6 +10,9 @@
     "type": "git",
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
+  "vortex": {
+    "electron": "1.8.2"
+  },
   "dependencies": {
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "bluebird": "^3.5.1",
