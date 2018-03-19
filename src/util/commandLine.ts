@@ -7,6 +7,7 @@ export interface IParameters {
   wait?: boolean;
   get?: string;
   set?: string[];
+  del?: string;
   run?: string;
 }
 
@@ -27,6 +28,7 @@ function parseCommandline(argv: string[]): IParameters {
     .option('-s, --set [path]=[value]', 'Change a value in the state. Please be very careful '
                                       + 'with this, incorrect use will break Vortex and you may '
                                       + 'lose data', assign)
+    .option('--del [path]', 'Remove a value in state')
     .option('--wait', 'If another instance of Vortex is running, wait for it to end.')
     .option('--run [path]', 'Execute the js program instead of Vortex itself.')
     .option('--report [path]', 'Send an error report. For internal use')

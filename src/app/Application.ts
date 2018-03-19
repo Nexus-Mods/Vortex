@@ -102,6 +102,8 @@ class Application {
         this.handleGet(args.get);
       } else if (args.set) {
         this.handleSet(args.set);
+      } else if (args.del) {
+        this.handleDel(args.del);
       } else {
         this.regularStart(args);
       }
@@ -138,6 +140,10 @@ class Application {
         });
   }
 
+  private splitPath(statePath: string): string[] {
+    return statePath.match(/(\\.|[^.])+/g).map(input => input.replace(/\\(.)/, '$1'));
+  }
+
   private handleGet(getPath: string | boolean): Promise<void> {
     if (typeof(getPath) === 'boolean') {
       fs.writeSync(1, 'Usage: vortex --get <path>\n');
@@ -147,7 +153,7 @@ class Application {
 
     const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
     const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
-    const pathArray = getPath.split('.');
+    const pathArray = this.splitPath(getPath);
 
     let persist: LevelPersist;
 
@@ -177,7 +183,7 @@ class Application {
 
     const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
     const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
-    const pathArray = setParameters[0].split('.');
+    const pathArray = this.splitPath(setParameters[0]);
 
     let persist: LevelPersist;
 
@@ -194,6 +200,31 @@ class Application {
             : oldValue.constructor(setParameters[1]);
         return persist.setItem(pathArray, newValue);
       }).then(() => { process.stdout.write('changed\n'); })
+      .catch(err => { process.stderr.write(err.message + '\n'); })
+      .finally(() => {
+        app.quit();
+      });
+  }
+
+  private handleDel(delPath: string): Promise<void> {
+    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
+    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+    const pathArray = this.splitPath(delPath);
+
+    let persist: LevelPersist;
+
+    return LevelPersist.create(dbpath)
+      .then(persistIn => {
+        persist = persistIn;
+        return persist.getAllKeys();
+      })
+      .filter((key: string[]) => _.isEqual(key.slice(0, pathArray.length), pathArray))
+      .map((key: string[]) => {
+        // tslint:disable-next-line:no-console
+        console.log('removing', key.join('.'));
+        return persist.removeItem(key);
+      })
+      .then(() => { process.stdout.write('removed\n'); })
       .catch(err => { process.stderr.write(err.message + '\n'); })
       .finally(() => {
         app.quit();
