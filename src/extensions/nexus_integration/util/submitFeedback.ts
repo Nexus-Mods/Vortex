@@ -33,12 +33,12 @@ function zipFiles(files: string[]): Promise<string> {
 }
 
 function submitFeedback(nexus: Nexus, message: string, feedbackFiles: string[],
-                        anonymous: boolean): Promise<void> {
+                        anonymous: boolean, hash: string): Promise<void> {
   let archive: string;
   return zipFiles(feedbackFiles)
     .then(tmpPath => {
       archive = tmpPath;
-      return nexus.sendFeedback(message, tmpPath, anonymous);
+      return nexus.sendFeedback(message, tmpPath, anonymous, hash);
     })
     .then(() => {
       if (archive !== undefined) {

@@ -1,13 +1,14 @@
+import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import { IMainPage } from '../types/IMainPage';
 import { ComponentEx, translate } from '../util/ComponentEx';
+import { genHash } from '../util/errorHandling';
 import { log } from '../util/log';
 
 import { remote } from 'electron';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Alert, Button, Jumbotron } from 'react-bootstrap';
-import FlexLayout from '../controls/FlexLayout';
 
 export interface IBaseProps {
   page: IMainPage;
@@ -119,7 +120,7 @@ ${error.stack}
 
 ComponentStack:
   ${errorInfo.componentStack}
-`);
+`, [], genHash(error));
   }
 
   private retryRender = () => {

@@ -1,4 +1,5 @@
 import { ComponentEx } from '../util/ComponentEx';
+import { genHash } from '../util/errorHandling';
 
 import Icon from './Icon';
 
@@ -83,7 +84,7 @@ ${error.stack}
 
 ComponentStack:
   ${errorInfo.componentStack}
-`);
+`, [], genHash(error));
   }
 
   private retryRender = () => {

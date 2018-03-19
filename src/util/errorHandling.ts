@@ -55,7 +55,7 @@ ${error.stack}
   return `### Application ${type}\n` + sections.join('\n');
 }
 
-function genHash(error: IError) {
+export function genHash(error: IError) {
   const { createHash } = require('crypto');
   const hash = createHash('md5');
   if (error.stack !== undefined) {
