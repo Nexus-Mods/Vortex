@@ -80,7 +80,8 @@ function execInfo(scriptPath: string) {
 function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
                       main: (ipc) => Promise<void>) {
   const handleError = (error: any) => {
-    require('electron').dialog.showErrorBox('Elevated code failed', error.stack);
+    // tslint:disable-next-line:no-console
+    console.error('Elevated code failed', error.stack);
   };
   process.on('uncaughtException', handleError);
   process.on('unhandledRejection', handleError);

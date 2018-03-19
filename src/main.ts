@@ -77,6 +77,7 @@ function main() {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',
       },
+      stdio: 'inherit',
       detached: true,
     })
     .on('error', err => {

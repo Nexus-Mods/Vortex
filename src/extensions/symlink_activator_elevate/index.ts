@@ -1,5 +1,5 @@
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
-import {UserCanceled} from '../../util/CustomErrors';
+import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
 import { delayed } from '../../util/delayed';
 import * as elevatedT from '../../util/elevated';
 import * as fs from '../../util/fs';
@@ -33,8 +33,9 @@ class DeploymentMethod extends LinkingDeployment {
   public description: string;
 
   private mElevatedClient: any;
-  private mOutstanding: string[];
   private mQuitTimer: NodeJS.Timer;
+  private mCounter: number;
+  private mOpenRequests: { [num: number]: { resolve: () => void, reject: (err: Error) => void } };
   private mDone: () => void;
   private mWaitForUser: () => Promise<void>;
 
@@ -83,11 +84,17 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[]): Promise<void> {
+    this.mCounter = 0;
+    this.mOpenRequests = {};
     return super.prepare(dataPath, clean, lastActivation);
   }
 
   public finalize(gameId: string, dataPath: string,
                   installationPath: string): Promise<IDeployedFile[]> {
+    Object.keys(this.mOpenRequests).forEach(num => {
+      this.mOpenRequests[num].reject(new ProcessCanceled('unfinished'));
+    });
+    this.mOpenRequests = {};
     return this.startElevated()
         .then(() => super.finalize(gameId, dataPath, installationPath))
         .then(result => this.stopElevated().then(() => result));
@@ -113,21 +120,19 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.mOutstanding.push(sourcePath);
-
+      const num = this.mCounter++;
       ipc.server.emit(this.mElevatedClient, 'link-file',
-        { source: sourcePath, destination: linkPath });
-      resolve();
+        { source: sourcePath, destination: linkPath, num });
+      this.mOpenRequests[num] = { resolve, reject };
     });
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.mOutstanding.push(linkPath);
-
+      const num = this.mCounter++;
       ipc.server.emit(this.mElevatedClient, 'remove-link',
-        { destination: linkPath });
-      resolve();
+        { destination: linkPath, num });
+      this.mOpenRequests[num] = { resolve, reject };
     });
   }
 
@@ -161,7 +166,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private startElevated(): Promise<void> {
-    this.mOutstanding = [];
+    this.mOpenRequests = {};
     this.mDone = null;
     const ipcPath: string = 'vortex_elevate_symlink';
 
@@ -179,9 +184,18 @@ class DeploymentMethod extends LinkingDeployment {
         connected = true;
         resolve();
       });
-      ipc.server.on('finished', (modPath: string) => {
-        this.mOutstanding.splice(this.mOutstanding.indexOf(modPath), 1);
-        if ((this.mOutstanding.length === 0) && (this.mDone !== null)) {
+      ipc.server.on('completed', (data, socket) => {
+        const { err, num } = data;
+        const task = this.mOpenRequests[num];
+        if (task !== undefined) {
+          if (err !== null) {
+            task.reject(err);
+          } else {
+            task.resolve();
+          }
+          delete this.mOpenRequests[num];
+        }
+        if ((Object.keys(this.mOpenRequests).length === 0) && (this.mDone !== null)) {
           this.finish();
         }
       });
@@ -212,7 +226,7 @@ class DeploymentMethod extends LinkingDeployment {
       this.mDone = () => {
         resolve();
       };
-      if (this.mOutstanding.length === 0) {
+      if (Object.keys(this.mOpenRequests).length === 0) {
         this.finish();
       }
     });

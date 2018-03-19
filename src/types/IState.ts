@@ -158,9 +158,9 @@ export interface ISettingsGameMode {
 }
 
 export interface ISettingsDownloads {
-    minChunkSize: number;
-    maxChunks: number;
-    maxParallelDownloads: number;
+  minChunkSize: number;
+  maxChunks: number;
+  maxParallelDownloads: number;
 }
 
 export interface IStatePaths {

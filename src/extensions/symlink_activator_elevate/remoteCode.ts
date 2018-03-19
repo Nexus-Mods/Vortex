@@ -7,7 +7,7 @@ export function remoteCode(ipcClient) {
     const path = require('path');
 
     ipcClient.on('link-file', (payload) => {
-      const {source, destination} = payload;
+      const {source, destination, num} = payload;
       fs.ensureDirAsync(path.dirname(destination))
           .then(created => {
             if (created !== null) {
@@ -31,6 +31,7 @@ export function remoteCode(ipcClient) {
               message: 'installed',
               meta: {source, destination},
             });
+            ipcClient.emit('completed', { err: null, num });
           })
           .catch((err) => {
             ipcClient.emit('log', {
@@ -38,55 +39,26 @@ export function remoteCode(ipcClient) {
               message: 'failed to install symlink',
               meta: {err: err.message},
             });
-          })
-          .finally(() => { ipcClient.emit('finished', {source}); });
+            ipcClient.emit('completed', { err, num });
+          });
     });
 
     ipcClient.on('remove-link', (payload) => {
-      const { destination } = payload;
+      const { destination, num } = payload;
       fs.lstatAsync(destination)
       .then(stats => {
         if (stats.isSymbolicLink()) {
           return fs.removeAsync(destination);
         }
       })
-      .finally(() => { ipcClient.emit('finished', {destination}); });
+      .then(() => {
+        ipcClient.emit('completed', { err: null, num });
+      })
+      .catch((err) => {
+        ipcClient.emit('completed', { err, num });
+      });
     });
 
-    ipcClient.on('create-link', (payload) => {
-      const {source, destination} = payload;
-      try {
-        walk(source, (iterPath: string, stat) => {
-          const relPath: string = path.relative(source, iterPath);
-          const destFile: string = path.join(destination, relPath);
-          if (stat.isDirectory()) {
-            return fs.mkdirAsync(destFile);
-          } else {
-            return fs.symlinkAsync(iterPath, destFile)
-                .then(() => {
-                  ipcClient.emit('log', {
-                    level: 'debug',
-                    message: 'installed',
-                    meta: {source: iterPath, destination: destFile},
-                  });
-                })
-                .catch((err) => {
-                  ipcClient.emit('log', {
-                    level: 'error',
-                    message: 'failed to install symlink',
-                    meta: {err: err.message},
-                  });
-                });
-          }
-        }).finally(() => { ipcClient.emit('finished', {source}); });
-      } catch (err) {
-        ipcClient.emit('log', {
-          level: 'info',
-          message: 'failed to create link',
-          meta: {err: err.message},
-        });
-      }
-    });
     ipcClient.on('disconnect', () => { resolve(); });
     ipcClient.emit('initialised');
   });

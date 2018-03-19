@@ -1,4 +1,6 @@
-import * as fs from '../../util/fs';
+// IMPORTANT: This file is included from elevated code, it can't include electron stuff
+
+import * as fs from 'fs-extra-promise';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
