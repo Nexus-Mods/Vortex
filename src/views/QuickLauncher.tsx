@@ -59,9 +59,11 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidMount() {
-    this.context.api.events.on('quick-launch', () => {
-      this.start();
-    });
+    this.context.api.events.on('quick-launch', this.start);
+  }
+
+  public componentWillUnmount() {
+    this.context.api.events.removeListener('quick-launch', this.start);
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
