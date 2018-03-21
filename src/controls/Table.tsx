@@ -31,6 +31,7 @@ import * as SplitPane from 'react-split-pane';
 import * as Redux from 'redux';
 import { createSelector } from 'reselect';
 import { IconButton } from './TooltipControls';
+import { II18NProps } from '../types/II18NProps';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -87,7 +88,7 @@ interface IComponentState {
   rowIdsDelayed: string[];
 }
 
-type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps & II18NProps;
 
 /**
  * a wrapper for the react-bootstrap table adding various features:
@@ -147,6 +148,13 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   public componentWillMount() {
     this.updateSelection(this.props);
     this.context.api.events.on(this.props.tableId + '-scroll-to', this.scrollTo);
+    this.props.objects.forEach(object => {
+      if (object.externalData !== undefined) {
+        object.externalData(() => {
+          this.invalidate(object.id);
+        });
+      }
+    });
   }
 
   public componentWillUnmount() {
@@ -310,6 +318,10 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
           { id, tableId: this.props.tableId, error: err.message });
       }
     }
+  }
+
+  private invalidate(columnId: string)  {
+    this.updateCalculatedValues(this.props, columnId);
   }
 
   private toggleDetails = () => {
@@ -686,7 +698,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     }
   }
 
-  private updateCalculatedValues(props): Promise<boolean> {
+  private updateCalculatedValues(props: IProps, forceUpdateId?: string): Promise<boolean> {
     this.mNextUpdateState = props;
     if (this.mUpdateInProgress) {
       return Promise.resolve(true);
@@ -703,7 +715,9 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       const delta: any = {};
 
       return Promise.map(objects, (attribute: ITableAttribute) => {
-        if (!attribute.isVolatile && (oldData[rowId] === data[rowId])) {
+        if (!attribute.isVolatile
+            && (attribute.id !== forceUpdateId)
+            && (oldData[rowId] === data[rowId])) {
           return Promise.resolve();
         }
         return Promise.resolve(attribute.calc(data[rowId], t))
@@ -1071,7 +1085,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
 const emptyObj = {};
 
-function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedProps {
+function mapStateToProps(state: any, ownProps: any): IConnectedProps {
   return {
     language: state.settings.interface.language,
     attributeState:
@@ -1118,6 +1132,6 @@ export function makeGetSelection(tableId: string) {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(
-      extend(registerTableAttribute)(
+    extend(registerTableAttribute)(
+      connect(mapStateToProps, mapDispatchToProps)(
         SuperTable))) as React.ComponentClass<IBaseProps & IExtensibleProps>;

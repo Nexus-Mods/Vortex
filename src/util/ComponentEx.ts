@@ -127,6 +127,7 @@ export class PureComponentEx<P, S extends object> extends React.PureComponent<P 
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,
+    getModifiers: PropTypes.func,
   };
 
   public context: IComponentContext;

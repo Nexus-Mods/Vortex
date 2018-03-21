@@ -89,10 +89,12 @@ export interface ITableAttribute<T = any> {
    */
   isDefaultSort?: boolean;
   /**
-   * if true, the calc-function for this attribute is called from time to time to see if it changed.
+   * TODO: Obsolete
+   * if true, the calc-function for this attribute is called whenever table data is refreshed,
+   * even if the corresponding row data didn't change.
    * Otherwise (default) the values for this attribute are only updated when the input data to the
-   * table changes. This means you need this flag, if the value of the attribute may change without
-   * the table data changing.
+   * row changes. This means you need this flag, if the value of the attribute may change without
+   * the row data changing.
    * This is the case for example when your extension generates data in a separate object and then
    * only uses the row id to look up data from that object.
    * If you fail to set this flag when the rendered data isn't part of the table data
@@ -101,6 +103,13 @@ export interface ITableAttribute<T = any> {
    * may want to use a custom renderer with some manner of caching and debouncing.
    */
   isVolatile?: boolean;
+  /**
+   * when using external data (not part of the data passed to the table) in calc or customRenderer,
+   * set this parameter.
+   * This function gets called with a callback that then needs to be called whenever the external data
+   * (any of it) changes to cause a rerender.
+   */
+  externalData?: (onChanged: () => void) => void;
   /**
    * specifies whether the attribute appears in the table, the details pane or both.
    * \note that "isToggleable" and "isSortable" have no effect on attributes that don't appear
