@@ -139,8 +139,8 @@ export function loadActivation(api: IExtensionApi, modType: string,
           return emptyManifest(instanceId);
         }
         return Promise.reject(
-          new Error(`${err.message}.\nIf you report this, `
-                    + `please include the file "${tagFile}"`));
+          new Error(`${err.message}.\n*** When you report this, `
+                    + `please include the file "${tagFile} ***"`));
       })
       .then(tagObject => {
         if (tagObject === undefined) {
