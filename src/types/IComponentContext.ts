@@ -1,4 +1,5 @@
 import { IExtensionApi } from './IExtensionContext';
+import { IModifiers } from './IModifiers';
 
 /**
  * the context object passed along with all components
@@ -9,4 +10,5 @@ import { IExtensionApi } from './IExtensionContext';
 export interface IComponentContext {
   api: IExtensionApi;
   menuLayer: JSX.Element;
+  getModifiers: () => IModifiers;
 }

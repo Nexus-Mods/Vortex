@@ -107,6 +107,7 @@ export class ComponentEx<P, S extends object> extends React.Component<P & II18NP
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,
+    getModifiers: PropTypes.func,
   };
 
   public context: IComponentContext;

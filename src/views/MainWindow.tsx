@@ -11,6 +11,8 @@ import { IComponentContext } from '../types/IComponentContext';
 import { IExtensionApi, IMainPageOptions } from '../types/IExtensionContext';
 import { II18NProps } from '../types/II18NProps';
 import { IMainPage } from '../types/IMainPage';
+import { IModifiers } from '../types/IModifiers';
+import { INotification } from '../types/INotification';
 import { IProgress, IState } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
 import { getSafe } from '../util/storeHelper';
@@ -37,7 +39,6 @@ import { Alert, Badge, Button as ReactButton, ControlLabel, FormGroup,
 // tslint:disable-next-line:no-submodule-imports
 import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
-import { INotification } from '../types/INotification';
 
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
@@ -89,6 +90,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   public static childContextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,
+    getModifiers:  PropTypes.func,
   };
 
   private applicationButtons: IActionDefinition[];
@@ -96,6 +98,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private settingsPage: IMainPage;
   private nextState: IMainWindowState;
   private globalButtons: IActionDefinition[] = [];
+  private modifiers: IModifiers = { alt: false, ctrl: false, shift: false };
 
   private menuLayer: JSX.Element = null;
 
@@ -138,7 +141,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public getChildContext(): IComponentContext {
     const { api } = this.props;
-    return { api, menuLayer: this.menuLayer };
+    return { api, menuLayer: this.menuLayer, getModifiers: () => this.modifiers };
   }
 
   public componentWillMount() {
@@ -156,10 +159,14 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public componentDidMount() {
     window.addEventListener('resize', this.updateSize);
+    window.addEventListener('keydown', this.updateModifiers);
+    window.addEventListener('keyup', this.updateModifiers);
   }
 
   public componentWillUnmount() {
     window.removeEventListener('resize', this.updateSize);
+    window.removeEventListener('keydown', this.updateModifiers);
+    window.removeEventListener('keyup', this.updateModifiers);
   }
 
   public shouldComponentUpdate(nextProps: IProps, nextState: IMainWindowState) {
@@ -237,6 +244,17 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
       </div>
     );
+  }
+
+  private updateModifiers = (event: KeyboardEvent) => {
+    const newModifiers = {
+      alt: event.altKey,
+      ctrl: event.ctrlKey,
+      shift: event.shiftKey,
+    };
+    if (!_.isEqual(newModifiers, this.modifiers)) {
+      this.modifiers = newModifiers;
+    }
   }
 
   private updateState(spec: any) {
