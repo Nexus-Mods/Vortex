@@ -14,7 +14,7 @@ import allTypesSupported from './allTypesSupported';
 function supportedActivators(activators: IDeploymentMethod[], state: IState): IDeploymentMethod[] {
   const gameId = activeGameId(state);
   const discovery = state.settings.gameMode.discovered[gameId];
-  if (discovery === undefined) {
+  if ((discovery === undefined) || (discovery.path === undefined)) {
     return [];
   }
   const game = getGame(gameId);
