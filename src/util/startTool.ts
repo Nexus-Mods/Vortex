@@ -109,7 +109,7 @@ function startTool(starter: StarterInfo,
                    onShowError: ShowError,
                    ): Promise<void> {
   if (starter.exePath === undefined) {
-    onShowError('Tool not configured', 'Configuration for this tool is incomplete');
+    onShowError('Tool not configured', 'Configuration for this tool is incomplete', false);
     return Promise.resolve();
   }
   return startDeploy(queryDeploy, events)
