@@ -73,11 +73,14 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<str
     })
     .then(() => {
       try {
-        return Promise.resolve(alg.topsort(dependencies));
+        const res = alg.topsort(dependencies);
+        api.dismissNotification('mod-cycle-warning');
+        return Promise.resolve(res);
       } catch (err) {
         // exception type not included in typings
         if (err instanceof (alg.topsort as any).CycleException) {
           api.sendNotification({
+            id: 'mod-cycle-warning',
             type: 'warning',
             message: 'Mod rules contain cycles',
             actions: [
