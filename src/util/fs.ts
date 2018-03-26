@@ -34,7 +34,6 @@ export {
   closeSync,
   createReadStream,
   createWriteStream,
-  ensureDirAsync,
   ensureDirSync,
   fsyncAsync,
   linkAsync,
@@ -85,6 +84,21 @@ export {
 
 export function ensureFileAsync(filePath: string): Promise<void> {
   return (fs as any).ensureFileAsync(filePath);
+}
+
+export function ensureDirAsync(dirPath: string): Promise<void> {
+  const stack = new Error().stack;
+  return fs.ensureDirAsync(dirPath)
+    .catch(err => {
+      // ensureDir isn't supposed to cause EEXIST errors as far as I understood
+      // it but on windows, when targeting a OneDrive path (and similar?)
+      // it apparently still does
+      if (err.code === 'EEXIST') {
+        return Promise.resolve();
+      }
+      err.stack = err.message + '\n' + stack;
+      return Promise.reject(err);
+    });
 }
 
 export function copyAsync(src: string, dest: string,
