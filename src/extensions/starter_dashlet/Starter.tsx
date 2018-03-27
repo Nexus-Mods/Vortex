@@ -13,7 +13,6 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import StarterInfo from '../../util/StarterInfo';
-import { DeployResult } from '../../util/startTool';
 import { getSafe } from '../../util/storeHelper';
 
 import {
@@ -51,7 +50,7 @@ interface IWelcomeScreenState {
 interface IActionProps {
   onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => void;
   onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => void;
-  onShowError: (message: string, details?: string | Error, allowReport?: boolean) => void;
+  onShowError: (message: string, details?: any, allowReport?: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onMakePrimary: (gameId: string, toolId: string) => void;
@@ -62,7 +61,6 @@ interface IConnectedProps {
   knownGames: IGameStored[];
   discoveredGames: { [id: string]: IDiscoveryResult };
   discoveredTools: { [id: string]: IDiscoveredTool };
-  autoDeploy: boolean;
   primaryTool: string;
 }
 
@@ -297,42 +295,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     return starters;
   }
 
-  private queryElevate = (name: string) => {
-    const { t, onShowDialog } = this.props;
-    return onShowDialog('question', t('Requires elevation'), {
-      message: t('{{name}} needs to be run as administrator.', {
-          replace: {
-            name,
-          },
-        }),
-      options: {
-        translated: true,
-      },
-    }, [ { label: 'Cancel' }, { label: 'Run as administrator' } ])
-    .then(result => {
-        return result.action === 'Run as administrator';
-      });
-  }
-
-  private queryDeploy = (): Promise<DeployResult> => {
-    const { autoDeploy, onShowDialog } = this.props;
-    if (autoDeploy) {
-      return Promise.resolve<DeployResult>('auto');
-    } else {
-      return onShowDialog('question', 'Deploy now?', {
-        message: 'You should deploy mods now, otherwise the mods in game '
-        + 'will be outdated',
-      }, [ { label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' } ])
-        .then((result) => {
-          switch (result.action) {
-            case 'Skip': return Promise.resolve<DeployResult>('skip');
-            case 'Deploy': return Promise.resolve<DeployResult>('yes');
-            default: return Promise.resolve<DeployResult>('cancel');
-          }
-        });
-    }
-  }
-
   private startGame = () => {
     const { primaryTool } = this.props;
     const { tools } = this.state;
@@ -346,15 +308,32 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private startTool = (info: StarterInfo) => {
-    const startTool = require('../../util/startTool').default;
-    startTool(info, this.context.api.events, this.queryElevate,
-      this.queryDeploy, this.props.onShowError)
-      .catch((err: Error) => {
-        if (!(err instanceof UserCanceled)) {
-          this.props.onShowError('Failed to deploy', err);
+    this.context.api.runExecutable(info.exePath, info.commandLine, {
+      cwd: info.workingDirectory,
+      env: info.environment,
+      suggestDeploy: true,
+    })
+      .catch(err => {
+        const { onShowError } = this.props;
+        if (err.errno === 'ENOENT') {
+          onShowError('Failed to run tool', {
+            executable: info.exePath,
+            error: 'Executable doesn\'t exist, please check the configuration for this tool.',
+          }, false);
+        } else if (err.errno === 'UNKNOWN') {
+          // this sucks but node.js doesn't give us too much information about what went wrong
+          // and we can't have users misconfigure their tools and then report the error they
+          // get as feedback
+          onShowError('Failed to run tool', {
+            error: 'File is not executable, please check the configuration for this tool.',
+          }, false);
+        } else {
+          onShowError('Failed to run tool', {
+            executable: info.exePath,
+            error: err.stack,
+          });
         }
-      })
-      ;
+      });
   }
 
   private unhide = (toolId: any) => {
@@ -436,7 +415,6 @@ function mapStateToProps(state: any): IConnectedProps {
     discoveredGames: state.settings.gameMode.discovered,
     discoveredTools: getSafe(state, ['settings', 'gameMode',
       'discovered', gameMode, 'tools'], {}),
-    autoDeploy: state.settings.automation.deploy,
     primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', gameMode], undefined),
   };
 }

@@ -12,7 +12,6 @@ import { log } from '../util/log';
 import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
 import StarterInfo from '../util/StarterInfo';
-import { DeployResult } from '../util/startTool';
 import { getSafe } from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
@@ -31,7 +30,6 @@ interface IConnectedProps {
   game: IGameStored;
   gameDiscovery: IDiscoveryResult;
   discoveredTools: { [toolId: string]: IDiscoveredTool };
-  autoDeploy: boolean;
   primaryTool: string;
   tabsMinimized: boolean;
   profiles: { [profileId: string]: IProfile };
@@ -40,7 +38,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onShowError: (message: string, details?: string | Error, allowReport?: boolean) => void;
+  onShowError: (message: string, details?: any, allowReport?: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
 }
@@ -191,30 +189,33 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     .then(result => result.action === 'Run as administrator');
   }
 
-  private queryDeploy = (): Promise<DeployResult> => {
-    const { autoDeploy, onShowDialog } = this.props;
-    if (autoDeploy) {
-      return Promise.resolve<DeployResult>('auto');
-    } else {
-      return onShowDialog('question', 'Deploy now?', {
-        message: 'You should deploy mods now, otherwise the mods in game '
-               + 'will be outdated',
-      }, [ { label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' } ])
-      .then((result) => {
-        switch (result.action) {
-          case 'Skip': return Promise.resolve<DeployResult>('skip');
-          case 'Deploy': return Promise.resolve<DeployResult>('yes');
-          default: return Promise.resolve<DeployResult>('cancel');
-        }
-      });
-    }
-  }
-
   private start = () => {
-    const { onShowError } = this.props;
-    const startTool = require('../util/startTool').default;
-    startTool(this.state.starter, this.context.api.events,
-              this.queryElevate, this.queryDeploy, onShowError);
+    const { starter } = this.state;
+    this.context.api.runExecutable(starter.exePath, starter.commandLine, {
+      cwd: starter.workingDirectory,
+      env: starter.environment,
+      suggestDeploy: true,
+    }).catch(err => {
+      const { onShowError } = this.props;
+      if (err.errno === 'ENOENT') {
+        onShowError('Failed to run tool', {
+          executable: starter.exePath,
+          error: 'Executable doesn\'t exist, please check the configuration for this tool.',
+        }, false);
+      } else if (err.errno === 'UNKNOWN') {
+        // this sucks but node.js doesn't give us too much information about what went wrong
+        // and we can't have users misconfigure their tools and then report the error they
+        // get as feedback
+        onShowError('Failed to run tool', {
+          error: 'File is not executable, please check the configuration for this tool.',
+        }, false);
+      } else {
+        onShowError('Failed to run tool', {
+          executable: starter.exePath,
+          error: err.stack,
+        });
+      }
+    });
   }
 
   private makeStarter(props: IProps): StarterInfo {
@@ -255,7 +256,6 @@ function mapStateToProps(state: any): IConnectedProps {
     gameDiscovery: currentGameDiscovery(state),
     discoveredTools: getSafe(state, [ 'settings', 'gameMode',
                                       'discovered', gameMode, 'tools' ], {}),
-    autoDeploy: state.settings.automation.deploy,
     primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', gameMode], undefined),
     tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
 

@@ -161,8 +161,21 @@ interface IActionProps {
   onEditEnv: (itemId: string) => void;
 }
 
+interface IEditStarterInfo {
+  id: string;
+  gameId: string;
+  isGame: boolean;
+  iconPath: string;
+  iconOutPath: string;
+  name: string;
+  exePath: string;
+  commandLine: string;
+  workingDirectory: string;
+  environment: { [key: string]: string };
+}
+
 interface IToolEditState {
-  tool: IStarterInfo;
+  tool: IEditStarterInfo;
   imageId: number;
 }
 
@@ -179,7 +192,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   constructor(props: IProps) {
     super(props);
     this.initState({
-      tool: { ...props.tool },
+      tool: this.toEditStarter(props.tool),
       imageId: new Date().getTime(),
     });
     this.mUpdateImageDebouncer = new Debouncer((imagePath: string) => {
@@ -244,7 +257,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
               label={t('Command Line')}
               placeholder={t('Command Line Parameters')}
               stateKey='commandLine'
-              value={tool.commandLine.join(' ')}
+              value={tool.commandLine}
               onChangeValue={this.handleChangeParameters}
             />
 
@@ -365,8 +378,32 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     this.nextState.tool[field] = value;
   }
 
+  private splitCommandLine(input: string): string[] {
+    const res = [];
+    let inBrackets = false;
+    let startOffset = 0;
+
+    const completeWord = (i) => {
+      res.push(input.slice(startOffset, i));
+      startOffset = i + 1;
+    };
+
+    for (let i = 0; i < input.length; ++i) {
+      if ((input[i] === ' ') && (i > startOffset) && !inBrackets) {
+        completeWord(i);
+      } else if (input[i] === '"') {
+        inBrackets = !inBrackets;
+      }
+    }
+    if (input.length > startOffset) {
+      completeWord(input.length);
+    }
+
+    return res;
+  }
+
   private handleChangeParameters = (key, value) => {
-    this.handleChange('commandLine', value.split(' '));
+    this.handleChange('commandLine', value);
   }
 
   private handleChangePath = (field: 'exePath', filePath: string) => {
@@ -430,7 +467,13 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       });
   }
 
-  private toToolDiscovery(tool: IStarterInfo): IDiscoveredTool {
+  private toEditStarter(input: IStarterInfo): IEditStarterInfo {
+    const temp: any = { ...input };
+    temp.commandLine = temp.commandLine.join(' ');
+    return temp;
+  }
+
+  private toToolDiscovery(tool: IEditStarterInfo): IDiscoveredTool {
     return {
       path: tool.exePath,
       hidden: false,
@@ -442,7 +485,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       requiredFiles: [],
       environment: tool.environment,
       logo: `${tool.id}.png`,
-      parameters: tool.commandLine,
+      parameters: this.splitCommandLine(tool.commandLine),
     };
   }
 
@@ -454,7 +497,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
         workingDirectory: tool.workingDirectory,
         iconPath: tool.iconPath,
         environment: tool.environment,
-        commandLine: tool.commandLine,
+        commandLine: this.splitCommandLine(tool.commandLine),
       });
     } else {
       onAddTool(tool.gameId, tool.id, this.toToolDiscovery(tool));

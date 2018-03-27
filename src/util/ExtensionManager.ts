@@ -2,6 +2,7 @@ import { forgetExtension, setExtensionEnabled } from '../actions/app';
 import { addNotification, dismissNotification } from '../actions/notifications';
 import { setExtensionLoadFailures } from '../actions/session';
 
+import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
 import { ExtensionInit } from '../types/Extension';
 import {
   ArchiveHandlerCreator,
@@ -13,6 +14,8 @@ import {
   ILookupDetails,
   IOpenOptions,
   IReducerSpec,
+  IRunOptions,
+  IRunParameters,
   StateChangeCallback,
 } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
@@ -23,12 +26,14 @@ import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
 import { registerSanityCheck, SanityCheck } from './reduxSanity';
+import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManagerT from './StyleManager';
 import { setdefault } from './util';
 
 import * as Promise from 'bluebird';
+import { exec, spawn, SpawnOptions } from 'child_process';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
@@ -42,6 +47,7 @@ import { types as ratypes } from 'redux-act';
 import ReduxWatcher = require('redux-watcher');
 import * as rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
+import runElevated from './elevated';
 
 let app = appIn;
 let dialog = dialogIn;
@@ -54,6 +60,8 @@ if (remote !== undefined) {
 function asarUnpacked(input: string): string {
   return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
+
+type DeployResult = 'auto' | 'yes' | 'skip' | 'cancel';
 
 interface IRegisteredExtension {
   name: string;
@@ -236,6 +244,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerModType: undefined,
       registerActionCheck: undefined,
       registerMerge: undefined,
+      registerInterpreter: undefined,
       requireExtension: undefined,
       api: undefined,
       once: undefined,
@@ -325,10 +334,12 @@ class ExtensionManager {
   private mContextProxyHandler: ContextProxyHandler;
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
+  private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mPid = process.pid;
     this.mEventEmitter = eventEmitter;
+    this.mInterpreters = {};
     this.mApi = {
       showErrorNotification:
         (message: string, details: string | Error | any) => {
@@ -354,6 +365,7 @@ class ExtensionManager {
       saveModMeta: this.saveModMeta,
       openArchive: this.openArchive,
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
+      runExecutable: this.runExecutable,
     };
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
@@ -424,6 +436,11 @@ class ExtensionManager {
         (options !== undefined) ? options.id : undefined,
         (options === undefined) || (options.allowReport !== false));
     };
+
+    this.mApi.showDialog =
+      (type: DialogType, title: string, content: IDialogContent, actions: DialogActions) => {
+        return store.dispatch(showDialog(type, title, content, actions));
+      };
     this.mApi.dismissNotification = (id: string) => {
       store.dispatch(dismissNotification(id));
     };
@@ -482,6 +499,10 @@ class ExtensionManager {
     });
     this.apply('registerActionCheck', (actionType: string, check: SanityCheck) => {
       registerSanityCheck(actionType, check);
+    });
+    this.apply('registerInterpreter', (extension: string,
+                                       apply: (input: IRunParameters) => IRunParameters) => {
+      this.mInterpreters[extension.toLowerCase()] = apply;
     });
     return reducers;
   }
@@ -826,6 +847,102 @@ class ExtensionManager {
     }
     return creator(archivePath, options || {})
       .then((handler: IArchiveHandler) => Promise.resolve(new Archive(handler)));
+  }
+
+  private queryDeploy = (): Promise<DeployResult> => {
+    const autoDeploy = getSafe(this.mApi.store.getState(),
+                               ['settings', 'automation', 'deploy'], true);
+    if (autoDeploy) {
+      return Promise.resolve<DeployResult>('auto');
+    } else {
+      return this.mApi.showDialog('question', 'Deploy now?', {
+        message: 'You should deploy mods now, otherwise the mods in game '
+        + 'will be outdated',
+      }, [ { label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' } ])
+        .then((result) => {
+          switch (result.action) {
+            case 'Skip': return Promise.resolve<DeployResult>('skip');
+            case 'Deploy': return Promise.resolve<DeployResult>('yes');
+            default: return Promise.resolve<DeployResult>('cancel');
+          }
+        });
+    }
+  }
+
+  private checkDeploy(): Promise<boolean> {
+    return this.queryDeploy()
+      .then(shouldDeploy => {
+        if (shouldDeploy === 'yes') {
+          return new Promise<boolean>((resolve, reject) => {
+            this.mApi.events.emit('deploy-mods', (err) => {
+              if (err !== null) {
+                reject(err);
+              } else {
+                resolve(true);
+              }
+            });
+          });
+        } else if (shouldDeploy === 'auto') {
+          return new Promise<boolean>((resolve, reject) => {
+            this.mApi.events.emit('await-activation', (err: Error) => {
+              if (err !== null) {
+                reject(err);
+              } else {
+                resolve(true);
+              }
+            });
+          });
+        } else if (shouldDeploy === 'cancel') {
+          return Promise.resolve(false);
+        } else { // skip
+          return Promise.resolve(true);
+        }
+      });
+  }
+
+  private runExecutable =
+    (executable: string, args: string[], options: IRunOptions): Promise<void> => {
+      const interpreter = this.mInterpreters[path.extname(executable).toLowerCase()];
+      if (interpreter !== undefined) {
+        ({ executable, args, options } = interpreter({ executable, args, options }));
+      }
+      return (options.suggestDeploy === true ? this.checkDeploy() : Promise.resolve(true))
+      .then(cont => cont ? new Promise<void>((resolve, reject) => {
+        const cwd = options.cwd || path.dirname(executable);
+        const env = { ...process.env, ...options.env };
+        try {
+          const spawnOptions: SpawnOptions = {
+            cwd,
+            env,
+            detached: true,
+          };
+          const child = spawn(executable, args.map(arg => arg.replace(/"/g, '')), spawnOptions);
+
+          child
+            .on('error', err => {
+              reject(err);
+            })
+            .on('close', (code) => {
+              if (code !== 0) {
+                // TODO: the child process returns an exit code of 53 for SSE and
+                // FO4, and an exit code of 1 for Skyrim. We don't know why but it
+                // doesn't seem to affect anything
+                log('warn', 'child process exited with code: ' + code, {});
+              }
+          });
+        } catch (err) {
+          if (err.errno === 'EACCES') {
+            return resolve(runElevated(shortid(), runElevatedCustomTool, {
+              toolPath: executable,
+              toolCWD: cwd,
+              parameters: args,
+              environment: env,
+            }));
+          } else {
+            return reject(err);
+          }
+        }
+      }) : Promise.resolve());
   }
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {

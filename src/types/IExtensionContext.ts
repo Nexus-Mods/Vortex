@@ -33,6 +33,8 @@ import * as I18next from 'i18next';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
+import { DialogActions, IDialogAction, IDialogContent } from './api';
+import { DialogType, IDialogResult } from './IDialog';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, InstallFunc, ISupportedResult, ProgressDelegate };
@@ -253,6 +255,25 @@ export type MergeTest = (game: IGame, gameDiscovery: IDiscoveryResult) => IMerge
 export type MergeFunc = (filePath: string, mergeDir: string) => Promise<void>;
 
 /**
+ * options used when starting an external application through runExecutable
+ */
+export interface IRunOptions {
+  cwd?: string;
+  env?: { [key: string]: string };
+  suggestDeploy?: boolean;
+}
+
+/**
+ * all parameters passed to runExecutable. This is used to support interpreters
+ * changing the parameters
+ */
+export interface IRunParameters {
+  executable: string;
+  args: string[];
+  options: IRunOptions;
+}
+
+/**
  * interface for convenience functions made available to extensions
  *
  * @export
@@ -279,6 +300,12 @@ export interface IExtensionApi {
    */
   showErrorNotification?: (message: string, detail: string | Error | any,
                            options?: IErrorOptions) => void;
+
+  /**
+   * show a dialog
+   */
+  showDialog?: (type: DialogType, title: string, content: IDialogContent,
+                actions: DialogActions) => Promise<IDialogResult>;
 
   /**
    * hides a notification by its id
@@ -432,6 +459,13 @@ export interface IExtensionApi {
    * @memberOf IExtensionContext
    */
   setStylesheet: (key: string, filePath: string) => void;
+
+  /**
+   * run an executable. This is comparable to node.js child_process.spawn but it allows us to add
+   * extensions, like support interpreters and hooks.
+   * It will also automatically ask the user to authorize elevation if the executable requires it
+   */
+  runExecutable: (executable: string, args: string[], options: IRunOptions) => Promise<void>;
 }
 
 export interface IStateVerifier {
@@ -758,6 +792,12 @@ export interface IExtensionContext {
    * string for the default mod type
    */
   registerMerge: (test: MergeTest, merge: MergeFunc, modType: string) => void;
+
+  /**
+   * register an interpreter to be used to run files of the specified type when starting with
+   * IExtensionApi.runExecutable
+   */
+  registerInterpreter: (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
 
   /**
    * register a dependency on a different extension
