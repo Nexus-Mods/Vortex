@@ -75,7 +75,8 @@ class GameModeManager {
    */
   public setGameMode(oldMode: string, newMode: string): Promise<void> {
     const game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
-    const gameDiscovery = this.mStore.getState().settings.gameMode.discovered[newMode];
+    const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
+    const gameDiscovery = discoveredGames[newMode];
     if ((game === undefined)
         || (gameDiscovery === undefined)
         || (gameDiscovery.path === undefined)) {
@@ -91,7 +92,8 @@ class GameModeManager {
       .then(() => this.ensureWritable(modPath))
       .then(() => getNormalizeFunc(gameDiscovery.path))
       .then(normalize =>
-        discoverRelativeTools(game, gameDiscovery.path, this.onDiscoveredTool, normalize))
+        discoverRelativeTools(game, gameDiscovery.path, discoveredGames,
+                              this.onDiscoveredTool, normalize))
       .then(() => {
         log('info', 'changed game mode', {oldMode, newMode});
         this.mOnGameModeActivated(newMode);
@@ -139,7 +141,8 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public startQuickDiscovery() {
-    return quickDiscovery(this.mKnownGames, this.onDiscoveredGame, this.onDiscoveredTool);
+    return quickDiscovery(this.mKnownGames, this.mStore.getState().settings.gameMode.discovered,
+                          this.onDiscoveredGame, this.onDiscoveredTool);
   }
 
   /**

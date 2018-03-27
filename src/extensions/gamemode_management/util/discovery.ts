@@ -80,6 +80,7 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
  * @param {DiscoveredCB} onDiscoveredGame
  */
 export function quickDiscovery(knownGames: IGame[],
+                               discoveredGames: {[id: string]: IDiscoveryResult},
                                onDiscoveredGame: DiscoveredCB,
                                onDiscoveredTool: DiscoveredToolCB): Promise<string[]> {
   return Promise.map(knownGames, game => new Promise<string>((resolve, reject) => {
@@ -105,7 +106,7 @@ export function quickDiscovery(knownGames: IGame[],
           });
           getNormalizeFunc(resolvedPath)
           .then(normalize =>
-            discoverRelativeTools(game, resolvedPath, onDiscoveredTool, normalize))
+            discoverRelativeTools(game, resolvedPath, discoveredGames, onDiscoveredTool, normalize))
           .then(() => resolve(game.id));
         }).catch((err) => {
           log('debug', 'game not found',
@@ -221,9 +222,13 @@ function assertToolDir(tool: ITool, testPath: string): Promise<string> {
 const nop = () => undefined;
 
 export function discoverRelativeTools(game: IGame, gamePath: string,
+                                      discoveredGames: {[id: string]: IDiscoveryResult},
                                       onDiscoveredTool: DiscoveredToolCB, normalize: Normalize)
                                : Promise<void> {
-  const relativeTools = (game.supportedTools || []).filter(tool => tool.relative === true);
+  const discoveredTools = getSafe(discoveredGames[game.id], ['tools'], {});
+  const relativeTools = (game.supportedTools || [])
+    .filter(tool => tool.relative === true)
+    .filter(tool => discoveredTools[tool.id] === undefined);
 
   if (relativeTools.length === 0) {
     return Promise.resolve();
@@ -242,11 +247,13 @@ export function discoverRelativeTools(game: IGame, gamePath: string,
 
   const matchList: Set<string> = new Set(files.map(entry => path.basename(entry.fileName)));
 
-  const onFileCB = filePath => onFile(filePath, files, normalize, nop, onDiscoveredTool);
+  const onFileCB =
+    filePath => onFile(filePath, files, normalize, discoveredGames, nop, onDiscoveredTool);
   return walk(gamePath, matchList, onFileCB, undefined, normalize);
 }
 
 function testApplicationDirValid(application: ITool, testPath: string, gameId: string,
+                                 discoveredGames: {[id: string]: IDiscoveryResult},
                                  onDiscoveredGame: DiscoveredCB,
                                  onDiscoveredTool: DiscoveredToolCB,
                                  normalize: Normalize): void {
@@ -258,7 +265,8 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
           path: testPath,
         });
 
-        return discoverRelativeTools(game, testPath, onDiscoveredTool, normalize);
+        return discoverRelativeTools(game, testPath, discoveredGames,
+                                     onDiscoveredTool, normalize);
       } else {
         onDiscoveredTool(gameId, {
           ...application,
@@ -299,6 +307,7 @@ function toolFilesForGame(game: IGame,
 }
 
 function onFile(filePath: string, files: IFileEntry[], normalize: Normalize,
+                discoveredGames: {[id: string]: IDiscoveryResult},
                 onDiscoveredGame: DiscoveredCB, onDiscoveredTool: DiscoveredToolCB) {
   const matches: IFileEntry[] =
     files.filter(entry => normalize(filePath).endsWith(entry.fileName));
@@ -306,7 +315,7 @@ function onFile(filePath: string, files: IFileEntry[], normalize: Normalize,
   for (const match of matches) {
     const testPath: string = filePath.substring(0, filePath.length - match.fileName.length);
     testApplicationDirValid(match.application, testPath, match.gameId,
-      onDiscoveredGame, onDiscoveredTool, normalize);
+      discoveredGames, onDiscoveredGame, onDiscoveredTool, normalize);
   }
   return false;
 }
@@ -365,7 +374,7 @@ export function searchDiscovery(
           // at the last path component of a file
           const matchList: Set<string> = new Set(files.map(entry => path.basename(entry.fileName)));
           const onFileCB = (filePath: string) =>
-            onFile(filePath, files, normalize, onDiscoveredGame, onDiscoveredTool);
+            onFile(filePath, files, normalize, discoveredGames, onDiscoveredGame, onDiscoveredTool);
           return walk(searchPath, matchList, onFileCB, progressObj, normalize);
         })
         .then(() => {
